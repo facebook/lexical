@@ -24,6 +24,7 @@ import {
   $setFormatFromDOM,
   addClassNamesToElement,
   type BaseSelection,
+  booleanValue,
   buildImportMap,
   type DOMConversionOutput,
   type DOMExportOutput,
@@ -34,15 +35,19 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   normalizeClassNames,
+  numberValue,
+  objectValue,
+  optional,
   type ParagraphNode,
   type RangeSelection,
   removeClassNamesFromElement,
   type SerializedElementNode,
   setDOMStyleFromCSS,
   type Spread,
+  transformValue,
 } from 'lexical';
 
 import {$createListNode, $isListNode, type ListNode, type ListType} from './';
@@ -56,6 +61,28 @@ export type SerializedListItemNode = Spread<
   },
   SerializedElementNode
 >;
+
+/**
+ * The deepest list nesting `setIndent` will walk to. Each level it steps
+ * through nests or unwraps a whole list, so this bounds work an untrusted
+ * `indent` could otherwise make unbounded.
+ */
+const MAX_LIST_ITEM_INDENT = 128;
+
+const listItemNodeSchema = /* @__PURE__ */ objectValue({
+  checked: /* @__PURE__ */ optional(/* @__PURE__ */ booleanValue()),
+  // Overrides the inherited ElementNode field to bound it. This indent is
+  // structural — applying it nests or unwraps one whole list per level — so an
+  // unbounded value out of untrusted JSON would build millions of nodes. Since
+  // a schema falls back to its *default* for an out-of-domain value, clamping
+  // is a transform rather than `numberValue`'s `max`, which would read an
+  // over-deep item as indent 0 instead of as deeply nested.
+  indent: /* @__PURE__ */ transformValue(
+    /* @__PURE__ */ numberValue(0, {integer: true, min: 0}),
+    value => Math.min(value, MAX_LIST_ITEM_INDENT),
+  ),
+  value: /* @__PURE__ */ numberValue(1),
+});
 
 function applyMarkerStyles(
   dom: HTMLElement,
@@ -83,7 +110,16 @@ function applyMarkerStyles(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface ListItemNode {
+  exportJSON(compact?: boolean): SerializedListItemNode;
+  updateFromJSON(
+    serializedNode: LexicalParseJSON<SerializedListItemNode>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ListItemNode extends ElementNode {
   /** @internal */
   __value: number;
@@ -141,6 +177,7 @@ export class ListItemNode extends ElementNode {
           priority: 0,
         }),
       }),
+      json: listItemNodeSchema,
     });
   }
 
@@ -196,15 +233,6 @@ export class ListItemNode extends ElementNode {
     return false;
   }
 
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedListItemNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setValue(serializedNode.value)
-      .setChecked(serializedNode.checked);
-  }
-
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config);
 
@@ -238,14 +266,6 @@ export class ListItemNode extends ElementNode {
 
     return {
       element,
-    };
-  }
-
-  exportJSON(): SerializedListItemNode {
-    return {
-      ...super.exportJSON(),
-      checked: this.getChecked(),
-      value: this.getValue(),
     };
   }
 
@@ -485,9 +505,15 @@ export class ListItemNode extends ElementNode {
     invariant(typeof indent === 'number', 'Invalid indent value.');
     indent = Math.floor(indent);
     invariant(indent >= 0, 'Indent value must be non-negative.');
+    // Deliberately not clamped here: the bound belongs on the parse path (see
+    // listItemNodeSchema), because clamping the target of a walk that starts
+    // from the node's *current* indent would outdent an item that is already
+    // nested deeper than the bound — making `item.setIndent(item.getIndent())`
+    // destroy structure rather than do nothing.
+    const target = indent;
     let currentIndent = this.getIndent();
-    while (currentIndent !== indent) {
-      if (currentIndent < indent) {
+    while (currentIndent !== target) {
+      if (currentIndent < target) {
         $handleIndent(this);
         currentIndent++;
       } else {

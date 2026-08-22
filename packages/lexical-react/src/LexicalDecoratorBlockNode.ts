@@ -12,9 +12,11 @@ import {
   $getDocument,
   DecoratorNode,
   type ElementFormatType,
+  enumValue,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  objectValue,
   type SerializedLexicalNode,
   type Spread,
 } from 'lexical';
@@ -30,6 +32,31 @@ export type SerializedDecoratorBlockNode = Spread<
   SerializedLexicalNode
 >;
 
+// Single source of truth for parsing the node-specific properties of a
+// SerializedDecoratorBlockNode. DecoratorBlockNode is an abstract base (it has
+// no concrete node type) so it publishes its schema on `$config` under the
+// well-known `Symbol.for('DecoratorBlockNode')` key; concrete subclasses
+// compose it with their own.
+const decoratorBlockNodeSchema = /* @__PURE__ */ objectValue({
+  format: /* @__PURE__ */ enumValue([
+    '',
+    'left',
+    'start',
+    'center',
+    'right',
+    'end',
+    'justify',
+  ]),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface DecoratorBlockNode {
+  exportJSON(compact?: boolean): SerializedDecoratorBlockNode;
+  updateFromJSON(
+    serializedNode: LexicalParseJSON<SerializedDecoratorBlockNode>,
+  ): this;
+}
+
 /**
  * A base class for block-level {@link DecoratorNode}s (decorator nodes rendered
  * on their own line rather than inline). It stores an {@link ElementFormatType}
@@ -37,6 +64,7 @@ export type SerializedDecoratorBlockNode = Spread<
  * block embeds such as images, videos, or tweets, typically pairing it with
  * {@link BlockWithAlignableContents} to handle selection and alignment.
  */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
   __format: ElementFormatType;
 
@@ -50,19 +78,10 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
     this.__format = prevNode.__format;
   }
 
-  exportJSON(): SerializedDecoratorBlockNode {
-    return {
-      ...super.exportJSON(),
-      format: this.__format || '',
-    };
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedDecoratorBlockNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setFormat(serializedNode.format || '');
+  $config() {
+    return this.config(Symbol.for('DecoratorBlockNode'), {
+      json: decoratorBlockNodeSchema,
+    });
   }
 
   canIndent(): false {

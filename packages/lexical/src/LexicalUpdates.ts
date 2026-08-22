@@ -6,7 +6,11 @@
  *
  */
 
-import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
+import type {
+  LexicalNode,
+  SerializedLexicalNode,
+  SerializedPartial,
+} from './LexicalNode';
 
 import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
@@ -395,12 +399,13 @@ type InternalSerializedNode = {
   children?: InternalSerializedNode[];
   $slots?: Record<string, InternalSerializedNode>;
   type: string;
-  version: number;
+  /** @deprecated Ignored when parsing; see {@link SerializedLexicalNode.version}. */
+  version?: number;
 };
 
 /** Deserializes a SerializedLexicalNode JSON object into its corresponding LexicalNode instance. */
 export function $parseSerializedNode(
-  serializedNode: SerializedLexicalNode,
+  serializedNode: SerializedPartial<SerializedLexicalNode>,
 ): LexicalNode {
   const internalSerializedNode: InternalSerializedNode = serializedNode;
   return $parseSerializedNodeImpl(

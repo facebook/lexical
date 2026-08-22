@@ -23,8 +23,14 @@ import {
   type LexicalUpdateJSON,
   NODE_STATE_KEY,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type Spread,
 } from '.';
+import {
+  type AnySerializationSchema,
+  isSchemaEqual,
+  type SerializationSchema,
+} from './LexicalSchema';
 import {errorOnReadOnly} from './LexicalUpdates';
 import {
   getRegisteredNodeOrThrow,
@@ -214,6 +220,17 @@ export type NodeStateJSON<T extends LexicalNode> = Prettify<
  * //    ^? State<'number', StateValueConfig<number>>
  * ```
  *
+ * The {@link Parse} schema builders exported from `lexical` (such as
+ * {@link stringValue}, {@link numberValue}, {@link booleanValue}, and
+ * {@link enumValue}) cover the common primitive and enumeration cases and
+ * return a parse function you can use directly:
+ *
+ * @example
+ * ```ts
+ * const formatState = createState('format', {parse: numberValue()});
+ * //    ^? State<'format', StateValueConfig<number>>
+ * ```
+ *
  * Only the parse option is required, it is generally not useful to
  * override `unparse` or `isEqual`. However, if you are using
  * non-primitive types such as Array, Object, Date, or something
@@ -307,18 +324,71 @@ export class StateConfig<K extends string | symbol, V> {
    */
   readonly defaultValue: V;
   readonly resetOnCopyNode: boolean;
+  /**
+   * The {@link SerializationSchema} for this state's value, present when its
+   * `parse` is a schema (e.g. `createState('mode', {parse: enumValue([...])})`).
+   * It exposes the value's introspectable domain so tooling such as
+   * `@lexical/fast-check` can generate examples of this state. It is undefined
+   * when `parse` is a plain function with no schema metadata.
+   */
+  readonly schema?: AnySerializationSchema;
   constructor(key: K, stateValueConfig: StateValueConfig<V>) {
     this.key = key;
+    // Binding below strips a schema's own properties from this.parse, so
+    // resolve it first and keep the original when it carries introspectable
+    // metadata.
+    const schema = isIntrospectableSchema(stateValueConfig.parse)
+      ? stateValueConfig.parse
+      : undefined;
+    this.schema = schema;
     this.parse = stateValueConfig.parse.bind(stateValueConfig);
     this.unparse = (stateValueConfig.unparse || coerceToJSON).bind(
       stateValueConfig,
     );
-    this.isEqual = (stateValueConfig.isEqual || Object.is).bind(
-      stateValueConfig,
-    );
-    this.defaultValue = this.parse(undefined);
+    // A schema already knows its own domain, so a `parse` that is one supplies
+    // the equality and the default this state compares against — unless the
+    // caller declared its own. Without this a reference-typed schema
+    // (arrayValue/objectValue, which return a fresh value per parse) would fall
+    // back to Object.is: NodeState.toJSON would never recognize the default and
+    // would write it into every node, and $setState would dirty the node on
+    // every write of an equal value.
+    this.isEqual = stateValueConfig.isEqual
+      ? stateValueConfig.isEqual.bind(stateValueConfig)
+      : schema !== undefined && schema.isEqual !== undefined
+        ? (a, b) => isSchemaEqual(schema, a, b)
+        : Object.is;
+    // The schema's default is frozen when it is reference-typed, which matters
+    // because $getState hands this very value to every node that has none of
+    // its own.
+    this.defaultValue =
+      schema !== undefined ? schema.defaultValue : this.parse(undefined);
     this.resetOnCopyNode = stateValueConfig.resetOnCopyNode || false;
   }
+}
+
+/**
+ * Whether a `parse` is one of the {@link SerializationSchema} builders, which
+ * carry their domain alongside the coercion.
+ *
+ * It tests `meta.kind`, not `meta` alone: an unrelated parse function that
+ * happens to own a `meta` property is not a schema, and publishing it as one
+ * would hand introspecting tools a shape they cannot read. `defaultValue` is
+ * required for the same reason from the other direction — it is what this
+ * state's default is *taken from* below, so a function matching on `meta` but
+ * carrying no default would silently replace `parse(undefined)` with
+ * `undefined`, and every node with no value of its own would read as unset.
+ */
+function isIntrospectableSchema<V>(
+  parse: StateValueConfig<V>['parse'],
+): parse is SerializationSchema<V> {
+  return (
+    'meta' in parse &&
+    typeof parse.meta === 'object' &&
+    parse.meta !== null &&
+    'kind' in parse.meta &&
+    typeof parse.meta.kind === 'string' &&
+    'defaultValue' in parse
+  );
 }
 
 /**
@@ -893,21 +963,15 @@ export function $getSharedNodeState<T extends LexicalNode>(
  */
 export function $updateStateFromJSON<T extends LexicalNode>(
   node: T,
-  serialized: LexicalUpdateJSON<SerializedLexicalNode>,
+  serialized: LexicalUpdateJSON<SerializedPartial<SerializedLexicalNode>>,
 ): T {
   const writable = node.getWritable();
+  // Only the nested NodeState (under NODE_STATE_KEY) is applied here; flat
+  // states, which serialize at the top level, are applied via $setState by the
+  // node's compiled `json` schema (see $applyJSONSetters).
   const unknownState = serialized[NODE_STATE_KEY];
-  let parseState = unknownState;
-  for (const k of $getSharedNodeState(writable).flatKeys) {
-    if (k in serialized) {
-      if (parseState === undefined || parseState === unknownState) {
-        parseState = {...unknownState};
-      }
-      parseState[k] = serialized[k as keyof typeof serialized];
-    }
-  }
-  if (writable.__state || parseState) {
-    $getWritableNodeState(node).updateFromJSON(parseState);
+  if (writable.__state || unknownState) {
+    $getWritableNodeState(node).updateFromJSON(unknownState);
   }
   return writable;
 }

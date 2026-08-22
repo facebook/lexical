@@ -17,6 +17,7 @@ import {
   $caretFromPoint,
   $caretRangeFromSelection,
   $comparePointCaretNext,
+  $exportNodeJSON,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
@@ -55,7 +56,6 @@ import {
   type RangeSelection,
   safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-  type SerializedElementNode,
   shallowMergeConfig,
 } from 'lexical';
 
@@ -474,34 +474,11 @@ export interface BaseSerializedNode {
    */
   $slots?: Record<string, BaseSerializedNode>;
   type: string;
-  version: number;
-}
-
-function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
-  const serializedNode = node.exportJSON();
-  const nodeClass = node.constructor;
-
-  if (serializedNode.type !== nodeClass.getType()) {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not implement .exportJSON().',
-      nodeClass.name,
-    );
-  }
-
-  if ($isElementNode(node)) {
-    const serializedChildren = (serializedNode as SerializedElementNode)
-      .children;
-    if (!Array.isArray(serializedChildren)) {
-      invariant(
-        false,
-        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
-        nodeClass.name,
-      );
-    }
-  }
-
-  return serializedNode;
+  /**
+   * @deprecated Ignored when parsing, and omitted by a compact export; see
+   * {@link SerializedLexicalNode.version}.
+   */
+  version?: number;
 }
 
 function $appendNodesToJSON(
@@ -524,9 +501,19 @@ function $appendNodesToJSON(
   if (selection !== null && $isTextNode(target)) {
     target = $sliceSelectedTextNodeContent(selection, target, 'clone');
   }
+  // Route through the shared export so a selection honors the same form as
+  // editorState.toJSON().
+  const serializedNode: BaseSerializedNode = $exportNodeJSON(target);
   const children = $isElementNode(target) ? target.getChildren() : [];
-
-  const serializedNode = exportNodeToJSON(target);
+  let childTarget: BaseSerializedNode[] = [];
+  if ($isElementNode(target)) {
+    invariant(
+      Array.isArray(serializedNode.children),
+      'LexicalNode: Node %s is an element but the JSON exported for it has no children array.',
+      target.constructor.name,
+    );
+    childTarget = serializedNode.children;
+  }
   if ($isTextNode(target) && target.getTextContentSize() === 0) {
     // If an uncollapsed selection ends or starts at the end of a line of specialized,
     // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one
@@ -552,7 +539,7 @@ function $appendNodesToJSON(
       editor,
       childSelection,
       childNode,
-      serializedNode.children,
+      childTarget,
     );
 
     if (
@@ -586,34 +573,32 @@ function $appendNodesToJSON(
         );
         const slotArray: BaseSerializedNode[] = [];
         $appendNodesToJSON(editor, null, slotNode, slotArray);
-        // A whole-slot export must serialize to exactly the slot node. A slot
-        // value that overrides excludeFromCopy would otherwise make
+        // A whole-slot export must serialize to exactly the slot value node.
+        // A slot value that overrides excludeFromCopy would instead make
         // $appendNodesToJSON splice up its children (or emit nothing), leaving
         // a dangling/undefined slot entry that breaks on paste.
         invariant(
-          slotArray.length === 1 && slotArray[0].type === slotNode.getType(),
-          'LexicalNode: slot "%s" on %s did not serialize to exactly the slot value node (got %s of type %s); a slot value must not be excluded from copy.',
+          slotArray.length === 1 &&
+            !($isElementNode(slotNode) && slotNode.excludeFromCopy('clone')),
+          'LexicalNode: slot "%s" on %s did not serialize to exactly the slot value node (got %s nodes); a slot value must not be excluded from copy.',
           name,
           target.constructor.name,
           String(slotArray.length),
-          String(slotArray.length > 0 ? slotArray[0].type : 'none'),
         );
         serializedSlots[name] = slotArray[0];
       }
-      (
-        serializedNode as BaseSerializedNode & {
-          $slots?: Record<string, BaseSerializedNode>;
-        }
-      ).$slots = serializedSlots;
+      serializedNode.$slots = serializedSlots;
     }
   }
 
   if (shouldInclude && !shouldExclude) {
     targetArray.push(serializedNode);
-  } else if (Array.isArray(serializedNode.children)) {
-    for (let i = 0; i < serializedNode.children.length; i++) {
-      const serializedChildNode = serializedNode.children[i];
-      targetArray.push(serializedChildNode);
+  } else {
+    // Splice up whatever the recursion collected in this node's place — the
+    // selected descendants, never an override's authoritative subtree, which
+    // no selection ever filtered.
+    for (let i = 0; i < childTarget.length; i++) {
+      targetArray.push(childTarget[i]);
     }
   }
 

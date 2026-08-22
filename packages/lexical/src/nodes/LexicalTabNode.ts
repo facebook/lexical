@@ -12,6 +12,14 @@ import type {LexicalNode, NodeKey} from '../LexicalNode';
 import invariant from '@lexical/internal/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
+import {GENERATED_TAB} from '../LexicalGeneratedJSON';
+import {
+  enumValue,
+  numberValue,
+  objectValue,
+  stringValue,
+  withAccessors,
+} from '../LexicalSchema';
 import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {
   type SerializedTextNode,
@@ -25,7 +33,27 @@ export type SerializedTabNode = SerializedTextNode;
 /** @noInheritDoc */
 export class TabNode extends TextNode {
   $config() {
-    return this.config('tab', {extends: TextNode});
+    return this.config('tab', {
+      extends: TextNode,
+      generated: GENERATED_TAB,
+      // A tab's content, detail and mode are fixed rather than stored:
+      // setTextContent normalizes any input to '\t', and setDetail/setMode
+      // reject anything but IS_UNMERGEABLE/'normal'. They are therefore
+      // derived on import — declaring that (rather than relying on defaults)
+      // both keeps a hand-authored or foreign `{detail: 0}` / `{mode:
+      // 'token'}` from reaching a setter that throws, and lets the compact
+      // form omit them.
+      json: objectValue({
+        detail: withAccessors(numberValue(IS_UNMERGEABLE), {setter: null}),
+        mode: withAccessors(enumValue(['normal']), {setter: null}),
+        // Overriding an inherited field replaces it outright, so the getter is
+        // named here rather than inherited from TextNode.
+        text: withAccessors(stringValue('\t'), {
+          getter: 'getTextContent',
+          setter: null,
+        }),
+      }),
+    });
   }
 
   // `key` carries an explicit `undefined` default (rather than the usual `?`)

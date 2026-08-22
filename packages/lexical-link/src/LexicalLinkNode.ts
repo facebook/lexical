@@ -27,6 +27,7 @@ import {
   $setSelection,
   addClassNamesToElement,
   type BaseSelection,
+  booleanValue,
   createCommand,
   type DOMConversionOutput,
   type EditorConfig,
@@ -34,14 +35,18 @@ import {
   isHTMLAnchorElement,
   type LexicalCommand,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  nullable,
+  objectValue,
   type Point,
   type PointCaret,
   type PointType,
   type RangeSelection,
   type SerializedElementNode,
   type Spread,
+  stringValue,
+  withAccessors,
 } from 'lexical';
 
 export type LinkAttributes = {
@@ -71,7 +76,32 @@ const SUPPORTED_URL_PROTOCOLS = new Set([
   'tel:',
 ]);
 
+const linkNodeSchema = /* @__PURE__ */ objectValue({
+  // defaultAsNull preserves the legacy `value || null` semantics: an empty
+  // string (or junk that coerces to it) imports as null, not ''.
+  rel: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
+    defaultAsNull: true,
+  }),
+  target: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
+    defaultAsNull: true,
+  }),
+  title: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
+    defaultAsNull: true,
+  }),
+  url: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
+    getter: 'getURL',
+    setter: 'setURL',
+  }),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface LinkNode {
+  exportJSON(compact?: boolean): SerializedLinkNode;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedLinkNode>): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class LinkNode extends ElementNode {
   /** @internal */
   __url: string;
@@ -91,6 +121,7 @@ export class LinkNode extends ElementNode {
           priority: 1,
         }),
       },
+      json: linkNodeSchema,
     });
   }
 
@@ -154,15 +185,6 @@ export class LinkNode extends ElementNode {
     return false;
   }
 
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedLinkNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setURL(serializedNode.url)
-      .setRel(serializedNode.rel || null)
-      .setTarget(serializedNode.target || null)
-      .setTitle(serializedNode.title || null);
-  }
-
   sanitizeUrl(url: string): string {
     const rawUrl = url;
     url = formatUrl(url);
@@ -206,16 +228,6 @@ export class LinkNode extends ElementNode {
       }
     }
     return url;
-  }
-
-  exportJSON(): SerializedLinkNode | SerializedAutoLinkNode {
-    return {
-      ...super.exportJSON(),
-      rel: this.getRel(),
-      target: this.getTarget(),
-      title: this.getTitle(),
-      url: this.getURL(),
-    };
   }
 
   getURL(): string {
@@ -482,8 +494,21 @@ export type SerializedAutoLinkNode = Spread<
   SerializedLinkNode
 >;
 
+const autoLinkNodeSchema = /* @__PURE__ */ objectValue({
+  isUnlinked: /* @__PURE__ */ booleanValue(),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface AutoLinkNode {
+  exportJSON(compact?: boolean): SerializedAutoLinkNode;
+  updateFromJSON(
+    serializedNode: LexicalParseJSON<SerializedAutoLinkNode>,
+  ): this;
+}
+
 // Custom node type to override `canInsertTextAfter` that will
 // allow typing within the link
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class AutoLinkNode extends LinkNode {
   /** @internal */
   /** Indicates whether the autolink was ever unlinked. **/
@@ -507,7 +532,10 @@ export class AutoLinkNode extends LinkNode {
   }
 
   $config() {
-    return this.config('autolink', {extends: LinkNode});
+    return this.config('autolink', {
+      extends: LinkNode,
+      json: autoLinkNodeSchema,
+    });
   }
 
   shouldMergeAdjacentLink(_otherLink: LinkNode): boolean {
@@ -541,21 +569,6 @@ export class AutoLinkNode extends LinkNode {
       super.updateDOM(prevNode, anchor, config) ||
       prevNode.__isUnlinked !== this.__isUnlinked
     );
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedAutoLinkNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setIsUnlinked(serializedNode.isUnlinked || false);
-  }
-
-  exportJSON(): SerializedAutoLinkNode {
-    return {
-      ...super.exportJSON(),
-      isUnlinked: this.__isUnlinked,
-    };
   }
 
   // insertNewAfter is deliberately not overridden: LinkNode's implementation

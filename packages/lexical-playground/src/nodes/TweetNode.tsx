@@ -19,10 +19,19 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
+  objectValue,
   type Spread,
+  stringValue,
+  withGetter,
 } from 'lexical';
 import * as React from 'react';
 import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
+
+const tweetNodeSchema = /* @__PURE__ */ objectValue({
+  id: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), {
+    field: '__id',
+  }),
+});
 
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';
 
@@ -123,22 +132,14 @@ export class TweetNode extends DecoratorBlockNode {
   __id: string;
 
   $config() {
-    return this.config('tweet', {extends: DecoratorBlockNode});
+    return this.config('tweet', {
+      extends: DecoratorBlockNode,
+      json: tweetNodeSchema,
+    });
   }
 
   static clone(node: TweetNode): TweetNode {
     return new TweetNode(node.__id, node.__format, node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedTweetNode): TweetNode {
-    return $createTweetNode(serializedNode.id).updateFromJSON(serializedNode);
-  }
-
-  exportJSON(): SerializedTweetNode {
-    return {
-      ...super.exportJSON(),
-      id: this.getId(),
-    };
   }
 
   exportDOM(): DOMExportOutput {
@@ -149,7 +150,13 @@ export class TweetNode extends DecoratorBlockNode {
     return {element};
   }
 
-  constructor(id: string, format?: ElementFormatType, key?: NodeKey) {
+  setId(id: string): this {
+    const self = this.getWritable();
+    self.__id = id;
+    return self;
+  }
+
+  constructor(id: string = '', format?: ElementFormatType, key?: NodeKey) {
     super(format, key);
     this.__id = id;
   }

@@ -12,10 +12,16 @@ import {
   type EditorConfig,
   type LexicalNode,
   type NodeKey,
+  objectValue,
   type SerializedTextNode,
   type Spread,
+  stringValue,
   TextNode,
 } from 'lexical';
+
+const emojiNodeSchema = /* @__PURE__ */ objectValue({
+  className: /* @__PURE__ */ stringValue(),
+});
 
 export type SerializedEmojiNode = Spread<
   {
@@ -28,14 +34,23 @@ export class EmojiNode extends TextNode {
   __className: string;
 
   $config() {
-    return this.config('emoji', {extends: TextNode});
+    return this.config('emoji', {
+      extends: TextNode,
+      json: emojiNodeSchema,
+    });
   }
 
   static clone(node: EmojiNode): EmojiNode {
     return new EmojiNode(node.__className, node.__text, node.__key);
   }
 
-  constructor(className: string, text: string, key?: NodeKey) {
+  setClassName(className: string): this {
+    const self = this.getWritable();
+    self.__className = className;
+    return self;
+  }
+
+  constructor(className: string = '', text: string = '', key?: NodeKey) {
     super(text, key);
     this.__className = className;
   }
@@ -56,20 +71,6 @@ export class EmojiNode extends TextNode {
     }
     super.updateDOM(prevNode, inner as HTMLElement, config);
     return false;
-  }
-
-  static importJSON(serializedNode: SerializedEmojiNode): EmojiNode {
-    return $createEmojiNode(
-      serializedNode.className,
-      serializedNode.text,
-    ).updateFromJSON(serializedNode);
-  }
-
-  exportJSON(): SerializedEmojiNode {
-    return {
-      ...super.exportJSON(),
-      className: this.getClassName(),
-    };
   }
 
   getClassName(): string {

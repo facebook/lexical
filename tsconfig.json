@@ -28,6 +28,7 @@
         "./packages/lexical-eslint-plugin/src/index.ts"
       ],
       "@lexical/extension": ["./packages/lexical-extension/src/index.ts"],
+      "@lexical/fast-check": ["./packages/lexical-fast-check/src/index.ts"],
       "@lexical/file": ["./packages/lexical-file/src/index.ts"],
       "@lexical/hashtag": ["./packages/lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["./packages/lexical-headless/src/index.ts"],
@@ -270,6 +271,8 @@
       ],
       "@lexical/extension/src": ["./packages/lexical-extension/src"],
       "@lexical/extension/src/*": ["./packages/lexical-extension/src/*"],
+      "@lexical/fast-check/src": ["./packages/lexical-fast-check/src"],
+      "@lexical/fast-check/src/*": ["./packages/lexical-fast-check/src/*"],
       "@lexical/file/src": ["./packages/lexical-file/src"],
       "@lexical/file/src/*": ["./packages/lexical-file/src/*"],
       "@lexical/hashtag/src": ["./packages/lexical-hashtag/src"],

@@ -23,14 +23,18 @@ import {
   DecoratorNode,
   defineExtension,
   type EditorConfig,
+  enumValue,
   type LexicalEditor,
   type LexicalEditorWithDispose,
   type LexicalNode,
-  type LexicalUpdateJSON,
   type NodeKey,
+  numberValue,
+  objectValue,
+  rawValue,
   type SerializedEditor,
   type SerializedLexicalNode,
   type Spread,
+  withGetter,
 } from 'lexical';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
@@ -41,6 +45,23 @@ import ContentEditable from '../ui/ContentEditable';
 const StickyComponent = React.lazy(() => import('./StickyComponent'));
 
 type StickyNoteColor = 'pink' | 'yellow';
+
+const stickyNodeSchema = /* @__PURE__ */ objectValue({
+  caption: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ rawValue<SerializedEditor>(),
+    'getSerializedCaption',
+  ),
+  color: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ enumValue(['yellow', 'pink']),
+    {field: '__color'},
+  ),
+  xOffset: /* @__PURE__ */ withGetter(/* @__PURE__ */ numberValue(), {
+    field: '__x',
+  }),
+  yOffset: /* @__PURE__ */ withGetter(/* @__PURE__ */ numberValue(), {
+    field: '__y',
+  }),
+});
 
 export type SerializedStickyNode = Spread<
   {
@@ -80,7 +101,10 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   __caption: LexicalEditorWithDispose;
 
   $config() {
-    return this.config('sticky', {extends: DecoratorNode});
+    return this.config('sticky', {
+      extends: DecoratorNode,
+      json: stickyNodeSchema,
+    });
   }
 
   static clone(node: StickyNode): StickyNode {
@@ -92,31 +116,53 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
       node.__key,
     );
   }
-  static importJSON(serializedNode: SerializedStickyNode): StickyNode {
-    return new StickyNode(
-      serializedNode.xOffset,
-      serializedNode.yOffset,
-      serializedNode.color,
-    ).updateFromJSON(serializedNode);
+
+  /** @internal The nested caption editor's own serialized state. */
+  getSerializedCaption(): SerializedEditor {
+    return this.getLatest().__caption.toJSON();
   }
 
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedStickyNode>,
-  ): this {
-    const stickyNode = super.updateFromJSON(serializedNode);
-    const caption = serializedNode.caption;
-    const nestedEditor = stickyNode.__caption;
-    const editorState = nestedEditor.parseEditorState(caption.editorState);
-    if (!editorState.isEmpty()) {
-      nestedEditor.setEditorState(editorState);
+  /**
+   * Apply a serialized nested caption editor. The nested editor's own
+   * `parseEditorState` owns validation of the payload, which is why the `json`
+   * schema declares the property with {@link rawValue} rather than describing
+   * its shape. An empty parsed state is ignored so it does not clobber the
+   * caption the node was created with.
+   */
+  setCaption(caption: SerializedEditor | undefined): this {
+    const self = this.getWritable();
+    if (caption) {
+      const nestedEditor = self.__caption;
+      const editorState = nestedEditor.parseEditorState(caption.editorState);
+      if (!editorState.isEmpty()) {
+        nestedEditor.setEditorState(editorState);
+      }
     }
-    return stickyNode;
+    return self;
+  }
+
+  setXOffset(xOffset: number): this {
+    const self = this.getWritable();
+    self.__x = xOffset;
+    return self;
+  }
+
+  setYOffset(yOffset: number): this {
+    const self = this.getWritable();
+    self.__y = yOffset;
+    return self;
+  }
+
+  setColor(color: 'pink' | 'yellow'): this {
+    const self = this.getWritable();
+    self.__color = color;
+    return self;
   }
 
   constructor(
-    x: number,
-    y: number,
-    color: 'pink' | 'yellow',
+    x: number = 0,
+    y: number = 0,
+    color: 'pink' | 'yellow' = 'yellow',
     caption?: LexicalEditorWithDispose,
     key?: NodeKey,
   ) {
@@ -126,16 +172,6 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     this.__caption =
       caption || buildEditorFromExtensions(StickyEditorExtension);
     this.__color = color;
-  }
-
-  exportJSON(): SerializedStickyNode {
-    return {
-      ...super.exportJSON(),
-      caption: this.__caption.toJSON(),
-      color: this.__color,
-      xOffset: this.__x,
-      yOffset: this.__y,
-    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

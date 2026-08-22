@@ -17,8 +17,11 @@ import {
   type EditorConfig,
   ElementNode,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  numberValue,
+  objectValue,
+  optional,
   type SerializedElementNode,
   type Spread,
 } from 'lexical';
@@ -33,7 +36,20 @@ export type SerializedTableRowNode = Spread<
   SerializedElementNode
 >;
 
+const tableRowNodeSchema = /* @__PURE__ */ objectValue({
+  height: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface TableRowNode {
+  exportJSON(compact?: boolean): SerializedTableRowNode;
+  updateFromJSON(
+    serializedNode: LexicalParseJSON<SerializedTableRowNode>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TableRowNode extends ElementNode {
   /** @internal */
   __height?: number;
@@ -47,6 +63,7 @@ export class TableRowNode extends ElementNode {
           priority: 0,
         }),
       },
+      json: tableRowNodeSchema,
     });
   }
 
@@ -55,27 +72,11 @@ export class TableRowNode extends ElementNode {
     this.__height = prevNode.__height;
   }
 
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedTableRowNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setHeight(serializedNode.height);
-  }
-
   // `height` carries an explicit `undefined` default so the constructor reports
   // zero required arguments and `$config` can synthesize the static `clone`.
   constructor(height: number | undefined = undefined, key?: NodeKey) {
     super(key);
     this.__height = height;
-  }
-
-  exportJSON(): SerializedTableRowNode {
-    const height = this.getHeight();
-    return {
-      ...super.exportJSON(),
-      ...(height === undefined ? undefined : {height}),
-    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

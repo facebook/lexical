@@ -26,6 +26,7 @@ import type {
   EditorUpdateOptions,
   EditorSetOptions,
   InitialEditorConfig,
+  SerializedEditorState,
   SerializedLexicalNode,
   TextFormatType
 } from 'lexical';
@@ -255,3 +256,21 @@ declare export function registerTabIndentation(
   editor: LexicalEditor,
   maxIndent?: number | ReadonlySignal<null | number>,
 ): () => void;
+
+/**
+ * JSONExtension
+ */
+export type JSONConfig = {
+  compact: boolean;
+};
+export type ExportJSONOptions = {
+  readonly compact?: boolean;
+};
+export type JSONExtensionOutput = {
+  readonly $exportJSON: (
+    editorState?: EditorState,
+    options?: ExportJSONOptions,
+  ) => SerializedEditorState;
+  readonly $withSerialization: <T>(fn: () => T) => T;
+};
+declare export var JSONExtension: LexicalExtension<JSONConfig, "@lexical/extension/JSON", JSONExtensionOutput, void>;

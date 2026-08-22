@@ -13,17 +13,46 @@ import {
   DecoratorNode,
   type DOMExportOutput,
   type EditorConfig,
+  enumValue,
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
+  numberValue,
+  objectValue,
+  type SerializationSchema,
   type SerializedLexicalNode,
   type Spread,
+  stringValue,
+  unionValue,
+  withGetter,
 } from 'lexical';
 import * as React from 'react';
 
 type Dimension = number | 'inherit';
 
 const ExcalidrawComponent = React.lazy(() => import('./ExcalidrawComponent'));
+
+/**
+ * `Dimension` is `number | 'inherit'`, so width/height are described with
+ * {@link unionValue}. This also closes a hole in the previous
+ * `serializedNode.width ?? 'inherit'` parsing, which stored any non-nullish
+ * value (including a string like `'banana'`) verbatim.
+ */
+const dimensionSchema: SerializationSchema<Dimension> =
+  /* @__PURE__ */ unionValue(
+    [/* @__PURE__ */ numberValue(), /* @__PURE__ */ enumValue(['inherit'])],
+    'inherit',
+  );
+
+const excalidrawNodeSchema = /* @__PURE__ */ objectValue({
+  // '[]' is the empty-scene default the constructor uses; an absent or
+  // out-of-domain `data` must not become '' (JSON.parse('') throws).
+  data: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue('[]'), {
+    field: '__data',
+  }),
+  height: /* @__PURE__ */ withGetter(dimensionSchema, 'getSerializedHeight'),
+  width: /* @__PURE__ */ withGetter(dimensionSchema, 'getSerializedWidth'),
+});
 
 export type SerializedExcalidrawNode = Spread<
   {
@@ -40,7 +69,10 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __height: Dimension;
 
   $config() {
-    return this.config('excalidraw', {extends: DecoratorNode});
+    return this.config('excalidraw', {
+      extends: DecoratorNode,
+      json: excalidrawNodeSchema,
+    });
   }
 
   // Every constructor argument has a default, so `$config` synthesizes the
@@ -51,23 +83,6 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     this.__data = prevNode.__data;
     this.__width = prevNode.__width;
     this.__height = prevNode.__height;
-  }
-
-  static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(
-      serializedNode.data,
-      serializedNode.width ?? 'inherit',
-      serializedNode.height ?? 'inherit',
-    ).updateFromJSON(serializedNode);
-  }
-
-  exportJSON(): SerializedExcalidrawNode {
-    return {
-      ...super.exportJSON(),
-      data: this.__data,
-      height: this.__height === 'inherit' ? undefined : this.__height,
-      width: this.__width === 'inherit' ? undefined : this.__width,
-    };
   }
 
   constructor(
@@ -117,6 +132,18 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
     element.setAttribute('data-lexical-excalidraw-json', this.__data);
     return {element};
+  }
+
+  /** @internal The 'inherit' sentinel is omitted from the JSON. */
+  getSerializedWidth(): number | undefined {
+    const width = this.getWidth();
+    return width === 'inherit' ? undefined : width;
+  }
+
+  /** @internal */
+  getSerializedHeight(): number | undefined {
+    const height = this.getHeight();
+    return height === 'inherit' ? undefined : height;
   }
 
   setData(data: string): this {

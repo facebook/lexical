@@ -65,6 +65,32 @@ const editorConfig = Object.freeze({
 
 describe('LexicalLinkNode tests', () => {
   initializeUnitTest(testEnv => {
+    test('LinkNode.updateFromJSON restores null for empty or absent attributes', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const link = $createLinkNode('https://example.com/', {
+          rel: 'noopener',
+          target: '_blank',
+          title: 'example',
+        });
+        // The legacy parser applied `value || null`: an empty string imports
+        // as null, and an absent property resets to null.
+        link.updateFromJSON({
+          rel: '',
+          target: '',
+          title: '',
+          url: 'https://example.com/',
+        });
+        expect(link.getRel()).toBe(null);
+        expect(link.getTarget()).toBe(null);
+        expect(link.getTitle()).toBe(null);
+        link.setRel('noopener');
+        link.updateFromJSON({url: 'https://example.com/'});
+        expect(link.getRel()).toBe(null);
+      });
+    });
+
     test('LinkNode.constructor', async () => {
       const {editor} = testEnv;
 

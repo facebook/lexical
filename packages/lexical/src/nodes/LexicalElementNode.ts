@@ -10,7 +10,6 @@ import type {
   BaseStaticNodeConfig,
   KlassConstructor,
   LexicalEditor,
-  LexicalUpdateJSON,
   Spread,
   TextFormatType,
 } from 'lexical';
@@ -29,11 +28,19 @@ import {
   $isEphemeral,
   type DOMExportOutput,
   LexicalNode,
+  type LexicalParseJSON,
   type NodeKey,
   type SerializedLexicalNode,
   type SlotChildNode,
   type SlotHostNode,
 } from '../LexicalNode';
+import {
+  enumValue,
+  numberValue,
+  objectValue,
+  stringValue,
+  withGetter,
+} from '../LexicalSchema';
 import {
   $getSelection,
   $internalMakeRangeSelection,
@@ -74,6 +81,44 @@ export type SerializedElementNode<
   SerializedLexicalNode
 >;
 
+// Single source of truth for parsing the node-specific properties of a
+// SerializedElementNode (those it adds over a SerializedLexicalNode), applied
+// by the base LexicalNode.updateFromJSON.
+const elementNodeSchema = /* @__PURE__ */ objectValue({
+  direction: /* @__PURE__ */ enumValue([null, 'ltr', 'rtl']),
+  // The serialized `format` is the ElementFormatType string, not the numeric
+  // format getFormat() returns.
+  format: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ enumValue([
+      '',
+      'left',
+      'start',
+      'center',
+      'right',
+      'end',
+      'justify',
+    ]),
+    'getFormatType',
+  ),
+  // A whole, non-negative number: `setIndent` floors and rejects a negative,
+  // so those are out of domain and parse to 0. Deliberately not capped —
+  // `numberValue` falls back to its default rather than clamping, so a maximum
+  // here would silently flatten a legitimately deep document to indent 0. The
+  // unbounded walk that motivated a cap is ListItemNode.setIndent's, and it is
+  // bounded there.
+  indent: /* @__PURE__ */ numberValue(0, {integer: true, min: 0}),
+  // Persisted only in the narrow case below, so they are read through getters
+  // that return undefined (and are therefore omitted) otherwise.
+  textFormat: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ numberValue(),
+    'getSerializedTextFormat',
+  ),
+  textStyle: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ stringValue(),
+    'getSerializedTextStyle',
+  ),
+});
+
 export type ElementFormatType =
   | 'left'
   | 'start'
@@ -112,8 +157,15 @@ function $normalizeShadowRootChildren(node: ElementNode): void {
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ElementNode {
+  // Both JSON methods are narrowed here rather than overridden: the base
+  // implementations already do the right thing for an element — they read
+  // elementNodeSchema above, and the base export leads with `children` for
+  // anything that passes $isElementNode — so all a real override would
+  // contribute is this return type.
+  exportJSON(compact?: boolean): SerializedElementNode;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedElementNode>): this;
 }
 
 /** @noInheritDoc */
@@ -167,6 +219,7 @@ export class ElementNode
        */
       $transform: $normalizeShadowRootChildren,
       extends: LexicalNode,
+      json: elementNodeSchema,
     });
   }
 
@@ -847,46 +900,48 @@ export class ElementNode
     return {element};
   }
   // JSON serialization
-  exportJSON(): SerializedElementNode {
-    const json: SerializedElementNode = {
-      children: [],
-      direction: this.getDirection(),
-      format: this.getFormatType(),
-      indent: this.getIndent(),
-      // As an exception here we invoke super at the end for historical reasons.
-      // Namely, to preserve the order of the properties and not to break the tests
-      // that use the serialized string representation.
-      ...super.exportJSON(),
-    };
-    const textFormat = this.getTextFormat();
-    const textStyle = this.getTextStyle();
-    // Only persist for cases when there are no TextNode children from which
-    // these would be set on reconcile (#7968)
-    if (
-      (textFormat !== 0 || textStyle !== '') &&
-      !$isRootOrShadowRoot(this) &&
-      !this.getChildren().some($isTextNode)
+  /**
+   * Whether `textFormat`/`textStyle` are persisted at all: only when there are
+   * no TextNode children from which they would be set on reconcile (#7968).
+   *
+   * @internal
+   */
+  shouldSerializeTextStyles(): boolean {
+    if ($isRootOrShadowRoot(this)) {
+      return false;
+    }
+    // Walked rather than materialized with getChildren(), and it exits at the
+    // first TextNode. Both callers below test their own value first, so an
+    // element with a default textFormat/textStyle — every element that has
+    // many non-text children in practice — never reaches this at all.
+    for (
+      let child = this.getFirstChild();
+      child !== null;
+      child = child.getNextSibling()
     ) {
-      if (textFormat !== 0) {
-        json.textFormat = textFormat;
-      }
-      if (textStyle !== '') {
-        json.textStyle = textStyle;
+      if ($isTextNode(child)) {
+        return false;
       }
     }
-    return json;
+    return true;
   }
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedElementNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setFormat(serializedNode.format)
-      .setIndent(serializedNode.indent)
-      .setDirection(serializedNode.direction)
-      .setTextFormat(serializedNode.textFormat || 0)
-      .setTextStyle(serializedNode.textStyle || '');
+
+  /** @internal Serialized `textFormat`, or undefined to omit it. */
+  getSerializedTextFormat(): number | undefined {
+    const textFormat = this.getTextFormat();
+    return textFormat !== 0 && this.shouldSerializeTextStyles()
+      ? textFormat
+      : undefined;
   }
+
+  /** @internal Serialized `textStyle`, or undefined to omit it. */
+  getSerializedTextStyle(): string | undefined {
+    const textStyle = this.getTextStyle();
+    return textStyle !== '' && this.shouldSerializeTextStyles()
+      ? textStyle
+      : undefined;
+  }
+
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(
     selection: RangeSelection,

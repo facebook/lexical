@@ -19,7 +19,9 @@ import {
   $getNearestNodeFromDOMNode,
   $setDirectionFromDOM,
   addClassNamesToElement,
+  arrayValue,
   type BaseSelection,
+  booleanValue,
   type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
@@ -29,13 +31,18 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  numberValue,
+  objectValue,
+  optional,
   removeClassNamesFromElement,
   type SerializedElementNode,
   setDOMStyleFromCSS,
   setDOMUnmanaged,
   type Spread,
+  withAccessors,
+  withGetter,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
@@ -64,6 +71,24 @@ export type SerializedTableNode = Spread<
   },
   SerializedElementNode
 >;
+
+const tableNodeSchema = /* @__PURE__ */ objectValue({
+  colWidths: /* @__PURE__ */ optional(
+    /* @__PURE__ */ arrayValue(/* @__PURE__ */ numberValue()),
+  ),
+  frozenColumnCount: /* @__PURE__ */ withAccessors(
+    /* @__PURE__ */ numberValue(),
+    {getter: 'getSerializedFrozenColumnCount', setter: 'setFrozenColumns'},
+  ),
+  frozenRowCount: /* @__PURE__ */ withAccessors(/* @__PURE__ */ numberValue(), {
+    getter: 'getSerializedFrozenRowCount',
+    setter: 'setFrozenRows',
+  }),
+  rowStriping: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ booleanValue(),
+    'getSerializedRowStriping',
+  ),
+});
 
 function $updateColgroup(
   dom: HTMLTableElement,
@@ -368,7 +393,14 @@ export function setScrollableTablesActive(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface TableNode {
+  exportJSON(compact?: boolean): SerializedTableNode;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedTableNode>): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean = false;
@@ -389,7 +421,23 @@ export class TableNode extends ElementNode {
           priority: 1,
         }),
       },
+      json: tableNodeSchema,
     });
+  }
+
+  /** @internal These three are omitted from the JSON when falsy. */
+  getSerializedFrozenColumnCount(): number | undefined {
+    return this.getLatest().__frozenColumnCount || undefined;
+  }
+
+  /** @internal */
+  getSerializedFrozenRowCount(): number | undefined {
+    return this.getLatest().__frozenRowCount || undefined;
+  }
+
+  /** @internal */
+  getSerializedRowStriping(): boolean | undefined {
+    return this.getLatest().__rowStriping || undefined;
   }
 
   getColWidths(): readonly number[] | undefined {
@@ -411,27 +459,6 @@ export class TableNode extends ElementNode {
     this.__rowStriping = prevNode.__rowStriping;
     this.__frozenColumnCount = prevNode.__frozenColumnCount;
     this.__frozenRowCount = prevNode.__frozenRowCount;
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTableNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setRowStriping(serializedNode.rowStriping || false)
-      .setFrozenColumns(serializedNode.frozenColumnCount || 0)
-      .setFrozenRows(serializedNode.frozenRowCount || 0)
-      .setColWidths(serializedNode.colWidths);
-  }
-
-  exportJSON(): SerializedTableNode {
-    return {
-      ...super.exportJSON(),
-      colWidths: this.getColWidths(),
-      frozenColumnCount: this.__frozenColumnCount
-        ? this.__frozenColumnCount
-        : undefined,
-      frozenRowCount: this.__frozenRowCount ? this.__frozenRowCount : undefined,
-      rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
-    };
   }
 
   extractWithChild(

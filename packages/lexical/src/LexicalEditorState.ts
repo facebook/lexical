@@ -13,6 +13,7 @@ import type {BaseSelection} from './LexicalSelection';
 import invariant from '@lexical/internal/invariant';
 
 import {cloneMap} from './LexicalGenMap';
+import {$exportNodeJSON} from './LexicalSerializedExport';
 import {$getSlot, $getSlotNames} from './LexicalSlot';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
@@ -62,34 +63,19 @@ export function createEmptyEditorState(): EditorState {
 function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   node: LexicalNode,
 ): SerializedNode {
-  const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
 
-  if (serializedNode.type !== nodeClass.getType()) {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not match the serialized type. Check if .exportJSON() is implemented and it is returning the correct type.',
-      nodeClass.name,
-    );
-  }
+  // The active export decides the form: the compact form drops properties that
+  // parsing would restore from their schema default anyway.
+  const serializedNode = $exportNodeJSON(node);
 
   if ($isElementNode(node)) {
     const serializedChildren = (serializedNode as SerializedElementNode)
       .children;
-    if (!Array.isArray(serializedChildren)) {
-      invariant(
-        false,
-        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
-        nodeClass.name,
-      );
-    }
-
     const children = node.getChildren();
 
     for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const serializedChildNode = $exportNodeToJSON(child);
-      serializedChildren.push(serializedChildNode);
+      serializedChildren.push($exportNodeToJSON(children[i]));
     }
   }
 
@@ -108,11 +94,7 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
       );
       serializedSlots[name] = $exportNodeToJSON(slotNode);
     }
-    (
-      serializedNode as SerializedLexicalNode & {
-        $slots?: Record<string, SerializedLexicalNode>;
-      }
-    ).$slots = serializedSlots;
+    serializedNode.$slots = serializedSlots;
   }
 
   // @ts-expect-error
@@ -188,7 +170,7 @@ export class EditorState {
   }
   toJSON(): SerializedEditorState {
     return readEditorState(null, this, () => ({
-      root: $exportNodeToJSON($getRoot()),
+      root: $exportNodeToJSON($getRoot()) as SerializedRootNode,
     }));
   }
 }

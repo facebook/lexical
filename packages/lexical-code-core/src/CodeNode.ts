@@ -28,13 +28,17 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  nullable,
+  objectValue,
+  optional,
   type ParagraphNode,
   type RangeSelection,
   type SerializedElementNode,
   setDOMStyleFromCSS,
   type Spread,
+  stringValue,
   type TabNode,
 } from 'lexical';
 
@@ -52,6 +56,15 @@ export type SerializedCodeNode = Spread<
   },
   SerializedElementNode
 >;
+
+// Single source of truth for parsing the node-specific properties of a
+// SerializedCodeNode (those it adds over a SerializedElementNode).
+const codeNodeSchema = /* @__PURE__ */ objectValue({
+  language: /* @__PURE__ */ optional(
+    /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue()),
+  ),
+  theme: /* @__PURE__ */ optional(/* @__PURE__ */ stringValue()),
+});
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
 /** @internal Configurable through the extensions. */
@@ -77,7 +90,14 @@ const noExtensionDeprecation = warnOnlyOnce(
   'Using CodeNode without CodeExtension is deprecated',
 );
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface CodeNode {
+  exportJSON(compact?: boolean): SerializedCodeNode;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedCodeNode>): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class CodeNode extends ElementNode {
   /** @internal */
   __language: string | null | undefined;
@@ -153,6 +173,7 @@ export class CodeNode extends ElementNode {
           return null;
         },
       },
+      json: codeNodeSchema,
     });
   }
 
@@ -268,21 +289,6 @@ export class CodeNode extends ElementNode {
       setDOMStyleFromCSS(element.style, style);
     }
     return {element};
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedCodeNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setLanguage(serializedNode.language)
-      .setTheme(serializedNode.theme);
-  }
-
-  exportJSON(): SerializedCodeNode {
-    return {
-      ...super.exportJSON(),
-      language: this.getLanguage(),
-      theme: this.getTheme(),
-    };
   }
 
   // Mutation

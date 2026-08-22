@@ -1,0 +1,291 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import {
+  aliasedValue,
+  type AnySerializationSchema,
+  arrayValue,
+  booleanValue,
+  enumValue,
+  nullable,
+  numberValue,
+  objectValue,
+  optional,
+  rawValue,
+  stringValue,
+  transformValue,
+  unionValue,
+} from 'lexical';
+import {describe, expect, test} from 'vitest';
+
+import {
+  compileParse,
+  NotCompilable,
+  NUM_HELPER_SOURCE,
+  verificationCorpus,
+  verifyCompiledParse,
+  verifyTableCoversDomain,
+} from '../../shared/schemaParseCodegen.mjs';
+
+/**
+ * Build and run a compiled parse the way the generator's output does, so a
+ * test asserts on behavior rather than on the expression text.
+ */
+function compiled(schema: AnySerializationSchema): (value: unknown) => unknown {
+  const {expression, tables} = compileParse(
+    schema.meta,
+    schema.defaultValue,
+    'T',
+  );
+  const names = tables.map(({name}) => name);
+  // eslint-disable-next-line no-new-func
+  const fn = new Function(
+    'v',
+    'SCOPE',
+    `const {num, ${['_', ...names].join(', ')}} = SCOPE; return (${expression});`,
+  );
+  const scope: {[key: string]: unknown} = {
+    _: undefined,
+    num: (v: unknown, d: number) =>
+      typeof v === 'number'
+        ? Number.isFinite(v)
+          ? v
+          : d
+        : typeof v === 'string' &&
+            /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(v)
+          ? Number(v)
+          : d,
+  };
+  for (const {name, table} of tables) {
+    scope[name] = Object.assign(Object.create(null), table);
+  }
+  return value => fn(value, scope);
+}
+
+/** Every value the corpus covers has to agree, which is the real contract. */
+function expectAgrees(schema: AnySerializationSchema): void {
+  const run = compiled(schema);
+  for (const value of verificationCorpus(schema.meta)) {
+    expect({in: value, out: run(value)}).toEqual({
+      in: value,
+      out: schema(value),
+    });
+  }
+}
+
+describe('compileParse reproduces the schema it compiles', () => {
+  test('stringValue', () => {
+    expectAgrees(stringValue());
+    expectAgrees(stringValue('fallback'));
+  });
+
+  test('booleanValue', () => {
+    expectAgrees(booleanValue());
+    expectAgrees(booleanValue(true));
+  });
+
+  test('numberValue', () => {
+    expectAgrees(numberValue());
+    expectAgrees(numberValue(7));
+    // Including the stringified-number domain, which is the part a naive
+    // `Number(v)` would get wrong for '0x10' and ''.
+    const run = compiled(numberValue());
+    expect(run('42')).toBe(42);
+    expect(run('0x10')).toBe(0);
+    expect(run('')).toBe(0);
+    expect(run(' ')).toBe(0);
+    expect(run('+1')).toBe(0);
+    expect(run('Infinity')).toBe(0);
+    expect(run(Infinity)).toBe(0);
+    expect(run(NaN)).toBe(0);
+  });
+
+  test('enumValue', () => {
+    expectAgrees(enumValue(['normal', 'token', 'segmented']));
+    expectAgrees(enumValue([null, 'ltr', 'rtl']));
+    expectAgrees(enumValue(['a', 'b'], 'b'));
+  });
+
+  test('an enum member spelled undefined is never matched', () => {
+    // enumValue checks for undefined before membership, so an absent property
+    // takes the default rather than the in-band member.
+    const schema = enumValue([undefined, 'a'], 'a');
+    expectAgrees(schema);
+    expect(compiled(schema)(undefined)).toBe('a');
+  });
+
+  test('aliasedValue', () => {
+    const aliases = {bold: 1, italic: 2};
+    const schema = aliasedValue(numberValue(), aliases);
+    expectAgrees(schema);
+    const run = compiled(schema);
+    expect(run('bold')).toBe(1);
+    expect(run('italic')).toBe(2);
+    expect(run(4)).toBe(4);
+    expect(run('4')).toBe(4);
+    expect(run('nope')).toBe(0);
+  });
+
+  test('an alias table cannot be reached through Object.prototype', () => {
+    // The key comes straight out of untrusted JSON, so a plain object literal
+    // would resolve 'toString' to a function and store it as the value.
+    const run = compiled(aliasedValue(numberValue(), {bold: 1}));
+    for (const hostile of [
+      'toString',
+      'constructor',
+      'hasOwnProperty',
+      'valueOf',
+      '__proto__',
+    ]) {
+      expect(run(hostile)).toBe(0);
+    }
+  });
+});
+
+describe('compileParse refuses what it cannot express', () => {
+  test.each([
+    ['a constrained numberValue', () => numberValue(0, {min: 1})],
+    ['an integer numberValue', () => numberValue(0, {integer: true})],
+    ['nullable', () => nullable(stringValue())],
+    ['optional', () => optional(numberValue())],
+    ['arrayValue', () => arrayValue(stringValue())],
+    ['unionValue', () => unionValue([numberValue(), stringValue()])],
+    ['rawValue', () => rawValue()],
+    ['objectValue', () => objectValue({a: stringValue()})],
+  ])('%s', (_label, build) => {
+    const schema = build() as AnySerializationSchema;
+    expect(() => compileParse(schema.meta, schema.defaultValue, 'T')).toThrow(
+      NotCompilable,
+    );
+  });
+});
+
+describe('verifyCompiledParse is what catches a plausible-but-wrong parse', () => {
+  test('a transformValue compiles to something the check rejects', () => {
+    // The reason the verification exists: transformValue inherits its inner
+    // schema's meta and keeps the function to itself, so nothing about the meta
+    // reveals that the compiled expression stores the un-transformed value.
+    const schema = transformValue(
+      enumValue(['a', 'b']),
+      value => (value === 'a' ? 1 : 2) as unknown,
+    ) as AnySerializationSchema;
+    const {expression, tables} = compileParse(
+      schema.meta,
+      schema.defaultValue,
+      'T',
+    );
+    // It compiles happily — and to something that returns the *input* 'a'
+    // where the schema returns the transformed 1.
+    expect(expression).toContain('v === "a"');
+    // Only running it against the schema shows that.
+    expect(() => verifyCompiledParse({expression, schema, tables})).toThrow(
+      NotCompilable,
+    );
+    expect(() => verifyCompiledParse({expression, schema, tables})).toThrow(
+      /disagrees with its schema/,
+    );
+  });
+
+  test('a faithful parse passes', () => {
+    const schema = aliasedValue(numberValue(), {bold: 1});
+    const {expression, tables} = compileParse(
+      schema.meta,
+      schema.defaultValue,
+      'T',
+    );
+    expect(() =>
+      verifyCompiledParse({
+        expression,
+        nullPrototypeTables: tables.map(({name}) => name),
+        schema,
+        tables,
+      }),
+    ).not.toThrow();
+  });
+
+  test('a table left with Object.prototype fails the check', () => {
+    // Not declaring the table null-prototype is exactly the bug the hostile
+    // keys in the corpus are there to find.
+    const schema = aliasedValue(numberValue(), {bold: 1});
+    const {expression, tables} = compileParse(
+      schema.meta,
+      schema.defaultValue,
+      'T',
+    );
+    expect(() =>
+      verifyCompiledParse({
+        expression,
+        nullPrototypeTables: [],
+        schema,
+        tables,
+      }),
+    ).toThrow(/disagrees with its schema on "toString"/);
+  });
+});
+
+describe('verifyTableCoversDomain', () => {
+  const mode = enumValue(['normal', 'token', 'segmented']);
+
+  test('a total table passes', () => {
+    expect(() =>
+      verifyTableCoversDomain({
+        schema: mode,
+        table: {normal: 0, segmented: 2, token: 1},
+      }),
+    ).not.toThrow();
+  });
+
+  test('a missing member is named', () => {
+    // Without this the generated lookup would fall back and store 'segmented'
+    // as whatever the default encodes to, turning one value into another.
+    expect(() =>
+      verifyTableCoversDomain({schema: mode, table: {normal: 0, token: 1}}),
+    ).toThrow(/no table entry for "segmented"/);
+  });
+
+  test('an inherited key does not count as coverage', () => {
+    expect(() =>
+      verifyTableCoversDomain({
+        schema: enumValue(['toString']),
+        table: {other: 1},
+      }),
+    ).toThrow(/no table entry for "toString"/);
+  });
+});
+
+describe('the emitted num helper', () => {
+  test('is the one the verification ran', () => {
+    // Emitting a second spelling of this logic is the drift the whole
+    // verification exists to prevent, so the source is shared rather than
+    // written twice.
+    expect(NUM_HELPER_SOURCE).toContain('function num(v: unknown, d: number)');
+    expect(NUM_HELPER_SOURCE).toContain('Number.isFinite(v) ? v : d');
+    expect(NUM_HELPER_SOURCE).toContain('JSON_NUMBER.test(v)');
+  });
+});
+
+describe('verificationCorpus', () => {
+  test('covers the values a schema names and the shapes JSON arrives in', () => {
+    const values = verificationCorpus(
+      aliasedValue(numberValue(), {bold: 1}).meta,
+    );
+    // Both sides of every alias, so a table that maps the wrong way is caught.
+    expect(values).toContain('bold');
+    expect(values).toContain(1);
+    // And the prototype members a lookup must not resolve.
+    for (const hostile of ['toString', 'constructor', '__proto__', 'valueOf']) {
+      expect(values).toContain(hostile);
+    }
+    expect(values).toContain(undefined);
+  });
+
+  test('is fixed, so a generator using it is reproducible', () => {
+    const meta = enumValue(['a', 'b']).meta;
+    expect(verificationCorpus(meta)).toEqual(verificationCorpus(meta));
+  });
+});

@@ -20,7 +20,12 @@
  * nested call pins the entire enclosing definition.
  */
 const DEFAULT_FUNCTIONS = [
+  'aliasedValue',
+  'arrayValue',
+  'booleanValue',
   'configExtension',
+  'contextUpdater',
+  'contextValue',
   'createCommand',
   'createContextState',
   'createImportState',
@@ -31,7 +36,19 @@ const DEFAULT_FUNCTIONS = [
   'defineImportRule',
   'defineOverlayRules',
   'domOverride',
+  'enumValue',
+  'nullable',
+  'numberValue',
+  'objectValue',
+  'optional',
+  'rawValue',
   'safeCast',
+  'stringValue',
+  'transformValue',
+  'unionValue',
+  'withAccessors',
+  'withField',
+  'withGetter',
 ];
 
 const PURE_ANNOTATION = /[#@]__PURE__/;

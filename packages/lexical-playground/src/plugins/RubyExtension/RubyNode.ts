@@ -26,11 +26,12 @@ import {
   type NodeStateVersion,
   type StateConfigValue,
   type StateValueOrUpdater,
+  stringValue,
   TextNode,
 } from 'lexical';
 
 const annotationState = /* @__PURE__ */ createState('annotation', {
-  parse: v => (typeof v === 'string' ? v : ''),
+  parse: /* @__PURE__ */ stringValue(),
 });
 
 /** @noInheritDoc */

@@ -370,6 +370,9 @@ generated for you. Flat state keys are lifted to the top level of the
 serialized node and the rest are nested under `'$'` — see
 [Flat serialization with `$config`](../concepts/node-state.md#flat-serialization-with-config)
 and the [legacy-property upgrade recipe](../concepts/node-state.md#upgrading-a-legacy-json-property-to-nodestate).
+A `$config` node can also declare a
+[declarative `json` schema](#declarative-json-schemas-with-config) so
+parsing of its node-specific properties is generated too.
 
 :::
 
@@ -487,9 +490,202 @@ newNode.updateFromJSON(serializedNode);
 
 :::
 
+### Declarative JSON schemas with `$config`
+
+:::caution Experimental
+
+The schema and export-context APIs in this section and the next are
+experimental: the details may still change in a minor release based on
+feedback.
+
+:::
+
+Instead of writing `importJSON`, `updateFromJSON` and `exportJSON` by hand, a
+node that uses [`$config`](../concepts/nodes.mdx#creating-custom-nodes-with-config-and-nodestate)
+can declare a schema for its node-specific serialized properties with the
+`json` property. The schema is the single source of truth for both directions:
+the base `updateFromJSON` applies it automatically, the base `exportJSON`
+writes from it, `$config` synthesizes `importJSON` when the constructor has no
+required arguments, and every built-in node in Lexical now declares one. Most
+custom nodes need no JSON serialization code at all.
+
+```ts
+import {
+  $getDocument,
+  ElementNode,
+  enumValue,
+  numberValue,
+  objectValue,
+} from 'lexical';
+
+class CounterNode extends ElementNode {
+  __count = 0;
+  __variant: 'a' | 'b' = 'a';
+
+  // Node properties live on the node, so a clone has to carry them across —
+  // this is required of any custom node, schema or not.
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__count = prevNode.__count;
+    this.__variant = prevNode.__variant;
+  }
+
+  createDOM(): HTMLElement {
+    return $getDocument().createElement('div');
+  }
+
+  updateDOM(): boolean {
+    return false;
+  }
+
+  $config() {
+    return this.config('counter', {
+      extends: ElementNode,
+      json: objectValue({
+        count: numberValue(),
+        variant: enumValue(['a', 'b']),
+      }),
+    });
+  }
+
+  setCount(count: number): this {
+    const self = this.getWritable();
+    self.__count = count;
+    return self;
+  }
+
+  setVariant(variant: 'a' | 'b'): this {
+    const self = this.getWritable();
+    self.__variant = variant;
+    return self;
+  }
+
+  getCount(): number {
+    return this.getLatest().__count;
+  }
+
+  getVariant(): 'a' | 'b' {
+    return this.getLatest().__variant;
+  }
+}
+```
+
+`count` and `variant` are parsed through `setCount` and `setVariant` and
+written through `getCount` and `getVariant`, so neither `updateFromJSON` nor
+`exportJSON` has to be written at all — the rest of the class is the ordinary
+node boilerplate the schema does not touch.
+
+Each property's schema is built from composable helpers exported by
+`lexical`:
+
+- `stringValue(defaultValue = '')`, `numberValue(defaultValue = 0, {min, max, integer}?)`, and `booleanValue(defaultValue = false)` — primitive values with defaults. `numberValue` also reads a string spelled as a JSON number (`"120"` → `120`), so a document that stringified its numbers keeps them; notations JSON itself can not produce (`"0x10"`, `"+1"`, `"Infinity"`) stay out of domain, and the domain it reports is still `number`
+- `enumValue(values, defaultValue = values[0])` — one of a fixed set of values
+- `nullable(inner, {defaultAsNull}?)` — the property may also be `null`
+- `optional(inner, {omitDefault}?)` — the property may be `undefined`
+- `arrayValue(item)` — an array of `item` values. Like `objectValue`, it compares by content rather than by reference (see `isEqual` below), so an array-valued property equal to its default still compacts away
+- `unionValue(members, defaultValue)` — the first member schema whose domain contains the value wins, and the union yields what that member parsed. A member that normalizes its input composes here the same way it behaves alone, so `unionValue([numberValue(), enumValue(['inherit'])], 'inherit')` reads `"640"` as `640` and `"inherit"` as `'inherit'`
+- `transformValue(inner, transform, {isEqual}?)` — normalizes what `inner` parsed into the stored domain (e.g. the legacy `format: 'bold'` shorthand folded into its numeric form); introspection still describes `inner`'s accepted input domain. `inner`'s `isEqual` is not inherited, since the transformed domain may be a different type entirely — pass one when the output domain is reference-typed
+- `rawValue()` — an escape hatch that passes the value through unparsed
+- `objectValue(fields)` — the record of properties, used for the `json` declaration itself
+- `withSetter(schema, 'methodName')` / `withGetter(schema, 'methodName')` / `withAccessors(schema, {getter, setter})` — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose
+- `withField(schema, '__field')` — declare that the property *is* a node field, rather than a pair of accessor methods. Exporting reads the field and importing assigns it, with no method call on either side and no version resolution in either direction — the node being parsed into is already writable, and the node being exported is one the walk already resolved from the EditorState — so this is the fast path for a property that is stored verbatim. The trade-off is that whatever a `set<Prop>` method would do — normalizing, clamping, bookkeeping, or a subclass's override of it — is skipped, so reach for it only when the property really is the field. Because the schema records the field as `{field: '__name'}` rather than as a bare name, tooling can tell a field from a method without knowing anything about how a node names its fields — enough for a codegen pass to emit a specialized parser for a hot node type. The two directions are independent, so `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})` reads the field directly but writes through a method that normalizes
+
+A schema's default is compared by identity, which is right for the primitive
+domains. `arrayValue` and `objectValue` return a fresh value per parse, so they
+declare an `isEqual` that compares by content — otherwise a property equal to
+its default could never be omitted, since no two parses are the same object.
+The same rule drives `optional({omitDefault})` and `nullable({defaultAsNull})`,
+and a schema of your own can declare `isEqual` for a domain with the same
+problem. A default is also deeply frozen, since it is one value shared by every
+node that has none of its own — including as `createState`'s default, which
+`$getState` hands back directly.
+
+Parsing is total: a missing or out-of-domain value falls back to the
+schema's default instead of throwing, which is the domain importers actually
+face (older documents predate a property; a compact export omits a property
+whose value is its default). Each parsed property is applied through the
+node's setter — `set<Property>`, or the name given with `withSetter` — so
+subclass overrides of those setters are honored, and a subclass schema field
+with the same serialized property name overrides its ancestor's.
+
+The same declaration drives the export direction: the base `exportJSON` writes
+every declared property, reading each through its getter, so a node needs no
+`exportJSON` of its own either. A getter that returns `undefined` omits its
+property — absent and explicitly-`undefined` are indistinguishable once the
+JSON is stringified, so that is how an optional or conditionally-persisted
+property is expressed. Override `exportJSON` only for output a schema cannot
+describe, and call `super.exportJSON()` when you do.
+
+Because the node itself declares the schema, tooling can introspect it. The
+`@lexical/fast-check` package derives property-based test generators
+directly from a node class (`nodeArbitrary(TextNode)`), so a single
+declaration powers both parsing and example generation in tests.
+
+### Compact JSON
+
+By default `exportJSON` writes every property, producing the historical
+("legacy") format, and a bare `editorState.toJSON()` always does — existing
+persistence pipelines are unaffected until you opt in. With schemas declared,
+Lexical can also write a *compact* form, which omits:
+
+- any property whose value is the schema default parsing would restore,
+- any property the parser derives rather than reads (declared `{setter: null}`,
+  such as `ListNode`'s `tag`),
+- the deprecated `version` property.
+
+Parsing restores each, so both forms describe the same document; the compact
+form is typically much smaller. Compaction happens as the properties are
+written rather than as a pass over the finished object, so a derived property
+is skipped without even calling its getter — and a node that generates its own
+`exportJSON` can inline the same decisions and never consult the schema at
+runtime.
+
+:::caution
+
+The compact form is readable only by a Lexical new enough to parse it — the
+omitted properties are restored from the schema, which older versions do not
+have. Persisted documents outlive the code that wrote them, so keep writing the
+legacy form until every reader is upgraded.
+
+:::
+
+It is configured with `JSONExtension` from `@lexical/extension`:
+
+```ts
+import {
+  buildEditorFromExtensions,
+  configExtension,
+  getExtensionDependencyFromEditor,
+  JSONExtension,
+} from '@lexical/extension';
+
+const editor = buildEditorFromExtensions({
+  name: 'example',
+  dependencies: [configExtension(JSONExtension, {compact: true})],
+});
+
+const {$exportJSON, $withSerialization} = getExtensionDependencyFromEditor(
+  editor,
+  JSONExtension,
+).output;
+
+const json = editor.read(() => $exportJSON());
+```
+
+The extension's output provides:
+
+- `$exportJSON(editorState?, options?)` — serialize an editor state (the
+  editor's current one by default) in the configured form. `options.compact`
+  overrides the configured `compact` for that one call, e.g. to explicitly
+  produce the legacy format for a consumer that still requires it.
+- `$withSerialization(fn)` — run `fn` with the configured serialization
+  context installed, so JSON exports the extension does not own — an
+  `editorState.toJSON()` call, or the `@lexical/clipboard` selection export
+  inside a copy handler — also honor the configuration.
+
 ### Versioning & Breaking Changes
 
-It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. That's why we recommend using a version field to separate the different changes in your node as you add or change functionality of custom nodes. Here's the serialized type definition for Lexical's base `TextNode` class:
+It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. Lexical's own `version` property is deprecated and no longer the way to do this — it is optional in both directions, nothing reads it, and the reason it does not work is explained under [Dangers of a flat version property](#dangers-of-a-flat-version-property). Evolve your serialized type additively instead, and give each new property a default its parser can fall back to. Here's the serialized type definition for Lexical's base `TextNode` class:
 
 ```ts
 import type {Spread} from 'lexical';

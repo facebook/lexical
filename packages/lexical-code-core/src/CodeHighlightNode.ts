@@ -13,11 +13,15 @@ import {
   type EditorThemeClasses,
   type ElementNode,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  nullable,
+  objectValue,
+  optional,
   removeClassNamesFromElement,
   type SerializedTextNode,
   type Spread,
+  stringValue,
   TextNode,
 } from 'lexical';
 
@@ -30,7 +34,24 @@ type SerializedCodeHighlightNode = Spread<
   SerializedTextNode
 >;
 
+// Single source of truth for parsing the node-specific properties of a
+// SerializedCodeHighlightNode (those it adds over a SerializedTextNode).
+const codeHighlightNodeSchema = /* @__PURE__ */ objectValue({
+  highlightType: /* @__PURE__ */ optional(
+    /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue()),
+  ),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface CodeHighlightNode {
+  exportJSON(compact?: boolean): SerializedCodeHighlightNode;
+  updateFromJSON(
+    serializedNode: LexicalParseJSON<SerializedCodeHighlightNode>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class CodeHighlightNode extends TextNode {
   /** @internal */
   __highlightType: string | null | undefined;
@@ -45,7 +66,10 @@ export class CodeHighlightNode extends TextNode {
   }
 
   $config() {
-    return this.config('code-highlight', {extends: TextNode});
+    return this.config('code-highlight', {
+      extends: TextNode,
+      json: codeHighlightNodeSchema,
+    });
   }
 
   afterCloneFrom(prevNode: this): void {
@@ -97,21 +121,6 @@ export class CodeHighlightNode extends TextNode {
       }
     }
     return update;
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedCodeHighlightNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setHighlightType(serializedNode.highlightType);
-  }
-
-  exportJSON(): SerializedCodeHighlightNode {
-    return {
-      ...super.exportJSON(),
-      highlightType: this.getHighlightType(),
-    };
   }
 
   // Prevent formatting (bold, underline, etc)

@@ -52,6 +52,7 @@ import {
   HAS_DIRTY_NODES,
   LTR_REGEX,
   NO_DIRTY_NODES,
+  NODE_STATE_KEY,
   PROTOTYPE_CONFIG_METHOD,
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
@@ -80,11 +81,18 @@ import {
   $markEphemeral,
   LexicalNode,
   type LexicalPrivateDOM,
+  type LexicalUpdateJSON,
   type NodeKey,
   type NodeMap,
+  type SerializedLexicalNode,
+  type SerializedPartial,
   type StaticNodeConfigValue,
 } from './LexicalNode';
-import {$setState, type AnyStateConfig} from './LexicalNodeState';
+import {
+  $setState,
+  $updateStateFromJSON,
+  type AnyStateConfig,
+} from './LexicalNodeState';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   type AnySerializationSchema,
@@ -3804,6 +3812,53 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
 }
 
 /**
+ * Apply a serialized node to one this update has just constructed, which is
+ * what {@link LexicalNode.importJSON} does after building the node.
+ *
+ * The difference from {@link LexicalNode.updateFromJSON} is the `getWritable()`
+ * that one opens with. It has to: it is public API and may be handed any node,
+ * from any version, at any point in an update. A node `importJSON` just built
+ * is none of those things — {@link $setNodeKey} put it in the node map, in the
+ * dirty set and in `_cloneNotNeeded` a moment earlier, so it already *is* the
+ * writable latest version and `getWritable()` can only re-derive what the
+ * constructor established: resolve the latest by key, re-mark a node that is
+ * already dirty, and walk parents it does not yet have.
+ *
+ * That cost is per node and the parse path pays it for every node in the
+ * document, which is why this exists rather than the caller simply chaining
+ * `updateFromJSON`. The node a replacement returns is fresh in the same sense —
+ * {@link $applyNodeReplacement} requires it to carry a key of its own — so it
+ * qualifies too.
+ *
+ * @internal
+ */
+export function $applyImportJSON<T extends LexicalNode>(
+  node: T,
+  serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLexicalNode>>,
+): T {
+  if (__DEV__) {
+    // The whole point is skipping getWritable(), so assert what it would have
+    // returned rather than calling it: a key in _cloneNotNeeded is one whose
+    // node this update created (or already cloned), which is exactly the
+    // branch of getWritable() that returns the node unchanged.
+    invariant(
+      $isEphemeral(node) || getActiveEditor()._cloneNotNeeded.has(node.__key),
+      '$applyImportJSON: node %s with key %s was not constructed by this update; use updateFromJSON instead',
+      node.constructor.name,
+      node.__key,
+    );
+  }
+  // Skipped entirely for the common node, which carries no state and is
+  // imported from JSON that has none; $updateStateFromJSON is the one other
+  // place the getWritable would have come from.
+  const self =
+    node.__state || serializedNode[NODE_STATE_KEY] !== undefined
+      ? $updateStateFromJSON(node, serializedNode)
+      : node;
+  return $applyJSONSetters(self, serializedNode);
+}
+
+/**
  * Apply a node's compiled `json` serialization schema (see {@link compileSetters})
  * by calling each property's setter with its parsed value, returning the
  * (writable) node. Used by the base {@link LexicalNode.updateFromJSON} so a node
@@ -4066,7 +4121,7 @@ function injectSynthesizedStatics(
       klass.importJSON =
         (ownNodeConfig && ownNodeConfig.$importJSON) ||
         (serializedNode =>
-          $applyNodeReplacement(new klass()).updateFromJSON(serializedNode));
+          $applyImportJSON($applyNodeReplacement(new klass()), serializedNode));
     }
     if (!hasOwnStaticMethod(klass, 'importDOM') && ownNodeConfig) {
       const {importDOM} = ownNodeConfig;

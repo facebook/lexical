@@ -20,6 +20,7 @@
  * nested call pins the entire enclosing definition.
  */
 const DEFAULT_FUNCTIONS = [
+  'aliasedValue',
   'arrayValue',
   'booleanValue',
   'configExtension',

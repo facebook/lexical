@@ -676,9 +676,9 @@ export interface CodeIndentConfig {
  * Code blocks without syntax highlighting can use this extension on its
  * own.
  */
-export const CodeIndentExtension = /* @__PURE__ */ defineExtension({
+export const CodeIndentExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<CodeIndentConfig>({
+  config: safeCast<CodeIndentConfig>({
     disabled: false,
     escapeWithArrows: false,
     tabSize: undefined,

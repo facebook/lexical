@@ -1664,19 +1664,12 @@ export class LexicalNode {
     if (generated !== undefined) {
       return generated;
     }
-    const json: {[key: string]: unknown} = {};
-    this.exportJSONInto(json, compact);
-    return json as unknown as SerializedLexicalNode;
-  }
-
-  /**
-   * Write this node's serialized properties into `json`, which lets a subclass
-   * seed structural properties first (ElementNode's `children`) and keeps the
-   * whole class chain to a single object rather than a spread per level.
-   *
-   * @internal
-   */
-  exportJSONInto(json: {[key: string]: unknown}, compact: boolean): void {
+    // `children` is written first, before the schema's properties, so that an
+    // element's JSON reads structure-first — and so that this matches the key
+    // order the generated exporters emit.
+    const json: {[key: string]: unknown} = $isElementNode(this)
+      ? {children: []}
+      : {};
     $writeJSONGetters(this, json, compact);
     json.type = this.__type;
     if (!compact) {
@@ -1688,6 +1681,7 @@ export class LexicalNode {
     if (state !== undefined) {
       Object.assign(json, state);
     }
+    return json as unknown as SerializedLexicalNode;
   }
 
   /**

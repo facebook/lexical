@@ -378,6 +378,7 @@ export {
   getActiveElement,
   getActiveElementDeep,
   getComposedEventTarget,
+  getComposedSchema,
   getComposedSchemaFields,
   getComposedStaticRange,
   getDOMOwnerDocument,

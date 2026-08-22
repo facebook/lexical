@@ -20,6 +20,7 @@ import {
   type LexicalNode,
 } from '../..';
 import {getGeneratedExporter} from '../../LexicalGeneratedJSON';
+import {$writeJSONGetters} from '../../LexicalUtils';
 import {initializeUnitTest} from '../utils';
 
 const REPO = join(import.meta.dirname, '..', '..', '..', '..', '..');
@@ -34,12 +35,18 @@ const GENERATED = join(
 /**
  * The JSON the schema-driven walk produces, which the generated exporter has to
  * reproduce exactly — same values, same key order.
+ *
+ * This is `LexicalNode.exportJSON`'s body with the generated-exporter dispatch
+ * removed, which is the only way to reach the walk for a class that has a
+ * generated exporter.
  */
-function walkExportJSON(node: LexicalNode): {[key: string]: unknown} {
+function $walkExportJSON(node: LexicalNode): {[key: string]: unknown} {
   const json: {[key: string]: unknown} = $isElementNode(node)
     ? {children: []}
     : {};
-  node.exportJSONInto(json, false);
+  $writeJSONGetters(node, json, false);
+  json.type = node.getType();
+  json.version = 1;
   return json;
 }
 
@@ -75,7 +82,7 @@ describe('generated exportJSON', () => {
           for (const node of nodes) {
             expect(getGeneratedExporter(node.getType())).toBeDefined();
             const generated = node.exportJSON();
-            const walked = walkExportJSON(node);
+            const walked = $walkExportJSON(node);
             expect(generated).toEqual(walked);
             // Key order too: a document round-tripped through JSON.stringify
             // should be byte-identical either way.

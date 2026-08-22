@@ -3471,7 +3471,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
   // hand-written exportJSON produced for their own fields. It does *not*
   // reproduce it for a subclass: `{...super.exportJSON(), ownProps}` put the
   // subclass's properties last, and they now come first, with `type`/`version`
-  // appended by exportJSONInto. The JSON is equivalent — key order carries no
+  // appended afterwards. The JSON is equivalent — key order carries no
   // meaning — but `JSON.stringify(editorState.toJSON())` is byte-different for
   // an existing document, so anything comparing serialized strings sees a
   // change. Composition already resolved each key to exactly one schema, so a

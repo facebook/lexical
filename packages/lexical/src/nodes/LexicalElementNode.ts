@@ -25,7 +25,6 @@ import {
 } from '../LexicalConstants';
 import {ElementDOMSlot} from '../LexicalDOMSlot';
 import {
-  $generatedExportJSON,
   $isEphemeral,
   type DOMExportOutput,
   LexicalNode,
@@ -158,6 +157,12 @@ function $normalizeShadowRootChildren(node: ElementNode): void {
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ElementNode {
+  // Both JSON methods are narrowed here rather than overridden: the base
+  // implementations already do the right thing for an element — they read
+  // elementNodeSchema above, and the base export leads with `children` for
+  // anything that passes $isElementNode — so all a real override would
+  // contribute is this return type.
+  exportJSON(compact?: boolean): SerializedElementNode;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
   updateFromJSON(serializedNode: LexicalParseJSON<SerializedElementNode>): this;
@@ -935,21 +940,6 @@ export class ElementNode
     return textStyle !== '' && this.shouldSerializeTextStyles()
       ? textStyle
       : undefined;
-  }
-
-  exportJSON(compact = false): SerializedElementNode {
-    // `children` is structural rather than schema-declared (the export walk
-    // fills it), and leads for consistency with the historical property order.
-    // The declared properties themselves are written by the base
-    // implementation's compiled schema getters, which TypeScript cannot see,
-    // hence the widening cast.
-    const generated = $generatedExportJSON(this, compact);
-    if (generated !== undefined) {
-      return generated as SerializedElementNode;
-    }
-    const json: {[key: string]: unknown} = {children: []};
-    this.exportJSONInto(json, compact);
-    return json as unknown as SerializedElementNode;
   }
 
   // These are intended to be extends for specific element heuristics.

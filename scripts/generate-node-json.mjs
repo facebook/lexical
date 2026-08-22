@@ -30,6 +30,10 @@ import {writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
+/** @typedef {import('lexical').LexicalNode} LexicalNode */
+/** @typedef {import('lexical').Klass<LexicalNode>} NodeClass */
+/** @typedef {import('lexical').AnySerializationSchema} AnySchema */
+
 const OUT = join(
   import.meta.dirname,
   '..',
@@ -73,16 +77,23 @@ if (!process.env.LEXICAL_CODEGEN_PHASE_TWO) {
   process.exit(0);
 }
 
+// The bare specifier rather than the path to the source: tsconfig's `paths`
+// maps it to `packages/lexical/src/index.ts` for both tsx and the type checker,
+// and a specifier ending in `.ts` is a type error under this repo's settings.
 const {
-  getComposedSchemaFields,
+  getComposedSchema,
   isSchemaField,
   LineBreakNode,
   ParagraphNode,
   TabNode,
   TextNode,
-} = await import('../packages/lexical/src/index.ts');
+} = await import('lexical');
 
-/** Where each target class lives, for the generated file's imports. */
+/**
+ * Where each target class lives, for the generated file's imports.
+ *
+ * @type {{readonly [className: string]: string}}
+ */
 const MODULES = {
   LineBreakNode: 'LexicalLineBreakNode',
   ParagraphNode: 'LexicalParagraphNode',
@@ -90,21 +101,43 @@ const MODULES = {
   TextNode: 'LexicalTextNode',
 };
 
-/** The concrete core classes hot enough to be worth specializing. */
+/**
+ * The concrete core classes hot enough to be worth specializing.
+ *
+ * @type {readonly NodeClass[]}
+ */
 const TARGETS = [TextNode, ParagraphNode, LineBreakNode, TabNode];
 
-/** `foo` → `getFoo`, matching the schema's conventional accessor name. */
+/**
+ * `foo` → `getFoo`, matching the schema's conventional accessor name.
+ *
+ * @param {string} key
+ * @returns {string}
+ */
 function defaultGetterName(key) {
   return `get${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 }
 
-/** Lookup tables the generated module needs, by the const name given to each. */
+/**
+ * Lookup tables the generated module needs, by the const name given to each.
+ *
+ * @type {Map<string, {readonly [key: string]: unknown}>}
+ */
 const decodeTables = new Map();
 
-/** The expression that reads one property off `node`. */
+/**
+ * The expression that reads one property off `node`, or `null` for a property
+ * the walk does not write.
+ *
+ * @param {NodeClass} klass
+ * @param {AnySchema} schema
+ * @param {string} key
+ * @returns {null | string}
+ */
 function readExpression(klass, schema, key) {
   const {getter} = schema;
   if (getter === null) {
+    // Declared import-only, like the walk's compiled getters skip it.
     return null;
   }
   if (isSchemaField(getter)) {
@@ -120,16 +153,37 @@ function readExpression(klass, schema, key) {
   return `node.${getter === undefined ? defaultGetterName(key) : getter}()`;
 }
 
-function generateExport(klass) {
-  const type = klass.getType();
-  const fields = getComposedSchemaFields(klass);
+/**
+ * The properties one class's generated exporter reads, in the order the walk
+ * writes them.
+ *
+ * The source is {@link getComposedSchema}'s `fieldsDerivedFirst`, which is what
+ * the walk's own table compiles from — not `getComposedSchemaFields`, which
+ * also folds in flat NodeState. NodeState is written by `node.__state.toJSON()`
+ * and appended by the dispatch, so a state key here would emit a read of an
+ * accessor that does not exist.
+ *
+ * @param {NodeClass} klass
+ * @returns {{expression: string, key: string}[]}
+ */
+function schemaReads(klass) {
   const reads = [];
-  for (const [key, schema] of Object.entries(fields)) {
+  for (const [key, schema] of getComposedSchema(klass).fieldsDerivedFirst) {
     const expression = readExpression(klass, schema, key);
     if (expression !== null) {
       reads.push({expression, key});
     }
   }
+  return reads;
+}
+
+/**
+ * @param {NodeClass} klass
+ * @returns {string}
+ */
+function generateExport(klass) {
+  const type = klass.getType();
+  const reads = schemaReads(klass);
   const locals = reads
     .map(({expression, key}) => `  const ${key} = ${expression};`)
     .join('\n');
@@ -139,10 +193,10 @@ function generateExport(klass) {
   const defined = reads
     .map(({key}) => `${key} !== undefined`)
     .join(' &&\n    ');
-  // ElementNode seeds `children` before its schema fields, so the literal has
-  // to as well: the key order below is byte-identical to the walk's.
-  const isElement =
-    ParagraphNode.prototype instanceof Object && isElementish(klass);
+  // An element's JSON leads with `children`, which is structural rather than
+  // schema-declared, so the literal has to lead with it too: the key order
+  // below is byte-identical to the walk's.
+  const isElement = isElementish(klass);
   const literalEntries = [
     ...(isElement ? ['children: []'] : []),
     ...reads.map(({key}) => key),
@@ -182,48 +236,41 @@ ${incrementalEntries}
 }`;
 }
 
+/**
+ * Whether a class extends ElementNode, and so leads its JSON with `children`.
+ *
+ * By name rather than by `instanceof` the imported class, so this stays a plain
+ * walk of the constructor chain with nothing else to keep in sync.
+ *
+ * @param {unknown} klass
+ * @returns {boolean}
+ */
 function isElementish(klass) {
-  let proto = klass;
-  while (proto) {
-    if (proto.name === 'ElementNode') {
+  for (let proto = klass; proto; proto = Object.getPrototypeOf(proto)) {
+    if (/** @type {{name?: string}} */ (proto).name === 'ElementNode') {
       return true;
     }
-    proto = Object.getPrototypeOf(proto);
   }
   return false;
 }
 
 /**
- * Whether a class's `json` schema is the whole story for its export.
+ * Whether a class has any schema field to read, i.e. whether its generated
+ * exporter takes a node at all.
  *
- * A class that overrides `exportJSON` or `exportJSONInto` does something the
- * schema does not describe — ParagraphNode back-fills `textFormat`/`textStyle`
- * from its first text child for #7971 — so a literal generated from the schema
- * alone would silently drop it.
+ * @param {NodeClass} klass
+ * @returns {boolean}
  */
-function isFullyDescribedBySchema(klass) {
-  // hasOwnProperty rather than Object.hasOwn: this file is linted against the
-  // browser baseline even though it only ever runs in Node.
-  const has = Object.prototype.hasOwnProperty;
-  return !has.call(klass.prototype, 'exportJSONInto');
-}
-
-/** Whether a class has any schema field to read, i.e. whether its generated
- * exporter takes a node at all. */
 function hasFields(klass) {
-  return Object.keys(getComposedSchemaFields(klass)).length > 0;
+  return schemaReads(klass).length > 0;
 }
 
-const generatable = TARGETS.filter(isFullyDescribedBySchema);
-for (const klass of TARGETS) {
-  if (!generatable.includes(klass)) {
-    process.stdout.write(
-      `skipping ${klass.name}: it overrides exportJSON, so its schema does not describe the whole export\n`,
-    );
-  }
-}
-
-const body = generatable.map(generateExport).join('\n\n');
+// Every class is generatable: the base `exportJSON` writes exactly the schema's
+// properties plus type/version, and NodeState is appended by the dispatch. A
+// class that overrides `exportJSON` for output no schema describes — ParagraphNode
+// and its #7971 textFormat/textStyle back-fill — still composes, because the
+// override's `super.exportJSON(compact)` is what reaches the generated literal.
+const body = TARGETS.map(generateExport).join('\n\n');
 
 // Emitted after the bodies, because generating them is what discovers which
 // tables are needed.
@@ -240,8 +287,7 @@ writeFileSync(
 // Type-only, so this module has no runtime imports at all. A value import of
 // the node classes would be a cycle — they import LexicalNode, which imports
 // this — and would evaluate a class before its base was initialized.
-${generatable
-  .filter(hasFields)
+${TARGETS.filter(hasFields)
   .map(k => `import type {${k.name}} from './nodes/${MODULES[k.name]}';`)
   .sort()
   .join('\n')}
@@ -251,7 +297,7 @@ ${tables}${tables ? '\n\n' : ''}${body}
 type GeneratedExporter = (node: never) => {[key: string]: unknown};
 
 const EXPORTERS = new Map<string, GeneratedExporter>([
-${generatable.map(k => `  ['${k.getType()}', export${k.name} as GeneratedExporter],`).join('\n')}
+${TARGETS.map(k => `  ['${k.getType()}', export${k.name} as GeneratedExporter],`).join('\n')}
 ]);
 
 /**

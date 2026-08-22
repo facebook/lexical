@@ -13,12 +13,12 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  $isElementNode,
   type EditorState,
   type LexicalEditor,
   type LexicalNode,
   type ParagraphNode,
 } from '../index';
+import {$writeJSONGetters} from '../LexicalUtils';
 
 // Module-level sink so V8 cannot elide the work being measured.
 let _benchSink: unknown;
@@ -83,15 +83,18 @@ describe('EditorState.toJSON', () => {
   let parseTarget: LexicalEditor;
 });
 
-// What the generated exporters buy, measured against the schema-driven walk
-// they replace. `exportJSON()` takes the generated literal for a class that has
-// one; `exportJSONInto` is the walk, which every other class still uses.
-function buildNodes(): LexicalNode[] {
+// What the generated exporters buy, measured on TextNode only.
+//
+// The walk arm inlines `LexicalNode.exportJSON` without its generated-exporter
+// dispatch, which is the only way to reach the walk for a class that has one.
+// TextNode is the fair subject: it has no `exportJSON` override, so the two
+// arms differ by exactly the thing being measured — the generated literal
+// versus the schema-driven walk — with no post-processing on either side.
+function buildTextNodes(): LexicalNode[] {
   const editor = buildEditor();
   const nodes: LexicalNode[] = [];
   editor.read(() => {
     for (const paragraph of $getRoot().getChildren()) {
-      nodes.push(paragraph);
       for (const child of (paragraph as ParagraphNode).getChildren()) {
         nodes.push(child);
       }
@@ -101,7 +104,7 @@ function buildNodes(): LexicalNode[] {
   return nodes;
 }
 
-describe('per-node exportJSON', () => {
+describe('per-node exportJSON, TextNode', () => {
   let nodes: LexicalNode[] = [];
 
   bench(
@@ -110,19 +113,19 @@ describe('per-node exportJSON', () => {
       benchEditor.read(() => {
         for (let i = 0; i < nodes.length; i++) {
           const node = nodes[i];
-          const json: {[key: string]: unknown} = $isElementNode(node)
-            ? {children: []}
-            : {};
-          node.exportJSONInto(json, false);
+          const json: {[key: string]: unknown} = {};
+          $writeJSONGetters(node, json, false);
+          json.type = node.getType();
+          json.version = 1;
           _benchSink = json;
         }
       });
     },
-    {setup: () => (nodes = buildNodes())},
+    {setup: () => (nodes = buildTextNodes())},
   );
 
   bench(
-    'generated where available',
+    'generated literal',
     () => {
       benchEditor.read(() => {
         for (let i = 0; i < nodes.length; i++) {
@@ -130,6 +133,6 @@ describe('per-node exportJSON', () => {
         }
       });
     },
-    {setup: () => (nodes = buildNodes())},
+    {setup: () => (nodes = buildTextNodes())},
   );
 });

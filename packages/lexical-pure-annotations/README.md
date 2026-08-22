@@ -52,7 +52,9 @@ so that its calls are annotated too.
 Calls that only run later (a `nodes: () => [...]` callback, a `register`
 method body) are not counted, and neither are the built-ins every bundler
 already knows are pure (`new Map(...)`, `new Set(...)`, `Object`, `Symbol`,
-…). Lexical's own build runs with `strict` on.
+…). Modules under `node_modules` are annotated as usual but never
+checked: a definition a dependency shipped is not yours to fix. Lexical's own
+build runs with `strict` on.
 
 ## Usage
 

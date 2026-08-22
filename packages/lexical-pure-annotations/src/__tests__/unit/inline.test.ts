@@ -18,7 +18,11 @@ import {
 import * as fs from 'node:fs';
 import {describe, expect, it} from 'vitest';
 
-import {INLINE_FACTORY_FORMS, transformPureAnnotations} from '../../index';
+import {
+  INLINE_FACTORY_FORMS,
+  PURE_FACTORY_FUNCTIONS,
+  transformPureAnnotations,
+} from '../../index';
 
 const PURE = '/* @__PURE__ */';
 
@@ -215,6 +219,56 @@ describe('inlining', () => {
     })!;
     expect(result.code).toContain(`export const v = {x: 1};`);
     expect(result.inlined).toBe(1);
+  });
+
+  it('keeps parentheses an argument was written with', () => {
+    // The argument's own extent stops short of them, so slicing there would
+    // leave `([Ext, (cfg])`.
+    expect(
+      inline(
+        [
+          `import {configExtension} from 'lexical';`,
+          `export const d = configExtension(Ext, (cfg));`,
+        ].join('\n'),
+      )!.code,
+    ).toContain(`export const d = ([Ext, (cfg)]);`);
+  });
+
+  it('keeps a sequence argument a single element', () => {
+    // `declarePeerDependency((a, b))` passes one argument, so it returns a
+    // one element tuple; splitting on the comma would make it two.
+    expect(
+      inline(
+        [
+          `import {declarePeerDependency} from 'lexical';`,
+          `export const p = declarePeerDependency((a, b));`,
+        ].join('\n'),
+      )!.code,
+    ).toContain(`export const p = ([(a, b)]);`);
+  });
+
+  it('handles type arguments and a trailing comma', () => {
+    expect(
+      inline(
+        [
+          `import {configExtension} from 'lexical';`,
+          `export const t = configExtension<Cfg>(Ext, {a: 1},);`,
+        ].join('\n'),
+      )!.code,
+    ).toContain(`export const t = ([Ext, {a: 1},]);`);
+  });
+
+  it('leaves an optional call alone', () => {
+    // `factory?.(x)` is undefined when the factory is missing, so it is not
+    // interchangeable with what the factory returns.
+    expect(
+      inline(
+        [
+          `import {safeCast} from 'lexical';`,
+          `export const c = safeCast?.({a: 1});`,
+        ].join('\n'),
+      ),
+    ).toBeNull();
   });
 
   it('removes a run of unused specifiers without stranding a comma', () => {
@@ -527,6 +581,44 @@ describe('the inlined factories are still trivial', () => {
         inlinedExpression('declarePeerDependency', 'lexical', `'peer', CONFIG`),
       ),
     ).toEqual(declarePeer('peer', SCOPE.CONFIG));
+  });
+
+  it('every factory in the list declares itself side-effect free', () => {
+    // The list is what makes a call site trusted when the factory is
+    // imported by package name; the annotation on the declaration is what
+    // makes it trusted anywhere else, including from inside its own
+    // package. A name in one and not the other is a hole.
+    const declared = new Set<string>();
+    for (const file of glob.sync('packages/*/src/**/*.{ts,tsx}', {
+      ignore: ['**/__tests__/**'],
+      windowsPathsNoEscape: true,
+    })) {
+      const code = fs.readFileSync(file, 'utf8');
+      if (!code.includes('NO_SIDE_EFFECTS__')) {
+        continue;
+      }
+      const ast = parse(code, {plugins: ['typescript'], sourceType: 'module'});
+      for (const statement of ast.program.body) {
+        const declaration =
+          statement.type === 'ExportNamedDeclaration' && statement.declaration
+            ? statement.declaration
+            : statement;
+        const marked = (statement.leadingComments || []).some(comment =>
+          /[#@]__NO_SIDE_EFFECTS__/.test(comment.value),
+        );
+        if (
+          marked &&
+          (declaration.type === 'FunctionDeclaration' ||
+            declaration.type === 'TSDeclareFunction') &&
+          declaration.id
+        ) {
+          declared.add(declaration.id.name);
+        }
+      }
+    }
+    expect(PURE_FACTORY_FUNCTIONS.filter(name => !declared.has(name))).toEqual(
+      [],
+    );
   });
 
   it('is marked as inlinable wherever it is defined', () => {

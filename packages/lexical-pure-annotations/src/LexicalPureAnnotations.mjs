@@ -235,6 +235,14 @@ const PURE_GLOBALS = new Set([
   'WeakSet',
 ]);
 
+/**
+ * A dependency's own code. It is still annotated — a Lexical consumed
+ * through its `source` export condition is resolved from here — but `strict`
+ * does not apply to it: a definition somebody else shipped is not the
+ * building project's to fix, and neither is a marker they got wrong.
+ */
+const NODE_MODULES_RE = /[\\/]node_modules[\\/]/;
+
 const DEFERRED_TYPES = new Set([
   'ArrowFunctionExpression',
   'ClassAccessorProperty',
@@ -382,6 +390,9 @@ function visitModuleScopeCalls(node, names, visitor, state) {
     // block, whatever it is nested in.
     walkState.statementStarts.add(node.expression.start);
   }
+  // Only a plain CallExpression: `factory?.(x)` parses as an
+  // OptionalCallExpression, and it evaluates to undefined when the factory
+  // is missing rather than to what the factory returns.
   if (node.type === 'CallExpression' && node.callee) {
     const position = {
       discarded: walkState.discarded,
@@ -584,9 +595,30 @@ function removeUnusedImports(magicString, code, program, inlinedCalls) {
     // drops the module, which is only safe because it has no side effects to
     // run: the factories come either from a Lexical package (all of which
     // are `sideEffects: false`) or from a module that declares functions
-    // side-effect free and inlinable.
+    // side-effect free and inlinable. A module that exports such a factory
+    // and also does something at import time is out of scope by
+    // construction — Lexical has no modules with top-level side effects, and
+    // neither should a module that a build is told to inline from.
     magicString.remove(statement.start, statement.end);
   }
+}
+
+/**
+ * The offset just past a call's opening parenthesis, which is where its
+ * argument list begins — including any parentheses the first argument was
+ * written with, and any type arguments before it (`safeCast<T>(x)`).
+ *
+ * @param {string} code
+ * @param {any} node a call expression
+ * @returns {number}
+ */
+function argumentsStart(code, node) {
+  const typeArguments = node.typeArguments || node.typeParameters;
+  const from = Math.max(
+    node.callee.end,
+    typeArguments ? typeArguments.end : node.callee.end,
+  );
+  return code.indexOf('(', from) + 1;
 }
 
 /**
@@ -609,22 +641,24 @@ function inlineCall(magicString, code, node, spec, statementStart) {
   }
   const args = node.arguments;
   if (spec.form !== 'identity') {
+    // The argument list becomes the array literal, so the edit is on the
+    // call's own parentheses — `factory(` and its `)` — rather than on where
+    // the first and last arguments start and end. Those exclude parentheses
+    // an argument was written with (`configExtension(Ext, (cfg))`), which
+    // would be left behind unbalanced.
+    //
     // Parenthesized so that the replacement binds exactly like the call it
     // replaces, wherever that call was: a bare `[` at the start of an
     // expression statement is a member access on whatever the previous line
     // ended with, which is how ASI reads `f()\n[a, b].length`. Minifiers
     // drop the parentheses again.
-    if (args.length === 0) {
-      magicString.overwrite(node.start, node.end, '([])', CONTENT_ONLY);
-    } else {
-      magicString.overwrite(node.start, args[0].start, '([', CONTENT_ONLY);
-      magicString.overwrite(
-        args[args.length - 1].end,
-        node.end,
-        '])',
-        CONTENT_ONLY,
-      );
-    }
+    magicString.overwrite(
+      node.start,
+      argumentsStart(code, node),
+      '([',
+      CONTENT_ONLY,
+    );
+    magicString.overwrite(node.end - 1, node.end, '])', CONTENT_ONLY);
     return;
   }
   // The call's own parentheses were doing two jobs: grouping the argument
@@ -1469,6 +1503,7 @@ export function pureAnnotations(options) {
       if (!matchesAny(include, filename) || matchesAny(exclude, filename)) {
         return null;
       }
+      const dependency = NODE_MODULES_RE.test(filename);
       let result = null;
       try {
         result = transformPureAnnotations(code, {
@@ -1480,10 +1515,10 @@ export function pureAnnotations(options) {
           relativeImports: opts.relativeImports,
           sourceMap: opts.sourceMap,
           sources: opts.sources,
-          strict: opts.strict,
+          strict: opts.strict === true && !dependency,
         });
       } catch (err) {
-        if (err instanceof PureAnnotationsError) {
+        if (err instanceof PureAnnotationsError && !dependency) {
           // Not something to shrug off: the module says one thing and means
           // another, or a definition cannot be tree-shaken.
           throw err;

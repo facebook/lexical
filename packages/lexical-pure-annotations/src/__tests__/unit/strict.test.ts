@@ -9,7 +9,11 @@
 import * as path from 'node:path';
 import {describe, expect, it} from 'vitest';
 
-import {PURE_NAMESPACES, transformPureAnnotations} from '../../index';
+import {
+  PURE_NAMESPACES,
+  pureAnnotations,
+  transformPureAnnotations,
+} from '../../index';
 
 const PURE = '/* @__PURE__ */';
 
@@ -190,6 +194,37 @@ describe('strict', () => {
     expect(run).toThrow(/2 call\(s\)/);
     expect(run).toThrow(/a\(\.\.\.\)/);
     expect(run).toThrow(/b\(\.\.\.\)/);
+  });
+
+  it('does not hold a dependency to it, but still annotates one', () => {
+    // A Lexical resolved out of node_modules through its `source` export
+    // condition is exactly what this package exists for, so a dependency is
+    // annotated and inlined like anything else. What it is not is held to
+    // the check: a definition somebody else shipped is not the building
+    // project's to fix.
+    const vendored = pureAnnotations({inline: true, strict: true}).transform(
+      [
+        `import {defineExtension, safeCast} from 'lexical';`,
+        `export const E = defineExtension({config: safeCast({a: 1}), name: 'e'});`,
+      ].join('\n'),
+      '/app/node_modules/@lexical/mark/src/index.ts',
+    );
+    expect(vendored!.code).toContain(
+      `export const E = {config: {a: 1}, name: 'e'};`,
+    );
+
+    const code = [
+      `import {defineExtension} from 'lexical';`,
+      `import {thing} from 'somewhere';`,
+      `export const E = defineExtension({config: {x: thing()}, name: 'e'});`,
+    ].join('\n');
+    const plugin = pureAnnotations({inline: true, strict: true});
+    expect(() =>
+      plugin.transform(code, '/app/node_modules/some-dep/dist/index.mjs'),
+    ).not.toThrow();
+    expect(() => plugin.transform(code, '/app/src/E.ts')).toThrow(
+      /cannot be tree-shaken/,
+    );
   });
 
   it('is off unless asked for', () => {

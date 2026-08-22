@@ -166,6 +166,86 @@ test.describe('Checklist focus option', () => {
   });
 });
 
+test.describe('Checklist space key', () => {
+  // Firefox focuses the <li> when the caret lands in its text, since the item
+  // carries tabIndex="-1" for the checkbox role. That focus used to be read as
+  // "the checkbox is active", so Space toggled the item instead of typing.
+  test('typing a space in the label leaves the checkbox alone', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+    await expect(item).toHaveAttribute('aria-checked', 'false');
+
+    // Click the text itself, well clear of the marker on the left.
+    const textBox = await page.getByText('Task', {exact: true}).boundingBox();
+    await page.mouse.click(
+      textBox.x + textBox.width / 2,
+      textBox.y + textBox.height / 2,
+    );
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'false');
+    await expect(item).toHaveText('Ta sk');
+  });
+
+  test('space toggles the item after its checkbox is clicked', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+    const box = await item.boundingBox();
+
+    // Click the marker, which is the flow that hands the item keyboard focus.
+    await page.mouse.click(box.x + 5, box.y + box.height / 2);
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'false');
+    await expect(item).toHaveText('Task');
+  });
+
+  test('space toggles the item the arrow key moved onto', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+
+    const first = page.locator('li[role="checkbox"]').first();
+    const second = page.locator('li[role="checkbox"]').nth(1);
+    const box = await first.boundingBox();
+
+    await page.mouse.click(box.x + 5, box.y + box.height / 2);
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Space');
+
+    await expect(second).toHaveAttribute('aria-checked', 'true');
+    await expect(second).toHaveText('Two');
+  });
+});
+
 test.describe('Nested List', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 

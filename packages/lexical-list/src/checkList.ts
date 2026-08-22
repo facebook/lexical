@@ -207,7 +207,7 @@ export function registerCheckList(
                     domNode != null &&
                     getActiveElement(domNode) !== domNode
                   ) {
-                    domNode.focus();
+                    focusCheckListItem(domNode);
                     event.preventDefault();
                     return true;
                   }
@@ -351,7 +351,7 @@ function handleClick(
               $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
               $addUpdateTag(SKIP_DOM_SELECTION_TAG);
             } else {
-              domNode.focus();
+              focusCheckListItem(domNode);
             }
             node.toggleChecked();
           }
@@ -371,6 +371,15 @@ function handleSelectDefaults(
   event: PointerEvent | MouseEvent | TouchEvent,
   disableTakeFocusOnClick: boolean,
 ) {
+  // Runs in the capture phase on every pointer press, before the browser moves
+  // focus. Whatever the plugin focused earlier stops counting here, and a press
+  // on the marker marks it again when handleClick focuses the item.
+  const currentTarget = event.currentTarget;
+
+  if (isHTMLElement(currentTarget)) {
+    clearCheckListItemFocus(currentTarget);
+  }
+
   handleCheckItemEvent(event, () => {
     // Prevents caret moving when clicking on check mark.
     event.preventDefault();
@@ -378,6 +387,28 @@ function handleSelectDefaults(
       event.stopPropagation();
     }
   });
+}
+
+// The <li> carries role="checkbox" and tabIndex="-1" so the plugin can move
+// focus onto it, and the keyboard handlers read that focus as "the checkbox is
+// the thing being operated". Firefox also focuses the <li> on its own when a
+// click lands in the item's text, because the caret's nearest focusable
+// ancestor is the <li>. Reading that as an active checkbox made Space toggle
+// the item instead of typing a space (#4680), so the focus the plugin puts
+// there on purpose is marked, and only a marked <li> counts.
+function focusCheckListItem(dom: HTMLElement): void {
+  // @ts-ignore internal field
+  dom.__lexicalCheckListFocused = true;
+  dom.focus();
+}
+
+function clearCheckListItemFocus(root: HTMLElement): void {
+  const activeElement = getActiveElement(root);
+
+  if (isHTMLElement(activeElement)) {
+    // @ts-ignore internal field
+    activeElement.__lexicalCheckListFocused = false;
+  }
 }
 
 function getActiveCheckListItem(editor: LexicalEditor): HTMLElement | null {
@@ -389,6 +420,8 @@ function getActiveCheckListItem(editor: LexicalEditor): HTMLElement | null {
 
   return isHTMLElement(activeElement) &&
     activeElement.tagName === 'LI' &&
+    // @ts-ignore internal field
+    activeElement.__lexicalCheckListFocused === true &&
     activeElement.parentNode != null &&
     // @ts-ignore internal field
     activeElement.parentNode.__lexicalListType === 'check'
@@ -455,7 +488,7 @@ function handleArrowUpOrDown(
         if (dom != null) {
           event.preventDefault();
           setTimeout(() => {
-            dom.focus();
+            focusCheckListItem(dom);
           }, 0);
         }
       }

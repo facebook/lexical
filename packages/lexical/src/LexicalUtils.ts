@@ -4244,12 +4244,10 @@ function synthesizeImportJSON(
   const generatedUpdateFromJSON =
     generated === null ? undefined : generated.updateFromJSON;
   if (generatedUpdateFromJSON === undefined) {
-    // TODO: replace $applyNodeReplacement with $create once `withKlass` is required.
-    return serializedNode =>
-      $applyImportJSON($applyNodeReplacement(new klass()), serializedNode);
+    return serializedNode => $applyImportJSON($create(klass), serializedNode);
   }
   return serializedNode => {
-    const node = $applyNodeReplacement(new klass());
+    const node = $create(klass);
     if (
       node.constructor === klass &&
       serializedNode[NODE_STATE_KEY] === undefined
@@ -4378,10 +4376,14 @@ export function getRegisteredSubtypeMap(
 /**
  * Create an node from its class.
  *
- * Note that this will directly construct the final `withKlass` node type,
- * and will ignore the deprecated `with` functions. This allows `$create` to
- * skip any intermediate steps where the replaced node would be created and
- * then immediately discarded (once per configured replacement of that node).
+ * This directly constructs the final `withKlass` node type, skipping the
+ * intermediate steps where each replaced node would be created and then
+ * immediately discarded — once per configured replacement of that node.
+ *
+ * A deprecated `replace` given without a `withKlass` is the one case that
+ * cannot be resolved ahead of construction, since only its `with` function
+ * knows what to build. Such a replacement is still applied, the old way, to
+ * the node this constructs.
  *
  * This does not support any arguments to the constructor.
  * Setters can be used to initialize your node, and they can
@@ -4401,7 +4403,13 @@ export function $create<T extends LexicalNode>(klass: Klass<T>): T {
   const registeredNode = editor.resolveRegisteredNodeAfterReplacements(
     editor.getRegisteredNode(klass),
   );
-  return new registeredNode.klass() as T;
+  const node = new registeredNode.klass() as T;
+  // The resolve above follows `withKlass` as far as it goes, so a `replace`
+  // still set on the node it stopped at has no `withKlass` to follow: it is a
+  // deprecated one, and its `with` can only be given a constructed node.
+  return registeredNode.replace === null
+    ? node
+    : ($applyNodeReplacement(node) as T);
 }
 
 /**

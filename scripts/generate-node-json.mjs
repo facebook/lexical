@@ -90,7 +90,6 @@ import type {LexicalNode} from './LexicalNode';
 
 /** @internal */
 export interface GeneratedJSON {
-  readonly shape: string;
   // Method syntax, so TypeScript checks the parameter bivariantly and a
   // function generated for one class is assignable here — the same reason
   // SerializationSchema.isEqual is declared this way. The alternative is to
@@ -104,9 +103,13 @@ export interface GeneratedJSON {
 }
 
 /** @internal */
-export function getGeneratedJSON(_type: string): undefined | GeneratedJSON {
-  return undefined;
-}
+export const GENERATED_TEXT: undefined | GeneratedJSON = undefined;
+/** @internal */
+export const GENERATED_PARAGRAPH: undefined | GeneratedJSON = undefined;
+/** @internal */
+export const GENERATED_LINEBREAK: undefined | GeneratedJSON = undefined;
+/** @internal */
+export const GENERATED_TAB: undefined | GeneratedJSON = undefined;
 `;
 
 // Two phases, because reading the schemas means importing `lexical`, and
@@ -502,40 +505,6 @@ const generated = TARGETS.map(klass => ({
 }));
 
 /**
- * The shape the runtime compares against before using any of this, so a class
- * that merely shares a type — a subclass with no `$config` of its own inherits
- * one, accessor overrides and all — does not get code compiled for another.
- *
- * @param {NodeClass} klass
- * @returns {string}
- */
-function shapeOf(klass) {
-  const {fieldsDerivedFirst, fieldsBaseFirst, flatStates} =
-    getComposedSchema(klass);
-  const render = (
-    /** @type {undefined | null | string | import('lexical').SchemaField} */ a,
-  ) => (isSchemaField(a) ? a.field : `${a}()`);
-  let shape = klass.getType();
-  for (const [key, schema] of fieldsDerivedFirst) {
-    const a = accessor(klass, schema, key, 'getter');
-    if (a !== null) {
-      shape += `|${key}=${render(a)}`;
-    }
-  }
-  const states = new Set(flatStates.map(s => s.key));
-  for (const key of states) {
-    shape += `|${key}<state`;
-  }
-  for (const [key, schema] of fieldsBaseFirst) {
-    const a = accessor(klass, schema, key, 'setter');
-    if (a !== null) {
-      shape += `|${key}<${render(a)}`;
-    }
-  }
-  return shape;
-}
-
-/**
  * The value type to give a lookup table.
  *
  * The union of its literal values when there are few enough to read, because a
@@ -577,18 +546,14 @@ ${TARGETS.filter(hasFields)
   .join('\n')}
 
 /**
- * The generated implementations for one node type.
+ * The generated implementations for one node class.
  *
- * \`shape\` is how the class this was generated from reaches each of its
- * serialized properties. The dispatch compares it against the class it is
- * about to use this for, because a node type does not identify a class: a
- * subclass that declares no \`$config\` inherits its ancestor's, type included,
- * and may still override an accessor.
+ * Each is handed to the class it was generated from through that class's
+ * \`$config\`, so nothing has to match code to class at runtime.
  *
  * @internal
  */
 export interface GeneratedJSON {
-  readonly shape: string;
   // Method syntax, so TypeScript checks the parameter bivariantly and a
   // function generated for one class is assignable here — the same reason
   // SerializationSchema.isEqual is declared this way. The alternative is to
@@ -616,28 +581,16 @@ ${generated
   .filter(Boolean)
   .join('\n\n')}
 
-const GENERATED = new Map<string, GeneratedJSON>([
 ${generated
   .map(
     ({klass, updateFromJSON}) =>
-      `  [\n    '${klass.getType()}',\n    {\n      shape: ${JSON.stringify(shapeOf(klass))},\n      exportJSON: export${klass.name},${
+      `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const GENERATED_${klass.name.replace(/Node$/, '').toUpperCase()}: GeneratedJSON = {\n  exportJSON: export${klass.name},${
         updateFromJSON === null
           ? ''
-          : `\n      updateFromJSON: update${klass.name},`
-      }\n    },\n  ],`,
+          : `\n  updateFromJSON: update${klass.name},`
+      }\n};`,
   )
-  .join('\n')}
-]);
-
-/**
- * The generated implementations for a node type, or \`undefined\` for a type
- * that has none. The caller still has to check \`shape\`.
- *
- * @internal
- */
-export function getGeneratedJSON(type: string): undefined | GeneratedJSON {
-  return GENERATED.get(type);
-}
+  .join('\n\n')}
 `,
 );
 

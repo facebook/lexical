@@ -12,6 +12,7 @@ import type {LexicalNode, NodeKey} from '../LexicalNode';
 import invariant from '@lexical/internal/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
+import {GENERATED_TAB} from '../LexicalGeneratedJSON';
 import {
   enumValue,
   numberValue,
@@ -34,6 +35,7 @@ export class TabNode extends TextNode {
   $config() {
     return this.config('tab', {
       extends: TextNode,
+      generated: GENERATED_TAB,
       // A tab's content, detail and mode are fixed rather than stored:
       // setTextContent normalizes any input to '\t', and setDetail/setMode
       // reject anything but IS_UNMERGEABLE/'normal'. They are therefore

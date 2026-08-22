@@ -7,6 +7,7 @@
  */
 
 import type {EditorState} from './LexicalEditorState';
+import type {GeneratedJSON} from './LexicalGeneratedJSON';
 import type {RootNode} from './nodes/LexicalRootNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -74,7 +75,6 @@ import {
   type RegisteredNode,
   type RegisteredNodes,
 } from './LexicalEditor';
-import {type GeneratedJSON, getGeneratedJSON} from './LexicalGeneratedJSON';
 import {flushRootMutations} from './LexicalMutations';
 import {
   $isEphemeral,
@@ -3240,8 +3240,6 @@ type CompiledSetter =
       readonly kind: 'field';
       readonly key: string;
       readonly schema: AnySerializationSchema;
-      /** The accessor's name, which is what {@link schemaShape} reports. */
-      readonly name: string;
       // Resolved once at compile time so applying a field is a direct call
       // rather than a per-node string-keyed method lookup.
       readonly setter: (this: LexicalNode, value: unknown) => LexicalNode;
@@ -3532,8 +3530,6 @@ type CompiledGetter = CompactRule &
     | {
         readonly kind: 'method';
         readonly key: string;
-        /** The accessor's name, which is what {@link schemaShape} reports. */
-        readonly name: string;
         // Resolved once at compile time, like the setter counterpart.
         readonly getter: (this: LexicalNode) => unknown;
       }
@@ -3624,7 +3620,6 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       isDefault: value => isSchemaDefault(schema, value),
       key,
       kind: 'method',
-      name: getter,
     });
   }
   return fields.size === 0 ? EMPTY_GETTERS : [...fields.values()];
@@ -3810,7 +3805,6 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
     fields.set(key, {
       key,
       kind: 'field',
-      name: setter,
       schema,
       setter: method as (this: LexicalNode, value: unknown) => LexicalNode,
     });
@@ -3833,39 +3827,16 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
 }
 
 /**
- * How a class actually reaches each of its serialized properties, as a string
- * the codegen can emit alongside the function it generated and this can compare
- * against.
- *
- * The generated functions are keyed by node type because that is what keeps the
- * generated module free of runtime imports, and a type is *not* a class: a
- * subclass that declares no `$config` of its own inherits its ancestor's, type
- * included, and may still override an accessor or two. Nothing about the type
- * would reveal that, so the dispatch asks this instead — it is derived from the
- * same compiled tables the walk runs on, so agreeing with it is exactly the
- * condition for the generated code being right for this class.
- */
-function schemaShape(record: NodeClassRecord): string {
-  let shape = record.config.ownNodeType || '';
-  for (const entry of getCompiledGetters(record)) {
-    shape += `|${entry.key}=${
-      entry.kind === 'ownField' ? entry.field : `${entry.name}()`
-    }`;
-  }
-  for (const entry of getCompiledSetters(record)) {
-    shape +=
-      entry.kind === 'state'
-        ? `|${entry.key}<state`
-        : `|${entry.key}<${
-            entry.kind === 'ownField' ? entry.field : `${entry.name}()`
-          }`;
-  }
-  return shape;
-}
-
-/**
  * The generated JSON functions for a node class, or `null` for a class the
  * generated code does not describe.
+ *
+ * A class declares its own through `$config`, so the association is the same
+ * one its schema has, and the check is that this class is the one that declared
+ * it: a subclass with no `$config` of its own inherits the whole config —
+ * generated code included — while being free to override an accessor that code
+ * compiled away, so inheriting the declaration is exactly the case to reject.
+ * Compared by identity against the most basal class in the chain that names the
+ * same functions, for the same reason `declaredBy` is.
  *
  * @internal
  */
@@ -3874,37 +3845,25 @@ function generatedFor(record: NodeClassRecord): null | GeneratedJSON {
   if (generated !== undefined) {
     return generated;
   }
-  const candidate = getGeneratedJSON(record.config.ownNodeType || '');
-  // A candidate is generated from *a* class's schema; this is what says it was
-  // this one's.
-  const resolved =
-    candidate !== undefined && candidate.shape === schemaShape(record)
-      ? candidate
-      : null;
+  const {klass} = record.config;
+  const declared = record.config.ownNodeConfig
+    ? record.config.ownNodeConfig.generated
+    : undefined;
+  let resolved: null | GeneratedJSON = null;
+  if (declared !== undefined) {
+    let declaringKlass = klass;
+    for (const {
+      klass: currentKlass,
+      ownNodeConfig,
+    } of iterStaticNodeConfigChain(klass)) {
+      if (ownNodeConfig && ownNodeConfig.generated === declared) {
+        declaringKlass = currentKlass;
+      }
+    }
+    resolved = declaringKlass === klass ? declared : null;
+  }
   record.generated = resolved;
   return resolved;
-}
-
-/**
- * Which of the generated JSON implementations `klass` actually uses.
- *
- * The runtime derives a class's {@link schemaShape} from its compiled tables
- * and the codegen derives it from the schema, and a silent disagreement between
- * those two would not fail anything — it would just quietly put every node back
- * on the walk. This is how a test can see the difference.
- *
- * @internal
- */
-export function getGeneratedJSONUsage(klass: Klass<LexicalNode>): {
-  exportJSON: boolean;
-  updateFromJSON: boolean;
-} {
-  const generated = generatedFor(getNodeClassRecord(klass));
-  return {
-    exportJSON: generated !== null,
-    updateFromJSON:
-      generated !== null && generated.updateFromJSON !== undefined,
-  };
 }
 
 /**

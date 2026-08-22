@@ -13,6 +13,7 @@ import type {
   KlassConstructor,
   LexicalEditor,
 } from './LexicalEditor';
+import type {GeneratedJSON} from './LexicalGeneratedJSON';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -234,6 +235,22 @@ export interface StaticNodeConfigValue<
    * of node schema (e.g. a schema of allowed children).
    */
   readonly json?: AnySerializationSchema;
+  /**
+   * @internal
+   *
+   * Specialized `exportJSON`/`updateFromJSON` implementations compiled from
+   * this class's `json` schema by `scripts/generate-node-json.mjs`, which the
+   * schema-driven walks use in place of walking. Set by the core node classes
+   * that are code-generated; there is no reason to write it by hand.
+   *
+   * Carried here rather than looked up by node type, because a type does not
+   * identify a class: a subclass that declares no `$config` of its own inherits
+   * its ancestor's, type included, and may still override an accessor the
+   * generated code compiled away. Passing the code through the config makes the
+   * association the same one the schema itself has — the class whose `$config`
+   * named it — so the two cannot come apart.
+   */
+  readonly generated?: GeneratedJSON;
 }
 
 /**

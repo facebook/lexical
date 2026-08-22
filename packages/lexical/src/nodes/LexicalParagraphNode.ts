@@ -20,6 +20,7 @@ import type {
 import type {RangeSelection} from '../LexicalSelection';
 
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
+import {GENERATED_PARAGRAPH} from '../LexicalGeneratedJSON';
 import {
   $applyNodeReplacement,
   $getDocument,
@@ -52,6 +53,7 @@ export class ParagraphNode extends ElementNode {
   $config() {
     return this.config('paragraph', {
       extends: ElementNode,
+      generated: GENERATED_PARAGRAPH,
       importDOM: {
         p: () => ({
           conversion: $convertParagraphElement,

@@ -18,15 +18,19 @@ import {
   $createTabNode,
   $createTextNode,
   $isElementNode,
-  getGeneratedJSONUsage,
   type LexicalNode,
   LineBreakNode,
   ParagraphNode,
   TabNode,
   TextNode,
 } from '../..';
-import {getGeneratedJSON} from '../../LexicalGeneratedJSON';
-import {$writeJSONGetters} from '../../LexicalUtils';
+import {
+  GENERATED_LINEBREAK,
+  GENERATED_PARAGRAPH,
+  GENERATED_TAB,
+  GENERATED_TEXT,
+} from '../../LexicalGeneratedJSON';
+import {$writeJSONGetters, getStaticNodeConfig} from '../../LexicalUtils';
 import {initializeUnitTest} from '../utils';
 
 const REPO = join(import.meta.dirname, '..', '..', '..', '..', '..');
@@ -89,7 +93,6 @@ describe('generated exportJSON', () => {
             $createTabNode(),
           ];
           for (const node of nodes) {
-            expect(getGeneratedJSON(node.getType())).toBeDefined();
             const generated = node.exportJSON();
             const walked = $walkExportJSON(node);
             expect(generated).toEqual(walked);
@@ -102,17 +105,11 @@ describe('generated exportJSON', () => {
       );
     });
 
-    test('a subclass with its own type does not reach its parent code', () => {
-      expect(getGeneratedJSON('text')).toBeDefined();
-      expect(getGeneratedJSON('sub-text')).toBeUndefined();
-    });
-
     test('an exportJSON override composes with its generated exporter', () => {
       // ParagraphNode writes textFormat/textStyle computed from its first text
       // child (#7971) — output no schema describes. It keeps doing that in an
       // ordinary exportJSON override: the override calls super, super is where
       // the generated literal comes from, and the override then adjusts it.
-      expect(getGeneratedJSON('paragraph')).toBeDefined();
       testEnv.editor.update(
         () => {
           const paragraph = $createParagraphNode();
@@ -155,20 +152,18 @@ describe('generated exportJSON', () => {
   });
 });
 
-describe('the generated code is actually reached', () => {
-  // The runtime derives a class's shape from its compiled tables and the
-  // codegen derives it from the schema. Those are two independent derivations
-  // of the same string, and if they ever disagreed nothing would fail — every
-  // node would quietly go back to the walk, and the rest of this file would
-  // still pass. This is the test that would not.
-  test('each target class uses the code generated for it', () => {
-    expect(getGeneratedJSONUsage(TextNode)).toEqual({
-      exportJSON: true,
-      updateFromJSON: true,
-    });
-    for (const klass of [ParagraphNode, LineBreakNode, TabNode]) {
-      expect(getGeneratedJSONUsage(klass).exportJSON).toBe(true);
-    }
+describe('the generated code reaches the class it was generated for', () => {
+  // Handed over through `$config` rather than looked up by node type, so there
+  // is no second derivation that could stop matching the first — the check is
+  // that each class named its own.
+  test.each([
+    ['text', TextNode, GENERATED_TEXT],
+    ['paragraph', ParagraphNode, GENERATED_PARAGRAPH],
+    ['linebreak', LineBreakNode, GENERATED_LINEBREAK],
+    ['tab', TabNode, GENERATED_TAB],
+  ])('%s', (_type, klass, generated) => {
+    const {ownNodeConfig} = getStaticNodeConfig(klass);
+    expect(ownNodeConfig && ownNodeConfig.generated).toBe(generated);
   });
 });
 
@@ -178,10 +173,10 @@ describe('generated updateFromJSON', () => {
     // as data. ParagraphNode applies its properties through set<Prop>, and
     // TabNode declares three of its own import-only, so neither is generated —
     // and the generator says so rather than emitting a parser that disagrees.
-    expect(getGeneratedJSON('text')!.updateFromJSON).toBeDefined();
-    expect(getGeneratedJSON('paragraph')!.updateFromJSON).toBeUndefined();
-    expect(getGeneratedJSON('tab')!.updateFromJSON).toBeUndefined();
-    expect(getGeneratedJSON('linebreak')!.updateFromJSON).toBeUndefined();
+    expect(GENERATED_TEXT.updateFromJSON).toBeDefined();
+    expect(GENERATED_PARAGRAPH.updateFromJSON).toBeUndefined();
+    expect(GENERATED_TAB.updateFromJSON).toBeUndefined();
+    expect(GENERATED_LINEBREAK.updateFromJSON).toBeUndefined();
   });
 
   initializeUnitTest(testEnv => {

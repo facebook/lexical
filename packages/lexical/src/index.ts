@@ -392,7 +392,6 @@ export {
   getDOMShadowRoots,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
-  getGeneratedJSONUsage,
   getNearestEditorFromDOMNode,
   getParentElement,
   getRegisteredNode,

@@ -22,18 +22,14 @@ import type {TabNode} from './nodes/LexicalTabNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
 /**
- * The generated implementations for one node type.
+ * The generated implementations for one node class.
  *
- * `shape` is how the class this was generated from reaches each of its
- * serialized properties. The dispatch compares it against the class it is
- * about to use this for, because a node type does not identify a class: a
- * subclass that declares no `$config` inherits its ancestor's, type included,
- * and may still override an accessor.
+ * Each is handed to the class it was generated from through that class's
+ * `$config`, so nothing has to match code to class at runtime.
  *
  * @internal
  */
 export interface GeneratedJSON {
-  readonly shape: string;
   // Method syntax, so TypeScript checks the parameter bivariantly and a
   // function generated for one class is assignable here — the same reason
   // SerializationSchema.isEqual is declared this way. The alternative is to
@@ -268,47 +264,23 @@ function exportTabNode(node: TabNode): {[key: string]: unknown} {
   return json;
 }
 
-const GENERATED = new Map<string, GeneratedJSON>([
-  [
-    'text',
-    {
-      shape:
-        'text|detail=__detail|format=__format|mode=__mode|style=__style|text=__text|detail<__detail|format<__format|mode<__mode|style<__style|text<__text',
-      exportJSON: exportTextNode,
-      updateFromJSON: updateTextNode,
-    },
-  ],
-  [
-    'paragraph',
-    {
-      shape:
-        'paragraph|direction=getDirection()|format=getFormatType()|indent=getIndent()|textFormat=getSerializedTextFormat()|textStyle=getSerializedTextStyle()|direction<setDirection()|format<setFormat()|indent<setIndent()|textFormat<setTextFormat()|textStyle<setTextStyle()',
-      exportJSON: exportParagraphNode,
-    },
-  ],
-  [
-    'linebreak',
-    {
-      shape: 'linebreak',
-      exportJSON: exportLineBreakNode,
-    },
-  ],
-  [
-    'tab',
-    {
-      shape:
-        'tab|detail=getDetail()|mode=getMode()|text=getTextContent()|format=__format|style=__style|format<__format|style<__style',
-      exportJSON: exportTabNode,
-    },
-  ],
-]);
+/** TextNode's generated implementations, for its `$config`. @internal */
+export const GENERATED_TEXT: GeneratedJSON = {
+  exportJSON: exportTextNode,
+  updateFromJSON: updateTextNode,
+};
 
-/**
- * The generated implementations for a node type, or `undefined` for a type
- * that has none. The caller still has to check `shape`.
- *
- * @internal
- */
-export function getGeneratedJSON(type: string): undefined | GeneratedJSON {
-  return GENERATED.get(type);
-}
+/** ParagraphNode's generated implementations, for its `$config`. @internal */
+export const GENERATED_PARAGRAPH: GeneratedJSON = {
+  exportJSON: exportParagraphNode,
+};
+
+/** LineBreakNode's generated implementations, for its `$config`. @internal */
+export const GENERATED_LINEBREAK: GeneratedJSON = {
+  exportJSON: exportLineBreakNode,
+};
+
+/** TabNode's generated implementations, for its `$config`. @internal */
+export const GENERATED_TAB: GeneratedJSON = {
+  exportJSON: exportTabNode,
+};

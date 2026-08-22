@@ -37,6 +37,7 @@ import {
   TEXT_TYPE_TO_FORMAT,
   TEXT_TYPE_TO_MODE,
 } from '../LexicalConstants';
+import {GENERATED_TEXT} from '../LexicalGeneratedJSON';
 import {
   type DOMConversionOutput,
   type DOMExportOutput,
@@ -411,6 +412,7 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
 
   $config() {
     return this.config('text', {
+      generated: GENERATED_TEXT,
       importDOM: {
         '#text': () => ({
           conversion: $convertTextDOMNode,

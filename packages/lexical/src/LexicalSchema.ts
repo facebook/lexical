@@ -59,7 +59,13 @@ export type SerializationSchemaMeta =
       readonly members: readonly AnySerializationSchema[];
     }
   | {readonly kind: 'raw'}
-  | {readonly kind: 'object'; readonly fields: SerializationSchemaFields};
+  | {readonly kind: 'object'; readonly fields: SerializationSchemaFields}
+  | {
+      readonly kind: 'aliased';
+      readonly inner: AnySerializationSchema;
+      /** Legacy input spellings, mapped to the value each denotes. */
+      readonly aliases: {readonly [alias: string]: unknown};
+    };
 
 /** Domain constraints for {@link numberValue}. */
 export interface NumberValueOptions {
@@ -715,6 +721,61 @@ function unionAccessors(
     }
   }
   return accessors;
+}
+
+/**
+ * Combinator for a value that older documents may spell as one of a fixed set
+ * of names — TextNode's `format: 'bold'` for the numeric bit it stands for.
+ * A string matching one of `aliases` yields the value it names; anything else
+ * is `inner`'s to validate, so the domain, the default and the equality all
+ * stay `inner`'s and only the accepted *input* is wider.
+ *
+ * This is {@link transformValue} narrowed to the case where the normalization
+ * is a lookup, and the reason to prefer it is that the lookup is data: it goes
+ * into the schema's {@link SerializationSchemaMeta | meta}, where a tool can
+ * see it. A `transformValue` inherits its inner's meta and keeps the function
+ * to itself, so introspection describes a domain the schema does not actually
+ * produce — example generation invents values the node would normalize, and a
+ * code generator compiling from meta would emit a parser that stores the alias
+ * where the schema stores what it names.
+ *
+ * @example
+ * ```ts
+ * const parseFormat = aliasedValue(numberValue(), TEXT_TYPE_TO_FORMAT);
+ * //    ^? SerializationSchema<number>
+ * parseFormat(1);      // 1
+ * parseFormat('bold'); // IS_BOLD
+ * parseFormat('42');   // 42 (not an alias, so numberValue reads it)
+ * parseFormat('junk'); // 0  (numberValue falls back to its default)
+ * ```
+ * @__NO_SIDE_EFFECTS__
+ */
+export function aliasedValue<T>(
+  inner: SerializationSchema<T>,
+  aliases: {readonly [alias: string]: T},
+): SerializationSchema<T> {
+  // hasOwnKey, not `alias in aliases` or a bare lookup: `aliases` is a plain
+  // object literal, so an untrusted `'toString'` would otherwise resolve to
+  // Object.prototype's method and be stored as this property's value.
+  const isAlias = (value: unknown): value is string =>
+    typeof value === 'string' && hasOwnKey(aliases, value);
+  const {accepts} = inner;
+  return makeSchema(
+    value => (isAlias(value) ? (aliases[value] as T) : inner(value)),
+    {aliases, inner, kind: 'aliased'},
+    // One property, so the accessor names are the inner schema's, as with
+    // nullable/optional.
+    inner,
+    // Naming an alias says nothing about which value is the default.
+    inner.defaultValue,
+    inner.isEqual,
+    // Declared only when the inner schema declares one: without it, a union
+    // infers membership from the parse, and that inference reads an aliased
+    // schema exactly as well as it reads its inner.
+    accepts === undefined
+      ? undefined
+      : value => isAlias(value) || accepts(value),
+  );
 }
 
 /**

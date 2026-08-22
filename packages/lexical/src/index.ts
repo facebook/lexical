@@ -253,10 +253,12 @@ export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './Lexica
 export type {RefCountedRegistry} from './LexicalRefCountedRegistry';
 export {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 export {
+  aliasedValue,
   type AnySerializationSchema,
   arrayValue,
   booleanValue,
   enumValue,
+  type FieldOptions,
   isSchemaField,
   nullable,
   numberValue,
@@ -390,6 +392,7 @@ export {
   getDOMShadowRoots,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
+  getGeneratedJSONUsage,
   getNearestEditorFromDOMNode,
   getParentElement,
   getRegisteredNode,

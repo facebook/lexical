@@ -47,12 +47,11 @@ import {
 } from '../LexicalNode';
 import {$cloneNodeState} from '../LexicalNodeState';
 import {
+  aliasedValue,
   enumValue,
   numberValue,
   objectValue,
   stringValue,
-  transformValue,
-  unionValue,
   withField,
 } from '../LexicalSchema';
 import {
@@ -117,54 +116,33 @@ export type TextMarks = TextMark[];
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedTextNode; declared on the node via `$config`.
-// Every property but `mode` is read straight off the field. Each conventional
-// accessor — getDetail, getFormat, getStyle, getTextContent — is exactly
-// `getLatest().__field`, and resolution is already guaranteed by the time a
-// property is read: an export walk reaches a node through the EditorState's
-// node map, so it is the current version by construction. Saying so in the
-// schema lets both the walk and the generated exporter skip a node-map lookup
-// per property. `mode` is stored as a bitmask and serialized as a name, so it
-// names the decode table rather than an accessor.
 //
-// The setters are unaffected: those do real work (setFormat normalizes a
-// legacy string, setTextContent enforces the node's mode).
 // Every property here *is* one of TextNode's own fields in both directions, so
 // each is declared as the field it is rather than as the accessor pair that
 // wraps it — a read and a write with no method call, and none of the
 // getWritable() a set<Prop> repeats for a node updateFromJSON already holds
 // writable. Each names the accessor it stands in for, so a subclass that
 // overrides one is still the one that decides: see {@link SchemaField.method}.
+//
+// Nothing here is a transformValue, which is what lets the codegen emit a
+// specialized parser for this class: every domain is stated as data the
+// generator can compile — the alias tables below, and mode's encode/decode.
 const textNodeSchema = /* @__PURE__ */ objectValue({
   // `format` and `detail` also accept the legacy string names that
   // hand-authored and older documents carry (e.g. `format: 'bold'`),
   // normalized to the stored numeric form — so what reaches the field is
   // already what setDetail/setFormat would have stored.
   detail: /* @__PURE__ */ withField(
-    /* @__PURE__ */ transformValue(
-      /* @__PURE__ */ unionValue(
-        [
-          /* @__PURE__ */ numberValue(),
-          /* @__PURE__ */ enumValue(['directionless', 'unmergeable']),
-        ],
-        0,
-      ),
-      value =>
-        typeof value === 'string' ? DETAIL_TYPE_TO_DETAIL[value] : value,
+    /* @__PURE__ */ aliasedValue(
+      /* @__PURE__ */ numberValue(),
+      DETAIL_TYPE_TO_DETAIL,
     ),
     {field: '__detail', getter: 'getDetail', setter: 'setDetail'},
   ),
   format: /* @__PURE__ */ withField(
-    /* @__PURE__ */ transformValue(
-      /* @__PURE__ */ unionValue(
-        [
-          /* @__PURE__ */ numberValue(),
-          /* @__PURE__ */ enumValue(
-            Object.keys(TEXT_TYPE_TO_FORMAT) as TextFormatType[],
-          ),
-        ],
-        0,
-      ),
-      value => (typeof value === 'string' ? TEXT_TYPE_TO_FORMAT[value] : value),
+    /* @__PURE__ */ aliasedValue(
+      /* @__PURE__ */ numberValue(),
+      TEXT_TYPE_TO_FORMAT,
     ),
     {field: '__format', getter: 'getFormat', setter: 'setFormat'},
   ),

@@ -74,6 +74,7 @@ import {
   type RegisteredNode,
   type RegisteredNodes,
 } from './LexicalEditor';
+import {type GeneratedJSON, getGeneratedJSON} from './LexicalGeneratedJSON';
 import {flushRootMutations} from './LexicalMutations';
 import {
   $isEphemeral,
@@ -3150,6 +3151,13 @@ interface NodeClassRecord {
   composed: undefined | ComposedSchema;
   setters: undefined | readonly CompiledSetter[];
   getters: undefined | readonly CompiledGetter[];
+  /**
+   * The generated JSON functions this class may use, or `null` for a class
+   * that may not (see {@link generatedFor}). Resolved on first serialization
+   * rather than at registration, because it is the compiled tables above that
+   * decide, and those are themselves built lazily.
+   */
+  generated: undefined | null | GeneratedJSON;
   /** DEV only: whether validateOwnFields has run for this class. */
   ownFieldsValidated: boolean;
 }
@@ -3235,6 +3243,8 @@ type CompiledSetter =
       readonly kind: 'field';
       readonly key: string;
       readonly schema: AnySerializationSchema;
+      /** The accessor's name, which is what {@link schemaShape} reports. */
+      readonly name: string;
       // Resolved once at compile time so applying a field is a direct call
       // rather than a per-node string-keyed method lookup.
       readonly setter: (this: LexicalNode, value: unknown) => LexicalNode;
@@ -3403,23 +3413,33 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
   // Most-derived first, first write wins, so a subclass field overrides an
   // ancestor's and keeps the subclass's position.
   const derivedFirst = new Map<string, AnySerializationSchema>();
-  const declaredBy = new Map<string, Klass<LexicalNode>>();
   for (let i = 0; i < fieldGroups.length; i++) {
     for (const [key, schema] of fieldGroups[i]) {
       if (!derivedFirst.has(key)) {
         derivedFirst.set(key, schema);
-        declaredBy.set(key, groupKlasses[i]);
       }
     }
   }
   // The same winning schemas in ancestors-first order.
   const baseFirst = new Map<string, AnySerializationSchema>();
+  const declaredBy = new Map<string, Klass<LexicalNode>>();
   const flatStates = new Map<string, AnyStateConfig>();
   for (let i = fieldGroups.length - 1; i >= 0; i--) {
-    for (const [key] of fieldGroups[i]) {
-      const schema = derivedFirst.get(key);
-      if (schema !== undefined && !baseFirst.has(key)) {
-        baseFirst.set(key, schema);
+    for (const [key, schema] of fieldGroups[i]) {
+      const winner = derivedFirst.get(key);
+      if (winner !== undefined && !baseFirst.has(key)) {
+        baseFirst.set(key, winner);
+      }
+      // The most basal class declaring the *winning* schema, which is not the
+      // same as the most basal one declaring the key: a subclass that
+      // re-declares an inherited field is where that field now comes from.
+      // Compared by identity because a subclass with no `$config` of its own
+      // inherits the method and so reports its ancestor's fields as its own —
+      // recording it here would measure SchemaField.method against a class
+      // that never declared the property, and every override would look like
+      // no override at all.
+      if (winner !== undefined && schema === winner && !declaredBy.has(key)) {
+        declaredBy.set(key, groupKlasses[i]);
       }
     }
     for (const stateConfig of stateGroups[i]) {
@@ -3515,6 +3535,8 @@ type CompiledGetter = CompactRule &
     | {
         readonly kind: 'method';
         readonly key: string;
+        /** The accessor's name, which is what {@link schemaShape} reports. */
+        readonly name: string;
         // Resolved once at compile time, like the setter counterpart.
         readonly getter: (this: LexicalNode) => unknown;
       }
@@ -3605,6 +3627,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       isDefault: value => isSchemaDefault(schema, value),
       key,
       kind: 'method',
+      name: getter,
     });
   }
   return fields.size === 0 ? EMPTY_GETTERS : [...fields.values()];
@@ -3790,6 +3813,7 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
     fields.set(key, {
       key,
       kind: 'field',
+      name: setter,
       schema,
       setter: method as (this: LexicalNode, value: unknown) => LexicalNode,
     });
@@ -3809,6 +3833,102 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
   // Apply flat states before named setters, matching the previous ordering in
   // which $updateStateFromJSON ran before a node's own setters.
   return [...states, ...fields.values()];
+}
+
+/**
+ * How a class actually reaches each of its serialized properties, as a string
+ * the codegen can emit alongside the function it generated and this can compare
+ * against.
+ *
+ * The generated functions are keyed by node type because that is what keeps the
+ * generated module free of runtime imports, and a type is *not* a class: a
+ * subclass that declares no `$config` of its own inherits its ancestor's, type
+ * included, and may still override an accessor or two. Nothing about the type
+ * would reveal that, so the dispatch asks this instead — it is derived from the
+ * same compiled tables the walk runs on, so agreeing with it is exactly the
+ * condition for the generated code being right for this class.
+ */
+function schemaShape(record: NodeClassRecord): string {
+  let shape = record.config.ownNodeType || '';
+  for (const entry of getCompiledGetters(record)) {
+    shape += `|${entry.key}=${
+      entry.kind === 'ownField' ? entry.field : `${entry.name}()`
+    }`;
+  }
+  for (const entry of getCompiledSetters(record)) {
+    shape +=
+      entry.kind === 'state'
+        ? `|${entry.key}<state`
+        : `|${entry.key}<${
+            entry.kind === 'ownField' ? entry.field : `${entry.name}()`
+          }`;
+  }
+  return shape;
+}
+
+/**
+ * The generated JSON functions for a node class, or `null` for a class the
+ * generated code does not describe.
+ *
+ * @internal
+ */
+function generatedFor(record: NodeClassRecord): null | GeneratedJSON {
+  const {generated} = record;
+  if (generated !== undefined) {
+    return generated;
+  }
+  const candidate = getGeneratedJSON(record.config.ownNodeType || '');
+  // A candidate is generated from *a* class's schema; this is what says it was
+  // this one's.
+  const resolved =
+    candidate !== undefined && candidate.shape === schemaShape(record)
+      ? candidate
+      : null;
+  record.generated = resolved;
+  return resolved;
+}
+
+/**
+ * Which of the generated JSON implementations `klass` actually uses.
+ *
+ * The runtime derives a class's {@link schemaShape} from its compiled tables
+ * and the codegen derives it from the schema, and a silent disagreement between
+ * those two would not fail anything — it would just quietly put every node back
+ * on the walk. This is how a test can see the difference.
+ *
+ * @internal
+ */
+export function getGeneratedJSONUsage(klass: Klass<LexicalNode>): {
+  exportJSON: boolean;
+  updateFromJSON: boolean;
+} {
+  const generated = generatedFor(getNodeClassRecord(klass));
+  return {
+    exportJSON: generated !== null,
+    updateFromJSON:
+      generated !== null && generated.updateFromJSON !== undefined,
+  };
+}
+
+/**
+ * The generated exporter for `node`, or `undefined` when there is none for its
+ * class or the compact form is being written.
+ *
+ * @internal
+ */
+export function $generatedExportJSONFor(
+  node: LexicalNode,
+  compact: boolean,
+): undefined | GeneratedJSON['exportJSON'] {
+  if (compact) {
+    // Which properties the compact form drops depends on each node's values
+    // rather than on the schema alone, so only the legacy form is generated.
+    return undefined;
+  }
+  const generated = generatedFor(
+    getNodeClassRecord(node.constructor as Klass<LexicalNode>),
+  );
+  return generated === null ? undefined : generated.exportJSON;
 }
 
 /**
@@ -3872,10 +3992,18 @@ export function $applyJSONSetters<T extends LexicalNode>(
 ): T {
   const klass = node.constructor as Klass<LexicalNode>;
   const record = getNodeClassRecord(klass);
-  const setters = getCompiledSetters(record);
   if (__DEV__) {
     validateOwnFields(record, node);
   }
+  const generated = generatedFor(record);
+  if (generated !== null && generated.updateFromJSON !== undefined) {
+    // Generated only for a class whose every property is one of its own fields
+    // (see the codegen), so there is no setter that could replace the node and
+    // nothing to thread through: `node` is the result.
+    generated.updateFromJSON(node as never, serializedNode);
+    return node;
+  }
+  const setters = getCompiledSetters(record);
   let self = node;
   for (let i = 0; i < setters.length; i++) {
     const entry = setters[i];
@@ -3997,6 +4125,7 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
   const record: NodeClassRecord = {
     composed: undefined,
     config: {klass, ownNodeConfig, ownNodeType},
+    generated: undefined,
     getters: undefined,
     ownFieldsValidated: false,
     setters: undefined,

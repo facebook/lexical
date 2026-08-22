@@ -62,6 +62,14 @@ function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
       return fc.oneof(
         ...meta.members.map(member => metaArbitrary(member.meta)),
       );
+    case 'aliased':
+      // The aliases are legacy input spellings the schema still accepts, so
+      // they belong in the generated domain exactly as much as the inner one
+      // does — that is what makes them worth stating as data.
+      return fc.oneof(
+        metaArbitrary(meta.inner.meta),
+        fc.constantFrom(...Object.keys(meta.aliases)),
+      );
     case 'raw':
       // The schema deliberately does not describe this value's domain (its
       // owner validates it), so there is nothing to generate from.

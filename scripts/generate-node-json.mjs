@@ -7,16 +7,24 @@
  */
 
 /**
- * Emit a specialized `exportJSON` for the core node classes, from the same
- * `json` schema those classes declare.
+ * Emit specialized `exportJSON` and `updateFromJSON` implementations for the
+ * core node classes, from the same `json` schema those classes declare.
  *
- * The schema-driven `exportJSON` walks a compiled table per node: a loop, an
- * indirect call per property, and a keyed store whose key changes every
- * iteration. Everything it decides — which accessor to read, what the node's
- * type string is, which properties the legacy form writes — is fixed once the
- * schema is written, so it can be decided here instead and emitted as an object
- * literal. That is what the hand-written methods this schema replaced used to
- * be, recovered without hand-writing them.
+ * Both schema-driven paths walk a compiled table per node: a loop, an indirect
+ * call per property, and a keyed store whose key changes every iteration.
+ * Everything they decide — which accessor to use, what the node's type string
+ * is, what each property's domain admits — is fixed once the schema is written,
+ * so it can be decided here instead and emitted as straight-line code. That is
+ * what the hand-written methods this schema replaced used to be, recovered
+ * without hand-writing them.
+ *
+ * The export direction reads node fields, so it needs nothing from the schema
+ * but the accessor names. The import direction is the untrusted-JSON boundary
+ * and has to reproduce each property's validation exactly, so every emitted
+ * parser is checked here against the schema it was compiled from, over a corpus
+ * derived from that schema plus a fixed set of hostile values. A property whose
+ * schema this cannot compile — or compiles wrongly — takes the class out of the
+ * import half rather than shipping a parser that disagrees with the walk.
  *
  * Reading a schema needs no editor and constructs no node: `$config()` is a
  * plain method on the prototype, so this runs as an ordinary build step.
@@ -33,6 +41,7 @@ import {fileURLToPath} from 'node:url';
 /** @typedef {import('lexical').LexicalNode} LexicalNode */
 /** @typedef {import('lexical').Klass<LexicalNode>} NodeClass */
 /** @typedef {import('lexical').AnySerializationSchema} AnySchema */
+/** @typedef {import('lexical').SerializationSchemaMeta} SchemaMeta */
 
 const OUT = join(
   import.meta.dirname,
@@ -59,16 +68,30 @@ const HEADER = `/**
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 `;
 
+const STUB = `${HEADER}
+/** @internal */
+export interface GeneratedJSON {
+  readonly shape: string;
+  readonly exportJSON: (node: never) => {[key: string]: unknown};
+  readonly updateFromJSON?: (
+    node: never,
+    json: {readonly [key: string]: unknown},
+  ) => void;
+}
+
+/** @internal */
+export function getGeneratedJSON(_type: string): undefined | GeneratedJSON {
+  return undefined;
+}
+`;
+
 // Two phases, because reading the schemas means importing `lexical`, and
 // `lexical` imports the file this script writes. Phase one replaces that file
 // with a valid do-nothing module so the import always succeeds — otherwise a
 // generator run that produced broken output could never be run again to fix
 // it. Phase two re-enters under tsx and writes the real thing.
 if (!process.env.LEXICAL_CODEGEN_PHASE_TWO) {
-  writeFileSync(
-    OUT,
-    `${HEADER}\ntype GeneratedExporter = (node: never) => {[key: string]: unknown};\n\n/** @internal */\nexport function getGeneratedExporter(\n  _type: string,\n): undefined | GeneratedExporter {\n  return undefined;\n}\n`,
-  );
+  writeFileSync(OUT, STUB);
   execFileSync('npx', ['tsx', fileURLToPath(import.meta.url)], {
     cwd: join(import.meta.dirname, '..'),
     env: {...process.env, LEXICAL_CODEGEN_PHASE_TWO: '1'},
@@ -109,22 +132,67 @@ const MODULES = {
  */
 const TARGETS = [TextNode, ParagraphNode, LineBreakNode, TabNode];
 
-/**
- * `foo` → `getFoo`, matching the schema's conventional accessor name.
- *
- * @param {string} key
- * @returns {string}
- */
+/** `foo` → `getFoo`. @param {string} key @returns {string} */
 function defaultGetterName(key) {
   return `get${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 }
 
+/** `foo` → `setFoo`. @param {string} key @returns {string} */
+function defaultSetterName(key) {
+  return `set${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+}
+
+/** Lookup tables the generated module needs, by the const name given to each.
+ * @type {Map<string, {table: {readonly [key: string]: unknown}, nullProto: boolean}>} */
+const tables = new Map();
+
 /**
- * Lookup tables the generated module needs, by the const name given to each.
+ * Name and record a lookup table for the generated module.
  *
- * @type {Map<string, {readonly [key: string]: unknown}>}
+ * `nullProto` tables are the ones an untrusted key reaches: without it a
+ * serialized `'toString'` would resolve to Object.prototype's method and be
+ * stored as the property's value. The export-side tables are keyed by the
+ * node's own field, so they are plain objects.
+ *
+ * @param {string} name
+ * @param {{readonly [key: string]: unknown}} table
+ * @param {boolean} nullProto
+ * @returns {string}
  */
-const decodeTables = new Map();
+function addTable(name, table, nullProto) {
+  tables.set(name, {nullProto, table});
+  return name;
+}
+
+/** @param {NodeClass} klass @param {string} key @param {string} suffix */
+function tableName(klass, key, suffix) {
+  return `${klass.name.replace(/Node$/, '').toUpperCase()}_${key.toUpperCase()}_${suffix}`;
+}
+
+/**
+ * The accessor `klass` reaches one direction of `key` through, after the
+ * subclass-override guard — the same resolution the walk makes, from the same
+ * function, so a generated literal cannot describe a different node.
+ *
+ * @param {NodeClass} klass
+ * @param {AnySchema} schema
+ * @param {string} key
+ * @param {'getter' | 'setter'} direction
+ * @returns {undefined | null | string | import('lexical').SchemaField}
+ */
+function accessor(klass, schema, key, direction) {
+  const declared = schema[direction];
+  if (declared === null) {
+    return null;
+  }
+  const named =
+    declared === undefined
+      ? direction === 'getter'
+        ? defaultGetterName(key)
+        : defaultSetterName(key)
+      : declared;
+  return isSchemaField(named) ? resolveSchemaField(klass, key, named) : named;
+}
 
 /**
  * The expression that reads one property off `node`, or `null` for a property
@@ -136,28 +204,25 @@ const decodeTables = new Map();
  * @returns {null | string}
  */
 function readExpression(klass, schema, key) {
-  const declared = schema.getter;
-  if (declared === null) {
+  const getter = accessor(klass, schema, key, 'getter');
+  if (getter === null) {
     // Declared import-only, like the walk's compiled getters skip it.
     return null;
   }
-  // The same resolution the walk makes, from the same function: a field whose
-  // accessor a subclass overrode is read through that accessor instead, and a
-  // literal that ignored this would describe a different node.
-  const getter = isSchemaField(declared)
-    ? resolveSchemaField(klass, key, declared)
-    : declared;
   if (isSchemaField(getter)) {
     if (getter.decode === undefined) {
       return `node.${getter.field}`;
     }
     // The table is plain data, so it is inlined rather than imported: keeping
     // this module free of runtime imports is what keeps it out of the cycle.
-    const name = `${klass.name.replace(/Node$/, '').toUpperCase()}_${key.toUpperCase()}`;
-    decodeTables.set(name, getter.decode);
+    const name = addTable(
+      tableName(klass, key, 'DECODE'),
+      getter.decode,
+      false,
+    );
     return `${name}[node.${getter.field}]`;
   }
-  return `node.${getter === undefined ? defaultGetterName(key) : getter}()`;
+  return `node.${getter}()`;
 }
 
 /**
@@ -272,21 +337,344 @@ function hasFields(klass) {
   return schemaReads(klass).length > 0;
 }
 
-// Every class is generatable: the base `exportJSON` writes exactly the schema's
-// properties plus type/version, and NodeState is appended by the dispatch. A
-// class that overrides `exportJSON` for output no schema describes — ParagraphNode
-// and its #7971 textFormat/textStyle back-fill — still composes, because the
-// override's `super.exportJSON(compact)` is what reaches the generated literal.
-const body = TARGETS.map(generateExport).join('\n\n');
+// -- the import direction ----------------------------------------------------
 
-// Emitted after the bodies, because generating them is what discovers which
-// tables are needed.
-const tables = [...decodeTables]
-  .map(
-    ([name, table]) =>
-      `const ${name}: {readonly [key: string]: string} = ${JSON.stringify(table, null, 2)};`,
-  )
+/** A schema whose domain this cannot express as straight-line code. */
+class NotCompilable extends Error {}
+
+/** @param {unknown} value @returns {string} */
+function literal(value) {
+  return value === undefined ? 'undefined' : JSON.stringify(value);
+}
+
+/**
+ * A JS expression parsing `v` exactly as `schema` does, from `schema`'s meta.
+ *
+ * Only the kinds whose meta fully determines the parse are compiled. A
+ * `transformValue` post-processes what its meta describes and keeps the
+ * function to itself, so its meta is indistinguishable from its inner's —
+ * compiling one would silently store the un-transformed value. That is what the
+ * differential check below exists to catch, since no inspection of the meta
+ * can.
+ *
+ * @param {SchemaMeta} meta
+ * @param {unknown} defaultValue
+ * @returns {string}
+ */
+function parseExpression(meta, defaultValue) {
+  const fallback = literal(defaultValue);
+  switch (meta.kind) {
+    case 'string':
+      return `typeof v === 'string' ? v : ${fallback}`;
+    case 'boolean':
+      return `typeof v === 'boolean' ? v : ${fallback}`;
+    case 'enum': {
+      // `undefined` is checked before membership by enumValue, so a member
+      // spelled undefined can never be matched here — dropping it from the
+      // comparisons reproduces that exactly.
+      const tests = meta.values
+        .filter(value => value !== undefined)
+        .map(value => `v === ${literal(value)}`);
+      return tests.length === 0
+        ? fallback
+        : `${tests.join(' || ')} ? v : ${fallback}`;
+    }
+    case 'number': {
+      if (meta.min !== undefined || meta.max !== undefined || meta.integer) {
+        // A bounded domain is compilable, just not yet compiled: none of the
+        // classes below has one on a field-backed property.
+        throw new NotCompilable('a constrained numberValue');
+      }
+      return `num(v, ${fallback})`;
+    }
+    case 'aliased': {
+      const inner = parseExpression(meta.inner.meta, defaultValue);
+      const name = addTable(pendingTableName, meta.aliases, true);
+      return `typeof v === 'string' && v in ${name} ? ${name}[v] : ${inner}`;
+    }
+    default:
+      throw new NotCompilable(`a ${meta.kind} schema`);
+  }
+}
+
+/** Set around each parseExpression call so `aliased` can name its table. */
+let pendingTableName = '';
+
+/**
+ * Values every compiled parser is checked against: whatever the schema itself
+ * names — every enum member, every alias — plus the shapes untrusted JSON
+ * actually arrives in. Fixed rather than sampled, so the checked-in output is
+ * reproducible byte for byte.
+ *
+ * @param {SchemaMeta} meta
+ * @returns {unknown[]}
+ */
+function corpus(meta) {
+  /** @type {unknown[]} */
+  const values = [
+    undefined,
+    null,
+    true,
+    false,
+    0,
+    1,
+    -1,
+    1.5,
+    NaN,
+    Infinity,
+    -Infinity,
+    '',
+    ' ',
+    '0',
+    '1',
+    '-1',
+    '1.5',
+    '1e3',
+    '0x10',
+    '007',
+    '+1',
+    'Infinity',
+    'NaN',
+    'banana',
+    'toString',
+    'constructor',
+    '__proto__',
+    'hasOwnProperty',
+    {},
+    [],
+    [1],
+    {a: 1},
+  ];
+  const walk = (/** @type {SchemaMeta} */ m) => {
+    if (m.kind === 'enum') {
+      values.push(...m.values);
+    } else if (m.kind === 'aliased') {
+      values.push(...Object.keys(m.aliases), ...Object.values(m.aliases));
+      walk(m.inner.meta);
+    }
+  };
+  walk(meta);
+  return values;
+}
+
+/** Same-value equality, so NaN matches NaN and 0 does not match -0. */
+function same(/** @type {unknown} */ a, /** @type {unknown} */ b) {
+  return Object.is(a, b);
+}
+
+/**
+ * Compile one property's parse, then prove it agrees with the schema.
+ *
+ * @param {NodeClass} klass
+ * @param {AnySchema} schema
+ * @param {string} key
+ * @returns {{key: string, statements: string}}
+ */
+function writeExpression(klass, schema, key) {
+  if (key in Object.prototype) {
+    // The walk reads a property with hasOwn because its JSON came from
+    // JSON.parse and so inherits Object.prototype; `json.toString` in
+    // straight-line code would find the method rather than nothing. Refused
+    // rather than guarded because no core class has such a key, and the
+    // differential check below compares values, so it would not notice.
+    throw new NotCompilable(`"${key}" is also an Object.prototype member`);
+  }
+  const setter = accessor(klass, schema, key, 'setter');
+  if (setter === null) {
+    throw new NotCompilable(`"${key}" is import-only`);
+  }
+  if (!isSchemaField(setter)) {
+    // A method could be called, but then the node it returns has to be
+    // threaded through the rest, and every class below is all-fields anyway.
+    throw new NotCompilable(`"${key}" is applied through ${setter}()`);
+  }
+  pendingTableName = tableName(klass, key, 'ALIAS');
+  const parse = parseExpression(schema.meta, schema.defaultValue);
+  const encode = setter.encode;
+  // Two statements rather than one expression when a table has to be applied
+  // after parsing: folding them together needs an IIFE, and a closure per
+  // property per node is most of what generating this was meant to remove.
+  let statements = `  v = json.${key};\n  node.${setter.field} = ${parse};`;
+  let expression = parse;
+  const encodeTable = encode;
+  if (encode !== undefined) {
+    const name = addTable(tableName(klass, key, 'ENCODE'), encode, true);
+    // The schema already reduced the value to its own domain, so the table is
+    // total over what reaches it; the guard is for a domain member with no
+    // stored form, which would otherwise write undefined into the field.
+    const fallback = literal(
+      encode[/** @type {string} */ (schema.defaultValue)],
+    );
+    const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
+    statements = `  v = json.${key};\n  v = ${parse};\n  node.${setter.field} = ${lookup};`;
+    expression = `(() => {let v2 = ${parse}; return (v2 as string) in ${name} ? ${name}[v2 as string] : ${fallback};})()`;
+  }
+  // Prove it. `schema` is the real thing; `compiled` is what will ship. The
+  // check runs the same expression the statements above write, with the `as`
+  // casts (which only exist for the emitted TypeScript) stripped.
+  // This is the point: the expression about to be written into the generated
+  // module is compiled and run here, against the schema it claims to
+  // reproduce, so a disagreement is a build failure rather than a parser that
+  // silently stores the wrong value. Build-time only, over a fixed corpus,
+  // with nothing untrusted in scope.
+  // eslint-disable-next-line no-new-func
+  const compiled = new Function(
+    'v',
+    'TABLES',
+    `const {${[...tables.keys()].join(', ')}} = TABLES; return (${expression
+      .replace(/ as string/g, '')
+      .replace(/\bnum\(/g, 'TABLES.num(')});`,
+  );
+  const runtime = {
+    ...Object.fromEntries(
+      [...tables].map(([name, {nullProto, table}]) => [
+        name,
+        nullProto ? Object.assign(Object.create(null), table) : table,
+      ]),
+    ),
+    num,
+  };
+  for (const value of corpus(schema.meta)) {
+    const want = encodeTable
+      ? encodeTable[/** @type {string} */ (schema(value))]
+      : schema(value);
+    const got = compiled(value, runtime);
+    if (!same(want, got)) {
+      throw new NotCompilable(
+        `"${key}" disagrees with its schema on ${literal(value)}: schema says ${literal(
+          want,
+        )}, generated says ${literal(got)}`,
+      );
+    }
+  }
+  return {key, statements};
+}
+
+/** The runtime helper the generated module gets, mirrored here for the check. */
+function num(/** @type {unknown} */ v, /** @type {number} */ d) {
+  if (typeof v === 'number') {
+    return Number.isFinite(v) ? v : d;
+  }
+  return typeof v === 'string' && JSON_NUMBER.test(v) ? Number(v) : d;
+}
+const JSON_NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+
+/**
+ * @param {NodeClass} klass
+ * @returns {null | string}
+ */
+function generateUpdate(klass) {
+  const {fieldsBaseFirst, flatStates} = getComposedSchema(klass);
+  if (flatStates.length > 0) {
+    process.stdout.write(
+      `${klass.name}: no generated parser, it carries flat NodeState\n`,
+    );
+    return null;
+  }
+  const writes = [];
+  for (const [key, schema] of fieldsBaseFirst) {
+    try {
+      writes.push(writeExpression(klass, schema, key));
+    } catch (error) {
+      if (!(error instanceof NotCompilable)) {
+        throw error;
+      }
+      process.stdout.write(
+        `${klass.name}: no generated parser, ${error.message}\n`,
+      );
+      return null;
+    }
+  }
+  if (writes.length === 0) {
+    return null;
+  }
+  const body = writes.map(({statements}) => statements).join('\n');
+  return `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */
+function update${klass.name}(
+  node: ${klass.name},
+  json: {readonly [key: string]: unknown},
+): void {
+  let v: unknown;
+${body}
+}`;
+}
+
+// -- emit --------------------------------------------------------------------
+
+// Every class is exportable: the base `exportJSON` writes exactly the schema's
+// properties plus type/version, and NodeState is appended by the dispatch. A
+// class that overrides `exportJSON` for output no schema describes —
+// ParagraphNode and its #7971 textFormat/textStyle back-fill — still composes,
+// because the override's `super.exportJSON(compact)` is what reaches the
+// generated literal.
+const generated = TARGETS.map(klass => ({
+  exportJSON: generateExport(klass),
+  klass,
+  updateFromJSON: generateUpdate(klass),
+}));
+
+/**
+ * The shape the runtime compares against before using any of this, so a class
+ * that merely shares a type — a subclass with no `$config` of its own inherits
+ * one, accessor overrides and all — does not get code compiled for another.
+ *
+ * @param {NodeClass} klass
+ * @returns {string}
+ */
+function shapeOf(klass) {
+  const {fieldsDerivedFirst, fieldsBaseFirst, flatStates} =
+    getComposedSchema(klass);
+  const render = (
+    /** @type {undefined | null | string | import('lexical').SchemaField} */ a,
+  ) => (isSchemaField(a) ? a.field : `${a}()`);
+  let shape = klass.getType();
+  for (const [key, schema] of fieldsDerivedFirst) {
+    const a = accessor(klass, schema, key, 'getter');
+    if (a !== null) {
+      shape += `|${key}=${render(a)}`;
+    }
+  }
+  const states = new Set(flatStates.map(s => s.key));
+  for (const key of states) {
+    shape += `|${key}<state`;
+  }
+  for (const [key, schema] of fieldsBaseFirst) {
+    const a = accessor(klass, schema, key, 'setter');
+    if (a !== null) {
+      shape += `|${key}<${render(a)}`;
+    }
+  }
+  return shape;
+}
+
+/**
+ * The value type to give a lookup table.
+ *
+ * The union of its literal values when there are few enough to read, because a
+ * node field is often narrower than `number` — TextNode's `__mode` is
+ * `0 | 1 | 2 | 3` — and a table typed `number` would not be assignable to it.
+ *
+ * @param {{readonly [key: string]: unknown}} table
+ * @returns {string}
+ */
+function tableValueType(table) {
+  const values = Object.values(table);
+  const distinct = [...new Set(values.map(v => JSON.stringify(v)))].sort();
+  return distinct.length <= 8 ? distinct.join(' | ') : typeof values[0];
+}
+
+const tableSource = [...tables]
+  .map(([name, {nullProto, table}]) => {
+    const declaration = `const ${name}: {readonly [key: string]: ${tableValueType(table)}}`;
+    return nullProto
+      ? `// Null-prototype: an untrusted key must never resolve to Object.prototype.\n${declaration} =\n  /* @__PURE__ */ Object.assign(Object.create(null), ${JSON.stringify(table, null, 2)});`
+      : `${declaration} = ${JSON.stringify(table, null, 2)};`;
+  })
   .join('\n\n');
+
+const needsNum = generated.some(
+  g => g.updateFromJSON !== null && g.updateFromJSON.includes('num('),
+);
 
 writeFileSync(
   OUT,
@@ -299,29 +687,68 @@ ${TARGETS.filter(hasFields)
   .sort()
   .join('\n')}
 
-${tables}${tables ? '\n\n' : ''}${body}
-
-type GeneratedExporter = (node: never) => {[key: string]: unknown};
-
-const EXPORTERS = new Map<string, GeneratedExporter>([
-${TARGETS.map(k => `  ['${k.getType()}', export${k.name} as GeneratedExporter],`).join('\n')}
-]);
-
 /**
- * The generated exporter for a node type, or \`undefined\` for a type that has
- * none.
+ * The generated implementations for one node type.
  *
- * Keyed by the type rather than by the class, which is both what keeps this
- * module free of runtime imports and what makes the lookup exact: a subclass
- * registers under its own type, so it never reaches its parent's exporter —
- * which would write the parent's type and none of the subclass's properties.
+ * \`shape\` is how the class this was generated from reaches each of its
+ * serialized properties. The dispatch compares it against the class it is
+ * about to use this for, because a node type does not identify a class: a
+ * subclass that declares no \`$config\` inherits its ancestor's, type included,
+ * and may still override an accessor.
  *
  * @internal
  */
-export function getGeneratedExporter(
-  type: string,
-): undefined | GeneratedExporter {
-  return EXPORTERS.get(type);
+export interface GeneratedJSON {
+  readonly shape: string;
+  readonly exportJSON: (node: never) => {[key: string]: unknown};
+  readonly updateFromJSON?: (
+    node: never,
+    json: {readonly [key: string]: unknown},
+  ) => void;
+}
+${
+  needsNum
+    ? `
+// The JSON number grammar, anchored, matching numberValue: \`Number()\` alone
+// reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
+// produces.
+const JSON_NUMBER = /^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$/;
+
+function num(v: unknown, d: number): number {
+  if (typeof v === 'number') {
+    return Number.isFinite(v) ? v : d;
+  }
+  return typeof v === 'string' && JSON_NUMBER.test(v) ? Number(v) : d;
+}
+`
+    : ''
+}${tableSource ? `\n${tableSource}\n` : ''}
+${generated
+  .flatMap(g => [g.exportJSON, g.updateFromJSON])
+  .filter(Boolean)
+  .join('\n\n')}
+
+const GENERATED = new Map<string, GeneratedJSON>([
+${generated
+  .map(
+    ({klass, updateFromJSON}) =>
+      `  [\n    '${klass.getType()}',\n    {\n      shape: ${JSON.stringify(shapeOf(klass))},\n      exportJSON: export${klass.name} as GeneratedJSON['exportJSON'],${
+        updateFromJSON === null
+          ? ''
+          : `\n      updateFromJSON: update${klass.name} as GeneratedJSON['updateFromJSON'],`
+      }\n    },\n  ],`,
+  )
+  .join('\n')}
+]);
+
+/**
+ * The generated implementations for a node type, or \`undefined\` for a type
+ * that has none. The caller still has to check \`shape\`.
+ *
+ * @internal
+ */
+export function getGeneratedJSON(type: string): undefined | GeneratedJSON {
+  return GENERATED.get(type);
 }
 `,
 );

@@ -20,17 +20,82 @@ import type {ParagraphNode} from './nodes/LexicalParagraphNode';
 import type {TabNode} from './nodes/LexicalTabNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
-const TEXT_MODE: {readonly [key: string]: string} = {
+/**
+ * The generated implementations for one node type.
+ *
+ * `shape` is how the class this was generated from reaches each of its
+ * serialized properties. The dispatch compares it against the class it is
+ * about to use this for, because a node type does not identify a class: a
+ * subclass that declares no `$config` inherits its ancestor's, type included,
+ * and may still override an accessor.
+ *
+ * @internal
+ */
+export interface GeneratedJSON {
+  readonly shape: string;
+  readonly exportJSON: (node: never) => {[key: string]: unknown};
+  readonly updateFromJSON?: (
+    node: never,
+    json: {readonly [key: string]: unknown},
+  ) => void;
+}
+
+// The JSON number grammar, anchored, matching numberValue: `Number()` alone
+// reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
+// produces.
+const JSON_NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+
+function num(v: unknown, d: number): number {
+  if (typeof v === 'number') {
+    return Number.isFinite(v) ? v : d;
+  }
+  return typeof v === 'string' && JSON_NUMBER.test(v) ? Number(v) : d;
+}
+
+const TEXT_MODE_DECODE: {
+  readonly [key: string]: 'normal' | 'segmented' | 'token';
+} = {
   '0': 'normal',
   '1': 'token',
   '2': 'segmented',
 };
 
+// Null-prototype: an untrusted key must never resolve to Object.prototype.
+const TEXT_DETAIL_ALIAS: {readonly [key: string]: 1 | 2} =
+  /* @__PURE__ */ Object.assign(Object.create(null), {
+    directionless: 1,
+    unmergeable: 2,
+  });
+
+// Null-prototype: an untrusted key must never resolve to Object.prototype.
+const TEXT_FORMAT_ALIAS: {readonly [key: string]: number} =
+  /* @__PURE__ */ Object.assign(Object.create(null), {
+    bold: 1,
+    capitalize: 1024,
+    code: 16,
+    highlight: 128,
+    italic: 2,
+    lowercase: 256,
+    strikethrough: 4,
+    subscript: 32,
+    superscript: 64,
+    underline: 8,
+    uppercase: 512,
+  });
+
+// Null-prototype: an untrusted key must never resolve to Object.prototype.
+const TEXT_MODE_ENCODE: {readonly [key: string]: 0 | 1 | 2} =
+  /* @__PURE__ */ Object.assign(Object.create(null), {
+    normal: 0,
+    segmented: 2,
+    token: 1,
+  });
+
 /** Generated from TextNode's `json` schema. Do not edit by hand. */
 function exportTextNode(node: TextNode): {[key: string]: unknown} {
   const detail = node.__detail;
   const format = node.__format;
-  const mode = TEXT_MODE[node.__mode];
+  const mode = TEXT_MODE_DECODE[node.__mode];
   const style = node.__style;
   const text = node.__text;
   if (
@@ -69,6 +134,32 @@ function exportTextNode(node: TextNode): {[key: string]: unknown} {
   json.type = 'text';
   json.version = 1;
   return json;
+}
+
+/** Generated from TextNode's `json` schema. Do not edit by hand. */
+function updateTextNode(
+  node: TextNode,
+  json: {readonly [key: string]: unknown},
+): void {
+  let v: unknown;
+  v = json.detail;
+  node.__detail =
+    typeof v === 'string' && v in TEXT_DETAIL_ALIAS
+      ? TEXT_DETAIL_ALIAS[v]
+      : num(v, 0);
+  v = json.format;
+  node.__format =
+    typeof v === 'string' && v in TEXT_FORMAT_ALIAS
+      ? TEXT_FORMAT_ALIAS[v]
+      : num(v, 0);
+  v = json.mode;
+  v = v === 'normal' || v === 'token' || v === 'segmented' ? v : 'normal';
+  node.__mode =
+    (v as string) in TEXT_MODE_ENCODE ? TEXT_MODE_ENCODE[v as string] : 0;
+  v = json.style;
+  node.__style = typeof v === 'string' ? v : '';
+  v = json.text;
+  node.__text = typeof v === 'string' ? v : '';
 }
 
 /** Generated from ParagraphNode's `json` schema. Do not edit by hand. */
@@ -170,28 +261,47 @@ function exportTabNode(node: TabNode): {[key: string]: unknown} {
   return json;
 }
 
-type GeneratedExporter = (node: never) => {[key: string]: unknown};
-
-const EXPORTERS = new Map<string, GeneratedExporter>([
-  ['text', exportTextNode as GeneratedExporter],
-  ['paragraph', exportParagraphNode as GeneratedExporter],
-  ['linebreak', exportLineBreakNode as GeneratedExporter],
-  ['tab', exportTabNode as GeneratedExporter],
+const GENERATED = new Map<string, GeneratedJSON>([
+  [
+    'text',
+    {
+      shape:
+        'text|detail=__detail|format=__format|mode=__mode|style=__style|text=__text|detail<__detail|format<__format|mode<__mode|style<__style|text<__text',
+      exportJSON: exportTextNode as GeneratedJSON['exportJSON'],
+      updateFromJSON: updateTextNode as GeneratedJSON['updateFromJSON'],
+    },
+  ],
+  [
+    'paragraph',
+    {
+      shape:
+        'paragraph|direction=getDirection()|format=getFormatType()|indent=getIndent()|textFormat=getSerializedTextFormat()|textStyle=getSerializedTextStyle()|direction<setDirection()|format<setFormat()|indent<setIndent()|textFormat<setTextFormat()|textStyle<setTextStyle()',
+      exportJSON: exportParagraphNode as GeneratedJSON['exportJSON'],
+    },
+  ],
+  [
+    'linebreak',
+    {
+      shape: 'linebreak',
+      exportJSON: exportLineBreakNode as GeneratedJSON['exportJSON'],
+    },
+  ],
+  [
+    'tab',
+    {
+      shape:
+        'tab|detail=getDetail()|mode=getMode()|text=getTextContent()|format=__format|style=__style|format<__format|style<__style',
+      exportJSON: exportTabNode as GeneratedJSON['exportJSON'],
+    },
+  ],
 ]);
 
 /**
- * The generated exporter for a node type, or `undefined` for a type that has
- * none.
- *
- * Keyed by the type rather than by the class, which is both what keeps this
- * module free of runtime imports and what makes the lookup exact: a subclass
- * registers under its own type, so it never reaches its parent's exporter —
- * which would write the parent's type and none of the subclass's properties.
+ * The generated implementations for a node type, or `undefined` for a type
+ * that has none. The caller still has to check `shape`.
  *
  * @internal
  */
-export function getGeneratedExporter(
-  type: string,
-): undefined | GeneratedExporter {
-  return EXPORTERS.get(type);
+export function getGeneratedJSON(type: string): undefined | GeneratedJSON {
+  return GENERATED.get(type);
 }

@@ -25,6 +25,7 @@ import {
 } from '../LexicalConstants';
 import {ElementDOMSlot} from '../LexicalDOMSlot';
 import {
+  $generatedExportJSON,
   $isEphemeral,
   type DOMExportOutput,
   LexicalNode,
@@ -942,6 +943,10 @@ export class ElementNode
     // The declared properties themselves are written by the base
     // implementation's compiled schema getters, which TypeScript cannot see,
     // hence the widening cast.
+    const generated = $generatedExportJSON(this, compact);
+    if (generated !== undefined) {
+      return generated as SerializedElementNode;
+    }
     const json: {[key: string]: unknown} = {children: []};
     this.exportJSONInto(json, compact);
     return json as unknown as SerializedElementNode;

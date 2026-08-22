@@ -29,6 +29,7 @@ import {
   type NODE_STATE_KEY,
 } from '.';
 import {DOMSlot} from './LexicalDOMSlot';
+import {getGeneratedExporter} from './LexicalGeneratedJSON';
 import {
   $updateStateFromJSON,
   type NodeState,
@@ -517,6 +518,38 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
  * schema-driven ones on {@link LexicalNode}, which such a node does not
  * override.
  */
+/**
+ * The generated exporter's result for `node`, or `undefined` when the
+ * schema-driven walk has to run instead.
+ *
+ * A generated exporter is only ever right for the exact class it was generated
+ * from — a subclass declares its own schema and its own type — and only for the
+ * legacy form, since which properties the compact form drops depends on each
+ * node's values rather than on the schema alone. NodeState is appended here
+ * rather than generated, because what a node carries is not known when the code
+ * is written.
+ *
+ * @internal
+ */
+export function $generatedExportJSON(
+  node: LexicalNode,
+  compact: boolean,
+): undefined | SerializedLexicalNode {
+  if (compact) {
+    return undefined;
+  }
+  const generated = getGeneratedExporter(node.__type);
+  if (generated === undefined) {
+    return undefined;
+  }
+  const json = generated(node as never);
+  const state = node.__state ? node.__state.toJSON() : undefined;
+  if (state !== undefined) {
+    Object.assign(json, state);
+  }
+  return json as unknown as SerializedLexicalNode;
+}
+
 export type LexicalParseJSON<S extends SerializedLexicalNode> =
   LexicalUpdateJSON<SerializedPartial<S>>;
 
@@ -1627,6 +1660,10 @@ export class LexicalNode {
    *   writing the full form, which still parses.
    * */
   exportJSON(compact = false): SerializedLexicalNode {
+    const generated = $generatedExportJSON(this, compact);
+    if (generated !== undefined) {
+      return generated;
+    }
     const json: {[key: string]: unknown} = {};
     this.exportJSONInto(json, compact);
     return json as unknown as SerializedLexicalNode;

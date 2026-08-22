@@ -25,6 +25,7 @@
     "dev": "pnpm -C packages/lexical-playground run dev",
     "start-test-server": "pnpm -C packages/lexical-playground run preview",
     "build": "node scripts/build.mjs",
+    "generate-node-json": "node scripts/generate-node-json.mjs",
     "build-prod": "pnpm run clean && pnpm run build --prod",
     "build-docs": "pnpm -C packages/lexical-website run build",
     "build-playground-dev": "pnpm run build && pnpm -C packages/lexical-playground run build-dev",

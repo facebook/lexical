@@ -13,11 +13,11 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   type EditorState,
   type LexicalEditor,
   type LexicalNode,
-  ParagraphNode,
-  TextNode,
+  type ParagraphNode,
 } from '../index';
 
 // Module-level sink so V8 cannot elide the work being measured.
@@ -83,11 +83,9 @@ describe('EditorState.toJSON', () => {
   let parseTarget: LexicalEditor;
 });
 
-/**
- * The same document, plus every node in it, and the editor to read them under.
- * Exporting a node needs an active editor state, so the benchmarks below read
- * inside `editor.read` — a fixed cost both sides pay.
- */
+// What the generated exporters buy, measured against the schema-driven walk
+// they replace. `exportJSON()` takes the generated literal for a class that has
+// one; `exportJSONInto` is the walk, which every other class still uses.
 function buildNodes(): LexicalNode[] {
   const editor = buildEditor();
   const nodes: LexicalNode[] = [];
@@ -103,63 +101,6 @@ function buildNodes(): LexicalNode[] {
   return nodes;
 }
 
-// The headroom a build step would buy. `generated*Export` below is what a
-// generator emits for these two classes: an object literal, with every decision
-// the schema makes — which accessor to read, which properties the compact form
-// drops, how a value is normalized — resolved when the code is written rather
-// than walked per node. No loop, no closure, and no reference to the schema at
-// runtime. Measured against the schema-driven walk it replaces, so a codegen
-// change has a number to move.
-//
-// Note this runs with __DEV__ true, so the walk also pays the per-node
-// own-field validation that a production build compiles out.
-const TEXT_MODES = ['normal', 'token', 'segmented'] as const;
-
-// What a generator would emit for TextNode: an object literal, every decision
-// the schema makes resolved at build time, no schema reference at runtime.
-function generatedTextExport(this: TextNode) {
-  return {
-    detail: this.__detail,
-    format: this.__format,
-    mode: TEXT_MODES[this.__mode],
-    style: this.__style,
-    text: this.__text,
-    type: 'text',
-    version: 1,
-  };
-}
-
-function generatedParagraphExport(this: ParagraphNode) {
-  const json: {[k: string]: unknown} = {
-    children: [],
-    direction: this.__dir,
-    format: this.getFormatType(),
-    indent: this.__indent,
-    type: 'paragraph',
-    version: 1,
-  };
-  // ElementNode persists these only when the element has no TextNode child to
-  // carry them, so the generated code inlines that condition too.
-  const textFormat = this.__textFormat;
-  const textStyle = this.__textStyle;
-  if (textFormat !== 0 || textStyle !== '') {
-    let child = this.getFirstChild();
-    let hasText = false;
-    while (child !== null) {
-      if (child.getType() === 'text') {
-        hasText = true;
-        break;
-      }
-      child = child.getNextSibling();
-    }
-    if (!hasText) {
-      json.textFormat = textFormat;
-      json.textStyle = textStyle;
-    }
-  }
-  return json;
-}
-
 describe('per-node exportJSON', () => {
   let nodes: LexicalNode[] = [];
 
@@ -168,7 +109,12 @@ describe('per-node exportJSON', () => {
     () => {
       benchEditor.read(() => {
         for (let i = 0; i < nodes.length; i++) {
-          _benchSink = nodes[i].exportJSON();
+          const node = nodes[i];
+          const json: {[key: string]: unknown} = $isElementNode(node)
+            ? {children: []}
+            : {};
+          node.exportJSONInto(json, false);
+          _benchSink = json;
         }
       });
     },
@@ -176,7 +122,7 @@ describe('per-node exportJSON', () => {
   );
 
   bench(
-    'generated object literal',
+    'generated where available',
     () => {
       benchEditor.read(() => {
         for (let i = 0; i < nodes.length; i++) {
@@ -184,14 +130,6 @@ describe('per-node exportJSON', () => {
         }
       });
     },
-    {
-      setup: () => {
-        nodes = buildNodes();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (TextNode.prototype as any).exportJSON = generatedTextExport;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (ParagraphNode.prototype as any).exportJSON = generatedParagraphExport;
-      },
-    },
+    {setup: () => (nodes = buildNodes())},
   );
 });

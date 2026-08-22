@@ -707,7 +707,7 @@ function inlineMarkerForm(comments, filename) {
         if (!INLINE_FORMS.has(form)) {
           const where = filename ? ` in ${filename}` : '';
           throw new PureAnnotationsError(
-            `@lexical/pure-annotations: unknown @lexical-inline form ` +
+            `@lexical/compiler: unknown @lexical-inline form ` +
               `${form ? `"${form}"` : '(none given)'}${where}. Write ` +
               `\`@lexical-inline <form>\` with one of: ` +
               `${Array.from(INLINE_FORMS).sort().join(', ')}.`,
@@ -1267,7 +1267,7 @@ function assertArgumentsArePure(code, filename, factoryCalls, covered) {
   }
   if (violations.length > 0) {
     throw new PureAnnotationsError(
-      `@lexical/pure-annotations: ${violations.length} call(s) evaluated ` +
+      `@lexical/compiler: ${violations.length} call(s) evaluated ` +
         `inside a definition in ${filename || '<unknown>'} are not known to ` +
         `be side-effect free, so the definition cannot be tree-shaken:\n` +
         `${violations.join('\n')}\n` +
@@ -1492,7 +1492,7 @@ export function pureAnnotations(options) {
   const exclude = toRegExpArray(opts.exclude, []);
   return {
     enforce: opts.enforce === undefined ? 'post' : opts.enforce,
-    name: '@lexical/pure-annotations',
+    name: '@lexical/compiler',
     /**
      * @param {string} code
      * @param {string} id
@@ -1527,7 +1527,7 @@ export function pureAnnotations(options) {
         // say about; warn rather than failing the consumer's build.
         if (this && typeof this.warn === 'function') {
           this.warn(
-            `@lexical/pure-annotations could not parse ${id}, no annotations were added: ${
+            `@lexical/compiler could not parse ${id}, no annotations were added: ${
               err instanceof Error ? err.message : String(err)
             }`,
           );

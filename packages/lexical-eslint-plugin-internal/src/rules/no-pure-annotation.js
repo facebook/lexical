@@ -15,7 +15,7 @@ import {
   PURE_FACTORY_FUNCTIONS,
   pureCallNames,
   rootObjectName,
-} from '../../../lexical-pure-annotations/src/LexicalPureAnnotations.mjs';
+} from '../../../lexical-compiler/src/LexicalCompiler.mjs';
 
 /**
  * A `\/* @__PURE__ *\/` written in the source is redundant where the build
@@ -160,14 +160,14 @@ const rule = {
       description:
         'disallow hand-written /* @__PURE__ */ annotations on module-scope' +
         ' calls to the side-effect-free lexical factories, which the build' +
-        ' injects with @lexical/pure-annotations',
+        ' injects with @lexical/compiler',
       recommended: true,
     },
     fixable: 'code',
     messages: {
       unnecessaryPureAnnotation:
         'Remove this /* @__PURE__ */ annotation: the build injects it for' +
-        ' every module-scope call to {{name}} (@lexical/pure-annotations),' +
+        ' every module-scope call to {{name}} (@lexical/compiler),' +
         ' for the published bundles and for anything built from source.',
     },
     schema: [

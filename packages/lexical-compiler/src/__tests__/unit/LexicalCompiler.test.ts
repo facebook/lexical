@@ -317,7 +317,7 @@ describe('pureAnnotations', () => {
     const plugin = pureAnnotations();
     // Type-level assertion: usable in a Vite (and therefore Rollup) config.
     const vitePlugin: Plugin = plugin;
-    expect(vitePlugin.name).toBe('@lexical/pure-annotations');
+    expect(vitePlugin.name).toBe('@lexical/compiler');
     expect(plugin.enforce).toBe('post');
     expect(pureAnnotations({enforce: 'pre'}).enforce).toBe('pre');
   });

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {pureAnnotations} from '@lexical/pure-annotations';
+import {pureAnnotations} from '@lexical/compiler/PureAnnotations';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {defineConfig} from 'vite';
@@ -15,7 +15,7 @@ import {defineConfig} from 'vite';
 // (`@lexical/internal/*` is a real dependency, the react/test helpers are
 // package-internal) and the dev/prod branch uses `process.env.NODE_ENV`,
 // which Vite substitutes out of the box. The opt-ins are the `source`
-// resolve condition and the @lexical/pure-annotations plugin, which adds the
+// resolve condition and the @lexical/compiler plugin, which adds the
 // /* @__PURE__ */ annotations that the published dist bundles carry but the
 // TypeScript sources do not (they are injected by Lexical's own build).
 const fixtureDir = path.dirname(fileURLToPath(import.meta.url));

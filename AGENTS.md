@@ -75,7 +75,7 @@ Module-scope calls to the side-effect-free factories (`defineExtension`,
 `defineImportRule`, etc.) need a `/* @__PURE__ */` annotation so bundlers
 can drop unused definitions from application bundles. **Do not write those
 annotations by hand** — they are injected at build time by
-`@lexical/pure-annotations` (`packages/lexical-pure-annotations`), which
+`@lexical/compiler` (`packages/lexical-compiler`), which
 runs as a Rollup plugin in `scripts/build.mjs` for the published bundles
 and as a Vite plugin in `scripts/vite/lexicalMonorepoPlugin.ts` for
 everything the monorepo builds from source. The published package is also
@@ -92,7 +92,7 @@ alone.
 When adding a new factory of this kind, annotate its definition with
 `@__NO_SIDE_EFFECTS__`. That alone is enough for calls in the same package to
 be annotated; add its name to `PURE_FACTORY_FUNCTIONS` in
-`packages/lexical-pure-annotations/src/LexicalPureAnnotations.mjs` so that
+`packages/lexical-compiler/src/LexicalCompiler.mjs` so that
 calls in code that imports it by package name are too. An object whose
 methods build values and touch nothing else (like `@lexical/html`'s `sel`) is
 marked `@lexical-pure-namespace` instead, so that `sel.tag('p')` is annotated
@@ -112,7 +112,7 @@ A factory whose body is a trivial expression over its own arguments (like
 `@lexical-inline <form>` and listed in that file's `INLINE_FACTORIES`: the
 build replaces calls to it with the expression it would have returned, which
 needs no annotation at all. **The body of a marked function is reproduced by
-the build**, so keep it trivial — `packages/lexical-pure-annotations`'s unit
+the build**, so keep it trivial — `packages/lexical-compiler`'s unit
 tests compare what the transform emits against what the real function returns
 and will fail if the two drift apart.
 

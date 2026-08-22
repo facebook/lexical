@@ -75,7 +75,7 @@ One thing the compiled bundles have that the sources do not is the
 `createCommand`, `createState`, and friends. Lexical's own build injects
 them, and without them a bundler has to assume those calls have side effects
 and will keep every extension, command, and rule definition your app never
-uses. Add [`@lexical/pure-annotations`](https://www.npmjs.com/package/@lexical/pure-annotations)
+uses. Add [`@lexical/compiler`](https://www.npmjs.com/package/@lexical/compiler)
 to your build to get the same annotations out of `source` mode — it annotates
 the factory calls in your own code too.
 
@@ -83,7 +83,7 @@ the factory calls in your own code too.
 
 ```ts
 // vite.config.ts
-import {pureAnnotations} from '@lexical/pure-annotations';
+import {pureAnnotations} from '@lexical/compiler/PureAnnotations';
 import {defineConfig} from 'vite';
 
 export default defineConfig({
@@ -99,7 +99,7 @@ pass `pureAnnotations({inline: true})`, which replaces calls to the trivial
 factories (`safeCast`, `defineExtension`, `configExtension`, ...) with the
 literal they would have returned rather than annotating them.
 
-`@lexical/pure-annotations` also exports the transform itself
+`@lexical/compiler/PureAnnotations` also exports the transform itself
 (`transformPureAnnotations`) for bundlers without a Rollup-style plugin API;
 see its README for the options.
 

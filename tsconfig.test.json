@@ -10,6 +10,10 @@
       "@lexical/code-core": ["./packages/lexical-code-core/src/index.ts"],
       "@lexical/code-prism": ["./packages/lexical-code-prism/src/index.ts"],
       "@lexical/code-shiki": ["./packages/lexical-code-shiki/src/index.ts"],
+      "@lexical/compiler": ["./packages/lexical-compiler/src/index.ts"],
+      "@lexical/compiler/PureAnnotations": [
+        "./packages/lexical-compiler/src/PureAnnotations.ts"
+      ],
       "@lexical/devtools-core": [
         "./packages/lexical-devtools-core/src/index.ts"
       ],
@@ -56,9 +60,6 @@
       "@lexical/offset": ["./packages/lexical-offset/src/index.ts"],
       "@lexical/overflow": ["./packages/lexical-overflow/src/index.ts"],
       "@lexical/plain-text": ["./packages/lexical-plain-text/src/index.ts"],
-      "@lexical/pure-annotations": [
-        "./packages/lexical-pure-annotations/src/index.ts"
-      ],
       "@lexical/react/ExtensionComponent": [
         "./packages/lexical-react/src/ExtensionComponent.tsx"
       ],
@@ -251,6 +252,8 @@
       "@lexical/code-prism/src/*": ["./packages/lexical-code-prism/src/*"],
       "@lexical/code-shiki/src": ["./packages/lexical-code-shiki/src"],
       "@lexical/code-shiki/src/*": ["./packages/lexical-code-shiki/src/*"],
+      "@lexical/compiler/src": ["./packages/lexical-compiler/src"],
+      "@lexical/compiler/src/*": ["./packages/lexical-compiler/src/*"],
       "@lexical/devtools-core/src": ["./packages/lexical-devtools-core/src"],
       "@lexical/devtools-core/src/*": [
         "./packages/lexical-devtools-core/src/*"
@@ -294,12 +297,6 @@
       "@lexical/overflow/src/*": ["./packages/lexical-overflow/src/*"],
       "@lexical/plain-text/src": ["./packages/lexical-plain-text/src"],
       "@lexical/plain-text/src/*": ["./packages/lexical-plain-text/src/*"],
-      "@lexical/pure-annotations/src": [
-        "./packages/lexical-pure-annotations/src"
-      ],
-      "@lexical/pure-annotations/src/*": [
-        "./packages/lexical-pure-annotations/src/*"
-      ],
       "@lexical/react/src": ["./packages/lexical-react/src"],
       "@lexical/react/src/__tests__/utils": [
         "./packages/lexical-react/src/__tests__/utils/index.tsx"

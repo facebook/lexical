@@ -20,7 +20,7 @@ import minimist from 'minimist';
 import path from 'path';
 import {rollup} from 'rollup';
 
-import {pureAnnotations} from '../packages/lexical-pure-annotations/src/LexicalPureAnnotations.mjs';
+import {pureAnnotations} from '../packages/lexical-compiler/src/LexicalCompiler.mjs';
 import transformErrorMessages from './error-codes/transform-error-messages.mjs';
 import {exec} from './shared/childProcess.mjs';
 import {packagesManager} from './shared/packagesManager.mjs';
@@ -140,7 +140,7 @@ function resolveExternalEsm(id) {
  */
 const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
 const thirdPartyExternals = [
-  // @lexical/pure-annotations is a build-time tool: it wraps @babel/parser
+  // @lexical/compiler is a build-time tool: it wraps @babel/parser
   // and magic-string (declared dependencies that must not be inlined into
   // its published bundle) and reads relatively imported modules from disk.
   '@babel/parser',

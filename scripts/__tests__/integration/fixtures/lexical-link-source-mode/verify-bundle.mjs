@@ -13,7 +13,7 @@
 // against everything else. A source build inlines each package's TypeScript
 // (e.g. the LexicalEditor class); a dist build would instead pull in a
 // pre-bundled `Lexical*.dev.mjs`.
-import {transformPureAnnotations} from '@lexical/pure-annotations';
+import {transformPureAnnotations} from '@lexical/compiler';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -50,7 +50,7 @@ const assertions = [
   {
     // The TypeScript sources carry no /* @__PURE__ */ annotations; they are
     // injected at build time, by Lexical's own build for the published
-    // bundles and by the @lexical/pure-annotations vite plugin here. Without
+    // bundles and by the @lexical/compiler vite plugin here. Without
     // them a bundler that does not infer purity across modules (webpack,
     // esbuild) cannot drop unused extension and command definitions.
     //

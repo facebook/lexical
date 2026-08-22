@@ -1,12 +1,19 @@
-# `@lexical/pure-annotations`
+# `@lexical/compiler`
 
-A build-time transform that inserts `/* @__PURE__ */` annotations before
-module-scope calls to Lexical's side-effect-free factories (`defineExtension`,
-`createCommand`, `createState`, `safeCast`, `defineImportRule`, …) so that
-bundlers can tree-shake unused extension, command, and rule definitions out of
-application bundles.
+Lexical's build-time compiler: source-to-source passes over Lexical code,
+delivered as a Vite/Rollup plugin and as plain transform functions for
+builds with no plugin API of their own.
 
-Lexical's published `dist` bundles already carry these annotations — this
+Today it does one thing — **tree-shaking**. It inserts `/* @__PURE__ */`
+annotations before module-scope calls to the side-effect-free factories
+(`defineExtension`, `createCommand`, `createState`, `safeCast`,
+`defineImportRule`, …) so bundlers can drop the extension, command, and rule
+definitions an application never uses; it replaces calls to the trivial ones
+with the value they would have returned; and with `strict` it refuses to let
+an unannotated call hide inside a definition, where it would pin the whole
+thing into the bundle.
+
+Lexical's published `dist` bundles already carry the annotations — this
 package is for builds that compile Lexical from its TypeScript source:
 
 - consumers that opt into the `source` export condition
@@ -40,7 +47,7 @@ bundle that imports the module. With `strict: true` that is a build error
 naming the call rather than something you find later in a bundle analyzer:
 
 ```
-@lexical/pure-annotations: 1 call(s) evaluated inside a definition in
+@lexical/compiler: 1 call(s) evaluated inside a definition in
 src/MdastFootnoteExtension.ts are not known to be side-effect free, so the
 definition cannot be tree-shaken:
   1145:25 gfmFootnoteFromMarkdown(...) inside defineExtension(...)
@@ -58,11 +65,15 @@ build runs with `strict` on.
 
 ## Usage
 
+Each pass is its own entry point, so a build that wants one of them does not
+load the rest: `@lexical/compiler/PureAnnotations` is the tree-shaking pass,
+and `@lexical/compiler` re-exports every pass for convenience.
+
 ### Vite
 
 ```js
 // vite.config.js
-import {pureAnnotations} from '@lexical/pure-annotations';
+import {pureAnnotations} from '@lexical/compiler/PureAnnotations';
 import {defineConfig} from 'vite';
 
 export default defineConfig({
@@ -78,7 +89,7 @@ TypeScript and JSX away.
 
 ```js
 // rollup.config.js
-import {pureAnnotations} from '@lexical/pure-annotations';
+import {pureAnnotations} from '@lexical/compiler/PureAnnotations';
 
 export default {
   plugins: [
@@ -94,7 +105,7 @@ export default {
 integration, so it can be wrapped in a webpack loader or run as a codemod:
 
 ```js
-import {transformPureAnnotations} from '@lexical/pure-annotations';
+import {transformPureAnnotations} from '@lexical/compiler/PureAnnotations';
 
 const result = transformPureAnnotations(code, {filename});
 // `null` when the module needs no annotations

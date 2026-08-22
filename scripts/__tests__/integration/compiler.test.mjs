@@ -11,12 +11,12 @@ import {glob} from 'glob';
 import path from 'node:path';
 import {describe, expect, test} from 'vitest';
 
-import {transformPureAnnotations} from '../../../packages/lexical-pure-annotations/src/LexicalPureAnnotations.mjs';
+import {transformPureAnnotations} from '../../../packages/lexical-compiler/src/LexicalCompiler.mjs';
 import {packagesManager} from '../../shared/packagesManager.mjs';
 
 // The sources carry no `/* @__PURE__ */` annotations and still call the
 // trivial factories; the build injects the annotations and inlines those
-// calls with @lexical/pure-annotations, so that a consumer's bundler can drop
+// calls with @lexical/compiler, so that a consumer's bundler can drop
 // the extension, command, and rule definitions their app never uses. Guard
 // both: re-running the transform over each built artifact must find nothing
 // left to annotate and nothing left to inline. A failure means the transform

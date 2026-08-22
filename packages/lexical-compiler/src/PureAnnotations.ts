@@ -6,7 +6,7 @@
  *
  */
 
-import * as impl from './LexicalPureAnnotations.mjs';
+import * as impl from './LexicalCompiler.mjs';
 
 // The comments here spell the annotations without their leading sigil
 // (`__PURE__`) because bundlers scan comments for annotations, and one that
@@ -194,7 +194,7 @@ export function pureCallNames(
  * the extensions and commands your own application defines.
  *
  * ```js
- * import {pureAnnotations} from '@lexical/pure-annotations';
+ * import {pureAnnotations} from '@lexical/compiler';
  *
  * export default defineConfig({plugins: [pureAnnotations()]});
  * ```

@@ -99,30 +99,25 @@ export class ParagraphNode extends ElementNode {
     };
   }
 
-  afterExportJSON(json: {[key: string]: unknown}, compact: boolean): void {
-    // Provide backwards compatible values, see #7971. These are computed from
-    // the first text child rather than read off this node, so no schema can
-    // describe them — which is what this hook is for. The compact form writes
-    // them too, since omitting them would make the two forms describe different
-    // documents; it still drops the ones that *are* the default, which is what
-    // the parser would restore anyway.
-    if (json.textFormat !== undefined && json.textStyle !== undefined) {
-      return;
+  exportJSON(compact = false): SerializedParagraphNode {
+    const json = super.exportJSON(compact);
+    // Provide backwards compatible values, see #7971.
+    if (json.textFormat === undefined || json.textStyle === undefined) {
+      const firstTextNode = this.getChildren().find($isTextNode);
+      const textFormat = firstTextNode
+        ? firstTextNode.getFormat()
+        : this.getTextFormat();
+      const textStyle = firstTextNode
+        ? firstTextNode.getStyle()
+        : this.getTextStyle();
+      if (!compact || textFormat !== 0) {
+        json.textFormat = textFormat;
+      }
+      if (!compact || textStyle !== '') {
+        json.textStyle = textStyle;
+      }
     }
-    // Compute the same value that the reconciler would
-    const firstTextNode = this.getChildren().find($isTextNode);
-    const textFormat = firstTextNode
-      ? firstTextNode.getFormat()
-      : this.getTextFormat();
-    const textStyle = firstTextNode
-      ? firstTextNode.getStyle()
-      : this.getTextStyle();
-    if (!compact || textFormat !== 0) {
-      json.textFormat = textFormat;
-    }
-    if (!compact || textStyle !== '') {
-      json.textStyle = textStyle;
-    }
+    return json as SerializedParagraphNode;
   }
 
   // Mutation

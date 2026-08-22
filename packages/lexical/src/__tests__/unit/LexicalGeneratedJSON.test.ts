@@ -95,11 +95,11 @@ describe('generated exportJSON', () => {
       expect(getGeneratedExporter('sub-text')).toBeUndefined();
     });
 
-    test('the #7971 back-fill survives generation', () => {
+    test('an exportJSON override composes with its generated exporter', () => {
       // ParagraphNode writes textFormat/textStyle computed from its first text
-      // child, which no schema describes. It declares afterExportJSON instead
-      // of overriding exportJSON, so the generated exporter calls it and the
-      // values are still there.
+      // child (#7971) — output no schema describes. It keeps doing that in an
+      // ordinary exportJSON override: the override calls super, super is where
+      // the generated literal comes from, and the override then adjusts it.
       expect(getGeneratedExporter('paragraph')).toBeDefined();
       testEnv.editor.update(
         () => {
@@ -109,7 +109,21 @@ describe('generated exportJSON', () => {
           // The first text child's format, not the paragraph's own.
           expect(json.textFormat).toBe(1);
           expect(json.textStyle).toBe('');
-          expect(json).toEqual(walkExportJSON(paragraph));
+          // And the generated literal underneath it is intact. The two
+          // back-filled keys land after type/version because the override
+          // appends them to the finished object — unchanged from before the
+          // literal was generated, since the override itself did not change.
+          expect(json.type).toBe('paragraph');
+          expect(Object.keys(json)).toEqual([
+            'children',
+            'direction',
+            'format',
+            'indent',
+            'type',
+            'version',
+            'textFormat',
+            'textStyle',
+          ]);
         },
         {discrete: true},
       );

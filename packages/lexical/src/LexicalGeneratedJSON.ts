@@ -72,10 +72,7 @@ function exportTextNode(node: TextNode): {[key: string]: unknown} {
 }
 
 /** Generated from ParagraphNode's `json` schema. Do not edit by hand. */
-function exportParagraphNode(
-  node: ParagraphNode,
-  compact: boolean,
-): {[key: string]: unknown} {
+function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
   const direction = node.getDirection();
   const format = node.getFormatType();
   const indent = node.getIndent();
@@ -88,7 +85,7 @@ function exportParagraphNode(
     textFormat !== undefined &&
     textStyle !== undefined
   ) {
-    const json: {[key: string]: unknown} = {
+    return {
       children: [],
       direction,
       format,
@@ -98,8 +95,6 @@ function exportParagraphNode(
       type: 'paragraph',
       version: 1,
     };
-    node.afterExportJSON(json, compact);
-    return json;
   }
   const json: {[key: string]: unknown} = {children: []};
   if (direction !== undefined) {
@@ -119,7 +114,6 @@ function exportParagraphNode(
   }
   json.type = 'paragraph';
   json.version = 1;
-  node.afterExportJSON(json, compact);
   return json;
 }
 
@@ -176,10 +170,7 @@ function exportTabNode(node: TabNode): {[key: string]: unknown} {
   return json;
 }
 
-type GeneratedExporter = (
-  node: never,
-  compact: boolean,
-) => {[key: string]: unknown};
+type GeneratedExporter = (node: never) => {[key: string]: unknown};
 
 const EXPORTERS = new Map<string, GeneratedExporter>([
   ['text', exportTextNode as GeneratedExporter],

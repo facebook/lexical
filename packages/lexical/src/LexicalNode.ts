@@ -542,9 +542,7 @@ export function $generatedExportJSON(
   if (generated === undefined) {
     return undefined;
   }
-  // The generated function calls afterExportJSON itself, for the classes that
-  // declare one — so a class that does not pays nothing for the seam.
-  const json = generated(node as never, compact);
+  const json = generated(node as never);
   const state = node.__state ? node.__state.toJSON() : undefined;
   if (state !== undefined) {
     Object.assign(json, state);
@@ -1690,24 +1688,7 @@ export class LexicalNode {
     if (state !== undefined) {
       Object.assign(json, state);
     }
-    this.afterExportJSON(json, compact);
   }
-
-  /**
-   * Adjust the JSON this node's schema produced, after every declared property,
-   * its type and its NodeState have been written.
-   *
-   * This is the seam for output a schema cannot describe — a value computed
-   * from the node's children rather than read off the node, which is how
-   * ParagraphNode keeps writing the `textFormat`/`textStyle` its older readers
-   * expect (#7971). Overriding `exportJSON` itself would do the same thing, but
-   * only this runs on both paths: a class whose export is generated from its
-   * schema never calls `exportJSON`'s body at all.
-   *
-   * Prefer declaring the property in the `json` schema when it is simply read
-   * off the node. Reach for this when it is not.
-   */
-  afterExportJSON(_json: {[key: string]: unknown}, _compact: boolean): void {}
 
   /**
    * Controls how the this node is deserialized from JSON. This is usually boilerplate,

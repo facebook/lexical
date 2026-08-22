@@ -63,7 +63,7 @@ const HEADER = `/**
 if (!process.env.LEXICAL_CODEGEN_PHASE_TWO) {
   writeFileSync(
     OUT,
-    `${HEADER}\ntype GeneratedExporter = (\n  node: never,\n  compact: boolean,\n) => {[key: string]: unknown};\n\n/** @internal */\nexport function getGeneratedExporter(\n  _type: string,\n): undefined | GeneratedExporter {\n  return undefined;\n}\n`,
+    `${HEADER}\ntype GeneratedExporter = (node: never) => {[key: string]: unknown};\n\n/** @internal */\nexport function getGeneratedExporter(\n  _type: string,\n): undefined | GeneratedExporter {\n  return undefined;\n}\n`,
   );
   execFileSync('npx', ['tsx', fileURLToPath(import.meta.url)], {
     cwd: join(import.meta.dirname, '..'),
@@ -122,10 +122,6 @@ function readExpression(klass, schema, key) {
 
 function generateExport(klass) {
   const type = klass.getType();
-  // A class with its own afterExportJSON adjusts the JSON after the schema's
-  // properties are written; the call is emitted only where one exists, so the
-  // classes that do not declare it pay nothing.
-  const after = hasAfterHook(klass);
   const fields = getComposedSchemaFields(klass);
   const reads = [];
   for (const [key, schema] of Object.entries(fields)) {
@@ -162,22 +158,26 @@ function generateExport(klass) {
   if (reads.length === 0) {
     // Nothing to read, so the literal is the whole function.
     return `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */
-function export${klass.name}(${after ? `node: ${klass.name}, compact: boolean` : ''}): {[key: string]: unknown} {
-  ${after ? `const json: {[key: string]: unknown} = {\n    ${literalEntries.join(',\n    ')},\n  };\n  node.afterExportJSON(json, compact);\n  return json;` : `return {\n    ${literalEntries.join(',\n    ')},\n  };`}
+function export${klass.name}(): {[key: string]: unknown} {
+  return {
+    ${literalEntries.join(',\n    ')},
+  };
 }`;
   }
   return `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */
-function export${klass.name}(node: ${klass.name}${after ? ', compact: boolean' : ''}): {[key: string]: unknown} {
+function export${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
 ${locals}
   if (
     ${defined}
   ) {
-    ${after ? `const json: {[key: string]: unknown} = {\n      ${literalEntries.join(',\n      ')},\n    };\n    node.afterExportJSON(json, compact);\n    return json;` : `return {\n      ${literalEntries.join(',\n      ')},\n    };`}
+    return {
+      ${literalEntries.join(',\n      ')},
+    };
   }
   const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
 ${incrementalEntries}
   json.type = '${type}';
-  json.version = 1;${after ? '\n  node.afterExportJSON(json, compact);' : ''}
+  json.version = 1;
   return json;
 }`;
 }
@@ -201,21 +201,11 @@ function isElementish(klass) {
  * from its first text child for #7971 — so a literal generated from the schema
  * alone would silently drop it.
  */
-function hasAfterHook(klass) {
-  return Object.prototype.hasOwnProperty.call(
-    klass.prototype,
-    'afterExportJSON',
-  );
-}
-
 function isFullyDescribedBySchema(klass) {
   // hasOwnProperty rather than Object.hasOwn: this file is linted against the
   // browser baseline even though it only ever runs in Node.
   const has = Object.prototype.hasOwnProperty;
-  return (
-    !has.call(klass.prototype, 'exportJSON') &&
-    !has.call(klass.prototype, 'exportJSONInto')
-  );
+  return !has.call(klass.prototype, 'exportJSONInto');
 }
 
 /** Whether a class has any schema field to read, i.e. whether its generated
@@ -258,7 +248,7 @@ ${generatable
 
 ${tables}${tables ? '\n\n' : ''}${body}
 
-type GeneratedExporter = (\n  node: never,\n  compact: boolean,\n) => {[key: string]: unknown};
+type GeneratedExporter = (node: never) => {[key: string]: unknown};
 
 const EXPORTERS = new Map<string, GeneratedExporter>([
 ${generatable.map(k => `  ['${k.getType()}', export${k.name} as GeneratedExporter],`).join('\n')}

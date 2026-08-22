@@ -959,6 +959,9 @@ importers:
 
   packages/lexical-link:
     dependencies:
+      '@lexical/a11y':
+        specifier: workspace:*
+        version: link:../lexical-a11y
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension

@@ -315,22 +315,21 @@ export class LinkNode extends ElementNode {
   }
 
   isEmailURI(): boolean {
-    return this.__url.startsWith('mailto:');
+    return this.getURL().startsWith('mailto:');
   }
 
   isWebSiteURI(): boolean {
-    return (
-      this.__url.startsWith('https://') || this.__url.startsWith('http://')
-    );
+    const url = this.getURL();
+    return url.startsWith('https://') || url.startsWith('http://');
   }
 
   shouldMergeAdjacentLink(otherLink: LinkNode): boolean {
     return (
       this.getType() === otherLink.getType() &&
-      this.__url === otherLink.__url &&
-      this.__target === otherLink.__target &&
-      this.__rel === otherLink.__rel &&
-      this.__title === otherLink.__title
+      this.getURL() === otherLink.getURL() &&
+      this.getTarget() === otherLink.getTarget() &&
+      this.getRel() === otherLink.getRel() &&
+      this.getTitle() === otherLink.getTitle()
     );
   }
 }
@@ -544,7 +543,7 @@ export class AutoLinkNode extends LinkNode {
   }
 
   getIsUnlinked(): boolean {
-    return this.__isUnlinked;
+    return this.getLatest().__isUnlinked;
   }
 
   setIsUnlinked(value: boolean): this {

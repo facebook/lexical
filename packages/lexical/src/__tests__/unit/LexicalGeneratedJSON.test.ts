@@ -19,10 +19,15 @@ import {
   $createTabNode,
   $createTextNode,
   $getRoot,
+  $getState,
   $isElementNode,
+  $isParagraphNode,
+  $setState,
   createEditor,
+  createState,
   type LexicalNode,
   LineBreakNode,
+  NODE_STATE_KEY,
   ParagraphNode,
   TabNode,
   TextNode,
@@ -34,7 +39,7 @@ import {
   GENERATED_TEXT,
 } from '../../LexicalGeneratedJSON';
 import {$writeJSONGetters, getStaticNodeConfig} from '../../LexicalUtils';
-import {initializeUnitTest} from '../utils';
+import {initializeUnitTest, invariant} from '../utils';
 
 const REPO = join(import.meta.dirname, '..', '..', '..', '..', '..');
 const GENERATED = join(
@@ -229,6 +234,93 @@ describe('a generated exporter is installed on its class', () => {
       },
       {discrete: true},
     );
+  });
+});
+
+describe('the synthesized importJSON closes over its generated parser', () => {
+  // Narrower than the export side's fast path: it wants a node that is exactly
+  // this class and JSON with no NodeState, because the generated parser writes
+  // neither a subclass's properties nor state.
+  const probeState = createState('probeFlag', {
+    parse: v => (typeof v === 'string' ? v : ''),
+  });
+
+  class StatefulText extends TextNode {
+    $config() {
+      return this.config('stateful-text', {
+        extends: TextNode,
+        stateConfigs: [{flat: false, stateConfig: probeState}],
+      });
+    }
+  }
+
+  class ReplacedText extends TextNode {
+    $config() {
+      return this.config('replaced-text', {extends: TextNode});
+    }
+  }
+
+  test('JSON carrying NodeState takes the general path', () => {
+    const editor = createEditor({
+      namespace: '',
+      nodes: [StatefulText],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        const node = $create(StatefulText);
+        node.setTextContent('hi');
+        $setState(node, probeState, 'kept');
+        $getRoot().clear().append($createParagraphNode().append(node));
+      },
+      {discrete: true},
+    );
+    const json = JSON.stringify(editor.getEditorState().toJSON());
+    expect(json).toContain(`"${NODE_STATE_KEY}"`);
+    editor.parseEditorState(json).read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      invariant($isParagraphNode(paragraph), 'expected a paragraph');
+      expect($getState(paragraph.getFirstChildOrThrow(), probeState)).toBe(
+        'kept',
+      );
+    });
+  });
+
+  test('a replacement of another class takes the general path', () => {
+    // $applyNodeReplacement hands back a ReplacedText where the closure asked
+    // for a TextNode, so TextNode's parser is not the one to run.
+    const editor = createEditor({
+      namespace: '',
+      nodes: [
+        ReplacedText,
+        {
+          replace: TextNode,
+          with: (node: TextNode) => new ReplacedText(node.__text),
+          withKlass: ReplacedText,
+        },
+      ],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        const node = $createTextNode('hello').setStyle('color: red');
+        expect(node).toBeInstanceOf(ReplacedText);
+        $getRoot().clear().append($createParagraphNode().append(node));
+      },
+      {discrete: true},
+    );
+    const json = JSON.stringify(editor.getEditorState().toJSON());
+    editor.parseEditorState(json).read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      invariant($isParagraphNode(paragraph), 'expected a paragraph');
+      const node = paragraph.getFirstChildOrThrow();
+      expect(node).toBeInstanceOf(ReplacedText);
+      expect(node.getTextContent()).toBe('hello');
+    });
   });
 });
 

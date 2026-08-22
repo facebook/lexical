@@ -4204,11 +4204,9 @@ function injectSynthesizedStatics(
           String(klass.length),
         );
       }
-      // TODO: replace $applyNodeReplacement with $create once `withKlass` is required.
       klass.importJSON =
         (ownNodeConfig && ownNodeConfig.$importJSON) ||
-        (serializedNode =>
-          $applyImportJSON($applyNodeReplacement(new klass()), serializedNode));
+        synthesizeImportJSON(klass);
     }
     if (!hasOwnStaticMethod(klass, 'importDOM') && ownNodeConfig) {
       const {importDOM} = ownNodeConfig;
@@ -4218,6 +4216,54 @@ function injectSynthesizedStatics(
     }
     installGeneratedExportJSON(klass);
   }
+}
+
+/**
+ * The `importJSON` a class gets when it declares none: build the node, then
+ * apply the serialized properties to it.
+ *
+ * The generated parser, when the class has one, is closed over rather than
+ * looked up — the same trade as {@link installGeneratedExportJSON}, and worth
+ * rather less here, since constructing the node is most of what importing one
+ * costs either way.
+ *
+ * The fast path is narrower than the export side's. It wants a node that is
+ * exactly this class ({@link $applyNodeReplacement} may return a subclass, whose
+ * own parser is not this one) and JSON carrying no NodeState (what a node
+ * carries is not known when the code is generated, so the generated parser does
+ * not write it). Anything else is the general path, unchanged.
+ */
+function synthesizeImportJSON(
+  klass: Klass<LexicalNode>,
+): (
+  serializedNode: SerializedPartial<SerializedLexicalNode> &
+    Record<string, unknown>,
+) => LexicalNode {
+  const record = getNodeClassRecord(klass);
+  const generated = generatedFor(record);
+  const generatedUpdateFromJSON =
+    generated === null ? undefined : generated.updateFromJSON;
+  if (generatedUpdateFromJSON === undefined) {
+    // TODO: replace $applyNodeReplacement with $create once `withKlass` is required.
+    return serializedNode =>
+      $applyImportJSON($applyNodeReplacement(new klass()), serializedNode);
+  }
+  return serializedNode => {
+    const node = $applyNodeReplacement(new klass());
+    if (
+      node.constructor === klass &&
+      serializedNode[NODE_STATE_KEY] === undefined
+    ) {
+      if (__DEV__) {
+        // The one check $applyJSONSetters would have run for this class, which
+        // is once per class rather than per node.
+        validateOwnFields(record, node);
+      }
+      generatedUpdateFromJSON(node, serializedNode);
+      return node;
+    }
+    return $applyImportJSON(node, serializedNode);
+  };
 }
 
 /**

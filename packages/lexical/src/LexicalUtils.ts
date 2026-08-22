@@ -4216,7 +4216,62 @@ function injectSynthesizedStatics(
         klass.importDOM = () => importDOM;
       }
     }
+    installGeneratedExportJSON(klass);
   }
+}
+
+/**
+ * Put a class's generated `exportJSON` on its prototype, so exporting one of
+ * its nodes is a call rather than a lookup.
+ *
+ * The base `exportJSON` has to find the right code for whatever node it is
+ * handed, which costs a node-class-record lookup per node — and the generated
+ * literal it then calls is small enough that the lookup dominates it. Which
+ * code is right is settled once, here, at registration.
+ *
+ * Skipped for a class that writes its own `exportJSON`: that method is the
+ * class's answer, and it composes with the generated literal by calling
+ * `super.exportJSON(compact)`, which reaches the base and its lookup. That is
+ * how ParagraphNode's #7971 back-fill works, so this must not displace it.
+ *
+ * The `constructor` guard is the same one {@link generatedFor} applies and the
+ * same shape as the synthesized `getType` above: a subclass that declares no
+ * `$config` of its own inherits this method along with the type and the
+ * generated code, while being free to override an accessor that code compiled
+ * away, so anything but the exact class defers to the base.
+ */
+function installGeneratedExportJSON(klass: Klass<LexicalNode>): void {
+  const record = getNodeClassRecord(klass);
+  const generated = generatedFor(record);
+  if (
+    generated === null ||
+    hasOwnKey(klass.prototype as unknown as object, 'exportJSON')
+  ) {
+    return;
+  }
+  const generatedExportJSON = generated.exportJSON;
+  const prototype = klass.prototype as unknown as {
+    exportJSON: (this: LexicalNode, compact?: boolean) => SerializedLexicalNode;
+  };
+  const base = prototype.exportJSON;
+  prototype.exportJSON = function exportJSON(
+    this: LexicalNode,
+    compact = false,
+  ): SerializedLexicalNode {
+    if (compact || this.constructor !== klass) {
+      // The compact form drops properties by value rather than by schema, so
+      // it is not generated; a subclass is not what this was generated for.
+      return base.call(this, compact);
+    }
+    const json = generatedExportJSON(this);
+    // What a node carries is not known when the code is generated, so
+    // NodeState is appended here rather than by the literal.
+    const state = this.__state ? this.__state.toJSON() : undefined;
+    if (state !== undefined) {
+      Object.assign(json, state);
+    }
+    return json as unknown as SerializedLexicalNode;
+  };
 }
 
 /**

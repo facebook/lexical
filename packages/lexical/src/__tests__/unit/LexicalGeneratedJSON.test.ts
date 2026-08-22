@@ -13,11 +13,14 @@ import {join} from 'node:path';
 import {describe, expect, test} from 'vitest';
 
 import {
+  $create,
   $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
   $createTextNode,
+  $getRoot,
   $isElementNode,
+  createEditor,
   type LexicalNode,
   LineBreakNode,
   ParagraphNode,
@@ -164,6 +167,68 @@ describe('the generated code reaches the class it was generated for', () => {
   ])('%s', (_type, klass, generated) => {
     const {ownNodeConfig} = getStaticNodeConfig(klass);
     expect(ownNodeConfig && ownNodeConfig.generated).toBe(generated);
+  });
+});
+
+describe('a generated exporter is installed on its class', () => {
+  // Resolved once at registration rather than looked up per node: the literal
+  // is small enough that finding it cost more than running it.
+  test('the class that declared it gets it on its prototype', () => {
+    expect(
+      Object.prototype.hasOwnProperty.call(TextNode.prototype, 'exportJSON'),
+    ).toBe(true);
+  });
+
+  test('a class that writes its own exportJSON keeps it', () => {
+    // ParagraphNode's override is where the #7971 back-fill lives, and it
+    // reaches its generated literal through super — so nothing may displace it.
+    expect(
+      Object.prototype.hasOwnProperty.call(
+        ParagraphNode.prototype,
+        'exportJSON',
+      ),
+    ).toBe(true);
+    const paragraph = ParagraphNode.prototype.exportJSON;
+    expect(paragraph).not.toBe(TextNode.prototype.exportJSON);
+  });
+
+  test('a subclass that inherits the declaration defers to the base', () => {
+    // No `$config` of its own, so it inherits TextNode's — the node type and
+    // the generated code with it — while overriding an accessor that code
+    // compiled away. It inherits the installed method too, whose guard is the
+    // only thing standing between it and TextNode's literal.
+    class InheritsEverything extends TextNode {
+      getStyle(): string {
+        return `${super.getStyle()};extra`;
+      }
+    }
+    const editor = createEditor({
+      namespace: '',
+      nodes: [InheritsEverything],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        $getRoot().clear();
+        const node = $create(InheritsEverything).setStyle('color: red');
+        // Nothing was installed on the subclass, and the inherited method
+        // recognizes it is not the class it was generated for.
+        expect(
+          Object.prototype.hasOwnProperty.call(
+            InheritsEverything.prototype,
+            'exportJSON',
+          ),
+        ).toBe(false);
+        expect(node.exportJSON().style).toBe('color: red;extra');
+        // Which is what the schema-driven walk says too.
+        const walked: {[key: string]: unknown} = {};
+        $writeJSONGetters(node, walked, false);
+        expect(walked.style).toBe('color: red;extra');
+      },
+      {discrete: true},
+    );
   });
 });
 

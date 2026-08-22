@@ -42,7 +42,8 @@ export interface GeneratedJSON {
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
 // reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
-// produces.
+// produces. Emitted from the same source the codegen verified against, so the
+// two cannot be different functions.
 const JSON_NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
 
 function num(v: unknown, d: number): number {

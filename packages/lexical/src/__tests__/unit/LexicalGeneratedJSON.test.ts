@@ -7,7 +7,8 @@
  */
 
 import {execFileSync} from 'node:child_process';
-import {readFileSync} from 'node:fs';
+import {mkdtempSync, readFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {describe, expect, test} from 'vitest';
 
@@ -58,17 +59,21 @@ describe('generated exportJSON', () => {
   test('the checked-in output is what the generator produces', () => {
     // A schema change that nobody regenerated for would otherwise ship
     // specialized code describing the previous schema.
-    const checkedIn = readFileSync(GENERATED, 'utf8');
+    //
+    // Generated somewhere else and compared, rather than regenerated in place:
+    // the file under test is a source module other workers in this run import,
+    // and rewriting it — first with the generator's phase-one stub, then with
+    // the real output — makes whichever of them happens to be loading it fail.
+    const out = join(mkdtempSync(join(tmpdir(), 'lexical-codegen-')), 'out.ts');
     execFileSync(
       'npx',
-      ['tsx', join(REPO, 'scripts', 'generate-node-json.mjs')],
+      ['tsx', join(REPO, 'scripts', 'generate-node-json.mjs'), out],
       {
         cwd: REPO,
         stdio: 'pipe',
       },
     );
-    const regenerated = readFileSync(GENERATED, 'utf8');
-    expect(regenerated).toBe(checkedIn);
+    expect(readFileSync(out, 'utf8')).toBe(readFileSync(GENERATED, 'utf8'));
     // Spawning the generator dominates: it type-strips the whole core module
     // graph to read the schemas.
   }, 120_000);

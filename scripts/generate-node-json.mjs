@@ -35,15 +35,24 @@
 
 import {execFileSync} from 'node:child_process';
 import {writeFileSync} from 'node:fs';
-import {join} from 'node:path';
+import {join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+
+import {
+  compileParse,
+  literal,
+  NotCompilable,
+  NUM_HELPER_SOURCE,
+  verifyCompiledParse,
+  verifyTableCoversDomain,
+} from './shared/schemaParseCodegen.mjs';
 
 /** @typedef {import('lexical').LexicalNode} LexicalNode */
 /** @typedef {import('lexical').Klass<LexicalNode>} NodeClass */
 /** @typedef {import('lexical').AnySerializationSchema} AnySchema */
 /** @typedef {import('lexical').SerializationSchemaMeta} SchemaMeta */
 
-const OUT = join(
+const CHECKED_IN = join(
   import.meta.dirname,
   '..',
   'packages',
@@ -51,6 +60,14 @@ const OUT = join(
   'src',
   'LexicalGeneratedJSON.ts',
 );
+
+/**
+ * Where to write. The checked-in module by default; the drift check passes
+ * somewhere else, because regenerating in place would replace a source file
+ * other test workers are importing at that moment — first with phase one's
+ * stub, and only then with the real thing.
+ */
+const OUT = process.argv[2] ? resolve(process.argv[2]) : CHECKED_IN;
 
 const HEADER = `/**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -92,11 +109,15 @@ export function getGeneratedJSON(_type: string): undefined | GeneratedJSON {
 // it. Phase two re-enters under tsx and writes the real thing.
 if (!process.env.LEXICAL_CODEGEN_PHASE_TWO) {
   writeFileSync(OUT, STUB);
-  execFileSync('npx', ['tsx', fileURLToPath(import.meta.url)], {
-    cwd: join(import.meta.dirname, '..'),
-    env: {...process.env, LEXICAL_CODEGEN_PHASE_TWO: '1'},
-    stdio: 'inherit',
-  });
+  execFileSync(
+    'npx',
+    ['tsx', fileURLToPath(import.meta.url), ...process.argv.slice(2)],
+    {
+      cwd: process.cwd(),
+      env: {...process.env, LEXICAL_CODEGEN_PHASE_TWO: '1'},
+      stdio: 'inherit',
+    },
+  );
   process.exit(0);
 }
 
@@ -339,131 +360,14 @@ function hasFields(klass) {
 
 // -- the import direction ----------------------------------------------------
 
-/** A schema whose domain this cannot express as straight-line code. */
-class NotCompilable extends Error {}
-
-/** @param {unknown} value @returns {string} */
-function literal(value) {
-  return value === undefined ? 'undefined' : JSON.stringify(value);
-}
-
-/**
- * A JS expression parsing `v` exactly as `schema` does, from `schema`'s meta.
- *
- * Only the kinds whose meta fully determines the parse are compiled. A
- * `transformValue` post-processes what its meta describes and keeps the
- * function to itself, so its meta is indistinguishable from its inner's —
- * compiling one would silently store the un-transformed value. That is what the
- * differential check below exists to catch, since no inspection of the meta
- * can.
- *
- * @param {SchemaMeta} meta
- * @param {unknown} defaultValue
- * @returns {string}
- */
-function parseExpression(meta, defaultValue) {
-  const fallback = literal(defaultValue);
-  switch (meta.kind) {
-    case 'string':
-      return `typeof v === 'string' ? v : ${fallback}`;
-    case 'boolean':
-      return `typeof v === 'boolean' ? v : ${fallback}`;
-    case 'enum': {
-      // `undefined` is checked before membership by enumValue, so a member
-      // spelled undefined can never be matched here — dropping it from the
-      // comparisons reproduces that exactly.
-      const tests = meta.values
-        .filter(value => value !== undefined)
-        .map(value => `v === ${literal(value)}`);
-      return tests.length === 0
-        ? fallback
-        : `${tests.join(' || ')} ? v : ${fallback}`;
-    }
-    case 'number': {
-      if (meta.min !== undefined || meta.max !== undefined || meta.integer) {
-        // A bounded domain is compilable, just not yet compiled: none of the
-        // classes below has one on a field-backed property.
-        throw new NotCompilable('a constrained numberValue');
-      }
-      return `num(v, ${fallback})`;
-    }
-    case 'aliased': {
-      const inner = parseExpression(meta.inner.meta, defaultValue);
-      const name = addTable(pendingTableName, meta.aliases, true);
-      return `typeof v === 'string' && v in ${name} ? ${name}[v] : ${inner}`;
-    }
-    default:
-      throw new NotCompilable(`a ${meta.kind} schema`);
-  }
-}
-
-/** Set around each parseExpression call so `aliased` can name its table. */
-let pendingTableName = '';
-
-/**
- * Values every compiled parser is checked against: whatever the schema itself
- * names — every enum member, every alias — plus the shapes untrusted JSON
- * actually arrives in. Fixed rather than sampled, so the checked-in output is
- * reproducible byte for byte.
- *
- * @param {SchemaMeta} meta
- * @returns {unknown[]}
- */
-function corpus(meta) {
-  /** @type {unknown[]} */
-  const values = [
-    undefined,
-    null,
-    true,
-    false,
-    0,
-    1,
-    -1,
-    1.5,
-    NaN,
-    Infinity,
-    -Infinity,
-    '',
-    ' ',
-    '0',
-    '1',
-    '-1',
-    '1.5',
-    '1e3',
-    '0x10',
-    '007',
-    '+1',
-    'Infinity',
-    'NaN',
-    'banana',
-    'toString',
-    'constructor',
-    '__proto__',
-    'hasOwnProperty',
-    {},
-    [],
-    [1],
-    {a: 1},
-  ];
-  const walk = (/** @type {SchemaMeta} */ m) => {
-    if (m.kind === 'enum') {
-      values.push(...m.values);
-    } else if (m.kind === 'aliased') {
-      values.push(...Object.keys(m.aliases), ...Object.values(m.aliases));
-      walk(m.inner.meta);
-    }
-  };
-  walk(meta);
-  return values;
-}
-
-/** Same-value equality, so NaN matches NaN and 0 does not match -0. */
-function same(/** @type {unknown} */ a, /** @type {unknown} */ b) {
-  return Object.is(a, b);
-}
-
 /**
  * Compile one property's parse, then prove it agrees with the schema.
+ *
+ * The proof runs the compiled expression rather than the emitted statements, so
+ * what is verified is the expression the statements assign. The `encode` table
+ * a property may end with is applied to the schema's own result instead, which
+ * is what makes the two comparable without wrapping the expression in a closure
+ * that the emitted code does not have.
  *
  * @param {NodeClass} klass
  * @param {AnySchema} schema
@@ -476,7 +380,7 @@ function writeExpression(klass, schema, key) {
     // JSON.parse and so inherits Object.prototype; `json.toString` in
     // straight-line code would find the method rather than nothing. Refused
     // rather than guarded because no core class has such a key, and the
-    // differential check below compares values, so it would not notice.
+    // verification compares values, so it would not notice.
     throw new NotCompilable(`"${key}" is also an Object.prototype member`);
   }
   const setter = accessor(klass, schema, key, 'setter');
@@ -484,21 +388,28 @@ function writeExpression(klass, schema, key) {
     throw new NotCompilable(`"${key}" is import-only`);
   }
   if (!isSchemaField(setter)) {
-    // A method could be called, but then the node it returns has to be
-    // threaded through the rest, and every class below is all-fields anyway.
+    // A method could be called, but then the node it returns has to be threaded
+    // through the rest, and every class generated today is all-fields anyway.
     throw new NotCompilable(`"${key}" is applied through ${setter}()`);
   }
-  pendingTableName = tableName(klass, key, 'ALIAS');
-  const parse = parseExpression(schema.meta, schema.defaultValue);
-  const encode = setter.encode;
+  const {expression, tables: parseTables} = compileParse(
+    schema.meta,
+    schema.defaultValue,
+    tableName(klass, key, 'ALIAS'),
+  );
+  const nullPrototypeTables = parseTables.map(({name}) => name);
+  for (const {name, table} of parseTables) {
+    addTable(name, table, true);
+  }
+  const {encode} = setter;
   // Two statements rather than one expression when a table has to be applied
   // after parsing: folding them together needs an IIFE, and a closure per
   // property per node is most of what generating this was meant to remove.
-  let statements = `  v = json.${key};\n  node.${setter.field} = ${parse};`;
-  let expression = parse;
-  const encodeTable = encode;
+  let statements = `  v = json.${key};\n  node.${setter.field} = ${expression};`;
   if (encode !== undefined) {
-    const name = addTable(tableName(klass, key, 'ENCODE'), encode, true);
+    const name = tableName(klass, key, 'ENCODE');
+    addTable(name, encode, true);
+    nullPrototypeTables.push(name);
     // The schema already reduced the value to its own domain, so the table is
     // total over what reaches it; the guard is for a domain member with no
     // stored form, which would otherwise write undefined into the field.
@@ -506,58 +417,28 @@ function writeExpression(klass, schema, key) {
       encode[/** @type {string} */ (schema.defaultValue)],
     );
     const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
-    statements = `  v = json.${key};\n  v = ${parse};\n  node.${setter.field} = ${lookup};`;
-    expression = `(() => {let v2 = ${parse}; return (v2 as string) in ${name} ? ${name}[v2 as string] : ${fallback};})()`;
+    statements = `  v = json.${key};\n  v = ${expression};\n  node.${setter.field} = ${lookup};`;
   }
-  // Prove it. `schema` is the real thing; `compiled` is what will ship. The
-  // check runs the same expression the statements above write, with the `as`
-  // casts (which only exist for the emitted TypeScript) stripped.
-  // This is the point: the expression about to be written into the generated
-  // module is compiled and run here, against the schema it claims to
-  // reproduce, so a disagreement is a build failure rather than a parser that
-  // silently stores the wrong value. Build-time only, over a fixed corpus,
-  // with nothing untrusted in scope.
-  // eslint-disable-next-line no-new-func
-  const compiled = new Function(
-    'v',
-    'TABLES',
-    `const {${[...tables.keys()].join(', ')}} = TABLES; return (${expression
-      .replace(/ as string/g, '')
-      .replace(/\bnum\(/g, 'TABLES.num(')});`,
-  );
-  const runtime = {
-    ...Object.fromEntries(
-      [...tables].map(([name, {nullProto, table}]) => [
-        name,
-        nullProto ? Object.assign(Object.create(null), table) : table,
-      ]),
-    ),
-    num,
-  };
-  for (const value of corpus(schema.meta)) {
-    const want = encodeTable
-      ? encodeTable[/** @type {string} */ (schema(value))]
-      : schema(value);
-    const got = compiled(value, runtime);
-    if (!same(want, got)) {
-      throw new NotCompilable(
-        `"${key}" disagrees with its schema on ${literal(value)}: schema says ${literal(
-          want,
-        )}, generated says ${literal(got)}`,
-      );
+  try {
+    verifyCompiledParse({
+      expression,
+      nullPrototypeTables,
+      schema,
+      tables: parseTables,
+    });
+    if (encode !== undefined) {
+      // The lookup above falls back for a key that is missing, so the table has
+      // to have none: proving it total is what makes that fallback dead code
+      // rather than a silent remapping.
+      verifyTableCoversDomain({schema, table: encode});
     }
+  } catch (error) {
+    throw error instanceof NotCompilable
+      ? new NotCompilable(`"${key}" ${error.message}`)
+      : error;
   }
   return {key, statements};
 }
-
-/** The runtime helper the generated module gets, mirrored here for the check. */
-function num(/** @type {unknown} */ v, /** @type {number} */ d) {
-  if (typeof v === 'number') {
-    return Number.isFinite(v) ? v : d;
-  }
-  return typeof v === 'string' && JSON_NUMBER.test(v) ? Number(v) : d;
-}
-const JSON_NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
 
 /**
  * @param {NodeClass} klass
@@ -711,15 +592,9 @@ ${
     ? `
 // The JSON number grammar, anchored, matching numberValue: \`Number()\` alone
 // reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
-// produces.
-const JSON_NUMBER = /^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$/;
-
-function num(v: unknown, d: number): number {
-  if (typeof v === 'number') {
-    return Number.isFinite(v) ? v : d;
-  }
-  return typeof v === 'string' && JSON_NUMBER.test(v) ? Number(v) : d;
-}
+// produces. Emitted from the same source the codegen verified against, so the
+// two cannot be different functions.
+${NUM_HELPER_SOURCE}
 `
     : ''
 }${tableSource ? `\n${tableSource}\n` : ''}
@@ -755,9 +630,20 @@ export function getGeneratedJSON(type: string): undefined | GeneratedJSON {
 
 // Formatted here so the checked-in file is both prettier-clean and exactly
 // what a regeneration produces — the drift check compares them byte for byte.
-execFileSync('npx', ['prettier', '--write', OUT], {
-  cwd: join(import.meta.dirname, '..'),
-  stdio: 'pipe',
-});
+// The config is named explicitly rather than resolved from OUT's directory,
+// so the output is formatted the same way wherever it is written — the drift
+// check writes outside the repo, where prettier would otherwise use defaults
+// and report every line as drift.
+execFileSync(
+  'npx',
+  [
+    'prettier',
+    '--config',
+    join(import.meta.dirname, '..', '.prettierrc'),
+    '--write',
+    OUT,
+  ],
+  {cwd: join(import.meta.dirname, '..'), stdio: 'pipe'},
+);
 
 process.stdout.write(`wrote ${OUT}\n`);

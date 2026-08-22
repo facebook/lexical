@@ -97,6 +97,7 @@ import {
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   type AnySerializationSchema,
+  hasOwnKey,
   isSchemaDefault,
   isSchemaField,
   type SchemaField,
@@ -3082,10 +3083,6 @@ export function isDOMCapturingSelection(
  *
  * Object.hasOwn ponyfill
  */
-function hasOwn(o: object, k: string): boolean {
-  return Object.prototype.hasOwnProperty.call(o, k);
-}
-
 /**
  * @internal
  */
@@ -3093,7 +3090,7 @@ export function hasOwnStaticMethod(
   klass: Klass<LexicalNode>,
   k: keyof Klass<LexicalNode>,
 ): boolean {
-  return hasOwn(klass, k) && klass[k] !== LexicalNode[k];
+  return hasOwnKey(klass, k) && klass[k] !== LexicalNode[k];
 }
 
 /** @internal */
@@ -3681,7 +3678,7 @@ function validateOwnFields(record: NodeClassRecord, node: LexicalNode): void {
     for (const entry of entries) {
       if (entry.kind === 'ownField') {
         invariant(
-          hasOwn(fields, entry.field),
+          hasOwnKey(fields, entry.field),
           '%s: json schema field "%s" names a node field %s that the node does not have',
           klass.name,
           entry.key,
@@ -4013,7 +4010,7 @@ export function $applyJSONSetters<T extends LexicalNode>(
       // `serializedNode` came from JSON.parse, so `in` would find every
       // Object.prototype member and treat a state keyed 'constructor' or
       // 'toString' as present in JSON that never carried it.
-      if (hasOwn(serializedNode, entry.key)) {
+      if (hasOwnKey(serializedNode, entry.key)) {
         const parsed = entry.stateConfig.parse(serializedNode[entry.key]);
         // Wrapped in an updater thunk so a parse that returns a function
         // value is stored verbatim instead of being invoked as an updater.
@@ -4022,7 +4019,9 @@ export function $applyJSONSetters<T extends LexicalNode>(
       continue;
     }
     const parsed = entry.schema(
-      hasOwn(serializedNode, entry.key) ? serializedNode[entry.key] : undefined,
+      hasOwnKey(serializedNode, entry.key)
+        ? serializedNode[entry.key]
+        : undefined,
     );
     if (entry.kind === 'ownField') {
       // `self` is writable already — updateFromJSON starts from getWritable()

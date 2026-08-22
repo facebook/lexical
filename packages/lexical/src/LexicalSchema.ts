@@ -362,7 +362,20 @@ function liftIsEqual<T>(
     : (a, b) => (a == null || b == null ? a === b : isEqual(a, b));
 }
 
-function hasOwnKey<K extends string>(
+/**
+ * Whether `source` carries `key` as its own property.
+ *
+ * A type predicate rather than a `boolean`, so a caller can read the value off
+ * the narrowed `source` instead of casting an unindexable `object`.
+ *
+ * `Object.prototype.hasOwnProperty.call` rather than `Object.hasOwn`, which is
+ * newer than the browser baseline these packages are linted against. Lives here
+ * rather than in LexicalUtils because this module imports nothing from the rest
+ * of the core, so it is the one the other direction can reach.
+ *
+ * @internal
+ */
+export function hasOwnKey<K extends string>(
   source: object,
   key: K,
 ): source is {readonly [P in K]: unknown} {

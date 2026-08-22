@@ -187,9 +187,31 @@ export interface SchemaField {
    * property on the direct-read path: the table is a plain object of
    * primitives, so it is as inlinable by a code generator as the field read is.
    *
-   * The import direction is unaffected — the setter still does whatever it did.
+   * Used by the export direction; {@link SchemaField.encode} is its import
+   * mirror.
    */
   readonly decode?: {readonly [key: string]: unknown};
+  /**
+   * A lookup table from the serialized value to the stored one — the inverse of
+   * {@link SchemaField.decode}, for the import direction. The parsed value is
+   * the key, so the schema still owns the domain: only a value the schema
+   * admitted is ever looked up.
+   */
+  readonly encode?: {readonly [key: string]: unknown};
+  /**
+   * The accessor method this direct field access stands in for. Naming it keeps
+   * a subclass in charge of its own property: if any class between the one that
+   * declared this field and the node's own class overrides that method, the
+   * field access is abandoned and the method is called instead.
+   *
+   * Name it whenever the property already had an accessor before it had a
+   * schema — every core node's, since overriding `getTextContent()` or
+   * `setStyle()` on a TextNode subclass is ordinary — so that migrating the
+   * property to a field is not a behavior change for anyone who did. Leave it
+   * out for a property that is only ever the field, which is what plain
+   * {@link withField} declares.
+   */
+  readonly method?: string;
 }
 
 /**
@@ -198,6 +220,23 @@ export interface SchemaField {
  * deliberately unsupported.
  */
 export type SchemaAccessor = string | SchemaField | null;
+
+/**
+ * Both directions of a property that *is* a node field, as {@link withField}
+ * takes them: the field name, the two value tables (each used by the one
+ * direction it names), and the accessor each direction stands in for.
+ */
+export interface FieldOptions {
+  readonly field: string;
+  /** @see {@link SchemaField.decode} */
+  readonly decode?: {readonly [key: string]: unknown};
+  /** @see {@link SchemaField.encode} */
+  readonly encode?: {readonly [key: string]: unknown};
+  /** The getter this field read stands in for; see {@link SchemaField.method}. */
+  readonly getter?: string;
+  /** The setter this field write stands in for; see {@link SchemaField.method}. */
+  readonly setter?: string;
+}
 
 /**
  * The node accessors a {@link SerializationSchema} field is applied through.
@@ -931,14 +970,41 @@ export function withGetter<T>(
  *   id: withField(stringValue(), '__id'),
  * });
  * ```
+ * Pass an options object instead of a bare name to declare a property whose
+ * stored and serialized forms differ ({@link SchemaField.decode} /
+ * {@link SchemaField.encode}), or — for a property that already had accessors
+ * before it had a schema — to name them, so that a subclass overriding one
+ * still gets to decide. See {@link SchemaField.method}.
+ *
+ * @example
+ * ```ts
+ * objectValue({
+ *   // TextNode's own field in both directions, but getStyle/setStyle still
+ *   // win for a subclass that overrides either.
+ *   style: withField(stringValue(), {
+ *     field: '__style',
+ *     getter: 'getStyle',
+ *     setter: 'setStyle',
+ *   }),
+ * });
+ * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function withField<T>(
   schema: SerializationSchema<T>,
-  field: string,
+  field: string | FieldOptions,
 ): SerializationSchema<T> {
-  const accessor: SchemaField = {field};
-  return withAccessors(schema, {getter: accessor, setter: accessor});
+  if (typeof field === 'string') {
+    const accessor: SchemaField = {field};
+    return withAccessors(schema, {getter: accessor, setter: accessor});
+  }
+  // `decode`/`encode` and the two method names are each one direction's, so
+  // the single options object is split into the two accessors here rather
+  // than making every caller write both out.
+  return withAccessors(schema, {
+    getter: {decode: field.decode, field: field.field, method: field.getter},
+    setter: {encode: field.encode, field: field.field, method: field.setter},
+  });
 }
 
 /**

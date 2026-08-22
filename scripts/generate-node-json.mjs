@@ -85,6 +85,7 @@ const {
   isSchemaField,
   LineBreakNode,
   ParagraphNode,
+  resolveSchemaField,
   TabNode,
   TextNode,
 } = await import('lexical');
@@ -135,11 +136,17 @@ const decodeTables = new Map();
  * @returns {null | string}
  */
 function readExpression(klass, schema, key) {
-  const {getter} = schema;
-  if (getter === null) {
+  const declared = schema.getter;
+  if (declared === null) {
     // Declared import-only, like the walk's compiled getters skip it.
     return null;
   }
+  // The same resolution the walk makes, from the same function: a field whose
+  // accessor a subclass overrode is read through that accessor instead, and a
+  // literal that ignored this would describe a different node.
+  const getter = isSchemaField(declared)
+    ? resolveSchemaField(klass, key, declared)
+    : declared;
   if (isSchemaField(getter)) {
     if (getter.decode === undefined) {
       return `node.${getter.field}`;

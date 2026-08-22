@@ -90,6 +90,7 @@ import {
   type AnySerializationSchema,
   isSchemaDefault,
   isSchemaField,
+  type SchemaField,
 } from './LexicalSchema';
 import {
   $clampRangeSelectionToSlotFrame,
@@ -3238,6 +3239,8 @@ type CompiledSetter =
       readonly key: string;
       readonly schema: AnySerializationSchema;
       readonly field: string;
+      /** Maps the parsed value to the stored one; see {@link SchemaField}. */
+      readonly encode?: {readonly [key: string]: unknown};
     }
   | {
       readonly kind: 'state';
@@ -3246,6 +3249,48 @@ type CompiledSetter =
     };
 
 const EMPTY_SETTERS: readonly CompiledSetter[] = [];
+
+/**
+ * How `klass` reaches one direction of a serialized property: the
+ * {@link SchemaField} unchanged when the direct field access holds, and the
+ * name of the accessor it stands in for when it does not.
+ *
+ * A `SchemaField` that names a `method` is saying the two are equivalent *for
+ * the class that declared it*. A subclass that overrides that method has said
+ * otherwise, and it wins: before the property had a schema both JSON methods
+ * went through the accessor, so overriding one changed the node's
+ * serialization, and compiling the accessor away would silently take that back.
+ *
+ * The comparison resolves through each prototype chain, so it catches an
+ * override anywhere between the declaring class and this one. A field naming no
+ * method is one that only ever *is* the field (plain {@link withField}), so
+ * there is nothing to defer to.
+ *
+ * Shared with the codegen in `scripts/generate-node-json.mjs`, which has to
+ * make the identical choice or its literal would describe a different node.
+ *
+ * @internal
+ */
+export function resolveSchemaField(
+  klass: Klass<LexicalNode>,
+  key: string,
+  accessor: SchemaField,
+): SchemaField | string {
+  const {method} = accessor;
+  if (method === undefined) {
+    return accessor;
+  }
+  const declaringKlass = getComposedSchema(klass).declaredBy.get(key);
+  if (declaringKlass === undefined) {
+    return accessor;
+  }
+  const prototype = klass.prototype as unknown as Record<string, unknown>;
+  const declared = declaringKlass.prototype as unknown as Record<
+    string,
+    unknown
+  >;
+  return prototype[method] === declared[method] ? accessor : method;
+}
 
 /** The default setter name for a serialized property, e.g. `foo` → `setFoo`. */
 function defaultSetterName(key: string): string {
@@ -3287,9 +3332,17 @@ export interface ComposedSchema {
   ])[];
   /** Flat NodeStates, ancestors first. */
   readonly flatStates: readonly AnyStateConfig[];
+  /**
+   * The class whose `$config` declared each field's winning schema, which is
+   * where {@link SchemaField.method} is measured from: a method the declaring
+   * class and the node's class resolve differently is one somebody overrode in
+   * between.
+   */
+  readonly declaredBy: ReadonlyMap<string, Klass<LexicalNode>>;
 }
 
 const EMPTY_COMPOSED_SCHEMA: ComposedSchema = {
+  declaredBy: new Map(),
   fieldsBaseFirst: [],
   fieldsDerivedFirst: [],
   flatStates: [],
@@ -3303,9 +3356,13 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
     string,
     AnySerializationSchema,
   ])[])[] = [];
+  const groupKlasses: Klass<LexicalNode>[] = [];
   const stateGroups: (readonly AnyStateConfig[])[] = [];
-  for (const {ownNodeConfig} of iterStaticNodeConfigChain(klass)) {
+  for (const {klass: currentKlass, ownNodeConfig} of iterStaticNodeConfigChain(
+    klass,
+  )) {
     const json = ownNodeConfig && ownNodeConfig.json;
+    groupKlasses.push(currentKlass);
     if (__DEV__ && json) {
       // `json` is typed as any schema, but only an objectValue names fields.
       // Anything else contributes nothing, which would silently turn off the
@@ -3338,10 +3395,12 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
   // Most-derived first, first write wins, so a subclass field overrides an
   // ancestor's and keeps the subclass's position.
   const derivedFirst = new Map<string, AnySerializationSchema>();
-  for (const group of fieldGroups) {
-    for (const [key, schema] of group) {
+  const declaredBy = new Map<string, Klass<LexicalNode>>();
+  for (let i = 0; i < fieldGroups.length; i++) {
+    for (const [key, schema] of fieldGroups[i]) {
       if (!derivedFirst.has(key)) {
         derivedFirst.set(key, schema);
+        declaredBy.set(key, groupKlasses[i]);
       }
     }
   }
@@ -3376,6 +3435,7 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
   return derivedFirst.size === 0 && flatStates.size === 0
     ? EMPTY_COMPOSED_SCHEMA
     : {
+        declaredBy,
         fieldsBaseFirst: [...baseFirst],
         fieldsDerivedFirst: [...derivedFirst],
         flatStates: [...flatStates.values()],
@@ -3488,7 +3548,12 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
     // `=== undefined`, not `||`: an empty recorded name is a mistake, not a
     // request for the conventional one, and resolving it silently would apply
     // some other accessor that happens to exist.
-    const getter = declared === undefined ? defaultGetterName(key) : declared;
+    const named = declared === undefined ? defaultGetterName(key) : declared;
+    // A subclass override of the accessor a field stands in for reclaims the
+    // property; otherwise this is the field unchanged.
+    const getter = isSchemaField(named)
+      ? resolveSchemaField(klass, key, named)
+      : named;
     if (isSchemaField(getter)) {
       const getterName = getter.field;
       // withField: the property *is* this node field, so reading it is a
@@ -3672,7 +3737,12 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
       continue;
     }
     // `=== undefined` rather than `||`, as in the getter mirror.
-    const setter = declared === undefined ? defaultSetterName(key) : declared;
+    const named = declared === undefined ? defaultSetterName(key) : declared;
+    // As in the getter mirror: a subclass override of the accessor this field
+    // stands in for is what the value goes through.
+    const setter = isSchemaField(named)
+      ? resolveSchemaField(klass, key, named)
+      : named;
     if (isSchemaField(setter)) {
       const setterName = setter.field;
       // withField: the property *is* this node field, so applying it is an
@@ -3689,7 +3759,13 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
         klass.name,
         key,
       );
-      fields.set(key, {field: setterName, key, kind: 'ownField', schema});
+      fields.set(key, {
+        encode: setter.encode,
+        field: setterName,
+        key,
+        kind: 'ownField',
+        schema,
+      });
       continue;
     }
     const method = prototype[setter];
@@ -3769,7 +3845,8 @@ export function $applyJSONSetters<T extends LexicalNode>(
       // `self` is writable already — updateFromJSON starts from getWritable()
       // and every setter that replaces it returns a writable node — so this is
       // the whole of applying the property.
-      ownFieldRecord(self)[entry.field] = parsed;
+      ownFieldRecord(self)[entry.field] =
+        entry.encode === undefined ? parsed : entry.encode[parsed as string];
     } else {
       const next = entry.setter.call(self, parsed);
       // Lexical setters conventionally return the writable node so calls can

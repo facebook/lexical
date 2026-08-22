@@ -426,6 +426,7 @@ export {
   type OwnStaticNodeConfig,
   removeFromParent,
   resetRandomKey,
+  resolveSchemaField,
   setDOMUnmanaged,
   type SetDOMUnmanagedOptions,
   setNodeIndentFromDOM,

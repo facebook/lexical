@@ -53,8 +53,7 @@ import {
   stringValue,
   transformValue,
   unionValue,
-  withAccessors,
-  withGetter,
+  withField,
 } from '../LexicalSchema';
 import {
   $generateNodesFromRawText,
@@ -129,11 +128,18 @@ export type TextMarks = TextMark[];
 //
 // The setters are unaffected: those do real work (setFormat normalizes a
 // legacy string, setTextContent enforces the node's mode).
+// Every property here *is* one of TextNode's own fields in both directions, so
+// each is declared as the field it is rather than as the accessor pair that
+// wraps it — a read and a write with no method call, and none of the
+// getWritable() a set<Prop> repeats for a node updateFromJSON already holds
+// writable. Each names the accessor it stands in for, so a subclass that
+// overrides one is still the one that decides: see {@link SchemaField.method}.
 const textNodeSchema = /* @__PURE__ */ objectValue({
   // `format` and `detail` also accept the legacy string names that
   // hand-authored and older documents carry (e.g. `format: 'bold'`),
-  // normalized to the stored numeric form.
-  detail: /* @__PURE__ */ withGetter(
+  // normalized to the stored numeric form — so what reaches the field is
+  // already what setDetail/setFormat would have stored.
+  detail: /* @__PURE__ */ withField(
     /* @__PURE__ */ transformValue(
       /* @__PURE__ */ unionValue(
         [
@@ -145,9 +151,9 @@ const textNodeSchema = /* @__PURE__ */ objectValue({
       value =>
         typeof value === 'string' ? DETAIL_TYPE_TO_DETAIL[value] : value,
     ),
-    {field: '__detail'},
+    {field: '__detail', getter: 'getDetail', setter: 'setDetail'},
   ),
-  format: /* @__PURE__ */ withGetter(
+  format: /* @__PURE__ */ withField(
     /* @__PURE__ */ transformValue(
       /* @__PURE__ */ unionValue(
         [
@@ -160,21 +166,30 @@ const textNodeSchema = /* @__PURE__ */ objectValue({
       ),
       value => (typeof value === 'string' ? TEXT_TYPE_TO_FORMAT[value] : value),
     ),
-    {field: '__format'},
+    {field: '__format', getter: 'getFormat', setter: 'setFormat'},
   ),
-  // Stored as a bitmask, serialized as the name; the table keeps it on the
-  // direct-read path instead of needing getMode().
-  mode: /* @__PURE__ */ withGetter(
+  // Stored as a bitmask, serialized as the name, so this one needs both
+  // tables to stay off the accessors.
+  mode: /* @__PURE__ */ withField(
     /* @__PURE__ */ enumValue(['normal', 'token', 'segmented']),
-    {decode: TEXT_TYPE_TO_MODE, field: '__mode'},
+    {
+      decode: TEXT_TYPE_TO_MODE,
+      encode: TEXT_MODE_TO_TYPE,
+      field: '__mode',
+      getter: 'getMode',
+      setter: 'setMode',
+    },
   ),
-  style: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), {
+  style: /* @__PURE__ */ withField(/* @__PURE__ */ stringValue(), {
     field: '__style',
+    getter: 'getStyle',
+    setter: 'setStyle',
   }),
-  // Written through setTextContent rather than the default setText, which
-  // TextNode does not have.
-  text: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
-    getter: {field: '__text'},
+  // The accessors are getTextContent/setTextContent rather than the
+  // conventional getText/setText, which TextNode does not have.
+  text: /* @__PURE__ */ withField(/* @__PURE__ */ stringValue(), {
+    field: '__text',
+    getter: 'getTextContent',
     setter: 'setTextContent',
   }),
 });

@@ -25,10 +25,12 @@ import {
   objectValue,
   optional,
   rawValue,
+  resolveSchemaField,
   type SerializedLexicalNode,
   type SerializedPartial,
   type SerializedTextNode,
   stringValue,
+  TextNode,
   transformValue,
   unionValue,
   withAccessors,
@@ -789,6 +791,113 @@ describe('withField compiles to direct field access', () => {
     expect(isSchemaField(withGetter(stringValue(), 'getLabel').getter)).toBe(
       false,
     );
+  });
+});
+
+describe('a field stands in for its accessor only while nobody overrides it', () => {
+  // TextNode declares every one of its properties as the field it is, naming
+  // the accessor each stands in for. Before the schema existed both JSON
+  // methods went through those accessors, so a subclass that overrides one
+  // has to keep deciding what its own serialization says.
+  class LoudTextNode extends TextNode {
+    $config() {
+      return this.config('loud-text', {extends: TextNode});
+    }
+    getStyle(): string {
+      return `${super.getStyle()};loud`;
+    }
+    setStyle(style: string): this {
+      return super.setStyle(`${style};set`);
+    }
+  }
+  // Inherits the same schema and overrides nothing, so it keeps the field path.
+  class QuietTextNode extends TextNode {
+    $config() {
+      return this.config('quiet-text', {extends: TextNode});
+    }
+  }
+
+  function withEditor(fn: () => void): void {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[field-override]',
+        nodes: [LoudTextNode, QuietTextNode],
+      }),
+    );
+    editor.update(fn, {discrete: true});
+  }
+
+  test('an overridden accessor is consulted in both directions', () => {
+    withEditor(() => {
+      const node = $create(LoudTextNode).setStyle('color: red');
+      // The getter override runs, so its suffix reaches the JSON — which is
+      // what reading __style directly would have dropped.
+      expect(node.getStyle()).toBe('color: red;set;loud');
+      expect(node.exportJSON().style).toBe('color: red;set;loud');
+      // And the setter override runs on the way back in.
+      const parsed = $create(LoudTextNode).updateFromJSON({
+        style: 'color: blue',
+        text: 'x',
+      });
+      expect(parsed.getStyle()).toBe('color: blue;set;loud');
+    });
+  });
+
+  test('a property whose accessor is not overridden keeps the field path', () => {
+    withEditor(() => {
+      // `text` is declared the same way as `style`; only `style` was
+      // overridden, so the rest of the class is unaffected.
+      const node = $create(LoudTextNode).setTextContent('hello');
+      expect(node.exportJSON().text).toBe('hello');
+      // And a subclass that overrides nothing behaves exactly like TextNode.
+      const quiet = $create(QuietTextNode).setStyle('color: red');
+      expect(quiet.exportJSON().style).toBe('color: red');
+    });
+  });
+
+  test('the accessor resolves through the whole chain, not just one level', () => {
+    // The override is on LoudTextNode and the schema field is declared by
+    // TextNode, so nothing would catch it by looking at one class alone.
+    expect(
+      resolveSchemaField(LoudTextNode, 'style', {
+        field: '__style',
+        method: 'setStyle',
+      }),
+    ).toBe('setStyle');
+    expect(
+      resolveSchemaField(QuietTextNode, 'style', {
+        field: '__style',
+        method: 'setStyle',
+      }),
+    ).toEqual({field: '__style', method: 'setStyle'});
+    // A field naming no accessor is only ever the field, so there is nothing
+    // to defer to and it is returned unchanged.
+    expect(
+      resolveSchemaField(LoudTextNode, 'style', {field: '__style'}),
+    ).toEqual({field: '__style'});
+  });
+
+  test('encode and decode carry a property whose two forms differ', () => {
+    // TextNode stores `mode` as a bitmask and serializes it as a name, so it
+    // stays off getMode()/setMode() only because both tables are declared.
+    withEditor(() => {
+      const node = $create(QuietTextNode).setMode('segmented');
+      expect(node.exportJSON().mode).toBe('segmented');
+      const parsed = $create(QuietTextNode).updateFromJSON({
+        mode: 'token',
+        text: 'x',
+      });
+      expect(parsed.getMode()).toBe('token');
+      expect(parsed.exportJSON().mode).toBe('token');
+      // Out of domain falls back to the schema default rather than writing an
+      // undefined bitmask through the table.
+      const bogus = $create(QuietTextNode).updateFromJSON({
+        mode: 'nonsense' as 'normal',
+        text: 'x',
+      });
+      expect(bogus.getMode()).toBe('normal');
+    });
   });
 });
 

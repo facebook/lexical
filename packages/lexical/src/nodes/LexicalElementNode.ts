@@ -28,10 +28,9 @@ import {
   $isEphemeral,
   type DOMExportOutput,
   LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   type SerializedLexicalNode,
-  type SerializedPartial,
   type SlotChildNode,
   type SlotHostNode,
 } from '../LexicalNode';
@@ -160,11 +159,7 @@ function $normalizeShadowRootChildren(node: ElementNode): void {
 export interface ElementNode {
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
-  // Narrows the accepted JSON at the type level only; the runtime
-  // implementation is the schema-driven LexicalNode.updateFromJSON.
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedElementNode>>,
-  ): this;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedElementNode>): this;
 }
 
 /** @noInheritDoc */

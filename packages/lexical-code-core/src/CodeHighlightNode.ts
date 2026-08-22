@@ -13,13 +13,12 @@ import {
   type EditorThemeClasses,
   type ElementNode,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   nullable,
   objectValue,
   optional,
   removeClassNamesFromElement,
-  type SerializedPartial,
   type SerializedTextNode,
   type Spread,
   stringValue,
@@ -43,17 +42,11 @@ const codeHighlightNodeSchema = /* @__PURE__ */ objectValue({
   ),
 });
 
-// Narrows the accepted JSON at the type level only; the runtime
-// implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface CodeHighlightNode {
-  // The serialized shape this node exports; the runtime implementation is
-  // the schema-driven LexicalNode.exportJSON.
   exportJSON(compact?: boolean): SerializedCodeHighlightNode;
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<
-      SerializedPartial<SerializedCodeHighlightNode>
-    >,
+    serializedNode: LexicalParseJSON<SerializedCodeHighlightNode>,
   ): this;
 }
 

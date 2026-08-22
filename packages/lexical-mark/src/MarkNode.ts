@@ -16,13 +16,12 @@ import {
   type EditorConfig,
   ElementNode,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   objectValue,
   type RangeSelection,
   removeClassNamesFromElement,
   type SerializedElementNode,
-  type SerializedPartial,
   type Spread,
   stringValue,
   withAccessors,
@@ -46,16 +45,10 @@ const markNodeSchema = /* @__PURE__ */ objectValue({
 
 const NO_IDS: readonly string[] = [];
 
-// Narrows the accepted JSON at the type level only; the runtime
-// implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface MarkNode {
-  // The serialized shape this node exports; the runtime implementation is
-  // the schema-driven LexicalNode.exportJSON.
   exportJSON(compact?: boolean): SerializedMarkNode;
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedMarkNode>>,
-  ): this;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedMarkNode>): this;
 }
 
 /** @noInheritDoc */

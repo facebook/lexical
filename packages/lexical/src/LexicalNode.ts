@@ -493,6 +493,33 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
   $slots?: Record<string, SerializedPartial<SerializedLexicalNode>>;
 };
 
+/**
+ * The shape {@link LexicalNode.updateFromJSON} accepts for a node whose
+ * serialized type is `S`: every node-specific property optional (a compact
+ * export omits a default-valued one, and an older document predates a newer
+ * one), with `type`, `version` and `children` dropped.
+ *
+ * A node that declares a `json` schema narrows both JSON methods to its own
+ * serialized type by declaration merging, which is the one thing a schema
+ * cannot do for it — the members have to be declared on the node's own
+ * interface, since inheriting them from a shared base would collide with the
+ * ones it gets from its superclass rather than override them:
+ *
+ * ```ts
+ * // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+ * export interface MarkNode {
+ *   exportJSON(compact?: boolean): SerializedMarkNode;
+ *   updateFromJSON(serializedNode: LexicalParseJSON<SerializedMarkNode>): this;
+ * }
+ * ```
+ *
+ * Both narrow the *type* only: the runtime implementations are the
+ * schema-driven ones on {@link LexicalNode}, which such a node does not
+ * override.
+ */
+export type LexicalParseJSON<S extends SerializedLexicalNode> =
+  LexicalUpdateJSON<SerializedPartial<S>>;
+
 /** @internal */
 export interface LexicalPrivateDOM {
   __lexicalTextContent?: string | undefined | null;

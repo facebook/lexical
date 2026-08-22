@@ -41,10 +41,9 @@ import {
   type DOMConversionOutput,
   type DOMExportOutput,
   LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   type SerializedLexicalNode,
-  type SerializedPartial,
 } from '../LexicalNode';
 import {$cloneNodeState} from '../LexicalNodeState';
 import {
@@ -348,16 +347,10 @@ function $wrapElementWith(
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TextNode {
-  // The serialized shape this node exports; the runtime implementation is
-  // the schema-driven LexicalNode.exportJSON.
   exportJSON(compact?: boolean): SerializedTextNode;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
-  // Narrows the accepted JSON at the type level only; the runtime
-  // implementation is the schema-driven LexicalNode.updateFromJSON.
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedTextNode>>,
-  ): this;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedTextNode>): this;
 }
 
 export interface InlineFormattableNode {

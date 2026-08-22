@@ -14,11 +14,10 @@ import {
   type ElementFormatType,
   enumValue,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   objectValue,
   type SerializedLexicalNode,
-  type SerializedPartial,
   type Spread,
 } from 'lexical';
 
@@ -50,17 +49,11 @@ const decoratorBlockNodeSchema = /* @__PURE__ */ objectValue({
   ]),
 });
 
-// Narrows the accepted JSON at the type level only; the runtime
-// implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface DecoratorBlockNode {
-  // The serialized shape this node exports; the runtime implementation is
-  // the schema-driven LexicalNode.exportJSON.
   exportJSON(compact?: boolean): SerializedDecoratorBlockNode;
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<
-      SerializedPartial<SerializedDecoratorBlockNode>
-    >,
+    serializedNode: LexicalParseJSON<SerializedDecoratorBlockNode>,
   ): this;
 }
 

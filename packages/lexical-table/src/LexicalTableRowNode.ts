@@ -17,13 +17,12 @@ import {
   type EditorConfig,
   ElementNode,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   numberValue,
   objectValue,
   optional,
   type SerializedElementNode,
-  type SerializedPartial,
   type Spread,
 } from 'lexical';
 
@@ -41,17 +40,11 @@ const tableRowNodeSchema = /* @__PURE__ */ objectValue({
   height: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
 });
 
-// Narrows the accepted JSON at the type level only; the runtime
-// implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TableRowNode {
-  // The serialized shape this node exports; the runtime implementation is
-  // the schema-driven LexicalNode.exportJSON.
   exportJSON(compact?: boolean): SerializedTableRowNode;
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<
-      SerializedPartial<SerializedTableRowNode>
-    >,
+    serializedNode: LexicalParseJSON<SerializedTableRowNode>,
   ): this;
 }
 

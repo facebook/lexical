@@ -123,7 +123,7 @@ import {
   type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
@@ -326,16 +326,10 @@ const headingNodeSchema = /* @__PURE__ */ objectValue({
   tag: /* @__PURE__ */ enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']),
 });
 
-// Narrows the accepted JSON at the type level only; the runtime
-// implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface HeadingNode {
-  // The serialized shape this node exports; the runtime implementation is
-  // the schema-driven LexicalNode.exportJSON.
   exportJSON(compact?: boolean): SerializedHeadingNode;
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedHeadingNode>>,
-  ): this;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedHeadingNode>): this;
 }
 
 /** @noInheritDoc */

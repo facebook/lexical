@@ -23,14 +23,13 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   normalizeClassNames,
   numberValue,
   objectValue,
   removeClassNamesFromElement,
   type SerializedElementNode,
-  type SerializedPartial,
   type Spread,
   transformValue,
   withAccessors,
@@ -77,16 +76,10 @@ const listNodeSchema = /* @__PURE__ */ objectValue({
   }),
 });
 
-// Narrows the accepted JSON at the type level only; the runtime
-// implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ListNode {
-  // The serialized shape this node exports; the runtime implementation is
-  // the schema-driven LexicalNode.exportJSON.
   exportJSON(compact?: boolean): SerializedListNode;
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedListNode>>,
-  ): this;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedListNode>): this;
 }
 
 /** @noInheritDoc */

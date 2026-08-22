@@ -35,7 +35,7 @@ import {
   isHTMLAnchorElement,
   type LexicalCommand,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   nullable,
   objectValue,
@@ -44,7 +44,6 @@ import {
   type PointType,
   type RangeSelection,
   type SerializedElementNode,
-  type SerializedPartial,
   type Spread,
   stringValue,
   withAccessors,
@@ -95,16 +94,10 @@ const linkNodeSchema = /* @__PURE__ */ objectValue({
   }),
 });
 
-// Narrows the accepted JSON at the type level only; the runtime
-// implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface LinkNode {
-  // The serialized shape this node exports; the runtime implementation is
-  // the schema-driven LexicalNode.exportJSON.
   exportJSON(compact?: boolean): SerializedLinkNode;
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLinkNode>>,
-  ): this;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedLinkNode>): this;
 }
 
 /** @noInheritDoc */
@@ -506,17 +499,11 @@ const autoLinkNodeSchema = /* @__PURE__ */ objectValue({
   isUnlinked: /* @__PURE__ */ booleanValue(),
 });
 
-// Narrows the accepted JSON at the type level only; the runtime
-// implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface AutoLinkNode {
-  // The serialized shape this node exports; the runtime implementation is
-  // the schema-driven LexicalNode.exportJSON.
   exportJSON(compact?: boolean): SerializedAutoLinkNode;
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<
-      SerializedPartial<SerializedAutoLinkNode>
-    >,
+    serializedNode: LexicalParseJSON<SerializedAutoLinkNode>,
   ): this;
 }
 

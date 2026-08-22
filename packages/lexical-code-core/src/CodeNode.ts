@@ -28,7 +28,7 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   nullable,
   objectValue,
@@ -36,7 +36,6 @@ import {
   type ParagraphNode,
   type RangeSelection,
   type SerializedElementNode,
-  type SerializedPartial,
   setDOMStyleFromCSS,
   type Spread,
   stringValue,
@@ -91,16 +90,10 @@ const noExtensionDeprecation = warnOnlyOnce(
   'Using CodeNode without CodeExtension is deprecated',
 );
 
-// Narrows the accepted JSON at the type level only; the runtime
-// implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface CodeNode {
-  // The serialized shape this node exports; the runtime implementation is
-  // the schema-driven LexicalNode.exportJSON.
   exportJSON(compact?: boolean): SerializedCodeNode;
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedCodeNode>>,
-  ): this;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedCodeNode>): this;
 }
 
 /** @noInheritDoc */

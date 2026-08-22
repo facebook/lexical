@@ -215,6 +215,7 @@ export type {
   DOMExportOutputMap,
   LexicalExportJSON,
   LexicalNode,
+  LexicalParseJSON,
   LexicalUpdateJSON,
   NodeKey,
   NodeMap,

@@ -31,14 +31,13 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   numberValue,
   objectValue,
   optional,
   removeClassNamesFromElement,
   type SerializedElementNode,
-  type SerializedPartial,
   setDOMStyleFromCSS,
   setDOMUnmanaged,
   type Spread,
@@ -394,16 +393,10 @@ export function setScrollableTablesActive(
   }
 }
 
-// Narrows the accepted JSON at the type level only; the runtime
-// implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TableNode {
-  // The serialized shape this node exports; the runtime implementation is
-  // the schema-driven LexicalNode.exportJSON.
   exportJSON(compact?: boolean): SerializedTableNode;
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedTableNode>>,
-  ): this;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedTableNode>): this;
 }
 
 /** @noInheritDoc */

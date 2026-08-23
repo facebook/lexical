@@ -211,7 +211,10 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   // Set while a paste whose clipboard is a single token is being applied, so
   // that links created by pasting prose do not open the menu. It is cleared at
   // the end of the update in which the paste command was dispatched, after the
-  // mutation listeners for that update have run.
+  // mutation listeners for that update have run. This flag is the only gate on
+  // the paste check: the clipboard text is inspected directly, so no dirty
+  // node count heuristic is needed (and one would wrongly skip a bare URL
+  // pasted into a paragraph with formatted or other inline content).
   const isSingleTokenPasteRef = useRef(false);
 
   useEffect(() => {
@@ -256,16 +259,12 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   );
 
   useEffect(() => {
-    const listener: MutationListener = (
-      nodeMutations,
-      {updateTags, dirtyLeaves},
-    ) => {
+    const listener: MutationListener = (nodeMutations, {updateTags}) => {
       for (const [key, mutation] of nodeMutations) {
         if (
           mutation === 'created' &&
           updateTags.has(PASTE_TAG) &&
-          isSingleTokenPasteRef.current &&
-          dirtyLeaves.size <= 3
+          isSingleTokenPasteRef.current
         ) {
           checkIfLinkNodeIsEmbeddable(key);
         } else if (key === nodeKey) {

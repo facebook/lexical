@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor, NodeKey, TextNode} from 'lexical';
 
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {
@@ -29,8 +29,10 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   PASTE_COMMAND,
+  PASTE_TAG,
 } from 'lexical';
 import * as React from 'react';
 import {act} from 'react';
@@ -162,11 +164,14 @@ describe('LexicalAutoEmbedPlugin', () => {
     vi.unstubAllGlobals();
   });
 
-  async function pasteEvent(event: ClipboardEvent): Promise<void> {
+  async function pasteEvent(
+    event: ClipboardEvent,
+    $select: () => void = () => $getRoot().selectEnd(),
+  ): Promise<void> {
     await act(async () => {
       editor.update(
         () => {
-          $getRoot().selectEnd();
+          $select();
           editor.dispatchCommand(PASTE_COMMAND, event);
         },
         {discrete: true},
@@ -178,8 +183,11 @@ describe('LexicalAutoEmbedPlugin', () => {
     });
   }
 
-  function paste(data: Record<string, string>): Promise<void> {
-    return pasteEvent(createPasteEvent(data));
+  function paste(
+    data: Record<string, string>,
+    $select?: () => void,
+  ): Promise<void> {
+    return pasteEvent(createPasteEvent(data), $select);
   }
 
   function getMenu(): Element | null {
@@ -254,6 +262,53 @@ describe('LexicalAutoEmbedPlugin', () => {
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe(
         `Check this out: ${YOUTUBE_URL}`,
+      );
+    });
+  });
+
+  it('offers to embed a bare URL pasted into formatted text', async () => {
+    let middleKey: NodeKey;
+    await act(async () => {
+      editor.update(() => {
+        const middle = $createTextNode(' and ');
+        middleKey = middle.getKey();
+        const paragraph = $createParagraphNode().append(
+          $createTextNode('Read '),
+          $createTextNode('this').toggleFormat('bold'),
+          middle,
+          $createTextNode('that').toggleFormat('italic'),
+          $createTextNode(' now'),
+        );
+        $getRoot().clear().append(paragraph);
+      });
+    });
+
+    let pasteDirtyLeaves = 0;
+    const removeUpdateListener = editor.registerUpdateListener(
+      ({dirtyLeaves, tags}) => {
+        if (tags.has(PASTE_TAG)) {
+          pasteDirtyLeaves = dirtyLeaves.size;
+        }
+      },
+    );
+    try {
+      // Paste over the word between the bold and italic runs.
+      await paste({'text/plain': YOUTUBE_URL}, () => {
+        $getNodeByKey<TextNode>(middleKey)!.select(1, 4);
+      });
+    } finally {
+      removeUpdateListener();
+    }
+
+    // The formatted siblings and the split text nodes are all dirty, so a
+    // dirty leaf count cannot tell this paste apart from pasted prose.
+    expect(pasteDirtyLeaves).toBeGreaterThan(3);
+    expect(parseUrl).toHaveBeenCalledTimes(1);
+    expect(parseUrl).toHaveBeenCalledWith(YOUTUBE_URL);
+    expect(getMenu()).not.toBeNull();
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe(
+        `Read this ${YOUTUBE_URL} that now`,
       );
     });
   });

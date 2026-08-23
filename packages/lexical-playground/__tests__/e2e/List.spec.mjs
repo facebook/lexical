@@ -167,9 +167,10 @@ test.describe('Checklist focus option', () => {
 });
 
 test.describe('Checklist space key', () => {
-  // Firefox focuses the <li> when the caret lands in its text, since the item
-  // carries tabIndex="-1" for the checkbox role. That focus used to be read as
-  // "the checkbox is active", so Space toggled the item instead of typing.
+  // Pressing the mouse anywhere in an item focuses the <li>, which carries
+  // tabIndex="-1" for its checkbox role. Firefox left focus there, and the
+  // key handlers read a focused item as "the checkbox is what the keyboard is
+  // operating", so Space toggled the item instead of typing a space.
   test('typing a space in the label leaves the checkbox alone', async ({
     isCollab,
     page,
@@ -190,6 +191,18 @@ test.describe('Checklist space key', () => {
       textBox.x + textBox.width / 2,
       textBox.y + textBox.height / 2,
     );
+
+    // The click is in the label, so the editor holds the focus. The item is
+    // the active element only when its checkbox is what was clicked.
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.activeElement === window.lexicalEditor.getRootElement(),
+        ),
+      )
+      .toBe(true);
+
     await page.keyboard.press('Space');
 
     await expect(item).toHaveAttribute('aria-checked', 'false');
@@ -213,11 +226,48 @@ test.describe('Checklist space key', () => {
     // Click the marker, which is the flow that hands the item keyboard focus.
     await page.mouse.click(box.x + 5, box.y + box.height / 2);
     await expect(item).toHaveAttribute('aria-checked', 'true');
+    expect(
+      await page.evaluate(
+        () =>
+          document.activeElement ===
+          document.querySelector('li[role="checkbox"]'),
+      ),
+    ).toBe(true);
 
     await page.keyboard.press('Space');
 
     await expect(item).toHaveAttribute('aria-checked', 'false');
     await expect(item).toHaveText('Task');
+  });
+
+  test('clicking the label after the checkbox gives focus back', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+    const box = await item.boundingBox();
+
+    // The checkbox click leaves the item focused, and the click that follows
+    // lands in the label, so the editor has to take the focus back.
+    await page.mouse.click(box.x + 5, box.y + box.height / 2);
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+
+    const textBox = await page.getByText('Task', {exact: true}).boundingBox();
+    await page.mouse.click(
+      textBox.x + textBox.width / 2,
+      textBox.y + textBox.height / 2,
+    );
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+    await expect(item).toHaveText('Ta sk');
   });
 
   test('space toggles the item the arrow key moved onto', async ({

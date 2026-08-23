@@ -110,7 +110,7 @@ export function registerCheckList(
   const configHandleSelectDefaults = (
     event: PointerEvent | MouseEvent | TouchEvent,
   ) => {
-    handleSelectDefaults(event, peekDisableTakeFocusOnClick());
+    handleSelectDefaults(event, peekDisableTakeFocusOnClick(), editor);
   };
   return mergeRegister(
     editor.registerCommand(
@@ -207,7 +207,7 @@ export function registerCheckList(
                     domNode != null &&
                     getActiveElement(domNode) !== domNode
                   ) {
-                    focusCheckListItem(domNode);
+                    domNode.focus();
                     event.preventDefault();
                     return true;
                   }
@@ -351,7 +351,7 @@ function handleClick(
               $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
               $addUpdateTag(SKIP_DOM_SELECTION_TAG);
             } else {
-              focusCheckListItem(domNode);
+              domNode.focus();
             }
             node.toggleChecked();
           }
@@ -370,45 +370,59 @@ function handleClick(
 function handleSelectDefaults(
   event: PointerEvent | MouseEvent | TouchEvent,
   disableTakeFocusOnClick: boolean,
+  editor: LexicalEditor,
 ) {
-  // Runs in the capture phase on every pointer press, before the browser moves
-  // focus. Whatever the plugin focused earlier stops counting here, and a press
-  // on the marker marks it again when handleClick focuses the item.
-  const currentTarget = event.currentTarget;
-
-  if (isHTMLElement(currentTarget)) {
-    clearCheckListItemFocus(currentTarget);
-  }
+  let isCheckMarkPress = false;
 
   handleCheckItemEvent(event, () => {
+    isCheckMarkPress = true;
     // Prevents caret moving when clicking on check mark.
     event.preventDefault();
     if (disableTakeFocusOnClick) {
       event.stopPropagation();
     }
   });
-}
 
-// The <li> carries role="checkbox" and tabIndex="-1" so the plugin can move
-// focus onto it, and the keyboard handlers read that focus as "the checkbox is
-// the thing being operated". Firefox also focuses the <li> on its own when a
-// click lands in the item's text, because the caret's nearest focusable
-// ancestor is the <li>. Reading that as an active checkbox made Space toggle
-// the item instead of typing a space (#4680), so the focus the plugin puts
-// there on purpose is marked, and only a marked <li> counts.
-function focusCheckListItem(dom: HTMLElement): void {
-  // @ts-ignore internal field
-  dom.__lexicalCheckListFocused = true;
-  dom.focus();
-}
-
-function clearCheckListItemFocus(root: HTMLElement): void {
-  const activeElement = getActiveElement(root);
-
-  if (isHTMLElement(activeElement)) {
-    // @ts-ignore internal field
-    activeElement.__lexicalCheckListFocused = false;
+  // The press landed in the item's content rather than on its check mark, so
+  // the caret is what it is aiming at and the editor is what should end up
+  // focused.
+  if (!isCheckMarkPress) {
+    returnFocusToRoot(editor);
   }
+}
+
+// A check list item carries tabIndex="-1" so the plugin can hand it focus for
+// its checkbox role, which also makes it the nearest focusable ancestor of the
+// caret. Pressing the mouse in the item's text therefore focuses the item, and
+// a focused item is what the key handlers read as "the checkbox is what the
+// keyboard is operating", so Space toggled the item instead of typing a space
+// (#4680). Chrome and Safari hand focus back to the root once they are done
+// with the press; this does the same in every browser, one task later so the
+// press can finish placing the caret first.
+function returnFocusToRoot(editor: LexicalEditor): void {
+  setTimeout(() => {
+    const rootElement = editor.getRootElement();
+    const activeElement = rootElement ? getActiveElement(rootElement) : null;
+
+    if (
+      rootElement !== null &&
+      isHTMLElement(activeElement) &&
+      isCheckListItem(activeElement)
+    ) {
+      rootElement.focus({preventScroll: true});
+    }
+  }, 0);
+}
+
+function isCheckListItem(dom: HTMLElement): boolean {
+  const parentNode = dom.parentNode;
+
+  return (
+    dom.tagName === 'LI' &&
+    parentNode != null &&
+    // @ts-ignore internal field
+    parentNode.__lexicalListType === 'check'
+  );
 }
 
 function getActiveCheckListItem(editor: LexicalEditor): HTMLElement | null {
@@ -418,13 +432,7 @@ function getActiveCheckListItem(editor: LexicalEditor): HTMLElement | null {
   const rootElement = editor.getRootElement();
   const activeElement = rootElement ? getActiveElement(rootElement) : null;
 
-  return isHTMLElement(activeElement) &&
-    activeElement.tagName === 'LI' &&
-    // @ts-ignore internal field
-    activeElement.__lexicalCheckListFocused === true &&
-    activeElement.parentNode != null &&
-    // @ts-ignore internal field
-    activeElement.parentNode.__lexicalListType === 'check'
+  return isHTMLElement(activeElement) && isCheckListItem(activeElement)
     ? activeElement
     : null;
 }
@@ -488,7 +496,7 @@ function handleArrowUpOrDown(
         if (dom != null) {
           event.preventDefault();
           setTimeout(() => {
-            focusCheckListItem(dom);
+            dom.focus();
           }, 0);
         }
       }

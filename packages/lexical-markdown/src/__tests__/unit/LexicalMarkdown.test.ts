@@ -698,6 +698,22 @@ describe('Markdown', () => {
       md: '[foo [bar](/uri)](/uri)',
     },
     {
+      // https://spec.commonmark.org/0.31.2/#link-destination allows a balanced
+      // pair of parentheses inside the destination.
+      html: '<p><a href="https://en.wikipedia.org/wiki/Ruby_(programming_language)"><span style="white-space: pre-wrap;">Ruby</span></a></p>',
+      md: '[Ruby](https://en.wikipedia.org/wiki/Ruby_(programming_language))',
+    },
+    {
+      html: '<p><a href="https://example.com/a(b)c"><span style="white-space: pre-wrap;">a</span></a><span style="white-space: pre-wrap;"> and </span><a href="https://example.com/d"><span style="white-space: pre-wrap;">d</span></a></p>',
+      md: '[a](https://example.com/a(b)c) and [d](https://example.com/d)',
+    },
+    {
+      // A backslash-escaped parenthesis is part of the destination too.
+      html: '<p><a href="https://example.com/a)b"><span style="white-space: pre-wrap;">a</span></a></p>',
+      md: '[a](https://example.com/a\\)b)',
+      mdAfterExport: '[a](https://example.com/a)b)',
+    },
+    {
       // Import only: <mark>...</mark> is exported as ==...== in markdown.
       // Use HIGHLIGHT_TEXT_MATCH_IMPORT as custom transformer even though it is included later to ensure it runs before LINK.
       customTransformers: [HIGHLIGHT_TEXT_MATCH_IMPORT],

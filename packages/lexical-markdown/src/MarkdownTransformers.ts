@@ -890,10 +890,14 @@ export const LINK: TextMatchTransformer = {
 
     return linkContent;
   },
+  // A link destination may hold a backslash escape or a balanced pair of
+  // parentheses, so the three alternatives are: an escape, one balanced pair,
+  // or any other character that is not a space, a parenthesis or a backslash.
+  // They start on different characters, so the alternation cannot backtrack.
   importRegExp:
-    /(?:\[(.+?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
+    /(?:\[(.+?)\])(?:\((?:((?:\\.|\((?:\\.|[^\s()\\])*\)|[^\s()\\])+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
   regExp:
-    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
+    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:((?:\\.|\((?:\\.|[^\s()\\])*\)|[^\s()\\])+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
     if ($findMatchingParent(textNode, $isLinkNode)) {

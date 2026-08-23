@@ -17,6 +17,7 @@ import {objectKlassEquals} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
+  $onUpdate,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   type CommandListenerPriority,
@@ -204,27 +205,27 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   }, []);
 
   // Set while a paste whose clipboard is a single token is being applied, so
-  // that links created by pasting prose do not open the menu.
+  // that links created by pasting prose do not open the menu. It is cleared at
+  // the end of the update in which the paste command was dispatched, after the
+  // mutation listeners for that update have run.
   const isSingleTokenPasteRef = useRef(false);
 
   useEffect(() => {
-    return mergeRegister(
-      editor.registerCommand(
-        PASTE_COMMAND,
-        event => {
-          isSingleTokenPasteRef.current =
-            objectKlassEquals(event, ClipboardEvent) &&
-            event.clipboardData !== null &&
-            isSingleTokenPaste(event.clipboardData);
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerUpdateListener(({tags}) => {
-        if (tags.has(PASTE_TAG)) {
-          isSingleTokenPasteRef.current = false;
+    return editor.registerCommand(
+      PASTE_COMMAND,
+      event => {
+        isSingleTokenPasteRef.current =
+          objectKlassEquals(event, ClipboardEvent) &&
+          event.clipboardData !== null &&
+          isSingleTokenPaste(event.clipboardData);
+        if (isSingleTokenPasteRef.current) {
+          $onUpdate(() => {
+            isSingleTokenPasteRef.current = false;
+          });
         }
-      }),
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
     );
   }, [editor]);
 

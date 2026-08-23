@@ -69,10 +69,26 @@ function createPasteEvent(data: Record<string, string>): ClipboardEvent {
   return new ClipboardEvent('paste', {clipboardData});
 }
 
+// The playground e2e harness pastes by dispatching a ClipboardEvent whose
+// clipboardData is a plain object rather than a DataTransfer. Its getData
+// returns undefined, not '', for a type that the spec did not supply.
+function createHarnessPasteEvent(data: Record<string, string>): ClipboardEvent {
+  const event = new ClipboardEvent('paste', {bubbles: true, cancelable: true});
+  Object.defineProperty(event, 'clipboardData', {
+    value: {
+      files: [],
+      getData: (type: string) => data[type],
+      types: Object.keys(data),
+    },
+  });
+  return event;
+}
+
 describe('LexicalAutoEmbedPlugin', () => {
   let container: HTMLDivElement;
   let reactRoot: Root;
   let editor: LexicalEditor;
+  let onError: ReturnType<typeof vi.fn<(error: Error) => void>>;
   let parseUrl: ReturnType<
     typeof vi.fn<(url: string) => EmbedMatchResult | null>
   >;
@@ -90,6 +106,9 @@ describe('LexicalAutoEmbedPlugin', () => {
     container = document.createElement('div');
     document.body.appendChild(container);
     reactRoot = createRoot(container);
+    onError = vi.fn((error: Error) => {
+      throw error;
+    });
     parseUrl = vi.fn((url: string) => {
       const match = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/.exec(url);
       return match ? {id: match[1], url} : null;
@@ -107,9 +126,7 @@ describe('LexicalAutoEmbedPlugin', () => {
           initialConfig={{
             namespace: 'test-auto-embed',
             nodes: [LinkNode, AutoLinkNode],
-            onError: err => {
-              throw err;
-            },
+            onError,
             theme: {},
           }}>
           <RichTextPlugin
@@ -145,12 +162,12 @@ describe('LexicalAutoEmbedPlugin', () => {
     vi.unstubAllGlobals();
   });
 
-  async function paste(data: Record<string, string>): Promise<void> {
+  async function pasteEvent(event: ClipboardEvent): Promise<void> {
     await act(async () => {
       editor.update(
         () => {
           $getRoot().selectEnd();
-          editor.dispatchCommand(PASTE_COMMAND, createPasteEvent(data));
+          editor.dispatchCommand(PASTE_COMMAND, event);
         },
         {discrete: true},
       );
@@ -159,6 +176,10 @@ describe('LexicalAutoEmbedPlugin', () => {
     await act(async () => {
       await Promise.resolve();
     });
+  }
+
+  function paste(data: Record<string, string>): Promise<void> {
+    return pasteEvent(createPasteEvent(data));
   }
 
   function getMenu(): Element | null {
@@ -234,6 +255,17 @@ describe('LexicalAutoEmbedPlugin', () => {
       expect($getRoot().getTextContent()).toBe(
         `Check this out: ${YOUTUBE_URL}`,
       );
+    });
+  });
+
+  it('does not throw when the clipboard reports no plain text', async () => {
+    await pasteEvent(createHarnessPasteEvent({'text/html': 'replaced'}));
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(parseUrl).not.toHaveBeenCalled();
+    expect(getMenu()).toBeNull();
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('replaced');
     });
   });
 });

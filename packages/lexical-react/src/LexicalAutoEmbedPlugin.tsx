@@ -82,10 +82,14 @@ export const URL_MATCHER =
 /**
  * Whether the clipboard's plain text is a single token with no whitespace. A
  * link created by such a paste came from a bare address rather than from prose
- * that merely contains one.
+ * that merely contains one. A DataTransfer returns '' for a type it does not
+ * hold, but a synthetic clipboard (such as the one the playground e2e harness
+ * dispatches) may return undefined instead, so anything that is not a string
+ * is treated as empty text.
  */
 function isSingleTokenPaste(clipboardData: DataTransfer): boolean {
-  const text = clipboardData.getData('text/plain').trim();
+  const plainText: unknown = clipboardData.getData('text/plain');
+  const text = typeof plainText === 'string' ? plainText.trim() : '';
   return text !== '' && !/\s/.test(text);
 }
 

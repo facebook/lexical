@@ -867,6 +867,19 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
   type: 'text-format',
 };
 
+// `unescapeText` decodes a numeric character reference and a CommonMark reader
+// decodes the named ones too, so an `&` that begins one cannot be written raw
+// in a link destination or the URL comes back as the character it names. It
+// goes out as `&#38;` instead, which both of them read back as a single `&`.
+// An `&` that begins nothing is an ordinary character and stays as it is, so a
+// query string keeps the separators it was written with.
+function escapeCharacterReferences(value: string): string {
+  return value.replace(
+    /&(?=#\d+;|#[Xx][\dA-Fa-f]+;|[A-Za-z][\dA-Za-z]*;)/g,
+    '&#38;',
+  );
+}
+
 // Order of text transformers matters:
 //
 // - code should go first as it prevents any transformations inside
@@ -880,8 +893,10 @@ export const LINK: TextMatchTransformer = {
     const textContent = exportChildren(node);
     let title = node.getTitle();
 
+    // A title is read back through `unescapeText` as well, so a character
+    // reference in it needs the same treatment the destination gets below.
     if (title != null) {
-      title = title.replace(/([\\"])/g, '\\$1');
+      title = escapeCharacterReferences(title).replace(/([\\"])/g, '\\$1');
     }
 
     // A raw destination cannot hold whitespace, so a URL that has any is
@@ -896,14 +911,20 @@ export const LINK: TextMatchTransformer = {
     // destination that no reader can close and would split the paragraph in
     // two. It goes out as the character reference that `unescapeText` and a
     // CommonMark reader both turn back into the line ending.
+    //
+    // That spelling only survives because a reader decodes it, so an `&` that
+    // already begins a character reference has to go out as one itself, or the
+    // URL comes back as whatever the reference names. Escaping it first keeps
+    // the references written for the line endings below out of its way.
     const rawUrl = node.getURL();
+    const escapedUrl = escapeCharacterReferences(rawUrl);
     const url =
       rawUrl === '' || /\s/.test(rawUrl)
-        ? `<${rawUrl
+        ? `<${escapedUrl
             .replace(/([\\<>])/g, '\\$1')
             .replace(/\r/g, '&#13;')
             .replace(/\n/g, '&#10;')}>`
-        : rawUrl.replace(/([\\()])/g, '\\$1').replace(/^</, '\\<');
+        : escapedUrl.replace(/([\\()])/g, '\\$1').replace(/^</, '\\<');
 
     const linkContent = title
       ? `[${textContent}](${url} "${title}")`
@@ -931,10 +952,17 @@ export const LINK: TextMatchTransformer = {
   // spellings CommonMark gives it. Inside every shape here no two alternatives
   // can match at the same place, so none of them has anything to backtrack
   // over.
+  //
+  // The trailing whitespace sits inside the optional group with the
+  // destination rather than after it. Outside, it would neighbour the leading
+  // `\s*` whenever the destination is absent, and two runs of the same
+  // whitespace side by side can be split between them in as many ways as there
+  // are characters, which costs a quadratic walk of every run that never
+  // reaches the closing parenthesis.
   importRegExp:
-    /(?:\[(.+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?)?\s*\))/,
+    /(?:\[(.+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))/,
   regExp:
-    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?)?\s*\))$/,
+    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
     if ($findMatchingParent(textNode, $isLinkNode)) {

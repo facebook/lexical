@@ -3382,6 +3382,46 @@ describe('link destination and title shapes', () => {
   }
 });
 
+describe('link destination whitespace does not backtrack', () => {
+  // Whitespace may sit on either side of the destination, and when the
+  // destination is absent the two runs neighbour each other. A pattern that
+  // leaves them that way can split a run between them in as many ways as the
+  // run is long, and walks every one of them before giving up on a run that
+  // never reaches the closing parenthesis, so the work grows with the square
+  // of the input. Reading these takes milliseconds and grew into seconds
+  // before, so the time limit is the assertion.
+  // https://spec.commonmark.org/0.31.2/#link-destination
+  const RUN = 200000;
+  const CASES: [name: string, md: string][] = [
+    ['a run that never closes', `[x](${' '.repeat(RUN)}`],
+    ['a run in front of a quote', `[x](${' '.repeat(RUN)}"`],
+    ['a run of tabs', `[x](${'\t'.repeat(RUN)}`],
+    [
+      'a run on either side of a destination',
+      `[x](${' '.repeat(RUN)}/uri${' '.repeat(RUN)}`,
+    ],
+  ];
+
+  for (const [name, md] of CASES) {
+    it(`reads ${name}`, {timeout: 5000}, () => {
+      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+        discrete: true,
+      });
+
+      // None of them is a link, and the point is that saying so is quick.
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => node.getParent())
+            .filter($isLinkNode),
+        ),
+      ).toEqual([]);
+    });
+  }
+});
+
 describe('link destination round trip', () => {
   // Export has to write a destination that import can read back: escapes in
   // the raw form, and the pointy form for a URL the raw form cannot hold.
@@ -3414,6 +3454,20 @@ describe('link destination round trip', () => {
     // Only a `<` in first place would turn the raw form into the pointy one,
     // so an angle bracket anywhere else goes out unescaped.
     ['https://example.com/a<b>c', '[x](https://example.com/a<b>c)'],
+    // A URL that already holds a character reference has to keep it. Written
+    // raw it would be read back as the character it names, which is how the
+    // line endings above survive at all.
+    ['https://example.com/a&#10;b', '[x](https://example.com/a&#38;#10;b)'],
+    ['https://example.com/a&#x0A;b', '[x](https://example.com/a&#38;#x0A;b)'],
+    ['https://example.com/a&amp;b', '[x](https://example.com/a&#38;amp;b)'],
+    ['&#38;', '[x](&#38;#38;)'],
+    // An `&` that begins no reference is ordinary, so a query string keeps the
+    // separators it was written with.
+    ['https://example.com/?a=1&b=2', '[x](https://example.com/?a=1&b=2)'],
+    [
+      'https://example.com/?a=1&b=2;c=3',
+      '[x](https://example.com/?a=1&b=2;c=3)',
+    ],
     ['<foo>', '[x](\\<foo>)'],
     ['', '[x](<>)'],
     ['https://lexical.dev', '[x](https://lexical.dev)'],
@@ -3455,6 +3509,58 @@ describe('link destination round trip', () => {
             .map(node => node.getURL()),
         ),
       ).toEqual([url]);
+    });
+  }
+});
+
+describe('link title round trip', () => {
+  // A title is read back through `unescapeText` too, so a character reference
+  // in one survives only if it goes out as a reference of its own.
+  // https://spec.commonmark.org/0.31.2/#link-title
+  const CASES: [title: string, md: string][] = [
+    ['a&#10;b', '[x](/uri "a&#38;#10;b")'],
+    ['a&amp;b', '[x](/uri "a&#38;amp;b")'],
+    ['a&b', '[x](/uri "a&b")'],
+    ['a"b', '[x](/uri "a\\"b")'],
+    ['plain', '[x](/uri "plain")'],
+  ];
+
+  for (const [title, md] of CASES) {
+    it(`preserves "${title}"`, () => {
+      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createLinkNode('/uri', {title}).append($createTextNode('x')),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+
+      const exported = editor.read('latest', () =>
+        $convertToMarkdownString(TRANSFORMERS),
+      );
+      expect(exported).toBe(md);
+
+      const reimported = createHeadlessEditor({nodes: [LinkNode]});
+      reimported.update(
+        () => $convertFromMarkdownString(exported, TRANSFORMERS),
+        {discrete: true},
+      );
+
+      expect(
+        reimported.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => node.getParent())
+            .filter($isLinkNode)
+            .map(node => node.getTitle()),
+        ),
+      ).toEqual([title]);
     });
   }
 });

@@ -3347,6 +3347,41 @@ describe('a raw link destination cannot begin with an angle bracket', () => {
   }
 });
 
+describe('link destination and title shapes', () => {
+  // Every expectation here is what mdast-util-from-markdown returns for the
+  // same string. https://spec.commonmark.org/0.31.2/#inline-link
+  const CASES: [md: string, links: ImportedLink[]][] = [
+    // a title takes any of the three spellings, after whitespace
+    ['[x](/uri "t")', [{title: 't', url: '/uri'}]],
+    ["[x](/uri 't')", [{title: 't', url: '/uri'}]],
+    ['[x](/uri (t))', [{title: 't', url: '/uri'}]],
+    ['[x](/uri  "t")', [{title: 't', url: '/uri'}]],
+    ['[x](/uri\t"t")', [{title: 't', url: '/uri'}]],
+    // without the whitespace it is all destination
+    ['[x](/uri"t")', [{title: null, url: '/uri"t"'}]],
+    ['[x]( "t")', [{title: null, url: '"t"'}]],
+    // a parenthesized title may not hold an unescaped parenthesis
+    ['[x](/uri (a(b)c))', []],
+    // whitespace may sit on either side of the destination
+    ['[x]( /uri)', [{title: null, url: '/uri'}]],
+    ['[x](/uri )', [{title: null, url: '/uri'}]],
+    ['[x]( /uri "t" )', [{title: 't', url: '/uri'}]],
+    // the destination itself is optional
+    ['[x]()', [{title: null, url: ''}]],
+    ['[x]( )', [{title: null, url: ''}]],
+    // parentheses nest, up to the depth the pattern is written for
+    ['[x](foo(and(bar)))', [{title: null, url: 'foo(and(bar))'}]],
+    ['[x](a(b(c)d)e)', [{title: null, url: 'a(b(c)d)e'}]],
+    ['[x](((a)))', [{title: null, url: '((a))'}]],
+  ];
+
+  for (const [md, links] of CASES) {
+    it(`reads ${JSON.stringify(md)}`, () => {
+      expect(importLinks(md)).toEqual(links);
+    });
+  }
+});
+
 describe('link destination round trip', () => {
   // Export has to write a destination that import can read back: escapes in
   // the raw form, and the pointy form for a URL the raw form cannot hold.

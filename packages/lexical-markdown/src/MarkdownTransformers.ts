@@ -911,34 +911,51 @@ export const LINK: TextMatchTransformer = {
 
     return linkContent;
   },
-  // A link destination comes in two shapes. Between `<` and `>` it may hold
-  // anything but a line ending and an unescaped angle bracket, whitespace
-  // included. Written raw it may not begin with `<`, and it holds a backslash
-  // and whatever follows it, one balanced pair of parentheses, or any other
-  // character that is not a space, a parenthesis or a backslash. An angle
-  // bracket anywhere but the first character is ordinary there, so a pointy
-  // destination that never closes is not a destination at all.
+  // A link destination comes in two shapes, is itself optional, and may have
+  // whitespace on either side of it inside the parentheses. Between `<` and
+  // `>` it holds anything but a line ending and an unescaped angle bracket,
+  // whitespace included. Written raw it may not begin with `<`, and it holds a
+  // backslash and whatever follows it, a balanced pair of parentheses, or any
+  // other character that is not a space, a parenthesis or a backslash. An
+  // angle bracket anywhere but the first character is an ordinary character
+  // there. A backslash in front of whitespace escapes nothing, so that branch
+  // takes the backslash on its own and lets the whitespace end the
+  // destination.
   //
-  // A backslash in front of whitespace escapes
-  // nothing, so that branch takes the backslash on its own and lets the
-  // whitespace end the destination. Inside each shape no two alternatives can
-  // match at the same place, so neither has anything to backtrack over.
+  // The parentheses nest three deep. A regular expression cannot count them,
+  // so the depth is a limit written down rather than a general rule, and no
+  // URL in the wild reaches past the one level a disambiguated Wikipedia
+  // article needs.
+  //
+  // A title comes after the destination and whitespace, in any of the three
+  // spellings CommonMark gives it. Inside every shape here no two alternatives
+  // can match at the same place, so none of them has anything to backtrack
+  // over.
   importRegExp:
-    /(?:\[(.+?)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
+    /(?:\[(.+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?)?\s*\))/,
   regExp:
-    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
+    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?)?\s*\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
     if ($findMatchingParent(textNode, $isLinkNode)) {
       return;
     }
-    const [, linkText, pointyLinkUrl, rawLinkUrl, rawLinkTitle] = match;
+    const [
+      ,
+      linkText,
+      pointyLinkUrl,
+      rawLinkUrl,
+      quotedTitle,
+      apostrophedTitle,
+      parenthesizedTitle,
+    ] = match;
 
-    // Only one of the two destination shapes matched, and the pointy one may
-    // legitimately be empty, so this cannot fall back on truthiness.
-    const linkDestination = pointyLinkUrl != null ? pointyLinkUrl : rawLinkUrl;
-    const linkUrl =
-      linkDestination != null ? unescapeText(linkDestination) : undefined;
+    // At most one destination shape matched, either may legitimately be empty,
+    // and `[a]()` matches with no destination at all, so none of this can fall
+    // back on truthiness.
+    const linkUrl = unescapeText(pointyLinkUrl ?? rawLinkUrl ?? '');
+    // A title has three spellings and only the one that matched is defined.
+    const rawLinkTitle = quotedTitle ?? apostrophedTitle ?? parenthesizedTitle;
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});

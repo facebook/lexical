@@ -47,9 +47,9 @@ export interface AutoLinkAnnounceExtensionConfig {
  * say "Link" at `www.example.c`, again at `o`, and again at `m`. Only a
  * creation on its own is a link that was not there a moment ago.
  */
-export const AutoLinkAnnounceExtension = /* @__PURE__ */ defineExtension({
+export const AutoLinkAnnounceExtension = defineExtension({
   build: (_editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<AutoLinkAnnounceExtensionConfig>({
+  config: safeCast<AutoLinkAnnounceExtensionConfig>({
     created: 'Link',
     createdMany: '%s links',
     destroyed: 'Link removed',

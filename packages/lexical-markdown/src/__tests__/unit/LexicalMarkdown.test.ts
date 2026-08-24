@@ -9,7 +9,7 @@ import {$createCodeNode, CodeNode} from '@lexical/code-core';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import invariant from '@lexical/internal/invariant';
-import {$createLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -702,16 +702,22 @@ describe('Markdown', () => {
       // pair of parentheses inside the destination.
       html: '<p><a href="https://en.wikipedia.org/wiki/Ruby_(programming_language)"><span style="white-space: pre-wrap;">Ruby</span></a></p>',
       md: '[Ruby](https://en.wikipedia.org/wiki/Ruby_(programming_language))',
+      // Export escapes the parentheses so that the destination cannot close
+      // early, which is what @lexical/mdast writes for the same link.
+      mdAfterExport:
+        '[Ruby](https://en.wikipedia.org/wiki/Ruby_\\(programming_language\\))',
     },
     {
       html: '<p><a href="https://example.com/a(b)c"><span style="white-space: pre-wrap;">a</span></a><span style="white-space: pre-wrap;"> and </span><a href="https://example.com/d"><span style="white-space: pre-wrap;">d</span></a></p>',
       md: '[a](https://example.com/a(b)c) and [d](https://example.com/d)',
+      mdAfterExport:
+        '[a](https://example.com/a\\(b\\)c) and [d](https://example.com/d)',
     },
     {
-      // A backslash-escaped parenthesis is part of the destination too.
+      // A backslash-escaped parenthesis is part of the destination too, and it
+      // is the spelling export produces, so this one is already a fixed point.
       html: '<p><a href="https://example.com/a)b"><span style="white-space: pre-wrap;">a</span></a></p>',
       md: '[a](https://example.com/a\\)b)',
-      mdAfterExport: '[a](https://example.com/a)b)',
     },
     {
       // Import only: <mark>...</mark> is exported as ==...== in markdown.
@@ -3264,4 +3270,65 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
     );
     expect(result).toBe('  **b**');
   });
+});
+
+describe('link destination round trip', () => {
+  // A destination is written raw, so a parenthesis or a backslash in the URL
+  // has to be escaped on export or the link does not come back on import.
+  // https://spec.commonmark.org/0.31.2/#link-destination
+  const CASES: [url: string, md: string][] = [
+    [
+      'https://en.wikipedia.org/wiki/Ruby_(programming_language)',
+      '[x](https://en.wikipedia.org/wiki/Ruby_\\(programming_language\\))',
+    ],
+    ['https://example.com/a)b', '[x](https://example.com/a\\)b)'],
+    ['https://example.com/a(b', '[x](https://example.com/a\\(b)'],
+    [
+      'https://example.com/a(b)c(d)e',
+      '[x](https://example.com/a\\(b\\)c\\(d\\)e)',
+    ],
+    ['https://example.com/((a))', '[x](https://example.com/\\(\\(a\\)\\))'],
+    ['https://example.com/a\\', '[x](https://example.com/a\\\\)'],
+    ['https://example.com/a\\(b', '[x](https://example.com/a\\\\\\(b)'],
+    ['https://lexical.dev', '[x](https://lexical.dev)'],
+  ];
+
+  for (const [url, md] of CASES) {
+    it(`preserves "${url}"`, () => {
+      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createLinkNode(url).append($createTextNode('x')),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+
+      const exported = editor.read('latest', () =>
+        $convertToMarkdownString(TRANSFORMERS),
+      );
+      expect(exported).toBe(md);
+
+      const reimported = createHeadlessEditor({nodes: [LinkNode]});
+      reimported.update(
+        () => $convertFromMarkdownString(exported, TRANSFORMERS),
+        {discrete: true},
+      );
+
+      expect(
+        reimported.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => node.getParent())
+            .filter($isLinkNode)
+            .map(node => node.getURL()),
+        ),
+      ).toEqual([url]);
+    });
+  }
 });

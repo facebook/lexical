@@ -884,9 +884,15 @@ export const LINK: TextMatchTransformer = {
       title = title.replace(/([\\"])/g, '\\$1');
     }
 
+    // The destination is written raw, so a parenthesis in the URL would close
+    // it early and a backslash would be read back as the start of an escape.
+    // importRegExp accepts both escapes and the replace handler undoes them.
+    // @lexical/mdast escapes the same parentheses on its way out.
+    const url = node.getURL().replace(/([\\()])/g, '\\$1');
+
     const linkContent = title
-      ? `[${textContent}](${node.getURL()} "${title}")`
-      : `[${textContent}](${node.getURL()})`;
+      ? `[${textContent}](${url} "${title}")`
+      : `[${textContent}](${url})`;
 
     return linkContent;
   },

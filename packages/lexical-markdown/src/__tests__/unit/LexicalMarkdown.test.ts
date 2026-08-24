@@ -3289,11 +3289,27 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
   });
 });
 
+type ImportedLink = {title: null | string; url: string};
+
+function importLinks(md: string): ImportedLink[] {
+  const editor = createHeadlessEditor({nodes: [LinkNode]});
+  editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+    discrete: true,
+  });
+  return editor.read('latest', () =>
+    $getRoot()
+      .getAllTextNodes()
+      .map(node => node.getParent())
+      .filter($isLinkNode)
+      .map(node => ({title: node.getTitle(), url: node.getURL()})),
+  );
+}
+
 describe('link destination ends at whitespace', () => {
   // A backslash escapes punctuation only, so one in front of a space is a
   // literal backslash and the space closes the raw destination.
   // https://spec.commonmark.org/0.31.2/#link-destination
-  const CASES: [md: string, links: {title: null | string; url: string}[]][] = [
+  const CASES: [md: string, links: ImportedLink[]][] = [
     ['[x](b\\ "t")', [{title: 't', url: 'b\\'}]],
     ['[x](foo\\ bar)', []],
     ['[x](foo\\ bar "t")', []],
@@ -3303,20 +3319,30 @@ describe('link destination ends at whitespace', () => {
 
   for (const [md, links] of CASES) {
     it(`reads ${JSON.stringify(md)}`, () => {
-      const editor = createHeadlessEditor({nodes: [LinkNode]});
-      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
-        discrete: true,
-      });
+      expect(importLinks(md)).toEqual(links);
+    });
+  }
+});
 
-      expect(
-        editor.read('latest', () =>
-          $getRoot()
-            .getAllTextNodes()
-            .map(node => node.getParent())
-            .filter($isLinkNode)
-            .map(node => ({title: node.getTitle(), url: node.getURL()})),
-        ),
-      ).toEqual(links);
+describe('a raw link destination cannot begin with an angle bracket', () => {
+  // Otherwise a pointy destination that never closes falls through to the raw
+  // form and the brackets end up inside the URL. Every expectation here is
+  // what mdast-util-from-markdown returns for the same string.
+  const CASES: [md: string, links: ImportedLink[]][] = [
+    ['[x](<a<b>)', []],
+    ['[x](<>x)', []],
+    ['[x](<a>b)', []],
+    ['[x](<foo)', []],
+    ['[x](<\\>)', []],
+    // anywhere but in first place an angle bracket is an ordinary character
+    ['[x](a<b>c)', [{title: null, url: 'a<b>c'}]],
+    ['[x](a<b)', [{title: null, url: 'a<b'}]],
+    ['[x](a>b)', [{title: null, url: 'a>b'}]],
+  ];
+
+  for (const [md, links] of CASES) {
+    it(`reads ${JSON.stringify(md)}`, () => {
+      expect(importLinks(md)).toEqual(links);
     });
   }
 });
@@ -3350,7 +3376,9 @@ describe('link destination round trip', () => {
     ['https://example.com/a\nb', '[x](<https://example.com/a&#10;b>)'],
     ['https://example.com/a\r\nb', '[x](<https://example.com/a&#13;&#10;b>)'],
     ['https://example.com/a b\nc', '[x](<https://example.com/a b&#10;c>)'],
-    ['https://example.com/a<b>c', '[x](https://example.com/a\\<b>c)'],
+    // Only a `<` in first place would turn the raw form into the pointy one,
+    // so an angle bracket anywhere else goes out unescaped.
+    ['https://example.com/a<b>c', '[x](https://example.com/a<b>c)'],
     ['<foo>', '[x](\\<foo>)'],
     ['', '[x](<>)'],
     ['https://lexical.dev', '[x](https://lexical.dev)'],

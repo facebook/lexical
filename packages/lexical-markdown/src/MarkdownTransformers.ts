@@ -888,8 +888,9 @@ export const LINK: TextMatchTransformer = {
     // written in the pointy form, where only `<`, `>` and a backslash need an
     // escape. An empty URL goes there too, since the raw form has nothing left
     // to match. Everywhere else the destination is written raw, where a
-    // parenthesis would close it early, a backslash would start an escape and
-    // a leading `<` would turn it into the pointy form.
+    // parenthesis would close it early, a backslash would start an escape, and
+    // only a `<` in first place turns it into the pointy form. An angle
+    // bracket anywhere else is an ordinary character and goes out as it is.
     //
     // Neither shape may hold a line ending, so a literal one would leave a
     // destination that no reader can close and would split the paragraph in
@@ -902,7 +903,7 @@ export const LINK: TextMatchTransformer = {
             .replace(/([\\<>])/g, '\\$1')
             .replace(/\r/g, '&#13;')
             .replace(/\n/g, '&#10;')}>`
-        : rawUrl.replace(/([\\()<])/g, '\\$1');
+        : rawUrl.replace(/([\\()])/g, '\\$1').replace(/^</, '\\<');
 
     const linkContent = title
       ? `[${textContent}](${url} "${title}")`
@@ -912,16 +913,20 @@ export const LINK: TextMatchTransformer = {
   },
   // A link destination comes in two shapes. Between `<` and `>` it may hold
   // anything but a line ending and an unescaped angle bracket, whitespace
-  // included. Written raw it may hold a backslash and whatever follows it, one
-  // balanced pair of parentheses, or any other character that is not a space,
-  // a parenthesis or a backslash. A backslash in front of whitespace escapes
+  // included. Written raw it may not begin with `<`, and it holds a backslash
+  // and whatever follows it, one balanced pair of parentheses, or any other
+  // character that is not a space, a parenthesis or a backslash. An angle
+  // bracket anywhere but the first character is ordinary there, so a pointy
+  // destination that never closes is not a destination at all.
+  //
+  // A backslash in front of whitespace escapes
   // nothing, so that branch takes the backslash on its own and lets the
   // whitespace end the destination. Inside each shape no two alternatives can
   // match at the same place, so neither has anything to backtrack over.
   importRegExp:
-    /(?:\[(.+?)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
+    /(?:\[(.+?)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
   regExp:
-    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
+    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
     if ($findMatchingParent(textNode, $isLinkNode)) {

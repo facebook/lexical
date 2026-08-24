@@ -904,14 +904,16 @@ export const LINK: TextMatchTransformer = {
   },
   // A link destination comes in two shapes. Between `<` and `>` it may hold
   // anything but a line ending and an unescaped angle bracket, whitespace
-  // included. Written raw it may hold a backslash escape, one balanced pair of
-  // parentheses, or any other character that is not a space, a parenthesis or
-  // a backslash. Inside each shape the alternatives start on different
-  // characters, so neither has anything to backtrack over.
+  // included. Written raw it may hold a backslash and whatever follows it, one
+  // balanced pair of parentheses, or any other character that is not a space,
+  // a parenthesis or a backslash. A backslash in front of whitespace escapes
+  // nothing, so that branch takes the backslash on its own and lets the
+  // whitespace end the destination. Inside each shape no two alternatives can
+  // match at the same place, so neither has anything to backtrack over.
   importRegExp:
-    /(?:\[(.+?)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?:\\.|\((?:\\.|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
+    /(?:\[(.+?)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
   regExp:
-    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?:\\.|\((?:\\.|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
+    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
     if ($findMatchingParent(textNode, $isLinkNode)) {

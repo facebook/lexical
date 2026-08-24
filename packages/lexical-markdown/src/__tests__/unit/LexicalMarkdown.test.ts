@@ -3289,6 +3289,38 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
   });
 });
 
+describe('link destination ends at whitespace', () => {
+  // A backslash escapes punctuation only, so one in front of a space is a
+  // literal backslash and the space closes the raw destination.
+  // https://spec.commonmark.org/0.31.2/#link-destination
+  const CASES: [md: string, links: {title: null | string; url: string}[]][] = [
+    ['[x](b\\ "t")', [{title: 't', url: 'b\\'}]],
+    ['[x](foo\\ bar)', []],
+    ['[x](foo\\ bar "t")', []],
+    ['[x](a\\ b)', []],
+    ['[x](a\\ b "t")', []],
+  ];
+
+  for (const [md, links] of CASES) {
+    it(`reads ${JSON.stringify(md)}`, () => {
+      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+        discrete: true,
+      });
+
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => node.getParent())
+            .filter($isLinkNode)
+            .map(node => ({title: node.getTitle(), url: node.getURL()})),
+        ),
+      ).toEqual(links);
+    });
+  }
+});
+
 describe('link destination round trip', () => {
   // Export has to write a destination that import can read back: escapes in
   // the raw form, and the pointy form for a URL the raw form cannot hold.

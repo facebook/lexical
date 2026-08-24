@@ -68,13 +68,28 @@ const QuoteRule = /* @__PURE__ */ defineImportRule({
  * inline content.
  *
  * Not part of {@link RichTextImportRules}; without it `<blockquote>`
- * import behavior is unchanged. To opt in, register it with a higher
- * priority than the default rules, e.g.:
+ * import behavior is unchanged. To opt in, contribute it from somewhere
+ * that outranks {@link RichTextImportRules} in the compiled rule list —
+ * either directly to the editor builder:
  * ```ts
- * configExtension(DOMImportExtension, {rules: [ShadowRootQuoteRule]})
+ * buildEditorFromExtensions(
+ *   MyExtension,
+ *   configExtension(DOMImportExtension, {rules: [ShadowRootQuoteRule]}),
+ * )
  * ```
- * (rules from later configuration take priority, so this shadows the
- * default `@lexical/rich-text/blockquote` rule).
+ * or from an extension that depends on {@link RichTextExtension}:
+ * ```ts
+ * defineExtension({
+ *   dependencies: [
+ *     RichTextExtension,
+ *     configExtension(DOMImportExtension, {rules: [ShadowRootQuoteRule]}),
+ *   ],
+ *   name: '@app/quotes',
+ * })
+ * ```
+ * Either way the contribution is merged after rich-text's and therefore
+ * prepended in front of it, so this rule is reached first and shadows the
+ * default `@lexical/rich-text/blockquote` rule.
  *
  * @experimental
  */
@@ -121,9 +136,11 @@ const GoogleDocsTitleSpanRule = /* @__PURE__ */ defineImportRule({
 /**
  * Import rules for {@link HeadingNode} and {@link QuoteNode}, including
  * the Google Docs title heuristic that the legacy `HeadingNode.importDOM`
- * declared. The Google-Docs rules are registered last (highest priority)
- * so they precede the generic `<p>` and `<span>` rules from
- * {@link CoreImportRules}.
+ * declared. This whole array is contributed by {@link RichTextExtension},
+ * which depends on `CoreImportExtension`, so it is prepended in front of
+ * {@link CoreImportRules}: the Google-Docs `<p>` / `<span>` rules here are
+ * reached before the generic `<p>` and `<span>` rules from core, and defer
+ * to them via `$next()` when the Google-Docs heuristic doesn't match.
  *
  * Registered by {@link RichTextExtension} itself (together with
  * `CoreImportExtension`), so any editor that uses the rich-text

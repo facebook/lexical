@@ -3345,6 +3345,11 @@ describe('link destination round trip', () => {
     ['https://example.com/a b<c', '[x](<https://example.com/a b\\<c>)'],
     ['https://example.com/a b\\', '[x](<https://example.com/a b\\\\>)'],
     ['https://example.com/a\tb', '[x](<https://example.com/a\tb>)'],
+    // No destination may hold a line ending, and writing one raw would end the
+    // paragraph in the middle of the link.
+    ['https://example.com/a\nb', '[x](<https://example.com/a&#10;b>)'],
+    ['https://example.com/a\r\nb', '[x](<https://example.com/a&#13;&#10;b>)'],
+    ['https://example.com/a b\nc', '[x](<https://example.com/a b&#10;c>)'],
     ['https://example.com/a<b>c', '[x](https://example.com/a\\<b>c)'],
     ['<foo>', '[x](\\<foo>)'],
     ['', '[x](<>)'],

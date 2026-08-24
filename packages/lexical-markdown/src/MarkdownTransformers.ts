@@ -890,10 +890,18 @@ export const LINK: TextMatchTransformer = {
     // to match. Everywhere else the destination is written raw, where a
     // parenthesis would close it early, a backslash would start an escape and
     // a leading `<` would turn it into the pointy form.
+    //
+    // Neither shape may hold a line ending, so a literal one would leave a
+    // destination that no reader can close and would split the paragraph in
+    // two. It goes out as the character reference that `unescapeText` and a
+    // CommonMark reader both turn back into the line ending.
     const rawUrl = node.getURL();
     const url =
       rawUrl === '' || /\s/.test(rawUrl)
-        ? `<${rawUrl.replace(/([\\<>])/g, '\\$1')}>`
+        ? `<${rawUrl
+            .replace(/([\\<>])/g, '\\$1')
+            .replace(/\r/g, '&#13;')
+            .replace(/\n/g, '&#10;')}>`
         : rawUrl.replace(/([\\()<])/g, '\\$1');
 
     const linkContent = title

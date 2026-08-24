@@ -36,11 +36,11 @@ export type SerializedMarkNode = Spread<
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedMarkNode (those it adds over a SerializedElementNode).
-const markNodeSchema = /* @__PURE__ */ objectValue({
-  ids: /* @__PURE__ */ withAccessors(
-    /* @__PURE__ */ arrayValue(/* @__PURE__ */ stringValue()),
-    {getter: 'getIDs', setter: 'setIDs'},
-  ),
+const markNodeSchema = objectValue({
+  ids: withAccessors(arrayValue(stringValue()), {
+    getter: 'getIDs',
+    setter: 'setIDs',
+  }),
 });
 
 const NO_IDS: readonly string[] = [];

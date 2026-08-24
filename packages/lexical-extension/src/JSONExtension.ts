@@ -71,7 +71,7 @@ export interface JSONExtensionOutput {
  *
  * @experimental
  */
-export const JSONExtension = /* @__PURE__ */ defineExtension({
+export const JSONExtension = defineExtension({
   build(editor, config): JSONExtensionOutput {
     return {
       $exportJSON(editorState = editor.getEditorState(), options = {}) {
@@ -84,6 +84,6 @@ export const JSONExtension = /* @__PURE__ */ defineExtension({
       },
     };
   },
-  config: /* @__PURE__ */ safeCast<JSONConfig>({compact: false}),
+  config: safeCast<JSONConfig>({compact: false}),
   name: '@lexical/extension/JSON',
 });

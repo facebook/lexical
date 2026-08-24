@@ -76,19 +76,19 @@ const SUPPORTED_URL_PROTOCOLS = new Set([
   'tel:',
 ]);
 
-const linkNodeSchema = /* @__PURE__ */ objectValue({
+const linkNodeSchema = objectValue({
   // defaultAsNull preserves the legacy `value || null` semantics: an empty
   // string (or junk that coerces to it) imports as null, not ''.
-  rel: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
+  rel: nullable(stringValue(), {
     defaultAsNull: true,
   }),
-  target: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
+  target: nullable(stringValue(), {
     defaultAsNull: true,
   }),
-  title: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
+  title: nullable(stringValue(), {
     defaultAsNull: true,
   }),
-  url: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
+  url: withAccessors(stringValue(), {
     getter: 'getURL',
     setter: 'setURL',
   }),
@@ -494,8 +494,8 @@ export type SerializedAutoLinkNode = Spread<
   SerializedLinkNode
 >;
 
-const autoLinkNodeSchema = /* @__PURE__ */ objectValue({
-  isUnlinked: /* @__PURE__ */ booleanValue(),
+const autoLinkNodeSchema = objectValue({
+  isUnlinked: booleanValue(),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -606,7 +606,7 @@ export function $isAutoLinkNode(
 
 export const TOGGLE_LINK_COMMAND: LexicalCommand<
   string | ({url: string} & LinkAttributes) | null
-> = /* @__PURE__ */ createCommand('TOGGLE_LINK_COMMAND');
+> = createCommand('TOGGLE_LINK_COMMAND');
 
 function $getPointNode(point: Point, offset: number): LexicalNode | null {
   if (point.type === 'element') {

@@ -463,9 +463,9 @@ export interface CodePrismConfig {
  * and the related keyboard handlers are activated automatically. Set
  * `tabSize` on `CodeIndentExtension` to enable space-indent outdent.
  */
-export const CodePrismExtension = /* @__PURE__ */ defineExtension({
+export const CodePrismExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<CodePrismConfig>({
+  config: safeCast<CodePrismConfig>({
     disabled: false,
     tokenizer: PrismTokenizer,
   }),

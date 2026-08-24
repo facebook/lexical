@@ -27,8 +27,8 @@ import {
 import * as React from 'react';
 import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
 
-const tweetNodeSchema = /* @__PURE__ */ objectValue({
-  id: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), {
+const tweetNodeSchema = objectValue({
+  id: withGetter(stringValue(), {
     field: '__id',
   }),
 });

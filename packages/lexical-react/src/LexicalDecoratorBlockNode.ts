@@ -37,16 +37,8 @@ export type SerializedDecoratorBlockNode = Spread<
 // no concrete node type) so it publishes its schema on `$config` under the
 // well-known `Symbol.for('DecoratorBlockNode')` key; concrete subclasses
 // compose it with their own.
-const decoratorBlockNodeSchema = /* @__PURE__ */ objectValue({
-  format: /* @__PURE__ */ enumValue([
-    '',
-    'left',
-    'start',
-    'center',
-    'right',
-    'end',
-    'justify',
-  ]),
+const decoratorBlockNodeSchema = objectValue({
+  format: enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging

@@ -19,8 +19,8 @@ import {
   TextNode,
 } from 'lexical';
 
-const emojiNodeSchema = /* @__PURE__ */ objectValue({
-  className: /* @__PURE__ */ stringValue(),
+const emojiNodeSchema = objectValue({
+  className: stringValue(),
 });
 
 export type SerializedEmojiNode = Spread<

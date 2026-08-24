@@ -30,8 +30,8 @@ import {
   TextNode,
 } from 'lexical';
 
-const annotationState = /* @__PURE__ */ createState('annotation', {
-  parse: /* @__PURE__ */ stringValue(),
+const annotationState = createState('annotation', {
+  parse: stringValue(),
 });
 
 /** @noInheritDoc */

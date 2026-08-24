@@ -128,45 +128,38 @@ export type TextMarks = TextMark[];
 // Nothing here is a transformValue, which is what lets the codegen emit a
 // specialized parser for this class: every domain is stated as data the
 // generator can compile — the alias tables below, and mode's encode/decode.
-const textNodeSchema = /* @__PURE__ */ objectValue({
+const textNodeSchema = objectValue({
   // `format` and `detail` also accept the legacy string names that
   // hand-authored and older documents carry (e.g. `format: 'bold'`),
   // normalized to the stored numeric form — so what reaches the field is
   // already what setDetail/setFormat would have stored.
-  detail: /* @__PURE__ */ withField(
-    /* @__PURE__ */ aliasedValue(
-      /* @__PURE__ */ numberValue(),
-      DETAIL_TYPE_TO_DETAIL,
-    ),
-    {field: '__detail', getter: 'getDetail', setter: 'setDetail'},
-  ),
-  format: /* @__PURE__ */ withField(
-    /* @__PURE__ */ aliasedValue(
-      /* @__PURE__ */ numberValue(),
-      TEXT_TYPE_TO_FORMAT,
-    ),
-    {field: '__format', getter: 'getFormat', setter: 'setFormat'},
-  ),
+  detail: withField(aliasedValue(numberValue(), DETAIL_TYPE_TO_DETAIL), {
+    field: '__detail',
+    getter: 'getDetail',
+    setter: 'setDetail',
+  }),
+  format: withField(aliasedValue(numberValue(), TEXT_TYPE_TO_FORMAT), {
+    field: '__format',
+    getter: 'getFormat',
+    setter: 'setFormat',
+  }),
   // Stored as a bitmask, serialized as the name, so this one needs both
   // tables to stay off the accessors.
-  mode: /* @__PURE__ */ withField(
-    /* @__PURE__ */ enumValue(['normal', 'token', 'segmented']),
-    {
-      decode: TEXT_TYPE_TO_MODE,
-      encode: TEXT_MODE_TO_TYPE,
-      field: '__mode',
-      getter: 'getMode',
-      setter: 'setMode',
-    },
-  ),
-  style: /* @__PURE__ */ withField(/* @__PURE__ */ stringValue(), {
+  mode: withField(enumValue(['normal', 'token', 'segmented']), {
+    decode: TEXT_TYPE_TO_MODE,
+    encode: TEXT_MODE_TO_TYPE,
+    field: '__mode',
+    getter: 'getMode',
+    setter: 'setMode',
+  }),
+  style: withField(stringValue(), {
     field: '__style',
     getter: 'getStyle',
     setter: 'setStyle',
   }),
   // The accessors are getTextContent/setTextContent rather than the
   // conventional getText/setText, which TextNode does not have.
-  text: /* @__PURE__ */ withField(/* @__PURE__ */ stringValue(), {
+  text: withField(stringValue(), {
     field: '__text',
     getter: 'getTextContent',
     setter: 'setTextContent',

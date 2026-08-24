@@ -36,10 +36,8 @@ type SerializedCodeHighlightNode = Spread<
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedCodeHighlightNode (those it adds over a SerializedTextNode).
-const codeHighlightNodeSchema = /* @__PURE__ */ objectValue({
-  highlightType: /* @__PURE__ */ optional(
-    /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue()),
-  ),
+const codeHighlightNodeSchema = objectValue({
+  highlightType: optional(nullable(stringValue())),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging

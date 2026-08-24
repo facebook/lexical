@@ -36,8 +36,8 @@ export type SerializedTableRowNode = Spread<
   SerializedElementNode
 >;
 
-const tableRowNodeSchema = /* @__PURE__ */ objectValue({
-  height: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
+const tableRowNodeSchema = objectValue({
+  height: optional(numberValue()),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging

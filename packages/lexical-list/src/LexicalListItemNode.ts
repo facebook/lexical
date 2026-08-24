@@ -69,19 +69,18 @@ export type SerializedListItemNode = Spread<
  */
 const MAX_LIST_ITEM_INDENT = 128;
 
-const listItemNodeSchema = /* @__PURE__ */ objectValue({
-  checked: /* @__PURE__ */ optional(/* @__PURE__ */ booleanValue()),
+const listItemNodeSchema = objectValue({
+  checked: optional(booleanValue()),
   // Overrides the inherited ElementNode field to bound it. This indent is
   // structural — applying it nests or unwraps one whole list per level — so an
   // unbounded value out of untrusted JSON would build millions of nodes. Since
   // a schema falls back to its *default* for an out-of-domain value, clamping
   // is a transform rather than `numberValue`'s `max`, which would read an
   // over-deep item as indent 0 instead of as deeply nested.
-  indent: /* @__PURE__ */ transformValue(
-    /* @__PURE__ */ numberValue(0, {integer: true, min: 0}),
-    value => Math.min(value, MAX_LIST_ITEM_INDENT),
+  indent: transformValue(numberValue(0, {integer: true, min: 0}), value =>
+    Math.min(value, MAX_LIST_ITEM_INDENT),
   ),
-  value: /* @__PURE__ */ numberValue(1),
+  value: numberValue(1),
 });
 
 function applyMarkerStyles(

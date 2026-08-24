@@ -59,7 +59,7 @@ import {KeywordsExtension} from './KeywordNode';
 
 const ImageComponent = React.lazy(() => import('./ImageComponent'));
 
-const CaptionEditorExtension = /* @__PURE__ */ defineExtension({
+const CaptionEditorExtension = defineExtension({
   // Skip the default empty-paragraph initializer. In collab mode
   // CollaborationPlugin's bootstrap only runs `initializeEditor` when
   // the Lexical root is empty, so a pre-seeded paragraph would prevent
@@ -78,7 +78,7 @@ const CaptionEditorExtension = /* @__PURE__ */ defineExtension({
     LinkExtension,
     KeywordsExtension,
     EmojisExtension,
-    /* @__PURE__ */ configExtension(ReactExtension, {
+    configExtension(ReactExtension, {
       contentEditable: (
         <ContentEditable
           placeholder="Enter a caption..."
@@ -132,34 +132,19 @@ export type SerializedImageNode = Spread<
   SerializedLexicalNode
 >;
 
-const imageNodeSchema = /* @__PURE__ */ objectValue({
-  altText: /* @__PURE__ */ stringValue(),
-  caption: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ rawValue<SerializedEditor>(),
-    'getSerializedCaption',
-  ),
+const imageNodeSchema = objectValue({
+  altText: stringValue(),
+  caption: withGetter(rawValue<SerializedEditor>(), 'getSerializedCaption'),
   // An unsized dimension is the 'inherit' sentinel, which has always
   // serialized as 0 (and parses back through `|| 'inherit'`).
-  height: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
-    'getSerializedHeight',
-  ),
+  height: withGetter(optional(numberValue()), 'getSerializedHeight'),
   // Read straight from the field, but applied through setMaxWidth: an absent
   // `maxWidth` parses to `undefined`, and the setter reads that as "keep the
   // constructor's default" rather than as a value to store.
-  maxWidth: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
-    {field: '__maxWidth'},
-  ),
-  showCaption: /* @__PURE__ */ withField(
-    /* @__PURE__ */ booleanValue(),
-    '__showCaption',
-  ),
-  src: /* @__PURE__ */ stringValue(),
-  width: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
-    'getSerializedWidth',
-  ),
+  maxWidth: withGetter(optional(numberValue()), {field: '__maxWidth'}),
+  showCaption: withField(booleanValue(), '__showCaption'),
+  src: stringValue(),
+  width: withGetter(optional(numberValue()), 'getSerializedWidth'),
 });
 
 export class ImageNode extends DecoratorNode<JSX.Element> {

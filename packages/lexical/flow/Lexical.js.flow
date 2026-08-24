@@ -2223,8 +2223,8 @@ export type NormalizedLexicalExtensionArgument<
   Init,
 > = [LexicalExtension<Config, Name, Output, Init>, ...Partial<Config>[]];
 export type NormalizedPeerDependency<Extension extends AnyLexicalExtension> = [
-  Extension['name'],
-  Partial<LexicalExtensionConfig<Extension>> | void,
+  name: Extension['name'],
+  config?: Partial<LexicalExtensionConfig<Extension>>,
 ] & {readonly [typeof peerDependencySymbol]: Extension};
 export type OutputComponentExtension<ComponentType> =
   // $FlowFixMe[unclear-type]

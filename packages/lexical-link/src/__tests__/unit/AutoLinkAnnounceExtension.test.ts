@@ -60,7 +60,7 @@ function clearLiveRegion(): void {
  * Without matchers the transform unmakes the node it was just given, which is
  * a different scenario from typing an address.
  */
-const withMatchers = /* @__PURE__ */ configExtension(AutoLinkExtension, {
+const withMatchers = configExtension(AutoLinkExtension, {
   matchers: [autoLinkUrlMatcher],
 });
 

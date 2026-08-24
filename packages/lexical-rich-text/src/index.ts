@@ -152,8 +152,9 @@ export type SerializedHeadingNode = Spread<
   SerializedElementNode
 >;
 
-export const DRAG_DROP_PASTE: LexicalCommand<File[]> =
-  /* @__PURE__ */ createCommand('DRAG_DROP_PASTE_FILE');
+export const DRAG_DROP_PASTE: LexicalCommand<File[]> = createCommand(
+  'DRAG_DROP_PASTE_FILE',
+);
 
 export type SerializedQuoteNode = Spread<
   {
@@ -176,11 +177,11 @@ export type SerializedQuoteNode = Spread<
  * `<blockquote>` content. Defaults to `false`, in which case there is no
  * change to the legacy behavior (and nothing extra is serialized).
  */
-export const quoteShadowRootState = /* @__PURE__ */ createState('shadowRoot', {
+export const quoteShadowRootState = createState('shadowRoot', {
   // `booleanValue()`, not `Boolean`: the state's own serializer only ever
   // writes `true`/`false`, so anything else was never produced by Lexical and
   // is out of domain rather than a legacy form to coerce.
-  parse: /* @__PURE__ */ booleanValue(),
+  parse: booleanValue(),
 });
 
 /** @noInheritDoc */
@@ -322,8 +323,8 @@ export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedHeadingNode (those it adds over a SerializedElementNode).
-const headingNodeSchema = /* @__PURE__ */ objectValue({
-  tag: /* @__PURE__ */ enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']),
+const headingNodeSchema = objectValue({
+  tag: enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging

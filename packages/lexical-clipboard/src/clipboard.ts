@@ -1017,11 +1017,11 @@ export function $exportMimeTypeFromSelection(
  * });
  * ```
  */
-export const GetClipboardDataExtension = /* @__PURE__ */ defineExtension({
+export const GetClipboardDataExtension = defineExtension({
   build(editor, config, state) {
     return config.$exportMimeType;
   },
-  config: /* @__PURE__ */ safeCast<GetClipboardDataConfig>({
+  config: safeCast<GetClipboardDataConfig>({
     $exportMimeType: DEFAULT_EXPORT_MIME_TYPE,
   }),
   mergeConfig(config, partial) {

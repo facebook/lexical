@@ -49,33 +49,33 @@ export const TableCellHeaderStates = {
 export type TableCellHeaderState =
   (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates];
 
-const tableCellNodeSchema = /* @__PURE__ */ objectValue({
+const tableCellNodeSchema = objectValue({
   // defaultAsNull preserves the legacy `backgroundColor || null` semantics:
   // an empty string means "no background", which exportDOM checks for.
-  backgroundColor: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
+  backgroundColor: nullable(stringValue(), {
     defaultAsNull: true,
   }),
   // A span is a positive integer; 0 (the historical `|| 1` case), a negative,
   // or a fractional span is out of domain and falls back to 1.
-  colSpan: /* @__PURE__ */ numberValue(1, {integer: true, min: 1}),
+  colSpan: numberValue(1, {integer: true, min: 1}),
   // headerState is applied through setHeaderStyles (with its default BOTH
   // mask) rather than the conventional set<Prop> name.
-  headerState: /* @__PURE__ */ withAccessors(
-    /* @__PURE__ */ numberValue(TableCellHeaderStates.NO_STATUS),
-    {getter: {field: '__headerState'}, setter: 'setHeaderStyles'},
-  ),
-  rowSpan: /* @__PURE__ */ numberValue(1, {integer: true, min: 1}),
+  headerState: withAccessors(numberValue(TableCellHeaderStates.NO_STATUS), {
+    getter: {field: '__headerState'},
+    setter: 'setHeaderStyles',
+  }),
+  rowSpan: numberValue(1, {integer: true, min: 1}),
   // The domain exportJSON already enforces via isValidVerticalAlign; anything
   // else (including the historical falsy `|| undefined` case) is absent.
   // `undefined` leads the list so it is the default: passing it explicitly as
   // enumValue's second argument would instead select values[0].
-  verticalAlign: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ enumValue([undefined, 'middle', 'bottom']),
+  verticalAlign: withGetter(
+    enumValue([undefined, 'middle', 'bottom']),
     'getSerializedVerticalAlign',
   ),
   // A width of 0 is not a real width, matching the historical
   // `serializedNode.width || undefined`.
-  width: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue(), {
+  width: optional(numberValue(), {
     omitDefault: true,
   }),
 });

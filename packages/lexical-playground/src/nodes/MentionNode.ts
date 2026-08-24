@@ -31,8 +31,8 @@ const FORMAT_WRAPPER_TAGS: readonly (readonly [TextFormatType, string])[] = [
   ['underline', 'u'],
 ];
 
-const mentionNodeSchema = /* @__PURE__ */ objectValue({
-  mentionName: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), {
+const mentionNodeSchema = objectValue({
+  mentionName: withGetter(stringValue(), {
     field: '__mention',
   }),
 });

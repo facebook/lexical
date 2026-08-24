@@ -38,20 +38,19 @@ const ExcalidrawComponent = React.lazy(() => import('./ExcalidrawComponent'));
  * `serializedNode.width ?? 'inherit'` parsing, which stored any non-nullish
  * value (including a string like `'banana'`) verbatim.
  */
-const dimensionSchema: SerializationSchema<Dimension> =
-  /* @__PURE__ */ unionValue(
-    [/* @__PURE__ */ numberValue(), /* @__PURE__ */ enumValue(['inherit'])],
-    'inherit',
-  );
+const dimensionSchema: SerializationSchema<Dimension> = unionValue(
+  [numberValue(), enumValue(['inherit'])],
+  'inherit',
+);
 
-const excalidrawNodeSchema = /* @__PURE__ */ objectValue({
+const excalidrawNodeSchema = objectValue({
   // '[]' is the empty-scene default the constructor uses; an absent or
   // out-of-domain `data` must not become '' (JSON.parse('') throws).
-  data: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue('[]'), {
+  data: withGetter(stringValue('[]'), {
     field: '__data',
   }),
-  height: /* @__PURE__ */ withGetter(dimensionSchema, 'getSerializedHeight'),
-  width: /* @__PURE__ */ withGetter(dimensionSchema, 'getSerializedWidth'),
+  height: withGetter(dimensionSchema, 'getSerializedHeight'),
+  width: withGetter(dimensionSchema, 'getSerializedWidth'),
 });
 
 export type SerializedExcalidrawNode = Spread<

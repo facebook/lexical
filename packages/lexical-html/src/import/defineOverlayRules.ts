@@ -99,6 +99,7 @@ function isCompiledOverlayRules(
  * module scope so the dispatch table is built up front.
  *
  * @experimental
+ * @__NO_SIDE_EFFECTS__
  */
 export function defineOverlayRules(
   entries: readonly DOMImportRuleEntry[],

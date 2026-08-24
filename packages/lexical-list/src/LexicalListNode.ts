@@ -60,17 +60,17 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
   ul: 'bullet',
 };
 
-const listNodeSchema = /* @__PURE__ */ objectValue({
+const listNodeSchema = objectValue({
   // 'ul'/'ol' are the legacy tag-form listType some older documents carry,
   // normalized to the modern form.
-  listType: /* @__PURE__ */ transformValue(
-    /* @__PURE__ */ enumValue(['number', 'bullet', 'check', 'ul', 'ol']),
+  listType: transformValue(
+    enumValue(['number', 'bullet', 'check', 'ul', 'ol']),
     listType => TAG_TO_LIST_TYPE[listType] || listType,
   ),
-  start: /* @__PURE__ */ numberValue(1),
+  start: numberValue(1),
   // Derived from listType rather than stored: written on export, and
   // deliberately not applied on import.
-  tag: /* @__PURE__ */ withAccessors(/* @__PURE__ */ enumValue(['ul', 'ol']), {
+  tag: withAccessors(enumValue(['ul', 'ol']), {
     getter: 'getTag',
     setter: null,
   }),

@@ -46,19 +46,13 @@ const StickyComponent = React.lazy(() => import('./StickyComponent'));
 
 type StickyNoteColor = 'pink' | 'yellow';
 
-const stickyNodeSchema = /* @__PURE__ */ objectValue({
-  caption: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ rawValue<SerializedEditor>(),
-    'getSerializedCaption',
-  ),
-  color: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ enumValue(['yellow', 'pink']),
-    {field: '__color'},
-  ),
-  xOffset: /* @__PURE__ */ withGetter(/* @__PURE__ */ numberValue(), {
+const stickyNodeSchema = objectValue({
+  caption: withGetter(rawValue<SerializedEditor>(), 'getSerializedCaption'),
+  color: withGetter(enumValue(['yellow', 'pink']), {field: '__color'}),
+  xOffset: withGetter(numberValue(), {
     field: '__x',
   }),
-  yOffset: /* @__PURE__ */ withGetter(/* @__PURE__ */ numberValue(), {
+  yOffset: withGetter(numberValue(), {
     field: '__y',
   }),
 });
@@ -73,13 +67,13 @@ export type SerializedStickyNode = Spread<
   SerializedLexicalNode
 >;
 
-const StickyEditorExtension = /* @__PURE__ */ defineExtension({
+const StickyEditorExtension = defineExtension({
   dependencies: [
     SharedHistoryExtension,
     PlainTextExtension,
     ReactProviderExtension,
     NestedEditorExtension,
-    /* @__PURE__ */ configExtension(ReactExtension, {
+    configExtension(ReactExtension, {
       contentEditable: (
         <ContentEditable
           placeholder="What's up?"

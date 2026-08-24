@@ -72,22 +72,17 @@ export type SerializedTableNode = Spread<
   SerializedElementNode
 >;
 
-const tableNodeSchema = /* @__PURE__ */ objectValue({
-  colWidths: /* @__PURE__ */ optional(
-    /* @__PURE__ */ arrayValue(/* @__PURE__ */ numberValue()),
-  ),
-  frozenColumnCount: /* @__PURE__ */ withAccessors(
-    /* @__PURE__ */ numberValue(),
-    {getter: 'getSerializedFrozenColumnCount', setter: 'setFrozenColumns'},
-  ),
-  frozenRowCount: /* @__PURE__ */ withAccessors(/* @__PURE__ */ numberValue(), {
+const tableNodeSchema = objectValue({
+  colWidths: optional(arrayValue(numberValue())),
+  frozenColumnCount: withAccessors(numberValue(), {
+    getter: 'getSerializedFrozenColumnCount',
+    setter: 'setFrozenColumns',
+  }),
+  frozenRowCount: withAccessors(numberValue(), {
     getter: 'getSerializedFrozenRowCount',
     setter: 'setFrozenRows',
   }),
-  rowStriping: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ booleanValue(),
-    'getSerializedRowStriping',
-  ),
+  rowStriping: withGetter(booleanValue(), 'getSerializedRowStriping'),
 });
 
 function $updateColgroup(

@@ -59,11 +59,9 @@ export type SerializedCodeNode = Spread<
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedCodeNode (those it adds over a SerializedElementNode).
-const codeNodeSchema = /* @__PURE__ */ objectValue({
-  language: /* @__PURE__ */ optional(
-    /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue()),
-  ),
-  theme: /* @__PURE__ */ optional(/* @__PURE__ */ stringValue()),
+const codeNodeSchema = objectValue({
+  language: optional(nullable(stringValue())),
+  theme: optional(stringValue()),
 });
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';

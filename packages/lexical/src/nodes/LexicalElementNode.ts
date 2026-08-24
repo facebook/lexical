@@ -84,20 +84,12 @@ export type SerializedElementNode<
 // Single source of truth for parsing the node-specific properties of a
 // SerializedElementNode (those it adds over a SerializedLexicalNode), applied
 // by the base LexicalNode.updateFromJSON.
-const elementNodeSchema = /* @__PURE__ */ objectValue({
-  direction: /* @__PURE__ */ enumValue([null, 'ltr', 'rtl']),
+const elementNodeSchema = objectValue({
+  direction: enumValue([null, 'ltr', 'rtl']),
   // The serialized `format` is the ElementFormatType string, not the numeric
   // format getFormat() returns.
-  format: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ enumValue([
-      '',
-      'left',
-      'start',
-      'center',
-      'right',
-      'end',
-      'justify',
-    ]),
+  format: withGetter(
+    enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
     'getFormatType',
   ),
   // A whole, non-negative number: `setIndent` floors and rejects a negative,
@@ -106,17 +98,11 @@ const elementNodeSchema = /* @__PURE__ */ objectValue({
   // here would silently flatten a legitimately deep document to indent 0. The
   // unbounded walk that motivated a cap is ListItemNode.setIndent's, and it is
   // bounded there.
-  indent: /* @__PURE__ */ numberValue(0, {integer: true, min: 0}),
+  indent: numberValue(0, {integer: true, min: 0}),
   // Persisted only in the narrow case below, so they are read through getters
   // that return undefined (and are therefore omitted) otherwise.
-  textFormat: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ numberValue(),
-    'getSerializedTextFormat',
-  ),
-  textStyle: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ stringValue(),
-    'getSerializedTextStyle',
-  ),
+  textFormat: withGetter(numberValue(), 'getSerializedTextFormat'),
+  textStyle: withGetter(stringValue(), 'getSerializedTextStyle'),
 });
 
 export type ElementFormatType =

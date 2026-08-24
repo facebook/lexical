@@ -23,6 +23,7 @@ import {
 import {$createCodeNode} from './CodeNode';
 
 const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
+const THEME_DATA_ATTRIBUTE = 'data-theme';
 
 /**
  * True for elements whose `font-family` mentions `monospace` — the
@@ -63,11 +64,10 @@ const GitHubCodeTableOverlayRules = defineOverlayRules([
 
 const PreRule = defineImportRule({
   $import: (ctx, el) => [
-    $createCodeNode(el.getAttribute(LANGUAGE_DATA_ATTRIBUTE)).splice(
-      0,
-      0,
-      ctx.$importChildren(el),
-    ),
+    $createCodeNode(
+      el.getAttribute(LANGUAGE_DATA_ATTRIBUTE),
+      el.getAttribute(THEME_DATA_ATTRIBUTE),
+    ).splice(0, 0, ctx.$importChildren(el)),
   ],
   match: sel.tag('pre'),
   name: '@lexical/code/pre',
@@ -87,11 +87,10 @@ const MultilineCodeRule = defineImportRule({
       return $next();
     }
     return [
-      $createCodeNode(el.getAttribute(LANGUAGE_DATA_ATTRIBUTE)).splice(
-        0,
-        0,
-        ctx.$importChildren(el),
-      ),
+      $createCodeNode(
+        el.getAttribute(LANGUAGE_DATA_ATTRIBUTE),
+        el.getAttribute(THEME_DATA_ATTRIBUTE),
+      ).splice(0, 0, ctx.$importChildren(el)),
     ];
   },
   match: sel.tag('code'),

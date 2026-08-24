@@ -36,6 +36,7 @@ export interface GeneratedJSON {
   // widen the parameter to 'never', which no generated function actually
   // accepts and every call site then has to cast back.
   exportJSON(node: LexicalNode): {[key: string]: unknown};
+  exportCompactJSON?(node: LexicalNode): {[key: string]: unknown};
   updateFromJSON?(
     node: LexicalNode,
     json: {readonly [key: string]: unknown},
@@ -140,6 +141,33 @@ function exportTextNode(node: TextNode): {[key: string]: unknown} {
 }
 
 /** Generated from TextNode's `json` schema. Do not edit by hand. */
+function exportCompactTextNode(node: TextNode): {[key: string]: unknown} {
+  const json: {[key: string]: unknown} = {};
+  const detail = node.__detail;
+  if (detail !== undefined && detail !== 0) {
+    json.detail = detail;
+  }
+  const format = node.__format;
+  if (format !== undefined && format !== 0) {
+    json.format = format;
+  }
+  const mode = TEXT_MODE_DECODE[node.__mode];
+  if (mode !== undefined && mode !== 'normal') {
+    json.mode = mode;
+  }
+  const style = node.__style;
+  if (style !== undefined && style !== '') {
+    json.style = style;
+  }
+  const text = node.__text;
+  if (text !== undefined && text !== '') {
+    json.text = text;
+  }
+  json.type = 'text';
+  return json;
+}
+
+/** Generated from TextNode's `json` schema. Do not edit by hand. */
 function updateTextNode(
   node: TextNode,
   json: {readonly [key: string]: unknown},
@@ -211,12 +239,48 @@ function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
   return json;
 }
 
+/** Generated from ParagraphNode's `json` schema. Do not edit by hand. */
+function exportCompactParagraphNode(node: ParagraphNode): {
+  [key: string]: unknown;
+} {
+  const json: {[key: string]: unknown} = {children: []};
+  const direction = node.getDirection();
+  if (direction !== undefined && direction !== null) {
+    json.direction = direction;
+  }
+  const format = node.getFormatType();
+  if (format !== undefined && format !== '') {
+    json.format = format;
+  }
+  const indent = node.getIndent();
+  if (indent !== undefined && indent !== 0) {
+    json.indent = indent;
+  }
+  const textFormat = node.getSerializedTextFormat();
+  if (textFormat !== undefined && textFormat !== 0) {
+    json.textFormat = textFormat;
+  }
+  const textStyle = node.getSerializedTextStyle();
+  if (textStyle !== undefined && textStyle !== '') {
+    json.textStyle = textStyle;
+  }
+  json.type = 'paragraph';
+  return json;
+}
+
 /** Generated from LineBreakNode's `json` schema. Do not edit by hand. */
 function exportLineBreakNode(): {[key: string]: unknown} {
   return {
     type: 'linebreak',
     version: 1,
   };
+}
+
+/** Generated from LineBreakNode's `json` schema. Do not edit by hand. */
+function exportCompactLineBreakNode(): {[key: string]: unknown} {
+  const json: {[key: string]: unknown} = {};
+  json.type = 'linebreak';
+  return json;
 }
 
 /** Generated from TabNode's `json` schema. Do not edit by hand. */
@@ -264,23 +328,42 @@ function exportTabNode(node: TabNode): {[key: string]: unknown} {
   return json;
 }
 
+/** Generated from TabNode's `json` schema. Do not edit by hand. */
+function exportCompactTabNode(node: TabNode): {[key: string]: unknown} {
+  const json: {[key: string]: unknown} = {};
+  const format = node.__format;
+  if (format !== undefined && format !== 0) {
+    json.format = format;
+  }
+  const style = node.__style;
+  if (style !== undefined && style !== '') {
+    json.style = style;
+  }
+  json.type = 'tab';
+  return json;
+}
+
 /** TextNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TEXT: GeneratedJSON = {
   exportJSON: exportTextNode,
+  exportCompactJSON: exportCompactTextNode,
   updateFromJSON: updateTextNode,
 };
 
 /** ParagraphNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_PARAGRAPH: GeneratedJSON = {
   exportJSON: exportParagraphNode,
+  exportCompactJSON: exportCompactParagraphNode,
 };
 
 /** LineBreakNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_LINEBREAK: GeneratedJSON = {
   exportJSON: exportLineBreakNode,
+  exportCompactJSON: exportCompactLineBreakNode,
 };
 
 /** TabNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TAB: GeneratedJSON = {
   exportJSON: exportTabNode,
+  exportCompactJSON: exportCompactTabNode,
 };

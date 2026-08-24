@@ -96,6 +96,7 @@ export interface GeneratedJSON {
   // widen the parameter to 'never', which no generated function actually
   // accepts and every call site then has to cast back.
   exportJSON(node: LexicalNode): {[key: string]: unknown};
+  exportCompactJSON?(node: LexicalNode): {[key: string]: unknown};
   updateFromJSON?(
     node: LexicalNode,
     json: {readonly [key: string]: unknown},
@@ -267,17 +268,68 @@ function readExpression(klass, schema, key) {
  * accessor that does not exist.
  *
  * @param {NodeClass} klass
- * @returns {{expression: string, key: string}[]}
+ * @returns {{expression: string, key: string, schema: AnySchema}[]}
  */
 function schemaReads(klass) {
   const reads = [];
   for (const [key, schema] of getComposedSchema(klass).fieldsDerivedFirst) {
     const expression = readExpression(klass, schema, key);
     if (expression !== null) {
-      reads.push({expression, key});
+      reads.push({expression, key, schema});
     }
   }
   return reads;
+}
+
+/**
+ * The compact form of one class's export, or `null` for a class it cannot be
+ * generated for.
+ *
+ * The compact form omits a property whose value is the one parsing would
+ * restore, a property the parser derives rather than reads, and `version`. Which
+ * properties that turns out to be depends on the node's values, but the *rule*
+ * does not: each is a comparison against a default the schema states, which is
+ * as fixed as the accessor names are. So this generates the same way the legacy
+ * form does, and the `compact` argument picks between two straight-line
+ * functions rather than branching inside one.
+ *
+ * A schema that declares its own equality — {@link arrayValue} and
+ * {@link objectValue}, whose defaults are reference-typed — has no literal to
+ * compare against, so its class keeps the walk for this direction.
+ *
+ * @param {NodeClass} klass
+ * @returns {null | string}
+ */
+function generateCompactExport(klass) {
+  const type = klass.getType();
+  const writes = [];
+  for (const {expression, key, schema} of schemaReads(klass)) {
+    if (schema.setter === null) {
+      // Derived on import, so nothing will read it back: the compact form does
+      // not even call the getter to find out what it would have written.
+      continue;
+    }
+    if (schema.isEqual !== undefined) {
+      process.stdout.write(
+        `${klass.name}: no generated compact export, "${key}" compares by content\n`,
+      );
+      return null;
+    }
+    writes.push(
+      `  const ${key} = ${expression};\n  if (${key} !== undefined && ${key} !== ${literal(
+        schema.defaultValue,
+      )}) {\n    json.${key} = ${key};\n  }`,
+    );
+  }
+  const isElement = isElementish(klass);
+  return `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */
+function exportCompact${klass.name}(${
+    writes.length === 0 ? '' : `node: ${klass.name}`
+  }): {[key: string]: unknown} {
+  const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
+${writes.length === 0 ? '' : `${writes.join('\n')}\n`}  json.type = '${type}';
+  return json;
+}`;
 }
 
 /**
@@ -499,6 +551,7 @@ ${body}
 // because the override's `super.exportJSON(compact)` is what reaches the
 // generated literal.
 const generated = TARGETS.map(klass => ({
+  exportCompactJSON: generateCompactExport(klass),
   exportJSON: generateExport(klass),
   klass,
   updateFromJSON: generateUpdate(klass),
@@ -560,6 +613,7 @@ export interface GeneratedJSON {
   // widen the parameter to 'never', which no generated function actually
   // accepts and every call site then has to cast back.
   exportJSON(node: LexicalNode): {[key: string]: unknown};
+  exportCompactJSON?(node: LexicalNode): {[key: string]: unknown};
   updateFromJSON?(
     node: LexicalNode,
     json: {readonly [key: string]: unknown},
@@ -577,14 +631,18 @@ ${NUM_HELPER_SOURCE}
     : ''
 }${tableSource ? `\n${tableSource}\n` : ''}
 ${generated
-  .flatMap(g => [g.exportJSON, g.updateFromJSON])
+  .flatMap(g => [g.exportJSON, g.exportCompactJSON, g.updateFromJSON])
   .filter(Boolean)
   .join('\n\n')}
 
 ${generated
   .map(
-    ({klass, updateFromJSON}) =>
+    ({exportCompactJSON, klass, updateFromJSON}) =>
       `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const GENERATED_${klass.name.replace(/Node$/, '').toUpperCase()}: GeneratedJSON = {\n  exportJSON: export${klass.name},${
+        exportCompactJSON === null
+          ? ''
+          : `\n  exportCompactJSON: exportCompact${klass.name},`
+      }${
         updateFromJSON === null
           ? ''
           : `\n  updateFromJSON: update${klass.name},`

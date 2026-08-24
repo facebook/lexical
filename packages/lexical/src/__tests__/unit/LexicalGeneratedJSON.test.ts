@@ -57,13 +57,18 @@ const GENERATED = join(
  * This is `LexicalNode.exportJSON`'s body with the generated-exporter dispatch
  * removed, which is the only way to reach the walk for a class that has one.
  */
-function $walkExportJSON(node: LexicalNode): {[key: string]: unknown} {
+function $walkExportJSON(
+  node: LexicalNode,
+  compact: boolean,
+): {[key: string]: unknown} {
   const json: {[key: string]: unknown} = $isElementNode(node)
     ? {children: []}
     : {};
-  $writeJSONGetters(node, json, false);
+  $writeJSONGetters(node, json, compact);
   json.type = node.getType();
-  json.version = 1;
+  if (!compact) {
+    json.version = 1;
+  }
   return json;
 }
 
@@ -101,12 +106,20 @@ describe('generated exportJSON', () => {
             $createTabNode(),
           ];
           for (const node of nodes) {
-            const generated = node.exportJSON();
-            const walked = $walkExportJSON(node);
-            expect(generated).toEqual(walked);
-            // Key order too: a document round-tripped through JSON.stringify
-            // should be byte-identical either way.
-            expect(Object.keys(generated)).toEqual(Object.keys(walked));
+            // Both forms: each is generated separately, so each has to agree
+            // with the walk separately. None of these classes overrides
+            // exportJSON, so the walk is the whole of what they would export.
+            for (const compact of [false, true]) {
+              const generated = node.exportJSON(compact);
+              const walked = $walkExportJSON(node, compact);
+              expect({compact, json: generated}).toEqual({
+                compact,
+                json: walked,
+              });
+              // Key order too: a document round-tripped through JSON.stringify
+              // should be byte-identical either way.
+              expect(Object.keys(generated)).toEqual(Object.keys(walked));
+            }
           }
         },
         {discrete: true},
@@ -172,6 +185,40 @@ describe('the generated code reaches the class it was generated for', () => {
   ])('%s', (_type, klass, generated) => {
     const {ownNodeConfig} = getStaticNodeConfig(klass);
     expect(ownNodeConfig && ownNodeConfig.generated).toBe(generated);
+  });
+});
+
+describe('the compact form is generated too', () => {
+  // Which properties the compact form drops depends on a node's values, but the
+  // rule does not: each is a comparison against a default the schema states. So
+  // it generates the same way the legacy form does, and the `compact` argument
+  // picks between two straight-line functions rather than branching inside one.
+  test('each target class has one', () => {
+    for (const generated of [
+      GENERATED_TEXT,
+      GENERATED_PARAGRAPH,
+      GENERATED_LINEBREAK,
+      GENERATED_TAB,
+    ]) {
+      expect(generated.exportCompactJSON).toBeDefined();
+      expect(generated.exportCompactJSON).not.toBe(generated.exportJSON);
+    }
+  });
+
+  initializeUnitTest(testEnv => {
+    test('it omits what parsing restores, and nothing else', () => {
+      testEnv.editor.update(
+        () => {
+          // Every property at its default: the compact form is the type alone.
+          expect($createTextNode('').exportJSON(true)).toEqual({type: 'text'});
+          // And a property that differs is kept, with `version` still dropped.
+          expect(
+            $createTextNode('hi').setMode('token').exportJSON(true),
+          ).toEqual({mode: 'token', text: 'hi', type: 'text'});
+        },
+        {discrete: true},
+      );
+    });
   });
 });
 

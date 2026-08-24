@@ -98,7 +98,6 @@ import {$normalizeSelection} from './LexicalNormalization';
 import {
   type AnySerializationSchema,
   hasOwnKey,
-  isSchemaDefault,
   isSchemaField,
   type SchemaField,
 } from './LexicalSchema';
@@ -3510,12 +3509,22 @@ export function getComposedSchemaFields(
 interface CompactRule {
   readonly derived: boolean;
   /**
-   * Whether a written value would say the same thing as the default parsing
-   * restores — identity for a primitive domain, by content for an array or
-   * object one (see {@link SerializationSchema.isEqual}). Resolved with the
-   * accessor so the write path needs no second look at the schema.
+   * What parsing restores for an absent property, and so what the compact form
+   * omits. Resolved with the accessor so the write path needs no second look at
+   * the schema.
    */
-  readonly isDefault: (value: unknown) => boolean;
+  readonly defaultValue: unknown;
+  /**
+   * The schema's own equality, hoisted, or `undefined` where identity is the
+   * whole answer.
+   *
+   * Kept apart from the value so the common case is a comparison rather than a
+   * call. Only {@link arrayValue} and {@link objectValue} declare one — every
+   * primitive domain, which is nearly every serialized property, compares by
+   * identity — and the write path checks that first either way, so a declared
+   * equality costs a call only for a value that is not already identical.
+   */
+  readonly isEqual: undefined | ((a: unknown, b: unknown) => boolean);
 }
 
 /**
@@ -3595,9 +3604,10 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       );
       fields.set(key, {
         decode: getter.decode,
+        defaultValue: schema.defaultValue,
         derived: schema.setter === null,
         field: getterName,
-        isDefault: value => isSchemaDefault(schema, value),
+        isEqual: schema.isEqual,
         key,
         kind: 'ownField',
       });
@@ -3615,9 +3625,10 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       getter,
     );
     fields.set(key, {
+      defaultValue: schema.defaultValue,
       derived: schema.setter === null,
       getter: method as (this: LexicalNode) => unknown,
-      isDefault: value => isSchemaDefault(schema, value),
+      isEqual: schema.isEqual,
       key,
       kind: 'method',
     });
@@ -3738,9 +3749,22 @@ export function $writeJSONGetters(
     } else {
       value = entry.getter.call(node);
     }
-    if (value !== undefined && !(compact && entry.isDefault(value))) {
-      json[entry.key] = value;
+    if (value === undefined) {
+      continue;
     }
+    if (compact) {
+      // Inline rather than isSchemaDefault(schema, value): this runs per
+      // property per node, and for a primitive domain the whole answer is the
+      // comparison — the call chain around it was most of the cost.
+      const {defaultValue, isEqual} = entry;
+      if (
+        value === defaultValue ||
+        (isEqual !== undefined && isEqual(value, defaultValue))
+      ) {
+        continue;
+      }
+    }
+    json[entry.key] = value;
   }
 }
 
@@ -3876,15 +3900,16 @@ export function $generatedExportJSONFor(
   node: LexicalNode,
   compact: boolean,
 ): undefined | GeneratedJSON['exportJSON'] {
-  if (compact) {
-    // Which properties the compact form drops depends on each node's values
-    // rather than on the schema alone, so only the legacy form is generated.
-    return undefined;
-  }
   const generated = generatedFor(
     getNodeClassRecord(node.constructor as Klass<LexicalNode>),
   );
-  return generated === null ? undefined : generated.exportJSON;
+  if (generated === null) {
+    return undefined;
+  }
+  // Each form is generated separately, so this picks a function rather than
+  // passing the flag on. A class whose compact form could not be generated —
+  // one with a property that compares by content — keeps the walk for it.
+  return compact ? generated.exportCompactJSON : generated.exportJSON;
 }
 
 /**
@@ -4294,6 +4319,7 @@ function installGeneratedExportJSON(klass: Klass<LexicalNode>): void {
     return;
   }
   const generatedExportJSON = generated.exportJSON;
+  const generatedExportCompactJSON = generated.exportCompactJSON;
   const prototype = klass.prototype as unknown as {
     exportJSON: (this: LexicalNode, compact?: boolean) => SerializedLexicalNode;
   };
@@ -4302,12 +4328,21 @@ function installGeneratedExportJSON(klass: Klass<LexicalNode>): void {
     this: LexicalNode,
     compact = false,
   ): SerializedLexicalNode {
-    if (compact || this.constructor !== klass) {
-      // The compact form drops properties by value rather than by schema, so
-      // it is not generated; a subclass is not what this was generated for.
+    if (
+      this.constructor !== klass ||
+      (compact && generatedExportCompactJSON === undefined)
+    ) {
+      // Not the class this was generated for, or a form it has no generated
+      // code for; either way the base implementation is the general answer.
       return base.call(this, compact);
     }
-    const json = generatedExportJSON(this);
+    // Two functions rather than one taking the flag: which properties each
+    // form writes is fixed, so branching per property per node would be
+    // deciding at runtime what the codegen already decided.
+    const json =
+      compact && generatedExportCompactJSON !== undefined
+        ? generatedExportCompactJSON(this)
+        : generatedExportJSON(this);
     // What a node carries is not known when the code is generated, so
     // NodeState is appended here rather than by the literal.
     const state = this.__state ? this.__state.toJSON() : undefined;

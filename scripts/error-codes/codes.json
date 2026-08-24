@@ -397,20 +397,5 @@
   "395": "insertText: lastNode is not a TextNode",
   "396": "Table row index %s out of range",
   "397": "Table column index %s out of range",
-  "398": "insertText: anchor is not a text node",
-  "399": "KeyboardShortcutMatch: key must be non-empty",
-  "400": "replace: node %s (type %s) is slotted into host %s (type %s); a slot value cannot be replaced through the tree API. Use $setSlot on its host to assign a replacement.",
-  "401": "unionValue: at least one member schema is required",
-  "402": "objectValue: \"__proto__\" is not a valid field name",
-  "403": "$withCompactExport: f returned a thenable. The export form is restored synchronously, so an async callback gives it up at its first await; export inside a synchronous callback instead.",
-  "404": "%s: $config json must be an objectValue(...), got %s",
-  "405": "%s: \"%s\" is declared both as a json schema field and as a flat NodeState; it must be one or the other",
-  "406": "%s: json schema field \"%s\" cannot be read from __proto__",
-  "407": "%s: json schema field \"%s\" has no getter %s(); name one with withGetter or declare {getter: null} if it is deliberately not exported",
-  "408": "%s: json schema field \"%s\" names a node field %s that the node does not have",
-  "409": "%s: json schema field \"%s\" cannot be applied to __proto__",
-  "410": "%s: json schema field \"%s\" has no setter %s(); name one with withAccessors or declare {setter: null} if it is derived on import",
-  "411": "$applyImportJSON: node %s with key %s was not constructed by this update; use updateFromJSON instead",
-  "412": "LexicalNode: Node %s is an element but the JSON exported for it has no children array.",
-  "413": "LexicalNode: slot \"%s\" on %s did not serialize to exactly the slot value node (got %s nodes); a slot value must not be excluded from copy."
+  "398": "insertText: anchor is not a text node"
 }

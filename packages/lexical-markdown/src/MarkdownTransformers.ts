@@ -884,11 +884,17 @@ export const LINK: TextMatchTransformer = {
       title = title.replace(/([\\"])/g, '\\$1');
     }
 
-    // The destination is written raw, so a parenthesis in the URL would close
-    // it early and a backslash would be read back as the start of an escape.
-    // importRegExp accepts both escapes and the replace handler undoes them.
-    // @lexical/mdast escapes the same parentheses on its way out.
-    const url = node.getURL().replace(/([\\()])/g, '\\$1');
+    // A raw destination cannot hold whitespace, so a URL that has any is
+    // written in the pointy form, where only `<`, `>` and a backslash need an
+    // escape. An empty URL goes there too, since the raw form has nothing left
+    // to match. Everywhere else the destination is written raw, where a
+    // parenthesis would close it early, a backslash would start an escape and
+    // a leading `<` would turn it into the pointy form.
+    const rawUrl = node.getURL();
+    const url =
+      rawUrl === '' || /\s/.test(rawUrl)
+        ? `<${rawUrl.replace(/([\\<>])/g, '\\$1')}>`
+        : rawUrl.replace(/([\\()<])/g, '\\$1');
 
     const linkContent = title
       ? `[${textContent}](${url} "${title}")`
@@ -896,22 +902,28 @@ export const LINK: TextMatchTransformer = {
 
     return linkContent;
   },
-  // A link destination may hold a backslash escape or a balanced pair of
-  // parentheses, so the three alternatives are: an escape, one balanced pair,
-  // or any other character that is not a space, a parenthesis or a backslash.
-  // They start on different characters, so the alternation cannot backtrack.
+  // A link destination comes in two shapes. Between `<` and `>` it may hold
+  // anything but a line ending and an unescaped angle bracket, whitespace
+  // included. Written raw it may hold a backslash escape, one balanced pair of
+  // parentheses, or any other character that is not a space, a parenthesis or
+  // a backslash. Inside each shape the alternatives start on different
+  // characters, so neither has anything to backtrack over.
   importRegExp:
-    /(?:\[(.+?)\])(?:\((?:((?:\\.|\((?:\\.|[^\s()\\])*\)|[^\s()\\])+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
+    /(?:\[(.+?)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?:\\.|\((?:\\.|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
   regExp:
-    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:((?:\\.|\((?:\\.|[^\s()\\])*\)|[^\s()\\])+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
+    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:(?:<((?:\\.|[^<>\n\\])*)>|((?:\\.|\((?:\\.|[^\s()\\])*\)|[^\s()\\])+))(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
     if ($findMatchingParent(textNode, $isLinkNode)) {
       return;
     }
-    const [, linkText, rawLinkUrl, rawLinkTitle] = match;
+    const [, linkText, pointyLinkUrl, rawLinkUrl, rawLinkTitle] = match;
 
-    const linkUrl = rawLinkUrl != null ? unescapeText(rawLinkUrl) : undefined;
+    // Only one of the two destination shapes matched, and the pointy one may
+    // legitimately be empty, so this cannot fall back on truthiness.
+    const linkDestination = pointyLinkUrl != null ? pointyLinkUrl : rawLinkUrl;
+    const linkUrl =
+      linkDestination != null ? unescapeText(linkDestination) : undefined;
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});

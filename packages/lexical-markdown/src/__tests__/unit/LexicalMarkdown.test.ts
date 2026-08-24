@@ -720,6 +720,23 @@ describe('Markdown', () => {
       md: '[a](https://example.com/a\\)b)',
     },
     {
+      // A destination between < and > holds whitespace, which the raw form
+      // cannot. https://spec.commonmark.org/0.31.2/#link-destination
+      html: '<p><a href="https://example.com/a b"><span style="white-space: pre-wrap;">a</span></a></p>',
+      md: '[a](<https://example.com/a b>)',
+    },
+    {
+      html: '<p><a href="https://example.com/a b" title="t"><span style="white-space: pre-wrap;">a</span></a></p>',
+      md: '[a](<https://example.com/a b> "t")',
+    },
+    {
+      // The pointy form is read wherever it appears, and export drops it again
+      // when the destination has nothing that needs it.
+      html: '<p><a href="/uri"><span style="white-space: pre-wrap;">a</span></a></p>',
+      md: '[a](</uri>)',
+      mdAfterExport: '[a](/uri)',
+    },
+    {
       // Import only: <mark>...</mark> is exported as ==...== in markdown.
       // Use HIGHLIGHT_TEXT_MATCH_IMPORT as custom transformer even though it is included later to ensure it runs before LINK.
       customTransformers: [HIGHLIGHT_TEXT_MATCH_IMPORT],
@@ -3273,8 +3290,8 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
 });
 
 describe('link destination round trip', () => {
-  // A destination is written raw, so a parenthesis or a backslash in the URL
-  // has to be escaped on export or the link does not come back on import.
+  // Export has to write a destination that import can read back: escapes in
+  // the raw form, and the pointy form for a URL the raw form cannot hold.
   // https://spec.commonmark.org/0.31.2/#link-destination
   const CASES: [url: string, md: string][] = [
     [
@@ -3290,6 +3307,15 @@ describe('link destination round trip', () => {
     ['https://example.com/((a))', '[x](https://example.com/\\(\\(a\\)\\))'],
     ['https://example.com/a\\', '[x](https://example.com/a\\\\)'],
     ['https://example.com/a\\(b', '[x](https://example.com/a\\\\\\(b)'],
+    ['https://example.com/a b', '[x](<https://example.com/a b>)'],
+    ['https://example.com/a b(c)', '[x](<https://example.com/a b(c)>)'],
+    ['https://example.com/a b>c', '[x](<https://example.com/a b\\>c>)'],
+    ['https://example.com/a b<c', '[x](<https://example.com/a b\\<c>)'],
+    ['https://example.com/a b\\', '[x](<https://example.com/a b\\\\>)'],
+    ['https://example.com/a\tb', '[x](<https://example.com/a\tb>)'],
+    ['https://example.com/a<b>c', '[x](https://example.com/a\\<b>c)'],
+    ['<foo>', '[x](\\<foo>)'],
+    ['', '[x](<>)'],
     ['https://lexical.dev', '[x](https://lexical.dev)'],
   ];
 

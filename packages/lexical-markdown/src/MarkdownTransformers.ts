@@ -281,12 +281,12 @@ const TAG_END_REGEX = /^<\/[a-z_][\w-]*\s*>/i;
 const ENDS_WITH = (regex: RegExp) =>
   new RegExp(`(?:${regex.source})$`, regex.flags);
 
-export const listMarkerState = /* @__PURE__ */ createState('mdListMarker', {
+export const listMarkerState = createState('mdListMarker', {
   parse: v => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
   resetOnCopyNode: true,
 });
 
-export const codeFenceState = /* @__PURE__ */ createState('mdCodeFence', {
+export const codeFenceState = createState('mdCodeFence', {
   parse: val => {
     if (typeof val === 'string' && /^`{3,}$/.test(val)) {
       return val;
@@ -298,18 +298,15 @@ export const codeFenceState = /* @__PURE__ */ createState('mdCodeFence', {
 
 export type MarkdownHardLineBreak = string;
 
-export const hardLineBreakState = /* @__PURE__ */ createState(
-  'mdHardLineBreak',
-  {
-    parse: (val): MarkdownHardLineBreak => {
-      if (typeof val === 'string' && /^(\\| {2,})$/.test(val)) {
-        return val;
-      }
-      return '';
-    },
-    resetOnCopyNode: true,
+export const hardLineBreakState = createState('mdHardLineBreak', {
+  parse: (val): MarkdownHardLineBreak => {
+    if (typeof val === 'string' && /^(\\| {2,})$/.test(val)) {
+      return val;
+    }
+    return '';
   },
-);
+  resetOnCopyNode: true,
+});
 
 export function parseMarkdownHardLineBreak(
   line: string,

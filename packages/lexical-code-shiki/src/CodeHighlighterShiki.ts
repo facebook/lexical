@@ -480,9 +480,9 @@ export interface CodeShikiConfig {
  * and the related keyboard handlers are activated automatically. Set
  * `tabSize` on `CodeIndentExtension` to enable space-indent outdent.
  */
-export const CodeShikiExtension = /* @__PURE__ */ defineExtension({
+export const CodeShikiExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<CodeShikiConfig>({
+  config: safeCast<CodeShikiConfig>({
     disabled: false,
     tokenizer: ShikiTokenizer,
   }),
@@ -517,8 +517,8 @@ export type CodeHighlighterShikiConfig = Tokenizer;
  * `configExtension(CodeHighlighterShikiExtension, customTokenizer)`
  * continue to work without modification.
  */
-export const CodeHighlighterShikiExtension = /* @__PURE__ */ defineExtension({
-  config: /* @__PURE__ */ safeCast<CodeHighlighterShikiConfig>(ShikiTokenizer),
+export const CodeHighlighterShikiExtension = defineExtension({
+  config: safeCast<CodeHighlighterShikiConfig>(ShikiTokenizer),
   dependencies: [CodeShikiExtension],
   init: (editorConfig, config, state) => {
     // Forward the flat Tokenizer config to CodeShikiExtension's `tokenizer`

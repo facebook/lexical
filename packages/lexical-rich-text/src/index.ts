@@ -148,8 +148,9 @@ export type SerializedHeadingNode = Spread<
   SerializedElementNode
 >;
 
-export const DRAG_DROP_PASTE: LexicalCommand<File[]> =
-  /* @__PURE__ */ createCommand('DRAG_DROP_PASTE_FILE');
+export const DRAG_DROP_PASTE: LexicalCommand<File[]> = createCommand(
+  'DRAG_DROP_PASTE_FILE',
+);
 
 export type SerializedQuoteNode = Spread<
   {
@@ -172,7 +173,7 @@ export type SerializedQuoteNode = Spread<
  * `<blockquote>` content. Defaults to `false`, in which case there is no
  * change to the legacy behavior (and nothing extra is serialized).
  */
-export const quoteShadowRootState = /* @__PURE__ */ createState('shadowRoot', {
+export const quoteShadowRootState = createState('shadowRoot', {
   parse: Boolean,
 });
 

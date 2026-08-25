@@ -1984,6 +1984,12 @@ describe('Element-anchored selection on old parent (#6031)', () => {
         ({actNoRestore}) => {
           const {editor} = testEnv;
           let sourceKey = '';
+          // Skipping the shift leaves the offset (3) past the parent's new
+          // child count (2), so applying the selection to the DOM throws an
+          // IndexSizeError that the reconciler catches and warns about.
+          const mockWarning = vi
+            .spyOn(console, 'warn')
+            .mockImplementation(() => {});
           editor.update(
             () => {
               const refs = {} as Refs;
@@ -1994,6 +2000,8 @@ describe('Element-anchored selection on old parent (#6031)', () => {
             },
             {discrete: true},
           );
+          expect(mockWarning).toHaveBeenCalledWith(expect.any(DOMException));
+          mockWarning.mockRestore();
           editor.read(() => {
             const sel = $getSelection();
             invariant($isRangeSelection(sel));

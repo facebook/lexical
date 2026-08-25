@@ -9,7 +9,7 @@ import {$createCodeNode, CodeNode} from '@lexical/code-core';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import invariant from '@lexical/internal/invariant';
-import {$createLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -696,6 +696,45 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[foo </span><a href="/uri"><span style="white-space: pre-wrap;">bar</span></a><span style="white-space: pre-wrap;">](/uri)</span></p>',
       md: '[foo [bar](/uri)](/uri)',
+    },
+    {
+      // https://spec.commonmark.org/0.31.2/#link-destination allows a balanced
+      // pair of parentheses inside the destination.
+      html: '<p><a href="https://en.wikipedia.org/wiki/Ruby_(programming_language)"><span style="white-space: pre-wrap;">Ruby</span></a></p>',
+      md: '[Ruby](https://en.wikipedia.org/wiki/Ruby_(programming_language))',
+      // Export escapes the parentheses so that the destination cannot close
+      // early, which is what @lexical/mdast writes for the same link.
+      mdAfterExport:
+        '[Ruby](https://en.wikipedia.org/wiki/Ruby_\\(programming_language\\))',
+    },
+    {
+      html: '<p><a href="https://example.com/a(b)c"><span style="white-space: pre-wrap;">a</span></a><span style="white-space: pre-wrap;"> and </span><a href="https://example.com/d"><span style="white-space: pre-wrap;">d</span></a></p>',
+      md: '[a](https://example.com/a(b)c) and [d](https://example.com/d)',
+      mdAfterExport:
+        '[a](https://example.com/a\\(b\\)c) and [d](https://example.com/d)',
+    },
+    {
+      // A backslash-escaped parenthesis is part of the destination too, and it
+      // is the spelling export produces, so this one is already a fixed point.
+      html: '<p><a href="https://example.com/a)b"><span style="white-space: pre-wrap;">a</span></a></p>',
+      md: '[a](https://example.com/a\\)b)',
+    },
+    {
+      // A destination between < and > holds whitespace, which the raw form
+      // cannot. https://spec.commonmark.org/0.31.2/#link-destination
+      html: '<p><a href="https://example.com/a b"><span style="white-space: pre-wrap;">a</span></a></p>',
+      md: '[a](<https://example.com/a b>)',
+    },
+    {
+      html: '<p><a href="https://example.com/a b" title="t"><span style="white-space: pre-wrap;">a</span></a></p>',
+      md: '[a](<https://example.com/a b> "t")',
+    },
+    {
+      // The pointy form is read wherever it appears, and export drops it again
+      // when the destination has nothing that needs it.
+      html: '<p><a href="/uri"><span style="white-space: pre-wrap;">a</span></a></p>',
+      md: '[a](</uri>)',
+      mdAfterExport: '[a](/uri)',
     },
     {
       // Import only: <mark>...</mark> is exported as ==...== in markdown.
@@ -3248,4 +3287,280 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
     );
     expect(result).toBe('  **b**');
   });
+});
+
+type ImportedLink = {title: null | string; url: string};
+
+function importLinks(md: string): ImportedLink[] {
+  const editor = createHeadlessEditor({nodes: [LinkNode]});
+  editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+    discrete: true,
+  });
+  return editor.read('latest', () =>
+    $getRoot()
+      .getAllTextNodes()
+      .map(node => node.getParent())
+      .filter($isLinkNode)
+      .map(node => ({title: node.getTitle(), url: node.getURL()})),
+  );
+}
+
+describe('link destination ends at whitespace', () => {
+  // A backslash escapes punctuation only, so one in front of a space is a
+  // literal backslash and the space closes the raw destination.
+  // https://spec.commonmark.org/0.31.2/#link-destination
+  const CASES: [md: string, links: ImportedLink[]][] = [
+    ['[x](b\\ "t")', [{title: 't', url: 'b\\'}]],
+    ['[x](foo\\ bar)', []],
+    ['[x](foo\\ bar "t")', []],
+    ['[x](a\\ b)', []],
+    ['[x](a\\ b "t")', []],
+  ];
+
+  for (const [md, links] of CASES) {
+    it(`reads ${JSON.stringify(md)}`, () => {
+      expect(importLinks(md)).toEqual(links);
+    });
+  }
+});
+
+describe('a raw link destination cannot begin with an angle bracket', () => {
+  // Otherwise a pointy destination that never closes falls through to the raw
+  // form and the brackets end up inside the URL. Every expectation here is
+  // what mdast-util-from-markdown returns for the same string.
+  const CASES: [md: string, links: ImportedLink[]][] = [
+    ['[x](<a<b>)', []],
+    ['[x](<>x)', []],
+    ['[x](<a>b)', []],
+    ['[x](<foo)', []],
+    ['[x](<\\>)', []],
+    // anywhere but in first place an angle bracket is an ordinary character
+    ['[x](a<b>c)', [{title: null, url: 'a<b>c'}]],
+    ['[x](a<b)', [{title: null, url: 'a<b'}]],
+    ['[x](a>b)', [{title: null, url: 'a>b'}]],
+  ];
+
+  for (const [md, links] of CASES) {
+    it(`reads ${JSON.stringify(md)}`, () => {
+      expect(importLinks(md)).toEqual(links);
+    });
+  }
+});
+
+describe('link destination and title shapes', () => {
+  // Every expectation here is what mdast-util-from-markdown returns for the
+  // same string. https://spec.commonmark.org/0.31.2/#inline-link
+  const CASES: [md: string, links: ImportedLink[]][] = [
+    // a title takes any of the three spellings, after whitespace
+    ['[x](/uri "t")', [{title: 't', url: '/uri'}]],
+    ["[x](/uri 't')", [{title: 't', url: '/uri'}]],
+    ['[x](/uri (t))', [{title: 't', url: '/uri'}]],
+    ['[x](/uri  "t")', [{title: 't', url: '/uri'}]],
+    ['[x](/uri\t"t")', [{title: 't', url: '/uri'}]],
+    // without the whitespace it is all destination
+    ['[x](/uri"t")', [{title: null, url: '/uri"t"'}]],
+    ['[x]( "t")', [{title: null, url: '"t"'}]],
+    // a parenthesized title may not hold an unescaped parenthesis
+    ['[x](/uri (a(b)c))', []],
+    // whitespace may sit on either side of the destination
+    ['[x]( /uri)', [{title: null, url: '/uri'}]],
+    ['[x](/uri )', [{title: null, url: '/uri'}]],
+    ['[x]( /uri "t" )', [{title: 't', url: '/uri'}]],
+    // the destination itself is optional
+    ['[x]()', [{title: null, url: ''}]],
+    ['[x]( )', [{title: null, url: ''}]],
+    // parentheses nest, up to the depth the pattern is written for
+    ['[x](foo(and(bar)))', [{title: null, url: 'foo(and(bar))'}]],
+    ['[x](a(b(c)d)e)', [{title: null, url: 'a(b(c)d)e'}]],
+    ['[x](((a)))', [{title: null, url: '((a))'}]],
+  ];
+
+  for (const [md, links] of CASES) {
+    it(`reads ${JSON.stringify(md)}`, () => {
+      expect(importLinks(md)).toEqual(links);
+    });
+  }
+});
+
+describe('link destination whitespace does not backtrack', () => {
+  // Whitespace may sit on either side of the destination, and when the
+  // destination is absent the two runs neighbour each other. A pattern that
+  // leaves them that way can split a run between them in as many ways as the
+  // run is long, and walks every one of them before giving up on a run that
+  // never reaches the closing parenthesis, so the work grows with the square
+  // of the input. Reading these takes milliseconds and grew into seconds
+  // before, so the time limit is the assertion.
+  // https://spec.commonmark.org/0.31.2/#link-destination
+  const RUN = 200000;
+  const CASES: [name: string, md: string][] = [
+    ['a run that never closes', `[x](${' '.repeat(RUN)}`],
+    ['a run in front of a quote', `[x](${' '.repeat(RUN)}"`],
+    ['a run of tabs', `[x](${'\t'.repeat(RUN)}`],
+    [
+      'a run on either side of a destination',
+      `[x](${' '.repeat(RUN)}/uri${' '.repeat(RUN)}`,
+    ],
+  ];
+
+  for (const [name, md] of CASES) {
+    it(`reads ${name}`, {timeout: 5000}, () => {
+      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+        discrete: true,
+      });
+
+      // None of them is a link, and the point is that saying so is quick.
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => node.getParent())
+            .filter($isLinkNode),
+        ),
+      ).toEqual([]);
+    });
+  }
+});
+
+describe('link destination round trip', () => {
+  // Export has to write a destination that import can read back: escapes in
+  // the raw form, and the pointy form for a URL the raw form cannot hold.
+  // https://spec.commonmark.org/0.31.2/#link-destination
+  const CASES: [url: string, md: string][] = [
+    [
+      'https://en.wikipedia.org/wiki/Ruby_(programming_language)',
+      '[x](https://en.wikipedia.org/wiki/Ruby_\\(programming_language\\))',
+    ],
+    ['https://example.com/a)b', '[x](https://example.com/a\\)b)'],
+    ['https://example.com/a(b', '[x](https://example.com/a\\(b)'],
+    [
+      'https://example.com/a(b)c(d)e',
+      '[x](https://example.com/a\\(b\\)c\\(d\\)e)',
+    ],
+    ['https://example.com/((a))', '[x](https://example.com/\\(\\(a\\)\\))'],
+    ['https://example.com/a\\', '[x](https://example.com/a\\\\)'],
+    ['https://example.com/a\\(b', '[x](https://example.com/a\\\\\\(b)'],
+    ['https://example.com/a b', '[x](<https://example.com/a b>)'],
+    ['https://example.com/a b(c)', '[x](<https://example.com/a b(c)>)'],
+    ['https://example.com/a b>c', '[x](<https://example.com/a b\\>c>)'],
+    ['https://example.com/a b<c', '[x](<https://example.com/a b\\<c>)'],
+    ['https://example.com/a b\\', '[x](<https://example.com/a b\\\\>)'],
+    ['https://example.com/a\tb', '[x](<https://example.com/a\tb>)'],
+    // No destination may hold a line ending, and writing one raw would end the
+    // paragraph in the middle of the link.
+    ['https://example.com/a\nb', '[x](<https://example.com/a&#10;b>)'],
+    ['https://example.com/a\r\nb', '[x](<https://example.com/a&#13;&#10;b>)'],
+    ['https://example.com/a b\nc', '[x](<https://example.com/a b&#10;c>)'],
+    // Only a `<` in first place would turn the raw form into the pointy one,
+    // so an angle bracket anywhere else goes out unescaped.
+    ['https://example.com/a<b>c', '[x](https://example.com/a<b>c)'],
+    // A URL that already holds a character reference has to keep it. Written
+    // raw it would be read back as the character it names, which is how the
+    // line endings above survive at all.
+    ['https://example.com/a&#10;b', '[x](https://example.com/a&#38;#10;b)'],
+    ['https://example.com/a&#x0A;b', '[x](https://example.com/a&#38;#x0A;b)'],
+    ['https://example.com/a&amp;b', '[x](https://example.com/a&#38;amp;b)'],
+    ['&#38;', '[x](&#38;#38;)'],
+    // An `&` that begins no reference is ordinary, so a query string keeps the
+    // separators it was written with.
+    ['https://example.com/?a=1&b=2', '[x](https://example.com/?a=1&b=2)'],
+    [
+      'https://example.com/?a=1&b=2;c=3',
+      '[x](https://example.com/?a=1&b=2;c=3)',
+    ],
+    ['<foo>', '[x](\\<foo>)'],
+    ['', '[x](<>)'],
+    ['https://lexical.dev', '[x](https://lexical.dev)'],
+  ];
+
+  for (const [url, md] of CASES) {
+    it(`preserves "${url}"`, () => {
+      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createLinkNode(url).append($createTextNode('x')),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+
+      const exported = editor.read('latest', () =>
+        $convertToMarkdownString(TRANSFORMERS),
+      );
+      expect(exported).toBe(md);
+
+      const reimported = createHeadlessEditor({nodes: [LinkNode]});
+      reimported.update(
+        () => $convertFromMarkdownString(exported, TRANSFORMERS),
+        {discrete: true},
+      );
+
+      expect(
+        reimported.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => node.getParent())
+            .filter($isLinkNode)
+            .map(node => node.getURL()),
+        ),
+      ).toEqual([url]);
+    });
+  }
+});
+
+describe('link title round trip', () => {
+  // A title is read back through `unescapeText` too, so a character reference
+  // in one survives only if it goes out as a reference of its own.
+  // https://spec.commonmark.org/0.31.2/#link-title
+  const CASES: [title: string, md: string][] = [
+    ['a&#10;b', '[x](/uri "a&#38;#10;b")'],
+    ['a&amp;b', '[x](/uri "a&#38;amp;b")'],
+    ['a&b', '[x](/uri "a&b")'],
+    ['a"b', '[x](/uri "a\\"b")'],
+    ['plain', '[x](/uri "plain")'],
+  ];
+
+  for (const [title, md] of CASES) {
+    it(`preserves "${title}"`, () => {
+      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createLinkNode('/uri', {title}).append($createTextNode('x')),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+
+      const exported = editor.read('latest', () =>
+        $convertToMarkdownString(TRANSFORMERS),
+      );
+      expect(exported).toBe(md);
+
+      const reimported = createHeadlessEditor({nodes: [LinkNode]});
+      reimported.update(
+        () => $convertFromMarkdownString(exported, TRANSFORMERS),
+        {discrete: true},
+      );
+
+      expect(
+        reimported.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => node.getParent())
+            .filter($isLinkNode)
+            .map(node => node.getTitle()),
+        ),
+      ).toEqual([title]);
+    });
+  }
 });

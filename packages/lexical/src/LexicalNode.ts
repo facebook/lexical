@@ -1667,6 +1667,17 @@ export class LexicalNode {
    * that returns `undefined` omits its property. Override this only for output
    * a schema can not describe, and call `super.exportJSON(compact)` when you do.
    *
+   * This serializes **the version it is called on**, not the latest one. A
+   * property declared with {@link withField} is read straight off the node as
+   * an optimization, which the serialization walk relies on — every node it
+   * reaches comes from the EditorState's node map and is already current, so
+   * it resolves nothing per node. Calling this method directly on a reference
+   * that a `getWritable()` (any `set<Prop>`) has since superseded therefore
+   * serializes the pre-mutation values; call `node.getLatest().exportJSON()`
+   * when you hold such a reference. Previously every property went through an
+   * accessor that resolved the latest version on each read, so this is a
+   * behavior change for that case.
+   *
    * @param compact Write the compact form: omit a property the parser derives
    *   rather than reads, one whose value is the schema default parsing would
    *   restore, and the deprecated `version`. The two forms describe the same

@@ -92,10 +92,17 @@ export const JSON_NUMBER_SOURCE =
  * this logic is exactly the drift the verification exists to prevent, so there
  * is only one.
  */
-const NUM_BODY = `  if (typeof v === 'number') {
+export const NUM_BODY = `  if (typeof v === 'number') {
     return Number.isFinite(v) ? v : d;
   }
-  return typeof v === 'string' && JSON_NUMBER.test(v) ? Number(v) : d;`;
+  if (typeof v !== 'string' || !JSON_NUMBER.test(v)) {
+    return d;
+  }
+  // Matching the grammar is not enough to be in domain: '1e999' is a
+  // well-formed JSON number that coerces to Infinity, and numberValue tests
+  // Number.isFinite on the coerced value rather than on the input.
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;`;
 
 /** The `num` helper as TypeScript, for a module that emits a compiled parse. */
 export const NUM_HELPER_SOURCE = `const JSON_NUMBER = ${JSON_NUMBER_SOURCE};
@@ -216,6 +223,10 @@ export function verificationCorpus(meta) {
     '-1',
     '1.5',
     '1e3',
+    // Well-formed JSON numbers that coerce out of the finite domain, so a
+    // compiled parse that stops at the grammar disagrees with numberValue.
+    '1e999',
+    '-1e999',
     '0x10',
     '007',
     '+1',

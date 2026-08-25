@@ -3744,8 +3744,18 @@ export function $writeJSONGetters(
     let value: unknown;
     if (entry.kind === 'ownField') {
       const stored = ownFieldRecord(node)[entry.field];
+      // hasOwnKey for the same reason the import mirror uses it: the field
+      // holds whatever was stored, which for a schema whose domain is wider
+      // than the table's keys can be a name Object.prototype also carries —
+      // writing that method into the JSON as a value. A genuine miss still
+      // yields `undefined`, exactly as the bare lookup did, which is also what
+      // the generated exporters emit for one.
       value =
-        entry.decode === undefined ? stored : entry.decode[stored as string];
+        entry.decode === undefined
+          ? stored
+          : hasOwnKey(entry.decode, stored as string)
+            ? entry.decode[stored as string]
+            : undefined;
     } else {
       value = entry.getter.call(node);
     }
@@ -3908,11 +3918,18 @@ export function $generatedExportJSONFor(
   node: LexicalNode,
   compact: boolean,
 ): undefined | GeneratedJSON['exportJSON'] {
-  const generated = generatedFor(
-    getNodeClassRecord(node.constructor as Klass<LexicalNode>),
-  );
+  const record = getNodeClassRecord(node.constructor as Klass<LexicalNode>);
+  const generated = generatedFor(record);
   if (generated === null) {
     return undefined;
+  }
+  if (__DEV__) {
+    // The check the walk would have run, for the classes that reach generated
+    // code through this lookup rather than through the installed prototype
+    // method — one that overrides `exportJSON` and calls `super`, as
+    // ParagraphNode does. Without it those classes are the only ones whose
+    // misspelled `withField` name is never caught.
+    validateOwnFields(record, node);
   }
   // Each form is generated separately, so this picks a function rather than
   // passing the flag on. A class whose compact form could not be generated —
@@ -4019,8 +4036,21 @@ export function $applyJSONSetters<T extends LexicalNode>(
       // `self` is writable already — updateFromJSON starts from getWritable()
       // and every setter that replaces it returns a writable node — so this is
       // the whole of applying the property.
+      //
+      // The table is reached with hasOwnKey, as the codegen's emitted lookup
+      // is (`v in TABLE ? TABLE[v] : <default>` over a null-prototype table).
+      // The schema has already reduced the value to its own domain, but that
+      // domain can be wider than the table's keys — `withField(stringValue(),
+      // {encode})` admits any string — and a bare lookup would then resolve
+      // `'toString'` to Object.prototype's method and store *that* in the
+      // field. A genuine miss still yields `undefined`, exactly as the bare
+      // lookup did.
       ownFieldRecord(self)[entry.field] =
-        entry.encode === undefined ? parsed : entry.encode[parsed as string];
+        entry.encode === undefined
+          ? parsed
+          : hasOwnKey(entry.encode, parsed as string)
+            ? entry.encode[parsed as string]
+            : undefined;
     } else {
       const next = entry.setter.call(self, parsed);
       // Lexical setters conventionally return the writable node so calls can

@@ -76,6 +76,13 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
 
   $config() {
     return this.config(Symbol.for('DecoratorBlockNode'), {
+      // Named explicitly, as every abstract config in the tree is: this class
+      // carries the only declaration of `format` that its concrete subclasses
+      // inherit, and composeSchema honors an explicit `extends` where a
+      // severed static prototype chain (Babel's loose class transform) would
+      // otherwise stop the walk here and drop the property from both
+      // directions.
+      extends: DecoratorNode,
       json: decoratorBlockNodeSchema,
     });
   }

@@ -208,15 +208,16 @@ if (!process.env.LEXICAL_CODEGEN_PHASE_TWO) {
 // Bare specifiers rather than paths to the sources: tsconfig's `paths` maps
 // each to its package's src for both tsx and the type checker, and a specifier
 // ending in `.ts` is a type error under this repo's settings.
-const {
-  getComposedSchema,
-  isSchemaField,
-  LineBreakNode,
-  ParagraphNode,
-  resolveSchemaField,
-  TabNode,
-  TextNode,
-} = await import('lexical');
+const {isSchemaField, LineBreakNode, ParagraphNode, TabNode, TextNode} =
+  await import('lexical');
+// Both are `@internal` — how a class composes its schema and which accessor a
+// field stands in for are this codegen's concern and the walk's, not a public
+// API to be frozen by the backwards-compatibility rule — so they are reached
+// through the module that declares them rather than the package entry point.
+// `paths` maps `lexical/src/*` the same way it maps `lexical`, so this is the
+// same module instance the editor uses, not a second copy.
+const {getComposedSchema, resolveSchemaField} =
+  await import('lexical/src/LexicalUtils');
 const {HeadingNode, QuoteNode} = await import('@lexical/rich-text');
 const {AutoLinkNode, LinkNode} = await import('@lexical/link');
 const {MarkNode} = await import('@lexical/mark');
@@ -592,7 +593,7 @@ function writeExpression(klass, schema, key) {
   }
   const setter = accessor(klass, schema, key, 'setter');
   if (setter === null) {
-    throw new NotCompilable(`"${key}" is import-only`);
+    throw new NotCompilable(`"${key}" is export-only`);
   }
   if (!isSchemaField(setter)) {
     // A method could be called, but then the node it returns has to be threaded

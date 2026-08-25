@@ -25,7 +25,9 @@ import {describe, expect, test} from 'vitest';
 
 import {
   compileParse,
+  JSON_NUMBER_SOURCE,
   NotCompilable,
+  NUM_BODY,
   NUM_HELPER_SOURCE,
   verificationCorpus,
   verifyCompiledParse,
@@ -49,17 +51,18 @@ function compiled(schema: AnySerializationSchema): (value: unknown) => unknown {
     'SCOPE',
     `const {num, ${['_', ...names].join(', ')}} = SCOPE; return (${expression});`,
   );
+  // Built from the same source text the generator emits and
+  // verifyCompiledParse evaluates. Spelling it out here instead would be a
+  // third copy of the number grammar, and a copy that silently kept passing
+  // while the real helper changed is precisely what this checks against.
+  // eslint-disable-next-line no-new-func
+  const numFn = new Function('v', 'd', 'JSON_NUMBER', NUM_BODY);
+  const jsonNumber = new RegExp(
+    JSON_NUMBER_SOURCE.slice(1, JSON_NUMBER_SOURCE.lastIndexOf('/')),
+  );
   const scope: {[key: string]: unknown} = {
     _: undefined,
-    num: (v: unknown, d: number) =>
-      typeof v === 'number'
-        ? Number.isFinite(v)
-          ? v
-          : d
-        : typeof v === 'string' &&
-            /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(v)
-          ? Number(v)
-          : d,
+    num: (v: unknown, d: number) => numFn(v, d, jsonNumber),
   };
   for (const {name, table} of tables) {
     scope[name] = Object.assign(Object.create(null), table);
@@ -103,6 +106,13 @@ describe('compileParse reproduces the schema it compiles', () => {
     expect(run('Infinity')).toBe(0);
     expect(run(Infinity)).toBe(0);
     expect(run(NaN)).toBe(0);
+    // Well-formed JSON numbers whose value is out of the finite domain:
+    // matching the grammar is not enough, since numberValue tests
+    // Number.isFinite on the *coerced* value. Stopping at the grammar stores
+    // Infinity in a node field, which then serializes back out as null.
+    expect(run('1e999')).toBe(0);
+    expect(run('-1e999')).toBe(0);
+    expect(run('9'.repeat(400))).toBe(0);
   });
 
   test('enumValue', () => {

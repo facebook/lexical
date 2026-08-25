@@ -101,8 +101,12 @@ const elementNodeSchema = objectValue({
     enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
     'getFormatType',
   ),
-  // A whole, non-negative number: `setIndent` floors and rejects a negative,
-  // so those are out of domain and parse to 0. Deliberately not capped —
+  // A whole, non-negative number. That is the domain an indent has always
+  // had — every writer of one is an indent/outdent step — but nothing used to
+  // check it: `ElementNode.setIndent` is a bare field write, so a fractional
+  // or negative value in a document was stored verbatim rather than rejected.
+  // Stating the domain is what makes such a value parse to 0 instead.
+  // Deliberately not capped —
   // `numberValue` falls back to its default rather than clamping, so a maximum
   // here would silently flatten a legitimately deep document to indent 0. The
   // unbounded walk that motivated a cap is ListItemNode.setIndent's, and it is

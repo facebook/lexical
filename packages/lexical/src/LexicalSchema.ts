@@ -363,6 +363,30 @@ function liftIsEqual<T>(
 }
 
 /**
+ * Carry `inner`'s domain membership onto a wrapper that adds a nil to its
+ * domain, declared only when `inner` declares one — the same convention as
+ * {@link aliasedValue} — since without it a union's parse-inference reads the
+ * wrapper as well as it reads the inner schema.
+ *
+ * `isNil` is the wrapper's own nil test, not `== null` for both: `nullable`
+ * maps `null` *and* `undefined` to null, while `optional` maps only
+ * `undefined` and hands `null` to `inner`. Claiming to accept a value the
+ * wrapper then delegates is what makes wrapping change a union's answer —
+ * `unionValue([optional(numberValue()), enumValue(['inherit'])], 'inherit')`
+ * would commit to the optional member for `null` and return `inner`'s
+ * fallback `0`, where the unwrapped member correctly declines it.
+ */
+function liftAccepts<T>(
+  inner: SerializationSchema<T>,
+  isNil: (value: unknown) => boolean,
+): undefined | ((value: unknown) => boolean) {
+  const {accepts} = inner;
+  return accepts === undefined
+    ? undefined
+    : value => isNil(value) || accepts(value);
+}
+
+/**
  * Whether `source` carries `key` as its own property.
  *
  * A type predicate rather than a `boolean`, so a caller can read the value off
@@ -375,21 +399,6 @@ function liftIsEqual<T>(
  *
  * @internal
  */
-/**
- * Carry `inner`'s domain membership onto a wrapper that adds a nil to its
- * domain, declared only when `inner` declares one — the same convention as
- * {@link aliasedValue} — since without it a union's parse-inference reads the
- * wrapper as well as it reads the inner schema.
- */
-function liftAccepts<T>(
-  inner: SerializationSchema<T>,
-): undefined | ((value: unknown) => boolean) {
-  const {accepts} = inner;
-  return accepts === undefined
-    ? undefined
-    : value => value == null || accepts(value);
-}
-
 export function hasOwnKey<K extends string>(
   source: object,
   key: K,
@@ -592,7 +601,8 @@ export function nullable<T>(
     inner,
     undefined,
     liftIsEqual(inner),
-    liftAccepts(inner),
+    // Both nils: the parse above maps `null` and `undefined` alike to null.
+    liftAccepts(inner, value => value == null),
   );
 }
 
@@ -643,7 +653,9 @@ export function optional<T>(
     inner,
     undefined,
     liftIsEqual(inner),
-    liftAccepts(inner),
+    // Only `undefined`: the parse above delegates `null` to `inner`, so
+    // claiming to accept it would answer for a domain that is not this one's.
+    liftAccepts(inner, value => value === undefined),
   );
 }
 
@@ -663,10 +675,19 @@ export function optional<T>(
  * composes here the same way it behaves alone. If no member accepts, the result
  * is `defaultValue` when given, otherwise the first member's default.
  *
- * Because a value equal to a member's default is always accepted, a member
- * whose `defaultValue` lies outside its own constrained domain (e.g.
- * `numberValue(0, {min: 1})`) will accept that out-of-domain value; give such
- * members an in-domain default when combining them here.
+ * The inference above is only the fallback. A member that declares its own
+ * domain — every combinator but {@link arrayValue} and {@link objectValue} —
+ * is asked directly, which is the only way to recognize a value it normalizes
+ * *into* its own default (`numberValue()` reading `'0'`). A member whose
+ * `defaultValue` lies outside its own constrained domain (`numberValue(0,
+ * {min: 1})`) is therefore declined for that value rather than accepting it,
+ * and the union falls through to the next member.
+ *
+ * The result is itself a member of the union in both respects: it declares an
+ * `accepts` that asks each member in turn, so a union nested in another union
+ * (or reached through a wrapper) keeps its domain, and an `isEqual` that
+ * defers to whichever member recognizes the pair, so a union over a
+ * reference-typed member still compares by content.
  *
  * @example
  * ```ts
@@ -690,6 +711,41 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
   );
   const fallback =
     defaultValue !== undefined ? defaultValue : (members[0].defaultValue as T);
+  /**
+   * The member that recognizes `value`, and what it parsed to — the one place
+   * the membership rule is stated, so `accepts` cannot answer differently from
+   * the parse that follows it.
+   */
+  const $match = (value: unknown): undefined | {parsed: T} => {
+    for (let i = 0; i < members.length; i++) {
+      const member = members[i];
+      // A member that knows its own domain answers directly; that is the
+      // only way to recognize a value it normalizes *into* its default,
+      // which the inference below reads as a fallback.
+      const {accepts} = member;
+      if (accepts !== undefined) {
+        if (accepts(value)) {
+          return {parsed: member(value) as T};
+        }
+        continue;
+      }
+      const parsed = member(value);
+      // Landing on the member's default is the one result that is ambiguous:
+      // it means either "this value is the default" or "this value was out of
+      // domain and I fell back". Comparing the *input* against the default
+      // separates them for a member whose domain is a single value type, and
+      // every other result is proof the member recognized the value —
+      // including one it normalized, which is why the parsed value is what
+      // gets returned.
+      if (
+        !isSchemaDefault(member, parsed) ||
+        isSchemaEqual(member, value, member.defaultValue)
+      ) {
+        return {parsed: parsed as T};
+      }
+    }
+    return undefined;
+  };
   return makeSchema<T>(
     value => {
       if (value === undefined) {
@@ -698,34 +754,8 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
         // which compaction and `omitDefault` both compare against.
         return fallback;
       }
-      for (let i = 0; i < members.length; i++) {
-        const member = members[i];
-        // A member that knows its own domain answers directly; that is the
-        // only way to recognize a value it normalizes *into* its default,
-        // which the inference below reads as a fallback.
-        const {accepts} = member;
-        if (accepts !== undefined) {
-          if (accepts(value)) {
-            return member(value) as T;
-          }
-          continue;
-        }
-        const parsed = member(value);
-        // Landing on the member's default is the one result that is ambiguous:
-        // it means either "this value is the default" or "this value was out of
-        // domain and I fell back". Comparing the *input* against the default
-        // separates them for a member whose domain is a single value type, and
-        // every other result is proof the member recognized the value —
-        // including one it normalized, which is why the parsed value is what
-        // gets returned.
-        if (
-          !isSchemaDefault(member, parsed) ||
-          isSchemaEqual(member, value, member.defaultValue)
-        ) {
-          return parsed as T;
-        }
-      }
-      return fallback;
+      const matched = $match(value);
+      return matched === undefined ? fallback : matched.parsed;
     },
     {kind: 'union', members},
     // A union describes one property, so — like nullable/optional, and unlike
@@ -735,6 +765,20 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
     // A member that accepts `undefined` (an optional or raw one) would
     // otherwise make `undefined` the derived default, discarding `fallback`.
     fallback,
+    // Deferred to whichever member recognizes the pair, so a union over a
+    // reference-typed member (arrayValue/objectValue, which return a fresh
+    // value per parse) still compares by content — without this such a
+    // property could never equal its default and so could never compact, and
+    // as a `createState` parse it would fall back to Object.is and dirty the
+    // node on every write of an equal value.
+    (a, b) => members.some(m => m.isEqual !== undefined && m.isEqual(a, b)),
+    // Declared for the same reason every wrapper declares one: a union used as
+    // a member of another union (or wrapped and then used) would otherwise be
+    // read by the parse-inference above, which cannot see a value this
+    // normalizes into its own default — `unionValue([numberValue(),
+    // enumValue(['inherit'])])` parsing '0' to 0 would be read as a fallback
+    // and the whole union skipped. `undefined` is excluded to match the parse.
+    value => value !== undefined && $match(value) !== undefined,
   );
 }
 

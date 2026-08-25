@@ -50,7 +50,14 @@ function num(v: unknown, d: number): number {
   if (typeof v === 'number') {
     return Number.isFinite(v) ? v : d;
   }
-  return typeof v === 'string' && JSON_NUMBER.test(v) ? Number(v) : d;
+  if (typeof v !== 'string' || !JSON_NUMBER.test(v)) {
+    return d;
+  }
+  // Matching the grammar is not enough to be in domain: '1e999' is a
+  // well-formed JSON number that coerces to Infinity, and numberValue tests
+  // Number.isFinite on the coerced value rather than on the input.
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
 }
 
 const TEXT_MODE_DECODE: {

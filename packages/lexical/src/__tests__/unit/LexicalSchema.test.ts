@@ -25,7 +25,6 @@ import {
   objectValue,
   optional,
   rawValue,
-  resolveSchemaField,
   type SerializedLexicalNode,
   type SerializedPartial,
   type SerializedTextNode,
@@ -39,7 +38,12 @@ import {
 } from 'lexical';
 import {assert, describe, expect, expectTypeOf, test} from 'vitest';
 
-import {isSchemaDefault, isSchemaField} from '../../LexicalSchema';
+import {
+  isSchemaDefault,
+  isSchemaEqual,
+  isSchemaField,
+} from '../../LexicalSchema';
+import {resolveSchemaField} from '../../LexicalUtils';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalSchema value schemas', () => {
@@ -1333,6 +1337,60 @@ describe('a union member knows its own domain', () => {
       'inherit',
     );
     expect(maybe('0')).toBe(0);
+  });
+
+  test('a union is itself a member, so nesting one keeps its domain', () => {
+    // The chain has to close: a union that declared no `accepts` of its own
+    // would be read by the parse-inference, which cannot tell a value it
+    // normalized into its own default from a fallback — so the nested union
+    // parsing '0' to 0 (its default) would be skipped entirely.
+    const inner = unionValue([numberValue(), enumValue(['inherit'])], 0);
+    expect(typeof inner.accepts).toBe('function');
+    const outer = unionValue([inner, stringValue('zzz')], 'zzz');
+    expect(outer('0')).toBe(0);
+    expect(outer(640)).toBe(640);
+    expect(outer('inherit')).toBe('inherit');
+    // A value no member recognizes still falls through to the string member.
+    expect(outer('banana')).toBe('banana');
+    // And through a wrapper, which lifts the union's membership like any
+    // other inner schema's.
+    expect(unionValue([nullable(inner), stringValue('zzz')], 'zzz')('0')).toBe(
+      0,
+    );
+  });
+
+  test('optional lifts membership for undefined only, nullable for both', () => {
+    // `optional` hands `null` to its inner schema rather than absorbing it, so
+    // claiming to accept null would commit the union to a member that then
+    // answers with the inner fallback — 0 — where the unwrapped member
+    // correctly declines and the union reaches its own default.
+    const bare = unionValue([numberValue(), enumValue(['inherit'])], 'inherit');
+    const maybe = unionValue(
+      [optional(numberValue()), enumValue(['inherit'])],
+      'inherit',
+    );
+    expect(bare(null)).toBe('inherit');
+    expect(maybe(null)).toBe('inherit');
+    // nullable *does* absorb both nils, so it accepts null and yields it.
+    expect(
+      unionValue(
+        [nullable(numberValue()), enumValue(['inherit'])],
+        'inherit',
+      )(null),
+    ).toBe(null);
+  });
+
+  test('a union defers equality to the member that recognizes the pair', () => {
+    // Without this a union over a reference-typed member compares by identity:
+    // the property could never equal its default and so never compact, and as
+    // a createState parse it would dirty the node on every equal write.
+    const ids = unionValue([arrayValue(stringValue()), enumValue(['all'])]);
+    expect(isSchemaDefault(ids, [])).toBe(true);
+    expect(isSchemaDefault(ids, ['a'])).toBe(false);
+    expect(isSchemaEqual(ids, ['a', 'b'], ['a', 'b'])).toBe(true);
+    expect(isSchemaEqual(ids, ['a'], ['b'])).toBe(false);
+    // A primitive member still compares by identity through the same path.
+    expect(isSchemaEqual(ids, 'all', 'all')).toBe(true);
   });
 
   test('a bounded member rejects what falls outside its bounds', () => {

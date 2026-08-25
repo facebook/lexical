@@ -30,3 +30,22 @@ export {
   pureCallNames,
   transformPureAnnotations,
 } from './LexicalCompilerPureAnnotations';
+
+export type {
+  CompileParseResult,
+  SchemaJsonMeta,
+  SchemaJsonSchema,
+  SchemaJsonTable,
+  VerifyCompiledParseOptions,
+} from './LexicalCompilerSchemaJsonCodegen';
+
+export {
+  compileParse,
+  JSON_NUMBER_SOURCE,
+  literal,
+  NotCompilable,
+  NUM_HELPER_SOURCE,
+  verificationCorpus,
+  verifyCompiledParse,
+  verifyTableCoversDomain,
+} from './LexicalCompilerSchemaJsonCodegen';

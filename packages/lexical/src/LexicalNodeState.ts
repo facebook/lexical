@@ -357,9 +357,12 @@ export class StateConfig<K extends string | symbol, V> {
       : schema !== undefined && schema.isEqual !== undefined
         ? (a, b) => isSchemaEqual(schema, a, b)
         : Object.is;
-    // The schema's default is frozen when it is reference-typed, which matters
-    // because $getState hands this very value to every node that has none of
-    // its own.
+    // $getState hands this very value to every node that has none of its own,
+    // so a reference-typed default is shared. Every combinator that derives
+    // its own default deep-freezes it, which turns "mutate one node's default
+    // and corrupt every node" into a loud error; the exception is
+    // `transformValue`, whose default is the caller's `transform` applied to
+    // the inner default and so the caller's object to keep unfrozen.
     this.defaultValue =
       schema !== undefined ? schema.defaultValue : this.parse(undefined);
     this.resetOnCopyNode = stateValueConfig.resetOnCopyNode || false;

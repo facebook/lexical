@@ -504,16 +504,13 @@ function $appendNodesToJSON(
   // Route through the shared export so a selection honors the same form as
   // editorState.toJSON().
   const serializedNode: BaseSerializedNode = $exportNodeJSON(target);
+  // $exportNodeJSON above already throws for an element whose JSON has no
+  // children array, so this only has to narrow the type rather than re-check
+  // the condition and state the same failure a second way.
   const children = $isElementNode(target) ? target.getChildren() : [];
-  let childTarget: BaseSerializedNode[] = [];
-  if ($isElementNode(target)) {
-    invariant(
-      Array.isArray(serializedNode.children),
-      'LexicalNode: Node %s is an element but the JSON exported for it has no children array.',
-      target.constructor.name,
-    );
-    childTarget = serializedNode.children;
-  }
+  const childTarget = (
+    $isElementNode(target) ? serializedNode.children : []
+  ) as BaseSerializedNode[];
   if ($isTextNode(target) && target.getTextContentSize() === 0) {
     // If an uncollapsed selection ends or starts at the end of a line of specialized,
     // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one

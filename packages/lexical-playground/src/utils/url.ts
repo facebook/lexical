@@ -44,7 +44,11 @@ export function validateUrl(url: string): boolean {
   // requiring the whole (trimmed) string to be whitespace free is what turns
   // "contains a URL" into "is a URL". Trimming keeps a URL copied off its own
   // line, and so carrying a newline, valid.
-  const trimmed = url.trim();
+  // Callers reach this with whatever `clipboardData.getData()` returned, which
+  // is not always a string: a DataTransfer stand in can hand back undefined for
+  // a type it was never given. Coercing keeps that case falsy, as it was when
+  // the value went straight into `RegExp.prototype.test`.
+  const trimmed = typeof url === 'string' ? url.trim() : '';
   return (
     trimmed === 'https://' || (!/\s/.test(trimmed) && urlRegExp.test(trimmed))
   );

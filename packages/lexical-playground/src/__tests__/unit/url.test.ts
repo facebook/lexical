@@ -38,4 +38,15 @@ describe('validateUrl', () => {
   ])('rejects %j', url => {
     expect(validateUrl(url)).toBe(false);
   });
+
+  // `registerLink` hands this whatever `clipboardData.getData()` returned, and
+  // that is not always a string: a DataTransfer stand in can return undefined
+  // for a type it was never given. It has to stay falsy rather than throw
+  // inside the paste listener, which is where the value arrives.
+  test.each([undefined, null])(
+    'returns false for %j rather than throwing',
+    value => {
+      expect(validateUrl(value as unknown as string)).toBe(false);
+    },
+  );
 });

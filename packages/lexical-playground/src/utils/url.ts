@@ -38,5 +38,14 @@ const urlRegExp = new RegExp(
 export function validateUrl(url: string): boolean {
   // TODO Fix UI for link insertion; it should never default to an invalid URL such as https://.
   // Maybe show a dialog where they user can type the URL before inserting it.
-  return url === 'https://' || urlRegExp.test(url);
+  // The pattern is deliberately unanchored, since anchoring it would reject
+  // ports, parenthesised paths and hash routes, so it matches a URL sitting
+  // anywhere inside a longer string. A URL cannot contain raw whitespace, so
+  // requiring the whole (trimmed) string to be whitespace free is what turns
+  // "contains a URL" into "is a URL". Trimming keeps a URL copied off its own
+  // line, and so carrying a newline, valid.
+  const trimmed = url.trim();
+  return (
+    trimmed === 'https://' || (!/\s/.test(trimmed) && urlRegExp.test(trimmed))
+  );
 }

@@ -48,6 +48,8 @@ import {
   setDOMStyleFromCSS,
   type Spread,
   transformValue,
+  withAccessors,
+  withField,
 } from 'lexical';
 
 import {$createListNode, $isListNode, type ListNode, type ListType} from './';
@@ -70,7 +72,11 @@ export type SerializedListItemNode = Spread<
 const MAX_LIST_ITEM_INDENT = 128;
 
 const listItemNodeSchema = objectValue({
-  checked: optional(booleanValue()),
+  // getChecked computes from the parent list's type, so the getter stays a
+  // method; setChecked is a bare field write.
+  checked: withAccessors(optional(booleanValue()), {
+    setter: {field: '__checked', method: 'setChecked'},
+  }),
   // Overrides the inherited ElementNode field to bound it. This indent is
   // structural — applying it nests or unwraps one whole list per level — so an
   // unbounded value out of untrusted JSON would build millions of nodes. Since
@@ -80,7 +86,11 @@ const listItemNodeSchema = objectValue({
   indent: transformValue(numberValue(0, {integer: true, min: 0}), value =>
     Math.min(value, MAX_LIST_ITEM_INDENT),
   ),
-  value: numberValue(1),
+  value: withField(numberValue(1), {
+    field: '__value',
+    getter: 'getValue',
+    setter: 'setValue',
+  }),
 });
 
 function applyMarkerStyles(

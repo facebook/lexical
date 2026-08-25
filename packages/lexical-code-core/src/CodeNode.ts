@@ -40,6 +40,7 @@ import {
   type Spread,
   stringValue,
   type TabNode,
+  withAccessors,
 } from 'lexical';
 
 import {
@@ -60,8 +61,14 @@ export type SerializedCodeNode = Spread<
 // Single source of truth for parsing the node-specific properties of a
 // SerializedCodeNode (those it adds over a SerializedElementNode).
 const codeNodeSchema = objectValue({
-  language: optional(nullable(stringValue())),
-  theme: optional(stringValue()),
+  // Read straight off the fields; applied through the setters, which
+  // normalize a falsy value to undefined.
+  language: withAccessors(optional(nullable(stringValue())), {
+    getter: {field: '__language', method: 'getLanguage'},
+  }),
+  theme: withAccessors(optional(stringValue()), {
+    getter: {field: '__theme', method: 'getTheme'},
+  }),
 });
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';

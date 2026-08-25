@@ -33,6 +33,7 @@ import {
   type Spread,
   transformValue,
   withAccessors,
+  withField,
 } from 'lexical';
 
 import {$createListItemNode, $isListItemNode, type ListItemNode} from '.';
@@ -63,15 +64,24 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
 const listNodeSchema = objectValue({
   // 'ul'/'ol' are the legacy tag-form listType some older documents carry,
   // normalized to the modern form.
-  listType: transformValue(
-    enumValue(['number', 'bullet', 'check', 'ul', 'ol']),
-    listType => TAG_TO_LIST_TYPE[listType] || listType,
+  // Read straight off the field; applied through setListType, which also
+  // maintains the derived __tag, so the setter stays a method.
+  listType: withAccessors(
+    transformValue(
+      enumValue(['number', 'bullet', 'check', 'ul', 'ol']),
+      listType => TAG_TO_LIST_TYPE[listType] || listType,
+    ),
+    {getter: {field: '__listType', method: 'getListType'}},
   ),
-  start: numberValue(1),
+  start: withField(numberValue(1), {
+    field: '__start',
+    getter: 'getStart',
+    setter: 'setStart',
+  }),
   // Derived from listType rather than stored: written on export, and
   // deliberately not applied on import.
   tag: withAccessors(enumValue(['ul', 'ol']), {
-    getter: 'getTag',
+    getter: {field: '__tag', method: 'getTag'},
     setter: null,
   }),
 });

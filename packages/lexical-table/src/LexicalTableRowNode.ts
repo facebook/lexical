@@ -24,6 +24,7 @@ import {
   optional,
   type SerializedElementNode,
   type Spread,
+  withField,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
@@ -37,7 +38,11 @@ export type SerializedTableRowNode = Spread<
 >;
 
 const tableRowNodeSchema = objectValue({
-  height: optional(numberValue()),
+  height: withField(optional(numberValue()), {
+    field: '__height',
+    getter: 'getHeight',
+    setter: 'setHeight',
+  }),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging

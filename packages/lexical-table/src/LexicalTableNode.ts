@@ -73,7 +73,11 @@ export type SerializedTableNode = Spread<
 >;
 
 const tableNodeSchema = objectValue({
-  colWidths: optional(arrayValue(numberValue())),
+  // Read straight off the field; applied through setColWidths, which freezes
+  // the stored array in DEV.
+  colWidths: withAccessors(optional(arrayValue(numberValue())), {
+    getter: {field: '__colWidths', method: 'getColWidths'},
+  }),
   frozenColumnCount: withAccessors(numberValue(), {
     getter: 'getSerializedFrozenColumnCount',
     setter: 'setFrozenColumns',

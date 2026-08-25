@@ -95,6 +95,14 @@ const TEXT_MODE_ENCODE: {readonly [key: string]: 0 | 1 | 2} =
     token: 1,
   });
 
+const TAB_MODE_DECODE: {
+  readonly [key: string]: 'normal' | 'segmented' | 'token';
+} = {
+  '0': 'normal',
+  '1': 'token',
+  '2': 'segmented',
+};
+
 /** Generated from TextNode's `json` schema. Do not edit by hand. */
 function exportTextNode(node: TextNode): {[key: string]: unknown} {
   return {
@@ -220,9 +228,9 @@ function exportCompactLineBreakNode(): {[key: string]: unknown} {
 /** Generated from TabNode's `json` schema. Do not edit by hand. */
 function exportTabNode(node: TabNode): {[key: string]: unknown} {
   return {
-    detail: node.getDetail(),
-    mode: node.getMode(),
-    text: node.getTextContent(),
+    detail: node.__detail,
+    mode: TAB_MODE_DECODE[node.__mode],
+    text: node.__text,
     format: node.__format,
     style: node.__style,
     type: 'tab',

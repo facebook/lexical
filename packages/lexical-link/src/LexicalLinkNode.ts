@@ -46,7 +46,7 @@ import {
   type SerializedElementNode,
   type Spread,
   stringValue,
-  withAccessors,
+  withField,
 } from 'lexical';
 
 export type LinkAttributes = {
@@ -79,16 +79,26 @@ const SUPPORTED_URL_PROTOCOLS = new Set([
 const linkNodeSchema = objectValue({
   // defaultAsNull preserves the legacy `value || null` semantics: an empty
   // string (or junk that coerces to it) imports as null, not ''.
-  rel: nullable(stringValue(), {
-    defaultAsNull: true,
+  // Every property *is* its node field in both directions — each accessor is
+  // a bare read or write — so each is declared as the field it is, naming the
+  // accessor it stands in for (a subclass that overrides one still decides).
+  rel: withField(nullable(stringValue(), {defaultAsNull: true}), {
+    field: '__rel',
+    getter: 'getRel',
+    setter: 'setRel',
   }),
-  target: nullable(stringValue(), {
-    defaultAsNull: true,
+  target: withField(nullable(stringValue(), {defaultAsNull: true}), {
+    field: '__target',
+    getter: 'getTarget',
+    setter: 'setTarget',
   }),
-  title: nullable(stringValue(), {
-    defaultAsNull: true,
+  title: withField(nullable(stringValue(), {defaultAsNull: true}), {
+    field: '__title',
+    getter: 'getTitle',
+    setter: 'setTitle',
   }),
-  url: withAccessors(stringValue(), {
+  url: withField(stringValue(), {
+    field: '__url',
     getter: 'getURL',
     setter: 'setURL',
   }),

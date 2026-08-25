@@ -19,6 +19,7 @@ import {
   objectValue,
   type SerializedLexicalNode,
   type Spread,
+  withField,
 } from 'lexical';
 
 /**
@@ -38,7 +39,10 @@ export type SerializedDecoratorBlockNode = Spread<
 // well-known `Symbol.for('DecoratorBlockNode')` key; concrete subclasses
 // compose it with their own.
 const decoratorBlockNodeSchema = objectValue({
-  format: enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
+  format: withField(
+    enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
+    {field: '__format', getter: 'getFormat', setter: 'setFormat'},
+  ),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging

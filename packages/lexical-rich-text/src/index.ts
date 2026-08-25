@@ -143,6 +143,7 @@ import {
   setNodeIndentFromDOM,
   type Spread,
   type TextFormatType,
+  withField,
 } from 'lexical';
 
 export type SerializedHeadingNode = Spread<
@@ -324,7 +325,13 @@ export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 // Single source of truth for parsing the node-specific properties of a
 // SerializedHeadingNode (those it adds over a SerializedElementNode).
 const headingNodeSchema = objectValue({
-  tag: enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']),
+  // The tag *is* the field in both directions; getTag/setTag are bare
+  // accessors, so a subclass overriding either reclaims the property.
+  tag: withField(enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']), {
+    field: '__tag',
+    getter: 'getTag',
+    setter: 'setTag',
+  }),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging

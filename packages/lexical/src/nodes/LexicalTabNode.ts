@@ -11,7 +11,7 @@ import type {LexicalNode, NodeKey} from '../LexicalNode';
 
 import invariant from '@lexical/internal/invariant';
 
-import {IS_UNMERGEABLE} from '../LexicalConstants';
+import {IS_UNMERGEABLE, TEXT_TYPE_TO_MODE} from '../LexicalConstants';
 import {GENERATED_TAB} from '../LexicalGeneratedJSON';
 import {
   enumValue,
@@ -44,12 +44,24 @@ export class TabNode extends TextNode {
       // 'token'}` from reaching a setter that throws, and lets the compact
       // form omit them.
       json: objectValue({
-        detail: withAccessors(numberValue(IS_UNMERGEABLE), {setter: null}),
-        mode: withAccessors(enumValue(['normal']), {setter: null}),
-        // Overriding an inherited field replaces it outright, so the getter is
-        // named here rather than inherited from TextNode.
+        // Read straight off the inherited fields — mode through the decode
+        // table, since it is stored as a bitmask — each naming the accessor it
+        // stands in for. All three are export-only: the values are fixed for a
+        // tab, so they are derived on import rather than applied.
+        detail: withAccessors(numberValue(IS_UNMERGEABLE), {
+          getter: {field: '__detail', method: 'getDetail'},
+          setter: null,
+        }),
+        mode: withAccessors(enumValue(['normal']), {
+          getter: {
+            decode: TEXT_TYPE_TO_MODE,
+            field: '__mode',
+            method: 'getMode',
+          },
+          setter: null,
+        }),
         text: withAccessors(stringValue('\t'), {
-          getter: 'getTextContent',
+          getter: {field: '__text', method: 'getTextContent'},
           setter: null,
         }),
       }),

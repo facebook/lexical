@@ -1,0 +1,72 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+/**
+ * LexicalCompilerSchemaJsonCodegen
+ */
+
+export type SchemaJsonMeta =
+  | {kind: 'string'}
+  | {kind: 'boolean'}
+  | {kind: 'number', min?: number, max?: number, integer?: boolean}
+  | {kind: 'enum', values: ReadonlyArray<unknown>}
+  | {
+      kind: 'aliased',
+      aliases: {readonly [alias: string]: unknown},
+      inner: {meta: SchemaJsonMeta},
+    }
+  | {kind: 'array' | 'nullable' | 'object' | 'optional' | 'raw' | 'union'};
+
+export type SchemaJsonSchema = {
+  (value: unknown): unknown,
+  readonly defaultValue: unknown,
+  readonly meta: SchemaJsonMeta,
+};
+
+export type SchemaJsonTable = {
+  name: string,
+  table: {readonly [key: string]: unknown},
+};
+
+export type CompileParseResult = {
+  expression: string,
+  tables: Array<SchemaJsonTable>,
+};
+
+export type VerifyCompiledParseOptions = {
+  schema: SchemaJsonSchema,
+  expression: string,
+  tables: ReadonlyArray<SchemaJsonTable>,
+  nullPrototypeTables?: ReadonlyArray<string>,
+};
+
+declare export var JSON_NUMBER_SOURCE: string;
+declare export var NUM_HELPER_SOURCE: string;
+declare export class NotCompilable extends Error {}
+
+declare export function literal(value: unknown): string;
+
+declare export function compileParse(
+  meta: SchemaJsonMeta,
+  defaultValue: unknown,
+  tableBaseName: string,
+): CompileParseResult;
+
+declare export function verificationCorpus(
+  meta: SchemaJsonMeta,
+): Array<unknown>;
+
+declare export function verifyCompiledParse(
+  options: VerifyCompiledParseOptions,
+): void;
+
+declare export function verifyTableCoversDomain(options: {
+  schema: SchemaJsonSchema,
+  table: {readonly [key: string]: unknown},
+}): void;

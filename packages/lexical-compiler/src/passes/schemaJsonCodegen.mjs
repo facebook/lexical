@@ -8,13 +8,23 @@
 
 /**
  * Compiling a serialization schema's domain to straight-line JavaScript, and
- * proving the result agrees with the schema it was compiled from.
+ * proving the result agrees with the schema it was compiled from — the
+ * implementation behind `@lexical/compiler/SchemaJsonCodegen`, whose typed
+ * facade is `src/SchemaJsonCodegen.ts`. `scripts/generate-node-json.mjs` is
+ * its in-tree consumer, generating the core node classes' serializers; a
+ * build generating serializers for its own node classes uses the same
+ * functions.
  *
- * This is the portable half of `scripts/generate-node-json.mjs`: it knows about
- * {@link SerializationSchemaMeta} and nothing about node classes, so it can be
- * unit-tested against any schema rather than only the core classes that happen
- * to be code-generated today. It holds no module state — everything a compiled
- * expression needs comes back with it — which is what makes that possible.
+ * A pass lives here as plain JavaScript for bootstrapping reasons — the
+ * generator's first phase runs under plain node, before anything has been
+ * compiled. Its types are JSDoc, structural rather than imported from
+ * `lexical` so this package carries no dependency on it, and
+ * `tsconfig.scripts.json` type-checks this directory with `checkJs` and
+ * `strict`.
+ *
+ * It knows about a schema's introspectable `meta` and nothing about node
+ * classes, and holds no module state — everything a compiled expression needs
+ * comes back with it — which is what makes it testable against any schema.
  *
  * The import direction is the untrusted-JSON boundary, so
  * {@link verifyCompiledParse} is not optional politeness: a schema whose meta
@@ -23,8 +33,41 @@
  * catches it.
  */
 
-/** @typedef {import('lexical').SerializationSchemaMeta} SchemaMeta */
-/** @typedef {import('lexical').AnySerializationSchema} AnySchema */
+/**
+ * The introspectable description a serialization schema carries, structurally:
+ * the shape of `SerializationSchemaMeta` from `lexical`, declared here so this
+ * package needs no dependency on it. A union discriminated on `kind`, so the
+ * compile switch narrows; the kinds this module does not compile share the
+ * final arm and land in its default branch.
+ *
+ * @typedef {(
+ *   {readonly kind: 'string'} |
+ *   {readonly kind: 'boolean'} |
+ *   {
+ *     readonly kind: 'number',
+ *     readonly min?: number,
+ *     readonly max?: number,
+ *     readonly integer?: boolean,
+ *   } |
+ *   {readonly kind: 'enum', readonly values: readonly unknown[]} |
+ *   {
+ *     readonly kind: 'aliased',
+ *     readonly aliases: {readonly [alias: string]: unknown},
+ *     readonly inner: {readonly meta: SchemaMeta},
+ *   } |
+ *   {readonly kind: 'array' | 'nullable' | 'object' | 'optional' | 'raw' | 'union'}
+ * )} SchemaMeta
+ */
+/**
+ * The callable schema itself, structurally: the shape of
+ * `SerializationSchema` from `lexical`.
+ *
+ * @typedef {{
+ *   (value: unknown): unknown,
+ *   readonly defaultValue: unknown,
+ *   readonly meta: SchemaMeta,
+ * }} AnySchema
+ */
 /** @typedef {{readonly [key: string]: unknown}} Table */
 /** @typedef {{name: string, table: Table}} NamedTable */
 

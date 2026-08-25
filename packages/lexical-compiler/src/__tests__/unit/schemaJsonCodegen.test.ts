@@ -30,7 +30,7 @@ import {
   verificationCorpus,
   verifyCompiledParse,
   verifyTableCoversDomain,
-} from '../../shared/schemaParseCodegen.mjs';
+} from '../../passes/schemaJsonCodegen.mjs';
 
 /**
  * Build and run a compiled parse the way the generator's output does, so a

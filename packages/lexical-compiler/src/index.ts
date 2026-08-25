@@ -10,3 +10,4 @@
 // import it on its own — `@lexical/compiler/PureAnnotations` — and skip
 // loading the rest.
 export * from './PureAnnotations';
+export * from './SchemaJsonCodegen';

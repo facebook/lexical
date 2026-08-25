@@ -45,7 +45,7 @@ import {
   NUM_HELPER_SOURCE,
   verifyCompiledParse,
   verifyTableCoversDomain,
-} from './shared/schemaParseCodegen.mjs';
+} from '../packages/lexical-compiler/src/passes/schemaJsonCodegen.mjs';
 
 /** @typedef {import('lexical').LexicalNode} LexicalNode */
 /** @typedef {import('lexical').Klass<LexicalNode>} NodeClass */

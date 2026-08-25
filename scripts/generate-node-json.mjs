@@ -380,70 +380,41 @@ ${writes.join('\n')}
 }
 
 /**
+ * The legacy form of one class's export: a single unconditional literal.
+ *
+ * `undefined` is allowed in the value position — a getter with nothing to say
+ * (ParagraphNode's `getSerializedTextFormat` on a default paragraph) puts
+ * `undefined` there rather than omitting the key. JSON.stringify omits an
+ * undefined-valued property, so the serialized bytes are identical, and the
+ * object shape is the one the hand-written exporters always had: main's
+ * ListItemNode writes `checked: this.getChecked()` on every non-checklist
+ * item, and TableNode writes `colWidths: undefined` by explicit ternary. One
+ * literal also means one object shape per class, and no guarded fast path
+ * with an incremental fallback to keep in agreement with it. The walk writes
+ * unconditionally too, so the two stay key-for-key identical.
+ *
  * @param {NodeClass} klass
  * @returns {string}
  */
 function generateExport(klass) {
   const type = klass.getType();
   const reads = schemaReads(klass);
-  const locals = reads
-    .map(({expression, key}) => `  const ${key} = ${expression};`)
-    .join('\n');
-  // Every property is read before anything is written, so the fast path can be
-  // a single literal. A getter may still return undefined — the walk omits the
-  // property then — so the literal is taken only when none of them did.
-  //
-  // The fallback builds incrementally rather than deleting the undefined keys
-  // from a full literal, and not for key order (delete preserves it): deleting
-  // a non-last property drops the object to dictionary mode. That looks rare,
-  // but a getter returning undefined is how the schema spells an *optional*
-  // property, so for ParagraphNode — textFormat/textStyle on every default
-  // paragraph — the fallback is the common case. Measured on that population:
-  // delete builds 17x slower, and the dictionary-mode objects it returns
-  // stringify 2x slower downstream.
-  const defined = reads
-    .map(({key}) => `${key} !== undefined`)
-    .join(' &&\n    ');
   // An element's JSON leads with `children`, which is structural rather than
-  // schema-declared, so the literal has to lead with it too: the key order
-  // below is byte-identical to the walk's.
+  // schema-declared: the key order below is byte-identical to the walk's.
   const isElement = isElementish(klass);
-  const literalEntries = [
+  const entries = [
     ...(isElement ? ['children: []'] : []),
-    ...reads.map(({key}) => key),
+    ...reads.map(({expression, key}) => `${key}: ${expression}`),
     `type: '${type}'`,
     'version: 1',
   ];
-  const incrementalEntries = reads
-    .map(
-      ({key}) =>
-        `  if (${key} !== undefined) {\n    json.${key} = ${key};\n  }`,
-    )
-    .join('\n');
-  if (reads.length === 0) {
-    // Nothing to read, so the literal is the whole function.
-    return `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */
-function export${klass.name}(): {[key: string]: unknown} {
-  return {
-    ${literalEntries.join(',\n    ')},
-  };
-}`;
-  }
   return `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */
-function export${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
-${locals}
-  if (
-    ${defined}
-  ) {
-    return {
-      ${literalEntries.join(',\n      ')},
-    };
-  }
-  const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
-${incrementalEntries}
-  json.type = '${type}';
-  json.version = 1;
-  return json;
+function export${klass.name}(${
+    reads.length === 0 ? '' : `node: ${klass.name}`
+  }): {[key: string]: unknown} {
+  return {
+    ${entries.join(',\n    ')},
+  };
 }`;
 }
 

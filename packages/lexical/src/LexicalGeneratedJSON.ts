@@ -97,47 +97,15 @@ const TEXT_MODE_ENCODE: {readonly [key: string]: 0 | 1 | 2} =
 
 /** Generated from TextNode's `json` schema. Do not edit by hand. */
 function exportTextNode(node: TextNode): {[key: string]: unknown} {
-  const detail = node.__detail;
-  const format = node.__format;
-  const mode = TEXT_MODE_DECODE[node.__mode];
-  const style = node.__style;
-  const text = node.__text;
-  if (
-    detail !== undefined &&
-    format !== undefined &&
-    mode !== undefined &&
-    style !== undefined &&
-    text !== undefined
-  ) {
-    return {
-      detail,
-      format,
-      mode,
-      style,
-      text,
-      type: 'text',
-      version: 1,
-    };
-  }
-  const json: {[key: string]: unknown} = {};
-  if (detail !== undefined) {
-    json.detail = detail;
-  }
-  if (format !== undefined) {
-    json.format = format;
-  }
-  if (mode !== undefined) {
-    json.mode = mode;
-  }
-  if (style !== undefined) {
-    json.style = style;
-  }
-  if (text !== undefined) {
-    json.text = text;
-  }
-  json.type = 'text';
-  json.version = 1;
-  return json;
+  return {
+    detail: node.__detail,
+    format: node.__format,
+    mode: TEXT_MODE_DECODE[node.__mode],
+    style: node.__style,
+    text: node.__text,
+    type: 'text',
+    version: 1,
+  };
 }
 
 /** Generated from TextNode's `json` schema. Do not edit by hand. */
@@ -195,48 +163,16 @@ function updateTextNode(
 
 /** Generated from ParagraphNode's `json` schema. Do not edit by hand. */
 function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
-  const direction = node.__dir;
-  const format = node.getFormatType();
-  const indent = node.__indent;
-  const textFormat = node.getSerializedTextFormat();
-  const textStyle = node.getSerializedTextStyle();
-  if (
-    direction !== undefined &&
-    format !== undefined &&
-    indent !== undefined &&
-    textFormat !== undefined &&
-    textStyle !== undefined
-  ) {
-    return {
-      children: [],
-      direction,
-      format,
-      indent,
-      textFormat,
-      textStyle,
-      type: 'paragraph',
-      version: 1,
-    };
-  }
-  const json: {[key: string]: unknown} = {children: []};
-  if (direction !== undefined) {
-    json.direction = direction;
-  }
-  if (format !== undefined) {
-    json.format = format;
-  }
-  if (indent !== undefined) {
-    json.indent = indent;
-  }
-  if (textFormat !== undefined) {
-    json.textFormat = textFormat;
-  }
-  if (textStyle !== undefined) {
-    json.textStyle = textStyle;
-  }
-  json.type = 'paragraph';
-  json.version = 1;
-  return json;
+  return {
+    children: [],
+    direction: node.__dir,
+    format: node.getFormatType(),
+    indent: node.__indent,
+    textFormat: node.getSerializedTextFormat(),
+    textStyle: node.getSerializedTextStyle(),
+    type: 'paragraph',
+    version: 1,
+  };
 }
 
 /** Generated from ParagraphNode's `json` schema. Do not edit by hand. */
@@ -283,47 +219,15 @@ function exportCompactLineBreakNode(): {[key: string]: unknown} {
 
 /** Generated from TabNode's `json` schema. Do not edit by hand. */
 function exportTabNode(node: TabNode): {[key: string]: unknown} {
-  const detail = node.getDetail();
-  const mode = node.getMode();
-  const text = node.getTextContent();
-  const format = node.__format;
-  const style = node.__style;
-  if (
-    detail !== undefined &&
-    mode !== undefined &&
-    text !== undefined &&
-    format !== undefined &&
-    style !== undefined
-  ) {
-    return {
-      detail,
-      mode,
-      text,
-      format,
-      style,
-      type: 'tab',
-      version: 1,
-    };
-  }
-  const json: {[key: string]: unknown} = {};
-  if (detail !== undefined) {
-    json.detail = detail;
-  }
-  if (mode !== undefined) {
-    json.mode = mode;
-  }
-  if (text !== undefined) {
-    json.text = text;
-  }
-  if (format !== undefined) {
-    json.format = format;
-  }
-  if (style !== undefined) {
-    json.style = style;
-  }
-  json.type = 'tab';
-  json.version = 1;
-  return json;
+  return {
+    detail: node.getDetail(),
+    mode: node.getMode(),
+    text: node.getTextContent(),
+    format: node.__format,
+    style: node.__style,
+    type: 'tab',
+    version: 1,
+  };
 }
 
 /** Generated from TabNode's `json` schema. Do not edit by hand. */

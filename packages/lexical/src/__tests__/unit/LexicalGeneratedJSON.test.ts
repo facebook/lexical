@@ -170,20 +170,21 @@ describe('generated exportJSON', () => {
           // The first text child's format, not the paragraph's own.
           expect(json.textFormat).toBe(1);
           expect(json.textStyle).toBe('');
-          // And the generated literal underneath it is intact. The two
-          // back-filled keys land after type/version because the override
-          // appends them to the finished object — unchanged from before the
-          // literal was generated, since the override itself did not change.
+          // And the generated literal underneath it is intact. The literal
+          // writes every schema key unconditionally — textFormat/textStyle as
+          // undefined when the getters have nothing to say — so the override's
+          // back-fill assigns into keys that already exist, and they sit at
+          // their schema position rather than trailing after `version`.
           expect(json.type).toBe('paragraph');
           expect(Object.keys(json)).toEqual([
             'children',
             'direction',
             'format',
             'indent',
-            'type',
-            'version',
             'textFormat',
             'textStyle',
+            'type',
+            'version',
           ]);
         },
         {discrete: true},

@@ -3749,21 +3749,29 @@ export function $writeJSONGetters(
     } else {
       value = entry.getter.call(node);
     }
-    if (value === undefined) {
-      continue;
-    }
     if (compact) {
-      // Inline rather than isSchemaDefault(schema, value): this runs per
-      // property per node, and for a primitive domain the whole answer is the
-      // comparison — the call chain around it was most of the cost.
+      // The compact form omits, because its output is for storage and an
+      // object-level consumer (a structured clone into IndexedDB) counts keys
+      // the way stringify counts bytes. Inline rather than
+      // isSchemaDefault(schema, value): this runs per property per node, and
+      // for a primitive domain the whole answer is the comparison.
       const {defaultValue, isEqual} = entry;
       if (
+        value === undefined ||
         value === defaultValue ||
         (isEqual !== undefined && isEqual(value, defaultValue))
       ) {
         continue;
       }
     }
+    // The legacy form writes unconditionally, `undefined` included:
+    // JSON.stringify omits an undefined-valued property, so the serialized
+    // bytes are identical either way, and present-with-undefined is the shape
+    // the hand-written exporters always had — main's ListItemNode writes
+    // `checked: this.getChecked()` on every non-checklist item, TableNode
+    // writes `colWidths: undefined` by explicit ternary. Writing the key also
+    // keeps every export of a class on one object shape, and is one branch
+    // less per property.
     json[entry.key] = value;
   }
 }

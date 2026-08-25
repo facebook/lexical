@@ -584,11 +584,13 @@ Each property's schema is built from composable helpers exported by
 - `optional(inner, {omitDefault}?)` — the property may be `undefined`
 - `arrayValue(item)` — an array of `item` values. Like `objectValue`, it compares by content rather than by reference (see `isEqual` below), so an array-valued property equal to its default still compacts away
 - `unionValue(members, defaultValue)` — the first member schema whose domain contains the value wins, and the union yields what that member parsed. A member that normalizes its input composes here the same way it behaves alone, so `unionValue([numberValue(), enumValue(['inherit'])], 'inherit')` reads `"640"` as `640` and `"inherit"` as `'inherit'`
-- `transformValue(inner, transform, {isEqual}?)` — normalizes what `inner` parsed into the stored domain (e.g. the legacy `format: 'bold'` shorthand folded into its numeric form); introspection still describes `inner`'s accepted input domain. `inner`'s `isEqual` is not inherited, since the transformed domain may be a different type entirely — pass one when the output domain is reference-typed
+- `transformValue(inner, transform, {isEqual}?)` — normalizes what `inner` parsed into the stored domain; introspection still describes `inner`'s accepted input domain. `inner`'s `isEqual` is not inherited, since the transformed domain may be a different type entirely — pass one when the output domain is reference-typed
+- `aliasedValue(inner, aliases)` — a lookup-table normalization: a string matching a key of `aliases` yields the value it names, and anything else is `inner`'s to validate, so the domain, the default and the equality all stay `inner`'s. This is `transformValue` narrowed to the case where the normalization is a lookup, and the reason to prefer it is that the lookup is *data*: it is part of the schema's introspectable `meta`, where tooling can see it — example generation produces the legacy spellings, and a code generator can compile the table instead of being unable to see inside a function. `TextNode` declares its legacy `format: 'bold'` and `detail: 'directionless'` shorthands this way
 - `rawValue()` — an escape hatch that passes the value through unparsed
 - `objectValue(fields)` — the record of properties, used for the `json` declaration itself
-- `withSetter(schema, 'methodName')` / `withGetter(schema, 'methodName')` / `withAccessors(schema, {getter, setter})` — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose
+- `withGetter(schema, 'methodName')` / `withAccessors(schema, {getter, setter})` — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose
 - `withField(schema, '__field')` — declare that the property *is* a node field, rather than a pair of accessor methods. Exporting reads the field and importing assigns it, with no method call on either side and no version resolution in either direction — the node being parsed into is already writable, and the node being exported is one the walk already resolved from the EditorState — so this is the fast path for a property that is stored verbatim. The trade-off is that whatever a `set<Prop>` method would do — normalizing, clamping, bookkeeping, or a subclass's override of it — is skipped, so reach for it only when the property really is the field. Because the schema records the field as `{field: '__name'}` rather than as a bare name, tooling can tell a field from a method without knowing anything about how a node names its fields — enough for a codegen pass to emit a specialized parser for a hot node type. The two directions are independent, so `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})` reads the field directly but writes through a method that normalizes
+- `withField(schema, {field, getter?, setter?, decode?, encode?})` — the options form, for a property that already had accessors before it had a schema, or whose stored and serialized forms differ. `getter`/`setter` name the accessor each direction *stands in for*: declaring the field says the two are equivalent for the class that declared it, and any class that overrides the named method between the declaring class and the node's own class has said otherwise and wins — the field access is abandoned and the method is called, so migrating a property to a field is not a behavior change for anyone who overrode its accessor. `decode`/`encode` are lookup tables between the stored and serialized forms (`TextNode` stores `mode` as a number and serializes it as a name), keeping such a property on the direct-field path without an accessor method in between
 
 A schema's default is compared by identity, which is right for the primitive
 domains. `arrayValue` and `objectValue` return a fresh value per parse, so they
@@ -604,7 +606,7 @@ Parsing is total: a missing or out-of-domain value falls back to the
 schema's default instead of throwing, which is the domain importers actually
 face (older documents predate a property; a compact export omits a property
 whose value is its default). Each parsed property is applied through the
-node's setter — `set<Property>`, or the name given with `withSetter` — so
+node's setter — `set<Property>`, or the name given with `withAccessors` — so
 subclass overrides of those setters are honored, and a subclass schema field
 with the same serialized property name overrides its ancestor's.
 
@@ -633,12 +635,20 @@ Lexical can also write a *compact* form, which omits:
   such as `ListNode`'s `tag`),
 - the deprecated `version` property.
 
-Parsing restores each, so both forms describe the same document; the compact
-form is typically much smaller. Compaction happens as the properties are
-written rather than as a pass over the finished object, so a derived property
-is skipped without even calling its getter — and a node that generates its own
-`exportJSON` can inline the same decisions and never consult the schema at
-runtime.
+Parsing restores each, so both forms describe the same document. Compaction
+happens as the properties are written rather than as a pass over the finished
+object, so a derived property is skipped without even calling its getter — and
+a node with generated serialization code (see below) inlines the same
+decisions and never consults the schema at runtime.
+
+Know what the smaller form buys you before reaching for it. The raw JSON is
+much smaller — a representative rich document compacts to well under half the
+legacy byte count — which matters to consumers of the *objects*: structured
+clones into IndexedDB, in-memory copies, messages between workers. After
+gzip the two are typically a wash (the omitted properties are exactly the
+most repetitive, most compressible bytes; the same benchmark document came
+out a few percent *larger* compressed), so compact mode is not a wire-size
+optimization for a pipeline that already compresses.
 
 :::caution
 
@@ -682,6 +692,30 @@ The extension's output provides:
   context installed, so JSON exports the extension does not own — an
   `editorState.toJSON()` call, or the `@lexical/clipboard` selection export
   inside a copy handler — also honor the configuration.
+
+### Generated serialization code
+
+Because a schema states everything ahead of time — which accessor or field
+each property uses, what its default is, what its domain admits — the
+serialization it drives can be compiled to straight-line code instead of
+interpreted from the schema at runtime. Lexical does this for its most common
+built-in nodes: text, paragraph, linebreak and tab in `lexical`, heading and
+quote in `@lexical/rich-text`, link and autolink in `@lexical/link`, and mark
+in `@lexical/mark` ship `exportJSON` (both forms) and, where the whole class
+is compilable, `updateFromJSON` implementations generated from their schemas
+at build time. The generated code is handed back through `$config`'s
+`generated` property, so the association is carried by the class itself, and
+it produces byte-identical JSON to the schema-driven path — the unit tests
+compare the two directly, and each generated parser is differentially
+verified against the schema it was compiled from (over a corpus including
+hostile inputs) when it is generated.
+
+This is transparent to applications — same JSON, faster — and custom nodes do
+not need it: the schema-driven path serves them. Contributors adding a core
+node (or curious readers) can find the generator at
+`scripts/generate-node-json.mjs` (`pnpm run generate-node-json`) and the
+schema-to-JavaScript compiler it uses in `@lexical/compiler`'s
+`SchemaJsonCodegen` entry point.
 
 ### Versioning & Breaking Changes
 

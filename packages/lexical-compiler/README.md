@@ -4,7 +4,7 @@ Lexical's build-time compiler: source-to-source passes over Lexical code,
 delivered as a Vite/Rollup plugin and as plain transform functions for
 builds with no plugin API of their own.
 
-Today it does one thing — **tree-shaking**. It inserts `/* @__PURE__ */`
+The plugin does one thing — **tree-shaking**. It inserts `/* @__PURE__ */`
 annotations before module-scope calls to the side-effect-free factories
 (`defineExtension`, `createCommand`, `createState`, `safeCast`,
 `defineImportRule`, …) so bundlers can drop the extension, command, and rule
@@ -227,3 +227,32 @@ than failing the build.
 
 The transform is idempotent: a call that already has a `/* @__PURE__ */` (or
 terser's `/* #__PURE__ */`) annotation immediately before it is left alone.
+
+## SchemaJsonCodegen
+
+The package's second entry point, `@lexical/compiler/SchemaJsonCodegen`, is
+not part of the plugin pipeline: it is the library a code generator uses to
+turn a node's declarative serialization schema (the `json` property of
+`$config`) into straight-line JavaScript. Lexical's own
+`scripts/generate-node-json.mjs` uses it to generate the specialized
+`exportJSON`/`updateFromJSON` implementations the built-in nodes ship with.
+
+- `compileParse(meta, defaultValue, tableBaseName)` compiles a schema's
+  introspectable `meta` into a JavaScript expression over `v` that parses
+  exactly as the schema does, plus any lookup tables the expression refers
+  to. Only the kinds whose meta fully determines the parse are compiled
+  (strings, numbers, booleans, enums, and `aliasedValue` tables); the rest
+  throw `NotCompilable` rather than emit a guess.
+- Compiling is not trusting: `verifyCompiledParse` runs the compiled
+  expression against the real schema over `verificationCorpus(meta)` — every
+  value the schema names plus a fixed set of hostile inputs,
+  `Object.prototype` member names included — and throws naming the first
+  value they disagree on. `verifyTableCoversDomain` proves an emitted lookup
+  table total over a schema's domain, so its miss-fallback is dead code.
+- `NUM_HELPER_SOURCE` and `JSON_NUMBER_SOURCE` are the number-parsing helper
+  as source text, so an emitted module and the verification share one
+  definition rather than two copies that could drift.
+
+The corpus is fixed rather than sampled, so a generator built on this
+produces byte-reproducible output — which is what lets generated files be
+checked in and drift-tested against regeneration.

@@ -4031,6 +4031,9 @@ describe('LexicalEditor tests', () => {
         {discrete: true},
       );
 
+      const mockWarning = vi
+        .spyOn(console, 'warn')
+        .mockImplementationOnce(() => {});
       const legacy = createTestEditor({
         nodes: [
           LegacyParagraph,
@@ -4040,6 +4043,10 @@ describe('LexicalEditor tests', () => {
           throw err;
         },
       });
+      expect(mockWarning).toHaveBeenCalledWith(
+        `Override for ParagraphNode specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
+      );
+      mockWarning.mockRestore();
       legacy.update(
         () => {
           expect($create(ParagraphNode)).toBeInstanceOf(LegacyParagraph);
@@ -4056,6 +4063,9 @@ describe('LexicalEditor tests', () => {
       }
       const onError = vi.fn();
 
+      const mockWarning = vi
+        .spyOn(console, 'warn')
+        .mockImplementationOnce(() => {});
       const newEditor = createTestEditor({
         nodes: [
           CustomParagraphNode,
@@ -4066,6 +4076,10 @@ describe('LexicalEditor tests', () => {
         ],
         onError: onError,
       });
+      expect(mockWarning).toHaveBeenCalledWith(
+        `Override for ParagraphNode specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
+      );
+      mockWarning.mockRestore();
 
       const json = {
         root: {

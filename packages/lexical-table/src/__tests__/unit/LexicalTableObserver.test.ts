@@ -57,6 +57,7 @@ describe('TableObserver tracking MutationObserver teardown (#9073)', () => {
       defineExtension({
         dependencies: [TableExtension],
         name: 'table-observer-test',
+        theme: {tableScrollableWrapper: 'table-scrollable-wrapper'},
       }),
     );
     editor.setRootElement(container);

@@ -27,6 +27,8 @@ import {
   withAccessors,
 } from 'lexical';
 
+import {createGeneratedMarkNode} from './LexicalMarkGeneratedJSON';
+
 export type SerializedMarkNode = Spread<
   {
     ids: string[];
@@ -34,14 +36,20 @@ export type SerializedMarkNode = Spread<
   SerializedElementNode
 >;
 
+// Named outside the objectValue because the generated code needs it too: the
+// compact form's "is this the default?" comparison for an array goes through
+// the schema's own defaultValue and isEqual, so the factory closes over the
+// very schema the walk would have used.
+const idsSchema = withAccessors(arrayValue(stringValue()), {
+  getter: 'getIDs',
+  setter: 'setIDs',
+});
+
 // Single source of truth for parsing the node-specific properties of a
 // SerializedMarkNode (those it adds over a SerializedElementNode).
-const markNodeSchema = objectValue({
-  ids: withAccessors(arrayValue(stringValue()), {
-    getter: 'getIDs',
-    setter: 'setIDs',
-  }),
-});
+const markNodeSchema = objectValue({ids: idsSchema});
+
+const generatedMarkNode = createGeneratedMarkNode({ids: idsSchema});
 
 const NO_IDS: readonly string[] = [];
 
@@ -58,7 +66,11 @@ export class MarkNode extends ElementNode {
   __ids: readonly string[];
 
   $config() {
-    return this.config('mark', {extends: ElementNode, json: markNodeSchema});
+    return this.config('mark', {
+      extends: ElementNode,
+      generated: generatedMarkNode,
+      json: markNodeSchema,
+    });
   }
 
   afterCloneFrom(prevNode: this): void {

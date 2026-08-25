@@ -146,6 +146,11 @@ import {
   withField,
 } from 'lexical';
 
+import {
+  GENERATED_HEADING,
+  GENERATED_QUOTE,
+} from './LexicalRichTextGeneratedJSON';
+
 export type SerializedHeadingNode = Spread<
   {
     tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
@@ -198,6 +203,7 @@ export class QuoteNode extends ElementNode {
   $config() {
     return this.config('quote', {
       extends: ElementNode,
+      generated: GENERATED_QUOTE,
       importDOM: {
         blockquote: () => ({
           conversion: $convertBlockquoteElement,
@@ -349,6 +355,7 @@ export class HeadingNode extends ElementNode {
   $config() {
     return this.config('heading', {
       extends: ElementNode,
+      generated: GENERATED_HEADING,
       importDOM: {
         h1: () => ({conversion: $convertHeadingElement, priority: 0}),
         h2: () => ({conversion: $convertHeadingElement, priority: 0}),

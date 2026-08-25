@@ -192,6 +192,7 @@ export type {
 export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler, KeyDownShortcut} from './LexicalEvents';
 export {stopLexicalPropagation} from './LexicalEvents';
+export type {GeneratedJSON} from './LexicalGeneratedJSON';
 export type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
 export {
   compileKeyboardShortcuts,

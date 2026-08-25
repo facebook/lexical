@@ -8,7 +8,8 @@
 
 /**
  * Emit specialized `exportJSON` and `updateFromJSON` implementations for the
- * core node classes, from the same `json` schema those classes declare.
+ * node classes in {@link MANIFEST}, from the same `json` schema those classes
+ * declare, using `@lexical/compiler`'s SchemaJsonCodegen pass.
  *
  * Both schema-driven paths walk a compiled table per node: a loop, an indirect
  * call per property, and a keyed store whose key changes every iteration.
@@ -18,24 +19,31 @@
  * what the hand-written methods this schema replaced used to be, recovered
  * without hand-writing them.
  *
- * The export direction reads node fields, so it needs nothing from the schema
- * but the accessor names. The import direction is the untrusted-JSON boundary
- * and has to reproduce each property's validation exactly, so every emitted
- * parser is checked here against the schema it was compiled from, over a corpus
- * derived from that schema plus a fixed set of hostile values. A property whose
- * schema this cannot compile — or compiles wrongly — takes the class out of the
- * import half rather than shipping a parser that disagrees with the walk.
+ * Each package gets its own generated module beside its nodes, and each class
+ * passes its own generated code to `$config`, so the association is carried by
+ * the class rather than looked up at runtime. A class whose compact form needs
+ * a schema's own equality — MarkNode's `ids`, whose default is an array — gets
+ * a *factory* instead of a const: its `$config` calls the factory with the
+ * schema, and the emitted comparisons close over that schema's `defaultValue`
+ * and `isEqual` rather than a literal no reference value could ever be `===`.
+ *
+ * The import direction is the untrusted-JSON boundary and has to reproduce
+ * each property's validation exactly, so every emitted parser is checked here
+ * against the schema it was compiled from, over a corpus derived from that
+ * schema plus a fixed set of hostile values. A property whose schema this
+ * cannot compile — or compiles wrongly — takes the class out of the import
+ * half rather than shipping a parser that disagrees with the walk.
  *
  * Reading a schema needs no editor and constructs no node: `$config()` is a
  * plain method on the prototype, so this runs as an ordinary build step.
  *
  * Run with `pnpm run generate-node-json`; `LexicalGeneratedJSON.test.ts` fails
- * if the checked-in output is stale or disagrees with the schema-driven path.
+ * if any checked-in output is stale or disagrees with the schema-driven path.
  */
 
 import {execFileSync} from 'node:child_process';
-import {writeFileSync} from 'node:fs';
-import {join, resolve} from 'node:path';
+import {mkdirSync, writeFileSync} from 'node:fs';
+import {dirname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 import {
@@ -50,24 +58,68 @@ import {
 /** @typedef {import('lexical').LexicalNode} LexicalNode */
 /** @typedef {import('lexical').Klass<LexicalNode>} NodeClass */
 /** @typedef {import('lexical').AnySerializationSchema} AnySchema */
-/** @typedef {import('lexical').SerializationSchemaMeta} SchemaMeta */
 
-const CHECKED_IN = join(
-  import.meta.dirname,
-  '..',
-  'packages',
-  'lexical',
-  'src',
-  'LexicalGeneratedJSON.ts',
-);
+const REPO = join(import.meta.dirname, '..');
 
 /**
- * Where to write. The checked-in module by default; the drift check passes
- * somewhere else, because regenerating in place would replace a source file
- * other test workers are importing at that moment — first with phase one's
- * stub, and only then with the real thing.
+ * Everything phase one needs to write a valid stub for each output, stated
+ * statically because phase one runs before anything can be imported. Phase two
+ * asserts its resolved targets against this, so the two cannot drift apart
+ * silently.
+ *
+ * `home` marks the module that declares the `GeneratedJSON` interface (the
+ * others import the type from `lexical`). An entry with `factory` emits a
+ * function the class's `$config` calls with its schema, rather than a const —
+ * see the module docblock.
+ *
+ * @type {readonly {
+ *   file: string,
+ *   home?: boolean,
+ *   entries: readonly {name: string, factory?: boolean}[],
+ * }[]}
  */
-const OUT = process.argv[2] ? resolve(process.argv[2]) : CHECKED_IN;
+const MANIFEST = [
+  {
+    entries: [
+      {name: 'GENERATED_TEXT'},
+      {name: 'GENERATED_PARAGRAPH'},
+      {name: 'GENERATED_LINEBREAK'},
+      {name: 'GENERATED_TAB'},
+    ],
+    file: 'packages/lexical/src/LexicalGeneratedJSON.ts',
+    home: true,
+  },
+  {
+    entries: [{name: 'GENERATED_HEADING'}, {name: 'GENERATED_QUOTE'}],
+    file: 'packages/lexical-rich-text/src/LexicalRichTextGeneratedJSON.ts',
+  },
+  {
+    entries: [{name: 'GENERATED_LINK'}, {name: 'GENERATED_AUTOLINK'}],
+    file: 'packages/lexical-link/src/LexicalLinkGeneratedJSON.ts',
+  },
+  {
+    entries: [{factory: true, name: 'createGeneratedMarkNode'}],
+    file: 'packages/lexical-mark/src/LexicalMarkGeneratedJSON.ts',
+  },
+];
+
+/**
+ * Where to write. In place by default; the drift check passes a directory,
+ * because regenerating in place would replace source modules other test
+ * workers are importing at that moment — first with phase one's stubs, and
+ * only then with the real thing. In directory mode the repo-relative layout is
+ * preserved and a `manifest.json` lists every file written, so the check can
+ * compare each without knowing the list itself.
+ */
+const OUT_DIR = process.argv[2] ? resolve(process.argv[2]) : null;
+
+/** @param {string} repoRelative @returns {string} */
+function outPath(repoRelative) {
+  const target =
+    OUT_DIR === null ? join(REPO, repoRelative) : join(OUT_DIR, repoRelative);
+  mkdirSync(dirname(target), {recursive: true});
+  return target;
+}
 
 const HEADER = `/**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -85,10 +137,14 @@ const HEADER = `/**
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 `;
 
-const STUB = `${HEADER}
-import type {LexicalNode} from './LexicalNode';
-
-/** @internal */
+const INTERFACE_SOURCE = `/**
+ * The generated implementations for one node class.
+ *
+ * Each is handed to the class it was generated from through that class's
+ * \`$config\`, so nothing has to match code to class at runtime.
+ *
+ * @internal
+ */
 export interface GeneratedJSON {
   // Method syntax, so TypeScript checks the parameter bivariantly and a
   // function generated for one class is assignable here — the same reason
@@ -101,25 +157,42 @@ export interface GeneratedJSON {
     node: LexicalNode,
     json: {readonly [key: string]: unknown},
   ): void;
+}`;
+
+/**
+ * A valid do-nothing module for one output, from the static manifest alone.
+ *
+ * @param {(typeof MANIFEST)[number]} pkg
+ * @returns {string}
+ */
+function stubSource(pkg) {
+  const lines = [HEADER];
+  if (pkg.home) {
+    lines.push(
+      `\nimport type {LexicalNode} from './LexicalNode';\n\n${INTERFACE_SOURCE}\n`,
+    );
+  } else {
+    lines.push(`\nimport type {GeneratedJSON} from 'lexical';\n`);
+  }
+  for (const entry of pkg.entries) {
+    lines.push(
+      entry.factory
+        ? `\n/**\n * @internal\n * @__NO_SIDE_EFFECTS__\n */\nexport function ${entry.name}(..._config: unknown[]): undefined | GeneratedJSON {\n  return undefined;\n}\n`
+        : `\n/** @internal */\nexport const ${entry.name}: undefined | GeneratedJSON = undefined;\n`,
+    );
+  }
+  return lines.join('');
 }
 
-/** @internal */
-export const GENERATED_TEXT: undefined | GeneratedJSON = undefined;
-/** @internal */
-export const GENERATED_PARAGRAPH: undefined | GeneratedJSON = undefined;
-/** @internal */
-export const GENERATED_LINEBREAK: undefined | GeneratedJSON = undefined;
-/** @internal */
-export const GENERATED_TAB: undefined | GeneratedJSON = undefined;
-`;
-
-// Two phases, because reading the schemas means importing `lexical`, and
-// `lexical` imports the file this script writes. Phase one replaces that file
-// with a valid do-nothing module so the import always succeeds — otherwise a
-// generator run that produced broken output could never be run again to fix
-// it. Phase two re-enters under tsx and writes the real thing.
+// Two phases, because reading the schemas means importing the packages, and
+// each package imports the file this script writes for it. Phase one replaces
+// every output with a valid do-nothing module so the imports always succeed —
+// otherwise a generator run that produced broken output could never be run
+// again to fix it. Phase two re-enters under tsx and writes the real thing.
 if (!process.env.LEXICAL_CODEGEN_PHASE_TWO) {
-  writeFileSync(OUT, STUB);
+  for (const pkg of MANIFEST) {
+    writeFileSync(outPath(pkg.file), stubSource(pkg));
+  }
   execFileSync(
     'npx',
     ['tsx', fileURLToPath(import.meta.url), ...process.argv.slice(2)],
@@ -132,9 +205,9 @@ if (!process.env.LEXICAL_CODEGEN_PHASE_TWO) {
   process.exit(0);
 }
 
-// The bare specifier rather than the path to the source: tsconfig's `paths`
-// maps it to `packages/lexical/src/index.ts` for both tsx and the type checker,
-// and a specifier ending in `.ts` is a type error under this repo's settings.
+// Bare specifiers rather than paths to the sources: tsconfig's `paths` maps
+// each to its package's src for both tsx and the type checker, and a specifier
+// ending in `.ts` is a type error under this repo's settings.
 const {
   getComposedSchema,
   isSchemaField,
@@ -144,25 +217,63 @@ const {
   TabNode,
   TextNode,
 } = await import('lexical');
+const {HeadingNode, QuoteNode} = await import('@lexical/rich-text');
+const {AutoLinkNode, LinkNode} = await import('@lexical/link');
+const {MarkNode} = await import('@lexical/mark');
 
 /**
- * Where each target class lives, for the generated file's imports.
+ * The classes each generated module serializes, in the order their code is
+ * emitted, with the module each type import comes from. The list is what to
+ * extend to specialize another class; everything else is derived from its
+ * schema. `factory` names the config keys whose compact comparison closes over
+ * the schema — required exactly when a compact-relevant property's default is
+ * reference-typed.
  *
- * @type {{readonly [className: string]: string}}
+ * @type {readonly {
+ *   file: string,
+ *   home?: boolean,
+ *   targets: readonly {
+ *     klass: NodeClass,
+ *     module: string,
+ *   }[],
+ * }[]}
  */
-const MODULES = {
-  LineBreakNode: 'LexicalLineBreakNode',
-  ParagraphNode: 'LexicalParagraphNode',
-  TabNode: 'LexicalTabNode',
-  TextNode: 'LexicalTextNode',
-};
+const PACKAGES = [
+  {
+    file: 'packages/lexical/src/LexicalGeneratedJSON.ts',
+    home: true,
+    targets: [
+      {klass: TextNode, module: './nodes/LexicalTextNode'},
+      {klass: ParagraphNode, module: './nodes/LexicalParagraphNode'},
+      {klass: LineBreakNode, module: './nodes/LexicalLineBreakNode'},
+      {klass: TabNode, module: './nodes/LexicalTabNode'},
+    ],
+  },
+  {
+    file: 'packages/lexical-rich-text/src/LexicalRichTextGeneratedJSON.ts',
+    targets: [
+      {klass: HeadingNode, module: './index'},
+      {klass: QuoteNode, module: './index'},
+    ],
+  },
+  {
+    file: 'packages/lexical-link/src/LexicalLinkGeneratedJSON.ts',
+    targets: [
+      {klass: LinkNode, module: './LexicalLinkNode'},
+      {klass: AutoLinkNode, module: './LexicalLinkNode'},
+    ],
+  },
+  {
+    file: 'packages/lexical-mark/src/LexicalMarkGeneratedJSON.ts',
+    targets: [{klass: MarkNode, module: './MarkNode'}],
+  },
+];
 
-/**
- * The concrete core classes hot enough to be worth specializing.
- *
- * @type {readonly NodeClass[]}
- */
-const TARGETS = [TextNode, ParagraphNode, LineBreakNode, TabNode];
+/** `MarkNode` → `GENERATED_MARK` / `createGeneratedMarkNode`. */
+const constName = (/** @type {NodeClass} */ klass) =>
+  `GENERATED_${klass.name.replace(/Node$/, '').toUpperCase()}`;
+const factoryName = (/** @type {NodeClass} */ klass) =>
+  `createGenerated${klass.name}`;
 
 /** `foo` → `getFoo`. @param {string} key @returns {string} */
 function defaultGetterName(key) {
@@ -174,8 +285,13 @@ function defaultSetterName(key) {
   return `set${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 }
 
-/** Lookup tables the generated module needs, by the const name given to each.
- * @type {Map<string, {table: {readonly [key: string]: unknown}, nullProto: boolean}>} */
+/**
+ * Lookup tables the generated module being built needs, by the const name
+ * given to each. Reset per package: tables are emitted into the module whose
+ * classes need them.
+ *
+ * @type {Map<string, {table: {readonly [key: string]: unknown}, nullProto: boolean}>}
+ */
 const tables = new Map();
 
 /**
@@ -283,11 +399,12 @@ function schemaReads(klass) {
 
 /**
  * Whether `literal(value)` evaluates back to a value that is `===` this one,
- * which is what the emitted `!==` comparison needs in order to mean what the
+ * which is what an emitted `!==` comparison needs in order to mean what the
  * walk's `value === defaultValue` means.
  *
  * True for the primitives JSON round-trips. False for an object or array — a
- * literal allocates a fresh one, never `===` the default the walk holds — and
+ * literal allocates a fresh one, never `===` the default the walk holds; those
+ * compare through the schema's own equality, closed over by a factory — and
  * for a non-finite number, which `JSON.stringify` renders as `null`. `-0` is
  * rendered as `0`, which is fine: `-0 !== 0` is false either way.
  *
@@ -307,27 +424,31 @@ function hasFaithfulLiteral(value) {
 }
 
 /**
- * The compact form of one class's export, or `null` for a class it cannot be
- * generated for.
+ * The compact form of one class's export.
  *
  * The compact form omits a property whose value is the one parsing would
- * restore, a property the parser derives rather than reads, and `version`. Which
- * properties that turns out to be depends on the node's values, but the *rule*
- * does not: each is a comparison against a default the schema states, which is
- * as fixed as the accessor names are. So this generates the same way the legacy
- * form does, and the `compact` argument picks between two straight-line
- * functions rather than branching inside one.
+ * restore, a property the parser derives rather than reads, and `version`.
+ * Which properties that turns out to be depends on the node's values, but the
+ * *rule* does not: each is a comparison against a default the schema states,
+ * which is as fixed as the accessor names are. So this generates the same way
+ * the legacy form does, and the `compact` argument picks between two
+ * straight-line functions rather than branching inside one.
  *
- * A schema that declares its own equality — {@link arrayValue} and
- * {@link objectValue}, whose defaults are reference-typed — has no literal to
- * compare against, so its class keeps the walk for this direction.
+ * A property whose default is reference-typed has no literal a value could be
+ * `===`, so its comparison goes through the schema's own default and equality
+ * instead — mirroring the walk's inline compare — and the names it uses are
+ * reported in `factoryKeys` for the caller to close over. A default with no
+ * faithful literal and no declared equality (a non-finite number) still bails
+ * the class to the walk.
  *
  * @param {NodeClass} klass
- * @returns {null | string}
+ * @returns {null | {code: string, factoryKeys: string[]}}
  */
 function generateCompactExport(klass) {
   const type = klass.getType();
   const writes = [];
+  /** @type {string[]} */
+  const factoryKeys = [];
   for (const {expression, key, schema} of schemaReads(klass)) {
     if (schema.setter === null) {
       // Derived on import, so nothing will read it back: the compact form does
@@ -335,48 +456,56 @@ function generateCompactExport(klass) {
       continue;
     }
     const {defaultValue} = schema;
-    if (!hasFaithfulLiteral(defaultValue)) {
-      // The emitted comparison is `!==` against a literal, so it only means
-      // what the walk means when that literal evaluates back to the very same
-      // value. It does not for a reference-typed default — a fresh `[]` is
-      // never `===` the frozen one the walk compares against, so the property
-      // would always be written — nor for a non-finite number, which
-      // JSON.stringify renders as `null`.
+    if (hasFaithfulLiteral(defaultValue)) {
+      // A default of `undefined` needs no second comparison: the walk skips an
+      // undefined value before it ever looks at the default, and so does this.
+      const isDefault =
+        defaultValue === undefined
+          ? ''
+          : ` && ${key} !== ${literal(defaultValue)}`;
+      writes.push(
+        `  const ${key} = ${expression};\n  if (${key} !== undefined${isDefault}) {\n    json.${key} = ${key};\n  }`,
+      );
+      continue;
+    }
+    if (schema.isEqual === undefined) {
       process.stdout.write(
         `${klass.name}: no generated compact export, "${key}" has a default with no faithful literal (${String(
           defaultValue,
-        )})\n`,
+        )}) and no declared equality\n`,
       );
       return null;
     }
-    // A default of `undefined` needs no second comparison: the walk skips an
-    // undefined value before it ever looks at the default, and so does this.
-    const isDefault =
-      defaultValue === undefined
-        ? ''
-        : ` && ${key} !== ${literal(defaultValue)}`;
+    // The walk's inline compare, verbatim, over the schema's own default and
+    // equality — closed over by the surrounding factory.
+    factoryKeys.push(key);
     writes.push(
-      `  const ${key} = ${expression};\n  if (${key} !== undefined${isDefault}) {\n    json.${key} = ${key};\n  }`,
+      `  const ${key} = ${expression};\n  if (\n    ${key} !== undefined &&\n    ${key} !== ${key}_defaultValue &&\n    !(${key}_isEqual !== undefined && ${key}_isEqual(${key}, ${key}_defaultValue))\n  ) {\n    json.${key} = ${key};\n  }`,
     );
   }
   const isElement = isElementish(klass);
   const header = `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */`;
+  const indent = factoryKeys.length > 0 ? '  ' : '';
   if (writes.length === 0) {
     // Nothing to compare, so the literal is the whole function — as in
     // generateExport, and for the same reason: an object that lands on its
     // final shape in one allocation beats one built by assignment.
-    return `${header}
+    return {
+      code: `${header}
 function exportCompact${klass.name}(): {[key: string]: unknown} {
   return {${isElement ? 'children: [], ' : ''}type: '${type}'};
-}`;
+}`,
+      factoryKeys,
+    };
   }
-  return `${header}
-function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
-  const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
-${writes.join('\n')}
-  json.type = '${type}';
-  return json;
-}`;
+  const body = `${header}
+${indent}function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
+${indent}  const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
+${writes.map(w => w.replace(/^/gm, indent)).join('\n')}
+${indent}  json.type = '${type}';
+${indent}  return json;
+${indent}}`;
+  return {code: body, factoryKeys};
 }
 
 /**
@@ -436,17 +565,6 @@ function isElementish(klass) {
   return false;
 }
 
-/**
- * Whether a class has any schema field to read, i.e. whether its generated
- * exporter takes a node at all.
- *
- * @param {NodeClass} klass
- * @returns {boolean}
- */
-function hasFields(klass) {
-  return schemaReads(klass).length > 0;
-}
-
 // -- the import direction ----------------------------------------------------
 
 /**
@@ -468,7 +586,7 @@ function writeExpression(klass, schema, key) {
     // The walk reads a property with hasOwn because its JSON came from
     // JSON.parse and so inherits Object.prototype; `json.toString` in
     // straight-line code would find the method rather than nothing. Refused
-    // rather than guarded because no core class has such a key, and the
+    // rather than guarded because no generated class has such a key, and the
     // verification compares values, so it would not notice.
     throw new NotCompilable(`"${key}" is also an Object.prototype member`);
   }
@@ -571,19 +689,6 @@ ${body}
 
 // -- emit --------------------------------------------------------------------
 
-// Every class is exportable: the base `exportJSON` writes exactly the schema's
-// properties plus type/version, and NodeState is appended by the dispatch. A
-// class that overrides `exportJSON` for output no schema describes —
-// ParagraphNode and its #7971 textFormat/textStyle back-fill — still composes,
-// because the override's `super.exportJSON(compact)` is what reaches the
-// generated literal.
-const generated = TARGETS.map(klass => ({
-  exportCompactJSON: generateCompactExport(klass),
-  exportJSON: generateExport(klass),
-  klass,
-  updateFromJSON: generateUpdate(klass),
-}));
-
 /**
  * The value type to give a lookup table.
  *
@@ -600,101 +705,217 @@ function tableValueType(table) {
   return distinct.length <= 8 ? distinct.join(' | ') : typeof values[0];
 }
 
-const tableSource = [...tables]
-  .map(([name, {nullProto, table}]) => {
-    const declaration = `const ${name}: {readonly [key: string]: ${tableValueType(table)}}`;
-    return nullProto
-      ? `// Null-prototype: an untrusted key must never resolve to Object.prototype.\n${declaration} =\n  /* @__PURE__ */ Object.assign(Object.create(null), ${JSON.stringify(table, null, 2)});`
-      : `${declaration} = ${JSON.stringify(table, null, 2)};`;
-  })
-  .join('\n\n');
-
-const needsNum = generated.some(
-  g => g.updateFromJSON !== null && g.updateFromJSON.includes('num('),
-);
-
-writeFileSync(
-  OUT,
-  `${HEADER}
-// Type-only, so this module has no runtime imports at all. A value import of
-// the node classes would be a cycle — they import LexicalNode, which imports
-// this — and would evaluate a class before its base was initialized.
-import type {LexicalNode} from './LexicalNode';
-${TARGETS.filter(hasFields)
-  .map(k => `import type {${k.name}} from './nodes/${MODULES[k.name]}';`)
-  .sort()
-  .join('\n')}
-
 /**
- * The generated implementations for one node class.
+ * One package's generated module.
  *
- * Each is handed to the class it was generated from through that class's
- * \`$config\`, so nothing has to match code to class at runtime.
+ * @param {(typeof PACKAGES)[number]} pkg
+ * @returns {string}
+ */
+function generatePackage(pkg) {
+  tables.clear();
+  // Every class is exportable: the base `exportJSON` writes exactly the
+  // schema's properties plus type/version, and NodeState is appended by the
+  // dispatch. A class that overrides `exportJSON` for output no schema
+  // describes — ParagraphNode and its #7971 textFormat/textStyle back-fill —
+  // still composes, because the override's `super.exportJSON(compact)` is what
+  // reaches the generated literal.
+  const generated = pkg.targets.map(({klass}) => ({
+    compact: generateCompactExport(klass),
+    exportJSON: generateExport(klass),
+    klass,
+    updateFromJSON: generateUpdate(klass),
+  }));
+
+  const tableSource = [...tables]
+    .map(([name, {nullProto, table}]) => {
+      const declaration = `const ${name}: {readonly [key: string]: ${tableValueType(table)}}`;
+      return nullProto
+        ? `// Null-prototype: an untrusted key must never resolve to Object.prototype.\n${declaration} =\n  /* @__PURE__ */ Object.assign(Object.create(null), ${JSON.stringify(table, null, 2)});`
+        : `${declaration} = ${JSON.stringify(table, null, 2)};`;
+    })
+    .join('\n\n');
+
+  const needsNum = generated.some(
+    g => g.updateFromJSON !== null && g.updateFromJSON.includes('num('),
+  );
+
+  /** Class names by the module that declares them. @type {Map<string, Set<string>>} */
+  const typeImports = new Map();
+  for (const {klass, module} of pkg.targets) {
+    if (schemaReads(klass).length > 0) {
+      const names = typeImports.get(module) || new Set();
+      names.add(klass.name);
+      typeImports.set(module, names);
+    }
+  }
+  // Type-only, so this module has no runtime imports at all. A value import
+  // of the node classes would be a cycle — they import LexicalNode, which
+  // imports this — and would evaluate a class before its base was
+  // initialized. This repo's simple-import-sort config keeps every type
+  // import in one group ordered by specifier, so these are emitted the same
+  // way: one line per module, sorted, no blank lines between.
+  if (pkg.home) {
+    typeImports.set('./LexicalNode', new Set(['LexicalNode']));
+  } else {
+    typeImports.set('lexical', new Set(['GeneratedJSON']));
+  }
+  const importLines = [...typeImports]
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(
+      ([module, names]) =>
+        `import type {${[...names].sort().join(', ')}} from '${module}';`,
+    );
+
+  const pieces = [];
+  for (const {compact, exportJSON, klass, updateFromJSON} of generated) {
+    const factoryKeys = compact === null ? [] : compact.factoryKeys;
+    pieces.push(exportJSON);
+    if (compact !== null && factoryKeys.length === 0) {
+      pieces.push(compact.code);
+    }
+    if (updateFromJSON !== null) {
+      pieces.push(updateFromJSON);
+    }
+    if (factoryKeys.length === 0) {
+      pieces.push(
+        `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const ${constName(klass)}: GeneratedJSON = {\n  exportJSON: export${klass.name},${
+          compact === null
+            ? ''
+            : `\n  exportCompactJSON: exportCompact${klass.name},`
+        }${
+          updateFromJSON === null
+            ? ''
+            : `\n  updateFromJSON: update${klass.name},`
+        }\n};`,
+      );
+    } else {
+      // The factory form: the compact comparisons for these keys go through
+      // the schema's own default and equality, so the class's `$config` calls
+      // this with the very schemas it declared and the emitted code closes
+      // over them. Everything else about the class is the const form.
+      const params = factoryKeys
+        .map(
+          key =>
+            `  ${key}: {\n    readonly defaultValue: unknown;\n    isEqual?(a: unknown, b: unknown): boolean;\n  };`,
+        )
+        .join('\n');
+      const destructure = factoryKeys
+        .map(
+          key =>
+            `  const ${key}_defaultValue = config.${key}.defaultValue;\n  const ${key}_isEqual = config.${key}.isEqual;`,
+        )
+        .join('\n');
+      pieces.push(
+        `/**
+ * ${klass.name}'s generated implementations, for its \`$config\` — a factory,
+ * because the compact comparison for ${factoryKeys
+   .map(k => `\`${k}\``)
+   .join(', ')} goes through the
+ * schema's own default and equality (its default is reference-typed, so no
+ * literal a value could be \`===\` exists). The class passes the schemas it
+ * declared and the comparisons close over them.
  *
  * @internal
+ * @__NO_SIDE_EFFECTS__
  */
-export interface GeneratedJSON {
-  // Method syntax, so TypeScript checks the parameter bivariantly and a
-  // function generated for one class is assignable here — the same reason
-  // SerializationSchema.isEqual is declared this way. The alternative is to
-  // widen the parameter to 'never', which no generated function actually
-  // accepts and every call site then has to cast back.
-  exportJSON(node: LexicalNode): {[key: string]: unknown};
-  exportCompactJSON?(node: LexicalNode): {[key: string]: unknown};
-  updateFromJSON?(
-    node: LexicalNode,
-    json: {readonly [key: string]: unknown},
-  ): void;
-}
-${
-  needsNum
-    ? `
+export function ${factoryName(klass)}(config: {
+${params}
+}): GeneratedJSON {
+${destructure}
+${compact === null ? '' : compact.code}
+  return {
+    exportJSON: export${klass.name},${
+      compact === null
+        ? ''
+        : `\n    exportCompactJSON: exportCompact${klass.name},`
+    }${
+      updateFromJSON === null
+        ? ''
+        : `\n    updateFromJSON: update${klass.name},`
+    }
+  };
+}`,
+      );
+    }
+  }
+
+  return `${HEADER}
+${importLines.join('\n')}
+${pkg.home ? `\n${INTERFACE_SOURCE}\n` : ''}${
+    needsNum
+      ? `
 // The JSON number grammar, anchored, matching numberValue: \`Number()\` alone
 // reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
 // produces. Emitted from the same source the codegen verified against, so the
 // two cannot be different functions.
 ${NUM_HELPER_SOURCE}
 `
-    : ''
-}${tableSource ? `\n${tableSource}\n` : ''}
-${generated
-  .flatMap(g => [g.exportJSON, g.exportCompactJSON, g.updateFromJSON])
-  .filter(Boolean)
-  .join('\n\n')}
+      : ''
+  }${tableSource ? `\n${tableSource}\n` : ''}
+${pieces.join('\n\n')}
+`;
+}
 
-${generated
-  .map(
-    ({exportCompactJSON, klass, updateFromJSON}) =>
-      `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const GENERATED_${klass.name.replace(/Node$/, '').toUpperCase()}: GeneratedJSON = {\n  exportJSON: export${klass.name},${
-        exportCompactJSON === null
-          ? ''
-          : `\n  exportCompactJSON: exportCompact${klass.name},`
-      }${
-        updateFromJSON === null
-          ? ''
-          : `\n  updateFromJSON: update${klass.name},`
-      }\n};`,
-  )
-  .join('\n\n')}
-`,
-);
+// Phase two must be generating exactly what phase one stubbed, or a future
+// edit to one list silently ships a stub.
+if (PACKAGES.length !== MANIFEST.length) {
+  throw new Error('generate-node-json: PACKAGES and MANIFEST disagree');
+}
+const written = [];
+for (let i = 0; i < PACKAGES.length; i++) {
+  const pkg = PACKAGES[i];
+  const manifest = MANIFEST[i];
+  if (pkg.file !== manifest.file) {
+    throw new Error(`generate-node-json: manifest order mismatch ${pkg.file}`);
+  }
+  const source = generatePackage(pkg);
+  const expected = manifest.entries.map(e => e.name).sort();
+  const emitted = pkg.targets
+    .map(({klass}) =>
+      source.includes(`function ${factoryName(klass)}(`)
+        ? factoryName(klass)
+        : constName(klass),
+    )
+    .sort();
+  if (JSON.stringify(expected) !== JSON.stringify(emitted)) {
+    throw new Error(
+      `generate-node-json: ${pkg.file} emits [${emitted}] but the manifest stubs [${expected}]; update MANIFEST (and the $config wiring) together`,
+    );
+  }
+  const target = outPath(pkg.file);
+  writeFileSync(target, source);
+  written.push({path: pkg.file, target});
+}
 
-// Formatted here so the checked-in file is both prettier-clean and exactly
+if (OUT_DIR !== null) {
+  writeFileSync(
+    join(OUT_DIR, 'manifest.json'),
+    JSON.stringify(
+      written.map(w => w.path),
+      null,
+      2,
+    ),
+  );
+}
+
+// Formatted here so the checked-in files are both prettier-clean and exactly
 // what a regeneration produces — the drift check compares them byte for byte.
-// The config is named explicitly rather than resolved from OUT's directory,
-// so the output is formatted the same way wherever it is written — the drift
-// check writes outside the repo, where prettier would otherwise use defaults
-// and report every line as drift.
+// The config is named explicitly rather than resolved from the output's
+// directory, so the output is formatted the same way wherever it is written —
+// the drift check writes outside the repo, where prettier would otherwise use
+// defaults and report every line as drift.
 execFileSync(
   'npx',
   [
     'prettier',
     '--config',
-    join(import.meta.dirname, '..', '.prettierrc'),
+    join(REPO, '.prettierrc'),
     '--write',
-    OUT,
+    ...written.map(w => w.target),
   ],
-  {cwd: join(import.meta.dirname, '..'), stdio: 'pipe'},
+  {cwd: REPO, stdio: 'pipe'},
 );
 
-process.stdout.write(`wrote ${OUT}\n`);
+for (const w of written) {
+  process.stdout.write(`wrote ${w.target}\n`);
+}

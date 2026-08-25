@@ -49,6 +49,8 @@ import {
   withField,
 } from 'lexical';
 
+import {GENERATED_AUTOLINK, GENERATED_LINK} from './LexicalLinkGeneratedJSON';
+
 export type LinkAttributes = {
   rel?: null | string;
   target?: null | string;
@@ -125,6 +127,7 @@ export class LinkNode extends ElementNode {
   $config() {
     return this.config('link', {
       extends: ElementNode,
+      generated: GENERATED_LINK,
       importDOM: {
         a: () => ({
           conversion: $convertAnchorElement,
@@ -505,7 +508,14 @@ export type SerializedAutoLinkNode = Spread<
 >;
 
 const autoLinkNodeSchema = objectValue({
-  isUnlinked: booleanValue(),
+  // The property *is* the field in both directions — both accessors are bare —
+  // so it is declared as the field it is, naming the accessor it stands in for
+  // (a subclass that overrides one still decides).
+  isUnlinked: withField(booleanValue(), {
+    field: '__isUnlinked',
+    getter: 'getIsUnlinked',
+    setter: 'setIsUnlinked',
+  }),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -544,6 +554,7 @@ export class AutoLinkNode extends LinkNode {
   $config() {
     return this.config('autolink', {
       extends: LinkNode,
+      generated: GENERATED_AUTOLINK,
       json: autoLinkNodeSchema,
     });
   }

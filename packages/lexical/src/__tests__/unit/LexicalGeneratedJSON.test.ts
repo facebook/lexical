@@ -43,13 +43,6 @@ import {$writeJSONGetters, getStaticNodeConfig} from '../../LexicalUtils';
 import {initializeUnitTest, invariant} from '../utils';
 
 const REPO = join(import.meta.dirname, '..', '..', '..', '..', '..');
-const GENERATED = join(
-  REPO,
-  'packages',
-  'lexical',
-  'src',
-  'LexicalGeneratedJSON.ts',
-);
 
 /**
  * The JSON the schema-driven walk produces, which the generated exporter has to
@@ -95,15 +88,18 @@ function $generatedOnly(
 }
 
 describe('generated exportJSON', () => {
-  test('the checked-in output is what the generator produces', () => {
+  test('the checked-in outputs are what the generator produces', () => {
     // A schema change that nobody regenerated for would otherwise ship
     // specialized code describing the previous schema.
     //
     // Generated somewhere else and compared, rather than regenerated in place:
-    // the file under test is a source module other workers in this run import,
-    // and rewriting it — first with the generator's phase-one stub, then with
-    // the real output — makes whichever of them happens to be loading it fail.
-    const out = join(mkdtempSync(join(tmpdir(), 'lexical-codegen-')), 'out.ts');
+    // the files under test are source modules other workers in this run
+    // import, and rewriting one — first with the generator's phase-one stub,
+    // then with the real output — makes whichever of them happens to be
+    // loading it fail. The generator writes its repo-relative layout under the
+    // directory plus a manifest listing every file, so this covers every
+    // package it generates for without keeping a second copy of that list.
+    const out = mkdtempSync(join(tmpdir(), 'lexical-codegen-'));
     execFileSync(
       'npx',
       ['tsx', join(REPO, 'scripts', 'generate-node-json.mjs'), out],
@@ -112,7 +108,16 @@ describe('generated exportJSON', () => {
         stdio: 'pipe',
       },
     );
-    expect(readFileSync(out, 'utf8')).toBe(readFileSync(GENERATED, 'utf8'));
+    const manifest: string[] = JSON.parse(
+      readFileSync(join(out, 'manifest.json'), 'utf8'),
+    );
+    expect(manifest).toContain('packages/lexical/src/LexicalGeneratedJSON.ts');
+    for (const file of manifest) {
+      expect({content: readFileSync(join(out, file), 'utf8'), file}).toEqual({
+        content: readFileSync(join(REPO, file), 'utf8'),
+        file,
+      });
+    }
     // Spawning the generator dominates: it type-strips the whole core module
     // graph to read the schemas.
   }, 120_000);

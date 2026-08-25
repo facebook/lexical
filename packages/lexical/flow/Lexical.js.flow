@@ -1822,6 +1822,7 @@ export type SerializationSchemaShape<T> = {
 export type SerializationSchemaMeta = {
   readonly kind: string,
   readonly values?: ReadonlyArray<unknown>,
+  readonly aliases?: {readonly [alias: string]: unknown},
   readonly inner?: AnySerializationSchema,
   readonly item?: AnySerializationSchema,
   readonly fields?: SerializationSchemaFields,
@@ -1866,11 +1867,33 @@ declare export function transformValue<In, Out>(
   transform: (value: In) => Out,
   options?: {readonly isEqual?: (a: Out, b: Out) => boolean},
 ): SerializationSchema<Out>;
+declare export function aliasedValue<T>(
+  inner: SerializationSchema<T>,
+  aliases: {readonly [alias: string]: T},
+): SerializationSchema<T>;
 declare export function rawValue<T>(): SerializationSchema<T | void>;
 declare export function arrayValue<T>(item: SerializationSchema<T>): SerializationSchema<T[]>;
 declare export function objectValue<T>(fields: SerializationSchemaShape<T>): SerializationSchema<T>;
-// A node field, read and written directly rather than through a method.
-export type SchemaField = {readonly field: string};
+// A node field, read and written directly rather than through a method. May
+// carry a lookup table for a property whose stored and serialized forms
+// differ (`decode` for export, `encode` for import), and the name of the
+// accessor the field access stands in for (`method`) so a subclass that
+// overrides it still decides.
+export type SchemaField = {
+  readonly field: string,
+  readonly decode?: {readonly [key: string]: unknown},
+  readonly encode?: {readonly [key: string]: unknown},
+  readonly method?: string,
+};
+// Both directions of a property that *is* a node field, as withField takes
+// them.
+export type FieldOptions = {
+  readonly field: string,
+  readonly decode?: {readonly [key: string]: unknown},
+  readonly encode?: {readonly [key: string]: unknown},
+  readonly getter?: string,
+  readonly setter?: string,
+};
 // One direction of a schema field: a method name, a node field, or null for a
 // direction that is deliberately unsupported.
 export type SchemaAccessor = string | SchemaField | null;
@@ -1887,7 +1910,7 @@ declare export function withGetter<T>(
 ): SerializationSchema<T>;
 declare export function withField<T>(
   schema: SerializationSchema<T>,
-  field: string,
+  field: string | FieldOptions,
 ): SerializationSchema<T>;
 declare export function withAccessors<T>(
   schema: SerializationSchema<T>,
@@ -1914,6 +1937,17 @@ export type CollectStateJSON<
 
 export const PROTOTYPE_CONFIG_METHOD = '$config';
 
+// The generated JSON implementations for one node class, passed to that
+// class's $config as `generated`.
+export type GeneratedJSON = {
+  exportJSON: (node: LexicalNode) => {[key: string]: unknown},
+  exportCompactJSON?: (node: LexicalNode) => {[key: string]: unknown},
+  updateFromJSON?: (
+    node: LexicalNode,
+    json: {readonly [key: string]: unknown},
+  ) => void,
+};
+
 export interface StaticNodeConfigValue<
   T extends LexicalNode,
   Type extends string,
@@ -1922,6 +1956,8 @@ export interface StaticNodeConfigValue<
   readonly $transform?: (node: T) => void;
   readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
   readonly importDOM?: DOMConversionMap;
+  readonly json?: AnySerializationSchema;
+  readonly generated?: GeneratedJSON;
   readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
   readonly slots?: ReadonlyArray<string>;
   readonly extends?: Class<LexicalNode>;

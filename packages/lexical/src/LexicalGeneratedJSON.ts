@@ -13,9 +13,6 @@
 // produce byte-identical JSON. That order is the schema's, not alphabetical.
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
-// Type-only, so this module has no runtime imports at all. A value import of
-// the node classes would be a cycle — they import LexicalNode, which imports
-// this — and would evaluate a class before its base was initialized.
 import type {LexicalNode} from './LexicalNode';
 import type {ParagraphNode} from './nodes/LexicalParagraphNode';
 import type {TabNode} from './nodes/LexicalTabNode';
@@ -169,6 +166,13 @@ function updateTextNode(
   node.__text = typeof v === 'string' ? v : '';
 }
 
+/** TextNode's generated implementations, for its `$config`. @internal */
+export const GENERATED_TEXT: GeneratedJSON = {
+  exportJSON: exportTextNode,
+  exportCompactJSON: exportCompactTextNode,
+  updateFromJSON: updateTextNode,
+};
+
 /** Generated from ParagraphNode's `json` schema. Do not edit by hand. */
 function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
   return {
@@ -212,6 +216,12 @@ function exportCompactParagraphNode(node: ParagraphNode): {
   return json;
 }
 
+/** ParagraphNode's generated implementations, for its `$config`. @internal */
+export const GENERATED_PARAGRAPH: GeneratedJSON = {
+  exportJSON: exportParagraphNode,
+  exportCompactJSON: exportCompactParagraphNode,
+};
+
 /** Generated from LineBreakNode's `json` schema. Do not edit by hand. */
 function exportLineBreakNode(): {[key: string]: unknown} {
   return {
@@ -224,6 +234,12 @@ function exportLineBreakNode(): {[key: string]: unknown} {
 function exportCompactLineBreakNode(): {[key: string]: unknown} {
   return {type: 'linebreak'};
 }
+
+/** LineBreakNode's generated implementations, for its `$config`. @internal */
+export const GENERATED_LINEBREAK: GeneratedJSON = {
+  exportJSON: exportLineBreakNode,
+  exportCompactJSON: exportCompactLineBreakNode,
+};
 
 /** Generated from TabNode's `json` schema. Do not edit by hand. */
 function exportTabNode(node: TabNode): {[key: string]: unknown} {
@@ -252,25 +268,6 @@ function exportCompactTabNode(node: TabNode): {[key: string]: unknown} {
   json.type = 'tab';
   return json;
 }
-
-/** TextNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_TEXT: GeneratedJSON = {
-  exportJSON: exportTextNode,
-  exportCompactJSON: exportCompactTextNode,
-  updateFromJSON: updateTextNode,
-};
-
-/** ParagraphNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_PARAGRAPH: GeneratedJSON = {
-  exportJSON: exportParagraphNode,
-  exportCompactJSON: exportCompactParagraphNode,
-};
-
-/** LineBreakNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_LINEBREAK: GeneratedJSON = {
-  exportJSON: exportLineBreakNode,
-  exportCompactJSON: exportCompactLineBreakNode,
-};
 
 /** TabNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TAB: GeneratedJSON = {

@@ -1295,6 +1295,46 @@ describe('a union member knows its own domain', () => {
     expect(dimension('inherit')).toBe('inherit');
   });
 
+  test('a wrapper carries its inner membership into the union', () => {
+    // Naming an accessor, transforming the output, or admitting a nil says
+    // nothing about which *inputs* the member recognizes, so every wrapper
+    // forwards `accepts` — without that, ImageNode's width-or-'inherit' shape
+    // reads a stringified '0' as 'inherit' the moment the member is wrapped,
+    // because '0' normalizes into numberValue's own default and only
+    // `accepts` can tell that apart from a fallback.
+    const width = unionValue(
+      [withGetter(numberValue(), 'getSerializedWidth'), enumValue(['inherit'])],
+      'inherit',
+    );
+    expect(width('0')).toBe(0);
+    expect(width(640)).toBe(640);
+    expect(width('banana')).toBe('inherit');
+
+    const field = unionValue(
+      [withField(numberValue(), '__width'), enumValue(['inherit'])],
+      'inherit',
+    );
+    expect(field('0')).toBe(0);
+
+    const transformed = unionValue(
+      [transformValue(numberValue(), value => value), enumValue(['inherit'])],
+      'inherit',
+    );
+    expect(transformed('0')).toBe(0);
+
+    const nilable = unionValue(
+      [nullable(numberValue()), enumValue(['inherit'])],
+      'inherit',
+    );
+    expect(nilable('0')).toBe(0);
+
+    const maybe = unionValue(
+      [optional(numberValue()), enumValue(['inherit'])],
+      'inherit',
+    );
+    expect(maybe('0')).toBe(0);
+  });
+
   test('a bounded member rejects what falls outside its bounds', () => {
     const span = unionValue([numberValue(1, {integer: true, min: 1})], 1);
     expect(span('4')).toBe(4);

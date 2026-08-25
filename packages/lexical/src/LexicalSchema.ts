@@ -375,6 +375,21 @@ function liftIsEqual<T>(
  *
  * @internal
  */
+/**
+ * Carry `inner`'s domain membership onto a wrapper that adds a nil to its
+ * domain, declared only when `inner` declares one — the same convention as
+ * {@link aliasedValue} — since without it a union's parse-inference reads the
+ * wrapper as well as it reads the inner schema.
+ */
+function liftAccepts<T>(
+  inner: SerializationSchema<T>,
+): undefined | ((value: unknown) => boolean) {
+  const {accepts} = inner;
+  return accepts === undefined
+    ? undefined
+    : value => value == null || accepts(value);
+}
+
 export function hasOwnKey<K extends string>(
   source: object,
   key: K,
@@ -577,6 +592,7 @@ export function nullable<T>(
     inner,
     undefined,
     liftIsEqual(inner),
+    liftAccepts(inner),
   );
 }
 
@@ -627,6 +643,7 @@ export function optional<T>(
     inner,
     undefined,
     liftIsEqual(inner),
+    liftAccepts(inner),
   );
 }
 
@@ -847,6 +864,9 @@ export function transformValue<In, Out>(
     // elsewhere — and a default makeSchema derives is one it freezes.
     transform(inner.defaultValue),
     options.isEqual,
+    // Membership is about the *input* domain, and the transform maps outputs,
+    // so what the inner schema admits is exactly what this admits.
+    inner.accepts,
   );
 }
 
@@ -1111,10 +1131,11 @@ export function withAccessors<T>(
       setter: accessors.setter === undefined ? schema.setter : accessors.setter,
     },
     // Naming an accessor says nothing about the domain, so the copy keeps the
-    // original's default and equality rather than re-deriving them. This is
-    // also the one place that copy is built: withGetter and
+    // original's default, equality and membership rather than re-deriving
+    // them. This is also the one place that copy is built: withGetter and
     // withField all delegate here.
     schema.defaultValue,
     schema.isEqual,
+    schema.accepts,
   );
 }

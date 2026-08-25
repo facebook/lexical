@@ -540,11 +540,11 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
  * schema-driven walk has to run instead.
  *
  * A generated exporter is only ever right for the exact accessors its class
- * resolves — which is what {@link $generatedExportJSONFor} checks — and only
- * for the legacy form, since which properties the compact form drops depends on
- * each node's values rather than on the schema alone. NodeState is appended
- * here rather than generated, because what a node carries is not known when the
- * code is written.
+ * resolves, which is what {@link $generatedExportJSONFor} checks. Both forms
+ * are generated — which properties the compact one drops depends on a node's
+ * values, but the rule does not, so each form is its own straight-line
+ * function. NodeState is appended here rather than generated, because what a
+ * node carries is not known when the code is written.
  *
  * @internal
  */

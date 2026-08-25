@@ -282,6 +282,31 @@ function schemaReads(klass) {
 }
 
 /**
+ * Whether `literal(value)` evaluates back to a value that is `===` this one,
+ * which is what the emitted `!==` comparison needs in order to mean what the
+ * walk's `value === defaultValue` means.
+ *
+ * True for the primitives JSON round-trips. False for an object or array — a
+ * literal allocates a fresh one, never `===` the default the walk holds — and
+ * for a non-finite number, which `JSON.stringify` renders as `null`. `-0` is
+ * rendered as `0`, which is fine: `-0 !== 0` is false either way.
+ *
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function hasFaithfulLiteral(value) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value);
+  }
+  return (
+    value === undefined ||
+    value === null ||
+    typeof value === 'boolean' ||
+    typeof value === 'string'
+  );
+}
+
+/**
  * The compact form of one class's export, or `null` for a class it cannot be
  * generated for.
  *
@@ -309,25 +334,47 @@ function generateCompactExport(klass) {
       // not even call the getter to find out what it would have written.
       continue;
     }
-    if (schema.isEqual !== undefined) {
+    const {defaultValue} = schema;
+    if (!hasFaithfulLiteral(defaultValue)) {
+      // The emitted comparison is `!==` against a literal, so it only means
+      // what the walk means when that literal evaluates back to the very same
+      // value. It does not for a reference-typed default — a fresh `[]` is
+      // never `===` the frozen one the walk compares against, so the property
+      // would always be written — nor for a non-finite number, which
+      // JSON.stringify renders as `null`.
       process.stdout.write(
-        `${klass.name}: no generated compact export, "${key}" compares by content\n`,
+        `${klass.name}: no generated compact export, "${key}" has a default with no faithful literal (${String(
+          defaultValue,
+        )})\n`,
       );
       return null;
     }
+    // A default of `undefined` needs no second comparison: the walk skips an
+    // undefined value before it ever looks at the default, and so does this.
+    const isDefault =
+      defaultValue === undefined
+        ? ''
+        : ` && ${key} !== ${literal(defaultValue)}`;
     writes.push(
-      `  const ${key} = ${expression};\n  if (${key} !== undefined && ${key} !== ${literal(
-        schema.defaultValue,
-      )}) {\n    json.${key} = ${key};\n  }`,
+      `  const ${key} = ${expression};\n  if (${key} !== undefined${isDefault}) {\n    json.${key} = ${key};\n  }`,
     );
   }
   const isElement = isElementish(klass);
-  return `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */
-function exportCompact${klass.name}(${
-    writes.length === 0 ? '' : `node: ${klass.name}`
-  }): {[key: string]: unknown} {
+  const header = `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */`;
+  if (writes.length === 0) {
+    // Nothing to compare, so the literal is the whole function — as in
+    // generateExport, and for the same reason: an object that lands on its
+    // final shape in one allocation beats one built by assignment.
+    return `${header}
+function exportCompact${klass.name}(): {[key: string]: unknown} {
+  return {${isElement ? 'children: [], ' : ''}type: '${type}'};
+}`;
+  }
+  return `${header}
+function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
   const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
-${writes.length === 0 ? '' : `${writes.join('\n')}\n`}  json.type = '${type}';
+${writes.join('\n')}
+  json.type = '${type}';
   return json;
 }`;
 }

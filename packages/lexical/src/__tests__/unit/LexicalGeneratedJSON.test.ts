@@ -38,6 +38,7 @@ import {
   GENERATED_TAB,
   GENERATED_TEXT,
 } from '../../LexicalGeneratedJSON';
+import {LexicalNode as LexicalNodeClass} from '../../LexicalNode';
 import {$writeJSONGetters, getStaticNodeConfig} from '../../LexicalUtils';
 import {initializeUnitTest, invariant} from '../utils';
 
@@ -72,6 +73,27 @@ function $walkExportJSON(
   return json;
 }
 
+/**
+ * What the generated code alone produces for `node`, with any `exportJSON`
+ * override bypassed.
+ *
+ * ParagraphNode's override composes with the generated literal by calling
+ * `super.exportJSON(compact)`, so calling the override would compare its
+ * back-filled output against a walk that never runs it. Going straight to the
+ * base implementation reaches the generated code the same way `super` does.
+ */
+function $generatedOnly(
+  node: LexicalNode,
+  compact: boolean,
+): {[key: string]: unknown} {
+  return LexicalNodeClass.prototype.exportJSON.call(
+    node,
+    compact,
+  ) as unknown as {
+    [key: string]: unknown;
+  };
+}
+
 describe('generated exportJSON', () => {
   test('the checked-in output is what the generator produces', () => {
     // A schema change that nobody regenerated for would otherwise ship
@@ -102,15 +124,24 @@ describe('generated exportJSON', () => {
           const nodes = [
             $createTextNode('hello').setFormat('bold').setStyle('color: red'),
             $createTextNode(''),
+            $createTextNode('tok').setMode('token').setDetail('directionless'),
             $createLineBreakNode(),
             $createTabNode(),
+            // ParagraphNode belongs here most of all: it is the only element
+            // among them, so the only one whose generated code has to lead with
+            // `children`, and the only one whose properties are a mix of fields
+            // and methods. Its own exportJSON is bypassed below rather than
+            // skipped — that override back-fills #7971 on top of the generated
+            // literal, so calling it would compare the override's output
+            // against a walk that does not run it.
+            $createParagraphNode().setDirection('rtl').setIndent(3),
+            $createParagraphNode(),
           ];
           for (const node of nodes) {
             // Both forms: each is generated separately, so each has to agree
-            // with the walk separately. None of these classes overrides
-            // exportJSON, so the walk is the whole of what they would export.
+            // with the walk separately.
             for (const compact of [false, true]) {
-              const generated = node.exportJSON(compact);
+              const generated = $generatedOnly(node, compact);
               const walked = $walkExportJSON(node, compact);
               expect({compact, json: generated}).toEqual({
                 compact,
@@ -193,16 +224,15 @@ describe('the compact form is generated too', () => {
   // rule does not: each is a comparison against a default the schema states. So
   // it generates the same way the legacy form does, and the `compact` argument
   // picks between two straight-line functions rather than branching inside one.
-  test('each target class has one', () => {
-    for (const generated of [
-      GENERATED_TEXT,
-      GENERATED_PARAGRAPH,
-      GENERATED_LINEBREAK,
-      GENERATED_TAB,
-    ]) {
-      expect(generated.exportCompactJSON).toBeDefined();
-      expect(generated.exportCompactJSON).not.toBe(generated.exportJSON);
-    }
+  test('a class that has one gets a second, distinct function', () => {
+    // Not asserted for every target: a class whose default has no faithful
+    // literal keeps the walk for this form, which is a supported outcome
+    // rather than a regression, so pinning all four here would turn adding
+    // such a property into a failure pointing at this line.
+    expect(GENERATED_TEXT.exportCompactJSON).toBeDefined();
+    expect(GENERATED_TEXT.exportCompactJSON).not.toBe(
+      GENERATED_TEXT.exportJSON,
+    );
   });
 
   initializeUnitTest(testEnv => {

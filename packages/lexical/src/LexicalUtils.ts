@@ -3891,8 +3891,8 @@ function generatedFor(record: NodeClassRecord): null | GeneratedJSON {
 }
 
 /**
- * The generated exporter for `node`, or `undefined` when there is none for its
- * class or the compact form is being written.
+ * The generated exporter for `node` in the form asked for, or `undefined` when
+ * its class has none for that form.
  *
  * @internal
  */
@@ -4328,21 +4328,25 @@ function installGeneratedExportJSON(klass: Klass<LexicalNode>): void {
     this: LexicalNode,
     compact = false,
   ): SerializedLexicalNode {
-    if (
-      this.constructor !== klass ||
-      (compact && generatedExportCompactJSON === undefined)
-    ) {
+    // Two functions rather than one taking the flag: which properties each form
+    // writes is fixed, so branching per property per node would be deciding at
+    // runtime what the codegen already decided.
+    const generatedForm = compact
+      ? generatedExportCompactJSON
+      : generatedExportJSON;
+    if (this.constructor !== klass || generatedForm === undefined) {
       // Not the class this was generated for, or a form it has no generated
       // code for; either way the base implementation is the general answer.
       return base.call(this, compact);
     }
-    // Two functions rather than one taking the flag: which properties each
-    // form writes is fixed, so branching per property per node would be
-    // deciding at runtime what the codegen already decided.
-    const json =
-      compact && generatedExportCompactJSON !== undefined
-        ? generatedExportCompactJSON(this)
-        : generatedExportJSON(this);
+    if (__DEV__) {
+      // The check the walk would have run. Generated code reads the field
+      // names the schema declared, so a misspelled one is the same silent,
+      // total loss of a property here as it is there — and this is now the
+      // only export path these classes take.
+      validateOwnFields(record, this);
+    }
+    const json = generatedForm(this);
     // What a node carries is not known when the code is generated, so
     // NodeState is appended here rather than by the literal.
     const state = this.__state ? this.__state.toJSON() : undefined;

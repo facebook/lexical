@@ -195,9 +195,9 @@ function updateTextNode(
 
 /** Generated from ParagraphNode's `json` schema. Do not edit by hand. */
 function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
-  const direction = node.getDirection();
+  const direction = node.__dir;
   const format = node.getFormatType();
-  const indent = node.getIndent();
+  const indent = node.__indent;
   const textFormat = node.getSerializedTextFormat();
   const textStyle = node.getSerializedTextStyle();
   if (
@@ -244,7 +244,7 @@ function exportCompactParagraphNode(node: ParagraphNode): {
   [key: string]: unknown;
 } {
   const json: {[key: string]: unknown} = {children: []};
-  const direction = node.getDirection();
+  const direction = node.__dir;
   if (direction !== undefined && direction !== null) {
     json.direction = direction;
   }
@@ -252,7 +252,7 @@ function exportCompactParagraphNode(node: ParagraphNode): {
   if (format !== undefined && format !== '') {
     json.format = format;
   }
-  const indent = node.getIndent();
+  const indent = node.__indent;
   if (indent !== undefined && indent !== 0) {
     json.indent = indent;
   }
@@ -278,9 +278,7 @@ function exportLineBreakNode(): {[key: string]: unknown} {
 
 /** Generated from LineBreakNode's `json` schema. Do not edit by hand. */
 function exportCompactLineBreakNode(): {[key: string]: unknown} {
-  const json: {[key: string]: unknown} = {};
-  json.type = 'linebreak';
-  return json;
+  return {type: 'linebreak'};
 }
 
 /** Generated from TabNode's `json` schema. Do not edit by hand. */

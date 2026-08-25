@@ -39,6 +39,7 @@ import {
   numberValue,
   objectValue,
   stringValue,
+  withField,
   withGetter,
 } from '../LexicalSchema';
 import {
@@ -85,7 +86,15 @@ export type SerializedElementNode<
 // SerializedElementNode (those it adds over a SerializedLexicalNode), applied
 // by the base LexicalNode.updateFromJSON.
 const elementNodeSchema = objectValue({
-  direction: enumValue([null, 'ltr', 'rtl']),
+  // `direction` and `indent` *are* these fields in both directions —
+  // get/setDirection and get/setIndent do nothing else — so they are declared
+  // as the fields they are, naming the accessors they stand in for so a
+  // subclass that overrides one still decides (see SchemaField.method).
+  direction: withField(enumValue([null, 'ltr', 'rtl']), {
+    field: '__dir',
+    getter: 'getDirection',
+    setter: 'setDirection',
+  }),
   // The serialized `format` is the ElementFormatType string, not the numeric
   // format getFormat() returns.
   format: withGetter(
@@ -98,7 +107,11 @@ const elementNodeSchema = objectValue({
   // here would silently flatten a legitimately deep document to indent 0. The
   // unbounded walk that motivated a cap is ListItemNode.setIndent's, and it is
   // bounded there.
-  indent: numberValue(0, {integer: true, min: 0}),
+  indent: withField(numberValue(0, {integer: true, min: 0}), {
+    field: '__indent',
+    getter: 'getIndent',
+    setter: 'setIndent',
+  }),
   // Persisted only in the narrow case below, so they are read through getters
   // that return undefined (and are therefore omitted) otherwise.
   textFormat: withGetter(numberValue(), 'getSerializedTextFormat'),

@@ -574,7 +574,7 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       expect(layered.getter).toBe('getA');
       expect(layered.setter).toBe('setA');
       // withField is a getter that reads the node's own field
-      expect(withField(stringValue(), '__foo').getter).toEqual({
+      expect(withField(stringValue(), {field: '__foo'}).getter).toEqual({
         field: '__foo',
       });
     });
@@ -691,7 +691,7 @@ describe('withField compiles to direct field access', () => {
       return this.config('field-node', {
         extends: CountingNode,
         json: objectValue({
-          label: withField(stringValue('default'), '__label'),
+          label: withField(stringValue('default'), {field: '__label'}),
         }),
       });
     }
@@ -785,7 +785,7 @@ describe('withField compiles to direct field access', () => {
   test('the field name is introspectable, which is what makes it compilable', () => {
     // A codegen pass emitting a specialized parser reads the accessor names
     // off the schema; the `__` prefix is what marks one as a field.
-    const schema = withField(stringValue(), '__label');
+    const schema = withField(stringValue(), {field: '__label'});
     // Both directions name the same field, and each says so explicitly rather
     // than leaving the kind to be inferred from the name.
     expect(schema.getter).toEqual({field: '__label'});
@@ -929,7 +929,7 @@ describe('reference-typed defaults compact by content', () => {
         return this.config('tags-node', {
           extends: ElementNode,
           json: objectValue({
-            tags: withField(arrayValue(stringValue()), '__tags'),
+            tags: withField(arrayValue(stringValue()), {field: '__tags'}),
           }),
         });
       }
@@ -1315,7 +1315,7 @@ describe('a union member knows its own domain', () => {
     expect(width('banana')).toBe('inherit');
 
     const field = unionValue(
-      [withField(numberValue(), '__width'), enumValue(['inherit'])],
+      [withField(numberValue(), {field: '__width'}), enumValue(['inherit'])],
       'inherit',
     );
     expect(field('0')).toBe(0);

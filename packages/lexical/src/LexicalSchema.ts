@@ -1103,18 +1103,14 @@ export function withGetter<T>(
  * subclass override of that method is not consulted. Use it when the property
  * really is the field — which is also what makes it safe to compile away.
  *
- * @example
- * ```ts
- * objectValue({
- *   // exported as node.__id, imported as `writable.__id = value`
- *   id: withField(stringValue(), '__id'),
- * });
- * ```
- * Pass an options object instead of a bare name to declare a property whose
- * stored and serialized forms differ ({@link SchemaField.decode} /
- * {@link SchemaField.encode}), or — for a property that already had accessors
- * before it had a schema — to name them, so that a subclass overriding one
- * still gets to decide. See {@link SchemaField.method}.
+ * `getter`/`setter` name the accessor this field access stands in for. Name
+ * them whenever the property has one — which is nearly always, since a node
+ * that predates its schema already has `get<Prop>`/`set<Prop>` — so that a
+ * subclass overriding either still decides; see {@link SchemaField.method}.
+ * Leave them out only for a property that is *only* ever the field, which
+ * bypasses any accessor a subclass may define. `decode`/`encode` declare a
+ * property whose stored and serialized forms differ
+ * ({@link SchemaField.decode} / {@link SchemaField.encode}).
  *
  * @example
  * ```ts
@@ -1126,18 +1122,17 @@ export function withGetter<T>(
  *     getter: 'getStyle',
  *     setter: 'setStyle',
  *   }),
+ *   // A property that is only ever the field: exported as node.__id,
+ *   // imported as `writable.__id = value`, deferring to nothing.
+ *   id: withField(stringValue(), {field: '__id'}),
  * });
  * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function withField<T>(
   schema: SerializationSchema<T>,
-  field: string | FieldOptions,
+  field: FieldOptions,
 ): SerializationSchema<T> {
-  if (typeof field === 'string') {
-    const accessor: SchemaField = {field};
-    return withAccessors(schema, {getter: accessor, setter: accessor});
-  }
   // `decode`/`encode` and the two method names are each one direction's, so
   // the single options object is split into the two accessors here rather
   // than making every caller write both out.

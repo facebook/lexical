@@ -142,7 +142,7 @@ const imageNodeSchema = objectValue({
   // `maxWidth` parses to `undefined`, and the setter reads that as "keep the
   // constructor's default" rather than as a value to store.
   maxWidth: withGetter(optional(numberValue()), {field: '__maxWidth'}),
-  showCaption: withField(booleanValue(), '__showCaption'),
+  showCaption: withField(booleanValue(), {field: '__showCaption'}),
   src: stringValue(),
   width: withGetter(optional(numberValue()), 'getSerializedWidth'),
 });

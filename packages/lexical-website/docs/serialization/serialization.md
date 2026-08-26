@@ -578,18 +578,18 @@ node boilerplate the schema does not touch.
 Each property's schema is built from composable helpers exported by
 `lexical`:
 
-- `stringValue(defaultValue = '')`, `numberValue(defaultValue = 0, {min, max, integer}?)`, and `booleanValue(defaultValue = false)` — primitive values with defaults. `numberValue` also reads a string spelled as a JSON number (`"120"` → `120`), so a document that stringified its numbers keeps them; notations JSON itself can not produce (`"0x10"`, `"+1"`, `"Infinity"`) stay out of domain, and the domain it reports is still `number`
-- `enumValue(values, defaultValue = values[0])` — one of a fixed set of values
-- `nullable(inner, {defaultAsNull}?)` — the property may also be `null`
-- `optional(inner, {omitDefault}?)` — the property may be `undefined`
-- `arrayValue(item)` — an array of `item` values. Like `objectValue`, it compares by content rather than by reference (see `isEqual` below), so an array-valued property equal to its default still compacts away
-- `unionValue(members, defaultValue)` — the first member schema whose domain contains the value wins, and the union yields what that member parsed. A member that normalizes its input composes here the same way it behaves alone, so `unionValue([numberValue(), enumValue(['inherit'])], 'inherit')` reads `"640"` as `640` and `"inherit"` as `'inherit'`
-- `transformValue(inner, transform, {isEqual}?)` — normalizes what `inner` parsed into the stored domain; introspection still describes `inner`'s accepted input domain. `inner`'s `isEqual` is not inherited, since the transformed domain may be a different type entirely — pass one when the output domain is reference-typed
-- `aliasedValue(inner, aliases)` — a lookup-table normalization: a string matching a key of `aliases` yields the value it names, and anything else is `inner`'s to validate, so the domain, the default and the equality all stay `inner`'s. This is `transformValue` narrowed to the case where the normalization is a lookup, and the reason to prefer it is that the lookup is *data*: it is part of the schema's introspectable `meta`, where tooling can see it — example generation produces the legacy spellings, and a code generator can compile the table instead of being unable to see inside a function. `TextNode` declares its legacy `format: 'bold'` and `detail: 'directionless'` shorthands this way
-- `rawValue()` — an escape hatch that passes the value through unparsed
-- `objectValue(fields)` — the record of properties, used for the `json` declaration itself
-- `withGetter(schema, 'methodName')` / `withAccessors(schema, {getter, setter})` — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose
-- `withField(schema, '__field')` — declare that the property *is* a node field, rather than a pair of accessor methods. Exporting reads the field and importing assigns it, with no method call on either side and no version resolution in either direction — the node being parsed into is already writable, and the node being exported is one the walk already resolved from the EditorState — so this is the fast path for a property that is stored verbatim. The trade-off is that whatever a `set<Prop>` method would do — normalizing, clamping, bookkeeping, or a subclass's override of it — is skipped, so reach for it only when the property really is the field. Because the schema records the field as `{field: '__name'}` rather than as a bare name, tooling can tell a field from a method without knowing anything about how a node names its fields — enough for a codegen pass to emit a specialized parser for a hot node type. The two directions are independent, so `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})` reads the field directly but writes through a method that normalizes
+- [`stringValue(defaultValue = '')`](/docs/api/modules/lexical#stringvalue), [`numberValue(defaultValue = 0, {min, max, integer}?)`](/docs/api/modules/lexical#numbervalue), and [`booleanValue(defaultValue = false)`](/docs/api/modules/lexical#booleanvalue) — primitive values with defaults. `numberValue` also reads a string spelled as a JSON number (`"120"` → `120`), so a document that stringified its numbers keeps them; notations JSON itself can not produce (`"0x10"`, `"+1"`, `"Infinity"`) stay out of domain, and the domain it reports is still `number`
+- [`enumValue(values, defaultValue = values[0])`](/docs/api/modules/lexical#enumvalue) — one of a fixed set of values
+- [`nullable(inner, {defaultAsNull}?)`](/docs/api/modules/lexical#nullable) — the property may also be `null`
+- [`optional(inner, {omitDefault}?)`](/docs/api/modules/lexical#optional) — the property may be `undefined`
+- [`arrayValue(item)`](/docs/api/modules/lexical#arrayvalue) — an array of `item` values. Like `objectValue`, it compares by content rather than by reference (see `isEqual` below), so an array-valued property equal to its default still compacts away
+- [`unionValue(members, defaultValue)`](/docs/api/modules/lexical#unionvalue) — the first member schema whose domain contains the value wins, and the union yields what that member parsed. A member that normalizes its input composes here the same way it behaves alone, so `unionValue([numberValue(), enumValue(['inherit'])], 'inherit')` reads `"640"` as `640` and `"inherit"` as `'inherit'`
+- [`transformValue(inner, transform, {isEqual}?)`](/docs/api/modules/lexical#transformvalue) — normalizes what `inner` parsed into the stored domain; introspection still describes `inner`'s accepted input domain. `inner`'s `isEqual` is not inherited, since the transformed domain may be a different type entirely — pass one when the output domain is reference-typed
+- [`aliasedValue(inner, aliases)`](/docs/api/modules/lexical#aliasedvalue) — a lookup-table normalization: a string matching a key of `aliases` yields the value it names, and anything else is `inner`'s to validate, so the domain, the default and the equality all stay `inner`'s. This is `transformValue` narrowed to the case where the normalization is a lookup, and the reason to prefer it is that the lookup is *data*: it is part of the schema's introspectable `meta`, where tooling can see it — example generation produces the legacy spellings, and a code generator can compile the table instead of being unable to see inside a function. `TextNode` declares its legacy `format: 'bold'` and `detail: 'directionless'` shorthands this way
+- [`rawValue()`](/docs/api/modules/lexical#rawvalue) — an escape hatch that passes the value through unparsed
+- [`objectValue(fields)`](/docs/api/modules/lexical#objectvalue) — the record of properties, used for the `json` declaration itself
+- [`withGetter(schema, 'methodName')`](/docs/api/modules/lexical#withgetter) / [`withAccessors(schema, {getter, setter})`](/docs/api/modules/lexical#withaccessors) — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose
+- [`withField(schema, '__field')`](/docs/api/modules/lexical#withfield) — declare that the property *is* a node field, rather than a pair of accessor methods. Exporting reads the field and importing assigns it, with no method call on either side and no version resolution in either direction — the node being parsed into is already writable, and the node being exported is one the walk already resolved from the EditorState — so this is the fast path for a property that is stored verbatim. The trade-off is that whatever a `set<Prop>` method would do — normalizing, clamping, bookkeeping, or a subclass's override of it — is skipped, so reach for it only when the property really is the field. Because the schema records the field as `{field: '__name'}` rather than as a bare name, tooling can tell a field from a method without knowing anything about how a node names its fields — enough for a codegen pass to emit a specialized parser for a hot node type. The two directions are independent, so `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})` reads the field directly but writes through a method that normalizes
 - `withField(schema, {field, getter?, setter?, decode?, encode?})` — the options form, for a property that already had accessors before it had a schema, or whose stored and serialized forms differ. `getter`/`setter` name the accessor each direction *stands in for*: declaring the field says the two are equivalent for the class that declared it, and any class that overrides the named method between the declaring class and the node's own class has said otherwise and wins — the field access is abandoned and the method is called, so migrating a property to a field is not a behavior change for anyone who overrode its accessor. `decode`/`encode` are lookup tables between the stored and serialized forms (`TextNode` stores `mode` as a number and serializes it as a name), keeping such a property on the direct-field path without an accessor method in between
 
 A schema's default is compared by identity, which is right for the primitive
@@ -698,24 +698,15 @@ The extension's output provides:
 Because a schema states everything ahead of time — which accessor or field
 each property uses, what its default is, what its domain admits — the
 serialization it drives can be compiled to straight-line code instead of
-interpreted from the schema at runtime. Lexical does this for its most common
-built-in nodes: text, paragraph, linebreak and tab in `lexical`, heading and
-quote in `@lexical/rich-text`, link and autolink in `@lexical/link`, and mark
-in `@lexical/mark` ship `exportJSON` (both forms) and, where the whole class
-is compilable, `updateFromJSON` implementations generated from their schemas
-at build time. The generated code is handed back through `$config`'s
-`generated` property, so the association is carried by the class itself, and
-it produces byte-identical JSON to the schema-driven path — the unit tests
-compare the two directly, and each generated parser is differentially
-verified against the schema it was compiled from (over a corpus including
-hostile inputs) when it is generated.
+interpreted from the schema at runtime. Lexical's most common built-in nodes
+ship such code, generated from their own schemas at build time and producing
+byte-identical JSON to the schema-driven path.
 
-This is transparent to applications — same JSON, faster — and custom nodes do
-not need it: the schema-driven path serves them. Contributors adding a core
-node (or curious readers) can find the generator at
-`scripts/generate-node-json.mjs` (`pnpm run generate-node-json`) and the
-schema-to-JavaScript compiler it uses in `@lexical/compiler`'s
-`SchemaJsonCodegen` entry point.
+None of this changes how you write a node: it is the same JSON, faster, and a
+custom node needs nothing for it — the schema-driven path serves them. If you
+are working on Lexical itself, see
+[the generated JSON code](/docs/maintainers-guide#pnpm-run-generate-node-json)
+in the maintainers' guide.
 
 ### Versioning & Breaking Changes
 

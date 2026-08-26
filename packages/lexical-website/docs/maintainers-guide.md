@@ -245,6 +245,62 @@ Run the unit tests
 
 Run eslint
 
+### pnpm run generate-node-json
+
+Regenerate the specialized JSON serialization code for the built-in node
+classes. A node's [serialization schema](/docs/serialization/serialization#declarative-json-schemas-with-config)
+states everything about a serialized property ahead of time — which accessor
+or field it uses, what its default is, what its domain admits — so the
+generic walk over that schema can be compiled into straight-line code. This
+script does that compiling; the output is checked in.
+
+It writes one module per package, beside the nodes it serializes:
+
+| Module | Classes |
+| --- | --- |
+| `packages/lexical/src/LexicalGeneratedJSON.ts` | TextNode, ParagraphNode, LineBreakNode, TabNode |
+| `packages/lexical-rich-text/src/LexicalRichTextGeneratedJSON.ts` | HeadingNode, QuoteNode |
+| `packages/lexical-link/src/LexicalLinkGeneratedJSON.ts` | LinkNode, AutoLinkNode |
+| `packages/lexical-mark/src/LexicalMarkGeneratedJSON.ts` | MarkNode |
+
+Each class receives its own generated code through its `$config`'s
+`generated` property, so nothing has to match code to class at runtime, and a
+subclass that inherits the config without redeclaring it falls back to the
+schema-driven walk (which resolves accessors per class, as an override
+requires).
+
+Three things are worth knowing before touching it:
+
+- **The output is verified, not trusted.** The import direction is the
+  untrusted-JSON boundary, so every generated parser is run against the schema
+  it was compiled from over a corpus drawn from that schema plus a fixed set of
+  hostile values (`'__proto__'`, `'toString'`, `'1e999'`, …). A property whose
+  schema cannot be compiled faithfully takes its class out of the import half
+  rather than shipping a parser that disagrees with the walk — the script says
+  so on stdout when it happens.
+- **A stale checkout fails the tests.** `LexicalGeneratedJSON.test.ts`
+  regenerates into a temporary directory and compares every file byte for
+  byte, and separately asserts that each generated exporter agrees with the
+  schema-driven walk for both the legacy and compact forms. Change a schema
+  without rerunning this script and that test fails.
+- **Two lists, deliberately.** The script runs in two phases, because reading
+  the schemas means importing the packages and each package imports the file
+  the script writes for it. Phase one replaces every output with a valid
+  do-nothing stub from a static `MANIFEST` so the imports always succeed;
+  phase two re-enters under `tsx` and writes the real thing from `PACKAGES`.
+  Adding a class means editing both, and the script fails loudly if they
+  disagree.
+
+A class whose compact form needs a schema's own equality — MarkNode's `ids`,
+whose default is an array that no emitted literal could ever be `===` — gets a
+*factory* instead of a const, which its `$config` calls with the very schema
+it declared so the comparison closes over that schema's `defaultValue` and
+`isEqual`.
+
+The schema-to-JavaScript compiler itself lives in `@lexical/compiler`'s
+`SchemaJsonCodegen` entry point, so it is testable independently of the
+generator that drives it.
+
 ## Scripts for release managers
 
 ### pnpm run extract-codes

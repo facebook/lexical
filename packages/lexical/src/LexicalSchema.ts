@@ -679,9 +679,14 @@ export function optional<T>(
  * domain — every combinator but {@link arrayValue} and {@link objectValue} —
  * is asked directly, which is the only way to recognize a value it normalizes
  * *into* its own default (`numberValue()` reading `'0'`). A member whose
- * `defaultValue` lies outside its own constrained domain (`numberValue(0,
- * {min: 1})`) is therefore declined for that value rather than accepting it,
- * and the union falls through to the next member.
+ * `defaultValue` lies outside its own constrained domain
+ * (`numberValue(0, {min: 1})`) is therefore declined for that value rather
+ * than accepting it, and the union falls through to the next member.
+ *
+ * Note for editors of this comment: keep that code span on one line. A span
+ * broken across a newline stops protecting its braces once TypeDoc renders it
+ * into MDX, which then parses `{min: 1}` as a JSX expression and fails the
+ * website build with "Could not parse expression with acorn".
  *
  * The result is itself a member of the union in both respects: it declares an
  * `accepts` that asks each member in turn, so a union nested in another union

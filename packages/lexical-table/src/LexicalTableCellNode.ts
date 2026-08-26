@@ -35,7 +35,6 @@ import {
   stringValue,
   withAccessors,
   withField,
-  withGetter,
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
@@ -80,10 +79,9 @@ const tableCellNodeSchema = objectValue({
   // else (including the historical falsy `|| undefined` case) is absent.
   // `undefined` leads the list so it is the default: passing it explicitly as
   // enumValue's second argument would instead select values[0].
-  verticalAlign: withGetter(
-    enumValue([undefined, 'middle', 'bottom']),
-    'getSerializedVerticalAlign',
-  ),
+  verticalAlign: withAccessors(enumValue([undefined, 'middle', 'bottom']), {
+    getter: 'getSerializedVerticalAlign',
+  }),
   // A width of 0 is not a real width, matching the historical
   // `serializedNode.width || undefined`.
   width: withField(optional(numberValue(), {omitDefault: true}), {

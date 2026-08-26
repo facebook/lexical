@@ -1904,10 +1904,6 @@ export type SchemaAccessors = {
 declare export function isSchemaField(
   accessor: SchemaAccessor | void,
 ): implies accessor is SchemaField;
-declare export function withGetter<T>(
-  schema: SerializationSchema<T>,
-  getter: SchemaAccessor,
-): SerializationSchema<T>;
 declare export function withField<T>(
   schema: SerializationSchema<T>,
   field: string | FieldOptions,

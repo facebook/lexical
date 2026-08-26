@@ -24,13 +24,15 @@ import {
   objectValue,
   type Spread,
   stringValue,
-  withGetter,
+  withAccessors,
 } from 'lexical';
 import * as React from 'react';
 
 const youTubeNodeSchema = objectValue({
-  videoID: withGetter(stringValue(), {
-    field: '__id',
+  videoID: withAccessors(stringValue(), {
+    getter: {
+      field: '__id',
+    },
   }),
 });
 

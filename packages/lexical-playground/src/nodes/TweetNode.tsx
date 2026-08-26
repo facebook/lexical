@@ -22,14 +22,16 @@ import {
   objectValue,
   type Spread,
   stringValue,
-  withGetter,
+  withAccessors,
 } from 'lexical';
 import * as React from 'react';
 import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
 
 const tweetNodeSchema = objectValue({
-  id: withGetter(stringValue(), {
-    field: '__id',
+  id: withAccessors(stringValue(), {
+    getter: {
+      field: '__id',
+    },
   }),
 });
 

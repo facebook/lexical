@@ -39,8 +39,8 @@ import {
   numberValue,
   objectValue,
   stringValue,
+  withAccessors,
   withField,
-  withGetter,
 } from '../LexicalSchema';
 import {
   $getSelection,
@@ -97,9 +97,9 @@ const elementNodeSchema = objectValue({
   }),
   // The serialized `format` is the ElementFormatType string, not the numeric
   // format getFormat() returns.
-  format: withGetter(
+  format: withAccessors(
     enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
-    'getFormatType',
+    {getter: 'getFormatType'},
   ),
   // A whole, non-negative number. That is the domain an indent has always
   // had — every writer of one is an indent/outdent step — but nothing used to
@@ -118,8 +118,8 @@ const elementNodeSchema = objectValue({
   }),
   // Persisted only in the narrow case below, so they are read through getters
   // that return undefined (and are therefore omitted) otherwise.
-  textFormat: withGetter(numberValue(), 'getSerializedTextFormat'),
-  textStyle: withGetter(stringValue(), 'getSerializedTextStyle'),
+  textFormat: withAccessors(numberValue(), {getter: 'getSerializedTextFormat'}),
+  textStyle: withAccessors(stringValue(), {getter: 'getSerializedTextStyle'}),
 });
 
 export type ElementFormatType =

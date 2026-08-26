@@ -281,7 +281,6 @@ export {
   unionValue,
   withAccessors,
   withField,
-  withGetter,
 } from './LexicalSchema';
 export type {
   BaseSelection,

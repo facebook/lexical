@@ -34,7 +34,7 @@ import {
   type SerializedEditor,
   type SerializedLexicalNode,
   type Spread,
-  withGetter,
+  withAccessors,
 } from 'lexical';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
@@ -47,13 +47,21 @@ const StickyComponent = React.lazy(() => import('./StickyComponent'));
 type StickyNoteColor = 'pink' | 'yellow';
 
 const stickyNodeSchema = objectValue({
-  caption: withGetter(rawValue<SerializedEditor>(), 'getSerializedCaption'),
-  color: withGetter(enumValue(['yellow', 'pink']), {field: '__color'}),
-  xOffset: withGetter(numberValue(), {
-    field: '__x',
+  caption: withAccessors(rawValue<SerializedEditor>(), {
+    getter: 'getSerializedCaption',
   }),
-  yOffset: withGetter(numberValue(), {
-    field: '__y',
+  color: withAccessors(enumValue(['yellow', 'pink']), {
+    getter: {field: '__color'},
+  }),
+  xOffset: withAccessors(numberValue(), {
+    getter: {
+      field: '__x',
+    },
+  }),
+  yOffset: withAccessors(numberValue(), {
+    getter: {
+      field: '__y',
+    },
   }),
 });
 

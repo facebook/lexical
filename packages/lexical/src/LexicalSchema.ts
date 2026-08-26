@@ -109,7 +109,7 @@ export interface SerializationSchema<T> {
    * {@link LexicalNode.exportJSON} walks a node's serialization schema. When
    * omitted, the getter name defaults to `get<Prop>` (e.g. `foo` → `getFoo`).
    * Use
-   * {@link withGetter} to record a name that doesn't follow that convention
+   * {@link withAccessors} to record a name that doesn't follow that convention
    * (e.g. TextNode's `text` → `getTextContent`), or a {@link SchemaField} to
    * read the value straight from a node field. A getter that returns
    * `undefined` omits the property from the exported JSON.
@@ -1058,32 +1058,6 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
 }
 
 /**
- * Return a copy of `schema` that records the name of the node getter used to
- * read its value when the base {@link LexicalNode.exportJSON} walks a node's
- * serialization schema. Use this for an {@link objectValue} field whose
- * getter does not follow the default `get<Prop>` naming.
- *
- * The getter may return `undefined` to omit the property from the exported
- * JSON entirely, which is how an optional property (or one a node only
- * persists conditionally) is expressed.
- *
- * @example
- * ```ts
- * objectValue({
- *   // read with node.getTextContent() rather than the default node.getText()
- *   text: withGetter(stringValue(), 'getTextContent'),
- * });
- * ```
- * @__NO_SIDE_EFFECTS__
- */
-export function withGetter<T>(
-  schema: SerializationSchema<T>,
-  getter: SchemaAccessor,
-): SerializationSchema<T> {
-  return withAccessors(schema, {getter});
-}
-
-/**
  * Return a copy of `schema` that declares the serialized property to *be* a
  * node field rather than a pair of accessor methods.
  *
@@ -1145,9 +1119,8 @@ export function withField<T>(
 /**
  * Return a copy of `schema` that records both accessor names at once, which is
  * the common case for a property whose node methods do not follow the default
- * `get<Prop>`/`set<Prop>` naming. Equivalent to composing {@link withGetter}
- * and {@link withGetter}; either may be omitted to keep the default (or an
- * already recorded) name for that direction.
+ * `get<Prop>`/`set<Prop>` naming. Either direction may be omitted to keep the
+ * default (or an already recorded) name for that one.
  *
  * @example
  * ```ts
@@ -1173,8 +1146,8 @@ export function withAccessors<T>(
     },
     // Naming an accessor says nothing about the domain, so the copy keeps the
     // original's default, equality and membership rather than re-deriving
-    // them. This is also the one place that copy is built: withGetter and
-    // withField all delegate here.
+    // them. This is also the one place that copy is built: withField
+    // delegates here.
     schema.defaultValue,
     schema.isEqual,
     schema.accepts,

@@ -24,7 +24,7 @@ import {
   type Spread,
   stringValue,
   unionValue,
-  withGetter,
+  withAccessors,
 } from 'lexical';
 import * as React from 'react';
 
@@ -46,11 +46,13 @@ const dimensionSchema: SerializationSchema<Dimension> = unionValue(
 const excalidrawNodeSchema = objectValue({
   // '[]' is the empty-scene default the constructor uses; an absent or
   // out-of-domain `data` must not become '' (JSON.parse('') throws).
-  data: withGetter(stringValue('[]'), {
-    field: '__data',
+  data: withAccessors(stringValue('[]'), {
+    getter: {
+      field: '__data',
+    },
   }),
-  height: withGetter(dimensionSchema, 'getSerializedHeight'),
-  width: withGetter(dimensionSchema, 'getSerializedWidth'),
+  height: withAccessors(dimensionSchema, {getter: 'getSerializedHeight'}),
+  width: withAccessors(dimensionSchema, {getter: 'getSerializedWidth'}),
 });
 
 export type SerializedExcalidrawNode = Spread<

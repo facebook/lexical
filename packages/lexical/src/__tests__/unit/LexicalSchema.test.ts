@@ -34,7 +34,6 @@ import {
   unionValue,
   withAccessors,
   withField,
-  withGetter,
 } from 'lexical';
 import {assert, describe, expect, expectTypeOf, test} from 'vitest';
 
@@ -540,7 +539,7 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       expect(derived.setter).toBeNull();
       // and it survives further wrapping
       expect(optional(derived).setter).toBeNull();
-      expect(withGetter(derived, 'getFoo').setter).toBeNull();
+      expect(withAccessors(derived, {getter: 'getFoo'}).setter).toBeNull();
     });
   });
 
@@ -567,9 +566,9 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       expect(schema.getter).toBe('getFoo');
       expect(schema.setter).toBe('setFoo');
       // each direction can also be layered on independently
-      const layered = withGetter(
+      const layered = withAccessors(
         withAccessors(stringValue(), {setter: 'setA'}),
-        'getA',
+        {getter: 'getA'},
       );
       expect(layered.getter).toBe('getA');
       expect(layered.setter).toBe('setA');
@@ -792,9 +791,9 @@ describe('withField compiles to direct field access', () => {
     expect(schema.setter).toEqual({field: '__label'});
     expect(isSchemaField(schema.getter)).toBe(true);
     // A method name is a plain string, so the two can never be confused.
-    expect(isSchemaField(withGetter(stringValue(), 'getLabel').getter)).toBe(
-      false,
-    );
+    expect(
+      isSchemaField(withAccessors(stringValue(), {getter: 'getLabel'}).getter),
+    ).toBe(false);
   });
 });
 
@@ -1307,7 +1306,10 @@ describe('a union member knows its own domain', () => {
     // because '0' normalizes into numberValue's own default and only
     // `accepts` can tell that apart from a fallback.
     const width = unionValue(
-      [withGetter(numberValue(), 'getSerializedWidth'), enumValue(['inherit'])],
+      [
+        withAccessors(numberValue(), {getter: 'getSerializedWidth'}),
+        enumValue(['inherit']),
+      ],
       'inherit',
     );
     expect(width('0')).toBe(0);

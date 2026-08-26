@@ -72,7 +72,6 @@ export const PURE_FACTORY_FUNCTIONS = [
   'unionValue',
   'withAccessors',
   'withField',
-  'withGetter',
 ];
 
 /**

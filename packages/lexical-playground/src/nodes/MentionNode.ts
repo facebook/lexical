@@ -19,7 +19,7 @@ import {
   stringValue,
   type TextFormatType,
   TextNode,
-  withGetter,
+  withAccessors,
 } from 'lexical';
 
 // The element TextNode.exportDOM wraps its output with, one per text format,
@@ -32,8 +32,10 @@ const FORMAT_WRAPPER_TAGS: readonly (readonly [TextFormatType, string])[] = [
 ];
 
 const mentionNodeSchema = objectValue({
-  mentionName: withGetter(stringValue(), {
-    field: '__mention',
+  mentionName: withAccessors(stringValue(), {
+    getter: {
+      field: '__mention',
+    },
   }),
 });
 

@@ -46,8 +46,8 @@ import {
   type SerializedLexicalNode,
   type Spread,
   stringValue,
+  withAccessors,
   withField,
-  withGetter,
 } from 'lexical';
 import * as React from 'react';
 
@@ -134,17 +134,23 @@ export type SerializedImageNode = Spread<
 
 const imageNodeSchema = objectValue({
   altText: stringValue(),
-  caption: withGetter(rawValue<SerializedEditor>(), 'getSerializedCaption'),
+  caption: withAccessors(rawValue<SerializedEditor>(), {
+    getter: 'getSerializedCaption',
+  }),
   // An unsized dimension is the 'inherit' sentinel, which has always
   // serialized as 0 (and parses back through `|| 'inherit'`).
-  height: withGetter(optional(numberValue()), 'getSerializedHeight'),
+  height: withAccessors(optional(numberValue()), {
+    getter: 'getSerializedHeight',
+  }),
   // Read straight from the field, but applied through setMaxWidth: an absent
   // `maxWidth` parses to `undefined`, and the setter reads that as "keep the
   // constructor's default" rather than as a value to store.
-  maxWidth: withGetter(optional(numberValue()), {field: '__maxWidth'}),
+  maxWidth: withAccessors(optional(numberValue()), {
+    getter: {field: '__maxWidth'},
+  }),
   showCaption: withField(booleanValue(), {field: '__showCaption'}),
   src: stringValue(),
-  width: withGetter(optional(numberValue()), 'getSerializedWidth'),
+  width: withAccessors(optional(numberValue()), {getter: 'getSerializedWidth'}),
 });
 
 export class ImageNode extends DecoratorNode<JSX.Element> {

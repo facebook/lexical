@@ -42,7 +42,6 @@ import {
   setDOMUnmanaged,
   type Spread,
   withAccessors,
-  withGetter,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
@@ -86,7 +85,9 @@ const tableNodeSchema = objectValue({
     getter: 'getSerializedFrozenRowCount',
     setter: 'setFrozenRows',
   }),
-  rowStriping: withGetter(booleanValue(), 'getSerializedRowStriping'),
+  rowStriping: withAccessors(booleanValue(), {
+    getter: 'getSerializedRowStriping',
+  }),
 });
 
 function $updateColgroup(

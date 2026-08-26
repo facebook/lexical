@@ -14,12 +14,17 @@ import {packagesManager} from './shared/packagesManager.mjs';
 
 /**
  * @param {string} npmName the npm package name, e.g. '@lexical/rich-text'
- * @param {string} directoryName the package directory name, e.g. 'lexical-rich-text'
  * @param {string} description the package description
  * @returns {string} the rendered README.md contents
  */
-function readmeTemplate(npmName, directoryName, description) {
-  const apiModuleName = directoryName.replace(/-/g, '_');
+function readmeTemplate(npmName, description) {
+  // Derived from the npm name the way typedoc derives the module page it
+  // links to: drop the leading `@` and turn the scope separator into an
+  // underscore. Deriving it from the directory name instead (replacing every
+  // hyphen) produced a 404 for any package with a hyphen of its own —
+  // `@lexical/code-core` is documented at `lexical_code-core`, not
+  // `lexical_code_core`.
+  const apiModuleName = npmName.replace(/^@/, '').replace('/', '_');
   return (
     `
     # \`${npmName}\`
@@ -34,7 +39,6 @@ ${description}
 function createDocs() {
   packagesManager.getPublicPackages().forEach(pkg => {
     const npmName = pkg.getNpmName();
-    const directoryName = pkg.getDirectoryName();
     const root = pkg.resolve('..', '..');
     const readmePath = pkg.resolve('README.md');
     if (!fs.existsSync(readmePath)) {
@@ -43,7 +47,6 @@ function createDocs() {
         readmePath,
         readmeTemplate(
           npmName,
-          directoryName,
           pkg.packageJson.description ||
             'TODO: This package needs a description!',
         ),

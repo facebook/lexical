@@ -683,11 +683,6 @@ export function optional<T>(
  * (`numberValue(0, {min: 1})`) is therefore declined for that value rather
  * than accepting it, and the union falls through to the next member.
  *
- * Note for editors of this comment: keep that code span on one line. A span
- * broken across a newline stops protecting its braces once TypeDoc renders it
- * into MDX, which then parses `{min: 1}` as a JSX expression and fails the
- * website build with "Could not parse expression with acorn".
- *
  * The result is itself a member of the union in both respects: it declares an
  * `accepts` that asks each member in turn, so a union nested in another union
  * (or reached through a wrapper) keeps its domain, and an `isEqual` that

@@ -82,22 +82,17 @@ const linkNodeSchema = objectValue({
   // defaultAsNull preserves the legacy `value || null` semantics: an empty
   // string (or junk that coerces to it) imports as null, not ''.
   // Every property *is* its node field in both directions — each accessor is
-  // a bare read or write — so each is declared as the field it is, naming the
-  // accessor it stands in for (a subclass that overrides one still decides).
+  // a bare read or write — so each is declared as the field it is. Only `url`
+  // names its accessors, because getURL/setURL are not the conventional
+  // getUrl/setUrl the others are resolved to.
   rel: withField(nullable(stringValue(), {defaultAsNull: true}), {
     field: '__rel',
-    getter: 'getRel',
-    setter: 'setRel',
   }),
   target: withField(nullable(stringValue(), {defaultAsNull: true}), {
     field: '__target',
-    getter: 'getTarget',
-    setter: 'setTarget',
   }),
   title: withField(nullable(stringValue(), {defaultAsNull: true}), {
     field: '__title',
-    getter: 'getTitle',
-    setter: 'setTitle',
   }),
   url: withField(stringValue(), {
     field: '__url',
@@ -509,12 +504,11 @@ export type SerializedAutoLinkNode = Spread<
 
 const autoLinkNodeSchema = objectValue({
   // The property *is* the field in both directions — both accessors are bare —
-  // so it is declared as the field it is, naming the accessor it stands in for
-  // (a subclass that overrides one still decides).
+  // so it is declared as the field it is. The conventional
+  // getIsUnlinked/setIsUnlinked are still deferred to, so a subclass that
+  // overrides either still decides.
   isUnlinked: withField(booleanValue(), {
     field: '__isUnlinked',
-    getter: 'getIsUnlinked',
-    setter: 'setIsUnlinked',
   }),
 });
 

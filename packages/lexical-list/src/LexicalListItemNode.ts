@@ -88,8 +88,6 @@ const listItemNodeSchema = objectValue({
   ),
   value: withField(numberValue(1), {
     field: '__value',
-    getter: 'getValue',
-    setter: 'setValue',
   }),
 });
 

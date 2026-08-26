@@ -863,21 +863,39 @@ describe('a field stands in for its accessor only while nobody overrides it', ()
     // The override is on LoudTextNode and the schema field is declared by
     // TextNode, so nothing would catch it by looking at one class alone.
     expect(
-      resolveSchemaField(LoudTextNode, 'style', {
-        field: '__style',
-        method: 'setStyle',
-      }),
+      resolveSchemaField(
+        LoudTextNode,
+        'style',
+        {field: '__style', method: 'setStyle'},
+        'setStyle',
+      ),
     ).toBe('setStyle');
     expect(
-      resolveSchemaField(QuietTextNode, 'style', {
-        field: '__style',
-        method: 'setStyle',
-      }),
+      resolveSchemaField(
+        QuietTextNode,
+        'style',
+        {field: '__style', method: 'setStyle'},
+        'setStyle',
+      ),
     ).toEqual({field: '__style', method: 'setStyle'});
-    // A field naming no accessor is only ever the field, so there is nothing
-    // to defer to and it is returned unchanged.
+    // Naming no accessor defers to the conventional one for the key, which is
+    // the same `setStyle` — so leaving it out is not a way to bypass an
+    // override, it is just the common case spelled shorter.
     expect(
-      resolveSchemaField(LoudTextNode, 'style', {field: '__style'}),
+      resolveSchemaField(LoudTextNode, 'style', {field: '__style'}, 'setStyle'),
+    ).toBe('setStyle');
+    expect(
+      resolveSchemaField(
+        QuietTextNode,
+        'style',
+        {field: '__style'},
+        'setStyle',
+      ),
+    ).toEqual({field: '__style'});
+    // A key whose conventional accessor does not exist has nothing to defer
+    // to: both prototypes resolve undefined and compare equal.
+    expect(
+      resolveSchemaField(LoudTextNode, 'style', {field: '__style'}, 'setNope'),
     ).toEqual({field: '__style'});
   });
 

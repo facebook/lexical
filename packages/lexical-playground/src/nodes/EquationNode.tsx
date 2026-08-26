@@ -32,7 +32,6 @@ const equationNodeSchema = objectValue({
   equation: stringValue(),
   inline: withAccessors(booleanValue(), {
     getter: 'isInline',
-    setter: 'setInline',
   }),
 });
 

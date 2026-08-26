@@ -335,8 +335,6 @@ const headingNodeSchema = objectValue({
   // accessors, so a subclass overriding either reclaims the property.
   tag: withField(enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']), {
     field: '__tag',
-    getter: 'getTag',
-    setter: 'setTag',
   }),
 });
 

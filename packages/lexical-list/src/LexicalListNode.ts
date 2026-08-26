@@ -75,8 +75,6 @@ const listNodeSchema = objectValue({
   ),
   start: withField(numberValue(1), {
     field: '__start',
-    getter: 'getStart',
-    setter: 'setStart',
   }),
   // Derived from listType rather than stored: written on export, and
   // deliberately not applied on import.

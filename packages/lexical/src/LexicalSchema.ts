@@ -186,16 +186,19 @@ export function isSchemaDefault<T>(
 export interface SchemaFieldBase {
   readonly field: string;
   /**
-   * The accessor method this direct field access stands in for. Naming it keeps
+   * The accessor method this direct field access stands in for, when it is not
+   * the conventional `get<Prop>`/`set<Prop>` for the property. Naming one keeps
    * a subclass in charge of its own property: if any class between the one that
    * declared this field and the node's own class overrides that method, the
    * field access is abandoned and the method is called instead.
    *
-   * Name it whenever the property already had an accessor before it had a
-   * schema — every core node's, since overriding `getTextContent()` or
-   * `setStyle()` on a TextNode subclass is ordinary — so that migrating the
-   * property to a field is not a behavior change for anyone who did. Leave it
-   * out for a property that is only ever the field.
+   * Leaving it out defers to the conventional name, which is what nearly every
+   * property wants — a node that predates its schema already has those
+   * accessors, and overriding `getStyle()` on a TextNode subclass is ordinary,
+   * so migrating a property to a field must not silently take that back. Name
+   * one only when the accessor is spelled differently, as TextNode's `text` is
+   * (`getTextContent`) and LinkNode's `url` is (`getURL`). A class with no such
+   * method defers to nothing, since both prototypes then resolve `undefined`.
    */
   readonly method?: string;
 }

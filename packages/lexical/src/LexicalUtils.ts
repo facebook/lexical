@@ -3274,9 +3274,14 @@ const EMPTY_SETTERS: readonly CompiledSetter[] = [];
  * serialization, and compiling the accessor away would silently take that back.
  *
  * The comparison resolves through each prototype chain, so it catches an
- * override anywhere between the declaring class and this one. A field naming no
- * method is one that only ever *is* the field (plain {@link withField}), so
- * there is nothing to defer to.
+ * override anywhere between the declaring class and this one.
+ *
+ * `conventional` is the `get<Prop>`/`set<Prop>` name for this direction, used
+ * when the field names no `method` of its own — which is the common case, and
+ * why nearly every declaration can leave it out. A class that has no such
+ * method defers to nothing, because both prototypes then resolve `undefined`
+ * and compare equal; there is no separate way to say "bypass the accessor",
+ * and deliberately so: a subclass that overrode one always meant to be asked.
  *
  * Shared with the codegen in `scripts/generate-node-json.mjs`, which has to
  * make the identical choice or its literal would describe a different node.
@@ -3287,10 +3292,25 @@ export function resolveSchemaField<T extends SchemaFieldBase>(
   klass: Klass<LexicalNode>,
   key: string,
   accessor: T,
+  conventional: string,
 ): T | string {
-  const {method} = accessor;
-  if (method === undefined) {
-    return accessor;
+  const method = accessor.method === undefined ? conventional : accessor.method;
+  if (__DEV__ && accessor.method !== undefined) {
+    // Only a name the declaration spelled out: a derived one that resolves to
+    // nothing is the ordinary "this property has no accessor" case, while a
+    // spelled one that resolves to nothing is a typo, and a typo here is
+    // silent — both prototypes read `undefined`, compare equal, and the field
+    // access is kept, quietly retiring the override guard this option exists
+    // to provide. DEV-only: what it catches is a mistaken intent, and the
+    // behavior either way is well defined.
+    invariant(
+      typeof (klass.prototype as unknown as Record<string, unknown>)[method] ===
+        'function',
+      '%s: serialization schema field "%s" names a method %s() that the node does not have',
+      klass.name,
+      key,
+      method,
+    );
   }
   const declaringKlass = getComposedSchema(klass).declaredBy.get(key);
   if (declaringKlass === undefined) {
@@ -3590,7 +3610,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
     // A subclass override of the accessor a field stands in for reclaims the
     // property; otherwise this is the field unchanged.
     const getter = isSchemaField(named)
-      ? resolveSchemaField(klass, key, named)
+      ? resolveSchemaField(klass, key, named, defaultGetterName(key))
       : named;
     if (isSchemaField(getter)) {
       const getterName = getter.field;
@@ -3848,7 +3868,7 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
     // As in the getter mirror: a subclass override of the accessor this field
     // stands in for is what the value goes through.
     const setter = isSchemaField(named)
-      ? resolveSchemaField(klass, key, named)
+      ? resolveSchemaField(klass, key, named, defaultSetterName(key))
       : named;
     if (isSchemaField(setter)) {
       const setterName = setter.field;

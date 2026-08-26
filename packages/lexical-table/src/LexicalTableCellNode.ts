@@ -54,15 +54,11 @@ const tableCellNodeSchema = objectValue({
   // an empty string means "no background", which exportDOM checks for.
   backgroundColor: withField(nullable(stringValue(), {defaultAsNull: true}), {
     field: '__backgroundColor',
-    getter: 'getBackgroundColor',
-    setter: 'setBackgroundColor',
   }),
   // A span is a positive integer; 0 (the historical `|| 1` case), a negative,
   // or a fractional span is out of domain and falls back to 1.
   colSpan: withField(numberValue(1, {integer: true, min: 1}), {
     field: '__colSpan',
-    getter: 'getColSpan',
-    setter: 'setColSpan',
   }),
   // headerState is applied through setHeaderStyles (with its default BOTH
   // mask) rather than the conventional set<Prop> name.
@@ -72,8 +68,6 @@ const tableCellNodeSchema = objectValue({
   }),
   rowSpan: withField(numberValue(1, {integer: true, min: 1}), {
     field: '__rowSpan',
-    getter: 'getRowSpan',
-    setter: 'setRowSpan',
   }),
   // The domain exportJSON already enforces via isValidVerticalAlign; anything
   // else (including the historical falsy `|| undefined` case) is absent.
@@ -86,8 +80,6 @@ const tableCellNodeSchema = objectValue({
   // `serializedNode.width || undefined`.
   width: withField(optional(numberValue(), {omitDefault: true}), {
     field: '__width',
-    getter: 'getWidth',
-    setter: 'setWidth',
   }),
 });
 

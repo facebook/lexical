@@ -88,12 +88,11 @@ export type SerializedElementNode<
 const elementNodeSchema = objectValue({
   // `direction` and `indent` *are* these fields in both directions —
   // get/setDirection and get/setIndent do nothing else — so they are declared
-  // as the fields they are, naming the accessors they stand in for so a
-  // subclass that overrides one still decides (see SchemaField.method).
+  // as the fields they are. Each still stands in for the conventional
+  // accessor, so a subclass that overrides one reclaims its property (see
+  // SchemaFieldBase.method).
   direction: withField(enumValue([null, 'ltr', 'rtl']), {
     field: '__dir',
-    getter: 'getDirection',
-    setter: 'setDirection',
   }),
   // The serialized `format` is the ElementFormatType string, not the numeric
   // format getFormat() returns.
@@ -113,8 +112,6 @@ const elementNodeSchema = objectValue({
   // bounded there.
   indent: withField(numberValue(0, {integer: true, min: 0}), {
     field: '__indent',
-    getter: 'getIndent',
-    setter: 'setIndent',
   }),
   // Persisted only for an element with no TextNode child (see #7971), which
   // `shouldSerializeTextStyles` decides. Declaring that as the field it is

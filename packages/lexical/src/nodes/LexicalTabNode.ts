@@ -56,7 +56,6 @@ export class TabNode extends TextNode {
           getter: {
             decode: TEXT_TYPE_TO_MODE,
             field: '__mode',
-            method: 'getMode',
           },
           setter: null,
         }),

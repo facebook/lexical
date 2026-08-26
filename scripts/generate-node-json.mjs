@@ -339,7 +339,9 @@ function getterAccessor(klass, schema, key) {
     return null;
   }
   const named = declared === undefined ? defaultGetterName(key) : declared;
-  return isSchemaField(named) ? resolveSchemaField(klass, key, named) : named;
+  return isSchemaField(named)
+    ? resolveSchemaField(klass, key, named, defaultGetterName(key))
+    : named;
 }
 
 /**
@@ -356,7 +358,9 @@ function setterAccessor(klass, schema, key) {
     return null;
   }
   const named = declared === undefined ? defaultSetterName(key) : declared;
-  return isSchemaField(named) ? resolveSchemaField(klass, key, named) : named;
+  return isSchemaField(named)
+    ? resolveSchemaField(klass, key, named, defaultSetterName(key))
+    : named;
 }
 
 /**

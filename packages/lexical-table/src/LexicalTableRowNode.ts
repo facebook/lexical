@@ -40,8 +40,6 @@ export type SerializedTableRowNode = Spread<
 const tableRowNodeSchema = objectValue({
   height: withField(optional(numberValue()), {
     field: '__height',
-    getter: 'getHeight',
-    setter: 'setHeight',
   }),
 });
 

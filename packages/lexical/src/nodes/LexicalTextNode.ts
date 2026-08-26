@@ -135,13 +135,9 @@ const textNodeSchema = objectValue({
   // already what setDetail/setFormat would have stored.
   detail: withField(aliasedValue(numberValue(), DETAIL_TYPE_TO_DETAIL), {
     field: '__detail',
-    getter: 'getDetail',
-    setter: 'setDetail',
   }),
   format: withField(aliasedValue(numberValue(), TEXT_TYPE_TO_FORMAT), {
     field: '__format',
-    getter: 'getFormat',
-    setter: 'setFormat',
   }),
   // Stored as a bitmask, serialized as the name, so this one needs both
   // tables to stay off the accessors.
@@ -149,13 +145,9 @@ const textNodeSchema = objectValue({
     decode: TEXT_TYPE_TO_MODE,
     encode: TEXT_MODE_TO_TYPE,
     field: '__mode',
-    getter: 'getMode',
-    setter: 'setMode',
   }),
   style: withField(stringValue(), {
     field: '__style',
-    getter: 'getStyle',
-    setter: 'setStyle',
   }),
   // The accessors are getTextContent/setTextContent rather than the
   // conventional getText/setText, which TextNode does not have.

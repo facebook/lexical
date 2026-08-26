@@ -1318,13 +1318,24 @@ export class RangeSelection implements BaseSelection {
       INTERNAL_$isBlock,
     );
 
-    if (
-      insertedParagraph &&
-      $isElementNode(lastInsertedBlock) &&
-      (insertedParagraph.canMergeWhenEmpty() || INTERNAL_$isBlock(lastToInsert))
-    ) {
-      lastInsertedBlock.append(...insertedParagraph.getChildren());
-      insertedParagraph.remove();
+    if (insertedParagraph) {
+      if (
+        $isElementNode(lastInsertedBlock) &&
+        (insertedParagraph.canMergeWhenEmpty() ||
+          INTERNAL_$isBlock(lastToInsert))
+      ) {
+        lastInsertedBlock.append(...insertedParagraph.getChildren());
+        insertedParagraph.remove();
+      } else if (insertedParagraph.isEmpty()) {
+        // The split-off paragraph could not be merged into the last inserted
+        // block (a block-level DecoratorNode is not an ElementNode, and a
+        // container element such as a ListNode is not INTERNAL_$isBlock), but
+        // it holds no content either: it only exists because the caret sat at
+        // the end of the target block. Keeping it would leave a stray empty
+        // paragraph after the inserted node, while the non-empty case (a
+        // mid-block caret) keeps the content after the caret.
+        insertedParagraph.remove();
+      }
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
       firstBlock.remove();

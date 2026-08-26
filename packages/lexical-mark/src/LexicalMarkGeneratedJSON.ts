@@ -16,7 +16,7 @@
 import type {MarkNode} from './MarkNode';
 import type {GeneratedJSON} from 'lexical';
 
-/** Generated from MarkNode's `json` schema. Do not edit by hand. */
+/** Generated from MarkNode's serialization schema. Do not edit by hand. */
 function exportMarkNode(node: MarkNode): {[key: string]: unknown} {
   return {
     children: [],
@@ -49,7 +49,7 @@ export function createGeneratedMarkNode(config: {
 }): GeneratedJSON {
   const ids_defaultValue = config.ids.defaultValue;
   const ids_isEqual = config.ids.isEqual;
-  /** Generated from MarkNode's `json` schema. Do not edit by hand. */
+  /** Generated from MarkNode's serialization schema. Do not edit by hand. */
   function exportCompactMarkNode(node: MarkNode): {[key: string]: unknown} {
     const json: {[key: string]: unknown} = {children: []};
     const ids = node.getIDs();

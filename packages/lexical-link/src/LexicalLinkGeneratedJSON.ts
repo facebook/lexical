@@ -16,7 +16,7 @@
 import type {AutoLinkNode, LinkNode} from './LexicalLinkNode';
 import type {GeneratedJSON} from 'lexical';
 
-/** Generated from LinkNode's `json` schema. Do not edit by hand. */
+/** Generated from LinkNode's serialization schema. Do not edit by hand. */
 function exportLinkNode(node: LinkNode): {[key: string]: unknown} {
   return {
     children: [],
@@ -34,7 +34,7 @@ function exportLinkNode(node: LinkNode): {[key: string]: unknown} {
   };
 }
 
-/** Generated from LinkNode's `json` schema. Do not edit by hand. */
+/** Generated from LinkNode's serialization schema. Do not edit by hand. */
 function exportCompactLinkNode(node: LinkNode): {[key: string]: unknown} {
   const json: {[key: string]: unknown} = {children: []};
   const rel = node.__rel;
@@ -83,7 +83,7 @@ export const GENERATED_LINK: GeneratedJSON = {
   exportCompactJSON: exportCompactLinkNode,
 };
 
-/** Generated from AutoLinkNode's `json` schema. Do not edit by hand. */
+/** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
 function exportAutoLinkNode(node: AutoLinkNode): {[key: string]: unknown} {
   return {
     children: [],
@@ -102,7 +102,7 @@ function exportAutoLinkNode(node: AutoLinkNode): {[key: string]: unknown} {
   };
 }
 
-/** Generated from AutoLinkNode's `json` schema. Do not edit by hand. */
+/** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
 function exportCompactAutoLinkNode(node: AutoLinkNode): {
   [key: string]: unknown;
 } {

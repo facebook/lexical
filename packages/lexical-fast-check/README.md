@@ -3,7 +3,7 @@
 [![See API Documentation](https://lexical.dev/img/see-api-documentation.svg)](https://lexical.dev/docs/api/modules/lexical_fast_check)
 
 This package derives [fast-check](https://fast-check.dev) arbitraries from the
-JSON schemas Lexical nodes declare on `$config`, so property-based tests
+serialization schemas Lexical nodes declare on `$config`, so property-based tests
 generate exactly the serialized JSON a node's parser accepts.
 
 Install it alongside `fast-check`, which is a peer dependency:

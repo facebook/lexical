@@ -161,8 +161,9 @@ describe('@lexical/fast-check', () => {
   });
 
   test('a flat node state is included with the inherited schemas', () => {
-    // FlatStateNode declares no json schema, only a flat `count` state; its
-    // value schema (numberValue) makes it introspectable, so it appears
+    // FlatStateNode declares no serialization schema, only a flat `count`
+    // state; its value schema (numberValue) makes it introspectable, so it
+    // appears
     // alongside the five properties inherited from ElementNode.
     expect(Object.keys(getComposedSchemaFields(FlatStateNode)).sort()).toEqual([
       'count',

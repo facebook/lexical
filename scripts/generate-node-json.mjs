@@ -8,8 +8,8 @@
 
 /**
  * Emit specialized `exportJSON` and `updateFromJSON` implementations for the
- * node classes in {@link MANIFEST}, from the same `json` schema those classes
- * declare, using `@lexical/compiler`'s SchemaJsonCodegen pass.
+ * node classes in {@link MANIFEST}, from the same serialization schema those
+ * classes declare, using `@lexical/compiler`'s SchemaJsonCodegen pass.
  *
  * Both schema-driven paths walk a compiled table per node: a loop, an indirect
  * call per property, and a keyed store whose key changes every iteration.
@@ -485,7 +485,7 @@ function generateCompactExport(klass) {
     );
   }
   const isElement = isElementish(klass);
-  const header = `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */`;
+  const header = `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */`;
   const indent = factoryKeys.length > 0 ? '  ' : '';
   if (writes.length === 0) {
     // Nothing to compare, so the literal is the whole function — as in
@@ -538,7 +538,7 @@ function generateExport(klass) {
     `type: '${type}'`,
     'version: 1',
   ];
-  return `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */
+  return `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */
 function export${klass.name}(${
     reads.length === 0 ? '' : `node: ${klass.name}`
   }): {[key: string]: unknown} {
@@ -678,7 +678,7 @@ function generateUpdate(klass) {
     return null;
   }
   const body = writes.map(({statements}) => statements).join('\n');
-  return `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */
+  return `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */
 function update${klass.name}(
   node: ${klass.name},
   json: {readonly [key: string]: unknown},

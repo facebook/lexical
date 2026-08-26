@@ -38,7 +38,7 @@ describe('LexicalTableCellNode tests', () => {
 
       await editor.update(() => {
         // Everything a TableCellNode adds over an element, out of domain: the
-        // `json` schema replaced the historical `|| 1` / `|| undefined`
+        // serialization schema replaced the historical `|| 1` / `|| undefined`
         // parsing, so these fall back rather than being stored verbatim.
         // Cast: these are values a legacy or hostile document can carry, not
         // values the node's own type admits.

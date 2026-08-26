@@ -29,7 +29,7 @@ import {
 export interface JSONConfig {
   /**
    * Export the compact form of the document by default: a property whose value
-   * is strictly equal to its `json` schema default is omitted, as are the
+   * is strictly equal to its schema default is omitted, as are the
    * properties the parser derives rather than reads and the deprecated
    * `version`. Parsing restores each, so the compact and legacy forms describe
    * the same document. Defaults to false (the legacy form).

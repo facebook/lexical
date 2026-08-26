@@ -16,7 +16,7 @@
 import type {HeadingNode, QuoteNode} from './index';
 import type {GeneratedJSON} from 'lexical';
 
-/** Generated from HeadingNode's `json` schema. Do not edit by hand. */
+/** Generated from HeadingNode's serialization schema. Do not edit by hand. */
 function exportHeadingNode(node: HeadingNode): {[key: string]: unknown} {
   return {
     children: [],
@@ -31,7 +31,7 @@ function exportHeadingNode(node: HeadingNode): {[key: string]: unknown} {
   };
 }
 
-/** Generated from HeadingNode's `json` schema. Do not edit by hand. */
+/** Generated from HeadingNode's serialization schema. Do not edit by hand. */
 function exportCompactHeadingNode(node: HeadingNode): {[key: string]: unknown} {
   const json: {[key: string]: unknown} = {children: []};
   const tag = node.__tag;
@@ -68,7 +68,7 @@ export const GENERATED_HEADING: GeneratedJSON = {
   exportCompactJSON: exportCompactHeadingNode,
 };
 
-/** Generated from QuoteNode's `json` schema. Do not edit by hand. */
+/** Generated from QuoteNode's serialization schema. Do not edit by hand. */
 function exportQuoteNode(node: QuoteNode): {[key: string]: unknown} {
   return {
     children: [],
@@ -82,7 +82,7 @@ function exportQuoteNode(node: QuoteNode): {[key: string]: unknown} {
   };
 }
 
-/** Generated from QuoteNode's `json` schema. Do not edit by hand. */
+/** Generated from QuoteNode's serialization schema. Do not edit by hand. */
 function exportCompactQuoteNode(node: QuoteNode): {[key: string]: unknown} {
   const json: {[key: string]: unknown} = {children: []};
   const direction = node.__dir;

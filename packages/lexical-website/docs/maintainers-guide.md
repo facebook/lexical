@@ -248,7 +248,7 @@ Run eslint
 ### pnpm run generate-node-json
 
 Regenerate the specialized JSON serialization code for the built-in node
-classes. A node's [serialization schema](/docs/serialization/serialization#declarative-json-schemas-with-config)
+classes. A node's [serialization schema](/docs/serialization/serialization#declarative-serialization-schemas-with-config)
 states everything about a serialized property ahead of time — which accessor
 or field it uses, what its default is, what its domain admits — so the
 generic walk over that schema can be compiled into straight-line code. This

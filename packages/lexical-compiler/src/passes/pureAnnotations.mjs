@@ -44,8 +44,8 @@ import * as path from 'node:path';
  * @type {ReadonlyArray<string>}
  */
 export const PURE_FACTORY_FUNCTIONS = [
-  // The serialization schema combinators, which build a node's `json` schema
-  // at module scope and are nested inside each other and inside createState.
+  // The combinators that build a node's serialization schema at module
+  // scope, nested inside each other and inside createState.
   'aliasedValue',
   'arrayValue',
   'booleanValue',

@@ -3227,7 +3227,7 @@ const IS_UNOPTIMIZED_DEV_BUILD =
 
 /**
  * A precompiled step for applying one of a node's serialized top-level
- * properties in {@link LexicalNode.updateFromJSON}: either a `json` schema field
+ * properties in {@link LexicalNode.updateFromJSON}: either a schema field
  * applied through a named setter (`set<Prop>` by default, or the name recorded
  * with `withAccessors`), or a flat NodeState applied through the single
  * {@link $setState} entry point. Compiled once per class and cached so the base
@@ -3315,7 +3315,7 @@ function defaultGetterName(key: string): string {
 }
 
 /**
- * The `json` schema fields and flat NodeStates a node class serializes,
+ * The serialization schema fields and flat NodeStates a node class serializes,
  * composed across its config chain. Every consumer of "what does this class
  * serialize" derives from this one walk so they cannot disagree about
  * precedence: a subclass field overrides an ancestor's, while a re-declared
@@ -3448,7 +3448,7 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
       // over the state, so such a property would flip on every round trip.
       invariant(
         !derivedFirst.has(key),
-        '%s: "%s" is declared both as a json schema field and as a flat NodeState; it must be one or the other',
+        '%s: "%s" is declared both as a serialization schema field and as a flat NodeState; it must be one or the other',
         klass.name,
         key,
       );
@@ -3465,7 +3465,7 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
 }
 
 /**
- * The composed `json` schema of a node class, compiled once per class.
+ * The composed serialization schema of a node class, compiled once per class.
  *
  * @internal
  */
@@ -3479,7 +3479,7 @@ export function getComposedSchema(klass: Klass<LexicalNode>): ComposedSchema {
 
 /**
  * Every node-specific property of a class's serialized JSON — its composed
- * `json` schema fields plus any flat NodeState whose value schema is
+ * serialization schema fields plus any flat NodeState whose value schema is
  * introspectable — keyed by serialized property name.
  *
  * @internal
@@ -3598,7 +3598,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       // on stringify); the setter mirror rejects it for the same reason.
       invariant(
         getterName !== '__proto__',
-        '%s: json schema field "%s" cannot be read from __proto__',
+        '%s: serialization schema field "%s" cannot be read from __proto__',
         klass.name,
         key,
       );
@@ -3619,7 +3619,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
     // build, not only in DEV. It runs once per class at registration.
     invariant(
       typeof method === 'function',
-      '%s: json schema field "%s" has no getter %s(); name one with withGetter or declare {getter: null} if it is deliberately not exported',
+      '%s: serialization schema field "%s" has no getter %s(); name one with withGetter or declare {getter: null} if it is deliberately not exported',
       klass.name,
       key,
       getter,
@@ -3646,7 +3646,7 @@ function ownFieldRecord(node: LexicalNode): Record<string, unknown> {
 }
 
 /**
- * Check every field name a class's `json` schema declares (`withField`, or an
+ * Check every field name a class's schema declares (`withField`, or an
  * accessor named `__something`) against a real instance of it. A misspelled
  * one is silent, total loss of that property — nothing is ever exported, and
  * importing writes a field the node does not read.
@@ -3685,7 +3685,7 @@ function validateOwnFields(record: NodeClassRecord, node: LexicalNode): void {
       if (entry.kind === 'ownField') {
         invariant(
           hasOwnKey(fields, entry.field),
-          '%s: json schema field "%s" names a node field %s that the node does not have',
+          '%s: serialization schema field "%s" names a node field %s that the node does not have',
           klass.name,
           entry.key,
           entry.field,
@@ -3701,7 +3701,7 @@ function validateOwnFields(record: NodeClassRecord, node: LexicalNode): void {
 }
 
 /**
- * Write the serialized properties a node's `json` schema declares, reading each
+ * Write the serialized properties a node's schema declares, reading each
  * through its getter. A getter that returns `undefined` omits the property:
  * absent and explicitly-undefined are indistinguishable once the JSON is
  * stringified, so this is how an optional (or conditionally persisted)
@@ -3820,7 +3820,7 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
       // getter mirror does the per-instance check.
       invariant(
         setterName !== '__proto__',
-        '%s: json schema field "%s" cannot be applied to __proto__',
+        '%s: serialization schema field "%s" cannot be applied to __proto__',
         klass.name,
         key,
       );
@@ -3839,7 +3839,7 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
     // this fails in every build rather than only in DEV.
     invariant(
       typeof method === 'function',
-      '%s: json schema field "%s" has no setter %s(); name one with withAccessors or declare {setter: null} if it is derived on import',
+      '%s: serialization schema field "%s" has no setter %s(); name one with withAccessors or declare {setter: null} if it is derived on import',
       klass.name,
       key,
       setter,
@@ -3985,10 +3985,10 @@ export function $applyImportJSON<T extends LexicalNode>(
 }
 
 /**
- * Apply a node's compiled `json` serialization schema (see {@link compileSetters})
+ * Apply a node's compiled serialization schema (see {@link compileSetters})
  * by calling each property's setter with its parsed value, returning the
  * (writable) node. Used by the base {@link LexicalNode.updateFromJSON} so a node
- * that declares a `json` schema needs no `updateFromJSON` boilerplate.
+ * that declares a serialization schema needs no `updateFromJSON` boilerplate.
  *
  * @internal
  */

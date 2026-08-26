@@ -24,7 +24,7 @@ export type Parse<T> = (value: unknown) => T;
  * A structural, introspectable description of a {@link SerializationSchema}. It carries
  * exactly the information needed to coerce a value (which the schema closes
  * over) so that tooling can also walk it — for example to derive a `fast-check`
- * arbitrary that generates example values, or to emit a JSON schema. The data
+ * arbitrary that generates example values, or to emit a JSON Schema document. The data
  * here is the same domain information the parser already needs, so making it
  * available costs (almost) nothing in the production bundle.
  */
@@ -95,8 +95,9 @@ export interface SerializationSchema<T> {
   readonly meta: SerializationSchemaMeta;
   /**
    * The name of the node setter that applies a parsed value of this schema when
-   * the base {@link LexicalNode.updateFromJSON} walks a node's `json` schema.
-   * When omitted, the setter name defaults to `set<Prop>` for the property this
+   * the base {@link LexicalNode.updateFromJSON} walks a node's serialization
+   * schema. When omitted, the setter name defaults to `set<Prop>` for the
+   * property this
    * schema is bound to in an {@link objectValue} (e.g. `foo` → `setFoo`). Use
    * {@link withAccessors} to record a name that doesn't follow that convention
    * (e.g. TextNode's `text` → `setTextContent`), or a {@link SchemaField} to
@@ -105,8 +106,9 @@ export interface SerializationSchema<T> {
   readonly setter?: SchemaAccessor;
   /**
    * The name of the node getter that reads this property's value when the base
-   * {@link LexicalNode.exportJSON} walks a node's `json` schema. When omitted,
-   * the getter name defaults to `get<Prop>` (e.g. `foo` → `getFoo`). Use
+   * {@link LexicalNode.exportJSON} walks a node's serialization schema. When
+   * omitted, the getter name defaults to `get<Prop>` (e.g. `foo` → `getFoo`).
+   * Use
    * {@link withGetter} to record a name that doesn't follow that convention
    * (e.g. TextNode's `text` → `getTextContent`), or a {@link SchemaField} to
    * read the value straight from a node field. A getter that returns
@@ -1058,8 +1060,8 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
 /**
  * Return a copy of `schema` that records the name of the node getter used to
  * read its value when the base {@link LexicalNode.exportJSON} walks a node's
- * `json` schema. Use this for an {@link objectValue} field whose getter does
- * not follow the default `get<Prop>` naming.
+ * serialization schema. Use this for an {@link objectValue} field whose
+ * getter does not follow the default `get<Prop>` naming.
  *
  * The getter may return `undefined` to omit the property from the exported
  * JSON entirely, which is how an optional property (or one a node only

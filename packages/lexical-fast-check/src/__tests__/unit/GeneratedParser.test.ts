@@ -12,8 +12,9 @@ import {$getRoot, createEditor, TextNode} from 'lexical';
 import {describe, expect, test} from 'vitest';
 
 /**
- * A TextNode with its own type and nothing else. Its `json` schema is the one
- * it inherits, so the walk parses it exactly as it parses a TextNode — but the
+ * A TextNode with its own type and nothing else. Its serialization schema
+ * is the one it inherits, so the walk parses it exactly as it parses a
+ * TextNode — but the
  * generated code is keyed by type, so this one never reaches it. That is the
  * control arm: the same schema, applied the other way.
  */

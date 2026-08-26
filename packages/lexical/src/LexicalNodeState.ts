@@ -971,7 +971,7 @@ export function $updateStateFromJSON<T extends LexicalNode>(
   const writable = node.getWritable();
   // Only the nested NodeState (under NODE_STATE_KEY) is applied here; flat
   // states, which serialize at the top level, are applied via $setState by the
-  // node's compiled `json` schema (see $applyJSONSetters).
+  // node's compiled serialization schema (see $applyJSONSetters).
   const unknownState = serialized[NODE_STATE_KEY];
   if (writable.__state || unknownState) {
     $getWritableNodeState(node).updateFromJSON(unknownState);

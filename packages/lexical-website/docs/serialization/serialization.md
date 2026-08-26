@@ -371,7 +371,7 @@ serialized node and the rest are nested under `'$'` — see
 [Flat serialization with `$config`](../concepts/node-state.md#flat-serialization-with-config)
 and the [legacy-property upgrade recipe](../concepts/node-state.md#upgrading-a-legacy-json-property-to-nodestate).
 A `$config` node can also declare a
-[declarative `json` schema](#declarative-json-schemas-with-config) so
+[declarative serialization schema](#declarative-serialization-schemas-with-config) so
 parsing of its node-specific properties is generated too.
 
 :::
@@ -490,7 +490,7 @@ newNode.updateFromJSON(serializedNode);
 
 :::
 
-### Declarative JSON schemas with `$config`
+### Declarative serialization schemas with `$config`
 
 :::caution Experimental
 

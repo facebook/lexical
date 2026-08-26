@@ -239,8 +239,9 @@ export interface StaticNodeConfigValue<
    * @internal
    *
    * Specialized `exportJSON`/`updateFromJSON` implementations compiled from
-   * this class's `json` schema by `scripts/generate-node-json.mjs`, which the
-   * schema-driven walks use in place of walking. Set by the core node classes
+   * this class's serialization schema by `scripts/generate-node-json.mjs`,
+   * which the schema-driven walks use in place of walking. Set by the core
+   * node classes
    * that are code-generated; there is no reason to write it by hand.
    *
    * Carried here rather than looked up by node type, because a type does not
@@ -517,8 +518,9 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
  * export omits a default-valued one, and an older document predates a newer
  * one), with `type`, `version` and `children` dropped.
  *
- * A node that declares a `json` schema narrows both JSON methods to its own
- * serialized type by declaration merging, which is the one thing a schema
+ * A node that declares a serialization schema narrows both JSON methods to
+ * its own serialized type by declaration merging, which is the one thing a
+ * schema
  * cannot do for it — the members have to be declared on the node's own
  * interface, since inheriting them from a shared base would collide with the
  * ones it gets from its superclass rather than override them:
@@ -1661,8 +1663,8 @@ export class LexicalNode {
    * if you're serializing to JSON for persistent storage somewhere.
    * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
    *
-   * The base implementation writes every property the node's `json` schema
-   * declares (its own and those it inherits), reading each through its getter —
+   * The base implementation writes every property the node's schema declares
+   * (its own and those it inherits), reading each through its getter —
    * `get<Prop>` by default, or the name recorded with `withGetter`. A getter
    * that returns `undefined` omits its property. Override this only for output
    * a schema can not describe, and call `super.exportJSON(compact)` when you do.
@@ -1755,7 +1757,7 @@ export class LexicalNode {
    * }
    * ```
    *
-   * The whole `json` schema is applied, so a property the JSON omits is set to
+   * The whole schema is applied, so a property the JSON omits is set to
    * its schema default rather than left as it is — that is what lets the
    * compact form omit a default-valued property and have parsing restore it.
    * (A flat NodeState is the exception: it is applied only when present.) Pass

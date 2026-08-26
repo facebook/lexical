@@ -107,7 +107,7 @@ const TAB_MODE_DECODE: {
   '2': 'segmented',
 };
 
-/** Generated from TextNode's `json` schema. Do not edit by hand. */
+/** Generated from TextNode's serialization schema. Do not edit by hand. */
 function exportTextNode(node: TextNode): {[key: string]: unknown} {
   return {
     detail: node.__detail,
@@ -120,7 +120,7 @@ function exportTextNode(node: TextNode): {[key: string]: unknown} {
   };
 }
 
-/** Generated from TextNode's `json` schema. Do not edit by hand. */
+/** Generated from TextNode's serialization schema. Do not edit by hand. */
 function exportCompactTextNode(node: TextNode): {[key: string]: unknown} {
   const json: {[key: string]: unknown} = {};
   const detail = node.__detail;
@@ -147,7 +147,7 @@ function exportCompactTextNode(node: TextNode): {[key: string]: unknown} {
   return json;
 }
 
-/** Generated from TextNode's `json` schema. Do not edit by hand. */
+/** Generated from TextNode's serialization schema. Do not edit by hand. */
 function updateTextNode(
   node: TextNode,
   json: {readonly [key: string]: unknown},
@@ -180,7 +180,7 @@ export const GENERATED_TEXT: GeneratedJSON = {
   updateFromJSON: updateTextNode,
 };
 
-/** Generated from ParagraphNode's `json` schema. Do not edit by hand. */
+/** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
 function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
   return {
     children: [],
@@ -194,7 +194,7 @@ function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
   };
 }
 
-/** Generated from ParagraphNode's `json` schema. Do not edit by hand. */
+/** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
 function exportCompactParagraphNode(node: ParagraphNode): {
   [key: string]: unknown;
 } {
@@ -229,7 +229,7 @@ export const GENERATED_PARAGRAPH: GeneratedJSON = {
   exportCompactJSON: exportCompactParagraphNode,
 };
 
-/** Generated from LineBreakNode's `json` schema. Do not edit by hand. */
+/** Generated from LineBreakNode's serialization schema. Do not edit by hand. */
 function exportLineBreakNode(): {[key: string]: unknown} {
   return {
     type: 'linebreak',
@@ -237,7 +237,7 @@ function exportLineBreakNode(): {[key: string]: unknown} {
   };
 }
 
-/** Generated from LineBreakNode's `json` schema. Do not edit by hand. */
+/** Generated from LineBreakNode's serialization schema. Do not edit by hand. */
 function exportCompactLineBreakNode(): {[key: string]: unknown} {
   return {type: 'linebreak'};
 }
@@ -248,7 +248,7 @@ export const GENERATED_LINEBREAK: GeneratedJSON = {
   exportCompactJSON: exportCompactLineBreakNode,
 };
 
-/** Generated from TabNode's `json` schema. Do not edit by hand. */
+/** Generated from TabNode's serialization schema. Do not edit by hand. */
 function exportTabNode(node: TabNode): {[key: string]: unknown} {
   return {
     detail: node.__detail,
@@ -261,7 +261,7 @@ function exportTabNode(node: TabNode): {[key: string]: unknown} {
   };
 }
 
-/** Generated from TabNode's `json` schema. Do not edit by hand. */
+/** Generated from TabNode's serialization schema. Do not edit by hand. */
 function exportCompactTabNode(node: TabNode): {[key: string]: unknown} {
   const json: {[key: string]: unknown} = {};
   const format = node.__format;

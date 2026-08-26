@@ -99,7 +99,7 @@ import {
   type AnySerializationSchema,
   hasOwnKey,
   isSchemaField,
-  type SchemaField,
+  type SchemaFieldBase,
 } from './LexicalSchema';
 import {
   $clampRangeSelectionToSlotFrame,
@@ -3283,11 +3283,11 @@ const EMPTY_SETTERS: readonly CompiledSetter[] = [];
  *
  * @internal
  */
-export function resolveSchemaField(
+export function resolveSchemaField<T extends SchemaFieldBase>(
   klass: Klass<LexicalNode>,
   key: string,
-  accessor: SchemaField,
-): SchemaField | string {
+  accessor: T,
+): T | string {
   const {method} = accessor;
   if (method === undefined) {
     return accessor;
@@ -3551,6 +3551,12 @@ type CompiledGetter = CompactRule &
         readonly field: string;
         /** Maps the stored value to the serialized one; see {@link SchemaField}. */
         readonly decode?: {readonly [key: string]: unknown};
+        /**
+         * Resolved once at compile time, like the method getter: the predicate
+         * named by {@link SchemaGetterField.when}, which gates writing this
+         * property at all.
+         */
+        readonly when?: (this: LexicalNode) => boolean;
       }
   );
 
@@ -3602,6 +3608,21 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
         klass.name,
         key,
       );
+      const whenName = getter.when;
+      let when: undefined | ((this: LexicalNode) => boolean);
+      if (whenName !== undefined) {
+        const predicate = prototype[whenName];
+        // Same reasoning as the accessor check below: a predicate that does
+        // not resolve would silently drop the property from every export.
+        invariant(
+          typeof predicate === 'function',
+          '%s: serialization schema field "%s" names a predicate %s() that the node does not have',
+          klass.name,
+          key,
+          whenName,
+        );
+        when = predicate as (this: LexicalNode) => boolean;
+      }
       fields.set(key, {
         decode: getter.decode,
         defaultValue: schema.defaultValue,
@@ -3610,6 +3631,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
         isEqual: schema.isEqual,
         key,
         kind: 'ownField',
+        when,
       });
       continue;
     }
@@ -3758,6 +3780,26 @@ export function $writeJSONGetters(
             : undefined;
     } else {
       value = entry.getter.call(node);
+    }
+    if (entry.kind === 'ownField' && entry.when !== undefined) {
+      // A conditionally-persisted property: written only when it differs from
+      // the schema default *and* the node's predicate agrees. The default is
+      // tested first, so the predicate stays off the common path — a property
+      // holding what parsing would restore is omitted without asking. Written
+      // out rather than routed through isSchemaDefault for the same reason the
+      // compact comparison below is: this runs per property per node.
+      //
+      // Generated code hoists a predicate shared by several properties and so
+      // calls it once where this calls it per property, which is why it is
+      // required to be pure.
+      const {defaultValue, isEqual} = entry;
+      if (
+        value === defaultValue ||
+        (isEqual !== undefined && isEqual(value, defaultValue)) ||
+        !entry.when.call(node)
+      ) {
+        value = undefined;
+      }
     }
     if (compact) {
       // The compact form omits, because its output is for storage and an

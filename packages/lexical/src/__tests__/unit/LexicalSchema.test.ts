@@ -1298,6 +1298,29 @@ describe('a union member knows its own domain', () => {
     expect(dimension('inherit')).toBe('inherit');
   });
 
+  test('each value table is declared only on the direction that reads it', () => {
+    // `decode` is applied on export and `encode` on import, so naming either
+    // on the other side used to type-check and then be silently ignored. They
+    // are declared on the direction-specific field types now, which makes the
+    // wrong pairing a compile error rather than a property that does nothing.
+    const schema = withAccessors(stringValue(), {
+      getter: {decode: {stored: 'serialized'}, field: '__x'},
+      setter: {encode: {serialized: 'stored'}, field: '__x'},
+    });
+    expect(isSchemaField(schema.getter)).toBe(true);
+    expect(isSchemaField(schema.setter)).toBe(true);
+    assert(isSchemaField(schema.getter));
+    assert(isSchemaField(schema.setter));
+    // isSchemaField narrows to the direction it was handed, so each side sees
+    // only its own table.
+    expectTypeOf(schema.getter).toHaveProperty('decode');
+    expectTypeOf(schema.setter).toHaveProperty('encode');
+    // @ts-expect-error -- `encode` is the import direction's table
+    withAccessors(stringValue(), {getter: {encode: {a: 1}, field: '__x'}});
+    // @ts-expect-error -- `decode` is the export direction's table
+    withAccessors(stringValue(), {setter: {decode: {a: 1}, field: '__x'}});
+  });
+
   test('a wrapper carries its inner membership into the union', () => {
     // Naming an accessor, transforming the output, or admitting a nil says
     // nothing about which *inputs* the member recognizes, so every wrapper

@@ -1800,8 +1800,8 @@ export type Parse<T> = (value: unknown) => T;
 export type SerializationSchema<T> = Parse<T> & {
   readonly defaultValue: T,
   readonly meta: SerializationSchemaMeta,
-  readonly getter?: SchemaAccessor,
-  readonly setter?: SchemaAccessor,
+  readonly getter?: SchemaGetterAccessor,
+  readonly setter?: SchemaSetterAccessor,
   readonly isEqual?: (a: T, b: T) => boolean,
   readonly accepts?: (value: unknown) => boolean,
 };
@@ -1874,17 +1874,27 @@ declare export function aliasedValue<T>(
 declare export function rawValue<T>(): SerializationSchema<T | void>;
 declare export function arrayValue<T>(item: SerializationSchema<T>): SerializationSchema<T[]>;
 declare export function objectValue<T>(fields: SerializationSchemaShape<T>): SerializationSchema<T>;
-// A node field, read and written directly rather than through a method. May
-// carry a lookup table for a property whose stored and serialized forms
-// differ (`decode` for export, `encode` for import), and the name of the
-// accessor the field access stands in for (`method`) so a subclass that
-// overrides it still decides.
-export type SchemaField = {
+// A node field, read or written directly rather than through a method. The
+// lookup table for a property whose stored and serialized forms differ is
+// declared only on the direction that reads it — `decode` on the getter,
+// `encode` on the setter — so naming the wrong one is an error rather than a
+// silently ignored property. `method` names the accessor the field access
+// stands in for, so a subclass that overrides it still decides.
+export type SchemaFieldBase = {
   readonly field: string,
-  readonly decode?: {readonly [key: string]: unknown},
-  readonly encode?: {readonly [key: string]: unknown},
   readonly method?: string,
 };
+export type SchemaGetterField = {
+  ...SchemaFieldBase,
+  readonly decode?: {readonly [key: string]: unknown},
+};
+export type SchemaSetterField = {
+  ...SchemaFieldBase,
+  readonly encode?: {readonly [key: string]: unknown},
+};
+export type SchemaField = SchemaGetterField | SchemaSetterField;
+export type SchemaGetterAccessor = string | SchemaGetterField | null;
+export type SchemaSetterAccessor = string | SchemaSetterField | null;
 // Both directions of a property that *is* a node field, as withField takes
 // them.
 export type FieldOptions = {
@@ -1898,15 +1908,15 @@ export type FieldOptions = {
 // direction that is deliberately unsupported.
 export type SchemaAccessor = string | SchemaField | null;
 export type SchemaAccessors = {
-  readonly getter?: SchemaAccessor,
-  readonly setter?: SchemaAccessor,
+  readonly getter?: SchemaGetterAccessor,
+  readonly setter?: SchemaSetterAccessor,
 };
-declare export function isSchemaField(
-  accessor: SchemaAccessor | void,
-): implies accessor is SchemaField;
+declare export function isSchemaField<T extends SchemaFieldBase>(
+  accessor: string | T | null | void,
+): implies accessor is T;
 declare export function withField<T>(
   schema: SerializationSchema<T>,
-  field: string | FieldOptions,
+  field: FieldOptions,
 ): SerializationSchema<T>;
 declare export function withAccessors<T>(
   schema: SerializationSchema<T>,

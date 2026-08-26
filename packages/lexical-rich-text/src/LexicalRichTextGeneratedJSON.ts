@@ -18,14 +18,20 @@ import type {GeneratedJSON} from 'lexical';
 
 /** Generated from HeadingNode's serialization schema. Do not edit by hand. */
 function exportHeadingNode(node: HeadingNode): {[key: string]: unknown} {
+  const textFormat = node.__textFormat;
+  const textStyle = node.__textStyle;
+  const shouldSerializeTextStyles =
+    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
   return {
     children: [],
     tag: node.__tag,
     direction: node.__dir,
     format: node.getFormatType(),
     indent: node.__indent,
-    textFormat: node.getSerializedTextFormat(),
-    textStyle: node.getSerializedTextStyle(),
+    textFormat:
+      textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
+    textStyle:
+      textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
     type: 'heading',
     version: 1,
   };
@@ -33,6 +39,10 @@ function exportHeadingNode(node: HeadingNode): {[key: string]: unknown} {
 
 /** Generated from HeadingNode's serialization schema. Do not edit by hand. */
 function exportCompactHeadingNode(node: HeadingNode): {[key: string]: unknown} {
+  const textFormat = node.__textFormat;
+  const textStyle = node.__textStyle;
+  const shouldSerializeTextStyles =
+    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
   const json: {[key: string]: unknown} = {children: []};
   const tag = node.__tag;
   if (tag !== undefined && tag !== 'h1') {
@@ -50,12 +60,10 @@ function exportCompactHeadingNode(node: HeadingNode): {[key: string]: unknown} {
   if (indent !== undefined && indent !== 0) {
     json.indent = indent;
   }
-  const textFormat = node.getSerializedTextFormat();
-  if (textFormat !== undefined && textFormat !== 0) {
+  if (textFormat !== 0 && shouldSerializeTextStyles) {
     json.textFormat = textFormat;
   }
-  const textStyle = node.getSerializedTextStyle();
-  if (textStyle !== undefined && textStyle !== '') {
+  if (textStyle !== '' && shouldSerializeTextStyles) {
     json.textStyle = textStyle;
   }
   json.type = 'heading';
@@ -70,13 +78,19 @@ export const GENERATED_HEADING: GeneratedJSON = {
 
 /** Generated from QuoteNode's serialization schema. Do not edit by hand. */
 function exportQuoteNode(node: QuoteNode): {[key: string]: unknown} {
+  const textFormat = node.__textFormat;
+  const textStyle = node.__textStyle;
+  const shouldSerializeTextStyles =
+    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
   return {
     children: [],
     direction: node.__dir,
     format: node.getFormatType(),
     indent: node.__indent,
-    textFormat: node.getSerializedTextFormat(),
-    textStyle: node.getSerializedTextStyle(),
+    textFormat:
+      textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
+    textStyle:
+      textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
     type: 'quote',
     version: 1,
   };
@@ -84,6 +98,10 @@ function exportQuoteNode(node: QuoteNode): {[key: string]: unknown} {
 
 /** Generated from QuoteNode's serialization schema. Do not edit by hand. */
 function exportCompactQuoteNode(node: QuoteNode): {[key: string]: unknown} {
+  const textFormat = node.__textFormat;
+  const textStyle = node.__textStyle;
+  const shouldSerializeTextStyles =
+    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
   const json: {[key: string]: unknown} = {children: []};
   const direction = node.__dir;
   if (direction !== undefined && direction !== null) {
@@ -97,12 +115,10 @@ function exportCompactQuoteNode(node: QuoteNode): {[key: string]: unknown} {
   if (indent !== undefined && indent !== 0) {
     json.indent = indent;
   }
-  const textFormat = node.getSerializedTextFormat();
-  if (textFormat !== undefined && textFormat !== 0) {
+  if (textFormat !== 0 && shouldSerializeTextStyles) {
     json.textFormat = textFormat;
   }
-  const textStyle = node.getSerializedTextStyle();
-  if (textStyle !== undefined && textStyle !== '') {
+  if (textStyle !== '' && shouldSerializeTextStyles) {
     json.textStyle = textStyle;
   }
   json.type = 'quote';

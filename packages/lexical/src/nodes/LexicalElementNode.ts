@@ -116,10 +116,27 @@ const elementNodeSchema = objectValue({
     getter: 'getIndent',
     setter: 'setIndent',
   }),
-  // Persisted only in the narrow case below, so they are read through getters
-  // that return undefined (and are therefore omitted) otherwise.
-  textFormat: withAccessors(numberValue(), {getter: 'getSerializedTextFormat'}),
-  textStyle: withAccessors(stringValue(), {getter: 'getSerializedTextStyle'}),
+  // Persisted only for an element with no TextNode child (see #7971), which
+  // `shouldSerializeTextStyles` decides. Declaring that as the field it is
+  // plus the predicate that gates it — rather than reading through
+  // `getSerializedTextFormat`/`getSerializedTextStyle` — keeps both on the
+  // direct-field path, and lets generated code call the shared predicate once
+  // instead of once per property. The accessors are still named, so a
+  // subclass that overrides either reclaims its property.
+  textFormat: withAccessors(numberValue(), {
+    getter: {
+      field: '__textFormat',
+      method: 'getSerializedTextFormat',
+      when: 'shouldSerializeTextStyles',
+    },
+  }),
+  textStyle: withAccessors(stringValue(), {
+    getter: {
+      field: '__textStyle',
+      method: 'getSerializedTextStyle',
+      when: 'shouldSerializeTextStyles',
+    },
+  }),
 });
 
 export type ElementFormatType =

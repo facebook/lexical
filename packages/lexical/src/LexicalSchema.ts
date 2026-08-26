@@ -103,7 +103,7 @@ export interface SerializationSchema<T> {
    * (e.g. TextNode's `text` → `setTextContent`), or a {@link SchemaField} to
    * write the value straight to a node field.
    */
-  readonly setter?: SchemaAccessor;
+  readonly setter?: SchemaSetterAccessor;
   /**
    * The name of the node getter that reads this property's value when the base
    * {@link LexicalNode.exportJSON} walks a node's serialization schema. When
@@ -114,7 +114,7 @@ export interface SerializationSchema<T> {
    * read the value straight from a node field. A getter that returns
    * `undefined` omits the property from the exported JSON.
    */
-  readonly getter?: SchemaAccessor;
+  readonly getter?: SchemaGetterAccessor;
   /**
    * Whether two values of this schema's domain say the same thing, for the
    * comparisons that treat a value as absent: compaction dropping a property
@@ -183,29 +183,8 @@ export function isSchemaDefault<T>(
  * reach for, and deciding between them by looking at the string would make a
  * node's field naming part of this API's contract.
  */
-export interface SchemaField {
+export interface SchemaFieldBase {
   readonly field: string;
-  /**
-   * A lookup table from the stored field value to the serialized one, for a
-   * property whose two representations differ — TextNode stores `mode` as a
-   * bitmask and serializes it as a name.
-   *
-   * Without this such a property needs an accessor method, and a method is a
-   * call plus, by convention, a `getLatest()`. Stating the mapping keeps the
-   * property on the direct-read path: the table is a plain object of
-   * primitives, so it is as inlinable by a code generator as the field read is.
-   *
-   * Used by the export direction; {@link SchemaField.encode} is its import
-   * mirror.
-   */
-  readonly decode?: {readonly [key: string]: unknown};
-  /**
-   * A lookup table from the serialized value to the stored one — the inverse of
-   * {@link SchemaField.decode}, for the import direction. The parsed value is
-   * the key, so the schema still owns the domain: only a value the schema
-   * admitted is ever looked up.
-   */
-  readonly encode?: {readonly [key: string]: unknown};
   /**
    * The accessor method this direct field access stands in for. Naming it keeps
    * a subclass in charge of its own property: if any class between the one that
@@ -216,11 +195,66 @@ export interface SchemaField {
    * schema — every core node's, since overriding `getTextContent()` or
    * `setStyle()` on a TextNode subclass is ordinary — so that migrating the
    * property to a field is not a behavior change for anyone who did. Leave it
-   * out for a property that is only ever the field, which is what plain
-   * {@link withField} declares.
+   * out for a property that is only ever the field.
    */
   readonly method?: string;
 }
+
+/** A node field read directly on export. */
+export interface SchemaGetterField extends SchemaFieldBase {
+  /**
+   * The name of a node predicate that decides whether this property is written
+   * at all. Naming it keeps the property on the direct-field path: without it,
+   * a conditionally-persisted property needs an accessor method, and a method
+   * is a call plus a `getLatest()` on every export of every node.
+   *
+   * The property is written only when its value differs from the schema
+   * default *and* the predicate returns true — the default is what parsing
+   * would restore anyway, so writing it says nothing, and testing it first is
+   * what keeps the predicate off the common path. ElementNode's `textFormat`
+   * and `textStyle` are the motivating case: both are persisted only for an
+   * element with no TextNode child.
+   *
+   * The predicate must be a pure, zero-argument method: it is called once per
+   * export by the walk for each property that names it, and once in total by
+   * generated code, which hoists a predicate that several properties share.
+   */
+  readonly when?: string;
+  /**
+   * A lookup table from the stored field value to the serialized one, for a
+   * property whose two representations differ — TextNode stores `mode` as a
+   * bitmask and serializes it as a name.
+   *
+   * Without this such a property needs an accessor method, and a method is a
+   * call plus, by convention, a `getLatest()`. Stating the mapping keeps the
+   * property on the direct-read path: the table is a plain object of
+   * primitives, so it is as inlinable by a code generator as the field read is.
+   *
+   * The export direction's table; {@link SchemaSetterField.encode} is its
+   * import mirror. Each is declared only on the direction that reads it, so
+   * naming the wrong one is a type error rather than a silently ignored
+   * property.
+   */
+  readonly decode?: {readonly [key: string]: unknown};
+}
+
+/** A node field written directly on import. */
+export interface SchemaSetterField extends SchemaFieldBase {
+  /**
+   * A lookup table from the serialized value to the stored one — the inverse of
+   * {@link SchemaGetterField.decode}, for the import direction. The parsed
+   * value is the key, so the schema still owns the domain: only a value the
+   * schema admitted is ever looked up.
+   */
+  readonly encode?: {readonly [key: string]: unknown};
+}
+
+/**
+ * A node field in whichever direction it was declared for. Prefer the
+ * direction-specific types when the direction is known — this union admits
+ * both tables, so it cannot reject the one that does not belong.
+ */
+export type SchemaField = SchemaGetterField | SchemaSetterField;
 
 /**
  * One direction of a {@link SerializationSchema} field: a method name, a
@@ -229,6 +263,12 @@ export interface SchemaField {
  */
 export type SchemaAccessor = string | SchemaField | null;
 
+/** How the export direction reaches a property. */
+export type SchemaGetterAccessor = string | SchemaGetterField | null;
+
+/** How the import direction reaches a property. */
+export type SchemaSetterAccessor = string | SchemaSetterField | null;
+
 /**
  * Both directions of a property that *is* a node field, as {@link withField}
  * takes them: the field name, the two value tables (each used by the one
@@ -236,13 +276,13 @@ export type SchemaAccessor = string | SchemaField | null;
  */
 export interface FieldOptions {
   readonly field: string;
-  /** @see {@link SchemaField.decode} */
+  /** @see {@link SchemaGetterField.decode} */
   readonly decode?: {readonly [key: string]: unknown};
-  /** @see {@link SchemaField.encode} */
+  /** @see {@link SchemaSetterField.encode} */
   readonly encode?: {readonly [key: string]: unknown};
-  /** The getter this field read stands in for; see {@link SchemaField.method}. */
+  /** The getter this field read stands in for; see {@link SchemaFieldBase.method}. */
   readonly getter?: string;
-  /** The setter this field write stands in for; see {@link SchemaField.method}. */
+  /** The setter this field write stands in for; see {@link SchemaFieldBase.method}. */
   readonly setter?: string;
 }
 
@@ -262,14 +302,20 @@ export interface FieldOptions {
  * through `setHeaderStyles`, which supplies a default mask.
  */
 export interface SchemaAccessors {
-  readonly getter?: SchemaAccessor;
-  readonly setter?: SchemaAccessor;
+  readonly getter?: SchemaGetterAccessor;
+  readonly setter?: SchemaSetterAccessor;
 }
 
-/** Whether an accessor names a node field rather than a method. */
-export function isSchemaField(
-  accessor: SchemaAccessor | undefined,
-): accessor is SchemaField {
+/**
+ * Whether an accessor names a node field rather than a method.
+ *
+ * Generic in the field type so it narrows to the direction it was handed:
+ * given a {@link SchemaGetterAccessor} it yields a {@link SchemaGetterField},
+ * whose `decode` is then the only table in scope.
+ */
+export function isSchemaField<T extends SchemaFieldBase>(
+  accessor: string | T | null | undefined,
+): accessor is T {
   return typeof accessor === 'object' && accessor !== null;
 }
 
@@ -787,7 +833,10 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
 function unionAccessors(
   members: readonly AnySerializationSchema[],
 ): SchemaAccessors {
-  const accessors: {getter?: SchemaAccessor; setter?: SchemaAccessor} = {};
+  const accessors: {
+    getter?: SchemaGetterAccessor;
+    setter?: SchemaSetterAccessor;
+  } = {};
   for (const member of members) {
     if (accessors.getter === undefined) {
       accessors.getter = member.getter;

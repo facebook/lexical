@@ -18,6 +18,10 @@ import type {GeneratedJSON} from 'lexical';
 
 /** Generated from LinkNode's serialization schema. Do not edit by hand. */
 function exportLinkNode(node: LinkNode): {[key: string]: unknown} {
+  const textFormat = node.__textFormat;
+  const textStyle = node.__textStyle;
+  const shouldSerializeTextStyles =
+    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
   return {
     children: [],
     rel: node.__rel,
@@ -27,8 +31,10 @@ function exportLinkNode(node: LinkNode): {[key: string]: unknown} {
     direction: node.__dir,
     format: node.getFormatType(),
     indent: node.__indent,
-    textFormat: node.getSerializedTextFormat(),
-    textStyle: node.getSerializedTextStyle(),
+    textFormat:
+      textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
+    textStyle:
+      textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
     type: 'link',
     version: 1,
   };
@@ -36,6 +42,10 @@ function exportLinkNode(node: LinkNode): {[key: string]: unknown} {
 
 /** Generated from LinkNode's serialization schema. Do not edit by hand. */
 function exportCompactLinkNode(node: LinkNode): {[key: string]: unknown} {
+  const textFormat = node.__textFormat;
+  const textStyle = node.__textStyle;
+  const shouldSerializeTextStyles =
+    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
   const json: {[key: string]: unknown} = {children: []};
   const rel = node.__rel;
   if (rel !== undefined && rel !== null) {
@@ -65,12 +75,10 @@ function exportCompactLinkNode(node: LinkNode): {[key: string]: unknown} {
   if (indent !== undefined && indent !== 0) {
     json.indent = indent;
   }
-  const textFormat = node.getSerializedTextFormat();
-  if (textFormat !== undefined && textFormat !== 0) {
+  if (textFormat !== 0 && shouldSerializeTextStyles) {
     json.textFormat = textFormat;
   }
-  const textStyle = node.getSerializedTextStyle();
-  if (textStyle !== undefined && textStyle !== '') {
+  if (textStyle !== '' && shouldSerializeTextStyles) {
     json.textStyle = textStyle;
   }
   json.type = 'link';
@@ -85,6 +93,10 @@ export const GENERATED_LINK: GeneratedJSON = {
 
 /** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
 function exportAutoLinkNode(node: AutoLinkNode): {[key: string]: unknown} {
+  const textFormat = node.__textFormat;
+  const textStyle = node.__textStyle;
+  const shouldSerializeTextStyles =
+    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
   return {
     children: [],
     isUnlinked: node.__isUnlinked,
@@ -95,8 +107,10 @@ function exportAutoLinkNode(node: AutoLinkNode): {[key: string]: unknown} {
     direction: node.__dir,
     format: node.getFormatType(),
     indent: node.__indent,
-    textFormat: node.getSerializedTextFormat(),
-    textStyle: node.getSerializedTextStyle(),
+    textFormat:
+      textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
+    textStyle:
+      textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
     type: 'autolink',
     version: 1,
   };
@@ -106,6 +120,10 @@ function exportAutoLinkNode(node: AutoLinkNode): {[key: string]: unknown} {
 function exportCompactAutoLinkNode(node: AutoLinkNode): {
   [key: string]: unknown;
 } {
+  const textFormat = node.__textFormat;
+  const textStyle = node.__textStyle;
+  const shouldSerializeTextStyles =
+    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
   const json: {[key: string]: unknown} = {children: []};
   const isUnlinked = node.__isUnlinked;
   if (isUnlinked !== undefined && isUnlinked !== false) {
@@ -139,12 +157,10 @@ function exportCompactAutoLinkNode(node: AutoLinkNode): {
   if (indent !== undefined && indent !== 0) {
     json.indent = indent;
   }
-  const textFormat = node.getSerializedTextFormat();
-  if (textFormat !== undefined && textFormat !== 0) {
+  if (textFormat !== 0 && shouldSerializeTextStyles) {
     json.textFormat = textFormat;
   }
-  const textStyle = node.getSerializedTextStyle();
-  if (textStyle !== undefined && textStyle !== '') {
+  if (textStyle !== '' && shouldSerializeTextStyles) {
     json.textStyle = textStyle;
   }
   json.type = 'autolink';

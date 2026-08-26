@@ -323,55 +323,75 @@ function tableName(klass, key, suffix) {
  * subclass-override guard — the same resolution the walk makes, from the same
  * function, so a generated literal cannot describe a different node.
  *
- * @param {NodeClass} klass
- * @param {AnySchema} schema
- * @param {string} key
- * @param {'getter' | 'setter'} direction
- * @returns {undefined | null | string | import('lexical').SchemaField}
- */
-function accessor(klass, schema, key, direction) {
-  const declared = schema[direction];
-  if (declared === null) {
-    return null;
-  }
-  const named =
-    declared === undefined
-      ? direction === 'getter'
-        ? defaultGetterName(key)
-        : defaultSetterName(key)
-      : declared;
-  return isSchemaField(named) ? resolveSchemaField(klass, key, named) : named;
-}
-
-/**
- * The expression that reads one property off `node`, or `null` for a property
- * the walk does not write.
+ * Split by direction rather than taking a `'getter' | 'setter'` argument so
+ * each returns the field type that carries its own table: the getter's
+ * `decode` and the setter's `encode` are then the only one in scope, with no
+ * cast to reintroduce the other.
  *
  * @param {NodeClass} klass
  * @param {AnySchema} schema
  * @param {string} key
- * @returns {null | string}
+ * @returns {undefined | null | string | import('lexical').SchemaGetterField}
+ */
+function getterAccessor(klass, schema, key) {
+  const declared = schema.getter;
+  if (declared === null) {
+    return null;
+  }
+  const named = declared === undefined ? defaultGetterName(key) : declared;
+  return isSchemaField(named) ? resolveSchemaField(klass, key, named) : named;
+}
+
+/**
+ * The setter mirror of {@link getterAccessor}.
+ *
+ * @param {NodeClass} klass
+ * @param {AnySchema} schema
+ * @param {string} key
+ * @returns {undefined | null | string | import('lexical').SchemaSetterField}
+ */
+function setterAccessor(klass, schema, key) {
+  const declared = schema.setter;
+  if (declared === null) {
+    return null;
+  }
+  const named = declared === undefined ? defaultSetterName(key) : declared;
+  return isSchemaField(named) ? resolveSchemaField(klass, key, named) : named;
+}
+
+/**
+ * How one property is read off `node`, or `null` for a property the walk does
+ * not write. `when` names the predicate that gates it, for the caller to
+ * hoist; see {@link hoistGatedReads}.
+ *
+ * @param {NodeClass} klass
+ * @param {AnySchema} schema
+ * @param {string} key
+ * @returns {null | {expression: string, when?: string}}
  */
 function readExpression(klass, schema, key) {
-  const getter = accessor(klass, schema, key, 'getter');
+  const getter = getterAccessor(klass, schema, key);
   if (getter === null) {
     // Declared import-only, like the walk's compiled getters skip it.
     return null;
   }
   if (isSchemaField(getter)) {
-    if (getter.decode === undefined) {
-      return `node.${getter.field}`;
+    const read =
+      getter.decode === undefined
+        ? `node.${getter.field}`
+        : // The table is plain data, so it is inlined rather than imported:
+          // keeping this module free of runtime imports is what keeps it out
+          // of the cycle.
+          `${addTable(tableName(klass, key, 'DECODE'), getter.decode, false)}[node.${getter.field}]`;
+    if (getter.when === undefined) {
+      return {expression: read};
     }
-    // The table is plain data, so it is inlined rather than imported: keeping
-    // this module free of runtime imports is what keeps it out of the cycle.
-    const name = addTable(
-      tableName(klass, key, 'DECODE'),
-      getter.decode,
-      false,
-    );
-    return `${name}[node.${getter.field}]`;
+    // A conditionally-persisted property. The walk tests the default first
+    // and then calls the predicate; here the value is already in a local, and
+    // the predicate is hoisted so properties that share one call it once.
+    return {expression: read, when: getter.when};
   }
-  return `node.${getter}()`;
+  return {expression: `node.${getter}()`};
 }
 
 /**
@@ -385,17 +405,66 @@ function readExpression(klass, schema, key) {
  * accessor that does not exist.
  *
  * @param {NodeClass} klass
- * @returns {{expression: string, key: string, schema: AnySchema}[]}
+ * @returns {{expression: string, key: string, schema: AnySchema, when?: string}[]}
  */
 function schemaReads(klass) {
   const reads = [];
   for (const [key, schema] of getComposedSchema(klass).fieldsDerivedFirst) {
-    const expression = readExpression(klass, schema, key);
-    if (expression !== null) {
-      reads.push({expression, key, schema});
+    const read = readExpression(klass, schema, key);
+    if (read !== null) {
+      reads.push({...read, key, schema});
     }
   }
   return reads;
+}
+
+/**
+ * The `const` lines a class's exporters open with: one per property whose
+ * value a predicate gates (so the value is read once and compared twice), and
+ * one per predicate, which is why a predicate shared by several properties is
+ * called once rather than once each.
+ *
+ * The predicate is guarded by the same default comparisons the walk makes
+ * before calling it, so an element with nothing to persist — every element
+ * with a TextNode child — still never reaches it.
+ *
+ * @param {{expression: string, key: string, schema: AnySchema, when?: string}[]} reads
+ * @returns {{lines: string[], value: (read: {expression: string, key: string, schema: AnySchema, when?: string}) => string}}
+ */
+function hoistGatedReads(reads) {
+  // Built by hand rather than filtered, so `when` is a string in what follows.
+  /** @type {{expression: string, key: string, schema: AnySchema, when: string}[]} */
+  const gated = [];
+  for (const read of reads) {
+    if (read.when !== undefined) {
+      gated.push({...read, when: read.when});
+    }
+  }
+  if (gated.length === 0) {
+    return {lines: [], value: read => read.expression};
+  }
+  const lines = gated.map(read => `  const ${read.key} = ${read.expression};`);
+  /** @type {Map<string, string[]>} */
+  const byPredicate = new Map();
+  for (const read of gated) {
+    const differs = `${read.key} !== ${literal(read.schema.defaultValue)}`;
+    byPredicate.set(read.when, [
+      ...(byPredicate.get(read.when) || []),
+      differs,
+    ]);
+  }
+  for (const [predicate, tests] of byPredicate) {
+    lines.push(
+      `  const ${predicate} =\n    (${tests.join(' || ')}) && node.${predicate}();`,
+    );
+  }
+  return {
+    lines,
+    value: read =>
+      read.when === undefined
+        ? read.expression
+        : `${read.key} !== ${literal(read.schema.defaultValue)} && ${read.when}\n      ? ${read.key}\n      : undefined`,
+  };
 }
 
 /**
@@ -450,7 +519,13 @@ function generateCompactExport(klass) {
   const writes = [];
   /** @type {string[]} */
   const factoryKeys = [];
-  for (const {expression, key, schema} of schemaReads(klass)) {
+  const reads = schemaReads(klass);
+  // The same hoist the legacy form uses, so the two call a shared predicate
+  // exactly once each and stay byte-identical about what they omit.
+  const hoist = hoistGatedReads(
+    reads.filter(read => read.schema.setter !== null),
+  );
+  for (const {expression, key, schema, when} of reads) {
     if (schema.setter === null) {
       // Derived on import, so nothing will read it back: the compact form does
       // not even call the getter to find out what it would have written.
@@ -465,7 +540,11 @@ function generateCompactExport(klass) {
           ? ''
           : ` && ${key} !== ${literal(defaultValue)}`;
       writes.push(
-        `  const ${key} = ${expression};\n  if (${key} !== undefined${isDefault}) {\n    json.${key} = ${key};\n  }`,
+        when === undefined
+          ? `  const ${key} = ${expression};\n  if (${key} !== undefined${isDefault}) {\n    json.${key} = ${key};\n  }`
+          : // `${key}` and the predicate are already hoisted above, so this is
+            // the same test the legacy form makes, written as a statement.
+            `  if (${key} !== ${literal(defaultValue)} && ${when}) {\n    json.${key} = ${key};\n  }`,
       );
       continue;
     }
@@ -501,7 +580,7 @@ function exportCompact${klass.name}(): {[key: string]: unknown} {
   }
   const body = `${header}
 ${indent}function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
-${indent}  const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
+${hoist.lines.length === 0 ? '' : `${hoist.lines.map(l => l.replace(/^/gm, indent)).join('\n')}\n`}${indent}  const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
 ${writes.map(w => w.replace(/^/gm, indent)).join('\n')}
 ${indent}  json.type = '${type}';
 ${indent}  return json;
@@ -532,9 +611,10 @@ function generateExport(klass) {
   // An element's JSON leads with `children`, which is structural rather than
   // schema-declared: the key order below is byte-identical to the walk's.
   const isElement = isElementish(klass);
+  const hoist = hoistGatedReads(reads);
   const entries = [
     ...(isElement ? ['children: []'] : []),
-    ...reads.map(({expression, key}) => `${key}: ${expression}`),
+    ...reads.map(read => `${read.key}: ${hoist.value(read)}`),
     `type: '${type}'`,
     'version: 1',
   ];
@@ -542,7 +622,7 @@ function generateExport(klass) {
 function export${klass.name}(${
     reads.length === 0 ? '' : `node: ${klass.name}`
   }): {[key: string]: unknown} {
-  return {
+${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  return {
     ${entries.join(',\n    ')},
   };
 }`;
@@ -591,7 +671,7 @@ function writeExpression(klass, schema, key) {
     // verification compares values, so it would not notice.
     throw new NotCompilable(`"${key}" is also an Object.prototype member`);
   }
-  const setter = accessor(klass, schema, key, 'setter');
+  const setter = setterAccessor(klass, schema, key);
   if (setter === null) {
     throw new NotCompilable(`"${key}" is export-only`);
   }

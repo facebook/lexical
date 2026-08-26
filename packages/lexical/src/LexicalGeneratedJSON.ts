@@ -182,13 +182,19 @@ export const GENERATED_TEXT: GeneratedJSON = {
 
 /** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
 function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
+  const textFormat = node.__textFormat;
+  const textStyle = node.__textStyle;
+  const shouldSerializeTextStyles =
+    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
   return {
     children: [],
     direction: node.__dir,
     format: node.getFormatType(),
     indent: node.__indent,
-    textFormat: node.getSerializedTextFormat(),
-    textStyle: node.getSerializedTextStyle(),
+    textFormat:
+      textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
+    textStyle:
+      textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
     type: 'paragraph',
     version: 1,
   };
@@ -198,6 +204,10 @@ function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
 function exportCompactParagraphNode(node: ParagraphNode): {
   [key: string]: unknown;
 } {
+  const textFormat = node.__textFormat;
+  const textStyle = node.__textStyle;
+  const shouldSerializeTextStyles =
+    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
   const json: {[key: string]: unknown} = {children: []};
   const direction = node.__dir;
   if (direction !== undefined && direction !== null) {
@@ -211,12 +221,10 @@ function exportCompactParagraphNode(node: ParagraphNode): {
   if (indent !== undefined && indent !== 0) {
     json.indent = indent;
   }
-  const textFormat = node.getSerializedTextFormat();
-  if (textFormat !== undefined && textFormat !== 0) {
+  if (textFormat !== 0 && shouldSerializeTextStyles) {
     json.textFormat = textFormat;
   }
-  const textStyle = node.getSerializedTextStyle();
-  if (textStyle !== undefined && textStyle !== '') {
+  if (textStyle !== '' && shouldSerializeTextStyles) {
     json.textStyle = textStyle;
   }
   json.type = 'paragraph';

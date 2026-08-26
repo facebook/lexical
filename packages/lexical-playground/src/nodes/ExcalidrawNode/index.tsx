@@ -25,6 +25,7 @@ import {
   stringValue,
   unionValue,
   withAccessors,
+  withField,
 } from 'lexical';
 import * as React from 'react';
 
@@ -46,11 +47,16 @@ const dimensionSchema: SerializationSchema<Dimension> = unionValue(
 const excalidrawNodeSchema = objectValue({
   // '[]' is the empty-scene default the constructor uses; an absent or
   // out-of-domain `data` must not become '' (JSON.parse('') throws).
-  data: withAccessors(stringValue('[]'), {
-    getter: {
-      field: '__data',
-    },
-  }),
+  // `setData` is a bare field write, so this property *is* `__data` in both
+  // directions; naming the setter keeps a subclass that overrides it in
+  // charge. `width`/`height` below cannot be declared this way — see there.
+  data: withField(stringValue('[]'), {field: '__data', setter: 'setData'}),
+  // Not `withField`: the field holds the `'inherit'` sentinel, which has
+  // never been serialized (`width?: Dimension` is optional), so the getter
+  // maps it to `undefined` to omit the property. Reading the field directly
+  // would start writing `"width":"inherit"`. A `decode` table cannot express
+  // it either — the stored domain is open, so a table miss would omit every
+  // real width along with the sentinel.
   height: withAccessors(dimensionSchema, {getter: 'getSerializedHeight'}),
   width: withAccessors(dimensionSchema, {getter: 'getSerializedWidth'}),
 });

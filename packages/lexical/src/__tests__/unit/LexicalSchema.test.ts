@@ -429,6 +429,23 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
     test('records its members on meta', () => {
       expect(dimension.meta.kind).toBe('union');
     });
+    test('declares an equality only when a member has one to defer to', () => {
+      expect(dimension.isEqual).toBeUndefined();
+      // The case that makes this matter: transformValue does not inherit its
+      // inner's equality, so this is a union whose default is reference-typed
+      // and whose members can compare nothing. Delegating to an empty `some`
+      // would declare an equality answering false for every pair — including
+      // the default against itself — and the property would silently never
+      // compact. Reporting no equality is what lets the codegen say so.
+      const listy = unionValue([transformValue(stringValue(), s => [s])]);
+      expect(listy.defaultValue).toEqual(['']);
+      expect(listy.isEqual).toBeUndefined();
+      // A member that compares by content is still deferred to, which is what
+      // lets a union over one compact at all.
+      const tags = unionValue([arrayValue(stringValue()), enumValue(['all'])]);
+      expect(tags.isEqual).toBeInstanceOf(Function);
+      expect(isSchemaEqual(tags, ['a'], ['a'])).toBe(true);
+    });
   });
 
   describe('transformValue', () => {

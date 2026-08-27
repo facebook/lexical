@@ -914,6 +914,10 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
     }
     return undefined;
   };
+  const memberIsEqual = members.some(m => m.isEqual !== undefined)
+    ? (a: T, b: T) =>
+        members.some(m => m.isEqual !== undefined && m.isEqual(a, b))
+    : undefined;
   return makeSchema<T>(
     value => {
       if (value === undefined) {
@@ -939,7 +943,18 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
     // property could never equal its default and so could never compact, and
     // as a `createState` parse it would fall back to Object.is and dirty the
     // node on every write of an equal value.
-    (a, b) => members.some(m => m.isEqual !== undefined && m.isEqual(a, b)),
+    //
+    // Left undefined when no member has one to defer to, rather than
+    // delegating to an empty `some`. That would declare an equality answering
+    // `false` for every pair — including a value and the default it *is* — so
+    // a union whose default is reference-typed but whose members declare
+    // nothing (a `transformValue` member, which deliberately does not inherit
+    // its inner's) would silently never compact. Saying so instead is what
+    // lets a code generator report it: the codegen reads `isEqual ===
+    // undefined` as "this property cannot be compared here" and takes the
+    // class out of the compact half, where a phantom equality had it emit a
+    // comparison that never matches.
+    memberIsEqual,
     // Declared for the same reason every wrapper declares one: a union used as
     // a member of another union (or wrapped and then used) would otherwise be
     // read by the parse-inference above, which cannot see a value this

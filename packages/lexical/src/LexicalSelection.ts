@@ -54,7 +54,7 @@ import {
   type TextNode,
 } from '.';
 import {IS_FIREFOX} from './environment';
-import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {DOM_TEXT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
@@ -1617,6 +1617,7 @@ export class RangeSelection implements BaseSelection {
       alter,
       isBackward ? 'backward' : 'forward',
       granularity,
+      rootElement,
     );
     // Guard against no ranges
     if (domSelection.rangeCount > 0) {
@@ -2352,15 +2353,69 @@ function $swapPoints(selection: RangeSelection): void {
   focus.set(anchorKey, anchorOffset, anchorType, true);
 }
 
+/**
+ * True when `node` is a DOM Text node with at least one code unit on the
+ * `direction` side of `offset`, so a character-granularity caret movement in
+ * that direction must land inside the very same text node.
+ */
+function canMoveWithinDOMText(
+  node: Node | null,
+  offset: number,
+  direction: 'backward' | 'forward' | 'left' | 'right',
+): boolean {
+  if (node === null || node.nodeType !== DOM_TEXT_TYPE) {
+    return false;
+  }
+  if (direction === 'backward') {
+    return offset > 0;
+  } else if (direction === 'forward') {
+    return offset < (node as Text).length;
+  }
+  // 'left'/'right' are visual directions, so which side of the offset they
+  // consume depends on the bidi level; no caller uses them today.
+  return false;
+}
+
 function moveNativeSelection(
   domSelection: Selection,
   alter: 'move' | 'extend',
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
+  rootElement: HTMLElement | null,
 ): void {
+  // A caret that sits where a line soft-wraps has two visual positions for
+  // one DOM offset (end of the previous line, start of the next), and which
+  // one it takes is a piece of engine state that the DOM selection API does
+  // not expose. Firefox spends the first modify() call flipping between them
+  // instead of moving, which leaves the caret — and therefore a backspace
+  // measured from it — exactly where it started (#9100).
+  const points =
+    granularity === 'character'
+      ? getDOMSelectionPoints(domSelection, rootElement)
+      : null;
+  // In the light DOM these alias the live Selection, so snapshot them.
+  const focusNode = points && points.focusNode;
+  const focusOffset = points ? points.focusOffset : 0;
   // Selection.modify() method applies a change to the current selection or cursor position,
   // but is still non-standard in some browsers.
   domSelection.modify(alter, direction, granularity);
+  if (
+    points === null ||
+    !canMoveWithinDOMText(focusNode, focusOffset, direction)
+  ) {
+    return;
+  }
+  const nextPoints = getDOMSelectionPoints(domSelection, rootElement);
+  if (
+    nextPoints.focusNode === focusNode &&
+    nextPoints.focusOffset === focusOffset
+  ) {
+    // Nothing moved even though the character to cross is in this very text
+    // node, so the call was consumed by the line-affinity flip described
+    // above. Ask for the movement again; a caret that genuinely cannot move
+    // (the start or end of the document) stays put on this call too.
+    domSelection.modify(alter, direction, granularity);
+  }
 }
 
 /**
@@ -2496,6 +2551,7 @@ function $extendSelectionForDeletion(
     'move',
     isBackward ? 'backward' : 'forward',
     granularity,
+    rootElement,
   );
   if (domSelection.rangeCount === 0) {
     return;
@@ -4484,17 +4540,31 @@ function $modifySelectionAroundDecoratorsAndBlocks(
   const collapse = alter === 'move';
   let focus = initialFocus;
   let checkForBlock = mode === 'decorators-and-blocks';
+  // An isolated decorator stops the caret. Resolving that here rather than
+  // falling through to the native measurement is what makes it a defined
+  // behavior: left to the engine it was neither — Firefox stepped over the
+  // decorator while Chromium trapped the caret on the near side of it with no
+  // way past by keyboard.
+  let isolated = false;
   if (!$isExtendableTextPointCaret(focus)) {
     for (const siblingCaret of focus) {
       checkForBlock = false;
       const {origin} = siblingCaret;
-      if ($isDecoratorNode(origin) && !origin.isIsolated()) {
+      if ($isDecoratorNode(origin)) {
+        if (origin.isIsolated()) {
+          isolated = true;
+          break;
+        }
         focus = siblingCaret;
         if (isLineBoundary && origin.isInline()) {
           continue;
         }
       }
       break;
+    }
+    if (isolated) {
+      // Handled, with the selection deliberately left where it is.
+      return true;
     }
     if (checkForBlock) {
       for (const nextCaret of $extendCaretToRange(initialFocus).iterNodeCarets(

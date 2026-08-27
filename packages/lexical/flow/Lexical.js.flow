@@ -498,7 +498,8 @@ declare export class LexicalNode {
   static importJSON(serializedNode: $FlowFixMe): LexicalNode;
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
-  exportJSON(compact?: boolean): SerializedLexicalNode;
+  exportJSON(compact?: false): SerializedLexicalNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedLexicalNode>;
   updateFromJSON(serializedNode: $FlowFixMe): this;
   getType(): string;
   isAttached(): boolean;
@@ -834,7 +835,8 @@ declare export class TextNode extends LexicalNode {
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
   static importJSON(serializedTextNode: SerializedTextNode): TextNode;
-  exportJSON(compact?: boolean): SerializedTextNode;
+  exportJSON(compact?: false): SerializedTextNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedTextNode>;
 }
 export interface InlineFormattableNode {
   readonly __isInlineFormattable: true;
@@ -867,7 +869,8 @@ declare export function $isTabNode(
 declare export class TabNode extends TextNode {
   constructor(key?: NodeKey): void;
   static importJSON(serializedTabNode: SerializedTabNode): TabNode;
-  exportJSON(compact?: boolean): SerializedTabNode;
+  exportJSON(compact?: false): SerializedTabNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedTabNode>;
 }
 
 /**
@@ -883,7 +886,8 @@ declare export class LineBreakNode extends LexicalNode {
   static importJSON(
     serializedLineBreakNode: SerializedPartial<SerializedLineBreakNode>,
   ): LineBreakNode;
-  exportJSON(compact?: boolean): SerializedLexicalNode;
+  exportJSON(compact?: false): SerializedLexicalNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedLexicalNode>;
 }
 declare export function $createLineBreakNode(): LineBreakNode;
 declare export function $isLineBreakNode(
@@ -1045,7 +1049,8 @@ declare export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: LexicalNode[],
   ): this;
-  exportJSON(compact?: boolean): SerializedElementNode;
+  exportJSON(compact?: false): SerializedElementNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedElementNode>;
   getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement>;
 }
 declare export function $isElementNode(
@@ -1136,7 +1141,8 @@ declare export class ParagraphNode extends ElementNode {
   static importJSON(
     serializedParagraphNode: SerializedPartial<SerializedParagraphNode>,
   ): ParagraphNode;
-  exportJSON(compact?: boolean): SerializedElementNode;
+  exportJSON(compact?: false): SerializedElementNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedElementNode>;
 }
 declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(

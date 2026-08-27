@@ -195,7 +195,8 @@ export const quoteShadowRootState = createState('shadowRoot', {
 // schema-driven LexicalNode.exportJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface QuoteNode {
-  exportJSON(compact?: boolean): SerializedQuoteNode;
+  exportJSON(compact?: false): SerializedQuoteNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedQuoteNode>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -340,7 +341,8 @@ const headingNodeSchema = nodeSchema<HeadingNode>({
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface HeadingNode {
-  exportJSON(compact?: boolean): SerializedHeadingNode;
+  exportJSON(compact?: false): SerializedHeadingNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedHeadingNode>;
   updateFromJSON(serializedNode: LexicalParseJSON<SerializedHeadingNode>): this;
 }
 

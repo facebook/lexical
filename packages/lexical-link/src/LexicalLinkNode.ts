@@ -44,6 +44,7 @@ import {
   type PointType,
   type RangeSelection,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
   stringValue,
   withField,
@@ -103,7 +104,8 @@ const linkNodeSchema = nodeSchema<LinkNode>({
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface LinkNode {
-  exportJSON(compact?: boolean): SerializedLinkNode;
+  exportJSON(compact?: false): SerializedLinkNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedLinkNode>;
   updateFromJSON(serializedNode: LexicalParseJSON<SerializedLinkNode>): this;
 }
 
@@ -514,7 +516,8 @@ const autoLinkNodeSchema = nodeSchema<AutoLinkNode>({
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface AutoLinkNode {
-  exportJSON(compact?: boolean): SerializedAutoLinkNode;
+  exportJSON(compact?: false): SerializedAutoLinkNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedAutoLinkNode>;
   updateFromJSON(
     serializedNode: LexicalParseJSON<SerializedAutoLinkNode>,
   ): this;

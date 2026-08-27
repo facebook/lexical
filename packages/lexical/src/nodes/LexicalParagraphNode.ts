@@ -16,6 +16,7 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
+  SerializedPartial,
 } from '../LexicalNode';
 import type {RangeSelection} from '../LexicalSelection';
 
@@ -101,7 +102,9 @@ export class ParagraphNode extends ElementNode {
     };
   }
 
-  exportJSON(compact = false): SerializedParagraphNode {
+  exportJSON(compact?: false): SerializedParagraphNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedParagraphNode>;
+  exportJSON(compact = false): SerializedPartial<SerializedParagraphNode> {
     const json = super.exportJSON(compact);
     // Provide backwards compatible values, see #7971.
     if (json.textFormat === undefined || json.textStyle === undefined) {
@@ -119,7 +122,7 @@ export class ParagraphNode extends ElementNode {
         json.textStyle = textStyle;
       }
     }
-    return json as SerializedParagraphNode;
+    return json;
   }
 
   // Mutation

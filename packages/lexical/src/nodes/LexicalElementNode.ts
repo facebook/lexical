@@ -31,6 +31,7 @@ import {
   type LexicalParseJSON,
   type NodeKey,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type SlotChildNode,
   type SlotHostNode,
 } from '../LexicalNode';
@@ -174,15 +175,16 @@ function $normalizeShadowRootChildren(node: ElementNode): void {
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ElementNode {
+  exportJSON(compact?: false): SerializedElementNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedElementNode>;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedElementNode>): this;
   // Both JSON methods are narrowed here rather than overridden: the base
   // implementations already do the right thing for an element — they read
   // elementNodeSchema above, and the base export leads with `children` for
   // anything that passes $isElementNode — so all a real override would
   // contribute is this return type.
-  exportJSON(compact?: boolean): SerializedElementNode;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
-  updateFromJSON(serializedNode: LexicalParseJSON<SerializedElementNode>): this;
 }
 
 /** @noInheritDoc */

@@ -24,6 +24,7 @@ import {
   nodeSchema,
   type RangeSelection,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
 } from 'lexical';
 
@@ -44,7 +45,10 @@ type SerializedCollapsibleContainerNode = Spread<
 // schema-driven LexicalNode.exportJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface CollapsibleContainerNode {
-  exportJSON(compact?: boolean): SerializedCollapsibleContainerNode;
+  exportJSON(compact?: false): SerializedCollapsibleContainerNode;
+  exportJSON(
+    compact: boolean,
+  ): SerializedPartial<SerializedCollapsibleContainerNode>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging

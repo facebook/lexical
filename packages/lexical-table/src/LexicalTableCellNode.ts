@@ -31,6 +31,7 @@ import {
   optional,
   type ParagraphNode,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
   stringValue,
   withAccessors,
@@ -100,7 +101,8 @@ export type SerializedTableCellNode = Spread<
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TableCellNode {
-  exportJSON(compact?: boolean): SerializedTableCellNode;
+  exportJSON(compact?: false): SerializedTableCellNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedTableCellNode>;
   updateFromJSON(
     serializedNode: LexicalParseJSON<SerializedTableCellNode>,
   ): this;

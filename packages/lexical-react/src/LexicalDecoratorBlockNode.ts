@@ -18,6 +18,7 @@ import {
   type NodeKey,
   nodeSchema,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type Spread,
   withField,
 } from 'lexical';
@@ -47,7 +48,8 @@ const decoratorBlockNodeSchema = nodeSchema<DecoratorBlockNode>({
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface DecoratorBlockNode {
-  exportJSON(compact?: boolean): SerializedDecoratorBlockNode;
+  exportJSON(compact?: false): SerializedDecoratorBlockNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedDecoratorBlockNode>;
   updateFromJSON(
     serializedNode: LexicalParseJSON<SerializedDecoratorBlockNode>,
   ): this;

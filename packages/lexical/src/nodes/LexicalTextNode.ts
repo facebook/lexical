@@ -45,6 +45,7 @@ import {
   type LexicalParseJSON,
   type NodeKey,
   type SerializedLexicalNode,
+  type SerializedPartial,
 } from '../LexicalNode';
 import {$cloneNodeState} from '../LexicalNodeState';
 import {
@@ -352,10 +353,11 @@ function $wrapElementWith(
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TextNode {
-  exportJSON(compact?: boolean): SerializedTextNode;
+  exportJSON(compact?: false): SerializedTextNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedTextNode>;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedTextNode>): this;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
-  updateFromJSON(serializedNode: LexicalParseJSON<SerializedTextNode>): this;
 }
 
 export interface InlineFormattableNode {

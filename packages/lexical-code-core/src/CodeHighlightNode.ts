@@ -19,6 +19,7 @@ import {
   nullable,
   optional,
   removeClassNamesFromElement,
+  type SerializedPartial,
   type SerializedTextNode,
   type Spread,
   stringValue,
@@ -42,7 +43,8 @@ const codeHighlightNodeSchema = nodeSchema<CodeHighlightNode>({
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface CodeHighlightNode {
-  exportJSON(compact?: boolean): SerializedCodeHighlightNode;
+  exportJSON(compact?: false): SerializedCodeHighlightNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedCodeHighlightNode>;
   updateFromJSON(
     serializedNode: LexicalParseJSON<SerializedCodeHighlightNode>,
   ): this;

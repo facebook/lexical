@@ -459,6 +459,28 @@ export type GetStaticNodeOwnConfig<T extends LexicalNode> =
     : never;
 
 /**
+ * What `T.exportJSON(compact)` returns for the *legacy* form, which is the one
+ * that writes every property. The compact form omits properties and so returns
+ * the {@link SerializedPartial} of this.
+ *
+ * Matched against the whole overload set rather than read with `ReturnType`,
+ * which resolves an overloaded type to its *last* signature — the compact one,
+ * where nothing is promised. Both signatures have to appear in the pattern:
+ * matching only the first infers `never`, because an overloaded source is
+ * assignable to a single-signature target through its last overload.
+ *
+ * A node that declares one `exportJSON(compact?: boolean)` signature — a
+ * narrowing of both overloads at once, which therefore cannot distinguish
+ * them — satisfies both and matches too.
+ */
+type LexicalFullExportJSON<T extends LexicalNode> = T['exportJSON'] extends {
+  (compact?: false): infer R;
+  (compact: boolean): unknown;
+}
+  ? R
+  : ReturnType<T['exportJSON']>;
+
+/**
  * The most precise type we can infer for the JSON that will
  * be produced by T.exportJSON().
  *
@@ -466,7 +488,7 @@ export type GetStaticNodeOwnConfig<T extends LexicalNode> =
  * a more generic type to be compatible with subclassing.
  */
 export type LexicalExportJSON<T extends LexicalNode> = Prettify<
-  Omit<ReturnType<T['exportJSON']>, 'type' | 'version'> & {
+  Omit<LexicalFullExportJSON<T>, 'type' | 'version'> & {
     type: GetStaticNodeType<T>;
     /**
      * Written by `exportJSON()` so the output remains readable by older
@@ -513,31 +535,6 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
 };
 
 /**
- * The shape {@link LexicalNode.updateFromJSON} accepts for a node whose
- * serialized type is `S`: every node-specific property optional (a compact
- * export omits a default-valued one, and an older document predates a newer
- * one), with `type`, `version` and `children` dropped.
- *
- * A node that declares a serialization schema narrows both JSON methods to
- * its own serialized type by declaration merging, which is the one thing a
- * schema
- * cannot do for it — the members have to be declared on the node's own
- * interface, since inheriting them from a shared base would collide with the
- * ones it gets from its superclass rather than override them:
- *
- * ```ts
- * // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
- * export interface MarkNode {
- *   exportJSON(compact?: boolean): SerializedMarkNode;
- *   updateFromJSON(serializedNode: LexicalParseJSON<SerializedMarkNode>): this;
- * }
- * ```
- *
- * Both narrow the *type* only: the runtime implementations are the
- * schema-driven ones on {@link LexicalNode}, which such a node does not
- * override.
- */
-/**
  * The generated exporter's result for `node`, or `undefined` when the
  * schema-driven walk has to run instead.
  *
@@ -566,6 +563,38 @@ export function $generatedExportJSON(
   return json as unknown as SerializedLexicalNode;
 }
 
+/**
+ * The shape {@link LexicalNode.updateFromJSON} accepts for a node whose
+ * serialized type is `S`: every node-specific property optional (a compact
+ * export omits a default-valued one, and an older document predates a newer
+ * one), with `type`, `version` and `children` dropped.
+ *
+ * A node that declares a serialization schema narrows both JSON methods to its
+ * own serialized type by declaration merging, which is the one thing a schema
+ * cannot do for it — the members have to be declared on the node's own
+ * interface, since inheriting them (from a shared base, or via `extends` on
+ * the interface) collides with the ones it gets from its superclass rather
+ * than overriding them:
+ *
+ * ```ts
+ * // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+ * export interface MarkNode {
+ *   exportJSON(compact?: false): SerializedMarkNode;
+ *   exportJSON(compact: boolean): SerializedPartial<SerializedMarkNode>;
+ *   updateFromJSON(serializedNode: LexicalParseJSON<SerializedMarkNode>): this;
+ * }
+ * ```
+ *
+ * Export takes two signatures because the two forms have different shapes: the
+ * compact one omits every property parsing would restore, so what it returns is
+ * the {@link SerializedPartial} rather than the full type. Declaring only
+ * `exportJSON(compact?: boolean): SerializedMarkNode` compiles, and is what the
+ * compact form makes untrue.
+ *
+ * All three narrow the *type* only: the runtime implementations are the
+ * schema-driven ones on {@link LexicalNode}, which such a node does not
+ * override.
+ */
 export type LexicalParseJSON<S extends SerializedLexicalNode> =
   LexicalUpdateJSON<SerializedPartial<S>>;
 
@@ -1686,7 +1715,17 @@ export class LexicalNode {
    *   document. A node that overrides this and ignores the flag simply keeps
    *   writing the full form, which still parses.
    * */
-  exportJSON(compact = false): SerializedLexicalNode {
+  exportJSON(compact?: false): SerializedLexicalNode;
+  /**
+   * The compact form omits properties, so what it returns is the *partial*
+   * serialized type — every node-specific property optional — rather than the
+   * full one. Passing a `boolean` whose value is not statically known selects
+   * this overload too, which is right: neither form can be promised then.
+   *
+   * @see {@link SerializedPartial}
+   */
+  exportJSON(compact: boolean): SerializedPartial<SerializedLexicalNode>;
+  exportJSON(compact = false): SerializedPartial<SerializedLexicalNode> {
     const generated = $generatedExportJSON(this, compact);
     if (generated !== undefined) {
       return generated;

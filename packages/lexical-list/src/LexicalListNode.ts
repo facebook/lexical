@@ -30,6 +30,7 @@ import {
   numberValue,
   removeClassNamesFromElement,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
   transformValue,
   withAccessors,
@@ -86,7 +87,8 @@ const listNodeSchema = nodeSchema<ListNode>({
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ListNode {
-  exportJSON(compact?: boolean): SerializedListNode;
+  exportJSON(compact?: false): SerializedListNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedListNode>;
   updateFromJSON(serializedNode: LexicalParseJSON<SerializedListNode>): this;
 }
 

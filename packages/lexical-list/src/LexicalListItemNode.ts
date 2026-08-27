@@ -45,6 +45,7 @@ import {
   type RangeSelection,
   removeClassNamesFromElement,
   type SerializedElementNode,
+  type SerializedPartial,
   setDOMStyleFromCSS,
   type Spread,
   transformValue,
@@ -119,7 +120,8 @@ function applyMarkerStyles(
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ListItemNode {
-  exportJSON(compact?: boolean): SerializedListItemNode;
+  exportJSON(compact?: false): SerializedListItemNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedListItemNode>;
   updateFromJSON(
     serializedNode: LexicalParseJSON<SerializedListItemNode>,
   ): this;

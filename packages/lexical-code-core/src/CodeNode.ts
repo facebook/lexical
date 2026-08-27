@@ -36,6 +36,7 @@ import {
   type ParagraphNode,
   type RangeSelection,
   type SerializedElementNode,
+  type SerializedPartial,
   setDOMStyleFromCSS,
   type Spread,
   stringValue,
@@ -97,7 +98,8 @@ const noExtensionDeprecation = warnOnlyOnce(
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface CodeNode {
-  exportJSON(compact?: boolean): SerializedCodeNode;
+  exportJSON(compact?: false): SerializedCodeNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedCodeNode>;
   updateFromJSON(serializedNode: LexicalParseJSON<SerializedCodeNode>): this;
 }
 

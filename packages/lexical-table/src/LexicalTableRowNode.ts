@@ -23,6 +23,7 @@ import {
   numberValue,
   optional,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
   withField,
 } from 'lexical';
@@ -45,7 +46,8 @@ const tableRowNodeSchema = nodeSchema<TableRowNode>({
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TableRowNode {
-  exportJSON(compact?: boolean): SerializedTableRowNode;
+  exportJSON(compact?: false): SerializedTableRowNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedTableRowNode>;
   updateFromJSON(
     serializedNode: LexicalParseJSON<SerializedTableRowNode>,
   ): this;

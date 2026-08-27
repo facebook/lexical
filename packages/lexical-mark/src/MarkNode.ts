@@ -22,6 +22,7 @@ import {
   type RangeSelection,
   removeClassNamesFromElement,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
   stringValue,
   withAccessors,
@@ -55,7 +56,8 @@ const NO_IDS: readonly string[] = [];
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface MarkNode {
-  exportJSON(compact?: boolean): SerializedMarkNode;
+  exportJSON(compact?: false): SerializedMarkNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedMarkNode>;
   updateFromJSON(serializedNode: LexicalParseJSON<SerializedMarkNode>): this;
 }
 

@@ -19,6 +19,7 @@ import {
   createState,
   ElementNode,
   enumValue,
+  type LexicalExportJSON,
   type LexicalUpdateJSON,
   nodeSchema,
   type NodeSerializationSchema,
@@ -26,8 +27,10 @@ import {
   numberValue,
   objectValue,
   optional,
+  type ParagraphNode,
   rawValue,
   type SerializedLexicalNode,
+  type SerializedParagraphNode,
   type SerializedPartial,
   type SerializedTextNode,
   stringValue,
@@ -703,6 +706,39 @@ describe('the export and parse shapes differ only where parsing is looser', () =
         expectTypeOf(compact.version).toEqualTypeOf<number | undefined>();
         expect(compact).not.toHaveProperty('version');
         expect(node.exportJSON()).toHaveProperty('version', 1);
+      });
+    });
+
+    test('the compact form is typed as the partial it returns', () => {
+      testEnv.editor.update(() => {
+        const node = $createParagraphNode();
+        // The legacy form writes every property, so it is the full type…
+        expectTypeOf(
+          node.exportJSON(),
+        ).toEqualTypeOf<SerializedParagraphNode>();
+        expectTypeOf(
+          node.exportJSON(false),
+        ).toEqualTypeOf<SerializedParagraphNode>();
+        // …and the compact form omits them, so every one is optional. Typing
+        // it as the full shape is what let `json.indent.toFixed()` compile on
+        // a value the form had dropped.
+        expectTypeOf(node.exportJSON(true)).toEqualTypeOf<
+          SerializedPartial<SerializedParagraphNode>
+        >();
+        expectTypeOf(node.exportJSON(true).indent).toEqualTypeOf<
+          number | undefined
+        >();
+        // A flag whose value is not known statically cannot promise either
+        // form, so it resolves to the one that admits both.
+        const compact: boolean = Math.max(0, 1) > 0;
+        expectTypeOf(node.exportJSON(compact)).toEqualTypeOf<
+          SerializedPartial<SerializedParagraphNode>
+        >();
+        // LexicalExportJSON still describes the legacy form, which is the one
+        // that writes everything — it reads the first overload, not the last.
+        expectTypeOf<
+          LexicalExportJSON<ParagraphNode>['indent']
+        >().toEqualTypeOf<number>();
       });
     });
   });

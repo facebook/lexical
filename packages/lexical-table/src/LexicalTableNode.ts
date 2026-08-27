@@ -38,6 +38,7 @@ import {
   optional,
   removeClassNamesFromElement,
   type SerializedElementNode,
+  type SerializedPartial,
   setDOMStyleFromCSS,
   setDOMUnmanaged,
   type Spread,
@@ -395,7 +396,8 @@ export function setScrollableTablesActive(
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TableNode {
-  exportJSON(compact?: boolean): SerializedTableNode;
+  exportJSON(compact?: false): SerializedTableNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedTableNode>;
   updateFromJSON(serializedNode: LexicalParseJSON<SerializedTableNode>): this;
 }
 

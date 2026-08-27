@@ -75,7 +75,7 @@ const tableNodeSchema = nodeSchema<TableNode>({
   // Read straight off the field; applied through setColWidths, which freezes
   // the stored array in DEV.
   colWidths: withAccessors(optional(arrayValue(numberValue())), {
-    getter: {field: '__colWidths', method: 'getColWidths'},
+    getter: {field: '__colWidths'},
   }),
   frozenColumnCount: withAccessors(numberValue(), {
     getter: 'getSerializedFrozenColumnCount',

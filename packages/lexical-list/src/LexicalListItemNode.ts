@@ -75,7 +75,7 @@ const listItemNodeSchema = nodeSchema<ListItemNode>({
   // getChecked computes from the parent list's type, so the getter stays a
   // method; setChecked is a bare field write.
   checked: withAccessors(optional(booleanValue()), {
-    setter: {field: '__checked', method: 'setChecked'},
+    setter: {field: '__checked'},
   }),
   // Overrides the inherited ElementNode field to bound it. This indent is
   // structural — applying it nests or unwraps one whole list per level — so an

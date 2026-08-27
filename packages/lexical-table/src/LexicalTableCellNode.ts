@@ -60,10 +60,13 @@ const tableCellNodeSchema = nodeSchema<TableCellNode>({
   colSpan: withField(numberValue(1, {integer: true, min: 1}), {
     field: '__colSpan',
   }),
-  // headerState is applied through setHeaderStyles (with its default BOTH
-  // mask) rather than the conventional set<Prop> name.
+  // Neither accessor is the conventional get<Prop>/set<Prop>: headerState is
+  // read through getHeaderStyles and applied through setHeaderStyles (with its
+  // default BOTH mask). The read is still the field, standing in for the
+  // getter so a subclass that overrides it reclaims the property; the write
+  // goes through the method, which supplies that mask.
   headerState: withAccessors(numberValue(TableCellHeaderStates.NO_STATUS), {
-    getter: {field: '__headerState'},
+    getter: {field: '__headerState', method: 'getHeaderStyles'},
     setter: 'setHeaderStyles',
   }),
   rowSpan: withField(numberValue(1, {integer: true, min: 1}), {

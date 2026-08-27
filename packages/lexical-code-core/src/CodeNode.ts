@@ -64,10 +64,10 @@ const codeNodeSchema = nodeSchema<CodeNode>({
   // Read straight off the fields; applied through the setters, which
   // normalize a falsy value to undefined.
   language: withAccessors(optional(nullable(stringValue())), {
-    getter: {field: '__language', method: 'getLanguage'},
+    getter: {field: '__language'},
   }),
   theme: withAccessors(optional(stringValue()), {
-    getter: {field: '__theme', method: 'getTheme'},
+    getter: {field: '__theme'},
   }),
 });
 

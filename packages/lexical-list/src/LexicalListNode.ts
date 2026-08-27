@@ -71,7 +71,7 @@ const listNodeSchema = nodeSchema<ListNode>({
       enumValue(['number', 'bullet', 'check', 'ul', 'ol']),
       listType => TAG_TO_LIST_TYPE[listType] || listType,
     ),
-    {getter: {field: '__listType', method: 'getListType'}},
+    {getter: {field: '__listType'}},
   ),
   start: withField(numberValue(1), {
     field: '__start',
@@ -79,7 +79,7 @@ const listNodeSchema = nodeSchema<ListNode>({
   // Derived from listType rather than stored: written on export, and
   // deliberately not applied on import.
   tag: withAccessors(enumValue(['ul', 'ol']), {
-    getter: {field: '__tag', method: 'getTag'},
+    getter: {field: '__tag'},
     setter: null,
   }),
 });

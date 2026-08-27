@@ -41,7 +41,7 @@ export type SerializedDecoratorBlockNode = Spread<
 const decoratorBlockNodeSchema = nodeSchema<DecoratorBlockNode>({
   format: withField(
     enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
-    {field: '__format', getter: 'getFormat', setter: 'setFormat'},
+    {field: '__format'},
   ),
 });
 

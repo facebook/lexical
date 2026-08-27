@@ -45,11 +45,11 @@ export class TabNode extends TextNode {
       // form omit them.
       json: nodeSchema<TabNode>({
         // Read straight off the inherited fields — mode through the decode
-        // table, since it is stored as a bitmask — each naming the accessor it
-        // stands in for. All three are export-only: the values are fixed for a
-        // tab, so they are derived on import rather than applied.
+        // table, since it is stored as a bitmask. All three are export-only:
+        // the values are fixed for a tab, so they are derived on import rather
+        // than applied.
         detail: withAccessors(numberValue(IS_UNMERGEABLE), {
-          getter: {field: '__detail', method: 'getDetail'},
+          getter: {field: '__detail'},
           setter: null,
         }),
         mode: withAccessors(enumValue(['normal']), {

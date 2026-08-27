@@ -3379,7 +3379,7 @@ export interface ComposedSchema {
   readonly flatStates: readonly AnyStateConfig[];
   /**
    * The class whose `$config` declared each field's winning schema, which is
-   * where {@link SchemaField.method} is measured from: a method the declaring
+   * where {@link SchemaFieldBase.method} is measured from: a method the declaring
    * class and the node's class resolve differently is one somebody overrode in
    * between.
    */
@@ -3563,9 +3563,9 @@ interface CompactRule {
 /**
  * The mirror of {@link CompiledSetter} for the export direction: one of a
  * node's serialized properties read back through a named getter (`get<Prop>`
- * by default, or the name recorded with `withGetter`). Compiled once per class
- * so {@link LexicalNode.exportJSON} writes an object without walking the class
- * chain on every call.
+ * by default, or the name recorded with `withAccessors`). Compiled once per
+ * class so {@link LexicalNode.exportJSON} writes an object without walking the
+ * class chain on every call.
  */
 type CompiledGetter = CompactRule &
   (
@@ -3674,7 +3674,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
     // build, not only in DEV. It runs once per class at registration.
     invariant(
       typeof method === 'function',
-      '%s: serialization schema field "%s" has no getter %s(); name one with withGetter or declare {getter: null} if it is deliberately not exported',
+      '%s: serialization schema field "%s" has no getter %s(); name one with withAccessors({getter}) or declare {getter: null} if it is deliberately not exported',
       klass.name,
       key,
       getter,

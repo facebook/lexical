@@ -123,7 +123,7 @@ export type TextMarks = TextMark[];
 // wraps it — a read and a write with no method call, and none of the
 // getWritable() a set<Prop> repeats for a node updateFromJSON already holds
 // writable. Each names the accessor it stands in for, so a subclass that
-// overrides one is still the one that decides: see {@link SchemaField.method}.
+// overrides one is still the one that decides: see {@link SchemaFieldBase.method}.
 //
 // Nothing here is a transformValue, which is what lets the codegen emit a
 // specialized parser for this class: every domain is stated as data the

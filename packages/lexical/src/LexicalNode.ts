@@ -1665,7 +1665,7 @@ export class LexicalNode {
    *
    * The base implementation writes every property the node's schema declares
    * (its own and those it inherits), reading each through its getter —
-   * `get<Prop>` by default, or the name recorded with `withGetter`. A getter
+   * `get<Prop>` by default, or the name recorded with `withAccessors`. A getter
    * that returns `undefined` omits its property. Override this only for output
    * a schema can not describe, and call `super.exportJSON(compact)` when you do.
    *

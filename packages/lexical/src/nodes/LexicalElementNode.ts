@@ -113,7 +113,7 @@ const elementNodeSchema = nodeSchema<ElementNode>({
   indent: withField(numberValue(0, {integer: true, min: 0}), {
     field: '__indent',
   }),
-  // Persisted only for an element with no TextNode child (see #7971), which
+  // Persisted only for an element with no TextNode child (see #7968), which
   // `shouldSerializeTextStyles` decides. Declaring that as the field it is
   // plus the predicate that gates it — rather than reading through
   // `getSerializedTextFormat`/`getSerializedTextStyle` — keeps both on the

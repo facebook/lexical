@@ -57,21 +57,37 @@ mostly not the default:
 ```ts
 import {nodeArbitrary} from '@lexical/fast-check';
 import * as fc from 'fast-check';
-import {$create, $getNodeByKey, $getRoot, createEditor} from 'lexical';
+import {
+  $create,
+  $createParagraphNode,
+  $getNodeByKey,
+  $getRoot,
+  createEditor,
+  TextNode,
+} from 'lexical';
 
-test('a clone carries every property MyNode declares', () => {
+test('a clone carries every property TextNode declares', () => {
   fc.assert(
-    fc.property(nodeArbitrary(MyNode), props => {
-      const editor = createEditor({nodes: [MyNode], onError: e => { throw e; }});
+    fc.property(nodeArbitrary(TextNode), props => {
+      const editor = createEditor({
+        nodes: [TextNode],
+        onError: e => {
+          throw e;
+        },
+      });
       let key, before, original;
 
       // A node is only cloned *across* updates. Within one, getWritable()
       // hands back the same object, so a single-update test never reaches
       // afterCloneFrom at all.
       editor.update(() => {
-        const node = $create(MyNode);
-        node.updateFromJSON(props);
-        $getRoot().clear().append(node);
+        const node = $create(TextNode);
+        // Everything but `text` is used exactly as generated. An empty
+        // TextNode is removed by normalization between the two updates, so
+        // there would be nothing left to clone; a leaf also cannot be a child
+        // of the root, hence the paragraph.
+        node.updateFromJSON({...props, text: 'x'});
+        $getRoot().clear().append($createParagraphNode().append(node));
         [key, original, before] = [node.getKey(), node, node.exportJSON()];
       }, {discrete: true});
 
@@ -87,7 +103,7 @@ test('a clone carries every property MyNode declares', () => {
 
 When it fails, fast-check shrinks to the smallest value that exposes it, which
 names the property for you. Deleting `this.__style = prevNode.__style` from
-`TextNode.afterCloneFrom` and running this against `TextNode` reports:
+`TextNode.afterCloneFrom` reports:
 
 ```
 Counterexample: [{"style":" "}]

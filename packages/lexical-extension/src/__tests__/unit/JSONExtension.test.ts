@@ -64,7 +64,12 @@ function exportRoot(
     editor,
     JSONExtension,
   ).output;
-  return editor.read(() => $exportJSON(undefined, options).root);
+  // $exportJSON is typed as the shape both forms satisfy, since the form is
+  // the extension's configuration rather than this call's. Every case here
+  // knows which form it asked for, so the assertion is made once.
+  return editor.read(
+    () => $exportJSON(undefined, options).root,
+  ) as SerializedRootNode;
 }
 
 // The walk only ever produces elements where these are used, but serialized

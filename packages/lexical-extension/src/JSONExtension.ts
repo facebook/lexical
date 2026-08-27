@@ -8,10 +8,10 @@
 
 import {
   $withCompactExport,
+  type CompactSerializedEditorState,
   defineExtension,
   type EditorState,
   safeCast,
-  type SerializedEditorState,
 } from 'lexical';
 
 /**
@@ -47,11 +47,17 @@ export interface JSONExtensionOutput {
   /**
    * Serialize an editor state (the editor's current one by default) in the
    * form this extension is configured for.
+   *
+   * Typed as {@link CompactSerializedEditorState} whichever form that is,
+   * because the form comes from configuration the call site cannot see — so
+   * this is the shape both produce, and the legacy form satisfies it as well.
+   * Call `editorState.toJSON(compact)` directly to state the form at the call
+   * site and get back the type for it.
    */
   $exportJSON: (
     editorState?: EditorState,
     options?: ExportJSONOptions,
-  ) => SerializedEditorState;
+  ) => CompactSerializedEditorState;
   /**
    * Run `fn` with this extension's serialization context installed, so any
    * export it performs — `editorState.toJSON()`, a `@lexical/clipboard`
@@ -74,10 +80,16 @@ export interface JSONExtensionOutput {
 export const JSONExtension = defineExtension({
   build(editor, config): JSONExtensionOutput {
     return {
-      $exportJSON(editorState = editor.getEditorState(), options = {}) {
+      // Delegating rather than wrapping `editorState.toJSON()` in a compact
+      // scope: the form is an argument there now, so the return type says
+      // which shape came back instead of naming the full one either way.
+      $exportJSON(
+        editorState: EditorState = editor.getEditorState(),
+        options: ExportJSONOptions = {},
+      ): CompactSerializedEditorState {
         const compact =
           options.compact === undefined ? config.compact : options.compact;
-        return $withCompactExport(compact, () => editorState.toJSON());
+        return editorState.toJSON(compact);
       },
       $withSerialization<T>(fn: () => T): T {
         return $withCompactExport(config.compact, fn);

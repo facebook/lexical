@@ -204,3 +204,56 @@ describe('compact export: slot hosts', () => {
     }
   });
 });
+
+describe('editorState.toJSON states its form at the call site', () => {
+  const buildEditor = () =>
+    buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('hi')));
+        },
+        name: '[serialization-tojson]',
+      }),
+    );
+
+  test('an explicit form wins over the ambient one, and types as itself', () => {
+    using editor = buildEditor();
+    const state = editor.getEditorState();
+    // The legacy form writes `version`; the compact form omits it, which is
+    // the cheapest observable difference between the two.
+    expect(state.toJSON().root).toHaveProperty('version');
+    expect(state.toJSON(true).root).not.toHaveProperty('version');
+    // …including against an enclosing $withCompactExport, so both overloads
+    // are true of what they return rather than of what is ambient.
+    $withCompactExport(true, () => {
+      expect(state.toJSON(false).root).toHaveProperty('version');
+      expect(state.toJSON(true).root).not.toHaveProperty('version');
+    });
+  });
+
+  test('no argument inherits the ambient form, for a nested editor', () => {
+    // A nested editor (an image caption) is serialized by its node's
+    // exportJSON, which has no form to pass down — it has to write whatever
+    // the document containing it is writing.
+    using editor = buildEditor();
+    const state = editor.getEditorState();
+    expect(state.toJSON().root).toHaveProperty('version');
+    $withCompactExport(true, () => {
+      expect(state.toJSON().root).not.toHaveProperty('version');
+    });
+  });
+
+  test('JSON.stringify passes a key, which must not select the compact form', () => {
+    // `toJSON` is the JSON.stringify hook, and stringify invokes it with the
+    // property name the value sits under: '' at the top level, but 'state'
+    // here. A truthy test on the argument would silently write compact.
+    using editor = buildEditor();
+    const state = editor.getEditorState();
+    expect(JSON.parse(JSON.stringify({state})).state.root).toHaveProperty(
+      'version',
+    );
+    expect(JSON.parse(JSON.stringify(state)).root).toHaveProperty('version');
+  });
+});

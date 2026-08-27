@@ -452,7 +452,11 @@ export interface EditorState {
   constructor(nodeMap: NodeMap, selection?: BaseSelection | null): void;
   isEmpty(): boolean;
   read<V>(callbackFn: () => V, options?: EditorStateReadOptions): V;
-  toJSON(): SerializedEditorState;
+  // TypeScript overloads this on `compact` so the return type says which
+  // shape came back; Flow cannot overload a method across a class hierarchy
+  // (see exportJSON above), so this describes the legacy form. A Flow caller
+  // passing `true` gets a type that promises more than the value has.
+  toJSON(compact?: boolean): SerializedEditorState;
   clone(selection?: BaseSelection | null): EditorState;
 }
 type EditorStateReadOptions = {
@@ -1465,6 +1469,11 @@ export type SerializedGridCellNode = {
   ...
 };
 
+// The compact form of a document: every node written without the properties
+// parsing restores on its own.
+export interface CompactSerializedEditorState {
+  root: SerializedPartial<SerializedRootNode>;
+}
 export interface SerializedEditorState {
   root: SerializedRootNode;
 }

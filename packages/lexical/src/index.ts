@@ -185,6 +185,7 @@ export {
   getTransformSetFromKlass,
 } from './LexicalEditor';
 export type {
+  CompactSerializedEditorState,
   EditorState,
   EditorStateReadOptions,
   SerializedEditorState,

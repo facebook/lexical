@@ -24,9 +24,11 @@ let compactExport = false;
 
 /**
  * Run `f` writing the compact form of the document (or, with `false`, the
- * legacy form), for any export it performs: `editorState.toJSON()`, the
- * `@lexical/clipboard` selection export, and the nested editors those
- * serialize.
+ * legacy form), for any export it performs: the `@lexical/clipboard` selection
+ * export, a serialization walk of your own, and the nested editors those
+ * serialize. A whole document states its form at the call site instead —
+ * `editorState.toJSON(true)` — which is what lets its return type say which
+ * shape it is; this is for the walks that have no such argument to take.
  *
  * The compact form omits every property parsing would restore anyway — one
  * whose value is its schema default, one the parser derives rather than reads,
@@ -40,7 +42,7 @@ let compactExport = false;
  *
  * @example
  * ```ts
- * const compactJSON = $withCompactExport(true, () => editorState.toJSON());
+ * const selectionJSON = $withCompactExport(true, () => $generateJSONFromSelection());
  * ```
  *
  * @experimental

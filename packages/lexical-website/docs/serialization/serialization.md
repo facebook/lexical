@@ -686,7 +686,7 @@ declaration powers both parsing and example generation in tests.
 ### Compact JSON
 
 By default `exportJSON` writes every property, producing the historical
-("legacy") format, and a bare `editorState.toJSON()` always does — existing
+("legacy") format, and a bare `editorState.toJSON()` does too — existing
 persistence pipelines are unaffected until you opt in. With schemas declared,
 Lexical can also write a *compact* form, which omits:
 
@@ -694,6 +694,14 @@ Lexical can also write a *compact* form, which omits:
 - any property the parser derives rather than reads (declared `{setter: null}`,
   such as `ListNode`'s `tag`),
 - the deprecated `version` property.
+
+A whole document is written in the compact form by asking for it at the call
+site, `editorState.toJSON(true)`, which is also what lets its return type say
+which of the two shapes came back: the compact form omits properties, so it is
+typed as `CompactSerializedEditorState` rather than `SerializedEditorState`.
+Calling `toJSON()` with no argument writes the form of an enclosing
+`$withCompactExport`, which is what keeps a nested editor (an image caption) in
+the same form as the document containing it.
 
 Parsing restores each, so both forms describe the same document. Compaction
 happens as the properties are written rather than as a pass over the finished
@@ -749,9 +757,15 @@ The extension's output provides:
   overrides the configured `compact` for that one call, e.g. to explicitly
   produce the legacy format for a consumer that still requires it.
 - `$withSerialization(fn)` — run `fn` with the configured serialization
-  context installed, so JSON exports the extension does not own — an
-  `editorState.toJSON()` call, or the `@lexical/clipboard` selection export
+  context installed, so JSON exports the extension does not own — a nested
+  editor's `editorState.toJSON()`, or the `@lexical/clipboard` selection export
   inside a copy handler — also honor the configuration.
+
+`$exportJSON` is typed as `CompactSerializedEditorState` whichever form it
+produces, because the form is the extension's configuration and the call site
+cannot see it; the legacy form satisfies that shape as well. Call
+`editorState.toJSON(compact)` directly when you want the type for the form you
+asked for.
 
 ### Generated serialization code
 

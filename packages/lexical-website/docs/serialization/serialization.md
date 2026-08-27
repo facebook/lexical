@@ -793,6 +793,34 @@ are working on Lexical itself, see
 [the generated JSON code](/docs/maintainers-guide#pnpm-run-generate-node-json)
 in the maintainers' guide.
 
+### `exportJSON` serializes the version it is called on
+
+One behavior changed when properties became schema declarations, and it affects
+code that calls `exportJSON` directly.
+
+A property declared with `withField` is read straight off the node. That is the
+optimization the serialization walk is built on — every node the walk reaches
+comes from the `EditorState`'s node map and is already the current version, so
+the walk resolves nothing per node. Previously each property went through its
+accessor, and every accessor resolves `getLatest()`, so a stale node reference
+still exported current values.
+
+It no longer does. If you hold a reference that a `getWritable()` — that is,
+any `set<Property>` call — has since superseded, `exportJSON()` on it writes
+the pre-mutation values:
+
+```ts
+const stale = node;
+node.setStyle('color: red');   // clones; `stale` is now a previous version
+stale.exportJSON();            // ← the old style
+stale.getLatest().exportJSON(); // ← the new one
+```
+
+Call `getLatest()` first when you hold such a reference. Nothing inside Lexical
+does: the walk, the `@lexical/clipboard` selection export and
+`editorState.toJSON()` all start from the node map. This matters only for a
+node reference you kept across a mutation and then exported by hand.
+
 ### Versioning & Breaking Changes
 
 It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. Lexical's own `version` property is deprecated and no longer the way to do this — it is optional in both directions, nothing reads it, and the reason it does not work is explained under [Dangers of a flat version property](#dangers-of-a-flat-version-property). Evolve your serialized type additively instead, and give each new property a default its parser can fall back to. Here's the serialized type definition for Lexical's base `TextNode` class:

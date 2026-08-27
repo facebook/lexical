@@ -139,12 +139,12 @@ function $getFontSizeInputValue(): string {
  * The output exposes an `isLinkEditMode` signal that the link shortcut
  * sets, consumed by the floating link editor UI.
  */
-export const ShortcutsExtension = /* @__PURE__ */ defineExtension({
+export const ShortcutsExtension = defineExtension({
   build() {
     return {isLinkEditMode: /* @__PURE__ */ signal(false)};
   },
   dependencies: [
-    /* @__PURE__ */ configExtension(KeyboardShortcutsExtension, {
+    configExtension(KeyboardShortcutsExtension, {
       shortcuts: /* @__PURE__ */ buildShortcuts(),
     }),
   ],

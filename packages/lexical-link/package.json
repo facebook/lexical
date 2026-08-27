@@ -12,6 +12,7 @@
   "main": "./dist/LexicalLink.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
+    "@lexical/a11y": "workspace:*",
     "@lexical/extension": "workspace:*",
     "@lexical/html": "workspace:*",
     "@lexical/internal": "workspace:*",

@@ -254,11 +254,11 @@ function mergeNamedShortcuts(
  * overriding names are also matched first, ahead of the names they did not
  * override, when more than one shortcut matches the same keypress.
  */
-export const KeyboardShortcutsExtension = /* @__PURE__ */ defineExtension({
+export const KeyboardShortcutsExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: /* @__PURE__ */ safeCast<KeyboardShortcutsConfig>({
+  config: safeCast<KeyboardShortcutsConfig>({
     disabled: false,
     priority: COMMAND_PRIORITY_NORMAL,
     shortcuts: {},

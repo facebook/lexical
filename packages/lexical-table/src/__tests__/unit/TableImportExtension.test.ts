@@ -132,6 +132,7 @@ describe('TableImportExtension', () => {
       defineExtension({
         dependencies: [TableImportExtension],
         name: 'table-alias-host',
+        theme: {tableScrollableWrapper: ''},
       }),
     );
     importInto(editor, '<table><tr><td>a</td></tr></table>');

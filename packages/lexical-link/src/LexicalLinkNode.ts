@@ -37,8 +37,8 @@ import {
   type LexicalNode,
   type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
   nullable,
-  objectValue,
   type Point,
   type PointCaret,
   type PointType,
@@ -78,7 +78,7 @@ const SUPPORTED_URL_PROTOCOLS = new Set([
   'tel:',
 ]);
 
-const linkNodeSchema = objectValue({
+const linkNodeSchema = nodeSchema<LinkNode>({
   // defaultAsNull preserves the legacy `value || null` semantics: an empty
   // string (or junk that coerces to it) imports as null, not ''.
   // Every property *is* its node field in both directions — each accessor is
@@ -502,7 +502,7 @@ export type SerializedAutoLinkNode = Spread<
   SerializedLinkNode
 >;
 
-const autoLinkNodeSchema = objectValue({
+const autoLinkNodeSchema = nodeSchema<AutoLinkNode>({
   // The property *is* the field in both directions — both accessors are bare —
   // so it is declared as the field it is. The conventional
   // getIsUnlinked/setIsUnlinked are still deferred to, so a subclass that

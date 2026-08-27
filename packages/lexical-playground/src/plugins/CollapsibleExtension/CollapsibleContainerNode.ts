@@ -21,7 +21,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
-  objectValue,
+  nodeSchema,
   type RangeSelection,
   type SerializedElementNode,
   type Spread,
@@ -29,7 +29,7 @@ import {
 
 import {setDomHiddenUntilFound} from './CollapsibleUtils';
 
-const collapsibleContainerNodeSchema = objectValue({
+const collapsibleContainerNodeSchema = nodeSchema<CollapsibleContainerNode>({
   open: booleanValue(),
 });
 

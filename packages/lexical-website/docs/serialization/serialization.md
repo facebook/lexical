@@ -514,8 +514,8 @@ import {
   $getDocument,
   ElementNode,
   enumValue,
+  nodeSchema,
   numberValue,
-  objectValue,
 } from 'lexical';
 
 class CounterNode extends ElementNode {
@@ -541,7 +541,7 @@ class CounterNode extends ElementNode {
   $config() {
     return this.config('counter', {
       extends: ElementNode,
-      json: objectValue({
+      json: nodeSchema<CounterNode>({
         count: numberValue(),
         variant: enumValue(['a', 'b']),
       }),
@@ -587,7 +587,8 @@ Each property's schema is built from composable helpers exported by
 - [`transformValue(inner, transform, {isEqual}?)`](/docs/api/modules/lexical#transformvalue) — normalizes what `inner` parsed into the stored domain; introspection still describes `inner`'s accepted input domain. `inner`'s `isEqual` is not inherited, since the transformed domain may be a different type entirely — pass one when the output domain is reference-typed
 - [`aliasedValue(inner, aliases)`](/docs/api/modules/lexical#aliasedvalue) — a lookup-table normalization: a string matching a key of `aliases` yields the value it names, and anything else is `inner`'s to validate, so the domain, the default and the equality all stay `inner`'s. This is `transformValue` narrowed to the case where the normalization is a lookup, and the reason to prefer it is that the lookup is *data*: it is part of the schema's introspectable `meta`, where tooling can see it — example generation produces the legacy spellings, and a code generator can compile the table instead of being unable to see inside a function. `TextNode` declares its legacy `format: 'bold'` and `detail: 'directionless'` shorthands this way
 - [`rawValue()`](/docs/api/modules/lexical#rawvalue) — an escape hatch that passes the value through unparsed
-- [`objectValue(fields)`](/docs/api/modules/lexical#objectvalue) — the record of properties, used for the `json` declaration itself
+- [`nodeSchema<MyNode>(fields)`](/docs/api/modules/lexical#nodeschema) — the record of properties, and what `$config`'s `json` takes. The one type argument names the node, which is what lets every `field`, accessor and `when` predicate be checked against it: a name the node does not have is a compile error at the property that declares it, with the correction suggested (`Type '"__langauge"' is not assignable to type 'MemberOf<CodeNode>'. Did you mean '"__language"'?`). Declaring the schema above the class it names is fine — a class's *type* is in scope before its definition
+- [`objectValue(fields)`](/docs/api/modules/lexical#objectvalue) — the same record without the node check, for a property whose value is itself an object. A node's own schema should use `nodeSchema`, and `$config` requires it
 - [`withAccessors(schema, {getter, setter})`](/docs/api/modules/lexical#withaccessors) — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose
 - [`withField(schema, {field, getter?, setter?, decode?, encode?})`](/docs/api/modules/lexical#withfield) — declare that the property *is* a node field, rather than a pair of accessor methods. Exporting reads the field and importing assigns it, with no method call on either side and no version resolution in either direction — the node being parsed into is already writable, and the node being exported is one the walk already resolved from the EditorState — so this is the fast path for a property stored verbatim. Because the schema records the field rather than a bare name, tooling can tell a field from a method without knowing how a node names its fields — enough for a codegen pass to emit a specialized parser for a hot node type. Each direction still *stands in for* an accessor: any class that overrides it between the declaring class and the node's own has said the field and the method are not equivalent, and it wins — the field access is abandoned and the method is called, so migrating a property to a field is not a behavior change for anyone who overrode its accessor. That accessor is the conventional `get<Prop>`/`set<Prop>` unless `getter`/`setter` name a different one, so most declarations need neither: name one only where the accessor is spelled differently, as `TextNode`'s `text` is (`getTextContent`) and `LinkNode`'s `url` is (`getURL`). A node with no such method defers to nothing, which needs no declaring either. `decode`/`encode` are lookup tables between the stored and serialized forms (`TextNode` stores `mode` as a number and serializes it as a name), keeping such a property on the direct-field path without an accessor method in between. The two directions can also be declared separately with `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})`, which reads the field directly but writes through a method that normalizes.
 

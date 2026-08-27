@@ -11,6 +11,15 @@ import invariant from '@lexical/internal/invariant';
 const __DEV__ = process.env.NODE_ENV !== 'production';
 
 /**
+ * The key of {@link SerializationSchema}'s phantom `Names` member. Declared
+ * rather than defined: it exists only in the type system, so no value is ever
+ * created and nothing is emitted for it.
+ *
+ * @internal
+ */
+declare const NAMES: unique symbol;
+
+/**
  * A function that validates an untrusted `value` (such as a property parsed
  * from JSON) and coerces it into the expected type `T`, returning a default
  * value when `value` is not in the expected domain.
@@ -87,8 +96,22 @@ export interface NumberValueOptions {
  * {@link booleanValue}, {@link enumValue}, {@link nullable}, and composed into
  * whole-object (node) schemas with {@link objectValue}.
  */
-export interface SerializationSchema<T> {
+export interface SerializationSchema<T, Names extends string = never> {
   (value: unknown): T;
+  /**
+   * Every node member this schema's declarations name — each `field`, each
+   * accessor `method`, each `when` predicate — carried in the type so that
+   * `$config` can check them against the node they are declared for. Erased at
+   * runtime: nothing reads it, and no combinator assigns it.
+   *
+   * Defaults to `never` — a schema that names nothing constrains nothing, and
+   * `never` satisfies every checked position — so `SerializationSchema<T>`
+   * still means what it always did and a plain `stringValue()` needs no node
+   * to be declared against.
+   *
+   * @internal
+   */
+  readonly [NAMES]?: Names;
   /** The value returned for an out-of-domain input, i.e. `schema(undefined)`. */
   readonly defaultValue: T;
   /** An introspectable description of this schema's domain. */
@@ -155,7 +178,7 @@ export interface SerializationSchema<T> {
  * @internal
  */
 export function isSchemaEqual<T>(
-  schema: SerializationSchema<T>,
+  schema: SerializationSchema<T, string>,
   a: T,
   b: T,
 ): boolean {
@@ -170,7 +193,7 @@ export function isSchemaEqual<T>(
  * @internal
  */
 export function isSchemaDefault<T>(
-  schema: SerializationSchema<T>,
+  schema: SerializationSchema<T, string>,
   value: T,
 ): boolean {
   return isSchemaEqual(schema, value, schema.defaultValue);
@@ -205,6 +228,15 @@ export interface SchemaFieldBase {
 
 /** A node field read directly on export. */
 export interface SchemaGetterField extends SchemaFieldBase {
+  /**
+   * Declared as `never` rather than left out: an excess property is only
+   * rejected for a fresh object literal, and these accessors are captured by
+   * an inferred type parameter (so the schema can carry the names it
+   * declares), which is not fresh. Stating the wrong direction's table as
+   * `never` rejects it by assignability instead, which inference cannot
+   * launder away.
+   */
+  readonly encode?: never;
   /**
    * The name of a node predicate that decides whether this property is written
    * at all. Naming it keeps the property on the direct-field path: without it,
@@ -243,6 +275,14 @@ export interface SchemaGetterField extends SchemaFieldBase {
 
 /** A node field written directly on import. */
 export interface SchemaSetterField extends SchemaFieldBase {
+  /** @see {@link SchemaGetterField.encode} for why this is `never`. */
+  readonly decode?: never;
+  /**
+   * A predicate gates the export direction only, so naming one here is the
+   * same mistake as naming the wrong table; see
+   * {@link SchemaGetterField.encode}.
+   */
+  readonly when?: never;
   /**
    * A lookup table from the serialized value to the stored one — the inverse of
    * {@link SchemaGetterField.decode}, for the import direction. The parsed
@@ -310,6 +350,53 @@ export interface SchemaAccessors {
 }
 
 /**
+ * Every member of `N` a schema may name: its own fields (`__`-prefixed by
+ * convention, which is what makes them distinguishable) and its methods, which
+ * covers accessors and `when` predicates alike.
+ *
+ * This is what `$config` checks a node's schema against, so a `field`,
+ * `getter`, `setter` or `when` naming something the node does not have is a
+ * compile error at the declaration rather than a property that silently stops
+ * round-tripping.
+ */
+export type MemberOf<N> = Extract<
+  | Extract<keyof N, `__${string}`>
+  | {
+      [K in keyof N]-?: N[K] extends (...args: never[]) => unknown ? K : never;
+    }[keyof N],
+  string
+>;
+
+/** The node member an accessor names, if it names one. */
+type AccessorName<A> = A extends {readonly field: infer F extends string}
+  ?
+      | F
+      | (A extends {readonly method: infer M extends string} ? M : never)
+      | (A extends {readonly when: infer W extends string} ? W : never)
+  : A extends string
+    ? A
+    : never;
+
+/** Both directions of a {@link SchemaAccessors}. */
+type AccessorNames<A> =
+  | (A extends {readonly getter: infer G} ? AccessorName<G> : never)
+  | (A extends {readonly setter: infer S} ? AccessorName<S> : never);
+
+/** Every name a {@link FieldOptions} declares, across both directions. */
+type FieldOptionNames<F> =
+  | (F extends {readonly field: infer N extends string} ? N : never)
+  | (F extends {readonly getter: infer G extends string} ? G : never)
+  | (F extends {readonly setter: infer S extends string} ? S : never)
+  | (F extends {readonly when: infer W extends string} ? W : never);
+
+/** Every name the schemas of an {@link objectValue} shape declare. */
+type ShapeNames<S> = {[K in keyof S]: NamesOf<S[K]>}[keyof S];
+
+/** The members a schema's declarations name; see {@link MemberOf}. */
+export type NamesOf<S> =
+  S extends SerializationSchema<unknown, infer Names> ? Names : never;
+
+/**
  * Whether an accessor names a node field rather than a method.
  *
  * Generic in the field type so it narrows to the direction it was handed:
@@ -323,11 +410,11 @@ export function isSchemaField<T extends SchemaFieldBase>(
 }
 
 /** A {@link SerializationSchema} for an unknown type, used where the type is not relevant. */
-export type AnySerializationSchema = SerializationSchema<unknown>;
+export type AnySerializationSchema = SerializationSchema<unknown, string>;
 
 /** The value type a {@link SerializationSchema} parses to. */
 export type SerializationSchemaValue<S> =
-  S extends SerializationSchema<infer T> ? T : never;
+  S extends SerializationSchema<infer T, string> ? T : never;
 
 /** A record of named {@link SerializationSchema}s, as used by {@link objectValue}. */
 export type SerializationSchemaFields = {
@@ -339,7 +426,7 @@ export type SerializationSchemaShape<T> = {
   readonly [K in keyof T]-?: SerializationSchema<T[K]>;
 };
 
-function makeSchema<T>(
+function makeSchema<T, Names extends string = never>(
   parse: Parse<T>,
   meta: SerializationSchemaMeta,
   accessors: SchemaAccessors = {},
@@ -350,7 +437,7 @@ function makeSchema<T>(
   defaultValue?: T,
   isEqual?: (a: T, b: T) => boolean,
   accepts?: (value: unknown) => boolean,
-): SerializationSchema<T> {
+): SerializationSchema<T, Names> {
   const derived = defaultValue === undefined;
   const resolved: T = derived ? parse(undefined) : defaultValue;
   if (derived) {
@@ -361,6 +448,8 @@ function makeSchema<T>(
     // Only a default this call derived: one the caller passed in is theirs.
     deepFreeze(resolved);
   }
+  // The cast is the phantom: `Names` has no runtime member to assign, which
+  // is the whole point of carrying it in the type alone.
   return Object.assign(parse, {
     accepts,
     defaultValue: resolved,
@@ -368,7 +457,7 @@ function makeSchema<T>(
     isEqual,
     meta,
     setter: accessors.setter,
-  });
+  }) as SerializationSchema<T, Names>;
 }
 
 /**
@@ -405,7 +494,7 @@ function isRecord(value: unknown): value is {readonly [key: string]: unknown} {
  * two describe the same property, and identity already answers the nil cases.
  */
 function liftIsEqual<T>(
-  inner: SerializationSchema<T>,
+  inner: SerializationSchema<T, string>,
 ): undefined | ((a: T | null | undefined, b: T | null | undefined) => boolean) {
   const {isEqual} = inner;
   return isEqual === undefined
@@ -428,7 +517,7 @@ function liftIsEqual<T>(
  * fallback `0`, where the unwrapped member correctly declines it.
  */
 function liftAccepts<T>(
-  inner: SerializationSchema<T>,
+  inner: SerializationSchema<T, string>,
   isNil: (value: unknown) => boolean,
 ): undefined | ((value: unknown) => boolean) {
   const {accepts} = inner;
@@ -635,10 +724,10 @@ export function enumValue<const T>(
  * ```
  * @__NO_SIDE_EFFECTS__
  */
-export function nullable<T>(
-  inner: SerializationSchema<T>,
+export function nullable<T, Names extends string = never>(
+  inner: SerializationSchema<T, Names>,
   options: {readonly defaultAsNull?: boolean} = {},
-): SerializationSchema<T | null> {
+): SerializationSchema<T | null, Names> {
   const {defaultAsNull} = options;
   return makeSchema(
     value => {
@@ -687,10 +776,10 @@ export function nullable<T>(
  * ```
  * @__NO_SIDE_EFFECTS__
  */
-export function optional<T>(
-  inner: SerializationSchema<T>,
+export function optional<T, Names extends string = never>(
+  inner: SerializationSchema<T, Names>,
   options: {readonly omitDefault?: boolean} = {},
-): SerializationSchema<T | undefined> {
+): SerializationSchema<T | undefined, Names> {
   const {omitDefault} = options;
   return makeSchema(
     value => {
@@ -754,7 +843,10 @@ export function optional<T>(
 export function unionValue<const M extends readonly AnySerializationSchema[]>(
   members: M,
   defaultValue?: SerializationSchemaValue<M[number]>,
-): SerializationSchema<SerializationSchemaValue<M[number]>> {
+): SerializationSchema<
+  SerializationSchemaValue<M[number]>,
+  NamesOf<M[number]>
+> {
   type T = SerializationSchemaValue<M[number]>;
   invariant(
     members.length > 0,
@@ -852,6 +944,53 @@ function unionAccessors(
 }
 
 /**
+ * A serialization schema with no outstanding names — every `field`, accessor
+ * and predicate it declares has been checked against a node, which is what
+ * {@link nodeSchema} does and reports by discharging them.
+ *
+ * `$config`'s `json` asks for this, so a schema that names anything has to be
+ * built with {@link nodeSchema} and cannot reach a node unchecked.
+ */
+export type NodeSerializationSchema = SerializationSchema<unknown, never>;
+
+/**
+ * A node's serialization schema, checked against the node it is for.
+ *
+ * The same shape {@link objectValue} takes, with one type argument naming the
+ * node — which is what lets every `field`, accessor `method` and `when`
+ * predicate be verified to exist. A name the node does not have is a compile
+ * error at the property that declares it, with the correction suggested:
+ *
+ * ```ts
+ * const codeNodeSchema = nodeSchema<CodeNode>({
+ *   language: withField(optional(nullable(stringValue())), {
+ *     field: '__langauge',
+ *   }),
+ * });
+ * //          ~~~~~~~~~~~~
+ * // Type '"__langauge"' is not assignable to type 'MemberOf<CodeNode>'.
+ * //   Did you mean '"__language"'?
+ * ```
+ *
+ * Declaring the schema above the class it names is fine and is what every
+ * node does: a class's *type* is in scope before its definition.
+ *
+ * The result reports no outstanding names, which is what `$config`'s `json`
+ * requires — so a schema that names anything has to come through here, and the
+ * check cannot be skipped by declaring the properties some other way.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+export function nodeSchema<N>(fields: {
+  readonly [key: string]: SerializationSchema<unknown, MemberOf<N>>;
+}): SerializationSchema<{readonly [key: string]: unknown}, never> {
+  return objectValue(fields) as SerializationSchema<
+    {readonly [key: string]: unknown},
+    never
+  >;
+}
+
+/**
  * Combinator for a value that older documents may spell as one of a fixed set
  * of names — TextNode's `format: 'bold'` for the numeric bit it stands for.
  * A string matching one of `aliases` yields the value it names; anything else
@@ -878,10 +1017,10 @@ function unionAccessors(
  * ```
  * @__NO_SIDE_EFFECTS__
  */
-export function aliasedValue<T>(
-  inner: SerializationSchema<T>,
+export function aliasedValue<T, Names extends string = never>(
+  inner: SerializationSchema<T, Names>,
   aliases: {readonly [alias: string]: T},
-): SerializationSchema<T> {
+): SerializationSchema<T, Names> {
   // hasOwnKey, not `alias in aliases` or a bare lookup: `aliases` is a plain
   // object literal, so an untrusted `'toString'` would otherwise resolve to
   // Object.prototype's method and be stored as this property's value.
@@ -947,11 +1086,11 @@ export function aliasedValue<T>(
  * ```
  * @__NO_SIDE_EFFECTS__
  */
-export function transformValue<In, Out>(
-  inner: SerializationSchema<In>,
+export function transformValue<In, Out, Names extends string = never>(
+  inner: SerializationSchema<In, Names>,
   transform: (value: In) => Out,
   options: {readonly isEqual?: (a: Out, b: Out) => boolean} = {},
-): SerializationSchema<Out> {
+): SerializationSchema<Out, Names> {
   return makeSchema(
     value => transform(inner(value)),
     inner.meta,
@@ -1001,7 +1140,7 @@ export function rawValue<T>(): SerializationSchema<T | undefined> {
  * @__NO_SIDE_EFFECTS__
  */
 export function arrayValue<T>(
-  item: SerializationSchema<T>,
+  item: SerializationSchema<T, string>,
 ): SerializationSchema<T[]> {
   return makeSchema(
     value => {
@@ -1066,9 +1205,12 @@ export function arrayValue<T>(
  * ```
  * @__NO_SIDE_EFFECTS__
  */
-export function objectValue<T extends {readonly [key: string]: unknown}>(
-  fields: SerializationSchemaShape<T>,
-): SerializationSchema<T> {
+export function objectValue<const S extends SerializationSchemaFields>(
+  fields: S,
+): SerializationSchema<
+  {[K in keyof S]: SerializationSchemaValue<S[K]>},
+  ShapeNames<S>
+> {
   const entries = Object.entries(fields) as [string, AnySerializationSchema][];
   if (__DEV__) {
     for (const [key] of entries) {
@@ -1090,7 +1232,7 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
         const [key, schema] = entries[i];
         result[key] = schema(hasOwnKey(source, key) ? source[key] : undefined);
       }
-      return result as T;
+      return result as {[K in keyof S]: SerializationSchemaValue<S[K]>};
     },
     {fields: fields as SerializationSchemaFields, kind: 'object'},
     undefined,
@@ -1155,17 +1297,24 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
  * ```
  * @__NO_SIDE_EFFECTS__
  */
-export function withField<T>(
-  schema: SerializationSchema<T>,
-  field: FieldOptions,
-): SerializationSchema<T> {
+export function withField<
+  T,
+  const F extends FieldOptions,
+  Names extends string = never,
+>(
+  schema: SerializationSchema<T, Names>,
+  field: F,
+): SerializationSchema<T, Names | FieldOptionNames<F>> {
   // `decode`/`encode` and the two method names are each one direction's, so
   // the single options object is split into the two accessors here rather
   // than making every caller write both out.
+  // The two accessor objects are built here rather than written by the
+  // caller, so the names can only be recovered from `F` — which the return
+  // type does. The runtime value is exactly what withAccessors produced.
   return withAccessors(schema, {
     getter: {decode: field.decode, field: field.field, method: field.getter},
     setter: {encode: field.encode, field: field.field, method: field.setter},
-  });
+  }) as SerializationSchema<T, Names | FieldOptionNames<F>>;
 }
 
 /**
@@ -1185,11 +1334,15 @@ export function withField<T>(
  * ```
  * @__NO_SIDE_EFFECTS__
  */
-export function withAccessors<T>(
-  schema: SerializationSchema<T>,
-  accessors: SchemaAccessors,
-): SerializationSchema<T> {
-  return makeSchema(
+export function withAccessors<
+  T,
+  const A extends SchemaAccessors,
+  Names extends string = never,
+>(
+  schema: SerializationSchema<T, Names>,
+  accessors: A,
+): SerializationSchema<T, Names | AccessorNames<A>> {
+  return makeSchema<T, Names | AccessorNames<A>>(
     value => schema(value),
     schema.meta,
     {

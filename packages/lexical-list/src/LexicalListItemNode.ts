@@ -37,9 +37,9 @@ import {
   type LexicalNode,
   type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
   normalizeClassNames,
   numberValue,
-  objectValue,
   optional,
   type ParagraphNode,
   type RangeSelection,
@@ -71,7 +71,7 @@ export type SerializedListItemNode = Spread<
  */
 const MAX_LIST_ITEM_INDENT = 128;
 
-const listItemNodeSchema = objectValue({
+const listItemNodeSchema = nodeSchema<ListItemNode>({
   // getChecked computes from the parent list's type, so the getter stays a
   // method; setChecked is a bare field write.
   checked: withAccessors(optional(booleanValue()), {

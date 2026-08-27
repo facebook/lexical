@@ -25,9 +25,9 @@ import {
   type LexicalNode,
   type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
   nullable,
   numberValue,
-  objectValue,
   optional,
   type ParagraphNode,
   type SerializedElementNode,
@@ -49,7 +49,7 @@ export const TableCellHeaderStates = {
 export type TableCellHeaderState =
   (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates];
 
-const tableCellNodeSchema = objectValue({
+const tableCellNodeSchema = nodeSchema<TableCellNode>({
   // defaultAsNull preserves the legacy `backgroundColor || null` semantics:
   // an empty string means "no background", which exportDOM checks for.
   backgroundColor: withField(nullable(stringValue(), {defaultAsNull: true}), {

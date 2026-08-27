@@ -18,7 +18,7 @@ import {
   type LexicalNode,
   type LexicalParseJSON,
   type NodeKey,
-  objectValue,
+  nodeSchema,
   type RangeSelection,
   removeClassNamesFromElement,
   type SerializedElementNode,
@@ -47,7 +47,7 @@ const idsSchema = withAccessors(arrayValue(stringValue()), {
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedMarkNode (those it adds over a SerializedElementNode).
-const markNodeSchema = objectValue({ids: idsSchema});
+const markNodeSchema = nodeSchema<MarkNode>({ids: idsSchema});
 
 const generatedMarkNode = createGeneratedMarkNode({ids: idsSchema});
 

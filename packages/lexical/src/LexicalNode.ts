@@ -38,7 +38,7 @@ import {
   type RequiredNodeStateConfig,
 } from './LexicalNodeState';
 import {CACHED_TEXT_SIZE_KEY} from './LexicalReconciler';
-import {type AnySerializationSchema} from './LexicalSchema';
+import {type NodeSerializationSchema} from './LexicalSchema';
 import {
   $getSelection,
   $isNodeSelection,
@@ -234,7 +234,7 @@ export interface StaticNodeConfigValue<
    * It is named `json` rather than `schema` to avoid ambiguity with other kinds
    * of node schema (e.g. a schema of allowed children).
    */
-  readonly json?: AnySerializationSchema;
+  readonly json?: NodeSerializationSchema;
   /**
    * @internal
    *

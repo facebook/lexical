@@ -15,8 +15,8 @@ import {IS_UNMERGEABLE, TEXT_TYPE_TO_MODE} from '../LexicalConstants';
 import {GENERATED_TAB} from '../LexicalGeneratedJSON';
 import {
   enumValue,
+  nodeSchema,
   numberValue,
-  objectValue,
   stringValue,
   withAccessors,
 } from '../LexicalSchema';
@@ -43,7 +43,7 @@ export class TabNode extends TextNode {
       // both keeps a hand-authored or foreign `{detail: 0}` / `{mode:
       // 'token'}` from reaching a setter that throws, and lets the compact
       // form omit them.
-      json: objectValue({
+      json: nodeSchema<TabNode>({
         // Read straight off the inherited fields — mode through the decode
         // table, since it is stored as a bitmask — each naming the accessor it
         // stands in for. All three are export-only: the values are fixed for a

@@ -33,8 +33,8 @@ import {
   type LexicalNode,
   type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
   numberValue,
-  objectValue,
   optional,
   removeClassNamesFromElement,
   type SerializedElementNode,
@@ -71,7 +71,7 @@ export type SerializedTableNode = Spread<
   SerializedElementNode
 >;
 
-const tableNodeSchema = objectValue({
+const tableNodeSchema = nodeSchema<TableNode>({
   // Read straight off the field; applied through setColWidths, which freezes
   // the stored array in DEV.
   colWidths: withAccessors(optional(arrayValue(numberValue())), {

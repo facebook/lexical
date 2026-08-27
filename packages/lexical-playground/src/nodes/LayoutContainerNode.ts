@@ -14,7 +14,7 @@ import {
   ElementNode,
   type LexicalNode,
   type NodeKey,
-  objectValue,
+  nodeSchema,
   type SerializedElementNode,
   type Spread,
   stringValue,
@@ -27,7 +27,7 @@ export type SerializedLayoutContainerNode = Spread<
   SerializedElementNode
 >;
 
-const layoutContainerNodeSchema = objectValue({
+const layoutContainerNodeSchema = nodeSchema<LayoutContainerNode>({
   templateColumns: stringValue(),
 });
 

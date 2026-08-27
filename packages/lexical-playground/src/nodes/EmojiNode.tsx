@@ -12,14 +12,14 @@ import {
   type EditorConfig,
   type LexicalNode,
   type NodeKey,
-  objectValue,
+  nodeSchema,
   type SerializedTextNode,
   type Spread,
   stringValue,
   TextNode,
 } from 'lexical';
 
-const emojiNodeSchema = objectValue({
+const emojiNodeSchema = nodeSchema<EmojiNode>({
   className: stringValue(),
 });
 

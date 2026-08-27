@@ -19,7 +19,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
-  objectValue,
+  nodeSchema,
   type Spread,
   stringValue,
   withAccessors,
@@ -27,7 +27,7 @@ import {
 import * as React from 'react';
 import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
 
-const tweetNodeSchema = objectValue({
+const tweetNodeSchema = nodeSchema<TweetNode>({
   id: withAccessors(stringValue(), {
     getter: {
       field: '__id',

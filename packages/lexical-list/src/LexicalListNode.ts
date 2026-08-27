@@ -25,9 +25,9 @@ import {
   type LexicalNode,
   type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
   normalizeClassNames,
   numberValue,
-  objectValue,
   removeClassNamesFromElement,
   type SerializedElementNode,
   type Spread,
@@ -61,7 +61,7 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
   ul: 'bullet',
 };
 
-const listNodeSchema = objectValue({
+const listNodeSchema = nodeSchema<ListNode>({
   // 'ul'/'ol' are the legacy tag-form listType some older documents carry,
   // normalized to the modern form.
   // Read straight off the field; applied through setListType, which also

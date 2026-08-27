@@ -37,8 +37,8 @@ import {
   type LexicalEditorWithDispose,
   type LexicalNode,
   type NodeKey,
+  nodeSchema,
   numberValue,
-  objectValue,
   optional,
   type RangeSelection,
   rawValue,
@@ -132,7 +132,7 @@ export type SerializedImageNode = Spread<
   SerializedLexicalNode
 >;
 
-const imageNodeSchema = objectValue({
+const imageNodeSchema = nodeSchema<ImageNode>({
   altText: stringValue(),
   caption: withAccessors(rawValue<SerializedEditor>(), {
     getter: 'getSerializedCaption',

@@ -28,8 +28,8 @@ import {
   type LexicalEditorWithDispose,
   type LexicalNode,
   type NodeKey,
+  nodeSchema,
   numberValue,
-  objectValue,
   rawValue,
   type SerializedEditor,
   type SerializedLexicalNode,
@@ -46,7 +46,7 @@ const StickyComponent = React.lazy(() => import('./StickyComponent'));
 
 type StickyNoteColor = 'pink' | 'yellow';
 
-const stickyNodeSchema = objectValue({
+const stickyNodeSchema = nodeSchema<StickyNode>({
   caption: withAccessors(rawValue<SerializedEditor>(), {
     getter: 'getSerializedCaption',
   }),

@@ -19,8 +19,8 @@ import {
   type LexicalNode,
   type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
   numberValue,
-  objectValue,
   optional,
   type SerializedElementNode,
   type Spread,
@@ -37,7 +37,7 @@ export type SerializedTableRowNode = Spread<
   SerializedElementNode
 >;
 
-const tableRowNodeSchema = objectValue({
+const tableRowNodeSchema = nodeSchema<TableRowNode>({
   height: withField(optional(numberValue()), {
     field: '__height',
   }),

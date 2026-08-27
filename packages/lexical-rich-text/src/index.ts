@@ -128,8 +128,8 @@ import {
   MOVE_TO_END,
   MOVE_TO_START,
   type NodeKey,
+  nodeSchema,
   type NodeSelection,
-  objectValue,
   OUTDENT_CONTENT_COMMAND,
   type ParagraphNode,
   PASTE_COMMAND,
@@ -330,7 +330,7 @@ export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedHeadingNode (those it adds over a SerializedElementNode).
-const headingNodeSchema = objectValue({
+const headingNodeSchema = nodeSchema<HeadingNode>({
   // The tag *is* the field in both directions; getTag/setTag are bare
   // accessors, so a subclass overriding either reclaims the property.
   tag: withField(enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']), {

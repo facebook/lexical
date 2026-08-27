@@ -1874,6 +1874,22 @@ declare export function aliasedValue<T>(
 declare export function rawValue<T>(): SerializationSchema<T | void>;
 declare export function arrayValue<T>(item: SerializationSchema<T>): SerializationSchema<T[]>;
 declare export function objectValue<T>(fields: SerializationSchemaShape<T>): SerializationSchema<T>;
+
+// Every member of `N` a schema may name: its own `__`-prefixed fields and its
+// methods, which covers accessors and `when` predicates alike.
+export type MemberOf<N> = keyof N;
+// The members a schema's declarations name. TypeScript carries these in a
+// phantom type parameter so that `nodeSchema` can check them against the node;
+// Flow declares the surface without that check, and the DEV-time runtime
+// invariants catch the same mistakes here.
+export type NamesOf<S> = string;
+export type NodeSerializationSchema = AnySerializationSchema;
+// A node's serialization schema, checked against the node it is for. Under
+// TypeScript a `field`, accessor `method` or `when` predicate the node does
+// not have is a compile error; under Flow it is caught at registration.
+declare export function nodeSchema<N>(fields: {
+  readonly [key: string]: AnySerializationSchema,
+}): NodeSerializationSchema;
 // A node field, read or written directly rather than through a method. The
 // lookup table for a property whose stored and serialized forms differ is
 // declared only on the direction that reads it — `decode` on the getter,

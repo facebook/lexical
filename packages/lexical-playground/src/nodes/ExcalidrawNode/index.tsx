@@ -17,8 +17,8 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
+  nodeSchema,
   numberValue,
-  objectValue,
   type SerializationSchema,
   type SerializedLexicalNode,
   type Spread,
@@ -44,7 +44,7 @@ const dimensionSchema: SerializationSchema<Dimension> = unionValue(
   'inherit',
 );
 
-const excalidrawNodeSchema = objectValue({
+const excalidrawNodeSchema = nodeSchema<ExcalidrawNode>({
   // '[]' is the empty-scene default the constructor uses; an absent or
   // out-of-domain `data` must not become '' (JSON.parse('') throws).
   // `setData` is a bare field write, so this property *is* `__data` in both

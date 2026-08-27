@@ -20,6 +20,8 @@ import {
   ElementNode,
   enumValue,
   type LexicalUpdateJSON,
+  nodeSchema,
+  type NodeSerializationSchema,
   nullable,
   numberValue,
   objectValue,
@@ -689,7 +691,7 @@ describe('withField compiles to direct field access', () => {
     $config() {
       return this.config('field-node', {
         extends: CountingNode,
-        json: objectValue({
+        json: nodeSchema<FieldNode>({
           label: withField(stringValue('default'), {field: '__label'}),
         }),
       });
@@ -945,7 +947,7 @@ describe('reference-typed defaults compact by content', () => {
       $config() {
         return this.config('tags-node', {
           extends: ElementNode,
-          json: objectValue({
+          json: nodeSchema<TagsNode>({
             tags: withField(arrayValue(stringValue()), {field: '__tags'}),
           }),
         });
@@ -1244,12 +1246,17 @@ describe('a misspelled field name is caught in both directions', () => {
         // Import-only, and the field name is a typo of __label. Because the
         // property is never exported, this declaration produces an ownField
         // entry on the setter table and none on the getter table.
+        //
+        // Declared through `objectValue` rather than `nodeSchema` on purpose:
+        // `nodeSchema` would reject the typo at compile time, which is the
+        // point of it — what is under test here is the runtime check that
+        // still has to catch the same mistake for a JavaScript caller.
         json: objectValue({
           label: withAccessors(stringValue(), {
             getter: null,
             setter: {field: '__lable'},
           }),
-        }),
+        }) as NodeSerializationSchema,
       });
     }
   }
@@ -1314,6 +1321,41 @@ describe('a union member knows its own domain', () => {
     // Still not a number, so still the union's fallback.
     expect(dimension('banana')).toBe('inherit');
     expect(dimension('inherit')).toBe('inherit');
+  });
+
+  test('nodeSchema rejects a name the node does not have', () => {
+    class NamedNode extends ElementNode {
+      __label = '';
+      getLabel(): string {
+        return this.getLatest().__label;
+      }
+      shouldWrite(): boolean {
+        return true;
+      }
+    }
+    // Every name resolves, so this compiles.
+    const ok = nodeSchema<NamedNode>({
+      gated: withAccessors(stringValue(), {
+        getter: {field: '__label', method: 'getLabel', when: 'shouldWrite'},
+      }),
+      label: withField(stringValue(), {field: '__label'}),
+    });
+    expect(typeof ok).toBe('function');
+
+    nodeSchema<NamedNode>({
+      // @ts-expect-error -- __lable is not a field of NamedNode
+      label: withField(stringValue(), {field: '__lable'}),
+    });
+    nodeSchema<NamedNode>({
+      // @ts-expect-error -- getLabl is not a method of NamedNode
+      label: withField(stringValue(), {field: '__label', getter: 'getLabl'}),
+    });
+    nodeSchema<NamedNode>({
+      // @ts-expect-error -- shouldWrit is not a method of NamedNode
+      label: withAccessors(stringValue(), {
+        getter: {field: '__label', when: 'shouldWrit'},
+      }),
+    });
   });
 
   test('each value table is declared only on the direction that reads it', () => {

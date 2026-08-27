@@ -21,14 +21,14 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
-  objectValue,
+  nodeSchema,
   type Spread,
   stringValue,
   withAccessors,
 } from 'lexical';
 import * as React from 'react';
 
-const youTubeNodeSchema = objectValue({
+const youTubeNodeSchema = nodeSchema<YouTubeNode>({
   videoID: withAccessors(stringValue(), {
     getter: {
       field: '__id',

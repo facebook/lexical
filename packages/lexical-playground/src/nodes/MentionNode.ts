@@ -13,7 +13,7 @@ import {
   type EditorConfig,
   type LexicalNode,
   type NodeKey,
-  objectValue,
+  nodeSchema,
   type SerializedTextNode,
   type Spread,
   stringValue,
@@ -31,7 +31,7 @@ const FORMAT_WRAPPER_TAGS: readonly (readonly [TextFormatType, string])[] = [
   ['underline', 'u'],
 ];
 
-const mentionNodeSchema = objectValue({
+const mentionNodeSchema = nodeSchema<MentionNode>({
   mentionName: withAccessors(stringValue(), {
     getter: {
       field: '__mention',

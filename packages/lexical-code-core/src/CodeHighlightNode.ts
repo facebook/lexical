@@ -15,8 +15,8 @@ import {
   type LexicalNode,
   type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
   nullable,
-  objectValue,
   optional,
   removeClassNamesFromElement,
   type SerializedTextNode,
@@ -36,7 +36,7 @@ type SerializedCodeHighlightNode = Spread<
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedCodeHighlightNode (those it adds over a SerializedTextNode).
-const codeHighlightNodeSchema = objectValue({
+const codeHighlightNodeSchema = nodeSchema<CodeHighlightNode>({
   highlightType: optional(nullable(stringValue())),
 });
 

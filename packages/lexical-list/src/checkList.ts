@@ -40,8 +40,9 @@ import {$insertList} from './formatList';
 import {$isListItemNode, type ListItemNode} from './LexicalListItemNode';
 import {$isListNode} from './LexicalListNode';
 
-export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> =
-  /* @__PURE__ */ createCommand('INSERT_CHECK_LIST_COMMAND');
+export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
+  'INSERT_CHECK_LIST_COMMAND',
+);
 
 /**
  * Registers the checklist plugin with the editor.

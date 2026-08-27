@@ -133,13 +133,12 @@ function $buildWordListTree(
  * WeakSet per session, because `createImportState`'s default factory
  * runs once at state creation and its result is shared across sessions.
  */
-const WordListConsumed =
-  /* @__PURE__ */ createImportState<WeakSet<Element> | null>(
-    '@lexical/list/word-consumed-list-items',
-    () => null,
-  );
+const WordListConsumed = createImportState<WeakSet<Element> | null>(
+  '@lexical/list/word-consumed-list-items',
+  () => null,
+);
 
-const WordListParagraphRule = /* @__PURE__ */ defineImportRule({
+const WordListParagraphRule = defineImportRule({
   $import: (ctx, el) => {
     let consumed = ctx.session.get(WordListConsumed);
     if (consumed === null) {
@@ -169,7 +168,7 @@ const WordListParagraphRule = /* @__PURE__ */ defineImportRule({
     }
     return [$buildWordListTree(ctx, items)];
   },
-  match: /* @__PURE__ */ sel
+  match: sel
     .tag('p')
     .classAny(
       'MsoListParagraph',
@@ -182,13 +181,13 @@ const WordListParagraphRule = /* @__PURE__ */ defineImportRule({
 
 // <o:p> is Office's "paragraph end" marker, emitted inside every Word
 // paragraph including the list ones; it always produces nothing.
-const WordOfficeParagraphRule = /* @__PURE__ */ defineImportRule({
+const WordOfficeParagraphRule = defineImportRule({
   $import: () => [],
-  match: /* @__PURE__ */ sel.tag('o:p'),
+  match: sel.tag('o:p'),
   name: '@lexical/list/word-o-p',
 });
 
-const WordListPasteOverlay = /* @__PURE__ */ defineOverlayRules([
+const WordListPasteOverlay = defineOverlayRules([
   WordOfficeParagraphRule,
   WordListParagraphRule,
 ]);
@@ -241,11 +240,11 @@ const $installWordListPasteOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
  *
  * @experimental
  */
-export const WordListImportExtension = /* @__PURE__ */ defineExtension({
+export const WordListImportExtension = defineExtension({
   dependencies: [
     // The overlay builds ListNodes, so the nodes have to be registered.
     ListExtension,
-    /* @__PURE__ */ configExtension(DOMImportExtension, {
+    configExtension(DOMImportExtension, {
       preprocess: [$installWordListPasteOverlay],
     }),
   ],

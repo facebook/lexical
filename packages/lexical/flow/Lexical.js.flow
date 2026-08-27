@@ -498,8 +498,14 @@ declare export class LexicalNode {
   static importJSON(serializedNode: $FlowFixMe): LexicalNode;
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
-  exportJSON(compact?: false): SerializedLexicalNode;
-  exportJSON(compact: boolean): SerializedPartial<SerializedLexicalNode>;
+  // TypeScript declares two overloads here — the compact form omits
+  // properties, so it returns SerializedPartial<T> rather than T. Flow cannot:
+  // its method-override check compares a subclass's overload set against the
+  // base's as an intersection and pairs no branch, so every node from TextNode
+  // down fails to extend. This single signature describes the legacy form,
+  // which is what it described before `compact` existed; a Flow caller passing
+  // `true` gets a type that promises more than the value has.
+  exportJSON(compact?: boolean): SerializedLexicalNode;
   updateFromJSON(serializedNode: $FlowFixMe): this;
   getType(): string;
   isAttached(): boolean;
@@ -835,8 +841,7 @@ declare export class TextNode extends LexicalNode {
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
   static importJSON(serializedTextNode: SerializedTextNode): TextNode;
-  exportJSON(compact?: false): SerializedTextNode;
-  exportJSON(compact: boolean): SerializedPartial<SerializedTextNode>;
+  exportJSON(compact?: boolean): SerializedTextNode;
 }
 export interface InlineFormattableNode {
   readonly __isInlineFormattable: true;
@@ -869,8 +874,7 @@ declare export function $isTabNode(
 declare export class TabNode extends TextNode {
   constructor(key?: NodeKey): void;
   static importJSON(serializedTabNode: SerializedTabNode): TabNode;
-  exportJSON(compact?: false): SerializedTabNode;
-  exportJSON(compact: boolean): SerializedPartial<SerializedTabNode>;
+  exportJSON(compact?: boolean): SerializedTabNode;
 }
 
 /**
@@ -886,8 +890,7 @@ declare export class LineBreakNode extends LexicalNode {
   static importJSON(
     serializedLineBreakNode: SerializedPartial<SerializedLineBreakNode>,
   ): LineBreakNode;
-  exportJSON(compact?: false): SerializedLexicalNode;
-  exportJSON(compact: boolean): SerializedPartial<SerializedLexicalNode>;
+  exportJSON(compact?: boolean): SerializedLexicalNode;
 }
 declare export function $createLineBreakNode(): LineBreakNode;
 declare export function $isLineBreakNode(
@@ -1049,8 +1052,7 @@ declare export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: LexicalNode[],
   ): this;
-  exportJSON(compact?: false): SerializedElementNode;
-  exportJSON(compact: boolean): SerializedPartial<SerializedElementNode>;
+  exportJSON(compact?: boolean): SerializedElementNode;
   getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement>;
 }
 declare export function $isElementNode(
@@ -1141,8 +1143,7 @@ declare export class ParagraphNode extends ElementNode {
   static importJSON(
     serializedParagraphNode: SerializedPartial<SerializedParagraphNode>,
   ): ParagraphNode;
-  exportJSON(compact?: false): SerializedElementNode;
-  exportJSON(compact: boolean): SerializedPartial<SerializedElementNode>;
+  exportJSON(compact?: boolean): SerializedElementNode;
 }
 declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(

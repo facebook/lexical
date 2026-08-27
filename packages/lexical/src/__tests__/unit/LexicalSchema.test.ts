@@ -429,22 +429,21 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
     test('records its members on meta', () => {
       expect(dimension.meta.kind).toBe('union');
     });
-    test('declares an equality only when a member has one to defer to', () => {
-      expect(dimension.isEqual).toBeUndefined();
-      // The case that makes this matter: transformValue does not inherit its
-      // inner's equality, so this is a union whose default is reference-typed
-      // and whose members can compare nothing. Delegating to an empty `some`
-      // would declare an equality answering false for every pair — including
-      // the default against itself — and the property would silently never
-      // compact. Reporting no equality is what lets the codegen say so.
-      const listy = unionValue([transformValue(stringValue(), s => [s])]);
-      expect(listy.defaultValue).toEqual(['']);
-      expect(listy.isEqual).toBeUndefined();
-      // A member that compares by content is still deferred to, which is what
-      // lets a union over one compact at all.
+    test('defers equality to whichever member has one', () => {
+      // What the equality is for: a member returning a fresh value per parse
+      // would otherwise never equal the default and so never compact.
       const tags = unionValue([arrayValue(stringValue()), enumValue(['all'])]);
-      expect(tags.isEqual).toBeInstanceOf(Function);
       expect(isSchemaEqual(tags, ['a'], ['a'])).toBe(true);
+      expect(isSchemaEqual(tags, ['a'], ['b'])).toBe(false);
+      // A member's equality is asked about every pair, not only the ones it
+      // recognizes, so each has to be total — arrayValue's answers `false` for
+      // the enum member's values rather than throwing on them.
+      expect(isSchemaEqual(tags, 'all', 'all')).toBe(true);
+      expect(isSchemaEqual(tags, 'all', ['a'])).toBe(false);
+      // With no member to defer to the `some` is always false, leaving
+      // isSchemaEqual's leading identity test as the whole comparison.
+      expect(isSchemaEqual(dimension, 640, 640)).toBe(true);
+      expect(isSchemaEqual(dimension, 640, 'inherit')).toBe(false);
     });
   });
 

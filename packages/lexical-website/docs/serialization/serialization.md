@@ -503,7 +503,8 @@ feedback.
 Instead of writing `importJSON`, `updateFromJSON` and `exportJSON` by hand, a
 node that uses [`$config`](../concepts/nodes.mdx#creating-custom-nodes-with-config-and-nodestate)
 can declare a schema for its node-specific serialized properties with the
-`json` property. The schema is the single source of truth for both directions:
+`json` property, built with `nodeSchema<MyNode>`. The schema is the single
+source of truth for both directions:
 the base `updateFromJSON` applies it automatically, the base `exportJSON`
 writes from it, `$config` synthesizes `importJSON` when the constructor has no
 required arguments, and every built-in node in Lexical now declares one. Most
@@ -590,7 +591,57 @@ Each property's schema is built from composable helpers exported by
 - [`nodeSchema<MyNode>(fields)`](/docs/api/modules/lexical#nodeschema) — the record of properties, and what `$config`'s `json` takes. The one type argument names the node, which is what lets every `field`, accessor and `when` predicate be checked against it: a name the node does not have is a compile error at the property that declares it, with the correction suggested (`Type '"__langauge"' is not assignable to type 'MemberOf<CodeNode>'. Did you mean '"__language"'?`). Declaring the schema above the class it names is fine — a class's *type* is in scope before its definition
 - [`objectValue(fields)`](/docs/api/modules/lexical#objectvalue) — the same record without the node check, for a property whose value is itself an object. A node's own schema should use `nodeSchema`, and `$config` requires it
 - [`withAccessors(schema, {getter, setter})`](/docs/api/modules/lexical#withaccessors) — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose
-- [`withField(schema, {field, getter?, setter?, decode?, encode?})`](/docs/api/modules/lexical#withfield) — declare that the property *is* a node field, rather than a pair of accessor methods. Exporting reads the field and importing assigns it, with no method call on either side and no version resolution in either direction — the node being parsed into is already writable, and the node being exported is one the walk already resolved from the EditorState — so this is the fast path for a property stored verbatim. Because the schema records the field rather than a bare name, tooling can tell a field from a method without knowing how a node names its fields — enough for a codegen pass to emit a specialized parser for a hot node type. Each direction still *stands in for* an accessor: any class that overrides it between the declaring class and the node's own has said the field and the method are not equivalent, and it wins — the field access is abandoned and the method is called, so migrating a property to a field is not a behavior change for anyone who overrode its accessor. That accessor is the conventional `get<Prop>`/`set<Prop>` unless `getter`/`setter` name a different one, so most declarations need neither: name one only where the accessor is spelled differently, as `TextNode`'s `text` is (`getTextContent`) and `LinkNode`'s `url` is (`getURL`). A node with no such method defers to nothing, which needs no declaring either. `decode`/`encode` are lookup tables between the stored and serialized forms (`TextNode` stores `mode` as a number and serializes it as a name), keeping such a property on the direct-field path without an accessor method in between. The two directions can also be declared separately with `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})`, which reads the field directly but writes through a method that normalizes.
+- [`withField(schema, {field, getter?, setter?, decode?, encode?, when?})`](/docs/api/modules/lexical#withfield) — declare that the property *is* a node field, rather than a pair of accessor methods. Exporting reads the field and importing assigns it, with no method call on either side and no version resolution in either direction — the node being parsed into is already writable, and the node being exported is one the walk already resolved from the EditorState — so this is the fast path for a property stored verbatim. Because the schema records the field rather than a bare name, tooling can tell a field from a method without knowing how a node names its fields — enough for a codegen pass to emit a specialized parser for a hot node type. Each direction still *stands in for* an accessor: any class that overrides it between the declaring class and the node's own has said the field and the method are not equivalent, and it wins — the field access is abandoned and the method is called, so migrating a property to a field is not a behavior change for anyone who overrode its accessor. That accessor is the conventional `get<Prop>`/`set<Prop>` unless `getter`/`setter` name a different one, so most declarations need neither: name one only where the accessor is spelled differently, as `TextNode`'s `text` is (`getTextContent`) and `LinkNode`'s `url` is (`getURL`). A node with no such method defers to nothing, which needs no declaring either. `decode`/`encode` are lookup tables between the stored and serialized forms (`TextNode` stores `mode` as a number and serializes it as a name), keeping such a property on the direct-field path without an accessor method in between. The two directions can also be declared separately with `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})`, which reads the field directly but writes through a method that normalizes.
+
+A property that is only persisted in some states names the predicate that
+decides, with `when`, rather than going through a hand-written getter:
+
+```ts
+textFormat: withAccessors(numberValue(), {
+  getter: {
+    field: '__textFormat',
+    method: 'getSerializedTextFormat',
+    when: 'shouldSerializeTextStyles',
+  },
+}),
+```
+
+The property is written only when its value differs from the schema default
+*and* the predicate returns true. Testing the default first is what keeps the
+predicate off the common path, so an element with nothing to persist never
+calls it. The predicate must be pure and take no arguments: the walk calls it
+once per property that names it, while generated code hoists a predicate that
+several properties share and calls it once in total. This is how `ElementNode`
+persists `textFormat` and `textStyle` only for an element with no `TextNode`
+child, without either property leaving the direct-field path.
+
+#### Names are checked against the node
+
+`nodeSchema<MyNode>` takes one type argument naming the node, and that is what
+lets every `field`, accessor `method` and `when` predicate be verified to
+exist. A name the node does not have is a compile error at the property that
+declares it, with the correction suggested:
+
+```
+Type '"__langauge"' is not assignable to type 'MemberOf<CodeNode>'.
+  Did you mean '"__language"'?
+```
+
+This matters because the failure it replaces was silent. A misspelled field
+name means the property simply stops round-tripping; a misspelled accessor
+name means the subclass-override guard quietly stops applying. Neither throws,
+and neither shows up in the exported JSON as anything but a missing property.
+
+`$config`'s `json` requires a schema built this way, so the check cannot be
+skipped by reaching for `objectValue` instead — that one is for a property
+whose *value* is an object, and it does not name a node to check against.
+Declaring the schema above the class it names is fine, and is what every
+built-in node does: a class's *type* is in scope before its definition.
+
+The check is TypeScript-only. Under Flow, or from JavaScript, the same
+mistakes are caught when the editor registers the node — later, but before any
+document is serialized — so nothing depends on the compile-time check being
+the only line of defense.
 
 A schema's default is compared by identity, which is right for the primitive
 domains. `arrayValue` and `objectValue` return a fresh value per parse, so they

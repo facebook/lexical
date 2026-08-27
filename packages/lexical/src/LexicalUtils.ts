@@ -3324,13 +3324,26 @@ export function resolveSchemaField<T extends SchemaFieldBase>(
   return prototype[method] === declared[method] ? accessor : method;
 }
 
-/** The default setter name for a serialized property, e.g. `foo` → `setFoo`. */
-function defaultSetterName(key: string): string {
+/**
+ * The default setter name for a serialized property, e.g. `foo` → `setFoo`.
+ *
+ * Exported for the same reason {@link resolveSchemaField} is: the codegen in
+ * `scripts/generate-node-json.mjs` has to derive the identical name, and a
+ * second copy of the rule is a second thing that can drift.
+ *
+ * @internal
+ */
+export function defaultSetterName(key: string): string {
   return `set${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 }
 
-/** The default getter name for a serialized property, e.g. `foo` → `getFoo`. */
-function defaultGetterName(key: string): string {
+/**
+ * The default getter name for a serialized property, e.g. `foo` → `getFoo`.
+ *
+ * @see {@link defaultSetterName}
+ * @internal
+ */
+export function defaultGetterName(key: string): string {
   return `get${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 }
 

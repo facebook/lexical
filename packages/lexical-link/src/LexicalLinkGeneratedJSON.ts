@@ -75,10 +75,18 @@ function exportCompactLinkNode(node: LinkNode): {[key: string]: unknown} {
   if (indent !== undefined && indent !== 0) {
     json.indent = indent;
   }
-  if (textFormat !== 0 && shouldSerializeTextStyles) {
+  if (
+    textFormat !== undefined &&
+    textFormat !== 0 &&
+    shouldSerializeTextStyles
+  ) {
     json.textFormat = textFormat;
   }
-  if (textStyle !== '' && shouldSerializeTextStyles) {
+  if (
+    textStyle !== undefined &&
+    textStyle !== '' &&
+    shouldSerializeTextStyles
+  ) {
     json.textStyle = textStyle;
   }
   json.type = 'link';
@@ -157,10 +165,18 @@ function exportCompactAutoLinkNode(node: AutoLinkNode): {
   if (indent !== undefined && indent !== 0) {
     json.indent = indent;
   }
-  if (textFormat !== 0 && shouldSerializeTextStyles) {
+  if (
+    textFormat !== undefined &&
+    textFormat !== 0 &&
+    shouldSerializeTextStyles
+  ) {
     json.textFormat = textFormat;
   }
-  if (textStyle !== '' && shouldSerializeTextStyles) {
+  if (
+    textStyle !== undefined &&
+    textStyle !== '' &&
+    shouldSerializeTextStyles
+  ) {
     json.textStyle = textStyle;
   }
   json.type = 'autolink';

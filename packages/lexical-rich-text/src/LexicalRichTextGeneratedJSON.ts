@@ -60,10 +60,18 @@ function exportCompactHeadingNode(node: HeadingNode): {[key: string]: unknown} {
   if (indent !== undefined && indent !== 0) {
     json.indent = indent;
   }
-  if (textFormat !== 0 && shouldSerializeTextStyles) {
+  if (
+    textFormat !== undefined &&
+    textFormat !== 0 &&
+    shouldSerializeTextStyles
+  ) {
     json.textFormat = textFormat;
   }
-  if (textStyle !== '' && shouldSerializeTextStyles) {
+  if (
+    textStyle !== undefined &&
+    textStyle !== '' &&
+    shouldSerializeTextStyles
+  ) {
     json.textStyle = textStyle;
   }
   json.type = 'heading';
@@ -115,10 +123,18 @@ function exportCompactQuoteNode(node: QuoteNode): {[key: string]: unknown} {
   if (indent !== undefined && indent !== 0) {
     json.indent = indent;
   }
-  if (textFormat !== 0 && shouldSerializeTextStyles) {
+  if (
+    textFormat !== undefined &&
+    textFormat !== 0 &&
+    shouldSerializeTextStyles
+  ) {
     json.textFormat = textFormat;
   }
-  if (textStyle !== '' && shouldSerializeTextStyles) {
+  if (
+    textStyle !== undefined &&
+    textStyle !== '' &&
+    shouldSerializeTextStyles
+  ) {
     json.textStyle = textStyle;
   }
   json.type = 'quote';

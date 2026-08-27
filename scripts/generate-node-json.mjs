@@ -216,8 +216,12 @@ const {isSchemaField, LineBreakNode, ParagraphNode, TabNode, TextNode} =
 // through the module that declares them rather than the package entry point.
 // `paths` maps `lexical/src/*` the same way it maps `lexical`, so this is the
 // same module instance the editor uses, not a second copy.
-const {getComposedSchema, resolveSchemaField} =
-  await import('lexical/src/LexicalUtils');
+const {
+  defaultGetterName,
+  defaultSetterName,
+  getComposedSchema,
+  resolveSchemaField,
+} = await import('lexical/src/LexicalUtils');
 const {HeadingNode, QuoteNode} = await import('@lexical/rich-text');
 const {AutoLinkNode, LinkNode} = await import('@lexical/link');
 const {MarkNode} = await import('@lexical/mark');
@@ -276,40 +280,34 @@ const constName = (/** @type {NodeClass} */ klass) =>
 const factoryName = (/** @type {NodeClass} */ klass) =>
   `createGenerated${klass.name}`;
 
-/** `foo` → `getFoo`. @param {string} key @returns {string} */
-function defaultGetterName(key) {
-  return `get${key.charAt(0).toUpperCase()}${key.slice(1)}`;
-}
-
-/** `foo` → `setFoo`. @param {string} key @returns {string} */
-function defaultSetterName(key) {
-  return `set${key.charAt(0).toUpperCase()}${key.slice(1)}`;
-}
-
 /**
  * Lookup tables the generated module being built needs, by the const name
  * given to each. Reset per package: tables are emitted into the module whose
  * classes need them.
  *
- * @type {Map<string, {table: {readonly [key: string]: unknown}, nullProto: boolean}>}
+ * @type {Map<string, {readonly [key: string]: unknown}>}
  */
 const tables = new Map();
 
 /**
  * Name and record a lookup table for the generated module.
  *
- * `nullProto` tables are the ones an untrusted key reaches: without it a
- * serialized `'toString'` would resolve to Object.prototype's method and be
- * stored as the property's value. The export-side tables are keyed by the
- * node's own field, so they are plain objects.
+ * Every table is null-prototype, because every table can be reached by a key
+ * it does not have: without it a `'toString'` would resolve to
+ * Object.prototype's method rather than missing, and be stored (import) or
+ * serialized (export) as the property's value. On the import side the key is
+ * the parsed JSON, so it is untrusted outright; on the export side it is the
+ * node's own field, which for a schema whose domain is wider than the table's
+ * keys holds whatever was put there. Both are what the walk's `hasOwnKey`
+ * lookups already guard against, and a miss has to be `undefined` here for the
+ * same reason it is there.
  *
  * @param {string} name
  * @param {{readonly [key: string]: unknown}} table
- * @param {boolean} nullProto
  * @returns {string}
  */
-function addTable(name, table, nullProto) {
-  tables.set(name, {nullProto, table});
+function addTable(name, table) {
+  tables.set(name, table);
   return name;
 }
 
@@ -386,7 +384,7 @@ function readExpression(klass, schema, key) {
         : // The table is plain data, so it is inlined rather than imported:
           // keeping this module free of runtime imports is what keeps it out
           // of the cycle.
-          `${addTable(tableName(klass, key, 'DECODE'), getter.decode, false)}[node.${getter.field}]`;
+          `${addTable(tableName(klass, key, 'DECODE'), getter.decode)}[node.${getter.field}]`;
     if (getter.when === undefined) {
       return {expression: read};
     }
@@ -432,6 +430,16 @@ function schemaReads(klass) {
  * before calling it, so an element with nothing to persist — every element
  * with a TextNode child — still never reaches it.
  *
+ * That comparison is emitted as a `!==` against a literal, so a gated property
+ * whose default has no faithful literal has no generated form: `key !== []`
+ * allocates a fresh array and is always true, which would write the property
+ * where the walk's own equality omits it. Unlike the compact form's
+ * reference-typed comparison, this one cannot be closed over the schema
+ * instead — the legacy exporter is emitted at module scope, outside the
+ * factory that would carry it — so this refuses rather than emitting a
+ * comparison that means something else. No such property exists; the check is
+ * here so that declaring one fails the build instead of the round trip.
+ *
  * @param {{expression: string, key: string, schema: AnySchema, when?: string}[]} reads
  * @returns {{lines: string[], value: (read: {expression: string, key: string, schema: AnySchema, when?: string}) => string}}
  */
@@ -441,6 +449,13 @@ function hoistGatedReads(reads) {
   const gated = [];
   for (const read of reads) {
     if (read.when !== undefined) {
+      if (!hasFaithfulLiteral(read.schema.defaultValue)) {
+        throw new Error(
+          `generate-node-json: "${read.key}" is gated by ${read.when}() but its default (${String(
+            read.schema.defaultValue,
+          )}) has no faithful literal to compare against`,
+        );
+      }
       gated.push({...read, when: read.when});
     }
   }
@@ -547,10 +562,19 @@ function generateCompactExport(klass) {
         when === undefined
           ? `  const ${key} = ${expression};\n  if (${key} !== undefined${isDefault}) {\n    json.${key} = ${key};\n  }`
           : // `${key}` and the predicate are already hoisted above, so this is
-            // the same test the legacy form makes, written as a statement.
-            `  if (${key} !== ${literal(defaultValue)} && ${when}) {\n    json.${key} = ${key};\n  }`,
+            // the same test the legacy form makes plus the compact form's own
+            // `!== undefined`, written as a statement. The legacy form has no
+            // need of that one: it writes `undefined` into the literal, which
+            // stringify omits, where an omitted key is what compaction means.
+            `  if (${key} !== undefined${isDefault} && ${when}) {\n    json.${key} = ${key};\n  }`,
       );
       continue;
+    }
+    if (when !== undefined) {
+      // Unreachable: hoistGatedReads refuses a gated property whose default
+      // has no faithful literal, so a gated read never arrives here — where it
+      // would declare a `const` the hoist already declared.
+      throw new Error(`generate-node-json: "${key}" is gated and unhoistable`);
     }
     if (schema.isEqual === undefined) {
       process.stdout.write(
@@ -691,7 +715,7 @@ function writeExpression(klass, schema, key) {
   );
   const nullPrototypeTables = parseTables.map(({name}) => name);
   for (const {name, table} of parseTables) {
-    addTable(name, table, true);
+    addTable(name, table);
   }
   const {encode} = setter;
   // Two statements rather than one expression when a table has to be applied
@@ -700,7 +724,7 @@ function writeExpression(klass, schema, key) {
   let statements = `  v = json.${key};\n  node.${setter.field} = ${expression};`;
   if (encode !== undefined) {
     const name = tableName(klass, key, 'ENCODE');
-    addTable(name, encode, true);
+    addTable(name, encode);
     nullPrototypeTables.push(name);
     // The schema already reduced the value to its own domain, so the table is
     // total over what reaches it; the guard is for a domain member with no
@@ -812,12 +836,16 @@ function generatePackage(pkg) {
   }));
 
   const tableSource = [...tables]
-    .map(([name, {nullProto, table}]) => {
-      const declaration = `const ${name}: {readonly [key: string]: ${tableValueType(table)}}`;
-      return nullProto
-        ? `// Null-prototype: an untrusted key must never resolve to Object.prototype.\n${declaration} =\n  /* @__PURE__ */ Object.assign(Object.create(null), ${JSON.stringify(table, null, 2)});`
-        : `${declaration} = ${JSON.stringify(table, null, 2)};`;
-    })
+    .map(
+      ([name, table]) =>
+        `// Null-prototype: a key the table does not have must miss rather than\n// resolve to Object.prototype.\nconst ${name}: {readonly [key: string]: ${tableValueType(
+          table,
+        )}} =\n  /* @__PURE__ */ Object.assign(Object.create(null), ${JSON.stringify(
+          table,
+          null,
+          2,
+        )});`,
+    )
     .join('\n\n');
 
   const needsNum = generated.some(

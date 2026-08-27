@@ -60,22 +60,26 @@ function num(v: unknown, d: number): number {
   return Number.isFinite(n) ? n : d;
 }
 
+// Null-prototype: a key the table does not have must miss rather than
+// resolve to Object.prototype.
 const TEXT_MODE_DECODE: {
   readonly [key: string]: 'normal' | 'segmented' | 'token';
-} = {
+} = /* @__PURE__ */ Object.assign(Object.create(null), {
   '0': 'normal',
   '1': 'token',
   '2': 'segmented',
-};
+});
 
-// Null-prototype: an untrusted key must never resolve to Object.prototype.
+// Null-prototype: a key the table does not have must miss rather than
+// resolve to Object.prototype.
 const TEXT_DETAIL_ALIAS: {readonly [key: string]: 1 | 2} =
   /* @__PURE__ */ Object.assign(Object.create(null), {
     directionless: 1,
     unmergeable: 2,
   });
 
-// Null-prototype: an untrusted key must never resolve to Object.prototype.
+// Null-prototype: a key the table does not have must miss rather than
+// resolve to Object.prototype.
 const TEXT_FORMAT_ALIAS: {readonly [key: string]: number} =
   /* @__PURE__ */ Object.assign(Object.create(null), {
     bold: 1,
@@ -91,7 +95,8 @@ const TEXT_FORMAT_ALIAS: {readonly [key: string]: number} =
     uppercase: 512,
   });
 
-// Null-prototype: an untrusted key must never resolve to Object.prototype.
+// Null-prototype: a key the table does not have must miss rather than
+// resolve to Object.prototype.
 const TEXT_MODE_ENCODE: {readonly [key: string]: 0 | 1 | 2} =
   /* @__PURE__ */ Object.assign(Object.create(null), {
     normal: 0,
@@ -99,13 +104,15 @@ const TEXT_MODE_ENCODE: {readonly [key: string]: 0 | 1 | 2} =
     token: 1,
   });
 
+// Null-prototype: a key the table does not have must miss rather than
+// resolve to Object.prototype.
 const TAB_MODE_DECODE: {
   readonly [key: string]: 'normal' | 'segmented' | 'token';
-} = {
+} = /* @__PURE__ */ Object.assign(Object.create(null), {
   '0': 'normal',
   '1': 'token',
   '2': 'segmented',
-};
+});
 
 /** Generated from TextNode's serialization schema. Do not edit by hand. */
 function exportTextNode(node: TextNode): {[key: string]: unknown} {
@@ -221,10 +228,18 @@ function exportCompactParagraphNode(node: ParagraphNode): {
   if (indent !== undefined && indent !== 0) {
     json.indent = indent;
   }
-  if (textFormat !== 0 && shouldSerializeTextStyles) {
+  if (
+    textFormat !== undefined &&
+    textFormat !== 0 &&
+    shouldSerializeTextStyles
+  ) {
     json.textFormat = textFormat;
   }
-  if (textStyle !== '' && shouldSerializeTextStyles) {
+  if (
+    textStyle !== undefined &&
+    textStyle !== '' &&
+    shouldSerializeTextStyles
+  ) {
     json.textStyle = textStyle;
   }
   json.type = 'paragraph';

@@ -25,6 +25,7 @@ import {
   $setState,
   createEditor,
   createState,
+  IS_BOLD,
   type LexicalNode,
   LineBreakNode,
   NODE_STATE_KEY,
@@ -141,6 +142,20 @@ describe('generated exportJSON', () => {
             // against a walk that does not run it.
             $createParagraphNode().setDirection('rtl').setIndent(3),
             $createParagraphNode(),
+            // Both arms of the `when` gate, which the paragraphs above leave
+            // at their defaults and so never enter: the generated code hoists
+            // one shared `shouldSerializeTextStyles` where the walk tests the
+            // default and calls the predicate per property, so agreeing when
+            // the property is trivially omitted proves nothing about either.
+            $createParagraphNode()
+              .setTextFormat(IS_BOLD)
+              .setTextStyle('color: red'),
+            // Predicate false with a non-default value — the case the two
+            // decide differently if the hoist ever stops mirroring the walk.
+            $createParagraphNode()
+              .setTextFormat(IS_BOLD)
+              .setTextStyle('color: red')
+              .append($createTextNode('x')),
           ];
           for (const node of nodes) {
             // Both forms: each is generated separately, so each has to agree

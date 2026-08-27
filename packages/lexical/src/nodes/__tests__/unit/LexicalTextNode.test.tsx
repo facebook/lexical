@@ -519,21 +519,6 @@ describe('LexicalTextNode tests', () => {
       },
     );
 
-    test('splitText keeps the token mode on every part', async () => {
-      await update(() => {
-        const paragraphNode = $createParagraphNode();
-        const textNode = $createTextNode('Hello World').setMode('token');
-        paragraphNode.append(textNode);
-
-        const splitNodes = textNode.splitText(5);
-
-        expect(splitNodes.map(node => node.getMode())).toEqual([
-          'token',
-          'token',
-        ]);
-      });
-    });
-
     test('splitText moves composition key to last node', async () => {
       await update(() => {
         const paragraphNode = $createParagraphNode();

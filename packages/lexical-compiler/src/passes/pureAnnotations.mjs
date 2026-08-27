@@ -61,6 +61,7 @@ export const PURE_FACTORY_FUNCTIONS = [
   'defineOverlayRules',
   'domOverride',
   'enumValue',
+  'nodeSchema',
   'nullable',
   'numberValue',
   'objectValue',

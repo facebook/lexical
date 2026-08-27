@@ -37,6 +37,43 @@ function inline(code: string, filename = 'test.ts') {
   return transformPureAnnotations(code, {filename, inline: true});
 }
 
+/** The value names a package's entry point re-exports, by package directory. */
+const packageExportCache = new Map<string, Set<string>>();
+
+/**
+ * The names another package can import from `pkg`, which is what decides
+ * whether {@link PURE_FACTORY_FUNCTIONS} has anything to say about one.
+ */
+function packageExports(pkg: string): Set<string> {
+  const cached = packageExportCache.get(pkg);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const names = new Set<string>();
+  packageExportCache.set(pkg, names);
+  const ast = parse(fs.readFileSync(`${pkg}/src/index.ts`, 'utf8'), {
+    plugins: ['typescript'],
+    sourceType: 'module',
+  });
+  for (const statement of ast.program.body) {
+    if (
+      statement.type !== 'ExportNamedDeclaration' ||
+      statement.exportKind === 'type'
+    ) {
+      continue;
+    }
+    for (const specifier of statement.specifiers) {
+      if (
+        specifier.type === 'ExportSpecifier' &&
+        specifier.exportKind !== 'type'
+      ) {
+        names.add(specifier.local.name);
+      }
+    }
+  }
+  return names;
+}
+
 /**
  * Evaluate an expression from the transform's output against the same values
  * the real factory is called with.
@@ -583,12 +620,20 @@ describe('the inlined factories are still trivial', () => {
     ).toEqual(declarePeer('peer', SCOPE.CONFIG));
   });
 
-  it('every factory in the list declares itself side-effect free', () => {
+  it('agrees with the declarations about which factories are pure', () => {
     // The list is what makes a call site trusted when the factory is
     // imported by package name; the annotation on the declaration is what
     // makes it trusted anywhere else, including from inside its own
-    // package. A name in one and not the other is a hole.
-    const declared = new Set<string>();
+    // package. A name in one and not the other is a hole, so both
+    // directions are checked: a listed name with no annotation is trusted
+    // from outside its package and nowhere else, and an annotated name a
+    // package *exports* but does not list is the reverse — every module
+    // that imports it by package name silently loses the annotation, which
+    // is how `nodeSchema` shipped unannotated at first. A function that its
+    // package does not export cannot be imported by package name, so the
+    // list has nothing to say about it.
+    /** Annotated function name → the package directory that declares it. */
+    const declared = new Map<string, string>();
     for (const file of glob.sync('packages/*/src/**/*.{ts,tsx}', {
       ignore: ['**/__tests__/**'],
       windowsPathsNoEscape: true,
@@ -612,13 +657,23 @@ describe('the inlined factories are still trivial', () => {
             declaration.type === 'TSDeclareFunction') &&
           declaration.id
         ) {
-          declared.add(declaration.id.name);
+          declared.set(declaration.id.name, file.split('/src/')[0]);
         }
       }
     }
+    expect(declared.size).toBeGreaterThan(0);
     expect(PURE_FACTORY_FUNCTIONS.filter(name => !declared.has(name))).toEqual(
       [],
     );
+    const listed = new Set(PURE_FACTORY_FUNCTIONS);
+    expect(
+      [...declared]
+        .filter(
+          ([name, pkg]) => !listed.has(name) && packageExports(pkg).has(name),
+        )
+        .map(([name]) => name)
+        .sort(),
+    ).toEqual([]);
   });
 
   it('is marked as inlinable wherever it is defined', () => {

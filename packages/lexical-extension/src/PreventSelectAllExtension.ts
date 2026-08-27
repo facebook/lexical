@@ -43,9 +43,9 @@ export interface PreventSelectAllConfig {
  * When used as a dependency of SelectBlockExtension, its disabled state is
  * kept in sync with that extension.
  */
-export const PreventSelectAllExtension = /* @__PURE__ */ defineExtension({
+export const PreventSelectAllExtension = defineExtension({
   build: (editor, config, state) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<PreventSelectAllConfig>({
+  config: safeCast<PreventSelectAllConfig>({
     disabled: false,
   }),
   name: '@lexical/extension/PreventSelectAll',

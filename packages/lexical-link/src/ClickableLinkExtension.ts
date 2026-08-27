@@ -137,11 +137,11 @@ export function registerClickableLink(
  * selection to change instead of opening a link. This extension can be used to
  * restore the default behavior, e.g. when the editor is not editable.
  */
-export const ClickableLinkExtension = /* @__PURE__ */ defineExtension({
+export const ClickableLinkExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: /* @__PURE__ */ safeCast<ClickableLinkConfig>({
+  config: safeCast<ClickableLinkConfig>({
     disabled: false,
     newTab: false,
   }),

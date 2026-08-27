@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Getting Started with React
+# Getting Started
 
 ## Video Tutorials
 
@@ -91,7 +91,7 @@ However no UI can be created w/o CSS and Lexical is not an exception here. Pay a
 ## Saving Lexical State
 
 :::tip
-While we attempt to write our own plugin here for demonstration purposes, in real life projects it's better to opt for [LexicalOnChangePlugin](../react/plugins.md#lexicalonchangeplugin).
+While we attempt to write our own plugin here for demonstration purposes, in real life projects it's better to opt for [LexicalOnChangePlugin](./plugins.md#lexicalonchangeplugin).
 :::
 
 Now that we have a simple editor in React, the next thing we might want to do is access the content of the editor to, for instance,

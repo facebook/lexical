@@ -1,4 +1,4 @@
-# React and Lexical Extension
+# Extensions
 
 Lexical Extension vastly improved support for non-React usage, but
 did not make any compromises when supporting React.

@@ -1828,6 +1828,12 @@ declare export function $withCompactExport<T>(
   compact: boolean,
   f: () => T,
 ): T;
+// Whether the export walk in progress writes the compact form, for a schema
+// getter to read — the walk calls get<Prop>() with no arguments, so there is
+// nothing to pass one. Established by $withCompactExport (and so by
+// editorState.toJSON(compact) and the clipboard selection export), not by an
+// individual node's exportJSON(compact).
+declare export function $isCompactExport(): boolean;
 export type AnySerializationSchema = SerializationSchema<unknown>;
 export type SerializationSchemaFields = {
   readonly [key: string]: AnySerializationSchema,

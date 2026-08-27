@@ -321,7 +321,11 @@ export {
   type RawTextVisitor,
   tokenizeRawText,
 } from './LexicalSelection';
-export {$exportNodeJSON, $withCompactExport} from './LexicalSerializedExport';
+export {
+  $exportNodeJSON,
+  $isCompactExport,
+  $withCompactExport,
+} from './LexicalSerializedExport';
 export type {SlotName} from './LexicalSlot';
 export {
   $getSlot,

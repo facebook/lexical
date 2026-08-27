@@ -703,6 +703,17 @@ Calling `toJSON()` with no argument writes the form of an enclosing
 `$withCompactExport`, which is what keeps a nested editor (an image caption) in
 the same form as the document containing it.
 
+Anything with a call site of its own should take the form as an argument. The
+exception is a schema getter: the walk calls `get<Prop>()` with no arguments —
+the contract that lets `getTextContent` and `getURL` be ordinary node methods —
+so a getter whose value depends on the form reads `$isCompactExport()` instead.
+That reports the surrounding **walk**'s form, which `$withCompactExport`
+establishes and `editorState.toJSON(compact)` therefore does too, since it uses
+it internally. It is deliberately not set by a node's own
+`exportJSON(compact)`: that method already takes the form as an argument, and
+having it set the walk's form would report a whole document as compact when a
+single node was asked to be.
+
 Parsing restores each, so both forms describe the same document. Compaction
 happens as the properties are written rather than as a pass over the finished
 object, so a derived property is skipped without even calling its getter — and

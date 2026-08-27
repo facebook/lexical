@@ -68,6 +68,44 @@ export function $withCompactExport<T>(compact: boolean, f: () => T): T {
   return result;
 }
 
+/**
+ * Whether the export walk in progress is writing the compact form.
+ *
+ * For the one thing that cannot be told: a schema getter. The walk calls
+ * `get<Prop>()` with no arguments — that contract is what lets `getTextContent`
+ * and `getURL` be ordinary node methods rather than serialization-specific
+ * ones — so a getter whose value depends on the form has to read it here:
+ *
+ * ```ts
+ * getSerializedThumbnail(): string | undefined {
+ *   // Derivable from `src`, so the compact form leaves it out.
+ *   return $isCompactExport() ? undefined : this.getLatest().__thumbnail;
+ * }
+ * ```
+ *
+ * A getter that serializes a *nested editor* needs nothing: `toJSON()` with no
+ * argument writes the ambient form, which is what keeps an image caption in
+ * the same form as the document containing it.
+ *
+ * This reports the form of the surrounding **export walk** — what
+ * {@link $withCompactExport} established, and so what
+ * `editorState.toJSON(compact)` and the `@lexical/clipboard` selection export
+ * establish. It is deliberately *not* set by an individual
+ * {@link LexicalNode.exportJSON} call: that method takes its own `compact`
+ * argument and is called by the walk with the walk's form already in effect,
+ * so having it set this too would say a document is compact when only one node
+ * was asked to be. A bare `node.exportJSON(true)` outside a walk therefore
+ * reports `false` here.
+ *
+ * Anything with a call site of its own should take the form as an argument
+ * rather than read it here.
+ *
+ * @experimental
+ */
+export function $isCompactExport(): boolean {
+  return compactExport;
+}
+
 function isThenable(value: unknown): boolean {
   return (
     value !== null &&

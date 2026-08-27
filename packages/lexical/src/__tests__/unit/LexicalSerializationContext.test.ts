@@ -8,17 +8,23 @@
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isCompactExport,
   $isElementNode,
   $setSlot,
   $withCompactExport,
   createEditor,
   type LexicalEditor,
+  nodeSchema,
+  rawValue,
   type SerializedElementNode,
   type SerializedLexicalNode,
   type SerializedRootNode,
+  TextNode,
+  withAccessors,
 } from 'lexical';
 import {assert, beforeEach, describe, expect, test} from 'vitest';
 
@@ -220,9 +226,13 @@ describe('editorState.toJSON states its form at the call site', () => {
 
   test('an explicit form wins over the ambient one, and types as itself', () => {
     using editor = buildEditor();
-    const state = editor.getEditorState();
+    // $initialEditorState is applied on the first read, so the state has to be
+    // taken from inside one — otherwise every case below runs on an empty
+    // document and proves much less than it looks like it does.
+    const state = editor.read(() => editor.getEditorState());
     // The legacy form writes `version`; the compact form omits it, which is
     // the cheapest observable difference between the two.
+    expect(JSON.stringify(state.toJSON())).toContain('hi');
     expect(state.toJSON().root).toHaveProperty('version');
     expect(state.toJSON(true).root).not.toHaveProperty('version');
     // …including against an enclosing $withCompactExport, so both overloads
@@ -238,7 +248,10 @@ describe('editorState.toJSON states its form at the call site', () => {
     // exportJSON, which has no form to pass down — it has to write whatever
     // the document containing it is writing.
     using editor = buildEditor();
-    const state = editor.getEditorState();
+    // $initialEditorState is applied on the first read, so the state has to be
+    // taken from inside one — otherwise every case below runs on an empty
+    // document and proves much less than it looks like it does.
+    const state = editor.read(() => editor.getEditorState());
     expect(state.toJSON().root).toHaveProperty('version');
     $withCompactExport(true, () => {
       expect(state.toJSON().root).not.toHaveProperty('version');
@@ -250,10 +263,104 @@ describe('editorState.toJSON states its form at the call site', () => {
     // property name the value sits under: '' at the top level, but 'state'
     // here. A truthy test on the argument would silently write compact.
     using editor = buildEditor();
-    const state = editor.getEditorState();
+    // $initialEditorState is applied on the first read, so the state has to be
+    // taken from inside one — otherwise every case below runs on an empty
+    // document and proves much less than it looks like it does.
+    const state = editor.read(() => editor.getEditorState());
     expect(JSON.parse(JSON.stringify({state})).state.root).toHaveProperty(
       'version',
     );
     expect(JSON.parse(JSON.stringify(state)).root).toHaveProperty('version');
+  });
+});
+
+describe('$isCompactExport reports the walk, not a single node', () => {
+  const buildEditor = () =>
+    buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('hi')));
+        },
+        name: '[serialization-iscompact]',
+      }),
+    );
+
+  test('the export walk establishes it, in both directions', () => {
+    using editor = buildEditor();
+    editor.read(() => {
+      expect($isCompactExport()).toBe(false);
+      $withCompactExport(true, () => expect($isCompactExport()).toBe(true));
+      // …and restored, including from a nested scope that turns it back off.
+      $withCompactExport(true, () => {
+        $withCompactExport(false, () => expect($isCompactExport()).toBe(false));
+        expect($isCompactExport()).toBe(true);
+      });
+      expect($isCompactExport()).toBe(false);
+    });
+  });
+
+  test('a schema getter observes it, which is what it is for', () => {
+    // The case the function exists for: the walk calls get<Prop>() with no
+    // arguments, so this is the only way a getter can tell the two apart.
+    const seen: boolean[] = [];
+    class ProbeNode extends TextNode {
+      $config() {
+        return this.config('serialization-probe', {
+          extends: TextNode,
+          json: nodeSchema<ProbeNode>({
+            // Not `setter: null`: a derived property is skipped by the
+            // compact walk without its getter being called at all, so the
+            // probe would never run for the form under test.
+            probe: withAccessors(rawValue<boolean>(), {
+              getter: 'getSerializedProbe',
+              setter: 'setProbe',
+            }),
+          }),
+        });
+      }
+      getSerializedProbe(): boolean {
+        seen.push($isCompactExport());
+        return $isCompactExport();
+      }
+      setProbe(_probe: boolean | undefined): this {
+        return this;
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot()
+            .clear()
+            // A TextNode subclass with no text is removed by normalization,
+            // so there would be nothing left for the walk to reach.
+            .append(
+              $createParagraphNode().append(
+                $create(ProbeNode).setTextContent('x'),
+              ),
+            );
+        },
+        name: '[serialization-probe]',
+        nodes: [ProbeNode],
+      }),
+    );
+    const state = editor.read(() => editor.getEditorState());
+    // Each document walk hands the getter the form that walk is writing.
+    expect(state.toJSON(false).root).toBeDefined();
+    expect(state.toJSON(true).root).toBeDefined();
+    expect(seen).toEqual([false, true]);
+  });
+
+  test('a bare node.exportJSON(true) does not establish it', () => {
+    // exportJSON takes its own `compact` and is called by the walk with the
+    // walk's form already in effect. Setting this too would report a whole
+    // document as compact when one node was asked to be.
+    using editor = buildEditor();
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      paragraph.exportJSON(true);
+      expect($isCompactExport()).toBe(false);
+    });
   });
 });

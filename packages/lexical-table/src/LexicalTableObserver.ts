@@ -309,6 +309,7 @@ export class TableObserver {
         this.table = getTable(tableNode, tableElement);
       });
     });
+    this.listenersToRemove.add(() => observer.disconnect());
     this.editor.read('latest', () => {
       const {tableNode, tableElement} = this.$lookup();
       this.table = getTable(tableNode, tableElement);

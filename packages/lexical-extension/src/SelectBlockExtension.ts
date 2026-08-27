@@ -49,9 +49,9 @@ export interface SelectBlockConfig {
  * Pressing Ctrl + A again selects all content in the document. A selection
  * that already spans multiple blocks expands directly to the whole document.
  */
-export const SelectBlockExtension = /* @__PURE__ */ defineExtension({
+export const SelectBlockExtension = defineExtension({
   build: (editor, config, state) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<SelectBlockConfig>({
+  config: safeCast<SelectBlockConfig>({
     cascadeSelection: false,
     disabled: false,
   }),

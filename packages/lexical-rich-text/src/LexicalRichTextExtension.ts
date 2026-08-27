@@ -109,9 +109,9 @@ function mergeRichTextConfig(
   return merged;
 }
 
-export const RichTextExtension = /* @__PURE__ */ defineExtension({
+export const RichTextExtension = defineExtension({
   build: (_editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<RichTextConfig>(DEFAULT_RICH_TEXT_CONFIG),
+  config: safeCast<RichTextConfig>(DEFAULT_RICH_TEXT_CONFIG),
   conflictsWith: ['@lexical/plain-text'],
   dependencies: [
     HeadingAnnounceExtension,
@@ -123,7 +123,7 @@ export const RichTextExtension = /* @__PURE__ */ defineExtension({
     // unless the editor routes HTML through the pipeline (e.g. via
     // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
     CoreImportExtension,
-    /* @__PURE__ */ configExtension(DOMImportExtension, {
+    configExtension(DOMImportExtension, {
       rules: RichTextImportRules,
     }),
   ],
@@ -151,7 +151,7 @@ export const RichTextExtension = /* @__PURE__ */ defineExtension({
  * {@link RichTextImportRules} (and `CoreImportExtension`) itself —
  * depend on it directly instead.
  */
-export const RichTextImportExtension = /* @__PURE__ */ defineExtension({
+export const RichTextImportExtension = defineExtension({
   dependencies: [RichTextExtension],
   name: '@lexical/rich-text/Import',
 });

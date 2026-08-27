@@ -294,6 +294,7 @@ export {
 } from './LexicalSlot';
 export {
   $assumeActiveEditor,
+  $flushSyncAfterUpdate,
   $fullReconcile,
   $parseSerializedNode,
   isCurrentlyReadOnlyMode,

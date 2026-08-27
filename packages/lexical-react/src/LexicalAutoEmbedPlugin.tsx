@@ -75,7 +75,7 @@ export const URL_MATCHER =
  * and runs that config's URL detection flow.
  */
 export const INSERT_EMBED_COMMAND: LexicalCommand<EmbedConfig['type']> =
-  /* @__PURE__ */ createCommand('INSERT_EMBED_COMMAND');
+  createCommand('INSERT_EMBED_COMMAND');
 
 /**
  * A {@link MenuOption} for the auto-embed menu, pairing a display `title` with

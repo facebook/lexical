@@ -249,7 +249,7 @@ function applyFormatOverride(format: number, ov: FormatOverride): number {
  * - `<span style="text-decoration: none">` strip inherited underline /
  *   line-through.
  */
-const InlineFormatRule = /* @__PURE__ */ defineImportRule({
+const InlineFormatRule = defineImportRule({
   $import: (ctx, el) => {
     const inherited = ctx.get(ImportTextFormat);
     const tagDefault = TAG_DEFAULT_STYLE[el.nodeName];
@@ -431,7 +431,7 @@ function $applyTextStyle(
  * collapse whitespace using the same neighbor-aware rules as the legacy
  * `$convertTextDOMNode`.
  */
-const TextRule = /* @__PURE__ */ defineImportRule({
+const TextRule = defineImportRule({
   $import: (ctx, el) => {
     const format = ctx.get(ImportTextFormat);
     const style = ctx.get(ImportTextStyle);
@@ -463,13 +463,13 @@ const TextRule = /* @__PURE__ */ defineImportRule({
  * a higher-priority `<style>` rule to capture stylesheet text into the
  * import session for later use.
  */
-const IgnoreScriptStyleRule = /* @__PURE__ */ defineImportRule({
+const IgnoreScriptStyleRule = defineImportRule({
   $import: () => [],
   match: sel.tag('script', 'style'),
   name: '@lexical/html/script-style-ignore',
 });
 
-const LineBreakRule = /* @__PURE__ */ defineImportRule({
+const LineBreakRule = defineImportRule({
   // Mirror the legacy LineBreakNode.importDOM filter: stray `<br>` that
   // are the sole or trailing child of a block parent (e.g. Apple's
   // `<br class="Apple-interchange-newline">` clipboard sentinel, or the
@@ -488,7 +488,7 @@ const LineBreakRule = /* @__PURE__ */ defineImportRule({
  * `<p>` rule. Re-applies format, indent, direction, and the legacy
  * `align` attribute fallback.
  */
-const ParagraphRule = /* @__PURE__ */ defineImportRule({
+const ParagraphRule = defineImportRule({
   $import: (ctx, el) => {
     const p = $createParagraphNode();
     $setFormatFromDOM(p, el);
@@ -525,7 +525,7 @@ const ParagraphRule = /* @__PURE__ */ defineImportRule({
  *
  * @internal
  */
-export const HorizontalRuleRule = /* @__PURE__ */ defineImportRule({
+export const HorizontalRuleRule = defineImportRule({
   $import: (_ctx, _el, $next) =>
     $getEditor().hasNode(HorizontalRuleNode)
       ? [$createHorizontalRuleNode()]
@@ -564,7 +564,7 @@ export const HorizontalRuleRule = /* @__PURE__ */ defineImportRule({
  * `ParagraphNode` intermediate, and there is no need for a marker node
  * to distinguish them.
  */
-const TransparentBlockRule = /* @__PURE__ */ defineImportRule({
+const TransparentBlockRule = defineImportRule({
   $import: (ctx, el, $next) => {
     if (!isBlockDomNode(el)) {
       // Inline element with no dedicated rule — let the inline rules (or

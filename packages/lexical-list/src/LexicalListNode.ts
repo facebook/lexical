@@ -264,7 +264,7 @@ function $setListThemeClassNames(
       classesToAdd.push(...normalizeClassNames(listLevelClassName));
       for (let i = 0; i < listLevelsClassNames.length; i++) {
         if (i !== normalizedListDepth) {
-          classesToRemove.push(node.__tag + i);
+          classesToRemove.push(...normalizeClassNames(listLevelsClassNames[i]));
         }
       }
     }

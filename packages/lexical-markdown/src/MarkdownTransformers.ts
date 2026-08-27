@@ -281,12 +281,12 @@ const TAG_END_REGEX = /^<\/[a-z_][\w-]*\s*>/i;
 const ENDS_WITH = (regex: RegExp) =>
   new RegExp(`(?:${regex.source})$`, regex.flags);
 
-export const listMarkerState = /* @__PURE__ */ createState('mdListMarker', {
+export const listMarkerState = createState('mdListMarker', {
   parse: v => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
   resetOnCopyNode: true,
 });
 
-export const codeFenceState = /* @__PURE__ */ createState('mdCodeFence', {
+export const codeFenceState = createState('mdCodeFence', {
   parse: val => {
     if (typeof val === 'string' && /^`{3,}$/.test(val)) {
       return val;
@@ -298,18 +298,15 @@ export const codeFenceState = /* @__PURE__ */ createState('mdCodeFence', {
 
 export type MarkdownHardLineBreak = string;
 
-export const hardLineBreakState = /* @__PURE__ */ createState(
-  'mdHardLineBreak',
-  {
-    parse: (val): MarkdownHardLineBreak => {
-      if (typeof val === 'string' && /^(\\| {2,})$/.test(val)) {
-        return val;
-      }
-      return '';
-    },
-    resetOnCopyNode: true,
+export const hardLineBreakState = createState('mdHardLineBreak', {
+  parse: (val): MarkdownHardLineBreak => {
+    if (typeof val === 'string' && /^(\\| {2,})$/.test(val)) {
+      return val;
+    }
+    return '';
   },
-);
+  resetOnCopyNode: true,
+});
 
 export function parseMarkdownHardLineBreak(
   line: string,
@@ -928,6 +925,19 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
   type: 'text-format',
 };
 
+// `unescapeText` decodes a numeric character reference and a CommonMark reader
+// decodes the named ones too, so an `&` that begins one cannot be written raw
+// in a link destination or the URL comes back as the character it names. It
+// goes out as `&#38;` instead, which both of them read back as a single `&`.
+// An `&` that begins nothing is an ordinary character and stays as it is, so a
+// query string keeps the separators it was written with.
+function escapeCharacterReferences(value: string): string {
+  return value.replace(
+    /&(?=#\d+;|#[Xx][\dA-Fa-f]+;|[A-Za-z][\dA-Za-z]*;)/g,
+    '&#38;',
+  );
+}
+
 // Order of text transformers matters:
 //
 // - code should go first as it prevents any transformations inside
@@ -941,28 +951,97 @@ export const LINK: TextMatchTransformer = {
     const textContent = exportChildren(node);
     let title = node.getTitle();
 
+    // A title is read back through `unescapeText` as well, so a character
+    // reference in it needs the same treatment the destination gets below.
     if (title != null) {
-      title = title.replace(/([\\"])/g, '\\$1');
+      title = escapeCharacterReferences(title).replace(/([\\"])/g, '\\$1');
     }
 
+    // A raw destination cannot hold whitespace, so a URL that has any is
+    // written in the pointy form, where only `<`, `>` and a backslash need an
+    // escape. An empty URL goes there too, since the raw form has nothing left
+    // to match. Everywhere else the destination is written raw, where a
+    // parenthesis would close it early, a backslash would start an escape, and
+    // only a `<` in first place turns it into the pointy form. An angle
+    // bracket anywhere else is an ordinary character and goes out as it is.
+    //
+    // Neither shape may hold a line ending, so a literal one would leave a
+    // destination that no reader can close and would split the paragraph in
+    // two. It goes out as the character reference that `unescapeText` and a
+    // CommonMark reader both turn back into the line ending.
+    //
+    // That spelling only survives because a reader decodes it, so an `&` that
+    // already begins a character reference has to go out as one itself, or the
+    // URL comes back as whatever the reference names. Escaping it first keeps
+    // the references written for the line endings below out of its way.
+    const rawUrl = node.getURL();
+    const escapedUrl = escapeCharacterReferences(rawUrl);
+    const url =
+      rawUrl === '' || /\s/.test(rawUrl)
+        ? `<${escapedUrl
+            .replace(/([\\<>])/g, '\\$1')
+            .replace(/\r/g, '&#13;')
+            .replace(/\n/g, '&#10;')}>`
+        : escapedUrl.replace(/([\\()])/g, '\\$1').replace(/^</, '\\<');
+
     const linkContent = title
-      ? `[${textContent}](${node.getURL()} "${title}")`
-      : `[${textContent}](${node.getURL()})`;
+      ? `[${textContent}](${url} "${title}")`
+      : `[${textContent}](${url})`;
 
     return linkContent;
   },
+  // A link destination comes in two shapes, is itself optional, and may have
+  // whitespace on either side of it inside the parentheses. Between `<` and
+  // `>` it holds anything but a line ending and an unescaped angle bracket,
+  // whitespace included. Written raw it may not begin with `<`, and it holds a
+  // backslash and whatever follows it, a balanced pair of parentheses, or any
+  // other character that is not a space, a parenthesis or a backslash. An
+  // angle bracket anywhere but the first character is an ordinary character
+  // there. A backslash in front of whitespace escapes nothing, so that branch
+  // takes the backslash on its own and lets the whitespace end the
+  // destination.
+  //
+  // The parentheses nest three deep. A regular expression cannot count them,
+  // so the depth is a limit written down rather than a general rule, and no
+  // URL in the wild reaches past the one level a disambiguated Wikipedia
+  // article needs.
+  //
+  // A title comes after the destination and whitespace, in any of the three
+  // spellings CommonMark gives it. Inside every shape here no two alternatives
+  // can match at the same place, so none of them has anything to backtrack
+  // over.
+  //
+  // The trailing whitespace sits inside the optional group with the
+  // destination rather than after it. Outside, it would neighbour the leading
+  // `\s*` whenever the destination is absent, and two runs of the same
+  // whitespace side by side can be split between them in as many ways as there
+  // are characters, which costs a quadratic walk of every run that never
+  // reaches the closing parenthesis.
   importRegExp:
-    /(?:\[(.+?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
+    /(?:\[(.+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))/,
   regExp:
-    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
+    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
     if ($findMatchingParent(textNode, $isLinkNode)) {
       return;
     }
-    const [, linkText, rawLinkUrl, rawLinkTitle] = match;
+    const [
+      ,
+      linkText,
+      pointyLinkUrl,
+      rawLinkUrl,
+      quotedTitle,
+      apostrophedTitle,
+      parenthesizedTitle,
+    ] = match;
 
-    const linkUrl = rawLinkUrl != null ? unescapeText(rawLinkUrl) : undefined;
+    // At most one destination shape matched, either may legitimately be empty,
+    // and `[a]()` matches with no destination at all, so none of this can fall
+    // back on truthiness.
+    const linkUrl = unescapeText(pointyLinkUrl ?? rawLinkUrl ?? '');
+    // A title has three spellings and only the one that matched is defined.
+    const rawLinkTitle = quotedTitle ?? apostrophedTitle ?? parenthesizedTitle;
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});

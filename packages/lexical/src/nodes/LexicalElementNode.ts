@@ -709,12 +709,12 @@ export class ElementNode
   setFormat(type: ElementFormatType): this {
     const self = this.getWritable();
     self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] || 0 : 0;
-    return this;
+    return self;
   }
   setStyle(style: string): this {
     const self = this.getWritable();
     self.__style = style || '';
-    return this;
+    return self;
   }
   setTextFormat(type: number): this {
     const self = this.getWritable();
@@ -729,7 +729,7 @@ export class ElementNode
   setIndent(indentLevel: number): this {
     const self = this.getWritable();
     self.__indent = indentLevel;
-    return this;
+    return self;
   }
   splice(
     start: number,

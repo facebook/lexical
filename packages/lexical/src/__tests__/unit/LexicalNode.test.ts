@@ -2544,3 +2544,38 @@ describe('LexicalNode.$config() without registration', () => {
     );
   });
 });
+
+describe('a setter returns the version it wrote to', () => {
+  initializeUnitTest(testEnv => {
+    test('setFormat/setStyle/setIndent return the writable, not the receiver', () => {
+      // Each takes a writable, writes to it, and used to return `this` — the
+      // version it was called on, which getWritable() had just superseded.
+      // Their neighbours setTextFormat/setTextStyle return `self`, which is
+      // what makes this a slip rather than a decision.
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          $getRoot().clear().append($createParagraphNode());
+        },
+        {discrete: true},
+      );
+      // A node is cloned only *across* updates: within the one that created it
+      // getWritable() hands back the same object, so the two never diverge.
+      editor.update(
+        () => {
+          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const afterIndent = paragraph.setIndent(2);
+          expect(afterIndent).not.toBe(paragraph);
+          expect(afterIndent).toBe(paragraph.getLatest());
+          // The rest of the update no longer clones, so the remaining two are
+          // checked against the latest rather than against a fresh receiver.
+          expect(afterIndent.setStyle('color: red')).toBe(
+            paragraph.getLatest(),
+          );
+          expect(afterIndent.setFormat('center')).toBe(paragraph.getLatest());
+        },
+        {discrete: true},
+      );
+    });
+  });
+});

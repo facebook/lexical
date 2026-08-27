@@ -253,6 +253,11 @@ export interface SchemaGetterField extends SchemaFieldBase {
    * The predicate must be a pure, zero-argument method: it is called once per
    * export by the walk for each property that names it, and once in total by
    * generated code, which hoists a predicate that several properties share.
+   *
+   * Like the field read it gates, this is what {@link SchemaFieldBase.method}
+   * stands in for: a subclass that overrides that accessor abandons the field
+   * *and* the predicate, because a method that replaces the read replaces the
+   * decision to make it.
    */
   readonly when?: string;
   /**
@@ -327,6 +332,13 @@ export interface FieldOptions {
   readonly getter?: string;
   /** The setter this field write stands in for; see {@link SchemaFieldBase.method}. */
   readonly setter?: string;
+  /**
+   * The predicate gating the export direction; see
+   * {@link SchemaGetterField.when}. Like `decode`, it belongs to one direction
+   * only — the import direction has nothing to gate, since a property that was
+   * not written is simply absent.
+   */
+  readonly when?: string;
 }
 
 /**
@@ -377,17 +389,30 @@ type AccessorName<A> = A extends {readonly field: infer F extends string}
     ? A
     : never;
 
-/** Both directions of a {@link SchemaAccessors}. */
+/**
+ * Both directions of a {@link SchemaAccessors}.
+ *
+ * Each direction is inferred from an *optional* property, so a value typed as
+ * the interface rather than written as a literal yields the whole declared
+ * type — `string` for a name — instead of `never`. Requiring the property
+ * would make such a value name nothing and so discharge the check that
+ * {@link nodeSchema} performs, which is the one thing this must not do:
+ * `string` is not assignable to any node's {@link MemberOf}, so laundering an
+ * accessor through a variable fails loudly rather than silently.
+ */
 type AccessorNames<A> =
-  | (A extends {readonly getter: infer G} ? AccessorName<G> : never)
-  | (A extends {readonly setter: infer S} ? AccessorName<S> : never);
+  | (A extends {readonly getter?: infer G} ? AccessorName<G> : never)
+  | (A extends {readonly setter?: infer S} ? AccessorName<S> : never);
 
-/** Every name a {@link FieldOptions} declares, across both directions. */
+/**
+ * Every name a {@link FieldOptions} declares, across both directions;
+ * inferred from optional properties for the reason {@link AccessorNames} is.
+ */
 type FieldOptionNames<F> =
   | (F extends {readonly field: infer N extends string} ? N : never)
-  | (F extends {readonly getter: infer G extends string} ? G : never)
-  | (F extends {readonly setter: infer S extends string} ? S : never)
-  | (F extends {readonly when: infer W extends string} ? W : never);
+  | (F extends {readonly getter?: infer G extends string} ? G : never)
+  | (F extends {readonly setter?: infer S extends string} ? S : never)
+  | (F extends {readonly when?: infer W extends string} ? W : never);
 
 /** Every name the schemas of an {@link objectValue} shape declare. */
 type ShapeNames<S> = {[K in keyof S]: NamesOf<S[K]>}[keyof S];
@@ -1271,28 +1296,32 @@ export function objectValue<const S extends SerializationSchemaFields>(
  * subclass override of that method is not consulted. Use it when the property
  * really is the field — which is also what makes it safe to compile away.
  *
- * `getter`/`setter` name the accessor this field access stands in for. Name
- * them whenever the property has one — which is nearly always, since a node
- * that predates its schema already has `get<Prop>`/`set<Prop>` — so that a
- * subclass overriding either still decides; see {@link SchemaField.method}.
- * Leave them out only for a property that is *only* ever the field, which
- * bypasses any accessor a subclass may define. `decode`/`encode` declare a
- * property whose stored and serialized forms differ
- * ({@link SchemaField.decode} / {@link SchemaField.encode}).
+ * Each direction still stands in for an accessor, so a subclass that overrode
+ * one still decides; see {@link SchemaFieldBase.method}. That accessor is the
+ * conventional `get<Prop>`/`set<Prop>` unless `getter`/`setter` name a
+ * different one, so most declarations need neither — name one only where the
+ * accessor is spelled differently, as TextNode's `text` is (`getTextContent`).
+ * A node with no such method defers to nothing, which needs no declaring.
+ *
+ * `decode`/`encode` declare a property whose stored and serialized forms
+ * differ ({@link SchemaGetterField.decode} / {@link SchemaSetterField.encode}),
+ * and `when` names the predicate gating the export direction
+ * ({@link SchemaGetterField.when}).
  *
  * @example
  * ```ts
  * objectValue({
- *   // TextNode's own field in both directions, but getStyle/setStyle still
- *   // win for a subclass that overrides either.
- *   style: withField(stringValue(), {
- *     field: '__style',
- *     getter: 'getStyle',
- *     setter: 'setStyle',
+ *   // TextNode's own field in both directions, deferring to getStyle/setStyle
+ *   // for a subclass that overrides either — neither is spelled here, since
+ *   // both are the conventional name for a `style` property.
+ *   style: withField(stringValue(), {field: '__style'}),
+ *   // LinkNode's own field, standing in for getURL/setURL rather than the
+ *   // getUrl/setUrl the property name would derive.
+ *   url: withField(stringValue(), {
+ *     field: '__url',
+ *     getter: 'getURL',
+ *     setter: 'setURL',
  *   }),
- *   // A property that is only ever the field: exported as node.__id,
- *   // imported as `writable.__id = value`, deferring to nothing.
- *   id: withField(stringValue(), {field: '__id'}),
  * });
  * ```
  * @__NO_SIDE_EFFECTS__
@@ -1305,14 +1334,19 @@ export function withField<
   schema: SerializationSchema<T, Names>,
   field: F,
 ): SerializationSchema<T, Names | FieldOptionNames<F>> {
-  // `decode`/`encode` and the two method names are each one direction's, so
-  // the single options object is split into the two accessors here rather
-  // than making every caller write both out.
+  // `decode`/`encode`, `when` and the two method names each belong to one
+  // direction, so the single options object is split into the two accessors
+  // here rather than making every caller write both out.
   // The two accessor objects are built here rather than written by the
   // caller, so the names can only be recovered from `F` — which the return
   // type does. The runtime value is exactly what withAccessors produced.
   return withAccessors(schema, {
-    getter: {decode: field.decode, field: field.field, method: field.getter},
+    getter: {
+      decode: field.decode,
+      field: field.field,
+      method: field.getter,
+      when: field.when,
+    },
     setter: {encode: field.encode, field: field.field, method: field.setter},
   }) as SerializationSchema<T, Names | FieldOptionNames<F>>;
 }

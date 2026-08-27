@@ -579,6 +579,31 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
         field: '__foo',
       });
     });
+
+    test('withField splits its options into the direction each belongs to', () => {
+      // Every option but `field` is one direction's, so the direction that
+      // does not take it must not end up carrying it: a `when` on the setter
+      // has nothing to gate, and each table is read by one side only.
+      const schema = withField(numberValue(), {
+        decode: {1: 'one'},
+        encode: {one: 1},
+        field: '__count',
+        getter: 'getCount',
+        setter: 'setCount',
+        when: 'shouldWriteCount',
+      });
+      expect(schema.getter).toEqual({
+        decode: {1: 'one'},
+        field: '__count',
+        method: 'getCount',
+        when: 'shouldWriteCount',
+      });
+      expect(schema.setter).toEqual({
+        encode: {one: 1},
+        field: '__count',
+        method: 'setCount',
+      });
+    });
   });
 });
 
@@ -1355,6 +1380,10 @@ describe('a union member knows its own domain', () => {
       label: withAccessors(stringValue(), {
         getter: {field: '__label', when: 'shouldWrit'},
       }),
+    });
+    nodeSchema<NamedNode>({
+      // @ts-expect-error -- withField declares a predicate the same way
+      label: withField(stringValue(), {field: '__label', when: 'shouldWrit'}),
     });
   });
 

@@ -615,6 +615,15 @@ several properties share and calls it once in total. This is how `ElementNode`
 persists `textFormat` and `textStyle` only for an element with no `TextNode`
 child, without either property leaving the direct-field path.
 
+`withField(schema, {field, when})` declares the same thing for a property that
+is the field in both directions. Either way, the gate belongs to the export
+direction — there is nothing to gate on the way in, since a property that was
+not written is simply absent — so naming `when` on a setter is a compile error,
+like naming the wrong value table. And like the field read itself, the gate is
+what the accessor stands in for: if a subclass overrides that accessor, the
+field and the predicate are both abandoned and the method is called instead,
+because a method that replaces the read replaces the decision to make it.
+
 #### Names are checked against the node
 
 `nodeSchema<MyNode>` takes one type argument naming the node, and that is what

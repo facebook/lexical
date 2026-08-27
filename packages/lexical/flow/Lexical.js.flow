@@ -1816,8 +1816,13 @@ export type AnySerializationSchema = SerializationSchema<unknown>;
 export type SerializationSchemaFields = {
   readonly [key: string]: AnySerializationSchema,
 };
+// The record of per-property schemas for an object type: every key of `T`,
+// each with a schema for that key's type. Spelled out rather than aliased to
+// SerializationSchemaFields so that it checks what its TypeScript counterpart
+// checks — a shape missing a property, or describing one with the wrong
+// schema, is an error where it is declared.
 export type SerializationSchemaShape<T> = {
-  readonly [key: string]: AnySerializationSchema,
+  readonly [K in keyof T]: SerializationSchema<T[K]>,
 };
 export type SerializationSchemaMeta = {
   readonly kind: string,
@@ -1894,8 +1899,10 @@ declare export function nodeSchema<N>(fields: {
 // lookup table for a property whose stored and serialized forms differ is
 // declared only on the direction that reads it — `decode` on the getter,
 // `encode` on the setter — so naming the wrong one is an error rather than a
-// silently ignored property. `method` names the accessor the field access
-// stands in for, so a subclass that overrides it still decides.
+// silently ignored property, and `when` (the predicate that decides whether
+// the property is written at all) is the getter's for the same reason.
+// `method` names the accessor the field access stands in for, so a subclass
+// that overrides it still decides.
 export type SchemaFieldBase = {
   readonly field: string,
   readonly method?: string,
@@ -1903,22 +1910,28 @@ export type SchemaFieldBase = {
 export type SchemaGetterField = {
   ...SchemaFieldBase,
   readonly decode?: {readonly [key: string]: unknown},
+  readonly encode?: empty,
+  readonly when?: string,
 };
 export type SchemaSetterField = {
   ...SchemaFieldBase,
+  readonly decode?: empty,
   readonly encode?: {readonly [key: string]: unknown},
+  readonly when?: empty,
 };
 export type SchemaField = SchemaGetterField | SchemaSetterField;
 export type SchemaGetterAccessor = string | SchemaGetterField | null;
 export type SchemaSetterAccessor = string | SchemaSetterField | null;
 // Both directions of a property that *is* a node field, as withField takes
-// them.
+// them. `decode`, `encode` and `when` each belong to the one direction that
+// reads them, and are split onto it.
 export type FieldOptions = {
   readonly field: string,
   readonly decode?: {readonly [key: string]: unknown},
   readonly encode?: {readonly [key: string]: unknown},
   readonly getter?: string,
   readonly setter?: string,
+  readonly when?: string,
 };
 // One direction of a schema field: a method name, a node field, or null for a
 // direction that is deliberately unsupported.

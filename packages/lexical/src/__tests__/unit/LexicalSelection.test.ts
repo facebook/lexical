@@ -19,10 +19,12 @@ import {
 import {
   $createListItemNode,
   $createListNode,
+  $isListNode,
   ListExtension,
   type ListItemNode,
   type ListNode,
 } from '@lexical/list';
+import {$createQuoteNode, QuoteNode} from '@lexical/rich-text';
 import {
   $caretRangeFromSelection,
   $comparePointCaretNext,
@@ -1161,6 +1163,216 @@ describe('Regression tests for #8707', () => {
       expect(children).toHaveLength(2);
       assert($isParagraphNode(children[0]));
       assert($isDecoratorNode(children[1]));
+    });
+  });
+});
+
+describe('Regression tests for #9095', () => {
+  // insertNodes with block-level content at a collapsed selection first
+  // splits the target paragraph (insertParagraph), then tries to merge the
+  // split-off paragraph into the last inserted block. The merge branch
+  // required $isElementNode(lastInsertedBlock), so a pasted block-level
+  // DecoratorNode (which is its own INTERNAL_$isBlock ancestor) skipped the
+  // cleanup entirely, and a container element such as a ListNode failed the
+  // INTERNAL_$isBlock(lastToInsert) clause instead (its first child is a
+  // ListItemNode). Both left a stray empty paragraph after the pasted node
+  // whenever the caret sat at the end of a paragraph, while pasting a plain
+  // paragraph or quote at the same caret cleaned up correctly. The split-off
+  // paragraph is now also removed when it is empty, which keeps the
+  // mid-paragraph case (where it holds the text after the caret) intact.
+  const insertBlockTestExtension = defineExtension({
+    dependencies: [selectionTestExtension],
+    name: '@test/selection-insert-block',
+    nodes: [QuoteNode],
+  });
+
+  const $placeCaretInFirstText = (offset: number) => {
+    const paragraph = $getRoot().getFirstChildOrThrow();
+    assert($isParagraphNode(paragraph), 'Expected a paragraph');
+    const text = paragraph.getFirstChildOrThrow();
+    assert($isTextNode(text), 'Expected a text node');
+    text.select(offset, offset);
+  };
+
+  const setupParagraph = (
+    editor: LexicalEditorWithDispose,
+    text: string,
+    caretOffset: number,
+  ) => {
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode(text)));
+        $placeCaretInFirstText(caretOffset);
+      },
+      {discrete: true},
+    );
+  };
+
+  const insertBlocks = (
+    editor: LexicalEditorWithDispose,
+    $makeNodes: () => LexicalNode[],
+  ) => {
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'Expected RangeSelection');
+        selection.insertNodes($makeNodes());
+      },
+      {discrete: true},
+    );
+  };
+
+  const $makeList = () =>
+    $createListNode('bullet').append(
+      $createListItemNode().append($createTextNode('item')),
+    );
+
+  test('pasting a block decorator at the end of a paragraph leaves no empty paragraph', () => {
+    using editor = buildEditorFromExtensions(insertBlockTestExtension);
+    setupParagraph(editor, 'hello', 5);
+    insertBlocks(editor, () => [$createTestDecoratorNode().setIsInline(false)]);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      assert($isParagraphNode(children[0]));
+      expect(children[0].getTextContent()).toBe('hello');
+      assert($isDecoratorNode(children[1]));
+    });
+  });
+
+  test('pasting a block decorator in the middle of a paragraph keeps the trailing text', () => {
+    using editor = buildEditorFromExtensions(insertBlockTestExtension);
+    setupParagraph(editor, 'helloworld', 5);
+    insertBlocks(editor, () => [$createTestDecoratorNode().setIsInline(false)]);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(3);
+      assert($isParagraphNode(children[0]));
+      expect(children[0].getTextContent()).toBe('hello');
+      assert($isDecoratorNode(children[1]));
+      assert($isParagraphNode(children[2]));
+      expect(children[2].getTextContent()).toBe('world');
+    });
+  });
+
+  test('pasting a block decorator at the start of a paragraph keeps the paragraph after it', () => {
+    using editor = buildEditorFromExtensions(insertBlockTestExtension);
+    setupParagraph(editor, 'hello', 0);
+    insertBlocks(editor, () => [$createTestDecoratorNode().setIsInline(false)]);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      assert($isDecoratorNode(children[0]));
+      assert($isParagraphNode(children[1]));
+      expect(children[1].getTextContent()).toBe('hello');
+    });
+  });
+
+  test('pasting a list at the end of a paragraph leaves no empty paragraph', () => {
+    using editor = buildEditorFromExtensions(insertBlockTestExtension);
+    setupParagraph(editor, 'hello', 5);
+    insertBlocks(editor, () => [$makeList()]);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      assert($isParagraphNode(children[0]));
+      expect(children[0].getTextContent()).toBe('hello');
+      assert($isListNode(children[1]));
+      expect(children[1].getTextContent()).toBe('item');
+    });
+  });
+
+  test('pasting a list in the middle of a paragraph keeps the trailing text', () => {
+    using editor = buildEditorFromExtensions(insertBlockTestExtension);
+    setupParagraph(editor, 'helloworld', 5);
+    insertBlocks(editor, () => [$makeList()]);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(3);
+      assert($isParagraphNode(children[0]));
+      expect(children[0].getTextContent()).toBe('hello');
+      assert($isListNode(children[1]));
+      assert($isParagraphNode(children[2]));
+      expect(children[2].getTextContent()).toBe('world');
+    });
+  });
+
+  test('pasting a list at the start of a paragraph keeps the paragraph after it', () => {
+    using editor = buildEditorFromExtensions(insertBlockTestExtension);
+    setupParagraph(editor, 'hello', 0);
+    insertBlocks(editor, () => [$makeList()]);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      assert($isListNode(children[0]));
+      assert($isParagraphNode(children[1]));
+      expect(children[1].getTextContent()).toBe('hello');
+    });
+  });
+
+  // Control cases: at the same caret, a leaf block element merges through
+  // the existing branch and never leaves a stray paragraph. This is the
+  // in-function inconsistency the regression tests above pin down.
+  test('pasting a quote at the end of a paragraph merges into it (control)', () => {
+    using editor = buildEditorFromExtensions(insertBlockTestExtension);
+    setupParagraph(editor, 'hello', 5);
+    insertBlocks(editor, () => [
+      $createQuoteNode().append($createTextNode('quoted')),
+    ]);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      assert($isParagraphNode(children[0]));
+      expect(children[0].getTextContent()).toBe('helloquoted');
+    });
+  });
+
+  test('pasting a paragraph at the end of a paragraph merges into it (control)', () => {
+    using editor = buildEditorFromExtensions(insertBlockTestExtension);
+    setupParagraph(editor, 'hello', 5);
+    insertBlocks(editor, () => [
+      $createParagraphNode().append($createTextNode('world')),
+    ]);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      assert($isParagraphNode(children[0]));
+      expect(children[0].getTextContent()).toBe('helloworld');
+    });
+  });
+
+  test('typing after pasting a block decorator at the end creates a paragraph on demand', () => {
+    using editor = buildEditorFromExtensions(insertBlockTestExtension);
+    setupParagraph(editor, 'hello', 5);
+    insertBlocks(editor, () => [$createTestDecoratorNode().setIsInline(false)]);
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'Expected RangeSelection');
+        selection.insertText('x');
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(3);
+      assert($isParagraphNode(children[0]));
+      expect(children[0].getTextContent()).toBe('hello');
+      assert($isDecoratorNode(children[1]));
+      assert($isParagraphNode(children[2]));
+      expect(children[2].getTextContent()).toBe('x');
     });
   });
 });

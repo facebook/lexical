@@ -65,6 +65,7 @@ import {
 } from 'lexical';
 import {
   createTestEditor,
+  DECORATOR_BOUNDARY_ANCHOR_HTML,
   expectHtmlToBeEqual,
   html,
   TestComposer,
@@ -828,6 +829,8 @@ describe('SharedHistoryExtension', () => {
       },
       {discrete: true},
     );
+    // insertNodes at the end of the paragraph no longer leaves a stray empty
+    // paragraph after the block decorator (#9095).
     expectHtmlToBeEqual(
       dom.innerHTML,
       html`
@@ -839,7 +842,7 @@ describe('SharedHistoryExtension', () => {
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
         </div>
-        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+        ${DECORATOR_BOUNDARY_ANCHOR_HTML}
       `,
     );
     editor.read(() => {
@@ -864,7 +867,7 @@ describe('SharedHistoryExtension', () => {
             <span data-lexical-text="true">Child editor. Updated!</span>
           </p>
         </div>
-        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+        ${DECORATOR_BOUNDARY_ANCHOR_HTML}
       `,
     );
     expect(
@@ -898,7 +901,7 @@ describe('SharedHistoryExtension', () => {
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
         </div>
-        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+        ${DECORATOR_BOUNDARY_ANCHOR_HTML}
       `,
     );
     editor.update(() => editor.dispatchCommand(UNDO_COMMAND), {

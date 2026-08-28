@@ -15,7 +15,7 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   DROP_COMMAND,
 } from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {describe, expect, onTestFinished, test} from 'vitest';
 
 function createDropEventWithFiles(files: File[]): DragEvent {
   const dataTransfer = new DataTransfer();
@@ -63,15 +63,6 @@ function dispatchDropAndCaptureFiles(
 
 describe('RichTextExtension DROP_COMMAND file handling', () => {
   const fakeImage = new File(['fake-bytes'], 'photo.png', {type: 'image/png'});
-
-  afterEach(() => {
-    // Restore anything a test stubbed onto the document.
-    delete (
-      document as Document & {
-        caretRangeFromPoint?: unknown;
-      }
-    ).caretRangeFromPoint;
-  });
 
   test('dropped files are forwarded even when the drop point resolves to no caret', () => {
     // caretFromPoint() returns null whenever the browser cannot resolve a
@@ -122,6 +113,9 @@ describe('RichTextExtension DROP_COMMAND file handling', () => {
         return range;
       },
       writable: true,
+    });
+    onTestFinished(() => {
+      delete (document as {caretRangeFromPoint?: unknown}).caretRangeFromPoint;
     });
 
     const dispatchedFiles = dispatchDropAndCaptureFiles(

@@ -1338,6 +1338,9 @@ importers:
       '@lexical/a11y':
         specifier: workspace:*
         version: link:../lexical-a11y
+      '@lexical/code':
+        specifier: workspace:*
+        version: link:../lexical-code
       '@lexical/devtools-core':
         specifier: workspace:*
         version: link:../lexical-devtools-core
@@ -19929,7 +19932,7 @@ snapshots:
   '@types/react-router-config@5.0.11':
     dependencies:
       '@types/history': 4.7.11
-      '@types/react': 19.2.16
+      '@types/react': 19.2.18
       '@types/react-router': 5.1.20
 
   '@types/react-router-dom@5.3.3':

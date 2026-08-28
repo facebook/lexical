@@ -143,6 +143,30 @@ class ReservedDeclaredHostNode extends ElementNode {
   }
 }
 
+class WrappedSlotHostNode extends ElementNode {
+  $config() {
+    return this.config('wrapped_slot_host', {
+      extends: ElementNode,
+      slots: ['title'],
+    });
+  }
+  createDOM() {
+    const host = document.createElement('div');
+    const content = document.createElement('span');
+    content.dataset.content = 'true';
+    host.appendChild(content);
+    return host;
+  }
+  updateDOM() {
+    return false;
+  }
+  getDOMSlot(dom: HTMLElement) {
+    return super
+      .getDOMSlot(dom)
+      .withElement(dom.querySelector<HTMLElement>('[data-content]') ?? dom);
+  }
+}
+
 const mountedRoots: HTMLElement[] = [];
 afterEach(() => {
   while (mountedRoots.length > 0) {
@@ -170,6 +194,7 @@ function createSlotEditor(): LexicalEditorWithDispose {
         ReorderedHostNode,
         DupDeclaredHostNode,
         ReservedDeclaredHostNode,
+        WrappedSlotHostNode,
       ],
     }),
   );
@@ -182,6 +207,35 @@ function createSlotEditor(): LexicalEditorWithDispose {
 }
 
 describe('named-slots: core foundation', () => {
+  test('an empty wrapped child area gets a managed line break', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+
+    editor.update(
+      () => {
+        const host = $create(WrappedSlotHostNode).append(
+          $createTextNode('Body'),
+        );
+        $getRoot().append(host);
+        $setSlot(host, 'title', $slotContainer('Title'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        $assertNodeType($getNodeByKey(hostKey), $isElementNode).clear();
+      },
+      {discrete: true},
+    );
+
+    const hostDom = editor.getElementByKey(hostKey)!;
+    const content = hostDom.querySelector('[data-content]')!;
+    expect(
+      content.querySelector('[data-lexical-managed-linebreak="true"]'),
+    ).not.toBe(null);
+  });
+
   test('a slotted node is reachable, parentless, and attached', () => {
     using editor = createSlotEditor();
     let hostKey = '';
@@ -1398,6 +1452,29 @@ describe('named-slots: core foundation', () => {
     // A truly empty host (no slots, no children) still gets the br — the
     // gate is scoped to slots-only hosts.
     expect(directBr(editor.getElementByKey(emptyHostKey)!)).not.toBe(undefined);
+
+    editor.update(
+      () => {
+        $removeSlot(
+          $assertNodeType($getNodeByKey(slotHostKey), $isElementNode),
+          'title',
+        );
+      },
+      {discrete: true},
+    );
+    expect(directBr(editor.getElementByKey(slotHostKey)!)).not.toBe(undefined);
+
+    editor.update(
+      () => {
+        $setSlot(
+          $assertNodeType($getNodeByKey(slotHostKey), $isElementNode),
+          'title',
+          $slotContainer('New title'),
+        );
+      },
+      {discrete: true},
+    );
+    expect(directBr(editor.getElementByKey(slotHostKey)!)).toBeUndefined();
   });
 
   test('descendant navigation stays children-only (slots stay out of selection)', () => {

@@ -20,6 +20,10 @@
       "@lexical/code-core": ["./packages/lexical-code-core/src/index.ts"],
       "@lexical/code-prism": ["./packages/lexical-code-prism/src/index.ts"],
       "@lexical/code-shiki": ["./packages/lexical-code-shiki/src/index.ts"],
+      "@lexical/compiler": ["./packages/lexical-compiler/src/index.ts"],
+      "@lexical/compiler/PureAnnotations": [
+        "./packages/lexical-compiler/src/PureAnnotations.ts"
+      ],
       "@lexical/devtools-core": [
         "./packages/lexical-devtools-core/src/index.ts"
       ],
@@ -258,6 +262,8 @@
       "@lexical/code-prism/src/*": ["./packages/lexical-code-prism/src/*"],
       "@lexical/code-shiki/src": ["./packages/lexical-code-shiki/src"],
       "@lexical/code-shiki/src/*": ["./packages/lexical-code-shiki/src/*"],
+      "@lexical/compiler/src": ["./packages/lexical-compiler/src"],
+      "@lexical/compiler/src/*": ["./packages/lexical-compiler/src/*"],
       "@lexical/devtools-core/src": ["./packages/lexical-devtools-core/src"],
       "@lexical/devtools-core/src/*": [
         "./packages/lexical-devtools-core/src/*"

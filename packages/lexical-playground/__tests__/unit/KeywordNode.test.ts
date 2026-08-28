@@ -54,16 +54,14 @@ function keywordClasses(editor: LexicalEditorWithDispose): string[] {
 
 describe('KeywordNode', () => {
   it('keeps the theme class of the text format it was created with', () => {
-    const editor = makeEditor();
-    using _ = editor;
+    using editor = makeEditor();
     editor.update(() => $appendKeyword('underline'), {discrete: true});
 
     expect(keywordClasses(editor)).toEqual(['keyword', 'theme-underline']);
   });
 
   it('keeps the theme class across a re-render of the keyword', () => {
-    const editor = makeEditor();
-    using _ = editor;
+    using editor = makeEditor();
     editor.update(() => $appendKeyword('bold'), {discrete: true});
     // Re-create the node so createDOM() runs again, which is what a paste, an
     // undo/redo across the node, or a reload does.

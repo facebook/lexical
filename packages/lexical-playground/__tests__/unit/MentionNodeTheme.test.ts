@@ -47,8 +47,7 @@ function mentionClasses(editor: LexicalEditorWithDispose): string[] {
 
 describe('MentionNode theme classes', () => {
   it('keeps the theme class of the format it was created with', () => {
-    const editor = makeEditor();
-    using _ = editor;
+    using editor = makeEditor();
     editor.update(
       () => {
         const mention = $createMentionNode('Luke').setFormat('underline');
@@ -61,8 +60,7 @@ describe('MentionNode theme classes', () => {
   });
 
   it('keeps the theme class when a format change rebuilds the element', () => {
-    const editor = makeEditor();
-    using _ = editor;
+    using editor = makeEditor();
     editor.update(
       () => {
         const mention = $createMentionNode('Luke');

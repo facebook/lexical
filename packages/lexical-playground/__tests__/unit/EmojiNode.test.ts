@@ -58,8 +58,7 @@ function emojiDOM(editor: LexicalEditorWithDispose): HTMLElement {
 
 describe('EmojiNode', () => {
   it('renders a tag-changing format applied after the emoji exists', () => {
-    const editor = makeEditor();
-    using _ = editor;
+    using editor = makeEditor();
     editor.update(() => void $appendEmoji(), {discrete: true});
     expect(emojiDOM(editor).querySelector('strong')).toBe(null);
 
@@ -72,8 +71,7 @@ describe('EmojiNode', () => {
   });
 
   it('keeps the theme class of a class-only format on the inner element', () => {
-    const editor = makeEditor();
-    using _ = editor;
+    using editor = makeEditor();
     editor.update(() => void $appendEmoji().setFormat('underline'), {
       discrete: true,
     });

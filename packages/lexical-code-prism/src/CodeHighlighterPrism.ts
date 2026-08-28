@@ -26,6 +26,7 @@ import {
   $isRangeSelection,
   $isTabNode,
   $isTextNode,
+  $nodesOfType,
   $onUpdate,
   defineExtension,
   type LexicalEditor,
@@ -33,8 +34,7 @@ import {
   mergeRegister,
   type NodeKey,
   safeCast,
-  TextNode,
-} from 'lexical';
+  TextNode} from 'lexical';
 
 import {
   $getHighlightNodes,
@@ -404,6 +404,17 @@ export function registerHighlightingOnly(
     didTransform: false,
     nodesCurrentlyHighlighting: new Set(),
   };
+
+  editor.update(
+    () => {
+      const codeNodes = $nodesOfType(CodeNode);
+      for (const codeNode of codeNodes) {
+        $codeNodeTransform(editor, tokenizer, transformState, codeNode);
+      }
+    },
+    { tag: 'code-highlight-init' }
+  );
+
   registrations.push(
     editor.registerNodeTransform(
       CodeNode,

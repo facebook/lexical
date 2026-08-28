@@ -22,7 +22,7 @@ import {assert, describe, expect, it} from 'vitest';
 
 import {$createEmojiNode, EmojiNode} from '../../src/nodes/EmojiNode';
 
-const EmojiThemeTestExtension = /* @__PURE__ */ defineExtension({
+const EmojiThemeTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [RichTextExtension],
   name: '[test-emoji-theme]',

@@ -21,7 +21,7 @@ import {assert, describe, expect, it} from 'vitest';
 
 import {$createMentionNode, MentionNode} from '../../src/nodes/MentionNode';
 
-const MentionThemeTestExtension = /* @__PURE__ */ defineExtension({
+const MentionThemeTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [RichTextExtension],
   name: '[test-mention-theme]',

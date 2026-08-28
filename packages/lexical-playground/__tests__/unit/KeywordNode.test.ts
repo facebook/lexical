@@ -21,7 +21,7 @@ import {assert, describe, expect, it} from 'vitest';
 
 import {$createKeywordNode, KeywordNode} from '../../src/nodes/KeywordNode';
 
-const KeywordThemeTestExtension = /* @__PURE__ */ defineExtension({
+const KeywordThemeTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [RichTextExtension],
   name: '[test-keyword-theme]',

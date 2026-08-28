@@ -4130,24 +4130,18 @@ export function $applyJSONSetters<T extends LexicalNode>(
       const next = entry.setter.call(self, parsed);
       // Lexical setters conventionally return the writable node so calls can
       // be chained, but a `void` setter is perfectly valid — it has already
-      // mutated the node through getWritable(). Only follow a return value
-      // that is actually a node, so such a setter doesn't strand the rest of
-      // the schema on `undefined`. The identity check short-circuits every
-      // call after the first: getWritable() returns the same object for the
-      // rest of the update.
+      // mutated the node through getWritable() — so a nullish return means
+      // "unchanged" rather than stranding the rest of the schema on
+      // `undefined`. The identity comparison short-circuits every call after
+      // the first: getWritable() returns the same object for the rest of the
+      // update.
       //
-      // Following it also requires the same logical node. A setter that
-      // returns some *other* node would otherwise redirect every remaining
-      // property onto it — and because the compiled setters are detached
-      // prototype references applied with `.call`, they would run on the
-      // foreign node rather than failing — writing this node's properties
-      // somewhere else and returning it from a method declared to return
-      // `this`.
-      if (
-        next !== self &&
-        $isLexicalNode(next) &&
-        next.getKey() === self.getKey()
-      ) {
+      // Anything else is followed as given. A setter is declared to return
+      // `this`; one that returns some other value is a contract violation, and
+      // following it — which will throw on the next setter's `getWritable()` —
+      // is a better answer than quietly ignoring it and writing the remaining
+      // properties to a node the setter said it had replaced.
+      if ((next || self) !== self) {
         self = next as T;
       }
     }

@@ -19,7 +19,7 @@ import {
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
-const QuoteTestExtension = /* @__PURE__ */ defineExtension({
+const QuoteTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [RichTextExtension],
   name: '[test-quote-insert-new-after]',

@@ -19,6 +19,7 @@ import type {
 } from '../LexicalNode';
 import type {BaseSelection, RangeSelection} from '../LexicalSelection';
 
+import {$isBlockFullySelected} from '../caret/LexicalCaretUtils';
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {$isRangeSelection} from '../LexicalSelection';
 import {
@@ -141,14 +142,11 @@ export class ParagraphNode extends ElementNode {
     // A partial selection is a fragment of a line rather than a block: that
     // fragment must merge into the paste target instead of imposing its source
     // block on it.
-    const anchorNode = selection.anchor.getNode();
-    const focusNode = selection.focus.getNode();
-    return (
-      this.isParentOf(anchorNode) &&
-      this.isParentOf(focusNode) &&
-      this.getTextContentSize() > 0 &&
-      selection.getTextContent().length === this.getTextContentSize()
-    );
+    if ($isBlockFullySelected(this, selection)) {
+      const textContent = this.getTextContent();
+      return textContent !== '' && selection.getTextContent() === textContent;
+    }
+    return false;
   }
 
   // Mutation
@@ -169,15 +167,15 @@ export class ParagraphNode extends ElementNode {
   }
 
   collapseAtStart(): boolean {
-    const children = this.getChildren();
     // If we have an empty (trimmed) first paragraph and try and remove it,
     // delete the paragraph as long as we have another sibling to go to.
     // Every child has to be blank text: a paragraph that merely starts with
     // blank text still has content to lose, and a non-text child (an inline
     // decorator, a line break) is content even when it contributes no text.
     if (
-      children.length === 0 ||
-      (children.every($isTextNode) && this.getTextContent().trim() === '')
+      this.getChildren().every(
+        node => $isTextNode(node) && !/\S/.test(node.getTextContent()),
+      )
     ) {
       const nextSibling = this.getNextSibling();
       if (nextSibling !== null) {

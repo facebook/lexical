@@ -6,6 +6,7 @@
  *
  */
 
+import {CodeNode} from '@lexical/code';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {type EditorState, HISTORY_MERGE_TAG, type LexicalEditor} from 'lexical';
 
@@ -45,6 +46,12 @@ export function OnChangePlugin({
             (ignoreHistoryMergeTagChange && tags.has(HISTORY_MERGE_TAG)) ||
             prevEditorState.isEmpty()
           ) {
+            return;
+          }
+
+          const hasTag = tags.has('code-highlight-init') && tags.has('focus');
+
+          if (hasTag && editor.hasNodes([CodeNode])) {
             return;
           }
 

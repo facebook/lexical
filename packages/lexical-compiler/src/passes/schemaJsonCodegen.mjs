@@ -104,11 +104,32 @@ export const NUM_BODY = `  if (typeof v === 'number') {
   const n = Number(v);
   return Number.isFinite(n) ? n : d;`;
 
-/** The `num` helper as TypeScript, for a module that emits a compiled parse. */
+/**
+ * The constrained mirror of {@link NUM_BODY}, for `numberValue`'s `min`/`max`/
+ * `integer` options. Applied to what `num` returned rather than to the input,
+ * exactly as `numberValue` tests its coerced value — and falling back to `d`
+ * either way, which is what `numberValue` does when the domain rejects it,
+ * including for a default that is itself out of range.
+ */
+const NUM_RANGE_BODY = `  const n = num(v, d);
+  return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;`;
+
+/** The `num` helpers as TypeScript, for a module that emits a compiled parse. */
 export const NUM_HELPER_SOURCE = `const JSON_NUMBER = ${JSON_NUMBER_SOURCE};
 
 function num(v: unknown, d: number): number {
 ${NUM_BODY}
+}`;
+
+/** The `numC` helper, emitted alongside `num` when a domain is constrained. */
+export const NUM_RANGE_HELPER_SOURCE = `function numC(
+  v: unknown,
+  d: number,
+  min: number,
+  max: number,
+  integer: boolean,
+): number {
+${NUM_RANGE_BODY}
 }`;
 
 /** @param {unknown} value @returns {string} */
@@ -169,9 +190,12 @@ function compile(meta, defaultValue, base, tables) {
     }
     case 'number': {
       if (meta.min !== undefined || meta.max !== undefined || meta.integer) {
-        // Compilable in principle, just not compiled yet: nothing generated
-        // today has a constrained number on a field-backed property.
-        throw new NotCompilable('a constrained numberValue');
+        // The bounds are emitted as source rather than through `literal`,
+        // which renders a non-finite number as `null`: an absent bound is
+        // exactly ±Infinity, and JSON.stringify cannot say so.
+        const min = meta.min === undefined ? '-Infinity' : String(meta.min);
+        const max = meta.max === undefined ? 'Infinity' : String(meta.max);
+        return `numC(v, ${fallback}, ${min}, ${max}, ${Boolean(meta.integer)})`;
       }
       return `num(v, ${fallback})`;
     }
@@ -292,16 +316,42 @@ export function verifyCompiledParse({
   const compiled = new Function(
     'v',
     'SCOPE',
-    `const {${['num', ...names].join(', ')}} = SCOPE; return (${expression});`,
+    `const {${['num', 'numC', ...names].join(', ')}} = SCOPE; return (${expression});`,
   );
   // eslint-disable-next-line no-new-func
   const num = new Function('v', 'd', 'JSON_NUMBER', NUM_BODY);
+  // eslint-disable-next-line no-new-func
+  const numC = new Function(
+    'v',
+    'd',
+    'min',
+    'max',
+    'integer',
+    'num',
+    NUM_RANGE_BODY,
+  );
   const jsonNumber = new RegExp(
     JSON_NUMBER_SOURCE.slice(1, JSON_NUMBER_SOURCE.lastIndexOf('/')),
   );
   const scope = {
     num: (/** @type {unknown} */ v, /** @type {number} */ d) =>
       num(v, d, jsonNumber),
+    numC: (
+      /** @type {unknown} */ v,
+      /** @type {number} */ d,
+      /** @type {number} */ min,
+      /** @type {number} */ max,
+      /** @type {boolean} */ integer,
+    ) =>
+      numC(
+        v,
+        d,
+        min,
+        max,
+        integer,
+        (/** @type {unknown} */ x, /** @type {number} */ y) =>
+          num(x, y, jsonNumber),
+      ),
     ...Object.fromEntries(
       tables.map(({name, table}) => [
         name,

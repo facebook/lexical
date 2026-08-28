@@ -34,10 +34,13 @@ export interface GeneratedJSON {
   // accepts and every call site then has to cast back.
   exportJSON(node: LexicalNode): {[key: string]: unknown};
   exportCompactJSON?(node: LexicalNode): {[key: string]: unknown};
+  // Returns the node the properties were applied to, which is the node passed
+  // in unless a setter replaced it — the same value `$applyJSONSetters`
+  // returns from the walk, for the same reason.
   updateFromJSON?(
     node: LexicalNode,
     json: {readonly [key: string]: unknown},
-  ): void;
+  ): LexicalNode;
 }
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
@@ -58,6 +61,17 @@ function num(v: unknown, d: number): number {
   // Number.isFinite on the coerced value rather than on the input.
   const n = Number(v);
   return Number.isFinite(n) ? n : d;
+}
+
+function numC(
+  v: unknown,
+  d: number,
+  min: number,
+  max: number,
+  integer: boolean,
+): number {
+  const n = num(v, d);
+  return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
 // Null-prototype: a key the table does not have must miss rather than
@@ -158,7 +172,7 @@ function exportCompactTextNode(node: TextNode): {[key: string]: unknown} {
 function updateTextNode(
   node: TextNode,
   json: {readonly [key: string]: unknown},
-): void {
+): TextNode {
   let v: unknown;
   v = json.detail;
   node.__detail =
@@ -178,6 +192,7 @@ function updateTextNode(
   node.__style = typeof v === 'string' ? v : '';
   v = json.text;
   node.__text = typeof v === 'string' ? v : '';
+  return node;
 }
 
 /** TextNode's generated implementations, for its `$config`. @internal */
@@ -246,10 +261,51 @@ function exportCompactParagraphNode(node: ParagraphNode): {
   return json;
 }
 
+/** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
+function updateParagraphNode(
+  node: ParagraphNode,
+  json: {readonly [key: string]: unknown},
+): ParagraphNode {
+  let self = node;
+  let n: unknown;
+  let v: unknown;
+  v = json.direction;
+  self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+  v = json.format;
+  n = self.setFormat(
+    v === '' ||
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
+      ? v
+      : '',
+  );
+  if ((n || self) !== self) {
+    self = n as ParagraphNode;
+  }
+  v = json.indent;
+  self.__indent = numC(v, 0, 0, Infinity, true);
+  v = json.textFormat;
+  n = self.setTextFormat(num(v, 0));
+  if ((n || self) !== self) {
+    self = n as ParagraphNode;
+  }
+  v = json.textStyle;
+  n = self.setTextStyle(typeof v === 'string' ? v : '');
+  if ((n || self) !== self) {
+    self = n as ParagraphNode;
+  }
+  return self;
+}
+
 /** ParagraphNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_PARAGRAPH: GeneratedJSON = {
   exportJSON: exportParagraphNode,
   exportCompactJSON: exportCompactParagraphNode,
+  updateFromJSON: updateParagraphNode,
 };
 
 /** Generated from LineBreakNode's serialization schema. Do not edit by hand. */

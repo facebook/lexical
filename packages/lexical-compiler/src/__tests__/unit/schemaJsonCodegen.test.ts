@@ -159,8 +159,6 @@ describe('compileParse reproduces the schema it compiles', () => {
 
 describe('compileParse refuses what it cannot express', () => {
   test.each([
-    ['a constrained numberValue', () => numberValue(0, {min: 1})],
-    ['an integer numberValue', () => numberValue(0, {integer: true})],
     ['nullable', () => nullable(stringValue())],
     ['optional', () => optional(numberValue())],
     ['arrayValue', () => arrayValue(stringValue())],
@@ -172,6 +170,31 @@ describe('compileParse refuses what it cannot express', () => {
     expect(() => compileParse(schema.meta, schema.defaultValue, 'T')).toThrow(
       NotCompilable,
     );
+  });
+});
+
+describe('a constrained numberValue compiles to its bounds', () => {
+  test.each([
+    ['a minimum', () => numberValue(0, {min: 1})],
+    ['a maximum', () => numberValue(0, {max: 10})],
+    ['integers only', () => numberValue(0, {integer: true})],
+    ['all three', () => numberValue(2, {integer: true, max: 8, min: 1})],
+    // The bound an absent option stands for is ±Infinity, which JSON.stringify
+    // renders as `null` — so it is emitted as source, not through `literal`.
+    ['no bounds at all', () => numberValue(3)],
+  ])('%s', (_label, build) => {
+    const schema = build() as AnySerializationSchema;
+    const {expression, tables} = compileParse(
+      schema.meta,
+      schema.defaultValue,
+      'T',
+    );
+    // The verification runs the emitted expression against the schema over the
+    // corpus, so this is what proves the bounds were reproduced rather than
+    // merely emitted.
+    expect(() =>
+      verifyCompiledParse({expression, schema, tables}),
+    ).not.toThrow();
   });
 });
 

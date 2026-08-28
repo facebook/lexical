@@ -51,6 +51,7 @@ import {
   literal,
   NotCompilable,
   NUM_HELPER_SOURCE,
+  NUM_RANGE_HELPER_SOURCE,
   verifyCompiledParse,
   verifyTableCoversDomain,
 } from '../packages/lexical-compiler/src/passes/schemaJsonCodegen.mjs';
@@ -153,10 +154,13 @@ export interface GeneratedJSON {
   // accepts and every call site then has to cast back.
   exportJSON(node: LexicalNode): {[key: string]: unknown};
   exportCompactJSON?(node: LexicalNode): {[key: string]: unknown};
+  // Returns the node the properties were applied to, which is the node passed
+  // in unless a setter replaced it — the same value \`$applyJSONSetters\`
+  // returns from the walk, for the same reason.
   updateFromJSON?(
     node: LexicalNode,
     json: {readonly [key: string]: unknown},
-  ): void;
+  ): LexicalNode;
 }`;
 
 /**
@@ -688,7 +692,7 @@ function isElementish(klass) {
  * @param {NodeClass} klass
  * @param {AnySchema} schema
  * @param {string} key
- * @returns {{key: string, statements: string}}
+ * @returns {{key: string, needsSelf: boolean, statements: string}}
  */
 function writeExpression(klass, schema, key) {
   if (key in Object.prototype) {
@@ -703,11 +707,6 @@ function writeExpression(klass, schema, key) {
   if (setter === null) {
     throw new NotCompilable(`"${key}" is export-only`);
   }
-  if (!isSchemaField(setter)) {
-    // A method could be called, but then the node it returns has to be threaded
-    // through the rest, and every class generated today is all-fields anyway.
-    throw new NotCompilable(`"${key}" is applied through ${setter}()`);
-  }
   const {expression, tables: parseTables} = compileParse(
     schema.meta,
     schema.defaultValue,
@@ -717,11 +716,35 @@ function writeExpression(klass, schema, key) {
   for (const {name, table} of parseTables) {
     addTable(name, table);
   }
+  if (!isSchemaField(setter)) {
+    // Applied through a method: call it and follow what it returns, which is
+    // the rule $applyJSONSetters uses. A `void` setter has already mutated
+    // through getWritable(), so a nullish return means unchanged; the identity
+    // comparison short-circuits every call after the first, since getWritable()
+    // returns the same object for the rest of the update.
+    try {
+      verifyCompiledParse({
+        expression,
+        nullPrototypeTables,
+        schema,
+        tables: parseTables,
+      });
+    } catch (error) {
+      throw error instanceof NotCompilable
+        ? new NotCompilable(`"${key}" ${error.message}`)
+        : error;
+    }
+    return {
+      key,
+      needsSelf: true,
+      statements: `  v = json.${key};\n  n = self.${setter}(${expression});\n  if ((n || self) !== self) {\n    self = n as ${klass.name};\n  }`,
+    };
+  }
   const {encode} = setter;
   // Two statements rather than one expression when a table has to be applied
   // after parsing: folding them together needs an IIFE, and a closure per
   // property per node is most of what generating this was meant to remove.
-  let statements = `  v = json.${key};\n  node.${setter.field} = ${expression};`;
+  let statements = `  v = json.${key};\n  self.${setter.field} = ${expression};`;
   if (encode !== undefined) {
     const name = tableName(klass, key, 'ENCODE');
     addTable(name, encode);
@@ -733,7 +756,7 @@ function writeExpression(klass, schema, key) {
       encode[/** @type {string} */ (schema.defaultValue)],
     );
     const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
-    statements = `  v = json.${key};\n  v = ${expression};\n  node.${setter.field} = ${lookup};`;
+    statements = `  v = json.${key};\n  v = ${expression};\n  self.${setter.field} = ${lookup};`;
   }
   try {
     verifyCompiledParse({
@@ -753,7 +776,7 @@ function writeExpression(klass, schema, key) {
       ? new NotCompilable(`"${key}" ${error.message}`)
       : error;
   }
-  return {key, statements};
+  return {key, needsSelf: false, statements};
 }
 
 /**
@@ -786,13 +809,22 @@ function generateUpdate(klass) {
     return null;
   }
   const body = writes.map(({statements}) => statements).join('\n');
+  // `self` and `n` only when a property is applied through a method: a setter
+  // may return a different node, and the rest of the schema goes to whichever
+  // one it returned. An all-fields class writes to `node` throughout and needs
+  // neither binding.
+  const needsSelf = writes.some(write => write.needsSelf);
+  const locals = needsSelf
+    ? `  let self = node;\n  let n: unknown;\n  let v: unknown;`
+    : `  let v: unknown;`;
   return `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */
 function update${klass.name}(
   node: ${klass.name},
   json: {readonly [key: string]: unknown},
-): void {
-  let v: unknown;
-${body}
+): ${klass.name} {
+${locals}
+${needsSelf ? body : body.replace(/\bself\./g, 'node.')}
+  return ${needsSelf ? 'self' : 'node'};
 }`;
 }
 
@@ -848,9 +880,15 @@ function generatePackage(pkg) {
     )
     .join('\n\n');
 
-  const needsNum = generated.some(
-    g => g.updateFromJSON !== null && g.updateFromJSON.includes('num('),
+  // `numC` calls `num`, so a constrained domain needs both.
+  const needsNumC = generated.some(
+    g => g.updateFromJSON !== null && g.updateFromJSON.includes('numC('),
   );
+  const needsNum =
+    needsNumC ||
+    generated.some(
+      g => g.updateFromJSON !== null && g.updateFromJSON.includes('num('),
+    );
 
   /** Class names by the module that declares them. @type {Map<string, Set<string>>} */
   const typeImports = new Map();
@@ -962,7 +1000,7 @@ ${pkg.home ? `\n${INTERFACE_SOURCE}\n` : ''}${
 // produces. Emitted from the same source the codegen verified against, so the
 // two cannot be different functions.
 ${NUM_HELPER_SOURCE}
-`
+${needsNumC ? `\n${NUM_RANGE_HELPER_SOURCE}\n` : ''}`
       : ''
   }${tableSource ? `\n${tableSource}\n` : ''}
 ${pieces.join('\n\n')}

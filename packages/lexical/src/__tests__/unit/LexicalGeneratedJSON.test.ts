@@ -424,14 +424,43 @@ describe('the synthesized importJSON closes over its generated parser', () => {
 
 describe('generated updateFromJSON', () => {
   test('only a class the generator could compile has one', () => {
-    // TextNode's every property is one of its own fields with a domain stated
-    // as data. ParagraphNode applies its properties through set<Prop>, and
-    // TabNode declares three of its own import-only, so neither is generated —
-    // and the generator says so rather than emitting a parser that disagrees.
+    // Every property of TextNode and of ParagraphNode has a domain the
+    // compiler can state — a field write, or a set<Prop> whose return is
+    // followed the way the walk follows it.
     expect(GENERATED_TEXT.updateFromJSON).toBeDefined();
-    expect(GENERATED_PARAGRAPH.updateFromJSON).toBeUndefined();
+    expect(GENERATED_PARAGRAPH.updateFromJSON).toBeDefined();
+    // TabNode declares three of its own properties import-only, so a parser
+    // would have nothing to apply; LineBreakNode declares none at all. The
+    // generator says so rather than emitting one that disagrees with the walk.
     expect(GENERATED_TAB.updateFromJSON).toBeUndefined();
     expect(GENERATED_LINEBREAK.updateFromJSON).toBeUndefined();
+  });
+
+  test('a generated parser returns the node the walk would have', () => {
+    // It can now apply a property through a method, and a setter is free to
+    // return a different node — so the parser threads the return the way
+    // $applyJSONSetters does, and hands back what it ended on.
+    const updateParagraph = GENERATED_PARAGRAPH.updateFromJSON;
+    invariant(updateParagraph !== undefined, 'expected a generated parser');
+    const editor = createEditor({onError: e => Promise.reject(e)});
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        $getRoot().clear().append(paragraph);
+        expect(updateParagraph(paragraph, {format: 'center', indent: 3})).toBe(
+          paragraph.getLatest(),
+        );
+        expect(paragraph.getLatest().getFormatType()).toBe('center');
+        expect(paragraph.getLatest().getIndent()).toBe(3);
+        // The constrained domain is enforced by the emitted bounds, not by a
+        // setter: indent is `integer, min 0`.
+        updateParagraph(paragraph.getLatest(), {indent: -2});
+        expect(paragraph.getLatest().getIndent()).toBe(0);
+        updateParagraph(paragraph.getLatest(), {indent: 1.5});
+        expect(paragraph.getLatest().getIndent()).toBe(0);
+      },
+      {discrete: true},
+    );
   });
 
   initializeUnitTest(testEnv => {

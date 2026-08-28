@@ -16,6 +16,37 @@
 import type {HeadingNode, QuoteNode} from './index';
 import type {GeneratedJSON} from 'lexical';
 
+// The JSON number grammar, anchored, matching numberValue: `Number()` alone
+// reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
+// produces. Emitted from the same source the codegen verified against, so the
+// two cannot be different functions.
+const JSON_NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+
+function num(v: unknown, d: number): number {
+  if (typeof v === 'number') {
+    return Number.isFinite(v) ? v : d;
+  }
+  if (typeof v !== 'string' || !JSON_NUMBER.test(v)) {
+    return d;
+  }
+  // Matching the grammar is not enough to be in domain: '1e999' is a
+  // well-formed JSON number that coerces to Infinity, and numberValue tests
+  // Number.isFinite on the coerced value rather than on the input.
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+
+function numC(
+  v: unknown,
+  d: number,
+  min: number,
+  max: number,
+  integer: boolean,
+): number {
+  const n = num(v, d);
+  return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
+}
+
 /** Generated from HeadingNode's serialization schema. Do not edit by hand. */
 function exportHeadingNode(node: HeadingNode): {[key: string]: unknown} {
   const textFormat = node.__textFormat;
@@ -78,10 +109,61 @@ function exportCompactHeadingNode(node: HeadingNode): {[key: string]: unknown} {
   return json;
 }
 
+/** Generated from HeadingNode's serialization schema. Do not edit by hand. */
+function updateHeadingNode(
+  node: HeadingNode,
+  json: {readonly [key: string]: unknown},
+): HeadingNode {
+  let self = node;
+  let n: unknown;
+  let v: unknown;
+  v = json.direction;
+  self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+  v = json.format;
+  n = self.setFormat(
+    v === '' ||
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
+      ? v
+      : '',
+  );
+  if ((n || self) !== self) {
+    self = n as HeadingNode;
+  }
+  v = json.indent;
+  self.__indent = numC(v, 0, 0, Infinity, true);
+  v = json.textFormat;
+  n = self.setTextFormat(num(v, 0));
+  if ((n || self) !== self) {
+    self = n as HeadingNode;
+  }
+  v = json.textStyle;
+  n = self.setTextStyle(typeof v === 'string' ? v : '');
+  if ((n || self) !== self) {
+    self = n as HeadingNode;
+  }
+  v = json.tag;
+  self.__tag =
+    v === 'h1' ||
+    v === 'h2' ||
+    v === 'h3' ||
+    v === 'h4' ||
+    v === 'h5' ||
+    v === 'h6'
+      ? v
+      : 'h1';
+  return self;
+}
+
 /** HeadingNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_HEADING: GeneratedJSON = {
   exportJSON: exportHeadingNode,
   exportCompactJSON: exportCompactHeadingNode,
+  updateFromJSON: updateHeadingNode,
 };
 
 /** Generated from QuoteNode's serialization schema. Do not edit by hand. */

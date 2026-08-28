@@ -4078,11 +4078,10 @@ export function $applyJSONSetters<T extends LexicalNode>(
   }
   const generated = generatedFor(record);
   if (generated !== null && generated.updateFromJSON !== undefined) {
-    // Generated only for a class whose every property is one of its own fields
-    // (see the codegen), so there is no setter that could replace the node and
-    // nothing to thread through: `node` is the result.
-    generated.updateFromJSON(node, serializedNode);
-    return node;
+    // The generated parser applies the same properties in the same order and
+    // follows a setter's return the same way, so what it hands back is what
+    // this walk would have: the node passed in, unless a setter replaced it.
+    return generated.updateFromJSON(node, serializedNode) as T;
   }
   const setters = getCompiledSetters(record);
   let self = node;

@@ -69,13 +69,12 @@ export function registerCheckList(
   // and run the same toggle logic, deduplicating against any click that
   // does fire on browsers where preventDefault doesn't suppress it.
   //
-  // Dedup state is per-target: recorded as `__lexicalCheckListLastTouchHandled`
-  // on the target element, and written ONLY by the touch pointerup path. A
-  // global window would block tapping a second checkbox within 500ms of
-  // toggling the first. The click path reads the timestamp but never writes
-  // it, so rapid mouse clicks on the same desktop checkbox are not throttled
-  // — only synthesized mobile clicks (which always follow a touch pointerup)
-  // are absorbed.
+  // Dedup state is per-target: recorded as `__lexicalCheckListLastHandled`
+  // on the target element, and written only by the touch pointerup path.
+  // A global window would block tapping a second checkbox within 500ms of
+  // toggling the first. The click path only reads the timestamp, so rapid
+  // mouse clicks on the same desktop checkbox are not throttled — only the
+  // synthesized click that follows a touch pointerup is absorbed.
   const DEDUP_WINDOW_MS = 500;
   const isWithinDedupWindow = (
     event: PointerEvent | MouseEvent | TouchEvent,
@@ -85,18 +84,14 @@ export function registerCheckList(
       return false;
     }
     // @ts-ignore internal field
-    const last = target.__lexicalCheckListLastTouchHandled as
-      | number
-      | undefined;
+    const last = target.__lexicalCheckListLastHandled as number | undefined;
     return last !== undefined && event.timeStamp - last < DEDUP_WINDOW_MS;
   };
-  const recordTouchHandled = (
-    event: PointerEvent | MouseEvent | TouchEvent,
-  ) => {
+  const recordHandled = (event: PointerEvent | MouseEvent | TouchEvent) => {
     const target = event.target;
     if (isHTMLElement(target)) {
       // @ts-ignore internal field
-      target.__lexicalCheckListLastTouchHandled = event.timeStamp;
+      target.__lexicalCheckListLastHandled = event.timeStamp;
     }
   };
   const configHandleClick = (event: PointerEvent | MouseEvent | TouchEvent) => {
@@ -112,7 +107,7 @@ export function registerCheckList(
     if (isWithinDedupWindow(event)) {
       return;
     }
-    recordTouchHandled(event);
+    recordHandled(event);
     handleClick(event, peekDisableTakeFocusOnClick());
   };
   const configHandleSelectDefaults = (

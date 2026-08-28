@@ -1824,6 +1824,10 @@ export type SerializationSchema<T> = Parse<T> & {
 declare export function $exportNodeJSON(
   node: LexicalNode,
 ): SerializedLexicalNode;
+// TypeScript additionally rejects an async callback at the call site, through
+// a trailing parameter that is an empty tuple for every other return type;
+// Flow has no equivalent, so here that is caught by the runtime check, which
+// runs in every build.
 declare export function $withCompactExport<T>(
   compact: boolean,
   f: () => T,

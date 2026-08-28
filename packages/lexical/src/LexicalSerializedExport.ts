@@ -38,7 +38,11 @@ let compactExport = false;
  *
  * `f` must be synchronous. The form is restored as soon as it returns, so an
  * `async` callback would give up the form at its first `await` and export in
- * whatever form is ambient when it resumes.
+ * whatever form is ambient when it resumes. A callback whose return type is a
+ * promise is rejected at the call site by the trailing parameter, which is an
+ * empty tuple for every other type; the runtime check behind it is for an
+ * untyped caller, and runs in every build, because the failure it catches is a
+ * document written in the wrong form rather than a degraded experience.
  *
  * @example
  * ```ts
@@ -47,7 +51,17 @@ let compactExport = false;
  *
  * @experimental
  */
-export function $withCompactExport<T>(compact: boolean, f: () => T): T {
+export function $withCompactExport<T>(
+  compact: boolean,
+  f: () => T,
+  // Poisoning the *return* type instead does nothing: `never` is assignable to
+  // everything, so `const json: X = $withCompactExport(true, async () => …)`
+  // still compiles. Requiring an argument that cannot be supplied is what
+  // makes the call itself the error.
+  ...reject: T extends PromiseLike<unknown>
+    ? [theCallbackMustBeSynchronous: never]
+    : []
+): T {
   const previous = compactExport;
   let result: T;
   try {
@@ -56,15 +70,15 @@ export function $withCompactExport<T>(compact: boolean, f: () => T): T {
   } finally {
     compactExport = previous;
   }
-  if (__DEV__) {
-    // An async callback type-checks (T is simply a Promise), and the export it
-    // awaits would silently run in the ambient form instead of this one, so
-    // say what happened rather than returning quietly wrong output.
-    invariant(
-      !isThenable(result),
-      '$withCompactExport: f returned a thenable. The export form is restored synchronously, so an async callback gives it up at its first await; export inside a synchronous callback instead.',
-    );
-  }
+  // The export the callback awaits would run in whatever form is ambient when
+  // it resumes, not this one, so a thenable means the caller asked for a form
+  // they did not get. Checked in every build: in DEV alone this throws while
+  // production quietly writes the other form, which is the one outcome worse
+  // than either.
+  invariant(
+    !isThenable(result),
+    '$withCompactExport: f returned a thenable. The export form is restored synchronously, so an async callback gives it up at its first await; export inside a synchronous callback instead.',
+  );
   return result;
 }
 

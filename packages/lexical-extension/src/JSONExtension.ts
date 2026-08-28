@@ -64,7 +64,12 @@ export interface JSONExtensionOutput {
    * selection export, the nested editors those serialize — uses the
    * configured form.
    */
-  $withSerialization: <T>(fn: () => T) => T;
+  $withSerialization: <T>(
+    fn: () => T,
+    ...reject: T extends PromiseLike<unknown>
+      ? [theCallbackMustBeSynchronous: never]
+      : []
+  ) => T;
 }
 
 /**
@@ -91,8 +96,19 @@ export const JSONExtension = defineExtension({
           options.compact === undefined ? config.compact : options.compact;
         return editorState.toJSON(compact);
       },
-      $withSerialization<T>(fn: () => T): T {
-        return $withCompactExport(config.compact, fn);
+      $withSerialization<T>(
+        fn: () => T,
+        ..._reject: T extends PromiseLike<unknown>
+          ? [theCallbackMustBeSynchronous: never]
+          : []
+      ): T {
+        // The same constraint the signature above states, and the same one
+        // $withCompactExport states — but TypeScript cannot see that two
+        // conditionals over the same unresolved `T` agree, so the forward is
+        // widened here rather than either signature being weakened. `unknown`
+        // and not `never`: `never extends PromiseLike<unknown>` is true, so
+        // that would select the branch this is trying to avoid.
+        return $withCompactExport(config.compact, fn as () => unknown) as T;
       },
     };
   },

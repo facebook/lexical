@@ -1578,3 +1578,24 @@ describe('a sparse array is parsed, not passed through', () => {
     expect(schema(['a', 42, null])).toEqual(['a', '', '']);
   });
 });
+
+describe('objectValue refuses a __proto__ field in every build', () => {
+  test('because the parse would reparent its result instead of writing it', () => {
+    // A computed key, since `{__proto__: x}` in a literal sets the prototype
+    // rather than creating an own property — which is the same hazard one
+    // level up.
+    expect(() => objectValue({['__proto__']: stringValue()})).toThrow(
+      /__proto__/,
+    );
+    // What it prevents: `result['__proto__'] = value` invokes the inherited
+    // setter, so the parse would return an object without the property it
+    // declared, having reparented itself instead.
+    // Through a variable, exactly as the parse assigns it: written as a
+    // literal, dot-notation and no-proto rewrite and then reject it, and
+    // neither is what the parse actually does.
+    const key = '__proto__';
+    const result: {[key: string]: unknown} = {};
+    result[key] = {reparented: true};
+    expect(Object.keys(result)).toEqual([]);
+  });
+});

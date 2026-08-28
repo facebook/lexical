@@ -26,7 +26,7 @@ import {
   TextNode,
   withAccessors,
 } from 'lexical';
-import {assert, beforeEach, describe, expect, test} from 'vitest';
+import {assert, beforeEach, describe, expect, expectTypeOf, test} from 'vitest';
 
 import {
   $createTestDecoratorNode,
@@ -362,5 +362,32 @@ describe('$isCompactExport reports the walk, not a single node', () => {
       paragraph.exportJSON(true);
       expect($isCompactExport()).toBe(false);
     });
+  });
+});
+
+describe('$withCompactExport refuses an asynchronous callback', () => {
+  test('at the call site, and at runtime for an untyped caller', () => {
+    // The form is restored as soon as the callback returns, so an async one
+    // gives it up at its first await and exports in whatever form is ambient
+    // when it resumes — the caller gets a document in the form they did not
+    // ask for.
+    expect(() =>
+      $withCompactExport(true, (async () => {
+        await Promise.resolve();
+        // eslint-disable-next-line no-console -- unreachable; the guard throws
+        console.log('never');
+      }) as unknown as () => void),
+    ).toThrow(/thenable/);
+    // A thenable that is not a promise is the same hazard.
+    expect(() =>
+      $withCompactExport(true, () => ({then: () => undefined})),
+    ).toThrow(/thenable/);
+    // Typed callers do not get that far: the trailing parameter is an empty
+    // tuple for every type but a promise, so this is an arity error rather
+    // than a runtime one.
+    // @ts-expect-error -- the callback must be synchronous
+    void (() => $withCompactExport(true, async () => 1));
+    // …and a synchronous callback still infers its return type.
+    expectTypeOf($withCompactExport(true, () => 1)).toEqualTypeOf<number>();
   });
 });

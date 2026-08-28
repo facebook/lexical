@@ -1247,16 +1247,20 @@ export function objectValue<const S extends SerializationSchemaFields>(
   ShapeNames<S>
 > {
   const entries = Object.entries(fields) as [string, AnySerializationSchema][];
-  if (__DEV__) {
-    for (const [key] of entries) {
-      // `result[key] = ...` on a plain object would invoke Object.prototype's
-      // `__proto__` setter and reparent the result instead of writing a
-      // property, so this name cannot describe a serialized field.
-      invariant(
-        key !== '__proto__',
-        'objectValue: "__proto__" is not a valid field name',
-      );
-    }
+  for (const [key] of entries) {
+    // `result[key] = ...` on a plain object would invoke Object.prototype's
+    // `__proto__` setter and reparent the result instead of writing a
+    // property, so this name cannot describe a serialized field.
+    //
+    // Every build, not DEV only: what it prevents is a parse that returns an
+    // object missing the property it declared, having reparented itself
+    // instead — a wrong value rather than a missing diagnostic. It costs one
+    // comparison per field when the schema is built, which is once at module
+    // scope, and nothing per parse.
+    invariant(
+      key !== '__proto__',
+      'objectValue: "__proto__" is not a valid field name',
+    );
   }
   return makeSchema(
     value => {

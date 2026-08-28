@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor, NodeKey, TextNode} from 'lexical';
+import type {LexicalEditor, NodeKey} from 'lexical';
 
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {
@@ -31,9 +31,11 @@ import {
   $createTextNode,
   $getNodeByKey,
   $getRoot,
+  $isTextNode,
   PASTE_COMMAND,
   PASTE_TAG,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {act} from 'react';
 import ReactDOM from 'react-dom';
@@ -69,21 +71,6 @@ function createPasteEvent(data: Record<string, string>): ClipboardEvent {
     clipboardData.setData(type, value);
   }
   return new ClipboardEvent('paste', {clipboardData});
-}
-
-// The playground e2e harness pastes by dispatching a ClipboardEvent whose
-// clipboardData is a plain object rather than a DataTransfer. Its getData
-// returns undefined, not '', for a type that the spec did not supply.
-function createHarnessPasteEvent(data: Record<string, string>): ClipboardEvent {
-  const event = new ClipboardEvent('paste', {bubbles: true, cancelable: true});
-  Object.defineProperty(event, 'clipboardData', {
-    value: {
-      files: [],
-      getData: (type: string) => data[type],
-      types: Object.keys(data),
-    },
-  });
-  return event;
 }
 
 describe('LexicalAutoEmbedPlugin', () => {
@@ -294,7 +281,7 @@ describe('LexicalAutoEmbedPlugin', () => {
     try {
       // Paste over the word between the bold and italic runs.
       await paste({'text/plain': YOUTUBE_URL}, () => {
-        $getNodeByKey<TextNode>(middleKey)!.select(1, 4);
+        $assertNodeType($getNodeByKey(middleKey), $isTextNode)!.select(1, 4);
       });
     } finally {
       removeUpdateListener();
@@ -314,7 +301,7 @@ describe('LexicalAutoEmbedPlugin', () => {
   });
 
   it('does not throw when the clipboard reports no plain text', async () => {
-    await pasteEvent(createHarnessPasteEvent({'text/html': 'replaced'}));
+    await pasteEvent(createPasteEvent({'text/html': 'replaced'}));
 
     expect(onError).not.toHaveBeenCalled();
     expect(parseUrl).not.toHaveBeenCalled();

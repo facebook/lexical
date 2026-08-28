@@ -18,6 +18,7 @@ import {
   $getNodeByKey,
   $getSelection,
   $onUpdate,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   type CommandListenerPriority,
@@ -32,14 +33,7 @@ import {
   PASTE_TAG,
   type TextNode,
 } from 'lexical';
-import {
-  type JSX,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import {type JSX, useCallback, useEffect, useMemo, useState} from 'react';
 
 /**
  * The result of matching a URL for an embed: the matched `url`, an `id`
@@ -78,20 +72,6 @@ export interface EmbedConfig<
  */
 export const URL_MATCHER =
   /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
-
-/**
- * Whether the clipboard's plain text is a single token with no whitespace. A
- * link created by such a paste came from a bare address rather than from prose
- * that merely contains one. A DataTransfer returns '' for a type it does not
- * hold, but a synthetic clipboard (such as the one the playground e2e harness
- * dispatches) may return undefined instead, so anything that is not a string
- * is treated as empty text.
- */
-function isSingleTokenPaste(clipboardData: DataTransfer): boolean {
-  const plainText: unknown = clipboardData.getData('text/plain');
-  const text = typeof plainText === 'string' ? plainText.trim() : '';
-  return text !== '' && !/\s/.test(text);
-}
 
 /**
  * Command dispatched to start inserting an embed. Its payload is the `type` of
@@ -208,34 +188,6 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
     setActiveEmbedConfig(null);
   }, []);
 
-  // Set while a paste whose clipboard is a single token is being applied, so
-  // that links created by pasting prose do not open the menu. It is cleared at
-  // the end of the update in which the paste command was dispatched, after the
-  // mutation listeners for that update have run. This flag is the only gate on
-  // the paste check: the clipboard text is inspected directly, so no dirty
-  // node count heuristic is needed (and one would wrongly skip a bare URL
-  // pasted into a paragraph with formatted or other inline content).
-  const isSingleTokenPasteRef = useRef(false);
-
-  useEffect(() => {
-    return editor.registerCommand(
-      PASTE_COMMAND,
-      event => {
-        isSingleTokenPasteRef.current =
-          objectKlassEquals(event, ClipboardEvent) &&
-          event.clipboardData !== null &&
-          isSingleTokenPaste(event.clipboardData);
-        if (isSingleTokenPasteRef.current) {
-          $onUpdate(() => {
-            isSingleTokenPasteRef.current = false;
-          });
-        }
-        return false;
-      },
-      COMMAND_PRIORITY_LOW,
-    );
-  }, [editor]);
-
   const checkIfLinkNodeIsEmbeddable = useCallback(
     async (key: NodeKey) => {
       const url = editor.read('latest', function () {
@@ -259,12 +211,13 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   );
 
   useEffect(() => {
+    let isSingleTokenPaste = false;
     const listener: MutationListener = (nodeMutations, {updateTags}) => {
       for (const [key, mutation] of nodeMutations) {
         if (
           mutation === 'created' &&
           updateTags.has(PASTE_TAG) &&
-          isSingleTokenPasteRef.current
+          isSingleTokenPaste
         ) {
           checkIfLinkNodeIsEmbeddable(key);
         } else if (key === nodeKey) {
@@ -273,8 +226,24 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       }
     };
     return mergeRegister(
+      editor.registerCommand(
+        PASTE_COMMAND,
+        event => {
+          isSingleTokenPaste =
+            objectKlassEquals(event, ClipboardEvent) &&
+            event.clipboardData !== null &&
+            /^\S+\n?$/.test(event.clipboardData.getData('text/plain'));
+          if (isSingleTokenPaste) {
+            $onUpdate(() => {
+              isSingleTokenPaste = false;
+            });
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_BEFORE_EDITOR,
+      ),
       ...[LinkNode, AutoLinkNode].map(Klass =>
-        editor.registerMutationListener(Klass, (...args) => listener(...args), {
+        editor.registerMutationListener(Klass, listener, {
           skipInitialization: true,
         }),
       ),

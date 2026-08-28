@@ -232,7 +232,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
           isSingleTokenPaste =
             objectKlassEquals(event, ClipboardEvent) &&
             event.clipboardData !== null &&
-            /^\S+\n?$/.test(event.clipboardData.getData('text/plain'));
+            /^\S+$/.test(event.clipboardData.getData('text/plain'));
           if (isSingleTokenPaste) {
             $onUpdate(() => {
               isSingleTokenPaste = false;

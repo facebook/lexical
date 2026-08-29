@@ -966,8 +966,17 @@ export class RangeSelection implements BaseSelection {
           const replacement = $createTextNode(anchorNode.getTextContent());
           replacement.setFormat(format);
           replacement.setStyle(style);
+          const isCurrentSelection = $getSelection() === this;
           anchorNode.replace(replacement);
-          replacement.select(offset, offset);
+          // replace() installs a clone of the active selection, so this
+          // selection is still anchored to the segmented node that was just
+          // detached. Move it onto the replacement and make it current
+          // again, otherwise the recursive insertText below resolves an
+          // anchor that is no longer in the tree.
+          this.setTextNodeRange(replacement, offset, replacement, offset);
+          if (isCurrentSelection && $getSelection() !== this) {
+            $setSelection(this);
+          }
         }
         if (text !== '') {
           this.insertText(text);

@@ -852,6 +852,31 @@ describe('Segmented node composition (#5065)', () => {
     );
   });
 
+  test('insertText without composition types into a segmented node', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        const segmented = $createTextNode('JohnSmith').setMode('segmented');
+        $getRoot().clear().append($createParagraphNode().append(segmented));
+
+        const sel = segmented.select(4, 4);
+        sel.insertText('X');
+
+        expect(segmented.isAttached()).toBe(false);
+        const allText = $getRoot().getAllTextNodes();
+        expect(allText).toHaveLength(1);
+        expect(allText[0].isSegmented()).toBe(false);
+        expect(allText[0].getTextContent()).toBe('JohnXSmith');
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        expect(selection.isCollapsed()).toBe(true);
+        expect(selection.anchor.key).toBe(allText[0].getKey());
+        expect(selection.anchor.offset).toBe(5);
+      },
+      {discrete: true},
+    );
+  });
+
   test('insertText during composition preserves format and style', () => {
     using editor = buildEditorFromExtensions(selectionTestExtension);
     editor.update(

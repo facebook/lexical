@@ -30,6 +30,7 @@ import {
   type LexicalCommand,
   type LexicalEditor,
   mergeRegister,
+  type NodeKey,
   registerEventListener,
   registerEventListeners,
   SKIP_DOM_SELECTION_TAG,
@@ -108,10 +109,26 @@ export function registerCheckList(
     recordHandled(event);
     handleClick(event, peekDisableTakeFocusOnClick());
   };
+  // What the last pointer press landed on, recorded in the capture-phase
+  // handler that runs before the browser moves focus and consumed once the
+  // gesture ends. A press on the item's content is the one that has to hand
+  // focus back; a press on the check mark is how the plugin focuses the item
+  // on purpose; and 'none' covers a click with no press behind it, which a
+  // screen reader synthesizes on the focused item and which must not move
+  // focus at all.
+  let lastPress: 'checkMark' | 'content' | 'none' = 'none';
   const configHandleSelectDefaults = (
     event: PointerEvent | MouseEvent | TouchEvent,
   ) => {
-    handleSelectDefaults(event, peekDisableTakeFocusOnClick(), editor);
+    lastPress = handleSelectDefaults(event, peekDisableTakeFocusOnClick())
+      ? 'checkMark'
+      : 'content';
+  };
+  const returnFocusAfterPress = () => {
+    if (lastPress === 'content') {
+      returnFocusToRoot(editor);
+    }
+    lastPress = 'none';
   };
   return mergeRegister(
     editor.registerCommand(
@@ -227,8 +244,18 @@ export function registerCheckList(
       if (rootElement !== null) {
         return mergeRegister(
           registerEventListeners(rootElement, {
-            click: configHandleClick,
-            pointerup: configHandlePointerUp,
+            // Whichever of the two runs first consumes the press, before the
+            // toggle it wraps focuses the item again for a check mark press.
+            // pointerup also covers a gesture that never produces a click,
+            // such as a right click opening the context menu.
+            click: event => {
+              returnFocusAfterPress();
+              configHandleClick(event);
+            },
+            pointerup: event => {
+              returnFocusAfterPress();
+              configHandlePointerUp(event);
+            },
           }),
           // Use capture so we run before other listeners that might move focus.
           // Some browsers / integrations still generate mousedown events as well
@@ -236,6 +263,10 @@ export function registerCheckList(
           registerEventListeners(
             rootElement,
             {
+              // Entering text moves the caret, which Chrome and Safari also
+              // treat as handing focus back to the editing host. Capture so
+              // the focus is right before the editor handles the input.
+              beforeinput: () => returnFocusToRoot(editor),
               mousedown: configHandleSelectDefaults,
               pointerdown: configHandleSelectDefaults,
             },
@@ -371,8 +402,7 @@ function handleClick(
 function handleSelectDefaults(
   event: PointerEvent | MouseEvent | TouchEvent,
   disableTakeFocusOnClick: boolean,
-  editor: LexicalEditor,
-) {
+): boolean {
   let isCheckMarkPress = false;
 
   handleCheckItemEvent(event, () => {
@@ -384,12 +414,7 @@ function handleSelectDefaults(
     }
   });
 
-  // The press landed in the item's content rather than on its check mark, so
-  // the caret is what it is aiming at and the editor is what should end up
-  // focused.
-  if (!isCheckMarkPress) {
-    returnFocusToRoot(editor);
-  }
+  return isCheckMarkPress;
 }
 
 // A check list item carries tabIndex="-1" so the plugin can hand it focus for
@@ -398,21 +423,19 @@ function handleSelectDefaults(
 // a focused item is what the key handlers read as "the checkbox is what the
 // keyboard is operating", so Space toggled the item instead of typing a space
 // (#4680). Chrome and Safari hand focus back to the root once they are done
-// with the press; this does the same in every browser, one task later so the
-// press can finish placing the caret first.
+// with the press; this does the same in every browser, at the end of the
+// gesture so the press has finished placing the caret first.
 function returnFocusToRoot(editor: LexicalEditor): void {
-  setTimeout(() => {
-    const rootElement = editor.getRootElement();
-    const activeElement = rootElement ? getActiveElement(rootElement) : null;
+  const rootElement = editor.getRootElement();
+  const activeElement = rootElement ? getActiveElement(rootElement) : null;
 
-    if (
-      rootElement !== null &&
-      isHTMLElement(activeElement) &&
-      isCheckListItem(activeElement)
-    ) {
-      rootElement.focus({preventScroll: true});
-    }
-  }, 0);
+  if (
+    rootElement !== null &&
+    isHTMLElement(activeElement) &&
+    isCheckListItem(activeElement)
+  ) {
+    rootElement.focus({preventScroll: true});
+  }
 }
 
 function isCheckListItem(dom: HTMLElement): boolean {
@@ -481,27 +504,42 @@ function handleArrowUpOrDown(
   const activeItem = getActiveCheckListItem(editor);
 
   if (activeItem != null) {
-    editor.update(() => {
-      const listItem = $getNearestNodeFromDOMNode(activeItem);
+    let nextItemKey: null | NodeKey = null;
 
-      if (!$isListItemNode(listItem)) {
-        return;
-      }
+    editor.update(
+      () => {
+        const listItem = $getNearestNodeFromDOMNode(activeItem);
 
-      const nextListItem = findCheckListItemSibling(listItem, backward);
-
-      if (nextListItem != null) {
-        nextListItem.selectStart();
-        const dom = editor.getElementByKey(nextListItem.__key);
-
-        if (dom != null) {
-          event.preventDefault();
-          setTimeout(() => {
-            dom.focus();
-          }, 0);
+        if (!$isListItemNode(listItem)) {
+          return;
         }
-      }
-    });
+
+        const nextListItem = findCheckListItemSibling(listItem, backward);
+
+        if (nextListItem != null) {
+          nextListItem.selectStart();
+
+          if (editor.getElementByKey(nextListItem.__key) != null) {
+            event.preventDefault();
+            nextItemKey = nextListItem.__key;
+          }
+        }
+      },
+      {
+        // The focus has to land after the reconciler has moved the selection
+        // onto the next item, which is what onUpdate is for. The element is
+        // resolved from the key here rather than captured above, so a
+        // reconciliation that replaced it is followed to the current one.
+        onUpdate: () => {
+          const dom =
+            nextItemKey === null ? null : editor.getElementByKey(nextItemKey);
+
+          if (dom != null) {
+            dom.focus();
+          }
+        },
+      },
+    );
   }
 
   return false;

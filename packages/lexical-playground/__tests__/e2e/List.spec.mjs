@@ -194,14 +194,11 @@ test.describe('Checklist space key', () => {
 
     // The click is in the label, so the editor holds the focus. The item is
     // the active element only when its checkbox is what was clicked.
-    await expect
-      .poll(() =>
-        page.evaluate(
-          () =>
-            document.activeElement === window.lexicalEditor.getRootElement(),
-        ),
-      )
-      .toBe(true);
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
 
     await page.keyboard.press('Space');
 
@@ -293,6 +290,72 @@ test.describe('Checklist space key', () => {
 
     await expect(second).toHaveAttribute('aria-checked', 'true');
     await expect(second).toHaveText('Two');
+  });
+
+  test('space toggles the item the left arrow moved onto', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+
+    // The left arrow at the start of the label is the third way onto the
+    // checkbox, with the caret never having left the item.
+    await moveToLineBeginning(page);
+    await moveLeft(page);
+    expect(
+      await page.evaluate(
+        () =>
+          document.activeElement ===
+          document.querySelector('li[role="checkbox"]'),
+      ),
+    ).toBe(true);
+
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+    await expect(item).toHaveText('Task');
+  });
+
+  test('typing in the label hands focus back to the editor', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+    const box = await item.boundingBox();
+
+    // Click the check mark, so the item holds the focus and the caret is
+    // still sitting in the label.
+    await page.mouse.click(box.x + 5, box.y + box.height / 2);
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+
+    // Typing is text entry, so the editor takes the focus back and the next
+    // Space is a space rather than a toggle.
+    await page.keyboard.type('X');
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
+
+    await moveLeft(page);
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+    await expect(item).toHaveText('Task X');
   });
 });
 

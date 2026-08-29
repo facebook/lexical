@@ -52,6 +52,14 @@ export function registerClickableLink(
   eventOptions: Pick<AddEventListenerOptions, 'signal'> = {},
 ): () => void {
   const onClick = (event: MouseEvent) => {
+    // `click` only fires for the primary button; every other button arrives
+    // as `auxclick` (middle, right, and the back / forward buttons). Only the
+    // middle button follows the link -- a right click belongs to the context
+    // menu, and the history buttons belong to the browser.
+    const isMiddle = event.button === 1;
+    if (event.type === 'auxclick' && !isMiddle) {
+      return;
+    }
     const target = event.target;
     if (!isDOMNode(target)) {
       return;
@@ -97,7 +105,6 @@ export function registerClickableLink(
       return;
     }
 
-    const isMiddle = event.type === 'auxclick' && event.button === 1;
     // eslint-disable-next-line no-restricted-syntax
     window.open(
       url,
@@ -112,17 +119,14 @@ export function registerClickableLink(
     event.preventDefault();
   };
 
-  const onMouseUp = (event: MouseEvent) => {
-    if (event.button === 1) {
-      onClick(event);
-    }
-  };
-
   return editor.registerRootListener(rootElement => {
     if (rootElement) {
+      // `auxclick` rather than `mouseup`: canceling `mouseup` does not stop
+      // the browser from also opening a middle-clicked link in a new tab, so
+      // handling the middle button there opened the URL twice.
       return registerEventListeners(
         rootElement,
-        {click: onClick, mouseup: onMouseUp},
+        {auxclick: onClick, click: onClick},
         eventOptions,
       );
     }

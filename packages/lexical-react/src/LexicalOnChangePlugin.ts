@@ -7,7 +7,12 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {type EditorState, HISTORY_MERGE_TAG, type LexicalEditor} from 'lexical';
+import {
+  $getRoot,
+  type EditorState,
+  HISTORY_MERGE_TAG,
+  type LexicalEditor,
+} from 'lexical';
 
 import useLayoutEffect from './shared/useLayoutEffect';
 
@@ -45,6 +50,18 @@ export function OnChangePlugin({
             (ignoreHistoryMergeTagChange && tags.has(HISTORY_MERGE_TAG)) ||
             prevEditorState.isEmpty()
           ) {
+            return;
+          }
+
+          const prevJSON = prevEditorState.read(() =>
+            JSON.stringify($getRoot()),
+          );
+          const currentJSON = editorState.read(() =>
+            JSON.stringify($getRoot()),
+          );
+
+          const isTreeUnchanged = prevJSON === currentJSON;
+          if (isTreeUnchanged) {
             return;
           }
 

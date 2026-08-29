@@ -40,8 +40,9 @@ import {$insertList} from './formatList';
 import {$isListItemNode, type ListItemNode} from './LexicalListItemNode';
 import {$isListNode} from './LexicalListNode';
 
-export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> =
-  /* @__PURE__ */ createCommand('INSERT_CHECK_LIST_COMMAND');
+export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
+  'INSERT_CHECK_LIST_COMMAND',
+);
 
 /**
  * Registers the checklist plugin with the editor.
@@ -69,8 +70,11 @@ export function registerCheckList(
   // does fire on browsers where preventDefault doesn't suppress it.
   //
   // Dedup state is per-target: recorded as `__lexicalCheckListLastHandled`
-  // on the target element. A global window would
-  // block tapping a second checkbox within 500ms of toggling the first.
+  // on the target element, and written only by the touch pointerup path.
+  // A global window would block tapping a second checkbox within 500ms of
+  // toggling the first. The click path only reads the timestamp, so rapid
+  // mouse clicks on the same desktop checkbox are not throttled — only the
+  // synthesized click that follows a touch pointerup is absorbed.
   const DEDUP_WINDOW_MS = 500;
   const isWithinDedupWindow = (
     event: PointerEvent | MouseEvent | TouchEvent,
@@ -94,7 +98,6 @@ export function registerCheckList(
     if (isWithinDedupWindow(event)) {
       return;
     }
-    recordHandled(event);
     handleClick(event, peekDisableTakeFocusOnClick());
   };
   const configHandlePointerUp = (event: PointerEvent) => {

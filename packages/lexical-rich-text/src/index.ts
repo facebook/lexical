@@ -37,8 +37,10 @@ import {
   $createTabNode,
   $extendCaretToRange,
   $findMatchingParent,
+  $flushSyncAfterUpdate,
   $formatText,
   $getCaretRange,
+  $getCaretRangeInDirection,
   $getChildCaret,
   $getCollapsedCaretRange,
   $getDocument,
@@ -64,6 +66,7 @@ import {
   $needsBlockCursorBeside,
   $normalizeCaret,
   $normalizeSelection__EXPERIMENTAL,
+  $rewindSiblingCaret,
   $selectAll,
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -145,8 +148,9 @@ export type SerializedHeadingNode = Spread<
   SerializedElementNode
 >;
 
-export const DRAG_DROP_PASTE: LexicalCommand<File[]> =
-  /* @__PURE__ */ createCommand('DRAG_DROP_PASTE_FILE');
+export const DRAG_DROP_PASTE: LexicalCommand<File[]> = createCommand(
+  'DRAG_DROP_PASTE_FILE',
+);
 
 export type SerializedQuoteNode = Spread<
   {
@@ -169,7 +173,7 @@ export type SerializedQuoteNode = Spread<
  * `<blockquote>` content. Defaults to `false`, in which case there is no
  * change to the legacy behavior (and nothing extra is serialized).
  */
-export const quoteShadowRootState = /* @__PURE__ */ createState('shadowRoot', {
+export const quoteShadowRootState = createState('shadowRoot', {
   parse: Boolean,
 });
 
@@ -254,10 +258,17 @@ export class QuoteNode extends ElementNode {
 
   // Mutation
 
-  insertNewAfter(_: RangeSelection, restoreSelection?: boolean): ParagraphNode {
+  insertNewAfter(
+    rangeSelection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ParagraphNode {
     const newBlock = $createParagraphNode();
+    newBlock.setTextFormat(rangeSelection.format);
+    newBlock.setTextStyle(rangeSelection.style);
     const direction = this.getDirection();
     newBlock.setDirection(direction);
+    newBlock.setFormat(this.getFormatType());
+    newBlock.setStyle(this.getStyle());
     this.insertAfter(newBlock, restoreSelection);
     return newBlock;
   }
@@ -1070,6 +1081,49 @@ function $exitNodeSelectionToward(
 }
 
 /**
+ * Convert a contiguous NodeSelection to a RangeSelection that covers the same
+ * siblings. Discontiguous NodeSelections cannot be represented as a range
+ * without selecting the nodes between them, so they retain the existing
+ * collapse behavior in the arrow handlers.
+ */
+function $convertContiguousNodeSelection(
+  selection: NodeSelection,
+  direction: CaretDirection,
+): boolean {
+  const carets = selection
+    .getNodes()
+    .map(node => $getSiblingCaret(node, 'next'))
+    .sort($comparePointCaretNext);
+  // At least one node
+  const firstCaret = carets[0];
+  const lastCaret = carets[carets.length - 1];
+  if (!firstCaret || !lastCaret) {
+    return false;
+  }
+  // Check that all nodes are contiguous
+  for (let i = 0; i < carets.length - 1; i++) {
+    if (!carets[i + 1].origin.is(carets[i].getNodeAtCaret())) {
+      return false;
+    }
+  }
+  $setSelectionFromCaretRange(
+    $getCaretRangeInDirection(
+      $getCaretRange($rewindSiblingCaret(firstCaret), lastCaret),
+      direction,
+    ),
+  );
+  // The arrow handlers fall through to the RangeSelection paths after this,
+  // and the vertical ones leave the extension to the browser's default action
+  // for this keydown. That action reads the DOM selection, but this update
+  // would otherwise be committed in a microtask, and Firefox does not pick up
+  // a selection that lands after the keydown listeners return — it would
+  // extend nothing on the first press. Commit synchronously so every browser
+  // extends the converted selection.
+  $flushSyncAfterUpdate();
+  return true;
+}
+
+/**
  * Collapse a NodeSelection to a caret at the surrounding block's edge for
  * MOVE_TO_START / MOVE_TO_END. Picks the document-order first node for
  * MOVE_TO_START (`isBackward = true`) or last for MOVE_TO_END, walks up
@@ -1389,17 +1443,26 @@ export function registerRichText(
     editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
       event => {
-        const selection = $getSelection();
+        let selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
-            event.preventDefault();
-            $exitNodeSelectionToward(nodes[0], 'previous');
-            return true;
+            if (
+              event.shiftKey &&
+              $convertContiguousNodeSelection(selection, 'previous')
+            ) {
+              // Fallthrough
+              selection = $getSelection();
+            } else {
+              event.preventDefault();
+              $exitNodeSelectionToward(nodes[0], 'previous');
+              return true;
+            }
           }
-        } else if ($isRangeSelection(selection)) {
+        }
+        if ($isRangeSelection(selection)) {
           if ($isSelectionAtStartOfRoot(selection)) {
             event.preventDefault();
             return true;
@@ -1430,17 +1493,26 @@ export function registerRichText(
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
       event => {
-        const selection = $getSelection();
+        let selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
-            event.preventDefault();
-            $exitNodeSelectionToward(nodes[0], 'next');
-            return true;
+            if (
+              event.shiftKey &&
+              $convertContiguousNodeSelection(selection, 'next')
+            ) {
+              // Fallthrough
+              selection = $getSelection();
+            } else {
+              event.preventDefault();
+              $exitNodeSelectionToward(nodes[0], 'next');
+              return true;
+            }
           }
-        } else if ($isRangeSelection(selection)) {
+        }
+        if ($isRangeSelection(selection)) {
           if ($isSelectionAtEndOfRoot(selection)) {
             event.preventDefault();
             return true;
@@ -1474,18 +1546,24 @@ export function registerRichText(
     editor.registerCommand(
       KEY_ARROW_LEFT_COMMAND,
       event => {
-        const selection = $getSelection();
+        let selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
-            event.preventDefault();
-            $exitNodeSelectionToward(
-              nodes[0],
-              $isParentRTL(nodes[0]) ? 'next' : 'previous',
-            );
-            return true;
+            const direction = $isParentRTL(nodes[0]) ? 'next' : 'previous';
+            if (
+              event.shiftKey &&
+              $convertContiguousNodeSelection(selection, direction)
+            ) {
+              // Fallthrough
+              selection = $getSelection();
+            } else {
+              event.preventDefault();
+              $exitNodeSelectionToward(nodes[0], direction);
+              return true;
+            }
           }
         }
         if (!$isRangeSelection(selection)) {
@@ -1522,18 +1600,24 @@ export function registerRichText(
     editor.registerCommand(
       KEY_ARROW_RIGHT_COMMAND,
       event => {
-        const selection = $getSelection();
+        let selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
-            event.preventDefault();
-            $exitNodeSelectionToward(
-              nodes[0],
-              $isParentRTL(nodes[0]) ? 'previous' : 'next',
-            );
-            return true;
+            const direction = $isParentRTL(nodes[0]) ? 'previous' : 'next';
+            if (
+              event.shiftKey &&
+              $convertContiguousNodeSelection(selection, direction)
+            ) {
+              // Fallthrough
+              selection = $getSelection();
+            } else {
+              event.preventDefault();
+              $exitNodeSelectionToward(nodes[0], direction);
+              return true;
+            }
           }
         }
         if (!$isRangeSelection(selection)) {

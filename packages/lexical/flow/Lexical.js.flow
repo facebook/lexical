@@ -2105,8 +2105,8 @@ export type NormalizedLexicalExtensionArgument<
   Init,
 > = [LexicalExtension<Config, Name, Output, Init>, ...Partial<Config>[]];
 export type NormalizedPeerDependency<Extension extends AnyLexicalExtension> = [
-  Extension['name'],
-  Partial<LexicalExtensionConfig<Extension>> | void,
+  name: Extension['name'],
+  config?: Partial<LexicalExtensionConfig<Extension>>,
 ] & {readonly [typeof peerDependencySymbol]: Extension};
 export type OutputComponentExtension<ComponentType> =
   // $FlowFixMe[unclear-type]
@@ -2165,3 +2165,8 @@ declare export var IS_CHROME: boolean;
 declare export var IS_FIREFOX: boolean;
 declare export var IS_IOS: boolean;
 declare export var IS_SAFARI: boolean;
+
+declare export function $isBlockFullySelected(
+  blockNode: ElementNode,
+  selectionOrRange: RangeSelection | CaretRange<CaretDirection>,
+): boolean;

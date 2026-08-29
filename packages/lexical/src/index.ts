@@ -57,6 +57,7 @@ export {
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,
   $insertNodeToNearestRootAtCaret,
+  $isBlockFullySelected,
   $isExtendableTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
@@ -294,6 +295,7 @@ export {
 } from './LexicalSlot';
 export {
   $assumeActiveEditor,
+  $flushSyncAfterUpdate,
   $fullReconcile,
   $parseSerializedNode,
   isCurrentlyReadOnlyMode,

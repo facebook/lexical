@@ -107,6 +107,30 @@ describe('Select-all + delete over a columns layout (#6938)', () => {
     });
   });
 
+  it('replaces the widget when Enter is pressed over a select-all', () => {
+    using editor = buildEditorFromExtensions(LayoutTestExtension);
+    editor.update(() => void $getRoot().clear().append($createColumns()), {
+      discrete: true,
+    });
+
+    editor.update(
+      () => {
+        const selection = $selectAll();
+        assert($isRangeSelection(selection), 'Expected RangeSelection');
+        selection.insertParagraph();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      // insertParagraph's root/shadow-root branch only splices a paragraph
+      // in, so without removing the selection first it left the widget in
+      // place and merely prepended an empty paragraph. Two empty paragraphs
+      // is what Enter over a select-all of ordinary paragraphs produces.
+      expect($describeRoot()).toBe('paragraph()|paragraph()');
+    });
+  });
+
   it('already worked, and still works, with a paragraph before the widget', () => {
     using editor = buildEditorFromExtensions(LayoutTestExtension);
     editor.update(

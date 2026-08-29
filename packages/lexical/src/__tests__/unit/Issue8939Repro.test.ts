@@ -12,6 +12,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isParagraphNode,
   $isRangeSelection,
   $needsBlockCursorBeside,
   type LexicalNode,
@@ -128,6 +129,41 @@ describe('block cursor deletion beside an ElementNode (#8939)', () => {
       expect($getRoot().getTextContent()).toBe('A');
     });
   });
+
+  // Removing the last top-level node would otherwise leave the root with no
+  // children at all, so there is nowhere left to put a caret.
+  test.for([{kind: 'decorator' as const}, {kind: 'shadowRoot' as const}])(
+    'deleting the only $kind leaves the root editable',
+    ({kind}) => {
+      using editor = buildEditorFromExtensions(ext);
+      const $make =
+        kind === 'decorator' ? $blockDecorator : () => $shadowRoot('A');
+
+      editor.update(
+        () => {
+          $getRoot().clear().append($make());
+          $getRoot().select(1, 1);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.deleteCharacter(true);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(1);
+        assert($isParagraphNode(children[0]), 'Expected ParagraphNode');
+        expect(children[0].isEmpty()).toBe(true);
+      });
+    },
+  );
 
   // Guard the boundary of the new branch: an empty block whose caret merely
   // sits next to a shadow root is not a block cursor, so the existing

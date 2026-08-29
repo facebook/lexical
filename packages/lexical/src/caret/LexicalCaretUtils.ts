@@ -20,10 +20,10 @@ import {$getSlotFrame, $getSlotNames} from '../LexicalSlot';
 import {
   $copyNode,
   $getNodeByKeyOrThrow,
-  $getRoot,
   $isRootOrShadowRoot,
   $isShadowRootNode,
   $removeFromParent,
+  $restoreEmptyRootParagraph,
   $setSelection,
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
@@ -413,11 +413,10 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   // that is a single shadow root, for example) removes them all and leaves
   // the root with nothing to put a caret in. Restore the empty paragraph the
   // root would otherwise be missing, matching the result of deleting a
-  // document made of ordinary paragraphs.
-  const rootNode = $getRoot();
-  if (rootNode.isEmpty()) {
-    rootNode.append($createParagraphNode());
-  }
+  // document made of ordinary paragraphs. The range is always attached (the
+  // candidate walk above throws otherwise), so an empty root here is always
+  // this call's doing.
+  $restoreEmptyRootParagraph();
 
   // note this caret can be in either direction
   const bestCandidate = [

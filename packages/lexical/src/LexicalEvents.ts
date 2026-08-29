@@ -990,6 +990,12 @@ function $handleBeforeInput(event: InputEvent): boolean {
       // editor's back; the editor state is then rebuilt from that DOM into a
       // document that was never in Lexical's history. `@lexical/history`
       // restores a whole editor state, so it does not need a selection.
+      //
+      // The default is prevented whether or not anything handles the command:
+      // with no history extension registered undo becomes a no-op rather than
+      // native undo, which is what the same inputType already does on the
+      // RangeSelection path below (that one prevents the default before it
+      // reaches the switch).
       event.preventDefault();
       dispatchCommand(
         editor,

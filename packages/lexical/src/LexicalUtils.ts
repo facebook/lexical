@@ -107,6 +107,7 @@ import {
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
 } from './LexicalUpdates';
+import {$createParagraphNode} from './nodes/LexicalParagraphNode';
 import {TabNode} from './nodes/LexicalTabNode';
 import {type TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
@@ -770,6 +771,30 @@ export function markNodesWithTypesAsDirty(
 /** Returns the RootNode of the active EditorState. */
 export function $getRoot(): RootNode {
   return internalGetRoot(getActiveEditorState());
+}
+
+/**
+ * Restores the empty paragraph a {@link RootNode} needs to stay editable, when
+ * a removal has left it with no children at all. Removing the last top-level
+ * node (a lone table or block decorator sitting beside a block cursor, or a
+ * select-all over a document that is a single shadow root) otherwise leaves
+ * the root with nowhere to put a caret.
+ *
+ * Call this only where a removal could have emptied the root: it is a no-op on
+ * a root that is already populated, but on a root that was *already* empty
+ * before the removal it would seed a paragraph that the caller never asked
+ * for.
+ *
+ * @returns whether a paragraph was appended.
+ * @internal
+ */
+export function $restoreEmptyRootParagraph(): boolean {
+  const root = $getRoot();
+  if (!root.isEmpty()) {
+    return false;
+  }
+  root.append($createParagraphNode());
+  return true;
 }
 
 export function internalGetRoot(editorState: EditorState): RootNode {

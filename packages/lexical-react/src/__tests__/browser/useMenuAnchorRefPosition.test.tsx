@@ -9,7 +9,7 @@
 import {defineExtension} from '@lexical/extension';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextExtension} from '@lexical/rich-text';
-import {act, type ReactElement, useMemo} from 'react';
+import {act, type ReactElement, useMemo, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {describe, expect, onTestFinished, test} from 'vitest';
 
@@ -42,19 +42,33 @@ function renderReact(ui: ReactElement): void {
 }
 
 let anchorElement: HTMLElement | null = null;
+// Set by the probe so a test can open the menu after the initial render, the
+// way a typeahead trigger does.
+let openMenu: (() => void) | null = null;
 
-function MenuAnchorProbe({parent}: {parent?: HTMLElement}): null {
-  const resolution = useMemo<MenuResolution>(
-    () => ({
-      getRect: () =>
-        new DOMRect(
-          CARET_RECT.left,
-          CARET_RECT.top,
-          CARET_RECT.width,
-          CARET_RECT.height,
-        ),
-    }),
-    [],
+function MenuAnchorProbe({
+  parent,
+  initiallyOpen = true,
+}: {
+  parent?: HTMLElement;
+  initiallyOpen?: boolean;
+}): null {
+  const [isOpen, setIsOpen] = useState(initiallyOpen);
+  openMenu = () => setIsOpen(true);
+  const resolution = useMemo<MenuResolution | null>(
+    () =>
+      isOpen
+        ? {
+            getRect: () =>
+              new DOMRect(
+                CARET_RECT.left,
+                CARET_RECT.top,
+                CARET_RECT.width,
+                CARET_RECT.height,
+              ),
+          }
+        : null,
+    [isOpen],
   );
   anchorElement = useMenuAnchorRef(
     resolution,
@@ -109,6 +123,27 @@ describe('useMenuAnchorRef positioning (browser)', () => {
     expect(parent.contains(anchorElement!)).toBe(true);
     // Without accounting for the containing block the anchor is pushed down
     // and right by the parent's own offset.
+    const rect = anchorElement!.getBoundingClientRect();
+    expect(Math.round(rect.left)).toBe(CARET_RECT.left);
+    expect(Math.round(rect.top)).toBe(CARET_RECT.top + 3);
+  });
+
+  // The anchor is removed from the DOM whenever the menu closes, so every open
+  // after the initial render positions an element that is still detached --
+  // which is the only path a typeahead ever takes, since its resolution starts
+  // out null.
+  test('anchors the menu at the caret when the menu opens after mount', () => {
+    const parent = createPositionedParent();
+    renderReact(
+      <LexicalExtensionComposer extension={extension}>
+        <MenuAnchorProbe parent={parent} initiallyOpen={false} />
+      </LexicalExtensionComposer>,
+    );
+    act(() => {
+      openMenu!();
+    });
+    expect(anchorElement).not.toBeNull();
+    expect(parent.contains(anchorElement!)).toBe(true);
     const rect = anchorElement!.getBoundingClientRect();
     expect(Math.round(rect.left)).toBe(CARET_RECT.left);
     expect(Math.round(rect.top)).toBe(CARET_RECT.top + 3);

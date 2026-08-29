@@ -716,6 +716,15 @@ export function useMenuAnchorRef(
     if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();
       const anchorHeight = anchorElementRef.current.offsetHeight; // use to position under anchor
+      // Attach before measuring anything else: the anchor is removed from the
+      // DOM every time the menu closes, and a detached element has no
+      // `offsetParent` and reports a zero-sized rect for its menu child, so
+      // both the containing block below and the flip logic further down would
+      // silently fall back to their "nothing to correct for" branches.
+      if (!containerDiv.isConnected) {
+        setContainerDivAttributes(containerDiv, className);
+        resolvedParent.append(containerDiv);
+      }
       // `left`/`top` from getRect() are viewport coordinates; translate them
       // into the coordinate space the anchor is actually positioned in.
       const origin = getContainingBlockOrigin(containerDiv);
@@ -757,10 +766,6 @@ export function useMenuAnchorRef(
         }
       }
 
-      if (!containerDiv.isConnected) {
-        setContainerDivAttributes(containerDiv, className);
-        resolvedParent.append(containerDiv);
-      }
       containerDiv.setAttribute('id', 'typeahead-menu');
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }

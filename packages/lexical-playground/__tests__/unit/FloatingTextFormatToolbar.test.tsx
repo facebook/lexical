@@ -25,7 +25,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import FloatingTextFormatToolbarPlugin from '../../src/plugins/FloatingTextFormatToolbarPlugin';
 
-const ToolbarTestExtension = /* @__PURE__ */ defineExtension({
+const ToolbarTestExtension = defineExtension({
   $initialEditorState: () => {
     $getRoot()
       .clear()

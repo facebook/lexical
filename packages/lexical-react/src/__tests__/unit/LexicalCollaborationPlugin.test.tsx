@@ -207,4 +207,71 @@ describe(`LexicalCollaborationPlugin`, () => {
 
     expect(readText()).toBe('Initial content');
   });
+
+  // The bootstrap flag is time-scoped (it is cleared in a microtask), so a
+  // regression that leaves it set would silently disable undo for everything
+  // that follows. Assert the first real edit is still undoable.
+  test(`an edit made after bootstrapping is still undoable`, async () => {
+    const doc = new Y.Doc();
+    const provider = createSyncedProvider();
+    let editor: LexicalEditor | null = null;
+
+    function CaptureEditor() {
+      [editor] = useLexicalComposerContext();
+      return null;
+    }
+
+    function App() {
+      return (
+        <LexicalCollaboration>
+          <LexicalComposer initialConfig={editorConfig}>
+            <CaptureEditor />
+            <CollaborationPlugin
+              id="main"
+              providerFactory={(id, yjsDocMap) => {
+                yjsDocMap.set(id, doc);
+                return provider;
+              }}
+              shouldBootstrap={true}
+              initialEditorState={() => {
+                const root = $getRoot();
+                const paragraph = $createParagraphNode();
+                paragraph.append($createTextNode('Initial content'));
+                root.append(paragraph);
+              }}
+            />
+            <RichTextPlugin
+              contentEditable={<ContentEditable />}
+              placeholder={<></>}
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+          </LexicalComposer>
+        </LexicalCollaboration>
+      );
+    }
+
+    await act(async () => {
+      reactRoot.render(<App />);
+    });
+
+    const activeEditor = editor!;
+    const readText = () =>
+      activeEditor.getEditorState().read(() => $getRoot().getTextContent());
+
+    expect(readText()).toBe('Initial content');
+
+    await act(async () => {
+      activeEditor.update(() => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode(' and more'));
+        $getRoot().append(paragraph);
+      });
+    });
+    expect(readText()).toBe('Initial content\n\n and more');
+
+    await act(async () => {
+      activeEditor.dispatchCommand(UNDO_COMMAND, undefined);
+    });
+    expect(readText()).toBe('Initial content');
+  });
 });

@@ -63,11 +63,9 @@ describe('ClickableLinkExtension middle click', () => {
   test('middle click opens the link in a new tab', () => {
     withEditor(anchor => {
       // Browsers do not fire `click` for the middle button, so the extension
-      // routes middle clicks through its own `mouseup` listener. The event
-      // that reaches the handler therefore has type `mouseup`, never
-      // `auxclick`, and the link has to still open in a new tab.
+      // routes middle clicks through its own `auxclick` listener.
       anchor.dispatchEvent(
-        new MouseEvent('mouseup', {
+        new MouseEvent('auxclick', {
           bubbles: true,
           button: 1,
           cancelable: true,

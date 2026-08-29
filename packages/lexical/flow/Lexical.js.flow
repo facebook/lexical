@@ -2165,3 +2165,8 @@ declare export var IS_CHROME: boolean;
 declare export var IS_FIREFOX: boolean;
 declare export var IS_IOS: boolean;
 declare export var IS_SAFARI: boolean;
+
+declare export function $isBlockFullySelected(
+  blockNode: ElementNode,
+  selectionOrRange: RangeSelection | CaretRange<CaretDirection>,
+): boolean;

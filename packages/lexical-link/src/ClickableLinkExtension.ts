@@ -123,7 +123,11 @@ export function registerClickableLink(
     if (rootElement) {
       // `auxclick` rather than `mouseup`: canceling `mouseup` does not stop
       // the browser from also opening a middle-clicked link in a new tab, so
-      // handling the middle button there opened the URL twice.
+      // handling the middle button there opened the URL twice. Safari below
+      // 18.2 has no `auxclick` at all; there a middle click is left to the
+      // browser, which opens the anchor's href -- already sanitized by
+      // LinkNode, and absent entirely on an unlinked AutoLinkNode -- in a new
+      // tab, for the same result minus the `window.open` call.
       return registerEventListeners(
         rootElement,
         {auxclick: onClick, click: onClick},

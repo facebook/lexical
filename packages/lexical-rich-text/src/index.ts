@@ -1916,8 +1916,10 @@ export function registerRichText(
       PASTE_COMMAND,
       event => {
         const [, files, hasTextContent] = eventFiles(event);
-        if (shouldHandlePasteAsFiles.peek()(files, hasTextContent)) {
-          editor.dispatchCommand(DRAG_DROP_PASTE, files);
+        if (
+          shouldHandlePasteAsFiles.peek()(files, hasTextContent) &&
+          editor.dispatchCommand(DRAG_DROP_PASTE, files)
+        ) {
           return true;
         }
 

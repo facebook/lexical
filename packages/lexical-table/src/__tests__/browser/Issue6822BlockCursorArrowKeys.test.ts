@@ -32,7 +32,10 @@ import {userEvent} from 'vitest/browser';
 // beside it when the caret steps off its edge. Getting back into the table
 // from that block cursor is native caret movement, so these tests run in a
 // real browser (see the `browser` project in vitest.config.mts) against real
-// layout — jsdom has neither a caret nor line boxes to move it between.
+// layout — jsdom has neither a caret nor line boxes to move it between. That
+// also means the block cursor is only reachable on an engine whose native
+// caret walks off the table's edge, so the suite probes for that first (see
+// nativeVerticalCaretLeavesTrailingTable) and skips where it does not.
 //
 // The theme mirrors the playground's block cursor and table CSS because the
 // engine's vertical caret movement is layout-driven; an approximation of the
@@ -134,101 +137,150 @@ function hasBlockCursor(editor: LexicalEditor): boolean {
   return editor._blockCursorElement !== null;
 }
 
-describe('block cursor beside a table (#6822)', () => {
-  test('ArrowUp from the block cursor below a trailing table returns to the last row', async () => {
-    const editor = setUpEditor(() => {
-      const paragraph = $createParagraphNode();
-      paragraph.append($createTextNode('before'));
-      $getRoot().clear().append(paragraph, $createNumberedTable());
-    });
-    editor.update(
-      () => {
-        // The last descendant of the root is the text in the table's last
-        // cell in both layouts under test.
-        $getRoot().getLastDescendant()!.selectEnd();
-      },
-      {discrete: true},
+/**
+ * Ask the engine itself whether a downward line move takes the caret out of a
+ * table that has nothing after it, using a scratch contenteditable outside of
+ * Lexical.
+ *
+ * Every step these tests make is native caret movement — Lexical only imports
+ * the result through its selectionchange listener — so the block cursor is
+ * only reachable on an engine that walks the caret off the table's edge.
+ * Gecko does not: the caret stops on the table element itself and no further
+ * arrow press moves it, in or out. Probing the capability keeps the tests
+ * running wherever that movement happens instead of pinning them to a user
+ * agent string.
+ */
+function nativeVerticalCaretLeavesTrailingTable(): boolean {
+  const div = document.createElement('div');
+  div.contentEditable = 'true';
+  div.innerHTML =
+    '<p>before</p><table><tbody><tr><td><p>cell</p></td></tr></tbody></table>';
+  document.body.appendChild(div);
+  const table = div.querySelector('table')!;
+  const cellText = div.querySelector('td p')!.firstChild as Text;
+  const domSelection = window.getSelection()!;
+  try {
+    domSelection.setBaseAndExtent(
+      cellText,
+      cellText.length,
+      cellText,
+      cellText.length,
     );
-    editor.focus();
-    await new Promise(resolve => setTimeout(resolve, 60));
-    expect(anchorText(editor)).toBe('c9');
+    domSelection.modify('move', 'forward', 'line');
+    const {focusNode} = domSelection;
+    return focusNode !== null && !table.contains(focusNode);
+  } catch {
+    // No Selection.modify to probe with: run the tests and let a real failure
+    // be visible rather than skipping them silently.
+    return true;
+  } finally {
+    // Clear immediately (not at test end): a selection left in the scratch
+    // element would interfere with the first editor built below.
+    domSelection.removeAllRanges();
+    document.body.removeChild(div);
+  }
+}
 
-    // Step off the bottom edge: the caret becomes a block cursor after the
-    // table (an element point on the root).
-    await press('{ArrowDown}');
-    expect(hasBlockCursor(editor)).toBe(true);
-    expect(anchorText(editor)).toBe('element point on root@2');
+const NATIVE_CARET_LEAVES_TABLE = nativeVerticalCaretLeavesTrailingTable();
 
-    // A second ArrowDown moves nothing — there is nothing below the table.
-    await press('{ArrowDown}');
-    expect(hasBlockCursor(editor)).toBe(true);
-    expect(anchorText(editor)).toBe('element point on root@2');
+describe.skipIf(!NATIVE_CARET_LEAVES_TABLE)(
+  'block cursor beside a table (#6822)',
+  () => {
+    test('ArrowUp from the block cursor below a trailing table returns to the last row', async () => {
+      const editor = setUpEditor(() => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('before'));
+        $getRoot().clear().append(paragraph, $createNumberedTable());
+      });
+      editor.update(
+        () => {
+          // The last descendant of the root is the text in the table's last
+          // cell in both layouts under test.
+          $getRoot().getLastDescendant()!.selectEnd();
+        },
+        {discrete: true},
+      );
+      editor.focus();
+      await new Promise(resolve => setTimeout(resolve, 60));
+      expect(anchorText(editor)).toBe('c9');
 
-    // ArrowUp must step back into the row the caret left, not jump to the
-    // top-left cell.
-    await press('{ArrowUp}');
-    expect(hasBlockCursor(editor)).toBe(false);
-    expect(anchorText(editor)).toBe('c9');
+      // Step off the bottom edge: the caret becomes a block cursor after the
+      // table (an element point on the root).
+      await press('{ArrowDown}');
+      expect(hasBlockCursor(editor)).toBe(true);
+      expect(anchorText(editor)).toBe('element point on root@2');
 
-    await press('z');
-    expect(
-      editor.getEditorState().read(() => $getRoot().getTextContent()),
-    ).toBe('before\n\nc1\n\nc2\n\nc3\n\nc4\n\nc5\n\nc6\n\nc7\n\nc8\n\nc9z');
-  });
+      // A second ArrowDown moves nothing — there is nothing below the table.
+      await press('{ArrowDown}');
+      expect(hasBlockCursor(editor)).toBe(true);
+      expect(anchorText(editor)).toBe('element point on root@2');
 
-  test('ArrowUp from the block cursor below a table that is the only root child returns to the last row', async () => {
-    const editor = setUpEditor(() => {
-      $getRoot().clear().append($createNumberedTable());
+      // ArrowUp must step back into the row the caret left, not jump to the
+      // top-left cell.
+      await press('{ArrowUp}');
+      expect(hasBlockCursor(editor)).toBe(false);
+      expect(anchorText(editor)).toBe('c9');
+
+      await press('z');
+      expect(
+        editor.getEditorState().read(() => $getRoot().getTextContent()),
+      ).toBe('before\n\nc1\n\nc2\n\nc3\n\nc4\n\nc5\n\nc6\n\nc7\n\nc8\n\nc9z');
     });
-    editor.update(
-      () => {
-        // The last descendant of the root is the text in the table's last
-        // cell in both layouts under test.
-        $getRoot().getLastDescendant()!.selectEnd();
-      },
-      {discrete: true},
-    );
-    editor.focus();
-    await new Promise(resolve => setTimeout(resolve, 60));
 
-    await press('{ArrowDown}');
-    expect(hasBlockCursor(editor)).toBe(true);
-    await press('{ArrowDown}');
-    expect(hasBlockCursor(editor)).toBe(true);
-    await press('{ArrowUp}');
-    expect(anchorText(editor)).toBe('c9');
-  });
+    test('ArrowUp from the block cursor below a table that is the only root child returns to the last row', async () => {
+      const editor = setUpEditor(() => {
+        $getRoot().clear().append($createNumberedTable());
+      });
+      editor.update(
+        () => {
+          // The last descendant of the root is the text in the table's last
+          // cell in both layouts under test.
+          $getRoot().getLastDescendant()!.selectEnd();
+        },
+        {discrete: true},
+      );
+      editor.focus();
+      await new Promise(resolve => setTimeout(resolve, 60));
 
-  test('ArrowDown from the block cursor above a leading table still enters the first cell', async () => {
-    // A control: this passes with and without the fix, because in this engine
-    // the native ArrowDown lands in the first cell on its own. It is here to
-    // pin the direction the Firefox scroll workaround is gated to — entering
-    // the table from above must keep working.
-    const editor = setUpEditor(() => {
-      const paragraph = $createParagraphNode();
-      paragraph.append($createTextNode('after'));
-      $getRoot().clear().append($createNumberedTable(), paragraph);
+      await press('{ArrowDown}');
+      expect(hasBlockCursor(editor)).toBe(true);
+      await press('{ArrowDown}');
+      expect(hasBlockCursor(editor)).toBe(true);
+      await press('{ArrowUp}');
+      expect(anchorText(editor)).toBe('c9');
     });
-    editor.update(
-      () => {
-        $getRoot().getFirstDescendant()!.selectStart();
-      },
-      {discrete: true},
-    );
-    editor.focus();
-    await new Promise(resolve => setTimeout(resolve, 60));
 
-    await press('{ArrowUp}');
-    expect(hasBlockCursor(editor)).toBe(true);
-    expect(anchorText(editor)).toBe('element point on root@0');
+    test('ArrowDown from the block cursor above a leading table still enters the first cell', async () => {
+      // A control: this passes with and without the fix, because in this engine
+      // the native ArrowDown lands in the first cell on its own. It is here to
+      // pin the direction the Firefox scroll workaround is gated to — entering
+      // the table from above must keep working.
+      const editor = setUpEditor(() => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('after'));
+        $getRoot().clear().append($createNumberedTable(), paragraph);
+      });
+      editor.update(
+        () => {
+          $getRoot().getFirstDescendant()!.selectStart();
+        },
+        {discrete: true},
+      );
+      editor.focus();
+      await new Promise(resolve => setTimeout(resolve, 60));
 
-    await press('{ArrowDown}');
-    expect(hasBlockCursor(editor)).toBe(false);
-    expect(anchorText(editor)).toBe('c1');
+      await press('{ArrowUp}');
+      expect(hasBlockCursor(editor)).toBe(true);
+      expect(anchorText(editor)).toBe('element point on root@0');
 
-    await press('z');
-    expect(
-      editor.getEditorState().read(() => $getRoot().getTextContent()),
-    ).toBe('zc1\n\nc2\n\nc3\n\nc4\n\nc5\n\nc6\n\nc7\n\nc8\n\nc9\n\nafter');
-  });
-});
+      await press('{ArrowDown}');
+      expect(hasBlockCursor(editor)).toBe(false);
+      expect(anchorText(editor)).toBe('c1');
+
+      await press('z');
+      expect(
+        editor.getEditorState().read(() => $getRoot().getTextContent()),
+      ).toBe('zc1\n\nc2\n\nc3\n\nc4\n\nc5\n\nc6\n\nc7\n\nc8\n\nc9\n\nafter');
+    });
+  },
+);

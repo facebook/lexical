@@ -97,9 +97,6 @@ export function registerClickableLink(
       return;
     }
 
-    // Browsers do not fire `click` for the middle button, so middle clicks
-    // arrive here from the `mouseup` listener below (or from `auxclick` when
-    // a host registers one). Keying off the button alone covers every case.
     const isMiddle = event.button === 1;
     // eslint-disable-next-line no-restricted-syntax
     window.open(

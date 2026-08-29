@@ -11,6 +11,7 @@ import {
   $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,
   $createTableSelectionFrom,
+  $isTableCellNode,
   $isTableNode,
   $isTableSelection,
   $mergeCells,
@@ -51,6 +52,33 @@ function $table() {
   const table = $getRoot().getFirstChild();
   assert($isTableNode(table), 'expected a TableNode at the root');
   return table;
+}
+
+/**
+ * The current TableSelection, described by the grid coordinates its anchor and
+ * focus cells start at plus how many cells it covers, so an assertion names the
+ * rect rather than only that nothing threw.
+ */
+function $selectionRect() {
+  const selection = $getSelection();
+  assert($isTableSelection(selection), 'expected a TableSelection');
+  const [map] = $computeTableMapSkipCellCheck($table(), null, null);
+  const startOf = (key: string) => {
+    for (const row of map) {
+      for (const {cell, startRow, startColumn} of row) {
+        if (cell.getKey() === key) {
+          return `${startRow},${startColumn}`;
+        }
+      }
+    }
+    return `${key} is not in the table`;
+  };
+  return {
+    anchor: startOf(selection.anchor.key),
+    cellCount: selection.getNodes().filter($isTableCellNode).length,
+    focus: startOf(selection.focus.key),
+    isValid: selection.isValid(),
+  };
 }
 
 describe('Shift+Arrow with an anchor that is not on a rect corner', () => {
@@ -95,9 +123,16 @@ describe('Shift+Arrow with an anchor that is not on a rect corner', () => {
     ).not.toThrow();
 
     editor.read('latest', () => {
-      const selection = $getSelection();
-      assert($isTableSelection(selection), 'expected a TableSelection');
-      expect(selection.isValid()).toBe(true);
+      // The anchor was not on a corner, so getAnchorCorner falls back to the
+      // corner opposite the focus — top-left — and ArrowDown grows the rect
+      // down to the last row. The merged cell keeps the rect out at column 0,
+      // so the result is the whole table: 9 grid positions, 8 distinct cells.
+      expect($selectionRect()).toEqual({
+        anchor: '0,0',
+        cellCount: 8,
+        focus: '2,2',
+        isValid: true,
+      });
     });
   });
 });

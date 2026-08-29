@@ -29,11 +29,12 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
 
-function makeArrowEvent(key: string): KeyboardEvent {
+function makeArrowEvent(key: string, shiftKey = false): KeyboardEvent {
   return new KeyboardEvent('keydown', {
     bubbles: true,
     cancelable: true,
     key,
+    shiftKey,
   });
 }
 
@@ -165,6 +166,49 @@ describe('block cursor root boundary navigation (#7999)', () => {
       const s = $getSelection();
       assert($isNodeSelection(s));
       expect(s.getNodes()).toEqual([$getRoot().getChildAtIndex(2)]);
+    });
+  });
+
+  test('Shift+ArrowRight at the block cursor after the last block stays put', () => {
+    using editor = createBoundaryEditor();
+
+    // Holding shift does not create anything to extend toward: there is no
+    // block past the last one, so the outward key is consumed either way.
+    editor.update(() => $getRoot().select(3, 3), {discrete: true});
+
+    const event = makeArrowEvent('ArrowRight', true);
+    const handled = editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    expect(handled).toBe(true);
+    expect(event.defaultPrevented).toBe(true);
+    expectBlockCursorAt(editor, 3);
+  });
+
+  test('Shift+ArrowLeft at the block cursor before the first block stays put', () => {
+    using editor = createBoundaryEditor();
+
+    editor.update(() => $getRoot().select(0, 0), {discrete: true});
+
+    const event = makeArrowEvent('ArrowLeft', true);
+    const handled = editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+    expect(handled).toBe(true);
+    expect(event.defaultPrevented).toBe(true);
+    expectBlockCursorAt(editor, 0);
+  });
+
+  test('Shift+ArrowLeft at the block cursor after the last block is not consumed', () => {
+    using editor = createBoundaryEditor();
+
+    // Inward, not outward: root:3 is the end of the root, but ArrowLeft moves
+    // back toward the trailing decorator, so the edge check must not fire.
+    editor.update(() => $getRoot().select(3, 3), {discrete: true});
+
+    const event = makeArrowEvent('ArrowLeft', true);
+    editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+    editor.read(() => {
+      const s = $getSelection();
+      assert($isRangeSelection(s));
+      expect(s.isCollapsed()).toBe(false);
+      expect(s.focus.offset).toBe(2);
     });
   });
 

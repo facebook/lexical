@@ -11,6 +11,7 @@ import type {TableDOMTable} from './LexicalTableObserver';
 
 import invariant from '@lexical/internal/invariant';
 import {
+  $copyNode,
   $createParagraphNode,
   $createTextNode,
   $findMatchingParent,
@@ -555,7 +556,10 @@ export function $insertTableColumnAtNode(
     if (currentStartColumn + currentCell.__colSpan - 1 <= insertAfterColumn) {
       // Find the last cell this row actually owns at or before the insertion
       // column. Grid positions covered by a rowSpan from an earlier row are not
-      // children of this row, so they can not be inserted after.
+      // children of this row, so they can not be inserted after. Stepping over
+      // the rest of a wide cell's span is only an optimization: those positions
+      // map back to the same cell, so visiting them would reach the same
+      // answer.
       let insertAfterCell: null | TableCellNode = null;
       for (let column = 0; column <= insertAfterColumn; column++) {
         const currentCellMap = rowMap[column];
@@ -993,14 +997,21 @@ export function $unmergeCellNode(cellNode: TableCellNode): void {
     return rowStyle;
   });
 
-  // The cells the merged cell splits into are the same region of the table it
-  // was, so they keep its per-cell presentation. Only the header state is
-  // recomputed (above), because that describes the row/column rather than the
-  // cell.
+  // The cells the merged cell splits into cover the region the merged cell
+  // covered, so they keep its presentation: the background and vertical align
+  // it carries as a TableCellNode, and the format, style, direction and indent
+  // it carries as an ElementNode. $copyNode carries all of it, preserves a
+  // TableCellNode subclass, and returns the copy childless. Only the state that
+  // describes a position rather than the cell is reset — the spans, set by the
+  // loops below, the header state, recomputed above, and the width, which
+  // measured a cell colSpan grid columns wide and which every other path that
+  // creates a cell here leaves to the table's colWidths.
   const $createSplitCell = (headerState: TableCellHeaderState) =>
-    $createTableCellNode(headerState)
-      .setBackgroundColor(cell.getBackgroundColor())
-      .setVerticalAlign(cell.getVerticalAlign())
+    $copyNode(cell)
+      .setColSpan(1)
+      .setRowSpan(1)
+      .setHeaderStyles(headerState)
+      .setWidth(undefined)
       .append($createParagraphNode());
 
   if (colSpan > 1) {

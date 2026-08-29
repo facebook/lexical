@@ -84,6 +84,75 @@ describe('$unmergeCellNode keeps the cell presentation', () => {
     });
   });
 
+  test('the split cells keep the element format, style and direction', () => {
+    using editor = buildEditor();
+
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createTableNodeWithDimensions(2, 2, false));
+        const rows = $cells();
+        const merged = $mergeCells([
+          rows[0][0],
+          rows[0][1],
+          rows[1][0],
+          rows[1][1],
+        ]);
+        assert(merged !== null, 'expected the cells to merge');
+        merged.setFormat('center');
+        merged.setStyle('color: red;');
+        merged.setDirection('rtl');
+      },
+      {discrete: true},
+    );
+
+    editor.update(() => $unmergeCellNode($cells()[0][0]), {discrete: true});
+
+    editor.read(() => {
+      // Every cell, not only the one that was already there: a split that
+      // formats the original differently from the cells beside it is the bug.
+      for (const row of $cells()) {
+        for (const cell of row) {
+          expect(cell.getFormatType()).toBe('center');
+          expect(cell.getStyle()).toBe('color: red;');
+          expect(cell.getDirection()).toBe('rtl');
+        }
+      }
+    });
+  });
+
+  test('the split cells take no width, which the merged cell measured wide', () => {
+    using editor = buildEditor();
+
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createTableNodeWithDimensions(1, 2, false));
+        const rows = $cells();
+        const merged = $mergeCells([rows[0][0], rows[0][1]]);
+        assert(merged !== null, 'expected the cells to merge');
+        expect(merged.getColSpan()).toBe(2);
+        merged.setWidth(240);
+      },
+      {discrete: true},
+    );
+
+    editor.update(() => $unmergeCellNode($cells()[0][0]), {discrete: true});
+
+    editor.read(() => {
+      // The cell that was measured at 240px still is; the cell split off from
+      // it must not claim that width for a single column as well, and like
+      // every other cell created in LexicalTableUtils it leaves its width to
+      // the table's colWidths.
+      expect($cells()[0].map(cell => cell.getWidth())).toEqual([
+        240,
+        undefined,
+      ]);
+    });
+  });
+
   test('an unstyled merged cell still splits into unstyled cells', () => {
     using editor = buildEditor();
 

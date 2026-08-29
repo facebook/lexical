@@ -579,14 +579,29 @@ export class TableNode extends ElementNode {
       !isHTMLTableElement(element) && isHTMLElement(element)
         ? element.querySelector('table')
         : element;
-    // ElementNode.exportDOM writes `dir` onto whatever createDOM returned,
-    // which is the scroll wrapper when scrollable tables are active. That
-    // wrapper is not part of the export, so the direction has to be re-applied
-    // to the <table> itself — that is where $convertTableElement reads it back.
-    if (isHTMLTableElement(exportedElement) && exportedElement !== element) {
-      const direction = this.getDirection();
-      if (direction) {
-        exportedElement.dir = direction;
+    // ElementNode.exportDOM writes the direction and the indent onto whatever
+    // createDOM returned, which is the scroll wrapper (or the sticky scrollbar
+    // wrapper around it) when scrollable tables are active. Those wrappers are
+    // not part of the export, so move what they were given onto the <table>
+    // itself — that is where $convertTableElement reads it back. createDOM puts
+    // nothing of its own on a wrapper, so anything found here came from the
+    // super call, and moving rather than re-deriving keeps this in step with
+    // whatever ElementNode.exportDOM writes next.
+    if (
+      isHTMLElement(element) &&
+      isHTMLTableElement(exportedElement) &&
+      exportedElement !== element
+    ) {
+      if (element.dir) {
+        exportedElement.dir = element.dir;
+      }
+      const {paddingInlineStart} = element.style;
+      if (paddingInlineStart) {
+        exportedElement.style.paddingInlineStart = paddingInlineStart;
+      }
+      const indent = element.getAttribute('data-lexical-indent');
+      if (indent !== null) {
+        exportedElement.setAttribute('data-lexical-indent', indent);
       }
     }
     return {

@@ -1778,8 +1778,11 @@ function getCorner(
  * `$computeTableCellRectBoundary` grows the rect until it contains every
  * merged cell that straddles an edge, so the anchor is not guaranteed to be at
  * a corner of the result — a cell merged across the rect's edge pushes that
- * edge past the anchor. Fall back the same way {@link $extractRectCorners}
- * does: to the corner opposite the focus, and finally to the top-left.
+ * edge past the anchor. Fall back to the corner opposite the focus, and when
+ * the focus is not at a corner either, to the top-left.
+ *
+ * TODO the last fallback doesn't have to be arbitrary, use the closest corner
+ * instead.
  */
 function getAnchorCorner(
   rect: TableCellRectBoundary,
@@ -1841,25 +1844,14 @@ function $extractRectCorners(
     anchorCellValue,
     newFocusCellValue,
   );
-  const anchorCorner = getCorner(rect, anchorCellValue);
-  if (anchorCorner) {
-    return [
-      cellAtCornerOrThrow(tableMap, rect, anchorCorner),
-      cellAtCornerOrThrow(tableMap, rect, oppositeCorner(anchorCorner)),
-    ];
-  }
-  const newFocusCorner = getCorner(rect, newFocusCellValue);
-  if (newFocusCorner) {
-    return [
-      cellAtCornerOrThrow(tableMap, rect, oppositeCorner(newFocusCorner)),
-      cellAtCornerOrThrow(tableMap, rect, newFocusCorner),
-    ];
-  }
-  // TODO this doesn't have to be arbitrary, use the closest corner instead
-  const newAnchorCorner: Corner = ['minColumn', 'minRow'];
+  const anchorCorner = getAnchorCorner(
+    rect,
+    anchorCellValue,
+    newFocusCellValue,
+  );
   return [
-    cellAtCornerOrThrow(tableMap, rect, newAnchorCorner),
-    cellAtCornerOrThrow(tableMap, rect, oppositeCorner(newAnchorCorner)),
+    cellAtCornerOrThrow(tableMap, rect, anchorCorner),
+    cellAtCornerOrThrow(tableMap, rect, oppositeCorner(anchorCorner)),
   ];
 }
 

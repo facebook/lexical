@@ -6,6 +6,7 @@
  *
  */
 
+import type {InitialEditorStateType} from '@lexical/react/LexicalComposer';
 import type {Provider} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
 
@@ -20,6 +21,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  createEditor,
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -68,6 +70,30 @@ function createSyncedProvider(): Provider {
       set.add(cb);
     },
   } as Provider;
+}
+
+/** The content every bootstrap test starts the shared document with. */
+function $appendInitialContent(): void {
+  const paragraph = $createParagraphNode();
+  paragraph.append($createTextNode('Initial content'));
+  $getRoot().append(paragraph);
+}
+
+/**
+ * The same content as a serialized editor state. `initialEditorState` accepts
+ * this form too, and it reaches the editor through `editor.setEditorState`
+ * rather than a plain `editor.update`, so it commits on a different schedule
+ * and is worth covering separately.
+ */
+function serializedInitialContent(): string {
+  const editor = createEditor({
+    namespace: 'serializer',
+    onError(error: Error) {
+      throw error;
+    },
+  });
+  editor.update($appendInitialContent, {discrete: true});
+  return JSON.stringify(editor.getEditorState());
 }
 
 describe(`LexicalCollaborationPlugin`, () => {
@@ -151,8 +177,13 @@ describe(`LexicalCollaborationPlugin`, () => {
     expect(providerFactory).toHaveBeenCalledTimes(1);
   });
 
-  // https://github.com/facebook/lexical/issues/7110
-  test(`the bootstrapped initialEditorState can not be undone`, async () => {
+  /**
+   * Render a collaborative editor against an empty shared document, so the
+   * `shouldBootstrap` path writes `initialEditorState` into it.
+   */
+  async function renderBootstrapped(
+    initialEditorState: InitialEditorStateType,
+  ): Promise<{editor: LexicalEditor; readText: () => string}> {
     const doc = new Y.Doc();
     const provider = createSyncedProvider();
     let editor: LexicalEditor | null = null;
@@ -174,12 +205,7 @@ describe(`LexicalCollaborationPlugin`, () => {
                 return provider;
               }}
               shouldBootstrap={true}
-              initialEditorState={() => {
-                const root = $getRoot();
-                const paragraph = $createParagraphNode();
-                paragraph.append($createTextNode('Initial content'));
-                root.append(paragraph);
-              }}
+              initialEditorState={initialEditorState}
             />
             <RichTextPlugin
               contentEditable={<ContentEditable />}
@@ -196,72 +222,50 @@ describe(`LexicalCollaborationPlugin`, () => {
     });
 
     const activeEditor = editor!;
-    const readText = () =>
-      activeEditor.getEditorState().read(() => $getRoot().getTextContent());
+    return {
+      editor: activeEditor,
+      readText: () =>
+        activeEditor.getEditorState().read(() => $getRoot().getTextContent()),
+    };
+  }
 
+  // https://github.com/facebook/lexical/issues/7110
+  test(`the bootstrapped initialEditorState can not be undone`, async () => {
+    const {editor, readText} = await renderBootstrapped($appendInitialContent);
     expect(readText()).toBe('Initial content');
 
     await act(async () => {
-      activeEditor.dispatchCommand(UNDO_COMMAND, undefined);
+      editor.dispatchCommand(UNDO_COMMAND, undefined);
     });
 
     expect(readText()).toBe('Initial content');
   });
 
-  // The bootstrap flag is time-scoped (it is cleared in a microtask), so a
-  // regression that leaves it set would silently disable undo for everything
-  // that follows. Assert the first real edit is still undoable.
-  test(`an edit made after bootstrapping is still undoable`, async () => {
-    const doc = new Y.Doc();
-    const provider = createSyncedProvider();
-    let editor: LexicalEditor | null = null;
-
-    function CaptureEditor() {
-      [editor] = useLexicalComposerContext();
-      return null;
-    }
-
-    function App() {
-      return (
-        <LexicalCollaboration>
-          <LexicalComposer initialConfig={editorConfig}>
-            <CaptureEditor />
-            <CollaborationPlugin
-              id="main"
-              providerFactory={(id, yjsDocMap) => {
-                yjsDocMap.set(id, doc);
-                return provider;
-              }}
-              shouldBootstrap={true}
-              initialEditorState={() => {
-                const root = $getRoot();
-                const paragraph = $createParagraphNode();
-                paragraph.append($createTextNode('Initial content'));
-                root.append(paragraph);
-              }}
-            />
-            <RichTextPlugin
-              contentEditable={<ContentEditable />}
-              placeholder={<></>}
-              ErrorBoundary={LexicalErrorBoundary}
-            />
-          </LexicalComposer>
-        </LexicalCollaboration>
-      );
-    }
-
-    await act(async () => {
-      reactRoot.render(<App />);
-    });
-
-    const activeEditor = editor!;
-    const readText = () =>
-      activeEditor.getEditorState().read(() => $getRoot().getTextContent());
-
+  // The `setEditorState` form commits from inside the bootstrap update instead
+  // of from the microtask that follows it, so it exercises a different point in
+  // the flag's lifetime than the callback form above.
+  test(`a bootstrapped serialized initialEditorState can not be undone`, async () => {
+    const {editor, readText} = await renderBootstrapped(
+      serializedInitialContent(),
+    );
     expect(readText()).toBe('Initial content');
 
     await act(async () => {
-      activeEditor.update(() => {
+      editor.dispatchCommand(UNDO_COMMAND, undefined);
+    });
+
+    expect(readText()).toBe('Initial content');
+  });
+
+  // Undo is suppressed by a flag that is only meant to cover the bootstrap
+  // write. A regression that left it set would silently disable undo for the
+  // rest of the session, which the assertions above would not catch.
+  test(`an edit made after bootstrapping is still undoable`, async () => {
+    const {editor, readText} = await renderBootstrapped($appendInitialContent);
+    expect(readText()).toBe('Initial content');
+
+    await act(async () => {
+      editor.update(() => {
         const paragraph = $createParagraphNode();
         paragraph.append($createTextNode(' and more'));
         $getRoot().append(paragraph);
@@ -270,7 +274,7 @@ describe(`LexicalCollaborationPlugin`, () => {
     expect(readText()).toBe('Initial content\n\n and more');
 
     await act(async () => {
-      activeEditor.dispatchCommand(UNDO_COMMAND, undefined);
+      editor.dispatchCommand(UNDO_COMMAND, undefined);
     });
     expect(readText()).toBe('Initial content');
   });

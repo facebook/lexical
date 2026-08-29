@@ -25,8 +25,10 @@ import {
 import {afterEach, assert, describe, expect, test} from 'vitest';
 import {Doc, Map as YMap} from 'yjs';
 
-// A state key that IS registered on the node type, used as a control: known
-// state already syncs correctly on the create path.
+// A control for the unknown-key path: state written through `$setState` with a
+// StateConfig is tracked as *known* state (registering the key on a node type
+// is what makes it parse back from JSON, not what makes it known here), and
+// known state already syncs correctly on the create path.
 const knownFlagState = createState('knownFlag', {
   parse: v => (typeof v === 'string' ? v : ''),
 });

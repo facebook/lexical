@@ -648,24 +648,23 @@ function bootstrapEditor(
   initialEditorState?: InitialEditorStateType,
 ): void {
   binding.isBootstrapping = true;
-  try {
-    initializeEditor(editor, initialEditorState);
-  } finally {
-    // `editor.update` commits in a microtask, and the Yjs write happens in the
-    // update listener during that commit, so the flag has to outlive this call.
-    // Lexical schedules the commit with `queueMicrotask` from inside
-    // `editor.update`, so it is already queued ahead of this one. Resetting
-    // here rather than from the commit itself also means the flag can never get
-    // stuck when the update turns out to be a no-op.
-    queueMicrotask(() => {
-      binding.isBootstrapping = false;
-    });
-  }
+  // The Yjs write happens in the update listener during the commit, which is
+  // not necessarily synchronous with this call, so the flag has to outlive it.
+  // An `onUpdate` callback is the deterministic boundary: Lexical queues it on
+  // `editor._deferred` before the update body runs and flushes it at the tail
+  // of the same commit that ran the update listeners, so it always lands after
+  // the write and never earlier. A queued deferred callback also forces a
+  // commit on its own, so the flag is cleared even when the update turns out
+  // to be a no-op.
+  initializeEditor(editor, initialEditorState, () => {
+    binding.isBootstrapping = false;
+  });
 }
 
 function initializeEditor(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
+  onUpdate?: () => void,
 ): void {
   editor.update(
     () => {
@@ -717,6 +716,7 @@ function initializeEditor(
       }
     },
     {
+      onUpdate,
       tag: HISTORY_MERGE_TAG,
     },
   );

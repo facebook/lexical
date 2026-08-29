@@ -196,4 +196,14 @@ describe('collab-v2 element selection points', () => {
     expect(result.key).toBe(result.paragraphKey);
     expect(result.offset).toBe(3);
   });
+
+  test('an element point inside a text run decodes to the end of the run', () => {
+    // Offset 1 is between the two TextNodes, which share a single XmlText
+    // child. Yjs has no index for that position, so the point necessarily
+    // widens to the end of the run (offset 2) rather than round tripping.
+    // Pinned here so the loss is a documented property, not a surprise.
+    const result = roundTripElementOffset(1);
+    expect(result.key).toBe(result.paragraphKey);
+    expect(result.offset).toBe(2);
+  });
 });

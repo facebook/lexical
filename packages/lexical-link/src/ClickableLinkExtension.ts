@@ -115,17 +115,11 @@ export function registerClickableLink(
     event.preventDefault();
   };
 
-  const onMouseUp = (event: MouseEvent) => {
-    if (event.button === 1) {
-      onClick(event);
-    }
-  };
-
   return editor.registerRootListener(rootElement => {
     if (rootElement) {
       return registerEventListeners(
         rootElement,
-        {click: onClick, mouseup: onMouseUp},
+        {auxclick: onClick, click: onClick},
         eventOptions,
       );
     }

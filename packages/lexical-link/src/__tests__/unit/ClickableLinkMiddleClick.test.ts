@@ -10,7 +10,15 @@ import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {$createLinkNode, ClickableLinkExtension} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  type Mock,
+  test,
+  vi,
+} from 'vitest';
 
 const URL = 'https://lexical.dev/';
 
@@ -27,12 +35,10 @@ const extension = defineExtension({
 });
 
 describe('ClickableLinkExtension middle click', () => {
-  let windowOpen: ReturnType<typeof vi.spyOn>;
+  let windowOpen: Mock<(typeof window)['open']>;
 
   beforeEach(() => {
-    windowOpen = vi
-      .spyOn(window, 'open')
-      .mockImplementation(() => null) as ReturnType<typeof vi.spyOn>;
+    windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null);
   });
 
   afterEach(() => {

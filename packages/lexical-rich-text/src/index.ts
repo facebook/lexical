@@ -258,10 +258,17 @@ export class QuoteNode extends ElementNode {
 
   // Mutation
 
-  insertNewAfter(_: RangeSelection, restoreSelection?: boolean): ParagraphNode {
+  insertNewAfter(
+    rangeSelection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ParagraphNode {
     const newBlock = $createParagraphNode();
+    newBlock.setTextFormat(rangeSelection.format);
+    newBlock.setTextStyle(rangeSelection.style);
     const direction = this.getDirection();
     newBlock.setDirection(direction);
+    newBlock.setFormat(this.getFormatType());
+    newBlock.setStyle(this.getStyle());
     this.insertAfter(newBlock, restoreSelection);
     return newBlock;
   }

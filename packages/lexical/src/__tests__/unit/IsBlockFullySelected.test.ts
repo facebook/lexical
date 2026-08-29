@@ -6,13 +6,13 @@
  *
  */
 
-import {$isBlockFullySelected} from '@lexical/utils';
 import {
   $caretRangeFromSelection,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isBlockFullySelected,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,

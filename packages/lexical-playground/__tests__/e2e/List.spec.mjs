@@ -323,6 +323,108 @@ test.describe('Checklist space key', () => {
     await expect(item).toHaveText('Task');
   });
 
+  test('the item does not hold the focus for the length of the press', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    // Press the label and hold: the item is the caret's nearest focusable
+    // ancestor, so the browser focuses it, and it should not stay focused
+    // while the button is down.
+    const textBox = await page.getByText('Task', {exact: true}).boundingBox();
+    await page.mouse.move(
+      textBox.x + textBox.width / 2,
+      textBox.y + textBox.height / 2,
+    );
+    await page.mouse.down();
+
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
+
+    await page.mouse.up();
+  });
+
+  test('an arrow key that moves the caret hands focus back to the editor', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+    const box = await item.boundingBox();
+
+    // Click the check mark, so the item holds the focus.
+    await page.mouse.click(box.x + 5, box.y + box.height / 2);
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+
+    // Moving the caret through the label is operating the text, not the
+    // checkbox, so the editor takes the focus back.
+    await moveLeft(page);
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
+
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+    await expect(item).toHaveText('Tas k');
+  });
+
+  test('the right arrow moves the caret off a checkbox the left arrow reached', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+
+    // Left at the start of the label puts the focus on the checkbox.
+    await moveToLineBeginning(page);
+    await moveLeft(page);
+    expect(
+      await page.evaluate(
+        () =>
+          document.activeElement ===
+          document.querySelector('li[role="checkbox"]'),
+      ),
+    ).toBe(true);
+
+    // Right moves the caret back into the label, so the checkbox is no
+    // longer what the keyboard is operating.
+    await moveRight(page, 1);
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
+
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'false');
+    await expect(item).toHaveText('T ask');
+  });
+
   test('typing in the label hands focus back to the editor', async ({
     isCollab,
     page,

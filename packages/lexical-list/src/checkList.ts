@@ -21,6 +21,7 @@ import {
   type ElementNode,
   getActiveElement,
   getNearestEditorFromDOMNode,
+  IS_FIREFOX,
   isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -40,6 +41,22 @@ import {
 import {$insertList} from './formatList';
 import {$isListItemNode, type ListItemNode} from './LexicalListItemNode';
 import {$isListNode} from './LexicalListNode';
+
+// What a focused check list item's own key handlers use: Space toggles it,
+// the vertical arrows move to the sibling item and keep the checkbox focused,
+// and Escape hands the focus back itself. The modifiers are here because
+// pressing one on its own operates nothing at all.
+const CHECKBOX_KEYS = new Set([
+  ' ',
+  'Alt',
+  'ArrowDown',
+  'ArrowUp',
+  'CapsLock',
+  'Control',
+  'Escape',
+  'Meta',
+  'Shift',
+]);
 
 export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_CHECK_LIST_COMMAND',
@@ -269,6 +286,29 @@ export function registerCheckList(
               // treat as handing focus back to the editing host. Capture so
               // the focus is right before the editor handles the input.
               beforeinput: () => returnFocusToRoot(editor),
+              // Correcting the focus as soon as the browser moves it, rather
+              // than waiting for the release, keeps the item from holding it
+              // for the length of the press. Only Firefox: Chrome and Safari
+              // hand the focus back themselves as part of placing the caret,
+              // and stepping in before they do puts the caret at the start of
+              // the item instead. A press on an item that already holds the
+              // focus moves no focus at all and so arrives at neither of
+              // these, which is what the release below is still there for.
+              focusin: () => {
+                if (IS_FIREFOX && lastPress === 'content') {
+                  returnFocusToRoot(editor);
+                }
+              },
+              // Every other key is the text being operated rather than the
+              // checkbox, the caret-moving arrows above all: the caret leaves
+              // the check mark behind, so the focus has to follow it. Text
+              // entry arrives here too, but not all of it comes from a key,
+              // which is why beforeinput covers that separately.
+              keydown: event => {
+                if (!CHECKBOX_KEYS.has(event.key)) {
+                  returnFocusToRoot(editor);
+                }
+              },
               mousedown: configHandleSelectDefaults,
               pointerdown: configHandleSelectDefaults,
             },

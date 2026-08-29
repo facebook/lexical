@@ -386,6 +386,49 @@ test.describe('Checklist space key', () => {
     await expect(item).toHaveText('Tas k');
   });
 
+  test('the left arrow leaves the item when the checkbox already holds focus', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+
+    const first = page.locator('li[role="checkbox"]').first();
+    const second = page.locator('li[role="checkbox"]').nth(1);
+
+    // The first left arrow reaches the checkbox of the second item.
+    await moveToLineBeginning(page);
+    await moveLeft(page);
+    expect(
+      await page.evaluate(
+        () =>
+          document.activeElement ===
+          document.querySelectorAll('li[role="checkbox"]')[1],
+      ),
+    ).toBe(true);
+
+    // The second one leaves the item, so the caret carries on into the item
+    // before it and the focus goes with it.
+    await moveLeft(page);
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
+
+    await page.keyboard.type('X');
+
+    await expect(first).toHaveText('OneX');
+    await expect(second).toHaveText('Two');
+    await expect(second).toHaveAttribute('aria-checked', 'false');
+  });
+
   test('the right arrow moves the caret off a checkbox the left arrow reached', async ({
     isCollab,
     page,

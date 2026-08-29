@@ -44,12 +44,16 @@ import {$isListNode} from './LexicalListNode';
 
 // What a focused check list item's own key handlers use: Space toggles it,
 // the vertical arrows move to the sibling item and keep the checkbox focused,
-// and Escape hands the focus back itself. The modifiers are here because
-// pressing one on its own operates nothing at all.
+// Escape hands the focus back itself, and the left arrow is the one key that
+// means either thing -- it is what moves the focus onto the checkbox, and
+// pressing it again is what leaves the item -- so its handler decides rather
+// than the listener below. The modifiers are here because pressing one on its
+// own operates nothing at all.
 const CHECKBOX_KEYS = new Set([
   ' ',
   'Alt',
   'ArrowDown',
+  'ArrowLeft',
   'ArrowUp',
   'CapsLock',
   'Control',
@@ -215,6 +219,16 @@ export function registerCheckList(
     editor.registerCommand(
       KEY_ARROW_LEFT_COMMAND,
       event => {
+        // The checkbox holds the focus already, so this arrow is the caret
+        // moving rather than the checkbox being reached: back through the
+        // label, or out of the item altogether when the caret is at its
+        // start. Either way the editing host takes the focus back and the
+        // caret moves as it normally would.
+        if (getActiveCheckListItem(editor) !== null) {
+          returnFocusToRoot(editor);
+          return false;
+        }
+
         return editor.read('latest', () => {
           const selection = $getSelection();
 

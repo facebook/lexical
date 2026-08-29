@@ -1802,8 +1802,13 @@ export function registerRichText(
                 $normalizeSelection__EXPERIMENTAL(selection);
               $setSelection(normalizedSelection);
             }
-            editor.dispatchCommand(DRAG_DROP_PASTE, files);
           }
+          // The drop point does not always resolve to a caret (the browser
+          // returns nothing for e.g. the editor's padding). We still consume
+          // the event below, so the files have to be forwarded regardless,
+          // otherwise the drop is silently discarded. PASTE_COMMAND already
+          // dispatches DRAG_DROP_PASTE unconditionally.
+          editor.dispatchCommand(DRAG_DROP_PASTE, files);
           event.preventDefault();
           return true;
         }

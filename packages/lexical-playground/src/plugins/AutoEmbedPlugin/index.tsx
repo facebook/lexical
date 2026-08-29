@@ -7,17 +7,16 @@
  */
 
 import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
 
 import {
   AutoEmbedOption,
-  EmbedConfig,
-  EmbedMatchResult,
+  type EmbedConfig,
+  type EmbedMatchResult,
   LexicalAutoEmbedPlugin,
   URL_MATCHER,
 } from '@lexical/react/LexicalAutoEmbedPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useMemo, useState} from 'react';
+import {type JSX, useMemo, useState} from 'react';
 
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
@@ -37,7 +36,7 @@ interface PlaygroundEmbedConfig extends EmbedConfig {
   exampleUrl: string;
 
   // For extra searching.
-  keywords: Array<string>;
+  keywords: string[];
 
   // Embed a Figma Project.
   description?: string;
@@ -204,6 +203,7 @@ export function AutoEmbedDialog({
           className="Input__input"
           placeholder={embedConfig.exampleUrl}
           value={text}
+          autoFocus={true}
           data-test-id={`${embedConfig.type}-embed-modal-url`}
           onChange={e => {
             const {value} = e.target;

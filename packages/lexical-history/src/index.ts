@@ -6,18 +6,15 @@
  *
  */
 
-import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
-
 import {
   batch,
   effect,
   getPeerDependencyFromEditor,
   namedSignals,
-  ReadonlySignal,
-  Signal,
+  type ReadonlySignal,
+  type Signal,
   signal,
 } from '@lexical/extension';
-import {mergeRegister} from '@lexical/utils';
 import {
   $isRangeSelection,
   $isRootNode,
@@ -32,9 +29,14 @@ import {
   configExtension,
   CUT_TAG,
   defineExtension,
+  type EditorState,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
+  type NodeKey,
   PASTE_TAG,
   REDO_COMMAND,
   safeCast,
@@ -57,10 +59,17 @@ export type HistoryStateEntry = {
   editor: LexicalEditor;
   editorState: EditorState;
 };
+/**
+ * The undo/redo history maintained by the history plugin: the `current` entry
+ * plus the `undoStack` and `redoStack` of previous and future
+ * {@link HistoryStateEntry}s. Create an empty one with
+ * {@link createEmptyHistoryState} and pass it to the history plugin to share
+ * history across editors.
+ */
 export type HistoryState = {
   current: null | HistoryStateEntry;
-  redoStack: Array<HistoryStateEntry>;
-  undoStack: Array<HistoryStateEntry>;
+  redoStack: HistoryStateEntry[];
+  undoStack: HistoryStateEntry[];
 };
 
 type IntentionallyMarkedAsDirtyElement = boolean;
@@ -69,7 +78,7 @@ function getDirtyNodes(
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-): Array<LexicalNode> {
+): LexicalNode[] {
   const nodeMap = editorState._nodeMap;
   const nodes = [];
 
@@ -367,6 +376,58 @@ function createMergeActionGetter(
   };
 }
 
+/**
+ * Build the entry that reverses `historyStateEntry` and belongs on the
+ * opposite stack.
+ *
+ * With a single editor this is always `current`, since `current` tracks the
+ * live state of that editor. With a shared {@link HistoryState} the stacks
+ * interleave entries from several editors, so `current` may belong to an
+ * editor that is *not* about to change — pushing it would record a no-op and
+ * lose the state we are about to overwrite. In that case read the live state
+ * off the entry's own editor instead.
+ */
+function getInverseEntry(
+  historyStateEntry: HistoryStateEntry,
+  current: null | HistoryStateEntry,
+): null | HistoryStateEntry {
+  if (current !== null && current.editor === historyStateEntry.editor) {
+    return current;
+  }
+  const {editor} = historyStateEntry;
+  const editorState = editor.getEditorState();
+  // An empty EditorState can not be restored (setEditorState throws), so
+  // there is nothing to reverse to.
+  return editorState.isEmpty() ? null : {editor, editorState};
+}
+
+/**
+ * Build the entry that an update from `editor` pushes onto the undo stack.
+ *
+ * `current` is the state to restore when this update is undone, but with a
+ * shared {@link HistoryState} it may belong to a different editor — one that
+ * is not changing here, so restoring it would be a no-op and the state that is
+ * about to be overwritten would never make it onto the stack. Record this
+ * editor's own pre-update state in that case.
+ */
+function getUndoEntry(
+  editor: LexicalEditor,
+  prevEditorState: EditorState,
+  current: null | HistoryStateEntry,
+): null | HistoryStateEntry {
+  if (current === null) {
+    return null;
+  }
+  if (current.editor === editor) {
+    return {...current};
+  }
+  // An empty EditorState can not be restored (setEditorState throws). Skipping
+  // it mirrors the way the first update of an editor is not undoable.
+  return prevEditorState.isEmpty()
+    ? null
+    : {editor, editorState: prevEditorState};
+}
+
 function redo(
   editor: LexicalEditor,
   historyState: HistoryState,
@@ -377,13 +438,16 @@ function redo(
 
   if (redoStack.length !== 0) {
     const current = historyState.current;
-
-    if (current !== null) {
-      undoStack.push(current);
-      editor.dispatchCommand(CAN_UNDO_COMMAND, true);
-    }
-
     const historyStateEntry = redoStack.pop();
+
+    if (historyStateEntry) {
+      const inverseEntry = getInverseEntry(historyStateEntry, current);
+
+      if (inverseEntry !== null) {
+        undoStack.push(inverseEntry);
+        editor.dispatchCommand(CAN_UNDO_COMMAND, true);
+      }
+    }
 
     if (redoStack.length === 0) {
       editor.dispatchCommand(CAN_REDO_COMMAND, false);
@@ -416,9 +480,13 @@ function undo(
     const current = historyState.current;
     const historyStateEntry = undoStack.pop();
 
-    if (current !== null) {
-      redoStack.push(current);
-      editor.dispatchCommand(CAN_REDO_COMMAND, true);
+    if (historyStateEntry) {
+      const inverseEntry = getInverseEntry(historyStateEntry, current);
+
+      if (inverseEntry !== null) {
+        redoStack.push(inverseEntry);
+        editor.dispatchCommand(CAN_REDO_COMMAND, true);
+      }
     }
 
     if (undoStack.length === 0) {
@@ -529,10 +597,10 @@ export function registerHistory(
         editor.dispatchCommand(CAN_REDO_COMMAND, false);
       }
 
-      if (current !== null) {
-        undoStack.push({
-          ...current,
-        });
+      const undoEntry = getUndoEntry(editor, prevEditorState, current);
+
+      if (undoEntry !== null) {
+        undoStack.push(undoEntry);
         const cap = readMaxDepth();
         if (cap !== null && undoStack.length > cap) {
           // FIFO-evict the oldest entries so the stack stays at `cap`.
@@ -651,10 +719,11 @@ interface HistoryExtensionInit {
 /**
  * The output signals exposed by {@link HistoryExtension}.
  *
- * Config-derived signals (`delay`, `disabled`, `historyState`, `now`) are
- * writable so that peer extensions such as {@link SharedHistoryExtension} can
- * redirect them at runtime.  The `canUndo` / `canRedo` signals are
- * **readonly** for consumers — they are derived from the current
+ * Config-derived signals (`delay`, `disabled`, `historyState`, `maxDepth`,
+ * `now`) are writable so that peer extensions such as
+ * {@link SharedHistoryExtension} can redirect them at runtime.
+ * The `canUndo` / `canRedo` signals are **readonly** for
+ * consumers — they are derived from the current
  * {@link HistoryState} and kept in sync automatically.
  */
 export interface HistoryExtensionOutput {
@@ -688,7 +757,7 @@ export interface HistoryExtensionOutput {
  * Registers necessary listeners to manage undo/redo history stack and related
  * editor commands, via the \@lexical/history module.
  */
-export const HistoryExtension = /* @__PURE__ */ defineExtension({
+export const HistoryExtension = defineExtension({
   build: (
     editor,
     {delay, createInitialHistoryState, disabled, maxDepth, now},
@@ -710,7 +779,7 @@ export const HistoryExtension = /* @__PURE__ */ defineExtension({
       ...state.getInitResult(),
     };
   },
-  config: /* @__PURE__ */ safeCast<HistoryConfig>({
+  config: safeCast<HistoryConfig>({
     createInitialHistoryState: createEmptyHistoryState,
     delay: 300,
     disabled: typeof window === 'undefined',
@@ -780,18 +849,18 @@ export interface SharedHistoryConfig {
  * editor commands, via the \@lexical/history module, only if the parent editor
  * has a history plugin implementation.
  */
-export const SharedHistoryExtension = /* @__PURE__ */ defineExtension({
+export const SharedHistoryExtension = defineExtension({
   build: (editor, {disabled, parentEditor}) =>
     namedSignals({
       disabled,
       parentEditor: parentEditor || editor._parentEditor,
     }),
-  config: /* @__PURE__ */ safeCast<SharedHistoryConfig>({
+  config: safeCast<SharedHistoryConfig>({
     disabled: false,
     parentEditor: null,
   }),
   dependencies: [
-    /* @__PURE__ */ configExtension(HistoryExtension, {
+    configExtension(HistoryExtension, {
       disabled: true,
     }),
   ],
@@ -810,6 +879,10 @@ export const SharedHistoryExtension = /* @__PURE__ */ defineExtension({
           output.delay.value = parentOutput.delay.value;
           output.historyState.value = parentOutput.historyState.value;
           output.now.value = parentOutput.now.value;
+          // The cap must come from the parent too: the child pushes onto the
+          // parent's shared undoStack, so applying the child's own (default
+          // null) maxDepth would silently void the limit the app configured.
+          output.maxDepth.value = parentOutput.maxDepth.value;
           // Note that toggling the parent history will force this to be changed
           output.disabled.value = parentOutput.disabled.value;
         });

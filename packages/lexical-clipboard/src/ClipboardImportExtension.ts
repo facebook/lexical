@@ -6,8 +6,6 @@
  *
  */
 
-import type {BaseSelection, RangeSelection} from 'lexical';
-
 import {$getPeerDependency, configExtension} from '@lexical/extension';
 import {
   $generateNodesFromDOM,
@@ -22,7 +20,9 @@ import {
   $getEditor,
   $getSelection,
   $isRangeSelection,
+  type BaseSelection,
   defineExtension,
+  type RangeSelection,
   safeCast,
   shallowMergeConfig,
   tokenizeRawText,
@@ -31,7 +31,7 @@ import {
 import {
   $generateNodesFromSerializedNodes,
   $insertGeneratedNodes,
-  LexicalClipboardData,
+  type LexicalClipboardData,
 } from './clipboard';
 
 /**
@@ -164,7 +164,9 @@ export const DEFAULT_IMPORT_MIME_TYPE_PRIORITY: ImportMimeTypePriority = {
 };
 
 function trustHTML(html: string): string | TrustedHTML {
+  // eslint-disable-next-line no-restricted-syntax
   if (window.trustedTypes && window.trustedTypes.createPolicy) {
+    // eslint-disable-next-line no-restricted-syntax
     const policy = window.trustedTypes.createPolicy('lexical', {
       createHTML: input => input,
     });
@@ -440,14 +442,14 @@ export function $getImportOutput(): ClipboardImportOutput {
  * });
  * ```
  */
-export const ClipboardImportExtension = /* @__PURE__ */ defineExtension({
+export const ClipboardImportExtension = defineExtension({
   build: (_editor, config): ClipboardImportOutput => ({
     $importMimeType: config.$importMimeType,
     $insertDataTransfer: (dataTransfer, selection) =>
       $runImport(config, dataTransfer, selection),
     priority: config.priority,
   }),
-  config: /* @__PURE__ */ safeCast<ClipboardImportConfig>({
+  config: safeCast<ClipboardImportConfig>({
     $importMimeType: DEFAULT_IMPORT_MIME_TYPE,
     priority: DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
   }),
@@ -513,10 +515,10 @@ export const ClipboardImportExtension = /* @__PURE__ */ defineExtension({
  * });
  * ```
  */
-export const ClipboardDOMImportExtension = /* @__PURE__ */ defineExtension({
+export const ClipboardDOMImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
-    /* @__PURE__ */ configExtension(ClipboardImportExtension, {
+    configExtension(ClipboardImportExtension, {
       $importMimeType: {
         'text/html': [
           (html, selection, _$next, dataTransfer) => {

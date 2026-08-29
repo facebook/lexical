@@ -6,6 +6,7 @@
  *
  */
 
+import {markSelection} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelection,
@@ -15,8 +16,6 @@ import {
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, it, vi} from 'vitest';
-
-import {markSelection} from '../../index';
 
 Range.prototype.getBoundingClientRect = function (): DOMRect {
   const rect = {

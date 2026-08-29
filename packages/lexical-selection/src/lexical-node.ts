@@ -20,15 +20,15 @@ import {
   $isRootNode,
   $isTextNode,
   $isTokenOrSegmented,
-  BaseSelection,
-  ElementNode,
+  type BaseSelection,
+  type ElementNode,
   getStyleObjectFromCSS,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  Point,
-  RangeSelection,
-  TextNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type Point,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
 
 import {getCSSFromStyleObject} from './utils';
@@ -194,15 +194,13 @@ export function $trimTextContentFromAnchor(
     } else {
       const key = currentNode.getKey();
       // See if we can just revert it to what was in the last editor state
-      const prevTextContent: string | null = editor
-        .getEditorState()
-        .read(() => {
-          const prevNode = $getNodeByKey(key);
-          if ($isTextNode(prevNode) && prevNode.isSimpleText()) {
-            return prevNode.getTextContent();
-          }
-          return null;
-        });
+      const prevTextContent: string | null = editor.read('latest', () => {
+        const prevNode = $getNodeByKey(key);
+        if ($isTextNode(prevNode) && prevNode.isSimpleText()) {
+          return prevNode.getTextContent();
+        }
+        return null;
+      });
       const offset = currentNodeSize - remaining;
       const slicedText = text.slice(0, offset);
       if (prevTextContent !== null && prevTextContent !== text) {
@@ -322,10 +320,15 @@ export function $patchStyleText(
       ) => string)
   >,
 ): void {
+  // Shared with the empty-element loop below so that a node patched here is
+  // not patched a second time. A function-valued patch is not idempotent —
+  // it is evaluated against the value the previous application wrote.
+  const patchedElementKeys = new Set<NodeKey>();
   if ($isRangeSelection(selection) && selection.isCollapsed()) {
     $patchStyle(selection, patch);
     const emptyNode = selection.anchor.getNode();
     if ($isElementNode(emptyNode) && emptyNode.isEmpty()) {
+      patchedElementKeys.add(emptyNode.getKey());
       $patchStyle(emptyNode, patch);
     }
   }
@@ -335,7 +338,6 @@ export function $patchStyleText(
 
   const nodes = selection.getNodes();
   if (nodes.length > 0) {
-    const patchedElementKeys = new Set<NodeKey>();
     for (const node of nodes) {
       if (
         !$isElementNode(node) ||

@@ -6,17 +6,22 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
-
-import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $findMatchingParent,
   $getNodeByKey,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_LOW,
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
+  KEY_BACKSPACE_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
+  type NodeKey,
   TextNode,
 } from 'lexical';
 
@@ -33,13 +38,15 @@ import {$getListDepth} from './utils';
 export const UPDATE_LIST_START_COMMAND: LexicalCommand<{
   listNodeKey: NodeKey;
   newStart: number;
-}> = /* @__PURE__ */ createCommand('UPDATE_LIST_START_COMMAND');
+}> = createCommand('UPDATE_LIST_START_COMMAND');
 export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =
-  /* @__PURE__ */ createCommand('INSERT_UNORDERED_LIST_COMMAND');
-export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> =
-  /* @__PURE__ */ createCommand('INSERT_ORDERED_LIST_COMMAND');
-export const REMOVE_LIST_COMMAND: LexicalCommand<void> =
-  /* @__PURE__ */ createCommand('REMOVE_LIST_COMMAND');
+  createCommand('INSERT_UNORDERED_LIST_COMMAND');
+export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> = createCommand(
+  'INSERT_ORDERED_LIST_COMMAND',
+);
+export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
+  'REMOVE_LIST_COMMAND',
+);
 
 export interface RegisterListOptions {
   restoreNumbering?: boolean;
@@ -97,6 +104,36 @@ export function registerList(
         return $handleListInsertParagraph(!!shouldRestore);
       },
       COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      KEY_BACKSPACE_COMMAND,
+      event => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+        const {anchor} = selection;
+        if (anchor.offset !== 0) {
+          return false;
+        }
+        let current: LexicalNode = anchor.getNode();
+        while (!$isListItemNode(current)) {
+          if (current.getPreviousSibling() !== null) {
+            return false;
+          }
+          const parent = current.getParent();
+          if (parent === null) {
+            return false;
+          }
+          current = parent;
+        }
+        if ($isListItemNode(current) && current.collapseAtStart(selection)) {
+          event.preventDefault();
+          return true;
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_BEFORE_EDITOR,
     ),
     editor.registerNodeTransform(ListItemNode, node => {
       const firstChild = node.getFirstChild();

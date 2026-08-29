@@ -6,7 +6,7 @@
  *
  */
 
-import {PublicPath} from 'wxt/browser';
+import type {PublicPath} from 'wxt/browser';
 
 export default function injectScript(src: PublicPath) {
   const s = document.createElement('script');

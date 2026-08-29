@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
+  $cloneWithProperties,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -16,7 +16,7 @@ import {
   $isRootNode,
   $isTextNode,
   ElementNode,
-  RootNode,
+  type RootNode,
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 
@@ -35,7 +35,7 @@ describe('LexicalRootNode tests', () => {
 
     function expectRootTextContentToBe(text: string): void {
       const {editor} = testEnv;
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
 
         expect(root.__cachedText).toBe(text);
@@ -92,7 +92,7 @@ describe('LexicalRootNode tests', () => {
     });
 
     test('RootNode.clone()', async () => {
-      const rootNodeClone = (rootNode.constructor as typeof RootNode).clone();
+      const rootNodeClone = $cloneWithProperties(rootNode);
 
       expect(rootNodeClone).not.toBe(rootNode);
       expect(rootNodeClone).toStrictEqual(rootNode);
@@ -127,7 +127,7 @@ describe('LexicalRootNode tests', () => {
       });
 
       expect(
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           return $getRoot().getTextContent();
         }),
       ).toBe('Hello world');

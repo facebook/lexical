@@ -6,13 +6,14 @@
  *
  */
 
-import {$createLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, type LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
-  ListItemNode,
-  ListNode,
+  type ListItemNode,
+  type ListNode,
 } from '@lexical/list';
+import {$createMarkNode} from '@lexical/mark';
 import {$createHeadingNode, $isHeadingNode} from '@lexical/rich-text';
 import {
   $createTableCellNode,
@@ -21,11 +22,14 @@ import {
 } from '@lexical/table';
 import {
   $caretRangeFromSelection,
+  $comparePointCaretNext,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $extendCaretToRange,
   $getCaretRange,
   $getChildCaret,
+  $getChildCaretAtIndex,
   $getCommonAncestor,
   $getRoot,
   $getSelection,
@@ -43,14 +47,14 @@ import {
   $setSelection,
   $setSelectionFromCaretRange,
   $splitAtPointCaretNext,
-  ChildCaret,
-  ElementNode,
-  LexicalNode,
-  NodeCaret,
-  ParagraphNode,
-  RootNode,
-  SiblingCaret,
-  TextNode,
+  type ChildCaret,
+  type ElementNode,
+  type LexicalNode,
+  type NodeCaret,
+  type ParagraphNode,
+  type RootNode,
+  type SiblingCaret,
+  type TextNode,
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 
@@ -60,7 +64,6 @@ import {
   initializeUnitTest,
   invariant,
 } from '../../../__tests__/utils';
-import {$comparePointCaretNext} from '../../LexicalCaret';
 
 const DIRECTIONS = ['next', 'previous'] as const;
 const BIASES = ['inside', 'outside'] as const;
@@ -844,7 +847,7 @@ describe('LexicalCaret', () => {
             {discrete: true},
           );
           // Reconciliation has happened
-          testEnv.editor.getEditorState().read(() => {
+          testEnv.editor.read('latest', () => {
             const allTextNodes = $getRoot().getAllTextNodes();
             // These should get merged in reconciliation
             expect(allTextNodes.map(node => node.getTextContent())).toEqual([
@@ -1682,13 +1685,94 @@ describe('LexicalCaret', () => {
             },
             {discrete: true},
           );
-          testEnv.editor.getEditorState().read(() => {
+          testEnv.editor.read('latest', () => {
             const allTextNodes = $getRoot().getAllTextNodes();
             // These should get merged in reconciliation
             expect(allTextNodes.map(node => node.getTextContent())).toEqual([
               'listnested',
             ]);
           });
+        });
+      });
+    });
+    describe('$extendCaretToRange', () => {
+      test('next direction: focus can be flipped and used to delete to end of document (regression for #8927)', () => {
+        testEnv.editor.update(
+          () => {
+            const t1 = $createTextNode('hello');
+            const t2 = $createTextNode('world');
+            const p1 = $createParagraphNode().append(t1);
+            const p2 = $createParagraphNode().append(t2);
+            $getRoot().clear().append(p1, p2);
+            const range = $extendCaretToRange(
+              $getTextPointCaret(t1, 'next', 2),
+            );
+            expect(range.focus).toEqual($getSiblingCaret(p2, 'next'));
+            expect(range.focus.getFlipped()).toEqual(
+              $getChildCaret($getRoot(), 'previous'),
+            );
+            expect(range.focus.getFlipped().getFlipped()).toEqual(range.focus);
+            $removeTextFromCaretRange(range);
+            expect($getRoot().getChildren()).toEqual([p1]);
+            expect($getRoot().getAllTextNodes()).toEqual([t1]);
+            expect($getRoot().getTextContent()).toBe('he');
+          },
+          {discrete: true},
+        );
+      });
+
+      test('previous direction: focus can be flipped and used to delete to start of document', () => {
+        testEnv.editor.update(
+          () => {
+            const t1 = $createTextNode('hello');
+            const t2 = $createTextNode('world');
+            const p1 = $createParagraphNode().append(t1);
+            const p2 = $createParagraphNode().append(t2);
+            $getRoot().clear().append(p1, p2);
+
+            const range = $extendCaretToRange(
+              $getTextPointCaret(t2, 'previous', 2),
+            );
+            expect(range.focus).toEqual($getSiblingCaret(p1, 'previous'));
+            expect(range.focus.getFlipped()).toEqual(
+              $getChildCaret($getRoot(), 'next'),
+            );
+            expect(range.focus.getFlipped().getFlipped()).toEqual(range.focus);
+            $removeTextFromCaretRange(range);
+            expect($getRoot().getChildren()).toEqual([p2]);
+            expect($getRoot().getAllTextNodes()).toEqual([t2]);
+            expect($getRoot().getTextContent()).toBe('rld');
+          },
+          {discrete: true},
+        );
+      });
+
+      test("doesn't change which nodes plain iteration visits", () => {
+        testEnv.editor.update(() => {
+          const t1 = $createTextNode('hello');
+          const t2 = $createTextNode('world');
+          const p1 = $createParagraphNode().append(t1);
+          const p2 = $createParagraphNode().append(t2);
+          $getRoot().clear().append(p1, p2);
+          const visited = [
+            ...$extendCaretToRange($getTextPointCaret(t1, 'next', 2)),
+          ];
+          // Same sequence a plain for...of produced before this fix — the fix
+          // only changes whether the focus can be flipped, not what iteration visits.
+          expect(visited).toEqual([
+            $getSiblingCaret(p1, 'next'),
+            $getChildCaret(p2, 'next'),
+            $getSiblingCaret(t2, 'next'),
+            $getSiblingCaret(p2, 'next'),
+          ]);
+        });
+      });
+
+      test('empty document: focus can still be flipped without throwing', () => {
+        testEnv.editor.update(() => {
+          $getRoot().clear();
+          const range = $extendCaretToRange($getChildCaret($getRoot(), 'next'));
+          expect(() => range.focus.getFlipped()).not.toThrow();
         });
       });
     });
@@ -1986,6 +2070,121 @@ describe('LexicalSelectionHelpers', () => {
 
         expect(testEnv.innerHTML).toBe(
           '<p dir="auto"><a href="https://"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
+        );
+      });
+    });
+
+    describe('canBeEmpty()=false parent cleanup', () => {
+      test('MarkNode is removed when all children are deleted via element-type range', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const before = $createTextNode('before ');
+            const mark = $createMarkNode(['test-id']);
+            const markText1 = $createTextNode('aaa');
+            const markText2 = $createTextNode('bbb');
+            const after = $createTextNode(' after');
+            mark.append(markText1, markText2);
+            p.append(before, mark, after);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(mark, 0, 'next'),
+              $getChildCaretAtIndex(mark, 2, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(mark.isAttached()).toBe(false);
+            expect(before.isAttached()).toBe(true);
+            expect(after.isAttached()).toBe(true);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('LinkNode is removed when all children are deleted via element-type range', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const before = $createTextNode('before ');
+            const link = $createLinkNode('https://lexical.dev');
+            const linkText = $createTextNode('click');
+            const after = $createTextNode(' after');
+            link.append(linkText);
+            p.append(before, link, after);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(link, 0, 'next'),
+              $getChildCaretAtIndex(link, 1, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(link.isAttached()).toBe(false);
+            expect(before.isAttached()).toBe(true);
+            expect(after.isAttached()).toBe(true);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('canBeEmpty()=false parent survives when only some children are removed', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const mark = $createMarkNode(['test-id']);
+            const t1 = $createTextNode('aaa');
+            const t2 = $createTextNode('bbb');
+            const t3 = $createTextNode('ccc');
+            mark.append(t1, t2, t3);
+            p.append(mark);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(mark, 0, 'next'),
+              $getSiblingCaret(t2, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(mark.isAttached()).toBe(true);
+            expect(mark.getChildrenSize()).toBeGreaterThan(0);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('multiple canBeEmpty()=false parents in same range are cleaned up', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const mark1 = $createMarkNode(['id1']);
+            const mark2 = $createMarkNode(['id2']);
+            const t1 = $createTextNode('aaa');
+            const t2 = $createTextNode('bbb');
+            const spacer = $createTextNode(' ');
+            mark1.append(t1);
+            mark2.append(t2);
+            p.append(mark1, spacer, mark2);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(p, 0, 'next'),
+              $getChildCaretAtIndex(p, 3, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(mark1.isAttached()).toBe(false);
+            expect(mark2.isAttached()).toBe(false);
+          },
+          {discrete: true},
         );
       });
     });

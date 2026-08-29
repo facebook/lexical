@@ -6,18 +6,28 @@
  *
  */
 
+import type {ErrorBoundaryType} from './shared/types';
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 
-import {
-  type ErrorBoundaryType,
-  LegacyDecorators,
-} from './shared/LegacyDecorators';
+import {LegacyDecorators} from './shared/LegacyDecorators';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 import {usePlainTextSetup} from './shared/usePlainTextSetup';
 
+/**
+ * Sets up plain text editing by wiring up the core plain text commands and
+ * rendering the provided `contentEditable`, an optional `placeholder`, and any
+ * decorator nodes (wrapped in the given `ErrorBoundary`). Use this instead of
+ * {@link RichTextPlugin} when the editor should not support block-level rich
+ * text formatting.
+ *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link PlainTextExtension} instead.
+ *
+ * @returns The element tree to render inside your LexicalComposer.
+ */
 export function PlainTextPlugin({
   contentEditable,
   // TODO Remove. This property is now part of ContentEditable

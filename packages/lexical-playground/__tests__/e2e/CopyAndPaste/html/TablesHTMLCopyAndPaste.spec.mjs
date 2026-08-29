@@ -100,7 +100,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
     test.skip(isPlainText || isCollab);
     await focusEditor(page);
     const clipboard = {
-      'text/html': `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-dd8626d9-7fff-78d6-4aad-a0d248a19533"><div dir="ltr" style="margin-left:0pt;" align="center"><table style="border:none;border-collapse:collapse;"><colgroup><col width="78" /><col width="405" /><col width="233" /></colgroup><tbody><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">short</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">wide</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">default</span></p></td></tr><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">a</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">b</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">c</span></p></td></tr></tbody></table></div><br /></b>`,
+      'text/html': `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-dd8626d9-7fff-78d6-4aad-a0d248a19533"><div dir="ltr" style="margin-left:0pt;" align="center"><table style="border:none;border-collapse:collapse;"><colgroup><col width="78" /><col width="405" /><col width="233" /></colgroup><tbody><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">short</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">wide</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">default</span></p></td></tr><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">a</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">b</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">c</span></p></td></tr></tbody></table></div><br data-lexical-managed-linebreak="true" /></b>`,
     };
     await pasteFromClipboard(page, clipboard);
     await assertHTML(
@@ -153,7 +153,9 @@ test.describe('HTML Tables CopyAndPaste', () => {
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -342,7 +344,9 @@ test.describe('HTML Tables CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
           dir="auto">
@@ -372,12 +376,16 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
@@ -402,60 +410,82 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-          </tr>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -669,16 +699,24 @@ test.describe('HTML Tables CopyAndPaste', () => {
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
@@ -693,10 +731,14 @@ test.describe('HTML Tables CopyAndPaste', () => {
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
@@ -706,10 +748,14 @@ test.describe('HTML Tables CopyAndPaste', () => {
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
@@ -755,7 +801,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>

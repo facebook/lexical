@@ -6,8 +6,10 @@
  *
  */
 
-import {$toggleLink} from './LexicalLinkNode';
-
+export {
+  AutoLinkAnnounceExtension,
+  type AutoLinkAnnounceExtensionConfig,
+} from './AutoLinkAnnounceExtension';
 export {
   type ClickableLinkConfig,
   ClickableLinkExtension,
@@ -15,7 +17,9 @@ export {
 } from './ClickableLinkExtension';
 export {
   type AutoLinkConfig,
+  autoLinkEmailMatcher,
   AutoLinkExtension,
+  autoLinkUrlMatcher,
   type ChangeHandler,
   createLinkMatcherWithRegExp,
   type LinkMatcher,
@@ -42,6 +46,3 @@ export {
   TOGGLE_LINK_COMMAND,
 } from './LexicalLinkNode';
 export {LinkImportRules} from './LinkImportExtension';
-
-/** @deprecated renamed to {@link $toggleLink} by @lexical/eslint-plugin rules-of-lexical */
-export const toggleLink = $toggleLink;

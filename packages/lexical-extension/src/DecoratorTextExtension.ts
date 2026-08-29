@@ -6,27 +6,24 @@
  *
  */
 
-import type {
-  LexicalNode,
-  SerializedLexicalNode,
-  Spread,
-  StateConfigValue,
-  StateValueOrUpdater,
-  TextFormatType,
-} from 'lexical';
-
 import {
-  $getSelection,
+  $getDocument,
   $getState,
-  $isNodeSelection,
-  $isRangeSelection,
   $setState,
-  COMMAND_PRIORITY_LOW,
   createState,
   DecoratorNode,
   defineExtension,
-  FORMAT_TEXT_COMMAND,
+  type EditorConfig,
+  type InlineFormattableNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeStateVersion,
+  type SerializedLexicalNode,
+  type Spread,
+  type StateConfigValue,
+  type StateValueOrUpdater,
   TEXT_TYPE_TO_FORMAT,
+  type TextFormatType,
   toggleTextFormatType,
 } from 'lexical';
 
@@ -37,11 +34,19 @@ export type SerializedDecoratorTextNode = Spread<
   SerializedLexicalNode
 >;
 
-const formatState = /* @__PURE__ */ createState('format', {
+const formatState = createState('format', {
   parse: value => (typeof value === 'number' ? value : 0),
 });
 
-export class DecoratorTextNode extends DecoratorNode<unknown> {
+export class DecoratorTextNode
+  extends DecoratorNode<unknown>
+  implements InlineFormattableNode
+{
+  /** @internal */
+  get __isInlineFormattable(): true {
+    return true;
+  }
+
   $config() {
     return this.config('decorator-text', {
       extends: DecoratorNode,
@@ -49,8 +54,8 @@ export class DecoratorTextNode extends DecoratorNode<unknown> {
     });
   }
 
-  getFormat(): StateConfigValue<typeof formatState> {
-    return $getState(this, formatState);
+  getFormat(version?: NodeStateVersion): StateConfigValue<typeof formatState> {
+    return $getState(this, formatState, version);
   }
 
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
@@ -76,12 +81,8 @@ export class DecoratorTextNode extends DecoratorNode<unknown> {
     return true;
   }
 
-  createDOM(): HTMLElement {
-    return document.createElement('span');
-  }
-
-  updateDOM(): false {
-    return false;
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
+    return $getDocument().createElement('span');
   }
 }
 
@@ -153,24 +154,33 @@ export function applyFormatFromStyle(
  * @param tagNameToFormat Tag name and format mapping
  * @returns domNode
  */
-export function applyFormatToDom(
+export function applyFormatToDom<T extends Text | HTMLElement>(
   lexicalNode: DecoratorTextNode,
-  domNode: Text | HTMLElement,
+  domNode: T,
   tagNameToFormat = DEFAULT_TAG_NAME_TO_FORMAT,
-) {
+): T | HTMLElement {
+  let rval: T | HTMLElement = domNode;
   for (const [tag, format] of Object.entries(tagNameToFormat)) {
     if (lexicalNode.hasFormat(format)) {
-      domNode = wrapElementWith(domNode, tag);
+      rval = wrapElementWith(rval, tag);
     }
   }
-  return domNode;
+  return rval;
 }
+
+/**
+ * @deprecated Use {@link applyFormatToDom} instead. The `$` prefix was a
+ * mistake in the 0.47 release: the implementation does not read any editor
+ * state, so the dollar convention does not apply. This alias is kept for
+ * compatibility with 0.47.
+ */
+export const $applyFormatToDom = applyFormatToDom;
 
 function wrapElementWith(
   element: HTMLElement | Text,
   tag: string,
 ): HTMLElement {
-  const el = document.createElement(tag);
+  const el = element.ownerDocument.createElement(tag);
   el.appendChild(element);
   return el;
 }
@@ -189,28 +199,9 @@ const DEFAULT_TAG_NAME_TO_FORMAT: {[key: string]: TextFormatType} = {
 };
 
 /**
- * An extension for DecoratorTextNode that sets the format for the node and CSS classes for the DOM container.
- * The base class is always set, and the focus class is set when the node is selected.
+ * An extension that registers DecoratorTextNode with the editor.
  */
-export const DecoratorTextExtension = /* @__PURE__ */ defineExtension({
+export const DecoratorTextExtension = defineExtension({
   name: '@lexical/extension/DecoratorText',
   nodes: () => [DecoratorTextNode],
-  register(editor, config, state) {
-    return editor.registerCommand<TextFormatType>(
-      FORMAT_TEXT_COMMAND,
-      formatType => {
-        const selection = $getSelection();
-        if ($isNodeSelection(selection) || $isRangeSelection(selection)) {
-          for (const node of selection.getNodes()) {
-            if ($isDecoratorTextNode(node)) {
-              node.toggleFormat(formatType);
-            }
-          }
-        }
-
-        return false;
-      },
-      COMMAND_PRIORITY_LOW,
-    );
-  },
 });

@@ -72,7 +72,7 @@ export type TextOperation = {
 
 // CSS Custom Highlight API; lib.dom in TS but not in Flow's bundled defs.
 declare class Highlight {
-  constructor(...initialRanges: Array<Range>): void;
+  constructor(...initialRanges: Range[]): void;
   add(range: Range): Highlight;
   clear(): void;
 }
@@ -91,7 +91,7 @@ export type CursorSelection = {
   highlight: Highlight | null,
   highlightName: string,
   name: HTMLSpanElement,
-  selections: Array<HTMLElement>,
+  selections: HTMLElement[],
 };
 
 export type Cursor = {
@@ -255,12 +255,12 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 declare export class CollabElementNode {
   _key: NodeKey;
-  _children: Array<
+  _children: (
     | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
-    | CollabLineBreakNode,
-  >;
+    | CollabLineBreakNode
+  )[];
   _xmlText: XmlText;
   _type: string;
   _parent: null | CollabElementNode;
@@ -292,7 +292,7 @@ declare export class CollabElementNode {
     keysChanged: null | Set<string>,
   ): void;
 
-  applyChildrenYjsDelta(binding: Binding, deltas: Array<TextOperation>): void;
+  applyChildrenYjsDelta(binding: Binding, deltas: TextOperation[]): void;
 
   syncChildrenFromYjs(binding: Binding): void;
 
@@ -416,7 +416,7 @@ declare export function syncLexicalUpdateToYjs(
 declare export function syncYjsChangesToLexical(
   binding: Binding,
   provider: Provider,
-  events: Array<YjsEvent>,
+  events: YjsEvent[],
 ): void;
 
 declare export var CONNECTED_COMMAND: LexicalCommand<boolean>;

@@ -41,6 +41,7 @@ export interface Plugin {
     version: string;
   };
   rules: {
+    'no-document-in-dom-methods': Rule.RuleModule;
     'rules-of-lexical': Rule.RuleModule;
   };
   configs: {

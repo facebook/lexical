@@ -7,8 +7,7 @@
  */
 
 import {registerLexicalTextEntity} from '@lexical/text';
-import {mergeRegister} from '@lexical/utils';
-import {defineExtension, LexicalEditor} from 'lexical';
+import {defineExtension, type LexicalEditor, mergeRegister} from 'lexical';
 
 import {$createHashtagNode, HashtagNode} from './LexicalHashtagNode';
 
@@ -295,7 +294,7 @@ export interface HashtagConfig {
 /**
  * Add `#hashtag` support to the editor
  */
-export const HashtagExtension = /* @__PURE__ */ defineExtension({
+export const HashtagExtension = defineExtension({
   config: defaultHashtagConfig,
   name: '@lexical/hashtag/Hashtag',
   nodes: () => [HashtagNode],

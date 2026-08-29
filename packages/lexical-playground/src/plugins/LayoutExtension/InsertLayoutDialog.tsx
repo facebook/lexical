@@ -6,11 +6,10 @@
  *
  */
 
-import type {JSX} from 'react';
+import type {LexicalEditor} from 'lexical';
 
-import {LexicalEditor} from 'lexical';
 import * as React from 'react';
-import {useState} from 'react';
+import {type JSX, useState} from 'react';
 
 import Button from '../../ui/Button';
 import DropDown, {DropDownItem} from '../../ui/DropDown';

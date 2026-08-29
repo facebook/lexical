@@ -27,7 +27,15 @@ import {
   type LexicalEditor,
 } from 'lexical';
 import {act} from 'react';
-import {afterEach, beforeEach, describe, expect, it, Mock, vi} from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from 'vitest';
 
 function $prepopulatedRichText() {
   const root = $getRoot();

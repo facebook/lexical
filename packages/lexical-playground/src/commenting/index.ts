@@ -6,17 +6,15 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
-import {Provider, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
-import {COMMAND_PRIORITY_LOW} from 'lexical';
+import {type Provider, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
+import {COMMAND_PRIORITY_LOW, type LexicalEditor} from 'lexical';
 import {useEffect, useState} from 'react';
 import {
   Array as YArray,
   Map as YMap,
-  Transaction,
+  type Transaction,
   YArrayEvent,
-  YEvent,
+  type YEvent,
 } from 'yjs';
 
 export type Comment = {
@@ -29,13 +27,13 @@ export type Comment = {
 };
 
 export type Thread = {
-  comments: Array<Comment>;
+  comments: Comment[];
   id: string;
   quote: string;
   type: 'thread';
 };
 
-export type Comments = Array<Thread | Comment>;
+export type Comments = (Thread | Comment)[];
 
 function createUID(): string {
   return Math.random()
@@ -66,7 +64,7 @@ export function createComment(
 
 export function createThread(
   quote: string,
-  comments: Array<Comment>,
+  comments: Comment[],
   id?: string,
 ): Thread {
   return {
@@ -326,7 +324,7 @@ export class CommentStore {
     const onSharedCommentChanges = (
       // The YJS types explicitly use `any` as well.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      events: Array<YEvent<any>>,
+      events: YEvent<any>[],
       transaction: Transaction,
     ) => {
       if (transaction.origin !== this) {

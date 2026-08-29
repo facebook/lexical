@@ -22,6 +22,7 @@ export {
 export {
   $copyBlockFormatIndent,
   $getSelectionStyleValueForProperty,
+  $isAtEdgeOfElement,
   $isParentElementRTL,
   $moveCaretSelection,
   $moveCharacter,

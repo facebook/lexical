@@ -5,17 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalNode} from 'lexical';
 
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {
   $create,
+  $getDocument,
   $getEditor,
   addClassNamesToElement,
   ElementNode,
+  type LexicalNode,
 } from 'lexical';
 
-import {$isPageNode, PageNode} from './PageNode';
+import {$isPageNode, type PageNode} from './PageNode';
 import {PagesExtension} from './PagesExtension';
 
 export class PageContentNode extends ElementNode {
@@ -26,7 +27,7 @@ export class PageContentNode extends ElementNode {
   }
 
   createDOM(): HTMLElement {
-    const dom = document.createElement('div');
+    const dom = $getDocument().createElement('div');
     addClassNamesToElement(
       dom,
       getExtensionDependencyFromEditor($getEditor(), PagesExtension).config

@@ -79,7 +79,10 @@ export default defineConfig({
             ),
           },
           environment: 'jsdom',
-          include: ['packages/**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}'],
+          include: [
+            'packages/**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}',
+            'dev-examples/**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}',
+          ],
           name: 'unit',
           setupFiles: ['./vitest.setup.mts'],
           typecheck: {
@@ -109,6 +112,14 @@ export default defineConfig({
         plugins: [react()],
         test: {
           browser: {
+            // Vitest's default browser server port (63315) is in the
+            // ephemeral range, and Windows reserves randomized blocks of
+            // that range (Hyper-V excluded port ranges), so on Windows CI
+            // runners listen() occasionally fails with EACCES
+            // (vitest-dev/vitest#9035). Pin a port below the ephemeral
+            // range instead; if it happens to be busy, Vite falls back to
+            // the next free port rather than failing.
+            api: {port: 8315},
             enabled: true,
             // Headless everywhere by default so the suite runs the same way in
             // CI and in headless dev containers. Pass `--browser.headless=false`
@@ -122,7 +133,10 @@ export default defineConfig({
               `${process.env.npm_package_version}+git`,
             ),
           },
-          include: ['packages/**/__tests__/browser/**/*.test{.ts,.tsx}'],
+          include: [
+            'packages/**/__tests__/browser/**/*.test{.ts,.tsx}',
+            'dev-examples/**/__tests__/browser/**/*.test{.ts,.tsx}',
+          ],
           name: 'browser',
           setupFiles: ['./vitest.setup.mts'],
           typecheck: {
@@ -155,6 +169,7 @@ export default defineConfig({
             include: ['packages/*/src/__bench__/*.bench.ts'],
           },
           environment: 'node',
+          include: [],
           name: 'bench',
         },
       },
@@ -175,6 +190,7 @@ export default defineConfig({
             ),
           },
           environment: 'jsdom',
+          include: [],
           name: 'bench-dom',
           setupFiles: ['./vitest.setup.mts'],
           typecheck: {

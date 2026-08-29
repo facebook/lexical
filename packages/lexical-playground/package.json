@@ -1,6 +1,6 @@
 {
   "name": "lexical-playground",
-  "version": "0.45.0",
+  "version": "0.49.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -40,6 +40,8 @@
     "@lexical/text": "workspace:*",
     "@lexical/utils": "workspace:*",
     "@lexical/yjs": "workspace:*",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "date-fns": "^4.1.0",
     "katex": "^0.16.10",
     "lexical": "workspace:*",
@@ -48,13 +50,12 @@
     "react": "^19.2.5",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.5",
-    "react-error-boundary": "^6.1.1",
     "y-websocket": "^2.1.0",
     "yjs": "^13.6.31"
   },
   "devDependencies": {
-    "@babel/plugin-transform-flow-strip-types": "^7.29.7",
-    "@babel/preset-react": "^7.29.7",
+    "@babel/plugin-transform-flow-strip-types": "^8.0.1",
+    "@babel/preset-react": "^8.0.1",
     "@prettier/sync": "^0.6.1",
     "@rollup/plugin-babel": "^7.1.0",
     "@rollup/plugin-commonjs": "^29.0.3",

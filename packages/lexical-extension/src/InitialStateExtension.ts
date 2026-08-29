@@ -7,20 +7,18 @@
  */
 
 import {
-  $isEditorState,
-  defineExtension,
-  HISTORY_MERGE_TAG,
-  safeCast,
-  SerializedEditorState,
-} from 'lexical';
-import {
   $createParagraphNode,
   $getRoot,
+  $isEditorState,
+  defineExtension,
   type EditorSetOptions,
   type EditorUpdateOptions,
+  HISTORY_MERGE_TAG,
   LineBreakNode,
   ParagraphNode,
   RootNode,
+  safeCast,
+  type SerializedEditorState,
   TabNode,
   TextNode,
 } from 'lexical';
@@ -48,8 +46,8 @@ export interface InitialStateConfig {
  * but you should not call `editor.setRootElement` earlier than
  * this phase to avoid rendering an empty editor first.
  */
-export const InitialStateExtension = /* @__PURE__ */ defineExtension({
-  config: /* @__PURE__ */ safeCast<InitialStateConfig>({
+export const InitialStateExtension = defineExtension({
+  config: safeCast<InitialStateConfig>({
     setOptions: HISTORY_MERGE_OPTIONS,
     updateOptions: HISTORY_MERGE_OPTIONS,
   }),

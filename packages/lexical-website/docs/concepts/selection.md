@@ -147,6 +147,24 @@ editor.update(() => {
 });
 ```
 
+`SKIP_DOM_SELECTION_TAG` does not apply to the initial editor state setup
+(`editorState` supplied to `createEditor` or the `$initialEditorState`
+property of the root extension). On first mount the editor still scrolls
+to and focuses the initial selection. To prevent that, call
+`$setSelection(null)` inside your initial state setup function:
+
+```js
+const editor = createEditor({
+  // ...
+  editorState: (editor) => {
+    editor.update(() => {
+      // ... build your initial nodes ...
+      $setSelection(null);
+    });
+  },
+});
+```
+
 If you have to support older versions of Lexical, you can mark the editor
 as not editable during the update or dispatch.
 
@@ -165,3 +183,15 @@ editor.update(
   },
 );
 ```
+
+## Reading selection across a shadow boundary
+
+If your plugin reads the DOM selection directly — through
+`Selection.anchorNode`, `Selection.getRangeAt(0)`, or similar — and the
+editor's `contentEditable` lives inside a `ShadowRoot`, the browser retargets
+those reads to the shadow host. See
+[Shadow DOM and iframes](./shadow-dom.md) for the shadow-aware helpers
+(`getDOMSelectionPoints`, `getDOMSelectionRange`, etc.) that return the
+un-retargeted boundary points; they fall through to the standard reads in the
+plain light DOM, so there's nothing to do until you actually mount the editor
+in a shadow tree.

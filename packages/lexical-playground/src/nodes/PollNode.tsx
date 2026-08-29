@@ -9,25 +9,26 @@
 import type {JSX} from 'react';
 
 import {
+  $getDocument,
   $getState,
   $setState,
   createState,
   DecoratorNode,
-  DOMExportOutput,
-  LexicalNode,
-  SerializedLexicalNode,
-  Spread,
-  StateConfigValue,
+  type DOMExportOutput,
+  type LexicalNode,
+  type SerializedLexicalNode,
+  type Spread,
+  type StateConfigValue,
   type StateValueOrUpdater,
 } from 'lexical';
 import * as React from 'react';
 
-export type Options = ReadonlyArray<Option>;
+export type Options = readonly Option[];
 
 export type Option = Readonly<{
   text: string;
   uid: string;
-  votes: Array<string>;
+  votes: string[];
 }>;
 
 const PollComponent = React.lazy(() => import('./PollComponent'));
@@ -47,11 +48,7 @@ export function createPollOption(text = ''): Option {
   };
 }
 
-function cloneOption(
-  option: Option,
-  text: string,
-  votes?: Array<string>,
-): Option {
+function cloneOption(option: Option, text: string, votes?: string[]): Option {
   return {
     text,
     uid: option.uid,
@@ -85,10 +82,10 @@ function parseOptions(json: unknown): Options {
   return options;
 }
 
-const questionState = /* @__PURE__ */ createState('question', {
+const questionState = createState('question', {
   parse: v => (typeof v === 'string' ? v : ''),
 });
-const optionsState = /* @__PURE__ */ createState('options', {
+const optionsState = createState('options', {
   isEqual: (a, b) =>
     a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
   parse: parseOptions,
@@ -166,7 +163,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('span');
+    const element = $getDocument().createElement('span');
     element.setAttribute('data-lexical-poll-question', this.getQuestion());
     element.setAttribute(
       'data-lexical-poll-options',
@@ -176,7 +173,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(): HTMLElement {
-    const elem = document.createElement('span');
+    const elem = $getDocument().createElement('span');
     elem.style.display = 'inline-block';
     return elem;
   }

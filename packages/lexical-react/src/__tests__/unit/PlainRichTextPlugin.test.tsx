@@ -25,11 +25,11 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import * as React from 'react';
 import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 const RICH_TEXT_NODES = [
@@ -112,7 +112,7 @@ describe('LexicalNodeHelpers tests', () => {
         reactRoot.render(<App />);
       });
 
-      const text = editor!.getEditorState().read($rootTextContent);
+      const text = editor!.read('latest', $rootTextContent);
       expect(text).toBe('foo');
     });
   }
@@ -165,7 +165,7 @@ describe('LexicalNodeHelpers tests', () => {
 
       await editor!.focus();
 
-      await editor!.getEditorState().read(() => {
+      await editor!.read('latest', () => {
         expect($rootTextContent()).toBe('foo');
 
         const selection = $getSelection();

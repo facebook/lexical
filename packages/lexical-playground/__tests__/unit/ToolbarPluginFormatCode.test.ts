@@ -100,6 +100,14 @@ describe('formatCode (Toolbar) — selection-aware code block conversion', () =>
       text: 'Heading',
     },
     {
+      end: 'Head'.length,
+      expected: 'code:Head|paragraph:ing',
+      headingTag: 'h1' as const,
+      name: 'partial from offset 0 (regression for detached firstBlock)',
+      start: 0,
+      text: 'Heading',
+    },
+    {
       end: 'Section title'.length,
       expected: 'heading:Section |code:title',
       headingTag: 'h2' as const,

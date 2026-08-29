@@ -17,8 +17,8 @@ import {
   $isListNode,
   ListExtension,
   ListImportExtension,
-  type ListItemNode,
-  type ListNode,
+  ListItemNode,
+  ListNode,
   WordListImportExtension,
 } from '@lexical/list';
 import {JSDOM} from 'jsdom';
@@ -30,6 +30,21 @@ import {
   type LexicalNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
+
+class CustomListItemNode extends ListItemNode {
+  $config() {
+    return this.config('custom-listitem', {extends: ListItemNode});
+  }
+}
+
+class CustomListNode extends ListNode {
+  $config() {
+    return this.config('custom-list', {extends: ListNode});
+  }
+  createListItemNode(): ListItemNode {
+    return new CustomListItemNode();
+  }
+}
 
 function buildEditor() {
   return buildEditorFromExtensions(
@@ -135,6 +150,39 @@ describe('ListImportExtension', () => {
       expect(items.some(i => i.getTextContent().includes('real item'))).toBe(
         true,
       );
+    });
+  });
+
+  test('wrapper items come from ListNode.createListItemNode()', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [ListExtension],
+        name: 'custom-list-host',
+        nodes: [
+          CustomListNode,
+          CustomListItemNode,
+          {
+            replace: ListNode,
+            with: (node: ListNode) =>
+              new CustomListNode(node.getListType(), node.getStart()),
+            withKlass: CustomListNode,
+          },
+        ],
+      }),
+    );
+    // Both $normalizeListChildren branches: the nested <ul> is lifted into a
+    // wrapper item, and the stray text is wrapped in one.
+    importInto(editor, '<ul>stray<li>parent<ul><li>child</li></ul></li></ul>');
+    editor.read(() => {
+      const list = $rootList();
+      expect(list.getType()).toBe('custom-list');
+      const wrappers = $items(list).filter(
+        item => !item.getTextContent().startsWith('parent'),
+      );
+      expect(wrappers.length).toBeGreaterThanOrEqual(2);
+      for (const wrapper of wrappers) {
+        expect(wrapper.getType()).toBe('custom-listitem');
+      }
     });
   });
 

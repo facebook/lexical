@@ -29,7 +29,7 @@ import {
   $isListItemNode,
   type ListItemNode,
 } from './LexicalListItemNode';
-import {$createListNode, $isListNode} from './LexicalListNode';
+import {$createListNode, $isListNode, type ListNode} from './LexicalListNode';
 
 /**
  * Mirrors the legacy `isDomChecklist` heuristic from
@@ -47,8 +47,15 @@ function isDomChecklist(domNode: HTMLElement): boolean {
  * Lift nested `ListNode`s out of `ListItemNode`s into sibling
  * `ListItemNode`s (the legacy `$normalizeChildren` shape). Also wraps any
  * non-`ListItemNode` children in a new `ListItemNode`.
+ *
+ * The wrapper items come from `listNode.createListItemNode()` — the same
+ * subclass hook the legacy `$normalizeChildren` uses — so a `ListNode`
+ * subclass gets its own item type here too.
  */
-function $normalizeListChildren(children: LexicalNode[]): ListItemNode[] {
+function $normalizeListChildren(
+  children: LexicalNode[],
+  listNode: ListNode,
+): ListItemNode[] {
   const out: ListItemNode[] = [];
   for (const child of children) {
     if ($isListItemNode(child)) {
@@ -57,12 +64,12 @@ function $normalizeListChildren(children: LexicalNode[]): ListItemNode[] {
       if (innerChildren.length > 1) {
         for (const inner of innerChildren) {
           if ($isListNode(inner)) {
-            out.push($createListItemNode().append(inner));
+            out.push(listNode.createListItemNode().append(inner));
           }
         }
       }
     } else {
-      out.push($createListItemNode().append(child));
+      out.push(listNode.createListItemNode().append(child));
     }
   }
   return out;
@@ -89,7 +96,7 @@ const ListRule = defineImportRule({
         0,
         0,
         $propagateTextAlignToBlockChildren(
-          $normalizeListChildren(ctx.$importChildren(el)),
+          $normalizeListChildren(ctx.$importChildren(el), node),
           el,
         ),
       ),

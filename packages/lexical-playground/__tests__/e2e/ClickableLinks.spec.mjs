@@ -16,6 +16,7 @@ import {
 import {
   assertHTML,
   click,
+  E2E_PORT,
   focusEditor,
   html,
   initialize,
@@ -23,7 +24,12 @@ import {
   test,
 } from '../utils/index.mjs';
 
-const LINK_URL = 'https://example.com/target';
+/**
+ * Same origin as the playground on purpose. A cross-origin target makes WebKit
+ * swap the popup into a brand new WebContent process, which is both slow and,
+ * on macOS CI, a way to crash the browser out from under the test.
+ */
+const LINK_URL = `http://localhost:${E2E_PORT}/link-target`;
 
 /**
  * How long to wait before concluding that no (further) tab was opened. The
@@ -34,12 +40,13 @@ const LINK_URL = 'https://example.com/target';
 const NO_MORE_TABS_MS = 1000;
 
 /**
- * Serve the link target from the test itself. The route is installed on the
- * BrowserContext rather than the Page so that it also covers the tabs opened
- * by clicking the link, which is the whole point of these tests.
+ * Serve the link target from the test itself, so no test depends on the dev
+ * server having a route there. Installed on the BrowserContext rather than the
+ * Page so that it also covers the tabs opened by clicking the link, which is
+ * the whole point of these tests.
  */
 async function stubLinkTarget(page) {
-  await page.context().route('https://example.com/**', route =>
+  await page.context().route('**/link-target', route =>
     route.fulfill({
       body: '<!doctype html><title>target</title>',
       contentType: 'text/html',
@@ -61,14 +68,17 @@ function recordOpenedTabs(page) {
     async settle() {
       await sleep(NO_MORE_TABS_MS);
       context.off('page', onPage);
-      return Promise.all(
-        opened.map(async newPage => {
-          await newPage
-            .waitForLoadState('domcontentloaded')
-            .catch(() => undefined);
-          return newPage.url();
-        }),
-      );
+      const urls = [];
+      for (const newPage of opened) {
+        await newPage
+          .waitForLoadState('domcontentloaded')
+          .catch(() => undefined);
+        urls.push(newPage.url());
+        // Close as we go: an unclosed tab is a live renderer process for the
+        // rest of the worker's run.
+        await newPage.close().catch(() => undefined);
+      }
+      return urls;
     },
   };
 }
@@ -169,6 +179,8 @@ test.describe('Clickable links', () => {
 
       const tabs = recordOpenedTabs(page);
       await clickLink(page, 'right');
+      // Dismiss the native context menu the right click may have raised.
+      await page.keyboard.press('Escape');
 
       // `auxclick` fires for every non-primary button, not just the middle
       // one, so a right click must not be mistaken for a middle click -- it
@@ -219,6 +231,7 @@ test.describe('Clickable links', () => {
       await stubLinkTarget(page);
       await createLink(page);
       await collapseSelectionAfterLink(page);
+      const playgroundURL = page.url();
 
       const tabs = recordOpenedTabs(page);
       await clickLink(page, 'left');
@@ -226,7 +239,7 @@ test.describe('Clickable links', () => {
       // Clickable links are only enabled in read-only mode; in an editable
       // editor a click places the caret instead of navigating.
       expect(await tabs.settle()).toEqual([]);
-      expect(page.url()).toContain('localhost');
+      expect(page.url()).toBe(playgroundURL);
     });
   });
 });

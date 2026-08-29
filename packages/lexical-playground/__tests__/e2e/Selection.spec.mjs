@@ -1190,6 +1190,45 @@ test.describe('Selection', () => {
     );
   });
 
+  test('Backspace at the start of the first paragraph keeps content that follows a blank text node', async ({
+    page,
+    isPlainText,
+  }) => {
+    // Plain text uses line breaks instead of paragraphs for Enter.
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    // A blank first text node followed by a formatted one that carries the
+    // actual content.
+    await page.keyboard.type('  ');
+    await pressToggleBold(page);
+    await page.keyboard.type('hello');
+    await page.keyboard.press('Enter');
+    await pressToggleBold(page);
+    await page.keyboard.type('world');
+    await moveToEditorBeginning(page);
+
+    const expected = html`
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <span data-lexical-text="true"></span>
+        <strong
+          class="PlaygroundEditorTheme__textBold"
+          data-lexical-text="true">
+          hello
+        </strong>
+      </p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <span data-lexical-text="true">world</span>
+      </p>
+    `;
+    await assertHTML(page, expected);
+
+    await page.keyboard.press('Backspace');
+
+    // The paragraph is not blank, so it must not be collapsed away.
+    await assertHTML(page, expected);
+  });
+
   test('Select all from Node selection #4658', async ({page, isPlainText}) => {
     // TODO selectAll is bad for Linux #4665
     test.skip(isPlainText || IS_LINUX);

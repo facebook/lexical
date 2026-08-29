@@ -16,7 +16,7 @@ import {
   type PointType,
   type RangeSelection,
 } from '../LexicalSelection';
-import {$getSlotNames} from '../LexicalSlot';
+import {$getSlotFrame, $getSlotNames} from '../LexicalSlot';
 import {
   $copyNode,
   $getNodeByKeyOrThrow,
@@ -863,5 +863,50 @@ export function $insertNodeToNearestRootAtCaret<
   return $getCaretInDirection(
     $getSiblingCaret(node.getLatest(), 'next'),
     caret.direction,
+  );
+}
+
+/**
+ * Checks whether the selection covers the entire block: the selection's
+ * start point is at or before the first position inside blockNode and its
+ * end point is at or after the last position inside blockNode. A selection
+ * that extends beyond the block's boundaries still fully selects the block,
+ * and an empty block is fully selected by any selection that touches or
+ * surrounds it.
+ *
+ * @param blockNode - The ElementNode to check, typically a top-level block or the RootNode
+ * @param selectionOrRange - The RangeSelection or CaretRange to check
+ * @returns true if the selection covers the entire blockNode
+ */
+export function $isBlockFullySelected(
+  blockNode: ElementNode,
+  selectionOrRange: RangeSelection | CaretRange,
+): boolean {
+  const range = $getCaretRangeInDirection(
+    $isRangeSelection(selectionOrRange)
+      ? $caretRangeFromSelection(selectionOrRange)
+      : selectionOrRange,
+    'next',
+  );
+  // A named-slot subtree is isolated from its host through a parentless
+  // up-link, so a range inside a slot can never cover a block outside that
+  // slot frame (and vice versa) — and the caret comparison below has no
+  // common ancestor to walk across the boundary. Different frames are
+  // never fully selected; the same frame compares safely within it.
+  const anchorFrame = $getSlotFrame(range.anchor.origin);
+  const blockFrame = $getSlotFrame(blockNode.getLatest());
+  if (
+    anchorFrame === null ? blockFrame !== null : !anchorFrame.is(blockFrame)
+  ) {
+    return false;
+  }
+  const blockStart = $normalizeCaret($getChildCaret(blockNode, 'next'));
+  const blockEnd = $getCaretInDirection(
+    $normalizeCaret($getChildCaret(blockNode, 'previous')),
+    'next',
+  );
+  return (
+    $comparePointCaretNext(range.anchor, blockStart) <= 0 &&
+    $comparePointCaretNext(range.focus, blockEnd) >= 0
   );
 }

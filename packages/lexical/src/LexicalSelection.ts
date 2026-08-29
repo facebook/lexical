@@ -967,8 +967,17 @@ export class RangeSelection implements BaseSelection {
           const replacement = $createTextNode(anchorNode.getTextContent());
           replacement.setFormat(format);
           replacement.setStyle(style);
+          const isCurrentSelection = $getSelection() === this;
           anchorNode.replace(replacement);
-          replacement.select(offset, offset);
+          // replace() installs a clone of the active selection, so this
+          // selection is still anchored to the segmented node that was just
+          // detached. Move it onto the replacement and make it current
+          // again, otherwise the recursive insertText below resolves an
+          // anchor that is no longer in the tree.
+          this.setTextNodeRange(replacement, offset, replacement, offset);
+          if (isCurrentSelection && $getSelection() !== this) {
+            $setSelection(this);
+          }
         }
         if (text !== '') {
           this.insertText(text);
@@ -1347,13 +1356,24 @@ export class RangeSelection implements BaseSelection {
       INTERNAL_$isBlock,
     );
 
-    if (
-      insertedParagraph &&
-      $isElementNode(lastInsertedBlock) &&
-      (insertedParagraph.canMergeWhenEmpty() || INTERNAL_$isBlock(lastToInsert))
-    ) {
-      lastInsertedBlock.append(...insertedParagraph.getChildren());
-      insertedParagraph.remove();
+    if (insertedParagraph) {
+      if (
+        $isElementNode(lastInsertedBlock) &&
+        (insertedParagraph.canMergeWhenEmpty() ||
+          INTERNAL_$isBlock(lastToInsert))
+      ) {
+        lastInsertedBlock.append(...insertedParagraph.getChildren());
+        insertedParagraph.remove();
+      } else if (insertedParagraph.isEmpty()) {
+        // The split-off paragraph could not be merged into the last inserted
+        // block (a block-level DecoratorNode is not an ElementNode, and a
+        // container element such as a ListNode is not INTERNAL_$isBlock), but
+        // it holds no content either: it only exists because the caret sat at
+        // the end of the target block. Keeping it would leave a stray empty
+        // paragraph after the inserted node, while the non-empty case (a
+        // mid-block caret) keeps the content after the caret.
+        insertedParagraph.remove();
+      }
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
       firstBlock.remove();

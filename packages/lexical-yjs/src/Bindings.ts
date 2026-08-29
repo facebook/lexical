@@ -44,6 +44,9 @@ export interface BaseBinding {
    * shared document (the `shouldBootstrap` path). Bootstrapping is not a user
    * edit, so the {@link UndoManager} returned by `createUndoManager` does not
    * capture transactions produced while this is set.
+   *
+   * @internal Set by the collaboration plugin around the bootstrap update;
+   * not part of the supported surface for application code.
    */
   isBootstrapping: boolean;
 }

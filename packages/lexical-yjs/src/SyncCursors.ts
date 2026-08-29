@@ -248,6 +248,12 @@ function createRelativePositionV2(
     // `offset` while counting each text run as one yjs child, mirroring
     // $getNodeAndOffsetV2, which consumes one yjs offset per child and then
     // skips the remainder of a text run.
+    //
+    // Only offsets that fall on a run boundary round trip exactly: yjs has no
+    // index for a position *inside* a collapsed run, so an element point in
+    // the middle of one (children [Text, Text], offset 1) necessarily decodes
+    // back to the end of that run. That is inherent to the serialization, not
+    // to this loop.
     let yIndex = 0;
     let lexicalIndex = 0;
     let child = node.getFirstChild();

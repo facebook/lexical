@@ -11,9 +11,16 @@ import type {Provider} from '@lexical/yjs';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  type LexicalEditor,
+} from 'lexical';
 import * as React from 'react';
 import {act} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
@@ -186,4 +193,84 @@ describe(`LexicalCollaborationPlugin`, () => {
     // The superseded provider is torn down.
     expect(providerA._disconnectCount).toBeGreaterThan(0);
   });
+
+  test(`the binding follows the id onto the new document`, () => {
+    const docs = new Map<string, Y.Doc>();
+    const providerFactory = (id: string, yjsDocMap: Map<string, Y.Doc>) => {
+      const doc = new Y.Doc();
+      docs.set(id, doc);
+      yjsDocMap.set(id, doc);
+      return createTestProvider();
+    };
+
+    let editor: LexicalEditor | null = null;
+    function CaptureEditor() {
+      [editor] = useLexicalComposerContext();
+      return null;
+    }
+
+    function App({id}: {id: string}) {
+      return (
+        <LexicalCollaboration>
+          <LexicalComposer initialConfig={editorConfig}>
+            <CaptureEditor />
+            <CollaborationPlugin
+              id={id}
+              providerFactory={providerFactory}
+              shouldBootstrap={true}
+            />
+            <RichTextPlugin
+              contentEditable={<ContentEditable />}
+              placeholder={<></>}
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+          </LexicalComposer>
+        </LexicalCollaboration>
+      );
+    }
+
+    function type(text: string) {
+      act(() => {
+        // Discrete so the update -- and with it the listener that syncs it into
+        // Yjs -- has committed by the time the document is read below.
+        editor!.update(
+          () => {
+            $getRoot()
+              .clear()
+              .append($createParagraphNode().append($createTextNode(text)));
+          },
+          {discrete: true},
+        );
+      });
+    }
+
+    act(() => {
+      reactRoot.render(<App id="a" />);
+    });
+    type('in-a');
+    expect($rootTextOf(docs.get('a')!)).toContain('in-a');
+
+    // A different id is a different document, so the binding has to be rebuilt
+    // against it -- the effect's cleanup has already destroyed the old one.
+    act(() => {
+      reactRoot.render(<App id="b" />);
+    });
+    type('in-b');
+    // `undefined` here means no Binding was ever built against the new
+    // document, so the edit went to the old one (or nowhere).
+    expect($rootTextOf(docs.get('b')!)).toBeDefined();
+    expect($rootTextOf(docs.get('b')!)).toContain('in-b');
+    // The document that is no longer bound stops receiving edits.
+    expect($rootTextOf(docs.get('a')!)).not.toContain('in-b');
+  });
 });
+
+/**
+ * The serialized default `root` shared type of a Yjs document, or `undefined`
+ * when nothing has ever bound to it -- createYjsBinding() is what creates that
+ * type, so its absence means no Binding was ever built for this document.
+ */
+function $rootTextOf(doc: Y.Doc): string | undefined {
+  const root = doc.toJSON().root;
+  return typeof root === 'string' ? root : undefined;
+}

@@ -79,12 +79,20 @@ export function CollaborationPlugin({
   selectionHighlight,
   rootName,
 }: CollaborationPluginProps): JSX.Element {
-  const isBindingInitialized = useRef(false);
-  // The inputs that produced the current Provider. A ref rather than the effect
-  // deps alone because the effect must be idempotent: React StrictMode (and
-  // React 18+ remounts in general) re-runs the effect with unchanged inputs and
-  // must not create a second Provider.
-  const providerInputs = useRef<null | {
+  // The inputs that produced the current Provider, document and Binding. A ref
+  // rather than the effect deps alone because the effect must be idempotent:
+  // React StrictMode (and React 18+ remounts in general) re-runs it with
+  // unchanged inputs and must not call providerFactory a second time.
+  //
+  // The compared set has to match the dependency list exactly. React runs the
+  // previous cleanup before every re-run, so a dependency that is not compared
+  // here would disconnect the Provider and destroy the Binding and then take
+  // the early return, leaving both torn down but still in state.
+  // `excludedProperties` and `rootName` are in neither: they are read once when
+  // the Binding is built, as they always have been, so a caller that passes a
+  // fresh object every render keeps its connection instead of churning it.
+  const sessionInputs = useRef<null | {
+    editor: LexicalEditor;
     id: string;
     providerFactory: ProviderFactory;
     yjsDocMap: Map<string, Doc>;
@@ -98,12 +106,19 @@ export function CollaborationPlugin({
   useCollabActive(collabContext, editor);
 
   const [provider, setProvider] = useState<Provider>();
-  const [doc, setDoc] = useState<Doc>();
+  const [binding, setBinding] = useState<Binding>();
+  // The document itself is never read back: the Binding below is built from
+  // whatever providerFactory put in the map. Only the setter is still needed,
+  // for the legacy 'reload' path (#1409) that swaps the document out from under
+  // an existing session; rebinding on reload is a pre-existing gap that this
+  // change does not close.
+  const [, setDoc] = useState<Doc>();
 
   useEffect(() => {
-    const prevInputs = providerInputs.current;
+    const prevInputs = sessionInputs.current;
     if (
       prevInputs !== null &&
+      prevInputs.editor === editor &&
       prevInputs.id === id &&
       prevInputs.providerFactory === providerFactory &&
       prevInputs.yjsDocMap === yjsDocMap
@@ -111,49 +126,39 @@ export function CollaborationPlugin({
       return;
     }
 
-    providerInputs.current = {id, providerFactory, yjsDocMap};
+    sessionInputs.current = {editor, id, providerFactory, yjsDocMap};
 
     const newProvider = providerFactory(id, yjsDocMap);
+    // providerFactory is what puts the document in the map.
+    const newDoc = yjsDocMap.get(id);
+    const newBinding =
+      newDoc === undefined
+        ? undefined
+        : createYjsBinding({
+            doc: newDoc,
+            docMap: yjsDocMap,
+            editor,
+            excludedProperties,
+            id,
+            rootName,
+          });
+
+    // Set together, so that the components below see one consistent Provider,
+    // document and Binding in a single commit. Staged across renders instead,
+    // useProvider() would connect once for the new Provider and then again for
+    // the new Binding.
     setProvider(newProvider);
-    setDoc(yjsDocMap.get(id));
-
-    return () => {
-      newProvider.disconnect();
-    };
-  }, [id, providerFactory, yjsDocMap]);
-
-  const [binding, setBinding] = useState<Binding>();
-
-  useEffect(() => {
-    if (!provider) {
-      return;
-    }
-
-    if (isBindingInitialized.current) {
-      return;
-    }
-
-    const resolvedDoc = doc || yjsDocMap.get(id);
-    if (!resolvedDoc) {
-      return;
-    }
-
-    isBindingInitialized.current = true;
-    const newBinding = createYjsBinding({
-      doc: resolvedDoc,
-      docMap: yjsDocMap,
-      editor,
-      excludedProperties,
-      id,
-      rootName,
-    });
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDoc(newDoc);
     setBinding(newBinding);
 
     return () => {
-      newBinding.root.destroy(newBinding);
+      newProvider.disconnect();
+      if (newBinding !== undefined) {
+        newBinding.root.destroy(newBinding);
+      }
     };
-  }, [editor, provider, id, yjsDocMap, doc, excludedProperties, rootName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- excludedProperties and rootName are read once at creation, see sessionInputs above
+  }, [editor, id, providerFactory, yjsDocMap]);
 
   if (!provider || !binding) {
     return <></>;

@@ -131,6 +131,31 @@ describe('Issue #8915: text-transform survives an HTML round trip', () => {
     },
   );
 
+  test('text-transform: none clears an inherited capitalization format', () => {
+    // The clear half of the rule, on the @lexical/html import path — the
+    // same "explicit non-decorating value clears the bit" behaviour that
+    // `font-weight: normal` and `vertical-align: baseline` already have.
+    // The legacy `$generateNodesFromDOM` path has no ancestor format
+    // inheritance to clear, so only the extension path exercises this.
+    using editor = buildEditor();
+    editor.update(
+      () => {
+        const textNode = firstTextNode(
+          $generateNodesFromDOMViaExtension(
+            parse(
+              '<p><span style="text-transform: uppercase">' +
+                '<span style="text-transform: none">Hello</span>' +
+                '</span></p>',
+            ),
+          ),
+        );
+        assert($isTextNode(textNode), 'expected a TextNode');
+        expect(textNode.hasFormat('uppercase')).toBe(false);
+      },
+      {discrete: true},
+    );
+  });
+
   test('an unrelated text-transform: none does not clear other formats', () => {
     using editor = buildEditor();
     editor.update(

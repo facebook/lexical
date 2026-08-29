@@ -8,10 +8,6 @@
 
 import invariant from '@lexical/internal/invariant';
 import {
-  addClassNamesToElement,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -22,16 +18,18 @@ import {
   $isParagraphNode,
   $isRootNode,
   $setSelection,
+  addClassNamesToElement,
   getDOMSelection,
   INSERT_PARAGRAPH_COMMAND,
   type LexicalEditor,
   type NodeKey,
+  removeClassNamesFromElement,
   SELECTION_CHANGE_COMMAND,
   type TextFormatType,
 } from 'lexical';
 
-import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
-import {$isTableNode, TableNode} from './LexicalTableNode';
+import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
+import {$isTableNode, type TableNode} from './LexicalTableNode';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {
   $createTableSelectionFrom,
@@ -43,7 +41,7 @@ import {
   $updateDOMForSelection,
   getTable,
   getTableElement,
-  HTMLTableElementWithWithTableSelectionState,
+  type HTMLTableElementWithWithTableSelectionState,
 } from './LexicalTableSelectionHelpers';
 
 export type TableDOMCell = {
@@ -283,48 +281,43 @@ export class TableObserver {
 
   trackTable() {
     const observer = new MutationObserver(records => {
-      this.editor.getEditorState().read(
-        () => {
-          let gridNeedsRedraw = false;
+      this.editor.read('latest', () => {
+        let gridNeedsRedraw = false;
 
-          for (let i = 0; i < records.length; i++) {
-            const record = records[i];
-            const target = record.target;
-            const nodeName = target.nodeName;
+        for (let i = 0; i < records.length; i++) {
+          const record = records[i];
+          const target = record.target;
+          const nodeName = target.nodeName;
 
-            if (
-              nodeName === 'TABLE' ||
-              nodeName === 'TBODY' ||
-              nodeName === 'THEAD' ||
-              nodeName === 'TR'
-            ) {
-              gridNeedsRedraw = true;
-              break;
-            }
+          if (
+            nodeName === 'TABLE' ||
+            nodeName === 'TBODY' ||
+            nodeName === 'THEAD' ||
+            nodeName === 'TR'
+          ) {
+            gridNeedsRedraw = true;
+            break;
           }
+        }
 
-          if (!gridNeedsRedraw) {
-            return;
-          }
+        if (!gridNeedsRedraw) {
+          return;
+        }
 
-          const {tableNode, tableElement} = this.$lookup();
-          this.table = getTable(tableNode, tableElement);
-        },
-        {editor: this.editor},
-      );
-    });
-    this.editor.getEditorState().read(
-      () => {
         const {tableNode, tableElement} = this.$lookup();
         this.table = getTable(tableNode, tableElement);
-        observer.observe(tableElement, {
-          attributes: true,
-          childList: true,
-          subtree: true,
-        });
-      },
-      {editor: this.editor},
-    );
+      });
+    });
+    this.listenersToRemove.add(() => observer.disconnect());
+    this.editor.read('latest', () => {
+      const {tableNode, tableElement} = this.$lookup();
+      this.table = getTable(tableNode, tableElement);
+      observer.observe(tableElement, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+      });
+    });
   }
 
   $clearHighlight(setEmptySelection: boolean = true): void {
@@ -348,7 +341,7 @@ export class TableObserver {
     $updateDOMForSelection(editor, grid, null);
     if (setEmptySelection && $getSelection() !== null) {
       $setSelection(null);
-      editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
     }
   }
 
@@ -471,7 +464,7 @@ export class TableObserver {
           );
 
           $setSelection(this.tableSelection);
-          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
           $updateDOMForSelection(editor, this.table, this.tableSelection);
           return true;
         }
@@ -570,7 +563,7 @@ export class TableObserver {
 
     $setSelection(selection);
 
-    this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
   }
 
   $clearText() {
@@ -607,7 +600,7 @@ export class TableObserver {
       tableNode.remove();
       // Handle case when table was the only node
       if ($isRootNode(parent) && parent.isEmpty()) {
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       }
       return;
     }
@@ -630,6 +623,6 @@ export class TableObserver {
 
     $setSelection(null);
 
-    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
   }
 }

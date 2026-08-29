@@ -12,11 +12,12 @@ import {
   $isRangeSelection,
   $isTextNode,
   defineExtension,
+  getActiveElementDeep,
   getEditorPropertyFromDOMNode,
   isLexicalEditor,
-  LexicalEditor,
+  type LexicalEditor,
   safeCast,
-  TextFormatType,
+  type TextFormatType,
 } from 'lexical';
 
 interface WithWindowState {
@@ -164,7 +165,7 @@ function getFocusedEditor(
     return null;
   }
   const activeEditor = getEditorPropertyFromDOMNode(
-    targetWindow.document.activeElement,
+    getActiveElementDeep(targetWindow.document),
   );
   return isLexicalEditor(activeEditor) && state.editors.has(activeEditor)
     ? activeEditor
@@ -309,9 +310,9 @@ export interface DragonConfig {
  * Add Dragon speech to text input support to the editor, via the
  * \@lexical/dragon module.
  */
-export const DragonExtension = /* @__PURE__ */ defineExtension({
+export const DragonExtension = defineExtension({
   build: (editor, config, state) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<DragonConfig>({
+  config: safeCast<DragonConfig>({
     disabled: typeof window === 'undefined',
   }),
   name: '@lexical/dragon',

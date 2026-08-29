@@ -8,8 +8,12 @@
 
 import {effect, namedSignals} from '@lexical/extension';
 import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
-import {mergeRegister} from '@lexical/utils';
-import {configExtension, defineExtension, safeCast} from 'lexical';
+import {
+  configExtension,
+  defineExtension,
+  mergeRegister,
+  safeCast,
+} from 'lexical';
 
 import {registerCheckList} from './checkList';
 import {ListItemNode} from './LexicalListItemNode';
@@ -30,11 +34,11 @@ export interface ListConfig {
  * Configures {@link ListNode}, {@link ListItemNode} and registers
  * the strict indent transform if `hasStrictIndent` is true (default false).
  */
-export const ListExtension = /* @__PURE__ */ defineExtension({
+export const ListExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: /* @__PURE__ */ safeCast<ListConfig>({
+  config: safeCast<ListConfig>({
     hasStrictIndent: false,
     shouldPreserveNumbering: false,
   }),
@@ -43,7 +47,7 @@ export const ListExtension = /* @__PURE__ */ defineExtension({
     // unless the editor routes HTML through the pipeline (e.g. via
     // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
     CoreImportExtension,
-    /* @__PURE__ */ configExtension(DOMImportExtension, {
+    configExtension(DOMImportExtension, {
       rules: ListImportRules,
     }),
   ],
@@ -75,9 +79,9 @@ export interface CheckListConfig {
  * {@link ListItemNode} with a `INSERT_CHECK_LIST_COMMAND` listener and
  * the expected keyboard and mouse interactions for checkboxes.
  */
-export const CheckListExtension = /* @__PURE__ */ defineExtension({
+export const CheckListExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<CheckListConfig>({
+  config: safeCast<CheckListConfig>({
     disableTakeFocusOnClick: false,
   }),
   dependencies: [ListExtension],
@@ -95,7 +99,7 @@ export const CheckListExtension = /* @__PURE__ */ defineExtension({
  * {@link ListImportRules} (and `CoreImportExtension`) itself — depend on
  * it directly instead.
  */
-export const ListImportExtension = /* @__PURE__ */ defineExtension({
+export const ListImportExtension = defineExtension({
   dependencies: [ListExtension],
   name: '@lexical/list/Import',
 });

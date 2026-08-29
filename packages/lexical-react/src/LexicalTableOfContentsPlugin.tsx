@@ -6,23 +6,29 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
+import {
+  $isHeadingNode,
+  HeadingNode,
+  type HeadingTagType,
+} from '@lexical/rich-text';
 import {$getNextRightPreorderNode} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getRoot,
   $isElementNode,
-  ElementNode,
-  LexicalEditor,
-  NodeKey,
-  NodeMutation,
+  type ElementNode,
+  type LexicalEditor,
+  type NodeKey,
+  type NodeMutation,
   TextNode,
 } from 'lexical';
-import {useEffect, useState} from 'react';
+import {type JSX, useEffect, useState} from 'react';
 
+/**
+ * A single entry in the table of contents, as a tuple of the heading node's
+ * {@link NodeKey}, its text content, and its heading tag (for example `'h1'`).
+ */
 export type TableOfContentsEntry = [
   key: NodeKey,
   text: string,
@@ -142,6 +148,15 @@ type Props = {
   ) => JSX.Element;
 };
 
+/**
+ * Tracks every {@link HeadingNode} in the editor and keeps an ordered list of
+ * {@link TableOfContentsEntry}s in sync as headings are added, removed, edited,
+ * or moved. It is a render-prop component: `children` receives the current
+ * entries and the editor and returns the element used to render the table of
+ * contents.
+ *
+ * @returns The element returned by the `children` render prop.
+ */
 export function TableOfContentsPlugin({children}: Props): JSX.Element {
   const [tableOfContents, setTableOfContents] = useState<
     TableOfContentsEntry[]
@@ -150,7 +165,7 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
   useEffect(() => {
     // Set table of contents initial state
     let currentTableOfContents: TableOfContentsEntry[] = [];
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const updateCurrentTableOfContents = (node: ElementNode) => {
         for (const child of node.getChildren()) {
           if ($isHeadingNode(child)) {
@@ -204,7 +219,7 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
     const removeHeaderMutationListener = editor.registerMutationListener(
       HeadingNode,
       (mutatedNodes: Map<string, NodeMutation>) => {
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           for (const [nodeKey, mutation] of mutatedNodes) {
             if (mutation === 'created') {
               const newHeading = $getNodeByKey(nodeKey);
@@ -244,7 +259,7 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
     const removeTextNodeMutationListener = editor.registerMutationListener(
       TextNode,
       (mutatedNodes: Map<string, NodeMutation>) => {
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           for (const [nodeKey, mutation] of mutatedNodes) {
             if (mutation === 'updated') {
               const currNode = $getNodeByKey(nodeKey);

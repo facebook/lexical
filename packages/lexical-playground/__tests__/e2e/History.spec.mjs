@@ -33,6 +33,13 @@ test.describe('History', () => {
   }) => {
     test.skip(isCollab);
     await page.focus('div[contenteditable="true"]');
+    // Freeze the history merge clock before the first burst so "hello" coalesces
+    // into a single undo entry deterministically. Each advanceHistoryClock call
+    // only makes the bursts *after* it deterministic; without this leading call
+    // the initial "hello" is typed against the real 300ms merge window, and
+    // under WebKit/CI load a slow inter-keystroke gap can split it across undo
+    // entries and desync every undo/redo assertion below (flaky on webkit).
+    await advanceHistoryClock(page);
     await page.keyboard.type('hello');
     await advanceHistoryClock(page);
     await page.keyboard.type(' world');
@@ -138,7 +145,7 @@ test.describe('History', () => {
         focusPath: [1],
       });
     } else {
-      assertHTML(
+      await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -301,7 +308,7 @@ test.describe('History', () => {
         focusPath: [1, 0, 0],
       });
     } else {
-      assertHTML(
+      await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -322,7 +329,7 @@ test.describe('History', () => {
     await redo(page);
 
     if (isRichText) {
-      assertHTML(
+      await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -340,7 +347,7 @@ test.describe('History', () => {
         focusPath: [1, 0, 0],
       });
     } else {
-      assertHTML(
+      await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -445,6 +452,13 @@ test.describe('History', () => {
     test.skip(isCollab || isPlainText);
 
     await focusEditor(page);
+    // Freeze the history merge clock: without it each burst is typed against
+    // the real 300ms merge window, and under WebKit/CI load a slow
+    // inter-keystroke gap splits one burst across two undo entries, so the
+    // first undo leaves part of the run behind ("bar" -> "b") and every
+    // assertion below desyncs. Frozen, the only boundaries are the style
+    // switches, which is what this test is about.
+    await advanceHistoryClock(page);
     await toggleBold(page);
     await page.keyboard.type('foo');
     await toggleBold(page);
@@ -939,7 +953,7 @@ test.describe('History - IME', () => {
 
     await undo(page);
 
-    assertHTML(
+    await assertHTML(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">

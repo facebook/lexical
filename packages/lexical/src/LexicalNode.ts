@@ -6,13 +6,13 @@
  *
  */
 
+import type {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import type {
   EditorConfig,
   Klass,
   KlassConstructor,
   LexicalEditor,
 } from './LexicalEditor';
-import type {BaseSelection, RangeSelection} from './LexicalSelection';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -26,9 +26,8 @@ import {
   $isTextNode,
   type DecoratorNode,
   type ElementNode,
-  NODE_STATE_KEY,
+  type NODE_STATE_KEY,
 } from '.';
-import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {DOMSlot} from './LexicalDOMSlot';
 import {
   $updateStateFromJSON,
@@ -44,8 +43,16 @@ import {
   $isRangeSelection,
   $moveSelectionPointToEnd,
   $updateElementSelectionOnCreateDeleteNode,
+  type BaseSelection,
   moveSelectionPointToSibling,
+  type RangeSelection,
 } from './LexicalSelection';
+import {
+  $errorOnSlotCycleChild,
+  $getSlotHost,
+  $getSlotHostKey,
+  $getSlotsTextContent,
+} from './LexicalSlot';
 import {
   errorOnReadOnly,
   getActiveEditor,
@@ -55,16 +62,18 @@ import {
   $cloneWithProperties,
   $getCompositionKey,
   $getNodeByKey,
+  $hasAncestor,
   $isRootOrShadowRoot,
   $maybeMoveChildrenSelectionToParent,
+  $removeFromParent,
   $setCompositionKey,
   $setNodeKey,
   $setSelection,
   errorOnInsertTextNodeOnRoot,
   getRegisteredNode,
   getStaticNodeConfig,
+  getSuperclassOf,
   internalMarkNodeAsDirty,
-  removeFromParent,
 } from './LexicalUtils';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -84,6 +93,15 @@ export type SerializedLexicalNode = {
    * configured for flat storage
    */
   [NODE_STATE_KEY]?: Record<string, unknown>;
+  /**
+   * Named slot subtrees keyed by slot name. Present on host nodes (an
+   * ElementNode or DecoratorNode that registered slots via `$setSlot`).
+   * The `$` prefix keeps the framework-owned key out of the namespace a
+   * third-party subclass may already use for its own serialized `slots`
+   * property (mirroring the reserved NodeState `'$'` key).
+   * @experimental named-slots
+   */
+  $slots?: Record<string, SerializedLexicalNode>;
 };
 
 /**
@@ -160,6 +178,23 @@ export interface StaticNodeConfigValue<
    * ```
    */
   readonly stateConfigs?: readonly RequiredNodeStateConfig[];
+  /**
+   * @experimental named-slots
+   *
+   * Canonical order for this host's named slots. Declared names render,
+   * fold, serialize, and traverse in this order; occupied names that are
+   * not declared follow in code-unit order. Order is derived from this
+   * declaration at every {@link $setSlot} (never stored), so documents
+   * re-canonicalize on load and concurrent collaborative slot additions
+   * converge to the same order on every client. The declaration is not a
+   * schema: undeclared names are still accepted and retained, so adding,
+   * reordering, or dropping entries over time is non-destructive.
+   *
+   * Declaring slots also opts the host into eager slots-map creation in
+   * \@lexical/yjs, which makes each name's first set merge per-entry under
+   * concurrency instead of racing on attribute creation.
+   */
+  readonly slots?: readonly string[];
   /**
    * If specified, this must be the exact superclass of the node. It is not
    * checked at compile time and it is provided automatically at runtime.
@@ -401,6 +436,15 @@ export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
 export interface LexicalPrivateDOM {
   __lexicalTextContent?: string | undefined | null;
   /**
+   * @experimental named-slots. Byte length of the slot text folded slots-first
+   * into the front of `__lexicalTextContent` for a host element. The suffix
+   * fast path splices the linked-list child suffix, which lives after this
+   * prefix, so it strips this many leading chars to recover the child-only
+   * text before splicing and lets the slot fold re-prepend the slot text.
+   * Absent / `0` for non-host elements, so non-slot trees splice unchanged.
+   */
+  __lexicalSlotTextLength?: number | undefined;
+  /**
    * NodeKey of the deep first text descendant (DFS order) of this
    * element, or `null` if the subtree carries no text descendants.
    * Maintained alongside `__lexicalTextContent` and used by the
@@ -446,6 +490,12 @@ export function $removeNode(
   const key = nodeToRemove.__key;
   const parent = nodeToRemove.getParent();
   if (parent === null) {
+    invariant(
+      $getSlotHostKey(nodeToRemove) === null,
+      '$removeNode: node %s is slotted into host %s; use removeSlot on the host instead of remove().',
+      key,
+      String($getSlotHostKey(nodeToRemove)),
+    );
     return;
   }
   const selection = $maybeMoveChildrenSelectionToParent(nodeToRemove);
@@ -484,10 +534,10 @@ export function $removeNode(
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
     // Doing this is O(n) so lets avoid it unless we need to do it
     const index = nodeToRemove.getIndexWithinParent();
-    removeFromParent(nodeToRemove);
+    $removeFromParent(nodeToRemove);
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
   } else {
-    removeFromParent(nodeToRemove);
+    $removeFromParent(nodeToRemove);
   }
 
   if (
@@ -629,11 +679,40 @@ const NON_ENUMERABLE_PROP_DESC: PropertyDescriptor = {
   writable: true,
 };
 
+/**
+ * A node that can host named slots, implemented by {@link ElementNode} and
+ * {@link DecoratorNode}. The map is allocated lazily (null until the first
+ * {@link $setSlot}) since most nodes have none. Declaring this off the base
+ * {@link LexicalNode} is what lets {@link $setSlot} / {@link $removeSlot}
+ * reject a non-host at compile time.
+ *
+ * @experimental
+ */
+export interface SlotHostNode {
+  /** @internal */
+  __slots: null | Map<string, NodeKey>;
+}
+
+/**
+ * A node that can occupy a named slot, implemented by {@link ElementNode} and
+ * {@link DecoratorNode}. Its up-pointer is `__slotHost` rather than `__parent`
+ * (the two are mutually exclusive), so the slot boundary behaves like a shadow
+ * root.
+ *
+ * @experimental
+ */
+export interface SlotChildNode {
+  /** @internal */
+  __slotHost: null | NodeKey;
+}
+
 export class LexicalNode {
   /** @internal Allow us to look up the type including static props */
   declare ['constructor']: KlassConstructor<typeof LexicalNode>;
   /** @internal */
-  __type: string;
+  // `__type` is assigned once, in the constructor, and is never valid to
+  // mutate afterward.
+  readonly __type: string;
   /** @internal */
   //@ts-ignore We set the key in the constructor.
   __key: string;
@@ -711,20 +790,19 @@ export class LexicalNode {
    * well-known symbol (by convention `Symbol.for(<NodeClassName>)`) instead of
    * a string `type` to declare configuration shared with its subclasses.
    */
-  config<Config extends StaticNodeConfigValue<this, string>>(
+  config<const Config extends StaticNodeConfigValue<this, string>>(
     type: symbol,
     config: Config,
   ): AbstractStaticNodeConfigRecord<Config>;
-  config<Type extends string, Config extends StaticNodeConfigValue<this, Type>>(
-    type: Type,
-    config: Config,
-  ): StaticNodeConfigRecord<Type, Config>;
+  config<
+    Type extends string,
+    const Config extends StaticNodeConfigValue<this, Type>,
+  >(type: Type, config: Config): StaticNodeConfigRecord<Type, Config>;
   config(
     type: string | symbol,
     config: AnyStaticNodeConfigValue,
   ): BaseStaticNodeConfig {
-    const parentKlass =
-      config.extends || Object.getPrototypeOf(this.constructor);
+    const parentKlass = config.extends || getSuperclassOf(this.constructor);
     Object.assign(config, {extends: parentKlass});
     // A concrete node records its string `type`; an abstract base class is
     // keyed by a well-known symbol (e.g. Symbol.for('ElementNode')) and has no
@@ -864,7 +942,8 @@ export class LexicalNode {
       if (node === null) {
         break;
       }
-      nodeKey = node.__parent;
+      // A slotted node has no __parent; follow its slot host up toward root.
+      nodeKey = node.__parent !== null ? node.__parent : $getSlotHostKey(node);
     }
     return false;
   }
@@ -996,7 +1075,9 @@ export class LexicalNode {
       // Annotation breaks a circular inference through the loop (TS7022),
       // remove when the deprecated generic signatures from #8661 are removed
       const parent: ElementNode | null = node.getParent();
-      if ($isRootOrShadowRoot(parent)) {
+      // A slot value's host acts as a shadow root, so the slot boundary is
+      // the top of the isolated scope and this node is its top-level element.
+      if ($isRootOrShadowRoot(parent) || $getSlotHostKey(node) !== null) {
         invariant(
           $isElementNode(node) || (node === this && $isDecoratorNode(node)),
           'Children of root nodes must be elements or decorators',
@@ -1209,8 +1290,7 @@ export class LexicalNode {
    * @param targetNode - the would-be child node.
    */
   isParentOf(targetNode: LexicalNode): boolean {
-    const result = $getCommonAncestor(this, targetNode);
-    return result !== null && result.type === 'ancestor';
+    return $hasAncestor(targetNode, this);
   }
 
   // TO-DO: this function can be simplified a lot
@@ -1359,7 +1439,7 @@ export class LexicalNode {
    *
    */
   getTextContent(): string {
-    return '';
+    return $getSlotsTextContent(this);
   }
 
   /**
@@ -1367,6 +1447,9 @@ export class LexicalNode {
    *
    */
   getTextContentSize(): number {
+    // Decorator slot hosts use this base impl: slot text is folded into
+    // getTextContent, so .length is the size — counted by length, not by each
+    // slot's own getTextContentSize (the ElementNode override sums those).
     return this.getTextContent().length;
   }
 
@@ -1535,6 +1618,12 @@ export class LexicalNode {
    * Replaces this LexicalNode with the provided node, optionally transferring the children
    * of the replaced node to the replacing node.
    *
+   * Named slots are bound to their host node and are never transferred: this
+   * node keeps its slot map, so if it is reattached elsewhere (as
+   * `$wrapNodeInElement` does) its slots come with it, and if it stays
+   * detached the slot subtrees are garbage-collected along with it. To move a
+   * slot value onto another host, use `$setSlot` explicitly.
+   *
    * @param replaceWith - The node to replace this one with.
    * @param includeChildren - Whether or not to transfer the children of this node to the replacing node.
    * */
@@ -1547,9 +1636,28 @@ export class LexicalNode {
     errorOnInsertTextNodeOnRoot(this, replaceWith);
     const self = this.getLatest();
     const toReplaceKey = this.__key;
+    // A named-slot value has no parent (its up-link is __slotHost), so the
+    // getParentOrThrow below would throw an unhelpful generic error. Fail with
+    // an actionable one instead, mirroring the $removeFromParent guard for
+    // remove(): the slot assignment is managed by the node or extension that
+    // owns the slot, so generic tree surgery must go through $setSlot.
+    const slotHost = $getSlotHost(self);
+    if (slotHost !== null) {
+      invariant(
+        false,
+        'replace: node %s (type %s) is slotted into host %s (type %s); a slot value cannot be replaced through the tree API. Use $setSlot on its host to assign a replacement.',
+        toReplaceKey,
+        self.getType(),
+        slotHost.getKey(),
+        slotHost.getType(),
+      );
+    }
     const key = replaceWith.__key;
     const writableReplaceWith = replaceWith.getWritable();
     const writableParent = this.getParentOrThrow().getWritable();
+    // Before any mutation: becoming a child of this node's parent must not
+    // close a cycle through a slot up-link (reverse of $setSlot's guard).
+    $errorOnSlotCycleChild(writableParent, writableReplaceWith);
     const size = writableParent.__size;
     // Capture replaceWith's old parent / index before removeFromParent so the
     // cloned selection's element offsets in that old parent can be adjusted
@@ -1559,7 +1667,7 @@ export class LexicalNode {
       replaceWithOldParent !== null
         ? writableReplaceWith.getIndexWithinParent()
         : -1;
-    removeFromParent(writableReplaceWith);
+    $removeFromParent(writableReplaceWith);
     if (replaceWithOldParent !== null && $isRangeSelection(selection)) {
       $updateElementSelectionOnCreateDeleteNode(
         selection,
@@ -1590,7 +1698,13 @@ export class LexicalNode {
     }
     writableReplaceWith.__next = nextKey;
     writableReplaceWith.__parent = parentKey;
-    writableParent.__size = size;
+    // `size` was read before replaceWith was detached. When replaceWith was
+    // already a child of this same parent, two children collapse into one, so
+    // the restored size must account for the node that is not coming back.
+    writableParent.__size =
+      replaceWithOldParent !== null && replaceWithOldParent.is(writableParent)
+        ? size - 1
+        : size;
     // Snapshot replaceWith's children count before children transfer so
     // element-anchored selections on `this` can map to the equivalent offset
     // in writableReplaceWith.
@@ -1659,6 +1773,9 @@ export class LexicalNode {
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
+    // Before any mutation: becoming a sibling of this node must not close a
+    // cycle through a slot up-link (reverse of $setSlot's guard).
+    $errorOnSlotCycleChild(this.getParentOrThrow(), writableNodeToInsert);
     const oldParent = writableNodeToInsert.getParent();
     const selection = $getSelection();
     let elementAnchorSelectionOnNode = false;
@@ -1679,7 +1796,7 @@ export class LexicalNode {
           focus.key === oldParentKey &&
           focus.offset === oldIndex + 1;
       }
-      removeFromParent(writableNodeToInsert);
+      $removeFromParent(writableNodeToInsert);
       // Adjust element-anchored offsets in oldParent to track its reduced
       // child count. The boolean flags captured above
       // (elementAnchorSelectionOnNode / elementFocusSelectionOnNode) recorded
@@ -1694,6 +1811,8 @@ export class LexicalNode {
           -1,
         );
       }
+    } else {
+      $removeFromParent(writableNodeToInsert);
     }
     const nextSibling = this.getNextSibling();
     const writableParent = this.getParentOrThrow().getWritable();
@@ -1743,6 +1862,9 @@ export class LexicalNode {
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
+    // Before any mutation: becoming a sibling of this node must not close a
+    // cycle through a slot up-link (reverse of $setSlot's guard).
+    $errorOnSlotCycleChild(this.getParentOrThrow(), writableNodeToInsert);
     const insertKey = writableNodeToInsert.__key;
     const selection = $getSelection();
     // Capture nodeToInsert's old parent / index before detaching so the
@@ -1753,7 +1875,7 @@ export class LexicalNode {
       insertOldParent !== null
         ? writableNodeToInsert.getIndexWithinParent()
         : -1;
-    removeFromParent(writableNodeToInsert);
+    $removeFromParent(writableNodeToInsert);
     if (
       insertOldParent !== null &&
       restoreSelection &&
@@ -1823,6 +1945,13 @@ export class LexicalNode {
    * */
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
+    // Slot value root has __parent === null, so the regular sibling walk
+    // would throw via getParentOrThrow. Defer to the host so the cursor
+    // moves past the slot-bearing host's previous sibling.
+    const slotHost = $getSlotHost(this);
+    if (slotHost !== null) {
+      return slotHost.selectPrevious(anchorOffset, focusOffset);
+    }
     const prevSibling = this.getPreviousSibling();
     const parent = this.getParentOrThrow();
     if (prevSibling === null) {
@@ -1845,6 +1974,13 @@ export class LexicalNode {
    * */
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
+    // Slot value root has __parent === null, so the regular sibling walk
+    // would throw via getParentOrThrow. Defer to the host so the cursor
+    // moves past the slot-bearing host's next sibling.
+    const slotHost = $getSlotHost(this);
+    if (slotHost !== null) {
+      return slotHost.selectNext(anchorOffset, focusOffset);
+    }
     const nextSibling = this.getNextSibling();
     const parent = this.getParentOrThrow();
     if (nextSibling === null) {

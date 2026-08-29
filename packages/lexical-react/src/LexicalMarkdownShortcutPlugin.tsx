@@ -6,7 +6,6 @@
  *
  */
 
-import type {ElementTransformer, Transformer} from '@lexical/markdown';
 import type {LexicalNode} from 'lexical';
 
 import {
@@ -14,7 +13,12 @@ import {
   $isHorizontalRuleNode,
   HorizontalRuleNode,
 } from '@lexical/extension';
-import {registerMarkdownShortcuts, TRANSFORMERS} from '@lexical/markdown';
+import {
+  type ElementTransformer,
+  registerMarkdownShortcuts,
+  type Transformer,
+  TRANSFORMERS,
+} from '@lexical/markdown';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
@@ -39,8 +43,21 @@ const HR: ElementTransformer = {
   triggerOnEnter: true,
   type: 'element',
 };
+/**
+ * The default set of Markdown {@link Transformer}s used by
+ * {@link MarkdownShortcutPlugin}: the core `@lexical/markdown` `TRANSFORMERS`
+ * plus a transformer that turns `---`, `***`, or `___` into a horizontal rule.
+ */
 export const DEFAULT_TRANSFORMERS = [HR, ...TRANSFORMERS];
 
+/**
+ * Registers Markdown shortcuts so that typing Markdown syntax (for example
+ * `# ` for a heading or `- ` for a list item) is automatically converted into
+ * the corresponding nodes as you type. Pass `transformers` to customize which
+ * shortcuts are active; it defaults to {@link DEFAULT_TRANSFORMERS}.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function MarkdownShortcutPlugin({
   transformers = DEFAULT_TRANSFORMERS,
 }: Readonly<{

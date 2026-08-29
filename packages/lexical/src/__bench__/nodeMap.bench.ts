@@ -13,10 +13,11 @@ import {buildMap, type FakeNode, makeNode} from './_utils';
 
 const SIZES = [100, 1000, 10000, 100000] as const;
 
-// Module-level sink push'd into by each bench body so V8 can't elide
-// the work. The array is intentionally never read; `push` is the
-// observable side effect that anchors the computation. See README.md.
-const benchSinks: unknown[] = [];
+// Module-level sink written by each bench body so V8 can't elide the
+// work. A simple variable assignment is sufficient as an observable
+// side effect — unlike an array push, it doesn't grow without bound
+// and avoids memory exhaustion at high iteration counts (size=100000 get).
+let _benchSink: unknown;
 
 function buildGenMap(size: number): GenMap<string, FakeNode> {
   const g = new GenMap<string, FakeNode>();
@@ -38,7 +39,7 @@ for (const size of SIZES) {
     bench(
       'Map: new Map(prev)',
       () => {
-        const _ = new Map(mapBase);
+        _benchSink = new Map(mapBase);
       },
       {
         setup: () => {
@@ -50,7 +51,7 @@ for (const size of SIZES) {
     bench(
       'GenMap: clone()',
       () => {
-        const _ = genBase.clone();
+        _benchSink = genBase.clone();
       },
       {
         setup: () => {
@@ -69,6 +70,7 @@ for (const size of SIZES) {
       () => {
         const next = new Map(mapBase);
         next.set('newKey', makeNode('newKey'));
+        _benchSink = next;
       },
       {
         setup: () => {
@@ -82,6 +84,7 @@ for (const size of SIZES) {
       () => {
         const next = genBase.clone();
         next.set('newKey', makeNode('newKey'));
+        _benchSink = next;
       },
       {
         setup: () => {
@@ -104,6 +107,7 @@ for (const size of SIZES) {
           next.set(`typed${c}`, makeNode(`typed${c}`));
           cur = next;
         }
+        _benchSink = cur;
       },
       {
         setup: () => {
@@ -121,6 +125,7 @@ for (const size of SIZES) {
           next.set(`typed${c}`, makeNode(`typed${c}`));
           cur = next;
         }
+        _benchSink = cur;
       },
       {
         setup: () => {
@@ -142,6 +147,7 @@ for (const size of SIZES) {
           const k = `paste${i}`;
           next.set(k, makeNode(k));
         }
+        _benchSink = next;
       },
       {
         setup: () => {
@@ -158,6 +164,7 @@ for (const size of SIZES) {
           const k = `paste${i}`;
           next.set(k, makeNode(k));
         }
+        _benchSink = next;
       },
       {
         setup: () => {
@@ -175,7 +182,7 @@ for (const size of SIZES) {
     bench(
       'Map',
       () => {
-        benchSinks.push(mapBase.get(k));
+        _benchSink = mapBase.get(k);
       },
       {
         setup: () => {
@@ -187,7 +194,7 @@ for (const size of SIZES) {
     bench(
       'GenMap',
       () => {
-        benchSinks.push(genBase.get(k));
+        _benchSink = genBase.get(k);
       },
       {
         setup: () => {
@@ -206,7 +213,7 @@ for (const size of SIZES) {
       () => {
         let count = 0;
         for (const _ of mapBase) count++;
-        benchSinks.push(count);
+        _benchSink = count;
       },
       {
         setup: () => {
@@ -220,7 +227,7 @@ for (const size of SIZES) {
       () => {
         let count = 0;
         for (const _ of genBase) count++;
-        benchSinks.push(count);
+        _benchSink = count;
       },
       {
         setup: () => {

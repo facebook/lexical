@@ -10,7 +10,10 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import {EscapeFormatTriggerConfig, RichTextExtension} from '@lexical/rich-text';
+import {
+  type EscapeFormatTriggerConfig,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -20,14 +23,14 @@ import {
   $isTextNode,
   CLICK_COMMAND,
   configExtension,
-  InitialEditorStateType,
+  type InitialEditorStateType,
   IS_CODE,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
-  RangeSelection,
+  type RangeSelection,
   TEXT_TYPE_TO_FORMAT,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';

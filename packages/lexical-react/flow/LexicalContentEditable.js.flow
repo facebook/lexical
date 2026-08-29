@@ -56,7 +56,7 @@ export type PlaceholderProps =
         | React.Node,
     }>;
 
-export type Props = Readonly<{
+export type ContentEditableProps = Readonly<{
   ...HTMLDivElementDOMProps,
   ariaActiveDescendant?: string,
   ariaAutoComplete?: string,
@@ -76,5 +76,5 @@ export type Props = Readonly<{
 
 declare export var ContentEditable: component(
   ref?: React.RefSetter<HTMLDivElement>,
-  ...Props
+  ...ContentEditableProps
 );

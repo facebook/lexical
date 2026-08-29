@@ -7,8 +7,13 @@
  */
 
 import invariant from '@lexical/internal/invariant';
-import {$isTextNode, type LexicalNode, NodeKey, type TextNode} from 'lexical';
-import {XmlElement, XmlText} from 'yjs';
+import {
+  $isTextNode,
+  type LexicalNode,
+  type NodeKey,
+  type TextNode,
+} from 'lexical';
+import {type XmlElement, XmlText} from 'yjs';
 
 type SharedType = XmlElement | XmlText;
 

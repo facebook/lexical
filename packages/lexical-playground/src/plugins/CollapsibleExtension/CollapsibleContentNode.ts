@@ -6,35 +6,30 @@
  *
  */
 
-import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
-  DOMExportOutput,
-  EditorConfig,
+  $getDocument,
+  type DOMExportOutput,
+  type EditorConfig,
   ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  SerializedElementNode,
+  IS_CHROME,
+  IS_FIREFOX,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {domOnBeforeMatch, setDomHiddenUntilFound} from './CollapsibleUtils';
 
-type SerializedCollapsibleContentNode = SerializedElementNode;
-
 export class CollapsibleContentNode extends ElementNode {
-  static getType(): string {
-    return 'collapsible-content';
-  }
-
-  static clone(node: CollapsibleContentNode): CollapsibleContentNode {
-    return new CollapsibleContentNode(node.__key);
+  $config() {
+    return this.config('collapsible-content', {extends: ElementNode});
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    const dom = document.createElement('div');
+    const dom = $getDocument().createElement('div');
     dom.classList.add('Collapsible__content');
     if (IS_CHROME || IS_FIREFOX) {
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const containerNode = this.getParentOrThrow();
         if (!$isCollapsibleContainerNode(containerNode)) {
           throw new Error(
@@ -67,16 +62,10 @@ export class CollapsibleContentNode extends ElementNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('div');
+    const element = $getDocument().createElement('div');
     element.classList.add('Collapsible__content');
     element.setAttribute('data-lexical-collapsible-content', 'true');
     return {element};
-  }
-
-  static importJSON(
-    serializedNode: SerializedCollapsibleContentNode,
-  ): CollapsibleContentNode {
-    return $createCollapsibleContentNode().updateFromJSON(serializedNode);
   }
 
   isShadowRoot(): boolean {

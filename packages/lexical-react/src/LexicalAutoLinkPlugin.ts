@@ -6,14 +6,17 @@
  *
  */
 
-import type {ChangeHandler, LinkMatcher} from '@lexical/link';
 import type {ElementNode, LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
 
 import invariant from '@lexical/internal/invariant';
-import {AutoLinkNode, registerAutoLink} from '@lexical/link';
+import {
+  AutoLinkNode,
+  type ChangeHandler,
+  type LinkMatcher,
+  registerAutoLink,
+} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useEffect} from 'react';
+import {type JSX, useEffect} from 'react';
 
 export {
   type ChangeHandler,
@@ -44,6 +47,19 @@ function useAutoLink(
   }, [editor, matchers, onChange, excludeParents]);
 }
 
+/**
+ * Automatically converts text that matches one of the provided `matchers` into
+ * {@link AutoLinkNode}s as the user types, and reverts them back to plain text
+ * when they no longer match. Provide `onChange` to react to links being
+ * created, updated, or removed, and `excludeParents` to skip matching inside
+ * particular ancestor nodes. The editor must have the {@link AutoLinkNode}
+ * registered.
+ *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link AutoLinkExtension} instead.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function AutoLinkPlugin({
   matchers,
   onChange,

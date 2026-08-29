@@ -6,13 +6,16 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {calculateZoomLevel} from '@lexical/utils';
-import {isDOMNode} from 'lexical';
+import {
+  getComposedEventTarget,
+  isDOMNode,
+  registerEventListener,
+} from 'lexical';
 import * as React from 'react';
 import {
-  ReactNode,
+  type JSX,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -208,7 +211,10 @@ export default function DropDown({
 
     if (button !== null && showDropDown) {
       const handle = (event: PointerEvent) => {
-        const target = event.target;
+        // click bubbles up from a shadow tree with event.target retargeted
+        // to the shadow host, which would make button.contains(target) false
+        // and immediately close the dropdown. Use the composed-path target.
+        const target = getComposedEventTarget(event);
         if (!isDOMNode(target)) {
           return;
         }
@@ -227,20 +233,21 @@ export default function DropDown({
           }
         }
       };
-      document.addEventListener('click', handle);
-
-      return () => {
-        document.removeEventListener('click', handle);
-      };
+      const doc = button.ownerDocument;
+      return registerEventListener(doc, 'click', handle);
     }
   }, [dropDownRef, buttonRef, showDropDown, stopCloseOnClickSelf]);
 
   useEffect(() => {
+    const button = buttonRef.current;
+    if (button === null) {
+      return;
+    }
+
     const handleButtonPositionUpdate = () => {
       if (showDropDown) {
-        const button = buttonRef.current;
         const dropDown = dropDownRef.current;
-        if (button !== null && dropDown !== null) {
+        if (dropDown !== null) {
           const {top} = button.getBoundingClientRect();
           const newPosition = top + button.offsetHeight + dropDownPadding;
           if (newPosition !== dropDown.getBoundingClientRect().top) {
@@ -250,11 +257,11 @@ export default function DropDown({
       }
     };
 
-    document.addEventListener('scroll', handleButtonPositionUpdate);
-
-    return () => {
-      document.removeEventListener('scroll', handleButtonPositionUpdate);
-    };
+    return registerEventListener(
+      button.ownerDocument,
+      'scroll',
+      handleButtonPositionUpdate,
+    );
   }, [buttonRef, dropDownRef, showDropDown]);
 
   const handleOnClick = (e: React.MouseEvent) => {
@@ -286,7 +293,7 @@ export default function DropDown({
             autofocus={shouldAutofocus}>
             {children}
           </DropDownItems>,
-          document.body,
+          buttonRef.current?.ownerDocument?.body ?? document.body,
         )}
     </>
   );

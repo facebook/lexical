@@ -6,7 +6,12 @@
  *
  */
 
-import {CodeExtension, CodeImportExtension} from '@lexical/code-core';
+import {
+  $isCodeNode,
+  CodeExtension,
+  CodeImportExtension,
+  type CodeNode,
+} from '@lexical/code-core';
 import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
@@ -23,8 +28,6 @@ import {
   type LexicalNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
-
-import {$isCodeNode, CodeNode} from '../../CodeNode';
 
 function buildEditor() {
   return buildEditorFromExtensions(
@@ -77,6 +80,32 @@ describe('CodeImportExtension', () => {
     editor.read(() => {
       const node = $rootCode();
       expect(node.getLanguage()).toBe('ts');
+    });
+  });
+
+  test('<pre data-theme="poimandres"> restores the theme', () => {
+    using editor = buildEditor();
+    importInto(
+      editor,
+      '<pre data-language="ts" data-theme="poimandres">x</pre>',
+    );
+    editor.read(() => {
+      const node = $rootCode();
+      expect(node.getLanguage()).toBe('ts');
+      expect(node.getTheme()).toBe('poimandres');
+    });
+  });
+
+  test('multi-line <code data-theme> restores the theme', () => {
+    using editor = buildEditor();
+    importInto(
+      editor,
+      '<code data-language="ts" data-theme="poimandres">a\nb</code>',
+    );
+    editor.read(() => {
+      const node = $rootCode();
+      expect(node.getLanguage()).toBe('ts');
+      expect(node.getTheme()).toBe('poimandres');
     });
   });
 
@@ -140,6 +169,7 @@ describe('CodeImportExtension', () => {
         // <table> rule out-prioritizes TableExtension's generic one.
         dependencies: [TableExtension, CodeExtension],
         name: 'table-code-host',
+        theme: {tableScrollableWrapper: ''},
       }),
     );
     importInto(

@@ -6,19 +6,27 @@
  *
  */
 
-import type {BaseSelection, LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {IS_APPLE} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  type BaseSelection,
   getDOMSelection,
+  getDOMSelectionPoints,
+  IS_APPLE,
+  type LexicalEditor,
+  registerEventListeners,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {
+  type JSX,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 const copy = (text: string | null) => {
   const textArea = document.createElement('textarea');
@@ -178,14 +186,19 @@ function useTestRecorder(
   const generateTestContent = useCallback(() => {
     const rootElement = editor.getRootElement();
     const browserSelection = getDOMSelection(editor._window);
+    const browserPoints =
+      browserSelection !== null
+        ? getDOMSelectionPoints(browserSelection, rootElement)
+        : null;
 
     if (
       rootElement == null ||
       browserSelection == null ||
-      browserSelection.anchorNode == null ||
-      browserSelection.focusNode == null ||
-      !rootElement.contains(browserSelection.anchorNode) ||
-      !rootElement.contains(browserSelection.focusNode)
+      browserPoints == null ||
+      browserPoints.anchorNode == null ||
+      browserPoints.focusNode == null ||
+      !rootElement.contains(browserPoints.anchorNode) ||
+      !rootElement.contains(browserPoints.focusNode)
     ) {
       return null;
     }
@@ -284,12 +297,10 @@ ${steps.map(formatStep).join(`\n`)}
 
     return editor.registerRootListener(rootElement => {
       if (rootElement) {
-        rootElement.addEventListener('keydown', onKeyDown);
-        rootElement.addEventListener('keyup', onKeyUp);
-        return () => {
-          rootElement.removeEventListener('keydown', onKeyDown);
-          rootElement.removeEventListener('keyup', onKeyUp);
-        };
+        return registerEventListeners(rootElement, {
+          keydown: onKeyDown,
+          keyup: onKeyUp,
+        });
       }
     });
   }, [editor, isRecording, pushStep]);
@@ -329,10 +340,13 @@ ${steps.map(formatStep).join(`\n`)}
             !skipNextSelectionChange
           ) {
             const browserSelection = getDOMSelection(editor._window);
-            if (
+            const browserPoints =
               browserSelection &&
-              (browserSelection.anchorNode == null ||
-                browserSelection.focusNode == null)
+              getDOMSelectionPoints(browserSelection, editor.getRootElement());
+            if (
+              browserPoints &&
+              (browserPoints.anchorNode == null ||
+                browserPoints.focusNode == null)
             ) {
               return;
             }
@@ -386,15 +400,19 @@ ${steps.map(formatStep).join(`\n`)}
       return;
     }
     const browserSelection = getDOMSelection(getCurrentEditor()._window);
+    const rootElement = getCurrentEditor().getRootElement();
+    const browserPoints =
+      browserSelection !== null
+        ? getDOMSelectionPoints(browserSelection, rootElement)
+        : null;
     if (
-      browserSelection === null ||
-      browserSelection.anchorNode == null ||
-      browserSelection.focusNode == null
+      browserPoints === null ||
+      browserPoints.anchorNode == null ||
+      browserPoints.focusNode == null
     ) {
       return;
     }
-    const {anchorNode, anchorOffset, focusNode, focusOffset} = browserSelection;
-    const rootElement = getCurrentEditor().getRootElement();
+    const {anchorNode, anchorOffset, focusNode, focusOffset} = browserPoints;
     let anchorPath;
     if (anchorNode !== null) {
       anchorPath = getPathFromNodeToEditor(anchorNode, rootElement);

@@ -14,15 +14,14 @@ import {
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
 
 import {$createPageBreakNode, PageBreakNode} from '../../nodes/PageBreakNode';
 
-export const INSERT_PAGE_BREAK: LexicalCommand<undefined> =
-  /* @__PURE__ */ createCommand();
+export const INSERT_PAGE_BREAK: LexicalCommand<undefined> = createCommand();
 
-export const PageBreakExtension = /* @__PURE__ */ defineExtension({
+export const PageBreakExtension = defineExtension({
   dependencies: [ReactExtension],
   name: '@lexical/playground/PageBreak',
   nodes: () => [PageBreakNode],

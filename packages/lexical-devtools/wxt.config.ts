@@ -11,7 +11,7 @@ import babel from '@rollup/plugin-babel';
 import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import * as path from 'path';
-import {defineConfig, UserManifest} from 'wxt';
+import {defineConfig, type UserManifest} from 'wxt';
 
 import transformErrorMessages from '../../scripts/error-codes/transform-error-messages.mjs';
 import moduleResolution from '../../scripts/vite/viteModuleResolution';

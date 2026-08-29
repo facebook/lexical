@@ -18,9 +18,12 @@ import {OverflowNode} from '@lexical/overflow';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 
+import {CardNode} from '../plugins/CardExtension/CardNode';
 import {CollapsibleContainerNode} from '../plugins/CollapsibleExtension/CollapsibleContainerNode';
 import {CollapsibleContentNode} from '../plugins/CollapsibleExtension/CollapsibleContentNode';
 import {CollapsibleTitleNode} from '../plugins/CollapsibleExtension/CollapsibleTitleNode';
+import {PullQuoteNode} from '../plugins/PullQuoteExtension/PullQuoteNode';
+import {ReviewNode} from '../plugins/ReviewExtension/ReviewNode';
 import {DateTimeNode} from './DateTimeNode/DateTimeNode';
 import {EmojiNode} from './EmojiNode';
 import {EquationNode} from './EquationNode';
@@ -33,6 +36,7 @@ import {LayoutItemNode} from './LayoutItemNode';
 import {MentionNode} from './MentionNode';
 import {PageBreakNode} from './PageBreakNode';
 import {PollNode} from './PollNode';
+import {SlotContainerNode} from './SlotContainerNode';
 import {SpecialTextNode} from './SpecialTextNode';
 import {StickyNode} from './StickyNode';
 import {TweetNode} from './TweetNode';
@@ -73,6 +77,10 @@ const PlaygroundNodes: Klass<LexicalNode>[] = [
   LayoutItemNode,
   SpecialTextNode,
   DateTimeNode,
+  CardNode,
+  SlotContainerNode,
+  ReviewNode,
+  PullQuoteNode,
 ];
 
 export default PlaygroundNodes;

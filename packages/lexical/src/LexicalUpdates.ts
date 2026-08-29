@@ -6,7 +6,6 @@
  *
  */
 
-import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
 import devInvariant from '@lexical/internal/devInvariant';
@@ -20,21 +19,22 @@ import {
 } from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {
-  CommandPayloadType,
-  EditorUpdateOptions,
-  LexicalCommand,
+  type AnyLexicalCommand,
+  type CommandPayloadType,
+  type EditorUpdateOptions,
   LexicalEditor,
-  MapListeners,
-  MutatedNodes,
-  RegisteredNodes,
+  type MapListeners,
+  type MutatedNodes,
+  type RegisteredNodes,
   resetEditor,
-  Transform,
+  type Transform,
 } from './LexicalEditor';
 import {
   cloneEditorState,
   createEmptyEditorState,
-  EditorState,
+  type EditorState,
   editorStateHasDirtySelection,
+  type SerializedEditorState,
 } from './LexicalEditorState';
 import {
   $garbageCollectDetachedDecorators,
@@ -44,15 +44,18 @@ import {initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
 import {$reconcileRoot} from './LexicalReconciler';
 import {
+  $clampRangeSelectionToSlotFrame,
   $internalCreateSelection,
   $isNodeSelection,
   $isRangeSelection,
   $updateDOMSelection,
   applySelectionTransforms,
 } from './LexicalSelection';
+import {$isSlotHost, $setSlot} from './LexicalSlot';
 import {
   $getCompositionKey,
   $updateDOMBlockCursorElement,
+  findAllLexicalElementsDeep,
   getDOMSelection,
   getEditorPropertyFromDOMNode,
   getEditorStateTextContent,
@@ -90,6 +93,7 @@ const observerOptions = {
   subtree: true,
 };
 
+/** Returns true if the current editor update context is read-only. */
 export function isCurrentlyReadOnlyMode(): boolean {
   return (
     isReadOnlyMode ||
@@ -172,7 +176,7 @@ function collectBuildInformation(): string {
   const incompatibleEditors = new Set<string>();
   const thisVersion = LexicalEditor.version;
   if (typeof window !== 'undefined') {
-    for (const node of document.querySelectorAll('[contenteditable]')) {
+    for (const node of findAllLexicalElementsDeep(document)) {
       const editor = getEditorPropertyFromDOMNode(node);
       if (isLexicalEditor(editor)) {
         compatibleEditors++;
@@ -389,10 +393,12 @@ function $applyAllTransforms(
 
 type InternalSerializedNode = {
   children?: InternalSerializedNode[];
+  $slots?: Record<string, InternalSerializedNode>;
   type: string;
   version: number;
 };
 
+/** Deserializes a SerializedLexicalNode JSON object into its corresponding LexicalNode instance. */
 export function $parseSerializedNode(
   serializedNode: SerializedLexicalNode,
 ): LexicalNode {
@@ -440,6 +446,21 @@ function $parseSerializedNodeImpl<
     }
   }
 
+  // Slots live in a separate Map on every LexicalNode (an ElementNode or a
+  // DecoratorNode host), so re-attach them outside the element branch.
+  const slots = serializedNode.$slots;
+  if (slots) {
+    invariant(
+      $isSlotHost(node),
+      '$parseSerializedNode: node %s has slots but is not a valid slot host; only ElementNodes and DecoratorNodes can host slots.',
+      nodeClass.name,
+    );
+    for (const name in slots) {
+      const slotNode = $parseSerializedNodeImpl(slots[name], registeredNodes);
+      $setSlot(node, name, slotNode);
+    }
+  }
+
   return node;
 }
 
@@ -475,6 +496,7 @@ export function parseEditorState(
 
     // Make the editorState immutable
     editorState._readOnly = true;
+    editorState._parsed = true;
 
     if (__DEV__) {
       handleDEVOnlyPendingUpdateGuarantees(editorState);
@@ -571,7 +593,7 @@ function $commitPendingUpdatesImpl(
     // may have been added by a prior update (e.g. via $onUpdate inside
     // editor.focus()). This can happen when another commit consumed
     // the pending editor state before this scheduled commit ran.
-    if (editor._deferred.length > 0) {
+    if (!editor._updating && editor._deferred.length > 0) {
       triggerDeferredUpdateCallbacks(editor, editor._deferred);
     }
     return;
@@ -659,7 +681,6 @@ function $commitPendingUpdatesImpl(
   const dirtyElements = editor._dirtyElements;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
-  const deferred = editor._deferred;
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
@@ -746,7 +767,7 @@ function $commitPendingUpdatesImpl(
     pendingSelection !== null &&
     (currentSelection === null || !currentSelection.is(pendingSelection))
   ) {
-    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
   }
   /**
    * Capture pendingDecorators after garbage collecting detached decorators
@@ -777,7 +798,13 @@ function $commitPendingUpdatesImpl(
     prevEditorState: recoveryEditorState || currentEditorState,
     tags,
   });
-  triggerDeferredUpdateCallbacks(editor, deferred);
+  // A commit can be forced while an outer update is still running (for
+  // example, setEditorState() inside editor.update()). Keep $onUpdate
+  // callbacks queued so the outer update drains them after updateFn returns.
+  if (!previouslyUpdating) {
+    const deferred = editor._deferred;
+    triggerDeferredUpdateCallbacks(editor, deferred);
+  }
   $triggerEnqueuedUpdates(editor);
 }
 
@@ -838,7 +865,11 @@ export function triggerListeners<T extends keyof MapListeners>(
       if (unregister) {
         unregister();
       }
-      const nextUnregister = listener(...payload);
+      // TypeScript's void-return rule lets a `=> void` callback return any value,
+      // so a listener like `() => arr.push(x)` hands back a number. Only a
+      // function is an unregister callback.
+      const result = listener(...payload);
+      const nextUnregister = typeof result === 'function' ? result : undefined;
       if (listenerMap.has(listener)) {
         listenerMap.set(listener, nextUnregister);
       } else if (nextUnregister) {
@@ -850,9 +881,7 @@ export function triggerListeners<T extends keyof MapListeners>(
   }
 }
 
-export function triggerCommandListeners<
-  TCommand extends LexicalCommand<unknown>,
->(
+export function triggerCommandListeners<TCommand extends AnyLexicalCommand>(
   editor: LexicalEditor,
   type: TCommand,
   payload: CommandPayloadType<TCommand>,
@@ -1081,6 +1110,18 @@ function $processNestedUpdates(
   return skipTransforms;
 }
 
+/**
+ * Equivalent to setting `{discrete: true}` on the containing `editor.update`,
+ * generally used to ensure that the DOM is updated before returning from
+ * an event listener where the browser is expected to natively finish handling
+ * the event.
+ */
+export function $flushSyncAfterUpdate() {
+  const editorState = getActiveEditorState();
+  errorOnReadOnly();
+  editorState._flushSync = true;
+}
+
 function $beginUpdate(
   editor: LexicalEditor,
   updateFn: () => void,
@@ -1170,6 +1211,13 @@ function $beginUpdate(
     const pendingSelection = pendingEditorState._selection;
 
     if ($isRangeSelection(pendingSelection)) {
+      // Slot containment: a RangeSelection must not straddle a slot boundary.
+      // Every committed selection passes here, including ones produced by an
+      // in-place point mutation that bypassed `$setSelection`. Gated on
+      // `_slotsUsed` so editors that never slot anything skip the frame walk.
+      if (editor._slotsUsed) {
+        $clampRangeSelectionToSlotFrame(pendingSelection);
+      }
       const pendingNodeMap = pendingEditorState._nodeMap;
       const anchorKey = pendingSelection.anchor.key;
       const focusKey = pendingSelection.focus.key;
@@ -1252,7 +1300,30 @@ export function updateEditorSync(
   options?: EditorUpdateOptions,
 ): void {
   if (activeEditor === editor && options === undefined) {
-    updateFn();
+    if (isCurrentlyReadOnlyMode()) {
+      // We are nominally "inside an update" for this editor, but the active
+      // context is read-only (e.g. a command dispatched from inside
+      // editor.read(), or a force-commit read on the stack). Running updateFn
+      // inline here would mutate the frozen active editor state and throw
+      // "Cannot call set() on a frozen Lexical node map" — an error that gets
+      // routed to editor._onError rather than rethrown, so the mutation is
+      // silently dropped. Route through $beginUpdate instead, which starts a
+      // fresh writable update, so the work actually applies.
+      if (__DEV__) {
+        console.warn(
+          `updateEditorSync: an editor update (e.g. a command listener that ` +
+            `mutates the editor) ran while a read-only context was on the ` +
+            `stack. This most commonly happens when a command is dispatched ` +
+            `from inside editor.read(). The update has been deferred to a ` +
+            `fresh writable update so it still applies, but dispatching ` +
+            `mutations from a read-only context is an anti-pattern — dispatch ` +
+            `after editor.read() returns, or via queueMicrotask.`,
+        );
+      }
+      $beginUpdate(editor, updateFn, options);
+    } else {
+      updateFn();
+    }
   } else {
     $beginUpdate(editor, updateFn, options);
   }

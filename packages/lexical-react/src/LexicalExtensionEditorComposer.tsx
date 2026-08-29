@@ -5,10 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {LexicalEditorWithDispose} from 'lexical';
+
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
-import {LexicalEditorWithDispose} from 'lexical';
 
+/**
+ * Props for the {@link LexicalExtensionEditorComposer} component.
+ */
 export interface LexicalExtensionEditorComposerProps {
   /**
    * Your root extension, typically defined with {@link defineExtension}.

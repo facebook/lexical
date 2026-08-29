@@ -16,7 +16,6 @@ interface Delimiter {
   index: number;
   char: string;
   length: number;
-  originalLength: number;
   canOpen: boolean;
   canClose: boolean;
   active: boolean;
@@ -37,37 +36,29 @@ export function findOutermostTextFormatTransformer(
 } | null {
   const textContent = textNode.getTextContent();
 
-  // Find code span first. Emphasis delimiters inside inline elements (e.g., code spans)
+  // Find code spans first. Emphasis delimiters inside inline elements (e.g., code spans)
   // should not be processed. Currently only code spans are handled; other inline elements
   // (e.g., links, raw HTML) may need similar treatment in the future.
-  const codeRegex = textFormatTransformersIndex.fullMatchRegExpByTag['`'];
   const codeTransformer = textFormatTransformersIndex.transformersByTag['`'];
 
   const excludeRanges: {start: number; end: number}[] = [];
   let codeMatch = null;
-  if (codeRegex && codeTransformer) {
-    const globalRegex = new RegExp(codeRegex.source, 'g');
-    const matches = Array.from(textContent.matchAll(globalRegex));
+  if (codeTransformer) {
+    const codeSpans = scanCodeSpans(textContent);
 
-    for (const match of matches) {
-      // Group 1 captures the character preceding the opening backtick (or an
-      // empty string when the span starts at position 0). Offset past it so
-      // startIndex points to the backtick itself.
-      const startIndex = match.index! + match[1].length;
-      const endIndex = match.index! + match[0].length;
-
+    for (const span of codeSpans) {
       if (!codeMatch) {
         codeMatch = {
-          content: match[3],
-          endIndex,
-          startIndex,
+          content: span.content,
+          endIndex: span.endIndex,
+          startIndex: span.startIndex,
           tag: '`',
         };
       }
 
       excludeRanges.push({
-        end: endIndex,
-        start: startIndex,
+        end: span.endIndex,
+        start: span.startIndex,
       });
     }
   }
@@ -129,6 +120,86 @@ export function findOutermostTextFormatTransformer(
   };
 }
 
+// Finds all inline code spans, left to right and non-overlapping, per CommonMark
+// rules: https://spec.commonmark.org/#code-spans. A run opens a span and the
+// next run of equal length closes it. An escaped backtick (`\``) cannot open a
+// span, but backslashes are otherwise literal and don't prevent closing.
+function scanCodeSpans(text: string): {
+  startIndex: number;
+  endIndex: number;
+  content: string;
+}[] {
+  const isEscaped = (index: number): boolean => {
+    let count = 0;
+    for (let i = index - 1; i >= 0 && text[i] === '\\'; i--) {
+      count++;
+    }
+    return count % 2 === 1;
+  };
+
+  // Collect maximal backtick runs.
+  const runs: {index: number; length: number}[] = [];
+  let i = 0;
+  while (i < text.length) {
+    if (text[i] === '`') {
+      let length = 1;
+      while (i + length < text.length && text[i + length] === '`') {
+        length++;
+      }
+      runs.push({index: i, length});
+      i += length;
+    } else {
+      i++;
+    }
+  }
+
+  const spans: {content: string; endIndex: number; startIndex: number}[] = [];
+  let openIdx = 0;
+  while (openIdx < runs.length) {
+    const opener = runs[openIdx];
+
+    // An escaped backtick run is a literal backtick and cannot open a span.
+    if (isEscaped(opener.index)) {
+      openIdx++;
+      continue;
+    }
+
+    let closeIdx = -1;
+    for (let c = openIdx + 1; c < runs.length; c++) {
+      if (runs[c].length === opener.length) {
+        closeIdx = c;
+        break;
+      }
+    }
+
+    if (closeIdx === -1) {
+      // No matching closer; treat this run as literal and try the next one.
+      openIdx++;
+      continue;
+    }
+
+    const closer = runs[closeIdx];
+    let content = text.slice(opener.index + opener.length, closer.index);
+    if (
+      content.length >= 2 &&
+      content.startsWith(' ') &&
+      content.endsWith(' ') &&
+      /[^ ]/.test(content)
+    ) {
+      content = content.slice(1, -1);
+    }
+
+    spans.push({
+      content,
+      endIndex: closer.index + closer.length,
+      startIndex: opener.index,
+    });
+    openIdx = closeIdx + 1;
+  }
+
+  return spans;
+}
+
 function scanDelimiters(
   text: string,
   transformersIndex: TextFormatTransformersIndex,
@@ -180,7 +251,6 @@ function scanDelimiters(
         char,
         index: i,
         length: len,
-        originalLength: len,
       });
     }
 
@@ -212,7 +282,14 @@ function processEmphasis(
       continue;
     }
 
-    const bottomKey = `${closer.char}${closer.canOpen}`;
+    // The "no opener below this point" shortcut must be keyed by everything
+    // the opener search outcome depends on: the marker, whether the closer
+    // can also open (toggles the rule of 3), and the closer's length mod 3
+    // (the rule of 3 blocks different openers per class — CommonMark's
+    // openers_bottom is likewise per length-mod-3). The length key uses the
+    // *current* length: a partially consumed closer switches class and must
+    // rescan openers a shorter closer already gave up on (#4895).
+    const bottomKey = `${closer.char}${closer.canOpen}${closer.length % 3}`;
     const bottom = openersBottom[bottomKey] ?? -1;
     let foundOpener = false;
 
@@ -228,13 +305,18 @@ function processEmphasis(
         continue;
       }
 
-      // Rule of 3
+      // Rule of 3, on the *remaining* lengths: a delimiter run partially
+      // consumed by an earlier pairing is re-measured, matching micromark
+      // (the CommonMark reference this models). Using the original lengths
+      // instead would refuse pairings like the `**` opener with the two
+      // markers left of a `****` run in `**llo*wor****`, so the exporter's
+      // own output for overlapping formats would not re-import (#4895).
       if (opener.canClose || closer.canOpen) {
-        const sum = opener.originalLength + closer.originalLength;
+        const sum = opener.length + closer.length;
         if (
           sum % 3 === 0 &&
-          opener.originalLength % 3 !== 0 &&
-          closer.originalLength % 3 !== 0
+          opener.length % 3 !== 0 &&
+          closer.length % 3 !== 0
         ) {
           continue;
         }

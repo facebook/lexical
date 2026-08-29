@@ -6,12 +6,11 @@
  *
  */
 
-import type {JSX} from 'react';
+import type {JSX, ReactNode} from 'react';
 
 import './Button.css';
 
 import * as React from 'react';
-import {ReactNode} from 'react';
 
 import joinClasses from '../utils/joinClasses';
 

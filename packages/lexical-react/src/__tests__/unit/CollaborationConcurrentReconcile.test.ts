@@ -280,7 +280,7 @@ async function runProgram(cids: number[], ops: Op[]): Promise<string[]> {
       },
       {discrete: true},
     );
-    return ed.getEditorState().read(() =>
+    return ed.read('latest', () =>
       $getRoot()
         .getChildren()
         .map(c => '<' + c.getTextContent() + '>')

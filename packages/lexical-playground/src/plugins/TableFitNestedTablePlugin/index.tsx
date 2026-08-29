@@ -6,12 +6,16 @@
  *
  */
 
-import type {LexicalNode} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isTableNode, TableNode} from '@lexical/table';
-import {$dfs, $findMatchingParent} from '@lexical/utils';
-import {$getNodeByKey, $isRootOrShadowRoot, LexicalEditor} from 'lexical';
+import {$dfsWithSlots} from '@lexical/utils';
+import {
+  $findMatchingParent,
+  $getNodeByKey,
+  $isRootOrShadowRoot,
+  type LexicalEditor,
+  type LexicalNode,
+} from 'lexical';
 import {useEffect} from 'react';
 
 const PIXEL_VALUE_REG_EXP = /^(\d+(?:\.\d+)?)px$/;
@@ -74,7 +78,9 @@ function $resizeDOMColWidthsToFit(
   if (!editorWindow) {
     return;
   }
-  const allNestedTables = $dfs(node)
+  // $dfsWithSlots (not $dfs) so nested tables sitting inside a slot host
+  // subtree are still discovered. Mirrors LexicalTablePluginHelpers's caller.
+  const allNestedTables = $dfsWithSlots(node)
     .map(n => n.node)
     .filter($isTableNode);
   for (const table of allNestedTables) {
@@ -126,7 +132,7 @@ export default function TableFitNestedTablePlugin(): null {
 
   useEffect(() => {
     return editor.registerMutationListener(TableNode, nodeMutations => {
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const modifiedTables = new Set<TableNode>();
         for (const [nodeKey, mutation] of nodeMutations) {
           if (mutation === 'created' || mutation === 'updated') {

@@ -6,22 +6,22 @@
  *
  */
 
-import type {
-  BaseSelection,
-  EditorConfig,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
-
 import {
+  $applyNodeReplacement,
+  $getDocument,
+  $isRangeSelection,
   addClassNamesToElement,
+  type BaseSelection,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type RangeSelection,
   removeClassNamesFromElement,
-} from '@lexical/utils';
-import {$applyNodeReplacement, $isRangeSelection, ElementNode} from 'lexical';
+  type SerializedElementNode,
+  type Spread,
+} from 'lexical';
 
 export type SerializedMarkNode = Spread<
   {
@@ -37,25 +37,13 @@ export class MarkNode extends ElementNode {
   /** @internal */
   __ids: readonly string[];
 
-  static getType(): string {
-    return 'mark';
-  }
-
-  static clone(node: MarkNode): MarkNode {
-    return new MarkNode(node.__ids, node.__key);
+  $config() {
+    return this.config('mark', {extends: ElementNode});
   }
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__ids = prevNode.__ids;
-  }
-
-  static importDOM(): null {
-    return null;
-  }
-
-  static importJSON(serializedNode: SerializedMarkNode): MarkNode {
-    return $createMarkNode().updateFromJSON(serializedNode);
   }
 
   updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedMarkNode>): this {
@@ -75,7 +63,7 @@ export class MarkNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('mark');
+    const element = $getDocument().createElement('mark');
     addClassNamesToElement(element, config.theme.mark);
     if (this.__ids.length > 1) {
       addClassNamesToElement(element, config.theme.markOverlap);
@@ -94,12 +82,15 @@ export class MarkNode extends ElementNode {
     const nextIDsCount = nextIDs.length;
     const overlapTheme = config.theme.markOverlap;
 
-    if (prevIDsCount !== nextIDsCount) {
-      if (prevIDsCount === 1) {
-        if (nextIDsCount === 2) {
-          addClassNamesToElement(element, overlapTheme);
-        }
-      } else if (nextIDsCount === 1) {
+    // Mirror createDOM's rule (`ids.length > 1` carries the overlap class)
+    // rather than enumerating transitions: only 1 -> 2 and N -> 1 used to be
+    // handled, so e.g. 1 -> 3 never gained the class and 2 -> 0 never lost it.
+    const hadOverlap = prevIDsCount > 1;
+    const hasOverlap = nextIDsCount > 1;
+    if (hadOverlap !== hasOverlap) {
+      if (hasOverlap) {
+        addClassNamesToElement(element, overlapTheme);
+      } else {
         removeClassNamesFromElement(element, overlapTheme);
       }
     }
@@ -145,11 +136,11 @@ export class MarkNode extends ElementNode {
     return markNode;
   }
 
-  canInsertTextBefore(): false {
+  canInsertTextBefore(): boolean {
     return false;
   }
 
-  canInsertTextAfter(): false {
+  canInsertTextAfter(): boolean {
     return false;
   }
 

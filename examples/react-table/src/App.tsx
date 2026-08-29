@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {LexicalEditor} from 'lexical';
+
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -19,7 +21,6 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {LexicalEditor} from 'lexical';
 import {useEffect, useState} from 'react';
 
 import ExampleTheme from './ExampleTheme';

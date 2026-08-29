@@ -7,14 +7,14 @@
  */
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
-import {describe, expect, test} from 'vitest';
-
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $isParagraphNode,
-} from '../..';
+} from 'lexical';
+import {describe, expect, test} from 'vitest';
+
 import {
   $createTestDecoratorNode,
   $createTestShadowRootNode,

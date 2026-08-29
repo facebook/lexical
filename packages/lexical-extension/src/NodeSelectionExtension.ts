@@ -14,7 +14,7 @@ import {
 } from 'lexical';
 
 import {EditorStateExtension} from './EditorStateExtension';
-import {computed, effect, ReadonlySignal, signal} from './signals';
+import {computed, effect, type ReadonlySignal, signal} from './signals';
 import {watchedSignal} from './watchedSignal';
 
 const EMPTY_SET = new Set<NodeKey>();
@@ -27,7 +27,7 @@ const EMPTY_SET = new Set<NodeKey>();
  * currently selected or not. A framework independent
  * alternative to {@link useLexicalNodeSelection}.
  */
-export const NodeSelectionExtension = /* @__PURE__ */ defineExtension({
+export const NodeSelectionExtension = defineExtension({
   build(editor, config, state) {
     const editorStateStore = state.getDependency(EditorStateExtension).output;
     const watchedNodeStore = signal({

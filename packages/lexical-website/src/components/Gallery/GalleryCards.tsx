@@ -14,7 +14,7 @@ import React from 'react';
 import Card from './Card';
 import Filters from './components/Filters';
 import SearchBar from './components/SearchBar';
-import {Example, plugins} from './pluginList';
+import {type Example, plugins} from './pluginList';
 import styles from './styles.module.css';
 import {TagList} from './tagList';
 import {useFilteredExamples} from './utils';

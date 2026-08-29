@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import invariant from '@lexical/internal/invariant';
 import {
@@ -30,6 +28,7 @@ import {
 import {JSDOM} from 'jsdom';
 import * as lexical from 'lexical';
 import {
+  $create,
   $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
@@ -52,41 +51,51 @@ import {
   COMMAND_PRIORITY_BEFORE_LOW,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
-  CommandListenerPriority,
-  CommandListenerPriorityBefore,
+  type CommandListenerPriority,
+  type CommandListenerPriorityBefore,
   createCommand,
   createEditor,
-  EditorState,
-  ElementNode,
+  type EditorState,
   getDOMSelection,
   HISTORY_MERGE_TAG,
   type Klass,
+  type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
   type LexicalNodeReplacement,
   mergeRegister,
   ParagraphNode,
   RootNode,
+  safeCast,
   SKIP_DOM_SELECTION_TAG,
   TextNode,
-  UpdateListenerPayload,
+  type UpdateListenerPayload,
 } from 'lexical';
 import * as React from 'react';
 import {
   act,
   createRef,
-  ReactNode,
+  type JSX,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from 'react';
 import {createPortal} from 'react-dom';
-import {createRoot, Root} from 'react-dom/client';
-import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
+import {createRoot, type Root} from 'react-dom/client';
+import {
+  afterEach,
+  assert,
+  assertType,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
-import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
   $assertNodeType,
   $createTestDecoratorNode,
@@ -696,9 +705,9 @@ describe('LexicalEditor tests', () => {
 
     await Promise.resolve().then();
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
     // Calculate an expected update listener paylaod
@@ -985,8 +994,8 @@ describe('LexicalEditor tests', () => {
 
     await editor.update(() => {
       const root = $getRoot();
-      const paragraph = root.getFirstChild() as ParagraphNode;
-      const textNode = paragraph.getFirstChild() as TextNode;
+      const paragraph = $assertNodeType(root.getFirstChild(), $isParagraphNode);
+      const textNode = $assertNodeType(paragraph.getFirstChild(), $isTextNode);
 
       textNode.getWritable();
 
@@ -1156,7 +1165,10 @@ describe('LexicalEditor tests', () => {
 
     it('on splitText', async () => {
       await editor.update(() => {
-        const textNode1 = $getNodeByKey(textNodeKeys[1]) as TextNode;
+        const textNode1 = $assertNodeType(
+          $getNodeByKey(textNodeKeys[1]),
+          $isTextNode,
+        );
         textNode1.setTextContent('67');
         textNode1.splitText(1);
         textTransformCount.push(0, 0);
@@ -1166,7 +1178,10 @@ describe('LexicalEditor tests', () => {
 
     it('on append', async () => {
       await editor.update(() => {
-        const paragraph1 = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph1 = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         paragraph1.append($createTextNode('6').toggleUnmergeable());
         textTransformCount.push(0);
       });
@@ -1392,7 +1407,7 @@ describe('LexicalEditor tests', () => {
     });
 
     for (let i = 0; i < 150; i++) {
-      editor.dispatchCommand(BURST_COMMAND, undefined);
+      editor.dispatchCommand(BURST_COMMAND);
       // Yield only microtasks: commits flush, but the macrotask budget reset
       // never gets a chance to run within the burst.
       for (let j = 0; j < 4; j++) {
@@ -1429,7 +1444,7 @@ describe('LexicalEditor tests', () => {
     await new Promise(resolve => setTimeout(resolve, 0));
 
     const unregisterMutation = editor.registerMutationListener(TextNode, () => {
-      editor.dispatchCommand(NOOP_COMMAND, undefined);
+      editor.dispatchCommand(NOOP_COMMAND);
     });
     // Unbounded: flips the text content again on every commit, forever.
     const unregisterUpdate = editor.registerUpdateListener(() => {
@@ -1473,6 +1488,54 @@ describe('LexicalEditor tests', () => {
       await Promise.resolve();
     }
     expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('applies (and warns in DEV) when a command dispatched from a read-only context mutates the editor', async () => {
+    init();
+
+    const READONLY_MUTATE_COMMAND = createCommand<void>(
+      'READONLY_MUTATE_COMMAND',
+    );
+    // A listener that mutates the editor state, mirroring the real-world case
+    // (e.g. CLEAR_EDITOR_COMMAND building a fresh paragraph).
+    const unregister = editor.registerCommand(
+      READONLY_MUTATE_COMMAND,
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('mutated')));
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      // Dispatching from inside editor.read() (a read-only context) is the
+      // application anti-pattern. Previously the mutating listener ran inline
+      // against the frozen node map and threw (caught by _onError, silently
+      // dropping the mutation). It should now be deferred to a writable update
+      // so the mutation actually applies, and warn in DEV.
+      editor.read(() => {
+        editor.dispatchCommand(READONLY_MUTATE_COMMAND);
+      });
+      // Deferred update flushes on the next tick.
+      await Promise.resolve();
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toMatch(/read-only context/);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('mutated');
+      });
+
+      // A top-level (writable) dispatch must NOT warn and applies inline.
+      warnSpy.mockClear();
+      editor.dispatchCommand(READONLY_MUTATE_COMMAND);
+      expect(warnSpy).toHaveBeenCalledTimes(0);
+    } finally {
+      warnSpy.mockRestore();
+      unregister();
+    }
   });
 
   it('Should be able to update an editor state without a root element', () => {
@@ -1559,7 +1622,7 @@ describe('LexicalEditor tests', () => {
       useEffect(() => {
         editor.update(() => {
           const root = $getRoot();
-          const firstChild = root.getFirstChild() as ParagraphNode | null;
+          const firstChild = root.getFirstChild();
           const text = changeElement ? 'Change successful' : 'Not changed';
 
           if (firstChild === null) {
@@ -1568,7 +1631,10 @@ describe('LexicalEditor tests', () => {
             paragraph.append(textNode);
             root.append(paragraph);
           } else {
-            const textNode = firstChild.getFirstChild() as TextNode;
+            const textNode = $assertNodeType(
+              $assertNodeType(firstChild, $isParagraphNode).getFirstChild(),
+              $isTextNode,
+            );
             textNode.setTextContent(text);
           }
         });
@@ -1810,7 +1876,7 @@ describe('LexicalEditor tests', () => {
       // Wait for update to complete
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const paragraph = root.getFirstChild()!;
         expect(root).toEqual({
@@ -1825,6 +1891,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1841,6 +1909,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 0,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1901,9 +1971,15 @@ describe('LexicalEditor tests', () => {
         parsedEditorState = editor.parseEditorState(stringifiedEditorState);
         parsedEditorState.read(() => {
           parsedRoot = $getRoot();
-          parsedParagraph = parsedRoot.getFirstChild() as ParagraphNode;
+          parsedParagraph = $assertNodeType(
+            parsedRoot.getFirstChild(),
+            $isParagraphNode,
+          );
           paragraphKey = parsedParagraph.getKey();
-          parsedText = parsedParagraph.getFirstChild() as TextNode;
+          parsedText = $assertNodeType(
+            parsedParagraph.getFirstChild(),
+            $isTextNode,
+          );
           textKey = parsedText.getKey();
         });
       });
@@ -1921,6 +1997,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1937,6 +2015,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1985,9 +2065,15 @@ describe('LexicalEditor tests', () => {
         parsedEditorState = editor.parseEditorState(stringifiedEditorState);
         parsedEditorState.read(() => {
           parsedRoot = $getRoot();
-          parsedParagraph = parsedRoot.getFirstChild() as ParagraphNode;
+          parsedParagraph = $assertNodeType(
+            parsedRoot.getFirstChild(),
+            $isParagraphNode,
+          );
           paragraphKey = parsedParagraph.getKey();
-          parsedText = parsedParagraph.getFirstChild() as TextNode;
+          parsedText = $assertNodeType(
+            parsedParagraph.getFirstChild(),
+            $isTextNode,
+          );
           textKey = parsedText.getKey();
         });
       });
@@ -2005,6 +2091,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -2021,6 +2109,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -2109,7 +2199,10 @@ describe('LexicalEditor tests', () => {
       let textNode2Key: string;
 
       await update(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         paragraphNodeKey = paragraph.getKey();
 
         const [elementNode1, textNode1] = $createElementNodeWithText('A');
@@ -2124,8 +2217,14 @@ describe('LexicalEditor tests', () => {
       });
 
       await update(() => {
-        const elementNode1 = $getNodeByKey(elementNode1Key) as ElementNode;
-        const elementNode2 = $getNodeByKey(elementNode2Key) as TextNode;
+        const elementNode1 = $assertNodeType(
+          $getNodeByKey(elementNode1Key),
+          $isElementNode,
+        );
+        const elementNode2 = $assertNodeType(
+          $getNodeByKey(elementNode2Key),
+          $isElementNode,
+        );
         elementNode1.append(elementNode2);
       });
       const keys = [
@@ -2161,7 +2260,10 @@ describe('LexicalEditor tests', () => {
       let elementNode2Key: string;
 
       await update(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
 
         const elementNode1 = $createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
@@ -2173,8 +2275,14 @@ describe('LexicalEditor tests', () => {
       });
 
       await update(() => {
-        const elementNode1 = $getNodeByKey(elementNode1Key) as TextNode;
-        const elementNode2 = $getNodeByKey(elementNode2Key) as ElementNode;
+        const elementNode1 = $assertNodeType(
+          $getNodeByKey(elementNode1Key),
+          $isElementNode,
+        );
+        const elementNode2 = $assertNodeType(
+          $getNodeByKey(elementNode2Key),
+          $isElementNode,
+        );
         elementNode2.append(elementNode1);
       });
 
@@ -2197,7 +2305,10 @@ describe('LexicalEditor tests', () => {
       let elementNode3Key: string;
 
       await update(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
 
         const elementNode1 = $createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
@@ -2212,9 +2323,18 @@ describe('LexicalEditor tests', () => {
       });
 
       await update(() => {
-        const elementNode1 = $getNodeByKey(elementNode1Key) as ElementNode;
-        const elementNode2 = $getNodeByKey(elementNode2Key) as ElementNode;
-        const elementNode3 = $getNodeByKey(elementNode3Key) as TextNode;
+        const elementNode1 = $assertNodeType(
+          $getNodeByKey(elementNode1Key),
+          $isElementNode,
+        );
+        const elementNode2 = $assertNodeType(
+          $getNodeByKey(elementNode2Key),
+          $isElementNode,
+        );
+        const elementNode3 = $assertNodeType(
+          $getNodeByKey(elementNode3Key),
+          $isElementNode,
+        );
         elementNode2.append(elementNode3);
         elementNode1.append(elementNode3);
       });
@@ -2410,7 +2530,10 @@ describe('LexicalEditor tests', () => {
     });
 
     await editor.update(() => {
-      const textNode = $getNodeByKey(textNodeKeys[0]) as TextNode;
+      const textNode = $assertNodeType(
+        $getNodeByKey(textNodeKeys[0]),
+        $isTextNode,
+      );
       const textNode2 = $createTextNode('bar').toggleFormat('bold');
       const textNode3 = $createTextNode('xyz').toggleFormat('italic');
       textNode.insertAfter(textNode2);
@@ -2485,9 +2608,23 @@ describe('LexicalEditor tests', () => {
       }
     }
     expect(() =>
-      createEditor({nodes: [FakeLexicalNode as Klass<LexicalNode>]}),
-    ).toThrowError(
-      /FakeLexicalNode \(type fake-node\) does not subclass LexicalNode from the lexical package used by this editor/,
+      // @ts-expect-error
+      createEditor({nodes: [FakeLexicalNode]}),
+    ).toThrow(
+      /nodes\[0\] FakeLexicalNode \(type fake-node\) is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
+    );
+  });
+  it('rejects creating an editor with invalid LexicalNode parent class (no getType)', async () => {
+    class FakeLexicalNode {}
+    // @ts-expect-error
+    expect(() => createEditor({nodes: [FakeLexicalNode]})).toThrow(
+      /nodes\[0\] FakeLexicalNode is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
+    );
+  });
+  it('rejects creating an editor with invalid LexicalNode parent class (undefined)', async () => {
+    // @ts-expect-error
+    expect(() => createEditor({nodes: [undefined]})).toThrow(
+      /nodes\[0\] undefined is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
     );
   });
   it('mutation listener on newly initialized editor', async () => {
@@ -2513,7 +2650,10 @@ describe('LexicalEditor tests', () => {
     const textNodeKeys: string[] = [];
 
     await editor.update(() => {
-      const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+      const paragraph = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isParagraphNode,
+      );
       const textNode1 = $createTextNode('foo');
       paragraph.append(textNode1);
       textNodeKeys.push(textNode1.getKey());
@@ -2528,7 +2668,10 @@ describe('LexicalEditor tests', () => {
     );
 
     await editor.update(() => {
-      const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+      const paragraph = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isParagraphNode,
+      );
       const textNode2 = $createTextNode('bar').toggleFormat('bold');
       const textNode3 = $createTextNode('xyz').toggleFormat('italic');
       paragraph.append(textNode2, textNode3);
@@ -2596,7 +2739,10 @@ describe('LexicalEditor tests', () => {
     });
 
     await editor.update(() => {
-      const textNode = $getNodeByKey(textNodeKeys[0]) as TextNode;
+      const textNode = $assertNodeType(
+        $getNodeByKey(textNodeKeys[0]),
+        $isTextNode,
+      );
       const textNode2 = $createTextNode('bar').toggleFormat('bold');
       const textNode3 = $createTextNode('xyz').toggleFormat('italic');
       textNode.insertAfter(textNode2);
@@ -2815,6 +2961,54 @@ describe('LexicalEditor tests', () => {
     expect(historicCommit!.tags).toContain('historic-tag');
   });
 
+  it('defers onUpdate callbacks when setEditorState commits inside an update', async () => {
+    init();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('historic'));
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    const historicState = editor.getEditorState();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('current'));
+        root.append(paragraph);
+      },
+      {discrete: true},
+    );
+
+    const events: string[] = [];
+    editor.update(
+      () => {
+        events.push('update start');
+        editor.setEditorState(historicState);
+        events.push('update end');
+      },
+      {
+        onUpdate: () => {
+          events.push('onUpdate');
+        },
+      },
+    );
+    events.push('after update');
+
+    expect(events).toEqual(['update start', 'update end', 'after update']);
+
+    await Promise.resolve();
+    expect(events).toEqual([
+      'update start',
+      'update end',
+      'after update',
+      'onUpdate',
+    ]);
+  });
+
   it('mutation listeners does not trigger when other node types are mutated', async () => {
     init();
 
@@ -2856,14 +3050,20 @@ describe('LexicalEditor tests', () => {
     });
 
     await editor.update(() => {
-      const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+      const paragraph = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isParagraphNode,
+      );
       const textNode3 = $createTextNode('xyz').toggleFormat('bold');
       paragraph.append(textNode3);
       textNodeKeys.push(textNode3.getKey());
     });
 
     await editor.update(() => {
-      const textNode3 = $getNodeByKey(textNodeKeys[2]) as TextNode;
+      const textNode3 = $assertNodeType(
+        $getNodeByKey(textNodeKeys[2]),
+        $isTextNode,
+      );
       textNode3.toggleFormat('bold'); // Normalize with foobar
     });
 
@@ -2919,15 +3119,19 @@ describe('LexicalEditor tests', () => {
 
     // Change first text node's content.
     await editor.update(() => {
-      const textNode1 = $getNodeByKey(textNodeKeys[0]) as TextNode;
+      const textNode1 = $assertNodeType(
+        $getNodeByKey(textNodeKeys[0]),
+        $isTextNode,
+      );
       textNode1.setTextContent('Test'); // Normalize with foobar
     });
 
     // Append text node to paragraph.
     await editor.update(() => {
-      const paragraphNode1 = $getNodeByKey(
-        paragraphNodeKeys[0],
-      ) as ParagraphNode;
+      const paragraphNode1 = $assertNodeType(
+        $getNodeByKey(paragraphNodeKeys[0]),
+        $isParagraphNode,
+      );
       const textNode1 = $createTextNode('foo');
       paragraphNode1.append(textNode1);
     });
@@ -3230,6 +3434,85 @@ describe('LexicalEditor tests', () => {
     expect(calls).toHaveLength(0);
   });
 
+  it('has an invariant payload type for commands', () => {
+    const EVENT_COMMAND = createCommand<Event>('EVENT_COMMAND');
+    const MOUSE_EVENT_COMMAND = createCommand<MouseEvent>(
+      'MOUSE_EVENT_COMMAND',
+    );
+    const MAYBE_MOUSE_EVENT_COMMAND = createCommand<undefined | MouseEvent>(
+      'MAYBE_MOUSE_EVENT_COMMAND',
+    );
+    const VOID_COMMAND = createCommand<void>('VOID_COMMAND');
+    // Test expected correct paths
+    editor.dispatchCommand(EVENT_COMMAND, new Event('test_event'));
+    editor.dispatchCommand(MOUSE_EVENT_COMMAND, new MouseEvent('mouse'));
+    editor.dispatchCommand(MAYBE_MOUSE_EVENT_COMMAND, new MouseEvent('mouse'));
+    editor.dispatchCommand(MAYBE_MOUSE_EVENT_COMMAND);
+    editor.dispatchCommand(VOID_COMMAND, undefined);
+    editor.dispatchCommand(VOID_COMMAND);
+    // Test expected inference
+    editor.registerCommand(
+      EVENT_COMMAND,
+      e => {
+        assertType<Event>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      MOUSE_EVENT_COMMAND,
+      e => {
+        assertType<MouseEvent>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      MAYBE_MOUSE_EVENT_COMMAND,
+      e => {
+        assertType<undefined | MouseEvent>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      VOID_COMMAND,
+      e => {
+        assertType<void>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    // Verify that types can't be narrowed with annotations
+    editor.registerCommand(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand<LexicalCommand<MouseEvent>>(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    // Verify that types can't be widened with annotations
+    // @ts-expect-error
+    safeCast<LexicalCommand<Event>>(MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<unknown>>(MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<undefined>>(MAYBE_MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<MouseEvent>>(MAYBE_MOUSE_EVENT_COMMAND);
+    editor.registerCommand(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
+  });
+
   it('allows using the same listener for multiple node types', async () => {
     init();
 
@@ -3343,9 +3626,9 @@ describe('LexicalEditor tests', () => {
       },
     );
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
     // Calculate an expected update listener paylaod
@@ -3374,9 +3657,9 @@ describe('LexicalEditor tests', () => {
       },
     );
 
-    const textContent = headless
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = headless.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
@@ -3405,9 +3688,9 @@ describe('LexicalEditor tests', () => {
         discrete: true,
       },
     );
-    const textContent = headless
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = headless.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
   });
 
@@ -3431,9 +3714,9 @@ describe('LexicalEditor tests', () => {
       );
     });
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
@@ -3606,7 +3889,7 @@ describe('LexicalEditor tests', () => {
         expect(text.getTextContent()).toBe('123');
       });
 
-      await newEditor.getEditorState().read(() => {
+      await newEditor.read('latest', () => {
         expect(mockTransform).toHaveBeenCalledTimes(0);
       });
 
@@ -3654,12 +3937,173 @@ describe('LexicalEditor tests', () => {
         expect(text.getTextContent()).toBe('123');
       });
 
-      await newEditor.getEditorState().read(() => {
+      await newEditor.read('latest', () => {
         expect(mockTransform).toHaveBeenCalledTimes(1);
       });
 
       expect(onError).not.toHaveBeenCalled();
       removeTransform();
+    });
+
+    it('applies the replacement when deserializing a base node type via parseEditorState (#8640 regression)', async () => {
+      class CustomParagraphNode extends ParagraphNode {
+        $config() {
+          return this.config('custom-paragraph', {extends: ParagraphNode});
+        }
+      }
+      const onError = vi.fn();
+
+      const newEditor = createTestEditor({
+        nodes: [
+          CustomParagraphNode,
+          {
+            replace: ParagraphNode,
+            with: () => new CustomParagraphNode(),
+            withKlass: CustomParagraphNode,
+          },
+        ],
+        onError: onError,
+      });
+
+      // Serialized state whose paragraph uses the default type ("paragraph"), as
+      // an older persisted document (or one produced without the replacement)
+      // would contain.
+      const json = {
+        root: {
+          children: [
+            {
+              children: [],
+              type: 'paragraph',
+            },
+          ],
+          type: 'root',
+        },
+      };
+
+      newEditor.setEditorState(
+        newEditor.parseEditorState(JSON.stringify(json)),
+      );
+
+      newEditor.read(() => {
+        const paragraph = $getRoot().getFirstChild();
+        expect(paragraph instanceof CustomParagraphNode).toBe(true);
+        expect(paragraph!.getType()).toBe('custom-paragraph');
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('$create resolves withKlass directly, and still honors a `with` without one', () => {
+      // $create looks the replacement class up rather than building the
+      // replaced node and throwing it away, which is why importing a document
+      // is not paying for a construction per replaced node. A `with` given
+      // without a `withKlass` is the case that cannot be resolved ahead of
+      // construction — only its function knows what to build — so it is
+      // applied the old way instead of being skipped.
+      class ResolvedParagraph extends ParagraphNode {
+        $config() {
+          return this.config('resolved-paragraph', {extends: ParagraphNode});
+        }
+      }
+      class LegacyParagraph extends ParagraphNode {
+        $config() {
+          return this.config('legacy-paragraph', {extends: ParagraphNode});
+        }
+      }
+
+      const resolved = createTestEditor({
+        nodes: [
+          ResolvedParagraph,
+          {
+            replace: ParagraphNode,
+            with: () => new ResolvedParagraph(),
+            withKlass: ResolvedParagraph,
+          },
+        ],
+        onError: err => {
+          throw err;
+        },
+      });
+      resolved.update(
+        () => {
+          expect($create(ParagraphNode)).toBeInstanceOf(ResolvedParagraph);
+        },
+        {discrete: true},
+      );
+
+      const mockWarning = vi
+        .spyOn(console, 'warn')
+        .mockImplementationOnce(() => {});
+      const legacy = createTestEditor({
+        nodes: [
+          LegacyParagraph,
+          {replace: ParagraphNode, with: () => new LegacyParagraph()},
+        ],
+        onError: err => {
+          throw err;
+        },
+      });
+      expect(mockWarning).toHaveBeenCalledWith(
+        `Override for ParagraphNode specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
+      );
+      mockWarning.mockRestore();
+      legacy.update(
+        () => {
+          expect($create(ParagraphNode)).toBeInstanceOf(LegacyParagraph);
+        },
+        {discrete: true},
+      );
+    });
+
+    it('applies the replacement on import for `with` without `withKlass`', async () => {
+      class CustomParagraphNode extends ParagraphNode {
+        $config() {
+          return this.config('custom-paragraph', {extends: ParagraphNode});
+        }
+      }
+      const onError = vi.fn();
+
+      const mockWarning = vi
+        .spyOn(console, 'warn')
+        .mockImplementationOnce(() => {});
+      const newEditor = createTestEditor({
+        nodes: [
+          CustomParagraphNode,
+          {
+            replace: ParagraphNode,
+            with: () => new CustomParagraphNode(),
+          },
+        ],
+        onError: onError,
+      });
+      expect(mockWarning).toHaveBeenCalledWith(
+        `Override for ParagraphNode specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
+      );
+      mockWarning.mockRestore();
+
+      const json = {
+        root: {
+          children: [
+            {
+              children: [],
+              type: 'paragraph',
+            },
+          ],
+          type: 'root',
+        },
+      };
+
+      newEditor.setEditorState(
+        newEditor.parseEditorState(JSON.stringify(json)),
+      );
+
+      newEditor.read(() => {
+        const paragraph = $getRoot().getFirstChild();
+        expect(paragraph instanceof CustomParagraphNode).toBe(true);
+        expect(paragraph!.getType()).toBe('custom-paragraph');
+      });
+
+      expect(onError).not.toHaveBeenCalled();
     });
   });
 
@@ -3705,16 +4149,8 @@ describe('LexicalEditor tests', () => {
     vi.spyOn(ParagraphNode, 'importDOM');
 
     class CustomParagraphNode extends ParagraphNode {
-      static getType() {
-        return 'custom-paragraph';
-      }
-
-      static clone(node: CustomParagraphNode) {
-        return new CustomParagraphNode(node.__key);
-      }
-
-      static importJSON(serializedNode: SerializedParagraphNode) {
-        return new CustomParagraphNode().updateFromJSON(serializedNode);
+      $config() {
+        return this.config('custom-paragraph', {extends: ParagraphNode});
       }
     }
 

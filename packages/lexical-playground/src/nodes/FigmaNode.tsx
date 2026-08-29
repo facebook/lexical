@@ -19,7 +19,7 @@ import type {JSX} from 'react';
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
   DecoratorBlockNode,
-  SerializedDecoratorBlockNode,
+  type SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 
@@ -65,8 +65,8 @@ export type SerializedFigmaNode = Spread<
 export class FigmaNode extends DecoratorBlockNode {
   __id: string;
 
-  static getType(): string {
-    return 'figma';
+  $config() {
+    return this.config('figma', {extends: DecoratorBlockNode});
   }
 
   static clone(node: FigmaNode): FigmaNode {

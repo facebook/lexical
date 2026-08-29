@@ -16,8 +16,7 @@
  *
  */
 
-import type {EditorState, LexicalEditor, RangeSelection} from 'lexical';
-
+import {createHeadlessEditor} from '@lexical/headless';
 import {withDOM} from '@lexical/headless/dom';
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {JSDOM} from 'jsdom';
@@ -28,11 +27,13 @@ import {
   $getSelection,
   COMMAND_PRIORITY_NORMAL,
   CONTROLLED_TEXT_INSERTION_COMMAND,
+  type EditorState,
+  type LexicalEditor,
   ParagraphNode,
+  type RangeSelection,
 } from 'lexical';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
-import {createHeadlessEditor} from '../..';
 import {isEmptyNavigator} from '../utils';
 
 describe('LexicalHeadlessEditor', () => {
@@ -202,9 +203,9 @@ describe('LexicalHeadlessEditor', () => {
 
     const cleanup = setupDom();
 
-    const html = editor
-      .getEditorState()
-      .read(() => $generateHtmlFromNodes(editor, null), {editor});
+    const html = editor.read('latest', () =>
+      $generateHtmlFromNodes(editor, null),
+    );
 
     cleanup();
 
@@ -229,9 +230,7 @@ describe('LexicalHeadlessEditor', () => {
         ),
       );
       const html = withDOM(() =>
-        editor
-          .getEditorState()
-          .read(() => $generateHtmlFromNodes(editor, null), {editor}),
+        editor.read('latest', () => $generateHtmlFromNodes(editor, null)),
       );
 
       expect(html).toBe(

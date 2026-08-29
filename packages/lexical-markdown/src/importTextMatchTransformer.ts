@@ -6,8 +6,7 @@
  *
  */
 import type {TextMatchTransformer} from './MarkdownTransformers';
-
-import {type TextNode} from 'lexical';
+import type {TextNode} from 'lexical';
 
 export function findOutermostTextMatchTransformer(
   textNode_: TextNode,

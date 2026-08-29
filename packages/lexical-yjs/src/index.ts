@@ -7,20 +7,19 @@
  */
 
 import type {BaseBinding} from './Bindings';
-import type {LexicalCommand} from 'lexical';
-import type {
-  Doc,
-  RelativePosition,
-  Snapshot,
-  UndoManager,
-  XmlElement,
-  XmlText,
-} from 'yjs';
 
 import './types';
 
-import {createCommand} from 'lexical';
-import {UndoManager as YjsUndoManager} from 'yjs';
+import {createCommand, type LexicalCommand} from 'lexical';
+import {
+  type Doc,
+  type RelativePosition,
+  type Snapshot,
+  type UndoManager,
+  UndoManager as YjsUndoManager,
+  type XmlElement,
+  type XmlText,
+} from 'yjs';
 
 export type UserState = {
   anchorPos: null | RelativePosition;
@@ -32,18 +31,19 @@ export type UserState = {
   [key: string]: unknown;
 };
 export const CONNECTED_COMMAND: LexicalCommand<boolean> =
-  /* @__PURE__ */ createCommand('CONNECTED_COMMAND');
-export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> =
-  /* @__PURE__ */ createCommand('TOGGLE_CONNECT_COMMAND');
+  createCommand('CONNECTED_COMMAND');
+export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> = createCommand(
+  'TOGGLE_CONNECT_COMMAND',
+);
 
 export const DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<{
   // Starting snapshot if defined, otherwise compare since start of time.
   prevSnapshot?: Snapshot;
   // Ending snapshot if defined, otherwise compare against current state of the Yjs document.
   snapshot?: Snapshot;
-}> = /* @__PURE__ */ createCommand('DIFF_VERSIONS_COMMAND');
+}> = createCommand('DIFF_VERSIONS_COMMAND');
 export const CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<void> =
-  /* @__PURE__ */ createCommand('CLEAR_DIFF_VERSIONS_COMMAND');
+  createCommand('CLEAR_DIFF_VERSIONS_COMMAND');
 export {$getYChangeState, renderSnapshot__EXPERIMENTAL} from './RenderSnapshot';
 
 export type ProviderAwareness = {
@@ -82,9 +82,14 @@ export type {
   Binding,
   BindingV2,
   ClientID,
+  CreateYjsBindingOptions,
   ExcludedProperties,
 } from './Bindings';
-export {createBinding, createBindingV2__EXPERIMENTAL} from './Bindings';
+export {
+  createBinding,
+  createBindingV2__EXPERIMENTAL,
+  createYjsBinding,
+} from './Bindings';
 
 export function createUndoManager(
   binding: BaseBinding,

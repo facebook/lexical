@@ -6,7 +6,12 @@
  *
  */
 
-import {$getEditor, defineExtension, LexicalEditor, safeCast} from 'lexical';
+import {
+  $getEditor,
+  defineExtension,
+  type LexicalEditor,
+  safeCast,
+} from 'lexical';
 
 import {LexicalBuilder} from './LexicalBuilder';
 import {namedSignals} from './namedSignals';
@@ -23,10 +28,10 @@ function $defaultGetParentEditor() {
   return editor;
 }
 
-export const NestedEditorExtension = /* @__PURE__ */ defineExtension({
+export const NestedEditorExtension = defineExtension({
   build: (editor, config) =>
     namedSignals({inheritEditableFromParent: config.inheritEditableFromParent}),
-  config: /* @__PURE__ */ safeCast<NestedEditorConfig>({
+  config: safeCast<NestedEditorConfig>({
     $getParentEditor: $defaultGetParentEditor,
     inheritEditableFromParent: false,
   }),

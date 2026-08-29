@@ -5,8 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {$generateNodesFromDOM} from '@lexical/html';
+import {
+  $createListItemNode,
+  $createListNode,
+  $handleListInsertParagraph,
+  $isListItemNode,
+  $isListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -31,15 +39,7 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {assert, beforeEach, describe, expect, it, test} from 'vitest';
 
-import {
-  $createListItemNode,
-  $createListNode,
-  $isListItemNode,
-  $isListNode,
-  ListItemNode,
-  ListNode,
-} from '../..';
-import {$handleIndent, $handleListInsertParagraph} from '../../formatList';
+import {$handleIndent} from '../../formatList';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -716,6 +716,68 @@ describe('LexicalListItemNode tests', () => {
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
+                </li>
+              </ul>
+            </div>
+          `,
+        );
+      });
+
+      //   - A
+      // - x
+      //   1. B
+      test('both siblings are nested with a different listType', async () => {
+        const {editor} = testEnv;
+        let x: ListItemNode;
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const parent = new ListNode('bullet', 1);
+
+          const A_listItem = new ListItemNode();
+          const A_nestedList = new ListNode('bullet', 1);
+          const A_nestedListItem = new ListItemNode();
+          A_listItem.append(A_nestedList);
+          A_nestedList.append(A_nestedListItem);
+          A_nestedListItem.append(new TextNode('A'));
+
+          x = new ListItemNode();
+          x.append(new TextNode('x'));
+
+          const B_listItem = new ListItemNode();
+          const B_nestedList = new ListNode('number', 1);
+          const B_nestedListItem = new ListItemNode();
+          B_listItem.append(B_nestedList);
+          B_nestedList.append(B_nestedListItem);
+          B_nestedListItem.append(new TextNode('B'));
+
+          parent.append(A_listItem, x, B_listItem);
+          root.append(parent);
+        });
+
+        await editor.update(() => x.remove());
+
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul dir="auto">
+                <li value="1">
+                  <ul>
+                    <li value="1">
+                      <span data-lexical-text="true">A</span>
+                    </li>
+                  </ul>
+                </li>
+                <li value="1">
+                  <ol>
+                    <li value="1">
+                      <span data-lexical-text="true">B</span>
+                    </li>
+                  </ol>
                 </li>
               </ul>
             </div>
@@ -1501,6 +1563,53 @@ describe('LexicalListItemNode tests', () => {
           '</ol>' +
           '</div>',
       );
+    });
+
+    test('Option Enabled: Preserves numbering when a nested sublist precedes the split', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        const list = $createListNode('number');
+        const item1 = $createListItemNode();
+        item1.append($createTextNode('A'));
+
+        // A nested sublist lives inside its own wrapper <li>, which renders no
+        // marker of its own and so does not consume a number.
+        const nestedHolder = $createListItemNode();
+        const nested = $createListNode('bullet');
+        const nestedItem = $createListItemNode();
+        nestedItem.append($createTextNode('A.1'));
+        nested.append(nestedItem);
+        nestedHolder.append(nested);
+
+        const item2 = $createListItemNode();
+        item2.append($createTextNode('B'));
+        const emptyItem = $createListItemNode();
+        const item3 = $createListItemNode();
+        item3.append($createTextNode('C'));
+
+        list.append(item1, nestedHolder, item2, emptyItem, item3);
+        root.append(list);
+
+        emptyItem.select();
+      });
+
+      await editor.update(() => {
+        $handleListInsertParagraph(true);
+      });
+
+      editor.read('latest', () => {
+        // A is 1 and B is 2, so the removed empty item was 3 and the split-off
+        // list has to continue from 3 -- the same rule the flat case follows.
+        const [firstList, paragraph, secondList] = $getRoot().getChildren();
+        expect($isListNode(firstList)).toBe(true);
+        expect($isParagraphNode(paragraph)).toBe(true);
+        expect($isListNode(secondList)).toBe(true);
+        expect((secondList as ListNode).getStart()).toBe(3);
+        const firstItem = (secondList as ListNode).getFirstChild();
+        expect($isListItemNode(firstItem)).toBe(true);
+        expect((firstItem as ListItemNode).getValue()).toBe(3);
+      });
     });
 
     describe('ListItemNode $transform wraps orphan ListItemNodes', () => {

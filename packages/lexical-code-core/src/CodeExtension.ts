@@ -14,6 +14,8 @@ import {
   configExtension,
   defineExtension,
   KEY_ENTER_COMMAND,
+  mergeRegister,
+  TabNode,
 } from 'lexical';
 
 import {CodeHighlightNode} from './CodeHighlightNode';
@@ -21,18 +23,18 @@ import {
   $installVscodeCodePasteOverlay,
   CodeImportRules,
 } from './CodeImportExtension';
-import {$exitCodeNodeOnEnter, CodeNode} from './CodeNode';
+import {$exitCodeNodeOnEnter, $isCodeNode, CodeNode} from './CodeNode';
 
 /**
  * Add code blocks to the editor (syntax highlighting provided separately)
  */
-export const CodeExtension = /* @__PURE__ */ defineExtension({
+export const CodeExtension = defineExtension({
   dependencies: [
     // DOMImportExtension support for the nodes registered here. Inert
     // unless the editor routes HTML through the pipeline (e.g. via
     // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
     CoreImportExtension,
-    /* @__PURE__ */ configExtension(DOMImportExtension, {
+    configExtension(DOMImportExtension, {
       preprocess: [$installVscodeCodePasteOverlay],
       rules: CodeImportRules,
     }),
@@ -40,17 +42,26 @@ export const CodeExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/code',
   nodes: () => [CodeNode, CodeHighlightNode],
   register(editor) {
-    return editor.registerCommand<KeyboardEvent>(
-      KEY_ENTER_COMMAND,
-      event => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection) && $exitCodeNodeOnEnter(selection)) {
-          event.preventDefault();
-          return true;
+    return mergeRegister(
+      editor.registerCommand(
+        KEY_ENTER_COMMAND,
+        event => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection) && $exitCodeNodeOnEnter(selection)) {
+            if (event !== null) {
+              event.preventDefault();
+            }
+            return true;
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerNodeTransform(TabNode, node => {
+        if (node.getFormat() !== 0 && $isCodeNode(node.getParent())) {
+          node.setFormat(0);
         }
-        return false;
-      },
-      COMMAND_PRIORITY_LOW,
+      }),
     );
   },
 });
@@ -64,7 +75,7 @@ export const CodeExtension = /* @__PURE__ */ defineExtension({
  * {@link CodeImportRules} (and `CoreImportExtension`) itself — depend on
  * it directly instead.
  */
-export const CodeImportExtension = /* @__PURE__ */ defineExtension({
+export const CodeImportExtension = defineExtension({
   dependencies: [CodeExtension],
   name: '@lexical/code/Import',
 });

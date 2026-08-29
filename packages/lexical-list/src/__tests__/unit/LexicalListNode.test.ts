@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
+import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {$createLinkNode, $isLinkNode, type LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -209,6 +210,39 @@ describe('LexicalListNode tests', () => {
         expect(domElement.outerHTML).toBe(
           '<ul class="my-ul-list-class my-ul-list-class-1"></ul>',
         );
+      });
+    });
+
+    test('ListNode.exportDOM() round-trips the dir attribute', async () => {
+      const {editor} = testEnv;
+
+      const parser = new DOMParser();
+      const input = html`
+        <ul dir="rtl">
+          <li dir="rtl">שלום</li>
+        </ul>
+      `;
+
+      await editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          root.append(
+            ...$generateNodesFromDOM(
+              editor,
+              parser.parseFromString(input, 'text/html'),
+            ),
+          );
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const listNode = $getRoot().getFirstChild();
+        assert($isListNode(listNode), 'expected a ListNode at the root');
+        // $convertListNode read it back off the <ul>
+        expect(listNode.getDirection()).toBe('rtl');
+        expect($generateHtmlFromNodes(editor)).toContain('<ul dir="rtl">');
       });
     });
 
@@ -497,11 +531,8 @@ describe('LexicalListNode subclassing tests ($config)', () => {
       });
   }
   class ListNodeSubclass extends ListNode {
-    static getType() {
-      return 'list-subclass';
-    }
-    static clone(node: ListNodeSubclass) {
-      return new ListNodeSubclass(node.__listType, node.__start, node.__key);
+    $config() {
+      return this.config('list-subclass', {extends: ListNode});
     }
   }
   describe('ListNode as-is', () =>

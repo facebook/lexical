@@ -8,7 +8,6 @@
 
 import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
-import type {NodeKey, NodeMap, TextNode} from 'lexical';
 import type {Map as YMap} from 'yjs';
 
 import {
@@ -16,6 +15,9 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  type NodeKey,
+  type NodeMap,
+  type TextNode,
 } from 'lexical';
 
 import simpleDiffWithCursor from './simpleDiffWithCursor';

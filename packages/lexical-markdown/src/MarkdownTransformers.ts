@@ -35,7 +35,6 @@ import {
   $createLineBreakNode,
   $createTextNode,
   $findMatchingParent,
-  $getEditor,
   $getState,
   $isLineBreakNode,
   $isTextNode,
@@ -46,7 +45,6 @@ import {
   type Klass,
   type LexicalNode,
   type LineBreakNode,
-  type NodeKey,
   type TextFormatType,
   type TextNode,
 } from 'lexical';
@@ -400,6 +398,23 @@ const createBlockNode = (
 // TODO: should be an option
 const LIST_INDENT_SIZE = 4;
 
+function getIndent(whitespaces: string): number {
+  const tabs = whitespaces.match(/\t/g);
+  const spaces = whitespaces.match(/ /g);
+
+  let indent = 0;
+
+  if (tabs) {
+    indent += tabs.length;
+  }
+
+  if (spaces) {
+    indent += Math.floor(spaces.length / LIST_INDENT_SIZE);
+  }
+
+  return indent;
+}
+
 /**
  * The column the text after `whitespaces` starts at, expanding a tab to the
  * next multiple of `LIST_INDENT_SIZE` the way CommonMark does.
@@ -414,131 +429,69 @@ function getColumn(whitespaces: string): number {
 }
 
 /**
- * The content columns of the list levels the lines placed so far have left
- * open, outermost first.
+ * How far past its marker an item of `list` opens its content, capped at one
+ * `LIST_INDENT_SIZE` so that the indent `$listExport` writes always nests: a
+ * sublist of `100. ` is exported with four spaces, short of that marker's real
+ * content column. A check list item is marked by its bullet — the `[ ]` is
+ * content — so `- [ ] a` opens at the same offset `- a` does.
+ */
+function $getContentOffset(list: ListNode, lastItem: ListItemNode): number {
+  const width =
+    list.getListType() === 'number'
+      ? String(lastItem.getValue()).length + 2
+      : 2;
+  return Math.min(width, LIST_INDENT_SIZE);
+}
+
+/**
+ * The content columns of the list levels open above a line that follows
+ * `list`, outermost first.
  *
  * A sublist is measured against the column where its parent item's content
  * begins rather than against a fixed number of spaces: that is what lets
  * `1. a` take a three-space sublist while `- a` takes a two-space one, and
  * what keeps two items written at the same column siblings even when that
- * column is deep enough to have opened a level. `listReplace` only ever sees
- * one line, so the column each level opened at has to be carried from the
- * line that opened it.
- *
- * A column is capped one `LIST_INDENT_SIZE` past its marker so that the
- * indent `$listExport` writes always nests: a sublist of `100. ` is exported
- * with four spaces, which is short of that marker's real content column.
+ * column is deep enough to have opened a level.
  */
-let openListColumns: number[] = [];
-let openListEditorKey: string | null = null;
-let openListNodeKey: NodeKey | null = null;
-
-/**
- * How deeply the last item of `list` is nested. The lines that follow it can
- * only reuse the memoized columns if they describe exactly this many levels.
- */
-function $getOpenListDepth(list: ListNode): number {
-  let depth = 0;
-  for (let current: ListNode = list; ; depth++) {
+function $getListContentColumns(list: ListNode | null): number[] {
+  const columns: number[] = [];
+  for (let current = list; current !== null; ) {
     const lastItem = current.getLastChild();
     if (!$isListItemNode(lastItem)) {
-      return depth;
+      break;
     }
+    // A level's marker sits one LIST_INDENT_SIZE in from the level outside
+    // it, which is where $listExport writes it and where getIndent reads it.
+    columns.push(
+      columns.length * LIST_INDENT_SIZE + $getContentOffset(current, lastItem),
+    );
     const nested = lastItem.getLastChild();
-    if (!$isListNode(nested)) {
-      return depth;
-    }
-    current = nested;
-  }
-}
-
-/**
- * The content columns `list` has open. A list this run did not build itself —
- * one that was loaded, pasted, or typed earlier — left no columns behind, so
- * its levels are rebuilt at `LIST_INDENT_SIZE` each, which is what the indent
- * was measured in before columns were tracked.
- */
-function $getOpenListColumns(list: ListNode | null): number[] {
-  if (list === null) {
-    return [];
-  }
-  const depth = $getOpenListDepth(list);
-  if (
-    openListEditorKey === $getEditor().getKey() &&
-    openListNodeKey === list.getKey() &&
-    openListColumns.length === depth + 1
-  ) {
-    return openListColumns;
-  }
-  const columns: number[] = [];
-  for (let i = 0; i <= depth; i++) {
-    columns.push((i + 1) * LIST_INDENT_SIZE);
+    current = $isListNode(nested) ? nested : null;
   }
   return columns;
 }
 
 /**
- * The indent `column` names given the levels that are open: the innermost
- * level whose content it reaches, or 0 when it reaches none of them.
+ * The indent `whitespaces` names given the levels open above it: the innermost
+ * level whose content column it reaches, or 0 when it reaches none of them.
+ *
+ * With no list above the line there is no content column to measure against,
+ * so the indent falls back to a fixed `LIST_INDENT_SIZE` per level.
  */
-function getIndentFromColumn(
+function getListIndent(
   columns: readonly number[],
-  column: number,
+  whitespaces: string,
 ): number {
+  if (columns.length === 0) {
+    return getIndent(whitespaces);
+  }
+  const column = getColumn(whitespaces);
   for (let i = columns.length - 1; i >= 0; i--) {
     if (column >= columns[i]) {
       return i + 1;
     }
   }
   return 0;
-}
-
-/**
- * The width of the marker that made this line a list item, so that the next
- * line can be measured against the column its content starts at. A check list
- * item is marked by its bullet — the `[ ]` is content — so `- [ ] a` opens its
- * content at the same column `- a` does.
- */
-function getListMarkerWidth(match: string[], listType: ListType): number {
-  const marker = match[0].slice(match[1].length);
-  if (listType === 'number') {
-    return match[2].length + 2;
-  }
-  const bullet = marker.match(/^[-*+]\s/);
-  return bullet ? bullet[0].length : marker.length;
-}
-
-/**
- * Memoize the columns that `listItem`'s line leaves open for the lines after
- * it. Nothing is memoized for an item outside a list, and the memo is
- * invalidated so that the next line does not read it as its own.
- */
-function $setOpenListColumns(
-  listItem: ListItemNode,
-  columns: number[],
-  indent: number,
-  column: number,
-  markerWidth: number,
-): void {
-  let topList: ListNode | null = null;
-  for (
-    let parent = listItem.getParent();
-    parent !== null;
-    parent = parent.getParent()
-  ) {
-    if ($isListNode(parent)) {
-      topList = parent;
-    }
-  }
-  if (topList === null) {
-    openListNodeKey = null;
-    return;
-  }
-  columns.length = indent;
-  columns[indent] = column + Math.min(markerWidth, LIST_INDENT_SIZE);
-  openListColumns = columns;
-  openListEditorKey = $getEditor().getKey();
-  openListNodeKey = topList.getKey();
 }
 
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
@@ -558,11 +511,10 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       firstMatchChar === listMarkerState.parse(firstMatchChar)
         ? firstMatchChar
         : undefined;
-    const column = getColumn(match[1]);
-    const columns = $getOpenListColumns(
-      $isListNode(previousNode) ? previousNode : null,
+    const indent = getListIndent(
+      $getListContentColumns($isListNode(previousNode) ? previousNode : null),
+      match[1],
     );
-    const indent = getIndentFromColumn(columns, column);
     if ($isListNode(nextNode) && nextNode.getListType() === listType) {
       const firstChild = nextNode.getFirstChild();
       if (firstChild !== null) {
@@ -614,13 +566,6 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     if (listMarker && $isListNode(listNode)) {
       $setState(listNode, listMarkerState, listMarker);
     }
-    $setOpenListColumns(
-      listItem,
-      columns,
-      indent,
-      column,
-      getListMarkerWidth(match, listType),
-    );
   };
 };
 

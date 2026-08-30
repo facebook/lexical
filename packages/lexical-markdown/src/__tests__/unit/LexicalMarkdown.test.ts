@@ -3041,6 +3041,35 @@ describe('Typed sublist shortcuts', () => {
     });
   }
 
+  // The indent of a line with no list above it has no content column to be
+  // measured against, so it falls back to a fixed LIST_INDENT_SIZE per level.
+  // packages/lexical-playground/__tests__/e2e/Markdown.spec.mjs asserts the
+  // same shapes.
+  it.each([
+    ['1. ', '<ol><li value="1"></li></ol>'],
+    ['    1. ', '<ol><li value="1"><ol><li value="1"></li></ol></li></ol>'],
+    ['- ', '<ul><li value="1"></li></ul>'],
+    ['    - ', '<ul><li value="1"><ul><li value="1"></li></ul></li></ul>'],
+    ['      * ', '<ul><li value="1"><ul><li value="1"></li></ul></li></ul>'],
+    [
+      '        * ',
+      '<ul><li value="1"><ul><li value="1"><ul><li value="1"></li></ul></li></ul></li></ul>',
+    ],
+    ['\t- ', '<ul><li value="1"><ul><li value="1"></li></ul></li></ul>'],
+  ])('indents a typed "%s" with no list above it', (text, html) => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    typeLines(editor, [text]);
+    // The shortcut runs from an update listener, so it lands on the next
+    // update rather than the one that typed the closing space.
+    editor.update(() => {}, {discrete: true});
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      html,
+    );
+  });
+
   it('nests a typed sublist of another type and keeps the caret in it', () => {
     const editor = createHeadlessEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
@@ -3077,12 +3106,10 @@ describe('Typed sublist shortcuts', () => {
     expect(caretText(editor)).toBe('b@1');
   });
 
-  it('nests a typed sublist under a list it did not build itself', () => {
+  it('nests a typed sublist under a list a shortcut did not create', () => {
     const editor = createHeadlessEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
-    // No shortcut opened this list, so there are no columns to measure
-    // against and the indent falls back to a fixed four spaces per level.
     editor.update(
       () => {
         const root = $getRoot();

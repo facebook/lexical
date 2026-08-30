@@ -554,19 +554,27 @@ function $handleTableClick(
   // we don't have a proper state machine to do this "correctly" but
   // if we go ahead and make the table selection now it will work.
   //
-  // A shift-click only ever moves the focus — the anchor is where the
-  // selection started — so this does not require the previous selection to be
-  // inside the table that was clicked. Only the nearest cell's observer is
-  // given the pointerdown (getTableObserverFromCellNode resolves one), so
-  // shift-clicking into a nested table from the cell around it arrives here
-  // with a previous selection that is outside `tableNode`; the branches below
-  // already tell those two cases apart, and the second one is what preserves
-  // the anchor. Requiring the previous selection to be in this table left that
-  // case to Firefox, which resets the anchor to the start of the cell.
+  // Only the nearest cell's observer is given the pointerdown
+  // (getTableObserverFromCellNode resolves one), so shift-clicking into a table
+  // nested inside a cell arrives here with `tableNode` set to that nested table
+  // and a previous anchor in the cell around it — outside `tableNode`, so
+  // $isSelectionInTable alone would skip it and leave the case to Firefox,
+  // which resets the anchor to the start of the cell. The branches below do
+  // resolve it, so widen to it and to nothing else: an anchor in an unrelated
+  // table is not something they can resolve, and the second one would put the
+  // focus on this table's edge rather than on the cell that was clicked.
+  const prevAnchorNestedCell =
+    $isRangeSelection(prevSelection) || $isTableSelection(prevSelection)
+      ? $findCellNode(prevSelection.anchor.getNode())
+      : null;
+  const isShiftClickIntoNestedTable =
+    prevAnchorNestedCell !== null && prevAnchorNestedCell.isParentOf(tableNode);
   if (
     IS_FIREFOX &&
     event.shiftKey &&
-    ($isRangeSelection(prevSelection) || $isTableSelection(prevSelection))
+    ($isRangeSelection(prevSelection) || $isTableSelection(prevSelection)) &&
+    ($isSelectionInTable(prevSelection, tableNode) ||
+      isShiftClickIntoNestedTable)
   ) {
     const prevAnchorNode = prevSelection.anchor.getNode();
     const prevAnchorCell = $findParentTableCellNodeInTable(
@@ -590,6 +598,13 @@ function $handleTableClick(
         tableObserver.$setAnchorCellForSelection(prevAnchorDOMCell);
         tableObserver.$setFocusCellForSelection(selectedDOMCell);
         stopEvent(event);
+      } else if (event.pointerType !== 'touch') {
+        // No table selection to make, but the observer's anchor still has to
+        // follow the pointer down: createPointerHandlers only adopts its
+        // `startingCell` when `anchorCell` is null, so leaving a cell from an
+        // earlier click in place would anchor a drag started here on that one.
+        // This records the cell without touching the selection.
+        tableObserver.$setAnchorCellForSelection(selectedDOMCell);
       }
     } else {
       const newSelection = tableNode.isBefore(prevAnchorNode)

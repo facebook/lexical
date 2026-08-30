@@ -69,9 +69,11 @@ describe('TableNode.exportDOM direction', () => {
 });
 
 describe('TableNode.exportDOM indent', () => {
-  // data-lexical-indent is the authoritative round-trip signal, and the
-  // padding is what renders the indent outside of Lexical; both are written by
-  // ElementNode.exportDOM and both used to be lost to the scroll wrapper.
+  // The padding renders the indent outside of Lexical and data-lexical-indent
+  // records it exactly; both are written by ElementNode.exportDOM and both used
+  // to be lost to the scroll wrapper. Note that neither comes back on import —
+  // $convertTableElement restores the direction but nothing restores a table's
+  // indent, which is a gap that predates this.
   test('exports the indent with scrollable tables active', () => {
     const html = exportTable(true, table => table.setIndent(2));
     expect(html).toContain('data-lexical-indent="2"');

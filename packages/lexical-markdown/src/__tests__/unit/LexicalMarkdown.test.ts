@@ -384,6 +384,43 @@ describe('Markdown', () => {
       md: '25. Hello\n26. world',
     },
     {
+      // ...including a check list among the sublist types.
+      customTransformers: [CHECK_LIST],
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">item one</span></li><li value="2"><span style="white-space: pre-wrap;">item two</span><ul><li value="1"><span style="white-space: pre-wrap;">sublist</span></li></ul><ol><li value="1"><span style="white-space: pre-wrap;">sublist</span></li></ol><ul __lexicallisttype="check"><li role="checkbox" tabindex="-1" aria-checked="false" value="1"><span style="white-space: pre-wrap;">checklist</span></li></ul></li></ol>',
+      md: '1. item one\n2. item two\n    - sublist\n    1. sublist\n    - [ ] checklist',
+    },
+    {
+      // The sublist keeps its own bullet character. Import only: the marker
+      // does not survive a trip through HTML, so export writes "-".
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li><li value="2"><span style="white-space: pre-wrap;">c</span></li></ul></li></ul>',
+      md: '- a\n    * b\n    * c',
+      skipExport: true,
+    },
+    {
+      // A sublist is measured against the column its parent item's content
+      // starts at, so two spaces are enough under `- ` and three under
+      // `1. `. Export always writes four.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ul>',
+      md: '- a\n  - b',
+      mdAfterExport: '- a\n    - b',
+    },
+    {
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ol>',
+      md: '1. a\n   - b',
+      mdAfterExport: '1. a\n    - b',
+    },
+    {
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">item one</span></li><li value="2"><span style="white-space: pre-wrap;">item two</span><ul><li value="1"><span style="white-space: pre-wrap;">sublist</span></li></ul><ol><li value="1"><span style="white-space: pre-wrap;">sublist</span></li></ol></li></ol>',
+      md: '1. item one\n2. item two\n   - sublist\n   1. sublist',
+      mdAfterExport: '1. item one\n2. item two\n    - sublist\n    1. sublist',
+    },
+    {
+      // A marker wider than the indent that is exported for it still takes
+      // that indent as a sublist.
+      html: '<ol start="100"><li value="100"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ol>',
+      md: '100. a\n    - b',
+    },
+    {
       html: '<ul><li value="1"><span style="white-space: pre-wrap;">bullet1</span><ol><li value="1"><span style="white-space: pre-wrap;">ordered1</span></li><li value="2"><span style="white-space: pre-wrap;">ordered2</span></li></ol></li><li value="2"><span style="white-space: pre-wrap;">bullet2</span></li></ul>',
       md: '- bullet1\n    1. ordered1\n    2. ordered2\n- bullet2',
     },
@@ -2927,6 +2964,143 @@ describe('$convertSelectionToMarkdownString', () => {
       $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
     );
     expect(result).toBe('    - Nested A');
+  });
+});
+
+describe('Sublist markers', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it('records a marker on the list the item lands in, not the one above it', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    const md = '- a\n    * b\n    * c';
+
+    editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+
+    expect(
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(md);
+  });
+});
+
+describe('Typed sublist shortcuts', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  function typeLines(
+    editor: ReturnType<typeof createHeadlessEditor>,
+    lines: string[],
+  ): void {
+    for (const line of lines) {
+      editor.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          $getRoot().append(paragraph);
+          paragraph.selectEnd();
+        },
+        {discrete: true},
+      );
+      // One character at a time: the shortcut fires on the space that closes
+      // the marker, so anything after it is typed into whatever the shortcut
+      // left the caret in.
+      for (const char of line) {
+        editor.update(
+          () => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              selection.insertText(char);
+            }
+          },
+          {discrete: true},
+        );
+      }
+    }
+  }
+
+  function caretText(editor: ReturnType<typeof createHeadlessEditor>): string {
+    return editor.read('latest', () => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection), 'expected a range selection');
+      return `${selection.anchor.getNode().getTextContent()}@${
+        selection.anchor.offset
+      }`;
+    });
+  }
+
+  it('nests a typed sublist of another type and keeps the caret in it', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    typeLines(editor, ['- a', '    1. b']);
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ol><li value="1"><span style="white-space: pre-wrap;">b</span></li></ol></li></ul>',
+    );
+    expect(caretText(editor)).toBe('b@1');
+  });
+
+  it('nests a typed sublist of the same type and keeps the caret in it', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    typeLines(editor, ['- a', '    - b']);
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ul>',
+    );
+    expect(caretText(editor)).toBe('b@1');
+  });
+
+  it('nests a typed sublist indented to the content column', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    typeLines(editor, ['1. a', '   - b']);
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ol><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ol>',
+    );
+    expect(caretText(editor)).toBe('b@1');
+  });
+
+  it('nests a typed sublist under a list it did not build itself', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    // No shortcut opened this list, so there are no columns to measure
+    // against and the indent falls back to a fixed four spaces per level.
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        root.append(
+          $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode('a')),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    typeLines(editor, ['    1. b']);
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ol><li value="1"><span style="white-space: pre-wrap;">b</span></li></ol></li></ul>',
+    );
+    expect(caretText(editor)).toBe('b@1');
   });
 });
 

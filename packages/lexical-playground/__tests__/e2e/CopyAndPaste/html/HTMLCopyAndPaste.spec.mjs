@@ -7,7 +7,10 @@
  */
 import {expect} from '@playwright/test';
 
-import {moveToPrevWord} from '../../../keyboardShortcuts/index.mjs';
+import {
+  moveToPrevWord,
+  pressShiftEnter,
+} from '../../../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -47,6 +50,47 @@ test.describe('HTML CopyAndPaste', () => {
     });
     await expect(paragraphs.nth(3)).toHaveText('Hello World !', {
       useInnerText: true,
+    });
+  });
+
+  test('Copy + paste blocks after two line breaks', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('Line of text');
+    await pressShiftEnter(page);
+    await pressShiftEnter(page);
+    await pasteFromClipboard(page, {
+      'text/html': '<h3>Heading 3</h3><p>Some paragraph</p>',
+    });
+
+    // The empty line the user typed is preserved and the pasted heading keeps
+    // its own block instead of merging into the paragraph above it (#4815).
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Line of text</span>
+          <br />
+          <br />
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+        <h3 class="PlaygroundEditorTheme__h3" dir="auto">
+          <span data-lexical-text="true">Heading 3</span>
+        </h3>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Some paragraph</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 14,
+      anchorPath: [2, 0, 0],
+      focusOffset: 14,
+      focusPath: [2, 0, 0],
     });
   });
 

@@ -578,6 +578,48 @@ function $ensureRootHasParagraph(): void {
   }
 }
 
+/**
+ * The node immediately before the given point within its block, looking
+ * through the boundaries of inline elements: a point at the start of a link's
+ * text is still "after" whatever precedes the link. Returns null when text or
+ * nothing at all precedes the point in its block.
+ */
+function $getNodeBeforePoint(point: PointType): LexicalNode | null {
+  const node = point.getNode();
+  if (point.offset > 0) {
+    // An element point has the child before it; a text point has characters
+    // before it, so no node is adjacent.
+    return point.type === 'element' && $isElementNode(node)
+      ? node.getChildAtIndex(point.offset - 1)
+      : null;
+  }
+  for (
+    let child: LexicalNode | null = node;
+    child !== null && !INTERNAL_$isBlock(child) && !$isRootOrShadowRoot(child);
+    child = child.getParent()
+  ) {
+    const previousSibling = child.getPreviousSibling();
+    if (previousSibling !== null) {
+      return previousSibling;
+    }
+  }
+  return null;
+}
+
+/**
+ * Two consecutive soft line breaks render an empty line, which reads as a
+ * block boundary: a point directly after them sits at the start of a new
+ * visual paragraph rather than at the end of the text above the empty line
+ * (#4815).
+ */
+function $isPointAfterEmptyLine(point: PointType): boolean {
+  const nodeBefore = $getNodeBeforePoint(point);
+  return (
+    $isLineBreakNode(nodeBefore) &&
+    $isLineBreakNode(nodeBefore.getPreviousSibling())
+  );
+}
+
 /** Returns true if the given value is a RangeSelection. */
 export function $isRangeSelection(x: unknown): x is RangeSelection {
   return x instanceof RangeSelection;
@@ -1120,21 +1162,6 @@ export class RangeSelection implements BaseSelection {
     if (nodes.length === 0) {
       return;
     }
-    // Two soft breaks create an empty visual line, which should act as a
-    // block boundary instead of merging inserted blocks into either side.
-    const initialAnchorNode = this.anchor.getNode();
-    const nodeBeforeAnchor =
-      this.anchor.type === 'element' &&
-      $isElementNode(initialAnchorNode) &&
-      this.anchor.offset > 0
-        ? initialAnchorNode.getChildAtIndex(this.anchor.offset - 1)
-        : this.anchor.type === 'text' && this.anchor.offset === 0
-          ? initialAnchorNode.getPreviousSibling()
-          : null;
-    const shouldPreserveInsertedBlocks =
-      this.isCollapsed() &&
-      $isLineBreakNode(nodeBeforeAnchor) &&
-      $isLineBreakNode(nodeBeforeAnchor.getPreviousSibling());
     if (!this.isCollapsed()) {
       this.removeText();
     }
@@ -1320,8 +1347,14 @@ export class RangeSelection implements BaseSelection {
     const blocksParent = $wrapInlineNodes(nodes);
     const nodeToSelect = blocksParent.getLastDescendant()!;
     const blocks = blocksParent.getChildren();
+    // An empty line before the insertion point reads as a block boundary, so
+    // the first inserted block keeps its own block identity instead of being
+    // merged into the text above that empty line (#4815). The selection is
+    // collapsed by now (removeText above), so firstPoint is the insertion
+    // point, and nothing has split the block yet.
+    const isAfterEmptyLine = $isPointAfterEmptyLine(firstPoint);
     const isMergeable = (node: LexicalNode): node is ElementNode =>
-      !shouldPreserveInsertedBlocks &&
+      !isAfterEmptyLine &&
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
@@ -1362,7 +1395,6 @@ export class RangeSelection implements BaseSelection {
 
     if (insertedParagraph) {
       if (
-        !shouldPreserveInsertedBlocks &&
         $isElementNode(lastInsertedBlock) &&
         (insertedParagraph.canMergeWhenEmpty() ||
           INTERNAL_$isBlock(lastToInsert))
@@ -1390,7 +1422,13 @@ export class RangeSelection implements BaseSelection {
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()
       : null;
-    if ($isLineBreakNode(lastChild) && lastInsertedBlock !== firstBlock) {
+    if (
+      !isAfterEmptyLine &&
+      $isLineBreakNode(lastChild) &&
+      lastInsertedBlock !== firstBlock
+    ) {
+      // An empty line that was treated as a block boundary is content the
+      // user typed, not a leftover of the split, so it is kept as-is.
       lastChild.remove();
     }
   }

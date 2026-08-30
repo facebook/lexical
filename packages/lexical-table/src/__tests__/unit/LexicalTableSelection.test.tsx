@@ -31,6 +31,7 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
+  $selectAll,
   $setSelection,
 } from 'lexical';
 import {$assertNodeType, initializeUnitTest} from 'lexical/src/__tests__/utils';
@@ -441,6 +442,74 @@ describe('regression #8075', () => {
         // The next cell was not pulled into the empty one.
         expect(row.getChildrenSize()).toBe(2);
         expect(row.getFirstChildOrThrow().getTextContent()).toBe('');
+      });
+    });
+  });
+});
+
+// A select-all scoped inside a shadow root describes "everything in this
+// container". Keeping its points at the element level would leave the
+// container's own structural children in the range, so the next select-all
+// widens to the container's parent and a delete removes rows and cells
+// instead of their text.
+describe('repeated select-all inside a table cell', () => {
+  initializeUnitTest(testEnv => {
+    test('stays scoped to the cell and leaves the table intact', () => {
+      testEnv.editor.update(
+        () => {
+          const table = $createTableNodeWithDimensions(2, 2, false);
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append($createTextNode('before')),
+              table,
+            );
+          const row = $assertNodeType(table.getFirstChild(), $isTableRowNode);
+          const cell = $assertNodeType(row.getFirstChild(), $isTableCellNode);
+          const paragraph = $assertNodeType(
+            cell.getFirstChild(),
+            $isParagraphNode,
+          );
+          paragraph.append($createTextNode('a1'));
+          paragraph.selectEnd();
+        },
+        {discrete: true},
+      );
+
+      // All in one update: no DOM round-trip renormalizes the points in
+      // between, which is what hid this from a per-keystroke test.
+      testEnv.editor.update(
+        () => {
+          const initial = $getSelection();
+          assert($isRangeSelection(initial));
+          let selection = initial;
+          for (let i = 0; i < 3; i++) {
+            selection = $selectAll(selection);
+            expect(selection.anchor.type).toBe('text');
+            expect(selection.focus.type).toBe('text');
+          }
+          selection.removeText();
+        },
+        {discrete: true},
+      );
+
+      testEnv.editor.read(() => {
+        expect($getRoot().getChildrenSize()).toBe(2);
+        const table = $assertNodeType($getRoot().getLastChild(), $isTableNode);
+        // Every row and cell survives, and no ParagraphNode was appended
+        // directly into the table or a row.
+        expect(
+          table.getChildren().map(row =>
+            $assertNodeType(row, $isTableRowNode)
+              .getChildren()
+              .map(cell =>
+                $assertNodeType(cell, $isTableCellNode).getTextContent(),
+              ),
+          ),
+        ).toEqual([
+          ['', ''],
+          ['', ''],
+        ]);
       });
     });
   });

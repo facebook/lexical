@@ -37,7 +37,6 @@ import {
 import {
   $getSelection,
   $internalMakeRangeSelection,
-  $internalRefreshSelectionFormatAndStyle,
   $isRangeSelection,
   type BaseSelection,
   moveSelectionPointToSibling,
@@ -607,11 +606,9 @@ export class ElementNode
         'element',
       );
     } else {
-      const previousAnchorKey = selection.anchor.key;
       selection.anchor.set(key, anchorOffset, 'element');
       selection.focus.set(key, focusOffset, 'element');
       selection.dirty = true;
-      $internalRefreshSelectionFormatAndStyle(selection, previousAnchorKey);
     }
     return selection;
   }

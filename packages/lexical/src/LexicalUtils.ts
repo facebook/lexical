@@ -784,27 +784,31 @@ export function $getRoot(): RootNode {
  * otherwise leaves nowhere to put a caret, and the next keystroke acts on the
  * container itself rather than on a block inside it.
  *
- * Two obligations for the caller:
+ * A ParagraphNode is only a valid child of a container that holds blocks. The
+ * RootNode always does, but a shadow root may be structural instead — a
+ * TableNode holds rows, a TableRowNode holds cells — so for anything but the
+ * root, `removedChild` (a child the caller is removing, or has just removed,
+ * from `container`) decides: a paragraph belongs where a block did.
  *
- * - Pass a container that holds *blocks*. A ParagraphNode is only a valid
- *   child of a root, or of a shadow root in the "holds block-level content"
- *   sense — never of a structural shadow root such as a TableNode (which holds
- *   rows) or a TableRowNode (which holds cells). Every current caller has just
- *   removed a block from `container`, which is what establishes this.
- * - Call this only where a removal could have emptied `container`. It is a
- *   no-op on a container that is already populated, but on one that was
- *   *already* empty beforehand it would seed a paragraph nobody asked for.
+ * Call this only where a removal could have emptied `container`. It is a no-op
+ * on a container that is already populated, but on one that was *already*
+ * empty beforehand it would seed a paragraph nobody asked for.
  *
  * @returns the paragraph that was appended, or null when nothing was restored.
  * @internal
  */
 export function $restoreEmptyContainerParagraph(
   container: null | LexicalNode,
+  removedChild: null | LexicalNode,
 ): null | ParagraphNode {
   if (
     !$isRootOrShadowRoot(container) ||
     !container.isAttached() ||
-    !container.isEmpty()
+    !container.isEmpty() ||
+    !(
+      $isRootNode(container) ||
+      (removedChild !== null && INTERNAL_$isBlock(removedChild))
+    )
   ) {
     return null;
   }
@@ -1298,6 +1302,7 @@ function $getRootChildAncestor(node: LexicalNode): LexicalNode | null {
 
 function $normalizeSelectionForSelectAll(
   selection: RangeSelection,
+  container: ElementNode,
 ): RangeSelection {
   const {anchor, focus} = selection;
   const anchorKey = anchor.key;
@@ -1307,6 +1312,16 @@ function $normalizeSelectionForSelectAll(
   const focusOffset = focus.offset;
   const focusType = focus.type;
   $normalizeSelection(selection);
+  // Only a select-all that spans the whole document keeps its element-level
+  // points. A select-all scoped to a container *inside* a shadow root (a
+  // table cell, a layout column) already describes "everything in here", and
+  // element points there would leave the container's own children — a row's
+  // cells, a table's rows — inside the range, so the next select-all widens
+  // to the container's parent and a delete removes structural nodes rather
+  // than their text.
+  if (!$isRootNode(container)) {
+    return selection;
+  }
   // `getTopLevelElement` stops at the nearest shadow root, which for a nested
   // widget is one of its inner scopes (a layout item rather than the layout
   // container), so walk all the way out to the child of the RootNode instead.
@@ -1337,7 +1352,7 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
     if ($isRootNode(anchorNode)) {
       anchor.set(anchorNode.getKey(), 0, 'element');
       focus.set(anchorNode.getKey(), anchorNode.getChildrenSize(), 'element');
-      $normalizeSelectionForSelectAll(selection);
+      $normalizeSelectionForSelectAll(selection, anchorNode);
       return selection;
     }
     const topParent = anchorNode.getTopLevelElementOrThrow();
@@ -1360,19 +1375,21 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
       if ($isElementNode(topParent)) {
         anchor.set(topParent.getKey(), 0, 'element');
         focus.set(topParent.getKey(), topParent.getChildrenSize(), 'element');
-        $normalizeSelectionForSelectAll(selection);
+        $normalizeSelectionForSelectAll(selection, topParent);
       }
       return selection;
     }
-    const rootNode = parent;
-    anchor.set(rootNode.getKey(), 0, 'element');
-    focus.set(rootNode.getKey(), rootNode.getChildrenSize(), 'element');
-    $normalizeSelectionForSelectAll(selection);
+    // `parent` is the RootNode for a top-level `topParent`, and the enclosing
+    // shadow root (a table cell, a layout column) when the caret is inside
+    // one — which is why $normalizeSelectionForSelectAll is told which.
+    anchor.set(parent.getKey(), 0, 'element');
+    focus.set(parent.getKey(), parent.getChildrenSize(), 'element');
+    $normalizeSelectionForSelectAll(selection, parent);
     return selection;
   } else {
     // Create a new RangeSelection
     const newSelection = root.select(0, root.getChildrenSize());
-    $setSelection($normalizeSelectionForSelectAll(newSelection));
+    $setSelection($normalizeSelectionForSelectAll(newSelection, root));
     return newSelection;
   }
 }

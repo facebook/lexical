@@ -1774,7 +1774,10 @@ export class RangeSelection implements BaseSelection {
             adjacent.remove();
             // Removing the only block leaves the container (the root, or a
             // shadow root such as a table cell) with nowhere to put a caret.
-            const restored = $restoreEmptyContainerParagraph(container);
+            const restored = $restoreEmptyContainerParagraph(
+              container,
+              adjacent,
+            );
             if (restored !== null) {
               restored.selectStart();
             }
@@ -1852,9 +1855,13 @@ export class RangeSelection implements BaseSelection {
               } else {
                 // When the anchor is not an empty element then the
                 // adjacent decorator is removed
-                const container = caret.origin.getParent();
-                caret.origin.remove();
-                const restored = $restoreEmptyContainerParagraph(container);
+                const decorator = caret.origin;
+                const container = decorator.getParent();
+                decorator.remove();
+                const restored = $restoreEmptyContainerParagraph(
+                  container,
+                  decorator,
+                );
                 if (restored !== null) {
                   restored.selectStart();
                 }
@@ -3591,22 +3598,23 @@ export function $internalCreateRangeSelection(
 
 /**
  * Re-reads the format and style that a collapsed insertion would use from the
- * selection's anchor, after a programmatic move has repointed it at a
- * different node.
+ * selection's anchor, after `removeText` left the caret in a node it did not
+ * start in (#6781).
  *
- * {@link $internalCreateSelection} already does this for every selection
+ * {@link $internalCreateRangeSelection} already does this for every selection
  * change that originates in the DOM (a click, an arrow key), which is why
- * those keep the toolbar in sync. Moving the selection through the node APIs
- * bypassed it, so the format and style of the old position leaked into the new
- * one (#8817).
+ * those keep the toolbar in sync.
  *
  * Landing on the same node is not a move: a format toggled on a collapsed
  * caret is armed for the next insertion and is deliberately not backed by the
  * node yet, so it must survive being re-selected in place.
  *
- * @internal
+ * Deliberately *not* called from `ElementNode.select()`/`TextNode.select()`:
+ * those are how nearly every edit repositions its own caret, so refreshing
+ * there discards a format armed with Cmd+B on the way through Enter,
+ * Shift+Enter and paste.
  */
-export function $internalRefreshSelectionFormatAndStyle(
+function $internalRefreshSelectionFormatAndStyle(
   selection: RangeSelection,
   previousAnchorKey: NodeKey,
 ): void {

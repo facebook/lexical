@@ -256,6 +256,12 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   while (rangeContainer !== null && !$isRootOrShadowRoot(rangeContainer)) {
     rangeContainer = rangeContainer.getParent();
   }
+  // A child of the container, sampled while it still has one: it is what
+  // tells $restoreEmptyContainerParagraph whether this container holds blocks
+  // (a table cell) or structure (a table's rows).
+  const rangeContainerChild = $isElementNode(rangeContainer)
+    ? rangeContainer.getFirstChild()
+    : null;
 
   const anchorCandidates = $getAnchorCandidates(range.anchor, rootMode);
   const focusCandidates = $getAnchorCandidates(
@@ -427,8 +433,11 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   // doing. `rangeContainer` is itself removed when the range covered it — the
   // empty-ancestor walks above climb out of it — in which case the root is
   // what needs the paragraph.
-  if ($restoreEmptyContainerParagraph(rangeContainer) === null) {
-    $restoreEmptyContainerParagraph($getRoot());
+  if (
+    $restoreEmptyContainerParagraph(rangeContainer, rangeContainerChild) ===
+    null
+  ) {
+    $restoreEmptyContainerParagraph($getRoot(), null);
   }
 
   // note this caret can be in either direction

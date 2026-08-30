@@ -9665,7 +9665,7 @@ test.describe('Tables', () => {
       test.skip(isCollab);
       test.fixme(
         browserName === 'firefox',
-        'Erroneously selects the entire outer cell',
+        'Firefox resolves this shift-click as whole cells of the nested table, so what is imported is a TableSelection rather than a range and $fixRangeSelectionForSelectedTable never gets to clamp the anchor',
       );
       await initialize({hasNestedTables: true, page});
 
@@ -9694,17 +9694,12 @@ test.describe('Tables', () => {
     });
 
     test('Range-select from inside nested table to text below it selects the entire table, but not the outer table', async ({
-      browserName,
       page,
       isPlainText,
       isCollab,
     }) => {
       test.skip(isPlainText);
       test.skip(isCollab);
-      test.fixme(
-        browserName === 'firefox',
-        'Erroneously selects the entire outer cell',
-      );
       await initialize({hasNestedTables: true, page});
 
       await setupTables(page);

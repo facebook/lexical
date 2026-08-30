@@ -574,11 +574,23 @@ function $handleTableClick(
       prevSelection.anchor.getNode(),
     );
     if (prevAnchorCell) {
-      tableObserver.$setAnchorCellForSelection(
-        $getObserverCellFromCellNodeOrThrow(tableObserver, prevAnchorCell),
+      const prevAnchorDOMCell = $getObserverCellFromCellNodeOrThrow(
+        tableObserver,
+        prevAnchorCell,
       );
-      tableObserver.$setFocusCellForSelection(selectedDOMCell);
-      stopEvent(event);
+      // Only when the two ends are in different cells is there a table
+      // selection to make. A shift-click out of a nested table arrives here
+      // with both in the same one: the anchor sits inside that table, and
+      // $findParentTableCellNodeInTable walks past it to the cell of
+      // `tableNode` that contains it, which is also the cell that was clicked.
+      // Building a TableSelection from that covers the single cell end to end
+      // — "erroneously selects the entire outer cell". What belongs there is an
+      // ordinary range inside the cell, which the engine resolves on its own.
+      if (prevAnchorDOMCell.elem !== selectedDOMCell.elem) {
+        tableObserver.$setAnchorCellForSelection(prevAnchorDOMCell);
+        tableObserver.$setFocusCellForSelection(selectedDOMCell);
+        stopEvent(event);
+      }
     } else {
       const newSelection = tableNode.isBefore(prevAnchorNode)
         ? tableNode.selectStart()

@@ -133,7 +133,7 @@ export const getScrollParent = getScrollParent_;
 export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   index: number;
   option: MenuOption;
-}> = /* @__PURE__ */ createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
+}> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
 
 /**
  * Builds a {@link TriggerFn} for the common case of a single-character
@@ -285,9 +285,11 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
           return;
         }
 
-        if (editor.isComposing()) {
-          return;
-        }
+        const closeUnlessComposing = () => {
+          if (!editor.isComposing()) {
+            closeTypeahead();
+          }
+        };
 
         const editorWindow = editor._window || window;
         const range = editorWindow.document.createRange();
@@ -300,7 +302,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
           text === null ||
           range === null
         ) {
-          closeTypeahead();
+          closeUnlessComposing();
           return;
         }
 
@@ -328,7 +330,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
             return;
           }
         }
-        closeTypeahead();
+        closeUnlessComposing();
       });
     };
 

@@ -13,9 +13,12 @@ import {
   MenuOption,
   type MenuRenderFn,
 } from '@lexical/react/LexicalNodeMenuPlugin';
+import {objectKlassEquals} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
+  $onUpdate,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   type CommandListenerPriority,
@@ -26,6 +29,7 @@ import {
   mergeRegister,
   type MutationListener,
   type NodeKey,
+  PASTE_COMMAND,
   PASTE_TAG,
   type TextNode,
 } from 'lexical';
@@ -75,7 +79,7 @@ export const URL_MATCHER =
  * and runs that config's URL detection flow.
  */
 export const INSERT_EMBED_COMMAND: LexicalCommand<EmbedConfig['type']> =
-  /* @__PURE__ */ createCommand('INSERT_EMBED_COMMAND');
+  createCommand('INSERT_EMBED_COMMAND');
 
 /**
  * A {@link MenuOption} for the auto-embed menu, pairing a display `title` with
@@ -207,15 +211,13 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   );
 
   useEffect(() => {
-    const listener: MutationListener = (
-      nodeMutations,
-      {updateTags, dirtyLeaves},
-    ) => {
+    let isSingleTokenPaste = false;
+    const listener: MutationListener = (nodeMutations, {updateTags}) => {
       for (const [key, mutation] of nodeMutations) {
         if (
           mutation === 'created' &&
           updateTags.has(PASTE_TAG) &&
-          dirtyLeaves.size <= 3
+          isSingleTokenPaste
         ) {
           checkIfLinkNodeIsEmbeddable(key);
         } else if (key === nodeKey) {
@@ -224,8 +226,24 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       }
     };
     return mergeRegister(
+      editor.registerCommand(
+        PASTE_COMMAND,
+        event => {
+          isSingleTokenPaste =
+            objectKlassEquals(event, ClipboardEvent) &&
+            event.clipboardData !== null &&
+            /^\S+$/.test(event.clipboardData.getData('text/plain'));
+          if (isSingleTokenPaste) {
+            $onUpdate(() => {
+              isSingleTokenPaste = false;
+            });
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_BEFORE_EDITOR,
+      ),
       ...[LinkNode, AutoLinkNode].map(Klass =>
-        editor.registerMutationListener(Klass, (...args) => listener(...args), {
+        editor.registerMutationListener(Klass, listener, {
           skipInitialization: true,
         }),
       ),

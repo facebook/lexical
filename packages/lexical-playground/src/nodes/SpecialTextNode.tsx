@@ -8,6 +8,7 @@
 
 import {
   $applyNodeReplacement,
+  $getDocument,
   addClassNamesToElement,
   type EditorConfig,
   type LexicalNode,
@@ -21,16 +22,19 @@ export class SpecialTextNode extends TextNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('span');
+    const dom = $getDocument().createElement('span');
     addClassNamesToElement(dom, config.theme.specialText);
     dom.textContent = this.getTextContent();
     return dom;
   }
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    if (prevNode.__text.startsWith('[') && prevNode.__text.endsWith(']')) {
-      const strippedText = this.__text.substring(1, this.__text.length - 1); // Strip brackets again
-      dom.textContent = strippedText; // Update the text content
+    if (prevNode.__text !== this.__text) {
+      // Write the text the same way createDOM does. Returning false promises
+      // the reconciler that every difference is already in the DOM, so the
+      // text has to be re-synced here or the element keeps the text it was
+      // created with.
+      dom.textContent = this.getTextContent();
     }
 
     addClassNamesToElement(dom, config.theme.specialText);

@@ -7,6 +7,7 @@
  */
 
 import {
+  $getDocument,
   $getSiblingCaret,
   $isElementNode,
   $rewindSiblingCaret,
@@ -77,10 +78,10 @@ export class CollapsibleContainerNode extends ElementNode {
     // details is not well supported in Chrome #5582 and Firefox #8348
     let dom: HTMLElement;
     if (IS_CHROME || IS_FIREFOX) {
-      dom = document.createElement('div');
+      dom = $getDocument().createElement('div');
       dom.setAttribute('open', '');
     } else {
-      const detailsDom = document.createElement('details');
+      const detailsDom = $getDocument().createElement('details');
       detailsDom.open = this.__open;
       detailsDom.addEventListener('toggle', () => {
         const open = editor.read('latest', () => this.getOpen());
@@ -134,9 +135,15 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('details');
+    const element = $getDocument().createElement('details');
     element.classList.add('Collapsible__container');
-    element.setAttribute('open', this.__open.toString());
+    // `open` is an HTML boolean attribute — its presence is what makes the
+    // <details> open, whatever its value. Writing `open="false"` on a closed
+    // container reads back (and renders) as open, so omit it instead. This
+    // matches createDOM/updateDOM, which already set '' / removeAttribute.
+    if (this.__open) {
+      element.setAttribute('open', '');
+    }
     return {element};
   }
 

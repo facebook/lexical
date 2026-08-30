@@ -1128,6 +1128,28 @@ describe('LexicalNode tests', () => {
         );
       });
 
+      test('LexicalNode.replace(): with a sibling in the same parent', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const paragraph = textNode.getParentOrThrow();
+          const barTextNode = new TextNode('bar');
+          paragraph.append(barTextNode);
+
+          // Replacing a node with one of its own siblings must not leave the
+          // parent's __size counting the sibling twice.
+          textNode.replace(barTextNode);
+
+          expect(paragraph.getChildrenSize()).toBe(1);
+          expect(paragraph.getChildren()).toHaveLength(1);
+          expect(paragraph.getFirstChild()!.getTextContent()).toBe('bar');
+        });
+
+        expect(testEnv.outerHTML).toBe(
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">bar</span></p></div>',
+        );
+      });
+
       test('LexicalNode.replace(): text', async () => {
         const {editor} = testEnv;
 
@@ -1957,6 +1979,12 @@ describe('Element-anchored selection on old parent (#6031)', () => {
         ({actNoRestore}) => {
           const {editor} = testEnv;
           let sourceKey = '';
+          // Skipping the shift leaves the offset (3) past the parent's new
+          // child count (2), so applying the selection to the DOM throws an
+          // IndexSizeError that the reconciler catches and warns about.
+          const mockWarning = vi
+            .spyOn(console, 'warn')
+            .mockImplementation(() => {});
           editor.update(
             () => {
               const refs = {} as Refs;
@@ -1967,6 +1995,8 @@ describe('Element-anchored selection on old parent (#6031)', () => {
             },
             {discrete: true},
           );
+          expect(mockWarning).toHaveBeenCalledWith(expect.any(DOMException));
+          mockWarning.mockRestore();
           editor.read(() => {
             const sel = $getSelection();
             invariant($isRangeSelection(sel));

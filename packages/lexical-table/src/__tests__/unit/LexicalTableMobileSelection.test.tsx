@@ -18,12 +18,15 @@ import {
 import {
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  type ElementNode,
+  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, describe, expect, test, vi} from 'vitest';
 
 /**
  * Test suite for mobile/touch table selection behavior.
@@ -603,6 +606,102 @@ describe('LexicalTableMobileSelection touch gestures (#8538)', () => {
       await flushUpdates();
 
       expectNoTableSelection();
+    });
+
+    /**
+     * Puts a collapsed caret at the start of a cell and lets the table's
+     * SELECTION_CHANGE_COMMAND handler see it, which is what a touch device
+     * does natively as a finger presses and drags. jsdom moves no caret of its
+     * own, so the pointer-driven tests above never reach that handler.
+     */
+    async function moveCaretTo(keys: string[], index: number): Promise<void> {
+      await testEnv.editor.update(() => {
+        const cellNode = $getNodeByKey<ElementNode>(keys[index]);
+        expect(cellNode).not.toBe(null);
+        cellNode!.selectStart();
+        testEnv.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      });
+      await flushUpdates();
+    }
+
+    test('a drag inside one cell does not convert the caret into a table selection', async () => {
+      const {cells, keys} = await setupEmptyTable();
+
+      // An earlier tap left the caret in cell 0.
+      await moveCaretTo(keys, 0);
+
+      // The finger presses in cell 4 and drags 50px without leaving it, which
+      // is selecting text inside that cell. The browser moves the caret into
+      // cell 4 as it goes.
+      touchDown(cells, 4);
+      touchMove(cells, 4, 4, DRAG_DISTANCE);
+      await moveCaretTo(keys, 4);
+      touchUp(cells, 4);
+      await flushUpdates();
+
+      // Pairing that caret with the cell the previous gesture left behind is
+      // the #8538 symptom.
+      expectNoTableSelection();
+    });
+
+    /**
+     * Counts the animation frames the pointer handlers schedule for a single
+     * pointermove, which is how drag auto-scroll starts. The stub does not run
+     * the callback, so the scroll tick itself (which jsdom cannot perform)
+     * never fires.
+     */
+    function countScheduledFrames(move: () => void): number {
+      const raf = vi
+        .spyOn(testEnv.editor._window as Window, 'requestAnimationFrame')
+        .mockReturnValue(1);
+      try {
+        move();
+        return raf.mock.calls.length;
+      } finally {
+        raf.mockRestore();
+      }
+    }
+
+    // Row 0 sits within the auto-scroll edge zone of the viewport top, so any
+    // move there is "near a scroll edge" and only the tap/drag gate decides
+    // whether auto-scroll starts.
+    test('a touch tap near a scroll edge does not start auto-scroll', async () => {
+      const {cells} = await setupEmptyTable();
+
+      touchDown(cells, 0);
+      expect(countScheduledFrames(() => touchMove(cells, 0, 0, JITTER))).toBe(
+        0,
+      );
+      touchUp(cells, 0);
+      await flushUpdates();
+    });
+
+    test('a touch drag near a scroll edge starts auto-scroll', async () => {
+      const {cells} = await setupEmptyTable();
+
+      touchDown(cells, 0);
+      expect(
+        countScheduledFrames(() => touchMove(cells, 0, 1, DRAG_DISTANCE)),
+      ).toBeGreaterThan(0);
+      touchUp(cells, 1);
+      await flushUpdates();
+    });
+
+    test('a drag that leaves its starting cell still converts the caret into a table selection', async () => {
+      const {cells, keys} = await setupEmptyTable();
+
+      await moveCaretTo(keys, 0);
+
+      // Same shape, but the finger crosses out of the cell it started on, so
+      // the fallback that builds a table selection from the moving caret has
+      // to keep working.
+      touchDown(cells, 0);
+      touchMove(cells, 0, 1, DRAG_DISTANCE);
+      await moveCaretTo(keys, 1);
+
+      await testEnv.editor.read('latest', () => {
+        expect($isTableSelection($getSelection())).toBe(true);
+      });
     });
   });
 });

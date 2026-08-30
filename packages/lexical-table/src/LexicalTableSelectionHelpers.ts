@@ -304,6 +304,7 @@ function $handleTableClick(
     }
     tableObserver.isSelecting = true;
     tableObserver.isPointerDrag = false;
+    tableObserver.pointerStartCell = startingCell;
 
     const isTouch = event.pointerType === 'touch';
     // The pointer that owns this gesture. Moves and lifts belonging to any
@@ -352,6 +353,7 @@ function $handleTableClick(
     const stopSelecting = () => {
       tableObserver.isSelecting = false;
       tableObserver.isPointerDrag = false;
+      tableObserver.pointerStartCell = null;
       if (autoScrollRafId !== null) {
         editorWindow.cancelAnimationFrame(autoScrollRafId);
         autoScrollRafId = null;
@@ -552,7 +554,14 @@ function $handleTableClick(
 
     const maybeStartAutoScroll = () => {
       // Touch taps don't initiate table selection, so they shouldn't scroll.
-      if (autoScrollRafId !== null || isTouch || !isNearScrollEdge()) {
+      // A touch drag that has become one still needs to reach the columns
+      // past the edge of a scrollable table, so gate on the tap, not on the
+      // pointer type.
+      if (
+        autoScrollRafId !== null ||
+        (isTouch && !tableObserver.isPointerDrag) ||
+        !isNearScrollEdge()
+      ) {
         return;
       }
       autoScrollRafId = editorWindow.requestAnimationFrame(tickAutoScroll);
@@ -1399,7 +1408,21 @@ function $fixRangeSelectionForSelectedTable(
       prevSelection.isCollapsed()
     ) {
       const prevAnchorCellNode = $findCellNode(prevSelection.anchor.getNode());
-      if (prevAnchorCellNode && !prevAnchorCellNode.is(focusCellNode)) {
+      // Being a drag is not enough: it has to have left the cell it started
+      // on. A drag that stays inside one cell is selecting text there, and
+      // the caret the browser moves as it goes would otherwise be paired with
+      // whatever cell the previous gesture left in the range selection,
+      // producing exactly the multi-cell selection tapping is meant to avoid.
+      const {pointerStartCell} = tableObserver;
+      const hasLeftStartCell =
+        pointerStartCell !== null &&
+        $getObserverCellFromCellNodeOrThrow(tableObserver, focusCellNode)
+          .elem !== pointerStartCell.elem;
+      if (
+        hasLeftStartCell &&
+        prevAnchorCellNode &&
+        !prevAnchorCellNode.is(focusCellNode)
+      ) {
         tableObserver.$setAnchorCellForSelection(
           $getObserverCellFromCellNodeOrThrow(
             tableObserver,

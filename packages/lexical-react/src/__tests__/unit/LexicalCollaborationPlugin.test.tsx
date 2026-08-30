@@ -31,11 +31,23 @@ import {beforeEach, describe, expect, test, vi} from 'vitest';
 import * as Y from 'yjs';
 
 /**
- * A minimal in-memory {@link Provider} whose `connect()` immediately reports a
- * completed sync, which is what drives the `shouldBootstrap` code path.
+ * A minimal in-memory {@link Provider} that reports a completed sync, which is
+ * what drives the `shouldBootstrap` code path. By default `connect()` syncs
+ * immediately; with `autoSync: false` the caller decides when, via `emitSync`,
+ * so a test can settle the mount first and control what commits next.
  */
-function createSyncedProvider(): Provider {
+function createSyncedProvider({autoSync = true} = {}): Provider & {
+  emitSync: () => void;
+} {
   const listeners = new Map<string, Set<(arg: never) => void>>();
+  const emitSync = () => {
+    const syncListeners = listeners.get('sync');
+    if (syncListeners !== undefined) {
+      for (const cb of Array.from(syncListeners)) {
+        (cb as (isSynced: boolean) => void)(true);
+      }
+    }
+  };
 
   return {
     awareness: {
@@ -47,14 +59,12 @@ function createSyncedProvider(): Provider {
       setLocalStateField: () => {},
     },
     connect: () => {
-      const syncListeners = listeners.get('sync');
-      if (syncListeners !== undefined) {
-        for (const cb of Array.from(syncListeners)) {
-          (cb as (isSynced: boolean) => void)(true);
-        }
+      if (autoSync) {
+        emitSync();
       }
     },
     disconnect: () => {},
+    emitSync,
     off: (type: string, cb: (arg: never) => void) => {
       const set = listeners.get(type);
       if (set !== undefined) {
@@ -69,7 +79,7 @@ function createSyncedProvider(): Provider {
       }
       set.add(cb);
     },
-  } as Provider;
+  } as Provider & {emitSync: () => void};
 }
 
 /** The content every bootstrap test starts the shared document with. */
@@ -183,9 +193,17 @@ describe(`LexicalCollaborationPlugin`, () => {
    */
   async function renderBootstrapped(
     initialEditorState: InitialEditorStateType,
-  ): Promise<{editor: LexicalEditor; readText: () => string}> {
+    {
+      autoSync = true,
+      onError,
+    }: {autoSync?: boolean; onError?: (error: Error) => void} = {},
+  ): Promise<{
+    editor: LexicalEditor;
+    readText: () => string;
+    sync: () => Promise<void>;
+  }> {
     const doc = new Y.Doc();
-    const provider = createSyncedProvider();
+    const provider = createSyncedProvider({autoSync});
     let editor: LexicalEditor | null = null;
 
     function CaptureEditor() {
@@ -196,7 +214,10 @@ describe(`LexicalCollaborationPlugin`, () => {
     function App() {
       return (
         <LexicalCollaboration>
-          <LexicalComposer initialConfig={editorConfig}>
+          <LexicalComposer
+            initialConfig={
+              onError === undefined ? editorConfig : {...editorConfig, onError}
+            }>
             <CaptureEditor />
             <CollaborationPlugin
               id="main"
@@ -226,6 +247,11 @@ describe(`LexicalCollaborationPlugin`, () => {
       editor: activeEditor,
       readText: () =>
         activeEditor.getEditorState().read(() => $getRoot().getTextContent()),
+      sync: async () => {
+        await act(async () => {
+          provider.emitSync();
+        });
+      },
     };
   }
 
@@ -277,5 +303,40 @@ describe(`LexicalCollaborationPlugin`, () => {
       editor.dispatchCommand(UNDO_COMMAND, undefined);
     });
     expect(readText()).toBe('Initial content');
+  });
+
+  // A bootstrap update that throws still has to release the flag that keeps the
+  // bootstrap write out of the undo stack. Lexical reports the error, commits
+  // (so the update listeners — and the Yjs write — still run) and skips that
+  // commit's deferred callbacks, so a reset that only rides on `onUpdate` is
+  // left queued and does not land until the tail of the *next* commit, by which
+  // point that commit's listener has already written to Yjs with the flag set.
+  // Syncing on demand rather than from `connect()` keeps the user's edit the
+  // first commit after the failure, which is what makes that visible.
+  test(`an edit after a failed bootstrap is still undoable`, async () => {
+    const errors: Error[] = [];
+    const {editor, readText, sync} = await renderBootstrapped(
+      () => {
+        throw new Error('bootstrap failed');
+      },
+      {autoSync: false, onError: error => errors.push(error)},
+    );
+
+    await sync();
+    expect(errors.map(error => error.message)).toEqual(['bootstrap failed']);
+
+    await act(async () => {
+      editor.update(() => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('typed after the failure'));
+        $getRoot().append(paragraph);
+      });
+    });
+    expect(readText()).toBe('typed after the failure');
+
+    await act(async () => {
+      editor.dispatchCommand(UNDO_COMMAND, undefined);
+    });
+    expect(readText()).not.toBe('typed after the failure');
   });
 });

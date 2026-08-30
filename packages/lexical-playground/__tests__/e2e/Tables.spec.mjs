@@ -9638,6 +9638,11 @@ test.describe('Tables', () => {
     }) => {
       test.skip(isPlainText);
       test.skip(isCollab);
+      test.fixme(
+        browserName === 'firefox',
+        'Erroneously selects the entire outer cell (Firefox 152 extended the ' +
+          'shift-click behavior already fixme-d on the sibling cases to this one)',
+      );
       await initialize({hasNestedTables: true, page});
 
       await setupTables(page);

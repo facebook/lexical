@@ -83,8 +83,6 @@ function TextFormatFloatingToolbar({
 }): JSX.Element {
   const popupCharStylesEditorRef = useRef<HTMLDivElement | null>(null);
   const rovingRef = useLexicalRovingTabIndexRef();
-  // Subscribed rather than read off the editor, so that setEditable() actually
-  // re-renders the toolbar.
   const isEditable = useLexicalEditable();
   const mergedRef = useMergeRefs([popupCharStylesEditorRef, rovingRef, ref]);
 

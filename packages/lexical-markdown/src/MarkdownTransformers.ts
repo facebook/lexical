@@ -296,6 +296,16 @@ export const codeFenceState = createState('mdCodeFence', {
   resetOnCopyNode: true,
 });
 
+/**
+ * The info-string tail after a fenced code block's language (e.g. `title="x"`
+ * in ```` ```js title="x" ````). `CodeNode` models only the language, so the
+ * rest is kept here to survive the round trip.
+ */
+export const codeMetaState = createState('mdCodeMeta', {
+  parse: val => (typeof val === 'string' ? val : ''),
+  resetOnCopyNode: true,
+});
+
 export type MarkdownHardLineBreak = string;
 
 export const hardLineBreakState = createState('mdHardLineBreak', {
@@ -409,6 +419,18 @@ function stripFenceIndent(line: string, indent: number): string {
     index++;
   }
   return line.slice(index);
+}
+
+/**
+ * Attaches the opening fence's info-string tail to the `CodeNode` that
+ * `CODE.replace` just appended. `replace` takes the match rather than the
+ * source line, so the tail is applied here, where the line is in hand.
+ */
+function $setCodeMeta(parentNode: ElementNode, meta: string): void {
+  const codeNode = parentNode.getLastChild();
+  if (meta && $isCodeNode(codeNode)) {
+    $setState(codeNode, codeMetaState, meta);
+  }
 }
 
 const createBlockNode = (
@@ -649,9 +671,13 @@ export const CODE: MultilineElementTransformer = {
         fence = '`'.repeat(maxLength + 1);
       }
     }
+    const language = node.getLanguage() || '';
+    const meta = language ? $getState(node, codeMetaState) : '';
+
     return (
       fence +
-      (node.getLanguage() || '') +
+      language +
+      (meta ? ' ' + meta : '') +
       (textContent ? '\n' + textContent : '') +
       '\n' +
       fence
@@ -714,8 +740,11 @@ export const CODE: MultilineElementTransformer = {
         // blank remainder is unshifted rather than skipped — otherwise a code
         // block that genuinely starts with a blank line would have that line
         // mistaken for the (empty) remainder and dropped.
+        const meta = startMatch[2]
+          ? currentLine.slice(startMatch[0].length).trim()
+          : '';
         linesInBetween.unshift(
-          startMatch[2] ? '' : currentLine.slice(startMatch[0].length),
+          meta ? '' : currentLine.slice(startMatch[0].length),
         );
 
         CODE.replace(
@@ -726,6 +755,7 @@ export const CODE: MultilineElementTransformer = {
           linesInBetween,
           true,
         );
+        $setCodeMeta(rootNode, meta);
         return [true, i];
       }
     }
@@ -801,6 +831,9 @@ export const CODE: MultilineElementTransformer = {
       codeBlockNode.append(textNode);
       rootNode.append(codeBlockNode);
     } else if (children) {
+      if (!isImport && $isUnreplaceableBlock(rootNode)) {
+        return false;
+      }
       createBlockNode(match => {
         return $createCodeNode(match ? match[2] : undefined);
       })(rootNode, children, startMatch, isImport);

@@ -1243,6 +1243,51 @@ describe('Markdown', () => {
     },
   );
 
+  it('should preserve a quote when the code fence shortcut is typed in it (#7407)', () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    editor.update(
+      () => {
+        const quote = $createQuoteNode();
+        const text = $createTextNode('');
+        quote.append(text);
+        $getRoot().append(quote);
+        text.select(0, 0);
+      },
+      {discrete: true},
+    );
+
+    for (const character of '```') {
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText(character);
+          }
+        },
+        {discrete: true},
+      );
+    }
+    editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+
+    editor.read(() => {
+      const quote = $getRoot().getFirstChild();
+      expect($isQuoteNode(quote)).toBe(true);
+      expect(quote?.getTextContent()).toBe('```');
+    });
+  });
+
   it('can round-trip nested fenced code blocks (4 backticks wrapping 3 backticks)', () => {
     const markdown =
       '````markdown\n' +

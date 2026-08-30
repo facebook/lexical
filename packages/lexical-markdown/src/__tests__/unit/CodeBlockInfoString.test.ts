@@ -8,11 +8,26 @@
 
 import {$isCodeNode} from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {$convertFromMarkdownString, TRANSFORMERS} from '@lexical/markdown';
+import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+  TRANSFORMERS,
+} from '@lexical/markdown';
 import {$getRoot} from 'lexical';
 import {describe, expect, it} from 'vitest';
 
 import {MarkdownTestExtension} from '../utils';
+
+function roundTrip(markdown: string): string {
+  using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+  editor.update(
+    () => {
+      $convertFromMarkdownString(markdown, TRANSFORMERS);
+    },
+    {discrete: true},
+  );
+  return editor.read(() => $convertToMarkdownString(TRANSFORMERS));
+}
 
 function importCodeBlock(markdown: string): {
   language: string | null | undefined;
@@ -70,6 +85,21 @@ describe('fenced code block info string', () => {
       language: 'javascript',
       text: 'Code',
     });
+  });
+
+  it('round trips the info string of a closed fence', () => {
+    expect(roundTrip('```js title="x"\ncode\n```')).toBe(
+      '```js title="x"\ncode\n```',
+    );
+    expect(roundTrip('```ts {1,3}\ncode\n```')).toBe('```ts {1,3}\ncode\n```');
+    expect(roundTrip('```js showLineNumbers\na\nb\n```')).toBe(
+      '```js showLineNumbers\na\nb\n```',
+    );
+  });
+
+  it('adds nothing to a fence that has no info string tail', () => {
+    expect(roundTrip('```js\ncode\n```')).toBe('```js\ncode\n```');
+    expect(roundTrip('```\ncode\n```')).toBe('```\ncode\n```');
   });
 
   it('leaves an unterminated fence unchanged', () => {

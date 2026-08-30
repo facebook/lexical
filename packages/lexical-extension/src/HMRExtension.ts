@@ -13,10 +13,22 @@ import type {
 } from '@lexical/history';
 
 import {
+  $createNodeSelection,
+  $createRangeSelection,
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  $isNodeSelection,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
+  $setSelection,
   defineExtension,
   type EditorState,
   HISTORY_MERGE_TAG,
   type LexicalEditor,
+  type LexicalNode,
+  type PointType,
   safeCast,
 } from 'lexical';
 
@@ -93,10 +105,41 @@ interface HMRSavedState {
   editable: boolean;
   /** The live EditorState of the editor that is being replaced. */
   editorState: EditorState;
+  /**
+   * Reads the selection of `editorState`. This closure is created by the
+   * module instance that owns the state, so it runs with the `lexical` module
+   * that created it — necessary when `lexical` is itself part of the HMR
+   * graph, where `$getSelection()` from this instance would not find an active
+   * editor state. Optional: a payload saved by an older build has none.
+   */
+  captureSelection?: () => unknown;
   // Unknown because isValidHMRSavedState does not inspect this field;
   // callers must guard with isValidHistoryState before use.
   historyState: unknown;
 }
+
+/**
+ * A point of the previous selection, addressed by its path from the root
+ * rather than by NodeKey. `parseEditorState` assigns fresh keys, so the keys
+ * of the previous editor mean nothing to the new one — but a document restored
+ * from that state's own JSON has the same shape, so the same path leads to the
+ * same node.
+ */
+interface SavedPoint {
+  offset: number;
+  path: readonly number[];
+  type: 'element' | 'text';
+}
+
+type SavedSelection =
+  | {
+      anchor: SavedPoint;
+      focus: SavedPoint;
+      format: number;
+      style: string;
+      type: 'range';
+    }
+  | {paths: readonly (readonly number[])[]; type: 'node'};
 
 function getSavedHMRState(hot: HotContext, key: string): unknown {
   return hot.data[key];
@@ -155,6 +198,188 @@ function reparseEditorState(
   return editor.parseEditorState(editorState.toJSON());
 }
 
+function $getNodePath(node: LexicalNode): number[] | null {
+  const path: number[] = [];
+  let current = node;
+  while (!$isRootNode(current)) {
+    const parent = current.getParent();
+    if (parent === null) {
+      // A node detached from the root cannot be addressed by a path.
+      return null;
+    }
+    path.push(current.getIndexWithinParent());
+    current = parent;
+  }
+  return path.reverse();
+}
+
+function $capturePoint(point: PointType): SavedPoint | null {
+  const path = $getNodePath(point.getNode());
+  return path === null ? null : {offset: point.offset, path, type: point.type};
+}
+
+/**
+ * Reads `editorState`'s selection into a form that survives re-parsing. Only
+ * called when HMR takes place — walking to the root is proportional to the
+ * number of siblings, so it has no business running on every update.
+ */
+function captureSelection(editorState: EditorState): SavedSelection | null {
+  return editorState.read((): SavedSelection | null => {
+    const selection = $getSelection();
+    if ($isRangeSelection(selection)) {
+      const anchor = $capturePoint(selection.anchor);
+      const focus = $capturePoint(selection.focus);
+      return anchor === null || focus === null
+        ? null
+        : {
+            anchor,
+            focus,
+            format: selection.format,
+            style: selection.style,
+            type: 'range',
+          };
+    }
+    if ($isNodeSelection(selection)) {
+      const paths: number[][] = [];
+      for (const node of selection.getNodes()) {
+        const path = $getNodePath(node);
+        if (path === null) {
+          return null;
+        }
+        paths.push(path);
+      }
+      return paths.length === 0 ? null : {paths, type: 'node'};
+    }
+    return null;
+  });
+}
+
+function isValidPath(raw: unknown): raw is number[] {
+  return Array.isArray(raw) && raw.every(index => typeof index === 'number');
+}
+
+function isValidSavedPoint(raw: unknown): raw is SavedPoint {
+  if (raw == null || typeof raw !== 'object') {
+    return false;
+  }
+  const s = raw as Record<string, unknown>;
+  return (
+    typeof s.offset === 'number' &&
+    (s.type === 'text' || s.type === 'element') &&
+    isValidPath(s.path)
+  );
+}
+
+function isValidSavedSelection(raw: unknown): raw is SavedSelection {
+  if (raw == null || typeof raw !== 'object') {
+    return false;
+  }
+  const s = raw as Record<string, unknown>;
+  if (s.type === 'node') {
+    return Array.isArray(s.paths) && s.paths.every(isValidPath);
+  }
+  return (
+    s.type === 'range' &&
+    isValidSavedPoint(s.anchor) &&
+    isValidSavedPoint(s.focus) &&
+    typeof s.format === 'number' &&
+    typeof s.style === 'string'
+  );
+}
+
+function $resolvePath(path: readonly number[]): LexicalNode | null {
+  let node: LexicalNode = $getRoot();
+  for (const index of path) {
+    if (!$isElementNode(node)) {
+      return null;
+    }
+    const child = node.getChildAtIndex(index);
+    if (child === null) {
+      return null;
+    }
+    node = child;
+  }
+  return node;
+}
+
+function $setPoint(point: PointType, saved: SavedPoint): boolean {
+  const node = $resolvePath(saved.path);
+  // The offsets are clamped rather than trusted: a node transform may have
+  // reshaped the document after it was restored.
+  if (saved.type === 'text') {
+    if (!$isTextNode(node)) {
+      return false;
+    }
+    point.set(
+      node.getKey(),
+      Math.min(saved.offset, node.getTextContentSize()),
+      'text',
+    );
+    return true;
+  }
+  if (!$isElementNode(node)) {
+    return false;
+  }
+  point.set(
+    node.getKey(),
+    Math.min(saved.offset, node.getChildrenSize()),
+    'element',
+  );
+  return true;
+}
+
+function $restoreSelection(saved: SavedSelection): void {
+  if (saved.type === 'node') {
+    const selection = $createNodeSelection();
+    for (const path of saved.paths) {
+      const node = $resolvePath(path);
+      if (node === null) {
+        return;
+      }
+      selection.add(node.getKey());
+    }
+    $setSelection(selection);
+    return;
+  }
+  const selection = $createRangeSelection();
+  if (
+    $setPoint(selection.anchor, saved.anchor) &&
+    $setPoint(selection.focus, saved.focus)
+  ) {
+    selection.format = saved.format;
+    selection.style = saved.style;
+    $setSelection(selection);
+  }
+}
+
+/**
+ * Restores the caret or selection the previous editor had, once its content
+ * has been restored. A selection that no longer resolves is left alone rather
+ * than guessed at.
+ */
+function restoreSavedSelection(
+  editor: LexicalEditor,
+  saved: HMRSavedState,
+): void {
+  const {captureSelection: capture} = saved;
+  if (typeof capture !== 'function') {
+    return;
+  }
+  try {
+    const savedSelection = capture();
+    if (isValidSavedSelection(savedSelection)) {
+      editor.update(() => $restoreSelection(savedSelection), {
+        discrete: true,
+        tag: HISTORY_MERGE_TAG,
+      });
+    }
+  } catch (e) {
+    if (__DEV__) {
+      console.warn('HMR: Could not restore the previous selection.', e);
+    }
+  }
+}
+
 function restoreHistoryState(
   saved: HistoryState,
   editor: LexicalEditor,
@@ -173,9 +398,9 @@ function restoreHistoryState(
 }
 
 /**
- * Preserves editor state, editability, and undo/redo history across Hot Module
- * Replacement (HMR) cycles. When `HistoryExtension` is present as a peer,
- * undo/redo stacks are preserved as well.
+ * Preserves editor state, the selection, editability, and undo/redo history
+ * across Hot Module Replacement (HMR) cycles. When `HistoryExtension` is
+ * present as a peer, undo/redo stacks are preserved as well.
  *
  * Passing `hot: null` is a safe no-op, so `import.meta.hot ?? null` works
  * correctly in both development and production without a build-time
@@ -187,6 +412,11 @@ function restoreHistoryState(
  * per-update cost does not grow with the size of the document or of the undo
  * stack. Everything is serialized once, by the module instance that replaces
  * this one, when it restores the saved state.
+ *
+ * The selection is restored by path from the root rather than by `NodeKey`,
+ * since re-parsing the document assigns fresh keys. A selection that no longer
+ * resolves — because a node class now imports its JSON differently, say — is
+ * dropped, leaving the restored content untouched.
  *
  * @example
  * Basic usage
@@ -271,6 +501,7 @@ export const HMRExtension = /* @__PURE__ */ defineExtension({
         const restoredState = reparseEditorState(saved.editorState, editor);
         if (!restoredState.isEmpty()) {
           editor.setEditorState(restoredState, {tag: HISTORY_MERGE_TAG});
+          restoreSavedSelection(editor, saved);
           if (isValidHistoryState(saved.historyState)) {
             if (historyPeer) {
               try {
@@ -318,20 +549,20 @@ export const HMRExtension = /* @__PURE__ */ defineExtension({
       // keep the previously saved state instead of overwriting with empty.
       const validPrev =
         editorState.isEmpty() && isValidHMRSavedState(prev) ? prev : null;
-      // Only references are stored, so this stays cheap no matter how large
-      // the document or the undo stack gets.
+      // Only references and a closure are stored, so this stays cheap no
+      // matter how large the document or the undo stack gets.
       const nextState: HMRSavedState = {
+        ...(validPrev ?? {
+          captureSelection: () => captureSelection(editorState),
+          editorState,
+          historyState: historyPeer
+            ? // peek() — avoid subscribing this effect to historyState
+              // changes; @lexical/history mutates the HistoryState in place,
+              // so this reference stays current on its own.
+              historyPeer.output.historyState.peek()
+            : null,
+        }),
         editable,
-        editorState: validPrev != null ? validPrev.editorState : editorState,
-        historyState:
-          validPrev != null
-            ? validPrev.historyState
-            : historyPeer
-              ? // peek() — avoid subscribing this effect to historyState
-                // changes; @lexical/history mutates the HistoryState in place,
-                // so this reference stays current on its own.
-                historyPeer.output.historyState.peek()
-              : null,
       };
       hot.data[hmrKey] = nextState;
     });

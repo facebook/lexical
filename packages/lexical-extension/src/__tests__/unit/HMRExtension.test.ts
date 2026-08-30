@@ -14,9 +14,14 @@ import {
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {
+  $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
+  $isNodeSelection,
+  $isRangeSelection,
+  $setSelection,
   defineExtension,
   type EditorState,
   HISTORY_PUSH_TAG,
@@ -33,6 +38,29 @@ function $setupContent(text: string) {
   $getRoot()
     .clear()
     .append($createParagraphNode().append($createTextNode(text)));
+}
+
+function $setupParagraphs(...texts: string[]) {
+  $getRoot()
+    .clear()
+    .append(
+      ...texts.map(text =>
+        $createParagraphNode().append($createTextNode(text)),
+      ),
+    );
+}
+
+/** Reads the caret/selection as `[anchorPath, anchorOffset, focusPath, focusOffset]`. */
+function $readRangeSelection() {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return null;
+  }
+  const describePoint = (point: {
+    getNode: () => {getTextContent: () => string};
+    offset: number;
+  }) => [point.getNode().getTextContent(), point.offset] as const;
+  return [describePoint(selection.anchor), describePoint(selection.focus)];
 }
 
 /**
@@ -617,6 +645,163 @@ describe('HMRExtension', () => {
         expect($getRoot().getTextContent()).toBe('no history');
       });
     }
+  });
+
+  test('preserves a collapsed caret through an HMR cycle', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(
+        () => {
+          $setupParagraphs('first paragraph', 'second paragraph');
+          $getRoot().getLastDescendant()!.selectStart();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.anchor.offset = 6;
+            selection.focus.offset = 6;
+          }
+        },
+        {discrete: true},
+      );
+    }
+
+    {
+      using editor = createEditor(hot);
+      editor.read(() => {
+        expect($readRangeSelection()).toEqual([
+          ['second paragraph', 6],
+          ['second paragraph', 6],
+        ]);
+      });
+    }
+  });
+
+  test('preserves a selection spanning two paragraphs through an HMR cycle', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(
+        () => {
+          $setupParagraphs('alpha', 'beta');
+          const root = $getRoot();
+          root
+            .getFirstDescendant()!
+            .selectStart()
+            .focus.set(root.getLastDescendant()!.getKey(), 4, 'text');
+        },
+        {discrete: true},
+      );
+    }
+
+    {
+      using editor = createEditor(hot);
+      editor.read(() => {
+        expect($readRangeSelection()).toEqual([
+          ['alpha', 0],
+          ['beta', 4],
+        ]);
+      });
+    }
+  });
+
+  test('preserves a node selection through an HMR cycle', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(
+        () => {
+          $setupParagraphs('one', 'two');
+          const selection = $createNodeSelection();
+          selection.add($getRoot().getChildAtIndex(1)!.getKey());
+          $setSelection(selection);
+        },
+        {discrete: true},
+      );
+    }
+
+    {
+      using editor = createEditor(hot);
+      editor.read(() => {
+        const selection = $getSelection();
+        expect($isNodeSelection(selection)).toBe(true);
+        expect(
+          selection!.getNodes().map(node => node.getTextContent()),
+        ).toEqual(['two']);
+      });
+    }
+  });
+
+  test('restores the content when the saved selection no longer resolves', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(() => $setupParagraphs('kept'), {discrete: true});
+    }
+
+    // A path into a child that the restored document does not have
+    const saved = hot.data[TEST_HMR_KEY] as {captureSelection: () => unknown};
+    saved.captureSelection = () => ({
+      anchor: {offset: 0, path: [7, 0], type: 'text'},
+      focus: {offset: 0, path: [7, 0], type: 'text'},
+      format: 0,
+      style: '',
+      type: 'range',
+    });
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      using editor = createEditor(hot);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('kept');
+        expect($getSelection()).toBe(null);
+      });
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('restores the content when capturing the selection throws', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(() => $setupParagraphs('kept'), {discrete: true});
+    }
+
+    const saved = hot.data[TEST_HMR_KEY] as {captureSelection: () => unknown};
+    saved.captureSelection = () => {
+      throw new Error('no active editor state');
+    };
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      using editor = createEditor(hot);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('kept');
+      });
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('Could not restore the previous selection'),
+        expect.anything(),
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('does not capture the selection until the state is restored', () => {
+    const hot = createMockHotContext();
+
+    using editor = createEditor(hot);
+    editor.update(() => $setupParagraphs('typed'), {discrete: true});
+
+    const saved = hot.data[TEST_HMR_KEY] as {captureSelection: () => unknown};
+    // Still a closure over the live state — nothing has been walked or copied
+    expect(typeof saved.captureSelection).toBe('function');
   });
 
   test('stores a reference to the live editor state instead of a serialized copy', () => {

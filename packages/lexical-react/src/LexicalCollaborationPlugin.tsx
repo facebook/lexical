@@ -8,7 +8,7 @@
 
 import type {InitialEditorStateType} from './LexicalComposer';
 import type {LexicalEditor} from 'lexical';
-import type {Doc, XmlText} from 'yjs';
+import type {Doc, XmlElement, XmlText} from 'yjs';
 
 import {
   type CollaborationContextType,
@@ -293,6 +293,14 @@ type CollaborationPluginV2Props = {
   selectionHighlight?: boolean;
   /** Customize the Yjs shared-type key used for the root `XmlElement`. Defaults to `'root-v2'`. */
   rootName?: string;
+  /**
+   * Resolve the root `XmlElement` from the `Doc` yourself, for roots that are
+   * not a top-level shared type (e.g. an `XmlElement` held in a `Y.Map` or
+   * `Y.Array`, as when one `Doc` stores many independently editable
+   * documents). The element must be created as `new XmlElement()` without a
+   * `nodeName`. Takes precedence over `rootName`.
+   */
+  getXmlElement?: (doc: Doc) => XmlElement;
 };
 
 /**
@@ -316,6 +324,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   awarenessData,
   selectionHighlight,
   rootName,
+  getXmlElement,
 }: CollaborationPluginV2Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
   const {yjsDocMap, name, color} = collabContext;
@@ -335,6 +344,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
       __shouldBootstrapUnsafe,
       awarenessData,
       excludedProperties,
+      getXmlElement,
       rootName,
       selectionHighlight,
     },

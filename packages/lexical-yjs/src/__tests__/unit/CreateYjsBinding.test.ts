@@ -10,6 +10,7 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   type Binding,
   createBinding,
+  createBindingV2__EXPERIMENTAL,
   createYjsBinding,
   type Provider,
 } from '@lexical/yjs';
@@ -21,9 +22,17 @@ import {
   type LexicalEditor,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
-import {applyUpdate, Doc, encodeStateAsUpdate, Map as YMap, XmlText} from 'yjs';
+import {
+  applyUpdate,
+  Doc,
+  encodeStateAsUpdate,
+  Map as YMap,
+  XmlElement,
+  XmlText,
+} from 'yjs';
 
 import {type CollabElementNode} from '../../CollabElementNode';
+import {$createOrUpdateNodeFromYElement, $updateYFragment} from '../../SyncV2';
 
 function getRootXmlText(root: CollabElementNode): XmlText {
   return (root as unknown as {_xmlText: XmlText})._xmlText;
@@ -56,6 +65,32 @@ function getNoteBody(doc: Doc, index = 0): XmlText {
   const body = doc.getArray<YMap<XmlText>>('notes').get(index).get('body');
   if (!(body instanceof XmlText)) {
     throw new Error('expected an XmlText body');
+  }
+  return body;
+}
+
+/**
+ * The V2 counterpart of {@link createNotesDoc}: each note's body is an
+ * `XmlElement` created without a `nodeName`, as `doc.get(name, XmlElement)`
+ * would produce for a top-level root.
+ */
+function createNotesDocV2(): {doc: Doc; docMap: Map<string, Doc>} {
+  const {doc, docMap} = createTestDoc();
+  const notes = doc.getArray<YMap<XmlElement>>('notes');
+  notes.push(
+    ['first', 'second'].map(() => {
+      const note = new YMap<XmlElement>();
+      note.set('body', new XmlElement());
+      return note;
+    }),
+  );
+  return {doc, docMap};
+}
+
+function getNoteElement(doc: Doc, index = 0): XmlElement {
+  const body = doc.getArray<YMap<XmlElement>>('notes').get(index).get('body');
+  if (!(body instanceof XmlElement)) {
+    throw new Error('expected an XmlElement body');
   }
   return body;
 }
@@ -242,6 +277,112 @@ describe('createYjsBinding with getXmlText', () => {
     );
     // the sibling note in the same Doc is untouched by this binding
     expect(getNoteBody(remoteDoc, 1).length).toBe(0);
+  });
+});
+
+describe('createBindingV2__EXPERIMENTAL with getXmlElement', () => {
+  test('uses an XmlElement that is not a top-level shared type', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({name: 'yjs-binding-v2-test'}),
+    );
+    const {doc, docMap} = createNotesDocV2();
+
+    const binding = createBindingV2__EXPERIMENTAL(editor, 'test', doc, docMap, {
+      getXmlElement: getNoteElement,
+    });
+
+    expect(binding.root).toBe(getNoteElement(doc));
+    expect(doc.share.has('root-v2')).toBe(false);
+  });
+
+  test('takes precedence over rootName', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({name: 'yjs-binding-v2-test'}),
+    );
+    const {doc, docMap} = createNotesDocV2();
+
+    const binding = createBindingV2__EXPERIMENTAL(editor, 'test', doc, docMap, {
+      getXmlElement: getNoteElement,
+      rootName: 'customRoot',
+    });
+
+    expect(binding.root).toBe(getNoteElement(doc));
+    expect(doc.share.has('customRoot')).toBe(false);
+  });
+
+  test('a nested root round-trips to another client', () => {
+    using localEditor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: 'yjs-binding-v2-local',
+      }),
+    );
+    using remoteEditor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: 'yjs-binding-v2-remote',
+      }),
+    );
+    const {doc: localDoc, docMap: localDocMap} = createNotesDocV2();
+    const localBinding = createBindingV2__EXPERIMENTAL(
+      localEditor,
+      'test',
+      localDoc,
+      localDocMap,
+      {getXmlElement: getNoteElement},
+    );
+
+    localEditor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('Note body')));
+      },
+      {discrete: true},
+    );
+    localEditor.read(() => {
+      localDoc.transact(() => {
+        $updateYFragment(
+          localDoc,
+          localBinding.root,
+          $getRoot(),
+          localBinding,
+          new Set(['root']),
+        );
+      });
+    });
+
+    // the content lands in the nested body, not in a top-level `root-v2`
+    expect(getNoteElement(localDoc).length).toBeGreaterThan(0);
+    expect(localDoc.share.has('root-v2')).toBe(false);
+
+    const remoteDoc = new Doc();
+    applyUpdate(remoteDoc, encodeStateAsUpdate(localDoc));
+    const remoteBinding = createBindingV2__EXPERIMENTAL(
+      remoteEditor,
+      'test',
+      remoteDoc,
+      new Map<string, Doc>([['test', remoteDoc]]),
+      {getXmlElement: getNoteElement},
+    );
+    remoteEditor.update(
+      () => {
+        $getRoot().clear();
+        $createOrUpdateNodeFromYElement(
+          remoteBinding.root,
+          remoteBinding,
+          null,
+          true,
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(remoteEditor.read(() => $getRoot().getTextContent())).toBe(
+      'Note body',
+    );
+    // the sibling note in the same Doc is untouched by this binding
+    expect(getNoteElement(remoteDoc, 1).length).toBe(0);
   });
 });
 

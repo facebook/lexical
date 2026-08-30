@@ -178,6 +178,12 @@ document (reachable from a top-level shared type) and must not be shared with
 another binding. Both options are also available on `createYjsBinding` for
 non-React usage.
 
+The experimental `CollaborationPluginV2__EXPERIMENTAL` (and
+`createBindingV2__EXPERIMENTAL`) take the same two options, except that its
+root is an `XmlElement`, so the callback is named `getXmlElement`. Create that
+element as `new Y.XmlElement()` without a `nodeName`, which is how the root is
+recognized.
+
 ## Building collaborative plugins
 
 [Lexical Playground](https://playground.lexical.dev/) features set of the collaboration enabled plugins that integrate with primary document via `useCollaborationContext()` hook. Notable mentions:

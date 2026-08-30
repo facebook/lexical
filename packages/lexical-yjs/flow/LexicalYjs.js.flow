@@ -392,6 +392,20 @@ declare export function createYjsBinding(
   options: CreateYjsBindingOptions,
 ): Binding;
 
+export type CreateBindingV2Options__EXPERIMENTAL = {
+  excludedProperties?: ExcludedProperties,
+  rootName?: string,
+  getXmlElement?: (doc: Doc) => XmlElement,
+};
+
+declare export function createBindingV2__EXPERIMENTAL(
+  editor: LexicalEditor,
+  id: string,
+  doc: ?Doc,
+  docMap: Map<string, Doc>,
+  options?: CreateBindingV2Options__EXPERIMENTAL,
+): BindingV2;
+
 export type SyncCursorPositionsOptions = {
   getAwarenessStates?: (
     binding: Binding,

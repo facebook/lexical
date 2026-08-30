@@ -163,22 +163,46 @@ export function createBinding(
   return createYjsBinding({doc, docMap, editor, excludedProperties, id});
 }
 
+/** Options for {@link createBindingV2__EXPERIMENTAL}. */
+export interface CreateBindingV2Options__EXPERIMENTAL {
+  excludedProperties?: ExcludedProperties;
+  /** The key used to look up the root `XmlElement` shared type on the Yjs `Doc`. Defaults to `'root-v2'`. */
+  rootName?: string;
+  /**
+   * Resolve the root `XmlElement` from the `Doc` yourself, for roots that are
+   * not a top-level shared type (e.g. an `XmlElement` held in a `Y.Map` or
+   * `Y.Array`, as when one `Doc` stores many independently editable
+   * documents). The V2 equivalent of
+   * {@link CreateYjsBindingOptions.getXmlText}.
+   *
+   * The returned type must already be integrated into `doc` (reachable from a
+   * top-level shared type), must not be shared with another binding, and must
+   * have been created as `new XmlElement()` without a `nodeName` (the root is
+   * identified by its default `'UNDEFINED'` node name, which is also what
+   * `doc.get(rootName, XmlElement)` produces). When given, it takes precedence
+   * over {@link CreateBindingV2Options__EXPERIMENTAL.rootName}.
+   */
+  getXmlElement?: (doc: Doc) => XmlElement;
+}
+
 export function createBindingV2__EXPERIMENTAL(
   editor: LexicalEditor,
   id: string,
   doc: Doc | null | undefined,
   docMap: Map<string, Doc>,
-  options: {excludedProperties?: ExcludedProperties; rootName?: string} = {},
+  options: CreateBindingV2Options__EXPERIMENTAL = {},
 ): BindingV2 {
   invariant(
     doc !== undefined && doc !== null,
     'createBinding: doc is null or undefined',
   );
-  const {excludedProperties, rootName = 'root-v2'} = options;
+  const {excludedProperties, rootName = 'root-v2', getXmlElement} = options;
   return {
     ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
     mapping: new CollabV2Mapping(),
-    root: doc.get(rootName, XmlElement) as XmlElement,
+    root: getXmlElement
+      ? getXmlElement(doc)
+      : (doc.get(rootName, XmlElement) as XmlElement),
   };
 }
 

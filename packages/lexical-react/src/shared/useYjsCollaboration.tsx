@@ -65,6 +65,7 @@ import {
   type Snapshot,
   type Transaction,
   UndoManager,
+  type XmlElement,
   type YEvent,
 } from 'yjs';
 
@@ -210,6 +211,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData?: object;
     excludedProperties?: ExcludedProperties;
     rootName?: string;
+    getXmlElement?: (ydoc: Doc) => XmlElement;
     selectionHighlight?: boolean;
     __shouldBootstrapUnsafe?: boolean;
   } = {},
@@ -218,6 +220,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData,
     excludedProperties,
     rootName,
+    getXmlElement,
     selectionHighlight = false,
     __shouldBootstrapUnsafe: shouldBootstrap,
   } = options;
@@ -229,9 +232,10 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     () =>
       createBindingV2__EXPERIMENTAL(editor, id, doc, docMap, {
         excludedProperties,
+        getXmlElement,
         rootName,
       }),
-    [editor, id, doc, docMap, excludedProperties, rootName],
+    [editor, id, doc, docMap, excludedProperties, rootName, getXmlElement],
   );
 
   useEffect(() => {

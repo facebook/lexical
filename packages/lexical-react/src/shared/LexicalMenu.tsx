@@ -449,6 +449,14 @@ export function LexicalMenu<TOption extends MenuOption>({
     }
   }, [options, selectedIndex, updateSelectedIndex, preselectFirstItem]);
 
+  // Whether this menu currently puts nothing on screen, and so must not
+  // consume the keys that would otherwise reach the editor. Only true for the
+  // default renderer: a `menuRenderFn` is called whatever the option list
+  // looks like, and is free to draw a "no results" panel that the user still
+  // has to be able to arrow through and dismiss.
+  const rendersNothing =
+    menuRenderFnProp == null && (options === null || !options.length);
+
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
@@ -472,10 +480,10 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_DOWN_COMMAND,
         payload => {
           const event = payload;
-          if (options === null || !options.length) {
-            // There is nothing to move through, and an empty option list
-            // renders no menu, so the key has to keep propagating to whatever
-            // would otherwise move the caret.
+          if (rendersNothing) {
+            // There is nothing to move through, and the default renderer draws
+            // no menu for an empty list, so the key has to keep propagating to
+            // whatever would otherwise move the caret.
             return false;
           }
           const newSelectedIndex =
@@ -511,7 +519,7 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_UP_COMMAND,
         payload => {
           const event = payload;
-          if (options === null || !options.length) {
+          if (rendersNothing) {
             // See KEY_ARROW_DOWN_COMMAND above.
             return false;
           }
@@ -545,9 +553,9 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ESCAPE_COMMAND,
         payload => {
           const event = payload;
-          if (options === null || !options.length) {
-            // See KEY_ARROW_DOWN_COMMAND above: with no options there is no
-            // menu on screen to dismiss, so Escape has to keep propagating to
+          if (rendersNothing) {
+            // See KEY_ARROW_DOWN_COMMAND above: with nothing on screen there
+            // is no menu to dismiss, so Escape has to keep propagating to
             // whatever would otherwise handle it.
             return false;
           }
@@ -603,6 +611,7 @@ export function LexicalMenu<TOption extends MenuOption>({
     close,
     editor,
     options,
+    rendersNothing,
     selectedIndex,
     updateSelectedIndex,
     commandPriority,
@@ -643,6 +652,33 @@ function setContainerDivAttributes(
 }
 
 /**
+ * Whether an element establishes the containing block that an absolutely
+ * positioned descendant resolves its offsets against. Being positioned is the
+ * usual reason, but a transform, filter, containment or a `will-change` naming
+ * one of those does it too, on an otherwise statically positioned element.
+ */
+function establishesContainingBlock(style: CSSStyleDeclaration): boolean {
+  if (style.position !== 'static') {
+    return true;
+  }
+  const willChange = style.willChange;
+  return (
+    style.transform !== 'none' ||
+    style.perspective !== 'none' ||
+    style.filter !== 'none' ||
+    style.backdropFilter !== 'none' ||
+    style.contain.includes('paint') ||
+    style.contain.includes('layout') ||
+    style.contain.includes('strict') ||
+    style.contain.includes('content') ||
+    willChange.includes('transform') ||
+    willChange.includes('perspective') ||
+    willChange.includes('filter') ||
+    willChange.includes('contain')
+  );
+}
+
+/**
  * The anchor is absolutely positioned, so its `top`/`left` are resolved
  * against its containing block. That is the initial containing block — i.e.
  * document coordinates, which is why the page scroll offsets are added — only
@@ -677,7 +713,7 @@ function getContainingBlockOrigin(
     if (view === null) {
       break;
     }
-    if (view.getComputedStyle(element).position !== 'static') {
+    if (establishesContainingBlock(view.getComputedStyle(element))) {
       const rect = element.getBoundingClientRect();
       return {
         left: rect.left + element.clientLeft - element.scrollLeft,

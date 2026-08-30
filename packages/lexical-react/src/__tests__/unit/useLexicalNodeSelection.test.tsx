@@ -113,19 +113,36 @@ describe('useLexicalNodeSelection', () => {
     container.remove();
   });
 
-  it('keeps a range selection when asked to deselect', async () => {
-    editor.update(() => void $selectAll(), {discrete: true});
-    expect(editor.read(() => $isRangeSelection($getSelection()))).toBe(true);
+  it('keeps a range selection that does not cover the node', async () => {
+    // A caret in the paragraph, which does not reach the horizontal rule.
+    editor.update(() => void $getRoot().getFirstChild()!.selectEnd(), {
+      discrete: true,
+    });
+    expect(editor.read(() => $getNodeByKey(ruleKey)!.isSelected())).toBe(false);
 
-    // LexicalNode.isSelected() is true for a RangeSelection that covers the
-    // node, so the `setSelected(!isSelected)` toggle that this package's own
-    // HorizontalRuleComponent and BlockWithAlignableContents use arrives here
-    // with `false` while a range selection is active.
+    // Deselecting a node the selection does not reach has nothing to do, so it
+    // must not discard the user's caret to say so.
     await act(async () => {
       setSelected(false);
     });
 
     expect(editor.read(() => $isRangeSelection($getSelection()))).toBe(true);
+  });
+
+  it('deselects a node the range selection does cover', async () => {
+    editor.update(() => void $selectAll(), {discrete: true});
+    // LexicalNode.isSelected() is true for a RangeSelection that covers the
+    // node, so the `clearSelection(); setSelected(!isSelected)` toggle used by
+    // HorizontalRuleNode, BlockWithAlignableContents and the playground
+    // decorators arrives here with `false`. Ignoring it makes those a dead
+    // click: isSelected stays true, so the node can never be selected.
+    expect(editor.read(() => $getNodeByKey(ruleKey)!.isSelected())).toBe(true);
+
+    await act(async () => {
+      setSelected(false);
+    });
+
+    expect(editor.read(() => $getNodeByKey(ruleKey)!.isSelected())).toBe(false);
   });
 
   it('still creates a node selection when asked to select', async () => {

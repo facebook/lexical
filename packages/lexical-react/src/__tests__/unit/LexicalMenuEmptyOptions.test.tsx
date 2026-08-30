@@ -23,6 +23,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {
   LexicalMenu,
   MenuOption,
+  type MenuRenderFn,
   type MenuResolution,
 } from '../../shared/LexicalMenu';
 
@@ -83,7 +84,10 @@ describe('LexicalMenu arrow keys with no options', () => {
     vi.restoreAllMocks();
   });
 
-  async function renderMenu(options: TestOption[]): Promise<void> {
+  async function renderMenu(
+    options: TestOption[],
+    menuRenderFn?: MenuRenderFn<TestOption>,
+  ): Promise<void> {
     await act(async () => {
       reactRoot.render(
         <LexicalMenu<TestOption>
@@ -93,6 +97,7 @@ describe('LexicalMenu arrow keys with no options', () => {
           resolution={createTestResolution()}
           options={options}
           onSelectOption={vi.fn()}
+          menuRenderFn={menuRenderFn}
         />,
       );
     });
@@ -139,6 +144,19 @@ describe('LexicalMenu arrow keys with no options', () => {
 
     it(`still consumes ${name} when there are options`, async () => {
       await renderMenu([new TestOption('a'), new TestOption('b')]);
+
+      const result = pressKey(command);
+      expect(result.handled).toBe(true);
+      expect(result.defaultPrevented).toBe(true);
+      expect(result.reachedEditor).toBe(false);
+    });
+
+    it(`still consumes ${name} when a custom renderer draws an empty menu`, async () => {
+      // Only the default renderer draws nothing for an empty list. A
+      // menuRenderFn is called whatever the options look like and may put a
+      // "no results" panel on screen, which the user still has to be able to
+      // move through and dismiss.
+      await renderMenu([], () => <div>No results</div>);
 
       const result = pressKey(command);
       expect(result.handled).toBe(true);

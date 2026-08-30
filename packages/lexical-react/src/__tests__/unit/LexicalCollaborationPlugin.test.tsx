@@ -424,4 +424,51 @@ describe(`LexicalCollaborationPlugin`, () => {
     // The superseded provider is torn down.
     expect(providerA._disconnectCount).toBeGreaterThan(0);
   });
+
+  test(`an inline providerFactory keeps its provider connected`, () => {
+    const doc = new Y.Doc();
+    const provider = createTestProvider();
+
+    // Declared inline, the way this package's own test harness does it, so the
+    // factory has a fresh identity on every render while handing back the same
+    // provider. Re-rendering must not tear that provider down: nothing would
+    // reconnect it, because setProvider() bails on the identical value.
+    function App() {
+      return (
+        <LexicalCollaboration>
+          <LexicalComposer initialConfig={editorConfig}>
+            <CollaborationPlugin
+              id="main"
+              providerFactory={(id: string, yjsDocMap: Map<string, Y.Doc>) => {
+                yjsDocMap.set(id, doc);
+                return provider;
+              }}
+              shouldBootstrap={false}
+            />
+            <RichTextPlugin
+              contentEditable={<ContentEditable />}
+              placeholder={<></>}
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+          </LexicalComposer>
+        </LexicalCollaboration>
+      );
+    }
+
+    act(() => {
+      reactRoot.render(<App />);
+    });
+    expect(provider._connectCount).toBe(1);
+    expect(provider._disconnectCount).toBe(0);
+
+    act(() => {
+      reactRoot.render(<App />);
+    });
+    act(() => {
+      reactRoot.render(<App />);
+    });
+
+    expect(provider._disconnectCount).toBe(0);
+    expect(provider._connectCount).toBe(1);
+  });
 });

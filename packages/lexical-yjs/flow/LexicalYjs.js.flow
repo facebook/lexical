@@ -375,6 +375,21 @@ declare export function createBinding(
   id: string,
   doc: ?Doc,
   docMap: Map<string, Doc>,
+  excludedProperties?: ExcludedProperties,
+): Binding;
+
+export type CreateYjsBindingOptions = {
+  editor: LexicalEditor,
+  id: string,
+  doc: Doc,
+  docMap: Map<string, Doc>,
+  excludedProperties?: ExcludedProperties,
+  rootName?: string,
+  getXmlText?: (doc: Doc) => XmlText,
+};
+
+declare export function createYjsBinding(
+  options: CreateYjsBindingOptions,
 ): Binding;
 
 export type SyncCursorPositionsOptions = {

@@ -147,6 +147,37 @@ Source code: [examples/react-rich-collab](https://github.com/facebook/lexical/tr
 
 <iframe width="100%" height="600" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich-collab?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
 
+## Sharing one Yjs document between editors
+
+By default a binding uses the `XmlText` shared type named `root` on the Yjs
+`Doc`, so each editor needs its own document. Two options let several editors
+live in one document instead, which is what applications like collaborative
+sticky notes or comment threads usually want:
+
+- `rootName` picks a different top-level shared type, one per editor:
+
+```jsx
+<CollaborationPlugin id="notes" providerFactory={providerFactory} rootName={`note-${noteId}`} shouldBootstrap={true} />
+```
+
+- `getXmlText` resolves the root yourself, for roots that are not top-level
+  shared types (for example an `XmlText` stored in a `Y.Map` inside a
+  `Y.Array`). It takes precedence over `rootName`:
+
+```jsx
+const getXmlText = useCallback(
+  (doc) => doc.getArray('notes').get(noteIndex).get('body'),
+  [noteIndex],
+);
+
+<CollaborationPlugin id="notes" providerFactory={providerFactory} getXmlText={getXmlText} shouldBootstrap={true} />
+```
+
+The `XmlText` returned by `getXmlText` must already be integrated into the
+document (reachable from a top-level shared type) and must not be shared with
+another binding. Both options are also available on `createYjsBinding` for
+non-React usage.
+
 ## Building collaborative plugins
 
 [Lexical Playground](https://playground.lexical.dev/) features set of the collaboration enabled plugins that integrate with primary document via `useCollaborationContext()` hook. Notable mentions:

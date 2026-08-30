@@ -8,7 +8,7 @@
 
 import type {InitialEditorStateType} from './LexicalComposer';
 import type {LexicalEditor} from 'lexical';
-import type {Doc} from 'yjs';
+import type {Doc, XmlText} from 'yjs';
 
 import {
   type CollaborationContextType,
@@ -54,6 +54,13 @@ type CollaborationPluginProps = {
   selectionHighlight?: boolean;
   /** Customize the Yjs shared-type key used for the root `XmlText`. Defaults to `'root'`. */
   rootName?: string;
+  /**
+   * Resolve the root `XmlText` from the `Doc` yourself, for roots that are not
+   * a top-level shared type (e.g. an `XmlText` held in a `Y.Map` or `Y.Array`,
+   * as when one `Doc` stores many independently editable documents). Takes
+   * precedence over `rootName`.
+   */
+  getXmlText?: (doc: Doc) => XmlText;
 };
 
 /**
@@ -78,6 +85,7 @@ export function CollaborationPlugin({
   syncCursorPositionsFn,
   selectionHighlight,
   rootName,
+  getXmlText,
 }: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
   // The inputs that produced the current Provider. A ref rather than the effect
@@ -163,6 +171,7 @@ export function CollaborationPlugin({
       docMap: yjsDocMap,
       editor,
       excludedProperties,
+      getXmlText,
       id,
       rootName,
     });
@@ -172,7 +181,16 @@ export function CollaborationPlugin({
     return () => {
       newBinding.root.destroy(newBinding);
     };
-  }, [editor, provider, id, yjsDocMap, doc, excludedProperties, rootName]);
+  }, [
+    editor,
+    provider,
+    id,
+    yjsDocMap,
+    doc,
+    excludedProperties,
+    rootName,
+    getXmlText,
+  ]);
 
   if (!provider || !binding) {
     return <></>;

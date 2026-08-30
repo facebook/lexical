@@ -105,6 +105,16 @@ export interface CreateYjsBindingOptions {
   excludedProperties?: ExcludedProperties;
   /** The key used to look up the root `XmlText` shared type on the Yjs `Doc`. Defaults to `'root'`. */
   rootName?: string;
+  /**
+   * Resolve the root `XmlText` from the `Doc` yourself, for roots that are not
+   * a top-level shared type (e.g. an `XmlText` held in a `Y.Map` or `Y.Array`,
+   * as when one `Doc` stores many independently editable documents).
+   *
+   * The returned type must already be integrated into `doc` (reachable from a
+   * top-level shared type) and must not be shared with another binding. When
+   * given, it takes precedence over {@link CreateYjsBindingOptions.rootName}.
+   */
+  getXmlText?: (doc: Doc) => XmlText;
 }
 
 /**
@@ -120,8 +130,11 @@ export function createYjsBinding({
   docMap,
   excludedProperties,
   rootName = 'root',
+  getXmlText,
 }: CreateYjsBindingOptions): Binding {
-  const rootXmlText = doc.get(rootName, XmlText) as XmlText;
+  const rootXmlText = getXmlText
+    ? getXmlText(doc)
+    : (doc.get(rootName, XmlText) as XmlText);
   const root: CollabElementNode = $createCollabElementNode(
     rootXmlText,
     null,

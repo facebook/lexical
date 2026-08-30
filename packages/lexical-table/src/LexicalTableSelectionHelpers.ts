@@ -14,6 +14,7 @@ import invariant from '@lexical/internal/invariant';
 import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
+  $comparePointCaretNext,
   $createParagraphNode,
   $createRangeSelectionFromDom,
   $createTextNode,
@@ -21,6 +22,7 @@ import {
   $findMatchingParent,
   $getAdjacentChildCaret,
   $getChildCaret,
+  $getCommonAncestor,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getNodeByKeyOrThrow,
@@ -641,12 +643,29 @@ function $handleTableClick(
   const prevSelection = $getPreviousSelection();
   // We can't trust Firefox to do the right thing with the selection and
   // we don't have a proper state machine to do this "correctly" but
-  // if we go ahead and make the table selection now it will work
+  // if we go ahead and make the table selection now it will work.
+  //
+  // Only the nearest cell's observer is given the pointerdown
+  // (getTableObserverFromCellNode resolves one), so shift-clicking into a table
+  // nested inside a cell arrives here with `tableNode` set to that nested table
+  // and a previous anchor in the cell around it — outside `tableNode`, so
+  // $isSelectionInTable alone would skip it and leave the case to Firefox,
+  // which resets the anchor to the start of the cell. The branches below do
+  // resolve it, so widen to it and to nothing else: an anchor in an unrelated
+  // table is not something they can resolve, and the second one would put the
+  // focus on this table's edge rather than on the cell that was clicked.
+  const prevAnchorNestedCell =
+    $isRangeSelection(prevSelection) || $isTableSelection(prevSelection)
+      ? $findCellNode(prevSelection.anchor.getNode())
+      : null;
+  const isShiftClickIntoNestedTable =
+    prevAnchorNestedCell !== null && prevAnchorNestedCell.isParentOf(tableNode);
   if (
     IS_FIREFOX &&
     event.shiftKey &&
-    $isSelectionInTable(prevSelection, tableNode) &&
-    ($isRangeSelection(prevSelection) || $isTableSelection(prevSelection))
+    ($isRangeSelection(prevSelection) || $isTableSelection(prevSelection)) &&
+    ($isSelectionInTable(prevSelection, tableNode) ||
+      isShiftClickIntoNestedTable)
   ) {
     const prevAnchorNode = prevSelection.anchor.getNode();
     const prevAnchorCell = $findParentTableCellNodeInTable(
@@ -654,11 +673,30 @@ function $handleTableClick(
       prevSelection.anchor.getNode(),
     );
     if (prevAnchorCell) {
-      tableObserver.$setAnchorCellForSelection(
-        $getObserverCellFromCellNodeOrThrow(tableObserver, prevAnchorCell),
+      const prevAnchorDOMCell = $getObserverCellFromCellNodeOrThrow(
+        tableObserver,
+        prevAnchorCell,
       );
-      tableObserver.$setFocusCellForSelection(selectedDOMCell);
-      stopEvent(event);
+      // Only when the two ends are in different cells is there a table
+      // selection to make. A shift-click out of a nested table arrives here
+      // with both in the same one: the anchor sits inside that table, and
+      // $findParentTableCellNodeInTable walks past it to the cell of
+      // `tableNode` that contains it, which is also the cell that was clicked.
+      // Building a TableSelection from that covers the single cell end to end
+      // — "erroneously selects the entire outer cell". What belongs there is an
+      // ordinary range inside the cell, which the engine resolves on its own.
+      if (prevAnchorDOMCell.elem !== selectedDOMCell.elem) {
+        tableObserver.$setAnchorCellForSelection(prevAnchorDOMCell);
+        tableObserver.$setFocusCellForSelection(selectedDOMCell);
+        stopEvent(event);
+      } else if (event.pointerType !== 'touch') {
+        // No table selection to make, but the observer's anchor still has to
+        // follow the pointer down: createPointerHandlers only adopts its
+        // `startingCell` when `anchorCell` is null, so leaving a cell from an
+        // earlier click in place would anchor a drag started here on that one.
+        // This records the cell without touching the selection.
+        tableObserver.$setAnchorCellForSelection(selectedDOMCell);
+      }
     } else {
       const newSelection = tableNode.isBefore(prevAnchorNode)
         ? tableNode.selectStart()
@@ -668,6 +706,10 @@ function $handleTableClick(
         prevSelection.anchor.offset,
         prevSelection.anchor.type,
       );
+      // The selection above is the answer, so the native shift-click must not
+      // also run: Firefox would resolve its own, anchored at the start of the
+      // cell, and the selectionchange import would overwrite this one.
+      stopEvent(event);
     }
   } else {
     // Only set anchor cell for selection if this is not a simple touch tap
@@ -978,19 +1020,14 @@ export function applyTableHandlers(
           anchorNode,
           focusNode,
         );
-        const maxRow = Math.max(
-          anchorCell.startRow + anchorCell.cell.__rowSpan - 1,
-          focusCell.startRow + focusCell.cell.__rowSpan - 1,
-        );
-        const maxColumn = Math.max(
-          anchorCell.startColumn + anchorCell.cell.__colSpan - 1,
-          focusCell.startColumn + focusCell.cell.__colSpan - 1,
-        );
-        const minRow = Math.min(anchorCell.startRow, focusCell.startRow);
-        const minColumn = Math.min(
-          anchorCell.startColumn,
-          focusCell.startColumn,
-        );
+        // The same rect TableSelection.getNodes() walks. A naive min/max over
+        // the two cells' own spans is not enough: a merged cell that straddles
+        // the boundary pulls the rect outwards, and $computeTableCellRectBoundary
+        // iterates until it stops growing. Using the smaller rect here left the
+        // cells that only the expansion brings in selected and highlighted but
+        // unformatted.
+        const {minColumn, maxColumn, minRow, maxRow} =
+          $computeTableCellRectBoundary(tableMap, anchorCell, focusCell);
 
         if (
           minRow === 0 &&
@@ -1869,17 +1906,32 @@ function getCorner(
   return [colName, rowName];
 }
 
-function getCornerOrThrow(
+/**
+ * Resolve the corner of `rect` that the anchor sits on.
+ *
+ * `$computeTableCellRectBoundary` grows the rect until it contains every
+ * merged cell that straddles an edge, so the anchor is not guaranteed to be at
+ * a corner of the result — a cell merged across the rect's edge pushes that
+ * edge past the anchor. Fall back to the corner opposite the focus, and when
+ * the focus is not at a corner either, to the top-left.
+ *
+ * TODO the last fallback doesn't have to be arbitrary, use the closest corner
+ * instead.
+ */
+function getAnchorCorner(
   rect: TableCellRectBoundary,
-  cellValue: TableMapValueType,
+  anchorCellValue: TableMapValueType,
+  focusCellValue: TableMapValueType,
 ): Corner {
-  const corner = getCorner(rect, cellValue);
-  invariant(
-    corner !== null,
-    'getCornerOrThrow: cell %s is not at a corner of rect',
-    cellValue.cell.getKey(),
-  );
-  return corner;
+  const anchorCorner = getCorner(rect, anchorCellValue);
+  if (anchorCorner) {
+    return anchorCorner;
+  }
+  const focusCorner = getCorner(rect, focusCellValue);
+  if (focusCorner) {
+    return oppositeCorner(focusCorner);
+  }
+  return ['minColumn', 'minRow'];
 }
 
 function oppositeCorner([colName, rowName]: Corner): Corner {
@@ -1926,25 +1978,14 @@ function $extractRectCorners(
     anchorCellValue,
     newFocusCellValue,
   );
-  const anchorCorner = getCorner(rect, anchorCellValue);
-  if (anchorCorner) {
-    return [
-      cellAtCornerOrThrow(tableMap, rect, anchorCorner),
-      cellAtCornerOrThrow(tableMap, rect, oppositeCorner(anchorCorner)),
-    ];
-  }
-  const newFocusCorner = getCorner(rect, newFocusCellValue);
-  if (newFocusCorner) {
-    return [
-      cellAtCornerOrThrow(tableMap, rect, oppositeCorner(newFocusCorner)),
-      cellAtCornerOrThrow(tableMap, rect, newFocusCorner),
-    ];
-  }
-  // TODO this doesn't have to be arbitrary, use the closest corner instead
-  const newAnchorCorner: Corner = ['minColumn', 'minRow'];
+  const anchorCorner = getAnchorCorner(
+    rect,
+    anchorCellValue,
+    newFocusCellValue,
+  );
   return [
-    cellAtCornerOrThrow(tableMap, rect, newAnchorCorner),
-    cellAtCornerOrThrow(tableMap, rect, oppositeCorner(newAnchorCorner)),
+    cellAtCornerOrThrow(tableMap, rect, anchorCorner),
+    cellAtCornerOrThrow(tableMap, rect, oppositeCorner(anchorCorner)),
   ];
 }
 
@@ -1962,7 +2003,7 @@ function $adjustFocusInDirection(
   );
   const spans = $computeTableCellRectSpans(tableMap, rect);
   const {topSpan, leftSpan, bottomSpan, rightSpan} = spans;
-  const anchorCorner = getCornerOrThrow(rect, anchorCellValue);
+  const anchorCorner = getAnchorCorner(rect, anchorCellValue, focusCellValue);
   const [focusColumn, focusRow] = oppositeCorner(anchorCorner);
   let fCol = rect[focusColumn];
   let fRow = rect[focusRow];
@@ -2194,6 +2235,27 @@ function $findNextTableCell<D extends CaretDirection>(
   return null;
 }
 
+/**
+ * True when the selection focus sits before `tableNode` in document order —
+ * the only side an ArrowDown can move the caret into the table from.
+ */
+function $isSelectionBeforeTable(
+  selection: null | BaseSelection,
+  tableNode: TableNode,
+): boolean {
+  if (!$isRangeSelection(selection)) {
+    return false;
+  }
+  const focusCaret = $caretFromPoint(selection.focus, 'next');
+  // A ChildCaret is ordered at the table's 'enter' (pre-order) position, so
+  // any caret strictly before it is outside of and above the table.
+  const tableCaret = $getChildCaret(tableNode, 'next');
+  return (
+    $getCommonAncestor(focusCaret.origin, tableCaret.origin) !== null &&
+    $comparePointCaretNext(focusCaret, tableCaret) < 0
+  );
+}
+
 function $handleArrowKey(
   editor: LexicalEditor,
   event: KeyboardEvent,
@@ -2381,7 +2443,17 @@ function $handleArrowKey(
         }
       }
     }
-    if (direction === 'down' && $isScrollableTablesActive(editor)) {
+    if (
+      direction === 'down' &&
+      $isScrollableTablesActive(editor) &&
+      // Only arm the workaround when ArrowDown could actually move the caret
+      // into the table. From a caret after the table (e.g. the block cursor
+      // below a trailing table) ArrowDown moves nothing, so the flag would
+      // survive to be consumed by an unrelated later selection change — an
+      // ArrowUp back into the last row would then be snapped to the first
+      // cell.
+      $isSelectionBeforeTable(selection, tableNode)
+    ) {
       // Enable Firefox workaround
       tableObservers.setShouldCheckSelectionForTable(tableNode.getKey());
     }

@@ -15,6 +15,7 @@ import {
   $createParagraphNode,
   $getChildCaret,
   $getSelection,
+  $getSlotHost,
   $isElementNode,
   $isLeafNode,
   $isRangeSelection,
@@ -58,6 +59,21 @@ function $isSelectingEmptyListItem(
 }
 
 /**
+ * Build the ListNode that replaces `list` when its type is changed. The
+ * replacement stands in for the same list, so it is a copy — carrying the
+ * direction, format, style, indent and start the original was given — rather
+ * than a default-constructed ListNode. Every other place a ListNode is
+ * replaced by an equivalent one ({@link $handleIndent},
+ * {@link $handleOutdent}, {@link ListItemNode.replace}, …) uses `$copyNode`
+ * for the same reason.
+ */
+function $newListFrom(list: ElementNode, listType: ListType): ListNode {
+  return $isListNode(list)
+    ? $copyNode(list).setListType(listType)
+    : $createListNode(listType);
+}
+
+/**
  * Inserts a new ListNode. If the selection's anchor node is an empty ListItemNode and is a child of
  * the root/shadow root, it will replace the ListItemNode with a ListNode and the old ListItemNode.
  * Otherwise it will replace its parent with a new ListNode and re-insert the ListItemNode and any previous children.
@@ -86,9 +102,8 @@ export function $insertList(listType: ListType): void {
           nodes = paragraph.select().getNodes();
         }
       } else if ($isSelectingEmptyListItem(anchorNode, nodes)) {
-        const list = $createListNode(listType);
-
         if ($isRootOrShadowRoot(anchorNodeParent)) {
+          const list = $createListNode(listType);
           anchorNode.replace(list);
           const listItem = $createListItemNode();
           if ($isElementNode(anchorNode)) {
@@ -98,8 +113,15 @@ export function $insertList(listType: ListType): void {
           list.append(listItem);
         } else if ($isListItemNode(anchorNode)) {
           const parent = anchorNode.getParentOrThrow();
-          append(list, parent.getChildren());
-          parent.replace(list);
+          // A named-slot value has no __parent (its up-link is __slotHost);
+          // its slot assignment is managed by the node or extension that
+          // owns the slot, so converting it is a no-op rather than a
+          // replace (which would throw).
+          if ($getSlotHost(parent) === null) {
+            const list = $newListFrom(parent, listType);
+            append(list, parent.getChildren());
+            parent.replace(list);
+          }
         }
 
         return;
@@ -114,6 +136,10 @@ export function $insertList(listType: ListType): void {
         $isElementNode(node) &&
         node.isEmpty() &&
         !$isListItemNode(node) &&
+        // A named-slot value's slot assignment is managed by the node or
+        // extension that owns the slot, so it is not eligible for list
+        // conversion (see $setBlocksType).
+        $getSlotHost(node) === null &&
         !handled.has(node.getKey())
       ) {
         $createListOrMerge(node, listType);
@@ -130,8 +156,11 @@ export function $insertList(listType: ListType): void {
         const parentKey = parent.getKey();
 
         if ($isListNode(parent)) {
-          if (!handled.has(parentKey)) {
-            const newListNode = $createListNode(listType);
+          // A list occupying a named slot is left as-is — its slot
+          // assignment is managed by the node or extension that owns the
+          // slot.
+          if (!handled.has(parentKey) && $getSlotHost(parent) === null) {
+            const newListNode = $newListFrom(parent, listType);
             append(newListNode, parent.getChildren());
             parent.replace(newListNode);
             handled.add(parentKey);
@@ -230,7 +259,11 @@ export function mergeLists(list1: ListNode, list2: ListNode): void {
     listItem1 &&
     listItem2 &&
     $isNestedListNode(listItem1) &&
-    $isNestedListNode(listItem2)
+    $isNestedListNode(listItem2) &&
+    // A nested <ul> must not swallow a nested <ol>, same rule as
+    // mergeNextSiblingListIfSameType applies at the top level.
+    listItem1.getFirstChild().getListType() ===
+      listItem2.getFirstChild().getListType()
   ) {
     mergeLists(listItem1.getFirstChild(), listItem2.getFirstChild());
     listItem2.remove();
@@ -275,6 +308,13 @@ export function $removeList(): void {
     }
 
     for (const listNode of listNodes) {
+      // A list occupying a named slot is left as-is: unwinding it would
+      // insert siblings through the tree API (which would throw) and vacate
+      // a slot whose assignment is managed by the node or extension that
+      // owns it.
+      if ($getSlotHost(listNode) !== null) {
+        continue;
+      }
       let insertionPoint: ListNode | ParagraphNode = listNode;
 
       const listItems = $getAllListItems(listNode);
@@ -283,6 +323,17 @@ export function $removeList(): void {
         const paragraph = $createParagraphNode()
           .setTextStyle(selection.style)
           .setTextFormat(selection.format);
+
+        // The paragraph stands in for the list item, so it keeps the item's own
+        // element state. $createListOrMerge does the mirror image of this on the
+        // way in — it copies the block's format and indent onto the list item it
+        // creates — and the importers and ListItemNode.exportDOM round-trip the
+        // direction and style, so dropping them here loses state the user set.
+        paragraph
+          .setFormat(listItemNode.getFormatType())
+          .setIndent(listItemNode.getIndent())
+          .setDirection(listItemNode.getDirection())
+          .setStyle(listItemNode.getStyle());
 
         append(paragraph, listItemNode.getChildren());
 

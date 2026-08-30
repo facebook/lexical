@@ -31,6 +31,7 @@ export {
   $comparePointCaretNext,
   $extendCaretToRange,
   $getAdjacentChildCaret,
+  $getCaretInDirection,
   $getCaretRange,
   $getChildCaret,
   $getChildCaretOrSelf,
@@ -53,10 +54,10 @@ export {
   $caretFromPoint,
   $caretRangeFromSelection,
   $getAdjacentSiblingOrParentSiblingCaret,
-  $getCaretInDirection,
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,
   $insertNodeToNearestRootAtCaret,
+  $isBlockFullySelected,
   $isExtendableTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
@@ -190,8 +191,16 @@ export type {
   SerializedEditorState,
 } from './LexicalEditorState';
 export {$isEditorState} from './LexicalEditorState';
-export type {EventHandler} from './LexicalEvents';
+export type {EventHandler, KeyDownShortcut} from './LexicalEvents';
 export {stopLexicalPropagation} from './LexicalEvents';
+export type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
+export {
+  compileKeyboardShortcuts,
+  CONTROL_OR_ALT,
+  CONTROL_OR_META,
+  type KeyboardShortcut,
+  type KeyboardShortcutMatch,
+} from './LexicalKeyboardShortcuts';
 export type {
   AbstractStaticNodeConfigRecord,
   BaseStaticNodeConfig,
@@ -273,6 +282,7 @@ export {
 } from './LexicalSelection';
 export type {SlotName} from './LexicalSlot';
 export {
+  $getSelectionSlotFrame,
   $getSlot,
   $getSlotFrame,
   $getSlotHost,
@@ -286,6 +296,7 @@ export {
 } from './LexicalSlot';
 export {
   $assumeActiveEditor,
+  $flushSyncAfterUpdate,
   $fullReconcile,
   $parseSerializedNode,
   isCurrentlyReadOnlyMode,
@@ -332,6 +343,7 @@ export {
   $setFormatFromDOM,
   $setSelection,
   $splitNode,
+  CONTROL_OR_OTHER_KEY,
   type DOMSelectionBoundaryPoints,
   findAllLexicalElementsDeep,
   getActiveElement,
@@ -375,6 +387,10 @@ export {
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   iterStaticNodeConfigChain,
+  type KeyboardEventControlOrOther,
+  keyboardEventMaskForPlatform,
+  type KeyboardEventModifierMask,
+  type KeyboardEventModifiers,
   mountSlotContainer,
   type OwnStaticNodeConfig,
   removeFromParent,

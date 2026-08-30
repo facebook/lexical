@@ -16,11 +16,10 @@ import {
   $getEditor,
   $getEditorDOMRenderConfig,
   $getRoot,
-  $getSlotFrame,
+  $getSelectionSlotFrame,
   $isBlockElementNode,
   $isElementNode,
   $isNodeSelection,
-  $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
@@ -192,13 +191,14 @@ export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
     const root = $getRoot();
     const domConfig = $getSessionDOMRenderConfig(editor);
 
-    // A RangeSelection wholly inside a slot subtree never includes its host
+    // A selection wholly inside a slot subtree never includes its host
     // (slots are shadow-root isolated), so a root-children walk would miss
     // the selected nodes entirely and export an empty payload. Walk the
     // selection's slot frame instead; outside slots this is the root.
-    const slotFrame = $isRangeSelection(selection)
-      ? $getSlotFrame(selection.anchor.getNode())
-      : null;
+    // $generateJSONFromSelectedNodes in @lexical/clipboard redirects the
+    // JSON channel through the same frame, so the two clipboard payloads
+    // stay in agreement.
+    const slotFrame = $getSelectionSlotFrame(selection);
     const parentElementAppend = container.append.bind(container);
     for (const topLevelNode of ($isElementNode(slotFrame)
       ? slotFrame
@@ -352,14 +352,25 @@ function $appendNodesToHTML(
         element.append(fragment);
       }
     }
-    parentElementAppend(element);
-
-    if (after) {
-      const newElement = after.call(target, element);
-      if (newElement) {
-        if (isDocumentFragment(element)) {
+    if (isDocumentFragment(element)) {
+      // Resolve `after` before handing the fragment to the parent: appending a
+      // DocumentFragment moves its children out and leaves it empty, so a
+      // replacement written into it afterwards would land in a detached,
+      // already-drained fragment and never reach the output.
+      if (after) {
+        const newElement = after.call(target, element);
+        if (newElement) {
           element.replaceChildren(newElement);
-        } else {
+        }
+      }
+      parentElementAppend(element);
+    } else {
+      // An HTMLElement has to be in the tree first so replaceWith() can swap
+      // it in place.
+      parentElementAppend(element);
+      if (after) {
+        const newElement = after.call(target, element);
+        if (newElement) {
           element.replaceWith(newElement);
         }
       }

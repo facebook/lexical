@@ -1029,6 +1029,59 @@ test.describe('Selection', () => {
     );
   });
 
+  test('Can adjust selection on 3+ clicks', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+
+    await page.keyboard.type('Paragraph 1');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Paragraph 2');
+    await page
+      .locator('div[contenteditable="true"] > p')
+      .first()
+      .click({clickCount: 4});
+    const expectedSelection = createHumanReadableSelection(
+      'the whole first paragraph',
+      {
+        anchorOffset: {desc: 'start of Paragraph 1 text', value: 0},
+        anchorPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'Text node', value: 0},
+        ],
+        focusOffset: {
+          desc: 'end of Paragraph 1 text',
+          value: 'Paragraph 1'.length,
+        },
+        focusPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'Text node', value: 0},
+        ],
+      },
+    );
+
+    await assertSelection(page, expectedSelection);
+
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .item:has(.icon.h1)');
+
+    await assertHTML(
+      page,
+      html`
+        <h1 class="PlaygroundEditorTheme__h1" dir="auto">
+          <span data-lexical-text="true">Paragraph 1</span>
+        </h1>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Paragraph 2</span>
+        </p>
+      `,
+    );
+  });
+
   test('Can adjust triple click selection linebreak', async ({
     page,
     isCollab,
@@ -1135,6 +1188,45 @@ test.describe('Selection', () => {
         </p>
       `,
     );
+  });
+
+  test('Backspace at the start of the first paragraph keeps content that follows a blank text node', async ({
+    page,
+    isPlainText,
+  }) => {
+    // Plain text uses line breaks instead of paragraphs for Enter.
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    // A blank first text node followed by a formatted one that carries the
+    // actual content.
+    await page.keyboard.type('  ');
+    await pressToggleBold(page);
+    await page.keyboard.type('hello');
+    await page.keyboard.press('Enter');
+    await pressToggleBold(page);
+    await page.keyboard.type('world');
+    await moveToEditorBeginning(page);
+
+    const expected = html`
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <span data-lexical-text="true"></span>
+        <strong
+          class="PlaygroundEditorTheme__textBold"
+          data-lexical-text="true">
+          hello
+        </strong>
+      </p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <span data-lexical-text="true">world</span>
+      </p>
+    `;
+    await assertHTML(page, expected);
+
+    await page.keyboard.press('Backspace');
+
+    // The paragraph is not blank, so it must not be collapsed away.
+    await assertHTML(page, expected);
   });
 
   test('Select all from Node selection #4658', async ({page, isPlainText}) => {
@@ -1480,8 +1572,10 @@ test.describe('Selection', () => {
     // Move the mouse to the last cell
     await lastCell.hover();
     await page.mouse.down();
-    // Move the mouse to the end of the document
-    await page.mouse.move(500, 500);
+    // Move the mouse to the end of the document. `steps` matters: Firefox 152
+    // does not begin a drag-selection from a single mousemove that teleports
+    // out of the cell, and a real mouse never produces one either.
+    await page.mouse.move(500, 500, {steps: 10});
 
     const expectedSelection = createHumanReadableSelection(
       'the full table from beginning to the end of the text in the last cell',

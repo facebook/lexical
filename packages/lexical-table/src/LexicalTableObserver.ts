@@ -8,6 +8,7 @@
 
 import invariant from '@lexical/internal/invariant';
 import {
+  $copyNode,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -316,6 +317,7 @@ export class TableObserver {
         this.table = getTable(tableNode, tableElement);
       });
     });
+    this.listenersToRemove.add(() => observer.disconnect());
     this.editor.read('latest', () => {
       const {tableNode, tableElement} = this.$lookup();
       this.table = getTable(tableNode, tableElement);
@@ -614,7 +616,15 @@ export class TableObserver {
 
     selectedNodes.forEach(cellNode => {
       if ($isElementNode(cellNode)) {
-        const paragraphNode = $createParagraphNode();
+        // Clearing a cell empties its content; it does not reset how that
+        // content is laid out. A fresh ParagraphNode would start with no
+        // format, style, direction or indent, so the cell's paragraph is
+        // copied instead when there is one — $copyNode carries that state and
+        // returns it childless.
+        const firstChild = cellNode.getFirstChild();
+        const paragraphNode = $isParagraphNode(firstChild)
+          ? $copyNode(firstChild)
+          : $createParagraphNode();
         const textNode = $createTextNode();
         paragraphNode.append(textNode);
         cellNode.append(paragraphNode);

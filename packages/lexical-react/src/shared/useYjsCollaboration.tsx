@@ -108,7 +108,7 @@ export function useYjsCollaboration(
   const onBootstrap = useCallback(() => {
     const {root} = binding;
     if (shouldBootstrap && root.isEmpty() && root._xmlText._length === 0) {
-      initializeEditor(editor, initialEditorState);
+      bootstrapEditor(binding, editor, initialEditorState);
     }
   }, [binding, editor, initialEditorState, shouldBootstrap]);
 
@@ -244,7 +244,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
   const onBootstrap = useCallback(() => {
     const {root} = binding;
     if (shouldBootstrap && root._length === 0) {
-      initializeEditor(editor);
+      bootstrapEditor(binding, editor);
     }
   }, [binding, editor, shouldBootstrap]);
 
@@ -635,9 +635,52 @@ function useYjsUndoManager(editor: LexicalEditor, undoManager: UndoManager) {
   return clearHistory;
 }
 
+/**
+ * Write the initial editor state into an empty shared document. The write is
+ * flagged on the binding so that the Yjs UndoManager created by
+ * `createUndoManager` skips the resulting transaction: bootstrapping is not a
+ * user edit and must not be undoable, which matches a non-collab editor where
+ * the initial state is applied with HISTORY_MERGE_TAG (#7110).
+ */
+function bootstrapEditor(
+  binding: BaseBinding,
+  editor: LexicalEditor,
+  initialEditorState?: InitialEditorStateType,
+): void {
+  binding.isBootstrapping = true;
+  try {
+    // The Yjs write happens in the update listener during the commit, which is
+    // not necessarily synchronous with this call, so the flag has to outlive
+    // it. An `onUpdate` callback is the boundary that matches the write:
+    // Lexical queues it on `editor._deferred` before the update body runs and
+    // flushes it at the tail of the same commit that ran the update listeners,
+    // so it lands after the write and never before it. A queued deferred
+    // callback also forces a commit on its own, so this still runs when the
+    // update turns out to be a no-op.
+    initializeEditor(editor, initialEditorState, () => {
+      binding.isBootstrapping = false;
+    });
+  } finally {
+    // `onUpdate` alone is not enough: when the update body throws, Lexical
+    // reports the error, commits (running the update listeners, so the Yjs
+    // write still happens), and skips that commit's deferred callbacks. The
+    // reset would then be left queued until the tail of the *next* commit,
+    // by which point that commit's listener has already written to Yjs with
+    // the flag set — silently keeping the user's first edit after a failed
+    // bootstrap out of the undo stack. This bounds the flag's lifetime to a
+    // microtask no matter how the update ends. It cannot fire early: the
+    // commit is scheduled from inside `editor.update` above, so its microtask
+    // is queued ahead of this one.
+    queueMicrotask(() => {
+      binding.isBootstrapping = false;
+    });
+  }
+}
+
 function initializeEditor(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
+  onUpdate?: () => void,
 ): void {
   editor.update(
     () => {
@@ -689,6 +732,7 @@ function initializeEditor(
       }
     },
     {
+      onUpdate,
       tag: HISTORY_MERGE_TAG,
     },
   );

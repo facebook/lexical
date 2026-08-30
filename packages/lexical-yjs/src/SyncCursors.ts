@@ -242,19 +242,34 @@ function createRelativePositionV2(
     return createRelativePositionFromTypeIndex(yType, adjustedOffset, assoc);
   } else if (point.type === 'element') {
     invariant($isElementNode(node), 'Element point must be an element node');
-    let i = 0;
+    // `offset` counts lexical children, but the index handed to yjs counts
+    // yjs children, and normalizeNodeContent collapses a run of adjacent
+    // TextNodes into a single XmlText child. Advance a lexical cursor to
+    // `offset` while counting each text run as one yjs child, mirroring
+    // $getNodeAndOffsetV2, which consumes one yjs offset per child and then
+    // skips the remainder of a text run.
+    //
+    // Only offsets that fall on a run boundary round trip exactly: yjs has no
+    // index for a position *inside* a collapsed run, so an element point in
+    // the middle of one (children [Text, Text], offset 1) necessarily decodes
+    // back to the end of that run. That is inherent to the serialization, not
+    // to this loop.
+    let yIndex = 0;
+    let lexicalIndex = 0;
     let child = node.getFirstChild();
-    while (child !== null && i < offset) {
+    while (child !== null && lexicalIndex < offset) {
+      let nextSibling = child.getNextSibling();
+      lexicalIndex++;
       if ($isTextNode(child)) {
-        let nextSibling = child.getNextSibling();
         while ($isTextNode(nextSibling)) {
           nextSibling = nextSibling.getNextSibling();
+          lexicalIndex++;
         }
       }
-      i++;
-      child = child.getNextSibling();
+      yIndex++;
+      child = nextSibling;
     }
-    return createRelativePositionFromTypeIndex(yType, i, assoc);
+    return createRelativePositionFromTypeIndex(yType, yIndex, assoc);
   }
   return null;
 }
@@ -912,6 +927,17 @@ export function syncCursorPositions(
       if (cursor === undefined) {
         cursor = createCursor(name, color);
         cursors.set(clientID, cursor);
+      } else if (cursor.name !== name || cursor.color !== color) {
+        // Awareness is mutable: a peer can rename itself or change colour at
+        // any time (the React plugin republishes local state whenever its
+        // `username` / `cursorColor` props change). The name and colour are
+        // baked into the caret DOM and the ::highlight() rule when the
+        // selection is built, so drop the stale selection here and let the
+        // code below rebuild it from the new values.
+        destroyCursor(binding, cursor);
+        cursor.name = name;
+        cursor.color = color;
+        cursor.selection = null;
       }
 
       if (focusing) {

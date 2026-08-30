@@ -637,7 +637,11 @@ function syncNodeStateFromLexical(
       : [undefined, new Map()];
   if (unknown) {
     for (const [k, v] of Object.entries(unknown)) {
-      if (prevUnknown && v !== prevUnknown[k]) {
+      // `prevUnknown` is undefined when there is no previous state at all (the
+      // node is being created) and also when the previous state only had known
+      // keys. Both mean "nothing was synced yet", so every entry is new — the
+      // known loop below expresses the same thing with its empty-Map default.
+      if (!prevUnknown || v !== prevUnknown[k]) {
         stateMap.set(k, v);
       }
     }

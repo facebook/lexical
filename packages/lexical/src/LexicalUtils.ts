@@ -107,7 +107,10 @@ import {
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
 } from './LexicalUpdates';
-import {$createParagraphNode} from './nodes/LexicalParagraphNode';
+import {
+  $createParagraphNode,
+  type ParagraphNode,
+} from './nodes/LexicalParagraphNode';
 import {TabNode} from './nodes/LexicalTabNode';
 import {type TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
@@ -774,27 +777,40 @@ export function $getRoot(): RootNode {
 }
 
 /**
- * Restores the empty paragraph a {@link RootNode} needs to stay editable, when
- * a removal has left it with no children at all. Removing the last top-level
- * node (a lone table or block decorator sitting beside a block cursor, or a
- * select-all over a document that is a single shadow root) otherwise leaves
- * the root with nowhere to put a caret.
+ * Restores the empty paragraph a root or shadow root needs to stay editable,
+ * when a removal has left `container` with no children at all. Removing the
+ * last node it held (a lone table or block decorator sitting beside a block
+ * cursor, or a select-all over a document that is a single shadow root)
+ * otherwise leaves nowhere to put a caret, and the next keystroke acts on the
+ * container itself rather than on a block inside it.
  *
- * Call this only where a removal could have emptied the root: it is a no-op on
- * a root that is already populated, but on a root that was *already* empty
- * before the removal it would seed a paragraph that the caller never asked
- * for.
+ * Two obligations for the caller:
  *
- * @returns whether a paragraph was appended.
+ * - Pass a container that holds *blocks*. A ParagraphNode is only a valid
+ *   child of a root, or of a shadow root in the "holds block-level content"
+ *   sense — never of a structural shadow root such as a TableNode (which holds
+ *   rows) or a TableRowNode (which holds cells). Every current caller has just
+ *   removed a block from `container`, which is what establishes this.
+ * - Call this only where a removal could have emptied `container`. It is a
+ *   no-op on a container that is already populated, but on one that was
+ *   *already* empty beforehand it would seed a paragraph nobody asked for.
+ *
+ * @returns the paragraph that was appended, or null when nothing was restored.
  * @internal
  */
-export function $restoreEmptyRootParagraph(): boolean {
-  const root = $getRoot();
-  if (!root.isEmpty()) {
-    return false;
+export function $restoreEmptyContainerParagraph(
+  container: null | LexicalNode,
+): null | ParagraphNode {
+  if (
+    !$isRootOrShadowRoot(container) ||
+    !container.isAttached() ||
+    !container.isEmpty()
+  ) {
+    return null;
   }
-  root.append($createParagraphNode());
-  return true;
+  const paragraph = $createParagraphNode();
+  container.append(paragraph);
+  return paragraph;
 }
 
 export function internalGetRoot(editorState: EditorState): RootNode {

@@ -91,7 +91,7 @@ import {
   $isSelectionCapturedInDecoratorInput,
   $isTokenOrSegmented,
   $needsBlockCursorBeside,
-  $restoreEmptyRootParagraph,
+  $restoreEmptyContainerParagraph,
   $setCompositionKey,
   doesContainSurrogatePair,
   getActiveElement,
@@ -1770,8 +1770,14 @@ export class RangeSelection implements BaseSelection {
         if (anchor.type === 'element') {
           const adjacent = initialCaret.getNodeAtCaret();
           if ($isElementNode(adjacent) && $needsBlockCursorBeside(adjacent)) {
+            const container = adjacent.getParent();
             adjacent.remove();
-            $restoreEmptyRootParagraph();
+            // Removing the only block leaves the container (the root, or a
+            // shadow root such as a table cell) with nowhere to put a caret.
+            const restored = $restoreEmptyContainerParagraph(container);
+            if (restored !== null) {
+              restored.selectStart();
+            }
             return;
           }
         }
@@ -1846,8 +1852,12 @@ export class RangeSelection implements BaseSelection {
               } else {
                 // When the anchor is not an empty element then the
                 // adjacent decorator is removed
+                const container = caret.origin.getParent();
                 caret.origin.remove();
-                $restoreEmptyRootParagraph();
+                const restored = $restoreEmptyContainerParagraph(container);
+                if (restored !== null) {
+                  restored.selectStart();
+                }
               }
               // always stop when a decorator is encountered
               return;

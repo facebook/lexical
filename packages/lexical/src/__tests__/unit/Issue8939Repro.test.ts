@@ -12,6 +12,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
   $needsBlockCursorBeside,
@@ -161,9 +162,70 @@ describe('block cursor deletion beside an ElementNode (#8939)', () => {
         expect(children).toHaveLength(1);
         assert($isParagraphNode(children[0]), 'Expected ParagraphNode');
         expect(children[0].isEmpty()).toBe(true);
+        // The caret is inside the restored paragraph, not on the root before
+        // it, so the next keystroke acts on the paragraph.
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'Expected RangeSelection');
+        expect(selection.anchor.getNode().getKey()).toBe(children[0].getKey());
+      });
+
+      // Enter therefore behaves as it does in any other document holding a
+      // single empty paragraph: the caret ends up in the second one.
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertParagraph();
+          selection.insertText('X');
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        expect($getRoot().getChildrenSize()).toBe(2);
+        expect($getRoot().getChildAtIndex(0)!.getTextContent()).toBe('');
+        expect($getRoot().getChildAtIndex(1)!.getTextContent()).toBe('X');
       });
     },
   );
+
+  // The same rule one level down: a shadow root emptied by the deletion has
+  // nowhere to put a caret either.
+  test('deleting the only block inside a shadow root keeps it editable', () => {
+    using editor = buildEditorFromExtensions(ext);
+
+    editor.update(
+      () => {
+        const shadow = $createTestShadowRootNode().append($blockDecorator());
+        $getRoot().clear().append(shadow);
+        shadow.select(1, 1);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'Expected RangeSelection');
+        selection.deleteCharacter(true);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const shadow = $getRoot().getFirstChild();
+      assert($isElementNode(shadow), 'Expected the shadow root to survive');
+      // Previously the shadow root was left with no children at all and the
+      // caret on the shadow root itself.
+      expect(shadow.getChildrenSize()).toBe(1);
+      const paragraph = shadow.getFirstChild();
+      assert($isParagraphNode(paragraph), 'Expected ParagraphNode');
+      expect(paragraph.isEmpty()).toBe(true);
+      const selection = $getSelection();
+      assert($isRangeSelection(selection), 'Expected RangeSelection');
+      expect(selection.anchor.getNode().getKey()).toBe(paragraph.getKey());
+    });
+  });
 
   // Guard the boundary of the new branch: an empty block whose caret merely
   // sits next to a shadow root is not a block cursor, so the existing
@@ -194,6 +256,69 @@ describe('block cursor deletion beside an ElementNode (#8939)', () => {
       expect($getRoot().getTextContent()).toBe('A');
     });
   });
+
+  // Deleting all of a shadow root's content restores the empty paragraph the
+  // same way the document root does, so Enter over that selection does not
+  // depend on whether the selection is described with element or text points
+  // ($selectAll scoped to a top-level shadow root produces the former).
+  test.for([{points: 'element' as const}, {points: 'text' as const}])(
+    'Enter over all of a shadow root splits an empty paragraph ($points points)',
+    ({points}) => {
+      using editor = buildEditorFromExtensions(ext);
+
+      editor.update(
+        () => {
+          const shadow = $createTestShadowRootNode().append(
+            $createParagraphNode().append($createTextNode('inside')),
+          );
+          $getRoot().clear().append(shadow);
+          if (points === 'element') {
+            shadow.select(0, shadow.getChildrenSize());
+          } else {
+            const paragraph = shadow.getFirstChild();
+            assert($isElementNode(paragraph), 'Expected ElementNode');
+            const selection = paragraph.select(0, 0);
+            selection.focus.set(
+              paragraph.getFirstChildOrThrow().getKey(),
+              'inside'.length,
+              'text',
+            );
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertParagraph();
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const shadow = $getRoot().getFirstChild();
+        assert($isElementNode(shadow), 'Expected the shadow root to survive');
+        expect(
+          shadow
+            .getChildren()
+            .map(child => [
+              child.getType(),
+              $isElementNode(child) && child.isEmpty(),
+            ]),
+        ).toEqual([
+          ['paragraph', true],
+          ['paragraph', true],
+        ]);
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'Expected RangeSelection');
+        expect(selection.anchor.getNode().getKey()).toBe(
+          shadow.getChildAtIndex(1)!.getKey(),
+        );
+      });
+    },
+  );
 
   // A plain paragraph never renders a block cursor, so it must not be
   // removed as a unit.

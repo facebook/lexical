@@ -20,10 +20,11 @@ import {$getSlotFrame, $getSlotNames} from '../LexicalSlot';
 import {
   $copyNode,
   $getNodeByKeyOrThrow,
+  $getRoot,
   $isRootOrShadowRoot,
   $isShadowRootNode,
   $removeFromParent,
-  $restoreEmptyRootParagraph,
+  $restoreEmptyContainerParagraph,
   $setSelection,
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
@@ -249,6 +250,13 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   let sliceState = sliceMode;
   const range = $getCaretRangeInDirection(initialRange, nextDirection);
 
+  // The nearest root or shadow root the removal happens inside, captured
+  // before anything is detached; see the repair below.
+  let rangeContainer: null | LexicalNode = range.anchor.origin;
+  while (rangeContainer !== null && !$isRootOrShadowRoot(rangeContainer)) {
+    rangeContainer = rangeContainer.getParent();
+  }
+
   const anchorCandidates = $getAnchorCandidates(range.anchor, rootMode);
   const focusCandidates = $getAnchorCandidates(
     range.focus.getFlipped(),
@@ -409,14 +417,19 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     }
   }
 
-  // A range that covers every top-level node (a select-all over a document
-  // that is a single shadow root, for example) removes them all and leaves
-  // the root with nothing to put a caret in. Restore the empty paragraph the
-  // root would otherwise be missing, matching the result of deleting a
-  // document made of ordinary paragraphs. The range is always attached (the
-  // candidate walk above throws otherwise), so an empty root here is always
-  // this call's doing.
-  $restoreEmptyRootParagraph();
+  // A range that covers every child of its container (a select-all over a
+  // document that is a single shadow root, or over everything inside one)
+  // removes them all and leaves nothing to put a caret in. Restore the empty
+  // paragraph the container would otherwise be missing, so that deleting all
+  // of a container's content behaves like deleting a document made of
+  // ordinary paragraphs. The range is always attached (the candidate walk
+  // above throws otherwise), so an empty container here is always this call's
+  // doing. `rangeContainer` is itself removed when the range covered it — the
+  // empty-ancestor walks above climb out of it — in which case the root is
+  // what needs the paragraph.
+  if ($restoreEmptyContainerParagraph(rangeContainer) === null) {
+    $restoreEmptyContainerParagraph($getRoot());
+  }
 
   // note this caret can be in either direction
   const bestCandidate = [

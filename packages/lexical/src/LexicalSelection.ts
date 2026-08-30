@@ -1998,17 +1998,16 @@ export class RangeSelection implements BaseSelection {
       $ensureRootHasParagraph();
     }
     // A full-range (e.g. select-all) delete can empty the whole document down
-    // to a single non-paragraph block -- a heading, quote, list, or nested
-    // list -- which then lingers empty while keeping its type instead of
-    // collapsing to a plain paragraph like an empty editor. `collapseAtStart`
-    // above only covers backwards deletion of a heading/quote, so handle the
-    // forward-delete and list cases here. This lives in `deleteCharacter`
-    // rather than in the shared `removeText`/`$removeTextFromCaretRange`
-    // primitive on purpose: `insertText` also routes through `removeText` to
-    // clear the old selection before inserting (as the Prettier "format" flow
-    // does on a lone code block), and that replacement must keep its block.
+    // to a single non-paragraph block, which then lingers empty while keeping
+    // its type instead of collapsing like an empty editor (#5835). The
+    // `$collapseAtStart` above only covers backwards deletion, so handle both
+    // directions here. This lives in the delete methods rather than in the
+    // shared `removeText`/`$removeTextFromCaretRange` primitive on purpose:
+    // `insertText` also routes through `removeText` to clear the old selection
+    // before inserting (as the Prettier "format" flow does on a lone code
+    // block), and that replacement must keep its block.
     if (!wasCollapsed && this.isCollapsed()) {
-      $collapseEmptiedRootToParagraph(this);
+      INTERNAL_$collapseEmptiedRootToParagraph(this);
     }
   }
 
@@ -2062,6 +2061,9 @@ export class RangeSelection implements BaseSelection {
         this.deleteCharacter(isBackward);
       } else {
         this.removeText();
+        // Cmd+A then Cmd+Backspace wipes the document just as Backspace does,
+        // so it has to land in the same empty-editor state (#5835).
+        INTERNAL_$collapseEmptiedRootToParagraph(this);
       }
     }
   }
@@ -2088,6 +2090,9 @@ export class RangeSelection implements BaseSelection {
       this.deleteCharacter(isBackward);
     } else {
       this.removeText();
+      // Select-all then Alt/Ctrl+Backspace wipes the document just as
+      // Backspace does, so it has to land in the same state (#5835).
+      INTERNAL_$collapseEmptiedRootToParagraph(this);
     }
   }
 
@@ -2392,29 +2397,43 @@ function $collapseAtStart(
 }
 
 /**
- * After a full-range delete, collapse a document that is left as a single
- * empty non-paragraph block (heading, quote, list, nested list, ...) down to a
- * single empty paragraph, matching the empty-editor state. Bails out unless the
- * root's only content is that one block sitting on a single, empty branch --
- * any sibling content, decorator, shadow root, or surviving text leaves the
- * block untouched.
+ * After a range delete has emptied the whole document down to a single
+ * non-paragraph block -- a heading, quote, list, or nested list -- collapse
+ * that block so the editor lands in the same state as an empty editor, rather
+ * than lingering as an empty block that keeps its type (#5835).
+ *
+ * The collapse itself is delegated to {@link $collapseAtStart}, so each block
+ * type decides how (and whether) it dissolves through the `collapseAtStart`
+ * extension point it already implements: `HeadingNode` and `QuoteNode` become
+ * paragraphs, `ListItemNode` lifts itself out of its list, and a node that
+ * returns `false` -- the `ElementNode` default -- keeps its block.
+ *
+ * Bails out unless the root's only content is that one block sitting on a
+ * single, empty branch: any sibling content, decorator, shadow root, occupied
+ * slot, or surviving text means the document is not empty and leaves the block
+ * untouched.
  */
-function $collapseEmptiedRootToParagraph(selection: RangeSelection): void {
+export function INTERNAL_$collapseEmptiedRootToParagraph(
+  selection: RangeSelection,
+): void {
   const anchorNode = selection.anchor.getNode();
+  // `getParent` is typed to ElementNode, so `block` needs no further narrowing.
   const block = $isElementNode(anchorNode)
     ? anchorNode
     : anchorNode.getParent();
   if (
-    !block ||
-    !$isElementNode(block) ||
+    block === null ||
     $isParagraphNode(block) ||
     $isRootOrShadowRoot(block) ||
+    // `isEmpty` is already slot-aware, so a host still holding slot content is
+    // not empty and stops the collapse here.
     !block.isEmpty()
   ) {
     return;
   }
   // Walk up to the top-level block (the direct child of the root), bailing on
-  // anything that means this is not a plain, fully-emptied document.
+  // anything that means this is not a plain, fully-emptied document. The root
+  // is excluded by the loop condition, so only a shadow root can match here.
   let topLevel: ElementNode = block;
   for (
     let parent = block.getParent();
@@ -2422,9 +2441,11 @@ function $collapseEmptiedRootToParagraph(selection: RangeSelection): void {
     parent = parent.getParent()
   ) {
     if (
-      $isRootOrShadowRoot(parent) ||
-      !$isElementNode(parent) ||
-      parent.getChildrenSize() !== 1
+      parent.isShadowRoot() ||
+      parent.getChildrenSize() !== 1 ||
+      // A slot host still holding content is not an empty wrapper, even when
+      // its one regular child is (mirrors the `isEmpty` check above).
+      $getSlotNames(parent).length > 0
     ) {
       return;
     }
@@ -2434,9 +2455,7 @@ function $collapseEmptiedRootToParagraph(selection: RangeSelection): void {
   if (!$isRootNode(root) || root.getChildrenSize() !== 1) {
     return;
   }
-  const paragraph = $createParagraphNode();
-  topLevel.replace(paragraph);
-  paragraph.selectStart();
+  $collapseAtStart(selection, block);
 }
 
 function $swapPoints(selection: RangeSelection): void {

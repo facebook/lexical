@@ -103,6 +103,7 @@ import {
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   INSERT_TAB_COMMAND,
+  INTERNAL_$collapseEmptiedRootToParagraph,
   IS_APPLE_WEBKIT,
   IS_IOS,
   IS_SAFARI,
@@ -565,6 +566,10 @@ async function onCutForRichText(
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
         selection.removeText();
+        // Cutting the whole document wipes it just as deleting does, so it has
+        // to land in the same empty-editor state rather than leaving the last
+        // block behind as an empty heading/quote/list (#5835).
+        INTERNAL_$collapseEmptiedRootToParagraph(selection);
       } else if ($isNodeSelection(selection)) {
         selection.getNodes().forEach(node => node.remove());
       }

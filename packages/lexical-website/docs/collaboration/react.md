@@ -10,7 +10,7 @@ This is on top of the Yjs bindings provided by `@lexical/yjs`.
 
 :::tip
 
-Clone [Lexical GitHub repo](https://github.com/facebook/lexical), run `npm i && npm run start` and open [`http://localhost:3000/split/?isCollab=true`](http://localhost:3000/split/?isCollab=true) to launch playground in collaborative mode.
+Clone [Lexical GitHub repo](https://github.com/facebook/lexical), run `pnpm i && pnpm run start` and open [`http://localhost:3000/split/?isCollab=true`](http://localhost:3000/split/?isCollab=true) to launch playground in collaborative mode.
 
 :::
 

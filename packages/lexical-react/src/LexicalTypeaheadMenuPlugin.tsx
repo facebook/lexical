@@ -110,13 +110,13 @@ function isSelectionOnEntityBoundary(
   });
 }
 
+export {useDynamicPositioning} from './shared/LexicalMenu';
 export {
   getScrollParent,
   PUNCTUATION,
   SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
   useBasicTypeaheadTriggerMatch,
-} from './LexicalTypeaheadMenuPluginUtils';
-export {useDynamicPositioning} from './shared/LexicalMenu';
+} from '@lexical/react/LexicalTypeaheadMenuPluginUtils';
 
 /**
  * Props for the {@link LexicalTypeaheadMenuPlugin} component.

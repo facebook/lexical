@@ -7,6 +7,11 @@
  */
 
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
+import {
+  type AutoEmbedOption,
+  type EmbedConfig,
+  INSERT_EMBED_COMMAND,
+} from '@lexical/react/LexicalAutoEmbedPluginUtils';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalNodeMenuPlugin,
@@ -30,19 +35,13 @@ import {
 } from 'lexical';
 import {type JSX, useCallback, useEffect, useMemo, useState} from 'react';
 
-import {
-  type AutoEmbedOption,
-  type EmbedConfig,
-  INSERT_EMBED_COMMAND,
-} from './LexicalAutoEmbedPluginUtils';
-
 export {
   AutoEmbedOption,
   type EmbedConfig,
   type EmbedMatchResult,
   INSERT_EMBED_COMMAND,
   URL_MATCHER,
-} from './LexicalAutoEmbedPluginUtils';
+} from '@lexical/react/LexicalAutoEmbedPluginUtils';
 
 type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
   /**

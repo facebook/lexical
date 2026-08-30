@@ -90,12 +90,14 @@ The `hot` config accepts any object with a `data: Record<string, unknown>` prope
 
 When `HistoryExtension` is present as a peer, undo/redo stacks are preserved automatically. The extension does not declare `HistoryExtension` as a dependency — it detects it at runtime via peer dependency lookup.
 
-Editors with distinct `namespace` values — set via `namespace` in `defineExtension` or `createEditor` — are isolated automatically, so no `id` is needed. When two editors share both the same `import.meta.hot` context and the same `namespace`, pass a stable `id` string to keep their states independent:
+Editors with distinct `namespace` values — set via `namespace` in `defineExtension` or `createEditor` — are isolated automatically, so no `id` is needed. An editor given no namespace at all is keyed without one, since the namespace `createEditor` generates in that case is a new random string on every reload; those editors all share a single key. When two editors share both the same `import.meta.hot` context and the same key, pass a stable `id` string to keep their states independent:
 
 ```ts
 defineExtension({ name: '[main]', namespace: 'shared', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'main'})] })
 defineExtension({ name: '[sidebar]', namespace: 'shared', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'sidebar'})] })
 ```
+
+Saved state belongs to the namespace and `id` for as long as the page lives, not to the reload that produced it. An editor that is unmounted and later remounted under the same key during development restores what the previous one had rather than its own `$initialEditorState` — so two editors showing different documents need distinct namespaces even when they are never on screen at the same time.
 
 ### Fast Refresh compatibility
 

@@ -6,18 +6,17 @@
  *
  */
 
-import {useMemo} from 'react';
-
 import {
   CollaborationContext,
   newContext,
-} from './LexicalCollaborationContextUtils';
+} from '@lexical/react/LexicalCollaborationContextUtils';
+import {useMemo} from 'react';
 
 export {
   CollaborationContext,
   type CollaborationContextType,
   useCollaborationContext,
-} from './LexicalCollaborationContextUtils';
+} from '@lexical/react/LexicalCollaborationContextUtils';
 
 /**
  * A provider component that creates a fresh {@link CollaborationContextType}

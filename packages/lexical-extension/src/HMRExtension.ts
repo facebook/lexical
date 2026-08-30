@@ -34,6 +34,8 @@ import {
 
 import {EditorStateExtension} from './EditorStateExtension';
 import {getPeerDependencyFromEditor} from './getPeerDependencyFromEditor';
+import {LexicalBuilder} from './LexicalBuilder';
+import {RootElementExtension} from './RootElementExtension';
 import {effect} from './signals';
 import {WatchEditableExtension} from './WatchEditableExtension';
 
@@ -69,7 +71,8 @@ export interface HMRConfig {
    * context and the same `namespace` (set via
    * `defineExtension({ namespace: '...' })` or
    * `createEditor({ namespace: '...' })`); editors with distinct namespaces
-   * are isolated automatically. Must be a non-empty string when provided;
+   * are isolated automatically, and editors with no configured namespace all
+   * share one key. Must be a non-empty string when provided;
    * passing `''` triggers a dev warning and is treated as no `id`. Neither
    * `namespace` nor `id` should contain a colon (`:`), as that character is
    * used as a key separator internally.
@@ -78,7 +81,6 @@ export interface HMRConfig {
 }
 
 const HMR_KEY = 'lexicalHMR';
-const HMR_COUNT_KEY = 'lexicalHMR__count';
 const HISTORY_EXTENSION_NAME = '@lexical/history/History';
 
 function getHMRKey(id: string | undefined, namespace: string): string {
@@ -86,8 +88,71 @@ function getHMRKey(id: string | undefined, namespace: string): string {
   return id !== undefined ? `${base}:${id}` : base;
 }
 
-function getHMRCountKey(namespace: string): string {
-  return `${HMR_COUNT_KEY}:${namespace}`;
+/**
+ * True when the editor's namespace was chosen by the application rather than
+ * generated for it.
+ *
+ * `createEditor` falls back to a random `createUID()` namespace, which is a
+ * different string on every reload: an HMR key built from it would never match
+ * the key the previous instance saved under, so nothing would ever be restored
+ * and every reload would leave another orphaned entry (pinning a whole
+ * EditorState and its history) in `hot.data`. Such editors are keyed with an
+ * empty namespace segment instead, which is stable. Two of them sharing one
+ * HMR context then collide on that key, which is what the shared-key warning
+ * in the save effect reports.
+ */
+function hasConfiguredNamespace(editor: LexicalEditor): boolean {
+  if (editor._parentEditor !== null) {
+    // Inherited from the parent editor, which is where the namespace — and
+    // any HMRExtension keyed on it — belongs.
+    return true;
+  }
+  const builder = LexicalBuilder.maybeFromEditor(editor);
+  if (!builder) {
+    return true;
+  }
+  for (const rep of builder.extensionNameMap.values()) {
+    if (rep.extension.namespace !== undefined) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Keyed by HMR key, so a collision is reported once per module instance
+// instead of on every editor update.
+const warnedSharedKeys = new Set<string>();
+
+/**
+ * Warns when two editors that are both mounted write to the same HMR key,
+ * which means each reload restores one editor's content into both.
+ *
+ * The editor being replaced by an HMR cycle is not a collision: the composer
+ * builds the replacement during render and disposes the old editor in an
+ * effect cleanup, so the two overlap by construction. They are told apart by
+ * the root element — an editor that React discarded (a StrictMode double
+ * render) or disposed has none.
+ */
+function warnOnSharedKey(
+  hmrKey: string,
+  prev: HMRSavedState,
+  editor: LexicalEditor,
+): void {
+  const owner = prev.owner;
+  if (
+    owner === undefined ||
+    owner === editor ||
+    prev.mounted !== true ||
+    owner.getRootElement() === null ||
+    warnedSharedKeys.has(hmrKey)
+  ) {
+    return;
+  }
+  warnedSharedKeys.add(hmrKey);
+  console.warn(
+    `HMR: Two mounted editors are sharing the HMR key "${hmrKey}", so they will overwrite each other's saved state. ` +
+      'Give each editor a distinct `namespace`, or a distinct `HMRConfig.id`.',
+  );
 }
 
 /**
@@ -106,13 +171,18 @@ interface HMRSavedState {
   /** The live EditorState of the editor that is being replaced. */
   editorState: EditorState;
   /**
-   * Reads the selection of `editorState`. This closure is created by the
-   * module instance that owns the state, so it runs with the `lexical` module
-   * that created it — necessary when `lexical` is itself part of the HMR
-   * graph, where `$getSelection()` from this instance would not find an active
-   * editor state. Optional: a payload saved by an older build has none.
+   * Reads the selection of a state that this snapshot carries. It is the
+   * function of the module instance that owns those states, so it runs with
+   * the `lexical` module that created them — necessary when `lexical` is
+   * itself part of the HMR graph, where `$getSelection()` from this instance
+   * would not find an active editor state. Optional: a payload saved by an
+   * older build has none.
    */
-  captureSelection?: () => unknown;
+  captureSelection?: (editorState: EditorState) => unknown;
+  /** The editor that wrote this snapshot, for the shared-key warning. */
+  owner?: LexicalEditor;
+  /** Whether `owner` had a root element when it wrote this snapshot. */
+  mounted?: boolean;
   // Unknown because isValidHMRSavedState does not inspect this field;
   // callers must guard with isValidHistoryState before use.
   historyState: unknown;
@@ -185,17 +255,28 @@ function isValidHistoryState(raw: unknown): raw is HistoryState {
 }
 
 /**
- * Re-create `editorState` for `editor` by round-tripping it through JSON.
+ * Re-create `editorState` for `editor` by round-tripping it through JSON,
+ * restoring `selection` into the result.
  *
  * The nodes of the previous state are never reused: they are frozen in dev
  * builds and their classes may have been replaced by the reload, so they are
- * re-created from JSON with the classes registered on the new editor.
+ * re-created from JSON with the classes registered on the new editor. The
+ * selection is applied inside the parse, so it is part of the state that comes
+ * back rather than a second update on top of it.
  */
 function reparseEditorState(
   editorState: EditorState,
   editor: LexicalEditor,
+  selection: SavedSelection | null,
 ): EditorState {
-  return editor.parseEditorState(editorState.toJSON());
+  return editor.parseEditorState(editorState.toJSON(), () => {
+    // An empty root means the state was never initialized. Leaving it without
+    // a selection keeps `isEmpty()` true, which is how the caller knows to
+    // fall back to $initialEditorState.
+    if (selection !== null && !$getRoot().isEmpty()) {
+      $restoreSelection(selection);
+    }
+  });
 }
 
 function $getNodePath(node: LexicalNode): number[] | null {
@@ -353,47 +434,67 @@ function $restoreSelection(saved: SavedSelection): void {
 }
 
 /**
- * Restores the caret or selection the previous editor had, once its content
- * has been restored. A selection that no longer resolves is left alone rather
- * than guessed at.
+ * Reads the selection of one of the saved states, using the capture function
+ * of the module instance that created it. A selection that cannot be read is
+ * not worth failing a restore over.
  */
-function restoreSavedSelection(
-  editor: LexicalEditor,
-  saved: HMRSavedState,
-): void {
-  const {captureSelection: capture} = saved;
+function captureSavedSelection(
+  capture: HMRSavedState['captureSelection'],
+  editorState: EditorState,
+): SavedSelection | null {
   if (typeof capture !== 'function') {
-    return;
+    return null;
   }
   try {
-    const savedSelection = capture();
-    if (isValidSavedSelection(savedSelection)) {
-      editor.update(() => $restoreSelection(savedSelection), {
-        discrete: true,
-        tag: HISTORY_MERGE_TAG,
-      });
-    }
+    const saved = capture(editorState);
+    return isValidSavedSelection(saved) ? saved : null;
   } catch (e) {
     if (__DEV__) {
       console.warn('HMR: Could not restore the previous selection.', e);
     }
+    return null;
   }
 }
 
 function restoreHistoryState(
   saved: HistoryState,
   editor: LexicalEditor,
+  capture: HMRSavedState['captureSelection'],
 ): HistoryState {
-  const restoreEntry = (entry: HistoryStateEntry): HistoryStateEntry => {
-    const editorState = reparseEditorState(entry.editorState, editor);
-    if (editorState.isEmpty()) {
-      throw new Error('HMR: history entry is empty');
+  let dropped = 0;
+  const restoreEntry = (entry: HistoryStateEntry): HistoryStateEntry | null => {
+    try {
+      const editorState = reparseEditorState(
+        entry.editorState,
+        editor,
+        captureSavedSelection(capture, entry.editorState),
+      );
+      if (!editorState.isEmpty()) {
+        return {editor, editorState};
+      }
+    } catch {
+      // One entry that no longer parses costs that entry, not the whole
+      // undo and redo history.
     }
-    return {editor, editorState};
+    dropped++;
+    return null;
   };
+  const restoreStack = (
+    stack: readonly HistoryStateEntry[],
+  ): HistoryStateEntry[] =>
+    stack
+      .map(restoreEntry)
+      .filter((entry): entry is HistoryStateEntry => entry !== null);
   const current = saved.current ? restoreEntry(saved.current) : null;
-  const undoStack = saved.undoStack.map(restoreEntry);
-  const redoStack = saved.redoStack.map(restoreEntry);
+  const undoStack = restoreStack(saved.undoStack);
+  const redoStack = restoreStack(saved.redoStack);
+  if (__DEV__ && dropped > 0) {
+    console.warn(
+      `HMR: Dropped ${dropped} undo/redo ${
+        dropped === 1 ? 'entry' : 'entries'
+      } that could not be restored.`,
+    );
+  }
   return {current, redoStack, undoStack};
 }
 
@@ -452,6 +553,19 @@ function restoreHistoryState(
  * defineExtension({ name: '[first]', namespace: 'shared', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'first'})] })
  * defineExtension({ name: '[second]', namespace: 'shared', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'second'})] })
  * ```
+ *
+ * An editor that was given no `namespace` at all is keyed without one, because
+ * the namespace `createEditor` generates for it is a fresh random string on
+ * every reload — a key built from that would never match what the previous
+ * instance saved. Such editors all share one key, so give each editor a
+ * `namespace` (or an `id`) as soon as a page has more than one.
+ *
+ * Saved state belongs to the key for as long as the page lives, not to the
+ * reload that produced it. An editor that is unmounted and later remounted
+ * under the same key during development restores what the previous one had
+ * rather than its own `$initialEditorState`, so two editors showing different
+ * documents need distinct namespaces (or ids) even when they are never on
+ * screen at the same time.
  */
 export const HMRExtension = defineExtension({
   afterRegistration(editor, {hot, id: configId}, state) {
@@ -459,31 +573,20 @@ export const HMRExtension = defineExtension({
       return () => {};
     }
 
-    const namespace = editor._config.namespace;
+    // An unconfigured namespace is a random string that changes on every
+    // reload, so it is left out of the key rather than making it unmatchable.
+    const namespace = hasConfiguredNamespace(editor)
+      ? editor._config.namespace
+      : '';
     // Normalize '' to undefined: empty string is invalid and treated as no id.
     const id = configId === '' ? undefined : configId;
     const hmrKey = getHMRKey(id, namespace);
 
-    if (__DEV__) {
-      if (configId === '') {
-        console.warn(
-          'HMR: `id` must not be an empty string. ' +
-            'Use a stable non-empty string literal (e.g. `"main"`, `"sidebar"`).',
-        );
-      }
-      if (id === undefined) {
-        const countKey = getHMRCountKey(namespace);
-        const raw = hot.data[countKey];
-        const count = (typeof raw === 'number' ? raw : 0) + 1;
-        hot.data[countKey] = count;
-        if (count > 1) {
-          console.warn(
-            'HMR: Multiple editors share the same HMR context and namespace without a unique `id`. ' +
-              'Provide `HMRConfig.id` to keep their states independent, ' +
-              'or give each editor a distinct `namespace`.',
-          );
-        }
-      }
+    if (__DEV__ && configId === '') {
+      console.warn(
+        'HMR: `id` must not be an empty string. ' +
+          'Use a stable non-empty string literal (e.g. `"main"`, `"sidebar"`).',
+      );
     }
 
     const historyPeer = getPeerDependencyFromEditor<typeof HistoryExtension>(
@@ -498,16 +601,20 @@ export const HMRExtension = defineExtension({
         // The only place the previous state is serialized. HMR has just
         // happened, so this cost is paid once per reload instead of on every
         // editor update.
-        const restoredState = reparseEditorState(saved.editorState, editor);
+        const restoredState = reparseEditorState(
+          saved.editorState,
+          editor,
+          captureSavedSelection(saved.captureSelection, saved.editorState),
+        );
         if (!restoredState.isEmpty()) {
           editor.setEditorState(restoredState, {tag: HISTORY_MERGE_TAG});
-          restoreSavedSelection(editor, saved);
           if (isValidHistoryState(saved.historyState)) {
             if (historyPeer) {
               try {
                 historyPeer.output.historyState.value = restoreHistoryState(
                   saved.historyState,
                   editor,
+                  saved.captureSelection,
                 );
               } catch (e) {
                 historyPeer.output.historyState.value = {
@@ -541,19 +648,24 @@ export const HMRExtension = defineExtension({
 
     const editorStateSignal = state.getDependency(EditorStateExtension).output;
     const editableSignal = state.getDependency(WatchEditableExtension).output;
-    const stopSaveEffect = effect(() => {
+    const rootElementSignal = state.getDependency(RootElementExtension).output;
+    return effect(() => {
       const editorState = editorStateSignal.value;
       const editable = editableSignal.value;
+      const mounted = rootElementSignal.value !== null;
       const prev = getSavedHMRState(hot, hmrKey);
+      if (__DEV__ && mounted && isValidHMRSavedState(prev)) {
+        warnOnSharedKey(hmrKey, prev, editor);
+      }
       // On first mount the state is empty before $initialEditorState runs;
       // keep the previously saved state instead of overwriting with empty.
       const validPrev =
         editorState.isEmpty() && isValidHMRSavedState(prev) ? prev : null;
-      // Only references and a closure are stored, so this stays cheap no
-      // matter how large the document or the undo stack gets.
+      // Only references are stored, so this stays cheap no matter how large
+      // the document or the undo stack gets.
       const nextState: HMRSavedState = {
         ...(validPrev ?? {
-          captureSelection: () => captureSelection(editorState),
+          captureSelection,
           editorState,
           historyState: historyPeer
             ? // peek() — avoid subscribing this effect to historyState
@@ -563,23 +675,17 @@ export const HMRExtension = defineExtension({
             : null,
         }),
         editable,
+        mounted,
+        owner: editor,
       };
       hot.data[hmrKey] = nextState;
     });
-
-    return () => {
-      if (__DEV__ && id === undefined) {
-        const countKey = getHMRCountKey(namespace);
-        const raw = hot.data[countKey];
-        const count = typeof raw === 'number' ? raw : 0;
-        if (count > 0) {
-          hot.data[countKey] = count - 1;
-        }
-      }
-      stopSaveEffect();
-    };
   },
   config: safeCast<HMRConfig>({hot: null}),
-  dependencies: [EditorStateExtension, WatchEditableExtension],
+  dependencies: [
+    EditorStateExtension,
+    RootElementExtension,
+    WatchEditableExtension,
+  ],
   name: '@lexical/extension/HMR',
 });

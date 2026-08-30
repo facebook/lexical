@@ -109,6 +109,22 @@ function createEditorNoHistory(hot: HotContext) {
   );
 }
 
+function createEditorWithNamespace(hot: HotContext, namespace: string) {
+  return buildEditorFromExtensions(
+    defineExtension({
+      $initialEditorState: () => $setupContent('initial'),
+      dependencies: [configExtension(HMRExtension, {hot})],
+      name: `editor-${namespace}`,
+      namespace,
+    }),
+  );
+}
+
+/** An editor is only "in use" once it has a root element. */
+function $mount(editor: {setRootElement: (el: HTMLElement) => void}) {
+  editor.setRootElement(document.createElement('div'));
+}
+
 function createEditorNoInitialState(hot: HotContext) {
   return buildEditorFromExtensions(
     defineExtension({
@@ -351,7 +367,7 @@ describe('HMRExtension', () => {
     }
   });
 
-  test('preserves content but clears history when saved history is corrupted', () => {
+  test('drops only the corrupted history entry when saved history is partly corrupted', () => {
     const hot = createMockHotContext();
 
     {
@@ -364,13 +380,13 @@ describe('HMRExtension', () => {
       });
     }
 
-    // Corrupt only the history — leave editorState intact
-    const saved = hot.data[TEST_HMR_KEY] as {historyState: unknown};
-    saved.historyState = {
-      current: 'not-a-state',
-      redoStack: [],
-      undoStack: [],
+    // Corrupt only the `current` entry, keeping the real undo stack, so the
+    // restore has both a broken entry and a good one to deal with
+    const saved = hot.data[TEST_HMR_KEY] as {
+      historyState: {current: unknown; undoStack: unknown[]};
     };
+    expect(saved.historyState.undoStack).toHaveLength(1);
+    saved.historyState = {...saved.historyState, current: 'not-a-state'};
 
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
@@ -379,29 +395,78 @@ describe('HMRExtension', () => {
         expect($getRoot().getTextContent()).toBe('valid');
       });
       expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('Could not restore undo/redo history'),
-        expect.anything(),
+        expect.stringContaining('Dropped 1 undo/redo entry'),
       );
-      // History was cleared — undo must be a no-op (would have reached 'first' if intact)
+      // Only the corrupted `current` entry was dropped: the undo stack itself
+      // survived, so undo still reaches the earlier state
       editor.dispatchCommand(UNDO_COMMAND, undefined);
       editor.read(() => {
-        expect($getRoot().getTextContent()).toBe('valid');
+        expect($getRoot().getTextContent()).toBe('first');
       });
     } finally {
       warn.mockRestore();
     }
   });
 
-  test('warns in dev when multiple editors share HotContext and namespace without id', () => {
+  test('warns when two mounted editors share an HMR key', () => {
     const hot = createMockHotContext();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     try {
-      using _editor1 = createEditor(hot);
-      using _editor2 = createEditor(hot);
+      using editor1 = createEditorWithNamespace(hot, 'shared-key-ns');
+      using editor2 = createEditorWithNamespace(hot, 'shared-key-ns');
+      $mount(editor1);
+      $mount(editor2);
+      editor1.update(() => $setupContent('one'), {discrete: true});
+      editor2.update(() => $setupContent('two'), {discrete: true});
       expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('Multiple editors share the same HMR context'),
+        expect.stringContaining(
+          'Two mounted editors are sharing the HMR key "lexicalHMR:shared-key-ns"',
+        ),
       );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('does not warn when a replacement editor overlaps the one it replaces', () => {
+    const hot = createMockHotContext();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      // The shape LexicalExtensionComposer produces on an HMR cycle: the
+      // replacement is built (during render) while the old editor is still
+      // mounted, and the old one is disposed afterwards (effect cleanup).
+      const previous = createEditorWithNamespace(hot, 'swap-ns');
+      $mount(previous);
+      previous.update(() => $setupContent('typed'), {discrete: true});
+
+      using next = createEditorWithNamespace(hot, 'swap-ns');
+      previous.dispose();
+      $mount(next);
+      next.update(() => $setupContent('typed again'), {discrete: true});
+
+      next.read(() => {
+        expect($getRoot().getTextContent()).toBe('typed again');
+      });
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('does not warn for an editor that was built but never mounted', () => {
+    const hot = createMockHotContext();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      // React StrictMode renders twice, so the first editor of a pair is
+      // discarded without ever being mounted (or disposed).
+      using _discarded = createEditorWithNamespace(hot, 'discarded-ns');
+      using kept = createEditorWithNamespace(hot, 'discarded-ns');
+      $mount(kept);
+      kept.update(() => $setupContent('kept'), {discrete: true});
+      expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();
     }
@@ -435,27 +500,16 @@ describe('HMRExtension', () => {
   test('isolates two editors by namespace without requiring id', () => {
     const hot = createMockHotContext();
 
-    function createEditorWithNamespace(ns: string) {
-      return buildEditorFromExtensions(
-        defineExtension({
-          $initialEditorState: () => $setupContent('initial'),
-          dependencies: [configExtension(HMRExtension, {hot})],
-          name: `editor-${ns}`,
-          namespace: ns,
-        }),
-      );
-    }
-
     {
-      using main = createEditorWithNamespace('main-ns');
-      using sidebar = createEditorWithNamespace('sidebar-ns');
+      using main = createEditorWithNamespace(hot, 'main-ns');
+      using sidebar = createEditorWithNamespace(hot, 'sidebar-ns');
       main.update(() => $setupContent('main-content'), {discrete: true});
       sidebar.update(() => $setupContent('sidebar-content'), {discrete: true});
     }
 
     {
-      using main = createEditorWithNamespace('main-ns');
-      using sidebar = createEditorWithNamespace('sidebar-ns');
+      using main = createEditorWithNamespace(hot, 'main-ns');
+      using sidebar = createEditorWithNamespace(hot, 'sidebar-ns');
       main.read(() => {
         expect($getRoot().getTextContent()).toBe('main-content');
       });
@@ -643,6 +697,66 @@ describe('HMRExtension', () => {
       using editor = createEditorNoHistory(hot);
       editor.read(() => {
         expect($getRoot().getTextContent()).toBe('no history');
+      });
+    }
+  });
+
+  test('preserves state for an editor with no configured namespace', () => {
+    const hot = createMockHotContext();
+    const createUnnamespaced = () =>
+      buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $setupContent('initial'),
+          dependencies: [configExtension(HMRExtension, {hot})],
+          name: 'no-namespace-editor',
+        }),
+      );
+
+    {
+      using editor = createUnnamespaced();
+      editor.update(() => $setupContent('no namespace'), {discrete: true});
+    }
+
+    {
+      using editor = createUnnamespaced();
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('no namespace');
+      });
+    }
+
+    // createEditor generates a fresh random namespace for each of these
+    // editors, so the key must not be built from it: one stable key, rather
+    // than an orphaned entry pinning an EditorState for every cycle
+    expect(Object.keys(hot.data)).toEqual(['lexicalHMR:']);
+  });
+
+  test('preserves the caret of an undo history entry', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(
+        () => {
+          $setupParagraphs('alpha');
+          $getRoot().getLastDescendant()!.selectEnd();
+        },
+        {discrete: true},
+      );
+      editor.update(() => $setupParagraphs('bravo'), {
+        discrete: true,
+        tag: HISTORY_PUSH_TAG,
+      });
+    }
+
+    {
+      using editor = createEditor(hot);
+      editor.dispatchCommand(UNDO_COMMAND, undefined);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('alpha');
+        expect($readRangeSelection()).toEqual([
+          ['alpha', 5],
+          ['alpha', 5],
+        ]);
       });
     }
   });

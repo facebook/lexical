@@ -163,14 +163,16 @@ function serializeSelection(
 }
 
 function $serializeNodeVersion(node: LexicalNode): SerializedNodeVersion {
-  const json: Record<string, unknown> = {...node.exportJSON()};
-  // The nested containers are rebuilt from the links below. Leaving them in
-  // would restore a node's children a second time, once per version, which is
-  // the duplication this format exists to avoid.
-  delete json.children;
-  delete json.$slots;
+  // exportJSON hands its caller a fresh object to own — $exportNodeToJSON
+  // fills in the children of the one it gets the same way — so the nested
+  // containers are dropped in place. They are rebuilt from the links below;
+  // leaving them in would restore a node's children a second time, once per
+  // version, which is the duplication this format exists to avoid.
+  const json = node.exportJSON();
+  delete (json as {children?: unknown}).children;
+  delete (json as {$slots?: unknown}).$slots;
   const version: SerializedNodeVersion = {
-    json: json as unknown as SerializedLexicalNode,
+    json,
     key: node.__key,
     next: node.__next,
     parent: node.__parent,

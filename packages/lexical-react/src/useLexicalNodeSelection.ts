@@ -50,6 +50,11 @@ function isNodeSelected(editor: LexicalEditor, key: NodeKey): boolean {
  * @returns {[boolean, (selected: boolean) => void, () => void]} A tuple containing:
  * - `isSelected` (boolean): Whether the node is currently selected.
  * - `setSelected` (function): A function to set the selection state of the node.
+ *   `setSelected(false)` only removes the node from an existing NodeSelection.
+ *   It is a no-op under a RangeSelection -- creating an empty NodeSelection to
+ *   deselect would discard the user's caret -- so `isSelected` stays `true`
+ *   while a RangeSelection still covers the node. Use `clearSelected` (or
+ *   `$setSelection(null)`) to drop the selection itself.
  * - `clearSelected` (function): A function to clear the selection of the node.
  *
  */

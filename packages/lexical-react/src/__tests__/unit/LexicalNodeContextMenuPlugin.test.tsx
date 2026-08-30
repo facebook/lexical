@@ -11,6 +11,7 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {
   NodeContextMenuOption,
   NodeContextMenuPlugin,
+  NodeContextMenuSeparator,
 } from '@lexical/react/LexicalNodeContextMenuPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import * as React from 'react';
@@ -37,8 +38,12 @@ describe('NodeContextMenuPlugin', () => {
     container.remove();
   });
 
-  async function renderPlugin(showOn: boolean): Promise<void> {
+  async function renderPlugin(
+    showOn: boolean,
+    withSeparator = false,
+  ): Promise<void> {
     const items = [
+      ...(withSeparator ? [new NodeContextMenuSeparator()] : []),
       new NodeContextMenuOption('Do a thing', {
         $onSelect: vi.fn(),
         $showOn: () => showOn,
@@ -95,5 +100,15 @@ describe('NodeContextMenuPlugin', () => {
     const event = await rightClick();
     expect(event.defaultPrevented).toBe(true);
     expect(isMenuOpen()).toBe(true);
+  });
+
+  it('leaves the native context menu alone when only separators remain', async () => {
+    // Separators have no $showOn, so they survive the filter even when every
+    // option is hidden -- a menu of nothing but dividers is still no menu.
+    await renderPlugin(false, true);
+
+    const event = await rightClick();
+    expect(event.defaultPrevented).toBe(false);
+    expect(isMenuOpen()).toBe(false);
   });
 });

@@ -10,6 +10,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
+  KEY_ESCAPE_COMMAND,
   type LexicalCommand,
   type LexicalEditor,
 } from 'lexical';
@@ -123,6 +124,7 @@ describe('LexicalMenu arrow keys with no options', () => {
   for (const [name, command] of [
     ['ArrowDown', KEY_ARROW_DOWN_COMMAND],
     ['ArrowUp', KEY_ARROW_UP_COMMAND],
+    ['Escape', KEY_ESCAPE_COMMAND],
   ] as const) {
     it(`lets ${name} through when there are no options`, async () => {
       // An empty option list renders no menu at all, so the key must still

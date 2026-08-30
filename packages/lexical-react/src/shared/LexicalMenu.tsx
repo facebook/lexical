@@ -545,6 +545,12 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ESCAPE_COMMAND,
         payload => {
           const event = payload;
+          if (options === null || !options.length) {
+            // See KEY_ARROW_DOWN_COMMAND above: with no options there is no
+            // menu on screen to dismiss, so Escape has to keep propagating to
+            // whatever would otherwise handle it.
+            return false;
+          }
           event.preventDefault();
           event.stopImmediatePropagation();
           close();

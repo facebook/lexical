@@ -234,10 +234,11 @@ const NodeContextMenuPlugin = forwardRef<
         });
       }
 
-      // Every item is hidden for this node, so there is no menu to show. Let
-      // the browser's own context menu open rather than suppressing it and
-      // mounting a scroll-locking overlay around nothing.
-      if (visibleItems.length === 0) {
+      // Nothing is left to show for this node -- separators on their own draw
+      // a menu with no items in it -- so let the browser's own context menu
+      // open rather than suppressing it and mounting a scroll-locking overlay
+      // around nothing.
+      if (!visibleItems.some(option => option.type !== 'separator')) {
         return;
       }
 

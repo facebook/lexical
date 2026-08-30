@@ -96,13 +96,10 @@ function getHMRKey(id: string | undefined, namespace: string): string {
  * in the save effect reports.
  */
 function hasConfiguredNamespace(editor: LexicalEditor): boolean {
-  if (editor._parentEditor !== null) {
-    // Inherited from the parent editor, which is where the namespace — and
-    // any HMRExtension keyed on it — belongs.
-    return true;
-  }
   const builder = LexicalBuilder.maybeFromEditor(editor);
   if (!builder) {
+    // Built by createEditor rather than from extensions, so there is nothing
+    // to read the namespace's provenance from; take it as chosen.
     return true;
   }
   for (const rep of builder.extensionNameMap.values()) {
@@ -110,7 +107,12 @@ function hasConfiguredNamespace(editor: LexicalEditor): boolean {
       return true;
     }
   }
-  return false;
+  // An editor that configured none of its own inherits its parent's, so the
+  // question becomes whether the parent configured one.
+  return (
+    editor._parentEditor !== null &&
+    hasConfiguredNamespace(editor._parentEditor)
+  );
 }
 
 // Keyed by HMR key, so a collision is reported once per module instance
@@ -255,21 +257,49 @@ function isSerializedHMRState(raw: unknown): raw is SerializedHMRState {
  * version of a node keeps answering to one key: undo is a reconciliation
  * against the state that is current when it happens, which can only diff what
  * actually changed if the two agree about keys.
+ *
+ * Only the entries `editor` itself recorded are kept. `SharedHistoryExtension`
+ * gives a nested editor its parent's `HistoryState` object, so one stack can
+ * hold entries from several editors, and each entry names the editor that
+ * undoing it applies the state to. Those other editors do not survive the
+ * reload, and re-labelling their entries with this one would make undo replace
+ * this editor's document with a nested editor's content.
  */
 function serializeHMRState(
+  editor: LexicalEditor,
   editorState: EditorState,
   historyState: HistoryState | null,
 ): SerializedHMRState {
   const states: EditorState[] = [editorState];
+  let foreign = 0;
+  const own = (entry: HistoryStateEntry): boolean => {
+    const isOwn = entry.editor === editor;
+    if (!isOwn) {
+      foreign++;
+    }
+    return isOwn;
+  };
   const add = (entry: HistoryStateEntry): number =>
     states.push(entry.editorState) - 1;
+  const addStack = (stack: readonly HistoryStateEntry[]): number[] =>
+    stack.filter(own).map(add);
   const history = historyState
     ? {
-        current: historyState.current ? add(historyState.current) : null,
-        redoStack: historyState.redoStack.map(add),
-        undoStack: historyState.undoStack.map(add),
+        current:
+          historyState.current && own(historyState.current)
+            ? add(historyState.current)
+            : null,
+        redoStack: addStack(historyState.redoStack),
+        undoStack: addStack(historyState.undoStack),
       }
     : null;
+  if (__DEV__ && foreign > 0) {
+    console.warn(
+      `HMR: Left behind ${foreign} undo/redo ${
+        foreign === 1 ? 'entry' : 'entries'
+      } recorded by another editor sharing this history. They can only be applied to the editor that recorded them, which this reload replaced.`,
+    );
+  }
   return {family: serializeEditorStateFamily(states), history};
 }
 
@@ -367,6 +397,12 @@ function restoreHistoryState(
  * defineExtension({ name: '[second]', namespace: 'shared', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'second'})] })
  * ```
  *
+ * Only the undo/redo entries this editor recorded are preserved. With
+ * `SharedHistoryExtension` a nested editor pushes onto its parent's stacks, and
+ * an entry can only be applied to the editor that recorded it — editors the
+ * reload replaced, so those entries are left behind rather than re-pointed at
+ * whichever editor happens to restore the history.
+ *
  * An editor that was given no `namespace` at all is keyed without one, because
  * the namespace `createEditor` generates for it is a fresh random string on
  * every reload — a key built from that would never match what the previous
@@ -414,8 +450,19 @@ export const HMRExtension = defineExtension({
         // The only place the previous states are serialized. HMR has just
         // happened, so the cost is paid once per reload rather than on every
         // editor update, and it is paid by the module instance that owns them.
-        const serialized = saved.serialize ? saved.serialize() : null;
-        if (isSerializedHMRState(serialized)) {
+        const serialized =
+          typeof saved.serialize === 'function' ? saved.serialize() : null;
+        if (!isSerializedHMRState(serialized)) {
+          // A payload this build cannot read — one written by a different
+          // version of this extension, say. Falling back to
+          // $initialEditorState is the right move, but doing it quietly is
+          // not: from the outside the document simply vanished.
+          if (__DEV__) {
+            console.warn(
+              'HMR: The saved state could not be read — it was written by a different build of HMRExtension. Starting fresh.',
+            );
+          }
+        } else {
           const states = deserializeEditorStateFamily(
             serialized.family,
             editor,
@@ -479,6 +526,7 @@ export const HMRExtension = defineExtension({
           editorState,
           serialize: () =>
             serializeHMRState(
+              editor,
               editorState,
               // peek() — avoid subscribing this effect to historyState
               // changes; @lexical/history mutates the HistoryState in place,

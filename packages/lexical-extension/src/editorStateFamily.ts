@@ -9,19 +9,19 @@
 import {
   $createNodeSelection,
   $createRangeSelection,
+  $getRoot,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
-  $isRootNode,
   $parseSerializedNode,
   type BaseSelection,
   type EditorState,
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
-  RootNode,
   type SerializedEditorState,
   type SerializedLexicalNode,
+  type SerializedRootNode,
 } from 'lexical';
 
 /**
@@ -253,14 +253,27 @@ export function isSerializedEditorStateFamily(
   );
 }
 
-function $buildNodeVersion(json: SerializedLexicalNode): LexicalNode {
-  const node = $parseSerializedNode(json);
+function $buildNodeVersion(
+  json: SerializedLexicalNode,
+  editor: LexicalEditor,
+): LexicalNode {
+  if (json.type !== 'root') {
+    return $parseSerializedNode(json);
+  }
   // RootNode.importJSON returns the active editor state's root rather than a
-  // new node, so without this every root version would be the same object —
-  // and the states of the family would share one root instead of having their
-  // own. The parsed root carries this version's data; copying it onto a fresh
-  // RootNode keeps the version and leaves the scratch state's root alone.
-  return $isRootNode(node) ? Object.assign(new RootNode(), node) : node;
+  // new node, and updateFromJSON writes through getWritable(), so root
+  // versions built in one parse would all be the same object — sharing one
+  // NodeState, which the last of them to be parsed would clear. Giving each
+  // one its own parse gives each one its own root. parseEditorState saves and
+  // restores the active state, so nesting a parse inside one is safe.
+  let root: LexicalNode | undefined;
+  editor.parseEditorState({root: json as SerializedRootNode}, () => {
+    root = $getRoot();
+  });
+  if (root === undefined) {
+    throw new Error('editorStateFamily: the root version did not parse');
+  }
+  return root;
 }
 
 function $restoreSelection(
@@ -324,7 +337,7 @@ export function deserializeEditorStateFamily(
     for (const version of family.nodes) {
       let node: LexicalNode | null = null;
       try {
-        node = $buildNodeVersion(version.json);
+        node = $buildNodeVersion(version.json, editor);
       } catch {
         // A version that no longer rebuilds costs the states that reference
         // it, which the caller reports; the rest of the family is still good.

@@ -13,16 +13,23 @@ import {
   HMRExtension,
   type HotContext,
 } from '@lexical/extension';
-import {HistoryExtension} from '@lexical/history';
+import {
+  createEmptyHistoryState,
+  HistoryExtension,
+  type HistoryStateEntry,
+} from '@lexical/history';
 import {
   $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $getState,
   $isNodeSelection,
   $isRangeSelection,
   $setSelection,
+  $setState,
+  createState,
   defineExtension,
   type EditorState,
   type ElementNode,
@@ -35,6 +42,10 @@ import {
 import {describe, expect, test, vi} from 'vitest';
 
 import {serializeEditorStateFamily} from '../../editorStateFamily';
+
+const markerState = createState('hmr-test-marker', {
+  parse: (value: unknown) => (typeof value === 'string' ? value : ''),
+});
 
 function createMockHotContext(): HotContext {
   return {data: {}};
@@ -154,6 +165,18 @@ function createSeededEditor(hot: HotContext, namespace: string) {
       namespace,
     }),
   );
+}
+
+function entriesOf(historyState: {
+  current: null | HistoryStateEntry;
+  redoStack: HistoryStateEntry[];
+  undoStack: HistoryStateEntry[];
+}): HistoryStateEntry[] {
+  return [
+    ...(historyState.current ? [historyState.current] : []),
+    ...historyState.undoStack,
+    ...historyState.redoStack,
+  ];
 }
 
 function historyStateOf(editor: LexicalEditor) {
@@ -1025,6 +1048,161 @@ describe('HMRExtension', () => {
     // happened before the reload
     expect(countSerializedNodesForCycle(2)).toBe(1);
     expect(countSerializedNodesForCycle(50)).toBe(1);
+  });
+
+  test('preserves NodeState on the root through an HMR cycle', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(
+        () => {
+          $setState($getRoot(), markerState, 'root-value');
+          $setState($getRoot().getFirstChild()!, markerState, 'child-value');
+        },
+        {discrete: true},
+      );
+    }
+
+    {
+      using editor = createEditor(hot);
+      editor.read(() => {
+        // The root's own state is as easy to lose as any node's: every version
+        // of the root is built from the one the active state holds
+        expect($getState($getRoot(), markerState)).toBe('root-value');
+        expect($getState($getRoot().getFirstChild()!, markerState)).toBe(
+          'child-value',
+        );
+      });
+    }
+  });
+
+  test('leaves behind history entries recorded by another editor', () => {
+    const hot = createMockHotContext();
+    // Two editors sharing one HistoryState, the way SharedHistoryExtension
+    // hands a nested editor its parent's
+    const historyState = createEmptyHistoryState();
+    const createSharing = (namespace: string, id: string) =>
+      buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $setupContent(`initial ${id}`),
+          dependencies: [
+            configExtension(HistoryExtension, {
+              createInitialHistoryState: () => historyState,
+            }),
+            configExtension(HMRExtension, {hot, id}),
+          ],
+          name: `sharing-${id}`,
+          namespace,
+        }),
+      );
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      {
+        using owner = createSharing('shared-history-ns', 'owner');
+        using other = createSharing('shared-history-ns', 'other');
+        owner.update(() => $setupContent('owner one'), {discrete: true});
+        owner.update(() => $setupContent('owner two'), {
+          discrete: true,
+          tag: HISTORY_PUSH_TAG,
+        });
+        other.update(() => $setupContent('other one'), {
+          discrete: true,
+          tag: HISTORY_PUSH_TAG,
+        });
+        // The shared history holds entries recorded by both editors, each
+        // naming the editor undoing it would apply the state to
+        expect(new Set(entriesOf(historyState).map(e => e.editor)).size).toBe(
+          2,
+        );
+      }
+
+      {
+        using owner = createSharing('shared-history-ns', 'owner');
+        const restored = entriesOf(historyStateOf(owner));
+        // Only the owner's entries came back: another editor's state can only
+        // be applied to that editor, and it did not survive the reload
+        expect(restored).not.toHaveLength(0);
+        expect(restored.every(entry => entry.editor === owner)).toBe(true);
+        expect(warn).toHaveBeenCalledWith(
+          expect.stringContaining('Left behind 1 undo/redo entry'),
+        );
+        owner.dispatchCommand(UNDO_COMMAND, undefined);
+        owner.read(() => {
+          expect($getRoot().getTextContent()).toBe('owner one');
+        });
+      }
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('preserves state for a nested editor whose parent has no namespace', () => {
+    const hot = createMockHotContext();
+    const createNested = () => {
+      // The parent configures no namespace, so createEditor generates a random
+      // one — and the nested editor inherits it
+      const parent = buildEditorFromExtensions(
+        defineExtension({name: 'unnamespaced-parent'}),
+      );
+      const nested = buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $setupContent('initial'),
+          dependencies: [configExtension(HMRExtension, {hot})],
+          name: 'nested-editor',
+          parentEditor: parent,
+        }),
+      );
+      expect(nested._parentEditor).toBe(parent);
+      expect(nested._config.namespace).toBe(parent._config.namespace);
+      return {nested, parent};
+    };
+
+    {
+      const {nested, parent} = createNested();
+      nested.update(() => $setupContent('nested content'), {discrete: true});
+      nested.dispose();
+      parent.dispose();
+    }
+
+    {
+      const {nested, parent} = createNested();
+      nested.read(() => {
+        expect($getRoot().getTextContent()).toBe('nested content');
+      });
+      nested.dispose();
+      parent.dispose();
+    }
+
+    // Keyed without the inherited random namespace, so the key is the same on
+    // every reload rather than orphaning an entry each time
+    expect(Object.keys(hot.data)).toEqual(['lexicalHMR:']);
+  });
+
+  test('warns when the saved state was written by another build', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(() => $setupContent('unreadable'), {discrete: true});
+    }
+
+    // The shape another build of the extension might have left behind
+    delete (hot.data[TEST_HMR_KEY] as {serialize?: unknown}).serialize;
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      using editor = createEditor(hot);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('initial');
+      });
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('saved state could not be read'),
+      );
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   test('restored history entries keep the structural sharing they had', () => {

@@ -15,6 +15,7 @@ import type {Rule} from 'eslint';
 
 import * as jsPlugin from './LexicalEslintPlugin.js';
 
+export type {NoNestedEditorUpdatesOptions} from './rules/no-nested-editor-updates.js';
 export type {RulesOfLexicalOptions} from './rules/rules-of-lexical.js';
 
 // Legacy config format (ESLint 7-8)
@@ -42,6 +43,7 @@ export interface Plugin {
   };
   rules: {
     'no-document-in-dom-methods': Rule.RuleModule;
+    'no-nested-editor-updates': Rule.RuleModule;
     'rules-of-lexical': Rule.RuleModule;
   };
   configs: {

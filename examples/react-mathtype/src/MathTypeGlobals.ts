@@ -25,7 +25,7 @@ export type MathTypeIntegrationInstance = {
   insertFormula: (
     focusElement: HTMLElement | Window,
     windowTarget: Window,
-    mathML: string,
+    mathML: null | string,
     wirisProperties: null | object,
   ) => object;
   listeners: {
@@ -50,9 +50,32 @@ export type MathTypeIntegrationProperties = {
   toolbar: HTMLElement;
 };
 
+/** A `Listeners` entry, as built by `Listeners.newListener`. */
+export type MathTypeListener = {
+  callback: (event: object) => void;
+  eventName: string;
+};
+
 export type WirisPluginGlobal = {
   Configuration?: {
     get: (key: string) => false | string;
+  };
+  Core: {
+    /**
+     * Fires `onModalClose` every time the MathType dialog closes, whichever
+     * button or key closed it. `Listeners` has no `remove`, so unsubscribing
+     * means splicing this array.
+     */
+    globalListeners: {
+      add: (listener: MathTypeListener) => void;
+      listeners: MathTypeListener[];
+    };
+  };
+  Listeners: {
+    newListener: (
+      eventName: string,
+      callback: (event: object) => void,
+    ) => MathTypeListener;
   };
   currentInstance?: MathTypeIntegrationInstance | null;
   GenericIntegration: new (
@@ -65,12 +88,16 @@ export type WirisPluginGlobal = {
   Parser: {
     endParse: (html: string) => string;
     initParse: (html: string, language?: string) => string;
+    /**
+     * Returns null when the `showimage` service rejects the MathML as
+     * malformed, so every call site has to handle a missing image.
+     */
     mathmlToImgObject: (
       document: Document,
       mathML: string,
       wirisProperties: null | object,
       language?: string,
-    ) => HTMLImageElement;
+    ) => HTMLImageElement | null;
   };
 };
 

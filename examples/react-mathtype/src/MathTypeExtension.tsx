@@ -35,7 +35,7 @@ import {
 
 type InsertFormulaResult = {
   focusElement: HTMLElement | Window;
-  node: HTMLImageElement;
+  node: HTMLImageElement | null;
   windowTarget: Window;
 };
 
@@ -88,6 +88,13 @@ function $commitFormula(
   $getRoot().append($createParagraphNode().append(mathTypeNode));
 }
 
+function $removeFormula(nodeKey: NodeKey): void {
+  const node = $getNodeByKey(nodeKey);
+  if ($isMathTypeNode(node)) {
+    node.remove();
+  }
+}
+
 function createIntegration(
   editor: LexicalEditor,
   session: MathTypeSession,
@@ -119,28 +126,45 @@ function createIntegration(
   integration.insertFormula = (
     focusElement: HTMLElement | Window,
     windowTarget: Window,
-    mathML: string,
+    mathML: null | string,
     wirisProperties: null | object,
   ): InsertFormulaResult => {
+    const nodeKey = session.pendingNodeKey;
+    session.pendingNodeKey = null;
+    integration.core.editionProperties.temporalImage = null;
+    // Focus once the formula is on screen; editor.update() is batched, so
+    // focusing straight after it would run before reconciliation.
+    const updateOptions = {onUpdate: () => editor.focus()};
+
+    // ContentManager.submitAction() calls updateFormula(null) whenever the
+    // dialog is accepted with an empty formula - Accept on a blank new
+    // formula, or erasing an existing one - and the Accept button is never
+    // disabled. Core.insertFormula reads empty MathML as "remove the
+    // formula", and Parser.mathmlToImgObject would throw on it.
+    if (!mathML) {
+      if (nodeKey !== null) {
+        editor.update(() => {
+          $removeFormula(nodeKey);
+        }, updateOptions);
+      }
+      return {focusElement, node: null, windowTarget};
+    }
+
+    // Null when the showimage service rejects the MathML as malformed; there
+    // is nothing to commit, so leave the document as it was.
     const image = wirisPlugin.Parser.mathmlToImgObject(
       target.ownerDocument,
       mathML,
       wirisProperties,
     );
+    if (image === null) {
+      return {focusElement, node: null, windowTarget};
+    }
+
     const formula = createFormulaFromImage(image, mathML);
-    const nodeKey = session.pendingNodeKey;
-    session.pendingNodeKey = null;
-
-    editor.update(
-      () => {
-        $commitFormula(nodeKey, formula);
-      },
-      // Focus once the formula is on screen; editor.update() is batched, so
-      // focusing straight after it would run before reconciliation.
-      {onUpdate: () => editor.focus()},
-    );
-
-    integration.core.editionProperties.temporalImage = null;
+    editor.update(() => {
+      $commitFormula(nodeKey, formula);
+    }, updateOptions);
 
     return {focusElement, node: image, windowTarget};
   };
@@ -158,12 +182,33 @@ function mountIntegration(
   target: HTMLElement,
   toolbar: HTMLElement,
 ): () => void {
+  const wirisPlugin = getWirisPlugin();
   const integration = createIntegration(editor, session, target, toolbar);
   integration.init();
   integration.listeners.fire('onTargetReady', {});
   session.integration = integration;
 
+  // Give the editor its focus back whenever the dialog closes. Cancelling runs
+  // IntegrationModel.setActionsOnCancelButtons(), which focuses `target` - the
+  // offscreen, aria-hidden edition target - so without this the caret is
+  // stranded there and typing goes nowhere the reader can see.
+  const modalCloseListener = wirisPlugin.Listeners.newListener(
+    'onModalClose',
+    () => {
+      if (wirisPlugin.currentInstance === integration) {
+        editor.focus();
+      }
+    },
+  );
+  wirisPlugin.Core.globalListeners.add(modalCloseListener);
+
   return () => {
+    // Listeners exposes add() but no remove(), so drop it from the array.
+    const {listeners} = wirisPlugin.Core.globalListeners;
+    const index = listeners.indexOf(modalCloseListener);
+    if (index !== -1) {
+      listeners.splice(index, 1);
+    }
     if (session.integration === integration) {
       session.integration = null;
     }

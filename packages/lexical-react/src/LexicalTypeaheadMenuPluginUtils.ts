@@ -29,7 +29,7 @@ export const PUNCTUATION =
 export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   index: number;
   option: MenuOption;
-}> = /* @__PURE__ */ createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
+}> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
 
 /** @deprecated Moved to `@lexical/utils`. Import `getScrollParent` from there. */
 export const getScrollParent = getScrollParent_;

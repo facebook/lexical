@@ -57,6 +57,7 @@ export {
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,
   $insertNodeToNearestRootAtCaret,
+  $isBlockFullySelected,
   $isExtendableTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
@@ -281,6 +282,7 @@ export {
 } from './LexicalSelection';
 export type {SlotName} from './LexicalSlot';
 export {
+  $getSelectionSlotFrame,
   $getSlot,
   $getSlotFrame,
   $getSlotHost,

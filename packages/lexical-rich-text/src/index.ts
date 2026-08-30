@@ -148,8 +148,9 @@ export type SerializedHeadingNode = Spread<
   SerializedElementNode
 >;
 
-export const DRAG_DROP_PASTE: LexicalCommand<File[]> =
-  /* @__PURE__ */ createCommand('DRAG_DROP_PASTE_FILE');
+export const DRAG_DROP_PASTE: LexicalCommand<File[]> = createCommand(
+  'DRAG_DROP_PASTE_FILE',
+);
 
 export type SerializedQuoteNode = Spread<
   {
@@ -172,7 +173,7 @@ export type SerializedQuoteNode = Spread<
  * `<blockquote>` content. Defaults to `false`, in which case there is no
  * change to the legacy behavior (and nothing extra is serialized).
  */
-export const quoteShadowRootState = /* @__PURE__ */ createState('shadowRoot', {
+export const quoteShadowRootState = createState('shadowRoot', {
   parse: Boolean,
 });
 
@@ -257,10 +258,17 @@ export class QuoteNode extends ElementNode {
 
   // Mutation
 
-  insertNewAfter(_: RangeSelection, restoreSelection?: boolean): ParagraphNode {
+  insertNewAfter(
+    rangeSelection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ParagraphNode {
     const newBlock = $createParagraphNode();
+    newBlock.setTextFormat(rangeSelection.format);
+    newBlock.setTextStyle(rangeSelection.style);
     const direction = this.getDirection();
     newBlock.setDirection(direction);
+    newBlock.setFormat(this.getFormatType());
+    newBlock.setStyle(this.getStyle());
     this.insertAfter(newBlock, restoreSelection);
     return newBlock;
   }
@@ -1794,8 +1802,13 @@ export function registerRichText(
                 $normalizeSelection__EXPERIMENTAL(selection);
               $setSelection(normalizedSelection);
             }
-            editor.dispatchCommand(DRAG_DROP_PASTE, files);
           }
+          // The drop point does not always resolve to a caret (the browser
+          // returns nothing for e.g. the editor's padding). We still consume
+          // the event below, so the files have to be forwarded regardless,
+          // otherwise the drop is silently discarded. PASTE_COMMAND already
+          // dispatches DRAG_DROP_PASTE unconditionally.
+          editor.dispatchCommand(DRAG_DROP_PASTE, files);
           event.preventDefault();
           return true;
         }
@@ -1903,8 +1916,10 @@ export function registerRichText(
       PASTE_COMMAND,
       event => {
         const [, files, hasTextContent] = eventFiles(event);
-        if (shouldHandlePasteAsFiles.peek()(files, hasTextContent)) {
-          editor.dispatchCommand(DRAG_DROP_PASTE, files);
+        if (
+          shouldHandlePasteAsFiles.peek()(files, hasTextContent) &&
+          editor.dispatchCommand(DRAG_DROP_PASTE, files)
+        ) {
           return true;
         }
 

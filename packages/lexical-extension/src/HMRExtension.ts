@@ -453,7 +453,7 @@ function restoreHistoryState(
  * defineExtension({ name: '[second]', namespace: 'shared', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'second'})] })
  * ```
  */
-export const HMRExtension = /* @__PURE__ */ defineExtension({
+export const HMRExtension = defineExtension({
   afterRegistration(editor, {hot, id: configId}, state) {
     if (!hot) {
       return () => {};
@@ -579,7 +579,7 @@ export const HMRExtension = /* @__PURE__ */ defineExtension({
       stopSaveEffect();
     };
   },
-  config: /* @__PURE__ */ safeCast<HMRConfig>({hot: null}),
+  config: safeCast<HMRConfig>({hot: null}),
   dependencies: [EditorStateExtension, WatchEditableExtension],
   name: '@lexical/extension/HMR',
 });

@@ -13,26 +13,20 @@ import type {
 } from '@lexical/history';
 
 import {
-  $createNodeSelection,
-  $createRangeSelection,
-  $getRoot,
-  $getSelection,
-  $isElementNode,
-  $isNodeSelection,
-  $isRangeSelection,
-  $isRootNode,
-  $isTextNode,
-  $setSelection,
   defineExtension,
   type EditorState,
   HISTORY_MERGE_TAG,
   type LexicalEditor,
-  type LexicalNode,
-  type PointType,
   safeCast,
 } from 'lexical';
 
 import {EditorStateExtension} from './EditorStateExtension';
+import {
+  deserializeEditorStateFamily,
+  isSerializedEditorStateFamily,
+  type SerializedEditorStateFamily,
+  serializeEditorStateFamily,
+} from './editorStateFamily';
 import {getPeerDependencyFromEditor} from './getPeerDependencyFromEditor';
 import {LexicalBuilder} from './LexicalBuilder';
 import {RootElementExtension} from './RootElementExtension';
@@ -158,58 +152,45 @@ function warnOnSharedKey(
 /**
  * What is stashed in `hot.data` between module instances.
  *
- * The editor and history states are stored by reference, not serialized.
- * Serializing on every editor update is far too expensive for a document of
- * any size (the whole document plus every undo and redo entry, on every
- * keystroke), and it is wasted work in the common case where no reload ever
- * happens. The previous module instance stays alive for as long as `hot.data`
- * holds these references, so they can be serialized once, by the next module
- * instance, at the moment HMR actually takes place.
+ * The states are stored by reference, not serialized. Serializing on every
+ * editor update is far too expensive for a document of any size (the whole
+ * document plus every undo and redo entry, on every keystroke), and it is
+ * wasted work in the common case where no reload ever happens. The previous
+ * module instance stays alive for as long as `hot.data` holds these
+ * references, so `serialize` — its own function, closing over its own states
+ * and running with the `lexical` module that created them — is called once, by
+ * the next module instance, at the moment HMR actually takes place.
  */
 interface HMRSavedState {
   editable: boolean;
   /** The live EditorState of the editor that is being replaced. */
   editorState: EditorState;
   /**
-   * Reads the selection of a state that this snapshot carries. It is the
-   * function of the module instance that owns those states, so it runs with
-   * the `lexical` module that created them — necessary when `lexical` is
-   * itself part of the HMR graph, where `$getSelection()` from this instance
-   * would not find an active editor state. Optional: a payload saved by an
-   * older build has none.
+   * Serializes the editor state together with the undo/redo history as one
+   * family, so that what those states shared comes back shared. Optional: a
+   * payload written by an older build has none.
    */
-  captureSelection?: (editorState: EditorState) => unknown;
+  serialize?: () => unknown;
   /** The editor that wrote this snapshot, for the shared-key warning. */
   owner?: LexicalEditor;
   /** Whether `owner` had a root element when it wrote this snapshot. */
   mounted?: boolean;
-  // Unknown because isValidHMRSavedState does not inspect this field;
-  // callers must guard with isValidHistoryState before use.
-  historyState: unknown;
 }
 
 /**
- * A point of the previous selection, addressed by its path from the root
- * rather than by NodeKey. `parseEditorState` assigns fresh keys, so the keys
- * of the previous editor mean nothing to the new one — but a document restored
- * from that state's own JSON has the same shape, so the same path leads to the
- * same node.
+ * The plain-data form of a saved editor: every state whose NodeKeys have to
+ * stay aligned with the others, and where the history's entries are to be
+ * found among them.
  */
-interface SavedPoint {
-  offset: number;
-  path: readonly number[];
-  type: 'element' | 'text';
+interface SerializedHMRState {
+  family: SerializedEditorStateFamily;
+  /** Indices into `family.states`, whose first entry is the editor state. */
+  history: {
+    current: null | number;
+    redoStack: number[];
+    undoStack: number[];
+  } | null;
 }
-
-type SavedSelection =
-  | {
-      anchor: SavedPoint;
-      focus: SavedPoint;
-      format: number;
-      style: string;
-      type: 'range';
-    }
-  | {paths: readonly (readonly number[])[]; type: 'node'};
 
 function getSavedHMRState(hot: HotContext, key: string): unknown {
   return hot.data[key];
@@ -240,254 +221,85 @@ function isValidHMRSavedState(raw: unknown): raw is HMRSavedState {
   return (
     has('editable') &&
     has('editorState') &&
-    has('historyState') &&
     typeof s.editable === 'boolean' &&
     isEditorStateLike(s.editorState)
   );
 }
 
-function isValidHistoryState(raw: unknown): raw is HistoryState {
+function isSerializedHMRState(raw: unknown): raw is SerializedHMRState {
   if (raw == null || typeof raw !== 'object') {
     return false;
   }
-  const s = raw as Record<string, unknown>;
-  return Array.isArray(s.undoStack) && Array.isArray(s.redoStack);
-}
-
-/**
- * Re-create `editorState` for `editor` by round-tripping it through JSON,
- * restoring `selection` into the result.
- *
- * The nodes of the previous state are never reused: they are frozen in dev
- * builds and their classes may have been replaced by the reload, so they are
- * re-created from JSON with the classes registered on the new editor. The
- * selection is applied inside the parse, so it is part of the state that comes
- * back rather than a second update on top of it.
- */
-function reparseEditorState(
-  editorState: EditorState,
-  editor: LexicalEditor,
-  selection: SavedSelection | null,
-): EditorState {
-  return editor.parseEditorState(editorState.toJSON(), () => {
-    // An empty root means the state was never initialized. Leaving it without
-    // a selection keeps `isEmpty()` true, which is how the caller knows to
-    // fall back to $initialEditorState.
-    if (selection !== null && !$getRoot().isEmpty()) {
-      $restoreSelection(selection);
-    }
-  });
-}
-
-function $getNodePath(node: LexicalNode): number[] | null {
-  const path: number[] = [];
-  let current = node;
-  while (!$isRootNode(current)) {
-    const parent = current.getParent();
-    if (parent === null) {
-      // A node detached from the root cannot be addressed by a path.
-      return null;
-    }
-    path.push(current.getIndexWithinParent());
-    current = parent;
-  }
-  return path.reverse();
-}
-
-function $capturePoint(point: PointType): SavedPoint | null {
-  const path = $getNodePath(point.getNode());
-  return path === null ? null : {offset: point.offset, path, type: point.type};
-}
-
-/**
- * Reads `editorState`'s selection into a form that survives re-parsing. Only
- * called when HMR takes place — walking to the root is proportional to the
- * number of siblings, so it has no business running on every update.
- */
-function captureSelection(editorState: EditorState): SavedSelection | null {
-  return editorState.read((): SavedSelection | null => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      const anchor = $capturePoint(selection.anchor);
-      const focus = $capturePoint(selection.focus);
-      return anchor === null || focus === null
-        ? null
-        : {
-            anchor,
-            focus,
-            format: selection.format,
-            style: selection.style,
-            type: 'range',
-          };
-    }
-    if ($isNodeSelection(selection)) {
-      const paths: number[][] = [];
-      for (const node of selection.getNodes()) {
-        const path = $getNodePath(node);
-        if (path === null) {
-          return null;
-        }
-        paths.push(path);
-      }
-      return paths.length === 0 ? null : {paths, type: 'node'};
-    }
-    return null;
-  });
-}
-
-function isValidPath(raw: unknown): raw is number[] {
-  return Array.isArray(raw) && raw.every(index => typeof index === 'number');
-}
-
-function isValidSavedPoint(raw: unknown): raw is SavedPoint {
-  if (raw == null || typeof raw !== 'object') {
+  const {family, history} = raw as Record<string, unknown>;
+  if (!isSerializedEditorStateFamily(family)) {
     return false;
   }
-  const s = raw as Record<string, unknown>;
-  return (
-    typeof s.offset === 'number' &&
-    (s.type === 'text' || s.type === 'element') &&
-    isValidPath(s.path)
-  );
-}
-
-function isValidSavedSelection(raw: unknown): raw is SavedSelection {
-  if (raw == null || typeof raw !== 'object') {
-    return false;
-  }
-  const s = raw as Record<string, unknown>;
-  if (s.type === 'node') {
-    return Array.isArray(s.paths) && s.paths.every(isValidPath);
-  }
-  return (
-    s.type === 'range' &&
-    isValidSavedPoint(s.anchor) &&
-    isValidSavedPoint(s.focus) &&
-    typeof s.format === 'number' &&
-    typeof s.style === 'string'
-  );
-}
-
-function $resolvePath(path: readonly number[]): LexicalNode | null {
-  let node: LexicalNode = $getRoot();
-  for (const index of path) {
-    if (!$isElementNode(node)) {
-      return null;
-    }
-    const child = node.getChildAtIndex(index);
-    if (child === null) {
-      return null;
-    }
-    node = child;
-  }
-  return node;
-}
-
-function $setPoint(point: PointType, saved: SavedPoint): boolean {
-  const node = $resolvePath(saved.path);
-  // The offsets are clamped rather than trusted: a node transform may have
-  // reshaped the document after it was restored.
-  if (saved.type === 'text') {
-    if (!$isTextNode(node)) {
-      return false;
-    }
-    point.set(
-      node.getKey(),
-      Math.min(saved.offset, node.getTextContentSize()),
-      'text',
-    );
+  if (history == null) {
     return true;
   }
-  if (!$isElementNode(node)) {
-    return false;
-  }
-  point.set(
-    node.getKey(),
-    Math.min(saved.offset, node.getChildrenSize()),
-    'element',
+  const isIndex = (value: unknown): boolean =>
+    typeof value === 'number' && value >= 0 && value < family.states.length;
+  const {current, redoStack, undoStack} = history as Record<string, unknown>;
+  return (
+    (current === null || isIndex(current)) &&
+    Array.isArray(redoStack) &&
+    redoStack.every(isIndex) &&
+    Array.isArray(undoStack) &&
+    undoStack.every(isIndex)
   );
-  return true;
-}
-
-function $restoreSelection(saved: SavedSelection): void {
-  if (saved.type === 'node') {
-    const selection = $createNodeSelection();
-    for (const path of saved.paths) {
-      const node = $resolvePath(path);
-      if (node === null) {
-        return;
-      }
-      selection.add(node.getKey());
-    }
-    $setSelection(selection);
-    return;
-  }
-  const selection = $createRangeSelection();
-  if (
-    $setPoint(selection.anchor, saved.anchor) &&
-    $setPoint(selection.focus, saved.focus)
-  ) {
-    selection.format = saved.format;
-    selection.style = saved.style;
-    $setSelection(selection);
-  }
 }
 
 /**
- * Reads the selection of one of the saved states, using the capture function
- * of the module instance that created it. A selection that cannot be read is
- * not worth failing a restore over.
+ * Serializes `editorState` together with the states of `historyState`. They go
+ * in as one family so that the nodes they share stay shared, and so that every
+ * version of a node keeps answering to one key: undo is a reconciliation
+ * against the state that is current when it happens, which can only diff what
+ * actually changed if the two agree about keys.
  */
-function captureSavedSelection(
-  capture: HMRSavedState['captureSelection'],
+function serializeHMRState(
   editorState: EditorState,
-): SavedSelection | null {
-  if (typeof capture !== 'function') {
-    return null;
-  }
-  try {
-    const saved = capture(editorState);
-    return isValidSavedSelection(saved) ? saved : null;
-  } catch (e) {
-    if (__DEV__) {
-      console.warn('HMR: Could not restore the previous selection.', e);
-    }
-    return null;
-  }
+  historyState: HistoryState | null,
+): SerializedHMRState {
+  const states: EditorState[] = [editorState];
+  const add = (entry: HistoryStateEntry): number =>
+    states.push(entry.editorState) - 1;
+  const history = historyState
+    ? {
+        current: historyState.current ? add(historyState.current) : null,
+        redoStack: historyState.redoStack.map(add),
+        undoStack: historyState.undoStack.map(add),
+      }
+    : null;
+  return {family: serializeEditorStateFamily(states), history};
 }
 
+/**
+ * Rebuilds the undo/redo history from the states of a restored family. An
+ * entry whose state could not be rebuilt is dropped on its own rather than
+ * costing the whole history.
+ */
 function restoreHistoryState(
-  saved: HistoryState,
+  history: NonNullable<SerializedHMRState['history']>,
+  states: readonly (EditorState | null)[],
   editor: LexicalEditor,
-  capture: HMRSavedState['captureSelection'],
 ): HistoryState {
   let dropped = 0;
-  const restoreEntry = (entry: HistoryStateEntry): HistoryStateEntry | null => {
-    try {
-      const editorState = reparseEditorState(
-        entry.editorState,
-        editor,
-        captureSavedSelection(capture, entry.editorState),
-      );
-      if (!editorState.isEmpty()) {
-        return {editor, editorState};
-      }
-    } catch {
-      // One entry that no longer parses costs that entry, not the whole
-      // undo and redo history.
+  const restoreEntry = (index: number): HistoryStateEntry | null => {
+    const editorState = states[index];
+    if (editorState == null || editorState.isEmpty()) {
+      dropped++;
+      return null;
     }
-    dropped++;
-    return null;
+    return {editor, editorState};
   };
-  const restoreStack = (
-    stack: readonly HistoryStateEntry[],
-  ): HistoryStateEntry[] =>
-    stack
+  const restoreStack = (indices: readonly number[]): HistoryStateEntry[] =>
+    indices
       .map(restoreEntry)
       .filter((entry): entry is HistoryStateEntry => entry !== null);
-  const current = saved.current ? restoreEntry(saved.current) : null;
-  const undoStack = restoreStack(saved.undoStack);
-  const redoStack = restoreStack(saved.redoStack);
+  const current =
+    history.current === null ? null : restoreEntry(history.current);
+  const undoStack = restoreStack(history.undoStack);
+  const redoStack = restoreStack(history.redoStack);
   if (__DEV__ && dropped > 0) {
     console.warn(
       `HMR: Dropped ${dropped} undo/redo ${
@@ -514,10 +326,11 @@ function restoreHistoryState(
  * stack. Everything is serialized once, by the module instance that replaces
  * this one, when it restores the saved state.
  *
- * The selection is restored by path from the root rather than by `NodeKey`,
- * since re-parsing the document assigns fresh keys. A selection that no longer
- * resolves — because a node class now imports its JSON differently, say — is
- * dropped, leaving the restored content untouched.
+ * The editor state and the history entries are serialized as one family rather
+ * than one at a time, so that the nodes they shared come back shared and every
+ * version of a node keeps answering to one key — see `editorStateFamily`. That
+ * is what makes an undo after a reload a diff of what changed rather than a
+ * rebuild of the document, and it is why the selection can be carried by key.
  *
  * @example
  * Basic usage
@@ -598,41 +411,39 @@ export const HMRExtension = defineExtension({
     if (isValidHMRSavedState(saved)) {
       try {
         editor.setEditable(saved.editable);
-        // The only place the previous state is serialized. HMR has just
-        // happened, so this cost is paid once per reload instead of on every
-        // editor update.
-        const restoredState = reparseEditorState(
-          saved.editorState,
-          editor,
-          captureSavedSelection(saved.captureSelection, saved.editorState),
-        );
-        if (!restoredState.isEmpty()) {
-          editor.setEditorState(restoredState, {tag: HISTORY_MERGE_TAG});
-          if (isValidHistoryState(saved.historyState)) {
-            if (historyPeer) {
-              try {
-                historyPeer.output.historyState.value = restoreHistoryState(
-                  saved.historyState,
-                  editor,
-                  saved.captureSelection,
-                );
-              } catch (e) {
-                historyPeer.output.historyState.value = {
-                  current: null,
-                  redoStack: [],
-                  undoStack: [],
-                };
-                if (__DEV__) {
-                  console.warn(
-                    'HMR: Could not restore undo/redo history. History cleared.',
-                    e,
-                  );
-                }
-              }
-            } else if (__DEV__) {
+        // The only place the previous states are serialized. HMR has just
+        // happened, so the cost is paid once per reload rather than on every
+        // editor update, and it is paid by the module instance that owns them.
+        const serialized = saved.serialize ? saved.serialize() : null;
+        if (isSerializedHMRState(serialized)) {
+          const states = deserializeEditorStateFamily(
+            serialized.family,
+            editor,
+          );
+          const restoredState = states[0];
+          if (restoredState == null) {
+            // Some node of the document no longer rebuilds — a class the
+            // reload removed, say. There is nothing to restore, and that is
+            // worth saying rather than quietly starting over.
+            if (__DEV__) {
               console.warn(
-                'HMR: Saved undo/redo history discarded — HistoryExtension is no longer configured.',
+                'HMR: Could not restore previous editor state. Starting fresh.',
               );
+            }
+          } else if (!restoredState.isEmpty()) {
+            editor.setEditorState(restoredState, {tag: HISTORY_MERGE_TAG});
+            if (serialized.history !== null) {
+              if (historyPeer) {
+                historyPeer.output.historyState.value = restoreHistoryState(
+                  serialized.history,
+                  states,
+                  editor,
+                );
+              } else if (__DEV__) {
+                console.warn(
+                  'HMR: Saved undo/redo history discarded — HistoryExtension is no longer configured.',
+                );
+              }
             }
           }
         }
@@ -665,14 +476,15 @@ export const HMRExtension = defineExtension({
       // the document or the undo stack gets.
       const nextState: HMRSavedState = {
         ...(validPrev ?? {
-          captureSelection,
           editorState,
-          historyState: historyPeer
-            ? // peek() — avoid subscribing this effect to historyState
+          serialize: () =>
+            serializeHMRState(
+              editorState,
+              // peek() — avoid subscribing this effect to historyState
               // changes; @lexical/history mutates the HistoryState in place,
-              // so this reference stays current on its own.
-              historyPeer.output.historyState.peek()
-            : null,
+              // so this reads the latest history when it is finally called.
+              historyPeer ? historyPeer.output.historyState.peek() : null,
+            ),
         }),
         editable,
         mounted,

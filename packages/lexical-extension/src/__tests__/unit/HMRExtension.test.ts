@@ -9,6 +9,7 @@
 import {
   buildEditorFromExtensions,
   configExtension,
+  getExtensionDependencyFromEditor,
   HMRExtension,
   type HotContext,
 } from '@lexical/extension';
@@ -24,11 +25,16 @@ import {
   $setSelection,
   defineExtension,
   type EditorState,
+  type ElementNode,
   HISTORY_PUSH_TAG,
+  type LexicalEditor,
   REDO_COMMAND,
+  TextNode,
   UNDO_COMMAND,
 } from 'lexical';
 import {describe, expect, test, vi} from 'vitest';
+
+import {serializeEditorStateFamily} from '../../editorStateFamily';
 
 function createMockHotContext(): HotContext {
   return {data: {}};
@@ -118,6 +124,67 @@ function createEditorWithNamespace(hot: HotContext, namespace: string) {
       namespace,
     }),
   );
+}
+
+/** The plain-data payload the previous module instance hands over. */
+interface SavedPayload {
+  family: {
+    nodes: {json: {type: string}}[];
+    states: {nodes: number[]}[];
+  };
+  history: {current: number | null; redoStack: number[]; undoStack: number[]};
+}
+
+/** An editor whose document is large enough for sharing to be measurable. */
+function createSeededEditor(hot: HotContext, namespace: string) {
+  return buildEditorFromExtensions(
+    defineExtension({
+      $initialEditorState: () => {
+        const root = $getRoot().clear();
+        for (let index = 0; index < 20; index++) {
+          root.append(
+            $createParagraphNode().append(
+              $createTextNode(`paragraph ${index}`),
+            ),
+          );
+        }
+      },
+      dependencies: [HistoryExtension, configExtension(HMRExtension, {hot})],
+      name: `seeded-${namespace}`,
+      namespace,
+    }),
+  );
+}
+
+function historyStateOf(editor: LexicalEditor) {
+  return getExtensionDependencyFromEditor(editor, HistoryExtension).output
+    .historyState.value;
+}
+
+/** The payload shape a snapshot of a single, historyless state produces. */
+function serializeEmptyState(editorState: EditorState) {
+  return {family: serializeEditorStateFamily([editorState]), history: null};
+}
+
+function savedSnapshot(hot: HotContext, key = TEST_HMR_KEY) {
+  return hot.data[key] as {
+    editorState: EditorState;
+    serialize: () => SavedPayload;
+  };
+}
+
+/** Replaces `serialize` with one that mangles the payload it produced. */
+function corruptPayload(
+  hot: HotContext,
+  corrupt: (payload: SavedPayload) => void,
+) {
+  const saved = savedSnapshot(hot);
+  const {serialize} = saved;
+  saved.serialize = () => {
+    const payload = serialize();
+    corrupt(payload);
+    return payload;
+  };
 }
 
 /** An editor is only "in use" once it has a root element. */
@@ -230,25 +297,20 @@ describe('HMRExtension', () => {
 
   test('starts fresh when saved state is corrupted', () => {
     const hot = createMockHotContext();
-    // editorState passes the shape check but serializes to an unknown node
-    // type, so parseEditorState throws when it is restored
-    hot.data[TEST_HMR_KEY] = {
-      editable: true,
-      editorState: {
-        isEmpty: () => false,
-        toJSON: () => ({
-          root: {
-            children: [{type: '__hmr_corrupt_node__', version: 1}],
-            direction: 'ltr',
-            format: 0,
-            indent: 0,
-            type: 'root',
-            version: 1,
-          },
-        }),
-      },
-      historyState: null,
-    };
+
+    {
+      using editor = createEditor(hot);
+      editor.update(() => $setupContent('lost'), {discrete: true});
+    }
+
+    // A node of the document is now of a type the editor does not register
+    corruptPayload(hot, payload => {
+      for (const node of payload.family.nodes) {
+        if (node.json.type === 'paragraph') {
+          node.json.type = '__hmr_corrupt_node__';
+        }
+      }
+    });
 
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
@@ -258,7 +320,6 @@ describe('HMRExtension', () => {
       });
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining('Could not restore previous editor state'),
-        expect.anything(),
       );
     } finally {
       warn.mockRestore();
@@ -267,8 +328,7 @@ describe('HMRExtension', () => {
 
   test('starts fresh when saved state has invalid shape', () => {
     const hot = createMockHotContext();
-    // Old extension format (editorStateJSON / historyStateJSON), plus a value
-    // under `editorState` that is not an EditorState at all.
+    // An older extension format, whose `editorState` is not an EditorState.
     // editable: false proves the entire payload is rejected — not just the wrong fields
     hot.data[TEST_HMR_KEY] = {
       editable: false,
@@ -288,10 +348,11 @@ describe('HMRExtension', () => {
   test('uses initial state when saved editorState is empty', () => {
     const hot = createMockHotContext();
 
+    const empty = createDetachedEditorState();
     hot.data[TEST_HMR_KEY] = {
       editable: false,
-      editorState: createDetachedEditorState(),
-      historyState: null,
+      editorState: empty,
+      serialize: () => serializeEmptyState(empty),
     };
 
     using editor = createEditor(hot);
@@ -367,41 +428,47 @@ describe('HMRExtension', () => {
     }
   });
 
-  test('drops only the corrupted history entry when saved history is partly corrupted', () => {
+  test('drops only the history entry that cannot be restored', () => {
     const hot = createMockHotContext();
 
     {
       using editor = createEditor(hot);
-      // Two discrete updates so undo stack has a real entry to clear
       editor.update(() => $setupContent('first'), {discrete: true});
-      editor.update(() => $setupContent('valid'), {
+      editor.update(() => $setupContent('second'), {
+        discrete: true,
+        tag: HISTORY_PUSH_TAG,
+      });
+      editor.update(() => $setupContent('third'), {
         discrete: true,
         tag: HISTORY_PUSH_TAG,
       });
     }
 
-    // Corrupt only the `current` entry, keeping the real undo stack, so the
-    // restore has both a broken entry and a good one to deal with
-    const saved = hot.data[TEST_HMR_KEY] as {
-      historyState: {current: unknown; undoStack: unknown[]};
-    };
-    expect(saved.historyState.undoStack).toHaveLength(1);
-    saved.historyState = {...saved.historyState, current: 'not-a-state'};
+    // Corrupt a node version that only the oldest undo entry uses, leaving
+    // the document and the newer entry intact
+    corruptPayload(hot, payload => {
+      expect(payload.history.undoStack.length).toBeGreaterThan(1);
+      const shared = new Set(payload.family.states[0].nodes);
+      const oldest = payload.family.states[payload.history.undoStack[0]];
+      const own = oldest.nodes.filter(id => !shared.has(id));
+      expect(own.length).toBeGreaterThan(0);
+      payload.family.nodes[own[0]].json.type = '__hmr_corrupt_node__';
+    });
 
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       using editor = createEditor(hot);
       editor.read(() => {
-        expect($getRoot().getTextContent()).toBe('valid');
+        expect($getRoot().getTextContent()).toBe('third');
       });
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining('Dropped 1 undo/redo entry'),
       );
-      // Only the corrupted `current` entry was dropped: the undo stack itself
-      // survived, so undo still reaches the earlier state
+      // The surviving entry is still there — one bad entry does not cost the
+      // whole history
       editor.dispatchCommand(UNDO_COMMAND, undefined);
       editor.read(() => {
-        expect($getRoot().getTextContent()).toBe('first');
+        expect($getRoot().getTextContent()).toBe('second');
       });
     } finally {
       warn.mockRestore();
@@ -588,36 +655,32 @@ describe('HMRExtension', () => {
 
   test('preserves editable flag even when saved state fails to parse', () => {
     const hot = createMockHotContext();
-    // editable: false proves setEditable fires before parseEditorState throws
-    hot.data[TEST_HMR_KEY] = {
-      editable: false,
-      editorState: {
-        isEmpty: () => false,
-        toJSON: () => ({
-          root: {
-            children: [{type: '__hmr_corrupt_node__', version: 1}],
-            direction: 'ltr',
-            format: 0,
-            indent: 0,
-            type: 'root',
-            version: 1,
-          },
-        }),
-      },
-      historyState: null,
-    };
+
+    {
+      using editor = createEditor(hot);
+      editor.setEditable(false);
+      editor.update(() => $setupContent('lost'), {discrete: true});
+    }
+
+    corruptPayload(hot, payload => {
+      for (const node of payload.family.nodes) {
+        if (node.json.type === 'paragraph') {
+          node.json.type = '__hmr_corrupt_node__';
+        }
+      }
+    });
 
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       using editor = createEditor(hot);
-      // setEditable runs before parseEditorState throws, so editable is preserved
+      // setEditable runs before the content is rebuilt, so it is preserved
+      // even though the content could not be
       expect(editor.isEditable()).toBe(false);
       editor.read(() => {
         expect($getRoot().getTextContent()).toBe('initial');
       });
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining('Could not restore previous editor state'),
-        expect.anything(),
       );
     } finally {
       warn.mockRestore();
@@ -879,16 +942,15 @@ describe('HMRExtension', () => {
     }
   });
 
-  test('restores the content when capturing the selection throws', () => {
+  test('starts fresh when serializing the previous states throws', () => {
     const hot = createMockHotContext();
 
     {
       using editor = createEditor(hot);
-      editor.update(() => $setupParagraphs('kept'), {discrete: true});
+      editor.update(() => $setupParagraphs('lost'), {discrete: true});
     }
 
-    const saved = hot.data[TEST_HMR_KEY] as {captureSelection: () => unknown};
-    saved.captureSelection = () => {
+    savedSnapshot(hot).serialize = () => {
       throw new Error('no active editor state');
     };
 
@@ -896,10 +958,10 @@ describe('HMRExtension', () => {
     try {
       using editor = createEditor(hot);
       editor.read(() => {
-        expect($getRoot().getTextContent()).toBe('kept');
+        expect($getRoot().getTextContent()).toBe('initial');
       });
       expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('Could not restore the previous selection'),
+        expect.stringContaining('Could not restore previous editor state'),
         expect.anything(),
       );
     } finally {
@@ -907,15 +969,16 @@ describe('HMRExtension', () => {
     }
   });
 
-  test('does not capture the selection until the state is restored', () => {
+  test('does not serialize anything until the state is restored', () => {
     const hot = createMockHotContext();
 
     using editor = createEditor(hot);
     editor.update(() => $setupParagraphs('typed'), {discrete: true});
 
-    const saved = hot.data[TEST_HMR_KEY] as {captureSelection: () => unknown};
-    // Still a closure over the live state — nothing has been walked or copied
-    expect(typeof saved.captureSelection).toBe('function');
+    const saved = savedSnapshot(hot);
+    // Still the live state and a closure over it — nothing has been copied
+    expect(saved.editorState).toBe(editor.getEditorState());
+    expect(typeof saved.serialize).toBe('function');
   });
 
   test('stores a reference to the live editor state instead of a serialized copy', () => {
@@ -929,18 +992,13 @@ describe('HMRExtension', () => {
   });
 
   test('serialization work does not grow with the number of editor updates', () => {
-    // EditorState.prototype, so every instance created below is counted
-    const editorStatePrototype = Object.getPrototypeOf(
-      createDetachedEditorState(),
-    );
-
-    // Returns how many times an editor state was serialized over a full HMR
-    // cycle (edits, reload, restore). HistoryExtension is left out so that the
-    // undo stack — the only other thing that is serialized — stays empty and
-    // the update count is the sole variable.
-    const countSerializationsForCycle = (updates: number): number => {
+    // Counts how many nodes are serialized over a full HMR cycle (edits,
+    // reload, restore). HistoryExtension is left out so that the undo stack —
+    // the only other thing that is serialized — stays empty and the number of
+    // updates is the sole variable.
+    const countSerializedNodesForCycle = (updates: number): number => {
       const hot = createMockHotContext();
-      const toJSON = vi.spyOn(editorStatePrototype, 'toJSON');
+      const exportJSON = vi.spyOn(TextNode.prototype, 'exportJSON');
       try {
         {
           using editor = createEditorNoHistory(hot);
@@ -949,7 +1007,7 @@ describe('HMRExtension', () => {
               discrete: true,
             });
           }
-          expect(toJSON).not.toHaveBeenCalled();
+          expect(exportJSON).not.toHaveBeenCalled();
         }
         {
           using editor = createEditorNoHistory(hot);
@@ -957,15 +1015,106 @@ describe('HMRExtension', () => {
             expect($getRoot().getTextContent()).toBe(`update-${updates - 1}`);
           });
         }
-        return toJSON.mock.calls.length;
+        return exportJSON.mock.calls.length;
       } finally {
-        toJSON.mockRestore();
+        exportJSON.mockRestore();
       }
     };
 
-    // One serialization per HMR cycle, no matter how much editing happened
-    expect(countSerializationsForCycle(2)).toBe(1);
-    expect(countSerializationsForCycle(50)).toBe(1);
+    // The one text node of the document, once, no matter how much editing
+    // happened before the reload
+    expect(countSerializedNodesForCycle(2)).toBe(1);
+    expect(countSerializedNodesForCycle(50)).toBe(1);
+  });
+
+  test('restored history entries keep the structural sharing they had', () => {
+    const hot = createMockHotContext();
+    const EDITS = 5;
+
+    const createSeeded = () => createSeededEditor(hot, 'sharing-ns');
+
+    const keysOf = (state: EditorState) => new Set(state._nodeMap.keys());
+    const nodesOf = (state: EditorState) => new Set(state._nodeMap.values());
+    const shared = (a: Set<unknown>, b: Set<unknown>) =>
+      [...a].filter(value => b.has(value)).length;
+
+    let before = {entries: 0, keys: 0, nodes: 0, size: 0};
+    {
+      using editor = createSeeded();
+      for (let index = 0; index < EDITS; index++) {
+        editor.update(
+          () => {
+            $getRoot()
+              .getChildAtIndex<ElementNode>(index)!
+              .append($createTextNode(` edit ${index}`));
+          },
+          {discrete: true, tag: HISTORY_PUSH_TAG},
+        );
+      }
+      const stack = historyStateOf(editor).undoStack;
+      expect(stack.length).toBeGreaterThan(1);
+      before = {
+        entries: stack.length,
+        keys: shared(
+          keysOf(stack[0].editorState),
+          keysOf(stack[1].editorState),
+        ),
+        nodes: shared(
+          nodesOf(stack[0].editorState),
+          nodesOf(stack[1].editorState),
+        ),
+        size: stack[0].editorState._nodeMap.size,
+      };
+      // Adjacent versions of the document share all but the nodes an edit
+      // actually touched
+      expect(before.nodes).toBeGreaterThan(before.size - 5);
+    }
+
+    {
+      using editor = createSeeded();
+      const stack = historyStateOf(editor).undoStack;
+      expect(stack).toHaveLength(before.entries);
+      const first = stack[0].editorState;
+      const second = stack[1].editorState;
+      expect(first._nodeMap.size).toBe(before.size);
+      // Restored the same way: shared node objects, and one key space, so
+      // undoing to an entry is a diff rather than a rebuild
+      expect(shared(nodesOf(first), nodesOf(second))).toBe(before.nodes);
+      expect(shared(keysOf(first), keysOf(second))).toBe(before.keys);
+      expect(
+        shared(keysOf(first), keysOf(editor.getEditorState())),
+      ).toBeGreaterThan(before.size - 5);
+    }
+  });
+
+  test('serializes each shared node once rather than once per state', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createSeededEditor(hot, 'payload-ns');
+      // Each edit touches one paragraph, so consecutive versions of the
+      // document differ by a handful of nodes
+      for (let index = 0; index < 5; index++) {
+        editor.update(
+          () => {
+            $getRoot()
+              .getChildAtIndex<ElementNode>(index)!
+              .append($createTextNode(` edit ${index}`));
+          },
+          {discrete: true, tag: HISTORY_PUSH_TAG},
+        );
+      }
+    }
+
+    const payload = savedSnapshot(hot, 'lexicalHMR:payload-ns').serialize();
+    const referenced = payload.family.states.reduce(
+      (total, state) => total + state.nodes.length,
+      0,
+    );
+    expect(payload.family.states.length).toBeGreaterThan(5);
+    // Every state is described in full, but the table holds one entry per
+    // distinct node version rather than one per node per state
+    expect(payload.family.nodes.length).toBeLessThan(referenced / 4);
   });
 
   test('does not overwrite valid saved state with empty editor state on first-mount effect run (validPrev path)', () => {

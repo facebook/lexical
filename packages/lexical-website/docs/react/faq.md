@@ -64,9 +64,9 @@ During development, HMR re-executes modules on every code change. Because Lexica
 
 ### HMRExtension
 
-`@lexical/extension` exports an `HMRExtension` that preserves editor state, the selection, the editable flag, and undo/redo history across HMR cycles. It stashes a reference to the current `EditorState` in the bundler's HMR data store, and the module instance that replaces it serializes that state and calls `editor.parseEditorState(json)` on the new editor, which rebinds all nodes to the updated class constructors. Serializing only at that point keeps the cost off of every editor update.
+`@lexical/extension` exports an `HMRExtension` that preserves editor state, the selection, the editable flag, and undo/redo history across HMR cycles. It stashes a reference to the current `EditorState` in the bundler's HMR data store, and the module instance that replaces it serializes that state and rebuilds it against the new node classes. Serializing only at that point keeps the cost off of every editor update.
 
-The selection is restored alongside the content. Because re-parsing the document assigns fresh `NodeKey`s, each point is addressed by its path from the root instead; a selection that no longer resolves (a node class that now imports its JSON differently, for example) is dropped and the restored content is left untouched.
+The editor state and the undo/redo entries are serialized together, as one family of related states, rather than one at a time. Serializing each state on its own (`toJSON()` / `parseEditorState()`) would lose two properties the editor depends on: consecutive versions of a document share nearly all of their node objects, because an update clones only what it touches, and reconciliation is a diff over `NodeKey`s. Independently parsed states share nothing and have disjoint key spaces, so the history would cost memory proportional to its depth and the first undo after a reload would rebuild the whole document instead of the part that changed. The family format stores one entry per distinct node *version* and rebuilds each one once, so what was shared comes back shared and every version of a node answers to one key — which is also what lets the selection be carried by key.
 
 ```ts
 import {buildEditorFromExtensions, configExtension, defineExtension, HMRExtension} from '@lexical/extension';

@@ -9626,7 +9626,6 @@ test.describe('Tables', () => {
     });
 
     test('Range-select from below nested table into it selects the entire table, but not the outer table', async ({
-      browserName,
       page,
       isPlainText,
       isCollab,
@@ -9694,12 +9693,19 @@ test.describe('Tables', () => {
     });
 
     test('Range-select from inside nested table to text below it selects the entire table, but not the outer table', async ({
+      browserName,
       page,
       isPlainText,
       isCollab,
     }) => {
       test.skip(isPlainText);
       test.skip(isCollab);
+      test.fixme(
+        browserName === 'firefox',
+        'No longer selects the entire outer cell, but the rest is left to the ' +
+          'engine and only linux Firefox resolves it the same way as the other ' +
+          'engines -- on windows the focus stays at offset 0 of the text below',
+      );
       await initialize({hasNestedTables: true, page});
 
       await setupTables(page);

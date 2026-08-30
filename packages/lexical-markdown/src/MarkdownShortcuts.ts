@@ -12,6 +12,7 @@ import {
   $addUpdateTag,
   $createRangeSelection,
   $getSelection,
+  $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
@@ -421,9 +422,7 @@ function getOpenTagStartIndex(
 
 /**
  * Text coordinate of a point, measured in characters from the start of its
- * parent element rather than from the start of its own node. An element point
- * sits between two children, which is a boundary in that same coordinate
- * space, so it contributes nothing of its own.
+ * parent element rather than from the start of its own node.
  *
  * The "did the user type exactly one character?" heuristic compares the anchor
  * offset before and after an update, but node transforms (hashtags, autolinks,
@@ -438,9 +437,18 @@ function getOpenTagStartIndex(
 function $getOffsetInParent(point: PointType): number {
   const node = point.getNode();
 
-  // A text point's offset is already a character count within its own node; an
-  // element point's is a child index, which is not a text coordinate at all.
-  let offset = $isTextNode(node) ? point.offset : 0;
+  // A text point's offset is already a character count within its own node. An
+  // element point's is a child index, so the characters it stands after are
+  // those of the children before it.
+  let offset = 0;
+
+  if ($isTextNode(node)) {
+    offset = point.offset;
+  } else if ($isElementNode(node)) {
+    for (const child of node.getChildren().slice(0, point.offset)) {
+      offset += child.getTextContentSize();
+    }
+  }
 
   for (
     let sibling = node.getPreviousSibling();

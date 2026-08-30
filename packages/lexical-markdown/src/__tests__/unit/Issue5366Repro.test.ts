@@ -25,6 +25,9 @@ import {MarkdownTestExtension} from '../utils';
 
 // The hashtag entity turns the leading "#" of "##Welcome" into its own node,
 // which moves the caret to a different leaf while the shortcut is being typed.
+// HashtagExtension is a dependency rather than a sibling so that its transform
+// is registered ahead of the shortcut listener, which is the order #5366
+// reproduces in.
 const Issue5366TestExtension = defineExtension({
   dependencies: [MarkdownTestExtension, HashtagExtension],
   name: 'Issue5366Test',

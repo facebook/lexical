@@ -54,6 +54,7 @@ import {
   $markSlotEditable,
   cloneDecorators,
   getElementByKeyOrThrow,
+  removeEmptyDOMAttribute,
   setDOMUnmanaged,
   setMutatedNode,
   setNodeKeyOnDOMNode,
@@ -393,6 +394,8 @@ function setElementIndent(dom: HTMLElement, indent: number): void {
       ? ''
       : `calc(${indent} * var(--lexical-indent-base-value, ${DEFAULT_INDENT_VALUE}))`,
   );
+  removeEmptyDOMAttribute(dom, 'class');
+  removeEmptyDOMAttribute(dom, 'style');
 }
 
 function setElementFormat(dom: HTMLElement, format: number): void {
@@ -413,6 +416,7 @@ function setElementFormat(dom: HTMLElement, format: number): void {
   } else if (format === IS_ALIGN_END) {
     setTextAlign(domStyle, 'end');
   }
+  removeEmptyDOMAttribute(dom, 'style');
 }
 
 export function $getReconciledDirection(

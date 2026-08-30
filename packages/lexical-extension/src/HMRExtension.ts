@@ -14,10 +14,10 @@ import type {
 
 import {
   defineExtension,
+  type EditorState,
   HISTORY_MERGE_TAG,
   type LexicalEditor,
   safeCast,
-  type SerializedEditorState,
 } from 'lexical';
 
 import {EditorStateExtension} from './EditorStateExtension';
@@ -78,22 +78,44 @@ function getHMRCountKey(namespace: string): string {
   return `${HMR_COUNT_KEY}:${namespace}`;
 }
 
-interface SerializedHistoryState {
-  current: SerializedEditorState | null;
-  undoStack: SerializedEditorState[];
-  redoStack: SerializedEditorState[];
-}
-
+/**
+ * What is stashed in `hot.data` between module instances.
+ *
+ * The editor and history states are stored by reference, not serialized.
+ * Serializing on every editor update is far too expensive for a document of
+ * any size (the whole document plus every undo and redo entry, on every
+ * keystroke), and it is wasted work in the common case where no reload ever
+ * happens. The previous module instance stays alive for as long as `hot.data`
+ * holds these references, so they can be serialized once, by the next module
+ * instance, at the moment HMR actually takes place.
+ */
 interface HMRSavedState {
   editable: boolean;
-  editorStateJSON: SerializedEditorState;
+  /** The live EditorState of the editor that is being replaced. */
+  editorState: EditorState;
   // Unknown because isValidHMRSavedState does not inspect this field;
-  // callers must guard with isValidSerializedHistoryState before use.
-  historyStateJSON: unknown;
+  // callers must guard with isValidHistoryState before use.
+  historyState: unknown;
 }
 
 function getSavedHMRState(hot: HotContext, key: string): unknown {
   return hot.data[key];
+}
+
+/**
+ * Structural check rather than `$isEditorState`: the saved value was created
+ * by the module instance that HMR replaced. When `lexical` itself is part of
+ * the HMR graph (as it is for an app that builds it from source), the previous
+ * `EditorState` class is a different object than the current one, so
+ * `instanceof` would reject a perfectly usable state.
+ */
+function isEditorStateLike(raw: unknown): raw is EditorState {
+  return (
+    typeof raw === 'object' &&
+    raw !== null &&
+    typeof (raw as EditorState).toJSON === 'function' &&
+    typeof (raw as EditorState).isEmpty === 'function'
+  );
 }
 
 function isValidHMRSavedState(raw: unknown): raw is HMRSavedState {
@@ -102,28 +124,16 @@ function isValidHMRSavedState(raw: unknown): raw is HMRSavedState {
   }
   const s = raw as Record<string, unknown>;
   const has = (k: string) => Object.prototype.hasOwnProperty.call(s, k);
-  if (!has('editable') || !has('editorStateJSON') || !has('historyStateJSON')) {
-    return false;
-  }
-  const json = s.editorStateJSON;
-  if (
-    typeof s.editable !== 'boolean' ||
-    typeof json !== 'object' ||
-    json === null
-  ) {
-    return false;
-  }
-  const root = (json as Record<string, unknown>).root;
   return (
-    typeof root === 'object' &&
-    root !== null &&
-    Array.isArray((root as Record<string, unknown>).children)
+    has('editable') &&
+    has('editorState') &&
+    has('historyState') &&
+    typeof s.editable === 'boolean' &&
+    isEditorStateLike(s.editorState)
   );
 }
 
-function isValidSerializedHistoryState(
-  raw: unknown,
-): raw is SerializedHistoryState {
+function isValidHistoryState(raw: unknown): raw is HistoryState {
   if (raw == null || typeof raw !== 'object') {
     return false;
   }
@@ -131,32 +141,34 @@ function isValidSerializedHistoryState(
   return Array.isArray(s.undoStack) && Array.isArray(s.redoStack);
 }
 
-function serializeHistoryState(
-  historyState: HistoryState,
-): SerializedHistoryState {
-  const serializeEntry = (entry: HistoryStateEntry): SerializedEditorState =>
-    entry.editorState.toJSON();
-  return {
-    current: historyState.current ? serializeEntry(historyState.current) : null,
-    redoStack: historyState.redoStack.map(serializeEntry),
-    undoStack: historyState.undoStack.map(serializeEntry),
-  };
+/**
+ * Re-create `editorState` for `editor` by round-tripping it through JSON.
+ *
+ * The nodes of the previous state are never reused: they are frozen in dev
+ * builds and their classes may have been replaced by the reload, so they are
+ * re-created from JSON with the classes registered on the new editor.
+ */
+function reparseEditorState(
+  editorState: EditorState,
+  editor: LexicalEditor,
+): EditorState {
+  return editor.parseEditorState(editorState.toJSON());
 }
 
 function restoreHistoryState(
-  serialized: SerializedHistoryState,
+  saved: HistoryState,
   editor: LexicalEditor,
 ): HistoryState {
-  const restoreEntry = (json: SerializedEditorState): HistoryStateEntry => {
-    const editorState = editor.parseEditorState(json);
+  const restoreEntry = (entry: HistoryStateEntry): HistoryStateEntry => {
+    const editorState = reparseEditorState(entry.editorState, editor);
     if (editorState.isEmpty()) {
       throw new Error('HMR: history entry is empty');
     }
     return {editor, editorState};
   };
-  const current = serialized.current ? restoreEntry(serialized.current) : null;
-  const undoStack = serialized.undoStack.map(restoreEntry);
-  const redoStack = serialized.redoStack.map(restoreEntry);
+  const current = saved.current ? restoreEntry(saved.current) : null;
+  const undoStack = saved.undoStack.map(restoreEntry);
+  const redoStack = saved.redoStack.map(restoreEntry);
   return {current, redoStack, undoStack};
 }
 
@@ -169,6 +181,12 @@ function restoreHistoryState(
  * correctly in both development and production without a build-time
  * conditional. If a saved state cannot be parsed, the extension warns in dev
  * and falls back to `$initialEditorState` rather than throwing.
+ *
+ * Editor updates only stash a reference to the current `EditorState` (and to
+ * the `HistoryState`, which `@lexical/history` mutates in place), so the
+ * per-update cost does not grow with the size of the document or of the undo
+ * stack. Everything is serialized once, by the module instance that replaces
+ * this one, when it restores the saved state.
  *
  * @example
  * Basic usage
@@ -247,14 +265,17 @@ export const HMRExtension = /* @__PURE__ */ defineExtension({
     if (isValidHMRSavedState(saved)) {
       try {
         editor.setEditable(saved.editable);
-        const restoredState = editor.parseEditorState(saved.editorStateJSON);
+        // The only place the previous state is serialized. HMR has just
+        // happened, so this cost is paid once per reload instead of on every
+        // editor update.
+        const restoredState = reparseEditorState(saved.editorState, editor);
         if (!restoredState.isEmpty()) {
           editor.setEditorState(restoredState, {tag: HISTORY_MERGE_TAG});
-          if (isValidSerializedHistoryState(saved.historyStateJSON)) {
+          if (isValidHistoryState(saved.historyState)) {
             if (historyPeer) {
               try {
                 historyPeer.output.historyState.value = restoreHistoryState(
-                  saved.historyStateJSON,
+                  saved.historyState,
                   editor,
                 );
               } catch (e) {
@@ -297,17 +318,19 @@ export const HMRExtension = /* @__PURE__ */ defineExtension({
       // keep the previously saved state instead of overwriting with empty.
       const validPrev =
         editorState.isEmpty() && isValidHMRSavedState(prev) ? prev : null;
+      // Only references are stored, so this stays cheap no matter how large
+      // the document or the undo stack gets.
       const nextState: HMRSavedState = {
         editable,
-        editorStateJSON:
-          validPrev != null ? validPrev.editorStateJSON : editorState.toJSON(),
-        historyStateJSON:
+        editorState: validPrev != null ? validPrev.editorState : editorState,
+        historyState:
           validPrev != null
-            ? validPrev.historyStateJSON
+            ? validPrev.historyState
             : historyPeer
-              ? // peek() — avoid subscribing this effect to historyState changes;
-                // editor-state updates already cover every history mutation.
-                serializeHistoryState(historyPeer.output.historyState.peek())
+              ? // peek() — avoid subscribing this effect to historyState
+                // changes; @lexical/history mutates the HistoryState in place,
+                // so this reference stays current on its own.
+                historyPeer.output.historyState.peek()
               : null,
       };
       hot.data[hmrKey] = nextState;

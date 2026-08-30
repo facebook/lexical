@@ -64,7 +64,7 @@ During development, HMR re-executes modules on every code change. Because Lexica
 
 ### HMRExtension
 
-`@lexical/extension` exports an `HMRExtension` that preserves editor state, editable flag, and undo/redo history across HMR cycles. It works by serializing state to the bundler's HMR data store and calling `editor.parseEditorState(json)` on the new instance, which rebinds all nodes to the updated class constructors.
+`@lexical/extension` exports an `HMRExtension` that preserves editor state, editable flag, and undo/redo history across HMR cycles. It stashes a reference to the current `EditorState` in the bundler's HMR data store, and the module instance that replaces it serializes that state and calls `editor.parseEditorState(json)` on the new editor, which rebinds all nodes to the updated class constructors. Serializing only at that point keeps the cost off of every editor update.
 
 ```ts
 import {buildEditorFromExtensions, configExtension, defineExtension, HMRExtension} from '@lexical/extension';

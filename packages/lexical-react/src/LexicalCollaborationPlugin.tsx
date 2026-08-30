@@ -80,7 +80,16 @@ export function CollaborationPlugin({
   rootName,
 }: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
-  const isProviderInitialized = useRef(false);
+  // The inputs that produced the current Provider. A ref rather than the effect
+  // deps alone because the effect must be idempotent: React StrictMode (and
+  // React 18+ remounts in general) re-runs the effect with unchanged inputs and
+  // must not create a second Provider.
+  const providerInputs = useRef<null | {
+    id: string;
+    providerFactory: ProviderFactory;
+    yjsDocMap: Map<string, Doc>;
+  }>(null);
+  const providerRef = useRef<Provider | null>(null);
 
   const collabContext = useCollaborationContext(username, cursorColor);
   const {yjsDocMap, name, color} = collabContext;
@@ -93,20 +102,44 @@ export function CollaborationPlugin({
   const [doc, setDoc] = useState<Doc>();
 
   useEffect(() => {
-    if (isProviderInitialized.current) {
+    const prevInputs = providerInputs.current;
+    if (
+      prevInputs !== null &&
+      prevInputs.id === id &&
+      prevInputs.providerFactory === providerFactory &&
+      prevInputs.yjsDocMap === yjsDocMap
+    ) {
       return;
     }
 
-    isProviderInitialized.current = true;
+    providerInputs.current = {id, providerFactory, yjsDocMap};
 
     const newProvider = providerFactory(id, yjsDocMap);
+    const previousProvider = providerRef.current;
+    // Disconnected here rather than from this effect's cleanup, and only when
+    // something really did replace it. A `providerFactory` declared inline --
+    // the shape this package's own test harness uses -- has a fresh identity
+    // every render, so a cleanup-based disconnect tears down the live provider
+    // on every parent render; and when such a factory hands back a cached
+    // provider, setProvider() bails on the identical value, nothing re-runs,
+    // and the editor is left permanently disconnected.
+    if (previousProvider !== null && previousProvider !== newProvider) {
+      previousProvider.disconnect();
+    }
+    providerRef.current = newProvider;
     setProvider(newProvider);
     setDoc(yjsDocMap.get(id));
-
-    return () => {
-      newProvider.disconnect();
-    };
   }, [id, providerFactory, yjsDocMap]);
+
+  useEffect(() => {
+    return () => {
+      const currentProvider = providerRef.current;
+      if (currentProvider !== null) {
+        providerRef.current = null;
+        currentProvider.disconnect();
+      }
+    };
+  }, []);
 
   const [binding, setBinding] = useState<Binding>();
 

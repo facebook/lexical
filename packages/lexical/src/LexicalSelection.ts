@@ -54,7 +54,7 @@ import {
   type TextNode,
 } from '.';
 import {IS_FIREFOX} from './environment';
-import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {DOM_TEXT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
@@ -90,6 +90,8 @@ import {
   $isRootOrShadowRoot,
   $isSelectionCapturedInDecoratorInput,
   $isTokenOrSegmented,
+  $needsBlockCursorBeside,
+  $restoreEmptyContainerParagraph,
   $setCompositionKey,
   doesContainSurrogatePair,
   getActiveElement,
@@ -966,8 +968,17 @@ export class RangeSelection implements BaseSelection {
           const replacement = $createTextNode(anchorNode.getTextContent());
           replacement.setFormat(format);
           replacement.setStyle(style);
+          const isCurrentSelection = $getSelection() === this;
           anchorNode.replace(replacement);
-          replacement.select(offset, offset);
+          // replace() installs a clone of the active selection, so this
+          // selection is still anchored to the segmented node that was just
+          // detached. Move it onto the replacement and make it current
+          // again, otherwise the recursive insertText below resolves an
+          // anchor that is no longer in the tree.
+          this.setTextNodeRange(replacement, offset, replacement, offset);
+          if (isCurrentSelection && $getSelection() !== this) {
+            $setSelection(this);
+          }
         }
         if (text !== '') {
           this.insertText(text);
@@ -1068,8 +1079,16 @@ export class RangeSelection implements BaseSelection {
    */
   removeText(): void {
     const isCurrentSelection = $getSelection() === this;
+    const previousAnchorKey = this.anchor.key;
     const newRange = $removeTextFromCaretRange($caretRangeFromSelection(this));
     $updateRangeSelectionFromCaretRange(this, newRange);
+    // The caret can end up in a node it did not start in, e.g. backspacing
+    // an empty paragraph merges the caret into the end of the previous
+    // block. The pending format and style describe the node the caret left,
+    // so re-derive them from the node it landed on (#6781).
+    if (this.isCollapsed()) {
+      $internalRefreshSelectionFormatAndStyle(this, previousAnchorKey);
+    }
     if (isCurrentSelection && $getSelection() !== this) {
       $setSelection(this);
     }
@@ -1123,45 +1142,32 @@ export class RangeSelection implements BaseSelection {
     // slot-scoped Cmd+A leaves the selection on the slot's element point)
     // has __parent === null, so the block-finding walk below would throw.
     // Redirect into the slot subtree by collapsing the selection at the
-    // slot's first child and re-running insertNodes.
+    // slot's first child and re-running insertNodes. Only a container
+    // (shadow-root) value needs this: a block-shaped value IS the block, so
+    // the block-finding walk below (which stops at a slot host, see
+    // $removeTextAndSplitBlock) already lands on it directly at the right
+    // offset.
     const anchorNode = this.anchor.getNode();
     if (
       this.anchor.type === 'element' &&
       $isElementNode(anchorNode) &&
+      anchorNode.isShadowRoot() &&
       $getSlotHostKey(anchorNode) !== null
     ) {
-      // A container (shadow-root) value redirects into its first child; an
-      // empty one has no child to redirect into (its caret target is the
-      // reconciler's terminating <br>), so seed a paragraph first —
-      // insertNodes removes the seed again when block content replaces it. A
-      // block-shaped value (virtual shadow root around a single block) needs
-      // no seeding: it IS the block, so the block-finding walk below lands
-      // on it directly.
-      let firstChild = anchorNode.isShadowRoot()
-        ? (anchorNode.getFirstChild() ??
-          anchorNode.append($createParagraphNode()).getFirstChild())
-        : anchorNode.getFirstChild();
-      // A shadow-root slot whose first child is a non-element (typically a
-      // decorator like HorizontalRuleNode) would re-enter this same branch
-      // forever: `firstChild.selectStart()` resolves back to the slot value's
-      // own element-mode caret (no sibling, parent = the slot value root),
-      // which matches the entry condition above. Seed a paragraph before the
+      // An empty container has no child to redirect into (its caret target
+      // is the reconciler's terminating <br>), so seed a paragraph first —
+      // insertNodes removes the seed again when block content replaces it.
+      let firstChild =
+        anchorNode.getFirstChild() ??
+        anchorNode.append($createParagraphNode()).getFirstChild();
+      // A first child that is a non-element (typically a decorator like
+      // HorizontalRuleNode) would re-enter this same branch forever:
+      // `firstChild.selectStart()` resolves back to the slot value's own
+      // element-mode caret (no sibling, parent = the slot value root), which
+      // matches the entry condition above. Seed a paragraph before the
       // non-element first child so the redirected selection lands in a block
       // and the recursion terminates.
-      //
-      // The seed paragraph is the redirect target only — if `nodes` carries
-      // inline content the recursion fills the paragraph in place, and if it
-      // carries block content the recursion's root/shadow-root branch
-      // (`splice` after `$wrapInlineNodes`) inserts the new blocks before the
-      // existing non-element first child while the seed sits at offset 0 as
-      // the new shadow-root first child. In either case the seed ends up
-      // hosting either the inserted content or an empty leading line, never
-      // a stranded paragraph next to the original non-element child.
-      if (
-        anchorNode.isShadowRoot() &&
-        firstChild !== null &&
-        !$isElementNode(firstChild)
-      ) {
+      if (firstChild !== null && !$isElementNode(firstChild)) {
         const seed = $createParagraphNode();
         firstChild.insertBefore(seed);
         firstChild = seed;
@@ -1207,7 +1213,7 @@ export class RangeSelection implements BaseSelection {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
-        const index = $removeTextAndSplitBlock(this);
+        const [, index] = $removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
         last.selectEnd();
       }
@@ -1225,8 +1231,15 @@ export class RangeSelection implements BaseSelection {
         firstNode.constructor.name,
         firstNode.getType(),
       );
-      const index = $removeTextAndSplitBlock(this);
-      firstBlock.splice(index, 0, nodes);
+      // The split walk normally ends on firstBlock, but it stops early on an
+      // inline ElementNode that cannot be split, which is the only position
+      // that preserves the caret for content pasted inside such a node
+      // (#6477).
+      const [container, index] = $removeTextAndSplitBlock(this, true);
+      const insertionParent = $isElementNode(container)
+        ? container
+        : firstBlock;
+      insertionParent.splice(index, 0, nodes);
       last.selectEnd();
       return;
     }
@@ -1238,7 +1251,7 @@ export class RangeSelection implements BaseSelection {
     // stripped like the input value sanitization strips newlines, and
     // block-only decorators are dropped, having no single-line form).
     if ($isElementNode(firstBlock) && $getSlotHostKey(firstBlock) !== null) {
-      const index = $removeTextAndSplitBlock(this);
+      const [, index] = $removeTextAndSplitBlock(this);
       const inlineNodes = $extractInlineFromBlocks(nodes);
       firstBlock.splice(index, 0, inlineNodes);
       const lastInserted = inlineNodes[inlineNodes.length - 1];
@@ -1291,7 +1304,7 @@ export class RangeSelection implements BaseSelection {
       !firstBlock.isParentRequired() &&
       !$isRootOrShadowRoot(firstBlock.getParentOrThrow())
     ) {
-      const index = $removeTextAndSplitBlock(this);
+      const [, index] = $removeTextAndSplitBlock(this);
       const inlineNodes = $extractInlineFromBlocks(nodes);
       firstBlock.splice(index, 0, inlineNodes);
       const lastInserted = inlineNodes[inlineNodes.length - 1];
@@ -1347,14 +1360,25 @@ export class RangeSelection implements BaseSelection {
       INTERNAL_$isBlock,
     );
 
-    if (
-      !shouldPreserveInsertedBlocks &&
-      insertedParagraph &&
-      $isElementNode(lastInsertedBlock) &&
-      (insertedParagraph.canMergeWhenEmpty() || INTERNAL_$isBlock(lastToInsert))
-    ) {
-      lastInsertedBlock.append(...insertedParagraph.getChildren());
-      insertedParagraph.remove();
+    if (insertedParagraph) {
+      if (
+        !shouldPreserveInsertedBlocks &&
+        $isElementNode(lastInsertedBlock) &&
+        (insertedParagraph.canMergeWhenEmpty() ||
+          INTERNAL_$isBlock(lastToInsert))
+      ) {
+        lastInsertedBlock.append(...insertedParagraph.getChildren());
+        insertedParagraph.remove();
+      } else if (insertedParagraph.isEmpty()) {
+        // The split-off paragraph could not be merged into the last inserted
+        // block (a block-level DecoratorNode is not an ElementNode, and a
+        // container element such as a ListNode is not INTERNAL_$isBlock), but
+        // it holds no content either: it only exists because the caret sat at
+        // the end of the target block. Keeping it would leave a stray empty
+        // paragraph after the inserted node, while the non-empty case (a
+        // mid-block caret) keeps the content after the caret.
+        insertedParagraph.remove();
+      }
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
       firstBlock.remove();
@@ -1377,6 +1401,15 @@ export class RangeSelection implements BaseSelection {
    * @returns the newly inserted node.
    */
   insertParagraph(): ElementNode | null {
+    // The root/shadow-root branch below only splices a paragraph in, so the
+    // selected content has to go first. $removeTextAndSplitBlock further down
+    // does this for the other branches, but a select-all whose points stay at
+    // the element level (a document that is a single shadow root, see
+    // $selectAll) lands on the branch below and would otherwise keep the
+    // content it was replacing.
+    if (!this.isCollapsed()) {
+      this.removeText();
+    }
     const anchorNode = this.anchor.getNode();
     if (this.anchor.type === 'element' && $isRootOrShadowRoot(anchorNode)) {
       const paragraph = $createParagraphNode();
@@ -1384,7 +1417,7 @@ export class RangeSelection implements BaseSelection {
       paragraph.select();
       return paragraph;
     }
-    const index = $removeTextAndSplitBlock(this);
+    const [, index] = $removeTextAndSplitBlock(this);
     const block = $findMatchingParent(this.anchor.getNode(), INTERNAL_$isBlock);
     if (block !== null && $getSlotHostKey(block) !== null) {
       // The block IS the slot value: its virtual shadow root holds exactly
@@ -1618,6 +1651,7 @@ export class RangeSelection implements BaseSelection {
       alter,
       isBackward ? 'backward' : 'forward',
       granularity,
+      rootElement,
     );
     // Guard against no ranges
     if (domSelection.rangeCount > 0) {
@@ -1710,7 +1744,28 @@ export class RangeSelection implements BaseSelection {
       const anchor = this.anchor;
       let anchorNode: TextNode | ElementNode | null = anchor.getNode();
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
-        return;
+        // Forward deletion stops at an adjacent shadow root (e.g. a table)
+        // because its content must not be merged into the block at the
+        // anchor. When that block is empty there is nothing to merge, so we
+        // fall through to the caret walk below, which removes the empty block
+        // and leaves the shadow root in place — the same result backwards
+        // delete already produces. This is restricted to a shadow root that is
+        // a sibling of the anchor block, so deleting forwards at the end of a
+        // shadow root (e.g. the last block of a table cell) still bails out.
+        // See #8075.
+        const nextSibling = $isElementNode(anchorNode)
+          ? anchorNode.getNextSibling()
+          : null;
+        if (
+          !(
+            $isElementNode(anchorNode) &&
+            anchorNode.isEmpty() &&
+            $isElementNode(nextSibling) &&
+            nextSibling.isShadowRoot()
+          )
+        ) {
+          return;
+        }
       }
       const direction = isBackward ? 'previous' : 'next';
       const initialCaret = $caretFromPoint(anchor, direction);
@@ -1720,6 +1775,32 @@ export class RangeSelection implements BaseSelection {
           .getTextSlices()
           .every(slice => slice === null || slice.distance === 0)
       ) {
+        // The caret is an element point sitting directly beside a node that
+        // renders a block cursor ($needsBlockCursorBeside). There is no text
+        // position between the two, so the only thing the keystroke can mean
+        // is "delete that node", exactly as the DecoratorNode case below
+        // does. Decorators are left to that branch since it also honours
+        // isIsolated(); an ElementNode host (a shadow root such as a table or
+        // a slot-bearing card) has no such opt-out and was previously left
+        // untouched, because the loop below descends into it as a ChildCaret
+        // and bails out at the shadow root instead of deleting it.
+        if (anchor.type === 'element') {
+          const adjacent = initialCaret.getNodeAtCaret();
+          if ($isElementNode(adjacent) && $needsBlockCursorBeside(adjacent)) {
+            const container = adjacent.getParent();
+            adjacent.remove();
+            // Removing the only block leaves the container (the root, or a
+            // shadow root such as a table cell) with nowhere to put a caret.
+            const restored = $restoreEmptyContainerParagraph(
+              container,
+              adjacent,
+            );
+            if (restored !== null) {
+              restored.selectStart();
+            }
+            return;
+          }
+        }
         // There's no text in the direction of the deletion so we can explore our options
         let state:
           | {type: 'initial'}
@@ -1774,24 +1855,6 @@ export class RangeSelection implements BaseSelection {
             } else if ($isDecoratorNode(caret.origin)) {
               if (caret.origin.isIsolated()) {
                 // do nothing, shouldn't delete an isolated decorator
-              } else if ($getSlotNames(caret.origin).length > 0) {
-                // A slot-bearing decorator is removed only as a unit by an
-                // explicit host deletion, never silently via backspace —
-                // same policy as the merge-block branch below for
-                // ElementNode-as-host. When the anchor is an empty
-                // paragraph next to the host, drop the paragraph and
-                // select the host (matches the shadow-root ElementNode
-                // path at line 1951–1962 above); otherwise leave both in
-                // place.
-                if (
-                  $isElementNode(initialRange.anchor.origin) &&
-                  initialRange.anchor.origin.isEmpty()
-                ) {
-                  initialRange.anchor.origin.remove();
-                  const nodeSelection = $createNodeSelection();
-                  nodeSelection.add(caret.origin.getKey());
-                  $setSelection(nodeSelection);
-                }
               } else if (
                 state.type === 'merge-next-block' &&
                 (caret.origin.isKeyboardSelectable() ||
@@ -1809,9 +1872,24 @@ export class RangeSelection implements BaseSelection {
               } else {
                 // When the anchor is not an empty element then the
                 // adjacent decorator is removed
-                caret.origin.remove();
+                const decorator = caret.origin;
+                const container = decorator.getParent();
+                decorator.remove();
+                const restored = $restoreEmptyContainerParagraph(
+                  container,
+                  decorator,
+                );
+                if (restored !== null) {
+                  restored.selectStart();
+                }
               }
               // always stop when a decorator is encountered
+              return;
+            } else if ($isLineBreakNode(caret.origin)) {
+              // A LineBreakNode is a single deletable unit, same as a
+              // decorator: remove it directly instead of falling through to
+              // the slot-edge boundary check below with nothing deleted.
+              caret.origin.remove();
               return;
             }
             break;
@@ -1824,8 +1902,10 @@ export class RangeSelection implements BaseSelection {
           // The cross-block merge below removes `block` (it merges into the
           // adjacent block). If `block` owns slots, that removal would discard
           // them, since slots are not children and are not carried over. Leave
-          // the caret in place instead: a slot-bearing host is removed only as
-          // a unit by an explicit host deletion, never silently via backspace.
+          // the caret in place instead: unlike an adjacent decorator host,
+          // which backspace removes as a whole unit (slots included, #8904),
+          // merging would keep the host's children while silently dropping
+          // its slots.
           if ($getSlotNames(block).length > 0) {
             return;
           }
@@ -2326,15 +2406,69 @@ function $swapPoints(selection: RangeSelection): void {
   focus.set(anchorKey, anchorOffset, anchorType, true);
 }
 
+/**
+ * True when `node` is a DOM Text node with at least one code unit on the
+ * `direction` side of `offset`, so a character-granularity caret movement in
+ * that direction must land inside the very same text node.
+ */
+function canMoveWithinDOMText(
+  node: Node | null,
+  offset: number,
+  direction: 'backward' | 'forward' | 'left' | 'right',
+): boolean {
+  if (node === null || node.nodeType !== DOM_TEXT_TYPE) {
+    return false;
+  }
+  if (direction === 'backward') {
+    return offset > 0;
+  } else if (direction === 'forward') {
+    return offset < (node as Text).length;
+  }
+  // 'left'/'right' are visual directions, so which side of the offset they
+  // consume depends on the bidi level; no caller uses them today.
+  return false;
+}
+
 function moveNativeSelection(
   domSelection: Selection,
   alter: 'move' | 'extend',
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
+  rootElement: HTMLElement | null,
 ): void {
+  // A caret that sits where a line soft-wraps has two visual positions for
+  // one DOM offset (end of the previous line, start of the next), and which
+  // one it takes is a piece of engine state that the DOM selection API does
+  // not expose. Firefox spends the first modify() call flipping between them
+  // instead of moving, which leaves the caret — and therefore a backspace
+  // measured from it — exactly where it started (#9100).
+  const points =
+    granularity === 'character'
+      ? getDOMSelectionPoints(domSelection, rootElement)
+      : null;
+  // In the light DOM these alias the live Selection, so snapshot them.
+  const focusNode = points && points.focusNode;
+  const focusOffset = points ? points.focusOffset : 0;
   // Selection.modify() method applies a change to the current selection or cursor position,
   // but is still non-standard in some browsers.
   domSelection.modify(alter, direction, granularity);
+  if (
+    points === null ||
+    !canMoveWithinDOMText(focusNode, focusOffset, direction)
+  ) {
+    return;
+  }
+  const nextPoints = getDOMSelectionPoints(domSelection, rootElement);
+  if (
+    nextPoints.focusNode === focusNode &&
+    nextPoints.focusOffset === focusOffset
+  ) {
+    // Nothing moved even though the character to cross is in this very text
+    // node, so the call was consumed by the line-affinity flip described
+    // above. Ask for the movement again; a caret that genuinely cannot move
+    // (the start or end of the document) stays put on this call too.
+    domSelection.modify(alter, direction, granularity);
+  }
 }
 
 /**
@@ -2470,6 +2604,7 @@ function $extendSelectionForDeletion(
     'move',
     isBackward ? 'backward' : 'forward',
     granularity,
+    rootElement,
   );
   if (domSelection.rangeCount === 0) {
     return;
@@ -3478,6 +3613,49 @@ export function $internalCreateRangeSelection(
   return newSelection;
 }
 
+/**
+ * Re-reads the format and style that a collapsed insertion would use from the
+ * selection's anchor, after `removeText` left the caret in a node it did not
+ * start in (#6781).
+ *
+ * {@link $internalCreateRangeSelection} already does this for every selection
+ * change that originates in the DOM (a click, an arrow key), which is why
+ * those keep the toolbar in sync.
+ *
+ * Landing on the same node is not a move: a format toggled on a collapsed
+ * caret is armed for the next insertion and is deliberately not backed by the
+ * node yet, so it must survive being re-selected in place.
+ *
+ * Deliberately *not* called from `ElementNode.select()`/`TextNode.select()`:
+ * those are how nearly every edit repositions its own caret, so refreshing
+ * there discards a format armed with Cmd+B on the way through Enter,
+ * Shift+Enter and paste.
+ */
+function $internalRefreshSelectionFormatAndStyle(
+  selection: RangeSelection,
+  previousAnchorKey: NodeKey,
+): void {
+  const anchor = selection.anchor;
+  if (anchor.key === previousAnchorKey) {
+    return;
+  }
+  const anchorNode = anchor.getNode();
+  let format = 0;
+  let style = '';
+  if ($isTextNode(anchorNode)) {
+    format = anchorNode.getFormat();
+    style = anchorNode.getStyle();
+  } else if ($isElementNode(anchorNode)) {
+    format = anchorNode.getTextFormat();
+    style = anchorNode.getTextStyle();
+  }
+  if (selection.format !== format || selection.style !== style) {
+    selection.format = format;
+    selection.style = style;
+    selection.dirty = true;
+  }
+}
+
 function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   const node = $getNodeByKey(point.key);
   invariant(
@@ -4025,7 +4203,13 @@ export function $updateDOMSelection(
     }
   }
 
-  markSelectionChangeFromDOMUpdate(editor);
+  markSelectionChangeFromDOMUpdate(
+    editor,
+    nextAnchorNode,
+    nextAnchorOffset,
+    nextFocusNode,
+    nextFocusOffset,
+  );
 }
 
 /** Inserts nodes into the current selection, falling back to the previous selection or the end of the root. */
@@ -4125,7 +4309,20 @@ function $extractInlineFromBlocks(nodes: LexicalNode[]): LexicalNode[] {
   return inlineNodes;
 }
 
-function $removeTextAndSplitBlock(selection: RangeSelection): number {
+/**
+ * Removes the selected text and splits the ancestor chain at the anchor up to
+ * the nearest block, returning the node the caller should insert into and the
+ * index within it.
+ *
+ * @param stopAtUnsplittableNode - when true, stop the walk on an ElementNode
+ * that cannot be split instead of continuing past it, see
+ * {@link $splitNodeAtPoint}. The walk below never visits a block, so in
+ * practice this only ever stops on an inline ElementNode.
+ */
+function $removeTextAndSplitBlock(
+  selection: RangeSelection,
+  stopAtUnsplittableNode = false,
+): [container: LexicalNode, offset: number] {
   let selection_ = selection;
   if (!selection.isCollapsed()) {
     selection_.removeText();
@@ -4153,18 +4350,35 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   // to the document root.
   while (!INTERNAL_$isBlock(node) && $getSlotHostKey(node) === null) {
     const prevNode = node;
-    [node, offset] = $splitNodeAtPoint(node, offset);
+    [node, offset] = $splitNodeAtPoint(node, offset, stopAtUnsplittableNode);
     if (prevNode.is(node)) {
       break;
     }
   }
 
-  return offset;
+  return [node, offset];
 }
 
+/**
+ * Splits `node` at `offset`, returning the parent that now holds the two
+ * halves and the index between them.
+ *
+ * @param stopAtUnsplittableNode - an ElementNode is split by moving the
+ * children after `offset` into the node returned by its `insertNewAfter()`,
+ * but that returns null for any ElementNode that does not implement it (the
+ * base class default). Such a node cannot be split, and continuing the walk
+ * would move the insertion point past the whole node, so inline content
+ * pasted with the caret inside it would land after it instead of at the caret
+ * (#6477). When this is true the unsplittable node itself is returned so the
+ * caller inserts into it at `offset`; when false the previous behavior of
+ * ascending to the parent is kept. This does not itself test `isInline()` —
+ * the only caller that passes true is {@link $removeTextAndSplitBlock}, whose
+ * walk stops before it reaches a block.
+ */
 function $splitNodeAtPoint(
   node: LexicalNode,
   offset: number,
+  stopAtUnsplittableNode = false,
 ): [parent: ElementNode, offset: number] {
   const parent = node.getParent();
   if (!parent) {
@@ -4200,6 +4414,8 @@ function $splitNodeAtPoint(
     const newElement = node.insertNewAfter(insertPoint) as ElementNode | null;
     if (newElement) {
       newElement.append(firstToAppend, ...firstToAppend.getNextSiblings());
+    } else if (stopAtUnsplittableNode) {
+      return [node, offset];
     }
   }
   return [parent, node.getIndexWithinParent() + 1];
@@ -4381,17 +4597,31 @@ function $modifySelectionAroundDecoratorsAndBlocks(
   const collapse = alter === 'move';
   let focus = initialFocus;
   let checkForBlock = mode === 'decorators-and-blocks';
+  // An isolated decorator stops the caret. Resolving that here rather than
+  // falling through to the native measurement is what makes it a defined
+  // behavior: left to the engine it was neither — Firefox stepped over the
+  // decorator while Chromium trapped the caret on the near side of it with no
+  // way past by keyboard.
+  let isolated = false;
   if (!$isExtendableTextPointCaret(focus)) {
     for (const siblingCaret of focus) {
       checkForBlock = false;
       const {origin} = siblingCaret;
-      if ($isDecoratorNode(origin) && !origin.isIsolated()) {
+      if ($isDecoratorNode(origin)) {
+        if (origin.isIsolated()) {
+          isolated = true;
+          break;
+        }
         focus = siblingCaret;
         if (isLineBoundary && origin.isInline()) {
           continue;
         }
       }
       break;
+    }
+    if (isolated) {
+      // Handled, with the selection deliberately left where it is.
+      return true;
     }
     if (checkForBlock) {
       for (const nextCaret of $extendCaretToRange(initialFocus).iterNodeCarets(

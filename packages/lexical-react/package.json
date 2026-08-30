@@ -35,7 +35,7 @@
     "react": ">=18.x",
     "react-dom": ">=18.x",
     "typescript": ">=5.2",
-    "yjs": ">=13.5.22"
+    "yjs": ">=13.5.37"
   },
   "peerDependenciesMeta": {
     "yjs": {

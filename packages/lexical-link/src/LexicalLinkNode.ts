@@ -303,22 +303,21 @@ export class LinkNode extends ElementNode {
   }
 
   isEmailURI(): boolean {
-    return this.__url.startsWith('mailto:');
+    return this.getURL().startsWith('mailto:');
   }
 
   isWebSiteURI(): boolean {
-    return (
-      this.__url.startsWith('https://') || this.__url.startsWith('http://')
-    );
+    const url = this.getURL();
+    return url.startsWith('https://') || url.startsWith('http://');
   }
 
   shouldMergeAdjacentLink(otherLink: LinkNode): boolean {
     return (
       this.getType() === otherLink.getType() &&
-      this.__url === otherLink.__url &&
-      this.__target === otherLink.__target &&
-      this.__rel === otherLink.__rel &&
-      this.__title === otherLink.__title
+      this.getURL() === otherLink.getURL() &&
+      this.getTarget() === otherLink.getTarget() &&
+      this.getRel() === otherLink.getRel() &&
+      this.getTitle() === otherLink.getTitle()
     );
   }
 }
@@ -516,7 +515,7 @@ export class AutoLinkNode extends LinkNode {
   }
 
   getIsUnlinked(): boolean {
-    return this.__isUnlinked;
+    return this.getLatest().__isUnlinked;
   }
 
   setIsUnlinked(value: boolean): this {
@@ -559,19 +558,12 @@ export class AutoLinkNode extends LinkNode {
     };
   }
 
-  insertNewAfter(
-    _: RangeSelection,
-    restoreSelection = true,
-  ): null | ElementNode {
-    const linkNode = $createAutoLinkNode(this.__url, {
-      isUnlinked: this.__isUnlinked,
-      rel: this.__rel,
-      target: this.__target,
-      title: this.__title,
-    });
-    this.insertAfter(linkNode, restoreSelection);
-    return linkNode;
-  }
+  // insertNewAfter is deliberately not overridden: LinkNode's implementation
+  // uses $copyNode, which runs clone() + afterCloneFrom() and so carries the
+  // element props (format/indent/style/dir/textFormat/textStyle) and NodeState
+  // as well as the link attributes. Enumerating properties by hand here
+  // dropped all of those, and rebuilt the node as a base AutoLinkNode even for
+  // a subclass. AutoLinkNode.afterCloneFrom already carries __isUnlinked.
 }
 
 /**
@@ -601,7 +593,7 @@ export function $isAutoLinkNode(
 
 export const TOGGLE_LINK_COMMAND: LexicalCommand<
   string | ({url: string} & LinkAttributes) | null
-> = /* @__PURE__ */ createCommand('TOGGLE_LINK_COMMAND');
+> = createCommand('TOGGLE_LINK_COMMAND');
 
 function $getPointNode(point: Point, offset: number): LexicalNode | null {
   if (point.type === 'element') {
@@ -787,8 +779,11 @@ export function $toggleLink(
           if (rel !== undefined) {
             existingLink.setRel(rel);
           }
+          if (title !== undefined) {
+            existingLink.setTitle(title);
+          }
         } else {
-          const linkNode = $createLinkNode(url, {rel, target});
+          const linkNode = $createLinkNode(url, {rel, target, title});
           node.insertBefore(linkNode);
           linkNode.append(node);
         }

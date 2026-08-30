@@ -16,11 +16,10 @@ import {
   $getEditor,
   $getEditorDOMRenderConfig,
   $getRoot,
-  $getSlotFrame,
+  $getSelectionSlotFrame,
   $isBlockElementNode,
   $isElementNode,
   $isNodeSelection,
-  $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
@@ -192,13 +191,14 @@ export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
     const root = $getRoot();
     const domConfig = $getSessionDOMRenderConfig(editor);
 
-    // A RangeSelection wholly inside a slot subtree never includes its host
+    // A selection wholly inside a slot subtree never includes its host
     // (slots are shadow-root isolated), so a root-children walk would miss
     // the selected nodes entirely and export an empty payload. Walk the
     // selection's slot frame instead; outside slots this is the root.
-    const slotFrame = $isRangeSelection(selection)
-      ? $getSlotFrame(selection.anchor.getNode())
-      : null;
+    // $generateJSONFromSelectedNodes in @lexical/clipboard redirects the
+    // JSON channel through the same frame, so the two clipboard payloads
+    // stay in agreement.
+    const slotFrame = $getSelectionSlotFrame(selection);
     const parentElementAppend = container.append.bind(container);
     for (const topLevelNode of ($isElementNode(slotFrame)
       ? slotFrame

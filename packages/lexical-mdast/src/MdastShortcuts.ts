@@ -77,10 +77,16 @@ function $stripLeading(element: ElementNode, n: number): void {
  * Installs `block` in place of `container`, except for an inline-content quote
  * (see {@link $isShortcutQuote}) which keeps its identity and adopts the block
  * as a child instead.
+ *
+ * A QuoteNode may only hold block-level children once it has opted in to
+ * shadow root behaviour, so adopting the block also sets that flag — leaving
+ * it unset would produce a quote holding a block without the state that makes
+ * it legal, which is not the tree {@link MdastShadowRootQuoteExtension}
+ * imports for `> ## H2`.
  */
 function $placeBlock(container: ElementNode, block: ElementNode): void {
   if ($isQuoteNode(container)) {
-    container.append(block);
+    container.setIsShadowRoot(true).append(block);
   } else {
     container.replace(block);
   }

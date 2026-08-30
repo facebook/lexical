@@ -181,6 +181,8 @@ describe('@lexical/mdast streaming shortcuts', () => {
         expect(heading.getTag()).toBe('h2');
         expect(heading.getTextContent()).toBe('H2');
         expect(quote.getChildrenSize()).toBe(1);
+        // A quote may only hold block children as a shadow root.
+        expect(quote.isShadowRoot()).toBe(true);
       });
     });
 

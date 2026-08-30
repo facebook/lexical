@@ -26,7 +26,6 @@ import {type JSX, useEffect, useRef, useState} from 'react';
 
 import {
   type CursorsContainerRef,
-  useInitialValue,
   useYjsCollaboration,
   useYjsCollaborationV2__EXPERIMENTAL,
   useYjsCursors,
@@ -61,9 +60,11 @@ type CollaborationPluginProps = {
    * as when one `Doc` stores many independently editable documents). Takes
    * precedence over `rootName`.
    *
-   * Read once, when the binding is created: this prop and `rootName` cannot
-   * repoint a mounted editor at another document. Remount the plugin (e.g.
-   * with a React `key`) to edit a different one.
+   * Read when the binding is created: this prop and `rootName` cannot repoint
+   * a mounted editor at another document. Remount the editor (a React `key` on
+   * the component that owns it) to edit a different one — a remount of this
+   * plugin alone would leave the previous document's content in the editor and
+   * write it into the new root.
    */
   getXmlText?: (doc: Doc) => XmlText;
 };
@@ -92,9 +93,6 @@ export function CollaborationPlugin({
   rootName,
   getXmlText,
 }: CollaborationPluginProps): JSX.Element {
-  // The root is chosen when the binding is created; see useInitialValue.
-  const initialRootName = useInitialValue(rootName);
-  const initialGetXmlText = useInitialValue(getXmlText);
   const isBindingInitialized = useRef(false);
   // The inputs that produced the current Provider. A ref rather than the effect
   // deps alone because the effect must be idempotent: React StrictMode (and
@@ -179,26 +177,33 @@ export function CollaborationPlugin({
       docMap: yjsDocMap,
       editor,
       excludedProperties,
-      getXmlText: initialGetXmlText,
+      getXmlText,
       id,
-      rootName: initialRootName,
+      rootName,
     });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setBinding(newBinding);
+    // `excludedProperties`, `rootName` and `getXmlText` configure the binding
+    // and are read on the pass that creates it (which is not necessarily the
+    // first one -- the effect returns early until the provider exists, so a
+    // root that only resolves after mount is still picked up). They are
+    // deliberately not dependencies: a binding cannot be reconfigured or
+    // repointed once it exists, and re-running this effect would only tear the
+    // editor's binding down.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, provider, id, yjsDocMap, doc]);
 
+  // Destroying the binding belongs to unmount, not to this effect's cleanup:
+  // the binding is created once, so a cleanup on the creation effect would
+  // destroy it on any input change without building a replacement.
+  useEffect(() => {
+    if (binding === undefined) {
+      return;
+    }
     return () => {
-      newBinding.root.destroy(newBinding);
+      binding.root.destroy(binding);
     };
-  }, [
-    editor,
-    provider,
-    id,
-    yjsDocMap,
-    doc,
-    excludedProperties,
-    initialRootName,
-    initialGetXmlText,
-  ]);
+  }, [binding]);
 
   if (!provider || !binding) {
     return <></>;
@@ -308,9 +313,11 @@ type CollaborationPluginV2Props = {
    * documents). The element must be created as `new XmlElement()` without a
    * `nodeName`. Takes precedence over `rootName`.
    *
-   * Read once, when the binding is created: this prop and `rootName` cannot
-   * repoint a mounted editor at another document. Remount the plugin (e.g.
-   * with a React `key`) to edit a different one.
+   * Read when the binding is created: this prop and `rootName` cannot repoint
+   * a mounted editor at another document. Remount the editor (a React `key` on
+   * the component that owns it) to edit a different one — a remount of this
+   * plugin alone would leave the previous document's content in the editor and
+   * write it into the new root.
    */
   getXmlElement?: (doc: Doc) => XmlElement;
 };

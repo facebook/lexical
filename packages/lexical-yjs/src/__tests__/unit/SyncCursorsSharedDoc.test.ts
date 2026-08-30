@@ -185,4 +185,36 @@ describe('cursor positions across editors sharing one Doc', () => {
       ),
     ).toBe('Note B content');
   });
+
+  test('a binding rebuilt over an already-materialized root still resolves', () => {
+    const doc = new Y.Doc();
+    const docMap = new Map<string, Y.Doc>([['note-a', doc]]);
+    const noteA = createTestEditor(doc, docMap, 'note-a');
+    typeAndSelect(noteA, 'Note A content');
+
+    const userState = noteA.provider.awareness.getLocalState();
+    expect(userState!.anchorPos).not.toBeNull();
+    const beforeRebuild = noteA.editor.read('latest', () =>
+      $getAnchorAndFocusForUserState(noteA.binding, userState!),
+    );
+    expect(beforeRebuild.anchorKey).not.toBeNull();
+
+    // What remounting the collaboration plugin over the same document does: a
+    // second binding on a root whose shared types already carry the collab
+    // nodes of the first binding, which are reused as they are -- their
+    // `_parent` chain still ends at the first binding's root.
+    const rebuilt = createYjsBinding({
+      doc,
+      docMap,
+      editor: noteA.editor,
+      id: 'note-a',
+      rootName: 'note-a',
+    });
+
+    const afterRebuild = noteA.editor.read('latest', () =>
+      $getAnchorAndFocusForUserState(rebuilt, userState!),
+    );
+    expect(afterRebuild.anchorKey).toBe(beforeRebuild.anchorKey);
+    expect(afterRebuild.anchorOffset).toBe(beforeRebuild.anchorOffset);
+  });
 });

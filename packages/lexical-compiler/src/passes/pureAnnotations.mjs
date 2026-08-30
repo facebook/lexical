@@ -48,7 +48,6 @@ export const PURE_FACTORY_FUNCTIONS = [
   'createCommand',
   'createContextState',
   'createImportState',
-  'createQuoteTransformer',
   'createRenderState',
   'createState',
   'declarePeerDependency',

@@ -4,6 +4,10 @@ packages:
   - '!examples/**/*'
   - '!scripts/__tests__/integration/fixtures/**/*'
 
+# Was `engineStrict: true` in package.json, where pnpm never read it, so the
+# `engines` fields it was meant to enforce went unchecked. pnpm looks here.
+engineStrict: true
+
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - '@lexical/*'

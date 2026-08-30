@@ -106,6 +106,37 @@ function serializedInitialContent(): string {
   return JSON.stringify(editor.getEditorState());
 }
 
+type TestProvider = Provider & {
+  _connectCount: number;
+  _disconnectCount: number;
+};
+
+/** A minimal in-memory {@link Provider} that records connect/disconnect calls. */
+function createTestProvider(): TestProvider {
+  const provider: TestProvider = {
+    _connectCount: 0,
+    _disconnectCount: 0,
+    awareness: {
+      getLocalState: () => null,
+      getStates: () => new Map(),
+      off: () => {},
+      on: () => {},
+      setLocalState: () => {},
+      setLocalStateField: () => {},
+    },
+    connect: () => {
+      provider._connectCount++;
+    },
+    disconnect: () => {
+      provider._disconnectCount++;
+    },
+    off: () => {},
+    on: () => {},
+  };
+
+  return provider;
+}
+
 describe(`LexicalCollaborationPlugin`, () => {
   let container: HTMLDivElement;
   let reactRoot: Root;
@@ -338,5 +369,106 @@ describe(`LexicalCollaborationPlugin`, () => {
       editor.dispatchCommand(UNDO_COMMAND, undefined);
     });
     expect(readText()).not.toBe('typed after the failure');
+  });
+  // https://github.com/facebook/lexical/issues/7136
+  test(`provider is replaced when providerFactory changes`, () => {
+    const doc = new Y.Doc();
+    const providerA = createTestProvider();
+    const providerB = createTestProvider();
+
+    const factoryA = vi.fn((id: string, yjsDocMap: Map<string, Y.Doc>) => {
+      yjsDocMap.set(id, doc);
+      return providerA;
+    });
+    const factoryB = vi.fn((id: string, yjsDocMap: Map<string, Y.Doc>) => {
+      yjsDocMap.set(id, doc);
+      return providerB;
+    });
+
+    function App({
+      providerFactory,
+    }: {
+      providerFactory: (id: string, yjsDocMap: Map<string, Y.Doc>) => Provider;
+    }) {
+      return (
+        <LexicalCollaboration>
+          <LexicalComposer initialConfig={editorConfig}>
+            <CollaborationPlugin
+              id="main"
+              providerFactory={providerFactory}
+              shouldBootstrap={false}
+            />
+            <RichTextPlugin
+              contentEditable={<ContentEditable />}
+              placeholder={<></>}
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+          </LexicalComposer>
+        </LexicalCollaboration>
+      );
+    }
+
+    act(() => {
+      reactRoot.render(<App providerFactory={factoryA} />);
+    });
+
+    expect(factoryA).toHaveBeenCalledTimes(1);
+    expect(providerA._connectCount).toBe(1);
+
+    act(() => {
+      reactRoot.render(<App providerFactory={factoryB} />);
+    });
+
+    expect(factoryB).toHaveBeenCalledTimes(1);
+    expect(providerB._connectCount).toBe(1);
+    // The superseded provider is torn down.
+    expect(providerA._disconnectCount).toBeGreaterThan(0);
+  });
+
+  test(`an inline providerFactory keeps its provider connected`, () => {
+    const doc = new Y.Doc();
+    const provider = createTestProvider();
+
+    // Declared inline, the way this package's own test harness does it, so the
+    // factory has a fresh identity on every render while handing back the same
+    // provider. Re-rendering must not tear that provider down: nothing would
+    // reconnect it, because setProvider() bails on the identical value.
+    function App() {
+      return (
+        <LexicalCollaboration>
+          <LexicalComposer initialConfig={editorConfig}>
+            <CollaborationPlugin
+              id="main"
+              providerFactory={(id: string, yjsDocMap: Map<string, Y.Doc>) => {
+                yjsDocMap.set(id, doc);
+                return provider;
+              }}
+              shouldBootstrap={false}
+            />
+            <RichTextPlugin
+              contentEditable={<ContentEditable />}
+              placeholder={<></>}
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+          </LexicalComposer>
+        </LexicalCollaboration>
+      );
+    }
+
+    act(() => {
+      reactRoot.render(<App />);
+    });
+    expect(provider._connectCount).toBe(1);
+    expect(provider._disconnectCount).toBe(0);
+
+    act(() => {
+      reactRoot.render(<App />);
+    });
+    act(() => {
+      reactRoot.render(<App />);
+    });
+
+    expect(provider._disconnectCount).toBe(0);
+    expect(provider._connectCount).toBe(1);
   });
 });

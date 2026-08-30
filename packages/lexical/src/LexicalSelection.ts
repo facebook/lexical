@@ -2018,6 +2018,7 @@ export class RangeSelection implements BaseSelection {
    * @param isBackward whether or not the selection is backwards.
    */
   deleteLine(isBackward: boolean): void {
+    const wasCollapsed = this.isCollapsed();
     // A decorator-host slot's DOM is relocated out of document order (the
     // host's React decorate() mounts the slot container wherever it wants),
     // so a deletion that starts inside one cannot be expressed by the
@@ -2062,8 +2063,12 @@ export class RangeSelection implements BaseSelection {
       } else {
         this.removeText();
         // Cmd+A then Cmd+Backspace wipes the document just as Backspace does,
-        // so it has to land in the same empty-editor state (#5835).
-        INTERNAL_$collapseEmptiedRootToParagraph(this);
+        // so it has to land in the same empty-editor state (#5835). Extending
+        // a collapsed caret to the line boundary is an ordinary delete, not a
+        // wipe, so it leaves the block alone -- as Backspace does.
+        if (!wasCollapsed) {
+          INTERNAL_$collapseEmptiedRootToParagraph(this);
+        }
       }
     }
   }
@@ -2075,6 +2080,7 @@ export class RangeSelection implements BaseSelection {
    * @param isBackward whether or not the selection is backwards.
    */
   deleteWord(isBackward: boolean): void {
+    const wasCollapsed = this.isCollapsed();
     if (this.isCollapsed()) {
       const anchor = this.anchor;
       const anchorNode: TextNode | ElementNode | null = anchor.getNode();
@@ -2091,8 +2097,12 @@ export class RangeSelection implements BaseSelection {
     } else {
       this.removeText();
       // Select-all then Alt/Ctrl+Backspace wipes the document just as
-      // Backspace does, so it has to land in the same state (#5835).
-      INTERNAL_$collapseEmptiedRootToParagraph(this);
+      // Backspace does, so it has to land in the same state (#5835). Extending
+      // a collapsed caret over a word is an ordinary delete, not a wipe, so it
+      // leaves the block alone -- as Backspace does.
+      if (!wasCollapsed) {
+        INTERNAL_$collapseEmptiedRootToParagraph(this);
+      }
     }
   }
 
@@ -2397,25 +2407,15 @@ function $collapseAtStart(
 }
 
 /**
- * After a range delete has emptied the whole document down to a single
- * non-paragraph block -- a heading, quote, list, or nested list -- collapse
- * that block so the editor lands in the same state as an empty editor, rather
- * than lingering as an empty block that keeps its type (#5835).
- *
- * The collapse itself is delegated to {@link $collapseAtStart}, so each block
- * type decides how (and whether) it dissolves through the `collapseAtStart`
- * extension point it already implements: `HeadingNode` and `QuoteNode` become
- * paragraphs, `ListItemNode` lifts itself out of its list, and a node that
- * returns `false` -- the `ElementNode` default -- keeps its block.
- *
- * Bails out unless the root's only content is that one block sitting on a
- * single, empty branch: any sibling content, decorator, shadow root, occupied
- * slot, or surviving text means the document is not empty and leaves the block
- * untouched.
+ * The single empty non-paragraph block the document has been reduced to, with
+ * the depth of the branch it sits on (1 for a direct child of the root), or
+ * `null` when the document is not one empty branch under the root: any sibling
+ * content, decorator, shadow root, occupied slot, or surviving text disqualifies
+ * it, and so leaves the block untouched.
  */
-export function INTERNAL_$collapseEmptiedRootToParagraph(
+function $emptiedLoneBlock(
   selection: RangeSelection,
-): void {
+): null | {block: ElementNode; depth: number} {
   const anchorNode = selection.anchor.getNode();
   // `getParent` is typed to ElementNode, so `block` needs no further narrowing.
   const block = $isElementNode(anchorNode)
@@ -2429,12 +2429,13 @@ export function INTERNAL_$collapseEmptiedRootToParagraph(
     // not empty and stops the collapse here.
     !block.isEmpty()
   ) {
-    return;
+    return null;
   }
   // Walk up to the top-level block (the direct child of the root), bailing on
   // anything that means this is not a plain, fully-emptied document. The root
   // is excluded by the loop condition, so only a shadow root can match here.
   let topLevel: ElementNode = block;
+  let depth = 1;
   for (
     let parent = block.getParent();
     parent !== null && !$isRootNode(parent);
@@ -2447,15 +2448,53 @@ export function INTERNAL_$collapseEmptiedRootToParagraph(
       // its one regular child is (mirrors the `isEmpty` check above).
       $getSlotNames(parent).length > 0
     ) {
-      return;
+      return null;
     }
     topLevel = parent;
+    depth++;
   }
   const root = topLevel.getParent();
   if (!$isRootNode(root) || root.getChildrenSize() !== 1) {
-    return;
+    return null;
   }
-  $collapseAtStart(selection, block);
+  return {block, depth};
+}
+
+/**
+ * After a range delete has emptied the whole document down to a single
+ * non-paragraph block -- a heading, quote, list, or nested list -- collapse
+ * that block so the editor lands in the same state as an empty editor, rather
+ * than lingering as an empty block that keeps its type (#5835).
+ *
+ * The collapse itself is delegated to {@link $collapseAtStart}, so each block
+ * type decides how (and whether) it dissolves through the `collapseAtStart`
+ * extension point it already implements: `HeadingNode` and `QuoteNode` become
+ * paragraphs, `ListItemNode` lifts itself out of its list, and a node that
+ * returns `false` -- the `ElementNode` default -- keeps its block.
+ *
+ * Only ever called for a delete that started from a real range: a collapsed
+ * caret deletes at most one character or word, which is not the "the document
+ * is now empty" signal this collapse is for.
+ */
+export function INTERNAL_$collapseEmptiedRootToParagraph(
+  selection: RangeSelection,
+): void {
+  // A block type dissolves one level per call -- `ListItemNode.collapseAtStart`
+  // outdents a nested item rather than unwrapping the whole nest -- so a
+  // document left as a nested list needs one pass per level. Every pass has to
+  // leave a strictly shallower branch behind, which bounds the loop however a
+  // third-party `collapseAtStart` behaves.
+  let previousDepth = Infinity;
+  for (;;) {
+    const emptied = $emptiedLoneBlock(selection);
+    if (emptied === null || emptied.depth >= previousDepth) {
+      return;
+    }
+    previousDepth = emptied.depth;
+    if (!$collapseAtStart(selection, emptied.block)) {
+      return;
+    }
+  }
 }
 
 function $swapPoints(selection: RangeSelection): void {

@@ -232,6 +232,62 @@ describe('select-all + delete collapses to an empty paragraph (#5835)', () => {
         });
       });
 
+      // The nested list above still has a plain sibling item, so one
+      // `collapseAtStart` pass reaches a paragraph. A nest with nothing but
+      // nested items needs one pass per level: `ListItemNode.collapseAtStart`
+      // outdents a nested item rather than unwrapping the whole nest, so a
+      // single pass would leave `list > listitem` behind -- still a bullet for
+      // the next character typed, which is the #5835 symptom.
+      test('a nest with no plain sibling item', () => {
+        using editor = createEditor();
+        editor.update(
+          () => {
+            $getRoot()
+              .clear()
+              .append(
+                $createListNode('bullet').append(
+                  $createListItemNode().append(
+                    $createListNode('bullet').append(
+                      $createListItemNode().append($createTextNode('two')),
+                    ),
+                  ),
+                ),
+              );
+          },
+          {discrete: true},
+        );
+
+        selectAllAndDelete(editor, gesture, isBackward);
+
+        expect(readRootTypes(editor)).toEqual(['paragraph']);
+        editor.read(() => {
+          expect($getRoot().getTextContent()).toBe('');
+        });
+      });
+
+      test('a deeply nested list unwraps every level', () => {
+        using editor = createEditor();
+        editor.update(
+          () => {
+            let item = $createListItemNode().append($createTextNode('deep'));
+            for (let level = 0; level < 4; level++) {
+              item = $createListItemNode().append(
+                $createListNode('bullet').append(item),
+              );
+            }
+            $getRoot().clear().append($createListNode('bullet').append(item));
+          },
+          {discrete: true},
+        );
+
+        selectAllAndDelete(editor, gesture, isBackward);
+
+        expect(readRootTypes(editor)).toEqual(['paragraph']);
+        editor.read(() => {
+          expect($getRoot().getTextContent()).toBe('');
+        });
+      });
+
       test('paragraph as the first block is left as a paragraph', () => {
         using editor = createEditor();
         editor.update(

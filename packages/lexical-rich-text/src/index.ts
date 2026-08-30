@@ -595,6 +595,35 @@ function $isSelectionAtStartOfRoot(selection: RangeSelection) {
   return focus.key === 'root' && focus.offset === 0;
 }
 
+/**
+ * True when the selection is a collapsed element point at the very start or
+ * end of the root, beside a child that renders a block cursor (a decorator, a
+ * table or another shadow root). There is nothing past the block cursor to
+ * move to, so horizontal arrow navigation in that direction has to be a no-op.
+ * Left to the browser, the native caret escapes to the other side of the block
+ * instead and the caret appears to cycle around it. See #7999.
+ */
+function $isBlockCursorAtRootEdge(
+  selection: RangeSelection,
+  direction: CaretDirection,
+): boolean {
+  if (!selection.isCollapsed()) {
+    return false;
+  }
+  const isNext = direction === 'next';
+  if (
+    !(isNext
+      ? $isSelectionAtEndOfRoot(selection)
+      : $isSelectionAtStartOfRoot(selection))
+  ) {
+    return false;
+  }
+  const offset = selection.focus.offset;
+  return $needsBlockCursorBeside(
+    $getRoot().getChildAtIndex(isNext ? offset - 1 : offset),
+  );
+}
+
 function $isSelectionCollapsedAtFrontOfIndentedBlock(
   selection: RangeSelection,
 ): boolean {
@@ -1569,12 +1598,16 @@ export function registerRichText(
         if (!$isRangeSelection(selection)) {
           return false;
         }
+        const leftDirection = $isParentRTL(selection.anchor.getNode())
+          ? 'next'
+          : 'previous';
+        if ($isBlockCursorAtRootEdge(selection, leftDirection)) {
+          event.preventDefault();
+          return true;
+        }
         if (
           !event.shiftKey &&
-          $tryBlockCursorShadowRootNavigation(
-            selection,
-            $isParentRTL(selection.anchor.getNode()) ? 'next' : 'previous',
-          )
+          $tryBlockCursorShadowRootNavigation(selection, leftDirection)
         ) {
           event.preventDefault();
           return true;
@@ -1623,12 +1656,16 @@ export function registerRichText(
         if (!$isRangeSelection(selection)) {
           return false;
         }
+        const rightDirection = $isParentRTL(selection.anchor.getNode())
+          ? 'previous'
+          : 'next';
+        if ($isBlockCursorAtRootEdge(selection, rightDirection)) {
+          event.preventDefault();
+          return true;
+        }
         if (
           !event.shiftKey &&
-          $tryBlockCursorShadowRootNavigation(
-            selection,
-            $isParentRTL(selection.anchor.getNode()) ? 'previous' : 'next',
-          )
+          $tryBlockCursorShadowRootNavigation(selection, rightDirection)
         ) {
           event.preventDefault();
           return true;

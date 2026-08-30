@@ -33,10 +33,13 @@ import {
 } from '@lexical/rich-text';
 import {
   $createLineBreakNode,
+  $createParagraphNode,
   $createTextNode,
   $findMatchingParent,
   $getState,
+  $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isTextNode,
   $setState,
   type BaseSelection,
@@ -591,121 +594,170 @@ const $listExport = (
   return output.join('\n');
 };
 
-export function $createHeadingTransformer(options?: {
-  nestInBlockquote?: boolean;
-}): ElementTransformer {
-  const nestInBlockquote =
-    (options != null && options.nestInBlockquote) || false;
-  return {
-    dependencies: nestInBlockquote ? [HeadingNode, QuoteNode] : [HeadingNode],
-    export: (node, exportChildren) => {
-      if (!$isHeadingNode(node)) {
-        return null;
-      }
-      const level = Number(node.getTag().slice(1));
-      return '#'.repeat(level) + ' ' + exportChildren(node);
-    },
-    regExp: HEADING_REGEX,
-    replace: (parentNode, children, match, isImport) => {
-      if (!nestInBlockquote && !isImport && $isUnreplaceableBlock(parentNode)) {
-        return false;
-      }
+const $replaceWithHeading = createBlockNode(match => {
+  const tag = ('h' + match[1].length) as HeadingTagType;
+  return $createHeadingNode(tag);
+});
 
-      const tag = ('h' + match[1].length) as HeadingTagType;
-      const headingNode = $createHeadingNode(tag);
-      headingNode.append(...children);
+export const HEADING: ElementTransformer = {
+  dependencies: [HeadingNode],
+  export: (node, exportChildren) => {
+    if (!$isHeadingNode(node)) {
+      return null;
+    }
+    const level = Number(node.getTag().slice(1));
+    return '#'.repeat(level) + ' ' + exportChildren(node);
+  },
+  regExp: HEADING_REGEX,
+  replace: (parentNode, children, match, isImport) => {
+    if (!isImport && $isUnreplaceableBlock(parentNode)) {
+      return false;
+    }
+    return $replaceWithHeading(parentNode, children, match, isImport);
+  },
+  triggerOnEnter: true,
+  type: 'element',
+};
 
-      if (nestInBlockquote && $isQuoteNode(parentNode)) {
-        parentNode.append(headingNode);
-      } else {
-        parentNode.replace(headingNode);
-      }
+// Matches a quote line, capturing the ATX heading marker of a `> # Heading`
+// line so that the heading can be nested inside the quote rather than
+// replacing it. Only used by a quote transformer built with `shadowRoot`,
+// since an inline-content quote cannot hold a HeadingNode.
+const QUOTE_BLOCK_REGEX = /^>\s(?:(#{1,6})\s)?/;
 
-      if (!isImport) {
-        headingNode.select(0, 0);
-      }
-    },
-    triggerOnEnter: true,
-    type: 'element',
-  };
+/**
+ * Exports the content of a quote without its `> ` prefixes.
+ *
+ * A shadow root QuoteNode (see `quoteShadowRootState`) holds block-level
+ * children, so every child block is exported on its own line and keeps its
+ * own markdown syntax; a legacy inline-content quote exports its children
+ * directly, as it always has.
+ */
+function $exportQuoteContent(
+  node: QuoteNode,
+  exportChildren: (child: ElementNode) => string,
+): string {
+  if (!node.isShadowRoot()) {
+    return exportChildren(node);
+  }
+
+  const output = [];
+  for (const child of node.getChildren()) {
+    if ($isHeadingNode(child)) {
+      const level = Number(child.getTag().slice(1));
+      output.push('#'.repeat(level) + ' ' + exportChildren(child));
+    } else if ($isQuoteNode(child)) {
+      output.push($exportQuote(child, exportChildren));
+    } else if ($isElementNode(child)) {
+      output.push(exportChildren(child));
+    } else {
+      output.push(child.getTextContent());
+    }
+  }
+  return output.join('\n');
 }
 
-export const HEADING: ElementTransformer = $createHeadingTransformer();
+function $exportQuote(
+  node: QuoteNode,
+  exportChildren: (child: ElementNode) => string,
+): string {
+  const output = [];
+  for (const line of $exportQuoteContent(node, exportChildren).split('\n')) {
+    output.push('> ' + line);
+  }
+  return output.join('\n');
+}
 
-const QUOTE_WITH_HEADING_REGEX = /^>\s(?:(#{1,6})\s)?/;
+function $createQuoteBlock(match: string[]): ElementNode {
+  return match[1]
+    ? $createHeadingNode(('h' + match[1].length) as HeadingTagType)
+    : $createParagraphNode();
+}
 
-export function $createQuoteTransformer(options?: {
-  handleNestedHeadings?: boolean;
-}): ElementTransformer {
-  const handleNestedHeadings =
-    (options != null && options.handleNestedHeadings) || false;
+export interface QuoteTransformerOptions {
+  /**
+   * When `true` the transformer creates shadow root QuoteNodes
+   * (`$createQuoteNode({shadowRoot: true})`), which hold block-level children.
+   * `> # Heading` then nests the heading inside the quote instead of replacing
+   * the quote with a heading, and typing a markdown shortcut inside the quote
+   * transforms the block it is typed in rather than the quote itself.
+   *
+   * Defaults to `false`, the legacy behavior where a quote holds inline
+   * content only.
+   */
+  shadowRoot?: boolean;
+}
+
+/**
+ * Builds the `>` blockquote transformer. Call it with
+ * `{shadowRoot: true}` to opt in to quotes that hold block-level children;
+ * {@link QUOTE} is the default, inline-content transformer.
+ *
+ * The export side needs no option: a shadow root quote is always exported as
+ * its block children, whoever created it.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+export function createQuoteTransformer(
+  options?: QuoteTransformerOptions,
+): ElementTransformer {
+  const shadowRoot = options !== undefined && options.shadowRoot === true;
   return {
-    dependencies: handleNestedHeadings ? [QuoteNode, HeadingNode] : [QuoteNode],
+    dependencies: shadowRoot ? [QuoteNode, HeadingNode] : [QuoteNode],
     export: (node, exportChildren) => {
       if (!$isQuoteNode(node)) {
         return null;
       }
-
-      if (handleNestedHeadings) {
-        const firstChild = node.getFirstChild();
-        if ($isHeadingNode(firstChild) && node.getChildrenSize() === 1) {
-          const level = Number(firstChild.getTag().slice(1));
-          return '> ' + '#'.repeat(level) + ' ' + exportChildren(firstChild);
-        }
-      }
-
-      const lines = exportChildren(node).split('\n');
-      const output = [];
-      for (const line of lines) {
-        output.push('> ' + line);
-      }
-      return output.join('\n');
+      return $exportQuote(node, exportChildren);
     },
-    regExp: handleNestedHeadings ? QUOTE_WITH_HEADING_REGEX : QUOTE_REGEX,
+    regExp: shadowRoot ? QUOTE_BLOCK_REGEX : QUOTE_REGEX,
     replace: (parentNode, children, match, isImport) => {
-      if (handleNestedHeadings && match[1]) {
-        const tag = ('h' + match[1].length) as HeadingTagType;
-        const headingNode = $createHeadingNode(tag);
-        headingNode.append(...children);
-
+      if (!shadowRoot) {
         if (isImport) {
           const previousNode = parentNode.getPreviousSibling();
           if ($isQuoteNode(previousNode)) {
             previousNode.splice(previousNode.getChildrenSize(), 0, [
               $createMarkdownLineBreakNode(previousNode),
-              headingNode,
+              ...children,
             ]);
             parentNode.remove();
             return;
           }
         }
 
-        const quoteNode = $createQuoteNode();
-        quoteNode.append(headingNode);
-        parentNode.replace(quoteNode);
+        const node = $createQuoteNode();
+        node.append(...children);
+        parentNode.replace(node);
         if (!isImport) {
-          headingNode.select(0, 0);
+          node.select(0, 0);
         }
         return;
       }
 
       if (isImport) {
         const previousNode = parentNode.getPreviousSibling();
-        if ($isQuoteNode(previousNode)) {
-          previousNode.splice(previousNode.getChildrenSize(), 0, [
-            $createMarkdownLineBreakNode(previousNode),
-            ...children,
-          ]);
+        if ($isQuoteNode(previousNode) && previousNode.isShadowRoot()) {
+          const lastChild = previousNode.getLastChild();
+          if (!match[1] && $isParagraphNode(lastChild)) {
+            // Consecutive plain quote lines are one paragraph separated by
+            // soft line breaks, as they are for an inline-content quote.
+            lastChild.splice(lastChild.getChildrenSize(), 0, [
+              $createMarkdownLineBreakNode(lastChild),
+              ...children,
+            ]);
+          } else {
+            previousNode.append($createQuoteBlock(match).append(...children));
+          }
           parentNode.remove();
           return;
         }
       }
 
-      const node = $createQuoteNode();
-      node.append(...children);
-      parentNode.replace(node);
+      const block = $createQuoteBlock(match);
+      block.append(...children);
+      parentNode.replace($createQuoteNode({shadowRoot: true}).append(block));
       if (!isImport) {
-        node.select(0, 0);
+        block.select(0, 0);
       }
     },
     triggerOnEnter: true,
@@ -713,7 +765,7 @@ export function $createQuoteTransformer(options?: {
   };
 }
 
-export const QUOTE: ElementTransformer = $createQuoteTransformer();
+export const QUOTE: ElementTransformer = createQuoteTransformer();
 
 export const CODE: MultilineElementTransformer = {
   dependencies: [CodeNode],

@@ -253,7 +253,7 @@ function $importBlocks(
         $isQuoteNode(previousNode) ||
         $isListNode(previousNode))
     ) {
-      let targetNode: typeof previousNode | ListItemNode | null = previousNode;
+      let targetNode: ElementNode | ListItemNode | null = previousNode;
 
       if ($isListNode(previousNode)) {
         const lastDescendant = previousNode.getLastDescendant();
@@ -262,6 +262,11 @@ function $importBlocks(
         } else {
           targetNode = $findMatchingParent(lastDescendant, $isListItemNode);
         }
+      } else if ($isQuoteNode(previousNode) && previousNode.isShadowRoot()) {
+        // A shadow root quote holds block-level children, so the continuation
+        // line belongs to its last block rather than to the quote itself.
+        const lastChild = previousNode.getLastChild();
+        targetNode = $isElementNode(lastChild) ? lastChild : null;
       }
 
       if (targetNode != null && targetNode.getTextContentSize() > 0) {

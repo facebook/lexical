@@ -87,6 +87,30 @@ And bundles of commonly used transformers:
 
 Transformers are explicitly passed to markdown API allowing application-specific subset of markdown or custom transformers.
 
+### Block-level content inside a blockquote
+
+By default a `QuoteNode` holds inline content only, so there is nowhere to put
+the heading of a `> # Heading` line: the shortcut declines and the `#` stays as
+literal text. `createQuoteTransformer({shadowRoot: true})` returns a `QUOTE`
+transformer that instead builds
+[shadow root quotes](https://lexical.dev/docs/api/classes/lexical_rich_text.QuoteNode#isshadowroot),
+which hold block-level children, so the heading is nested inside the quote and
+round-trips:
+
+```js
+import {createQuoteTransformer, QUOTE, TRANSFORMERS} from '@lexical/markdown';
+
+const transformers = TRANSFORMERS.map(transformer =>
+  transformer === QUOTE
+    ? createQuoteTransformer({shadowRoot: true})
+    : transformer,
+);
+```
+
+Only the nodes this transformer *creates* change; a shadow root quote is
+exported as its block children by every quote transformer, including the
+default `QUOTE`.
+
 There're three types of transformers:
 
 - **Element transformer** handles top level elements (lists, headings, quotes, tables or code blocks)

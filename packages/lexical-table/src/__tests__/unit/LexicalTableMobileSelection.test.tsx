@@ -25,27 +25,6 @@ import {
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {afterEach, describe, expect, test} from 'vitest';
 
-// Polyfill PointerEvent for test environment
-interface PointerEventInit extends EventInit {
-  button?: number;
-  buttons?: number;
-  pointerType?: string;
-}
-
-(global as unknown as {PointerEvent: unknown}).PointerEvent =
-  class PointerEvent extends Event {
-    button: number;
-    buttons: number;
-    pointerType: string;
-
-    constructor(type: string, options: PointerEventInit = {}) {
-      super(type, options);
-      this.button = options.button || 0;
-      this.buttons = options.buttons ?? 1;
-      this.pointerType = options.pointerType || 'mouse';
-    }
-  };
-
 /**
  * Test suite for mobile/touch table selection behavior.
  * Addresses the bug where simple taps between table cells on mobile
@@ -321,18 +300,28 @@ describe('LexicalTableMobileSelection', () => {
 
 /**
  * Regression tests for https://github.com/facebook/lexical/issues/8538 -
- * setting the text cursor by tapping table cells on mobile does not work
- * reliably when a single (empty) table is the whole content.
+ * placing the text cursor by tapping table cells on a touch device is
+ * unreliable: instead of a caret, taps produce multi-cell table selections.
  *
- * These tests register the table selection observer so the real pointer
- * handlers are exercised. Real-world touch taps commonly include micro
- * pointermove events between pointerdown and pointerup; such a tap must not
- * initiate table selection mode or leave anchor state behind that turns
- * later taps into multi-cell table selections.
+ * These register the real selection observer so the actual pointer handlers
+ * run. jsdom has no layout, so cells are laid out on a synthetic grid and the
+ * cell under the pointer is resolved through a stubbed elementsFromPoint.
  */
-describe('LexicalTableMobileSelection with selection observer (#8538)', () => {
+describe('LexicalTableMobileSelection touch gestures (#8538)', () => {
   initializeUnitTest(testEnv => {
+    const COLUMNS = 3;
+    const ROWS = 3;
+    const CELL_WIDTH = 100;
+    const CELL_HEIGHT = 40;
+    // Comfortably beyond the handler's tap slop, so a move of this much is
+    // unambiguously a drag.
+    const DRAG_DISTANCE = 50;
+    // Comfortably smaller, so a move of this much is still a tap.
+    const JITTER = 3;
+
     let unregisterObserver: null | (() => void) = null;
+    let cellUnderPointer: Element | null = null;
+    const hadElementsFromPoint = 'elementsFromPoint' in document;
     const originalElementsFromPoint = document.elementsFromPoint;
 
     afterEach(() => {
@@ -340,172 +329,280 @@ describe('LexicalTableMobileSelection with selection observer (#8538)', () => {
         unregisterObserver();
         unregisterObserver = null;
       }
-      document.elementsFromPoint = originalElementsFromPoint;
+      cellUnderPointer = null;
+      if (hadElementsFromPoint) {
+        document.elementsFromPoint = originalElementsFromPoint;
+      } else {
+        delete (document as Partial<Document>).elementsFromPoint;
+      }
     });
 
     /**
-     * Creates a 3x3 table with empty cells as the sole content of the
-     * document (the scenario from #8538) and registers the table selection
-     * observer. Returns the cell elements and their node keys in row-major
-     * order.
+     * Creates a table of empty cells as the sole content of the document (the
+     * scenario from #8538) and registers the table selection observer.
+     * Returns the cell elements and their node keys in row-major order.
      */
-    async function setupSoleEmptyTable(): Promise<{
-      cellElements: HTMLTableCellElement[];
-      cellKeys: string[];
+    async function setupEmptyTable(): Promise<{
+      cells: HTMLTableCellElement[];
+      keys: string[];
     }> {
       unregisterObserver = registerTableSelectionObserver(testEnv.editor);
-      const cellKeys: string[] = [];
+      const keys: string[] = [];
 
       await testEnv.editor.update(() => {
         const tableNode = $createTableNode();
-        for (let row = 0; row < 3; row++) {
+        for (let row = 0; row < ROWS; row++) {
           const rowNode = $createTableRowNode();
-          for (let col = 0; col < 3; col++) {
+          for (let col = 0; col < COLUMNS; col++) {
             const cellNode = $createTableCellNode();
             cellNode.append($createParagraphNode());
             rowNode.append(cellNode);
-            cellKeys.push(cellNode.getKey());
+            keys.push(cellNode.getKey());
           }
           tableNode.append(rowNode);
         }
         $getRoot().clear().append(tableNode);
       });
 
-      const cellElements = Array.from(testEnv.container.querySelectorAll('td'));
-      expect(cellElements.length).toBe(9);
-      return {cellElements, cellKeys};
+      const cells = Array.from(testEnv.container.querySelectorAll('td'));
+      expect(cells).toHaveLength(ROWS * COLUMNS);
+      // jsdom has no layout, so hit-testing is driven by cellUnderPointer
+      // rather than by the coordinates the handlers pass in.
+      document.elementsFromPoint = () =>
+        cellUnderPointer === null ? [] : [cellUnderPointer];
+      return {cells, keys};
+    }
+
+    /** The centre of a cell in the synthetic grid laid out above. */
+    function centerOf(index: number): {clientX: number; clientY: number} {
+      return {
+        clientX: (index % COLUMNS) * CELL_WIDTH + CELL_WIDTH / 2,
+        clientY: Math.floor(index / COLUMNS) * CELL_HEIGHT + CELL_HEIGHT / 2,
+      };
     }
 
     function dispatchPointerEvent(
-      element: Element,
+      cell: Element,
       type: string,
       options: PointerEventInit,
     ): void {
-      element.dispatchEvent(
+      cell.dispatchEvent(
         new PointerEvent(type, {
           bubbles: true,
+          button: 0,
+          buttons: 1,
           cancelable: true,
+          pointerId: 1,
+          pointerType: 'touch',
           ...options,
         }),
       );
     }
 
-    /**
-     * jsdom has no layout, so stub the hit-testing that onPointerMove uses
-     * to resolve the cell under the pointer.
-     */
-    function stubElementsFromPoint(element: Element): void {
-      document.elementsFromPoint = () => [element];
+    /** Waits for the batched updates the pointer events triggered to commit. */
+    function flushUpdates(): Promise<void> {
+      return new Promise(resolve => setTimeout(resolve, 0));
+    }
+
+    /** Presses a finger down on the centre of a cell. */
+    function touchDown(
+      cells: HTMLTableCellElement[],
+      index: number,
+      pointerId = 1,
+    ): void {
+      cellUnderPointer = cells[index];
+      dispatchPointerEvent(cells[index], 'pointerdown', {
+        pointerId,
+        ...centerOf(index),
+      });
     }
 
     /**
-     * Waits for the batched editor updates triggered by the dispatched
-     * pointer events to commit.
+     * Moves the finger by `dx` from where the gesture started and reports
+     * `overCell` as the cell underneath it.
      */
-    async function flushUpdates(): Promise<void> {
-      await new Promise(resolve => setTimeout(resolve, 0));
+    function touchMove(
+      cells: HTMLTableCellElement[],
+      fromIndex: number,
+      overIndex: number,
+      dx: number,
+      pointerId = 1,
+    ): void {
+      cellUnderPointer = cells[overIndex];
+      const from = centerOf(fromIndex);
+      dispatchPointerEvent(cells[overIndex], 'pointermove', {
+        clientX: from.clientX + dx,
+        clientY: from.clientY,
+        pointerId,
+      });
     }
 
-    /**
-     * Simulates a touch tap on a cell, including the micro pointermove
-     * within the same cell that real taps commonly produce.
-     */
-    async function simulateTouchTap(cell: Element): Promise<void> {
-      dispatchPointerEvent(cell, 'pointerdown', {
-        buttons: 1,
-        pointerType: 'touch',
-      });
-      stubElementsFromPoint(cell);
-      dispatchPointerEvent(cell, 'pointermove', {
-        buttons: 1,
-        pointerType: 'touch',
-      });
-      dispatchPointerEvent(cell, 'pointerup', {
+    function touchUp(
+      cells: HTMLTableCellElement[],
+      index: number,
+      pointerId = 1,
+    ): void {
+      dispatchPointerEvent(cells[index], 'pointerup', {
         buttons: 0,
-        pointerType: 'touch',
+        pointerId,
+        ...centerOf(index),
       });
-      await flushUpdates();
     }
 
     /**
-     * Simulates a touch drag from one cell to another.
+     * A tap: down, the micro pointermove that real taps produce, then up.
      */
-    async function simulateTouchDrag(
-      fromCell: Element,
-      toCell: Element,
+    async function touchTap(
+      cells: HTMLTableCellElement[],
+      index: number,
     ): Promise<void> {
-      dispatchPointerEvent(fromCell, 'pointerdown', {
-        buttons: 1,
-        pointerType: 'touch',
-      });
-      stubElementsFromPoint(toCell);
-      dispatchPointerEvent(toCell, 'pointermove', {
-        buttons: 1,
-        pointerType: 'touch',
-      });
-      dispatchPointerEvent(toCell, 'pointerup', {
-        buttons: 0,
-        pointerType: 'touch',
-      });
+      touchDown(cells, index);
+      touchMove(cells, index, index, JITTER);
+      touchUp(cells, index);
       await flushUpdates();
     }
 
-    test('a single touch tap with micro pointermove should not create a table selection', async () => {
-      const {cellElements} = await setupSoleEmptyTable();
+    /** A drag from one cell into another. */
+    async function touchDrag(
+      cells: HTMLTableCellElement[],
+      fromIndex: number,
+      toIndex: number,
+    ): Promise<void> {
+      touchDown(cells, fromIndex);
+      touchMove(cells, fromIndex, toIndex, DRAG_DISTANCE);
+      touchUp(cells, toIndex);
+      await flushUpdates();
+    }
 
-      // Tap the center cell of the empty table
-      await simulateTouchTap(cellElements[4]);
-
-      await testEnv.editor.read('latest', () => {
+    function expectNoTableSelection(): void {
+      testEnv.editor.read('latest', () => {
         expect($isTableSelection($getSelection())).toBe(false);
       });
-    });
+    }
 
-    test('touch taps on different cells should not create a table selection', async () => {
-      const {cellElements} = await setupSoleEmptyTable();
-
-      // Tap the first cell, then the center cell (as when trying to place
-      // the caret by tapping different cells of the sole table)
-      await simulateTouchTap(cellElements[0]);
-      await simulateTouchTap(cellElements[4]);
-
-      await testEnv.editor.read('latest', () => {
-        expect($isTableSelection($getSelection())).toBe(false);
-      });
-    });
-
-    test('touch drag across cells should still create a table selection', async () => {
-      const {cellElements, cellKeys} = await setupSoleEmptyTable();
-
-      await simulateTouchDrag(cellElements[0], cellElements[1]);
-
-      await testEnv.editor.read('latest', () => {
+    function expectTableSelection(
+      keys: string[],
+      anchorIndex: number,
+      focusIndex: number,
+    ): void {
+      testEnv.editor.read('latest', () => {
         const selection = $getSelection();
         expect($isTableSelection(selection)).toBe(true);
         if ($isTableSelection(selection)) {
-          expect(selection.anchor.getNode().getKey()).toBe(cellKeys[0]);
-          expect(selection.focus.getNode().getKey()).toBe(cellKeys[1]);
+          expect(selection.anchor.getNode().getKey()).toBe(keys[anchorIndex]);
+          expect(selection.focus.getNode().getKey()).toBe(keys[focusIndex]);
         }
       });
+    }
+
+    test('a tap with a micro pointermove does not create a table selection', async () => {
+      const {cells} = await setupEmptyTable();
+
+      await touchTap(cells, 4);
+
+      expectNoTableSelection();
     });
 
-    test('touch drag after a previous tap should anchor at the cell where the drag started', async () => {
-      const {cellElements, cellKeys} = await setupSoleEmptyTable();
+    test('taps on different cells do not create a table selection', async () => {
+      const {cells} = await setupEmptyTable();
 
-      // Tap the first cell, then drag from the center cell to its neighbor
-      await simulateTouchTap(cellElements[0]);
-      await simulateTouchDrag(cellElements[4], cellElements[5]);
+      await touchTap(cells, 0);
+      await touchTap(cells, 4);
 
-      await testEnv.editor.read('latest', () => {
-        const selection = $getSelection();
-        expect($isTableSelection(selection)).toBe(true);
-        if ($isTableSelection(selection)) {
-          // The anchor must be the cell the drag started on, not the cell
-          // tapped by the previous gesture
-          expect(selection.anchor.getNode().getKey()).toBe(cellKeys[4]);
-          expect(selection.focus.getNode().getKey()).toBe(cellKeys[5]);
-        }
+      expectNoTableSelection();
+    });
+
+    test('a tap near a cell border does not create a table selection', async () => {
+      const {cells} = await setupEmptyTable();
+
+      // The finger barely moves, but the jitter is enough for the hit-test to
+      // land in the neighbouring cell. That is still a tap, not a drag.
+      touchDown(cells, 0);
+      touchMove(cells, 0, 1, JITTER);
+      touchUp(cells, 0);
+      await flushUpdates();
+
+      expectNoTableSelection();
+    });
+
+    test('a drag across cells creates a table selection', async () => {
+      const {cells, keys} = await setupEmptyTable();
+
+      await touchDrag(cells, 0, 1);
+
+      expectTableSelection(keys, 0, 1);
+    });
+
+    test('a drag after a tap anchors at the cell the drag started on', async () => {
+      const {cells, keys} = await setupEmptyTable();
+
+      await touchTap(cells, 0);
+      await touchDrag(cells, 4, 5);
+
+      // The anchor must be the cell the drag started on, not the cell the
+      // previous gesture tapped.
+      expectTableSelection(keys, 4, 5);
+    });
+
+    test('a drag within the starting cell does not create a table selection', async () => {
+      const {cells} = await setupEmptyTable();
+
+      // Selecting text inside one cell is a range selection, not a table one.
+      touchDown(cells, 0);
+      touchMove(cells, 0, 0, DRAG_DISTANCE);
+      touchUp(cells, 0);
+      await flushUpdates();
+
+      expectNoTableSelection();
+    });
+
+    test.each(['pointercancel', 'lostpointercapture'])(
+      'a gesture ended by %s does not leak into the next tap',
+      async endEvent => {
+        const {cells} = await setupEmptyTable();
+
+        // The browser takes the gesture away - a touch that turned into a
+        // scroll, say - so no pointerup is ever delivered.
+        touchDown(cells, 0);
+        dispatchPointerEvent(cells[0], endEvent, {
+          buttons: 0,
+          ...centerOf(0),
+        });
+        await flushUpdates();
+
+        await touchTap(cells, 4);
+
+        expectNoTableSelection();
+      },
+    );
+
+    test('a gesture ended by pointercancel does not wedge later gestures', async () => {
+      const {cells, keys} = await setupEmptyTable();
+
+      touchDown(cells, 0);
+      dispatchPointerEvent(cells[0], 'pointercancel', {
+        buttons: 0,
+        ...centerOf(0),
       });
+      await flushUpdates();
+
+      // The observer must have returned to a state where a real drag works.
+      await touchDrag(cells, 4, 5);
+
+      expectTableSelection(keys, 4, 5);
+    });
+
+    test('a second finger does not drive the first finger gesture', async () => {
+      const {cells} = await setupEmptyTable();
+
+      touchDown(cells, 0, 1);
+      // A second contact lands elsewhere and moves across cells. It belongs to
+      // its own gesture and must not extend this one.
+      touchMove(cells, 0, 5, DRAG_DISTANCE, 2);
+      touchUp(cells, 0, 1);
+      await flushUpdates();
+
+      expectNoTableSelection();
     });
   });
 });

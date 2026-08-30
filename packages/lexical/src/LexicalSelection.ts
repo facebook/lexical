@@ -607,17 +607,13 @@ function $getNodeBeforePoint(point: PointType): LexicalNode | null {
 }
 
 /**
- * Two consecutive soft line breaks render an empty line, which reads as a
- * block boundary: a point directly after them sits at the start of a new
- * visual paragraph rather than at the end of the text above the empty line
- * (#4815).
+ * A soft line break before the point puts it at the start of its own line,
+ * with nothing to its left to continue. Blocks inserted there behave as they
+ * do at the start of a block: they keep their own block identity instead of
+ * being flattened into the line above (#4815).
  */
-function $isPointAfterEmptyLine(point: PointType): boolean {
-  const nodeBefore = $getNodeBeforePoint(point);
-  return (
-    $isLineBreakNode(nodeBefore) &&
-    $isLineBreakNode(nodeBefore.getPreviousSibling())
-  );
+function $isPointAtStartOfLine(point: PointType): boolean {
+  return $isLineBreakNode($getNodeBeforePoint(point));
 }
 
 /** Returns true if the given value is a RangeSelection. */
@@ -1347,14 +1343,15 @@ export class RangeSelection implements BaseSelection {
     const blocksParent = $wrapInlineNodes(nodes);
     const nodeToSelect = blocksParent.getLastDescendant()!;
     const blocks = blocksParent.getChildren();
-    // An empty line before the insertion point reads as a block boundary, so
+    // A line break before the insertion point makes it the start of a line, so
     // the first inserted block keeps its own block identity instead of being
-    // merged into the text above that empty line (#4815). The selection is
-    // collapsed by now (removeText above), so firstPoint is the insertion
-    // point, and nothing has split the block yet.
-    const isAfterEmptyLine = $isPointAfterEmptyLine(firstPoint);
+    // flattened into the line above it (#4815) -- matching what already
+    // happens at the start of a block, where firstBlock is empty after the
+    // split. The selection is collapsed by now (removeText above), so
+    // firstPoint is the insertion point and nothing has split the block yet.
+    const isAtStartOfLine = $isPointAtStartOfLine(firstPoint);
     const isMergeable = (node: LexicalNode): node is ElementNode =>
-      !isAfterEmptyLine &&
+      !isAtStartOfLine &&
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
@@ -1422,13 +1419,7 @@ export class RangeSelection implements BaseSelection {
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()
       : null;
-    if (
-      !isAfterEmptyLine &&
-      $isLineBreakNode(lastChild) &&
-      lastInsertedBlock !== firstBlock
-    ) {
-      // An empty line that was treated as a block boundary is content the
-      // user typed, not a leftover of the split, so it is kept as-is.
+    if ($isLineBreakNode(lastChild) && lastInsertedBlock !== firstBlock) {
       lastChild.remove();
     }
   }

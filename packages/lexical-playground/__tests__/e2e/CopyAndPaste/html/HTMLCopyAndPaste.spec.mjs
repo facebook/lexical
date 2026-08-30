@@ -67,14 +67,14 @@ test.describe('HTML CopyAndPaste', () => {
       'text/html': '<h3>Heading 3</h3><p>Some paragraph</p>',
     });
 
-    // The empty line the user typed is preserved and the pasted heading keeps
-    // its own block instead of merging into the paragraph above it (#4815).
+    // The pasted heading keeps its own block instead of merging into the
+    // paragraph above it, and the empty line the user typed survives: only the
+    // break that terminated the caret's own line goes with it (#4815).
     await assertHTML(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Line of text</span>
-          <br />
           <br />
           <br data-lexical-managed-linebreak="true" />
         </p>
@@ -92,6 +92,37 @@ test.describe('HTML CopyAndPaste', () => {
       focusOffset: 14,
       focusPath: [2, 0, 0],
     });
+  });
+
+  test('Copy + paste blocks after a single line break', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('Line of text');
+    await pressShiftEnter(page);
+    await pasteFromClipboard(page, {
+      'text/html': '<h3>Heading 3</h3><p>Some paragraph</p>',
+    });
+
+    // One line break is enough to put the caret at the start of a line, so the
+    // heading is not flattened into the line above it either (#4815).
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Line of text</span>
+        </p>
+        <h3 class="PlaygroundEditorTheme__h3" dir="auto">
+          <span data-lexical-text="true">Heading 3</span>
+        </h3>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Some paragraph</span>
+        </p>
+      `,
+    );
   });
 
   test('Copy + paste a code block with BR', async ({page, isPlainText}) => {

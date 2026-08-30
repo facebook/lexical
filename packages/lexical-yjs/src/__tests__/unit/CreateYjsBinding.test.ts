@@ -228,6 +228,41 @@ describe('createYjsBinding with getXmlText', () => {
     expect(doc.share.has('customRoot')).toBe(false);
   });
 
+  test('rejects a root that is not integrated into the doc', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({name: 'yjs-binding-test'}),
+    );
+    const {doc, docMap} = createNotesDoc();
+
+    expect(() =>
+      createYjsBinding({
+        doc,
+        docMap,
+        editor,
+        getXmlText: () => new XmlText(),
+        id: 'test',
+      }),
+    ).toThrow('getXmlText must return an XmlText');
+  });
+
+  test('rejects a root that could not be resolved', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({name: 'yjs-binding-test'}),
+    );
+    const {doc, docMap} = createNotesDoc();
+
+    expect(() =>
+      createYjsBinding({
+        doc,
+        docMap,
+        editor,
+        // what reaching for a note the doc has not synced yet returns
+        getXmlText: () => doc.getMap<XmlText>('missing').get('body') as XmlText,
+        id: 'test',
+      }),
+    ).toThrow('getXmlText must return an XmlText');
+  });
+
   test('a nested root round-trips to another client', () => {
     using localEditor = buildEditorFromExtensions(
       defineExtension({$initialEditorState: null, name: 'yjs-binding-local'}),
@@ -308,6 +343,34 @@ describe('createBindingV2__EXPERIMENTAL with getXmlElement', () => {
 
     expect(binding.root).toBe(getNoteElement(doc));
     expect(doc.share.has('customRoot')).toBe(false);
+  });
+
+  test('rejects a root that is not integrated into the doc', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({name: 'yjs-binding-v2-test'}),
+    );
+    const {doc, docMap} = createNotesDocV2();
+
+    expect(() =>
+      createBindingV2__EXPERIMENTAL(editor, 'test', doc, docMap, {
+        getXmlElement: () => new XmlElement(),
+      }),
+    ).toThrow('getXmlElement must return an XmlElement');
+  });
+
+  test('rejects a root created with a nodeName', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({name: 'yjs-binding-v2-test'}),
+    );
+    const {doc, docMap} = createNotesDocV2();
+    const named = new XmlElement('note');
+    doc.getMap<XmlElement>('named').set('body', named);
+
+    expect(() =>
+      createBindingV2__EXPERIMENTAL(editor, 'test', doc, docMap, {
+        getXmlElement: () => named,
+      }),
+    ).toThrow('must be created without a nodeName');
   });
 
   test('a nested root round-trips to another client', () => {

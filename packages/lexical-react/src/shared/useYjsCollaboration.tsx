@@ -88,6 +88,21 @@ type OnYjsTreeChanges = (
   transaction: Transaction,
 ) => void;
 
+/**
+ * Capture `value` as of the first render, ignoring later changes.
+ *
+ * The Yjs root an editor is bound to is fixed for the life of its binding:
+ * nothing reloads a mounted editor from a different root, so repointing one
+ * would either leave the editor bound to a destroyed binding (V1, whose effect
+ * creates the binding once) or overwrite the newly selected root with the
+ * previous document's content on the next local edit (V2). To edit a different
+ * document, remount the plugin (e.g. with a React `key`).
+ */
+export function useInitialValue<T>(value: T): T {
+  const [initialValue] = useState<T>(() => value);
+  return initialValue;
+}
+
 export function useYjsCollaboration(
   editor: LexicalEditor,
   id: string,
@@ -224,6 +239,9 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     selectionHighlight = false,
     __shouldBootstrapUnsafe: shouldBootstrap,
   } = options;
+  // The root is chosen when the binding is created; see useInitialValue.
+  const initialRootName = useInitialValue(rootName);
+  const initialGetXmlElement = useInitialValue(getXmlElement);
 
   // Note: v2 does not support 'reload' event, which is not an actual Yjs event type.
   const isReloadingDoc = useMemo(() => ({current: false}), []);
@@ -232,10 +250,18 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     () =>
       createBindingV2__EXPERIMENTAL(editor, id, doc, docMap, {
         excludedProperties,
-        getXmlElement,
-        rootName,
+        getXmlElement: initialGetXmlElement,
+        rootName: initialRootName,
       }),
-    [editor, id, doc, docMap, excludedProperties, rootName, getXmlElement],
+    [
+      editor,
+      id,
+      doc,
+      docMap,
+      excludedProperties,
+      initialRootName,
+      initialGetXmlElement,
+    ],
   );
 
   useEffect(() => {

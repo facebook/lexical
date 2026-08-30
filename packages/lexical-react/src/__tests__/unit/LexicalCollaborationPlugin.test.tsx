@@ -8,10 +8,13 @@
 
 import type {InitialEditorStateType} from '@lexical/react/LexicalComposer';
 import type {Provider} from '@lexical/yjs';
-import type {LexicalEditor} from 'lexical';
+import type {ElementNode, LexicalEditor} from 'lexical';
 
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
-import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
+import {
+  CollaborationPlugin,
+  CollaborationPluginV2__EXPERIMENTAL,
+} from '@lexical/react/LexicalCollaborationPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
@@ -49,14 +52,25 @@ function createSyncedProvider({autoSync = true} = {}): Provider & {
     }
   };
 
+  // A working awareness store (rather than a stub), so tests can observe what
+  // the binding publishes about the local user -- notably the cursor position,
+  // which is resolved through `binding.collabNodeMap`.
+  let localState: Record<string, unknown> | null = null;
+
   return {
     awareness: {
-      getLocalState: () => null,
+      getLocalState: () => localState,
       getStates: () => new Map(),
       off: () => {},
       on: () => {},
-      setLocalState: () => {},
-      setLocalStateField: () => {},
+      setLocalState: (state: Record<string, unknown> | null) => {
+        localState = state;
+      },
+      setLocalStateField: (field: string, value: unknown) => {
+        if (localState !== null) {
+          localState = {...localState, [field]: value};
+        }
+      },
     },
     connect: () => {
       if (autoSync) {
@@ -470,5 +484,154 @@ describe(`LexicalCollaborationPlugin`, () => {
 
     expect(provider._disconnectCount).toBe(0);
     expect(provider._connectCount).toBe(1);
+  });
+  /**
+   * The root a binding uses is fixed for its lifetime -- nothing reloads a
+   * mounted editor from another root -- so `getXmlText` / `getXmlElement` (and
+   * `rootName`) are read when the binding is created and ignored afterwards.
+   * Acting on a later change would tear the V1 binding down without building a
+   * replacement, and in V2 would build one and then overwrite the newly chosen
+   * root with the previous document's content.
+   */
+  describe('the root is fixed once the binding exists', () => {
+    function $appendParagraph(text: string): void {
+      const paragraph = $createParagraphNode();
+      paragraph.append($createTextNode(text));
+      $getRoot().append(paragraph);
+    }
+
+    test(`changing getXmlText leaves the mounted editor on its own root`, async () => {
+      const doc = new Y.Doc();
+      const notes = doc.getMap<Y.XmlText>('notes');
+      notes.set('a', new Y.XmlText());
+      notes.set('b', new Y.XmlText());
+      const provider = createSyncedProvider();
+      let editor: LexicalEditor | null = null;
+
+      function CaptureEditor() {
+        [editor] = useLexicalComposerContext();
+        return null;
+      }
+
+      function App({noteId}: {noteId: string}) {
+        return (
+          <LexicalCollaboration>
+            <LexicalComposer initialConfig={editorConfig}>
+              <CaptureEditor />
+              <CollaborationPlugin
+                id="main"
+                providerFactory={(id, yjsDocMap) => {
+                  yjsDocMap.set(id, doc);
+                  return provider;
+                }}
+                shouldBootstrap={false}
+                getXmlText={ydoc =>
+                  ydoc.getMap<Y.XmlText>('notes').get(noteId)!
+                }
+              />
+              <RichTextPlugin
+                contentEditable={<ContentEditable />}
+                placeholder={<></>}
+                ErrorBoundary={LexicalErrorBoundary}
+              />
+            </LexicalComposer>
+          </LexicalCollaboration>
+        );
+      }
+
+      await act(async () => {
+        reactRoot.render(<App noteId="a" />);
+      });
+      await act(async () => {
+        editor!.update(() => $appendParagraph('hello'));
+      });
+      expect(notes.get('a')!.toString()).toContain('hello');
+
+      // A resolver for another note is ignored...
+      await act(async () => {
+        reactRoot.render(<App noteId="b" />);
+      });
+
+      // ...and the binding is still the one this editor was mounted with, so
+      // further edits keep syncing, into the note it is bound to.
+      await act(async () => {
+        editor!.update(() => $appendParagraph('world'));
+      });
+      expect(notes.get('a')!.toString()).toContain('hello');
+      expect(notes.get('a')!.toString()).toContain('world');
+      expect(notes.get('b')!.length).toBe(0);
+      expect(
+        editor!.getEditorState().read(() => $getRoot().getTextContent()),
+      ).toBe('hello\n\nworld');
+
+      // Acting on the change would have destroyed the binding without building
+      // a replacement, which empties `binding.collabNodeMap` and silently stops
+      // the caret of every node that predates it from being published.
+      await act(async () => {
+        editor!.update(() => {
+          const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
+          paragraph.selectStart();
+        });
+      });
+      expect(provider.awareness.getLocalState()!.anchorPos).not.toBeNull();
+    });
+
+    test(`changing getXmlElement leaves the mounted V2 editor on its own root`, async () => {
+      const doc = new Y.Doc();
+      const notes = doc.getMap<Y.XmlElement>('notes');
+      notes.set('a', new Y.XmlElement());
+      notes.set('b', new Y.XmlElement());
+      const provider = createSyncedProvider();
+      let editor: LexicalEditor | null = null;
+
+      function CaptureEditor() {
+        [editor] = useLexicalComposerContext();
+        return null;
+      }
+
+      function App({noteId}: {noteId: string}) {
+        return (
+          <LexicalCollaboration>
+            <LexicalComposer initialConfig={editorConfig}>
+              <CaptureEditor />
+              <CollaborationPluginV2__EXPERIMENTAL
+                id="main"
+                doc={doc}
+                provider={provider}
+                getXmlElement={ydoc =>
+                  ydoc.getMap<Y.XmlElement>('notes').get(noteId)!
+                }
+              />
+              <RichTextPlugin
+                contentEditable={<ContentEditable />}
+                placeholder={<></>}
+                ErrorBoundary={LexicalErrorBoundary}
+              />
+            </LexicalComposer>
+          </LexicalCollaboration>
+        );
+      }
+
+      await act(async () => {
+        reactRoot.render(<App noteId="a" />);
+      });
+      await act(async () => {
+        editor!.update(() => $appendParagraph('hello'));
+      });
+      expect(notes.get('a')!.length).toBeGreaterThan(0);
+
+      await act(async () => {
+        reactRoot.render(<App noteId="b" />);
+      });
+      await act(async () => {
+        editor!.update(() => $appendParagraph('world'));
+      });
+
+      // note b never receives this editor's content: rebuilding the binding on
+      // the new root would serialize the whole editor state over it.
+      expect(notes.get('b')!.length).toBe(0);
+      expect(notes.get('a')!.toString()).toContain('hello');
+      expect(notes.get('a')!.toString()).toContain('world');
+    });
   });
 });

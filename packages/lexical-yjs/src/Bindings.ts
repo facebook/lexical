@@ -21,7 +21,7 @@ import {
   type CollabElementNode,
 } from './CollabElementNode';
 import {CollabV2Mapping} from './CollabV2Mapping';
-import {initializeNodeProperties} from './Utils';
+import {initializeNodeProperties, ROOT_NODE_NAME} from './Utils';
 
 export type ClientID = number;
 export interface BaseBinding {
@@ -110,9 +110,13 @@ export interface CreateYjsBindingOptions {
    * a top-level shared type (e.g. an `XmlText` held in a `Y.Map` or `Y.Array`,
    * as when one `Doc` stores many independently editable documents).
    *
-   * The returned type must already be integrated into `doc` (reachable from a
-   * top-level shared type) and must not be shared with another binding. When
-   * given, it takes precedence over {@link CreateYjsBindingOptions.rootName}.
+   * Called once, while the binding is constructed — before any provider has
+   * synced — so it must resolve (or create) the root from whatever the `Doc`
+   * holds locally at that moment. The returned type must already be integrated
+   * into `doc` (reachable from a top-level shared type) and must not be shared
+   * with another binding; a binding cannot be repointed at a different root
+   * afterwards. When given, it takes precedence over
+   * {@link CreateYjsBindingOptions.rootName}.
    */
   getXmlText?: (doc: Doc) => XmlText;
 }
@@ -135,6 +139,10 @@ export function createYjsBinding({
   const rootXmlText = getXmlText
     ? getXmlText(doc)
     : (doc.get(rootName, XmlText) as XmlText);
+  invariant(
+    rootXmlText instanceof XmlText && rootXmlText.doc === doc,
+    'createYjsBinding: getXmlText must return an XmlText that is already integrated into the given doc',
+  );
   const root: CollabElementNode = $createCollabElementNode(
     rootXmlText,
     null,
@@ -173,14 +181,16 @@ export interface CreateBindingV2Options__EXPERIMENTAL {
    * not a top-level shared type (e.g. an `XmlElement` held in a `Y.Map` or
    * `Y.Array`, as when one `Doc` stores many independently editable
    * documents). The V2 equivalent of
-   * {@link CreateYjsBindingOptions.getXmlText}.
+   * {@link CreateYjsBindingOptions.getXmlText}, with the same call-once,
+   * before-any-sync timing.
    *
    * The returned type must already be integrated into `doc` (reachable from a
    * top-level shared type), must not be shared with another binding, and must
    * have been created as `new XmlElement()` without a `nodeName` (the root is
    * identified by its default `'UNDEFINED'` node name, which is also what
-   * `doc.get(rootName, XmlElement)` produces). When given, it takes precedence
-   * over {@link CreateBindingV2Options__EXPERIMENTAL.rootName}.
+   * `doc.get(rootName, XmlElement)` produces). Each of these is checked, and
+   * fails with an invariant rather than corrupting the document. When given, it
+   * takes precedence over {@link CreateBindingV2Options__EXPERIMENTAL.rootName}.
    */
   getXmlElement?: (doc: Doc) => XmlElement;
 }
@@ -197,12 +207,23 @@ export function createBindingV2__EXPERIMENTAL(
     'createBinding: doc is null or undefined',
   );
   const {excludedProperties, rootName = 'root-v2', getXmlElement} = options;
+  const root = getXmlElement
+    ? getXmlElement(doc)
+    : (doc.get(rootName, XmlElement) as XmlElement);
+  invariant(
+    root instanceof XmlElement && root.doc === doc,
+    'createBindingV2: getXmlElement must return an XmlElement that is already integrated into the given doc',
+  );
+  invariant(
+    root.nodeName === ROOT_NODE_NAME,
+    'createBindingV2: the root XmlElement must be created without a nodeName (its nodeName is %s, expected %s)',
+    root.nodeName,
+    ROOT_NODE_NAME,
+  );
   return {
     ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
     mapping: new CollabV2Mapping(),
-    root: getXmlElement
-      ? getXmlElement(doc)
-      : (doc.get(rootName, XmlElement) as XmlElement),
+    root,
   };
 }
 

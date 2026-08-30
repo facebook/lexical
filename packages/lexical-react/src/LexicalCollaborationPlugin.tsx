@@ -26,6 +26,7 @@ import {type JSX, useEffect, useRef, useState} from 'react';
 
 import {
   type CursorsContainerRef,
+  useInitialValue,
   useYjsCollaboration,
   useYjsCollaborationV2__EXPERIMENTAL,
   useYjsCursors,
@@ -59,6 +60,10 @@ type CollaborationPluginProps = {
    * a top-level shared type (e.g. an `XmlText` held in a `Y.Map` or `Y.Array`,
    * as when one `Doc` stores many independently editable documents). Takes
    * precedence over `rootName`.
+   *
+   * Read once, when the binding is created: this prop and `rootName` cannot
+   * repoint a mounted editor at another document. Remount the plugin (e.g.
+   * with a React `key`) to edit a different one.
    */
   getXmlText?: (doc: Doc) => XmlText;
 };
@@ -87,6 +92,9 @@ export function CollaborationPlugin({
   rootName,
   getXmlText,
 }: CollaborationPluginProps): JSX.Element {
+  // The root is chosen when the binding is created; see useInitialValue.
+  const initialRootName = useInitialValue(rootName);
+  const initialGetXmlText = useInitialValue(getXmlText);
   const isBindingInitialized = useRef(false);
   // The inputs that produced the current Provider. A ref rather than the effect
   // deps alone because the effect must be idempotent: React StrictMode (and
@@ -171,9 +179,9 @@ export function CollaborationPlugin({
       docMap: yjsDocMap,
       editor,
       excludedProperties,
-      getXmlText,
+      getXmlText: initialGetXmlText,
       id,
-      rootName,
+      rootName: initialRootName,
     });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setBinding(newBinding);
@@ -188,8 +196,8 @@ export function CollaborationPlugin({
     yjsDocMap,
     doc,
     excludedProperties,
-    rootName,
-    getXmlText,
+    initialRootName,
+    initialGetXmlText,
   ]);
 
   if (!provider || !binding) {
@@ -299,6 +307,10 @@ type CollaborationPluginV2Props = {
    * `Y.Array`, as when one `Doc` stores many independently editable
    * documents). The element must be created as `new XmlElement()` without a
    * `nodeName`. Takes precedence over `rootName`.
+   *
+   * Read once, when the binding is created: this prop and `rootName` cannot
+   * repoint a mounted editor at another document. Remount the plugin (e.g.
+   * with a React `key`) to edit a different one.
    */
   getXmlElement?: (doc: Doc) => XmlElement;
 };

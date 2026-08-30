@@ -161,22 +161,46 @@ sticky notes or comment threads usually want:
 ```
 
 - `getXmlText` resolves the root yourself, for roots that are not top-level
-  shared types (for example an `XmlText` stored in a `Y.Map` inside a
-  `Y.Array`). It takes precedence over `rootName`:
+  shared types (for example an `XmlText` stored in a `Y.Map`). It takes
+  precedence over `rootName`:
 
 ```jsx
 const getXmlText = useCallback(
-  (doc) => doc.getArray('notes').get(noteIndex).get('body'),
-  [noteIndex],
+  (doc) => doc.getMap('notes').get(noteId),
+  [noteId],
 );
 
-<CollaborationPlugin id="notes" providerFactory={providerFactory} getXmlText={getXmlText} shouldBootstrap={true} />
+<CollaborationPlugin
+  key={noteId}
+  id="notes"
+  providerFactory={providerFactory}
+  getXmlText={getXmlText}
+  shouldBootstrap={true}
+/>
 ```
 
-The `XmlText` returned by `getXmlText` must already be integrated into the
-document (reachable from a top-level shared type) and must not be shared with
-another binding. Both options are also available on `createYjsBinding` for
-non-React usage.
+Both options are also available on `createYjsBinding` for non-React usage.
+
+:::warning
+
+The root is chosen once, when the binding is created, and a mounted editor
+cannot be repointed at another root: changing `rootName` or `getXmlText` on a
+mounted plugin has no effect. Give the plugin a `key` that changes with the
+document (as above) so React remounts it, which builds a new binding and a new
+editor state.
+
+:::
+
+`getXmlText` runs while the binding is constructed, before the provider has
+synced, so it has to resolve the root from whatever the local `Doc` holds at
+that moment — reaching into a `Y.Array` that the server has not sent yet throws.
+Either mount the editor only once the note exists locally, or have the callback
+create the missing shared type (create it in one place, so two clients cannot
+race to overwrite each other's).
+
+The returned `XmlText` must already be integrated into the document and must
+not be shared with another binding; both are checked when the binding is
+created.
 
 The experimental `CollaborationPluginV2__EXPERIMENTAL` (and
 `createBindingV2__EXPERIMENTAL`) take the same two options, except that its

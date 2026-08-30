@@ -651,10 +651,12 @@ export function getAnchorAndFocusCollabNodesForUserState(
 
     if (anchorAbsPos !== null && focusAbsPos !== null) {
       [anchorCollabNode, anchorOffset] = getCollabNodeAndOffset(
+        binding,
         anchorAbsPos.type,
         anchorAbsPos.index,
       );
       [focusCollabNode, focusOffset] = getCollabNodeAndOffset(
+        binding,
         focusAbsPos.type,
         focusAbsPos.index,
       );
@@ -697,10 +699,12 @@ export function $getAnchorAndFocusForUserState(
 
   if (isBindingV1(binding)) {
     const [anchorCollabNode, anchorOffset] = getCollabNodeAndOffset(
+      binding,
       anchorAbsPos.type,
       anchorAbsPos.index,
     );
     const [focusCollabNode, focusOffset] = getCollabNodeAndOffset(
+      binding,
       focusAbsPos.type,
       focusAbsPos.index,
     );
@@ -795,14 +799,37 @@ function $setPoint(point: Point, key: NodeKey, offset: number): void {
   }
 }
 
+/**
+ * Whether `collabNode` belongs to this binding's tree.
+ *
+ * Several editors can share one Yjs `Doc` (see the `rootName` and `getXmlText`
+ * binding options), and V1 caches the collab node that materialized a shared
+ * type on the type itself (`sharedType._collabNode`). A peer editing another
+ * editor's subtree therefore resolves to a collab node owned by that other
+ * binding, whose `NodeKey`s only mean something in that other editor. Treat
+ * anything outside this binding's root as an unresolvable cursor position
+ * rather than painting it at whatever node happens to share the key here.
+ */
+function isCollabNodeInBinding(
+  binding: Binding,
+  collabNode: AnyCollabNode,
+): boolean {
+  let node: null | AnyCollabNode = collabNode;
+  while (node !== null && node !== binding.root) {
+    node = node._parent;
+  }
+  return node === binding.root;
+}
+
 function getCollabNodeAndOffset(
+  binding: Binding,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sharedType: any,
   offset: number,
 ): [null | AnyCollabNode, number] {
   const collabNode = sharedType._collabNode;
 
-  if (collabNode === undefined) {
+  if (collabNode === undefined || !isCollabNodeInBinding(binding, collabNode)) {
     return [null, 0];
   }
 

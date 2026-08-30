@@ -16,6 +16,7 @@ import {
   type CommandListenerPriority,
   createCommand,
   getDOMShadowRoots,
+  getParentElement,
   getRootOwnerDocument,
   isDOMShadowRoot,
   isHTMLElement,
@@ -645,31 +646,42 @@ function setContainerDivAttributes(
  * menu, and document coordinates then place the menu at the parent's own
  * offset instead of at the caret.
  *
+ * Resolved by walking up from the element the anchor is appended to rather
+ * than from the anchor's own `offsetParent`: the anchor is removed from the
+ * DOM every time the menu closes and is positioned again before it is
+ * re-attached, so at this point it is usually detached, and a detached element
+ * has no `offsetParent` to read.
+ *
  * @returns The viewport coordinates of the origin that the anchor's `top`/
  *   `left` are measured from, or `null` when that origin is the initial
  *   containing block and document coordinates apply.
  */
 function getContainingBlockOrigin(
-  containerDiv: HTMLElement,
+  parent: HTMLElement | ShadowRoot,
 ): null | {left: number; top: number} {
-  const {offsetParent} = containerDiv;
-  if (!isHTMLElement(offsetParent)) {
-    return null;
-  }
-  const view = offsetParent.ownerDocument.defaultView;
-  // `offsetParent` falls back to the body when nothing above the anchor is
-  // positioned, in which case the containing block is still the initial one.
-  if (
-    view === null ||
-    view.getComputedStyle(offsetParent).position === 'static'
+  // An anchor inside a shadow tree is laid out against the flat tree, so the
+  // walk continues at the host.
+  const start = isDOMShadowRoot(parent) ? parent.host : parent;
+  for (
+    let element: HTMLElement | null = isHTMLElement(start) ? start : null;
+    element !== null;
+    element = getParentElement(element)
   ) {
-    return null;
+    const view = element.ownerDocument.defaultView;
+    if (view === null) {
+      break;
+    }
+    if (view.getComputedStyle(element).position !== 'static') {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left + element.clientLeft - element.scrollLeft,
+        top: rect.top + element.clientTop - element.scrollTop,
+      };
+    }
   }
-  const rect = offsetParent.getBoundingClientRect();
-  return {
-    left: rect.left + offsetParent.clientLeft - offsetParent.scrollLeft,
-    top: rect.top + offsetParent.clientTop - offsetParent.scrollTop,
-  };
+  // Nothing at or above the insertion point is positioned, so the containing
+  // block is still the initial one and document coordinates apply.
+  return null;
 }
 
 function resolveMenuParent(
@@ -716,18 +728,9 @@ export function useMenuAnchorRef(
     if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();
       const anchorHeight = anchorElementRef.current.offsetHeight; // use to position under anchor
-      // Attach before measuring anything else: the anchor is removed from the
-      // DOM every time the menu closes, and a detached element has no
-      // `offsetParent` and reports a zero-sized rect for its menu child, so
-      // both the containing block below and the flip logic further down would
-      // silently fall back to their "nothing to correct for" branches.
-      if (!containerDiv.isConnected) {
-        setContainerDivAttributes(containerDiv, className);
-        resolvedParent.append(containerDiv);
-      }
       // `left`/`top` from getRect() are viewport coordinates; translate them
       // into the coordinate space the anchor is actually positioned in.
-      const origin = getContainingBlockOrigin(containerDiv);
+      const origin = getContainingBlockOrigin(resolvedParent);
       const toAnchorLeft = (viewportLeft: number) =>
         origin !== null
           ? viewportLeft - origin.left
@@ -766,6 +769,10 @@ export function useMenuAnchorRef(
         }
       }
 
+      if (!containerDiv.isConnected) {
+        setContainerDivAttributes(containerDiv, className);
+        resolvedParent.append(containerDiv);
+      }
       containerDiv.setAttribute('id', 'typeahead-menu');
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }

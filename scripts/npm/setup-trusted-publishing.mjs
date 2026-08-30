@@ -131,22 +131,43 @@ async function publishStub(pkg) {
       console.log(`[dry-run] Would publish ${name}@${stubVersion}`);
       return;
     }
-    await exec(
-      `cd ${tmpDir} && npm publish --registry ${registry} --access public --tag bootstrap`,
+    // Publish via runNpm so stdin/stdout stay TTYs and npm can run its
+    // interactive OTP / web-auth recovery — a captured exec() dies with
+    // EOTP instead of prompting.
+    console.log(
+      `\nPublishing ${name}@${stubVersion} (npm may prompt for OTP / web auth):`,
     );
+    const {code} = await runNpm(
+      [
+        'publish',
+        '--registry',
+        registry,
+        '--access',
+        'public',
+        '--tag',
+        'bootstrap',
+      ],
+      {cwd: tmpDir},
+    );
+    if (code !== 0) {
+      throw new Error(`npm publish exited with code ${code}`);
+    }
     console.log(`Published ${name}@${stubVersion}`);
     // Mark the stub as deprecated so anyone who accidentally installs it
     // sees a warning. Failure here is non-fatal — the stub is already
     // published, which is what unblocks trusted publishing setup.
-    await exec(
-      `npm deprecate --registry ${registry} ${name}@${stubVersion} "Bootstrap placeholder for trusted publishing setup; do not install"`,
-    ).catch(err => {
+    const deprecateResult = await runNpm([
+      'deprecate',
+      '--registry',
+      registry,
+      `${name}@${stubVersion}`,
+      'Bootstrap placeholder for trusted publishing setup; do not install',
+    ]);
+    if (deprecateResult.code !== 0) {
       console.warn(
-        `(Could not deprecate ${name}@${stubVersion}: ${
-          err instanceof Error ? err.message : String(err)
-        })`,
+        `(Could not deprecate ${name}@${stubVersion}: npm exit ${deprecateResult.code})`,
       );
-    });
+    }
   } finally {
     await fs.remove(tmpDir);
   }
@@ -351,15 +372,16 @@ function npmCleanEnv() {
  * captured call — warm the auth session first (see warmTrustAuth).
  *
  * @param {string[]} args
- * @param {{captureStdout?: boolean}} [options]
+ * @param {{captureStdout?: boolean, cwd?: string}} [options]
  * @returns {Promise<{code: number | null, stdout: string, stderr: string}>}
  */
-function runNpm(args, {captureStdout = false} = {}) {
+function runNpm(args, {captureStdout = false, cwd} = {}) {
   return new Promise(resolve => {
     // Lazy import; keeps top of file tidy and avoids extra weight on
     // dry-run/check-only paths.
     import('node:child_process').then(({spawn: spawnCb}) => {
       const child = spawnCb('npm', args, {
+        cwd,
         env: npmCleanEnv(),
         stdio: ['inherit', captureStdout ? 'pipe' : 'inherit', 'pipe'],
       });

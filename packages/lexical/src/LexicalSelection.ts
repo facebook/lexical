@@ -54,7 +54,7 @@ import {
   type TextNode,
 } from '.';
 import {IS_FIREFOX} from './environment';
-import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {DOM_TEXT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
@@ -90,7 +90,8 @@ import {
   $isRootOrShadowRoot,
   $isSelectionCapturedInDecoratorInput,
   $isTokenOrSegmented,
-  $isTokenOrTab,
+  $needsBlockCursorBeside,
+  $restoreEmptyContainerParagraph,
   $setCompositionKey,
   doesContainSurrogatePair,
   getActiveElement,
@@ -114,7 +115,7 @@ import {
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
-import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
+import {$createTabNode} from './nodes/LexicalTabNode';
 import {
   $isInlineFormattable,
   type TextFormatType,
@@ -247,6 +248,7 @@ export class Point {
   }
 }
 
+/** Creates a selection endpoint (Point) targeting the given node key at the specified offset. */
 export function $createPoint(
   key: NodeKey,
   offset: number,
@@ -348,6 +350,48 @@ function $transferStartingElementPointToTextPoint(
     end.set(textNode.__key, 0, 'text');
   }
   start.set(textNode.__key, 0, 'text');
+}
+
+function $insertTextAtPoint(
+  selection: RangeSelection,
+  text: string,
+  format: number,
+  style: string,
+): void {
+  const anchorNode = selection.anchor.getNode();
+  invariant($isTextNode(anchorNode), 'insertText: anchor is not a text node');
+  const offset = selection.anchor.offset;
+  const textNode = $createTextNode(text);
+  textNode.setFormat(format);
+  textNode.setStyle(style);
+  const parent = anchorNode.getParentOrThrow();
+  if (offset === 0) {
+    if (parent.isInline() && !anchorNode.__prev) {
+      parent.insertBefore(textNode);
+    } else {
+      anchorNode.insertBefore(textNode, false);
+    }
+  } else if (offset === anchorNode.getTextContentSize()) {
+    if (parent.isInline() && !anchorNode.__next) {
+      parent.insertAfter(textNode);
+    } else {
+      anchorNode.insertAfter(textNode, false);
+    }
+  } else {
+    const [before] = anchorNode.splitText(offset);
+    before.insertAfter(textNode, false);
+  }
+  if (anchorNode.getTextContent() === '' && anchorNode.isAttached()) {
+    anchorNode.remove();
+  }
+  textNode.selectEnd();
+  if (textNode.isComposing() && selection.anchor.type === 'text') {
+    selection.anchor.set(
+      selection.anchor.key,
+      selection.anchor.offset - text.length,
+      selection.anchor.type,
+    );
+  }
 }
 
 export interface BaseSelection {
@@ -534,6 +578,7 @@ function $ensureRootHasParagraph(): void {
   }
 }
 
+/** Returns true if the given value is a RangeSelection. */
 export function $isRangeSelection(x: unknown): x is RangeSelection {
   return x instanceof RangeSelection;
 }
@@ -822,8 +867,8 @@ export class RangeSelection implements BaseSelection {
   }
 
   /**
-   * Returns whether the provided TextFormatType is present on the Selection. This will be true if any node in the Selection
-   * has the specified format.
+   * Returns whether the provided TextFormatType is present on the Selection. This will be true if all text nodes in the Selection
+   * have the specified format.
    *
    * @param type the TextFormatType to check for.
    * @returns true if the provided format is currently toggled on the Selection, false otherwise.
@@ -849,427 +894,183 @@ export class RangeSelection implements BaseSelection {
    * @param text the text to insert into the Selection
    */
   insertText(text: string): void {
-    // Now that "removeText" has been improved and does not depend on
-    // insertText, insertText can be greatly simplified. The next
-    // commented version is a WIP (about 5 tests fail).
-    //
-    // this.removeText();
-    // if (text === '') {
-    //   return;
-    // }
-    // const anchorNode = this.anchor.getNode();
-    // const textNode = $createTextNode(text);
-    // textNode.setFormat(this.format);
-    // textNode.setStyle(this.style);
-    // if ($isTextNode(anchorNode)) {
-    //   const parent = anchorNode.getParentOrThrow();
-    //   if (this.anchor.offset === 0) {
-    //     if (parent.isInline() && !anchorNode.__prev) {
-    //       parent.insertBefore(textNode);
-    //     } else {
-    //       anchorNode.insertBefore(textNode);
-    //     }
-    //   } else if (this.anchor.offset === anchorNode.getTextContentSize()) {
-    //     if (parent.isInline() && !anchorNode.__next) {
-    //       parent.insertAfter(textNode);
-    //     } else {
-    //       anchorNode.insertAfter(textNode);
-    //     }
-    //   } else {
-    //     const [before] = anchorNode.splitText(this.anchor.offset);
-    //     before.insertAfter(textNode);
-    //   }
-    // } else {
-    //   anchorNode.splice(this.anchor.offset, 0, [textNode]);
-    // }
-    // const nodeToSelect = textNode.isAttached() ? textNode : anchorNode;
-    // nodeToSelect.selectEnd();
-    // // When composing, we need to adjust the anchor offset so that
-    // // we correctly replace that right range.
-    // if (
-    //   textNode.isComposing() &&
-    //   this.anchor.type === 'text' &&
-    //   anchorNode.getTextContent() !== ''
-    // ) {
-    //   this.anchor.offset -= text.length;
-    // }
-
-    const anchor = this.anchor;
-    const focus = this.focus;
-    const format = this.format;
-    const style = this.style;
-    let firstPoint = anchor;
-    let endPoint = focus;
-    if (!this.isCollapsed() && focus.isBefore(anchor)) {
-      firstPoint = focus;
-      endPoint = anchor;
+    // For non-collapsed selections, inherit format/style from the first
+    // selected text node so the replacement preserves the original styling.
+    let format = this.format;
+    let style = this.style;
+    if (!this.isCollapsed()) {
+      const firstPoint = this.focus.isBefore(this.anchor)
+        ? this.focus
+        : this.anchor;
+      const firstNode = firstPoint.getNode();
+      if ($isTextNode(firstNode)) {
+        format = firstNode.getFormat();
+        style = firstNode.getStyle();
+      }
+      this.removeText();
+      this.format = format;
+      this.style = style;
+      if (text === '') {
+        return;
+      }
+      if ($getCompositionKey() === null) {
+        if (this.anchor.type === 'element') {
+          $transferStartingElementPointToTextPoint(
+            this.anchor,
+            this.focus,
+            format,
+            style,
+          );
+        }
+        $insertTextAtPoint(this, text, format, style);
+        return;
+      }
+      // Composing: fall through to the collapsed code below.
+      // spliceText preserves DOM node identity so the browser's
+      // IME tracker stays attached.
     }
-    if (firstPoint.type === 'element') {
+
+    if (this.anchor.type === 'element') {
       $transferStartingElementPointToTextPoint(
-        firstPoint,
-        endPoint,
+        this.anchor,
+        this.focus,
         format,
         style,
       );
     }
-    if (endPoint.type === 'element') {
-      $setPointFromCaret(
-        endPoint,
-        $normalizeCaret($caretFromPoint(endPoint, 'next')),
+
+    const anchorNode = this.anchor.getNode();
+    invariant($isTextNode(anchorNode), 'insertText: anchor is not a text node');
+    const offset = this.anchor.offset;
+
+    const anchorParent = anchorNode.getParentOrThrow();
+    const anchorSize = anchorNode.getTextContentSize();
+    const needsRedirect =
+      $isTokenOrSegmented(anchorNode) ||
+      (offset === 0 &&
+        (!anchorNode.canInsertTextBefore() ||
+          (!anchorParent.canInsertTextBefore() && !anchorNode.__prev))) ||
+      (offset === anchorSize &&
+        (!anchorNode.canInsertTextAfter() ||
+          (!anchorParent.canInsertTextAfter() && !anchorNode.__next)));
+
+    if (needsRedirect) {
+      // Token/segmented nodes and nodes whose parent forbids text insertion
+      // at the boundary: reposition the cursor to an adjacent insertable
+      // node, then recurse.
+
+      // Segmented node with cursor in the middle: convert to normal
+      // text node so that the recursive insertText can proceed.
+      if (anchorNode.isSegmented() && offset !== 0 && offset !== anchorSize) {
+        if ($getCompositionKey() !== null) {
+          anchorNode.setMode('normal').setFormat(format).setStyle(style);
+        } else {
+          const replacement = $createTextNode(anchorNode.getTextContent());
+          replacement.setFormat(format);
+          replacement.setStyle(style);
+          const isCurrentSelection = $getSelection() === this;
+          anchorNode.replace(replacement);
+          // replace() installs a clone of the active selection, so this
+          // selection is still anchored to the segmented node that was just
+          // detached. Move it onto the replacement and make it current
+          // again, otherwise the recursive insertText below resolves an
+          // anchor that is no longer in the tree.
+          this.setTextNodeRange(replacement, offset, replacement, offset);
+          if (isCurrentSelection && $getSelection() !== this) {
+            $setSelection(this);
+          }
+        }
+        if (text !== '') {
+          this.insertText(text);
+        }
+        return;
+      }
+      if (text === '') {
+        return;
+      }
+      if (offset === 0) {
+        const prev = anchorNode.getPreviousSibling();
+        if (
+          $isTextNode(prev) &&
+          prev.canInsertTextAfter() &&
+          !$isTokenOrSegmented(prev)
+        ) {
+          prev.select();
+        } else {
+          const newNode = $createTextNode();
+          newNode.setFormat(format);
+          newNode.setStyle(style);
+          if (!anchorParent.canInsertTextBefore()) {
+            anchorParent.insertBefore(newNode);
+          } else {
+            anchorNode.insertBefore(newNode);
+          }
+          newNode.select();
+        }
+        this.insertText(text);
+        return;
+      } else if (offset === anchorSize) {
+        const next = anchorNode.getNextSibling();
+        if (
+          $isTextNode(next) &&
+          next.canInsertTextBefore() &&
+          !$isTokenOrSegmented(next)
+        ) {
+          next.select(0, 0);
+        } else {
+          const newNode = $createTextNode();
+          newNode.setFormat(format);
+          newNode.setStyle(style);
+          if (!anchorParent.canInsertTextAfter()) {
+            anchorParent.insertAfter(newNode);
+          } else {
+            anchorNode.insertAfter(newNode);
+          }
+          newNode.select(0, 0);
+        }
+        this.insertText(text);
+        return;
+      }
+      const newNode = $createTextNode(text);
+      newNode.setFormat(format);
+      newNode.setStyle(style);
+      anchorNode.replace(newNode);
+      newNode.select();
+      return;
+    }
+
+    if (text === '') {
+      return;
+    }
+
+    const atStartOfInline =
+      anchorParent.isInline() && offset === 0 && !anchorNode.__prev;
+    const atEndOfInline =
+      anchorParent.isInline() && offset === anchorSize && !anchorNode.__next;
+    const formatDiffers =
+      anchorNode.getFormat() !== format || anchorNode.getStyle() !== style;
+
+    if (atStartOfInline || atEndOfInline || formatDiffers) {
+      if (
+        anchorNode.getTextContent() === '' &&
+        !atStartOfInline &&
+        !atEndOfInline
+      ) {
+        anchorNode.setFormat(format);
+        anchorNode.setStyle(style);
+      } else {
+        $insertTextAtPoint(this, text, format, style);
+        return;
+      }
+    }
+
+    anchorNode.spliceText(offset, 0, text, true);
+    if (anchorNode.isComposing() && this.anchor.type === 'text') {
+      this.anchor.set(
+        this.anchor.key,
+        this.anchor.offset - text.length,
+        this.anchor.type,
       );
-    }
-    const startOffset = firstPoint.offset;
-    let endOffset = endPoint.offset;
-    const selectedNodes = this.getNodes();
-    const selectedNodesLength = selectedNodes.length;
-    let firstNode: TextNode = selectedNodes[0] as TextNode;
-
-    invariant(
-      $isTextNode(firstNode),
-      'insertText: first node is not a text node',
-    );
-    const firstNodeText = firstNode.getTextContent();
-    const firstNodeTextLength = firstNodeText.length;
-    const firstNodeParent = firstNode.getParentOrThrow();
-    const lastIndex = selectedNodesLength - 1;
-    let lastNode = selectedNodes[lastIndex];
-
-    if (selectedNodesLength === 1 && endPoint.type === 'element') {
-      endOffset = firstNodeTextLength;
-      endPoint.set(firstPoint.key, endOffset, 'text');
-    }
-
-    if (
-      this.isCollapsed() &&
-      startOffset === firstNodeTextLength &&
-      ($isTokenOrSegmented(firstNode) ||
-        !firstNode.canInsertTextAfter() ||
-        (!firstNodeParent.canInsertTextAfter() &&
-          firstNode.getNextSibling() === null))
-    ) {
-      const candidateNextSibling = firstNode.getNextSibling();
-      let nextSibling: TextNode;
-      if (
-        !$isTextNode(candidateNextSibling) ||
-        !candidateNextSibling.canInsertTextBefore() ||
-        $isTokenOrSegmented(candidateNextSibling)
-      ) {
-        nextSibling = $createTextNode();
-        nextSibling.setFormat(format);
-        nextSibling.setStyle(style);
-        if (!firstNodeParent.canInsertTextAfter()) {
-          firstNodeParent.insertAfter(nextSibling);
-        } else {
-          firstNode.insertAfter(nextSibling);
-        }
-      } else {
-        nextSibling = candidateNextSibling;
-      }
-      nextSibling.select(0, 0);
-      firstNode = nextSibling;
-      if (text !== '') {
-        this.insertText(text);
-        return;
-      }
-    } else if (
-      this.isCollapsed() &&
-      startOffset === 0 &&
-      ($isTokenOrSegmented(firstNode) ||
-        !firstNode.canInsertTextBefore() ||
-        (!firstNodeParent.canInsertTextBefore() &&
-          firstNode.getPreviousSibling() === null))
-    ) {
-      const candidatePrevSibling = firstNode.getPreviousSibling();
-      let prevSibling: TextNode;
-      if (
-        !$isTextNode(candidatePrevSibling) ||
-        $isTokenOrSegmented(candidatePrevSibling)
-      ) {
-        prevSibling = $createTextNode();
-        prevSibling.setFormat(format);
-        if (!firstNodeParent.canInsertTextBefore()) {
-          firstNodeParent.insertBefore(prevSibling);
-        } else {
-          firstNode.insertBefore(prevSibling);
-        }
-      } else {
-        prevSibling = candidatePrevSibling;
-      }
-      prevSibling.select();
-      firstNode = prevSibling;
-      if (text !== '') {
-        this.insertText(text);
-        return;
-      }
-    } else if (firstNode.isSegmented() && startOffset !== firstNodeTextLength) {
-      if ($getCompositionKey() !== null) {
-        // Preserve the DOM element for the browser's composition tracker.
-        // The subclass instance stays in normal mode until composition ends,
-        // when $cleanupComposedSubclass replaces it with a plain TextNode.
-        firstNode = firstNode
-          .setMode('normal')
-          .setFormat(format)
-          .setStyle(style);
-      } else {
-        const textNode = $createTextNode(firstNode.getTextContent());
-        textNode.setFormat(format);
-        firstNode.replace(textNode);
-        firstNode = textNode;
-      }
-    } else if (!this.isCollapsed() && text !== '') {
-      // When the firstNode or lastNode parents are elements that
-      // do not allow text to be inserted before or after, we first
-      // clear the content. Then we normalize selection, then insert
-      // the new content.
-      const lastNodeParent = lastNode.getParent();
-
-      if (
-        !firstNodeParent.canInsertTextBefore() ||
-        !firstNodeParent.canInsertTextAfter() ||
-        ($isElementNode(lastNodeParent) &&
-          (!lastNodeParent.canInsertTextBefore() ||
-            !lastNodeParent.canInsertTextAfter()))
-      ) {
-        this.insertText('');
-        $normalizeSelectionPointsForBoundaries(this.anchor, this.focus, null);
-        this.insertText(text);
-        return;
-      }
-    }
-
-    if (selectedNodesLength === 1) {
-      if ($isTokenOrTab(firstNode)) {
-        const textNode = $createTextNode(text);
-        textNode.select();
-        firstNode.replace(textNode);
-        return;
-      }
-      const firstNodeFormat = firstNode.getFormat();
-      const firstNodeStyle = firstNode.getStyle();
-
-      if (
-        startOffset === endOffset &&
-        (firstNodeFormat !== format || firstNodeStyle !== style)
-      ) {
-        if (firstNode.getTextContent() === '') {
-          firstNode.setFormat(format);
-          firstNode.setStyle(style);
-        } else {
-          const textNode = $createTextNode(text);
-          textNode.setFormat(format);
-          textNode.setStyle(style);
-          textNode.select();
-          if (startOffset === 0) {
-            firstNode.insertBefore(textNode, false);
-          } else {
-            const [targetNode] = firstNode.splitText(startOffset);
-            targetNode.insertAfter(textNode, false);
-          }
-          // When composing, we need to adjust the anchor offset so that
-          // we correctly replace that right range.
-          if (textNode.isComposing() && this.anchor.type === 'text') {
-            this.anchor.offset -= text.length;
-            this._cachedNodes = null;
-            this._cachedIsBackward = null;
-          }
-          return;
-        }
-      } else if ($isTabNode(firstNode)) {
-        // We don't need to check for delCount because there is only the entire selected node case
-        // that can hit here for content size 1 and with canInsertTextBeforeAfter false
-        const textNode = $createTextNode(text);
-        textNode.setFormat(format);
-        textNode.setStyle(style);
-        textNode.select();
-        firstNode.replace(textNode);
-        return;
-      }
-      const delCount = endOffset - startOffset;
-
-      firstNode = firstNode.spliceText(startOffset, delCount, text, true);
-      if (firstNode.getTextContent() === '') {
-        firstNode.remove();
-      } else if (this.anchor.type === 'text') {
-        this.format = firstNodeFormat;
-        this.style = firstNodeStyle;
-        if (firstNode.isComposing()) {
-          // When composing, we need to adjust the anchor offset so that
-          // we correctly replace that right range.
-          this.anchor.offset -= text.length;
-          this._cachedNodes = null;
-          this._cachedIsBackward = null;
-        }
-      }
-    } else {
-      const markedNodeKeysForKeep = new Set([
-        ...firstNode.getParentKeys(),
-        ...lastNode.getParentKeys(),
-      ]);
-
-      // We have to get the parent elements before the next section,
-      // as in that section we might mutate the lastNode.
-      const firstElement = $isElementNode(firstNode)
-        ? firstNode
-        : firstNode.getParentOrThrow();
-      let lastElement = $isElementNode(lastNode)
-        ? lastNode
-        : lastNode.getParentOrThrow();
-      let lastElementChild = lastNode;
-
-      // If the last element is inline, we should instead look at getting
-      // the nodes of its parent, rather than itself. This behavior will
-      // then better match how text node insertions work. We will need to
-      // also update the last element's child accordingly as we do this.
-      if (!firstElement.is(lastElement) && lastElement.isInline()) {
-        // Keep traversing till we have a non-inline element parent.
-        do {
-          lastElementChild = lastElement;
-          lastElement = lastElement.getParentOrThrow();
-        } while (lastElement.isInline());
-      }
-
-      // Handle mutations to the last node.
-      if (
-        (endPoint.type === 'text' &&
-          (endOffset !== 0 || lastNode.getTextContent() === '')) ||
-        (endPoint.type === 'element' &&
-          lastNode.getIndexWithinParent() < endOffset)
-      ) {
-        if (
-          $isTextNode(lastNode) &&
-          !$isTokenOrTab(lastNode) &&
-          endOffset !== lastNode.getTextContentSize()
-        ) {
-          if (lastNode.isSegmented()) {
-            const textNode = $createTextNode(lastNode.getTextContent());
-            lastNode.replace(textNode);
-            lastNode = textNode;
-          }
-          // root node selections only select whole nodes, so no text splice is necessary
-          if (!$isRootNode(endPoint.getNode()) && endPoint.type === 'text') {
-            invariant(
-              $isTextNode(lastNode),
-              'insertText: lastNode is not a TextNode',
-            );
-            lastNode = lastNode.spliceText(0, endOffset, '');
-          }
-          markedNodeKeysForKeep.add(lastNode.__key);
-        } else {
-          const lastNodeParent = lastNode.getParentOrThrow();
-          if (
-            !lastNodeParent.canBeEmpty() &&
-            lastNodeParent.getChildrenSize() === 1
-          ) {
-            lastNodeParent.remove();
-          } else {
-            lastNode.remove();
-          }
-        }
-      } else {
-        markedNodeKeysForKeep.add(lastNode.__key);
-      }
-
-      // Either move the remaining nodes of the last parent to after
-      // the first child, or remove them entirely. If the last parent
-      // is the same as the first parent, this logic also works.
-      const lastNodeChildren = lastElement.getChildren();
-      const selectedNodesSet = new Set(selectedNodes);
-      const firstAndLastElementsAreEqual = firstElement.is(lastElement);
-
-      // We choose a target to insert all nodes after. In the case of having
-      // and inline starting parent element with a starting node that has no
-      // siblings, we should insert after the starting parent element, otherwise
-      // we will incorrectly merge into the starting parent element.
-      // TODO: should we keep on traversing parents if we're inside another
-      // nested inline element?
-      const insertionTarget =
-        firstElement.isInline() && firstNode.getNextSibling() === null
-          ? firstElement
-          : firstNode;
-
-      for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
-        const lastNodeChild = lastNodeChildren[i];
-
-        if (
-          lastNodeChild.is(firstNode) ||
-          ($isElementNode(lastNodeChild) && lastNodeChild.isParentOf(firstNode))
-        ) {
-          break;
-        }
-
-        if (lastNodeChild.isAttached()) {
-          if (
-            !selectedNodesSet.has(lastNodeChild) ||
-            lastNodeChild.is(lastElementChild)
-          ) {
-            if (!firstAndLastElementsAreEqual) {
-              insertionTarget.insertAfter(lastNodeChild, false);
-            }
-          } else {
-            lastNodeChild.remove();
-          }
-        }
-      }
-
-      if (!firstAndLastElementsAreEqual) {
-        // Check if we have already moved out all the nodes of the
-        // last parent, and if so, traverse the parent tree and mark
-        // them all as being able to deleted too.
-        let parent: ElementNode | null = lastElement;
-        let lastRemovedParent = null;
-
-        while (parent !== null) {
-          const children = parent.getChildren();
-          const childrenLength = children.length;
-          if (
-            childrenLength === 0 ||
-            children[childrenLength - 1].is(lastRemovedParent)
-          ) {
-            markedNodeKeysForKeep.delete(parent.__key);
-            lastRemovedParent = parent;
-          }
-          parent = parent.getParent();
-        }
-      }
-
-      // Ensure we do splicing after moving of nodes, as splicing
-      // can have side-effects (in the case of hashtags).
-      if (!$isTokenOrTab(firstNode)) {
-        firstNode = firstNode.spliceText(
-          startOffset,
-          firstNodeTextLength - startOffset,
-          text,
-          true,
-        );
-        if (firstNode.getTextContent() === '') {
-          firstNode.remove();
-        } else if (this.anchor.type === 'text') {
-          this.format = firstNode.getFormat();
-          this.style = firstNode.getStyle();
-          if (firstNode.isComposing()) {
-            // When composing, we need to adjust the anchor offset so that
-            // we correctly replace that right range.
-            this.anchor.offset -= text.length;
-            this._cachedNodes = null;
-            this._cachedIsBackward = null;
-          }
-        }
-      } else if (startOffset === firstNodeTextLength) {
-        firstNode.select();
-      } else {
-        const textNode = $createTextNode(text);
-        textNode.select();
-        firstNode.replace(textNode);
-      }
-
-      // Remove all selected nodes that haven't already been removed.
-      for (let i = 1; i < selectedNodesLength; i++) {
-        const selectedNode = selectedNodes[i];
-        const key = selectedNode.__key;
-        if (!markedNodeKeysForKeep.has(key)) {
-          selectedNode.remove();
-        }
-      }
     }
   }
 
@@ -1278,8 +1079,16 @@ export class RangeSelection implements BaseSelection {
    */
   removeText(): void {
     const isCurrentSelection = $getSelection() === this;
+    const previousAnchorKey = this.anchor.key;
     const newRange = $removeTextFromCaretRange($caretRangeFromSelection(this));
     $updateRangeSelectionFromCaretRange(this, newRange);
+    // The caret can end up in a node it did not start in, e.g. backspacing
+    // an empty paragraph merges the caret into the end of the previous
+    // block. The pending format and style describe the node the caret left,
+    // so re-derive them from the node it landed on (#6781).
+    if (this.isCollapsed()) {
+      $internalRefreshSelectionFormatAndStyle(this, previousAnchorKey);
+    }
     if (isCurrentSelection && $getSelection() !== this) {
       $setSelection(this);
     }
@@ -1318,45 +1127,32 @@ export class RangeSelection implements BaseSelection {
     // slot-scoped Cmd+A leaves the selection on the slot's element point)
     // has __parent === null, so the block-finding walk below would throw.
     // Redirect into the slot subtree by collapsing the selection at the
-    // slot's first child and re-running insertNodes.
+    // slot's first child and re-running insertNodes. Only a container
+    // (shadow-root) value needs this: a block-shaped value IS the block, so
+    // the block-finding walk below (which stops at a slot host, see
+    // $removeTextAndSplitBlock) already lands on it directly at the right
+    // offset.
     const anchorNode = this.anchor.getNode();
     if (
       this.anchor.type === 'element' &&
       $isElementNode(anchorNode) &&
+      anchorNode.isShadowRoot() &&
       $getSlotHostKey(anchorNode) !== null
     ) {
-      // A container (shadow-root) value redirects into its first child; an
-      // empty one has no child to redirect into (its caret target is the
-      // reconciler's terminating <br>), so seed a paragraph first —
-      // insertNodes removes the seed again when block content replaces it. A
-      // block-shaped value (virtual shadow root around a single block) needs
-      // no seeding: it IS the block, so the block-finding walk below lands
-      // on it directly.
-      let firstChild = anchorNode.isShadowRoot()
-        ? (anchorNode.getFirstChild() ??
-          anchorNode.append($createParagraphNode()).getFirstChild())
-        : anchorNode.getFirstChild();
-      // A shadow-root slot whose first child is a non-element (typically a
-      // decorator like HorizontalRuleNode) would re-enter this same branch
-      // forever: `firstChild.selectStart()` resolves back to the slot value's
-      // own element-mode caret (no sibling, parent = the slot value root),
-      // which matches the entry condition above. Seed a paragraph before the
+      // An empty container has no child to redirect into (its caret target
+      // is the reconciler's terminating <br>), so seed a paragraph first —
+      // insertNodes removes the seed again when block content replaces it.
+      let firstChild =
+        anchorNode.getFirstChild() ??
+        anchorNode.append($createParagraphNode()).getFirstChild();
+      // A first child that is a non-element (typically a decorator like
+      // HorizontalRuleNode) would re-enter this same branch forever:
+      // `firstChild.selectStart()` resolves back to the slot value's own
+      // element-mode caret (no sibling, parent = the slot value root), which
+      // matches the entry condition above. Seed a paragraph before the
       // non-element first child so the redirected selection lands in a block
       // and the recursion terminates.
-      //
-      // The seed paragraph is the redirect target only — if `nodes` carries
-      // inline content the recursion fills the paragraph in place, and if it
-      // carries block content the recursion's root/shadow-root branch
-      // (`splice` after `$wrapInlineNodes`) inserts the new blocks before the
-      // existing non-element first child while the seed sits at offset 0 as
-      // the new shadow-root first child. In either case the seed ends up
-      // hosting either the inserted content or an empty leading line, never
-      // a stranded paragraph next to the original non-element child.
-      if (
-        anchorNode.isShadowRoot() &&
-        firstChild !== null &&
-        !$isElementNode(firstChild)
-      ) {
+      if (firstChild !== null && !$isElementNode(firstChild)) {
         const seed = $createParagraphNode();
         firstChild.insertBefore(seed);
         firstChild = seed;
@@ -1402,7 +1198,7 @@ export class RangeSelection implements BaseSelection {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
-        const index = $removeTextAndSplitBlock(this);
+        const [, index] = $removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
         last.selectEnd();
       }
@@ -1420,8 +1216,15 @@ export class RangeSelection implements BaseSelection {
         firstNode.constructor.name,
         firstNode.getType(),
       );
-      const index = $removeTextAndSplitBlock(this);
-      firstBlock.splice(index, 0, nodes);
+      // The split walk normally ends on firstBlock, but it stops early on an
+      // inline ElementNode that cannot be split, which is the only position
+      // that preserves the caret for content pasted inside such a node
+      // (#6477).
+      const [container, index] = $removeTextAndSplitBlock(this, true);
+      const insertionParent = $isElementNode(container)
+        ? container
+        : firstBlock;
+      insertionParent.splice(index, 0, nodes);
       last.selectEnd();
       return;
     }
@@ -1433,7 +1236,7 @@ export class RangeSelection implements BaseSelection {
     // stripped like the input value sanitization strips newlines, and
     // block-only decorators are dropped, having no single-line form).
     if ($isElementNode(firstBlock) && $getSlotHostKey(firstBlock) !== null) {
-      const index = $removeTextAndSplitBlock(this);
+      const [, index] = $removeTextAndSplitBlock(this);
       const inlineNodes = $extractInlineFromBlocks(nodes);
       firstBlock.splice(index, 0, inlineNodes);
       const lastInserted = inlineNodes[inlineNodes.length - 1];
@@ -1486,7 +1289,7 @@ export class RangeSelection implements BaseSelection {
       !firstBlock.isParentRequired() &&
       !$isRootOrShadowRoot(firstBlock.getParentOrThrow())
     ) {
-      const index = $removeTextAndSplitBlock(this);
+      const [, index] = $removeTextAndSplitBlock(this);
       const inlineNodes = $extractInlineFromBlocks(nodes);
       firstBlock.splice(index, 0, inlineNodes);
       const lastInserted = inlineNodes[inlineNodes.length - 1];
@@ -1541,13 +1344,24 @@ export class RangeSelection implements BaseSelection {
       INTERNAL_$isBlock,
     );
 
-    if (
-      insertedParagraph &&
-      $isElementNode(lastInsertedBlock) &&
-      (insertedParagraph.canMergeWhenEmpty() || INTERNAL_$isBlock(lastToInsert))
-    ) {
-      lastInsertedBlock.append(...insertedParagraph.getChildren());
-      insertedParagraph.remove();
+    if (insertedParagraph) {
+      if (
+        $isElementNode(lastInsertedBlock) &&
+        (insertedParagraph.canMergeWhenEmpty() ||
+          INTERNAL_$isBlock(lastToInsert))
+      ) {
+        lastInsertedBlock.append(...insertedParagraph.getChildren());
+        insertedParagraph.remove();
+      } else if (insertedParagraph.isEmpty()) {
+        // The split-off paragraph could not be merged into the last inserted
+        // block (a block-level DecoratorNode is not an ElementNode, and a
+        // container element such as a ListNode is not INTERNAL_$isBlock), but
+        // it holds no content either: it only exists because the caret sat at
+        // the end of the target block. Keeping it would leave a stray empty
+        // paragraph after the inserted node, while the non-empty case (a
+        // mid-block caret) keeps the content after the caret.
+        insertedParagraph.remove();
+      }
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
       firstBlock.remove();
@@ -1570,6 +1384,15 @@ export class RangeSelection implements BaseSelection {
    * @returns the newly inserted node.
    */
   insertParagraph(): ElementNode | null {
+    // The root/shadow-root branch below only splices a paragraph in, so the
+    // selected content has to go first. $removeTextAndSplitBlock further down
+    // does this for the other branches, but a select-all whose points stay at
+    // the element level (a document that is a single shadow root, see
+    // $selectAll) lands on the branch below and would otherwise keep the
+    // content it was replacing.
+    if (!this.isCollapsed()) {
+      this.removeText();
+    }
     const anchorNode = this.anchor.getNode();
     if (this.anchor.type === 'element' && $isRootOrShadowRoot(anchorNode)) {
       const paragraph = $createParagraphNode();
@@ -1577,7 +1400,7 @@ export class RangeSelection implements BaseSelection {
       paragraph.select();
       return paragraph;
     }
-    const index = $removeTextAndSplitBlock(this);
+    const [, index] = $removeTextAndSplitBlock(this);
     const block = $findMatchingParent(this.anchor.getNode(), INTERNAL_$isBlock);
     if (block !== null && $getSlotHostKey(block) !== null) {
       // The block IS the slot value: its virtual shadow root holds exactly
@@ -1725,21 +1548,20 @@ export class RangeSelection implements BaseSelection {
     ) {
       removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
     }
+    const focusKeyedDOM = getElementByKeyOrThrow(editor, this.focus.key);
+    let nextFocusDOM: HTMLElement | Text | null = focusKeyedDOM;
+    if (this.focus.type === 'text') {
+      nextFocusDOM = $isTextNode(focusNode)
+        ? $getDOMTextNode(focusNode, focusKeyedDOM, editor)
+        : null;
+    }
     if (this.dirty) {
       const anchorKeyedDOM = getElementByKeyOrThrow(editor, this.anchor.key);
-      const focusKeyedDOM = getElementByKeyOrThrow(editor, this.focus.key);
       let nextAnchorDOM: HTMLElement | Text | null = anchorKeyedDOM;
-      let nextFocusDOM: HTMLElement | Text | null = focusKeyedDOM;
       if (this.anchor.type === 'text') {
         const node = this.anchor.getNode();
         nextAnchorDOM = $isTextNode(node)
           ? $getDOMTextNode(node, anchorKeyedDOM, editor)
-          : null;
-      }
-      if (this.focus.type === 'text') {
-        const node = this.focus.getNode();
-        nextFocusDOM = $isTextNode(node)
-          ? $getDOMTextNode(node, focusKeyedDOM, editor)
           : null;
       }
       if (nextAnchorDOM && nextFocusDOM) {
@@ -1750,6 +1572,55 @@ export class RangeSelection implements BaseSelection {
           nextFocusDOM,
           this.focus.offset,
         );
+      }
+    }
+    // When focus sits at a TextNode boundary, pre-normalize the DOM
+    // selection into the adjacent sibling's Text node so that the
+    // native Selection.modify can cross inline-grid/flex spans (#7301).
+    if (
+      granularity === 'character' &&
+      $isTextNode(focusNode) &&
+      focusNode.isUnmergeable()
+    ) {
+      const atBoundary = isBackward
+        ? this.focus.offset === 0
+        : this.focus.offset === focusNode.getTextContentSize();
+      if (atBoundary) {
+        const sibling = $getSiblingCaret(
+          focusNode,
+          isBackward ? 'previous' : 'next',
+        ).getNodeAtCaret();
+        if ($isTextNode(sibling)) {
+          if (collapse) {
+            const sibKeyedDOM = editor.getElementByKey(sibling.getKey());
+            const sibDOM = sibKeyedDOM
+              ? $getDOMTextNode(sibling, sibKeyedDOM, editor)
+              : null;
+            if (sibDOM) {
+              const sibOffset = isBackward ? sibDOM.length : 0;
+              setDOMSelectionBaseAndExtent(
+                domSelection,
+                sibDOM,
+                sibOffset,
+                sibDOM,
+                sibOffset,
+              );
+            }
+          } else {
+            // For extend (used by deleteCharacter), native Selection.modify
+            // cannot cross inline-grid span boundaries even after
+            // pre-normalization. Set the Lexical selection directly and
+            // return early to skip the native moveNativeSelection call.
+            const sibLen = sibling.getTextContentSize();
+            if (isBackward) {
+              this.focus.set(sibling.__key, sibLen - 1, 'text');
+            } else {
+              this.focus.set(sibling.__key, 1, 'text');
+            }
+            this.dirty = true;
+            return;
+          }
+        }
       }
     }
     // We use the DOM selection.modify API here to "tell" us what the selection
@@ -1763,6 +1634,7 @@ export class RangeSelection implements BaseSelection {
       alter,
       isBackward ? 'backward' : 'forward',
       granularity,
+      rootElement,
     );
     // Guard against no ranges
     if (domSelection.rangeCount > 0) {
@@ -1855,7 +1727,28 @@ export class RangeSelection implements BaseSelection {
       const anchor = this.anchor;
       let anchorNode: TextNode | ElementNode | null = anchor.getNode();
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
-        return;
+        // Forward deletion stops at an adjacent shadow root (e.g. a table)
+        // because its content must not be merged into the block at the
+        // anchor. When that block is empty there is nothing to merge, so we
+        // fall through to the caret walk below, which removes the empty block
+        // and leaves the shadow root in place — the same result backwards
+        // delete already produces. This is restricted to a shadow root that is
+        // a sibling of the anchor block, so deleting forwards at the end of a
+        // shadow root (e.g. the last block of a table cell) still bails out.
+        // See #8075.
+        const nextSibling = $isElementNode(anchorNode)
+          ? anchorNode.getNextSibling()
+          : null;
+        if (
+          !(
+            $isElementNode(anchorNode) &&
+            anchorNode.isEmpty() &&
+            $isElementNode(nextSibling) &&
+            nextSibling.isShadowRoot()
+          )
+        ) {
+          return;
+        }
       }
       const direction = isBackward ? 'previous' : 'next';
       const initialCaret = $caretFromPoint(anchor, direction);
@@ -1865,6 +1758,32 @@ export class RangeSelection implements BaseSelection {
           .getTextSlices()
           .every(slice => slice === null || slice.distance === 0)
       ) {
+        // The caret is an element point sitting directly beside a node that
+        // renders a block cursor ($needsBlockCursorBeside). There is no text
+        // position between the two, so the only thing the keystroke can mean
+        // is "delete that node", exactly as the DecoratorNode case below
+        // does. Decorators are left to that branch since it also honours
+        // isIsolated(); an ElementNode host (a shadow root such as a table or
+        // a slot-bearing card) has no such opt-out and was previously left
+        // untouched, because the loop below descends into it as a ChildCaret
+        // and bails out at the shadow root instead of deleting it.
+        if (anchor.type === 'element') {
+          const adjacent = initialCaret.getNodeAtCaret();
+          if ($isElementNode(adjacent) && $needsBlockCursorBeside(adjacent)) {
+            const container = adjacent.getParent();
+            adjacent.remove();
+            // Removing the only block leaves the container (the root, or a
+            // shadow root such as a table cell) with nowhere to put a caret.
+            const restored = $restoreEmptyContainerParagraph(
+              container,
+              adjacent,
+            );
+            if (restored !== null) {
+              restored.selectStart();
+            }
+            return;
+          }
+        }
         // There's no text in the direction of the deletion so we can explore our options
         let state:
           | {type: 'initial'}
@@ -1919,24 +1838,6 @@ export class RangeSelection implements BaseSelection {
             } else if ($isDecoratorNode(caret.origin)) {
               if (caret.origin.isIsolated()) {
                 // do nothing, shouldn't delete an isolated decorator
-              } else if ($getSlotNames(caret.origin).length > 0) {
-                // A slot-bearing decorator is removed only as a unit by an
-                // explicit host deletion, never silently via backspace —
-                // same policy as the merge-block branch below for
-                // ElementNode-as-host. When the anchor is an empty
-                // paragraph next to the host, drop the paragraph and
-                // select the host (matches the shadow-root ElementNode
-                // path at line 1951–1962 above); otherwise leave both in
-                // place.
-                if (
-                  $isElementNode(initialRange.anchor.origin) &&
-                  initialRange.anchor.origin.isEmpty()
-                ) {
-                  initialRange.anchor.origin.remove();
-                  const nodeSelection = $createNodeSelection();
-                  nodeSelection.add(caret.origin.getKey());
-                  $setSelection(nodeSelection);
-                }
               } else if (
                 state.type === 'merge-next-block' &&
                 (caret.origin.isKeyboardSelectable() ||
@@ -1954,9 +1855,24 @@ export class RangeSelection implements BaseSelection {
               } else {
                 // When the anchor is not an empty element then the
                 // adjacent decorator is removed
-                caret.origin.remove();
+                const decorator = caret.origin;
+                const container = decorator.getParent();
+                decorator.remove();
+                const restored = $restoreEmptyContainerParagraph(
+                  container,
+                  decorator,
+                );
+                if (restored !== null) {
+                  restored.selectStart();
+                }
               }
               // always stop when a decorator is encountered
+              return;
+            } else if ($isLineBreakNode(caret.origin)) {
+              // A LineBreakNode is a single deletable unit, same as a
+              // decorator: remove it directly instead of falling through to
+              // the slot-edge boundary check below with nothing deleted.
+              caret.origin.remove();
               return;
             }
             break;
@@ -1969,8 +1885,10 @@ export class RangeSelection implements BaseSelection {
           // The cross-block merge below removes `block` (it merges into the
           // adjacent block). If `block` owns slots, that removal would discard
           // them, since slots are not children and are not carried over. Leave
-          // the caret in place instead: a slot-bearing host is removed only as
-          // a unit by an explicit host deletion, never silently via backspace.
+          // the caret in place instead: unlike an adjacent decorator host,
+          // which backspace removes as a whole unit (slots included, #8904),
+          // merging would keep the host's children while silently dropping
+          // its slots.
           if ($getSlotNames(block).length > 0) {
             return;
           }
@@ -2182,77 +2100,56 @@ export class RangeSelection implements BaseSelection {
   }
 }
 
+/** Returns true if the given value is a NodeSelection. */
 export function $isNodeSelection(x: unknown): x is NodeSelection {
   return x instanceof NodeSelection;
 }
 
 /**
- * Applies the provided format to TextNodes and inline formattable nodes
- * (e.g. DecoratorTextNode) in the selection, splitting or merging TextNodes
- * as necessary and aligning all formattable nodes to the same target format.
- *
- * For RangeSelection the target format is determined by the first TextNode in
- * the selection (same semantics as the previous RangeSelection.formatText).
- * For NodeSelection each node is toggled independently since there is no
- * TextNode to use as an alignment reference.
+ * Applies a pure bitmask transform to every formattable node in the selection
+ * in a single traversal, splitting the first and last TextNodes as necessary
+ * so that only the selected text is affected. Each node receives exactly one
+ * `setFormat(applyFormat(getFormat()))` (ElementNodes use their textFormat).
  *
  * @param selection - the selection whose nodes should be formatted.
- * @param formatType - the format type to apply.
- * @param alignWithFormat - optional 32-bit bitmask to align with (RangeSelection only).
+ * @param applyFormat - maps a node's current 32-bit format to its new format.
  */
-export function $formatText(
+function $updateTextFormat(
   selection: RangeSelection | NodeSelection,
-  formatType: TextFormatType,
-  alignWithFormat: number | null = null,
+  applyFormat: (format: number) => number,
 ): void {
   if ($isNodeSelection(selection)) {
     for (const node of selection.getNodes()) {
       if ($isInlineFormattable(node)) {
-        node.setFormat(node.getFormatFlags(formatType, null));
+        node.setFormat(applyFormat(node.getFormat()));
       }
     }
     return;
   }
 
   if (selection.isCollapsed()) {
-    selection.toggleFormat(formatType);
+    selection.setFormat(applyFormat(selection.format));
     // When changing format, we should stop composition
     $setCompositionKey(null);
     return;
   }
 
-  const selectedNodes = selection.getNodes();
   const selectedTextNodes: TextNode[] = [];
-  for (const selectedNode of selectedNodes) {
-    if ($isTextNode(selectedNode)) {
-      selectedTextNodes.push(selectedNode);
+  for (const node of selection.getNodes()) {
+    if ($isTextNode(node)) {
+      selectedTextNodes.push(node);
+    } else if ($isElementNode(node)) {
+      node.setTextFormat(applyFormat(node.getTextFormat()));
+    } else if ($isInlineFormattable(node)) {
+      node.setFormat(applyFormat(node.getFormat()));
     }
   }
 
-  const applyFormatToElements = (alignWith: number | null) => {
-    for (const node of selectedNodes) {
-      if ($isElementNode(node)) {
-        const newFormat = node.getFormatFlags(formatType, alignWith);
-        node.setTextFormat(newFormat);
-      }
-    }
-  };
-
-  const applyFormatToInlineNodes = (alignWith: number | null) => {
-    for (const node of selectedNodes) {
-      if (!$isTextNode(node) && $isInlineFormattable(node)) {
-        node.setFormat(node.getFormatFlags(formatType, alignWith));
-      }
-    }
-  };
-
   const selectedTextNodesLength = selectedTextNodes.length;
   if (selectedTextNodesLength === 0) {
-    selection.toggleFormat(formatType);
+    selection.setFormat(applyFormat(selection.format));
     // When changing format, we should stop composition
     $setCompositionKey(null);
-    applyFormatToElements(alignWithFormat);
-    applyFormatToInlineNodes(alignWithFormat);
     return;
   }
 
@@ -2276,13 +2173,6 @@ export function $formatText(
     startOffset = 0;
   }
 
-  const firstNextFormat = (firstNode ?? selectedTextNodes[0]).getFormatFlags(
-    formatType,
-    alignWithFormat,
-  );
-  applyFormatToElements(firstNextFormat);
-  applyFormatToInlineNodes(firstNextFormat);
-
   if (firstNode == null) {
     return;
   }
@@ -2298,18 +2188,19 @@ export function $formatText(
     if (startOffset === endOffset) {
       return;
     }
+    const newFormat = applyFormat(firstNode.getFormat());
     // The entire node is selected or it is token, so just format it
     if (
       $isTokenOrSegmented(firstNode) ||
       (startOffset === 0 && endOffset === firstNode.getTextContentSize())
     ) {
-      firstNode.setFormat(firstNextFormat);
+      firstNode.setFormat(newFormat);
     } else {
       // Node is partially selected, so split it into two nodes
       // and style the selected one.
       const splitNodes = firstNode.splitText(startOffset, endOffset);
       const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-      replacement.setFormat(firstNextFormat);
+      replacement.setFormat(newFormat);
 
       // Update selection only if starts/ends on text node
       if (startPoint.type === 'text') {
@@ -2320,7 +2211,7 @@ export function $formatText(
       }
     }
 
-    selection.format = firstNextFormat;
+    selection.format = newFormat;
     return;
   }
 
@@ -2330,9 +2221,10 @@ export function $formatText(
     [, firstNode] = firstNode.splitText(startOffset);
     startOffset = 0;
   }
+  const firstNextFormat = applyFormat(firstNode.getFormat());
   firstNode.setFormat(firstNextFormat);
 
-  const lastNextFormat = lastNode.getFormatFlags(formatType, firstNextFormat);
+  const lastNextFormat = applyFormat(lastNode.getFormat());
   // If the offset is 0, it means no actual characters are selected,
   // so we skip formatting the last node altogether.
   if (endOffset > 0) {
@@ -2348,8 +2240,7 @@ export function $formatText(
   // Process all text nodes in between
   for (let i = firstIndex + 1; i < lastIndex; i++) {
     const textNode = selectedTextNodes[i];
-    const nextFormat = textNode.getFormatFlags(formatType, lastNextFormat);
-    textNode.setFormat(nextFormat);
+    textNode.setFormat(applyFormat(textNode.getFormat()));
   }
 
   // Update selection only if starts/ends on text node
@@ -2361,6 +2252,74 @@ export function $formatText(
   }
 
   selection.format = firstNextFormat | lastNextFormat;
+}
+
+/**
+ * Explicitly sets or unsets text formats on the selection. Unlike $formatText
+ * which toggles based on the current selection state, this function sets each
+ * specified format to the exact boolean value provided. Mutually exclusive
+ * formats (subscript/superscript, lowercase/uppercase/capitalize) are
+ * reconciled by {@link toggleTextFormatType}, with later entries winning when
+ * the requested formats conflict.
+ *
+ * @param selection - the selection whose nodes should be formatted.
+ * @param formats - a partial record mapping TextFormatType to boolean.
+ */
+export function $setTextFormat(
+  selection: RangeSelection | NodeSelection,
+  formats: Partial<Record<TextFormatType, boolean>>,
+): void {
+  const entries: [TextFormatType, boolean][] = [];
+  for (const [type, value] of Object.entries(formats) as [
+    TextFormatType,
+    boolean | undefined,
+  ][]) {
+    if (typeof value === 'boolean') {
+      entries.push([type, value]);
+    }
+  }
+  if (entries.length === 0) {
+    return;
+  }
+  $updateTextFormat(selection, format => {
+    for (const [type, value] of entries) {
+      format = toggleTextFormatType(
+        format,
+        type,
+        value ? TEXT_TYPE_TO_FORMAT[type] : 0,
+      );
+    }
+    return format;
+  });
+}
+
+/**
+ * Applies the provided format to TextNodes and inline formattable nodes
+ * (e.g. DecoratorTextNode) in the selection, splitting or merging TextNodes
+ * as necessary and aligning all formattable nodes to the same target format.
+ *
+ * For RangeSelection the toggle direction is determined by the selection's
+ * computed format (intersection of all text nodes) when no explicit alignment
+ * is given. For NodeSelection each node is toggled independently when no
+ * explicit alignment is given, since there is no TextNode to use as an
+ * alignment reference.
+ *
+ * @param selection - the selection whose nodes should be formatted.
+ * @param formatType - the format type to apply.
+ * @param alignWithFormat - optional 32-bit bitmask to align with.
+ */
+export function $formatText(
+  selection: RangeSelection | NodeSelection,
+  formatType: TextFormatType,
+  alignWithFormat: number | null = null,
+): void {
+  const effectiveAlign =
+    alignWithFormat === null && $isRangeSelection(selection)
+      ? toggleTextFormatType(selection.format, formatType, null)
+      : alignWithFormat;
+  $updateTextFormat(selection, format =>
+    toggleTextFormatType(format, formatType, effectiveAlign),
+  );
 }
 
 function getCharacterOffset(point: PointType): number {
@@ -2375,6 +2334,7 @@ function getCharacterOffset(point: PointType): number {
     : 0;
 }
 
+/** Returns the character offsets of the selection's anchor and focus points as an [anchor, focus] tuple. */
 export function $getCharacterOffsets(
   selection: BaseSelection,
 ): [number, number] {
@@ -2429,15 +2389,69 @@ function $swapPoints(selection: RangeSelection): void {
   focus.set(anchorKey, anchorOffset, anchorType, true);
 }
 
+/**
+ * True when `node` is a DOM Text node with at least one code unit on the
+ * `direction` side of `offset`, so a character-granularity caret movement in
+ * that direction must land inside the very same text node.
+ */
+function canMoveWithinDOMText(
+  node: Node | null,
+  offset: number,
+  direction: 'backward' | 'forward' | 'left' | 'right',
+): boolean {
+  if (node === null || node.nodeType !== DOM_TEXT_TYPE) {
+    return false;
+  }
+  if (direction === 'backward') {
+    return offset > 0;
+  } else if (direction === 'forward') {
+    return offset < (node as Text).length;
+  }
+  // 'left'/'right' are visual directions, so which side of the offset they
+  // consume depends on the bidi level; no caller uses them today.
+  return false;
+}
+
 function moveNativeSelection(
   domSelection: Selection,
   alter: 'move' | 'extend',
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
+  rootElement: HTMLElement | null,
 ): void {
+  // A caret that sits where a line soft-wraps has two visual positions for
+  // one DOM offset (end of the previous line, start of the next), and which
+  // one it takes is a piece of engine state that the DOM selection API does
+  // not expose. Firefox spends the first modify() call flipping between them
+  // instead of moving, which leaves the caret — and therefore a backspace
+  // measured from it — exactly where it started (#9100).
+  const points =
+    granularity === 'character'
+      ? getDOMSelectionPoints(domSelection, rootElement)
+      : null;
+  // In the light DOM these alias the live Selection, so snapshot them.
+  const focusNode = points && points.focusNode;
+  const focusOffset = points ? points.focusOffset : 0;
   // Selection.modify() method applies a change to the current selection or cursor position,
   // but is still non-standard in some browsers.
   domSelection.modify(alter, direction, granularity);
+  if (
+    points === null ||
+    !canMoveWithinDOMText(focusNode, focusOffset, direction)
+  ) {
+    return;
+  }
+  const nextPoints = getDOMSelectionPoints(domSelection, rootElement);
+  if (
+    nextPoints.focusNode === focusNode &&
+    nextPoints.focusOffset === focusOffset
+  ) {
+    // Nothing moved even though the character to cross is in this very text
+    // node, so the call was consumed by the line-affinity flip described
+    // above. Ask for the movement again; a caret that genuinely cannot move
+    // (the start or end of the document) stays put on this call too.
+    domSelection.modify(alter, direction, granularity);
+  }
 }
 
 /**
@@ -2573,6 +2587,7 @@ function $extendSelectionForDeletion(
     'move',
     isBackward ? 'backward' : 'forward',
     granularity,
+    rootElement,
   );
   if (domSelection.rangeCount === 0) {
     return;
@@ -2585,6 +2600,30 @@ function $extendSelectionForDeletion(
     domSelection.getRangeAt(0);
   const landedContainer = landedRange.startContainer;
   const landedOffset = landedRange.startOffset;
+  // Native 'move' cannot cross inline-grid/flex span boundaries (#7301).
+  // When at the deletion-side edge of an unmergeable TextNode, extend into
+  // the adjacent sibling directly instead of relying on the native result.
+  if (
+    wasCollapsed &&
+    granularity === 'character' &&
+    anchor.type === 'text' &&
+    $isTextNode(anchorNode) &&
+    anchorNode.isUnmergeable()
+  ) {
+    const boundaryOffset = isBackward ? 0 : anchorNode.getTextContentSize();
+    if (anchorOffset === boundaryOffset) {
+      const sibling = $getSiblingCaret(
+        anchorNode,
+        isBackward ? 'previous' : 'next',
+      ).getNodeAtCaret();
+      if ($isTextNode(sibling)) {
+        const sibOffset = isBackward ? sibling.getTextContentSize() - 1 : 1;
+        selection.focus.set(sibling.__key, sibOffset, 'text');
+        selection.dirty = true;
+        return;
+      }
+    }
+  }
   // In-node character deletion (the common case): keep the focus in the
   // anchor's own text node. A native 'move' reports a caret that lands on a
   // text-node boundary as a position in the *adjacent* node, and that
@@ -3068,7 +3107,7 @@ function resolveSelectionPointOnBoundary(
         prevSibling.isInline()
       ) {
         point.set(prevSibling.__key, prevSibling.getChildrenSize(), 'element');
-      } else if ($isTextNode(prevSibling)) {
+      } else if ($isTextNode(prevSibling) && !node.isUnmergeable()) {
         point.set(
           prevSibling.__key,
           prevSibling.getTextContent().length,
@@ -3383,6 +3422,7 @@ function $internalResolveSelectionPoints(
   ];
 }
 
+/** Returns true if the given node is a non-inline ElementNode. */
 export function $isBlockElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode {
@@ -3413,12 +3453,14 @@ export function $internalMakeRangeSelection(
   return selection;
 }
 
+/** Creates a detached RangeSelection anchored at the root element origin (offset 0). */
 export function $createRangeSelection(): RangeSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new RangeSelection(anchor, focus, 0, '');
 }
 
+/** Creates an empty NodeSelection with no selected node keys. */
 export function $createNodeSelection(): NodeSelection {
   return new NodeSelection(new Set());
 }
@@ -3442,6 +3484,7 @@ export function $internalCreateSelection(
   return lastSelection.clone();
 }
 
+/** Creates a RangeSelection from the given DOM selection, or returns null if one cannot be resolved. */
 export function $createRangeSelectionFromDom(
   domSelection: Selection | null,
   editor: LexicalEditor,
@@ -3553,6 +3596,49 @@ export function $internalCreateRangeSelection(
   return newSelection;
 }
 
+/**
+ * Re-reads the format and style that a collapsed insertion would use from the
+ * selection's anchor, after `removeText` left the caret in a node it did not
+ * start in (#6781).
+ *
+ * {@link $internalCreateRangeSelection} already does this for every selection
+ * change that originates in the DOM (a click, an arrow key), which is why
+ * those keep the toolbar in sync.
+ *
+ * Landing on the same node is not a move: a format toggled on a collapsed
+ * caret is armed for the next insertion and is deliberately not backed by the
+ * node yet, so it must survive being re-selected in place.
+ *
+ * Deliberately *not* called from `ElementNode.select()`/`TextNode.select()`:
+ * those are how nearly every edit repositions its own caret, so refreshing
+ * there discards a format armed with Cmd+B on the way through Enter,
+ * Shift+Enter and paste.
+ */
+function $internalRefreshSelectionFormatAndStyle(
+  selection: RangeSelection,
+  previousAnchorKey: NodeKey,
+): void {
+  const anchor = selection.anchor;
+  if (anchor.key === previousAnchorKey) {
+    return;
+  }
+  const anchorNode = anchor.getNode();
+  let format = 0;
+  let style = '';
+  if ($isTextNode(anchorNode)) {
+    format = anchorNode.getFormat();
+    style = anchorNode.getStyle();
+  } else if ($isElementNode(anchorNode)) {
+    format = anchorNode.getTextFormat();
+    style = anchorNode.getTextStyle();
+  }
+  if (selection.format !== format || selection.style !== style) {
+    selection.format = format;
+    selection.style = style;
+    selection.dirty = true;
+  }
+}
+
 function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   const node = $getNodeByKey(point.key);
   invariant(
@@ -3594,11 +3680,13 @@ function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   }
 }
 
+/** Returns the current selection of the active editor state, or null if none exists. */
 export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;
 }
 
+/** Returns the selection from the previous editor state, or null if none existed. */
 export function $getPreviousSelection(): null | BaseSelection {
   const editor = getActiveEditor();
   return editor._editorState._selection;
@@ -4098,9 +4186,16 @@ export function $updateDOMSelection(
     }
   }
 
-  markSelectionChangeFromDOMUpdate(editor);
+  markSelectionChangeFromDOMUpdate(
+    editor,
+    nextAnchorNode,
+    nextAnchorOffset,
+    nextFocusNode,
+    nextFocusOffset,
+  );
 }
 
+/** Inserts nodes into the current selection, falling back to the previous selection or the end of the root. */
 export function $insertNodes(nodes: LexicalNode[]) {
   let selection = $getSelection() || $getPreviousSelection();
 
@@ -4166,6 +4261,7 @@ export function $generateNodesFromRawText(
   return nodes;
 }
 
+/** Returns the text content of the current selection, or an empty string if no selection exists. */
 export function $getTextContent(): string {
   const selection = $getSelection();
   if (selection === null) {
@@ -4196,7 +4292,20 @@ function $extractInlineFromBlocks(nodes: LexicalNode[]): LexicalNode[] {
   return inlineNodes;
 }
 
-function $removeTextAndSplitBlock(selection: RangeSelection): number {
+/**
+ * Removes the selected text and splits the ancestor chain at the anchor up to
+ * the nearest block, returning the node the caller should insert into and the
+ * index within it.
+ *
+ * @param stopAtUnsplittableNode - when true, stop the walk on an ElementNode
+ * that cannot be split instead of continuing past it, see
+ * {@link $splitNodeAtPoint}. The walk below never visits a block, so in
+ * practice this only ever stops on an inline ElementNode.
+ */
+function $removeTextAndSplitBlock(
+  selection: RangeSelection,
+  stopAtUnsplittableNode = false,
+): [container: LexicalNode, offset: number] {
   let selection_ = selection;
   if (!selection.isCollapsed()) {
     selection_.removeText();
@@ -4224,18 +4333,35 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   // to the document root.
   while (!INTERNAL_$isBlock(node) && $getSlotHostKey(node) === null) {
     const prevNode = node;
-    [node, offset] = $splitNodeAtPoint(node, offset);
+    [node, offset] = $splitNodeAtPoint(node, offset, stopAtUnsplittableNode);
     if (prevNode.is(node)) {
       break;
     }
   }
 
-  return offset;
+  return [node, offset];
 }
 
+/**
+ * Splits `node` at `offset`, returning the parent that now holds the two
+ * halves and the index between them.
+ *
+ * @param stopAtUnsplittableNode - an ElementNode is split by moving the
+ * children after `offset` into the node returned by its `insertNewAfter()`,
+ * but that returns null for any ElementNode that does not implement it (the
+ * base class default). Such a node cannot be split, and continuing the walk
+ * would move the insertion point past the whole node, so inline content
+ * pasted with the caret inside it would land after it instead of at the caret
+ * (#6477). When this is true the unsplittable node itself is returned so the
+ * caller inserts into it at `offset`; when false the previous behavior of
+ * ascending to the parent is kept. This does not itself test `isInline()` —
+ * the only caller that passes true is {@link $removeTextAndSplitBlock}, whose
+ * walk stops before it reaches a block.
+ */
 function $splitNodeAtPoint(
   node: LexicalNode,
   offset: number,
+  stopAtUnsplittableNode = false,
 ): [parent: ElementNode, offset: number] {
   const parent = node.getParent();
   if (!parent) {
@@ -4271,6 +4397,8 @@ function $splitNodeAtPoint(
     const newElement = node.insertNewAfter(insertPoint) as ElementNode | null;
     if (newElement) {
       newElement.append(firstToAppend, ...firstToAppend.getNextSiblings());
+    } else if (stopAtUnsplittableNode) {
+      return [node, offset];
     }
   }
   return [parent, node.getIndexWithinParent() + 1];
@@ -4452,17 +4580,31 @@ function $modifySelectionAroundDecoratorsAndBlocks(
   const collapse = alter === 'move';
   let focus = initialFocus;
   let checkForBlock = mode === 'decorators-and-blocks';
+  // An isolated decorator stops the caret. Resolving that here rather than
+  // falling through to the native measurement is what makes it a defined
+  // behavior: left to the engine it was neither — Firefox stepped over the
+  // decorator while Chromium trapped the caret on the near side of it with no
+  // way past by keyboard.
+  let isolated = false;
   if (!$isExtendableTextPointCaret(focus)) {
     for (const siblingCaret of focus) {
       checkForBlock = false;
       const {origin} = siblingCaret;
-      if ($isDecoratorNode(origin) && !origin.isIsolated()) {
+      if ($isDecoratorNode(origin)) {
+        if (origin.isIsolated()) {
+          isolated = true;
+          break;
+        }
         focus = siblingCaret;
         if (isLineBoundary && origin.isInline()) {
           continue;
         }
       }
       break;
+    }
+    if (isolated) {
+      // Handled, with the selection deliberately left where it is.
+      return true;
     }
     if (checkForBlock) {
       for (const nextCaret of $extendCaretToRange(initialFocus).iterNodeCarets(

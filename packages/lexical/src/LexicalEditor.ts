@@ -7,6 +7,8 @@
  */
 
 import type {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
+import type {KeyDownShortcut} from './LexicalEvents';
+import type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -227,6 +229,7 @@ export interface EditorThemeClasses {
   tableScrollableWrapper?: EditorThemeClassName;
   tableSelected?: EditorThemeClassName;
   tableSelection?: EditorThemeClassName;
+  tableStickyScrollbar?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   collaboration?: {
     cursor?: EditorThemeClassName;
@@ -273,6 +276,20 @@ export interface InputState {
   postDeleteSelectionToRestore: RangeSelection | null;
 
   isSelectionChangeFromDOMUpdate: boolean;
+  /**
+   * The DOM boundary points the reconciler applied when it set
+   * isSelectionChangeFromDOMUpdate, so the selectionchange handler can tell
+   * "the event for our own update" apart from a user selection that arrives
+   * while the flag is stale. WebKit fires no selectionchange at all when the
+   * applied selection matches what the DOM already had, so the flag alone can
+   * outlive its event and swallow the next real one.
+   */
+  selectionChangeFromDOMUpdatePoints: null | {
+    anchorNode: Node;
+    anchorOffset: number;
+    focusNode: Node;
+    focusOffset: number;
+  };
   isSelectionChangeFromMouseDown: boolean;
   isInsertLineBreak: boolean;
 
@@ -302,6 +319,7 @@ export function createInputState(): InputState {
     lastKeyCode: null,
     lastKeyDownTimeStamp: 0,
     postDeleteSelectionToRestore: null,
+    selectionChangeFromDOMUpdatePoints: null,
     unprocessedBeforeInputData: null,
   };
 }
@@ -666,10 +684,16 @@ function normalizePriority(
   return (priority & 7) as CommandListenerPriority;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type LexicalCommand<TPayload> = {
+declare const LexicalCommandBrand: unique symbol;
+
+export interface LexicalCommand<TPayload> {
   type?: string;
-};
+  // TPayload must be invariant
+  readonly [LexicalCommandBrand]?: (payload: TPayload) => TPayload;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyLexicalCommand = LexicalCommand<any>;
 
 /**
  * Type helper for extracting the payload type from a command.
@@ -691,16 +715,19 @@ export type LexicalCommand<TPayload> = {
  * }
  * ```
  */
-export type CommandPayloadType<TCommand extends LexicalCommand<unknown>> =
+export type CommandPayloadType<TCommand extends AnyLexicalCommand> =
   TCommand extends LexicalCommand<infer TPayload> ? TPayload : never;
+
+export type CommandPayloadArgs<TPayload> = [
+  TPayload extends undefined ? true : never,
+] extends [never]
+  ? [payload: TPayload]
+  : [payload?: TPayload];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCommandListener = CommandListener<any>;
 
-type Commands = Map<
-  LexicalCommand<unknown>,
-  Tuple5<DequeSet<AnyCommandListener>>
->;
+type Commands = Map<AnyLexicalCommand, Tuple5<DequeSet<AnyCommandListener>>>;
 
 export type ListenerMap<T> = Map<T, undefined | (() => void)>;
 
@@ -1169,6 +1196,8 @@ export class LexicalEditor {
    */
   _slotsUsed: boolean;
   /** @internal */
+  _keyDownShortcuts: null | CompiledKeyboardShortcuts<KeyDownShortcut>;
+  /** @internal */
   _inputState: InputState;
   /** @internal */
   _createEditorArgs?: undefined | CreateEditorArgs;
@@ -1239,6 +1268,7 @@ export class LexicalEditor {
     this._window = null;
     this._blockCursorElement = null;
     this._slotsUsed = false;
+    this._keyDownShortcuts = null;
     this._inputState = createInputState();
   }
 
@@ -1571,11 +1601,11 @@ export class LexicalEditor {
    * @param type - the type of command listeners to trigger.
    * @param payload - the data to pass as an argument to the command listeners.
    */
-  dispatchCommand<TCommand extends LexicalCommand<unknown>>(
+  dispatchCommand<TCommand extends AnyLexicalCommand>(
     type: TCommand,
-    payload: CommandPayloadType<TCommand>,
+    ...args: CommandPayloadArgs<CommandPayloadType<TCommand>>
   ): boolean {
-    return dispatchCommand(this, type, payload);
+    return dispatchCommand(this, type, ...args);
   }
 
   /**

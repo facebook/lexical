@@ -10,8 +10,16 @@
 /**
  * LexicalCommands
  */
+export opaque type LexicalCommand<P> = Readonly<{type?: string}>;
 
-export type LexicalCommand<P> = Readonly<{type?: string}>;
+// $FlowFixMe[unclear-type]
+export type AnyLexicalCommand = LexicalCommand<any>;
+
+export type CommandPayloadType<TCommand> =
+  TCommand extends LexicalCommand<infer P> ? P : empty;
+
+export type CommandPayloadArgs<P> =
+  [P extends void ? true : empty] extends [empty] ? [payload: P] : [payload?: P];
 
 declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<void>;
 declare export var CLICK_COMMAND: LexicalCommand<MouseEvent>;
@@ -24,6 +32,7 @@ declare export var REMOVE_TEXT_COMMAND: LexicalCommand<InputEvent | null>;
 declare export var DELETE_WORD_COMMAND: LexicalCommand<boolean>;
 declare export var DELETE_LINE_COMMAND: LexicalCommand<boolean>;
 declare export var FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType>;
+declare export var SET_TEXT_FORMAT_COMMAND: LexicalCommand<Partial<Record<TextFormatType, boolean>>>;
 declare export var UNDO_COMMAND: LexicalCommand<void>;
 declare export var REDO_COMMAND: LexicalCommand<void>;
 declare export var KEY_DOWN_COMMAND: LexicalCommand<KeyboardEvent>;
@@ -286,7 +295,7 @@ declare export class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand<P>(command: LexicalCommand<P>, payload: P): boolean;
+  dispatchCommand<P>(command: LexicalCommand<P>, ...args: CommandPayloadArgs<P>): boolean;
   hasNode(node: Class<LexicalNode>): boolean;
   hasNodes(nodes: Class<LexicalNode>[]): boolean;
   getKey(): string;
@@ -486,6 +495,7 @@ declare export class LexicalNode {
   static getType(): string;
   static clone(data: $FlowFixMe): LexicalNode;
   static importDOM(): DOMConversionMap | null;
+  static importJSON(serializedNode: $FlowFixMe): LexicalNode;
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   exportJSON(): SerializedLexicalNode;
@@ -742,6 +752,10 @@ declare export function $formatText(
 declare export function $generateNodesFromRawText(
   text: string,
 ): (TextNode | LineBreakNode)[];
+declare export function $setTextFormat(
+  selection: RangeSelection | NodeSelection,
+  formats: Partial<Record<TextFormatType, boolean>>,
+): void;
 declare export function $getSelection(): null | BaseSelection;
 declare export function $getTextContent(): string;
 declare export function $getPreviousSelection(): null | BaseSelection;
@@ -777,9 +791,7 @@ declare export class TextNode extends LexicalNode {
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
-  static getType(): string;
-  static clone(node: $FlowFixMe): TextNode;
-  constructor(text: string, key?: NodeKey): void;
+  constructor(text?: string, key?: NodeKey): void;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
   getFormat(): number;
@@ -826,6 +838,7 @@ declare export class TextNode extends LexicalNode {
 }
 export interface InlineFormattableNode {
   readonly __isInlineFormattable: true;
+  getFormat(): number;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
   hasFormat(type: TextFormatType): boolean;
   setFormat(format: number): unknown;
@@ -852,10 +865,7 @@ declare export function $isTabNode(
 ): node is TabNode;
 
 declare export class TabNode extends TextNode {
-  static getType(): string;
-  static clone(node: TabNode): TabNode;
   constructor(key?: NodeKey): void;
-  static importDOM(): DOMConversionMap | null;
   static importJSON(serializedTabNode: SerializedTabNode): TabNode;
   exportJSON(): SerializedTabNode;
 }
@@ -865,8 +875,6 @@ declare export class TabNode extends TextNode {
  */
 
 declare export class LineBreakNode extends LexicalNode {
-  static getType(): string;
-  static clone(node: LineBreakNode): LineBreakNode;
   constructor(key?: NodeKey): void;
   getTextContent(): '\n';
   createDOM(): HTMLElement;
@@ -888,8 +896,7 @@ declare export function $isLineBreakNode(
 
 declare export class RootNode extends ElementNode {
   __cachedText: null | string;
-  static getType(): string;
-  static clone(): RootNode;
+  static importJSON(serializedNode: SerializedRootNode): RootNode;
   constructor(): void;
   getTextContent(): string;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
@@ -1119,8 +1126,6 @@ declare export function $isLexicalNode(
  * LexicalParagraphNode
  */
 declare export class ParagraphNode extends ElementNode {
-  static getType(): string;
-  static clone(node: ParagraphNode): ParagraphNode;
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   insertNewAfter(
@@ -1277,6 +1282,9 @@ declare export function $getSlotHost(
 ): ElementNode | DecoratorNode<unknown> | null;
 declare export function $getSlotFrame(
   node: LexicalNode,
+): LexicalNode | null;
+declare export function $getSelectionSlotFrame(
+  selection: null | BaseSelection,
 ): LexicalNode | null;
 declare export function getDeclaredSlots(
   klass: Class<LexicalNode>,
@@ -2100,8 +2108,8 @@ export type NormalizedLexicalExtensionArgument<
   Init,
 > = [LexicalExtension<Config, Name, Output, Init>, ...Partial<Config>[]];
 export type NormalizedPeerDependency<Extension extends AnyLexicalExtension> = [
-  Extension['name'],
-  Partial<LexicalExtensionConfig<Extension>> | void,
+  name: Extension['name'],
+  config?: Partial<LexicalExtensionConfig<Extension>>,
 ] & {readonly [typeof peerDependencySymbol]: Extension};
 export type OutputComponentExtension<ComponentType> =
   // $FlowFixMe[unclear-type]
@@ -2160,3 +2168,8 @@ declare export var IS_CHROME: boolean;
 declare export var IS_FIREFOX: boolean;
 declare export var IS_IOS: boolean;
 declare export var IS_SAFARI: boolean;
+
+declare export function $isBlockFullySelected(
+  blockNode: ElementNode,
+  selectionOrRange: RangeSelection | CaretRange<CaretDirection>,
+): boolean;

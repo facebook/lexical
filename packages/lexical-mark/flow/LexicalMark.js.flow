@@ -24,9 +24,7 @@ export type SerializedMarkNode = SerializedElementNode & {
 declare export class MarkNode extends ElementNode {
   __ids: string[];
 
-  // $FlowFixMe[incompatible-variance]
-  static clone(node: this): MarkNode;
-  constructor(ids: string[], key?: NodeKey): void;
+  constructor(ids?: string[], key?: NodeKey): void;
 
   hasID(id: string): boolean;
   getIDs(): string[];

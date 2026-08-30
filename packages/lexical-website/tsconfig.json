@@ -27,6 +27,10 @@
       "@lexical/code-core": ["../lexical-code-core/src/index.ts"],
       "@lexical/code-prism": ["../lexical-code-prism/src/index.ts"],
       "@lexical/code-shiki": ["../lexical-code-shiki/src/index.ts"],
+      "@lexical/compiler": ["../lexical-compiler/src/index.ts"],
+      "@lexical/compiler/PureAnnotations": [
+        "../lexical-compiler/src/PureAnnotations.ts"
+      ],
       "@lexical/devtools-core": ["../lexical-devtools-core/src/index.ts"],
       "@lexical/dragon": ["../lexical-dragon/src/index.ts"],
       "@lexical/eslint-plugin": ["../lexical-eslint-plugin/src/index.ts"],
@@ -61,6 +65,7 @@
       "@lexical/list": ["../lexical-list/src/index.ts"],
       "@lexical/mark": ["../lexical-mark/src/index.ts"],
       "@lexical/markdown": ["../lexical-markdown/src/index.ts"],
+      "@lexical/mdast": ["../lexical-mdast/src/index.ts"],
       "@lexical/offset": ["../lexical-offset/src/index.ts"],
       "@lexical/overflow": ["../lexical-overflow/src/index.ts"],
       "@lexical/plain-text": ["../lexical-plain-text/src/index.ts"],

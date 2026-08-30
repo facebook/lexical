@@ -18,5 +18,8 @@ jobs:
       - uses: ./.github/actions/setup-pnpm
         with:
           node-version: ${{ matrix.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ matrix.node-version }}
       - run: pnpm run test-integration
       - run: pnpm run test-eslint-integration

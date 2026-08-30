@@ -8,6 +8,7 @@
 
 import {
   $create,
+  $getDocument,
   type DOMExportOutput,
   ElementNode,
   type LexicalEditor,
@@ -23,14 +24,14 @@ export class SlotContainerNode extends ElementNode {
   }
 
   createDOM(): HTMLElement {
-    const div = document.createElement('div');
+    const div = $getDocument().createElement('div');
     div.className = 'lexical-slot-container';
     return div;
   }
 
   // Export as a fragment since it "is" the slot wrapper created by the host
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    return {element: document.createDocumentFragment()};
+    return {element: $getDocument().createDocumentFragment()};
   }
 
   updateDOM(): false {

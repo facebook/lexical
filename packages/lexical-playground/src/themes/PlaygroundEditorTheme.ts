@@ -112,6 +112,7 @@ const theme: EditorThemeClasses = {
   tableScrollableWrapper: 'PlaygroundEditorTheme__tableScrollableWrapper',
   tableSelected: 'PlaygroundEditorTheme__tableSelected',
   tableSelection: 'PlaygroundEditorTheme__tableSelection',
+  tableStickyScrollbar: 'PlaygroundEditorTheme__tableStickyScrollbar',
   text: {
     bold: 'PlaygroundEditorTheme__textBold',
     capitalize: 'PlaygroundEditorTheme__textCapitalize',

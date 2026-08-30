@@ -85,7 +85,7 @@ export function registerTabIndentation(
     | ReadonlySignal<CanIndentPredicate> = $defaultCanIndent,
 ) {
   return mergeRegister(
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_TAB_COMMAND,
       event => {
         const selection = $getSelection();
@@ -98,7 +98,7 @@ export function registerTabIndentation(
             ? OUTDENT_CONTENT_COMMAND
             : INDENT_CONTENT_COMMAND
           : INSERT_TAB_COMMAND;
-        return editor.dispatchCommand(command, undefined);
+        return editor.dispatchCommand(command);
       },
       COMMAND_PRIORITY_EDITOR,
     ),
@@ -150,11 +150,11 @@ export interface TabIndentationConfig {
  * recommend using this plugin as it could negatively affect accessibility for keyboard
  * users, causing focus to become trapped within the editor.
  */
-export const TabIndentationExtension = /* @__PURE__ */ defineExtension({
+export const TabIndentationExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: /* @__PURE__ */ safeCast<TabIndentationConfig>({
+  config: safeCast<TabIndentationConfig>({
     $canIndent: $defaultCanIndent,
     disabled: false,
     maxIndent: null,

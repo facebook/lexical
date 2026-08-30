@@ -29,6 +29,7 @@ jsdom setup cost.
 | ---- | ------- | -------- |
 | `nodeMap.bench.ts` | `bench` | `Map` vs `GenMap` on clone / typing / paste / iteration / get |
 | `dom/editorCycle.bench.ts` | `bench-dom` | real `editor.update` cycle cost on a jsdom-backed editor |
+| `dom/editorOperations.bench.ts` | `bench-dom` | editor operations: split, format, delete range, paste, select-all |
 
 Helpers shared across files live in `_utils.ts` (microbench) and
 `dom/_utils.ts` (real-editor). Use them when you can; extract new helpers
@@ -100,31 +101,38 @@ register both under the same `describe` block. Vitest's summary shows the
 relative factor between benches in the same block, which is exactly what
 you want to cite in PR descriptions.
 
-**Setup state** — reset state in the `setup` callback so each iteration
-starts from a clean baseline. Vitest invokes `setup` before each timed
-iteration; allocations inside `setup` do not count toward the benchmark.
+**Setup state** — use the `setup` callback to initialize state before a
+task's measurement loop begins. Vitest invokes `setup` once per task
+(before warmup iterations and again before measured iterations), not
+per-iteration. Mutations made by the bench body accumulate across
+iterations — design accordingly (either make the body idempotent, or
+accept that it measures incremental cost on evolving state).
 
 **DCE prevention** — V8 may eliminate calls whose return values are
-unused. Each bench file should declare a module-level sink and `push`
-into it from the timed body so the call can't be elided:
+unused. Each bench file should declare a module-level scalar sink and
+assign into it from the timed body so the call can't be elided:
 
 ```ts
-const benchSinks: unknown[] = [];
+let _benchSink: unknown;
 
 bench('get', () => {
-  benchSinks.push(map.get(someKey));
+  _benchSink = map.get(someKey);
 });
 ```
 
-For loops, accumulate into a local and push the local once at the end:
+For loops, accumulate into a local and assign the local once at the end:
 
 ```ts
 bench('iterate', () => {
   let count = 0;
   for (const _ of map) count++;
-  benchSinks.push(count);
+  _benchSink = count;
 });
 ```
+
+A scalar assignment (rather than an array push) avoids unbounded memory
+growth at high iteration counts — e.g. size=100000 `get` can run millions
+of iterations per bench cycle.
 
 ## Reading results
 

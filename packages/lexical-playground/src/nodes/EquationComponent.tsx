@@ -95,7 +95,7 @@ export default function EquationComponent({
   // root-level element point that swallows further keystrokes — the
   // user sees an editor that won't accept text after a fresh equation.
   const $onEnter = useCallback(
-    (event: KeyboardEvent) => {
+    (event: null | KeyboardEvent) => {
       const latestSelection = $getSelection();
       if (
         !(
@@ -129,7 +129,7 @@ export default function EquationComponent({
         node.insertAfter(paragraph);
         paragraph.select();
       }
-      event.preventDefault();
+      event?.preventDefault();
       return true;
     },
     [nodeKey],

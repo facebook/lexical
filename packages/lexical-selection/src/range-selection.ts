@@ -12,6 +12,8 @@ import {
   $extendCaretToRange,
   $findMatchingParent,
   $getPreviousSelection,
+  $getSlotFrame,
+  $getSlotHost,
   $hasAncestor,
   $isChildCaret,
   $isDecoratorNode,
@@ -20,7 +22,9 @@ import {
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isTabNode,
   $isTextNode,
+  $isTextPointCaret,
   $setSelection,
   type BaseSelection,
   type CaretDirection,
@@ -185,6 +189,9 @@ export function $setBlocksType<T extends ElementNode>(
   // ListItemNode.replace override): both remap an element-anchored point
   // on the replaced block to {key: replacement, offset: prevSize + offset}.
   for (const prevNode of blockMap.values()) {
+    if ($getSlotHost(prevNode) !== null) {
+      continue;
+    }
     const element = $createElement();
     $afterCreateElement(prevNode, element);
     prevNode.replace(element, true);
@@ -228,6 +235,20 @@ export function $wrapNodes(
   const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
+
+  // A selection inside a bare-block named-slot value has nothing eligible to
+  // wrap: the slot value is the only block in its virtual scope and its slot
+  // assignment is managed by the node or extension that owns the slot, so
+  // this is a no-op (same rule as $setBlocksType). A shadow-root slot value
+  // is root-like and wraps its own subtree below, as usual. (A selection
+  // never crosses a slot boundary, so checking the anchor covers the whole
+  // selection.)
+  if (anchor !== null) {
+    const slotFrame = $getSlotFrame(anchor.getNode());
+    if (slotFrame !== null && !$isRootOrShadowRoot(slotFrame)) {
+      return;
+    }
+  }
 
   if (
     anchor !== null &&
@@ -546,6 +567,20 @@ export function $shouldOverrideDefaultCharacterSelection(
   );
   if ($isExtendableTextPointCaret(focusCaret)) {
     return false;
+  }
+  // At an unmergeable TextNode boundary adjacent to another plain TextNode,
+  // override so Lexical's modify() can pre-normalize across inline-grid/flex
+  // spans (#7301). Restricted to unmergeable nodes to avoid disrupting
+  // format-affinity at normal bold/italic boundaries.
+  if (
+    $isTextPointCaret(focusCaret) &&
+    !$isTabNode(focusCaret.origin) &&
+    focusCaret.origin.isUnmergeable()
+  ) {
+    const sibling = focusCaret.getNodeAtCaret();
+    if ($isTextNode(sibling) && !$isTabNode(sibling)) {
+      return true;
+    }
   }
   for (const nextCaret of $extendCaretToRange(focusCaret)) {
     if ($isChildCaret(nextCaret)) {

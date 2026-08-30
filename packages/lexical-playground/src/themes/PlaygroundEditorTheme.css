@@ -202,6 +202,32 @@
 .PlaygroundEditorTheme__tableScrollableWrapper {
   overflow-x: auto;
   margin: 0px 0px 5px 0px;
+  scrollbar-width: none;
+}
+.PlaygroundEditorTheme__tableScrollableWrapper::-webkit-scrollbar {
+  display: none;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar {
+  position: sticky;
+  bottom: 0;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  z-index: 1;
+  /* Overlap the wrapper's bottom margin so the scrollbar sits flush under
+     the table; the wrapper margin keeps the 5px gap when the scrollbar is
+     hidden (non-overflowing tables). */
+  margin-top: -5px;
+  margin-bottom: 5px;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar::-webkit-scrollbar {
+  height: 8px;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
 }
 .PlaygroundEditorTheme__tableScrollRight {
   box-shadow: inset -10px 0 10px rgba(0, 0, 0, 0.15);
@@ -609,7 +635,14 @@
   background: rgba(255, 212, 0, 0.7);
   border-bottom: 2px solid rgba(255, 212, 0, 0.7);
 }
-.PlaygroundEditorTheme__embedBlock {
+/*
+  Keep the embed's contents unselectable, but leave the decorator host and this
+  wrapper itself selectable: a browser will not extend a triple click past an
+  unselectable block, so an unselectable wrapper collapses the selection when
+  the paragraph before the embed is triple clicked (#7618). `user-select` is
+  inherited, so scoping it to the children still covers the whole embed.
+*/
+.PlaygroundEditorTheme__embedBlock > * {
   user-select: none;
 }
 .PlaygroundEditorTheme__embedBlockFocus {

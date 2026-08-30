@@ -67,6 +67,8 @@ export default [
       '**/build/',
       'packages/**/npm/',
       '**/__tests__/integration/fixtures/',
+      'packages/lexical-website/static/dev-examples/',
+      '**/dist-size/',
       '**/*.js.flow',
       '**/*.d.ts',
       '**/playwright*/',
@@ -80,6 +82,7 @@ export default [
       '**/.wxt/',
       '**/*.www.cjs',
       '**/typedoc-sidebar.cjs',
+      '**/.next/',
     ],
   },
 
@@ -351,7 +354,7 @@ export default [
             'createBinding',
           ],
           isLexicalProvider: ['updateEditor', 'updateEditorSync'],
-          isSafeDollarFunction: '$createRootNode',
+          isSafeDollarFunction: ['$createRootNode', '$createCollabElementNode'],
         }),
       ],
       '@typescript-eslint/array-type': [ERROR, {default: 'array'}],
@@ -447,16 +450,17 @@ export default [
     },
   },
 
-  // Override: Package sources - require /* @__PURE__ */ annotations on
-  // module-scope calls to the side-effect-free lexical factories
-  // (defineExtension, createCommand, defineImportRule, ...) so bundlers
-  // can tree-shake unused definitions. The pre-commit `eslint --fix`
-  // inserts them automatically. Not applied to tests (never bundled).
+  // Override: the /* @__PURE__ */ annotations on module-scope calls to the
+  // side-effect-free lexical factories are injected at build time by
+  // @lexical/compiler, so they do not belong in the sources. The
+  // rule is autofixable, which is how a branch written before the transform
+  // existed migrates: `pnpm run lint:fix`. Annotations on anything else
+  // (a third-party factory, a call inside a function body) are untouched.
   {
-    files: ['packages/**/src/**'],
-    ignores: ['packages/**/src/__tests__/**'],
+    files: ['packages/**', 'examples/**', 'dev-examples/**'],
+    ignores: ['packages/lexical-compiler/**'],
     rules: {
-      '@lexical/internal/require-pure-annotation': ERROR,
+      '@lexical/internal/no-pure-annotation': ERROR,
     },
   },
 

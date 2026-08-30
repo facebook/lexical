@@ -184,20 +184,17 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
     new ComponentPickerOption('Numbered List', {
       icon: <i className="icon number" />,
       keywords: ['numbered list', 'ordered list', 'ol'],
-      onSelect: () =>
-        editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined),
+      onSelect: () => editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND),
     }),
     new ComponentPickerOption('Bulleted List', {
       icon: <i className="icon bullet" />,
       keywords: ['bulleted list', 'unordered list', 'ul'],
-      onSelect: () =>
-        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined),
+      onSelect: () => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND),
     }),
     new ComponentPickerOption('Check List', {
       icon: <i className="icon check" />,
       keywords: ['check list', 'todo list'],
-      onSelect: () =>
-        editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined),
+      onSelect: () => editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND),
     }),
     new ComponentPickerOption('Quote', {
       icon: <i className="icon quote" />,
@@ -233,19 +230,17 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
     new ComponentPickerOption('Divider', {
       icon: <i className="icon horizontal-rule" />,
       keywords: ['horizontal rule', 'divider', 'hr'],
-      onSelect: () =>
-        editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined),
+      onSelect: () => editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND),
     }),
     new ComponentPickerOption('Page Break', {
       icon: <i className="icon page-break" />,
       keywords: ['page break', 'divider'],
-      onSelect: () => editor.dispatchCommand(INSERT_PAGE_BREAK, undefined),
+      onSelect: () => editor.dispatchCommand(INSERT_PAGE_BREAK),
     }),
     new ComponentPickerOption('Excalidraw', {
       icon: <i className="icon diagram-2" />,
       keywords: ['excalidraw', 'diagram', 'drawing'],
-      onSelect: () =>
-        editor.dispatchCommand(INSERT_EXCALIDRAW_COMMAND, undefined),
+      onSelect: () => editor.dispatchCommand(INSERT_EXCALIDRAW_COMMAND),
     }),
     new ComponentPickerOption('Poll', {
       icon: <i className="icon poll" />,
@@ -330,24 +325,22 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
     new ComponentPickerOption('Collapsible', {
       icon: <i className="icon caret-right" />,
       keywords: ['collapse', 'collapsible', 'toggle'],
-      onSelect: () =>
-        editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined),
+      onSelect: () => editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND),
     }),
     new ComponentPickerOption('Card', {
       icon: <i className="icon caret-right" />,
       keywords: ['card', 'slot', 'named slots'],
-      onSelect: () => editor.dispatchCommand(INSERT_CARD_COMMAND, undefined),
+      onSelect: () => editor.dispatchCommand(INSERT_CARD_COMMAND),
     }),
     new ComponentPickerOption('Pull Quote', {
       icon: <i className="icon quote" />,
       keywords: ['pull quote', 'quote', 'attribution', 'cite', 'slot'],
-      onSelect: () =>
-        editor.dispatchCommand(INSERT_PULLQUOTE_COMMAND, undefined),
+      onSelect: () => editor.dispatchCommand(INSERT_PULLQUOTE_COMMAND),
     }),
     new ComponentPickerOption('Review', {
       icon: <i className="icon star" />,
       keywords: ['review', 'testimonial', 'rating', 'stars', 'react', 'slot'],
-      onSelect: () => editor.dispatchCommand(INSERT_REVIEW_COMMAND, undefined),
+      onSelect: () => editor.dispatchCommand(INSERT_REVIEW_COMMAND),
     }),
     new ComponentPickerOption('Columns Layout', {
       icon: <i className="icon columns" />,

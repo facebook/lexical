@@ -932,38 +932,50 @@ test.describe('TextFormatting', () => {
     await selectCharacters(page, 'right', 5);
 
     await toggleBold(page);
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">Hello w</span>
-          <em
-            class="PlaygroundEditorTheme__textItalic"
-            data-lexical-text="true">
-            or
-          </em>
-          <span data-lexical-text="true">ld!</span>
-        </p>
-      `,
-    );
-    await assertSelection(page, {
-      anchorOffset: 6,
-      anchorPath: [0, 0, 0],
-      focusOffset: 2,
-      focusPath: [0, 2, 0],
-    });
-
-    await toggleItalic(page);
+    // selection.format = AND(bold "w", italic "or", bold "ld") = 0 → bold toggled ON
     await assertHTML(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <em
-            class="PlaygroundEditorTheme__textItalic"
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            w
+          </strong>
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            data-lexical-text="true">
+            or
+          </strong>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            ld
+          </strong>
+          <span data-lexical-text="true">!</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
+      focusOffset: 2,
+      focusPath: [0, 3, 0],
+    });
+
+    await toggleItalic(page);
+    // selection.format = AND(bold, bold+italic, bold) = bold → italic toggled ON
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             data-lexical-text="true">
             world
-          </em>
+          </strong>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -977,19 +989,26 @@ test.describe('TextFormatting', () => {
     });
 
     await toggleItalic(page);
+    // selection.format = bold+italic → italic toggled OFF → bold only
     await assertHTML(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">Hello world!</span>
+          <span data-lexical-text="true">Hello</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            world
+          </strong>
+          <span data-lexical-text="true">!</span>
         </p>
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 6,
-      anchorPath: [0, 0, 0],
-      focusOffset: 11,
-      focusPath: [0, 0, 0],
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
+      focusOffset: 5,
+      focusPath: [0, 1, 0],
     });
   });
 
@@ -1110,6 +1129,23 @@ test.describe('TextFormatting', () => {
     await page.keyboard.up('Shift');
     await toggleBold(page);
 
+    // selection.format = AND(bold "3", plain "456") = 0 → bold toggled ON
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            123456
+          </strong>
+        </p>
+      `,
+    );
+
+    // Toggle once more — now all selected text is bold → bold toggled OFF
+    await toggleBold(page);
+
     await assertHTML(
       page,
       html`
@@ -1120,22 +1156,6 @@ test.describe('TextFormatting', () => {
             12
           </strong>
           <span data-lexical-text="true">3456</span>
-        </p>
-      `,
-    );
-
-    // Toggle once more
-    await toggleBold(page);
-
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <strong
-            class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true">
-            123456
-          </strong>
         </p>
       `,
     );

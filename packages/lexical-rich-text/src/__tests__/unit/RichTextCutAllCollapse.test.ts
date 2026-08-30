@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListExtension,
+} from '@lexical/list';
 import {$createHeadingNode, RichTextExtension} from '@lexical/rich-text';
 import {
   $createTextNode,
@@ -16,8 +21,13 @@ import {
 } from 'lexical';
 import {describe, expect, onTestFinished, test} from 'vitest';
 
+const ext = defineExtension({
+  dependencies: [RichTextExtension, ListExtension],
+  name: '[5835-cut]',
+});
+
 function createEditor(): LexicalEditorWithDispose {
-  const editor = buildEditorFromExtensions(RichTextExtension);
+  const editor = buildEditorFromExtensions(ext);
   const container = document.createElement('div');
   document.body.appendChild(container);
   editor.setRootElement(container);
@@ -73,4 +83,44 @@ describe('select-all + cut collapses to an empty paragraph (#5835)', () => {
       expect($getRoot().getTextContent()).toBe('');
     });
   });
+
+  // A collapsed caret cuts nothing, so it must not dissolve the block either:
+  // Ctrl+X with no selection in an already-empty heading or list is a no-op,
+  // not a wipe.
+  test.for([
+    {
+      $block: () => $createHeadingNode('h1'),
+      expected: 'heading',
+      label: 'heading',
+    },
+    {
+      $block: () => $createListNode('bullet').append($createListItemNode()),
+      expected: 'list',
+      label: 'list',
+    },
+  ])(
+    'a collapsed caret in an empty $label cuts nothing',
+    async ({$block, expected}) => {
+      using editor = createEditor();
+      editor.update(
+        () => {
+          const block = $block();
+          $getRoot().clear().append(block);
+          block.selectStart();
+        },
+        {discrete: true},
+      );
+
+      editor.dispatchCommand(CUT_COMMAND, cutEvent());
+      await flush();
+
+      editor.read(() => {
+        expect(
+          $getRoot()
+            .getChildren()
+            .map(node => node.getType()),
+        ).toEqual([expected]);
+      });
+    },
+  );
 });

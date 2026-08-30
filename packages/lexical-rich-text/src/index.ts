@@ -565,11 +565,17 @@ async function onCutForRichText(
     () => {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
+        // A collapsed caret cuts nothing, so `removeText` is a no-op below and
+        // must not be followed by a collapse either -- otherwise Ctrl+X in an
+        // already-empty heading or list would dissolve the block.
+        const wasCollapsed = selection.isCollapsed();
         selection.removeText();
         // Cutting the whole document wipes it just as deleting does, so it has
         // to land in the same empty-editor state rather than leaving the last
         // block behind as an empty heading/quote/list (#5835).
-        INTERNAL_$collapseEmptiedRootToParagraph(selection);
+        if (!wasCollapsed) {
+          INTERNAL_$collapseEmptiedRootToParagraph(selection);
+        }
       } else if ($isNodeSelection(selection)) {
         selection.getNodes().forEach(node => node.remove());
       }

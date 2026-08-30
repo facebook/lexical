@@ -8,6 +8,7 @@
 
 import {
   deleteNextWord,
+  moveToEditorBeginning,
   selectAll,
   toggleBulletList,
 } from '../keyboardShortcuts/index.mjs';
@@ -81,5 +82,29 @@ test.describe('Select all + delete clears the editor (#5835)', () => {
     await selectAll(page);
     await deleteNextWord(page);
     await assertHTML(page, EMPTY_EDITOR);
+  });
+
+  // The collapse is for wiping a document, not for an ordinary delete that
+  // happens to empty the block. Deleting the only word from a caret extends a
+  // *collapsed* selection, so the heading has to survive -- exactly as it does
+  // when the same word is removed with repeated Backspace. jsdom stubs
+  // Selection.modify, so only a real browser exercises this path.
+  test('delete-by-word from a caret keeps the heading', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('# Heading');
+    await moveToEditorBeginning(page);
+    await deleteNextWord(page);
+    await assertHTML(
+      page,
+      html`
+        <h1 class="PlaygroundEditorTheme__h1" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </h1>
+      `,
+    );
   });
 });

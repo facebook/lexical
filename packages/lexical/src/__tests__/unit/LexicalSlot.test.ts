@@ -25,6 +25,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $getSelectionSlotFrame,
   $getSlot,
   $getSlotFrame,
   $getSlotHost,
@@ -2716,6 +2717,97 @@ describe('named-slots: slot-name type hints', () => {
     const declared: SlotName<DeclaredHostNode> = 'title';
     const undeclared: SlotName<DeclaredHostNode> = 'anything';
     expect([declared, undeclared]).toEqual(['title', 'anything']);
+  });
+});
+
+describe('$getSelectionSlotFrame', () => {
+  test('returns null for a null selection', () => {
+    using editor = createSlotEditor();
+    editor.read(() => {
+      expect($getSelectionSlotFrame(null)).toBe(null);
+    });
+  });
+
+  test('returns null for a selection outside any slot', () => {
+    using editor = createSlotEditor();
+    editor.update(
+      () => {
+        const text = $createTextNode('plain');
+        $getRoot().append($createParagraphNode().append(text));
+        text.select(0, 'plain'.length);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      expect($getSelectionSlotFrame($getSelection())).toBe(null);
+    });
+  });
+
+  test('returns the slot frame for a RangeSelection inside a slot', () => {
+    using editor = createSlotEditor();
+    let containerKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const container = $slotContainer('inside');
+        $getRoot().append(host);
+        $setSlot(host, 'title', container);
+        containerKey = container.getKey();
+        $assertNodeType(
+          container.getFirstChildOrThrow(),
+          $isParagraphNode,
+        ).selectStart();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const frame = $getSelectionSlotFrame($getSelection());
+      expect(frame && frame.getKey()).toBe(containerKey);
+    });
+  });
+
+  test('returns the slot frame for a NodeSelection inside a slot', () => {
+    // A NodeSelection is not a RangeSelection, so the frame has to come from
+    // the nodes it reports rather than from an anchor point. The same path
+    // carries every other BaseSelection implementation (TableSelection, and
+    // anything an app defines).
+    using editor = createSlotEditor();
+    let containerKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const container = $slotContainer('inside');
+        $getRoot().append(host);
+        $setSlot(host, 'title', container);
+        containerKey = container.getKey();
+        const nodeSelection = $createNodeSelection();
+        nodeSelection.add(container.getFirstChildOrThrow().getKey());
+        $setSelection(nodeSelection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const frame = $getSelectionSlotFrame($getSelection());
+      expect(frame && frame.getKey()).toBe(containerKey);
+    });
+  });
+
+  test('returns null for an empty NodeSelection', () => {
+    using editor = createSlotEditor();
+    editor.update(
+      () => {
+        $getRoot().append($createParagraphNode());
+        $setSelection($createNodeSelection());
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      expect($getSelectionSlotFrame($getSelection())).toBe(null);
+    });
   });
 });
 

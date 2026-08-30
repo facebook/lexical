@@ -148,8 +148,9 @@ export type SerializedHeadingNode = Spread<
   SerializedElementNode
 >;
 
-export const DRAG_DROP_PASTE: LexicalCommand<File[]> =
-  /* @__PURE__ */ createCommand('DRAG_DROP_PASTE_FILE');
+export const DRAG_DROP_PASTE: LexicalCommand<File[]> = createCommand(
+  'DRAG_DROP_PASTE_FILE',
+);
 
 export type SerializedQuoteNode = Spread<
   {
@@ -172,7 +173,7 @@ export type SerializedQuoteNode = Spread<
  * `<blockquote>` content. Defaults to `false`, in which case there is no
  * change to the legacy behavior (and nothing extra is serialized).
  */
-export const quoteShadowRootState = /* @__PURE__ */ createState('shadowRoot', {
+export const quoteShadowRootState = createState('shadowRoot', {
   parse: Boolean,
 });
 
@@ -257,10 +258,17 @@ export class QuoteNode extends ElementNode {
 
   // Mutation
 
-  insertNewAfter(_: RangeSelection, restoreSelection?: boolean): ParagraphNode {
+  insertNewAfter(
+    rangeSelection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ParagraphNode {
     const newBlock = $createParagraphNode();
+    newBlock.setTextFormat(rangeSelection.format);
+    newBlock.setTextStyle(rangeSelection.style);
     const direction = this.getDirection();
     newBlock.setDirection(direction);
+    newBlock.setFormat(this.getFormatType());
+    newBlock.setStyle(this.getStyle());
     this.insertAfter(newBlock, restoreSelection);
     return newBlock;
   }
@@ -585,6 +593,35 @@ function $isSelectionAtEndOfRoot(selection: RangeSelection) {
 function $isSelectionAtStartOfRoot(selection: RangeSelection) {
   const focus = selection.focus;
   return focus.key === 'root' && focus.offset === 0;
+}
+
+/**
+ * True when the selection is a collapsed element point at the very start or
+ * end of the root, beside a child that renders a block cursor (a decorator, a
+ * table or another shadow root). There is nothing past the block cursor to
+ * move to, so horizontal arrow navigation in that direction has to be a no-op.
+ * Left to the browser, the native caret escapes to the other side of the block
+ * instead and the caret appears to cycle around it. See #7999.
+ */
+function $isBlockCursorAtRootEdge(
+  selection: RangeSelection,
+  direction: CaretDirection,
+): boolean {
+  if (!selection.isCollapsed()) {
+    return false;
+  }
+  const isNext = direction === 'next';
+  if (
+    !(isNext
+      ? $isSelectionAtEndOfRoot(selection)
+      : $isSelectionAtStartOfRoot(selection))
+  ) {
+    return false;
+  }
+  const offset = selection.focus.offset;
+  return $needsBlockCursorBeside(
+    $getRoot().getChildAtIndex(isNext ? offset - 1 : offset),
+  );
 }
 
 function $isSelectionCollapsedAtFrontOfIndentedBlock(
@@ -1561,12 +1598,16 @@ export function registerRichText(
         if (!$isRangeSelection(selection)) {
           return false;
         }
+        const leftDirection = $isParentRTL(selection.anchor.getNode())
+          ? 'next'
+          : 'previous';
+        if ($isBlockCursorAtRootEdge(selection, leftDirection)) {
+          event.preventDefault();
+          return true;
+        }
         if (
           !event.shiftKey &&
-          $tryBlockCursorShadowRootNavigation(
-            selection,
-            $isParentRTL(selection.anchor.getNode()) ? 'next' : 'previous',
-          )
+          $tryBlockCursorShadowRootNavigation(selection, leftDirection)
         ) {
           event.preventDefault();
           return true;
@@ -1615,12 +1656,16 @@ export function registerRichText(
         if (!$isRangeSelection(selection)) {
           return false;
         }
+        const rightDirection = $isParentRTL(selection.anchor.getNode())
+          ? 'previous'
+          : 'next';
+        if ($isBlockCursorAtRootEdge(selection, rightDirection)) {
+          event.preventDefault();
+          return true;
+        }
         if (
           !event.shiftKey &&
-          $tryBlockCursorShadowRootNavigation(
-            selection,
-            $isParentRTL(selection.anchor.getNode()) ? 'previous' : 'next',
-          )
+          $tryBlockCursorShadowRootNavigation(selection, rightDirection)
         ) {
           event.preventDefault();
           return true;
@@ -1794,8 +1839,13 @@ export function registerRichText(
                 $normalizeSelection__EXPERIMENTAL(selection);
               $setSelection(normalizedSelection);
             }
-            editor.dispatchCommand(DRAG_DROP_PASTE, files);
           }
+          // The drop point does not always resolve to a caret (the browser
+          // returns nothing for e.g. the editor's padding). We still consume
+          // the event below, so the files have to be forwarded regardless,
+          // otherwise the drop is silently discarded. PASTE_COMMAND already
+          // dispatches DRAG_DROP_PASTE unconditionally.
+          editor.dispatchCommand(DRAG_DROP_PASTE, files);
           event.preventDefault();
           return true;
         }
@@ -1903,8 +1953,10 @@ export function registerRichText(
       PASTE_COMMAND,
       event => {
         const [, files, hasTextContent] = eventFiles(event);
-        if (shouldHandlePasteAsFiles.peek()(files, hasTextContent)) {
-          editor.dispatchCommand(DRAG_DROP_PASTE, files);
+        if (
+          shouldHandlePasteAsFiles.peek()(files, hasTextContent) &&
+          editor.dispatchCommand(DRAG_DROP_PASTE, files)
+        ) {
           return true;
         }
 

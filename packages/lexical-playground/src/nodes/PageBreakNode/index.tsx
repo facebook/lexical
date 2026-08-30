@@ -6,26 +6,22 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
+  $getDocument,
   CLICK_COMMAND,
-  COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   DecoratorNode,
-  DOMConversionMap,
-  DOMConversionOutput,
-  LexicalNode,
-  NodeKey,
-  SerializedLexicalNode,
+  type LexicalNode,
+  mergeRegister,
+  type NodeKey,
+  type SerializedLexicalNode,
 } from 'lexical';
 import * as React from 'react';
-import {useEffect} from 'react';
+import {type JSX, useEffect} from 'react';
 
 export type SerializedPageBreakNode = SerializedLexicalNode;
 
@@ -67,38 +63,14 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
 }
 
 export class PageBreakNode extends DecoratorNode<JSX.Element> {
-  static getType(): string {
-    return 'page-break';
-  }
-
-  static clone(node: PageBreakNode): PageBreakNode {
-    return new PageBreakNode(node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedPageBreakNode): PageBreakNode {
-    return $createPageBreakNode().updateFromJSON(serializedNode);
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      figure: (domNode: HTMLElement) => {
-        const tp = domNode.getAttribute('type');
-        if (tp !== this.getType()) {
-          return null;
-        }
-
-        return {
-          conversion: $convertPageBreakElement,
-          priority: COMMAND_PRIORITY_HIGH,
-        };
-      },
-    };
+  $config() {
+    return this.config('page-break', {extends: DecoratorNode});
   }
 
   createDOM(): HTMLElement {
-    const el = document.createElement('figure');
+    const el = $getDocument().createElement('hr');
     el.style.pageBreakAfter = 'always';
-    el.setAttribute('type', this.getType());
+    el.setAttribute('data-lexical-page-break', 'true');
     return el;
   }
 
@@ -117,10 +89,6 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
   decorate(): JSX.Element {
     return <PageBreakComponent nodeKey={this.__key} />;
   }
-}
-
-function $convertPageBreakElement(): DOMConversionOutput {
-  return {node: $createPageBreakNode()};
 }
 
 export function $createPageBreakNode(): PageBreakNode {

@@ -6,30 +6,34 @@
  *
  */
 
-import type {JSX} from 'react';
-
+import {caretFromPoint} from '@lexical/clipboard';
+import {
+  $generateNodesFromDOM,
+  defineImportRule,
+  DOMImportExtension,
+  sel,
+} from '@lexical/html';
 import {
   $isAutoLinkNode,
   $isLinkNode,
-  LinkNode,
+  type LinkNode,
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
-import {
-  $findMatchingParent,
-  $wrapNodeInElement,
-  mergeRegister,
-} from '@lexical/utils';
+import {$wrapNodeInElement} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelection,
+  $findMatchingParent,
   $getSelection,
   $insertNodes,
   $isNodeSelection,
   $isRootOrShadowRoot,
+  $selectAll,
   $setSelection,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  configExtension,
   createCommand,
   defineExtension,
   DRAGOVER_COMMAND,
@@ -37,10 +41,13 @@ import {
   DROP_COMMAND,
   getDOMSelectionFromTarget,
   isHTMLElement,
-  LexicalCommand,
-  LexicalEditor,
+  type LexicalCommand,
+  type LexicalEditor,
+  mergeRegister,
+  registerEventListener,
+  SKIP_DOM_SELECTION_TAG,
 } from 'lexical';
-import {useEffect, useRef, useState} from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 
 import landscapeImage from '../../images/landscape.jpg';
 import yellowFlowerImage from '../../images/yellow-flower.jpg';
@@ -48,12 +55,86 @@ import {
   $createImageNode,
   $isImageNode,
   ImageNode,
-  ImagePayload,
+  type ImagePayload,
 } from '../../nodes/ImageNode';
 import Button from '../../ui/Button';
 import {DialogActions, DialogButtonsList} from '../../ui/Dialog';
 import FileInput from '../../ui/FileInput';
 import TextInput from '../../ui/TextInput';
+
+/**
+ * Google Docs serializes its bullet/check list markers as a leading
+ * `<img>` carrying `aria-roledescription="checkbox"`. We never want to
+ * import those as ImageNodes — that yields a stray bullet image in the
+ * editor where the list marker should be.
+ */
+function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
+  return (
+    img.parentElement != null &&
+    img.parentElement.tagName === 'LI' &&
+    img.previousSibling === null &&
+    img.getAttribute('aria-roledescription') === 'checkbox'
+  );
+}
+
+const ImgRule = defineImportRule({
+  $import: (_ctx, el, $next) => {
+    const src = el.getAttribute('src');
+    if (!src || src.startsWith('file:///') || isGoogleDocCheckboxImg(el)) {
+      return $next();
+    }
+    return [
+      $createImageNode({
+        altText: el.alt,
+        height: el.height,
+        src,
+        width: el.width,
+      }),
+    ];
+  },
+  match: sel.tag('img'),
+  name: '@lexical/playground/img',
+});
+
+/**
+ * `<figcaption>` is consumed by the surrounding `<figure>` rule (its
+ * content is imported into the ImageNode's nested caption editor), so a
+ * top-level handler drops it entirely.
+ */
+const FigcaptionRule = defineImportRule({
+  $import: () => [],
+  match: sel.tag('figcaption'),
+  name: '@lexical/playground/figcaption',
+});
+
+const FigureRule = defineImportRule({
+  $import: (ctx, el) => {
+    const imported = ctx.$importChildren(el);
+    const figcaption = el.querySelector('figcaption');
+    if (figcaption) {
+      for (const imgNode of imported) {
+        if (!$isImageNode(imgNode)) {
+          continue;
+        }
+        imgNode.setShowCaption(true);
+        // The caption editor is a nested editor with its own (legacy)
+        // import pipeline; route the <figcaption> children through it.
+        imgNode.__caption.update(
+          () => {
+            $selectAll().insertNodes(
+              $generateNodesFromDOM(imgNode.__caption, figcaption),
+            );
+            $setSelection(null);
+          },
+          {tag: SKIP_DOM_SELECTION_TAG},
+        );
+      }
+    }
+    return imported;
+  },
+  match: sel.tag('figure'),
+  name: '@lexical/playground/figure',
+});
 
 export type InsertImagePayload = Readonly<ImagePayload>;
 
@@ -73,6 +154,7 @@ export function InsertImageUriDialogBody({
   return (
     <>
       <TextInput
+        autoFocus={true}
         label="Image URL"
         placeholder="i.e. https://source.unsplash.com/random"
         onChange={setSrc}
@@ -163,10 +245,7 @@ export function InsertImageDialog({
     const handler = (e: KeyboardEvent) => {
       hasModifier.current = e.altKey;
     };
-    document.addEventListener('keydown', handler);
-    return () => {
-      document.removeEventListener('keydown', handler);
-    };
+    return registerEventListener(document, 'keydown', handler);
   }, [activeEditor]);
 
   const onClick = (payload: InsertImagePayload) => {
@@ -215,11 +294,16 @@ export function InsertImageDialog({
 }
 
 export const ImagesExtension = defineExtension({
+  dependencies: [
+    configExtension(DOMImportExtension, {
+      rules: [FigcaptionRule, FigureRule, ImgRule],
+    }),
+  ],
   name: '@lexical/playground/Images',
   nodes: [ImageNode],
   register: editor =>
     mergeRegister(
-      editor.registerCommand<InsertImagePayload>(
+      editor.registerCommand(
         INSERT_IMAGE_COMMAND,
         payload => {
           const imageNode = $createImageNode(payload);
@@ -232,17 +316,17 @@ export const ImagesExtension = defineExtension({
         },
         COMMAND_PRIORITY_EDITOR,
       ),
-      editor.registerCommand<DragEvent>(
+      editor.registerCommand(
         DRAGSTART_COMMAND,
         event => $onDragStart(event),
         COMMAND_PRIORITY_HIGH,
       ),
-      editor.registerCommand<DragEvent>(
+      editor.registerCommand(
         DRAGOVER_COMMAND,
         event => $onDragover(event),
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand<DragEvent>(
+      editor.registerCommand(
         DROP_COMMAND,
         event => $onDrop(event, editor),
         COMMAND_PRIORITY_HIGH,
@@ -252,6 +336,8 @@ export const ImagesExtension = defineExtension({
 
 const TRANSPARENT_IMAGE =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+// Detached element for setDragImage() visual feedback — not inserted into
+// any DOM tree, so it does not need shadow-root-aware $getDocument().
 const img = document.createElement('img');
 img.src = TRANSPARENT_IMAGE;
 
@@ -313,7 +399,7 @@ function $onDrop(event: DragEvent, editor: LexicalEditor): boolean {
   );
   event.preventDefault();
   if (canDropImage(event)) {
-    const range = getDragSelection(event);
+    const range = getDragSelection(event, editor.getRootElement());
     node.remove();
     const rangeSelection = $createRangeSelection();
     if (range !== null && range !== undefined) {
@@ -368,17 +454,26 @@ function canDropImage(event: DragEvent): boolean {
   );
 }
 
-function getDragSelection(event: DragEvent): Range | null | undefined {
-  let range;
+function getDragSelection(
+  event: DragEvent,
+  rootElement: HTMLElement | null,
+): Range | null | undefined {
   const domSelection = getDOMSelectionFromTarget(event.target);
-  if (document.caretRangeFromPoint) {
-    range = document.caretRangeFromPoint(event.clientX, event.clientY);
+  // Pass rootElement so caretFromPoint uses caretPositionFromPoint's
+  // shadowRoots option rather than the retargeted caretRangeFromPoint.
+  const caret = caretFromPoint(event.clientX, event.clientY, rootElement);
+  if (caret !== null) {
+    const range = (caret.node.ownerDocument ?? document).createRange();
+    range.setStart(caret.node, caret.offset);
+    range.collapse(true);
+    return range;
   } else if (event.rangeParent && domSelection !== null) {
     domSelection.collapse(event.rangeParent, event.rangeOffset || 0);
-    range = domSelection.getRangeAt(0);
-  } else {
-    throw Error(`Cannot get the selection when dragging`);
+    return domSelection.getRangeAt(0);
   }
-
-  return range;
+  // The pre-shadow code returned the caretRangeFromPoint result directly,
+  // which could be null when the cursor was over a gap with no text node.
+  // The caller ($onDrop above) is written to accept null/undefined here,
+  // so preserve the original silent fall-through rather than throwing.
+  return null;
 }

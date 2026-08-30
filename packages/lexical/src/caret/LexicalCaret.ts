@@ -6,14 +6,15 @@
  *
  */
 import type {LexicalNode, NodeKey} from '../LexicalNode';
+import type {TextNode} from '../nodes/LexicalTextNode';
 
-import devInvariant from 'shared/devInvariant';
-import invariant from 'shared/invariant';
+import devInvariant from '@lexical/internal/devInvariant';
+import invariant from '@lexical/internal/invariant';
 
+import {$getSlotHostKey} from '../LexicalSlot';
 import {$getRoot, $isRootOrShadowRoot} from '../LexicalUtils';
-import {$isElementNode, ElementNode} from '../nodes/LexicalElementNode';
+import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
 import {$isRootNode} from '../nodes/LexicalRootNode';
-import {TextNode} from '../nodes/LexicalTextNode';
 
 /**
  * The direction of a caret, 'next' points towards the end of the document
@@ -587,7 +588,14 @@ function $filterByMode<T extends ElementNode>(
   node: T | null,
   mode: RootMode = 'root',
 ): T | null {
-  return MODE_PREDICATE[mode](node) ? null : node;
+  if (node === null || MODE_PREDICATE[mode](node)) {
+    return null;
+  }
+  // A slotted node's up-link is __slotHost, not __parent, so getParent() (and
+  // thus getParentOrThrow()) returns null on it. It is a hard upward boundary
+  // in every mode — like the root — so caret walks must stop at it instead of
+  // trying to rewind past a parentless node.
+  return $getSlotHostKey(node) === null ? node : null;
 }
 
 abstract class AbstractSiblingCaret<
@@ -1122,13 +1130,47 @@ export function $isTextPointCaretSlice<D extends CaretDirection>(
 }
 
 /**
+ * Return the caret if it's in the given direction, otherwise return
+ * caret.getFlipped().
+ *
+ * @param caret Any PointCaret
+ * @param direction The desired direction
+ * @returns A PointCaret in direction
+ */
+export function $getCaretInDirection<
+  Caret extends PointCaret<CaretDirection>,
+  D extends CaretDirection,
+>(
+  caret: Caret,
+  direction: D,
+):
+  | NodeCaret<D>
+  | (Caret extends TextPointCaret<TextNode, CaretDirection>
+      ? TextPointCaret<TextNode, D>
+      : never) {
+  return (caret.direction === direction ? caret : caret.getFlipped()) as
+    | NodeCaret<D>
+    | (Caret extends TextPointCaret<TextNode, CaretDirection>
+        ? TextPointCaret<TextNode, D>
+        : never);
+}
+
+/**
  * Construct a CaretRange that starts at anchor and goes to the end of the
  * document in the anchor caret's direction.
  */
 export function $extendCaretToRange<D extends CaretDirection>(
   anchor: PointCaret<D>,
 ): CaretRange<D> {
-  return $getCaretRange(anchor, $getSiblingCaret($getRoot(), anchor.direction));
+  // Use an in-document point to represent the end,
+  // iteration is inclusive of the endpoint.
+  return $getCaretRange(
+    anchor,
+    $getCaretInDirection(
+      $getChildCaret($getRoot(), flipDirection(anchor.direction)),
+      anchor.direction,
+    ),
+  );
 }
 
 /**

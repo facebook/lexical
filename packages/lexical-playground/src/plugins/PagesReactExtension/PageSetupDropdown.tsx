@@ -6,11 +6,10 @@
  *
  */
 import type {PageSetup, PageSize} from '../PagesExtension/types';
-import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
-import {useCallback, useEffect, useState} from 'react';
+import {type JSX, useCallback, useEffect, useState} from 'react';
 
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import {DEFAULT_PAGE_SETUP, PAGE_SIZES} from '../PagesExtension/constants';
@@ -21,17 +20,17 @@ function dropDownActiveClass(active: boolean): string {
   return active ? 'active dropdown-item-active' : '';
 }
 
-const MARGIN_PRESETS: ReadonlyArray<{
+const MARGIN_PRESETS: readonly {
   label: string;
   margins: PageSetup['margins'];
-}> = [
+}[] = [
   {
     label: 'Narrow (0.25")',
     margins: {bottom: 0.25, left: 0.25, right: 0.25, top: 0.25},
   },
   {
     label: 'Normal (0.4")',
-    margins: structuredClone(DEFAULT_PAGE_SETUP.margins),
+    margins: {...DEFAULT_PAGE_SETUP.margins},
   },
   {
     label: 'Moderate (0.75")',

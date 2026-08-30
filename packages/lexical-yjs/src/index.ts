@@ -7,20 +7,19 @@
  */
 
 import type {BaseBinding} from './Bindings';
-import type {LexicalCommand} from 'lexical';
-import type {
-  Doc,
-  RelativePosition,
-  Snapshot,
-  UndoManager,
-  XmlElement,
-  XmlText,
-} from 'yjs';
 
 import './types';
 
-import {createCommand} from 'lexical';
-import {UndoManager as YjsUndoManager} from 'yjs';
+import {createCommand, type LexicalCommand} from 'lexical';
+import {
+  type Doc,
+  type RelativePosition,
+  type Snapshot,
+  type UndoManager,
+  UndoManager as YjsUndoManager,
+  type XmlElement,
+  type XmlText,
+} from 'yjs';
 
 export type UserState = {
   anchorPos: null | RelativePosition;
@@ -74,7 +73,7 @@ export type Operation = {
   };
   insert: string | Record<string, unknown>;
 };
-export type Delta = Array<Operation>;
+export type Delta = Operation[];
 export type YjsNode = Record<string, unknown>;
 export type YjsEvent = Record<string, unknown>;
 export type {Provider};
@@ -83,15 +82,24 @@ export type {
   Binding,
   BindingV2,
   ClientID,
+  CreateYjsBindingOptions,
   ExcludedProperties,
 } from './Bindings';
-export {createBinding, createBindingV2__EXPERIMENTAL} from './Bindings';
+export {
+  createBinding,
+  createBindingV2__EXPERIMENTAL,
+  createYjsBinding,
+} from './Bindings';
 
 export function createUndoManager(
   binding: BaseBinding,
   root: XmlText | XmlElement,
 ): UndoManager {
   return new YjsUndoManager(root, {
+    // Bootstrapping the initial editor state is not a user edit, so it must not
+    // become an undo entry (matching a non-collab editor, where the initial
+    // state is applied with HISTORY_MERGE_TAG). See #7110.
+    captureTransaction: () => !binding.isBootstrapping,
     trackedOrigins: new Set([binding, null]),
   });
 }
@@ -138,7 +146,9 @@ export function setLocalStateFocus(
   awareness.setLocalState(localState);
 }
 export {
+  $getAnchorAndFocusForUserState,
   getAnchorAndFocusCollabNodesForUserState,
+  removeCursorHighlightRule,
   syncCursorPositions,
   type SyncCursorPositionsFn,
 } from './SyncCursors';

@@ -6,14 +6,12 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import './KatexEquationAlterer.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import * as React from 'react';
-import {useCallback, useState} from 'react';
-import {ErrorBoundary} from 'react-error-boundary';
+import {type JSX, useCallback, useState} from 'react';
 
 import Button from '../ui/Button';
 import KatexRenderer from './KatexRenderer';
@@ -58,6 +56,7 @@ export default function KatexEquationAlterer({
               setEquation(event.target.value);
             }}
             value={equation}
+            autoFocus={true}
             className="KatexEquationAlterer_textArea"
             data-test-id="equation-input"
           />
@@ -67,6 +66,7 @@ export default function KatexEquationAlterer({
               setEquation(event.target.value);
             }}
             value={equation}
+            autoFocus={true}
             className="KatexEquationAlterer_textArea"
             data-test-id="equation-input"
           />
@@ -74,13 +74,13 @@ export default function KatexEquationAlterer({
       </div>
       <div className="KatexEquationAlterer_defaultRow">Visualization </div>
       <div className="KatexEquationAlterer_centerRow">
-        <ErrorBoundary onError={e => editor._onError(e)} fallback={null}>
+        <LexicalErrorBoundary onError={e => editor._onError(e)} fallback={null}>
           <KatexRenderer
             equation={equation}
             inline={false}
             onDoubleClick={() => null}
           />
-        </ErrorBoundary>
+        </LexicalErrorBoundary>
       </div>
       <div className="KatexEquationAlterer_dialogActions">
         <Button onClick={onClick} data-test-id="equation-submit-btn">

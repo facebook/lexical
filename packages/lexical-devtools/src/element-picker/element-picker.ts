@@ -7,7 +7,7 @@
  */
 
 import ElementOverlay from './element-overlay';
-import {ElementOverlayOptions, getElementBounds} from './utils';
+import {type ElementOverlayOptions, getElementBounds} from './utils';
 
 type ElementCallback<T> = (el: HTMLElement) => T;
 type ElementPickerOptions = {
@@ -90,9 +90,24 @@ export default class ElementPicker {
       return;
     }
 
-    // Peek through the overlay to find the new target
+    // Peek through the overlay to find the new target. Descend into open
+    // shadow roots so editors mounted inside a shadow tree are pickable;
+    // document.elementFromPoint is retargeted to the outermost shadow host.
     this.overlay.ignoreCursor();
-    const elAtCursor = document.elementFromPoint(this.mouseX, this.mouseY);
+    let elAtCursor: Element | null = document.elementFromPoint(
+      this.mouseX,
+      this.mouseY,
+    );
+    while (elAtCursor !== null && elAtCursor.shadowRoot !== null) {
+      const inner = elAtCursor.shadowRoot.elementFromPoint(
+        this.mouseX,
+        this.mouseY,
+      );
+      if (inner === null || inner === elAtCursor) {
+        break;
+      }
+      elAtCursor = inner;
+    }
     let newTarget = elAtCursor as HTMLElement;
     this.overlay.captureCursor();
 

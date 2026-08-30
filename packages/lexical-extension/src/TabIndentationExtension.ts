@@ -6,13 +6,6 @@
  *
  */
 
-import type {
-  ElementNode,
-  LexicalCommand,
-  LexicalEditor,
-  RangeSelection,
-} from 'lexical';
-
 import {
   $getNearestBlockElementAncestorOrThrow,
   $handleIndentAndOutdent,
@@ -26,11 +19,15 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
   defineExtension,
+  type ElementNode,
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
   mergeRegister,
   OUTDENT_CONTENT_COMMAND,
+  type RangeSelection,
   safeCast,
 } from 'lexical';
 
@@ -70,9 +67,16 @@ function $indentOverTab(selection: RangeSelection): boolean {
 export type CanIndentPredicate = (node: ElementNode) => boolean;
 
 function $defaultCanIndent(node: ElementNode) {
-  return node.canBeEmpty();
+  return node.canIndent();
 }
 
+/**
+ * Registers a `KEY_TAB_COMMAND` handler that makes Tab and Shift+Tab indent and
+ * outdent block elements (and otherwise insert a tab). Pass `maxIndent` to cap
+ * the indent depth and `$canIndent` to control which elements may be indented.
+ *
+ * @returns A cleanup function that unregisters the handler.
+ */
 export function registerTabIndentation(
   editor: LexicalEditor,
   maxIndent?: number | ReadonlySignal<null | number>,
@@ -81,7 +85,7 @@ export function registerTabIndentation(
     | ReadonlySignal<CanIndentPredicate> = $defaultCanIndent,
 ) {
   return mergeRegister(
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_TAB_COMMAND,
       event => {
         const selection = $getSelection();
@@ -94,7 +98,7 @@ export function registerTabIndentation(
             ? OUTDENT_CONTENT_COMMAND
             : INDENT_CONTENT_COMMAND
           : INSERT_TAB_COMMAND;
-        return editor.dispatchCommand(command, undefined);
+        return editor.dispatchCommand(command);
       },
       COMMAND_PRIORITY_EDITOR,
     ),

@@ -19,7 +19,7 @@ import type {CodeNode} from '@lexical/code';
  */
 
 export type Tokenizer = {
-  defaultLanguage: string;
+  defaultLanguage: string | null;
   defaultTheme: string;
   $tokenize: (codeNode: CodeNode, language?: string) => LexicalNode[];
 }

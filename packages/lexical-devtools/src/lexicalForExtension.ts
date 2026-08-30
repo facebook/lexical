@@ -14,7 +14,7 @@
  * - "instanceof" operator does not work correctly again due to the same issue.
  * So we hijack calls to the original Lexical APIs and implement extension specific workarounds
  */
-import * as lexical from 'lexicalOriginal';
+import type * as lexical from 'lexicalOriginal';
 
 export * from 'lexicalOriginal';
 

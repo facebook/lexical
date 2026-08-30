@@ -18,13 +18,15 @@ import {execSync} from 'child_process';
 
 /**
  * Executes a shell command and returns the output
+ * @param {string} command the shell command to execute
+ * @returns {string | null} the trimmed stdout, or null if the command failed
  */
 function exec(command) {
   try {
     return execSync(command, {encoding: 'utf8'}).trim();
   } catch (error) {
     console.error(`Error executing command: ${command}`);
-    console.error(error.message);
+    console.error(/** @type {Error} */ (error).message);
     return null;
   }
 }
@@ -105,7 +107,10 @@ async function findAllPRReviewers() {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     } catch (error) {
-      console.error('Error parsing response:', error.message);
+      console.error(
+        'Error parsing response:',
+        /** @type {Error} */ (error).message,
+      );
       break;
     }
   }

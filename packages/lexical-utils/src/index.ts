@@ -6,15 +6,31 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
+import {$isAtEdgeOfElement} from '@lexical/selection';
+import {
+  $isExtendableTextPointCaret,
+  CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
+  getParentElement,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from 'lexical';
 import {
   $caretFromPoint,
   $caretRangeFromSelection,
   $cloneWithProperties,
   $createParagraphNode,
   $findMatchingParent,
+  $fullReconcile,
   $getAdjacentChildCaret,
   $getAdjacentSiblingOrParentSiblingCaret,
-  $getCaretInDirection,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
@@ -24,11 +40,16 @@ import {
   $getRoot,
   $getSelection,
   $getSiblingCaret,
+  $getSlot,
+  $getSlotHost,
+  $getSlotNames,
   $getState,
+  $insertNodeToNearestRootAtCaret,
   $isChildCaret,
   $isElementNode,
   $isRangeSelection,
   $isSiblingCaret,
+  $isSlotHost,
   $isTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
@@ -39,41 +60,29 @@ import {
   $splitAtPointCaretNext,
   type CaretDirection,
   type EditorState,
-  ElementNode,
+  type ElementNode,
   type Klass,
   type LexicalEditor,
   type LexicalNode,
   makeStepwiseIterator,
   type NodeCaret,
   type NodeKey,
-  PointCaret,
+  type PasteCommandType,
+  type PointCaret,
+  type PointType,
   type SiblingCaret,
-  SplitAtPointCaretNextOptions,
-  StateConfig,
-  ValueOrUpdater,
+  type StateConfig,
+  type ValueOrUpdater,
 } from 'lexical';
-// This underscore postfixing is used as a hotfix so we do not
-// export shared types from this module #5918
-import {CAN_USE_DOM as CAN_USE_DOM_} from 'shared/canUseDOM';
-import {
-  CAN_USE_BEFORE_INPUT as CAN_USE_BEFORE_INPUT_,
-  IS_ANDROID as IS_ANDROID_,
-  IS_ANDROID_CHROME as IS_ANDROID_CHROME_,
-  IS_APPLE as IS_APPLE_,
-  IS_APPLE_WEBKIT as IS_APPLE_WEBKIT_,
-  IS_CHROME as IS_CHROME_,
-  IS_FIREFOX as IS_FIREFOX_,
-  IS_IOS as IS_IOS_,
-  IS_SAFARI as IS_SAFARI_,
-} from 'shared/environment';
-import invariant from 'shared/invariant';
 
+export {default as dedupeSelectionRects} from './dedupeSelectionRects';
 export {default as markSelection} from './markSelection';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
 export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';
 export {
   $findMatchingParent,
   $getAdjacentSiblingOrParentSiblingCaret,
+  $isBlockFullySelected,
   $splitNode,
   addClassNamesToElement,
   isBlockDomNode,
@@ -83,17 +92,20 @@ export {
   mergeRegister,
   removeClassNamesFromElement,
 } from 'lexical';
-// Hotfix to export these with inlined types #5918
-export const CAN_USE_BEFORE_INPUT: boolean = CAN_USE_BEFORE_INPUT_;
-export const CAN_USE_DOM: boolean = CAN_USE_DOM_;
-export const IS_ANDROID: boolean = IS_ANDROID_;
-export const IS_ANDROID_CHROME: boolean = IS_ANDROID_CHROME_;
-export const IS_APPLE: boolean = IS_APPLE_;
-export const IS_APPLE_WEBKIT: boolean = IS_APPLE_WEBKIT_;
-export const IS_CHROME: boolean = IS_CHROME_;
-export const IS_FIREFOX: boolean = IS_FIREFOX_;
-export const IS_IOS: boolean = IS_IOS_;
-export const IS_SAFARI: boolean = IS_SAFARI_;
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
+export {
+  CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+};
 
 /**
  * Returns true if the file type matches the types passed within the acceptableMimeTypes array, false otherwise.
@@ -103,10 +115,7 @@ export const IS_SAFARI: boolean = IS_SAFARI_;
  * @param acceptableMimeTypes - An array of strings of types which the file is checked against.
  * @returns true if the file is an acceptable mime type, false otherwise.
  */
-export function isMimeType(
-  file: File,
-  acceptableMimeTypes: Array<string>,
-): boolean {
+export function isMimeType(file: File, acceptableMimeTypes: string[]): boolean {
   for (const acceptableType of acceptableMimeTypes) {
     if (file.type.startsWith(acceptableType)) {
       return true;
@@ -127,12 +136,12 @@ export function isMimeType(
  * \\}));
  */
 export function mediaFileReader(
-  files: Array<File>,
-  acceptableMimeTypes: Array<string>,
-): Promise<Array<{file: File; result: string}>> {
+  files: File[],
+  acceptableMimeTypes: string[],
+): Promise<{file: File; result: string}[]> {
   const filesIterator = files[Symbol.iterator]();
   return new Promise((resolve, reject) => {
-    const processed: Array<{file: File; result: string}> = [];
+    const processed: {file: File; result: string}[] = [];
     const handleNextFile = () => {
       const {done, value: file} = filesIterator.next();
       if (done) {
@@ -168,6 +177,11 @@ export interface DFSNode {
  * branch until you hit a dead-end (leaf) and backtracking to find the nearest branching path and repeat.
  * It will then return all the nodes found in the search in an array of objects.
  * Preorder traversal is used, meaning that nodes are listed in the order of when they are FIRST encountered.
+ *
+ * Children-only spine: named slot subtrees are skipped. Use {@link $dfsWithSlots}
+ * when you need to descend into slots (e.g. character counting, slot-aware
+ * content extraction).
+ *
  * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
  * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode. If endNode
  * is an ElementNode, it will stop before visiting any of its children.
@@ -177,7 +191,7 @@ export interface DFSNode {
 export function $dfs(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): Array<DFSNode> {
+): DFSNode[] {
   return Array.from($dfsIterator(startNode, endNode));
 }
 
@@ -194,21 +208,39 @@ export function $getAdjacentCaret<D extends CaretDirection>(
 }
 
 /**
- * $dfs iterator (right to left). Tree traversal is done on the fly as new values are requested with O(1) memory.
- * @param startNode - The node to start the search, if omitted, it will start at the root node.
- * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
- * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ * Right-to-left mirror of {@link $dfs}. It returns all the nodes found in the
+ * search in an array of objects.
+ * Preorder traversal is used, meaning that nodes are listed in the order of when they are FIRST encountered.
+ *
+ * Children-only spine: named slot subtrees are skipped. Use {@link $reverseDfsWithSlots}
+ * when you need to descend into slots (e.g. character counting, slot-aware
+ * content extraction).
+ *
+ * The whole traversal is materialized. Use {@link $reverseDfsIterator} to walk
+ * it on the fly with O(1) memory.
+ *
+ * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
+ * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode. If endNode
+ * is an ElementNode, it will stop before visiting any of its children.
+ * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
+ * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
  */
 export function $reverseDfs(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): Array<DFSNode> {
+): DFSNode[] {
   return Array.from($reverseDfsIterator(startNode, endNode));
 }
 
 /**
  * $dfs iterator (left to right). Tree traversal is done on the fly as new values are requested with O(1) memory.
  * Preorder traversal is used, meaning that nodes are iterated over in the order of when they are FIRST encountered.
+ *
+ * Children-only spine: named slot subtrees are skipped. Use {@link $dfsWithSlotsIterator}
+ * (or {@link $dfsWithSlots}) when you need to descend into slots — e.g. character
+ * counting, content extraction, or any cross-tree analysis where slotted content
+ * should be visited.
+ *
  * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
  * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode.
  * If endNode is an ElementNode, the iterator will end as soon as it reaches the endNode (no children will be visited).
@@ -219,6 +251,84 @@ export function $dfsIterator(
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
   return $dfsCaretIterator('next', startNode, endNode);
+}
+
+/**
+ * Like {@link $dfs}, but also descends into named slots. Slots are not on the
+ * linked-list spine, so each host's slot subtrees are emitted slots-first,
+ * right after the host node and before its linked-list children.
+ * @experimental
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Like {@link $dfs}, reaching endNode stops the traversal before visiting any of its
+ * children — including its slot subtrees. An endNode strictly inside a slot subtree
+ * is never reached (slot subtrees are spliced in whole), so it does not truncate
+ * the traversal.
+ * @returns An array of DFSNodes. It will always return at least 1 node (the start node).
+ */
+export function $dfsWithSlots(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSNode[] {
+  return Array.from($dfsWithSlotsIterator(startNode, endNode));
+}
+
+/**
+ * Slot-aware {@link $dfsIterator}: a host's slot subtrees are emitted
+ * slots-first, right after the host node and before its linked-list children.
+ * The caret iterator drives the linked-list spine untouched.
+ * @experimental
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Like {@link $dfs}, reaching endNode stops the traversal before visiting any of its
+ * children — including its slot subtrees. An endNode strictly inside a slot subtree
+ * is never reached (slot subtrees are spliced in whole), so it does not truncate
+ * the traversal.
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ */
+export function* $dfsWithSlotsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): IterableIterator<DFSNode> {
+  for (const dfsNode of $dfsCaretIterator('next', startNode, endNode)) {
+    yield dfsNode;
+    const {node, depth} = dfsNode;
+    // endNode is an inclusive stop: none of its children are visited, so its
+    // slot subtrees must not be either.
+    if ($isSlotHost(node) && !node.is(endNode)) {
+      for (const name of $getSlotNames(node)) {
+        const slot = $getSlot(node, name);
+        if (slot !== null) {
+          yield* $dfsSubtreeIterator(slot, depth + 1);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Slots-first preorder traversal of a self-contained subtree (a slot node and
+ * everything it owns). Used to splice slot subtrees into $dfsWithSlotsIterator.
+ */
+function* $dfsSubtreeIterator(
+  node: LexicalNode,
+  depth: number,
+): IterableIterator<DFSNode> {
+  yield {depth, node};
+  const childDepth = depth + 1;
+  if ($isSlotHost(node)) {
+    for (const name of $getSlotNames(node)) {
+      const slot = $getSlot(node, name);
+      if (slot !== null) {
+        yield* $dfsSubtreeIterator(slot, childDepth);
+      }
+    }
+  }
+  if ($isElementNode(node)) {
+    for (const child of node.getChildren()) {
+      yield* $dfsSubtreeIterator(child, childDepth);
+    }
+  }
 }
 
 function $getEndCaret<D extends CaretDirection>(
@@ -291,7 +401,8 @@ export function $getDepth(node: null | LexicalNode): number {
   for (
     let innerNode = node;
     innerNode !== null;
-    innerNode = innerNode.getParent()
+    // A slotted node has no parent; climb its slot host instead.
+    innerNode = innerNode.getParent() ?? $getSlotHost(innerNode)
   ) {
     depth++;
   }
@@ -327,6 +438,107 @@ export function $reverseDfsIterator(
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
   return $dfsCaretIterator('previous', startNode, endNode);
+}
+
+/**
+ * Like {@link $reverseDfs}, but also descends into named slots. Mirror of
+ * {@link $dfsWithSlots}.
+ * @experimental
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Mirroring {@link $dfsWithSlots}, reaching endNode stops the traversal without
+ * emitting its slot subtrees. An endNode strictly inside a slot subtree is never
+ * reached (slot subtrees are spliced in whole), so it does not truncate the
+ * traversal.
+ * @returns An array of DFSNodes. It will always return at least 1 node (the start node).
+ */
+export function $reverseDfsWithSlots(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSNode[] {
+  return Array.from($reverseDfsWithSlotsIterator(startNode, endNode));
+}
+
+/**
+ * Right-to-left mirror of {@link $dfsWithSlotsIterator}. Forward visits slots
+ * before children, so the mirror visits them last: a host's slot subtrees are
+ * emitted (in reverse slot order) only once its linked-list subtree is fully
+ * traversed. Because the caret spine streams nodes, "left the host subtree" is
+ * detected when a node at the host's depth or shallower arrives, flushing the
+ * host's pending slots. The caret iterator drives the spine untouched.
+ * @experimental
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Mirroring {@link $dfsWithSlotsIterator}, reaching endNode stops the traversal
+ * without emitting its slot subtrees. An endNode strictly inside a slot subtree is
+ * never reached (slot subtrees are spliced in whole), so it does not truncate the
+ * traversal.
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ */
+export function* $reverseDfsWithSlotsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): IterableIterator<DFSNode> {
+  const pending: {depth: number; node: LexicalNode}[] = [];
+  for (const dfsNode of $dfsCaretIterator('previous', startNode, endNode)) {
+    while (
+      pending.length > 0 &&
+      dfsNode.depth <= pending[pending.length - 1].depth
+    ) {
+      const host = pending.pop()!;
+      yield* $reverseSlotsOf(host.node, host.depth + 1);
+    }
+    yield dfsNode;
+    const {node, depth} = dfsNode;
+    // endNode is an inclusive stop: mirror the forward iterator and leave its
+    // slot subtrees unvisited rather than flushing them after the stop.
+    if (
+      $isSlotHost(node) &&
+      $getSlotNames(node).length > 0 &&
+      !node.is(endNode)
+    ) {
+      pending.push({depth, node});
+    }
+  }
+  while (pending.length > 0) {
+    const host = pending.pop()!;
+    yield* $reverseSlotsOf(host.node, host.depth + 1);
+  }
+}
+
+/** Emit a host's slot subtrees in reverse slot order (mirror of slots-first). */
+function* $reverseSlotsOf(
+  host: LexicalNode,
+  childDepth: number,
+): IterableIterator<DFSNode> {
+  const names = $getSlotNames(host);
+  for (let i = names.length - 1; i >= 0; i--) {
+    const slot = $getSlot(host, names[i]);
+    if (slot !== null) {
+      yield* $reverseDfsSubtreeIterator(slot, childDepth);
+    }
+  }
+}
+
+/**
+ * Right-to-left slots-last preorder of a self-contained subtree: children in
+ * reverse order, then slots in reverse order. Mirror of $dfsSubtreeIterator.
+ */
+function* $reverseDfsSubtreeIterator(
+  node: LexicalNode,
+  depth: number,
+): IterableIterator<DFSNode> {
+  yield {depth, node};
+  const childDepth = depth + 1;
+  if ($isElementNode(node)) {
+    const children = node.getChildren();
+    for (let i = children.length - 1; i >= 0; i--) {
+      yield* $reverseDfsSubtreeIterator(children[i], childDepth);
+    }
+  }
+  if ($isSlotHost(node)) {
+    yield* $reverseSlotsOf(node, childDepth);
+  }
 }
 
 /**
@@ -414,8 +626,8 @@ export function registerNestedElementResolver<N extends ElementNode>(
       }
     }
 
-    let parentNode: N | null = node;
-    let childNode = node;
+    let parentNode: ElementNode | null = node;
+    let childNode: ElementNode = node;
 
     while (parentNode !== null) {
       childNode = parentNode;
@@ -476,7 +688,6 @@ export function $restoreEditorState(
   editor: LexicalEditor,
   editorState: EditorState,
 ): void {
-  const FULL_RECONCILE = 2;
   const nodeMap = new Map();
   const activeEditorState = editor._pendingEditorState;
 
@@ -488,9 +699,23 @@ export function $restoreEditorState(
     activeEditorState._nodeMap = nodeMap;
   }
 
-  editor._dirtyType = FULL_RECONCILE;
+  $fullReconcile();
   const selection = editorState._selection;
   $setSelection(selection === null ? null : selection.clone());
+}
+
+/**
+ * Determine whether anything follows the given caret before the end of its
+ * nearest root (see {@link lexical!$isRootOrShadowRoot}).
+ */
+function $hasContentAfter(caret: PointCaret<'next'>): boolean {
+  return (
+    $isExtendableTextPointCaret(caret) ||
+    $getAdjacentSiblingOrParentSiblingCaret(
+      $isTextPointCaret(caret) ? caret.getSiblingCaret() : caret,
+      'shadowRoot',
+    ) !== null
+  );
 }
 
 /**
@@ -520,7 +745,18 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
         .getFlipped()
         .insert($createParagraphNode());
   }
-  const insertCaret = $insertNodeToNearestRootAtCaret(node, initialCaret);
+  // Splitting at the end of a block would otherwise leave an empty copy of
+  // that block after the inserted node. That empty block is only useful when
+  // the insertion point is at the very end of its nearest root, where it is
+  // the only place left for the selection to go. Anywhere else it is a
+  // spurious extra paragraph (#5433).
+  const insertCaret = $insertNodeToNearestRootAtCaret(
+    node,
+    initialCaret,
+    $hasContentAfter(initialCaret)
+      ? {$shouldSplit: (_node, edge) => edge !== 'last'}
+      : undefined,
+  );
   const adjacent = $getAdjacentChildCaret(insertCaret);
   const selectionCaret = $isChildCaret(adjacent)
     ? $normalizeCaret(adjacent)
@@ -529,70 +765,8 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
   return node.getLatest();
 }
 
-/**
- * If the insertion caret is the root/shadow root node (see {@link lexical!$isRootOrShadowRoot}),
- * the node will be inserted there, otherwise the parent nodes will be split according to the
- * given options.
- * @param node - The node to be inserted
- * @param caret - The location to insert or split from
- * @returns The node after its insertion
- */
-export function $insertNodeToNearestRootAtCaret<
-  T extends LexicalNode,
-  D extends CaretDirection,
->(
-  node: T,
-  caret: PointCaret<D>,
-  options?: SplitAtPointCaretNextOptions,
-): NodeCaret<D> {
-  let insertCaret: PointCaret<'next'> = $getCaretInDirection(caret, 'next');
-  // Normalize boundary cases for TextPointCaret
-  if ($isTextPointCaret(insertCaret)) {
-    if (insertCaret.offset === 0) {
-      insertCaret = $getSiblingCaret(
-        insertCaret.origin,
-        'previous',
-      ).getFlipped();
-    } else if (insertCaret.offset === insertCaret.origin.getTextContentSize()) {
-      insertCaret = $getSiblingCaret(insertCaret.origin, 'next');
-    }
-  }
-  // Make sure we have a distinct node as the origin
-  if (insertCaret.origin.is(node)) {
-    invariant(
-      $isSiblingCaret(insertCaret),
-      '$insertNodeToNearestRootAtCaret node %s of type %s can not be inserted into itself',
-      node.getKey(),
-      node.getType(),
-    );
-    insertCaret = $rewindSiblingCaret(insertCaret);
-  }
-  // Handle split boundary conditions where node is being inserted adjacent to itself
-  if (
-    node.is(insertCaret.getNodeAtCaret()) ||
-    node.is(insertCaret.getFlipped().getNodeAtCaret())
-  ) {
-    node.remove(true);
-  }
-  for (
-    let nextCaret: null | PointCaret<'next'> = insertCaret;
-    nextCaret;
-    nextCaret = $splitAtPointCaretNext(nextCaret, options)
-  ) {
-    insertCaret = nextCaret;
-  }
-  invariant(
-    !$isTextPointCaret(insertCaret),
-    '$insertNodeToNearestRootAtCaret: An unattached TextNode can not be split',
-  );
-  insertCaret.insert(
-    node.isInline() ? $createParagraphNode().append(node) : node,
-  );
-  return $getCaretInDirection(
-    $getSiblingCaret(node.getLatest(), 'next'),
-    caret.direction,
-  );
-}
+// Re-exported from the `lexical` core package for backwards compatibility.
+export {$insertNodeToNearestRootAtCaret};
 
 /**
  * Inserts a node into leaf — the deepest accessible node at the carriage position
@@ -629,10 +803,10 @@ export function $insertNodeIntoLeaf(node: LexicalNode): void {
  * @param createElementNode - Creates a new lexical element to wrap the to-be-wrapped node and returns it.
  * @returns A new lexical element with the previous node appended within (as a child, including its children).
  */
-export function $wrapNodeInElement(
+export function $wrapNodeInElement<T extends ElementNode>(
   node: LexicalNode,
-  createElementNode: () => ElementNode,
-): ElementNode {
+  createElementNode: () => T,
+): T {
   const elementNode = createElementNode();
   node.replace(elementNode);
   elementNode.append(node);
@@ -651,9 +825,38 @@ export function objectKlassEquals<T>(
   object: unknown,
   objectClass: ObjectKlass<T>,
 ): object is T {
-  return object !== null
-    ? Object.getPrototypeOf(object).constructor.name === objectClass.name
-    : false;
+  if (object == null) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(object);
+  if (prototype == null || prototype.constructor == null) {
+    return false;
+  }
+  return prototype.constructor.name === objectClass.name;
+}
+
+// Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,
+// in certain occasions, we want to know whether it was a file transfer, as opposed to text. We
+// control this with the first boolean flag.
+export function eventFiles(
+  event: DragEvent | PasteCommandType,
+): [boolean, File[], boolean] {
+  let dataTransfer: null | DataTransfer = null;
+  if (objectKlassEquals(event, DragEvent)) {
+    dataTransfer = event.dataTransfer;
+  } else if (objectKlassEquals(event, ClipboardEvent)) {
+    dataTransfer = event.clipboardData;
+  }
+
+  if (dataTransfer === null) {
+    return [false, [], false];
+  }
+
+  const types = dataTransfer.types;
+  const hasFiles = types.includes('Files');
+  const hasContent =
+    types.includes('text/html') || types.includes('text/plain');
+  return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 
 /**
@@ -666,9 +869,9 @@ export function objectKlassEquals<T>(
  */
 
 export function $filter<T>(
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
   filterFn: (node: LexicalNode) => null | T,
-): Array<T> {
+): T[] {
   const result: T[] = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = filterFn(nodes[i]);
@@ -734,15 +937,18 @@ function needsManualZoom(): boolean {
     // will be wider after zoom is applied
     // https://chromestatus.com/feature/5198254868529152
     // https://github.com/facebook/lexical/issues/6863
+    // eslint-disable-next-line no-restricted-syntax
     const div = document.createElement('div');
     div.style.position = 'absolute';
     div.style.opacity = '0';
     div.style.width = '100px';
     div.style.left = '-1000px';
+    // eslint-disable-next-line no-restricted-syntax
     document.body.appendChild(div);
     const noZoom = div.getBoundingClientRect();
     div.style.setProperty('zoom', '2');
     NEEDS_MANUAL_ZOOM = div.getBoundingClientRect().width === noZoom.width;
+    // eslint-disable-next-line no-restricted-syntax
     document.body.removeChild(div);
   }
   return NEEDS_MANUAL_ZOOM;
@@ -761,9 +967,13 @@ export function calculateZoomLevel(
 ): number {
   let zoom = 1;
   if (needsManualZoom() || useManualZoom) {
+    // Read styles from the element's own realm so an iframe-mounted editor's
+    // zoom isn't computed through the top-level window (cross-realm
+    // getComputedStyle can return an empty zoom).
+    const win = (element && element.ownerDocument.defaultView) || window;
     while (element) {
-      zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
-      element = element.parentElement;
+      zoom *= Number(win.getComputedStyle(element).getPropertyValue('zoom'));
+      element = getParentElement(element);
     }
   }
   return zoom;
@@ -1001,3 +1211,122 @@ export function makeStateWrapper<K extends string, V>(
     stateConfig,
   };
 }
+
+/**
+ * Inserts a new paragraph before a container node when the cursor moves outside the container element
+ *
+ * Intended for use ArrowLeft/ArrowUp keyboard handlers to allow the user to break out
+ * of a container node by creating a new paragraph before it.
+ *
+ * A paragraph is inserted if that the cursor is positioned at the beginning inside the container,
+ * and the container itself is the first element in the document and has no preceding sibling
+ *
+ * When a paragraph is inserted the selection is moved to it and, if the
+ * triggering keyboard event is provided, its default action is prevented so
+ * the browser does not additionally move the selection. Relying on the native
+ * caret movement is not portable: Chromium moves into the freshly inserted
+ * paragraph while Firefox leaves the caret inside the container.
+ *
+ * @param $isContainerNode - Type guard identifying the container node type to escape from.
+ * @param event - The keyboard event that triggered the escape, if any. Its
+ *   default action is prevented when a paragraph is inserted.
+ * @returns `true` if a paragraph was inserted, `false` otherwise.
+ */
+export function $onEscapeUp(
+  $isContainerNode: (node?: LexicalNode | null) => node is ElementNode,
+  event?: KeyboardEvent | null,
+) {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    const containerNode = $findMatchingParent(
+      selection.anchor.getNode(),
+      $isContainerNode,
+    );
+    if (containerNode) {
+      const parent = containerNode.getParent();
+      if (
+        parent !== null &&
+        parent.getFirstChild() === containerNode &&
+        $isAtStartOfNode(selection.anchor, containerNode)
+      ) {
+        containerNode.insertBefore($createParagraphNode()).selectEnd();
+        if (event) {
+          event.preventDefault();
+        }
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Inserts a new paragraph after a container node when the cursor moves outside the container element
+ *
+ * Intended for use ArrowRight/ArrowDown keyboard handlers to allow the user to break out
+ * of a container node by creating a new paragraph after it.
+ *
+ * A paragraph is inserted if that the cursor is positioned at the ending inside the container,
+ * and the container itself is the last element in the document and has no next sibling
+ *
+ * When a paragraph is inserted the selection is moved to it and, if the
+ * triggering keyboard event is provided, its default action is prevented so
+ * the browser does not additionally move the selection. Relying on the native
+ * caret movement is not portable: Chromium moves into the freshly inserted
+ * paragraph while Firefox leaves the caret inside the container.
+ *
+ * @param $isContainerNode - Type guard identifying the container node type to escape from.
+ * @param event - The keyboard event that triggered the escape, if any. Its
+ *   default action is prevented when a paragraph is inserted.
+ * @returns `true` if a paragraph was inserted, `false` otherwise.
+ */
+export function $onEscapeDown(
+  $isContainerNode: (node?: LexicalNode | null) => node is ElementNode,
+  event?: KeyboardEvent | null,
+) {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    const containerNode = $findMatchingParent(
+      selection.anchor.getNode(),
+      $isContainerNode,
+    );
+    if (containerNode) {
+      const parent = containerNode.getParent();
+      if (
+        parent !== null &&
+        parent.getLastChild() === containerNode &&
+        $isAtEndOfNode(selection.anchor, containerNode)
+      ) {
+        containerNode.insertAfter($createParagraphNode()).selectEnd();
+        if (event) {
+          event.preventDefault();
+        }
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Whether the collapsed `point` sits at the very start of `node`'s content —
+ * on its first descendant (or on the empty node itself) at offset 0. Shared by
+ * {@link $onEscapeUp} and slot-aware variants so the "at the leading edge of a
+ * container" test stays in one place.
+ */
+export function $isAtStartOfNode(point: PointType, node: ElementNode): boolean {
+  return $isAtEdgeOfElement(point, node, 'previous');
+}
+
+/**
+ * Whether the collapsed `point` sits at the very end of `node`'s content — on
+ * its last descendant (or on the empty node itself) at that node's end. Shared
+ * by {@link $onEscapeDown} and slot-aware variants so the "at the trailing edge
+ * of a container" test stays in one place.
+ */
+export function $isAtEndOfNode(point: PointType, node: ElementNode): boolean {
+  return $isAtEdgeOfElement(point, node, 'next');
+}
+
+export {getScrollParent} from './getScrollParent';

@@ -43,7 +43,7 @@ test.describe('DateTime', () => {
             data-lexical-decorator="true">
             <div class="dateTimePill">*</div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
       undefined,
@@ -133,7 +133,7 @@ test.describe('DateTime', () => {
             data-lexical-decorator="true">
             <div class="dateTimePill bold">*</div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
       undefined,

@@ -6,7 +6,11 @@
  *
  */
 
-export default function evalToString(ast /* : Object */) /* : string */ {
+/**
+ * @param {any} ast a Babel/ESLint AST node (shape varies by node type)
+ * @returns {string}
+ */
+export default function evalToString(ast) {
   switch (ast.type) {
     case 'StringLiteral':
     case 'Literal': // ESLint

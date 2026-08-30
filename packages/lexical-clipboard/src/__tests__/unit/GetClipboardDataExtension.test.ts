@@ -19,7 +19,6 @@ import {
   defineExtension,
 } from '@lexical/extension';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
-import {DataTransferMock} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 const SEED_TEXT = 'hello world';
@@ -189,7 +188,7 @@ describe('GetClipboardDataExtension', () => {
         'application/x-myformat': [() => 'custom-payload'],
       },
     });
-    const dt = new DataTransferMock();
+    const dt = new DataTransfer();
     editor.read(() => {
       setLexicalClipboardDataTransfer(
         dt as unknown as DataTransfer,

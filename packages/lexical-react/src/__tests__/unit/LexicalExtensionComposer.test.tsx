@@ -19,10 +19,9 @@ import {
   $getRoot,
   defineExtension,
 } from 'lexical';
-import {useEffect} from 'react';
+import {act, useEffect} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
-import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('LexicalExtensionComposer', () => {
   const extension = defineExtension({
@@ -41,24 +40,24 @@ describe('LexicalExtensionComposer', () => {
 
   beforeEach(() => {
     container = document.createElement('div');
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot = createRoot(container);
     });
     document.body.appendChild(container);
   });
   afterEach(() => {
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.unmount();
     });
     document.body.removeChild(container);
     // container = null;
   });
   it('Renders', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<MyEditor />);
     });
     expect(container.innerHTML).toEqual(
-      `<div contenteditable="true" role="textbox" spellcheck="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>`,
+      `<div contenteditable="true" role="textbox" spellcheck="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>`,
     );
   });
   it('$commitPendingUpdates flushes deferred callbacks even with no pending state', async () => {
@@ -93,9 +92,16 @@ describe('LexicalExtensionComposer', () => {
     // editor. This makes editor.focus() → updateEditorSync take the
     // inline path: $onUpdate pushes to _deferred, but NO $beginUpdate,
     // NO pending state, NO microtask. The callback is orphaned.
+    // updateEditorSync warns in DEV because the root listener runs
+    // with a read-only context on the stack — expected for this
+    // deliberate reproduction.
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     editor.update(() => {
       editor.setRootElement(rootElement);
     });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toMatch(/read-only context/);
+    warnSpy.mockRestore();
 
     // _deferred has the stuck focus callback.
     expect(editor._deferred.length).toBeGreaterThan(0);
@@ -120,7 +126,7 @@ describe('LexicalExtensionComposer', () => {
       }, [editor]);
       return null;
     }
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <MyEditor>
           <InitialPlugin />

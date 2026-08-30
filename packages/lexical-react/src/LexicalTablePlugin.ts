@@ -6,9 +6,7 @@
  *
  */
 
-import type {JSX} from 'react';
-
-import {Signal, signal} from '@lexical/extension';
+import {type Signal, signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $isScrollableTablesActive,
@@ -17,10 +15,13 @@ import {
   registerTableSelectionObserver,
   setScrollableTablesActive,
   TableCellNode,
-  TableNode,
 } from '@lexical/table';
-import {useEffect, useState} from 'react';
+import {$fullReconcile} from 'lexical';
+import {type JSX, useEffect, useState} from 'react';
 
+/**
+ * Props for the {@link TablePlugin} component.
+ */
 export interface TablePluginProps {
   /**
    * When `false` (default `true`), merged cell support (colspan and rowspan) will be disabled and all
@@ -51,6 +52,9 @@ export interface TablePluginProps {
  * A plugin to enable all of the features of Lexical's TableNode.
  *
  * @param props - See type for documentation
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link TableExtension} instead.
+ *
  * @returns An element to render in your LexicalComposer
  */
 export function TablePlugin({
@@ -66,9 +70,11 @@ export function TablePlugin({
     const hadHorizontalScroll = $isScrollableTablesActive(editor);
     if (hadHorizontalScroll !== hasHorizontalScroll) {
       setScrollableTablesActive(editor, hasHorizontalScroll);
-      // Registering the transform has the side-effect of marking all existing
-      // TableNodes as dirty. The handler is immediately unregistered.
-      editor.registerNodeTransform(TableNode, () => {})();
+      // Re-render existing tables through the new scroll-wrapper config without
+      // cloning every TableNode the way marking them dirty would. A full
+      // reconcile marks no nodes dirty, so it's deferred (no synchronous render
+      // from this effect) and produces no history entry.
+      editor.update($fullReconcile);
     }
   }, [editor, hasHorizontalScroll]);
 

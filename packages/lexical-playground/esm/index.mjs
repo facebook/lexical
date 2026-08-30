@@ -9,8 +9,7 @@
 import {registerDragonSupport} from '@lexical/dragon';
 import {createEmptyHistoryState, registerHistory} from '@lexical/history';
 import {HeadingNode, QuoteNode, registerRichText} from '@lexical/rich-text';
-import {mergeRegister} from '@lexical/utils';
-import {createEditor, HISTORY_MERGE_TAG} from 'lexical';
+import {createEditor, HISTORY_MERGE_TAG, mergeRegister} from 'lexical';
 
 import prepopulatedRichText from './prepopulatedRichText.mjs';
 

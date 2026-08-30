@@ -34,7 +34,7 @@ import {
   test,
 } from '../utils/index.mjs';
 
-test.describe.parallel('TextFormatting', () => {
+test.describe('TextFormatting', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can create bold text using the shortcut`, async ({
     page,
@@ -554,7 +554,7 @@ test.describe.parallel('TextFormatting', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <span style="font-size: 17px;" data-lexical-text="true">world</span>
+          <span style="font-size: 18px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -586,8 +586,8 @@ test.describe.parallel('TextFormatting', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span style="font-size: 17px;" data-lexical-text="true">Hello</span>
-          <span style="font-size: 19px;" data-lexical-text="true">world!</span>
+          <span style="font-size: 18px;" data-lexical-text="true">Hello</span>
+          <span style="font-size: 20px;" data-lexical-text="true">world!</span>
         </p>
       `,
     );
@@ -618,7 +618,7 @@ test.describe.parallel('TextFormatting', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <span style="font-size: 13px;" data-lexical-text="true">world</span>
+          <span style="font-size: 14px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -650,7 +650,7 @@ test.describe.parallel('TextFormatting', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span style="font-size: 13px;" data-lexical-text="true">Hello</span>
+          <span style="font-size: 14px;" data-lexical-text="true">Hello</span>
           <span style="font-size: 12px;" data-lexical-text="true">world!</span>
         </p>
       `,
@@ -683,7 +683,7 @@ test.describe.parallel('TextFormatting', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <span style="font-size: 17px;" data-lexical-text="true">world</span>
+          <span style="font-size: 18px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -705,7 +705,7 @@ test.describe.parallel('TextFormatting', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <span
-            style="font-size: 17px; font-family: Georgia;"
+            style="font-size: 18px; font-family: Georgia;"
             data-lexical-text="true">
             world
           </span>
@@ -729,7 +729,7 @@ test.describe.parallel('TextFormatting', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <span
-            style="font-size: 15px; font-family: Georgia;"
+            style="font-size: 16px; font-family: Georgia;"
             data-lexical-text="true">
             world
           </span>
@@ -932,38 +932,50 @@ test.describe.parallel('TextFormatting', () => {
     await selectCharacters(page, 'right', 5);
 
     await toggleBold(page);
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">Hello w</span>
-          <em
-            class="PlaygroundEditorTheme__textItalic"
-            data-lexical-text="true">
-            or
-          </em>
-          <span data-lexical-text="true">ld!</span>
-        </p>
-      `,
-    );
-    await assertSelection(page, {
-      anchorOffset: 6,
-      anchorPath: [0, 0, 0],
-      focusOffset: 2,
-      focusPath: [0, 2, 0],
-    });
-
-    await toggleItalic(page);
+    // selection.format = AND(bold "w", italic "or", bold "ld") = 0 → bold toggled ON
     await assertHTML(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <em
-            class="PlaygroundEditorTheme__textItalic"
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            w
+          </strong>
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            data-lexical-text="true">
+            or
+          </strong>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            ld
+          </strong>
+          <span data-lexical-text="true">!</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
+      focusOffset: 2,
+      focusPath: [0, 3, 0],
+    });
+
+    await toggleItalic(page);
+    // selection.format = AND(bold, bold+italic, bold) = bold → italic toggled ON
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             data-lexical-text="true">
             world
-          </em>
+          </strong>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -977,19 +989,26 @@ test.describe.parallel('TextFormatting', () => {
     });
 
     await toggleItalic(page);
+    // selection.format = bold+italic → italic toggled OFF → bold only
     await assertHTML(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">Hello world!</span>
+          <span data-lexical-text="true">Hello</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            world
+          </strong>
+          <span data-lexical-text="true">!</span>
         </p>
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 6,
-      anchorPath: [0, 0, 0],
-      focusOffset: 11,
-      focusPath: [0, 0, 0],
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
+      focusOffset: 5,
+      focusPath: [0, 1, 0],
     });
   });
 
@@ -1110,6 +1129,23 @@ test.describe.parallel('TextFormatting', () => {
     await page.keyboard.up('Shift');
     await toggleBold(page);
 
+    // selection.format = AND(bold "3", plain "456") = 0 → bold toggled ON
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            123456
+          </strong>
+        </p>
+      `,
+    );
+
+    // Toggle once more — now all selected text is bold → bold toggled OFF
+    await toggleBold(page);
+
     await assertHTML(
       page,
       html`
@@ -1120,22 +1156,6 @@ test.describe.parallel('TextFormatting', () => {
             12
           </strong>
           <span data-lexical-text="true">3456</span>
-        </p>
-      `,
-    );
-
-    // Toggle once more
-    await toggleBold(page);
-
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <strong
-            class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true">
-            123456
-          </strong>
         </p>
       `,
     );
@@ -1179,63 +1199,63 @@ test.describe.parallel('TextFormatting', () => {
     expect(isButtonActiveStatusDisplayedCorrectly).toBe(true);
   });
 
-  test(
-    'Regression #2523: can toggle format when selecting a TextNode edge followed by a non TextNode; ',
-    {tag: '@flaky'},
-    async ({page, isCollab, isPlainText}) => {
-      test.skip(isPlainText);
-      await focusEditor(page);
+  test('Regression #2523: can toggle format when selecting a TextNode edge followed by a non TextNode; ', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
 
-      await page.keyboard.type('A');
-      await insertDateTime(page);
-      await page.keyboard.type('BC');
+    await page.keyboard.type('A');
+    await insertDateTime(page);
+    await page.keyboard.type('BC');
 
-      await moveLeft(page, 1);
-      await selectCharacters(page, 'left', 2);
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 2);
 
-      if (!isCollab) {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">A</span>
-              ${getExpectedDateTimeHtml({selected: true})}
-              <span data-lexical-text="true">BC</span>
-            </p>
-          `,
-        );
-      }
-      await toggleBold(page);
+    if (!isCollab) {
       await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">A</span>
-            ${getExpectedDateTimeHtml({formats: ['bold']})}
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true">
-              B
-            </strong>
-            <span data-lexical-text="true">C</span>
-          </p>
-        `,
-      );
-      await toggleBold(page);
-      await assertHTML(
-        page,
-        // After formatting the text, the selection will be reset from the decorator node,
-        // so it will retain its previous format when toggleBold is triggered again
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">A</span>
-            ${getExpectedDateTimeHtml({formats: ['bold']})}
+            ${getExpectedDateTimeHtml({selected: true})}
             <span data-lexical-text="true">BC</span>
           </p>
         `,
       );
-    },
-  );
+    }
+    await toggleBold(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">A</span>
+          ${getExpectedDateTimeHtml({formats: ['bold']})}
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            B
+          </strong>
+          <span data-lexical-text="true">C</span>
+        </p>
+      `,
+    );
+    await toggleBold(page);
+    await assertHTML(
+      page,
+      // After formatting, the selection resets to just the TextNode "B".
+      // The DecoratorTextNode is no longer selected, so it retains its bold format.
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">A</span>
+          ${getExpectedDateTimeHtml({formats: ['bold']})}
+          <span data-lexical-text="true">BC</span>
+        </p>
+      `,
+    );
+  });
 
   test('Multiline selection format ignores new lines', async ({
     page,

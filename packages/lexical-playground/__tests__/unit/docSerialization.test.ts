@@ -210,7 +210,7 @@ describe('docSerialization', () => {
           htmlString2 = $generateHtmlFromNodes(editor);
         });
         expect(htmlString2).toBe(
-          '<p><span style="white-space: pre-wrap;">paragraph</span></p><h1><span style="white-space: pre-wrap;">heading</span></h1><blockquote><span style="white-space: pre-wrap;">quote</span></blockquote><p style="padding-inline-start: 80px;"><span style="white-space: pre-wrap;">paragraph</span></p><h1 style="padding-inline-start: 80px;"><span style="white-space: pre-wrap;">heading</span></h1><blockquote style="padding-inline-start: 80px;"><span style="white-space: pre-wrap;">quote</span></blockquote>',
+          '<p><span style="white-space: pre-wrap;">paragraph</span></p><h1><span style="white-space: pre-wrap;">heading</span></h1><blockquote><span style="white-space: pre-wrap;">quote</span></blockquote><p style="padding-inline-start: 80px;" data-lexical-indent="2"><span style="white-space: pre-wrap;">paragraph</span></p><h1 style="padding-inline-start: 80px;" data-lexical-indent="2"><span style="white-space: pre-wrap;">heading</span></h1><blockquote style="padding-inline-start: 80px;" data-lexical-indent="2"><span style="white-space: pre-wrap;">quote</span></blockquote>',
         );
       });
     });

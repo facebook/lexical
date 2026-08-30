@@ -40,9 +40,9 @@ function EditorsRefreshCTA({tabID, setErrorMessage}: Props) {
 
   return (
     <Button
-      colorScheme="gray"
+      colorPalette="gray"
       size="xs"
-      isLoading={isRefreshing}
+      loading={isRefreshing}
       onClick={handleRefreshClick}
       disabled={isRefreshing}>
       Refresh

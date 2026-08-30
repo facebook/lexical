@@ -10,6 +10,7 @@ import {TabIndentationExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
+import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -26,7 +27,6 @@ import {
   defaultCreateWorker,
 } from './ai/AIExtension';
 import {Toolbar, ToolbarExtension} from './ToolbarExtension';
-import {useExtensionSignalValue} from './utils/useExtensionHooks';
 
 const theme = {
   heading: {

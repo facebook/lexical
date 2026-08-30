@@ -6,17 +6,18 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
 import {
   $addUpdateTag,
   $createParagraphNode,
   $getRoot,
   $hasUpdateTag,
   COLLABORATION_TAG,
+  CUT_TAG,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
+  type LexicalEditor,
+  PASTE_TAG,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
@@ -37,6 +38,8 @@ describe('LexicalUpdateTags tests', () => {
           HISTORIC_TAG,
           HISTORY_PUSH_TAG,
           HISTORY_MERGE_TAG,
+          PASTE_TAG,
+          CUT_TAG,
           COLLABORATION_TAG,
           SKIP_DOM_SELECTION_TAG,
           SKIP_SCROLL_INTO_VIEW_TAG,

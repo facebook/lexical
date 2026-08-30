@@ -93,7 +93,7 @@ test.describe('HTML CopyAndPaste', () => {
               </div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -155,7 +155,7 @@ test.describe('HTML CopyAndPaste', () => {
               </div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -231,7 +231,7 @@ test.describe('HTML CopyAndPaste', () => {
               </div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

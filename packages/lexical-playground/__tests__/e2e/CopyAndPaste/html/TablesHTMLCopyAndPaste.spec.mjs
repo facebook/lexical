@@ -50,13 +50,13 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <col style="width: 92px" />
             <col style="width: 92px" />
           </colgroup>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">a</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">b</span>
               </p>
@@ -64,24 +64,24 @@ test.describe('HTML Tables CopyAndPaste', () => {
                 <span style="font-size: 11pt" data-lexical-text="true">b</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">c</span>
               </p>
             </td>
           </tr>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">d</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">e</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">f</span>
               </p>
@@ -100,7 +100,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
     test.skip(isPlainText || isCollab);
     await focusEditor(page);
     const clipboard = {
-      'text/html': `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-dd8626d9-7fff-78d6-4aad-a0d248a19533"><div dir="ltr" style="margin-left:0pt;" align="center"><table style="border:none;border-collapse:collapse;"><colgroup><col width="78" /><col width="405" /><col width="233" /></colgroup><tbody><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">short</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">wide</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">default</span></p></td></tr><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">a</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">b</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">c</span></p></td></tr></tbody></table></div><br /></b>`,
+      'text/html': `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-dd8626d9-7fff-78d6-4aad-a0d248a19533"><div dir="ltr" style="margin-left:0pt;" align="center"><table style="border:none;border-collapse:collapse;"><colgroup><col width="78" /><col width="405" /><col width="233" /></colgroup><tbody><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">short</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">wide</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">default</span></p></td></tr><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">a</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">b</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">c</span></p></td></tr></tbody></table></div><br data-lexical-managed-linebreak="true" /></b>`,
     };
     await pasteFromClipboard(page, clipboard);
     await assertHTML(
@@ -112,22 +112,22 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <col style="width: 405px;" />
             <col style="width: 233px;" />
           </colgroup>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">
                   short
                 </span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">
                   wide
                 </span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">
                   default
@@ -135,25 +135,27 @@ test.describe('HTML Tables CopyAndPaste', () => {
               </p>
             </td>
           </tr>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">a</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">b</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
                 <span style="font-size: 11pt" data-lexical-text="true">c</span>
               </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -177,49 +179,55 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <col style="width: 90px" />
             <col style="width: 90px" />
           </colgroup>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p
                 class="PlaygroundEditorTheme__paragraph"
+                dir="auto"
                 style="text-align: left;">
                 <span data-lexical-text="true">a</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p
                 class="PlaygroundEditorTheme__paragraph"
+                dir="auto"
                 style="text-align: left;">
                 <span data-lexical-text="true">b</span>
                 <br />
                 <span data-lexical-text="true">b</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p
                 class="PlaygroundEditorTheme__paragraph"
+                dir="auto"
                 style="text-align: left;">
                 <span data-lexical-text="true">c</span>
               </p>
             </td>
           </tr>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p
                 class="PlaygroundEditorTheme__paragraph"
+                dir="auto"
                 style="text-align: left;">
                 <span data-lexical-text="true">d</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p
                 class="PlaygroundEditorTheme__paragraph"
+                dir="auto"
                 style="text-align: left;">
                 <span data-lexical-text="true">e</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p
                 class="PlaygroundEditorTheme__paragraph"
+                dir="auto"
                 style="text-align: left;">
                 <span data-lexical-text="true">f</span>
               </p>
@@ -250,18 +258,20 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <col style="width: 100px" />
             <col style="width: 100px" />
           </colgroup>
-          <tr style="height: 21px">
+          <tr dir="auto" style="height: 21px">
             <td
               class="PlaygroundEditorTheme__tableCell"
+              dir="auto"
               style="vertical-align: bottom">
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">a</span>
               </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell"
+              dir="auto"
               style="vertical-align: bottom">
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">b</span>
                 <br />
                 <span data-lexical-text="true">b</span>
@@ -269,31 +279,35 @@ test.describe('HTML Tables CopyAndPaste', () => {
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell"
+              dir="auto"
               style="vertical-align: bottom">
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">c</span>
               </p>
             </td>
           </tr>
-          <tr style="height: 21px">
+          <tr dir="auto" style="height: 21px">
             <td
               class="PlaygroundEditorTheme__tableCell"
+              dir="auto"
               style="vertical-align: bottom">
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">d</span>
               </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell"
+              dir="auto"
               style="vertical-align: bottom">
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">e</span>
               </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell"
+              dir="auto"
               style="vertical-align: bottom">
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">f</span>
               </p>
             </td>
@@ -330,7 +344,9 @@ test.describe('HTML Tables CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
           dir="auto">
@@ -340,93 +356,136 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <col style="width: 92px" />
             <col style="width: 92px" />
           </colgroup>
-          <tr>
+          <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto"
               style="background-color: rgb(242, 243, 245)">
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">a</span>
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto"
               style="background-color: rgb(242, 243, 245)">
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">b</span>
               </p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
-          <tr>
+          <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto"
               style="background-color: rgb(242, 243, 245)">
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">c</span>
               </p>
             </th>
             <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
               <p
                 class="PlaygroundEditorTheme__paragraph"
+                dir="auto"
                 style="text-align: start">
                 <span data-lexical-text="true">d</span>
               </p>
             </td>
             <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
-          <tr>
+          <tr dir="auto">
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -493,35 +552,35 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <col style="width: 92px" />
             <col style="width: 92px" />
           </colgroup>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">456</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">789</span>
               </p>
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">000</span>
               </p>
             </td>
           </tr>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">ABC</span>
               </p>
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">000</span>
               </p>
-              <p class="PlaygroundEditorTheme__paragraph">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">000</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">DEF</span>
               </p>
             </td>
@@ -611,76 +670,92 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <col style="width: 92px" />
             <col style="width: 92px" />
           </colgroup>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell" colspan="2">
-              <p class="PlaygroundEditorTheme__paragraph">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" colspan="2" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">1</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">2</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">3</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">4</span>
               </p>
             </td>
           </tr>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell" rowspan="4">
-              <p class="PlaygroundEditorTheme__paragraph">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto" rowspan="4">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">7</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">8</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell" rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto" rowspan="2">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">9</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">0</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
@@ -716,23 +791,23 @@ test.describe('HTML Tables CopyAndPaste', () => {
           <colgroup>
             <col style="width: 92px" />
           </colgroup>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">1</span>
               </p>
             </td>
           </tr>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
-                <br />
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
-          <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph">
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">2</span>
               </p>
             </td>

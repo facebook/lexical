@@ -14,13 +14,12 @@ jobs:
     env:
       CI: true
     steps:
-      - uses: actions/checkout@v6
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-pnpm
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: pnpm/action-setup@v6
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ matrix.node-version }}
       - run: pnpm run test-integration
       - run: pnpm run test-eslint-integration

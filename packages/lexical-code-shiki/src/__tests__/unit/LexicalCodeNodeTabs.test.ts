@@ -6,13 +6,11 @@
  *
  */
 
-import type {CodeHighlightNode, CodeNode} from '@lexical/code';
-import type {LexicalCommand, LineBreakNode, TabNode} from 'lexical';
-
 import {
   $createCodeNode,
   $isCodeHighlightNode,
   $isCodeNode,
+  type CodeNode,
 } from '@lexical/code';
 import {CodeIndentExtension} from '@lexical/code-core';
 import {
@@ -38,6 +36,7 @@ import {
   $isLineBreakNode,
   $isTabNode,
   $setSelectionFromCaretRange,
+  type AnyLexicalCommand,
   configExtension,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
@@ -47,7 +46,7 @@ import {
   initializeUnitTest,
   tabKeyboardEvent,
 } from 'lexical/src/__tests__/utils';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 import {
   $runOutdentScenario,
@@ -129,10 +128,10 @@ describe('LexicalCodeNode tests', () => {
               return getRawTextWithSelection(input).replaceAll('|', '');
             };
 
-            await loadCodeLanguage(ShikiTokenizer.defaultLanguage);
-            expect(isCodeLanguageLoaded(ShikiTokenizer.defaultLanguage)).toBe(
-              true,
-            );
+            const tokenizerDefault = ShikiTokenizer.defaultLanguage;
+            assert(tokenizerDefault !== null, 'expected default language');
+            await loadCodeLanguage(tokenizerDefault);
+            expect(isCodeLanguageLoaded(tokenizerDefault)).toBe(true);
             await loadCodeTheme(ShikiTokenizer.defaultTheme);
             expect(isCodeThemeLoaded(ShikiTokenizer.defaultTheme)).toBe(true);
             registerRichText(editor);
@@ -187,11 +186,7 @@ describe('LexicalCodeNode tests', () => {
                   selLast -= 1;
                 }
 
-                let matching:
-                  | null
-                  | LineBreakNode
-                  | TabNode
-                  | CodeHighlightNode = codeNode.getFirstChild();
+                let matching = codeNode.getFirstChild();
                 let parentIndex = 0;
                 let offset = 0;
                 while (
@@ -252,7 +247,7 @@ describe('LexicalCodeNode tests', () => {
               // selectionTarget.getBoundingClientRect is not a function Error
               editor.dispatchCommand(
                 ...(getDispatchArgs(scenario[2]) as [
-                  LexicalCommand<unknown>,
+                  AnyLexicalCommand,
                   unknown,
                 ]),
               );
@@ -292,7 +287,9 @@ describe('LexicalCodeNode tests', () => {
     });
   });
   describe('tabSize (#8410): outdent space-indented lines', async () => {
-    await loadCodeLanguage(ShikiTokenizer.defaultLanguage);
+    const tokenizerDefault = ShikiTokenizer.defaultLanguage;
+    assert(tokenizerDefault !== null, 'expected default language');
+    await loadCodeLanguage(tokenizerDefault);
     await loadCodeTheme(ShikiTokenizer.defaultTheme);
     test.for(OUTDENT_SCENARIOS)(
       '$name',

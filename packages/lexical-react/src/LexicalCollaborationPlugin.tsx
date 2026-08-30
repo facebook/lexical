@@ -6,7 +6,9 @@
  *
  */
 
-import type {JSX} from 'react';
+import type {InitialEditorStateType} from './LexicalComposer';
+import type {LexicalEditor} from 'lexical';
+import type {Doc} from 'yjs';
 
 import {
   type CollaborationContextType,
@@ -14,19 +16,16 @@ import {
 } from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  Binding,
-  createBinding,
-  ExcludedProperties,
-  Provider,
-  SyncCursorPositionsFn,
+  type Binding,
+  createYjsBinding,
+  type ExcludedProperties,
+  type Provider,
+  type SyncCursorPositionsFn,
 } from '@lexical/yjs';
-import {LexicalEditor} from 'lexical';
-import {useEffect, useRef, useState} from 'react';
-import {Doc} from 'yjs';
+import {type JSX, useEffect, useRef, useState} from 'react';
 
-import {InitialEditorStateType} from './LexicalComposer';
 import {
-  CursorsContainerRef,
+  type CursorsContainerRef,
   useYjsCollaboration,
   useYjsCollaborationV2__EXPERIMENTAL,
   useYjsCursors,
@@ -49,8 +48,23 @@ type CollaborationPluginProps = {
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
   syncCursorPositionsFn?: SyncCursorPositionsFn;
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
+  selectionHighlight?: boolean;
+  /** Customize the Yjs shared-type key used for the root `XmlText`. Defaults to `'root'`. */
+  rootName?: string;
 };
 
+/**
+ * Connects the editor to a Yjs document for real-time collaboration, syncing
+ * editor state and rendering remote users' cursors and selections. Provide a
+ * `providerFactory` that creates the Yjs {@link Provider} for the given
+ * document `id`. Must be used within a {@link LexicalCollaboration} provider.
+ *
+ * @returns The element that renders collaborators' cursors (or an empty
+ * fragment until the provider and binding are initialized).
+ */
 export function CollaborationPlugin({
   id,
   providerFactory,
@@ -62,9 +76,20 @@ export function CollaborationPlugin({
   excludedProperties,
   awarenessData,
   syncCursorPositionsFn,
+  selectionHighlight,
+  rootName,
 }: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
-  const isProviderInitialized = useRef(false);
+  // The inputs that produced the current Provider. A ref rather than the effect
+  // deps alone because the effect must be idempotent: React StrictMode (and
+  // React 18+ remounts in general) re-runs the effect with unchanged inputs and
+  // must not create a second Provider.
+  const providerInputs = useRef<null | {
+    id: string;
+    providerFactory: ProviderFactory;
+    yjsDocMap: Map<string, Doc>;
+  }>(null);
+  const providerRef = useRef<Provider | null>(null);
 
   const collabContext = useCollaborationContext(username, cursorColor);
   const {yjsDocMap, name, color} = collabContext;
@@ -77,20 +102,44 @@ export function CollaborationPlugin({
   const [doc, setDoc] = useState<Doc>();
 
   useEffect(() => {
-    if (isProviderInitialized.current) {
+    const prevInputs = providerInputs.current;
+    if (
+      prevInputs !== null &&
+      prevInputs.id === id &&
+      prevInputs.providerFactory === providerFactory &&
+      prevInputs.yjsDocMap === yjsDocMap
+    ) {
       return;
     }
 
-    isProviderInitialized.current = true;
+    providerInputs.current = {id, providerFactory, yjsDocMap};
 
     const newProvider = providerFactory(id, yjsDocMap);
+    const previousProvider = providerRef.current;
+    // Disconnected here rather than from this effect's cleanup, and only when
+    // something really did replace it. A `providerFactory` declared inline --
+    // the shape this package's own test harness uses -- has a fresh identity
+    // every render, so a cleanup-based disconnect tears down the live provider
+    // on every parent render; and when such a factory hands back a cached
+    // provider, setProvider() bails on the identical value, nothing re-runs,
+    // and the editor is left permanently disconnected.
+    if (previousProvider !== null && previousProvider !== newProvider) {
+      previousProvider.disconnect();
+    }
+    providerRef.current = newProvider;
     setProvider(newProvider);
     setDoc(yjsDocMap.get(id));
-
-    return () => {
-      newProvider.disconnect();
-    };
   }, [id, providerFactory, yjsDocMap]);
+
+  useEffect(() => {
+    return () => {
+      const currentProvider = providerRef.current;
+      if (currentProvider !== null) {
+        providerRef.current = null;
+        currentProvider.disconnect();
+      }
+    };
+  }, []);
 
   const [binding, setBinding] = useState<Binding>();
 
@@ -103,22 +152,27 @@ export function CollaborationPlugin({
       return;
     }
 
-    isBindingInitialized.current = true;
+    const resolvedDoc = doc || yjsDocMap.get(id);
+    if (!resolvedDoc) {
+      return;
+    }
 
-    const newBinding = createBinding(
+    isBindingInitialized.current = true;
+    const newBinding = createYjsBinding({
+      doc: resolvedDoc,
+      docMap: yjsDocMap,
       editor,
-      provider,
-      id,
-      doc || yjsDocMap.get(id),
-      yjsDocMap,
       excludedProperties,
-    );
+      id,
+      rootName,
+    });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBinding(newBinding);
 
     return () => {
       newBinding.root.destroy(newBinding);
     };
-  }, [editor, provider, id, yjsDocMap, doc, excludedProperties]);
+  }, [editor, provider, id, yjsDocMap, doc, excludedProperties, rootName]);
 
   if (!provider || !binding) {
     return <></>;
@@ -140,6 +194,7 @@ export function CollaborationPlugin({
       shouldBootstrap={shouldBootstrap}
       yjsDocMap={yjsDocMap}
       syncCursorPositionsFn={syncCursorPositionsFn}
+      selectionHighlight={selectionHighlight}
     />
   );
 }
@@ -159,6 +214,7 @@ function YjsCollaborationCursors({
   binding,
   setDoc,
   syncCursorPositionsFn,
+  selectionHighlight,
 }: {
   editor: LexicalEditor;
   id: string;
@@ -174,6 +230,10 @@ function YjsCollaborationCursors({
   awarenessData?: object;
   collabContext: CollaborationContextType;
   syncCursorPositionsFn?: SyncCursorPositionsFn;
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
+  selectionHighlight?: boolean;
 }) {
   const cursors = useYjsCollaboration(
     editor,
@@ -189,6 +249,7 @@ function YjsCollaborationCursors({
     initialEditorState,
     awarenessData,
     syncCursorPositionsFn,
+    selectionHighlight,
   );
 
   useYjsHistory(editor, binding);
@@ -208,8 +269,23 @@ type CollaborationPluginV2Props = {
   excludedProperties?: ExcludedProperties;
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
+  selectionHighlight?: boolean;
+  /** Customize the Yjs shared-type key used for the root `XmlElement`. Defaults to `'root-v2'`. */
+  rootName?: string;
 };
 
+/**
+ * A variant of {@link CollaborationPlugin} that takes an already-created Yjs
+ * `doc` and {@link Provider} directly instead of a provider factory, giving the
+ * application full control over their lifecycle. Must be used within a
+ * {@link LexicalCollaboration} provider.
+ *
+ * @experimental The API may change in a future release.
+ * @returns The element that renders collaborators' cursors.
+ */
 export function CollaborationPluginV2__EXPERIMENTAL({
   id,
   doc,
@@ -220,6 +296,8 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   cursorsContainerRef,
   excludedProperties,
   awarenessData,
+  selectionHighlight,
+  rootName,
 }: CollaborationPluginV2Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
   const {yjsDocMap, name, color} = collabContext;
@@ -239,6 +317,8 @@ export function CollaborationPluginV2__EXPERIMENTAL({
       __shouldBootstrapUnsafe,
       awarenessData,
       excludedProperties,
+      rootName,
+      selectionHighlight,
     },
   );
 

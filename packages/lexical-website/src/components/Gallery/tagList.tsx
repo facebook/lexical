@@ -54,6 +54,11 @@ export const TagList: {[type in string]: Tag} = {
       'Our favorite Lexical examples that you must absolutely check out!',
     title: 'Favorite',
   },
+  markdown: {
+    color: '#0d9488',
+    description: 'Examples that import / export markdown',
+    title: 'Markdown',
+  },
   opensource: {
     color: '#39ca30',
     description: 'Open-source Lexical examples for inspiration',

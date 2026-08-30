@@ -6,18 +6,24 @@
  *
  */
 
-import type {SerializedMarkNode} from './MarkNode';
-import type {ElementNode, LexicalNode, RangeSelection, TextNode} from 'lexical';
-
 import {
   $createRangeSelection,
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
   defineExtension,
+  type ElementNode,
+  type LexicalNode,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
 
-import {$createMarkNode, $isMarkNode, MarkNode} from './MarkNode';
+import {
+  $createMarkNode,
+  $isMarkNode,
+  MarkNode,
+  type SerializedMarkNode,
+} from './MarkNode';
 
 export function $unwrapMarkNode(node: MarkNode): void {
   const children = node.getChildren();
@@ -38,7 +44,7 @@ export function $wrapSelectionInMarkNode(
   selection: RangeSelection,
   isBackward: boolean,
   id: string,
-  createNode?: (ids: Array<string>) => MarkNode,
+  createNode?: (ids: string[]) => MarkNode,
 ): void {
   // Force a forwards selection since append is used, ignore the argument.
   // A new selection is used to avoid side-effects of flipping the given
@@ -135,10 +141,7 @@ export function $wrapSelectionInMarkNode(
   }
 }
 
-export function $getMarkIDs(
-  node: TextNode,
-  offset: number,
-): null | Array<string> {
+export function $getMarkIDs(node: TextNode, offset: number): null | string[] {
   let currentNode: LexicalNode | null = node;
   while (currentNode !== null) {
     if ($isMarkNode(currentNode)) {

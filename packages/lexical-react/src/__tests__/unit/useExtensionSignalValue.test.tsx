@@ -20,8 +20,8 @@ import {
   useSignalValue,
 } from '@lexical/react/useExtensionSignalValue';
 import * as React from 'react';
-import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {act} from 'react';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 describe('useSignalValue', () => {
@@ -49,7 +49,7 @@ describe('useSignalValue', () => {
       return <div>{value}</div>;
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<TestComponent />);
     });
 
@@ -67,21 +67,21 @@ describe('useSignalValue', () => {
       return <div>{value}</div>;
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<TestComponent />);
     });
 
     expect(renderCounts).toEqual([0]);
     expect(container?.textContent).toBe('0');
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       testSignal.value = 1;
     });
 
     expect(renderCounts).toEqual([0, 1]);
     expect(container?.textContent).toBe('1');
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       testSignal.value = 2;
     });
 
@@ -105,7 +105,7 @@ describe('useSignalValue', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<TestComponent />);
     });
 
@@ -132,7 +132,7 @@ describe('useSignalValue', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<TestComponent dummy={1} />);
     });
 
@@ -140,7 +140,7 @@ describe('useSignalValue', () => {
     expect(initialSubscriptionCount).toBeGreaterThan(0);
 
     // Re-render with different prop (but same signal)
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<TestComponent dummy={2} />);
     });
 
@@ -175,7 +175,7 @@ describe('useExtensionSignalValue', () => {
       return <div>Count: {count}</div>;
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <LexicalExtensionComposer extension={TestExtension}>
           <TestComponent />
@@ -204,7 +204,7 @@ describe('useExtensionSignalValue', () => {
       return <div>{value}</div>;
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <LexicalExtensionEditorComposer initialEditor={editor}>
           <TestComponent />
@@ -214,11 +214,17 @@ describe('useExtensionSignalValue', () => {
 
     expect(container?.textContent).toBe('initial');
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       dep.output.value.value = 'updated';
     });
 
     expect(container?.textContent).toBe('updated');
+
+    // Unmount before `using` disposes the editor so the disposal does not
+    // update the still-mounted EditorComponent outside of act().
+    await act(async () => {
+      reactRoot.unmount();
+    });
   });
 
   test('works with multiple signal properties', async () => {
@@ -242,7 +248,7 @@ describe('useExtensionSignalValue', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <LexicalExtensionComposer extension={TestExtension}>
           <TestComponent />
@@ -267,7 +273,7 @@ describe('useExtensionSignalValue', () => {
       return <div>Count: {count}</div>;
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <LexicalExtensionComposer extension={TestExtension}>
           <TestComponent />
@@ -301,7 +307,7 @@ describe('useExtensionSignalValue', () => {
       return <div>B: {count}</div>;
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <LexicalExtensionEditorComposer initialEditor={editor}>
           <ComponentA />
@@ -312,11 +318,17 @@ describe('useExtensionSignalValue', () => {
 
     expect(container?.textContent).toBe('A: 1B: 1');
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       dep.output.count.value = 5;
     });
 
     expect(container?.textContent).toBe('A: 5B: 5');
+
+    // Unmount before `using` disposes the editor so the disposal does not
+    // update the still-mounted EditorComponent outside of act().
+    await act(async () => {
+      reactRoot.unmount();
+    });
   });
 
   test('works with complex object signals', async () => {
@@ -353,7 +365,7 @@ describe('useExtensionSignalValue', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <LexicalExtensionEditorComposer initialEditor={editor}>
           <TestComponent />
@@ -363,7 +375,7 @@ describe('useExtensionSignalValue', () => {
 
     expect(container?.textContent).toBe('John Doe (john@example.com)');
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       dep.output.user.value = {
         email: 'jane@example.com',
         id: 2,
@@ -372,6 +384,12 @@ describe('useExtensionSignalValue', () => {
     });
 
     expect(container?.textContent).toBe('Jane Smith (jane@example.com)');
+
+    // Unmount before `using` disposes the editor so the disposal does not
+    // update the still-mounted EditorComponent outside of act().
+    await act(async () => {
+      reactRoot.unmount();
+    });
   });
 
   test('updates correctly with rapid signal changes', async () => {
@@ -392,7 +410,7 @@ describe('useExtensionSignalValue', () => {
       return <div>{count}</div>;
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <LexicalExtensionEditorComposer initialEditor={editor}>
           <TestComponent />
@@ -403,12 +421,18 @@ describe('useExtensionSignalValue', () => {
     expect(container?.textContent).toBe('0');
 
     // Make rapid updates
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       for (let i = 1; i <= 10; i++) {
         dep.output.count.value = i;
       }
     });
 
     expect(container?.textContent).toBe('10');
+
+    // Unmount before `using` disposes the editor so the disposal does not
+    // update the still-mounted EditorComponent outside of act().
+    await act(async () => {
+      reactRoot.unmount();
+    });
   });
 });

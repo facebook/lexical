@@ -38,34 +38,54 @@ async function publish() {
     await waitForInput();
   }
 
+  const failures = [];
   for (const pkg of pkgs) {
     console.info(`Publishing ${pkg.getNpmName()}...`);
     if (dryRun === undefined || dryRun === 0) {
-      await exec(
-        `cd ./packages/${pkg.getDirectoryName()}/npm && pnpm publish --access public --tag ${channel} --no-git-checks`,
-      ).catch(err => {
-        if (
-          ignorePreviouslyPublished &&
-          err &&
-          typeof err.stderr === 'string' &&
-          /You cannot publish over the previously published version/.test(
-            err.stderr,
-          )
-        ) {
-          console.info(`Ignoring previously published error`);
-          return null;
-        }
-        console.error(`\nFailed to publish ${pkg.getNpmName()}:`);
-        console.error(err);
-        return err;
-      });
+      // Publish from the package root. pnpm rewrites `workspace:*` for us
+      // and honors the `files` field so only the declared assets ship.
+      const error = await exec(
+        `cd ./packages/${pkg.getDirectoryName()} && pnpm publish --access public --tag ${channel} --no-git-checks --provenance`,
+      ).then(
+        () => null,
+        err => {
+          if (
+            ignorePreviouslyPublished &&
+            err &&
+            typeof err.stderr === 'string' &&
+            /You cannot publish over the previously published version/.test(
+              err.stderr,
+            )
+          ) {
+            console.info(`Ignoring previously published error`);
+            return null;
+          }
+          console.error(`\nFailed to publish ${pkg.getNpmName()}:`);
+          console.error(err);
+          return err;
+        },
+      );
+      if (error) {
+        failures.push(pkg.getNpmName());
+      }
       console.info(`Done!`);
     } else {
       console.info(`Dry run - skipping publish step.`);
     }
   }
+
+  if (failures.length > 0) {
+    throw new Error(
+      `Failed to publish ${failures.length} package(s):\n - ${failures.join(
+        '\n - ',
+      )}`,
+    );
+  }
 }
 
+/**
+ * @returns {Promise<void>}
+ */
 async function waitForInput() {
   return new Promise(resolve => {
     const rl = readline.createInterface({
@@ -83,4 +103,7 @@ async function waitForInput() {
   });
 }
 
-publish();
+publish().catch(err => {
+  console.error(err);
+  process.exitCode = 1;
+});

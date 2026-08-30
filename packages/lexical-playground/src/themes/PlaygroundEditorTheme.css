@@ -17,7 +17,6 @@
   margin: 0;
   margin-left: 20px;
   margin-bottom: 10px;
-  font-size: 15px;
   color: rgb(101, 103, 107);
   border-left-color: rgb(206, 208, 212);
   border-left-width: 4px;
@@ -31,7 +30,7 @@
   margin: 0;
 }
 .PlaygroundEditorTheme__h2 {
-  font-size: 15px;
+  font-size: 16px;
   color: rgb(101, 103, 107);
   font-weight: 700;
   margin: 0;
@@ -119,6 +118,7 @@
 .PlaygroundEditorTheme__textCode {
   background-color: rgb(240, 242, 245);
   padding: 1px 0.25rem;
+  --font-family: Menlo, Consolas, Monaco, monospace;
   font-family: Menlo, Consolas, Monaco, monospace;
   font-size: 94%;
 }
@@ -165,6 +165,7 @@
 .PlaygroundEditorTheme__code {
   background-color: rgb(240, 242, 245);
   font-family: Menlo, Consolas, Monaco, monospace;
+  --font-family: Menlo, Consolas, Monaco, monospace;
   display: block;
   line-height: 1.53;
   font-size: 13px;
@@ -201,6 +202,32 @@
 .PlaygroundEditorTheme__tableScrollableWrapper {
   overflow-x: auto;
   margin: 0px 0px 5px 0px;
+  scrollbar-width: none;
+}
+.PlaygroundEditorTheme__tableScrollableWrapper::-webkit-scrollbar {
+  display: none;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar {
+  position: sticky;
+  bottom: 0;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  z-index: 1;
+  /* Overlap the wrapper's bottom margin so the scrollbar sits flush under
+     the table; the wrapper margin keeps the 5px gap when the scrollbar is
+     hidden (non-overflowing tables). */
+  margin-top: -5px;
+  margin-bottom: 5px;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar::-webkit-scrollbar {
+  height: 8px;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
 }
 .PlaygroundEditorTheme__tableScrollRight {
   box-shadow: inset -10px 0 10px rgba(0, 0, 0, 0.15);
@@ -294,7 +321,7 @@
 .PlaygroundEditorTheme__tableSelection *::selection {
   background-color: transparent;
 }
-.PlaygroundEditorTheme__tableSelected {
+[contenteditable]:focus-within .PlaygroundEditorTheme__tableSelected {
   outline: 2px solid rgb(60, 132, 244);
 }
 .PlaygroundEditorTheme__tableCell {
@@ -330,7 +357,8 @@
 .PlaygroundEditorTheme__tableCellSelected {
   caret-color: transparent;
 }
-.PlaygroundEditorTheme__tableCellSelected::after {
+[contenteditable]:focus-within
+  .PlaygroundEditorTheme__tableCellSelected::after {
   position: absolute;
   left: 0;
   right: 0;
@@ -506,6 +534,11 @@
   position: absolute;
   transform: translateY(-50%);
 }
+.PlaygroundEditorTheme__listItemUnchecked[dir='rtl']:before,
+.PlaygroundEditorTheme__listItemChecked[dir='rtl']:before {
+  left: auto;
+  right: 0;
+}
 .PlaygroundEditorTheme__listItemChecked {
   text-decoration: line-through;
 }
@@ -537,6 +570,10 @@
   height: 0.4em;
   transform: translateY(-50%) rotate(45deg);
   border-width: 0 0.1em 0.1em 0;
+}
+.PlaygroundEditorTheme__listItemChecked[dir='rtl']:after {
+  left: auto;
+  right: 0.35em;
 }
 .PlaygroundEditorTheme__nestedListItem {
   list-style-type: none;
@@ -598,7 +635,14 @@
   background: rgba(255, 212, 0, 0.7);
   border-bottom: 2px solid rgba(255, 212, 0, 0.7);
 }
-.PlaygroundEditorTheme__embedBlock {
+/*
+  Keep the embed's contents unselectable, but leave the decorator host and this
+  wrapper itself selectable: a browser will not extend a triple click past an
+  unselectable block, so an unselectable wrapper collapses the selection when
+  the paragraph before the embed is triple clicked (#7618). `user-select` is
+  inherited, so scoping it to the children still covers the whole embed.
+*/
+.PlaygroundEditorTheme__embedBlock > * {
   user-select: none;
 }
 .PlaygroundEditorTheme__embedBlockFocus {
@@ -666,7 +710,7 @@
   color: #050505;
   border: 0;
   border-radius: 0px;
-  font-size: 15px;
+  font-size: var(--playground-font-size);
   text-align: left;
   line-height: 20px;
   padding: 8px;
@@ -724,7 +768,7 @@
       var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom)
     );
   }
-  .PlaygroundEditorTheme__page + [type='page-break'] {
+  .PlaygroundEditorTheme__page + hr[data-lexical-page-break] {
     display: none;
   }
 }
@@ -740,4 +784,298 @@
     width: var(--page-width);
     min-height: var(--page-height);
   }
+}
+[data-lexical-visible-non-printing-linebreak]::before {
+  content: '↵';
+  color: #999;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  position: absolute;
+}
+[data-lexical-visible-non-printing-block] {
+  position: relative;
+}
+[data-lexical-visible-non-printing-block]::after {
+  content: '¶';
+  color: #999;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  font-size: var(--text-font-size, inherit);
+  font-weight: var(--text-font-weight, inherit);
+  font-family: var(--text-font-family, inherit);
+  text-decoration: none;
+  position: absolute;
+}
+[data-lexical-visible-non-printing-block]:has(br:only-child) {
+  font-size: var(--text-font-size, inherit);
+  font-weight: var(--text-font-weight, inherit);
+  font-family: var(--text-font-family, inherit);
+}
+[data-lexical-visible-non-printing-block]:has(br:last-child)::after {
+  bottom: 0;
+}
+[data-lexical-visible-non-printing-empty-root]
+  [data-lexical-visible-non-printing-block]::after {
+  content: '\200B';
+}
+[data-lexical-visible-non-printing-tab] {
+  position: relative;
+}
+[data-lexical-visible-non-printing-tab]::before {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  height: 8px;
+  transform: translateY(-50%);
+  /* Two-layer composition: fixed-size SVG arrowhead pinned to the right end,
+     plus a 1px stem that stretches across the rest of the tab whitespace.
+     Decouples the arrowhead shape from tab width so heading fonts (large tab
+     widths) and body fonts (small tab widths) both render a sane arrow. */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 8'%3E%3Cpath d='M0 0 L6 4 L0 8' fill='none' stroke='%23999' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      no-repeat right center / 6px 8px,
+    linear-gradient(#999, #999) no-repeat left center / calc(100% - 6px) 1px;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Inline WOFF2 (~308 bytes) whose only glyph is a 120×120 unit square dot
+   centered at (130, 350) in a 1000 UPM space slot — maps U+0020 to a middle
+   dot for the VisibleNonPrintingExtension. Regenerate via
+   packages/lexical-playground/scripts/build-space-dot-font.py (requires
+   fonttools + brotli). */
+@font-face {
+  font-family: 'LexicalSpaceDot';
+  src: url('data:font/woff2;base64,d09GMgABAAAAAAFMAAoAAAAAAqQAAAEFAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmAANAo4TwE2AiQDBgsGAAQgBXgHJhsAAiAvCmwbtjU1FiYhthYrpIeZP0WUDdns/1FKf0mxBFuaQjicQUicrhqlCPGg0W2W9y1dXXVcQyQEwQiD/qtPR6qarErVtE5oiiLwZ2DZQ/6H47jBcUQBQcKB0aD7Io/jhLuN+fQIbnfU7qKeyosJRQxw2QbD6OM/+vAFkF96xwANHeu6YF0ZKCUY/zzJAqCBQrCMVUABsvzk9M3G8Xrmm8uz/2E7y9nZyfIO60AQXnvE07/p3n/g+9o3cg8hn1joGggzLUp50HwIACApPKholgU0AACUCwGxhIBmypIuNSMObVbYLDp//JnAb9cc+UrqG6VTjxHgpg2EYiENarkcHCTaCQA=')
+    format('woff2');
+  unicode-range: U+0020;
+  font-display: block;
+}
+.lexical-card-node {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04);
+  margin: 12px 0;
+  padding: 16px 20px;
+}
+.lexical-card-node[data-selected='true'] {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+.lexical-pullquote-node {
+  border-left: 4px solid #2563eb;
+  background: #f8fafc;
+  border-radius: 4px;
+  margin: 12px 0;
+  padding: 16px 20px;
+}
+.lexical-pullquote-node[data-selected='true'] {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+.lexical-pullquote-body {
+  outline: none;
+  font-style: italic;
+  font-size: 18px;
+  color: #1f2937;
+  line-height: 1.5;
+}
+.lexical-pullquote-attribution {
+  outline: none;
+  margin-top: 8px;
+  color: #4b5563;
+  font-size: 14px;
+  text-align: right;
+}
+.lexical-pullquote-attribution::before {
+  content: '— ';
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Review — an ElementNode whose React chrome goes beyond static presentation:
+   an interactive star-rating widget (click/hover to set, persisted via
+   NodeState) sits above the editable islands — the testimonial prose
+   (getDOMSlot children) and the `author` slot container. */
+.lexical-review-node {
+  background: #fafaf9;
+  border: 1px solid #e7e5e4;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+.lexical-review-chrome {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 18px;
+}
+.lexical-review-stars {
+  display: flex;
+  gap: 2px;
+}
+.lexical-review-star {
+  background: none;
+  border: none;
+  color: #d6d3d1;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0;
+}
+.lexical-review-star-on {
+  color: #f59e0b;
+}
+.lexical-review-children {
+  font-style: italic;
+  line-height: 1.6;
+  outline: none;
+}
+.lexical-review-author [data-lexical-slot='author'] {
+  align-items: baseline;
+  display: flex;
+  outline: none;
+}
+.lexical-review-author [data-lexical-slot='author'] > * {
+  color: #57534e;
+  /* Fill the row beside the permanent '— ' prefix so the editable line (and
+     its empty-state placeholder overlay) does not collapse to zero width. */
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 0;
+}
+/* Permanent '— ' prefix before the author, always shown (like the PullQuote
+   attribution) rather than only as part of the empty-field placeholder. Flex on
+   the slot container keeps it inline with the author paragraph; an empty
+   paragraph's <br> would otherwise drop a block-container ::before to its own
+   line. */
+.lexical-review-author [data-lexical-slot='author']::before {
+  content: '— ';
+  color: #57534e;
+  font-size: 14px;
+  font-weight: 600;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* CSS placeholders for the empty author / prose fields, same idiom as the
+   Card: shown only while a field holds just its empty-paragraph <br>, hidden
+   the moment the user types, so the model seeds no placeholder TextNodes. The
+   author placeholder is just 'Author' now — the '— ' prefix above is
+   permanent. */
+.lexical-review-author [data-lexical-slot='author'] > p:has(br:only-child),
+.lexical-review-children > p:only-of-type:has(br:only-child) {
+  position: relative;
+}
+.lexical-review-author
+  [data-lexical-slot='author']
+  > p:has(br:only-child)::before {
+  content: 'Author';
+}
+.lexical-review-children > p:only-of-type:has(br:only-child)::before {
+  content: 'Write a review…';
+}
+.lexical-review-author
+  [data-lexical-slot='author']
+  > p:has(br:only-child)::before,
+.lexical-review-children > p:only-of-type:has(br:only-child)::before {
+  color: #a8a29e;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Title slot — a header field: large, bold editable text with a thin
+   separator below. The title's editable paragraph reads as header content,
+   not a separately-bordered box. The container renders hidden until
+   CardExtension mounts it in place. */
+.lexical-card-node [data-lexical-slot='title'] {
+  border-bottom: 1px solid #d1d5db;
+  outline: none;
+  padding-bottom: 4px;
+}
+.lexical-card-node [data-lexical-slot='title'] > * {
+  font-size: 20px;
+  font-weight: 600;
+}
+/* Body children (regular ElementNode children, not a named slot) sit
+   directly inside the card with spacing only — no separate panel chrome,
+   since they're the card's content area. The :not([data-lexical-slot])
+   guard keeps the title slot's own wrapper out of this selector. */
+.lexical-card-node > *:not([data-lexical-slot]) {
+  line-height: 1.6;
+  margin-top: 12px;
+}
+/* CSS placeholders for the empty title / body fields. Shown only while a
+   field holds just its empty-paragraph <br> (the codebase's
+   :has(br:only-child) idiom), hidden the moment the user types, so the model
+   seeds no placeholder TextNodes. Absolutely positioned and pointer-inert so
+   they overlay the empty line without shifting the caret or blocking clicks. */
+.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child),
+.lexical-card-node > p:only-of-type:has(br:only-child) {
+  position: relative;
+}
+.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child)::before {
+  content: 'Title';
+}
+.lexical-card-node > p:only-of-type:has(br:only-child)::before {
+  content: 'Body';
+}
+.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child)::before,
+.lexical-card-node > p:only-of-type:has(br:only-child)::before {
+  color: #9ca3af;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Caret-slot focus indicator. The active slot gets an orange accent (the
+   card's existing chrome family) so it visibly differs from the blue
+   `data-selected` ring used for the whole-card NodeSelection — orange
+   reads as "cursor is inside this region", blue reads as "the whole
+   card is selected and Backspace will remove it". We deliberately stay
+   off `content` / `display` so the per-update attribute write doesn't
+   trigger a layout reflow on the same frame as a forward-delete
+   keystroke. */
+.lexical-card-node[data-current-slot='title'] [data-lexical-slot='title'] {
+  border-bottom-color: #fb923c;
+}
+.lexical-card-node[data-current-slot='body'] {
+  border-color: #fb923c;
+  box-shadow:
+    0 0 0 1px rgba(251, 146, 60, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04);
+}
+.PlaygroundEditorTheme__ruby {
+  position: relative;
+  display: inline-block;
+  line-height: 1.3;
+  vertical-align: baseline;
+}
+.PlaygroundEditorTheme__ruby::after {
+  content: attr(data-ruby-annotation);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -0.75em;
+  font-size: 0.5em;
+  line-height: 1;
+  color: #888;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+.PlaygroundEditorTheme__ruby--composing::after {
+  display: none;
 }

@@ -20,6 +20,7 @@ import {PackageMetadata} from './shared/PackageMetadata.mjs';
 async function main() {
   const argv = minimist(process.argv.slice(2));
   const {version} = new PackageMetadata('package.json').packageJson;
+  /** @type {string[]} */
   const paths =
     argv._.length > 0
       ? argv._
@@ -48,6 +49,10 @@ async function main() {
         lexicalUnreleasedDependencies,
       )
       .writeSync();
+    /**
+     * @param {...string} args arguments to pass to the pnpm command
+     * @returns {Promise<void>}
+     */
     const pnpm = async (...args) => {
       console.log(['>', 'pnpm', ...args].join(' '));
       try {
@@ -58,8 +63,10 @@ async function main() {
         });
       } catch (err) {
         console.error(`\nFailed to update example ${path.dirname(fn)}`);
+        // `spawn` rejects with an Error that carries an optional numeric `code`
+        const error = /** @type {{code?: unknown}} */ (err);
         process.exit(
-          'code' in err && typeof err.code === 'number' ? err.code : 1,
+          'code' in error && typeof error.code === 'number' ? error.code : 1,
         );
       }
     };

@@ -9,14 +9,14 @@
 /// <reference types="trusted-types" />
 
 import {getPeerDependencyFromEditor} from '@lexical/extension';
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {$generateHtmlFromNodes} from '@lexical/html';
+import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
   $caretRangeFromSelection,
   $comparePointCaretNext,
-  $createTabNode,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
@@ -26,31 +26,41 @@ import {
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $getSelectionSlotFrame,
+  $getSlot,
+  $getSlotNames,
   $getTextPointCaret,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
   $isTextPointCaret,
   $parseSerializedNode,
   $setSelectionFromCaretRange,
   $splitAtPointCaretNext,
-  BaseSelection,
+  type BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
   defineExtension,
+  findAllLexicalElementsDeep,
   getDOMSelection,
+  getDOMSelectionPoints,
+  getEditorPropertyFromDOMNode,
+  isHTMLElement,
+  isLexicalEditor,
   isSelectionWithinEditor,
-  LexicalEditor,
-  LexicalNode,
-  PointCaret,
-  RangeSelection,
+  type LexicalEditor,
+  type LexicalNode,
+  type PointCaret,
+  type RangeSelection,
   safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-  SerializedElementNode,
+  type SerializedElementNode,
   shallowMergeConfig,
 } from 'lexical';
-import caretFromPoint from 'shared/caretFromPoint';
-import invariant from 'shared/invariant';
+
+import {caretFromPoint} from './caretFromPoint';
+import {$getImportOutput} from './ClipboardImportExtension';
 
 export interface LexicalClipboardData {
   'text/html'?: string | undefined;
@@ -138,83 +148,27 @@ export function $insertDataTransferForPlainText(
 }
 
 /**
- * Attempts to insert content of the mime-types application/x-lexical-editor, text/html,
- * text/plain, or text/uri-list (in descending order of priority) from the provided DataTransfer
- * object into the editor at the provided selection.
+ * Insert the contents of `dataTransfer` at `selection` using the rich-text
+ * import pipeline (`application/x-lexical-editor` → `text/html` → `text/plain`
+ * → `text/uri-list`, in descending order of priority).
+ *
+ * Every payload type leaves the editor's selection after the inserted content,
+ * so `selection` must be a live selection this update may write to — the one
+ * from `$getSelection()`, or one built with `$createRangeSelection()`. Passing
+ * a selection read out of an already-committed EditorState is not supported and
+ * raises an invariant in development builds.
  *
  * @param dataTransfer an object conforming to the [DataTransfer interface] (https://html.spec.whatwg.org/multipage/dnd.html#the-datatransfer-interface)
  * @param selection the selection to use as the insertion point for the content in the DataTransfer object
- * @param editor the LexicalEditor the content is being inserted into.
+ * @param _editor unused; retained for backwards compatibility. Safe to
+ *   omit on new call sites.
  */
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: BaseSelection,
-  editor: LexicalEditor,
+  _editor?: LexicalEditor,
 ): void {
-  const lexicalString = dataTransfer.getData('application/x-lexical-editor');
-
-  if (lexicalString) {
-    try {
-      const payload = JSON.parse(lexicalString);
-      if (
-        payload.namespace === editor._config.namespace &&
-        Array.isArray(payload.nodes)
-      ) {
-        const nodes = $generateNodesFromSerializedNodes(payload.nodes);
-        return $insertGeneratedNodes(editor, nodes, selection);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  const htmlString = dataTransfer.getData('text/html');
-  const plainString = dataTransfer.getData('text/plain');
-
-  // Skip HTML handling if it matches the plain text representation.
-  // This avoids unnecessary processing for plain text strings created by
-  // iOS Safari autocorrect, which incorrectly includes a `text/html` type.
-  if (htmlString && plainString !== htmlString) {
-    try {
-      const parser = new DOMParser();
-      const dom = parser.parseFromString(
-        trustHTML(htmlString) as string,
-        'text/html',
-      );
-      const nodes = $generateNodesFromDOM(editor, dom);
-      return $insertGeneratedNodes(editor, nodes, selection);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  // Multi-line plain text in rich text mode pasted as separate paragraphs
-  // instead of single paragraph with linebreaks.
-  // Webkit-specific: Supports read 'text/uri-list' in clipboard.
-  const text = plainString || dataTransfer.getData('text/uri-list');
-  if (text != null) {
-    if ($isRangeSelection(selection)) {
-      const parts = text.split(/(\r?\n|\t)/);
-      if (parts[parts.length - 1] === '') {
-        parts.pop();
-      }
-      for (let i = 0; i < parts.length; i++) {
-        const currentSelection = $getSelection();
-        if ($isRangeSelection(currentSelection)) {
-          const part = parts[i];
-          if (part === '\n' || part === '\r\n') {
-            currentSelection.insertParagraph();
-          } else if (part === '\t') {
-            currentSelection.insertNodes([$createTabNode()]);
-          } else {
-            currentSelection.insertText(part);
-          }
-        }
-      }
-    } else {
-      selection.insertRawText(text);
-    }
-  }
+  $getImportOutput().$insertDataTransfer(dataTransfer, selection);
 }
 
 const LEXICAL_DRAG_MIME_TYPE = 'application/x-lexical-drag';
@@ -271,19 +225,28 @@ function readDragMarker(dataTransfer: DataTransfer): LexicalDragMarker | null {
 }
 
 function findEditorRootByKey(key: string, doc: Document): HTMLElement | null {
-  const elements = doc.querySelectorAll('[data-lexical-editor="true"]');
-  for (const el of Array.from(elements)) {
-    const editor = (el as unknown as {__lexicalEditor?: {getKey: () => string}})
-      .__lexicalEditor;
-    if (editor && editor.getKey() === key) {
-      return el as HTMLElement;
+  for (const el of findAllLexicalElementsDeep(doc)) {
+    const editor = getEditorPropertyFromDOMNode(el);
+    if (
+      isLexicalEditor(editor) &&
+      editor.getKey() === key &&
+      isHTMLElement(el)
+    ) {
+      return el;
     }
   }
   return null;
 }
 
-function $resolveDropPointCaret(event: DragEvent): null | PointCaret<'next'> {
-  const hit = caretFromPoint(event.clientX, event.clientY);
+function $resolveDropPointCaret(
+  event: DragEvent,
+  editor: LexicalEditor,
+): null | PointCaret<'next'> {
+  const hit = caretFromPoint(
+    event.clientX,
+    event.clientY,
+    editor.getRootElement(),
+  );
   if (hit === null) {
     return null;
   }
@@ -341,7 +304,7 @@ function $doDrop(
     return false;
   }
 
-  const dropCaret = $resolveDropPointCaret(event);
+  const dropCaret = $resolveDropPointCaret(event, editor);
   if (dropCaret === null) {
     return false;
   }
@@ -443,16 +406,6 @@ export function $handlePlainTextDrop(
   );
 }
 
-function trustHTML(html: string): string | TrustedHTML {
-  if (window.trustedTypes && window.trustedTypes.createPolicy) {
-    const policy = window.trustedTypes.createPolicy('lexical', {
-      createHTML: input => input,
-    });
-    return policy.createHTML(html);
-  }
-  return html;
-}
-
 /**
  * Inserts Lexical nodes into the editor using different strategies depending on
  * some simple selection-based heuristics. If you're looking for a generic way to
@@ -465,7 +418,7 @@ function trustHTML(html: string): string | TrustedHTML {
  */
 export function $insertGeneratedNodes(
   editor: LexicalEditor,
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
   selection: BaseSelection,
 ): void {
   if (
@@ -519,7 +472,13 @@ function $updateSelectionOnInsert(selection: BaseSelection): void {
 }
 
 export interface BaseSerializedNode {
-  children?: Array<BaseSerializedNode>;
+  children?: BaseSerializedNode[];
+  /**
+   * Named slot subtrees keyed by slot name; present on serialized hosts.
+   * Mirrors {@link SerializedLexicalNode.$slots}.
+   * @experimental named-slots
+   */
+  $slots?: Record<string, BaseSerializedNode>;
   type: string;
   version: number;
 }
@@ -555,12 +514,17 @@ function $appendNodesToJSON(
   editor: LexicalEditor,
   selection: BaseSelection | null,
   currentNode: LexicalNode,
-  targetArray: Array<BaseSerializedNode> = [],
+  targetArray: BaseSerializedNode[] = [],
 ): boolean {
   let shouldInclude =
     selection !== null ? currentNode.isSelected(selection) : true;
+  // 'clone', not 'html': this builds the internal
+  // `application/x-lexical-editor` payload, the same destination the
+  // $sliceSelectedTextNodeContent and extractWithChild calls below already
+  // pass. Asking with 'html' dropped nodes that opt out of HTML export while
+  // asking to survive a clone (e.g. MarkNode).
   const shouldExclude =
-    $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
+    $isElementNode(currentNode) && currentNode.excludeFromCopy('clone');
   let target = currentNode;
 
   if (selection !== null && $isTextNode(target)) {
@@ -576,11 +540,23 @@ function $appendNodesToJSON(
     shouldInclude = false;
   }
 
+  // An element host in a NodeSelection (e.g. a Card promoted whole-host by a
+  // chrome click) recurses into its children with a null selection so the
+  // whole subtree serializes even when none of the children are in the outer
+  // selection themselves — the old shell-only output made cut silently lossy.
+  // Only a whole-host NodeSelection promotes: a partial RangeSelection that
+  // happens to contain the host must keep slicing/excluding per child, or a
+  // drag into the host's interior would over-export unselected content.
+  const childSelection =
+    shouldInclude && $isNodeSelection(selection) && $isElementNode(currentNode)
+      ? null
+      : selection;
+
   for (let i = 0; i < children.length; i++) {
     const childNode = children[i];
     const shouldIncludeChild = $appendNodesToJSON(
       editor,
-      selection,
+      childSelection,
       childNode,
       serializedNode.children,
     );
@@ -592,6 +568,49 @@ function $appendNodesToJSON(
       currentNode.extractWithChild(childNode, selection, 'clone')
     ) {
       shouldInclude = true;
+    }
+  }
+
+  // Slots are shadow-root isolated, so they can't be partially selected by a
+  // RangeSelection — when the host is included, each slot subtree is copied
+  // whole. Pass a null selection to deep-export the slot regardless of the
+  // outer selection, mirroring the EditorState slot serialization. Gate on the
+  // same condition as the push below (and as the HTML exporter): only emit
+  // slots for a host that is itself emitted, so a host outside the selection
+  // is never walked — its slots must not influence (or break) this export.
+  if (shouldInclude && !shouldExclude) {
+    const slotNames = $getSlotNames(target);
+    if (slotNames.length > 0) {
+      const serializedSlots: Record<string, BaseSerializedNode> = {};
+      for (const name of slotNames) {
+        const slotNode = $getSlot(target, name);
+        invariant(
+          slotNode !== null,
+          'LexicalNode: Node %s has slot "%s" but it resolved to no node during export.',
+          target.constructor.name,
+          name,
+        );
+        const slotArray: BaseSerializedNode[] = [];
+        $appendNodesToJSON(editor, null, slotNode, slotArray);
+        // A whole-slot export must serialize to exactly the slot node. A slot
+        // value that overrides excludeFromCopy would otherwise make
+        // $appendNodesToJSON splice up its children (or emit nothing), leaving
+        // a dangling/undefined slot entry that breaks on paste.
+        invariant(
+          slotArray.length === 1 && slotArray[0].type === slotNode.getType(),
+          'LexicalNode: slot "%s" on %s did not serialize to exactly the slot value node (got %s of type %s); a slot value must not be excluded from copy.',
+          name,
+          target.constructor.name,
+          String(slotArray.length),
+          String(slotArray.length > 0 ? slotArray[0].type : 'none'),
+        );
+        serializedSlots[name] = slotArray[0];
+      }
+      (
+        serializedNode as BaseSerializedNode & {
+          $slots?: Record<string, BaseSerializedNode>;
+        }
+      ).$slots = serializedSlots;
     }
   }
 
@@ -622,11 +641,20 @@ export function $generateJSONFromSelectedNodes<
   selection: BaseSelection | null,
 ): {
   namespace: string;
-  nodes: Array<SerializedNode>;
+  nodes: SerializedNode[];
 } {
-  const nodes: Array<SerializedNode> = [];
+  const nodes: SerializedNode[] = [];
   const root = $getRoot();
-  const topLevelChildren = root.getChildren();
+  // A selection wholly inside a slot subtree never includes its host (slots
+  // are shadow-root isolated), so a root-children walk would miss the
+  // selected nodes entirely and export an empty payload (cut = data loss).
+  // Walk the selection's slot frame instead; outside slots this is the root.
+  // $generateDOMFromNodes in @lexical/html redirects the text/html channel
+  // through the same frame, so the two clipboard payloads stay in agreement.
+  const slotFrame = $getSelectionSlotFrame(selection);
+  const topLevelChildren = (
+    $isElementNode(slotFrame) ? slotFrame : root
+  ).getChildren();
   for (let i = 0; i < topLevelChildren.length; i++) {
     const topLevelNode = topLevelChildren[i];
     $appendNodesToJSON(editor, selection, topLevelNode, nodes);
@@ -646,8 +674,8 @@ export function $generateJSONFromSelectedNodes<
  * @returns an Array of Lexical Node objects.
  */
 export function $generateNodesFromSerializedNodes(
-  serializedNodes: Array<BaseSerializedNode>,
-): Array<LexicalNode> {
+  serializedNodes: BaseSerializedNode[],
+): LexicalNode[] {
   const nodes = [];
   for (const serializedNode of serializedNodes) {
     nodes.push($parseSerializedNode(serializedNode));
@@ -699,7 +727,7 @@ export async function copyToClipboard(
   element.style.top = '-1000px';
   element.append(windowDocument.createTextNode('#'));
   rootElement.append(element);
-  const range = new Range();
+  const range = windowDocument.createRange();
   range.setStart(element, 0);
   range.setEnd(element, 1);
   domSelection.removeAllRanges();
@@ -750,8 +778,9 @@ function $copyToClipboardEvent(
     if (!domSelection) {
       return false;
     }
-    const anchorDOM = domSelection.anchorNode;
-    const focusDOM = domSelection.focusNode;
+    const points = getDOMSelectionPoints(domSelection, editor.getRootElement());
+    const anchorDOM = points.anchorNode;
+    const focusDOM = points.focusNode;
     if (
       anchorDOM !== null &&
       focusDOM !== null &&

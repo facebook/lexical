@@ -39,7 +39,9 @@ export default async function () {
   for (const pkg of packagesManager.getPublicPackages()) {
     const cwd = process.cwd();
     try {
-      process.chdir(pkg.resolve('npm'));
+      // Packs from the package root now that build artifacts and metadata
+      // live there directly (no separate `npm/` subdirectory).
+      process.chdir(pkg.resolve('.'));
       await exec(`pnpm pack --pack-destination ${packDest}`);
     } finally {
       process.chdir(cwd);

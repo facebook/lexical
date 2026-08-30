@@ -6,21 +6,18 @@
  *
  */
 
-import type {
-  EditorConfig,
-  EditorThemeClasses,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  SerializedTextNode,
-  Spread,
-} from 'lexical';
-
 import {
   $applyNodeReplacement,
   addClassNamesToElement,
-  ElementNode,
+  type EditorConfig,
+  type EditorThemeClasses,
+  type ElementNode,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
   removeClassNamesFromElement,
+  type SerializedTextNode,
+  type Spread,
   TextNode,
 } from 'lexical';
 
@@ -47,16 +44,8 @@ export class CodeHighlightNode extends TextNode {
     this.__highlightType = highlightType;
   }
 
-  static getType(): string {
-    return 'code-highlight';
-  }
-
-  static clone(node: CodeHighlightNode): CodeHighlightNode {
-    return new CodeHighlightNode(
-      node.__text,
-      node.__highlightType || undefined,
-      node.__key,
-    );
+  $config() {
+    return this.config('code-highlight', {extends: TextNode});
   }
 
   afterCloneFrom(prevNode: this): void {
@@ -108,12 +97,6 @@ export class CodeHighlightNode extends TextNode {
       }
     }
     return update;
-  }
-
-  static importJSON(
-    serializedNode: SerializedCodeHighlightNode,
-  ): CodeHighlightNode {
-    return $createCodeHighlightNode().updateFromJSON(serializedNode);
   }
 
   updateFromJSON(

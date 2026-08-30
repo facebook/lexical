@@ -6,22 +6,22 @@
  *
  */
 
+import type {TextNode} from 'lexical';
+
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {
   LexicalNodeMenuPlugin,
   MenuOption,
-  MenuRenderFn,
-  MenuResolution,
+  type MenuRenderFn,
+  type MenuResolution,
 } from '@lexical/react/LexicalNodeMenuPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {TextNode} from 'lexical';
 import * as React from 'react';
-import {useCallback} from 'react';
+import {act, useCallback} from 'react';
 import ReactDOM from 'react-dom';
-import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 class TestNodeMenuOption extends MenuOption {
@@ -188,7 +188,7 @@ describe('LexicalNodeMenuPlugin', () => {
     it('should render without errors when menuRenderFn is provided', async () => {
       const App = createApp(<NodeMenuPluginWithMenuRenderFn />);
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -199,7 +199,7 @@ describe('LexicalNodeMenuPlugin', () => {
     it('should accept menuRenderFn as an optional prop', async () => {
       const App = createApp(<NodeMenuPluginWithMenuRenderFn options={[]} />);
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -211,7 +211,7 @@ describe('LexicalNodeMenuPlugin', () => {
     it('should render without errors when menuRenderFn is omitted', async () => {
       const App = createApp(<NodeMenuPluginWithoutMenuRenderFn />);
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -221,7 +221,7 @@ describe('LexicalNodeMenuPlugin', () => {
     it('should accept props without menuRenderFn', async () => {
       const App = createApp(<NodeMenuPluginWithoutMenuRenderFn options={[]} />);
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 

@@ -6,14 +6,16 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  RangeSelection,
-  SerializedElementNode,
+import {
+  $applyNodeReplacement,
+  $getDocument,
+  defineExtension,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+  type RangeSelection,
+  type SerializedElementNode,
 } from 'lexical';
-
-import {$applyNodeReplacement, defineExtension, ElementNode} from 'lexical';
 
 export type SerializedOverflowNode = SerializedElementNode;
 
@@ -32,7 +34,7 @@ export class OverflowNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const div = document.createElement('span');
+    const div = $getDocument().createElement('span');
     const className = config.theme.characterLimit;
     if (typeof className === 'string') {
       div.className = className;

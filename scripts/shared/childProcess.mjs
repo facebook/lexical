@@ -19,12 +19,14 @@ export const exec = promisify(execCb);
  */
 export function spawn(command, args, options) {
   return new Promise((resolve, reject) => {
-    const child = spawnCb(command, args, options);
+    const child = spawnCb(command, args, options ?? {});
     child.on('close', code => {
       if (code === 0) {
         resolve();
       } else {
-        const err = new Error(`Command "${command}" exited with code ${code}`);
+        const err = /** @type {Error & {code: number | null}} */ (
+          new Error(`Command "${command}" exited with code ${code}`)
+        );
         err.code = code;
         reject(err);
       }

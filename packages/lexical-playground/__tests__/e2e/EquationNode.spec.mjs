@@ -31,13 +31,15 @@ function equationHtml(inline = true) {
   return `<${tag}
             class="editor-equation"
             contenteditable="false"
-            data-lexical-decorator="true">
+            data-lexical-decorator="true"
+            role="math"
+            aria-label="Equation: 1">
             <img
               alt=""
               height="0"
               src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
               width="0" />
-            <span role="button" tabindex="-1">
+            <span>
               ${inline ? '' : `<span class="katex-display">`}
               <span class="katex">
                 <span class="katex-html" aria-hidden="true">
@@ -78,7 +80,7 @@ test.describe('EquationNode', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           ${equationHtml(true)}
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -95,11 +97,11 @@ test.describe('EquationNode', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         ${equationHtml(false)}
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

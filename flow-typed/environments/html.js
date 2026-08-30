@@ -1,5 +1,5 @@
-// flow-typed signature: 760aeea3b9b767e808097fe22b68a20f
-// flow-typed version: 8584579196/html/flow_>=v0.261.x
+// flow-typed signature: b876b0c754b533b8b6d83f6166e66d8e
+// flow-typed version: 84d934abce/html/flow_>=v0.261.x
 
 /* DataTransfer */
 
@@ -808,6 +808,7 @@ declare class HTMLImageElement extends HTMLElement {
   isMap: boolean;
   naturalHeight: number; // readonly
   naturalWidth: number; // readonly
+  fetchPriority: "high" | "low" | "auto";
   sizes: string;
   src: string;
   srcset: string;
@@ -1280,6 +1281,7 @@ declare class HTMLLinkElement extends HTMLElement {
   href: string;
   hreflang: string;
   media: string;
+  fetchPriority: "high" | "low" | "auto";
   rel: string;
   sizes: DOMTokenList;
   type: string;
@@ -1292,6 +1294,7 @@ declare class HTMLScriptElement extends HTMLElement {
   charset: string;
   crossOrigin?: string;
   defer: boolean;
+  fetchPriority: "high" | "low" | "auto";
   // flowlint unsafe-getters-setters:off
   get src(): string;
   set src(value: string | TrustedScriptURL): void;

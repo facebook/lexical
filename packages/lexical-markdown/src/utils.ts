@@ -6,10 +6,16 @@
  *
  */
 
-import type {ListNode} from '@lexical/list';
+import type {
+  ElementTransformer,
+  MultilineElementTransformer,
+  TextFormatTransformer,
+  TextMatchTransformer,
+  Transformer,
+} from './MarkdownTransformers';
 
 import {$isCodeNode} from '@lexical/code-core';
-import {$isListItemNode, $isListNode} from '@lexical/list';
+import {$isListItemNode, $isListNode, type ListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
 import {
   $isParagraphNode,
@@ -18,14 +24,6 @@ import {
   type LexicalNode,
   type TextFormatType,
 } from 'lexical';
-
-import {
-  ElementTransformer,
-  MultilineElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from './MarkdownTransformers';
 
 type MarkdownFormatKind =
   | 'noTransformation'
@@ -65,7 +63,7 @@ type MarkdownCriteria = Readonly<{
   requiresParagraphStart: boolean | null | undefined;
 }>;
 
-type MarkdownCriteriaArray = Array<MarkdownCriteria>;
+type MarkdownCriteriaArray = MarkdownCriteria[];
 
 const autoFormatBase: MarkdownCriteria = {
   markdownFormatKind: null,
@@ -404,10 +402,10 @@ function codeBlockExport(node: LexicalNode) {
 }
 
 export function indexBy<T>(
-  list: Array<T>,
+  list: T[],
   callback: (arg0: T) => string | undefined,
-): Readonly<Record<string, Array<T>>> {
-  const index: Record<string, Array<T>> = {};
+): Readonly<Record<string, T[]>> {
+  const index: Record<string, T[]> = {};
 
   for (const item of list) {
     const key = callback(item);
@@ -426,25 +424,25 @@ export function indexBy<T>(
   return index;
 }
 
-export function transformersByType(transformers: Array<Transformer>): Readonly<{
-  element: Array<ElementTransformer>;
-  multilineElement: Array<MultilineElementTransformer>;
-  textFormat: Array<TextFormatTransformer>;
-  textMatch: Array<TextMatchTransformer>;
+export function transformersByType(transformers: Transformer[]): Readonly<{
+  element: ElementTransformer[];
+  multilineElement: MultilineElementTransformer[];
+  textFormat: TextFormatTransformer[];
+  textMatch: TextMatchTransformer[];
 }> {
   const byType = indexBy(transformers, t => t.type);
 
   return {
-    element: (byType.element || []) as Array<ElementTransformer>,
+    element: (byType.element || []) as ElementTransformer[],
     multilineElement: (byType['multiline-element'] ||
-      []) as Array<MultilineElementTransformer>,
-    textFormat: (byType['text-format'] || []) as Array<TextFormatTransformer>,
-    textMatch: (byType['text-match'] || []) as Array<TextMatchTransformer>,
+      []) as MultilineElementTransformer[],
+    textFormat: (byType['text-format'] || []) as TextFormatTransformer[],
+    textMatch: (byType['text-match'] || []) as TextMatchTransformer[],
   };
 }
 
 export const PUNCTUATION_OR_SPACE = /[!-/:-@[-`{-~\s]/;
-export const WHITESPACE = /[ \t\n\r\f]/;
+export const WHITESPACE = /\s/;
 export const PUNCTUATION = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/;
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;

@@ -508,62 +508,28 @@ test.describe('Keyboard Navigation', () => {
       // navigate through the text
       // 1 left
       await moveToPrevWord(page);
-      if (browserName === 'webkit') {
-        await assertSelection(page, {
-          anchorOffset: 7,
-          anchorPath: [0, 2, 0],
-          focusOffset: 7,
-          focusPath: [0, 2, 0],
-        });
-      } else if (browserName === 'firefox') {
-        await assertSelection(page, {
-          anchorOffset: 7,
-          anchorPath: [0, 2, 0],
-          focusOffset: 7,
-          focusPath: [0, 2, 0],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 7,
-          anchorPath: [0, 2, 0],
-          focusOffset: 7,
-          focusPath: [0, 2, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 7,
+        anchorPath: [0, 2, 0],
+        focusOffset: 7,
+        focusPath: [0, 2, 0],
+      });
       // 2 left
       await moveToPrevWord(page);
-      if (browserName === 'firefox') {
-        await assertSelection(page, {
-          anchorOffset: 2,
-          anchorPath: [0, 2, 0],
-          focusOffset: 2,
-          focusPath: [0, 2, 0],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 2,
-          anchorPath: [0, 2, 0],
-          focusOffset: 2,
-          focusPath: [0, 2, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [0, 2, 0],
+        focusOffset: 2,
+        focusPath: [0, 2, 0],
+      });
       // 3 left
       await moveToPrevWord(page);
-      if (browserName === 'firefox') {
-        await assertSelection(page, {
-          anchorOffset: 6,
-          anchorPath: [0, 0, 0],
-          focusOffset: 6,
-          focusPath: [0, 0, 0],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 6,
-          anchorPath: [0, 0, 0],
-          focusOffset: 6,
-          focusPath: [0, 0, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 6,
+        anchorPath: [0, 0, 0],
+        focusOffset: 6,
+        focusPath: [0, 0, 0],
+      });
       // 4 left
       await moveToPrevWord(page);
       await assertSelection(page, {

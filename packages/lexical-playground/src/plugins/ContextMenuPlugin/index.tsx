@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -25,7 +23,7 @@ import {
   type LexicalNode,
   PASTE_COMMAND,
 } from 'lexical';
-import {useMemo} from 'react';
+import {type JSX, useMemo} from 'react';
 
 export default function ContextMenuPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
@@ -67,25 +65,29 @@ export default function ContextMenuPlugin(): JSX.Element {
             const readClipboardItems = await navigator.clipboard.read();
             const item = readClipboardItems[0];
 
-            const permission = await navigator.permissions.query({
-              // @ts-expect-error These types are incorrect.
-              name: 'clipboard-read',
-            });
-            if (permission.state === 'denied') {
-              alert('Not allowed to paste from clipboard.');
-              return;
+            if (navigator.permissions) {
+              const permission = await navigator.permissions.query({
+                // @ts-expect-error These types are incorrect.
+                name: 'clipboard-read',
+              });
+              if (permission.state === 'denied') {
+                alert('Not allowed to paste from clipboard.');
+                return;
+              }
+
+              for (const type of item.types) {
+                const dataString = await (await item.getType(type)).text();
+                data.setData(type, dataString);
+              }
+
+              const event = new ClipboardEvent('paste', {
+                clipboardData: data,
+              });
+
+              editor.dispatchCommand(PASTE_COMMAND, event);
+            } else {
+              alert('Your browser does not support navigator.permissions');
             }
-
-            for (const type of item.types) {
-              const dataString = await (await item.getType(type)).text();
-              data.setData(type, dataString);
-            }
-
-            const event = new ClipboardEvent('paste', {
-              clipboardData: data,
-            });
-
-            editor.dispatchCommand(PASTE_COMMAND, event);
           });
         },
         disabled: false,
@@ -96,24 +98,28 @@ export default function ContextMenuPlugin(): JSX.Element {
       new NodeContextMenuOption(`Paste as Plain Text`, {
         $onSelect: () => {
           navigator.clipboard.read().then(async function (...args) {
-            const permission = await navigator.permissions.query({
-              // @ts-expect-error These types are incorrect.
-              name: 'clipboard-read',
-            });
+            if (navigator.permissions) {
+              const permission = await navigator.permissions.query({
+                // @ts-expect-error These types are incorrect.
+                name: 'clipboard-read',
+              });
 
-            if (permission.state === 'denied') {
-              alert('Not allowed to paste from clipboard.');
-              return;
+              if (permission.state === 'denied') {
+                alert('Not allowed to paste from clipboard.');
+                return;
+              }
+
+              const data = new DataTransfer();
+              const clipboardText = await navigator.clipboard.readText();
+              data.setData('text/plain', clipboardText);
+
+              const event = new ClipboardEvent('paste', {
+                clipboardData: data,
+              });
+              editor.dispatchCommand(PASTE_COMMAND, event);
+            } else {
+              alert('Your browser does not support navigator.permissions');
             }
-
-            const data = new DataTransfer();
-            const clipboardText = await navigator.clipboard.readText();
-            data.setData('text/plain', clipboardText);
-
-            const event = new ClipboardEvent('paste', {
-              clipboardData: data,
-            });
-            editor.dispatchCommand(PASTE_COMMAND, event);
           });
         },
         disabled: false,

@@ -6,10 +6,8 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import * as React from 'react';
-import {useCallback, useMemo, useState} from 'react';
+import {type JSX, useCallback, useMemo, useState} from 'react';
 
 import Modal from '../ui/Modal';
 

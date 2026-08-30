@@ -6,30 +6,21 @@
  *
  */
 
-import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getDocument,
   $isElementNode,
-  buildImportMap,
-  DOMConversionOutput,
-  EditorConfig,
+  type EditorConfig,
   ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  RangeSelection,
+  IS_CHROME,
+  IS_FIREFOX,
+  type LexicalEditor,
+  type LexicalNode,
+  type RangeSelection,
 } from 'lexical';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
-
-export function $convertSummaryElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const node = $createCollapsibleTitleNode();
-  return {
-    node,
-  };
-}
 
 /** @noInheritDoc */
 export class CollapsibleTitleNode extends ElementNode {
@@ -42,17 +33,11 @@ export class CollapsibleTitleNode extends ElementNode {
         }
       },
       extends: ElementNode,
-      importDOM: buildImportMap({
-        summary: () => ({
-          conversion: $convertSummaryElement,
-          priority: 1,
-        }),
-      }),
     });
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    const dom = document.createElement('summary');
+    const dom = $getDocument().createElement('summary');
     dom.classList.add('Collapsible__title');
     if (IS_CHROME || IS_FIREFOX) {
       dom.addEventListener('click', () => {

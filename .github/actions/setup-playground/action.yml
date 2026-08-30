@@ -1,0 +1,38 @@
+name: Setup playground build
+description: Set up the playground with prepare-ci, depends on setup-pnpm
+inputs:
+  node-version:
+    required: true
+    description: 'Node version, e.g. 24.x'
+  fail-on-cache-miss:
+    required: false
+    description: 'true to fail on cache miss'
+  prod:
+    required: false
+    description: 'true to build prod'
+
+runs:
+  using: 'composite'
+  steps:
+    # setup-pnpm must be completed before this point
+    - name: Restore build cache
+      uses: actions/cache/restore@v5
+      id: build-cache
+      with:
+        path: |
+          packages/lexical-playground/build
+          packages/*/dist
+        key: build-${{ inputs.prod == 'true' && 'prod' || 'dev' }}-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+        fail-on-cache-miss: ${{ inputs.fail-on-cache-miss == 'true' && 'true' || ''}}
+    - name: Build
+      shell: bash
+      if: steps.build-cache.outputs.cache-hit != 'true'
+      run: pnpm run ${{ inputs.prod == 'prod' && 'prepare-ci-prod' || 'prepare-ci' }}
+    - name: Save build cache
+      if: steps.build-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: |
+          packages/lexical-playground/build
+          packages/*/dist
+        key: ${{ steps.build-cache.outputs.cache-primary-key }}

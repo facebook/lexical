@@ -6,28 +6,25 @@
  *
  */
 
-import type {
-  BaseBinding,
-  Binding,
-  BindingV2,
-  ExcludedProperties,
-  Provider,
-  SyncCursorPositionsFn,
-} from '@lexical/yjs';
-import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
+import type {InitialEditorStateType} from '../LexicalComposer';
 
-import {mergeRegister} from '@lexical/utils';
 import {
+  type BaseBinding,
+  type Binding,
+  type BindingV2,
   CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
   CONNECTED_COMMAND,
   createBindingV2__EXPERIMENTAL,
   createUndoManager,
   DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
+  type ExcludedProperties,
   initLocalState,
+  type Provider,
+  removeCursorHighlightRule,
   renderSnapshot__EXPERIMENTAL,
   setLocalStateFocus,
   syncCursorPositions,
+  type SyncCursorPositionsFn,
   syncLexicalUpdateToYjs,
   syncLexicalUpdateToYjsV2__EXPERIMENTAL,
   syncYjsChangesToLexical,
@@ -44,24 +41,49 @@ import {
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   FOCUS_COMMAND,
+  getActiveElement,
   HISTORY_MERGE_TAG,
+  type LexicalEditor,
+  mergeRegister,
   REDO_COMMAND,
+  registerEventListeners,
   SKIP_COLLAB_TAG,
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  type JSX,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {createPortal} from 'react-dom';
-import {Doc, Snapshot, Transaction, UndoManager, YEvent} from 'yjs';
-
-import {InitialEditorStateType} from '../LexicalComposer';
+import {
+  type Doc,
+  type Snapshot,
+  type Transaction,
+  UndoManager,
+  type YEvent,
+} from 'yjs';
 
 export type CursorsContainerRef = React.RefObject<HTMLElement | null>;
+
+/**
+ * Well-known key under which the active Yjs {@link UndoManager} is published on
+ * the editor instance (mirroring how `@lexical/extension` attaches its builder
+ * via a `Symbol.for` key). Collab disables `@lexical/history`, so this is the
+ * handle tooling and e2e tests use to force a deterministic undo boundary via
+ * `editor[COLLAB_UNDO_MANAGER]?.stopCapturing()` instead of waiting out the
+ * UndoManager capture timeout.
+ */
+const COLLAB_UNDO_MANAGER = Symbol.for('@lexical/yjs/UndoManager');
 
 type OnYjsTreeChanges = (
   // The below `any` type is taken directly from the vendor types for YJS.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  events: Array<YEvent<any>>,
+  events: YEvent<any>[],
   transaction: Transaction,
 ) => void;
 
@@ -79,13 +101,14 @@ export function useYjsCollaboration(
   initialEditorState?: InitialEditorStateType,
   awarenessData?: object,
   syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
+  selectionHighlight: boolean = false,
 ): JSX.Element {
   const isReloadingDoc = useRef(false);
 
   const onBootstrap = useCallback(() => {
     const {root} = binding;
     if (shouldBootstrap && root.isEmpty() && root._xmlText._length === 0) {
-      initializeEditor(editor, initialEditorState);
+      bootstrapEditor(binding, editor, initialEditorState);
     }
   }, [binding, editor, initialEditorState, shouldBootstrap]);
 
@@ -170,7 +193,7 @@ export function useYjsCollaboration(
     onBootstrap,
   );
 
-  useAwareness(binding, provider);
+  useAwareness(binding, provider, selectionHighlight);
 
   return useYjsCursors(binding, cursorsContainerRef);
 }
@@ -187,6 +210,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData?: object;
     excludedProperties?: ExcludedProperties;
     rootName?: string;
+    selectionHighlight?: boolean;
     __shouldBootstrapUnsafe?: boolean;
   } = {},
 ): BindingV2 {
@@ -194,6 +218,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData,
     excludedProperties,
     rootName,
+    selectionHighlight = false,
     __shouldBootstrapUnsafe: shouldBootstrap,
   } = options;
 
@@ -219,7 +244,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
   const onBootstrap = useCallback(() => {
     const {root} = binding;
     if (shouldBootstrap && root._length === 0) {
-      initializeEditor(editor);
+      bootstrapEditor(binding, editor);
     }
   }, [binding, editor, shouldBootstrap]);
 
@@ -284,6 +309,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
         prevEditorState,
         editorState,
         dirtyElements,
+        dirtyLeaves,
         normalizedNodes,
         tags,
       }) => {
@@ -294,6 +320,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
             prevEditorState,
             editorState,
             dirtyElements,
+            dirtyLeaves,
             normalizedNodes,
             tags,
           );
@@ -317,7 +344,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     onBootstrap,
   );
 
-  useAwareness(binding, provider);
+  useAwareness(binding, provider, selectionHighlight);
 
   return binding;
 }
@@ -352,11 +379,14 @@ function useProvider(
       }
     };
 
+    const rootElement = editor.getRootElement();
     initLocalState(
       provider,
       name,
       color,
-      document.activeElement === editor.getRootElement(),
+      // getActiveElement rather than document.activeElement, which reports the
+      // shadow host when the editor is in a shadow root.
+      rootElement !== null && getActiveElement(rootElement) === rootElement,
       awarenessData || {},
     );
 
@@ -437,28 +467,29 @@ function useProvider(
     // Use both beforeunload and pagehide for maximum browser compatibility
     // beforeunload: fires before page unloads (may be cancelable)
     // pagehide: fires when page is being unloaded (more reliable, especially on mobile)
-    window.addEventListener('beforeunload', clearAwarenessState);
-    window.addEventListener('pagehide', clearAwarenessState);
-
-    return () => {
-      window.removeEventListener('beforeunload', clearAwarenessState);
-      window.removeEventListener('pagehide', clearAwarenessState);
-    };
+    return registerEventListeners(window, {
+      beforeunload: clearAwarenessState,
+      pagehide: clearAwarenessState,
+    });
   }, [provider]);
 }
 
-function useAwareness(binding: Binding | BindingV2, provider: Provider) {
+function useAwareness(
+  binding: Binding | BindingV2,
+  provider: Provider,
+  selectionHighlight: boolean,
+) {
   useEffect(() => {
     const {awareness} = provider;
     const onAwarenessUpdate = () => {
-      syncCursorPositions(binding, provider);
+      syncCursorPositions(binding, provider, {selectionHighlight});
     };
     awareness.on('update', onAwarenessUpdate);
 
     return () => {
       awareness.off('update', onAwarenessUpdate);
     };
-  }, [binding, provider]);
+  }, [binding, provider, selectionHighlight]);
 }
 
 export function useYjsCursors(
@@ -473,6 +504,7 @@ export function useYjsCursors(
 
     return createPortal(
       <div ref={ref} />,
+      // eslint-disable-next-line no-restricted-syntax
       (cursorsContainerRef && cursorsContainerRef.current) || document.body,
     );
   }, [binding, cursorsContainerRef]);
@@ -560,6 +592,20 @@ function useYjsUndoManager(editor: LexicalEditor, undoManager: UndoManager) {
       ),
     );
   });
+  // Publish the UndoManager on the editor (see COLLAB_UNDO_MANAGER) so tooling
+  // and e2e tests can reach it; remove it again when it changes or unmounts.
+  useEffect(() => {
+    const withManager = editor as LexicalEditor &
+      Record<symbol, UndoManager | undefined>;
+    // eslint-disable-next-line react-hooks/immutability
+    withManager[COLLAB_UNDO_MANAGER] = undoManager;
+    return () => {
+      if (withManager[COLLAB_UNDO_MANAGER] === undoManager) {
+        delete withManager[COLLAB_UNDO_MANAGER];
+      }
+    };
+  }, [editor, undoManager]);
+
   const clearHistory = useCallback(() => {
     undoManager.clear();
   }, [undoManager]);
@@ -589,9 +635,52 @@ function useYjsUndoManager(editor: LexicalEditor, undoManager: UndoManager) {
   return clearHistory;
 }
 
+/**
+ * Write the initial editor state into an empty shared document. The write is
+ * flagged on the binding so that the Yjs UndoManager created by
+ * `createUndoManager` skips the resulting transaction: bootstrapping is not a
+ * user edit and must not be undoable, which matches a non-collab editor where
+ * the initial state is applied with HISTORY_MERGE_TAG (#7110).
+ */
+function bootstrapEditor(
+  binding: BaseBinding,
+  editor: LexicalEditor,
+  initialEditorState?: InitialEditorStateType,
+): void {
+  binding.isBootstrapping = true;
+  try {
+    // The Yjs write happens in the update listener during the commit, which is
+    // not necessarily synchronous with this call, so the flag has to outlive
+    // it. An `onUpdate` callback is the boundary that matches the write:
+    // Lexical queues it on `editor._deferred` before the update body runs and
+    // flushes it at the tail of the same commit that ran the update listeners,
+    // so it lands after the write and never before it. A queued deferred
+    // callback also forces a commit on its own, so this still runs when the
+    // update turns out to be a no-op.
+    initializeEditor(editor, initialEditorState, () => {
+      binding.isBootstrapping = false;
+    });
+  } finally {
+    // `onUpdate` alone is not enough: when the update body throws, Lexical
+    // reports the error, commits (running the update listeners, so the Yjs
+    // write still happens), and skips that commit's deferred callbacks. The
+    // reset would then be left queued until the tail of the *next* commit,
+    // by which point that commit's listener has already written to Yjs with
+    // the flag set — silently keeping the user's first edit after a failed
+    // bootstrap out of the undo stack. This bounds the flag's lifetime to a
+    // microtask no matter how the update ends. It cannot fire early: the
+    // commit is scheduled from inside `editor.update` above, so its microtask
+    // is queued ahead of this one.
+    queueMicrotask(() => {
+      binding.isBootstrapping = false;
+    });
+  }
+}
+
 function initializeEditor(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
+  onUpdate?: () => void,
 ): void {
   editor.update(
     () => {
@@ -630,12 +719,12 @@ function initializeEditor(
         } else {
           const paragraph = $createParagraphNode();
           root.append(paragraph);
-          const {activeElement} = document;
+          const rootElement = editor.getRootElement();
 
           if (
             $getSelection() !== null ||
-            (activeElement !== null &&
-              activeElement === editor.getRootElement())
+            (rootElement !== null &&
+              getActiveElement(rootElement) === rootElement)
           ) {
             paragraph.select();
           }
@@ -643,6 +732,7 @@ function initializeEditor(
       }
     },
     {
+      onUpdate,
       tag: HISTORY_MERGE_TAG,
     },
   );
@@ -676,19 +766,23 @@ function clearEditorSkipCollab(editor: LexicalEditor, binding: BaseBinding) {
     return;
   }
 
-  // reset cursors in dom
-  const cursorsArr = Array.from(cursors.values());
-
-  for (let i = 0; i < cursorsArr.length; i++) {
-    const cursor = cursorsArr[i];
+  for (const cursor of cursors.values()) {
     const selection = cursor.selection;
-
-    if (selection && selection.selections != null) {
-      const selections = selection.selections;
-
-      for (let j = 0; j < selections.length; j++) {
-        cursorsContainer.removeChild(selections[i]);
+    if (selection === null) {
+      continue;
+    }
+    if (selection.highlight !== null) {
+      CSS.highlights.delete(selection.highlightName);
+      removeCursorHighlightRule(binding, selection.highlightName);
+    }
+    if (selection.caret.parentNode === cursorsContainer) {
+      cursorsContainer.removeChild(selection.caret);
+    }
+    for (const span of selection.selections) {
+      if (span.parentNode === cursorsContainer) {
+        cursorsContainer.removeChild(span);
       }
     }
+    cursor.selection = null;
   }
 }

@@ -6,58 +6,30 @@
  *
  */
 
-import type {JSX} from 'react';
-
-import {
-  SelectionAlwaysOnDisplayExtension,
-  type Signal,
-} from '@lexical/extension';
-import {
-  ClickableLinkExtension,
-  LinkAttributes,
-  LinkExtension,
-} from '@lexical/link';
-import {CheckListExtension, ListExtension} from '@lexical/list';
+import {getExtensionDependencyFromEditor, signal} from '@lexical/extension';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
-import {
-  CollaborationPlugin,
-  CollaborationPluginV2__EXPERIMENTAL,
-} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
-import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
-import {useOptionalExtensionDependency} from '@lexical/react/useExtensionComponent';
-import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
-import {CAN_USE_DOM} from '@lexical/utils';
-import {OutputExtension} from 'lexical';
-import {useEffect, useMemo, useState} from 'react';
-import {Doc} from 'yjs';
+import {useSignalValue} from '@lexical/react/useExtensionSignalValue';
+import {CAN_USE_DOM, registerEventListener} from 'lexical';
+import {type JSX, useCallback, useEffect, useMemo, useState} from 'react';
 
-import {
-  createWebsocketProvider,
-  createWebsocketProviderWithDoc,
-} from './collaboration';
+import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
+import {useSynchronizeSettings} from './hooks/useSynchronizeSettings';
 import ActionsPlugin from './plugins/ActionsPlugin';
-import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
-import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
-import EquationsPlugin from './plugins/EquationsPlugin';
-import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
+import {ExcalidrawPlugin} from './plugins/ExcalidrawExtension';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
-import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
-import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
-import MentionsPlugin from './plugins/MentionsPlugin';
-import PollPlugin from './plugins/PollPlugin';
-import ShortcutsPlugin from './plugins/ShortcutsPlugin';
-import {SpecialTextExtension} from './plugins/SpecialTextExtension';
+import {MentionsPlugin} from './plugins/MentionsExtension';
+import FloatingRubyEditorPlugin from './plugins/RubyExtension/FloatingRubyEditor';
+import {ShortcutsExtension} from './plugins/ShortcutsExtension';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
@@ -67,46 +39,14 @@ import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
 import TableScrollShadowPlugin from './plugins/TableScrollShadowPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
-import {VersionsPlugin} from './plugins/VersionsPlugin';
 import ContentEditable from './ui/ContentEditable';
-
-const COLLAB_DOC_ID = 'main';
-
-const skipCollaborationInit =
-  // @ts-expect-error
-  window.parent != null && window.parent.frames.right === window;
-
-export function useSyncExtensionSignal<
-  K extends string,
-  V,
-  Output extends {[Key in K]: Signal<V>},
->(extension: OutputExtension<Output>, prop: K, value: V) {
-  const signal = useOptionalExtensionDependency(extension)?.output[prop];
-  useEffect(() => {
-    if (signal) {
-      // eslint-disable-next-line react-hooks/immutability
-      signal.value = value;
-    }
-  }, [signal, value]);
-}
-
-const DEFAULT_LINK_ATTRIBUTES: LinkAttributes = {
-  rel: 'noopener noreferrer',
-  target: '_blank',
-};
 
 export default function Editor(): JSX.Element {
   const {
     settings: {
-      isCodeHighlighted,
-      isCodeShiki,
       isCollab,
       useCollabV2,
-      isAutocomplete,
-      isMaxLength,
       isCharLimit,
-      hasLinkAttributes,
-      hasNestedTables,
       hasFitNestedTables,
       isCharLimitUtf8,
       isRichText,
@@ -114,16 +54,12 @@ export default function Editor(): JSX.Element {
       showTableOfContents,
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
-      tableCellMerge,
-      tableCellBackgroundColor,
-      tableHorizontalScroll,
-      shouldAllowHighlightingWithBrackets,
-      selectionAlwaysOnDisplay,
-      listStrictIndent,
-      shouldDisableFocusOnClickChecklist,
     },
   } = useSettings();
-  const isEditable = useLexicalEditable();
+  // Mirror the settings context onto the editor's reactive extension config
+  // signals (NOT via App.tsx's DynamicSettings, which would rebuild the
+  // editor). See the hook for details.
+  useSynchronizeSettings();
   const placeholder = isCollab
     ? 'Enter some collaborative rich text...'
     : isRichText
@@ -135,42 +71,36 @@ export default function Editor(): JSX.Element {
     useState<boolean>(false);
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
-  const [isLinkEditMode, setIsLinkEditMode] = useState<boolean>(false);
+  // The link edit mode state lives on the ShortcutsExtension output so the
+  // insert-link keyboard shortcut can set it without any React coupling
+  // (the extension is only present in rich text configurations)
+  const isLinkEditModeSignal = useMemo(
+    () =>
+      isRichText
+        ? getExtensionDependencyFromEditor(editor, ShortcutsExtension).output
+            .isLinkEditMode
+        : signal(false),
+    [editor, isRichText],
+  );
+  const isLinkEditMode = useSignalValue(isLinkEditModeSignal);
+  const setIsLinkEditMode = useCallback(
+    (nextIsLinkEditMode: boolean) => {
+      if (isRichText) {
+        getExtensionDependencyFromEditor(
+          editor,
+          ShortcutsExtension,
+        ).output.isLinkEditMode.value = nextIsLinkEditMode;
+      }
+    },
+    [editor, isRichText],
+  );
+  const [isRubyEditMode, setIsRubyEditMode] = useState<boolean>(false);
 
   const onRef = (_floatingAnchorElem: HTMLDivElement) => {
     if (_floatingAnchorElem !== null) {
       setFloatingAnchorElem(_floatingAnchorElem);
     }
   };
-
-  useSyncExtensionSignal(MaxLengthExtension, 'disabled', !isMaxLength);
-  useSyncExtensionSignal(
-    CodeHighlightExtension,
-    'mode',
-    !isCodeHighlighted ? 'off' : isCodeShiki ? 'shiki' : 'prism',
-  );
-  useSyncExtensionSignal(
-    SpecialTextExtension,
-    'disabled',
-    !shouldAllowHighlightingWithBrackets,
-  );
-  useSyncExtensionSignal(
-    LinkExtension,
-    'attributes',
-    hasLinkAttributes ? DEFAULT_LINK_ATTRIBUTES : undefined,
-  );
-  useSyncExtensionSignal(ListExtension, 'hasStrictIndent', listStrictIndent);
-  useSyncExtensionSignal(
-    CheckListExtension,
-    'disableTakeFocusOnClick',
-    shouldDisableFocusOnClickChecklist,
-  );
-  useSyncExtensionSignal(ClickableLinkExtension, 'disabled', isEditable);
-  useSyncExtensionSignal(
-    SelectionAlwaysOnDisplayExtension,
-    'disabled',
-    !selectionAlwaysOnDisplay,
-  );
 
   useEffect(() => {
     const updateViewPortWidth = () => {
@@ -182,11 +112,7 @@ export default function Editor(): JSX.Element {
       }
     };
     updateViewPortWidth();
-    window.addEventListener('resize', updateViewPortWidth);
-
-    return () => {
-      window.removeEventListener('resize', updateViewPortWidth);
-    };
+    return registerEventListener(window, 'resize', updateViewPortWidth);
   }, [isSmallWidthViewport]);
 
   return (
@@ -197,12 +123,7 @@ export default function Editor(): JSX.Element {
           activeEditor={activeEditor}
           setActiveEditor={setActiveEditor}
           setIsLinkEditMode={setIsLinkEditMode}
-        />
-      )}
-      {isRichText && (
-        <ShortcutsPlugin
-          editor={activeEditor}
-          setIsLinkEditMode={setIsLinkEditMode}
+          setIsRubyEditMode={setIsRubyEditMode}
         />
       )}
       <div
@@ -221,48 +142,26 @@ export default function Editor(): JSX.Element {
         )}
         {isRichText ? (
           <>
-            {isCollab ? (
-              useCollabV2 ? (
-                <>
-                  <CollabV2
-                    id={COLLAB_DOC_ID}
-                    shouldBootstrap={!skipCollaborationInit}
-                  />
-                  <VersionsPlugin id={COLLAB_DOC_ID} />
-                </>
-              ) : (
-                <CollaborationPlugin
-                  id={COLLAB_DOC_ID}
-                  providerFactory={createWebsocketProvider}
-                  shouldBootstrap={!skipCollaborationInit}
-                />
-              )
-            ) : null}
             <div className="editor-scroller">
               <div className="editor" ref={onRef}>
                 <ContentEditable placeholder={placeholder} />
               </div>
             </div>
-            <TablePlugin
-              hasCellMerge={tableCellMerge}
-              hasCellBackgroundColor={tableCellBackgroundColor}
-              hasHorizontalScroll={tableHorizontalScroll && !hasFitNestedTables}
-              hasNestedTables={hasNestedTables}
-            />
             {hasFitNestedTables ? <TableFitNestedTablePlugin /> : null}
             <TableCellResizer />
             <TableScrollShadowPlugin />
-            <PollPlugin />
-            <EquationsPlugin />
             <ExcalidrawPlugin />
-            <TabIndentationPlugin maxIndent={7} />
-            <LayoutPlugin />
             {floatingAnchorElem && (
               <>
                 <FloatingLinkEditorPlugin
                   anchorElem={floatingAnchorElem}
                   isLinkEditMode={isLinkEditMode}
                   setIsLinkEditMode={setIsLinkEditMode}
+                />
+                <FloatingRubyEditorPlugin
+                  anchorElem={floatingAnchorElem}
+                  isRubyEditMode={isRubyEditMode}
+                  setIsRubyEditMode={setIsRubyEditMode}
                 />
                 <TableCellActionMenuPlugin
                   anchorElem={floatingAnchorElem}
@@ -278,6 +177,7 @@ export default function Editor(): JSX.Element {
                 <FloatingTextFormatToolbarPlugin
                   anchorElem={floatingAnchorElem}
                   setIsLinkEditMode={setIsLinkEditMode}
+                  isRubyEditMode={isRubyEditMode}
                 />
               </>
             )}
@@ -291,7 +191,6 @@ export default function Editor(): JSX.Element {
             maxLength={5}
           />
         )}
-        {isAutocomplete && <AutocompletePlugin />}
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
         <ActionsPlugin
@@ -301,29 +200,5 @@ export default function Editor(): JSX.Element {
       </div>
       {showTreeView && <TreeViewPlugin />}
     </>
-  );
-}
-
-function CollabV2({
-  id,
-  shouldBootstrap,
-}: {
-  id: string;
-  shouldBootstrap: boolean;
-}) {
-  // VersionsPlugin needs GC disabled.
-  const doc = useMemo(() => new Doc({gc: false}), []);
-
-  const provider = useMemo(() => {
-    return createWebsocketProviderWithDoc('main', doc);
-  }, [doc]);
-
-  return (
-    <CollaborationPluginV2__EXPERIMENTAL
-      id={id}
-      doc={doc}
-      provider={provider}
-      __shouldBootstrapUnsafe={shouldBootstrap}
-    />
   );
 }

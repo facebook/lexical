@@ -6,17 +6,9 @@
  *
  */
 
-import type {CodeHighlightNode} from './CodeHighlightNode';
-import type {
-  BaseSelection,
-  LexicalCommand,
-  LexicalEditor,
-  LineBreakNode,
-  RangeSelection,
-  TabNode,
-} from 'lexical';
-
 import {effect, namedSignals} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
+import {$onEscapeDown, $onEscapeUp} from '@lexical/utils';
 import {
   $createLineBreakNode,
   $createPoint,
@@ -32,23 +24,33 @@ import {
   $isTabNode,
   $normalizeCaret,
   $setSelectionFromCaretRange,
+  type BaseSelection,
   COMMAND_PRIORITY_LOW,
   defineExtension,
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
+  KEY_ARROW_LEFT_COMMAND,
+  KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LineBreakNode,
   mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
+  type RangeSelection,
   safeCast,
+  type TabNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {CodeExtension} from './CodeExtension';
-import {$isCodeHighlightNode} from './CodeHighlightNode';
+import {
+  $isCodeHighlightNode,
+  type CodeHighlightNode,
+} from './CodeHighlightNode';
 import {$isCodeNode} from './CodeNode';
 import {
   $getCodeLineDirection,
@@ -204,6 +206,32 @@ function $handleTab(shiftKey: boolean): null | LexicalCommand<void> {
   return indentOrOutdent;
 }
 
+/**
+ * Outdent the single line the collapsed caret sits on.
+ *
+ * `$getCodeLines` drops a trailing line when the selection ends exactly at its
+ * start — for a collapsed caret that is always true, so the caret's own line
+ * never reaches the outdent loop and the line has to be resolved from the
+ * anchor here. Applies the same rule as that loop: strip a leading TabNode, or
+ * `tabSize` leading spaces when the extension is configured for them.
+ */
+function $outdentLineAtCaret(
+  selection: RangeSelection,
+  tabSize: number | undefined,
+): void {
+  const anchorNode = selection.anchor.getNode();
+  // An element point (e.g. the caret on a blank line) has no line to outdent.
+  if (!$isCodeHighlightNode(anchorNode) && !$isTabNode(anchorNode)) {
+    return;
+  }
+  const firstOfLine = $getFirstCodeNodeOfLine(anchorNode);
+  if ($isTabNode(firstOfLine)) {
+    firstOfLine.remove();
+  } else if (tabSize !== undefined && $isCodeHighlightNode(firstOfLine)) {
+    $outdentLeadingSpaces(firstOfLine, tabSize, selection);
+  }
+}
+
 function $handleMultilineIndent(
   type: LexicalCommand<void>,
   tabSize?: number,
@@ -221,6 +249,8 @@ function $handleMultilineIndent(
   if (codeLinesLength === 0 && selection.isCollapsed()) {
     if (type === INDENT_CONTENT_COMMAND) {
       selection.insertNodes([$createTabNode()]);
+    } else {
+      $outdentLineAtCaret(selection, tabSize);
     }
     return true;
   }
@@ -328,7 +358,7 @@ function $handleShiftLines(
         if (codeNodeSibling === null) {
           codeNode.selectPrevious();
           event.preventDefault();
-          return true;
+          return false;
         }
       } else if (
         !arrowIsUp &&
@@ -339,7 +369,7 @@ function $handleShiftLines(
         if (codeNodeSibling === null) {
           codeNode.selectNext();
           event.preventDefault();
-          return true;
+          return false;
         }
       }
     }
@@ -390,10 +420,15 @@ function $handleShiftLines(
     return true;
   }
 
+  // A LineBreakNode sibling means the adjacent line is blank, so it has no
+  // node of its own to anchor the move to — $getFirstCodeNodeOfLine /
+  // $getLastCodeNodeOfLine hand that linebreak straight back, and it belongs
+  // to a *different* line. Anchoring on it splices the moving line into the
+  // line on the far side of the blank one, merging the two.
+  const adjacentLineIsBlank = $isLineBreakNode(sibling);
   const maybeInsertionPoint =
-    $isCodeHighlightNode(sibling) ||
-    $isTabNode(sibling) ||
-    $isLineBreakNode(sibling)
+    !adjacentLineIsBlank &&
+    ($isCodeHighlightNode(sibling) || $isTabNode(sibling))
       ? arrowIsUp
         ? $getFirstCodeNodeOfLine(sibling)
         : $getLastCodeNodeOfLine(sibling)
@@ -402,7 +437,15 @@ function $handleShiftLines(
     maybeInsertionPoint != null ? maybeInsertionPoint : sibling;
   linebreak.remove();
   range.forEach(node => node.remove());
-  if (type === KEY_ARROW_UP_COMMAND) {
+  if (adjacentLineIsBlank) {
+    // The blank line's position is immediately after the sibling linebreak,
+    // in both directions.
+    range.forEach(node => {
+      insertionPoint.insertAfter(node);
+      insertionPoint = node;
+    });
+    insertionPoint.insertAfter(linebreak);
+  } else if (type === KEY_ARROW_UP_COMMAND) {
     range.forEach(node => insertionPoint.insertBefore(node));
     insertionPoint.insertBefore(linebreak);
   } else {
@@ -446,6 +489,14 @@ function $handleMoveTo(
   const direction = $getCodeLineDirection(focusLineNode);
   const moveToStart = direction === 'rtl' ? !isMoveToStart : isMoveToStart;
 
+  // Shift variant: let the non-shift branches resolve the target via
+  // framework helpers (`selectNext` / `selectStart` / `setTextNodeRange` /
+  // `node.select`), then restore the original anchor so we end up with an
+  // extended selection rather than a collapsed caret. This keeps point
+  // shapes (text vs. element) consistent between shift and non-shift.
+  const originalAnchorKey = anchor.key;
+  const originalAnchorOffset = anchor.offset;
+  const originalAnchorType = anchor.type;
   if (moveToStart) {
     const start = $getStartOfCodeInLine(focusLineNode, focus.offset);
     if (start !== null) {
@@ -461,6 +512,13 @@ function $handleMoveTo(
   } else {
     const node = $getEndOfCodeInLine(focusLineNode);
     node.select();
+  }
+  if (event.shiftKey) {
+    selection.anchor.set(
+      originalAnchorKey,
+      originalAnchorOffset,
+      originalAnchorType,
+    );
   }
 
   event.preventDefault();
@@ -487,8 +545,36 @@ function $handleMoveTo(
 export function registerCodeIndentation(
   editor: LexicalEditor,
   tabSize?: number,
+  escapeWithArrows?: boolean,
 ): () => void {
   return mergeRegister(
+    // When node is the last child pressing down/right or up/let arrow will insert paragraph
+    // below it to allow adding more content.
+    // These handlers must be executed before $handleShiftLines
+    ...(escapeWithArrows
+      ? [
+          editor.registerCommand(
+            KEY_ARROW_DOWN_COMMAND,
+            event => (event.altKey ? false : $onEscapeDown($isCodeNode, event)),
+            COMMAND_PRIORITY_LOW,
+          ),
+          editor.registerCommand(
+            KEY_ARROW_RIGHT_COMMAND,
+            event => $onEscapeDown($isCodeNode, event),
+            COMMAND_PRIORITY_LOW,
+          ),
+          editor.registerCommand(
+            KEY_ARROW_UP_COMMAND,
+            event => (event.altKey ? false : $onEscapeUp($isCodeNode, event)),
+            COMMAND_PRIORITY_LOW,
+          ),
+          editor.registerCommand(
+            KEY_ARROW_LEFT_COMMAND,
+            event => $onEscapeUp($isCodeNode, event),
+            COMMAND_PRIORITY_LOW,
+          ),
+        ]
+      : []),
     editor.registerCommand(
       KEY_TAB_COMMAND,
       event => {
@@ -497,7 +583,7 @@ export function registerCodeIndentation(
           return false;
         }
         event.preventDefault();
-        editor.dispatchCommand(command, undefined);
+        editor.dispatchCommand(command);
         return true;
       },
       COMMAND_PRIORITY_LOW,
@@ -537,11 +623,13 @@ export function registerCodeIndentation(
           return false;
         }
         // If at the start of a code block, prevent selection from moving out
+        const parent = anchorNode.getParent();
         if (
           selection.isCollapsed() &&
           anchor.offset === 0 &&
           anchorNode.getPreviousSibling() === null &&
-          $isCodeNode(anchorNode.getParentOrThrow())
+          $isCodeNode(parent) &&
+          parent.getPreviousSibling() === null
         ) {
           event.preventDefault();
           return true;
@@ -567,7 +655,8 @@ export function registerCodeIndentation(
           selection.isCollapsed() &&
           anchor.offset === anchorNode.getTextContentSize() &&
           anchorNode.getNextSibling() === null &&
-          $isCodeNode(anchorNode.getParentOrThrow())
+          $isCodeNode(anchorNode.getParentOrThrow()) &&
+          anchorNode.getParentOrThrow().getNextSibling() === null
         ) {
           event.preventDefault();
           return true;
@@ -606,6 +695,15 @@ export interface CodeIndentConfig {
    * this option.
    */
   tabSize: number | undefined;
+  /**
+   * When `true`, this enables the ability to exit a code block
+   * that has no adjacent elements using the ArrowLeft/ArrowUp keys
+   * if the cursor is at the beginning, or the ArrowRight/ArrowDown keys
+   * if the cursor is at the end.
+   * When `false` (default), pressing the arrow keys will not move the cursor
+   * if there are no adjacent elements around the code block
+   */
+  escapeWithArrows: boolean;
 }
 
 /**
@@ -623,6 +721,7 @@ export const CodeIndentExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
   config: safeCast<CodeIndentConfig>({
     disabled: false,
+    escapeWithArrows: false,
     tabSize: undefined,
   }),
   dependencies: [CodeExtension],
@@ -633,7 +732,11 @@ export const CodeIndentExtension = defineExtension({
       if (stores.disabled.value) {
         return;
       }
-      return registerCodeIndentation(editor, stores.tabSize.value);
+      return registerCodeIndentation(
+        editor,
+        stores.tabSize.value,
+        stores.escapeWithArrows.value,
+      );
     });
   },
 });

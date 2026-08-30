@@ -5,18 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$getRoot, $getState, createState, LexicalNode} from 'lexical';
-import invariant from 'shared/invariant';
+import type {BindingV2} from './Bindings';
+
+import invariant from '@lexical/internal/invariant';
+import {$getRoot, $getState, createState, type LexicalNode} from 'lexical';
 import {
   emptySnapshot,
-  ID,
+  type ID,
   iterateDeletedStructs,
   PermanentUserData,
-  Snapshot,
+  type Snapshot,
   snapshot as createSnapshot,
 } from 'yjs';
 
-import {BindingV2} from './Bindings';
 import {$createOrUpdateNodeFromYElement} from './SyncV2';
 
 const STATE_KEY = 'ychange';
@@ -60,7 +61,7 @@ export const renderSnapshot__EXPERIMENTAL = (
 
   doc.transact(transaction => {
     // Before rendering, we are going to sanitize ops and split deleted ops
-    // if they were deleted by seperate users.
+    // if they were deleted by separate users.
     const pud = new PermanentUserData(doc);
     if (pud) {
       pud.dss.forEach(ds => {

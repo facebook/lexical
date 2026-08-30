@@ -6,19 +6,27 @@
  *
  */
 
-import type {BaseSelection, LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {IS_APPLE} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  type BaseSelection,
   getDOMSelection,
+  getDOMSelectionPoints,
+  IS_APPLE,
+  type LexicalEditor,
+  registerEventListeners,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {
+  type JSX,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 const copy = (text: string | null) => {
   const textArea = document.createElement('textarea');
@@ -106,33 +114,38 @@ export function isSelectAll(event: KeyboardEvent): boolean {
   );
 }
 
-// stolen from LexicalSelection-test
-function sanitizeSelection(selection: Selection) {
-  const {anchorNode, focusNode} = selection;
-  let {anchorOffset, focusOffset} = selection;
-  if (anchorOffset !== 0) {
-    anchorOffset--;
+function fixOffset(node: Node, offset: number) {
+  // If the selection offset is at the br of a webkit img+br linebreak
+  // then move the offset to the img so the tests are consistent across
+  // browsers
+  if (node && node.nodeType === Node.ELEMENT_NODE && offset > 0) {
+    const child = (node as Element).children[offset - 1];
+    if (
+      child &&
+      child.nodeType === Node.ELEMENT_NODE &&
+      child.nodeName === 'IMG' &&
+      child.getAttribute('data-lexical-managed-linebreak') === 'true'
+    ) {
+      return offset - 1;
+    }
   }
-  if (focusOffset !== 0) {
-    focusOffset--;
-  }
-  return {anchorNode, anchorOffset, focusNode, focusOffset};
+  return offset;
 }
 
 function getPathFromNodeToEditor(node: Node, rootElement: HTMLElement | null) {
-  let currentNode: Node | null | undefined = node;
   const path = [];
-  while (currentNode !== rootElement) {
-    if (currentNode !== null && currentNode !== undefined) {
-      path.unshift(
-        Array.from(currentNode?.parentNode?.childNodes ?? []).indexOf(
-          currentNode as ChildNode,
-        ),
-      );
-    }
-    currentNode = currentNode?.parentNode;
+  if (node === rootElement) {
+    return [];
   }
-  return path;
+  while (node !== null) {
+    const parent = node.parentNode;
+    if (parent === null || node === rootElement) {
+      break;
+    }
+    path.push(Array.from(parent.childNodes).indexOf(node as ChildNode));
+    node = parent;
+  }
+  return path.reverse();
 }
 
 const keyPresses = new Set([
@@ -173,14 +186,19 @@ function useTestRecorder(
   const generateTestContent = useCallback(() => {
     const rootElement = editor.getRootElement();
     const browserSelection = getDOMSelection(editor._window);
+    const browserPoints =
+      browserSelection !== null
+        ? getDOMSelectionPoints(browserSelection, rootElement)
+        : null;
 
     if (
       rootElement == null ||
       browserSelection == null ||
-      browserSelection.anchorNode == null ||
-      browserSelection.focusNode == null ||
-      !rootElement.contains(browserSelection.anchorNode) ||
-      !rootElement.contains(browserSelection.focusNode)
+      browserPoints == null ||
+      browserPoints.anchorNode == null ||
+      browserPoints.focusNode == null ||
+      !rootElement.contains(browserPoints.anchorNode) ||
+      !rootElement.contains(browserPoints.focusNode)
     ) {
       return null;
     }
@@ -279,12 +297,10 @@ ${steps.map(formatStep).join(`\n`)}
 
     return editor.registerRootListener(rootElement => {
       if (rootElement) {
-        rootElement.addEventListener('keydown', onKeyDown);
-        rootElement.addEventListener('keyup', onKeyUp);
-        return () => {
-          rootElement.removeEventListener('keydown', onKeyDown);
-          rootElement.removeEventListener('keyup', onKeyUp);
-        };
+        return registerEventListeners(rootElement, {
+          keydown: onKeyDown,
+          keyup: onKeyUp,
+        });
       }
     });
   }, [editor, isRecording, pushStep]);
@@ -324,10 +340,13 @@ ${steps.map(formatStep).join(`\n`)}
             !skipNextSelectionChange
           ) {
             const browserSelection = getDOMSelection(editor._window);
-            if (
+            const browserPoints =
               browserSelection &&
-              (browserSelection.anchorNode == null ||
-                browserSelection.focusNode == null)
+              getDOMSelectionPoints(browserSelection, editor.getRootElement());
+            if (
+              browserPoints &&
+              (browserPoints.anchorNode == null ||
+                browserPoints.focusNode == null)
             ) {
               return;
             }
@@ -381,16 +400,19 @@ ${steps.map(formatStep).join(`\n`)}
       return;
     }
     const browserSelection = getDOMSelection(getCurrentEditor()._window);
+    const rootElement = getCurrentEditor().getRootElement();
+    const browserPoints =
+      browserSelection !== null
+        ? getDOMSelectionPoints(browserSelection, rootElement)
+        : null;
     if (
-      browserSelection === null ||
-      browserSelection.anchorNode == null ||
-      browserSelection.focusNode == null
+      browserPoints === null ||
+      browserPoints.anchorNode == null ||
+      browserPoints.focusNode == null
     ) {
       return;
     }
-    const {anchorNode, anchorOffset, focusNode, focusOffset} =
-      sanitizeSelection(browserSelection);
-    const rootElement = getCurrentEditor().getRootElement();
+    const {anchorNode, anchorOffset, focusNode, focusOffset} = browserPoints;
     let anchorPath;
     if (anchorNode !== null) {
       anchorPath = getPathFromNodeToEditor(anchorNode, rootElement);
@@ -401,10 +423,10 @@ ${steps.map(formatStep).join(`\n`)}
     }
     pushStep('snapshot', {
       anchorNode,
-      anchorOffset,
+      anchorOffset: fixOffset(anchorNode, anchorOffset),
       anchorPath,
       focusNode,
-      focusOffset,
+      focusOffset: fixOffset(focusNode, focusOffset),
       focusPath,
     });
   }, [pushStep, isRecording, getCurrentEditor]);

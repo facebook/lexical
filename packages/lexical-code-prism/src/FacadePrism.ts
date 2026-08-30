@@ -6,10 +6,11 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code-core';
-import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import type {Token, TokenStream} from 'prismjs';
 
+// Side-effect import: loads prismjs and sets up the global `Prism` that the
+// component imports below extend. Must stay separate from the type-only import
+// above so it is not elided.
 import 'prismjs';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-diff';
@@ -18,6 +19,7 @@ import 'prismjs/components/prism-markup';
 import 'prismjs/components/prism-markdown';
 import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-go';
 import 'prismjs/components/prism-objectivec';
 import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-powershell';
@@ -28,8 +30,15 @@ import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-cpp';
 
-import {$createCodeHighlightNode} from '@lexical/code-core';
-import {$createLineBreakNode, $createTabNode} from 'lexical';
+import {$createCodeHighlightNode, type CodeNode} from '@lexical/code-core';
+import {
+  $createLineBreakNode,
+  $createTabNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  tokenizeRawText,
+} from 'lexical';
 
 declare global {
   interface Window {
@@ -38,6 +47,7 @@ declare global {
 }
 
 export const Prism: typeof import('prismjs') =
+  // eslint-disable-next-line no-restricted-syntax
   (globalThis as {Prism?: typeof import('prismjs')}).Prism || window.Prism;
 
 export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
@@ -45,6 +55,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   clike: 'C-like',
   cpp: 'C++',
   css: 'CSS',
+  go: 'Go',
   html: 'HTML',
   java: 'Java',
   js: 'JavaScript',
@@ -62,6 +73,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
 
 export const CODE_LANGUAGE_MAP: Record<string, string> = {
   cpp: 'cpp',
+  golang: 'go',
   java: 'java',
   javascript: 'js',
   md: 'markdown',
@@ -71,16 +83,28 @@ export const CODE_LANGUAGE_MAP: Record<string, string> = {
   ts: 'typescript',
 };
 
+// The two maps above are plain objects, so a language whose name matches a
+// member of `Object.prototype` reads the inherited value: `CODE_LANGUAGE_MAP`
+// indexed with `constructor` hands back the `Object` function, not a string.
+// A code block's language comes from the document, so the name is not ours to
+// choose.
+function ownValue(
+  map: Record<string, string>,
+  key: string,
+): string | undefined {
+  return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : undefined;
+}
+
 export function normalizeCodeLanguage(lang: string) {
-  return CODE_LANGUAGE_MAP[lang] || lang;
+  return ownValue(CODE_LANGUAGE_MAP, lang) || lang;
 }
 
 export function getLanguageFriendlyName(lang: string) {
   const _lang = normalizeCodeLanguage(lang);
-  return CODE_LANGUAGE_FRIENDLY_NAME_MAP[_lang] || _lang;
+  return ownValue(CODE_LANGUAGE_FRIENDLY_NAME_MAP, _lang) || _lang;
 }
 
-export const getCodeLanguages = (): Array<string> =>
+export const getCodeLanguages = (): string[] =>
   Object.keys(Prism.languages)
     .filter(
       // Prism has several language helpers mixed into languages object
@@ -149,7 +173,7 @@ function getTextContent(token: TokenStream): string {
 export function tokenizeDiffHighlight(
   tokens: (string | Token)[],
   language: string,
-): Array<string | Token> {
+): (string | Token)[] {
   const diffLanguage = language;
   const diffGrammar = Prism.languages[diffLanguage];
   const env = {tokens};
@@ -254,7 +278,7 @@ export function $getHighlightNodes(
 
   const code = codeNode.getTextContent();
 
-  let tokens: Array<string | Token> = Prism.tokenize(
+  let tokens: (string | Token)[] = Prism.tokenize(
     code,
     Prism.languages[diffLanguageMatch ? 'diff' : language],
   );
@@ -265,25 +289,18 @@ export function $getHighlightNodes(
 }
 
 function $mapTokensToLexicalStructure(
-  tokens: Array<string | Token>,
+  tokens: (string | Token)[],
   type?: string,
 ): LexicalNode[] {
   const nodes: LexicalNode[] = [];
 
   for (const token of tokens) {
     if (typeof token === 'string') {
-      const partials = token.split(/(\n|\t)/);
-      const partialsLength = partials.length;
-      for (let i = 0; i < partialsLength; i++) {
-        const part = partials[i];
-        if (part === '\n' || part === '\r\n') {
-          nodes.push($createLineBreakNode());
-        } else if (part === '\t') {
-          nodes.push($createTabNode());
-        } else if (part.length > 0) {
-          nodes.push($createCodeHighlightNode(part, type));
-        }
-      }
+      tokenizeRawText(token, {
+        linebreak: () => nodes.push($createLineBreakNode()),
+        tab: () => nodes.push($createTabNode()),
+        text: part => nodes.push($createCodeHighlightNode(part, type)),
+      });
     } else {
       const {content, alias} = token;
       if (typeof content === 'string') {

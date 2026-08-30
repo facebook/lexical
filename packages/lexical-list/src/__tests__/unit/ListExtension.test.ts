@@ -97,7 +97,7 @@ describe('CheckListExtension', () => {
       }
     });
 
-    editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
 
     editor.update(() => {
       const root = $getRoot();

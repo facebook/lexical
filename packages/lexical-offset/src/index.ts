@@ -6,23 +6,20 @@
  *
  */
 
-import type {
-  EditorState,
-  LexicalEditor,
-  NodeKey,
-  NodeMap,
-  RangeSelection,
-  RootNode,
-} from 'lexical';
-
+import invariant from '@lexical/internal/invariant';
 import {
   $createChildrenArray as $createChildrenArray_,
   $createRangeSelection,
   $getNodeByKey,
   $isElementNode,
   $isTextNode,
+  type EditorState,
+  type LexicalEditor,
+  type NodeKey,
+  type NodeMap,
+  type RangeSelection,
+  type RootNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 type OffsetElementNode = {
   child: null | OffsetNode;
@@ -502,7 +499,7 @@ function $createOffsetChild(
     offset: number;
     prevIsBlock: boolean;
   },
-  children: Array<NodeKey>,
+  children: NodeKey[],
   parent: null | OffsetElementNode,
   nodeMap: NodeMap,
   offsetMap: OffsetMap,

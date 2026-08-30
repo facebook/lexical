@@ -12,7 +12,6 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {mergeRegister} from '@lexical/utils';
 import {axe, toHaveNoViolations} from 'jest-axe';
 import {
   $applyNodeReplacement,
@@ -25,27 +24,27 @@ import {
   createCommand,
   createEditor,
   DecoratorNode,
-  EditorConfig,
+  type EditorConfig,
   getRegisteredNode,
-  LexicalEditor,
-  SerializedLexicalNode,
+  type LexicalEditor,
+  mergeRegister,
   TextNode,
 } from 'lexical';
 import {
+  DECORATOR_BOUNDARY_ANCHOR_HTML,
   expectHtmlToBeEqual,
   html,
   invariant,
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
-import {useEffect} from 'react';
-import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {act, useEffect} from 'react';
+import {createRoot, type Root} from 'react-dom/client';
 import {
   afterEach,
   beforeEach,
   describe,
   expect,
-  MockInstance,
+  type MockInstance,
   test,
   vi,
 } from 'vitest';
@@ -54,14 +53,8 @@ expect.extend(toHaveNoViolations);
 class ReactDecoratorNode extends DecoratorNode<React.ReactNode> {
   __decorate?: (node: this) => React.ReactNode;
   __inline?: boolean;
-  static getType() {
-    return 'react-decorator';
-  }
-  static clone(node: ReactDecoratorNode): ReactDecoratorNode {
-    return new ReactDecoratorNode(node.__key);
-  }
-  static importJSON(json: SerializedLexicalNode): ReactDecoratorNode {
-    throw new Error('not implemented');
+  $config() {
+    return this.config('react-decorator', {extends: DecoratorNode});
   }
   createDOM(_config: EditorConfig, editor: LexicalEditor): HTMLElement {
     return (editor._window || window).document.createElement(
@@ -167,7 +160,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -198,10 +191,11 @@ describe('LexicalNestedComposer', () => {
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
+          ${DECORATOR_BOUNDARY_ANCHOR_HTML}
         </div>
       `,
     );
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -259,7 +253,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -297,10 +291,11 @@ describe('LexicalNestedComposer', () => {
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
+          ${DECORATOR_BOUNDARY_ANCHOR_HTML}
         </div>
       `,
     );
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -362,7 +357,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -394,6 +389,7 @@ describe('LexicalNestedComposer', () => {
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
+          ${DECORATOR_BOUNDARY_ANCHOR_HTML}
         </div>
       `,
     );
@@ -402,7 +398,7 @@ describe('LexicalNestedComposer', () => {
         `LexicalNestedComposer initialNodes is deprecated and will be removed in v0.32.0, it has never worked correctly.\nYou can configure your editor's nodes with createEditor({nodes: [], parentEditor: $getEditor()})`,
       ],
     ]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -462,7 +458,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -496,11 +492,12 @@ describe('LexicalNestedComposer', () => {
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
+          ${DECORATOR_BOUNDARY_ANCHOR_HTML}
         </div>
       `,
     );
     expect(warn.mock.calls).toEqual([]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -564,7 +561,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -602,13 +599,14 @@ describe('LexicalNestedComposer', () => {
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
+          ${DECORATOR_BOUNDARY_ANCHOR_HTML}
         </div>
       `,
     );
     const editableA11yResults = await axe(container!);
     expect(editableA11yResults).toHaveNoViolations();
     expect(warn.mock.calls).toEqual([]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor!.setEditable(false);
     });
     expect(editor.isEditable()).toBe(false);
@@ -621,6 +619,7 @@ describe('LexicalNestedComposer', () => {
           role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
+          tabindex="-1"
           aria-autocomplete="none"
           aria-label="parent"
           aria-readonly="true"
@@ -632,6 +631,7 @@ describe('LexicalNestedComposer', () => {
               role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
+              tabindex="-1"
               aria-autocomplete="none"
               aria-label="nested"
               aria-readonly="true"
@@ -639,18 +639,19 @@ describe('LexicalNestedComposer', () => {
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
+          ${DECORATOR_BOUNDARY_ANCHOR_HTML}
         </div>
       `,
     );
     const uneditableA11yResults = await axe(container!);
     expect(uneditableA11yResults).toHaveNoViolations();
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor!.setEditable(true);
     });
     expect(editor.isEditable()).toBe(true);
     expect(nestedEditor.isEditable()).toBe(true);
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -715,7 +716,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -748,6 +749,7 @@ describe('LexicalNestedComposer', () => {
               role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
+              tabindex="-1"
               aria-autocomplete="none"
               aria-label="nested"
               aria-readonly="true"
@@ -755,13 +757,14 @@ describe('LexicalNestedComposer', () => {
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
+          ${DECORATOR_BOUNDARY_ANCHOR_HTML}
         </div>
       `,
     );
     const editableA11yResults = await axe(container!);
     expect(editableA11yResults).toHaveNoViolations();
     expect(warn.mock.calls).toEqual([]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor!.setEditable(false);
     });
     expect(editor.isEditable()).toBe(false);
@@ -774,6 +777,7 @@ describe('LexicalNestedComposer', () => {
           role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
+          tabindex="-1"
           aria-autocomplete="none"
           aria-label="parent"
           aria-readonly="true"
@@ -785,6 +789,7 @@ describe('LexicalNestedComposer', () => {
               role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
+              tabindex="-1"
               aria-autocomplete="none"
               aria-label="nested"
               aria-readonly="true"
@@ -792,18 +797,19 @@ describe('LexicalNestedComposer', () => {
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
+          ${DECORATOR_BOUNDARY_ANCHOR_HTML}
         </div>
       `,
     );
     const uneditableA11yResults = await axe(container!);
     expect(uneditableA11yResults).toHaveNoViolations();
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor!.setEditable(true);
     });
     expect(editor.isEditable()).toBe(true);
     expect(nestedEditor.isEditable()).toBe(false);
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -899,7 +905,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -914,7 +920,7 @@ describe('LexicalNestedComposer', () => {
         .sort(),
     );
     expect(warn.mock.calls).toEqual([]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       expect(editor?.dispatchCommand(DELEGATED_COMMAND, undefined)).toBe(false);
       expect($commandListener.mock.calls).toEqual([
         [
@@ -1038,7 +1044,7 @@ describe('LexicalNestedComposer', () => {
       $commandListener.mockClear();
     });
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -1114,7 +1120,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -1135,7 +1141,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
     expect(warn.mock.calls).toEqual([]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });

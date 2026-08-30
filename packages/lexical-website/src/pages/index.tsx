@@ -16,14 +16,10 @@ import HomepageExamples from '@site/src/components/HomepageExamples';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import StackBlitzButton from '@site/src/components/StackBlitzButton';
 import Layout from '@theme/Layout';
-import {inject} from '@vercel/analytics';
-
-// activate analytics
-inject();
 
 function LandingHero() {
   return (
-    <div className="flex w-screen flex-col items-center justify-start gap-10 p-10 lg:h-[75vh] lg:flex-row lg:justify-around">
+    <div className="flex w-full flex-col items-center justify-start gap-10 p-10 lg:h-[75vh] lg:flex-row lg:justify-around">
       <div className="w-full space-y-6 lg:max-w-[40rem] lg:min-w-[20rem]">
         <p className="text-4xl font-extrabold lg:text-6xl">
           A text editor framework that does things{' '}

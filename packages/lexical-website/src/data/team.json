@@ -46,6 +46,15 @@
       "org": "Meta",
       "orgLink": "https://github.com/facebook",
       "title": "Core Maintainer"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/19604232?v=4",
+      "links": {
+        "github": "https://github.com/potatowagon"
+      },
+      "name": "Sherry",
+      "username": "potatowagon",
+      "title": "Core Maintainer"
     }
   ],
   "distinguished": [
@@ -134,7 +143,9 @@
         "github": "https://github.com/GermanJablo"
       },
       "name": "German Jablonski",
-      "username": "GermanJablo"
+      "username": "GermanJablo",
+      "location": "United Kingdom",
+      "org": "Figma"
     },
     {
       "avatar": "https://avatars.githubusercontent.com/u/119275535?v=4",
@@ -190,6 +201,24 @@
       "name": "Luci",
       "username": "LuciNyan",
       "sponsor": "https://github.com/sponsors/LuciNyan"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/68384104?v=4",
+      "links": {
+        "github": "https://github.com/mayrang"
+      },
+      "name": "mayrang",
+      "username": "mayrang"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/16897447?v=4",
+      "links": {
+        "github": "https://github.com/thatmichael85"
+      },
+      "name": "Michael",
+      "username": "thatmichael85",
+      "location": "Singapore",
+      "org": "Meta"
     },
     {
       "avatar": "https://avatars.githubusercontent.com/u/126554055?v=4",
@@ -316,15 +345,6 @@
       "title": "Core Team Emeritus"
     },
     {
-      "avatar": "https://avatars.githubusercontent.com/u/19604232?v=4",
-      "links": {
-        "github": "https://github.com/potatowagon"
-      },
-      "name": "Sherry",
-      "username": "potatowagon",
-      "title": "Core Team Emeritus"
-    },
-    {
       "avatar": "https://avatars.githubusercontent.com/u/13852400?v=4",
       "links": {
         "github": "https://github.com/tylerjbainbridge"
@@ -335,5 +355,5 @@
       "title": "Core Team Emeritus"
     }
   ],
-  "generated": "2026-03-31T19:10:44.440Z"
+  "generated": "2026-05-11T19:37:52.336Z"
 }

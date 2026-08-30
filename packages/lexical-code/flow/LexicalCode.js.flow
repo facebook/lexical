@@ -40,9 +40,7 @@ declare export function $isCodeHighlightNode(
 
 declare export class CodeHighlightNode extends TextNode {
   __highlightType: ?string;
-  constructor(text: string, highlightType?: string, key?: NodeKey): void;
-  static getType(): string;
-  static clone(node: CodeHighlightNode): CodeHighlightNode;
+  constructor(text?: string, highlightType?: string, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   setFormat(format: number): this;
 }
@@ -95,9 +93,7 @@ declare export function $isCodeNode(
 
 declare export class CodeNode extends ElementNode {
   __language: string | null | void;
-  static getType(): string;
-  static clone(node: CodeNode): CodeNode;
-  constructor(language: ?string, key?: NodeKey): void;
+  constructor(language?: ?string, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   insertNewAfter(
     selection: RangeSelection,
@@ -127,7 +123,7 @@ export interface Token {
   content: TokenContent;
 }
 export interface Tokenizer {
-  defaultLanguage: string;
+  defaultLanguage: string | null;
   tokenize(code: string, language?: string): (string | Token)[];
 }
 declare export var PrismTokenizer: Tokenizer;
@@ -141,7 +137,7 @@ declare export function registerCodeHighlighting(
 declare export function normalizeCodeLang(lang: string): string;
 declare export function normalizeCodeLanguage(lang: string): string;
 
-declare export var getCodeLanguages: () => Array<string>;
+declare export var getCodeLanguages: () => string[];
 declare export function getLanguageFriendlyName(lang: string): string;
 
 declare export var CODE_LANGUAGE_FRIENDLY_NAME_MAP: {[string]: string};

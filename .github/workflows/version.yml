@@ -11,10 +11,24 @@ on:
           - prerelease
           - patch
           - minor
+
+permissions:
+  contents: write
+  # Required because this workflow calls call-release.yml, whose `publish`
+  # job requests `id-token: write` for npm trusted publishing (OIDC). GitHub
+  # validates a reusable workflow's permission requests against the caller
+  # statically — even though this workflow never sets `publish: true`, the
+  # caller must still grant every permission the nested jobs declare.
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   release:
-    uses: ./.github/workflows/call-increment-version.yml
+    uses: ./.github/workflows/call-release.yml
     with:
+      increment-version: true
       increment: ${{ inputs.increment }}
-      dry-run: false
       channel: ${{ inputs.increment == 'prerelease' && 'next' || 'latest' }}

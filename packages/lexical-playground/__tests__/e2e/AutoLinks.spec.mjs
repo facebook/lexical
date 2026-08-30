@@ -26,7 +26,7 @@ import {
   test,
 } from '../utils/index.mjs';
 
-test.describe.parallel('Auto Links', () => {
+test.describe('Auto Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test('Can convert url-like text into links', async ({page, isPlainText}) => {
@@ -144,7 +144,7 @@ test.describe.parallel('Auto Links', () => {
       page,
       htmlWithLink +
         html`
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         `,
       undefined,
       {ignoreClasses: true},
@@ -454,7 +454,7 @@ test.describe.parallel('Auto Links', () => {
       page,
       html`
         <p dir="auto">
-          <span style="font-size: 19px;" data-lexical-text="true">
+          <span style="font-size: 20px;" data-lexical-text="true">
             Hellohttp://example.com and more
           </span>
         </p>
@@ -472,13 +472,13 @@ test.describe.parallel('Auto Links', () => {
       page,
       html`
         <p dir="auto">
-          <span style="font-size: 19px;" data-lexical-text="true">Hello</span>
+          <span style="font-size: 20px;" data-lexical-text="true">Hello</span>
           <a href="http://example.com">
-            <span style="font-size: 19px;" data-lexical-text="true">
+            <span style="font-size: 20px;" data-lexical-text="true">
               http://example.com
             </span>
           </a>
-          <span style="font-size: 19px;" data-lexical-text="true">
+          <span style="font-size: 20px;" data-lexical-text="true">
             and more
           </span>
         </p>
@@ -612,9 +612,6 @@ test.describe.parallel('Auto Links', () => {
       // Invalid Protocol
       'htp://example.com', // Typo in protocol
       'htps://example.com', // Typo in protocol
-
-      // Invalid TLDs
-      'http://example.abcdefg', // TLD too long
 
       // Spaces and Invalid Characters
       'http://exa mple.com', // Space in domain
@@ -991,6 +988,54 @@ test.describe.parallel('Auto Links', () => {
         </p>
         <p dir="auto">
           <span data-lexical-text="true">m</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can convert Unicode url-like text with Arabic path into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.insertText('مرحبا https://qabilah.com/posts/عربي end');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">مرحبا</span>
+          <a href="https://qabilah.com/posts/عربي">
+            <span data-lexical-text="true">https://qabilah.com/posts/عربي</span>
+          </a>
+          <span data-lexical-text="true">end</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can convert Unicode url-like text with Korean IDN into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.insertText('go http://예시.한국/경로?키=값#부분 done');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">go</span>
+          <a href="http://예시.한국/경로?키=값#부분">
+            <span data-lexical-text="true">
+              http://예시.한국/경로?키=값#부분
+            </span>
+          </a>
+          <span data-lexical-text="true">done</span>
         </p>
       `,
       undefined,

@@ -11,29 +11,19 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "allowJs": true,
+    "customConditions": ["source"],
     "paths": {
-      "@examples/agent-example/Editor": [
-        "./examples/agent-example/src/Editor.tsx"
-      ],
-      "@examples/website-chat/Editor": [
-        "./examples/website-chat/src/Editor.tsx"
-      ],
-      "@examples/website-notion/Editor": [
-        "./examples/website-notion/src/Editor.tsx"
-      ],
-      "@examples/website-rich-input/Editor": [
-        "./examples/website-rich-input/src/Editor.tsx"
-      ],
-      "@examples/website-toolbar/Editor": [
-        "./examples/website-toolbar/src/Editor.tsx"
-      ],
-      "@site/*": ["./packages/lexical-website/*"],
       "lexical": ["./packages/lexical/src/index.ts"],
+      "@lexical/a11y": ["./packages/lexical-a11y/src/index.ts"],
       "@lexical/clipboard": ["./packages/lexical-clipboard/src/index.ts"],
       "@lexical/code": ["./packages/lexical-code/src/index.ts"],
       "@lexical/code-core": ["./packages/lexical-code-core/src/index.ts"],
       "@lexical/code-prism": ["./packages/lexical-code-prism/src/index.ts"],
       "@lexical/code-shiki": ["./packages/lexical-code-shiki/src/index.ts"],
+      "@lexical/compiler": ["./packages/lexical-compiler/src/index.ts"],
+      "@lexical/compiler/PureAnnotations": [
+        "./packages/lexical-compiler/src/PureAnnotations.ts"
+      ],
       "@lexical/devtools-core": [
         "./packages/lexical-devtools-core/src/index.ts"
       ],
@@ -48,10 +38,35 @@
       "@lexical/headless/dom": ["./packages/lexical-headless/src/dom.ts"],
       "@lexical/history": ["./packages/lexical-history/src/index.ts"],
       "@lexical/html": ["./packages/lexical-html/src/index.ts"],
+      "@lexical/internal/devInvariant": [
+        "./packages/lexical-internal/src/devInvariant.ts"
+      ],
+      "@lexical/internal/formatDevErrorMessage": [
+        "./packages/lexical-internal/src/formatDevErrorMessage.ts"
+      ],
+      "@lexical/internal/formatDevWarningMessage": [
+        "./packages/lexical-internal/src/formatDevWarningMessage.ts"
+      ],
+      "@lexical/internal/formatProdErrorMessage": [
+        "./packages/lexical-internal/src/formatProdErrorMessage.ts"
+      ],
+      "@lexical/internal/formatProdWarningMessage": [
+        "./packages/lexical-internal/src/formatProdWarningMessage.ts"
+      ],
+      "@lexical/internal/invariant": [
+        "./packages/lexical-internal/src/invariant.ts"
+      ],
+      "@lexical/internal/version": [
+        "./packages/lexical-internal/src/version.ts"
+      ],
+      "@lexical/internal/warnOnlyOnce": [
+        "./packages/lexical-internal/src/warnOnlyOnce.ts"
+      ],
       "@lexical/link": ["./packages/lexical-link/src/index.ts"],
       "@lexical/list": ["./packages/lexical-list/src/index.ts"],
       "@lexical/mark": ["./packages/lexical-mark/src/index.ts"],
       "@lexical/markdown": ["./packages/lexical-markdown/src/index.ts"],
+      "@lexical/mdast": ["./packages/lexical-mdast/src/index.ts"],
       "@lexical/offset": ["./packages/lexical-offset/src/index.ts"],
       "@lexical/overflow": ["./packages/lexical-overflow/src/index.ts"],
       "@lexical/plain-text": ["./packages/lexical-plain-text/src/index.ts"],
@@ -193,14 +208,29 @@
       "@lexical/react/useExtensionSignalValue": [
         "./packages/lexical-react/src/useExtensionSignalValue.ts"
       ],
+      "@lexical/react/useLexicalAriaLiveRegion": [
+        "./packages/lexical-react/src/useLexicalAriaLiveRegion.ts"
+      ],
       "@lexical/react/useLexicalEditable": [
         "./packages/lexical-react/src/useLexicalEditable.ts"
+      ],
+      "@lexical/react/useLexicalFocusManagerRef": [
+        "./packages/lexical-react/src/useLexicalFocusManagerRef.ts"
+      ],
+      "@lexical/react/useLexicalFocusTrapRef": [
+        "./packages/lexical-react/src/useLexicalFocusTrapRef.ts"
       ],
       "@lexical/react/useLexicalIsTextContentEmpty": [
         "./packages/lexical-react/src/useLexicalIsTextContentEmpty.ts"
       ],
       "@lexical/react/useLexicalNodeSelection": [
         "./packages/lexical-react/src/useLexicalNodeSelection.ts"
+      ],
+      "@lexical/react/useLexicalRovingTabIndexRef": [
+        "./packages/lexical-react/src/useLexicalRovingTabIndexRef.ts"
+      ],
+      "@lexical/react/useLexicalSlotRef": [
+        "./packages/lexical-react/src/useLexicalSlotRef.ts"
       ],
       "@lexical/react/useLexicalSubscription": [
         "./packages/lexical-react/src/useLexicalSubscription.tsx"
@@ -215,73 +245,90 @@
       "@lexical/text": ["./packages/lexical-text/src/index.ts"],
       "@lexical/utils": ["./packages/lexical-utils/src/index.ts"],
       "@lexical/yjs": ["./packages/lexical-yjs/src/index.ts"],
-      "shared/canUseDOM": ["./packages/shared/src/canUseDOM.ts"],
-      "shared/caretFromPoint": ["./packages/shared/src/caretFromPoint.ts"],
-      "shared/devInvariant": ["./packages/shared/src/devInvariant.ts"],
-      "shared/environment": ["./packages/shared/src/environment.ts"],
-      "shared/formatDevErrorMessage": [
-        "./packages/shared/src/formatDevErrorMessage.ts"
-      ],
-      "shared/formatDevWarningMessage": [
-        "./packages/shared/src/formatDevWarningMessage.ts"
-      ],
-      "shared/formatProdErrorMessage": [
-        "./packages/shared/src/formatProdErrorMessage.ts"
-      ],
-      "shared/formatProdWarningMessage": [
-        "./packages/shared/src/formatProdWarningMessage.ts"
-      ],
-      "shared/invariant": ["./packages/shared/src/invariant.ts"],
-      "shared/react-test-utils": ["./packages/shared/src/react-test-utils.ts"],
-      "shared/reactPatches": ["./packages/shared/src/reactPatches.ts"],
-      "shared/simpleDiffWithCursor": [
-        "./packages/shared/src/simpleDiffWithCursor.ts"
-      ],
-      "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"],
-      "shared/warnOnlyOnce": ["./packages/shared/src/warnOnlyOnce.ts"],
       "lexical/src": ["./packages/lexical/src"],
       "lexical/src/__tests__/utils": [
         "./packages/lexical/src/__tests__/utils/index.tsx"
       ],
+      "lexical/src/*": ["./packages/lexical/src/*"],
+      "@lexical/a11y/src": ["./packages/lexical-a11y/src"],
+      "@lexical/a11y/src/*": ["./packages/lexical-a11y/src/*"],
       "@lexical/clipboard/src": ["./packages/lexical-clipboard/src"],
+      "@lexical/clipboard/src/*": ["./packages/lexical-clipboard/src/*"],
       "@lexical/code/src": ["./packages/lexical-code/src"],
+      "@lexical/code/src/*": ["./packages/lexical-code/src/*"],
       "@lexical/code-core/src": ["./packages/lexical-code-core/src"],
+      "@lexical/code-core/src/*": ["./packages/lexical-code-core/src/*"],
       "@lexical/code-prism/src": ["./packages/lexical-code-prism/src"],
+      "@lexical/code-prism/src/*": ["./packages/lexical-code-prism/src/*"],
       "@lexical/code-shiki/src": ["./packages/lexical-code-shiki/src"],
+      "@lexical/code-shiki/src/*": ["./packages/lexical-code-shiki/src/*"],
+      "@lexical/compiler/src": ["./packages/lexical-compiler/src"],
+      "@lexical/compiler/src/*": ["./packages/lexical-compiler/src/*"],
       "@lexical/devtools-core/src": ["./packages/lexical-devtools-core/src"],
+      "@lexical/devtools-core/src/*": [
+        "./packages/lexical-devtools-core/src/*"
+      ],
       "@lexical/dragon/src": ["./packages/lexical-dragon/src"],
+      "@lexical/dragon/src/*": ["./packages/lexical-dragon/src/*"],
       "@lexical/eslint-plugin/src": ["./packages/lexical-eslint-plugin/src"],
+      "@lexical/eslint-plugin/src/*": [
+        "./packages/lexical-eslint-plugin/src/*"
+      ],
       "@lexical/extension/src": ["./packages/lexical-extension/src"],
+      "@lexical/extension/src/*": ["./packages/lexical-extension/src/*"],
       "@lexical/file/src": ["./packages/lexical-file/src"],
+      "@lexical/file/src/*": ["./packages/lexical-file/src/*"],
       "@lexical/hashtag/src": ["./packages/lexical-hashtag/src"],
+      "@lexical/hashtag/src/*": ["./packages/lexical-hashtag/src/*"],
       "@lexical/headless/src": ["./packages/lexical-headless/src"],
       "@lexical/headless/src/__tests__/utils": [
         "./packages/lexical-headless/src/__tests__/utils/index.ts"
       ],
+      "@lexical/headless/src/*": ["./packages/lexical-headless/src/*"],
       "@lexical/history/src": ["./packages/lexical-history/src"],
+      "@lexical/history/src/*": ["./packages/lexical-history/src/*"],
       "@lexical/html/src": ["./packages/lexical-html/src"],
+      "@lexical/html/src/*": ["./packages/lexical-html/src/*"],
+      "@lexical/internal/src": ["./packages/lexical-internal/src"],
+      "@lexical/internal/src/*": ["./packages/lexical-internal/src/*"],
       "@lexical/link/src": ["./packages/lexical-link/src"],
+      "@lexical/link/src/*": ["./packages/lexical-link/src/*"],
       "@lexical/list/src": ["./packages/lexical-list/src"],
+      "@lexical/list/src/*": ["./packages/lexical-list/src/*"],
       "@lexical/mark/src": ["./packages/lexical-mark/src"],
+      "@lexical/mark/src/*": ["./packages/lexical-mark/src/*"],
       "@lexical/markdown/src": ["./packages/lexical-markdown/src"],
+      "@lexical/markdown/src/*": ["./packages/lexical-markdown/src/*"],
+      "@lexical/mdast/src": ["./packages/lexical-mdast/src"],
+      "@lexical/mdast/src/*": ["./packages/lexical-mdast/src/*"],
       "@lexical/offset/src": ["./packages/lexical-offset/src"],
+      "@lexical/offset/src/*": ["./packages/lexical-offset/src/*"],
       "@lexical/overflow/src": ["./packages/lexical-overflow/src"],
+      "@lexical/overflow/src/*": ["./packages/lexical-overflow/src/*"],
       "@lexical/plain-text/src": ["./packages/lexical-plain-text/src"],
+      "@lexical/plain-text/src/*": ["./packages/lexical-plain-text/src/*"],
       "@lexical/react/src": ["./packages/lexical-react/src"],
       "@lexical/react/src/__tests__/utils": [
         "./packages/lexical-react/src/__tests__/utils/index.tsx"
       ],
+      "@lexical/react/src/*": ["./packages/lexical-react/src/*"],
       "@lexical/rich-text/src": ["./packages/lexical-rich-text/src"],
+      "@lexical/rich-text/src/*": ["./packages/lexical-rich-text/src/*"],
       "@lexical/selection/src": ["./packages/lexical-selection/src"],
       "@lexical/selection/src/__tests__/utils": [
         "./packages/lexical-selection/src/__tests__/utils/index.ts"
       ],
+      "@lexical/selection/src/*": ["./packages/lexical-selection/src/*"],
       "@lexical/table/src": ["./packages/lexical-table/src"],
+      "@lexical/table/src/*": ["./packages/lexical-table/src/*"],
       "@lexical/tailwind/src": ["./packages/lexical-tailwind/src"],
+      "@lexical/tailwind/src/*": ["./packages/lexical-tailwind/src/*"],
       "@lexical/text/src": ["./packages/lexical-text/src"],
+      "@lexical/text/src/*": ["./packages/lexical-text/src/*"],
       "@lexical/utils/src": ["./packages/lexical-utils/src"],
+      "@lexical/utils/src/*": ["./packages/lexical-utils/src/*"],
       "@lexical/yjs/src": ["./packages/lexical-yjs/src"],
-      "shared/src": ["./packages/shared/src"]
+      "@lexical/yjs/src/*": ["./packages/lexical-yjs/src/*"]
     }
   },
   "include": ["./libdefs", "./packages"],
@@ -291,9 +338,10 @@
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",
+    "./packages/*/*.js",
     "./packages/lexical-devtools/**",
-    "./packages/lexical-website/**"
+    "./packages/lexical-website/**",
+    "**/__bench__/**"
   ],
-  "typedocOptions": {"logLevel": "Verbose"},
-  "ts-node": {"require": ["tsconfig-paths/register"], "transpileOnly": true}
+  "typedocOptions": {"logLevel": "Verbose"}
 }

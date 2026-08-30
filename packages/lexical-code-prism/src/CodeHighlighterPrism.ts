@@ -6,11 +6,10 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
-
 import {
   $isCodeHighlightNode,
   $isCodeNode,
+  $plainifyCodeContent,
   CodeExtension,
   CodeHighlightNode,
   CodeIndentExtension,
@@ -29,7 +28,10 @@ import {
   $isTextNode,
   $onUpdate,
   defineExtension,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
+  type NodeKey,
   safeCast,
   TextNode,
 } from 'lexical';
@@ -50,20 +52,32 @@ export interface Token {
 }
 
 export interface Tokenizer {
-  defaultLanguage: string;
+  /**
+   * Language to fall back to when a {@link CodeNode} doesn't carry one.
+   * Set to `null` to opt out of the implicit fallback — code blocks
+   * without a language stay untouched (no `data-language` attribute, no
+   * syntax highlighting) so a markdown round-trip can preserve ``` with
+   * no info string.
+   */
+  defaultLanguage: string | null;
   tokenize(code: string, language?: string): (string | Token)[];
   $tokenize(codeNode: CodeNode, language?: string): LexicalNode[];
 }
 
 export const PrismTokenizer: Tokenizer = {
   $tokenize(codeNode: CodeNode, language?: string): LexicalNode[] {
-    return $getHighlightNodes(codeNode, language || this.defaultLanguage);
+    const lang = language || this.defaultLanguage;
+    return lang === null
+      ? $plainifyCodeContent(codeNode.getTextContent())
+      : $getHighlightNodes(codeNode, lang);
   },
   defaultLanguage: DEFAULT_CODE_LANGUAGE,
   tokenize(code: string, language?: string): (string | Token)[] {
+    const fallback = this.defaultLanguage;
     return Prism.tokenize(
       code,
-      Prism.languages[language || ''] || Prism.languages[this.defaultLanguage],
+      Prism.languages[language || ''] ||
+        (fallback === null ? undefined : Prism.languages[fallback]),
     );
   },
 };
@@ -119,22 +133,29 @@ function $codeNodeTransform(
   const {nodesCurrentlyHighlighting} = transformState;
   const nodeKey = node.getKey();
 
-  // When new code block inserted it might not have language selected
-  if (node.getLanguage() === undefined) {
+  // When new code block inserted it might not have language selected.
+  // Tokenizers configured with `defaultLanguage: null` opt out of the
+  // implicit fallback — leave the node unset and skip highlighting so
+  // markdown round-trips ``` (no info string) without injecting one.
+  if (node.getLanguage() === undefined && tokenizer.defaultLanguage !== null) {
     node.setLanguage(tokenizer.defaultLanguage);
   }
 
   const language = node.getLanguage() || tokenizer.defaultLanguage;
-  if (isCodeLanguageLoaded(language)) {
-    if (!node.getIsSyntaxHighlightSupported()) {
-      node.setIsSyntaxHighlightSupported(true);
+  if (language) {
+    if (isCodeLanguageLoaded(language)) {
+      if (!node.getIsSyntaxHighlightSupported()) {
+        node.setIsSyntaxHighlightSupported(true);
+      }
+    } else {
+      if (node.getIsSyntaxHighlightSupported()) {
+        node.setIsSyntaxHighlightSupported(false);
+      }
+      loadCodeLanguage(language, editor, nodeKey);
+      return;
     }
-  } else {
-    if (node.getIsSyntaxHighlightSupported()) {
-      node.setIsSyntaxHighlightSupported(false);
-    }
-    loadCodeLanguage(language, editor, nodeKey);
-    return;
+  } else if (node.getIsSyntaxHighlightSupported()) {
+    node.setIsSyntaxHighlightSupported(false);
   }
 
   if (nodesCurrentlyHighlighting.has(nodeKey)) {
@@ -161,7 +182,10 @@ function $codeNodeTransform(
       currentNode.getLanguage() || tokenizer.defaultLanguage;
     //const diffLanguageMatch = DIFF_LANGUAGE_REGEX.exec(currentLanguage);
 
-    const highlightNodes = tokenizer.$tokenize(currentNode, currentLanguage);
+    const highlightNodes = tokenizer.$tokenize(
+      currentNode,
+      currentLanguage ?? undefined,
+    );
 
     const diffRange = getDiffRange(currentNode.getChildren(), highlightNodes);
     const {from, to, nodesForReplacement} = diffRange;
@@ -194,6 +218,17 @@ function $updateAndRetainSelection(
   }
 
   const anchor = selection.anchor;
+  // The selection is restored by walking this code node's children, so it can
+  // only be retained when it actually points inside this code node. When the
+  // selection lives elsewhere there is nothing to retain and restoring would
+  // drag the caret into the code block instead of leaving it where the user
+  // put it.
+  const anchorNode = anchor.getNode();
+  if (anchorNode !== node && !node.isParentOf(anchorNode)) {
+    updateFn();
+    return;
+  }
+
   const anchorOffset = anchor.offset;
   const isNewLineAnchor =
     anchor.type === 'element' &&
@@ -202,7 +237,6 @@ function $updateAndRetainSelection(
 
   // Calculating previous text offset (all text node prior to anchor + anchor own text offset)
   if (!isNewLineAnchor) {
-    const anchorNode = anchor.getNode();
     textOffset =
       anchorOffset +
       anchorNode.getPreviousSiblings().reduce((offset, _node) => {
@@ -223,29 +257,40 @@ function $updateAndRetainSelection(
   }
 
   // If it was non-element anchor then we walk through child nodes
-  // and looking for a position of original text offset
-  node.getChildren().some(_node => {
-    const isText = $isTextNode(_node);
-    if (isText || $isLineBreakNode(_node)) {
-      const textContentSize = _node.getTextContentSize();
-      if (isText && textContentSize >= textOffset) {
-        _node.select(textOffset, textOffset);
-        return true;
+  // and looking for a position of original text offset. A LineBreakNode
+  // consumes one unit of the offset but can't host a text point, so when the
+  // offset lands on one we use an element point on the code node instead of
+  // letting the offset go negative and selecting the next text node at an
+  // out-of-range position.
+  const children = node.getChildren();
+  for (let index = 0; index < children.length; index++) {
+    const child = children[index];
+    if ($isTextNode(child)) {
+      const textContentSize = child.getTextContentSize();
+      if (textContentSize >= textOffset) {
+        child.select(textOffset, textOffset);
+        return;
       }
       textOffset -= textContentSize;
+    } else if ($isLineBreakNode(child)) {
+      if (textOffset === 0) {
+        node.select(index, index);
+        return;
+      }
+      textOffset -= 1;
     }
-    return false;
-  });
+  }
+  node.select(children.length, children.length);
 }
 
 // Finds minimal diff range between two nodes lists. It returns from/to range boundaries of prevNodes
 // that needs to be replaced with `nodes` (subset of nextNodes) to make prevNodes equal to nextNodes.
 function getDiffRange(
-  prevNodes: Array<LexicalNode>,
-  nextNodes: Array<LexicalNode>,
+  prevNodes: LexicalNode[],
+  nextNodes: LexicalNode[],
 ): {
   from: number;
-  nodesForReplacement: Array<LexicalNode>;
+  nodesForReplacement: LexicalNode[];
   to: number;
 } {
   let leadingMatch = 0;
@@ -339,7 +384,7 @@ export function registerHighlightingOnly(
       editor.registerMutationListener(
         CodeNode,
         mutations => {
-          editor.getEditorState().read(() => {
+          editor.read('latest', () => {
             for (const [key, type] of mutations) {
               if (type !== 'destroyed') {
                 const node = $getNodeByKey(key);

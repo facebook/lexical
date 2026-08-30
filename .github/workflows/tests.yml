@@ -14,7 +14,10 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Only cancel an in-progress run when a newer commit lands on the same ref.
+  # Other events (labeled, reopened, manual approval re-runs, etc.) get a
+  # distinct group so they never cancel a run that is already underway.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name == 'pull_request' && github.event.action != 'synchronize' && github.run_id || 'commit' }}
   cancel-in-progress: true
 
 jobs:

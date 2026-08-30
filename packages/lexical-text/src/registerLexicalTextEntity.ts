@@ -6,15 +6,15 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   $createTextNode,
   $isTextNode,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 export type EntityMatch = {end: number; start: number};
 
@@ -42,14 +42,16 @@ export function registerLexicalTextEntity<T extends TextNode>(
   getMatch: (text: string) => null | EntityMatch,
   targetNode: Klass<T>,
   createNode: (textNode: TextNode) => T,
-): Array<() => void> {
+): (() => void)[] {
   const isTargetNode = (node: LexicalNode | null | undefined): node is T => {
     return node instanceof targetNode;
   };
 
   const $replaceWithSimpleText = (node: TextNode): void => {
-    const textNode = $createTextNode(node.getTextContent());
-    textNode.setFormat(node.getFormat());
+    const textNode = $createTextNode(node.getTextContent())
+      .setFormat(node.getFormat())
+      .setStyle(node.getStyle())
+      .setDetail(node.getDetail());
     node.replace(textNode);
   };
 
@@ -104,17 +106,23 @@ export function registerLexicalTextEntity<T extends TextNode>(
     let prevMatchLengthToSkip = 0;
 
     while (true) {
-      match = getMatch(text);
-      let nextText = match === null ? '' : text.slice(match.end);
+      const remainingText = text;
+      match = getMatch(remainingText);
+      const nextText = match === null ? '' : remainingText.slice(match.end);
       text = nextText;
 
       if (nextText === '') {
         const nextSibling = currentNode.getNextSibling();
 
         if ($isTextNode(nextSibling)) {
-          nextText =
-            currentNode.getTextContent() + nextSibling.getTextContent();
-          const nextMatch = getMatch(nextText);
+          // The match ends where this node ends, so the next sibling's text may
+          // extend, shorten or invalidate it. Re-run getMatch over the text that
+          // is still to be processed plus the sibling's text and bail out unless
+          // the same match is found at the same offset. Matches that were
+          // already replaced (or skipped) are excluded from `remainingText`, so
+          // the comparison is against `match.start` rather than 0.
+          const combinedText = remainingText + nextSibling.getTextContent();
+          const nextMatch = getMatch(combinedText);
 
           if (nextMatch === null) {
             if (isTargetNode(nextSibling)) {
@@ -124,7 +132,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
             }
 
             return;
-          } else if (nextMatch.start !== 0) {
+          } else if (match === null || nextMatch.start !== match.start) {
             return;
           }
         }
@@ -211,7 +219,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
     TextNode,
     $textNodeTransform,
   );
-  const removeReverseNodeTransform = editor.registerNodeTransform<T>(
+  const removeReverseNodeTransform = editor.registerNodeTransform(
     targetNode,
     $reverseNodeTransform,
   );

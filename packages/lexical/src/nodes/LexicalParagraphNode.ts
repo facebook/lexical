@@ -13,26 +13,29 @@ import type {
   Spread,
 } from '../LexicalEditor';
 import type {
-  DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
 } from '../LexicalNode';
-import type {RangeSelection} from '../LexicalSelection';
-import type {
-  ElementFormatType,
-  SerializedElementNode,
-} from './LexicalElementNode';
+import type {BaseSelection, RangeSelection} from '../LexicalSelection';
 
+import {$isBlockFullySelected} from '../caret/LexicalCaretUtils';
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
+import {$isRangeSelection} from '../LexicalSelection';
 import {
   $applyNodeReplacement,
+  $getDocument,
   $setDirectionFromDOM,
+  $setFormatFromDOM,
   getCachedClassNameArray,
   isHTMLElement,
   setNodeIndentFromDOM,
 } from '../LexicalUtils';
-import {ElementNode} from './LexicalElementNode';
+import {
+  type ElementFormatType,
+  ElementNode,
+  type SerializedElementNode,
+} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
 export type SerializedParagraphNode = Spread<
@@ -48,18 +51,22 @@ export class ParagraphNode extends ElementNode {
   /** @internal */
   declare ['constructor']: KlassConstructor<typeof ParagraphNode>;
 
-  static getType(): string {
-    return 'paragraph';
-  }
-
-  static clone(node: ParagraphNode): ParagraphNode {
-    return new ParagraphNode(node.__key);
+  $config() {
+    return this.config('paragraph', {
+      extends: ElementNode,
+      importDOM: {
+        p: () => ({
+          conversion: $convertParagraphElement,
+          priority: 0,
+        }),
+      },
+    });
   }
 
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('p');
+    const dom = $getDocument().createElement('p');
     const classNames = getCachedClassNameArray(config.theme, 'paragraph');
     if (classNames !== undefined) {
       const domClassList = dom.classList;
@@ -75,21 +82,12 @@ export class ParagraphNode extends ElementNode {
     return false;
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      p: (node: Node) => ({
-        conversion: $convertParagraphElement,
-        priority: 0,
-      }),
-    };
-  }
-
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
     if (isHTMLElement(element)) {
       if (this.isEmpty()) {
-        element.append(document.createElement('br'));
+        element.append($getDocument().createElement('br'));
       }
 
       const formatType = this.getFormatType();
@@ -101,10 +99,6 @@ export class ParagraphNode extends ElementNode {
     return {
       element,
     };
-  }
-
-  static importJSON(serializedNode: SerializedParagraphNode): ParagraphNode {
-    return $createParagraphNode().updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedParagraphNode {
@@ -122,6 +116,37 @@ export class ParagraphNode extends ElementNode {
       }
     }
     return json as SerializedParagraphNode;
+  }
+
+  extractWithChild(
+    child: LexicalNode,
+    selection: BaseSelection | null,
+    destination: 'clone' | 'html',
+  ): boolean {
+    if (!$isRangeSelection(selection)) {
+      return false;
+    }
+    // Alignment, indent and inline style live on the paragraph element and
+    // nowhere else. Splicing the children up into the payload drops them
+    // silently (#8101), so a paragraph carrying any of that has to travel as a
+    // block. A paragraph carrying none of it serializes identically either
+    // way, so it is left alone and keeps producing inline-only content — the
+    // long-standing shape that clipboard consumers expect.
+    if (
+      this.getFormatType() === '' &&
+      this.getIndent() === 0 &&
+      this.getStyle() === ''
+    ) {
+      return false;
+    }
+    // A partial selection is a fragment of a line rather than a block: that
+    // fragment must merge into the paste target instead of imposing its source
+    // block on it.
+    if ($isBlockFullySelected(this, selection)) {
+      const textContent = this.getTextContent();
+      return textContent !== '' && selection.getTextContent() === textContent;
+    }
+    return false;
   }
 
   // Mutation
@@ -142,12 +167,15 @@ export class ParagraphNode extends ElementNode {
   }
 
   collapseAtStart(): boolean {
-    const children = this.getChildren();
     // If we have an empty (trimmed) first paragraph and try and remove it,
-    // delete the paragraph as long as we have another sibling to go to
+    // delete the paragraph as long as we have another sibling to go to.
+    // Every child has to be blank text: a paragraph that merely starts with
+    // blank text still has content to lose, and a non-text child (an inline
+    // decorator, a line break) is content even when it contributes no text.
     if (
-      children.length === 0 ||
-      ($isTextNode(children[0]) && children[0].getTextContent().trim() === '')
+      this.getChildren().every(
+        node => $isTextNode(node) && !/\S/.test(node.getTextContent()),
+      )
     ) {
       const nextSibling = this.getNextSibling();
       if (nextSibling !== null) {
@@ -168,10 +196,8 @@ export class ParagraphNode extends ElementNode {
 
 function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   const node = $createParagraphNode();
-  if (element.style) {
-    node.setFormat(element.style.textAlign as ElementFormatType);
-    setNodeIndentFromDOM(element, node);
-  }
+  $setFormatFromDOM(node, element);
+  setNodeIndentFromDOM(element, node);
 
   // Check legacy 'align' attribute
   // Only use this if no format was set by CSS
@@ -187,10 +213,12 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   return {node};
 }
 
+/** Creates a ParagraphNode, the default block-level container for text. */
 export function $createParagraphNode(): ParagraphNode {
   return $applyNodeReplacement(new ParagraphNode());
 }
 
+/** Returns true if the given node is a ParagraphNode. */
 export function $isParagraphNode(
   node: LexicalNode | null | undefined,
 ): node is ParagraphNode {

@@ -6,13 +6,10 @@
  *
  */
 
-import type {LexicalNode, TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalPrivateDOM} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
-
-import {IS_FIREFOX} from 'shared/environment';
 
 import {
   $getSelection,
@@ -20,17 +17,21 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  type LexicalNode,
+  type TextNode,
 } from '.';
+import {IS_FIREFOX} from './environment';
+import {isDecoratorBoundaryAnchorDOM} from './LexicalDOMSlot';
 import {updateEditorSync} from './LexicalUpdates';
 import {
   $getNodeByKey,
   $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getDOMSelection,
+  getDOMSelectionPoints,
   getNodeKeyFromDOMNode,
   getParentElement,
   getWindow,
-  internalGetRoot,
   isDOMTextNode,
   isDOMUnmanaged,
   isFirefoxClipboardEvents,
@@ -72,7 +73,7 @@ function isManagedLineBreak(
 }
 
 function getLastSelection(editor: LexicalEditor): null | BaseSelection {
-  return editor.getEditorState().read(() => {
+  return editor.read('latest', () => {
     const selection = $getSelection();
     return selection !== null ? selection.clone() : null;
   });
@@ -84,12 +85,14 @@ function $handleTextMutation(
   editor: LexicalEditor,
 ): void {
   const domSelection = getDOMSelection(getWindow(editor));
+  const domSelectionPoints =
+    domSelection && getDOMSelectionPoints(domSelection, editor._rootElement);
   let anchorOffset = null;
   let focusOffset = null;
 
-  if (domSelection !== null && domSelection.anchorNode === target) {
-    anchorOffset = domSelection.anchorOffset;
-    focusOffset = domSelection.focusOffset;
+  if (domSelectionPoints !== null && domSelectionPoints.anchorNode === target) {
+    anchorOffset = domSelectionPoints.anchorOffset;
+    focusOffset = domSelectionPoints.focusOffset;
   }
 
   const text = target.nodeValue;
@@ -119,7 +122,6 @@ function $getNearestManagedNodePairFromDOMNode(
   startingDOM: Node,
   editor: LexicalEditor,
   editorState: EditorState,
-  rootElement: HTMLElement | null,
 ): [HTMLElement, LexicalNode] | undefined {
   for (
     let dom: Node | null = startingDOM;
@@ -135,15 +137,13 @@ function $getNearestManagedNodePairFromDOMNode(
           ? undefined
           : [dom, node];
       }
-    } else if (dom === rootElement) {
-      return [rootElement, internalGetRoot(editorState)];
     }
   }
 }
 
 function flushMutations(
   editor: LexicalEditor,
-  mutations: Array<MutationRecord>,
+  mutations: MutationRecord[],
   observer: MutationObserver,
 ): void {
   isProcessingMutations = true;
@@ -153,7 +153,6 @@ function flushMutations(
     updateEditorSync(editor, () => {
       const selection = $getSelection() || getLastSelection(editor);
       const badDOMTargets = new Map<HTMLElement, LexicalNode>();
-      const rootElement = editor.getRootElement();
       // We use the current editor state, as that reflects what is
       // actually "on screen".
       const currentEditorState = editor._editorState;
@@ -169,7 +168,6 @@ function flushMutations(
           targetDOM,
           editor,
           currentEditorState,
-          rootElement,
         );
         if (!pair) {
           continue;
@@ -206,7 +204,27 @@ function flushMutations(
               parentDOM != null &&
               addedDOM !== blockCursorElement &&
               node === null &&
-              !isManagedLineBreak(addedDOM, parentDOM, editor)
+              !isManagedLineBreak(addedDOM, parentDOM, editor) &&
+              // The zero-size selection anchors the reconciler parks outside
+              // a leading / trailing block decorator (#8922) are keyless
+              // scaffolding, like the managed line break — don't evict them
+              // as foreign DOM.
+              !isDecoratorBoundaryAnchorDOM(addedDOM) &&
+              // @experimental named-slots. Slot containers are keyless
+              // reconciler scaffolding: a flush that observes one being
+              // parked in its host or relocated by an explicit mount must
+              // not evict it as foreign DOM. Gated on the editor slot latch so
+              // a non-slot editor still evicts foreign DOM that happens to
+              // carry a `data-lexical-slot` attribute.
+              !(
+                editor._slotsUsed &&
+                isHTMLElement(addedDOM) &&
+                addedDOM.hasAttribute('data-lexical-slot')
+              ) &&
+              // Skip externally-added DOM that's explicitly opted out of
+              // mutation tracking (e.g. an extension-rendered decoration
+              // inside a TextNode's span, like the autocomplete ghost).
+              !isDOMUnmanaged(addedDOM)
             ) {
               if (IS_FIREFOX) {
                 const possibleText =
@@ -236,6 +254,11 @@ function flushMutations(
                 blockCursorElement === removedDOM
               ) {
                 targetDOM.appendChild(removedDOM);
+                unremovedBRs++;
+              } else if (isDecoratorBoundaryAnchorDOM(removedDOM)) {
+                // Position matters for these (leading vs trailing), so don't
+                // blindly re-append — the next reconcile of this element puts
+                // a fresh anchor on the right edge.
                 unremovedBRs++;
               }
             }
@@ -316,7 +339,7 @@ export function flushRootMutations(editor: LexicalEditor): void {
 export function initMutationObserver(editor: LexicalEditor): void {
   initTextEntryListener(editor);
   editor._observer = new MutationObserver(
-    (mutations: Array<MutationRecord>, observer: MutationObserver) => {
+    (mutations: MutationRecord[], observer: MutationObserver) => {
       flushMutations(editor, mutations, observer);
     },
   );

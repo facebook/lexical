@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {ExtensionState} from '../../store';
 import type {StoreApi} from 'zustand';
 
-import {IS_FIREFOX, IS_SAFARI} from 'shared/environment';
-
-import {ExtensionState} from '../../store';
+import {IS_FIREFOX, IS_SAFARI} from 'lexical';
 
 export default class ActionIconWatchdog {
   private constructor(

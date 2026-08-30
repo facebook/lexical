@@ -6,20 +6,19 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
-import {DecoratorNode} from 'lexical';
+import {
+  $getDocument,
+  DecoratorNode,
+  type DOMExportOutput,
+  type EditorConfig,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type SerializedLexicalNode,
+  type Spread,
+} from 'lexical';
 import * as React from 'react';
 
 type Dimension = number | 'inherit';
@@ -35,43 +34,23 @@ export type SerializedExcalidrawNode = Spread<
   SerializedLexicalNode
 >;
 
-function $convertExcalidrawElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const excalidrawData = domNode.getAttribute('data-lexical-excalidraw-json');
-  const styleAttributes = window.getComputedStyle(domNode);
-  const heightStr = styleAttributes.getPropertyValue('height');
-  const widthStr = styleAttributes.getPropertyValue('width');
-  const height =
-    !heightStr || heightStr === 'inherit' ? 'inherit' : parseInt(heightStr, 10);
-  const width =
-    !widthStr || widthStr === 'inherit' ? 'inherit' : parseInt(widthStr, 10);
-
-  if (excalidrawData) {
-    const node = $createExcalidrawNode(excalidrawData, width, height);
-    return {
-      node,
-    };
-  }
-  return null;
-}
-
 export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __data: string;
   __width: Dimension;
   __height: Dimension;
 
-  static getType(): string {
-    return 'excalidraw';
+  $config() {
+    return this.config('excalidraw', {extends: DecoratorNode});
   }
 
-  static clone(node: ExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(
-      node.__data,
-      node.__width,
-      node.__height,
-      node.__key,
-    );
+  // Every constructor argument has a default, so `$config` synthesizes the
+  // static `clone` as `new ExcalidrawNode()` — the drawing and its dimensions
+  // have to be carried over here or every `getWritable()` resets them.
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__data = prevNode.__data;
+    this.__width = prevNode.__width;
+    this.__height = prevNode.__height;
   }
 
   static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
@@ -105,7 +84,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
   // View
   createDOM(config: EditorConfig): HTMLElement {
-    const span = document.createElement('span');
+    const span = $getDocument().createElement('span');
     const theme = config.theme;
     const className = theme.image;
     if (className !== undefined) {
@@ -118,22 +97,8 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     return false;
   }
 
-  static importDOM(): DOMConversionMap<HTMLSpanElement> | null {
-    return {
-      span: (domNode: HTMLSpanElement) => {
-        if (!domNode.hasAttribute('data-lexical-excalidraw-json')) {
-          return null;
-        }
-        return {
-          conversion: $convertExcalidrawElement,
-          priority: 1,
-        };
-      },
-    };
-  }
-
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = document.createElement('span');
+    const element = $getDocument().createElement('span');
 
     element.style.display = 'inline-block';
 

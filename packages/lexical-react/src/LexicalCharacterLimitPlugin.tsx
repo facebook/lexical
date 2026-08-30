@@ -6,11 +6,9 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
-import {useMemo, useState} from 'react';
+import {type JSX, useMemo, useState} from 'react';
 
 import {useCharacterLimit} from './shared/useCharacterLimit';
 
@@ -18,11 +16,13 @@ const CHARACTER_LIMIT = 5;
 let textEncoderInstance: null | TextEncoder = null;
 
 function textEncoder(): null | TextEncoder {
+  // eslint-disable-next-line no-restricted-syntax
   if (window.TextEncoder === undefined) {
     return null;
   }
 
   if (textEncoderInstance === null) {
+    // eslint-disable-next-line no-restricted-syntax
     textEncoderInstance = new window.TextEncoder();
   }
 
@@ -52,6 +52,16 @@ function DefaultRenderer({remainingCharacters}: {remainingCharacters: number}) {
   );
 }
 
+/**
+ * Tracks the length of the editor's text content against `maxLength` and
+ * renders the number of remaining characters, marking any overflowing text so
+ * it can be styled. Length is measured in either `'UTF-8'` or `'UTF-16'`
+ * (default) code units via the `charset` prop, and the display can be
+ * customized with the `renderer` prop.
+ *
+ * @returns The element produced by `renderer` (by default a `<span>` showing
+ * the number of remaining characters).
+ */
 export function CharacterLimitPlugin({
   charset = 'UTF-16',
   maxLength = CHARACTER_LIMIT,

@@ -6,12 +6,13 @@
  *
  */
 
+import type {IInjectedPegasusService} from '../../injected/InjectedPegasusService';
+
 import {IconButton, Image} from '@chakra-ui/react';
 import {getRPCService} from '@webext-pegasus/rpc';
 import * as React from 'react';
 
 import {useExtensionStore} from '../../../store';
-import {IInjectedPegasusService} from '../../injected/InjectedPegasusService';
 
 interface Props {
   tabID: number;
@@ -40,13 +41,12 @@ export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
   return (
     <IconButton
       aria-label="dsds"
-      colorScheme="gray"
+      colorPalette="gray"
       variant="ghost"
       size="xs"
       onClick={handleClick}
-      icon={<Image w={5} src="/inspect.svg" />}
-      isActive={isActive}
-      _active={{bg: 'blue.100'}}
-    />
+      bg={isActive ? 'blue.100' : undefined}>
+      <Image w={5} src="/inspect.svg" />
+    </IconButton>
   );
 }

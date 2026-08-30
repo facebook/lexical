@@ -65,7 +65,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -102,7 +102,9 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await assertSelection(page, {
@@ -145,7 +147,7 @@ test.describe('Images', () => {
                 <div class="image-resizer image-resizer-nw"></div>
               </div>
             </span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
         true,
@@ -157,7 +159,9 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -185,7 +189,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -204,7 +208,9 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -259,7 +265,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -287,7 +293,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -302,7 +308,9 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await assertSelection(page, {
@@ -348,7 +356,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -376,7 +384,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -433,7 +441,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -488,10 +496,10 @@ test.describe('Images', () => {
                   style="height: inherit; max-width: 500px; width: inherit" />
               </div>
             </span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -525,7 +533,7 @@ test.describe('Images', () => {
             <span data-lexical-text="true">World</span>
           </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -568,7 +576,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -583,11 +591,6 @@ test.describe('Images', () => {
     // This test is flaky in collab #3915
     test.fixme(isCollab);
     test.skip(isPlainText);
-
-    await page.setViewportSize({
-      height: 1000,
-      width: 2000,
-    });
 
     await focusEditor(page);
 
@@ -650,7 +653,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text2</span>
@@ -668,7 +671,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text3</span>
@@ -696,7 +699,9 @@ test.describe('Images', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text1</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text2</span>
         </p>
@@ -761,7 +766,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -811,7 +816,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

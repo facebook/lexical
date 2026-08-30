@@ -13,13 +13,12 @@ import {$selectAll, $setSelection, defineExtension} from 'lexical';
 import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
 import {describe, it} from 'vitest';
 
-import {buildHTMLConfig} from '../../src/buildHTMLConfig';
 import {$createImageNode} from '../../src/nodes/ImageNode';
+import {PlaygroundDOMRenderExtension} from '../../src/PlaygroundDOMRenderExtension';
 import {ImagesExtension} from '../../src/plugins/ImagesExtension';
 
 const ImageTestExtension = defineExtension({
-  dependencies: [ImagesExtension],
-  html: buildHTMLConfig(),
+  dependencies: [ImagesExtension, PlaygroundDOMRenderExtension],
   name: '[test]',
 });
 

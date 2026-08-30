@@ -8,7 +8,7 @@
  */
 .ContentEditable__root {
   border: 0;
-  font-size: 15px;
+  font-size: 16px;
   display: block;
   position: relative;
   outline: 0;
@@ -23,7 +23,7 @@
 }
 
 .ContentEditable__placeholder {
-  font-size: 15px;
+  font-size: 16px;
   color: #999;
   overflow: hidden;
   position: absolute;

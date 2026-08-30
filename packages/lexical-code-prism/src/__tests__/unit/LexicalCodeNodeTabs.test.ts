@@ -6,10 +6,7 @@
  *
  */
 
-import type {CodeHighlightNode, CodeNode} from '@lexical/code';
-import type {LexicalCommand, LineBreakNode, TabNode} from 'lexical';
-
-import {$createCodeNode, $isCodeNode} from '@lexical/code';
+import {$createCodeNode, $isCodeNode, type CodeNode} from '@lexical/code';
 import {CodeIndentExtension} from '@lexical/code-core';
 import {
   CodePrismExtension,
@@ -29,6 +26,7 @@ import {
   $getSelection,
   $isLineBreakNode,
   $setSelectionFromCaretRange,
+  type AnyLexicalCommand,
   configExtension,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
@@ -151,11 +149,7 @@ describe('LexicalCodeNode tests', () => {
                   selLast -= 1;
                 }
 
-                let matching:
-                  | null
-                  | LineBreakNode
-                  | TabNode
-                  | CodeHighlightNode = codeNode.getFirstChild();
+                let matching = codeNode.getFirstChild();
                 let parentIndex = 0;
                 let offset = 0;
                 while (
@@ -216,7 +210,7 @@ describe('LexicalCodeNode tests', () => {
               // selectionTarget.getBoundingClientRect is not a function Error
               editor.dispatchCommand(
                 ...(getDispatchArgs(scenario[2]) as [
-                  LexicalCommand<unknown>,
+                  AnyLexicalCommand,
                   unknown,
                 ]),
               );

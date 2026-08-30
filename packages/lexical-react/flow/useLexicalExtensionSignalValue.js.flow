@@ -12,7 +12,7 @@ import type {AnyLexicalExtension} from 'lexical';
 
 declare export function useSignalValue<V>(s: ReadonlySignal<V>): V;
 
-declare export function useExtensionSignalValue<V>(
+declare export hook useExtensionSignalValue<V>(
   extension: AnyLexicalExtension,
   prop: string,
 ): V;

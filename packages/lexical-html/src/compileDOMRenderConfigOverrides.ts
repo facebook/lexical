@@ -5,58 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {AnyDOMRenderMatch, DOMRenderConfig, DOMRenderMatch} from './types';
+
 import {getKnownTypesAndNodes} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {
   $isLexicalNode,
   DEFAULT_EDITOR_DOM_CONFIG,
   type EditorDOMRenderConfig,
-  getStaticNodeConfig,
-  InitialEditorConfig,
-  Klass,
-  LexicalEditor,
+  getRegisteredSubtypeMap,
+  type InitialEditorConfig,
+  iterStaticNodeConfigChain,
+  type Klass,
+  type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {ALWAYS_TRUE} from './constants';
-import {AnyDOMRenderMatch, DOMRenderConfig, DOMRenderMatch} from './types';
-
-interface TypeRecord {
-  readonly klass: Klass<LexicalNode>;
-  readonly types: {[NodeAndSubclasses in string]?: boolean};
-}
-
-type TypeTree = {
-  [NodeType in string]?: TypeRecord;
-};
-
-export function buildTypeTree(
-  editorConfig: Pick<InitialEditorConfig, 'nodes'>,
-): TypeTree {
-  const t: TypeTree = {};
-  const {nodes} = getKnownTypesAndNodes(editorConfig);
-  for (const klass of nodes) {
-    const type = klass.getType();
-    t[type] = {klass, types: {}};
-  }
-  for (const baseRec of Object.values(t)) {
-    if (baseRec) {
-      const baseType = baseRec.klass.getType();
-      for (
-        let {klass} = baseRec;
-        $isLexicalNode(klass.prototype);
-        klass = Object.getPrototypeOf(klass)
-      ) {
-        const {ownNodeType} = getStaticNodeConfig(klass);
-        const superRec = ownNodeType && t[ownNodeType];
-        if (superRec) {
-          superRec.types[baseType] = true;
-        }
-      }
-    }
-  }
-  return t;
-}
 
 type PredicateOrTypes =
   | ((node: LexicalNode) => boolean)
@@ -75,7 +40,7 @@ function buildNodePredicate<T extends LexicalNode>(klass: Klass<T>) {
 }
 
 function getPredicate(
-  typeTree: TypeTree,
+  subtypeMap: Map<string, Set<string>>,
   {nodes}: DOMRenderMatch<LexicalNode>,
 ): {[NodeType in string]?: true} | ((node: LexicalNode) => boolean) {
   if (nodes === '*') {
@@ -87,14 +52,16 @@ function getPredicate(
     if ('getType' in klassOrPredicate) {
       const type = klassOrPredicate.getType();
       if (types) {
-        const tree = typeTree[type];
+        const subtypes = subtypeMap.get(type);
         invariant(
-          tree !== undefined,
+          subtypes !== undefined,
           'Node class %s with type %s not registered in editor',
           klassOrPredicate.name,
           type,
         );
-        types = Object.assign(types, tree.types);
+        for (const subtype of subtypes) {
+          types[subtype] = true;
+        }
       }
       predicates.push(buildNodePredicate(klassOrPredicate));
     } else {
@@ -124,6 +91,7 @@ function makePrerender(): PreEditorDOMRenderConfig {
     $exportDOM: [],
     $extractWithChild: [],
     $getDOMSlot: [],
+    $getSlotTargetElement: [],
     $shouldExclude: [],
     $shouldInclude: [],
     $updateDOM: [],
@@ -192,6 +160,15 @@ function merge3<T, N extends LexicalNode, A>(
     return $override ? $override(node, a, $next, editor) : $next();
   };
 }
+
+const merge3GetDOMSlot = merge3 as (
+  acc: EditorDOMRenderConfig['$getDOMSlot'],
+  $getOverride: (n: LexicalNode) => DOMRenderMatch<LexicalNode>['$getDOMSlot'],
+) => EditorDOMRenderConfig['$getDOMSlot'];
+
+const ignoreNext3GetDOMSlot = ignoreNext3 as (
+  fn: EditorDOMRenderConfig['$getDOMSlot'],
+) => DOMRenderMatch<LexicalNode>['$getDOMSlot'];
 
 function merge4<T, N extends LexicalNode, A, B>(
   $acc: AccFn<T, N, [A, B]>,
@@ -344,12 +321,8 @@ function sortedOverrides(
   const depthOf = (klass: Klass<LexicalNode>): number => {
     let depth = depths.get(klass);
     if (depth === undefined) {
-      depth = 0;
-      for (
-        let k: Klass<LexicalNode> = klass;
-        $isLexicalNode(k.prototype);
-        k = Object.getPrototypeOf(k)
-      ) {
+      depth = -1;
+      for (const _ of iterStaticNodeConfigChain(klass)) {
         depth++;
       }
       depths.set(klass, depth);
@@ -364,10 +337,12 @@ export function precompileDOMRenderConfigOverrides(
   editorConfig: Pick<InitialEditorConfig, 'nodes'>,
   overrides: DOMRenderConfig['overrides'],
 ): PreEditorDOMRenderConfig {
-  const typeTree = buildTypeTree(editorConfig);
+  const subtypeMap = getRegisteredSubtypeMap(
+    getKnownTypesAndNodes(editorConfig).nodes,
+  );
   const prerender = makePrerender();
   for (const override of sortedOverrides(overrides)) {
-    const predicateOrTypes = getPredicate(typeTree, override);
+    const predicateOrTypes = getPredicate(subtypeMap, override);
     for (const k_ in prerender) {
       const k = k_ as keyof typeof prerender;
       addOverride(prerender, k, predicateOrTypes, override[k]);
@@ -381,8 +356,8 @@ function identity<T>(v: T) {
 }
 
 export function compileDOMRenderConfigOverrides(
-  editorConfig: InitialEditorConfig,
-  {overrides}: DOMRenderConfig,
+  editorConfig: Pick<InitialEditorConfig, 'nodes' | 'dom'>,
+  {overrides}: Pick<DOMRenderConfig, 'overrides'>,
 ): EditorDOMRenderConfig {
   const prerender = precompileDOMRenderConfigOverrides(editorConfig, overrides);
   const dom = {
@@ -392,9 +367,22 @@ export function compileDOMRenderConfigOverrides(
   compilePrerenderKey(prerender, '$createDOM', dom, merge2, ignoreNext2);
   compilePrerenderKey(prerender, '$exportDOM', dom, merge2, ignoreNext2);
   compilePrerenderKey(prerender, '$extractWithChild', dom, merge5, ignoreNext5);
-  compilePrerenderKey(prerender, '$getDOMSlot', dom, merge3, ignoreNext3);
+  compilePrerenderKey(
+    prerender,
+    '$getDOMSlot',
+    dom,
+    merge3GetDOMSlot,
+    ignoreNext3GetDOMSlot,
+  );
   compilePrerenderKey(prerender, '$shouldExclude', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$shouldInclude', dom, merge3, ignoreNext3);
+  compilePrerenderKey(
+    prerender,
+    '$getSlotTargetElement',
+    dom,
+    merge4,
+    ignoreNext4,
+  );
   compilePrerenderKey(prerender, '$updateDOM', dom, merge4, ignoreNext4);
   compilePrerenderKey(prerender, '$decorateDOM', dom, sequence4, identity);
   return dom;

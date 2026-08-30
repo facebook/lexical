@@ -9,6 +9,7 @@
 .cache-loader
 /docs/api
 /docs/packages
+/static/llms
 
 # Misc
 .DS_Store

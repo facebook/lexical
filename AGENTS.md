@@ -11,8 +11,10 @@ This file provides detailed guidance for AI agents and automated tools working w
 - `pnpm run build-types` - Build TypeScript type definitions and validate them
 
 ### Testing
-- `pnpm run test-unit` - Run all unit tests (Vitest)
+- `pnpm run test-unit` - Run all unit tests (Vitest, jsdom)
 - `pnpm run test-unit-watch` - Run unit tests in watch mode
+- `pnpm run test-browser` - Run browser-mode unit tests (Vitest + Playwright, real browser)
+- `pnpm run test-browser-watch` - Run browser-mode tests in watch mode
 - `pnpm run test-e2e-chromium` - Run E2E tests in Chromium (requires dev server running)
 - `pnpm run test-e2e-firefox` - Run E2E tests in Firefox
 - `pnpm run test-e2e-webkit` - Run E2E tests in WebKit
@@ -37,6 +39,82 @@ For E2E testing workflow:
 - `pnpm run flow` - Run Flow type checker
 - `pnpm run tsc` - Run TypeScript compiler
 - `pnpm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
+
+**Never commit changes to `scripts/error-codes/codes.json`.**
+That edit is not yours to make — revert it to the state of
+`main` before staging, and never `git add` the file.
+
+### Searching and refactoring
+
+Prefer **ast-grep** over line-oriented regex (`grep`/`sed`) for anything
+structural — matching or rewriting imports, call sites, JSX, type
+annotations, etc. Regexes miss multi-line forms (a symbol on its own line
+inside a multi-line `import { ... }` block) and produce false positives
+(`IS_APPLE` matching inside `IS_APPLE_WEBKIT`); ast-grep matches the syntax
+tree, so it does neither.
+
+It isn't a dependency, so run it via npx (the CLI binary is `ast-grep`, not
+the shadow-utils `sg` that may be on `PATH`):
+
+```sh
+# Find every import of something from '@lexical/utils' (ts and tsx are
+# separate grammars, so pass -l for each; add --json=compact to post-process)
+npx --package @ast-grep/cli ast-grep run \
+  -p "import { \$\$\$NAMES } from '@lexical/utils'" -l ts packages
+```
+
+Metavariables (`$NAME`, `$$$LIST`) capture nodes for reporting or rewriting
+with `--rewrite`. Reach for it whenever a change spans many files and must be
+precise — e.g. moving symbols that `@lexical/utils` merely re-exports back to
+a direct `lexical` import.
+
+### Tree-shaking annotations
+
+Module-scope calls to the side-effect-free factories (`defineExtension`,
+`configExtension`, `safeCast`, `createCommand`, `createState`,
+`defineImportRule`, etc.) need a `/* @__PURE__ */` annotation so bundlers
+can drop unused definitions from application bundles. **Do not write those
+annotations by hand** — they are injected at build time by
+`@lexical/compiler` (`packages/lexical-compiler`), which
+runs as a Rollup plugin in `scripts/build.mjs` for the published bundles
+and as a Vite plugin in `scripts/vite/lexicalMonorepoPlugin.ts` for
+everything the monorepo builds from source. The published package is also
+what consumers add to their own build when they compile Lexical from its
+`source` export condition rather than from `dist`.
+
+A hand-written annotation on one of these calls is a lint error
+(`@lexical/internal/no-pure-annotation`), and the rule is autofixable, so a
+branch written before the transform existed migrates with
+`pnpm run lint:fix`. Annotations on anything else — a third-party factory, or
+a call inside a function body, where the build never injects one — are left
+alone.
+
+When adding a new factory of this kind, annotate its definition with
+`@__NO_SIDE_EFFECTS__`. That alone is enough for calls in the same package to
+be annotated; add its name to `PURE_FACTORY_FUNCTIONS` in
+`packages/lexical-compiler/src/LexicalCompiler.mjs` so that
+calls in code that imports it by package name are too. An object whose
+methods build values and touch nothing else (like `@lexical/html`'s `sel`) is
+marked `@lexical-pure-namespace` instead, so that `sel.tag('p')` is annotated
+the way a factory call is.
+
+The build runs with `strict`, which fails on a call inside one of these
+definitions that nothing has established is side-effect free — such a call
+pins the definition into every bundle that imports the module, however well
+annotated the definition itself is. If it stops you, either make the call
+lazy (a `nodes: () => [...]` callback is not evaluated at module scope), or
+declare the function side-effect free so its calls are annotated too. A
+third-party factory that cannot be declared is annotated by hand at the call
+site, which is what the remaining hand-written annotations in the tree are.
+
+A factory whose body is a trivial expression over its own arguments (like
+`safeCast`, `defineExtension`, or `configExtension`) is additionally marked
+`@lexical-inline <form>` and listed in that file's `INLINE_FACTORIES`: the
+build replaces calls to it with the expression it would have returned, which
+needs no annotation at all. **The body of a marked function is reproduced by
+the build**, so keep it trivial — `packages/lexical-compiler`'s unit
+tests compare what the transform emits against what the real function returns
+and will fail if the two drift apart.
 
 ## High-Level Architecture
 
@@ -161,20 +239,46 @@ This codebase uses **both TypeScript and Flow**:
 
 When adding/modifying APIs, types must be maintained for both systems.
 
+## Backwards Compatibility
+
+**All changes MUST be backwards compatible.** Lexical is a widely-adopted OSS library, and breaking changes ripple out to every downstream consumer.
+
+- Do NOT remove or rename existing public APIs, exported functions, types, or `$` functions. Add new APIs alongside the old ones instead.
+- Do NOT change the signature, return type, or behavior of existing public APIs in ways that could break callers. Prefer additive, optional parameters.
+- Preserve the serialization format of `EditorState` and node JSON. Serialized content produced by older versions must continue to deserialize correctly.
+- If an API genuinely must change, deprecate the old one first (keep it working, document the replacement) rather than removing it outright.
+- When in doubt, assume external code depends on the current behavior and keep it intact.
+
 ## Important Development Notes
 
 ### Reconciliation and Updates
-- `editor.read()` flushes pending updates first, then provides consistent reconciled state
+- `editor.read(...)`  or `editor.read('force-commit', ...)` flushes pending updates first, then provides consistent reconciled state
+- `editor.read('pending', ...)` reads the pending state (like `editor.update(...)`, but read-only)
+- `editor.read('latest', ...)` reads the latest consistent reconciled state
 - Inside `editor.update()`, you see pending state (transforms/reconciliation not yet run)
-- `editor.getEditorState().read()` always uses latest reconciled state
-- Updates can be nested: `editor.update(() => editor.update(...))` is allowed
-- Do NOT nest reads in updates or vice versa (except read at end of update, which flushes)
+- `editor.getEditorState().read()` always uses latest reconciled state, but prefer `editor.read('latest', ...)` in new code
+- Updates can be nested: `editor.update(() => editor.update(...))` is allowed but strongly discouraged
+- Do NOT nest updates in reads, or use a force-commit in an update
 
 ### Node References
 Always access node properties/methods within read/update context. Nodes automatically resolve to their latest version via their key. Don't store node references across update boundaries.
 
 ### Testing Strategy
-- **Unit tests** - Vitest, located in `packages/**/__tests__/unit/**/*.test.{ts,tsx}`
+- **Unit tests** - Vitest (jsdom), located in `packages/**/__tests__/unit/**/*.test.{ts,tsx}`
+- **Browser tests** - Vitest browser mode driven by the Playwright runner, located in
+  `packages/**/__tests__/browser/**/*.test.{ts,tsx}`. Use these for behavior that depends on
+  a real layout/selection engine instead of stubbing the missing jsdom functionality from
+  `vitest.setup.mts` (e.g. `Range.getBoundingClientRect`, the Selection API). Run with
+  `pnpm run test-browser`; the browser set is controlled by the `VITEST_BROWSER` env var
+  (comma-separated, default `chromium`). Prefer building editors with the extension APIs
+  (`buildEditorFromExtensions`, or `LexicalExtensionComposer`/`LexicalExtensionEditorComposer`
+  in React).
+  - **Do not use `using`/`Disposable` in browser tests (or any browser-facing code).**
+    Explicit Resource Management (`using`, `Symbol.dispose`, `Disposable`) is not supported
+    in WebKit/Safari yet, so the syntax throws a `SyntaxError` there. `using` is fine in unit
+    tests (jsdom/Node), but browser tests should clean up with
+    `onTestFinished(() => editor.dispose())` instead — `editor.dispose()` is a plain method
+    available on the result of `buildEditorFromExtensions`.
 - **E2E tests** - Playwright, located in `packages/lexical-playground/__tests__/e2e/**/*.spec.{ts,mjs}`
 - E2E tests require the playground dev server running
 - Use `pnpm run debug-test-e2e-chromium` to debug E2E tests with browser UI
@@ -185,6 +289,72 @@ When creating custom nodes:
 2. Implement instance methods: `$config()`, `createDOM()`, `updateDOM()`
 3. Register with extension or editor config: `nodes: [YourCustomNode]`
 4. Export a `$createYourNode()` factory function (follows $ convention)
+
+### Shadow DOM and iframe realm safety
+
+Lexical supports editors whose root element lives inside a Shadow DOM or an
+`<iframe>` document. The editor resolves its `window` and `document` from
+`rootElement.ownerDocument.defaultView`, so code that reaches for the **global**
+`window` or `document` will silently use the wrong realm when the editor crosses
+a frame boundary. Shadow DOM adds a second hazard: the browser **retargets**
+selection and focus reads to the shadow host, hiding the real nodes.
+
+Use the shadow/iframe-aware helpers exported from `lexical` instead of the raw
+browser globals:
+
+| Instead of | Use | Why |
+| --- | --- | --- |
+| `window` | `element.ownerDocument.defaultView` or `getDefaultView(element)` (@internal) | Returns the window that owns the element |
+| `window.getSelection()` | `getDOMSelection(rootElement.ownerDocument.defaultView)` | Reads selection from the correct window |
+| `selection.getRangeAt(0)` | `getDOMSelectionRange(selection, rootElement)` | Unwraps retargeted shadow-DOM selection |
+| `document` in `createDOM`/`updateDOM`/`exportDOM` | `$getDocument()` | Returns the document that owns the editor root (falls back to `globalThis.document`) |
+| `document` elsewhere | `getRootOwnerDocument(rootElement)` or `element.ownerDocument` | Returns the document that owns a specific element |
+| `document.activeElement` | `getActiveElement(element)` / `getActiveElementDeep(document)` | Walks through shadow roots to find the real focused element |
+| `event.target` | `getComposedEventTarget(event)` | Returns the un-retargeted target for composed events |
+| `element.parentElement` | `getParentElement(element)` | Crosses shadow boundaries correctly |
+| `selection.anchorNode` / `focusNode` | `getDOMSelectionPoints(selection, rootElement)` | Returns un-retargeted boundary points |
+
+Two ESLint rules enforce the globals rows at lint time:
+- `no-restricted-syntax` (error) catches all `document.*` and `window.*` member access in library sources.
+- `@lexical/no-document-in-dom-methods` (error, with autofix) catches `document.*` specifically inside `createDOM`/`updateDOM`/`exportDOM` methods and autofixes to `$getDocument().*`.
+
+The remaining rows involve local variable properties that lint cannot reliably detect, so they must be caught in code review.
+
+For full details on the browser platform APIs involved, see
+[Shadow DOM and iframes](packages/lexical-website/docs/concepts/shadow-dom.md).
+
+### Commits and Pull Requests
+Every commit message — not just PR bodies — must be written to the shape of
+`.github/pull_request_template.md`, so any commit can seed a PR directly
+without being rewritten. This applies to every commit you author, including
+one-line fixes; do not wait to be asked. Read the template rather than working
+from memory, and fill in its sections:
+
+- **Subject line**: `[Affected Packages] PR Type: title`, where the packages are
+  the directory names under `packages/` that the diff touches and the type is
+  one of Breaking change / Refactor / Feature / Bug Fix / Documentation Update /
+  Chore. Test-only and tooling changes are `Chore`.
+- **`## Description`**: what the current behavior is and what this change makes
+  it do. Add `Closes #<issue>` only when there is a real issue number; drop the
+  line otherwise rather than leaving the template's placeholder behind.
+- **`## Test plan`** with `### Before` and `### After` subsections: the command
+  you ran, plus the actual failing output before and passing output after.
+  Paste real output — do not describe it. If a platform or browser in the
+  matrix could not be exercised, say so explicitly under `### After`.
+
+Drop any template section that does not apply to the diff instead of carrying
+an empty heading, and treat the template's HTML comments as instructions to
+follow, not text to copy into the message.
+
+### Commit and PR Hygiene for Agents
+This is an open source project: never include agent-session URLs or other
+private/team-internal links (e.g. `https://claude.ai/code/session_...`) in
+commit messages, PR titles, or PR bodies. Those URLs are private to the
+person or team that ran the session and are meaningless or misleading to
+everyone else. Co-authorship attribution (e.g. `Co-Authored-By:`) is fine.
+For Claude Code this is enforced mechanically via `attribution.sessionUrl:
+false` in the checked-in `.claude/settings.json`; agents from other vendors
+should follow this rule as written.
 
 ### Build System
 - Uses Rollup for bundling

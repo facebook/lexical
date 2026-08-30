@@ -16,6 +16,21 @@ import fs from 'fs';
 import {dirname, join} from 'path';
 import {fileURLToPath} from 'url';
 
+/**
+ * A single team member as stored in team.json
+ * @typedef {Object} TeamMember
+ * @property {string} username the GitHub username
+ * @property {string} name the GitHub display name
+ */
+
+/**
+ * The shape of team.json
+ * @typedef {Object} TeamData
+ * @property {Array<TeamMember>} core
+ * @property {Array<TeamMember>} emeriti
+ * @property {Array<TeamMember>} distinguished
+ */
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -63,7 +78,9 @@ const teamDataPath = join(
   __dirname,
   '../packages/lexical-website/src/data/team.json',
 );
-const teamData = JSON.parse(fs.readFileSync(teamDataPath, 'utf8'));
+const teamData = /** @type {TeamData} */ (
+  JSON.parse(fs.readFileSync(teamDataPath, 'utf8'))
+);
 
 const coreUsernames = teamData.core.map(m => m.username);
 const emeritiUsernames = teamData.emeriti.map(m => m.username);
@@ -85,7 +102,11 @@ allHistoricalReviewers.forEach(({name, username}) => {
   },
 );
 
-// Helper function to format a reviewer with name and username
+/**
+ * Helper function to format a reviewer with name and username
+ * @param {string} username the GitHub username
+ * @returns {string} the formatted "Display Name (@username)" string
+ */
 function formatReviewer(username) {
   const displayName = usernameToName.get(username);
   return `${displayName} (@${username})`;

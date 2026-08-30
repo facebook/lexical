@@ -22,7 +22,7 @@ import {packagesManager} from './shared/packagesManager.mjs';
  */
 
 /**
- * @param {opts} UpdateTsconfigOptions
+ * @param {UpdateTsconfigOptions} options
  * @returns {Promise<void>}
  */
 async function updateTsconfig({
@@ -34,26 +34,21 @@ async function updateTsconfig({
   const prevTsconfigContents = fs.readFileSync(jsonFileName, 'utf8');
   const tsconfig = JSON.parse(prevTsconfigContents);
   const publicPaths = [];
-  const privatePaths = [];
   const testPaths = [];
   const configDir = path.resolve(path.dirname(jsonFileName));
   for (const pkg of packagesManager.getPackages()) {
-    const resolveRelative = (...subPaths) =>
+    const resolveRelative = (/** @type {string[]} */ ...subPaths) =>
       path
         .relative(configDir, pkg.resolve(...subPaths))
         .replace(/^(?!\.)/, './');
 
+    // Private packages are not published and not imported by their package
+    // name across the monorepo, so they need no path aliases.
     if (pkg.isPrivate()) {
-      if (pkg.getDirectoryName() !== 'shared') {
-        continue;
-      }
-      for (const {name, sourceFileName} of pkg.getPrivateModuleEntries()) {
-        privatePaths.push([name, [resolveRelative('src', sourceFileName)]]);
-      }
-    } else {
-      for (const {name, sourceFileName} of pkg.getExportedNpmModuleEntries()) {
-        publicPaths.push([name, [resolveRelative('src', sourceFileName)]]);
-      }
+      continue;
+    }
+    for (const {name, sourceFileName} of pkg.getExportedNpmModuleEntries()) {
+      publicPaths.push([name, [resolveRelative('src', sourceFileName)]]);
     }
     if (test) {
       testPaths.push([`${pkg.getNpmName()}/src`, [resolveRelative('src')]]);
@@ -66,12 +61,19 @@ async function updateTsconfig({
           [resolveRelative(fn)],
         ]);
       }
+      // Deep source imports (e.g. `lexical/src/environment`). Tests need to
+      // address a package's internal modules by a stable specifier so that
+      // `vi.mock` can intercept the exact module the source imports relatively
+      // (e.g. environment constants or `@internal` helpers like caretFromPoint).
+      testPaths.push([
+        `${pkg.getNpmName()}/src/*`,
+        [resolveRelative('src', '*')],
+      ]);
     }
   }
   const paths = Object.fromEntries([
     ...extraPaths,
     ...publicPaths,
-    ...privatePaths,
     ...testPaths,
   ]);
   tsconfig.compilerOptions.paths = paths;
@@ -85,40 +87,61 @@ async function updateTsconfig({
   }
 }
 
+// Example/site aliases relative to packages/lexical-website (the website
+// type-checks the out-of-workspace @examples sources embedded in its docs).
 /** @type {Array<[string, Array<string>]>} */
-const WEBSITE_EXAMPLE_PATHS = [
+const WEBSITE_EXTRA_PATHS = [
   [
     '@examples/agent-example/Editor',
-    ['./examples/agent-example/src/Editor.tsx'],
+    ['../../examples/agent-example/src/Editor.tsx'],
   ],
-  ['@examples/website-chat/Editor', ['./examples/website-chat/src/Editor.tsx']],
+  [
+    '@examples/website-chat/Editor',
+    ['../../examples/website-chat/src/Editor.tsx'],
+  ],
   [
     '@examples/website-notion/Editor',
-    ['./examples/website-notion/src/Editor.tsx'],
+    ['../../examples/website-notion/src/Editor.tsx'],
   ],
   [
     '@examples/website-rich-input/Editor',
-    ['./examples/website-rich-input/src/Editor.tsx'],
+    ['../../examples/website-rich-input/src/Editor.tsx'],
   ],
   [
     '@examples/website-toolbar/Editor',
-    ['./examples/website-toolbar/src/Editor.tsx'],
+    ['../../examples/website-toolbar/src/Editor.tsx'],
   ],
-  ['@site/*', ['./packages/lexical-website/*']],
+  ['@site/*', ['./*']],
 ];
 
+// The monorepo's package path aliases exist for two reasons:
+// - The unit-test typecheck (tsconfig.test.json) needs them because tests
+//   import sibling packages without declaring them, including deep subpaths
+//   like `*/src/__tests__/utils` that aren't part of the public exports.
+// - VSCode walks up from a test file to the nearest tsconfig.json (the root
+//   one) and uses that for editor diagnostics. To make those resolve to the
+//   same source the unit tests use, the root tsconfig also carries the test
+//   paths. tsconfig.build.json is hand-maintained and resolves via the
+//   `source` export condition (customConditions) instead — it is not
+//   generated here.
 async function updateAllTsconfig() {
   const prettierConfig =
     (await prettier.resolveConfig(new URL(import.meta.url).pathname)) || {};
   await updateTsconfig({
-    extraPaths: WEBSITE_EXAMPLE_PATHS,
-    jsonFileName: './tsconfig.json',
+    extraPaths: [],
+    jsonFileName: './tsconfig.test.json',
     prettierConfig,
     test: true,
   });
   await updateTsconfig({
     extraPaths: [],
-    jsonFileName: './tsconfig.build.json',
+    jsonFileName: './tsconfig.json',
+    prettierConfig,
+    test: true,
+  });
+  await updateTsconfig({
+    extraPaths: WEBSITE_EXTRA_PATHS,
+    jsonFileName: './packages/lexical-website/tsconfig.json',
     prettierConfig,
     test: false,
   });

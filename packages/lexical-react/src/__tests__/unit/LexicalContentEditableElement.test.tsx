@@ -8,9 +8,9 @@
 
 import {ContentEditableElement} from '@lexical/react/LexicalContentEditable';
 import {axe, toHaveNoViolations} from 'jest-axe';
-import {createEditor, LexicalEditor} from 'lexical';
-import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {createEditor, type LexicalEditor} from 'lexical';
+import {act} from 'react';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('ContentEditableElement tests', () => {
@@ -33,7 +33,7 @@ describe('ContentEditableElement tests', () => {
 
   afterEach(async () => {
     if (container) {
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.unmount();
       });
       document.body.removeChild(container);
@@ -42,7 +42,7 @@ describe('ContentEditableElement tests', () => {
   });
 
   it('renders the correct ARIA attributes when editable', async () => {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <ContentEditableElement
           editor={editor}
@@ -58,7 +58,7 @@ describe('ContentEditableElement tests', () => {
   });
 
   it('renders aria-labelledby attribute correctly', async () => {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <ContentEditableElement
           editor={editor}
@@ -76,7 +76,7 @@ describe('ContentEditableElement tests', () => {
     const roles = ['textbox', 'combobox', 'listbox', 'spinbutton'];
 
     for (const role of roles) {
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <ContentEditableElement editor={editor} role={role} />,
         );
@@ -87,7 +87,7 @@ describe('ContentEditableElement tests', () => {
     }
   });
   it('renders optional ARIA attributes when provided', async () => {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <ContentEditableElement
           editor={editor}
@@ -102,7 +102,7 @@ describe('ContentEditableElement tests', () => {
   });
 
   it('renders aria-expanded correctly for role combobox', async () => {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <ContentEditableElement
           editor={editor}
@@ -118,7 +118,7 @@ describe('ContentEditableElement tests', () => {
   });
 
   it('renders aria-invalid and aria-required correctly', async () => {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <ContentEditableElement
           editor={editor}
@@ -135,7 +135,7 @@ describe('ContentEditableElement tests', () => {
   });
 
   it('applies custom attributes and styles correctly', async () => {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <ContentEditableElement
           editor={editor}
@@ -153,7 +153,7 @@ describe('ContentEditableElement tests', () => {
   });
 
   it('renders aria-invalid and aria-required correctly when set to false', async () => {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <ContentEditableElement
           editor={editor}
@@ -170,7 +170,7 @@ describe('ContentEditableElement tests', () => {
   });
 
   it('renders custom data attributes correctly', async () => {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <ContentEditableElement
           editor={editor}
@@ -192,7 +192,7 @@ describe('ContentEditableElement tests', () => {
       rootElement = element;
     });
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <ContentEditableElement editor={editor} role="textbox" />,
       );
@@ -201,7 +201,7 @@ describe('ContentEditableElement tests', () => {
     const element = container!.querySelector('[role="textbox"]')!;
     expect(rootElement).toBe(element); // Verify registration.
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.unmount(); // Unmount the component.
     });
 
@@ -212,7 +212,7 @@ describe('ContentEditableElement tests', () => {
     const spellCheckValues = [true, false];
 
     for (const spellCheck of spellCheckValues) {
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <ContentEditableElement
             editor={editor}
@@ -230,7 +230,7 @@ describe('ContentEditableElement tests', () => {
   it('should have no accessibility violations', async () => {
     expect.extend(toHaveNoViolations);
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <ContentEditableElement
           editor={editor}
@@ -244,11 +244,44 @@ describe('ContentEditableElement tests', () => {
     expect(results).toHaveNoViolations();
   });
 
+  it('renders tabindex="-1" when not editable', async () => {
+    editor.setEditable(false);
+    await act(async () => {
+      reactRoot.render(
+        <ContentEditableElement editor={editor} role="textbox" />,
+      );
+    });
+    const element = container!.querySelector('[role="textbox"]')!;
+    expect(element.getAttribute('tabindex')).toBe('-1');
+    expect(element.getAttribute('contenteditable')).toBe('false');
+  });
+
+  it('does not render tabindex when editable', async () => {
+    await act(async () => {
+      reactRoot.render(
+        <ContentEditableElement editor={editor} role="textbox" />,
+      );
+    });
+    const element = container!.querySelector('[role="textbox"]')!;
+    expect(element.getAttribute('tabindex')).toBeNull();
+  });
+
+  it('allows custom tabIndex to override default when not editable', async () => {
+    editor.setEditable(false);
+    await act(async () => {
+      reactRoot.render(
+        <ContentEditableElement editor={editor} role="textbox" tabIndex={0} />,
+      );
+    });
+    const element = container!.querySelector('[role="textbox"]')!;
+    expect(element.getAttribute('tabindex')).toBe('0');
+  });
+
   it('should have no accessibility violations when not editable', async () => {
     expect.extend(toHaveNoViolations);
     editor.setEditable(false);
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <ContentEditableElement
           editor={editor}

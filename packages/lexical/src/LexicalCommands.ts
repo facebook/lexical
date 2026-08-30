@@ -28,22 +28,29 @@ export function createCommand<T>(type?: string): LexicalCommand<T> {
   return {type};
 }
 
+/** Dispatched whenever the editor selection changes. */
 export const SELECTION_CHANGE_COMMAND: LexicalCommand<void> = createCommand(
   'SELECTION_CHANGE_COMMAND',
 );
+/** Dispatched to insert clipboard nodes at the current selection. */
 export const SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
-  nodes: Array<LexicalNode>;
+  nodes: LexicalNode[];
   selection: BaseSelection;
 }> = createCommand('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND');
+/** Dispatched on a mouse click event in the editor. */
 export const CLICK_COMMAND: LexicalCommand<MouseEvent> =
   createCommand('CLICK_COMMAND');
+/** Dispatched on a beforeinput event. */
 export const BEFORE_INPUT_COMMAND: LexicalCommand<InputEvent> = createCommand(
   'BEFORE_INPUT_COMMAND',
 );
+/** Dispatched on an input event. */
 export const INPUT_COMMAND: LexicalCommand<InputEvent> =
   createCommand('INPUT_COMMAND');
+/** Dispatched when an IME composition session starts. */
 export const COMPOSITION_START_COMMAND: LexicalCommand<CompositionEvent> =
   createCommand('COMPOSITION_START_COMMAND');
+/** Dispatched when an IME composition session ends. */
 export const COMPOSITION_END_COMMAND: LexicalCommand<CompositionEvent> =
   createCommand('COMPOSITION_END_COMMAND');
 /**
@@ -62,14 +69,18 @@ export const DELETE_CHARACTER_COMMAND: LexicalCommand<boolean> = createCommand(
 export const INSERT_LINE_BREAK_COMMAND: LexicalCommand<boolean> = createCommand(
   'INSERT_LINE_BREAK_COMMAND',
 );
+/** Dispatched to insert a new paragraph (Enter key). */
 export const INSERT_PARAGRAPH_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_PARAGRAPH_COMMAND',
 );
+/** Dispatched to insert text from an InputEvent or a string. */
 export const CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<
   InputEvent | string
 > = createCommand('CONTROLLED_TEXT_INSERTION_COMMAND');
+/** Dispatched on a paste event. */
 export const PASTE_COMMAND: LexicalCommand<PasteCommandType> =
   createCommand('PASTE_COMMAND');
+/** Dispatched to remove the currently selected text. */
 export const REMOVE_TEXT_COMMAND: LexicalCommand<InputEvent | null> =
   createCommand('REMOVE_TEXT_COMMAND');
 /**
@@ -93,6 +104,14 @@ export const DELETE_LINE_COMMAND: LexicalCommand<boolean> = createCommand(
  */
 export const FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType> =
   createCommand('FORMAT_TEXT_COMMAND');
+/**
+ * Dispatched to explicitly set or unset text formats on the selection.
+ * Unlike FORMAT_TEXT_COMMAND which toggles, this command sets each specified
+ * format to the exact boolean value provided.
+ */
+export const SET_TEXT_FORMAT_COMMAND: LexicalCommand<
+  Partial<Record<TextFormatType, boolean>>
+> = createCommand('SET_TEXT_FORMAT_COMMAND');
 /**
  * Dispatched on undo (Cmd+Z on macOS, Ctrl+Z elsewhere).
  */
@@ -178,22 +197,30 @@ export const KEY_DELETE_COMMAND: LexicalCommand<KeyboardEvent> =
  */
 export const KEY_TAB_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('KEY_TAB_COMMAND');
+/** Dispatched to insert a tab character. */
 export const INSERT_TAB_COMMAND: LexicalCommand<void> =
   createCommand('INSERT_TAB_COMMAND');
+/** Dispatched to indent the selected content. */
 export const INDENT_CONTENT_COMMAND: LexicalCommand<void> = createCommand(
   'INDENT_CONTENT_COMMAND',
 );
+/** Dispatched to outdent the selected content. */
 export const OUTDENT_CONTENT_COMMAND: LexicalCommand<void> = createCommand(
   'OUTDENT_CONTENT_COMMAND',
 );
+/** Dispatched on a drop event. */
 export const DROP_COMMAND: LexicalCommand<DragEvent> =
   createCommand('DROP_COMMAND');
+/** Dispatched to set the element format (alignment) of the selected block. */
 export const FORMAT_ELEMENT_COMMAND: LexicalCommand<ElementFormatType> =
   createCommand('FORMAT_ELEMENT_COMMAND');
+/** Dispatched when a drag operation starts. */
 export const DRAGSTART_COMMAND: LexicalCommand<DragEvent> =
   createCommand('DRAGSTART_COMMAND');
+/** Dispatched when a dragged element is over the editor. */
 export const DRAGOVER_COMMAND: LexicalCommand<DragEvent> =
   createCommand('DRAGOVER_COMMAND');
+/** Dispatched when a drag operation ends. */
 export const DRAGEND_COMMAND: LexicalCommand<DragEvent> =
   createCommand('DRAGEND_COMMAND');
 /**
@@ -216,18 +243,40 @@ export const CUT_COMMAND: LexicalCommand<
  */
 export const SELECT_ALL_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('SELECT_ALL_COMMAND');
+/** Dispatched to clear all editor content. */
 export const CLEAR_EDITOR_COMMAND: LexicalCommand<void> = createCommand(
   'CLEAR_EDITOR_COMMAND',
 );
+/** Dispatched to clear the undo/redo history stack. */
 export const CLEAR_HISTORY_COMMAND: LexicalCommand<void> = createCommand(
   'CLEAR_HISTORY_COMMAND',
 );
+/**
+ * @deprecated in v0.49.0, use the `canRedo` signal from `HistoryExtension`.
+ *
+ * A command only reports a change, so a listener registered after the editor
+ * is initialized has no way to read the current value. The signal always
+ * holds it.
+ *
+ * Dispatched when the redo availability changes. Payload is true if redo is available.
+ */
 export const CAN_REDO_COMMAND: LexicalCommand<boolean> =
   createCommand('CAN_REDO_COMMAND');
+/**
+ * @deprecated in v0.49.0, use the `canUndo` signal from `HistoryExtension`.
+ *
+ * A command only reports a change, so a listener registered after the editor
+ * is initialized has no way to read the current value. The signal always
+ * holds it.
+ *
+ * Dispatched when the undo availability changes. Payload is true if undo is available.
+ */
 export const CAN_UNDO_COMMAND: LexicalCommand<boolean> =
   createCommand('CAN_UNDO_COMMAND');
+/** Dispatched when the editor receives focus. */
 export const FOCUS_COMMAND: LexicalCommand<FocusEvent> =
   createCommand('FOCUS_COMMAND');
+/** Dispatched when the editor loses focus. */
 export const BLUR_COMMAND: LexicalCommand<FocusEvent> =
   createCommand('BLUR_COMMAND');
 /**

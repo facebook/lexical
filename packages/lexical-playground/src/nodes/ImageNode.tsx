@@ -6,20 +6,6 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditorWithDispose,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  RangeSelection,
-  SerializedEditor,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
 import {
@@ -28,7 +14,7 @@ import {
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {$generateHtmlFromNodes} from '@lexical/html';
 import {LinkExtension} from '@lexical/link';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
@@ -38,20 +24,28 @@ import {
   $createRangeSelection,
   $extendCaretToRange,
   $getChildCaret,
+  $getDocument,
   $getRoot,
   $isElementNode,
   $isParagraphNode,
-  $selectAll,
-  $setSelection,
   configExtension,
   DecoratorNode,
   defineExtension,
-  SKIP_DOM_SELECTION_TAG,
+  type DOMExportOutput,
+  type EditorConfig,
+  type LexicalEditorWithDispose,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type RangeSelection,
+  type SerializedEditor,
+  type SerializedLexicalNode,
+  type Spread,
 } from 'lexical';
 import * as React from 'react';
 
 import {EmojisExtension} from '../plugins/EmojisExtension';
-import MentionsPlugin from '../plugins/MentionsPlugin';
+import {MentionsPlugin} from '../plugins/MentionsExtension';
 import ContentEditable from '../ui/ContentEditable';
 import {EmojiNode} from './EmojiNode';
 import {KeywordsExtension} from './KeywordNode';
@@ -105,26 +99,6 @@ export interface ImagePayload {
   captionsEnabled?: boolean;
 }
 
-function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
-  return (
-    img.parentElement != null &&
-    img.parentElement.tagName === 'LI' &&
-    img.previousSibling === null &&
-    img.getAttribute('aria-roledescription') === 'checkbox'
-  );
-}
-
-function $convertImageElement(domNode: Node): null | DOMConversionOutput {
-  const img = domNode as HTMLImageElement;
-  const src = img.getAttribute('src');
-  if (!src || src.startsWith('file:///') || isGoogleDocCheckboxImg(img)) {
-    return null;
-  }
-  const {alt: altText, width, height} = img;
-  const node = $createImageNode({altText, height, src, width});
-  return {node};
-}
-
 export function $isCaptionEditorEmpty(): boolean {
   // Search the document for any non-element node
   // to determine if it's empty or not
@@ -162,8 +136,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   // Captions cannot yet be used within editor cells
   __captionsEnabled: boolean;
 
-  static getType(): string {
-    return 'image';
+  $config() {
+    return this.config('image', {extends: DecoratorNode});
   }
 
   static clone(node: ImageNode): ImageNode {
@@ -205,7 +179,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(): DOMExportOutput {
-    const imgElement = document.createElement('img');
+    const imgElement = $getDocument().createElement('img');
     imgElement.setAttribute('src', this.__src);
     imgElement.setAttribute('alt', this.__altText);
     imgElement.setAttribute('width', this.__width.toString());
@@ -235,8 +209,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
         return $generateHtmlFromNodes(captionEditor, selection);
       });
       if (captionHtml) {
-        const figureElement = document.createElement('figure');
-        const figcaptionElement = document.createElement('figcaption');
+        const figureElement = $getDocument().createElement('figure');
+        const figcaptionElement = $getDocument().createElement('figcaption');
         figcaptionElement.innerHTML = captionHtml;
 
         figureElement.appendChild(imgElement);
@@ -247,46 +221,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     }
 
     return {element: imgElement};
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      figcaption: () => ({
-        conversion: () => ({node: null}),
-        priority: 0,
-      }),
-      figure: () => ({
-        conversion: node => {
-          return {
-            after: childNodes => {
-              const imageNodes = childNodes.filter($isImageNode);
-              const figcaption = node.querySelector('figcaption');
-              if (figcaption) {
-                for (const imgNode of imageNodes) {
-                  imgNode.setShowCaption(true);
-                  imgNode.__caption.update(
-                    () => {
-                      $selectAll().insertNodes(
-                        $generateNodesFromDOM(imgNode.__caption, figcaption),
-                      );
-                      $setSelection(null);
-                    },
-                    {tag: SKIP_DOM_SELECTION_TAG},
-                  );
-                }
-              }
-              return imageNodes;
-            },
-            node: null,
-          };
-        },
-        priority: 0,
-      }),
-      img: () => ({
-        conversion: $convertImageElement,
-        priority: 0,
-      }),
-    };
   }
 
   constructor(
@@ -344,7 +278,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
-    const span = document.createElement('span');
+    const span = $getDocument().createElement('span');
     const theme = config.theme;
     const className = theme.image;
     if (className !== undefined) {

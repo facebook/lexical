@@ -12,7 +12,6 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
   $needsBlockCursorBeside,
@@ -21,8 +20,10 @@ import {
 import {assert, describe, expect, test} from 'vitest';
 
 import {
+  $assertNodeType,
   $createTestDecoratorNode,
   $createTestShadowRootNode,
+  $isTestShadowRootNode,
   TestDecoratorNode,
   TestShadowRootNode,
 } from '../utils';
@@ -160,13 +161,13 @@ describe('block cursor deletion beside an ElementNode (#8939)', () => {
       editor.read(() => {
         const children = $getRoot().getChildren();
         expect(children).toHaveLength(1);
-        assert($isParagraphNode(children[0]), 'Expected ParagraphNode');
-        expect(children[0].isEmpty()).toBe(true);
+        const paragraph = $assertNodeType(children[0], $isParagraphNode);
+        expect(paragraph.isEmpty()).toBe(true);
         // The caret is inside the restored paragraph, not on the root before
         // it, so the next keystroke acts on the paragraph.
         const selection = $getSelection();
         assert($isRangeSelection(selection), 'Expected RangeSelection');
-        expect(selection.anchor.getNode().getKey()).toBe(children[0].getKey());
+        expect(selection.anchor.getNode().getKey()).toBe(paragraph.getKey());
       });
 
       // Enter therefore behaves as it does in any other document holding a
@@ -182,9 +183,13 @@ describe('block cursor deletion beside an ElementNode (#8939)', () => {
       );
 
       editor.read(() => {
-        expect($getRoot().getChildrenSize()).toBe(2);
-        expect($getRoot().getChildAtIndex(0)!.getTextContent()).toBe('');
-        expect($getRoot().getChildAtIndex(1)!.getTextContent()).toBe('X');
+        expect(
+          $getRoot()
+            .getChildren()
+            .map(child =>
+              $assertNodeType(child, $isParagraphNode).getTextContent(),
+            ),
+        ).toEqual(['', 'X']);
       });
     },
   );
@@ -213,13 +218,17 @@ describe('block cursor deletion beside an ElementNode (#8939)', () => {
     );
 
     editor.read(() => {
-      const shadow = $getRoot().getFirstChild();
-      assert($isElementNode(shadow), 'Expected the shadow root to survive');
+      const shadow = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isTestShadowRootNode,
+      );
       // Previously the shadow root was left with no children at all and the
       // caret on the shadow root itself.
       expect(shadow.getChildrenSize()).toBe(1);
-      const paragraph = shadow.getFirstChild();
-      assert($isParagraphNode(paragraph), 'Expected ParagraphNode');
+      const paragraph = $assertNodeType(
+        shadow.getFirstChild(),
+        $isParagraphNode,
+      );
       expect(paragraph.isEmpty()).toBe(true);
       const selection = $getSelection();
       assert($isRangeSelection(selection), 'Expected RangeSelection');
@@ -275,8 +284,10 @@ describe('block cursor deletion beside an ElementNode (#8939)', () => {
           if (points === 'element') {
             shadow.select(0, shadow.getChildrenSize());
           } else {
-            const paragraph = shadow.getFirstChild();
-            assert($isElementNode(paragraph), 'Expected ElementNode');
+            const paragraph = $assertNodeType(
+              shadow.getFirstChild(),
+              $isParagraphNode,
+            );
             const selection = paragraph.select(0, 0);
             selection.focus.set(
               paragraph.getFirstChildOrThrow().getKey(),
@@ -298,23 +309,21 @@ describe('block cursor deletion beside an ElementNode (#8939)', () => {
       );
 
       editor.read(() => {
-        const shadow = $getRoot().getFirstChild();
-        assert($isElementNode(shadow), 'Expected the shadow root to survive');
-        expect(
-          shadow
-            .getChildren()
-            .map(child => [
-              child.getType(),
-              $isElementNode(child) && child.isEmpty(),
-            ]),
-        ).toEqual([
-          ['paragraph', true],
-          ['paragraph', true],
+        const shadow = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isTestShadowRootNode,
+        );
+        const paragraphs = shadow
+          .getChildren()
+          .map(child => $assertNodeType(child, $isParagraphNode));
+        expect(paragraphs.map(paragraph => paragraph.isEmpty())).toEqual([
+          true,
+          true,
         ]);
         const selection = $getSelection();
         assert($isRangeSelection(selection), 'Expected RangeSelection');
         expect(selection.anchor.getNode().getKey()).toBe(
-          shadow.getChildAtIndex(1)!.getKey(),
+          paragraphs[1].getKey(),
         );
       });
     },

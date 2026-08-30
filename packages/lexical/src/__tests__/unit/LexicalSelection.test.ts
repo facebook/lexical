@@ -1220,8 +1220,9 @@ describe('Regression tests for #8075', () => {
       const children = $getRoot().getChildren();
       // The empty paragraph is gone and the shadow root is untouched.
       expect(children).toHaveLength(1);
-      assert($isTestShadowRootNode(children[0]), 'Expected shadow root');
-      expect(children[0].getTextContent()).toBe('inside');
+      expect(
+        $assertNodeType(children[0], $isTestShadowRootNode).getTextContent(),
+      ).toBe('inside');
     });
   });
 
@@ -1254,8 +1255,9 @@ describe('Regression tests for #8075', () => {
       const children = $getRoot().getChildren();
       expect(children).toHaveLength(2);
       expect(children[0].getTextContent()).toBe('before');
-      assert($isTestShadowRootNode(children[1]), 'Expected shadow root');
-      expect(children[1].getTextContent()).toBe('inside');
+      expect(
+        $assertNodeType(children[1], $isTestShadowRootNode).getTextContent(),
+      ).toBe('inside');
     });
   });
 
@@ -1289,8 +1291,7 @@ describe('Regression tests for #8075', () => {
     editor.read(() => {
       const children = $getRoot().getChildren();
       expect(children).toHaveLength(2);
-      const shadow = children[0];
-      assert($isTestShadowRootNode(shadow), 'Expected shadow root');
+      const shadow = $assertNodeType(children[0], $isTestShadowRootNode);
       // The empty block still belongs to the first shadow root; the
       // following shadow root was not pulled into it.
       expect(shadow.getChildrenSize()).toBe(1);

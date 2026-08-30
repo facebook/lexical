@@ -17,7 +17,7 @@ import {
 import {assert, describe, expect, test} from 'vitest';
 
 import {IS_BOLD, IS_ITALIC} from '../../LexicalConstants';
-import {initializeUnitTest} from '../utils';
+import {$assertNodeType, initializeUnitTest} from '../utils';
 
 describe('Backspacing an empty block updates the pending format (#6781)', () => {
   initializeUnitTest(testEnv => {
@@ -72,14 +72,12 @@ describe('Backspacing an empty block updates the pending format (#6781)', () => 
       editor.read(() => {
         const root = $getRoot();
         expect(root.getTextContent()).toBe('helloX');
-        const text = root.getLastDescendant();
-        assert($isTextNode(text), 'Expected TextNode');
+        const text = $assertNodeType(root.getLastDescendant(), $isTextNode);
         expect(text.getFormat()).toBe(IS_BOLD);
         expect(text.getStyle()).toBe('color: red');
         // The inserted text merges into the existing node rather than
         // starting a differently styled one.
-        const paragraph = root.getFirstChild();
-        assert($isElementNode(paragraph), 'Expected ElementNode');
+        const paragraph = $assertNodeType(root.getFirstChild(), $isElementNode);
         expect(paragraph.getChildrenSize()).toBe(1);
       });
     });

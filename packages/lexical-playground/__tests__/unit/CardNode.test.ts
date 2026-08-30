@@ -39,6 +39,7 @@ import {
   KEY_TAB_COMMAND,
   type SerializedElementNode,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it} from 'vitest';
 
 import {CardExtension} from '../../src/plugins/CardExtension';
@@ -349,8 +350,10 @@ describe('CardNode named slots', () => {
             [a, 'A'],
             [b, 'B'],
           ] as const) {
-            const title = $getSlot(card, 'title');
-            assert($isParagraphNode(title), 'title slot must be a paragraph');
+            const title = $assertNodeType(
+              $getSlot(card, 'title'),
+              $isParagraphNode,
+            );
             title.append($createTextNode(label));
           }
           $getRoot().clear().append(a, b);
@@ -371,9 +374,9 @@ describe('CardNode named slots', () => {
 
       editor.read(() => {
         expect($getRoot().getChildrenSize()).toBe(1);
-        const card = $getRoot().getFirstChild();
-        assert($isCardNode(card), 'The other Card must survive');
-        // The slot went with the deleted host, and the survivor kept its own.
+        // The other Card must survive: the slot went with the deleted host,
+        // and the survivor kept its own.
+        const card = $assertNodeType($getRoot().getFirstChild(), $isCardNode);
         expect($getSlot(card, 'title')?.getTextContent()).toBe(survivor);
       });
     },

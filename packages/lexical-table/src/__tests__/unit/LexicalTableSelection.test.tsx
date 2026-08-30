@@ -436,14 +436,8 @@ describe('regression #8075', () => {
       );
       testEnv.editor.update($deleteForward, {discrete: true});
       testEnv.editor.read(() => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected a TableNode');
-        }
-        const row = table.getFirstChild();
-        if (!$isTableRowNode(row)) {
-          throw new Error('Expected a TableRowNode');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const row = $assertNodeType(table.getFirstChild(), $isTableRowNode);
         // The next cell was not pulled into the empty one.
         expect(row.getChildrenSize()).toBe(2);
         expect(row.getFirstChildOrThrow().getTextContent()).toBe('');

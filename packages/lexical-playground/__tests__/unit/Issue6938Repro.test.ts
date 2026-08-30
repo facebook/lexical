@@ -18,10 +18,17 @@ import {
   defineExtension,
   type LexicalNode,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it} from 'vitest';
 
-import {$createLayoutContainerNode} from '../../src/nodes/LayoutContainerNode';
-import {$createLayoutItemNode} from '../../src/nodes/LayoutItemNode';
+import {
+  $createLayoutContainerNode,
+  $isLayoutContainerNode,
+} from '../../src/nodes/LayoutContainerNode';
+import {
+  $createLayoutItemNode,
+  $isLayoutItemNode,
+} from '../../src/nodes/LayoutItemNode';
 import {LayoutExtension} from '../../src/plugins/LayoutExtension/LayoutExtension';
 
 const LayoutTestExtension = defineExtension({
@@ -68,9 +75,9 @@ describe('Select-all + delete over a columns layout (#6938)', () => {
     editor.read(() => {
       // Previously the container survived with two empty layout items.
       expect($describeRoot()).toBe('paragraph()');
-      const first = $getRoot().getFirstChild();
-      assert($isParagraphNode(first), 'Expected ParagraphNode');
-      expect(first.isEmpty()).toBe(true);
+      expect(
+        $assertNodeType($getRoot().getFirstChild(), $isParagraphNode).isEmpty(),
+      ).toBe(true);
     });
   });
 
@@ -166,12 +173,18 @@ describe('Select-all + delete over a columns layout (#6938)', () => {
 
     editor.update(
       () => {
-        const container = $getRoot().getFirstChild();
-        assert($isElementNode(container), 'Expected ElementNode');
-        const item = container.getFirstChild();
-        assert($isElementNode(item), 'Expected ElementNode');
-        const paragraph = item.getFirstChild();
-        assert($isElementNode(paragraph), 'Expected ElementNode');
+        const container = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isLayoutContainerNode,
+        );
+        const item = $assertNodeType(
+          container.getFirstChild(),
+          $isLayoutItemNode,
+        );
+        const paragraph = $assertNodeType(
+          item.getFirstChild(),
+          $isParagraphNode,
+        );
         const selection = $selectAll(paragraph.select(0, 0));
         selection.removeText();
       },

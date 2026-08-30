@@ -552,11 +552,20 @@ function $handleTableClick(
   const prevSelection = $getPreviousSelection();
   // We can't trust Firefox to do the right thing with the selection and
   // we don't have a proper state machine to do this "correctly" but
-  // if we go ahead and make the table selection now it will work
+  // if we go ahead and make the table selection now it will work.
+  //
+  // A shift-click only ever moves the focus — the anchor is where the
+  // selection started — so this does not require the previous selection to be
+  // inside the table that was clicked. Only the nearest cell's observer is
+  // given the pointerdown (getTableObserverFromCellNode resolves one), so
+  // shift-clicking into a nested table from the cell around it arrives here
+  // with a previous selection that is outside `tableNode`; the branches below
+  // already tell those two cases apart, and the second one is what preserves
+  // the anchor. Requiring the previous selection to be in this table left that
+  // case to Firefox, which resets the anchor to the start of the cell.
   if (
     IS_FIREFOX &&
     event.shiftKey &&
-    $isSelectionInTable(prevSelection, tableNode) &&
     ($isRangeSelection(prevSelection) || $isTableSelection(prevSelection))
   ) {
     const prevAnchorNode = prevSelection.anchor.getNode();
@@ -579,6 +588,10 @@ function $handleTableClick(
         prevSelection.anchor.offset,
         prevSelection.anchor.type,
       );
+      // The selection above is the answer, so the native shift-click must not
+      // also run: Firefox would resolve its own, anchored at the start of the
+      // cell, and the selectionchange import would overwrite this one.
+      stopEvent(event);
     }
   } else {
     // Only set anchor cell for selection if this is not a simple touch tap

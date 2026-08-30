@@ -1572,8 +1572,11 @@ test.describe('Selection', () => {
     // Move the mouse to the last cell
     await lastCell.hover();
     await page.mouse.down();
-    // Move the mouse to the end of the document
-    await page.mouse.move(500, 500);
+    // Move the mouse to the end of the document. A real drag emits a stream of
+    // mousemove events; a single jump to the destination is a synthetic-only
+    // gesture that Firefox 153 no longer resolves as a drag, so ask playwright
+    // for the intermediate moves.
+    await page.mouse.move(500, 500, {steps: 10});
 
     const expectedSelection = createHumanReadableSelection(
       'the full table from beginning to the end of the text in the last cell',

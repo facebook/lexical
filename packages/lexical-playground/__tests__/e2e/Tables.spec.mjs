@@ -9592,17 +9592,12 @@ test.describe('Tables', () => {
     }
 
     test('Range-select from above nested table into it selects the entire table, but not the outer table', async ({
-      browserName,
       page,
       isPlainText,
       isCollab,
     }) => {
       test.skip(isPlainText);
       test.skip(isCollab);
-      test.fixme(
-        browserName === 'firefox',
-        'Erroneously selects the text after the table as well',
-      );
       await initialize({hasNestedTables: true, page});
 
       await setupTables(page);

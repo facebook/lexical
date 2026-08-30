@@ -12,10 +12,12 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $isParagraphNode,
+  $isRangeSelection,
   $isTextNode,
   defineExtension,
-  ParagraphNode,
+  type ParagraphNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
@@ -223,6 +225,67 @@ describe('clearFormatting (Toolbar)', () => {
       assert($isParagraphNode(firstParagraph), 'Expected a ParagraphNode');
       assert($isParagraphNode(secondParagraph), 'Expected a ParagraphNode');
       expect(secondParagraph.getFormatType()).toBe('right');
+    });
+  });
+
+  test('resets the cached selection format so the toolbar updates (#8881)', () => {
+    using editor = createEditor();
+    // Format a range in the middle of the node, which splits it in three and
+    // leaves the selection on the bold node in the middle
+    editor.update(
+      () => {
+        const text = $createTextNode('Hello World');
+        $getRoot().clear().append($createParagraphNode().append(text));
+        text.select('Hel'.length, 'Hello Wo'.length);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'Expected a RangeSelection');
+        selection.formatText('bold');
+        selection.setStyle('color: red');
+      },
+      {discrete: true},
+    );
+
+    editor.update(() => clearFormatting(editor), {discrete: true});
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection), 'Expected a RangeSelection');
+      // The toolbars read hasFormat() to decide whether a button is active
+      expect(selection.hasFormat('bold')).toBe(false);
+      expect(selection.format).toBe(0);
+      expect(selection.style).toBe('');
+    });
+  });
+
+  test('keeps the cached selection format with a collapsed selection (#7383)', () => {
+    using editor = createEditor();
+    editor.update(
+      () => {
+        const text = $createTextNode('Hello World');
+        text.toggleFormat('bold');
+        $getRoot().clear().append($createParagraphNode().append(text));
+        // A caret inside bold text carries bold as its pending format, which
+        // is what onSelectionChange would sync from the node in the browser
+        text
+          .select('Hello World'.length, 'Hello World'.length)
+          .toggleFormat('bold');
+      },
+      {discrete: true},
+    );
+
+    editor.update(() => clearFormatting(editor), {discrete: true});
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection), 'Expected a RangeSelection');
+      // A collapsed selection only clears block formatting, so the pending
+      // text format the user would type with must survive
+      expect(selection.hasFormat('bold')).toBe(true);
     });
   });
 });

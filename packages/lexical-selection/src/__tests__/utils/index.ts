@@ -12,8 +12,8 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
-  LexicalEditor,
-  PointType,
+  type LexicalEditor,
+  type PointType,
 } from 'lexical';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {

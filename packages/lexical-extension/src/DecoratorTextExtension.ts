@@ -6,25 +6,24 @@
  *
  */
 
-import type {
-  EditorConfig,
-  InlineFormattableNode,
-  LexicalEditor,
-  LexicalNode,
-  SerializedLexicalNode,
-  Spread,
-  StateConfigValue,
-  StateValueOrUpdater,
-  TextFormatType,
-} from 'lexical';
-
 import {
+  $getDocument,
   $getState,
   $setState,
   createState,
   DecoratorNode,
   defineExtension,
+  type EditorConfig,
+  type InlineFormattableNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeStateVersion,
+  type SerializedLexicalNode,
+  type Spread,
+  type StateConfigValue,
+  type StateValueOrUpdater,
   TEXT_TYPE_TO_FORMAT,
+  type TextFormatType,
   toggleTextFormatType,
 } from 'lexical';
 
@@ -35,7 +34,7 @@ export type SerializedDecoratorTextNode = Spread<
   SerializedLexicalNode
 >;
 
-const formatState = /* @__PURE__ */ createState('format', {
+const formatState = createState('format', {
   parse: value => (typeof value === 'number' ? value : 0),
 });
 
@@ -55,8 +54,8 @@ export class DecoratorTextNode
     });
   }
 
-  getFormat(): StateConfigValue<typeof formatState> {
-    return $getState(this, formatState);
+  getFormat(version?: NodeStateVersion): StateConfigValue<typeof formatState> {
+    return $getState(this, formatState, version);
   }
 
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
@@ -83,7 +82,7 @@ export class DecoratorTextNode
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    return document.createElement('span');
+    return $getDocument().createElement('span');
   }
 }
 
@@ -155,24 +154,33 @@ export function applyFormatFromStyle(
  * @param tagNameToFormat Tag name and format mapping
  * @returns domNode
  */
-export function applyFormatToDom(
+export function applyFormatToDom<T extends Text | HTMLElement>(
   lexicalNode: DecoratorTextNode,
-  domNode: Text | HTMLElement,
+  domNode: T,
   tagNameToFormat = DEFAULT_TAG_NAME_TO_FORMAT,
-) {
+): T | HTMLElement {
+  let rval: T | HTMLElement = domNode;
   for (const [tag, format] of Object.entries(tagNameToFormat)) {
     if (lexicalNode.hasFormat(format)) {
-      domNode = wrapElementWith(domNode, tag);
+      rval = wrapElementWith(rval, tag);
     }
   }
-  return domNode;
+  return rval;
 }
+
+/**
+ * @deprecated Use {@link applyFormatToDom} instead. The `$` prefix was a
+ * mistake in the 0.47 release: the implementation does not read any editor
+ * state, so the dollar convention does not apply. This alias is kept for
+ * compatibility with 0.47.
+ */
+export const $applyFormatToDom = applyFormatToDom;
 
 function wrapElementWith(
   element: HTMLElement | Text,
   tag: string,
 ): HTMLElement {
-  const el = document.createElement(tag);
+  const el = element.ownerDocument.createElement(tag);
   el.appendChild(element);
   return el;
 }
@@ -193,7 +201,7 @@ const DEFAULT_TAG_NAME_TO_FORMAT: {[key: string]: TextFormatType} = {
 /**
  * An extension that registers DecoratorTextNode with the editor.
  */
-export const DecoratorTextExtension = /* @__PURE__ */ defineExtension({
+export const DecoratorTextExtension = defineExtension({
   name: '@lexical/extension/DecoratorText',
   nodes: () => [DecoratorTextNode],
 });

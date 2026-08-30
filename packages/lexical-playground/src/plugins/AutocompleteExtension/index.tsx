@@ -10,9 +10,9 @@ import {
   effect,
   IMEExtension,
   namedSignals,
+  RootElementExtension,
   shallowMergeConfig,
   WatchEditableExtension,
-  watchedSignal,
 } from '@lexical/extension';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {
@@ -35,6 +35,7 @@ import {
   type LexicalEditor,
   mergeRegister,
   type NodeKey,
+  registerEventListener,
   safeCast,
   setDOMUnmanaged,
 } from 'lexical';
@@ -278,7 +279,7 @@ function syncGhost(
   if (!dom) {
     return;
   }
-  const ghost = document.createElement('span');
+  const ghost = dom.ownerDocument.createElement('span');
   ghost.setAttribute(AUTOCOMPLETE_GHOST_ATTR, 'true');
   ghost.setAttribute('contenteditable', 'false');
   ghost.className = 'PlaygroundEditorTheme__autocomplete';
@@ -336,27 +337,21 @@ function mergeAutocompleteConfig(
   return merged;
 }
 
-export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
+export const AutocompleteExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<AutocompleteConfig>({
+  config: safeCast<AutocompleteConfig>({
     compositionIdleDebounceMs: DEFAULT_COMPOSITION_IDLE_DEBOUNCE_MS,
     detectLanguage: defaultDetectLanguage,
     dictionaries: defaultDictionaries,
     disabled: false,
   }),
-  dependencies: [IMEExtension, WatchEditableExtension],
+  dependencies: [IMEExtension, RootElementExtension, WatchEditableExtension],
   mergeConfig: mergeAutocompleteConfig,
   name: '@lexical/playground/autocomplete',
   register: (editor: LexicalEditor, config, state) => {
     const ime = state.getDependency(IMEExtension).output;
     const editableSignal = state.getDependency(WatchEditableExtension).output;
-    const rootElemSignal = watchedSignal(
-      () => editor.getRootElement(),
-      signal =>
-        editor.registerRootListener(rootElem => {
-          signal.value = rootElem;
-        }),
-    );
+    const rootElemSignal = state.getDependency(RootElementExtension).output;
     let activeTextNodeKey: NodeKey | null = null;
     let lastMatch: string | null = null;
     let lastSuggestion: string | null = null;
@@ -732,9 +727,13 @@ export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
       for (const loader of Object.values(output.dictionaries.value)) {
         loadDictionary(loader);
       }
-      rootElem.addEventListener('compositionupdate', onCompositionUpdateDOM);
-      rootElem.addEventListener('compositionend', onCompositionEndDOM);
       return mergeRegister(
+        registerEventListener(
+          rootElem,
+          'compositionupdate',
+          onCompositionUpdateDOM,
+        ),
+        registerEventListener(rootElem, 'compositionend', onCompositionEndDOM),
         editor.registerUpdateListener(handleUpdate),
         // Drop the ghost as soon as the editor loses focus, rather than
         // waiting for the next update.
@@ -769,14 +768,7 @@ export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
           COMMAND_PRIORITY_LOW,
         ),
         addSwipeRightListener(rootElem, handleSwipeRight),
-        () => {
-          clearPendingCompositionTimer();
-          rootElem.removeEventListener(
-            'compositionupdate',
-            onCompositionUpdateDOM,
-          );
-          rootElem.removeEventListener('compositionend', onCompositionEndDOM);
-        },
+        clearPendingCompositionTimer,
         // Tear down on dispose: clear any ghost still attached so a fresh
         // build doesn't see leftover decoration.
         dismiss,

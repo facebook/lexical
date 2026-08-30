@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {NodeKey} from 'lexical';
-import type {JSX} from 'react';
 
 import './index.css';
 
@@ -20,14 +18,23 @@ import {
   $isParagraphNode,
   $isTextNode,
   getComposedEventTarget,
+  type NodeKey,
+  registerEventListener,
 } from 'lexical';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  type JSX,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import * as ReactDOM from 'react-dom';
 
 import useModal from '../../hooks/useModal';
 import {
   ComponentPickerMenuItem,
-  ComponentPickerOption,
+  type ComponentPickerOption,
   getBaseOptions,
   getDynamicOptions,
 } from '../ComponentPickerPlugin';
@@ -115,11 +122,12 @@ export default function DraggableBlockPlugin({
       setIsPickerOpen(false);
       setPickerState(null);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isPickerOpen]);
+    return registerEventListener(
+      anchorElem.ownerDocument,
+      'mousedown',
+      handleClickOutside,
+    );
+  }, [isPickerOpen, anchorElem]);
 
   const selectOption = useCallback(
     (option: ComponentPickerOption) => {
@@ -189,10 +197,7 @@ export default function DraggableBlockPlugin({
         setPickerState(null);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return registerEventListener(window, 'keydown', handleKeyDown);
   }, [highlightedIndex, isPickerOpen, options, selectOption]);
 
   function openComponentPicker(e: React.MouseEvent) {
@@ -265,7 +270,7 @@ export default function DraggableBlockPlugin({
                 ))}
               </ul>
             </div>,
-            document.body,
+            anchorElem.ownerDocument.body,
           )
         : null}
       <DraggableBlockPlugin_EXPERIMENTAL

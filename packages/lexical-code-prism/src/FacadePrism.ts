@@ -6,10 +6,11 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code-core';
-import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import type {Token, TokenStream} from 'prismjs';
 
+// Side-effect import: loads prismjs and sets up the global `Prism` that the
+// component imports below extend. Must stay separate from the type-only import
+// above so it is not elided.
 import 'prismjs';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-diff';
@@ -29,8 +30,15 @@ import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-cpp';
 
-import {$createCodeHighlightNode} from '@lexical/code-core';
-import {$createLineBreakNode, $createTabNode, tokenizeRawText} from 'lexical';
+import {$createCodeHighlightNode, type CodeNode} from '@lexical/code-core';
+import {
+  $createLineBreakNode,
+  $createTabNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  tokenizeRawText,
+} from 'lexical';
 
 declare global {
   interface Window {
@@ -39,6 +47,7 @@ declare global {
 }
 
 export const Prism: typeof import('prismjs') =
+  // eslint-disable-next-line no-restricted-syntax
   (globalThis as {Prism?: typeof import('prismjs')}).Prism || window.Prism;
 
 export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
@@ -74,13 +83,25 @@ export const CODE_LANGUAGE_MAP: Record<string, string> = {
   ts: 'typescript',
 };
 
+// The two maps above are plain objects, so a language whose name matches a
+// member of `Object.prototype` reads the inherited value: `CODE_LANGUAGE_MAP`
+// indexed with `constructor` hands back the `Object` function, not a string.
+// A code block's language comes from the document, so the name is not ours to
+// choose.
+function ownValue(
+  map: Record<string, string>,
+  key: string,
+): string | undefined {
+  return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : undefined;
+}
+
 export function normalizeCodeLanguage(lang: string) {
-  return CODE_LANGUAGE_MAP[lang] || lang;
+  return ownValue(CODE_LANGUAGE_MAP, lang) || lang;
 }
 
 export function getLanguageFriendlyName(lang: string) {
   const _lang = normalizeCodeLanguage(lang);
-  return CODE_LANGUAGE_FRIENDLY_NAME_MAP[_lang] || _lang;
+  return ownValue(CODE_LANGUAGE_FRIENDLY_NAME_MAP, _lang) || _lang;
 }
 
 export const getCodeLanguages = (): string[] =>

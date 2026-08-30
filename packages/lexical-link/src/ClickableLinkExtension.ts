@@ -6,7 +6,7 @@
  *
  */
 
-import {namedSignals, NamedSignalsOutput} from '@lexical/extension';
+import {namedSignals, type NamedSignalsOutput} from '@lexical/extension';
 import {
   $findMatchingParent,
   $getNearestNodeFromDOMNode,
@@ -17,12 +17,13 @@ import {
   getNearestEditorFromDOMNode,
   isDOMNode,
   isHTMLAnchorElement,
-  LexicalEditor,
+  type LexicalEditor,
+  registerEventListeners,
   safeCast,
 } from 'lexical';
 
 import {LinkExtension} from './LexicalLinkExtension';
-import {$isLinkNode} from './LexicalLinkNode';
+import {$isAutoLinkNode, $isLinkNode} from './LexicalLinkNode';
 
 function findMatchingDOM<T extends Node>(
   startNode: Node,
@@ -51,6 +52,14 @@ export function registerClickableLink(
   eventOptions: Pick<AddEventListenerOptions, 'signal'> = {},
 ): () => void {
   const onClick = (event: MouseEvent) => {
+    // `click` only fires for the primary button; every other button arrives
+    // as `auxclick` (middle, right, and the back / forward buttons). Only the
+    // middle button follows the link -- a right click belongs to the context
+    // menu, and the history buttons belong to the browser.
+    const isMiddle = event.button === 1;
+    if (event.type === 'auxclick' && !isMiddle) {
+      return;
+    }
     const target = event.target;
     if (!isDOMNode(target)) {
       return;
@@ -63,12 +72,15 @@ export function registerClickableLink(
 
     let url = null;
     let urlTarget = null;
+    let isUnlinkedAutolink = false;
     nearestEditor.update(() => {
       const clickedNode = $getNearestNodeFromDOMNode(target);
       if (clickedNode !== null) {
         const maybeLinkNode = $findMatchingParent(clickedNode, $isElementNode);
         if (!stores.disabled.peek()) {
           if ($isLinkNode(maybeLinkNode)) {
+            isUnlinkedAutolink =
+              $isAutoLinkNode(maybeLinkNode) && maybeLinkNode.getIsUnlinked();
             url = maybeLinkNode.sanitizeUrl(maybeLinkNode.getURL());
             urlTarget = maybeLinkNode.getTarget();
           } else {
@@ -82,7 +94,7 @@ export function registerClickableLink(
       }
     });
 
-    if (url === null || url === '') {
+    if (url === null || url === '' || isUnlinkedAutolink) {
       return;
     }
 
@@ -93,7 +105,7 @@ export function registerClickableLink(
       return;
     }
 
-    const isMiddle = event.type === 'auxclick' && event.button === 1;
+    // eslint-disable-next-line no-restricted-syntax
     window.open(
       url,
       stores.newTab.peek() ||
@@ -107,20 +119,20 @@ export function registerClickableLink(
     event.preventDefault();
   };
 
-  const onMouseUp = (event: MouseEvent) => {
-    if (event.button === 1) {
-      onClick(event);
-    }
-  };
-
   return editor.registerRootListener(rootElement => {
     if (rootElement) {
-      rootElement.addEventListener('click', onClick, eventOptions);
-      rootElement.addEventListener('mouseup', onMouseUp, eventOptions);
-      return () => {
-        rootElement.removeEventListener('click', onClick);
-        rootElement.removeEventListener('mouseup', onMouseUp);
-      };
+      // `auxclick` rather than `mouseup`: canceling `mouseup` does not stop
+      // the browser from also opening a middle-clicked link in a new tab, so
+      // handling the middle button there opened the URL twice. Safari below
+      // 18.2 has no `auxclick` at all; there a middle click is left to the
+      // browser, which opens the anchor's href -- already sanitized by
+      // LinkNode, and absent entirely on an unlinked AutoLinkNode -- in a new
+      // tab, for the same result minus the `window.open` call.
+      return registerEventListeners(
+        rootElement,
+        {auxclick: onClick, click: onClick},
+        eventOptions,
+      );
     }
   });
 }
@@ -130,11 +142,11 @@ export function registerClickableLink(
  * selection to change instead of opening a link. This extension can be used to
  * restore the default behavior, e.g. when the editor is not editable.
  */
-export const ClickableLinkExtension = /* @__PURE__ */ defineExtension({
+export const ClickableLinkExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: /* @__PURE__ */ safeCast<ClickableLinkConfig>({
+  config: safeCast<ClickableLinkConfig>({
     disabled: false,
     newTab: false,
   }),

@@ -25,12 +25,12 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $setSelection,
-  ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  ParagraphNode,
-  RangeSelection,
-  TextModeType,
+  type ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type ParagraphNode,
+  type RangeSelection,
+  type TextModeType,
   TextNode,
 } from 'lexical';
 import {
@@ -1352,11 +1352,12 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, state) => {
         selection.insertText('Test');
 
-        expect($getNodeByKey('a')!.getTextContent()).toBe('Test');
+        const firstChild = state.getFirstChild()!;
+        expect(firstChild.getTextContent()).toBe('Test');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: 'a',
+            key: firstChild.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -1364,7 +1365,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: 'a',
+            key: firstChild.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -3276,5 +3277,41 @@ describe('$patchStyleText', () => {
       expect(newFocusNode.getTextContent()).toBe('st ');
       expect(newFocus.offset).toBe(0);
     });
+  });
+
+  test('applies a function-valued patch exactly once to an empty element', async () => {
+    const editor = createTestEditor();
+
+    const element = document.createElement('div');
+
+    editor.setRootElement(element);
+
+    let paragraphStyle = '';
+    let selectionStyle = '';
+
+    await editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraph.selectStart();
+
+      const selection = $getSelection()!;
+
+      // Mirrors the playground font-size +/- buttons, which patch with a
+      // function of the previous value rather than a constant.
+      $patchStyleText(selection, {
+        'font-size': currentValue => {
+          const size = parseInt(currentValue || '', 10);
+          return `${(Number.isNaN(size) ? 16 : size) + 2}px`;
+        },
+      });
+
+      selectionStyle = ($getSelection() as RangeSelection).style;
+      paragraphStyle = paragraph.getTextStyle();
+    });
+
+    expect(selectionStyle).toBe('font-size: 18px;');
+    expect(paragraphStyle).toBe('font-size: 18px;');
   });
 });

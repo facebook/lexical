@@ -15,6 +15,7 @@ import type {
   MutationListeners,
   RegisteredNodes,
 } from './LexicalEditor';
+import type {EditorState} from './LexicalEditorState';
 import type {
   LexicalNode,
   LexicalPrivateDOM,
@@ -43,16 +44,17 @@ import {
   IS_ALIGN_RIGHT,
   IS_ALIGN_START,
 } from './LexicalConstants';
-import {EditorState} from './LexicalEditorState';
 import {cloneMap} from './LexicalGenMap';
 import {$isSlotChild, $isSlotHost, EMPTY_SLOTS} from './LexicalSlot';
 import {
   $createChildrenArray,
+  $getDocument,
   $getDOMSlot,
   $isRootOrShadowRoot,
   $markSlotEditable,
   cloneDecorators,
   getElementByKeyOrThrow,
+  removeEmptyDOMAttribute,
   setDOMUnmanaged,
   setMutatedNode,
   setNodeKeyOnDOMNode,
@@ -392,6 +394,8 @@ function setElementIndent(dom: HTMLElement, indent: number): void {
       ? ''
       : `calc(${indent} * var(--lexical-indent-base-value, ${DEFAULT_INDENT_VALUE}))`,
   );
+  removeEmptyDOMAttribute(dom, 'class');
+  removeEmptyDOMAttribute(dom, 'style');
 }
 
 function setElementFormat(dom: HTMLElement, format: number): void {
@@ -412,6 +416,7 @@ function setElementFormat(dom: HTMLElement, format: number): void {
   } else if (format === IS_ALIGN_END) {
     setTextAlign(domStyle, 'end');
   }
+  removeEmptyDOMAttribute(dom, 'style');
 }
 
 export function $getReconciledDirection(
@@ -469,8 +474,8 @@ function $setElementDirection(dom: HTMLElement, node: ElementNode): void {
 // fresh mount, slots-first on reconcile) — and starts `display: none`, revealed
 // only by an explicit mount / $getSlotTargetElement. Editability is applied
 // separately by $applySlotEditable.
-function createSlotDOM(name: string): HTMLElement {
-  const container = document.createElement('div');
+function $createSlotDOM(name: string): HTMLElement {
+  const container = $getDocument().createElement('div');
   container.setAttribute('data-lexical-slot', name);
   container.style.display = 'none';
   return container;
@@ -508,7 +513,7 @@ function $mountSlotChildren(
   let totalText = '';
   const decoratorHost = $isDecoratorNode(node);
   for (const [name, slotKey] of slots) {
-    const container = createSlotDOM(name);
+    const container = $createSlotDOM(name);
     $applySlotEditable(hostDom, decoratorHost, container);
     hostDom.appendChild(container);
     subTreeTextContent = '';
@@ -603,7 +608,7 @@ function $reconcileSlotChildren(
     subTreeTextContent = '';
     const saved = $beginCaptureGuard();
     if (container === null) {
-      container = createSlotDOM(name);
+      container = $createSlotDOM(name);
       // Keep the hidden placeholder slots-first: it must land ahead of the
       // linked-list children (and the terminating <br>) so the leading
       // DOMSlot boundary can skip it; it must not be appended after them.
@@ -784,6 +789,7 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
     }
     if (!node.isInline()) {
       $reconcileElementTerminatingLineBreak(null, node, dom);
+      $reconcileDecoratorBoundaryAnchors(node, dom);
     }
   } else {
     const text = node.getTextContent();
@@ -909,14 +915,44 @@ function $isLastChildLineBreakOrDecorator(
             : null;
       }
     }
-    // A host with slots but no linked-list children is not empty (the slots
-    // carry its content). The 'empty' line break exists to give a truly empty
-    // block a caret target; on a slots-only host that <br> would instead be a
-    // stray caret target in the host's own child area, after the slot
-    // containers — text typed there leaks out of the slot. Skip it.
-    return $readSlots(element).size > 0 ? null : 'empty';
+    return 'empty';
   }
   return null;
+}
+
+function $isBlockDecoratorChild(
+  key: null | NodeKey,
+  nodeMap: NodeMap,
+): boolean {
+  if (!key) {
+    return false;
+  }
+  const node = nodeMap.get(key);
+  return $isDecoratorNode(node) && !node.isInline();
+}
+
+/**
+ * Browsers drop the selection highlight for the whole document when a range
+ * endpoint lands on an element boundary that is immediately adjacent to a
+ * block-level `contenteditable=false` child — e.g. select-all in a document
+ * whose first or last block is a DecoratorNode (#8922). Keep a zero-size
+ * out-of-flow anchor parked outside each such boundary child so the browser has
+ * an editable inline box to resolve the boundary position against. Interior
+ * decorators are unaffected, so only the first / last child is considered.
+ */
+function $reconcileDecoratorBoundaryAnchors(
+  nextElement: ElementNode,
+  dom: HTMLElement & LexicalPrivateDOM,
+): void {
+  const slot = $getDOMSlot(nextElement, dom, activeEditor);
+  slot.setDecoratorBoundaryAnchor(
+    'leading',
+    $isBlockDecoratorChild(nextElement.__first, activeNextNodeMap),
+  );
+  slot.setDecoratorBoundaryAnchor(
+    'trailing',
+    $isBlockDecoratorChild(nextElement.__last, activeNextNodeMap),
+  );
 }
 
 // If we end an element with a LineBreakNode, then we need to add an additional <br>
@@ -925,20 +961,14 @@ function $reconcileElementTerminatingLineBreak(
   nextElement: ElementNode,
   dom: HTMLElement & LexicalPrivateDOM,
 ): void {
-  // Read previous render's last-child kind from the slot element's cache
-  // so the prev-state DecoratorNode reference's isInline() (which routes
-  // through getLatest() and would throw once the key is detached from the
-  // active node map) is never called.
   const slot = $getDOMSlot(nextElement, dom, activeEditor);
-  const slotElement: HTMLElement & LexicalPrivateDOM = slot.element;
-  const prevLineBreak = slotElement.__lexicalLastChildKind ?? null;
   const nextLineBreak = $isLastChildLineBreakOrDecorator(
     nextElement,
     activeNextNodeMap,
   );
-  if (prevLineBreak !== nextLineBreak) {
-    slot.setManagedLineBreak(nextLineBreak);
-  }
+  // ElementDOMSlot normalizes the empty state against the actual content
+  // range, including named-slot containers, and caches the result.
+  slot.setManagedLineBreak(nextLineBreak);
 }
 
 function reconcileTextFormat(element: ElementNode): void {
@@ -1779,8 +1809,14 @@ function $reconcileNode(
     if (isDirty) {
       const outerBefore = subTreeTextContent;
       $reconcileChildrenWithDirection(prevNode, nextNode, dom);
-      if (!$isRootNode(nextNode) && !nextNode.isInline()) {
-        $reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
+      if (!nextNode.isInline()) {
+        if (!$isRootNode(nextNode)) {
+          $reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
+        }
+        // Unlike the terminating line break this applies to the root too — a
+        // leading / trailing block decorator at the top level is exactly the
+        // shape that breaks select-all.
+        $reconcileDecoratorBoundaryAnchors(nextNode, dom);
       }
       // Fold slot text slots-first, ahead of the child text the children
       // reconcile just wrote, matching `ElementNode.getTextContent` and the

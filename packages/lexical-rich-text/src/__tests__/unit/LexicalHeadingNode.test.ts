@@ -27,8 +27,8 @@ import {
   $isElementNode,
   $isTextNode,
   ParagraphNode,
-  RangeSelection,
-  TextNode,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
 import {
   $assertNodeType,
@@ -159,6 +159,27 @@ describe('LexicalHeadingNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><span data-lexical-text="true">hello world</span></h1><h1 dir="auto"><br data-lexical-managed-linebreak="true"></h1></div>',
       );
+    });
+
+    test('HeadingNode.insertNewAfter() middle keeps format and style', async () => {
+      const {editor} = testEnv;
+      let headingNode: HeadingNode;
+      await editor.update(() => {
+        const root = $getRoot();
+        headingNode = new HeadingNode('h1');
+        headingNode.setFormat('center');
+        headingNode.setStyle('color: red;');
+        const headingTextNode = $createTextNode('hello world');
+        root.append(headingNode.append(headingTextNode));
+        headingTextNode.select(5, 5);
+      });
+      await editor.update(() => {
+        const selection = $getSelection() as RangeSelection;
+        const result = headingNode.insertNewAfter(selection);
+        expect(result).toBeInstanceOf(HeadingNode);
+        expect(result.getFormatType()).toBe('center');
+        expect(result.getStyle()).toBe('color: red;');
+      });
     });
 
     test('HeadingNode.insertNewAfter() end', async () => {

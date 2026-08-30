@@ -8,6 +8,8 @@
 
 // Import the editor CSS as a raw string so it can be injected *inside* the
 // shadow root (shadow trees do not inherit the document's stylesheets).
+import type {JSX} from 'react';
+
 import {AutoFocusExtension, TabIndentationExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {LinkExtension} from '@lexical/link';
@@ -23,7 +25,6 @@ import {
   DecoratorNode,
   defineExtension,
 } from 'lexical';
-import {type JSX} from 'react';
 
 import editorStyleSheet from './editor.css?raw';
 import ExampleTheme from './ExampleTheme';

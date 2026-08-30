@@ -7,18 +7,6 @@
  */
 
 import type {
-  DOMExportOutput,
-  NodeKey,
-  SerializedLexicalNode,
-  SlotChildNode,
-  SlotHostNode,
-} from '../LexicalNode';
-import type {
-  BaseSelection,
-  PointType,
-  RangeSelection,
-} from '../LexicalSelection';
-import type {
   BaseStaticNodeConfig,
   KlassConstructor,
   LexicalEditor,
@@ -29,7 +17,7 @@ import type {
 
 import invariant from '@lexical/internal/invariant';
 
-import {$isTextNode, TextNode} from '../index';
+import {$isTextNode, type TextNode} from '../index';
 import {
   DOUBLE_LINE_BREAK,
   ELEMENT_FORMAT_TO_TYPE,
@@ -37,12 +25,23 @@ import {
   TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
 import {ElementDOMSlot} from '../LexicalDOMSlot';
-import {$isEphemeral, LexicalNode} from '../LexicalNode';
+import {
+  $isEphemeral,
+  type DOMExportOutput,
+  LexicalNode,
+  type NodeKey,
+  type SerializedLexicalNode,
+  type SlotChildNode,
+  type SlotHostNode,
+} from '../LexicalNode';
 import {
   $getSelection,
   $internalMakeRangeSelection,
   $isRangeSelection,
+  type BaseSelection,
   moveSelectionPointToSibling,
+  type PointType,
+  type RangeSelection,
 } from '../LexicalSelection';
 import {
   $errorOnSlotCycleChild,
@@ -688,7 +687,7 @@ export class ElementNode
     const writableSelfKey = writableSelf.__key;
     const nodesToInsertKeys = [];
     const nodesToRemoveKeys = [];
-    const nodeAfterRange = this.getChildAtIndex(start + deleteCount);
+    let nodeAfterRange = this.getChildAtIndex(start + deleteCount);
     let nodeBeforeRange = null;
     let newSize = oldSize - deleteCount + nodesToInsert.length;
 
@@ -726,6 +725,9 @@ export class ElementNode
       if (prevNode !== null && nodeToInsert.is(prevNode)) {
         nodeBeforeRange = prevNode = prevNode.getPreviousSibling();
       }
+      if (nodeAfterRange !== null && nodeToInsert.is(nodeAfterRange)) {
+        nodeAfterRange = nodeAfterRange.getNextSibling();
+      }
       const writableNodeToInsert = nodeToInsert.getWritable();
       if (writableNodeToInsert.__parent === writableSelfKey) {
         newSize--;
@@ -749,13 +751,13 @@ export class ElementNode
       prevNode = nodeToInsert;
     }
 
-    if (start + deleteCount === oldSize) {
+    if (nodeAfterRange === null) {
       if (prevNode !== null) {
         const writablePrevNode = prevNode.getWritable();
         writablePrevNode.__next = null;
         writableSelf.__last = prevNode.__key;
       }
-    } else if (nodeAfterRange !== null) {
+    } else {
       const writableNodeAfterRange = nodeAfterRange.getWritable();
       if (prevNode !== null) {
         const writablePrevNode = prevNode.getWritable();
@@ -1000,6 +1002,7 @@ export class ElementNode
   }
 }
 
+/** Returns true if the given node is an ElementNode. */
 export function $isElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode {

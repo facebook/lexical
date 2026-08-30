@@ -8,32 +8,48 @@
 
 import invariant from '@lexical/internal/invariant';
 import {
+  $createParagraphNode,
   $createPoint,
+  $createTextNode,
   $findMatchingParent,
   $getNodeByKey,
   $getSelection,
   $isElementNode,
   $isParagraphNode,
   $normalizeSelection__EXPERIMENTAL,
-  BaseSelection,
-  ElementNode,
+  type BaseSelection,
+  type ElementNode,
   isCurrentlyReadOnlyMode,
-  LexicalNode,
-  NodeKey,
-  PointType,
+  type LexicalNode,
+  type NodeKey,
+  type PointType,
   TEXT_TYPE_TO_FORMAT,
-  TextFormatType,
-  TextNode,
+  type TextFormatType,
+  type TextNode,
 } from 'lexical';
 
-import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
-import {$isTableNode, TableNode} from './LexicalTableNode';
-import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
+import {
+  $createTableCellNode,
+  $isTableCellNode,
+  TableCellHeaderStates,
+  type TableCellNode,
+} from './LexicalTableCellNode';
+import {
+  $createTableNode,
+  $isTableNode,
+  type TableNode,
+} from './LexicalTableNode';
+import {
+  $createTableRowNode,
+  $isTableRowNode,
+  type TableRowNode,
+} from './LexicalTableRowNode';
 import {$findTableNode} from './LexicalTableSelectionHelpers';
 import {
   $computeTableCellRectBoundary,
   $computeTableMap,
   $getTableCellNodeRect,
+  $insertTableIntoGrid,
 } from './LexicalTableUtils';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -211,7 +227,28 @@ export class TableSelection implements BaseSelection {
   }
 
   insertRawText(text: string): void {
-    // Do nothing?
+    if (text === '') {
+      return;
+    }
+    const trimmed = text.endsWith('\n') ? text.slice(0, -1) : text;
+    const tsvGrid = trimmed.split('\n').map(line => line.split('\t'));
+    const tableNode = $createTableNode();
+    for (const row of tsvGrid) {
+      const rowNode = $createTableRowNode();
+      for (const cellText of row) {
+        const cellNode = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
+        const paragraph = $createParagraphNode();
+        if (cellText) {
+          paragraph.append($createTextNode(cellText));
+        }
+        cellNode.append(paragraph);
+        rowNode.append(cellNode);
+      }
+      tableNode.append(rowNode);
+    }
+    const {anchorCell} = $getCellNodes(this);
+    const rangeSelection = anchorCell.select(0, anchorCell.getChildrenSize());
+    $insertTableIntoGrid(tableNode, rangeSelection);
   }
 
   insertText(): void {
@@ -252,7 +289,7 @@ export class TableSelection implements BaseSelection {
     selection.insertNodes(nodes);
   }
 
-  // TODO Deprecate this method. It's confusing when used with colspan|rowspan
+  /** @deprecated Use {@link $computeTableMap} and {@link $computeTableCellRectBoundary} directly. */
   getShape(): TableSelectionShape {
     const {anchorCell, focusCell} = $getCellNodes(this);
     const anchorCellNodeRect = $getTableCellNodeRect(anchorCell);
@@ -380,21 +417,27 @@ export class TableSelection implements BaseSelection {
   }
 }
 
+/** Type guard for {@link TableSelection}. */
 export function $isTableSelection(x: unknown): x is TableSelection {
   return x instanceof TableSelection;
 }
 
+/** @deprecated Use {@link $createTableSelectionFrom} instead. */
 export function $createTableSelection(): TableSelection {
-  // TODO this is a suboptimal design, it doesn't make sense to have
-  // a table selection that isn't associated with a table. This
-  // constructor should have required arguments and in __DEV__ we
-  // should check that they point to a table and are element points to
-  // cell nodes of that table.
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new TableSelection('root', anchor, focus);
 }
 
+/**
+ * Creates a {@link TableSelection} spanning from `anchorCell` to `focusCell`
+ * within `tableNode`. In `__DEV__` mode, validates that both cells belong to
+ * the given table and that the table is attached to the editor state.
+ *
+ * If the current selection is already a TableSelection, it clones and
+ * re-targets it (preserving identity for dirty-checking); otherwise it
+ * constructs a fresh one.
+ */
 export function $createTableSelectionFrom(
   tableNode: TableNode,
   anchorCell: TableCellNode,
@@ -426,7 +469,11 @@ export function $createTableSelectionFrom(
   const prevSelection = $getSelection();
   const nextSelection = $isTableSelection(prevSelection)
     ? prevSelection.clone()
-    : $createTableSelection();
+    : new TableSelection(
+        'root',
+        $createPoint('root', 0, 'element'),
+        $createPoint('root', 0, 'element'),
+      );
   nextSelection.set(
     tableNode.getKey(),
     anchorCell.getKey(),

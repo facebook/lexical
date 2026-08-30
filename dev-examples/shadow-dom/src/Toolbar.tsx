@@ -6,6 +6,8 @@
  *
  */
 
+import type {JSX, MouseEvent} from 'react';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   FORMAT_TEXT_COMMAND,
@@ -13,7 +15,6 @@ import {
   type TextFormatType,
   UNDO_COMMAND,
 } from 'lexical';
-import {type JSX, type MouseEvent} from 'react';
 
 /**
  * A toolbar that lives in the *light DOM*, outside the shadow root that hosts

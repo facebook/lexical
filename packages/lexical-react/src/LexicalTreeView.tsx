@@ -6,18 +6,17 @@
  *
  */
 
-import type {EditorState, LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
 import {
-  CustomPrintNodeFn,
+  type CustomPrintNodeFn,
   generateContent,
   TreeView as TreeViewCore,
   useLexicalCommandsLog,
 } from '@lexical/devtools-core';
-import {mergeRegister} from 'lexical';
+import {type EditorState, type LexicalEditor, mergeRegister} from 'lexical';
 import * as React from 'react';
-import {useEffect, useState} from 'react';
+import {type JSX, useEffect, useState} from 'react';
+
+import useLayoutEffect from './shared/useLayoutEffect';
 
 /**
  * TreeView is a React component that provides a visual representation of
@@ -68,7 +67,14 @@ export function TreeView({
 
   const commandsLog = useLexicalCommandsLog(editor);
 
-  useEffect(() => {
+  // useLayoutEffect, like useCanShowPlaceholder and ContentEditableElement, so
+  // the state can be re-derived before subscribing without the cascading
+  // render that setState inside a useEffect body causes.
+  useLayoutEffect(() => {
+    // The state was seeded on the first render only, so re-read it here: when
+    // the editor prop changes, neither listener has fired yet for the new
+    // editor and the view would keep rendering the previous editor's state.
+    setEditorCurrentState(editor.getEditorState());
     // Registers listeners to update the tree view when the editor state changes
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {

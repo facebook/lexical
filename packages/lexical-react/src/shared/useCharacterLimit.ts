@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $createOverflowNode,
@@ -28,6 +26,8 @@ import {
   COMMAND_PRIORITY_LOW,
   DELETE_CHARACTER_COMMAND,
   HISTORY_MERGE_TAG,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
 } from 'lexical';
 import {useEffect} from 'react';
@@ -61,7 +61,41 @@ export function useCharacterLimit(
 
   useEffect(() => {
     let text = editor.read('latest', $rootTextContent);
-    let lastComputedTextLength = 0;
+    let lastComputedTextLength: null | number = null;
+
+    // Not `$`-prefixed: this runs outside an update/read context (from the
+    // effect body and from listener callbacks) and opens its own
+    // editor.update() for the OverflowNode wrapping.
+    function updateCharacterLimit(): void {
+      const textLength = strlen(text);
+      const textLengthAboveThreshold =
+        textLength > maxCharacters ||
+        (lastComputedTextLength !== null &&
+          lastComputedTextLength > maxCharacters);
+      const diff = maxCharacters - textLength;
+
+      remainingCharacters(diff);
+
+      if (lastComputedTextLength === null || textLengthAboveThreshold) {
+        const offset = findOffset(text, maxCharacters, strlen);
+        editor.update(
+          () => {
+            $wrapOverflowedNodes(offset);
+          },
+          {
+            tag: HISTORY_MERGE_TAG,
+          },
+        );
+      }
+
+      lastComputedTextLength = textLength;
+    }
+
+    // Derive the count from the content that is already there before
+    // subscribing. registerUpdateListener does not fire on registration, so
+    // otherwise both the reported count and the OverflowNode wrapping stay at
+    // their initial values until the next edit.
+    updateCharacterLimit();
 
     return mergeRegister(
       editor.registerTextContentListener((currentText: string) => {
@@ -76,28 +110,7 @@ export function useCharacterLimit(
           return;
         }
 
-        const textLength = strlen(text);
-        const textLengthAboveThreshold =
-          textLength > maxCharacters ||
-          (lastComputedTextLength !== null &&
-            lastComputedTextLength > maxCharacters);
-        const diff = maxCharacters - textLength;
-
-        remainingCharacters(diff);
-
-        if (lastComputedTextLength === null || textLengthAboveThreshold) {
-          const offset = findOffset(text, maxCharacters, strlen);
-          editor.update(
-            () => {
-              $wrapOverflowedNodes(offset);
-            },
-            {
-              tag: HISTORY_MERGE_TAG,
-            },
-          );
-        }
-
-        lastComputedTextLength = textLength;
+        updateCharacterLimit();
       }),
       editor.registerCommand(
         DELETE_CHARACTER_COMMAND,
@@ -179,6 +192,14 @@ export function $wrapOverflowedNodes(offset: number): void {
 
   for (let i = 0; i < dfsNodesLength; i += 1) {
     const {node} = dfsNodes[i];
+
+    // ElementNode.getTextContent() inserts '\n\n' after each non-inline
+    // element child that is not the last child. findOffset counts those
+    // separators (via $rootTextContent), so the DFS must count them too.
+    const prevSibling = node.getPreviousSibling();
+    if ($isElementNode(prevSibling) && !prevSibling.isInline()) {
+      accumulatedLength += 2;
+    }
 
     // Slot value roots (a non-inline DecoratorNode slotted into a host) are
     // leaf nodes with __parent === null; wrapping them in OverflowNode would
@@ -266,6 +287,10 @@ export function $wrapOverflowedNodes(offset: number): void {
         }
 
         $mergePrevious(overflowNode);
+        const nextNode = overflowNode.getNextSibling();
+        if ($isOverflowNode(nextNode)) {
+          $mergePrevious(nextNode);
+        }
       }
     }
   }
@@ -303,7 +328,7 @@ export function $mergePrevious(overflowNode: OverflowNode): void {
     const anchor = selection.anchor;
     const anchorNode = anchor.getNode();
     const focus = selection.focus;
-    const focusNode = anchor.getNode();
+    const focusNode = focus.getNode();
 
     if (anchorNode.is(previousNode)) {
       anchor.set(overflowNode.getKey(), anchor.offset, 'element');

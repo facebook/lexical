@@ -9,7 +9,7 @@
 import invariant from '@lexical/internal/invariant';
 import {$isAtEdgeOfElement} from '@lexical/selection';
 import {
-  $getSlotFrame,
+  $isExtendableTextPointCaret,
   CAN_USE_BEFORE_INPUT,
   CAN_USE_DOM,
   getParentElement,
@@ -26,13 +26,11 @@ import {
   $caretFromPoint,
   $caretRangeFromSelection,
   $cloneWithProperties,
-  $comparePointCaretNext,
   $createParagraphNode,
   $findMatchingParent,
   $fullReconcile,
   $getAdjacentChildCaret,
   $getAdjacentSiblingOrParentSiblingCaret,
-  $getCaretInDirection,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
@@ -61,9 +59,8 @@ import {
   $setState,
   $splitAtPointCaretNext,
   type CaretDirection,
-  type CaretRange,
   type EditorState,
-  ElementNode,
+  type ElementNode,
   type Klass,
   type LexicalEditor,
   type LexicalNode,
@@ -71,12 +68,11 @@ import {
   type NodeCaret,
   type NodeKey,
   type PasteCommandType,
-  PointCaret,
+  type PointCaret,
   type PointType,
-  type RangeSelection,
   type SiblingCaret,
-  StateConfig,
-  ValueOrUpdater,
+  type StateConfig,
+  type ValueOrUpdater,
 } from 'lexical';
 
 export {default as dedupeSelectionRects} from './dedupeSelectionRects';
@@ -86,6 +82,7 @@ export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';
 export {
   $findMatchingParent,
   $getAdjacentSiblingOrParentSiblingCaret,
+  $isBlockFullySelected,
   $splitNode,
   addClassNamesToElement,
   isBlockDomNode,
@@ -211,10 +208,22 @@ export function $getAdjacentCaret<D extends CaretDirection>(
 }
 
 /**
- * $dfs iterator (right to left). Tree traversal is done on the fly as new values are requested with O(1) memory.
- * @param startNode - The node to start the search, if omitted, it will start at the root node.
- * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
- * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ * Right-to-left mirror of {@link $dfs}. It returns all the nodes found in the
+ * search in an array of objects.
+ * Preorder traversal is used, meaning that nodes are listed in the order of when they are FIRST encountered.
+ *
+ * Children-only spine: named slot subtrees are skipped. Use {@link $reverseDfsWithSlots}
+ * when you need to descend into slots (e.g. character counting, slot-aware
+ * content extraction).
+ *
+ * The whole traversal is materialized. Use {@link $reverseDfsIterator} to walk
+ * it on the fly with O(1) memory.
+ *
+ * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
+ * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode. If endNode
+ * is an ElementNode, it will stop before visiting any of its children.
+ * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
+ * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
  */
 export function $reverseDfs(
   startNode?: LexicalNode,
@@ -578,51 +587,6 @@ export function $getNearestBlockElementAncestorOrThrow(
   return blockNode;
 }
 
-/**
- * Checks whether the selection covers the entire block: the selection's
- * start point is at or before the first position inside blockNode and its
- * end point is at or after the last position inside blockNode. A selection
- * that extends beyond the block's boundaries still fully selects the block,
- * and an empty block is fully selected by any selection that touches or
- * surrounds it.
- *
- * @param blockNode - The ElementNode to check, typically a top-level block or the RootNode
- * @param selectionOrRange - The RangeSelection or CaretRange to check
- * @returns true if the selection covers the entire blockNode
- */
-export function $isBlockFullySelected(
-  blockNode: ElementNode,
-  selectionOrRange: RangeSelection | CaretRange,
-): boolean {
-  const range = $getCaretRangeInDirection(
-    $isRangeSelection(selectionOrRange)
-      ? $caretRangeFromSelection(selectionOrRange)
-      : selectionOrRange,
-    'next',
-  );
-  // A named-slot subtree is isolated from its host through a parentless
-  // up-link, so a range inside a slot can never cover a block outside that
-  // slot frame (and vice versa) — and the caret comparison below has no
-  // common ancestor to walk across the boundary. Different frames are
-  // never fully selected; the same frame compares safely within it.
-  const anchorFrame = $getSlotFrame(range.anchor.origin);
-  const blockFrame = $getSlotFrame(blockNode.getLatest());
-  if (
-    anchorFrame === null ? blockFrame !== null : !anchorFrame.is(blockFrame)
-  ) {
-    return false;
-  }
-  const blockStart = $normalizeCaret($getChildCaret(blockNode, 'next'));
-  const blockEnd = $getCaretInDirection(
-    $normalizeCaret($getChildCaret(blockNode, 'previous')),
-    'next',
-  );
-  return (
-    $comparePointCaretNext(range.anchor, blockStart) <= 0 &&
-    $comparePointCaretNext(range.focus, blockEnd) >= 0
-  );
-}
-
 export type DOMNodeToLexicalConversion = (element: Node) => LexicalNode;
 
 export type DOMNodeToLexicalConversionMap = Record<
@@ -741,6 +705,20 @@ export function $restoreEditorState(
 }
 
 /**
+ * Determine whether anything follows the given caret before the end of its
+ * nearest root (see {@link lexical!$isRootOrShadowRoot}).
+ */
+function $hasContentAfter(caret: PointCaret<'next'>): boolean {
+  return (
+    $isExtendableTextPointCaret(caret) ||
+    $getAdjacentSiblingOrParentSiblingCaret(
+      $isTextPointCaret(caret) ? caret.getSiblingCaret() : caret,
+      'shadowRoot',
+    ) !== null
+  );
+}
+
+/**
  * If the selected insertion area is the root/shadow root node (see {@link lexical!$isRootOrShadowRoot}),
  * the node will be appended there, otherwise, it will be inserted before the insertion area.
  * If there is no selection where the node is to be inserted, it will be appended after any current nodes
@@ -767,7 +745,18 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
         .getFlipped()
         .insert($createParagraphNode());
   }
-  const insertCaret = $insertNodeToNearestRootAtCaret(node, initialCaret);
+  // Splitting at the end of a block would otherwise leave an empty copy of
+  // that block after the inserted node. That empty block is only useful when
+  // the insertion point is at the very end of its nearest root, where it is
+  // the only place left for the selection to go. Anywhere else it is a
+  // spurious extra paragraph (#5433).
+  const insertCaret = $insertNodeToNearestRootAtCaret(
+    node,
+    initialCaret,
+    $hasContentAfter(initialCaret)
+      ? {$shouldSplit: (_node, edge) => edge !== 'last'}
+      : undefined,
+  );
   const adjacent = $getAdjacentChildCaret(insertCaret);
   const selectionCaret = $isChildCaret(adjacent)
     ? $normalizeCaret(adjacent)
@@ -836,9 +825,14 @@ export function objectKlassEquals<T>(
   object: unknown,
   objectClass: ObjectKlass<T>,
 ): object is T {
-  return object !== null
-    ? Object.getPrototypeOf(object).constructor.name === objectClass.name
-    : false;
+  if (object == null) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(object);
+  if (prototype == null || prototype.constructor == null) {
+    return false;
+  }
+  return prototype.constructor.name === objectClass.name;
 }
 
 // Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,
@@ -943,15 +937,18 @@ function needsManualZoom(): boolean {
     // will be wider after zoom is applied
     // https://chromestatus.com/feature/5198254868529152
     // https://github.com/facebook/lexical/issues/6863
+    // eslint-disable-next-line no-restricted-syntax
     const div = document.createElement('div');
     div.style.position = 'absolute';
     div.style.opacity = '0';
     div.style.width = '100px';
     div.style.left = '-1000px';
+    // eslint-disable-next-line no-restricted-syntax
     document.body.appendChild(div);
     const noZoom = div.getBoundingClientRect();
     div.style.setProperty('zoom', '2');
     NEEDS_MANUAL_ZOOM = div.getBoundingClientRect().width === noZoom.width;
+    // eslint-disable-next-line no-restricted-syntax
     document.body.removeChild(div);
   }
   return NEEDS_MANUAL_ZOOM;

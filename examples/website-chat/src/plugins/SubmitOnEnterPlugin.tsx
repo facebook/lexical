@@ -11,7 +11,7 @@ import {
   $getRoot,
   CLEAR_EDITOR_COMMAND,
   COMMAND_PRIORITY_LOW,
-  EditorState,
+  type EditorState,
   KEY_ENTER_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';

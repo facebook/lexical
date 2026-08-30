@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode} from 'lexical';
-
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
@@ -15,6 +13,8 @@ import {
   $getRoot,
   $isElementNode,
   $setSelection,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 import {
   $createTestDecoratorNode,
@@ -87,6 +87,37 @@ describe('LexicalUtils#insertNodeToNearestRoot', () => {
       initialHtml: '<p>Hello world</p>',
       selectionOffset: 'Hello world'.length, // Selection on text node after "Hello" world
       selectionPath: [0, 0],
+    },
+    {
+      // The empty paragraph created by splitting at the end of a block is
+      // only useful when nothing follows it, otherwise it is spurious (#5433)
+      _: 'insert in the end of paragraph that is followed by another block',
+      expectedHtml:
+        '<p><span style="white-space: pre-wrap;">Hello world</span></p>' +
+        '<test-decorator></test-decorator>' +
+        '<p><span style="white-space: pre-wrap;">Second</span></p>',
+      initialHtml: '<p>Hello world</p><p>Second</p>',
+      selectionOffset: 'Hello world'.length,
+      selectionPath: [0, 0],
+    },
+    {
+      _: 'insert in the end of the last nested list item',
+      expectedHtml:
+        '<ul>' +
+        '<li><span style="white-space: pre-wrap;">Before</span><ul><li><span style="white-space: pre-wrap;">Hello</span></li></ul></li>' +
+        '</ul>' +
+        '<test-decorator></test-decorator>' +
+        '<ul>' +
+        '<li><span style="white-space: pre-wrap;">After</span></li>' +
+        '</ul>',
+      initialHtml:
+        '<ul>' +
+        '<li><span>Before</span></li>' +
+        '<ul><li><span>Hello</span></li></ul>' +
+        '<li><span>After</span></li>' +
+        '</ul>',
+      selectionOffset: 'Hello'.length,
+      selectionPath: [0, 1, 0, 0, 0],
     },
     {
       _: 'insert in the beginning of paragraph',

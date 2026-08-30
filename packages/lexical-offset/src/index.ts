@@ -6,15 +6,6 @@
  *
  */
 
-import type {
-  EditorState,
-  LexicalEditor,
-  NodeKey,
-  NodeMap,
-  RangeSelection,
-  RootNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $createChildrenArray as $createChildrenArray_,
@@ -22,6 +13,12 @@ import {
   $getNodeByKey,
   $isElementNode,
   $isTextNode,
+  type EditorState,
+  type LexicalEditor,
+  type NodeKey,
+  type NodeMap,
+  type RangeSelection,
+  type RootNode,
 } from 'lexical';
 
 type OffsetElementNode = {

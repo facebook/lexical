@@ -6,22 +6,11 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalCommand,
-  LexicalNode,
-  NodeKey,
-  NodeSelection,
-  SerializedLexicalNode,
-} from 'lexical';
-
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $create,
   $createNodeSelection,
+  $getDocument,
   $getNodeFromDOMNode,
   $getSelection,
   $isNodeSelection,
@@ -34,14 +23,28 @@ import {
   createCommand,
   DecoratorNode,
   defineExtension,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
   isDOMNode,
+  type LexicalCommand,
+  type LexicalNode,
   mergeRegister,
+  type NodeKey,
+  type NodeSelection,
   removeClassNamesFromElement,
+  type SerializedLexicalNode,
 } from 'lexical';
 
 import {EditorStateExtension} from './EditorStateExtension';
 import {NodeSelectionExtension} from './NodeSelectionExtension';
-import {batch, effect, ReadonlySignal, Signal, signal} from './signals';
+import {
+  batch,
+  effect,
+  type ReadonlySignal,
+  type Signal,
+  signal,
+} from './signals';
 
 /**
  * The serialized form of a {@link HorizontalRuleNode}. It has no extra fields
@@ -52,41 +55,34 @@ export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 /**
  * Command that inserts a {@link HorizontalRuleNode} at the current selection.
  * Dispatch it with
- * `editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined)`.
+ * `editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND)`.
  */
 export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
-  /* @__PURE__ */ createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
+  createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
 
 export class HorizontalRuleNode extends DecoratorNode<unknown> {
-  static getType(): string {
-    return 'horizontalrule';
-  }
-
-  static clone(node: HorizontalRuleNode): HorizontalRuleNode {
-    return new HorizontalRuleNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedHorizontalRuleNode,
-  ): HorizontalRuleNode {
-    return $createHorizontalRuleNode().updateFromJSON(serializedNode);
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      hr: () => ({
-        conversion: $convertHorizontalRuleElement,
-        priority: 0,
-      }),
-    };
+  $config() {
+    // `extends` is intentionally left to the runtime default (the prototype
+    // parent) rather than declared explicitly: the deprecated
+    // `@lexical/react` HorizontalRuleNode subclasses this one and reuses the
+    // same 'horizontalrule' type, so both `$config()` overrides must infer a
+    // matching shape.
+    return this.config('horizontalrule', {
+      importDOM: {
+        hr: () => ({
+          conversion: $convertHorizontalRuleElement,
+          priority: 0,
+        }),
+      },
+    });
   }
 
   exportDOM(): DOMExportOutput {
-    return {element: document.createElement('hr')};
+    return {element: $getDocument().createElement('hr')};
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('hr');
+    const element = $getDocument().createElement('hr');
     addClassNamesToElement(element, config.theme.hr);
     return element;
   }
@@ -146,7 +142,7 @@ function $toggleNodeSelection(
  * An extension for HorizontalRuleNode that provides an implementation that
  * works without any React dependency.
  */
-export const HorizontalRuleExtension = /* @__PURE__ */ defineExtension({
+export const HorizontalRuleExtension = defineExtension({
   dependencies: [EditorStateExtension, NodeSelectionExtension],
   name: '@lexical/extension/HorizontalRule',
   nodes: () => [HorizontalRuleNode],

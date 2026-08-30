@@ -11,8 +11,8 @@ import {
   $createTableNode,
   $createTableRowNode,
   $isTableSelection,
-  TableCellNode,
-  TableNode,
+  type TableCellNode,
+  type TableNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,

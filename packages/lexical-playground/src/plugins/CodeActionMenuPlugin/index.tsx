@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import './index.css';
 
 import {$isCodeNode, CodeNode} from '@lexical/code';
@@ -21,9 +19,11 @@ import {
   $getNearestNodeFromDOMNode,
   getComposedEventTarget,
   isHTMLElement,
+  mergeRegister,
+  registerEventListener,
 } from 'lexical';
 import * as React from 'react';
-import {useEffect, useRef, useState} from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {CopyButton} from './components/CopyButton';
@@ -107,13 +107,13 @@ function CodeActionMenuContainer({
       return;
     }
 
-    document.addEventListener('mousemove', debouncedOnMouseMove);
-
-    return () => {
-      setShown(false);
-      debouncedOnMouseMove.cancel();
-      document.removeEventListener('mousemove', debouncedOnMouseMove);
-    };
+    return mergeRegister(
+      registerEventListener(document, 'mousemove', debouncedOnMouseMove),
+      () => {
+        setShown(false);
+        debouncedOnMouseMove.cancel();
+      },
+    );
   }, [shouldListenMouseMove, debouncedOnMouseMove]);
 
   useEffect(() => {

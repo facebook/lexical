@@ -6,6 +6,7 @@
  *
  */
 
+import type {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import type {
   AnyStaticNodeConfigValue,
   GetStaticNodeOwnConfig,
@@ -24,7 +25,6 @@ import {
   type SerializedLexicalNode,
   type Spread,
 } from '.';
-import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {errorOnReadOnly} from './LexicalUpdates';
 import {
   getRegisteredNodeOrThrow,

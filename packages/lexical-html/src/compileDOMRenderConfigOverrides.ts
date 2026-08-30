@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {AnyDOMRenderMatch, DOMRenderConfig, DOMRenderMatch} from './types';
+
 import {getKnownTypesAndNodes} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {
@@ -12,15 +14,14 @@ import {
   DEFAULT_EDITOR_DOM_CONFIG,
   type EditorDOMRenderConfig,
   getRegisteredSubtypeMap,
-  InitialEditorConfig,
+  type InitialEditorConfig,
   iterStaticNodeConfigChain,
-  Klass,
-  LexicalEditor,
+  type Klass,
+  type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
 
 import {ALWAYS_TRUE} from './constants';
-import {AnyDOMRenderMatch, DOMRenderConfig, DOMRenderMatch} from './types';
 
 type PredicateOrTypes =
   | ((node: LexicalNode) => boolean)

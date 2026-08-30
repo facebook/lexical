@@ -16,8 +16,8 @@ import {
   $getSlotNames,
   $isElementNode,
   $setSlot,
-  LexicalNode,
-  NodeKey,
+  type LexicalNode,
+  type NodeKey,
 } from 'lexical';
 import {
   $createTestDecoratorNode,

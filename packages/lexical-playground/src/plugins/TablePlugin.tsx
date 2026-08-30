@@ -6,11 +6,10 @@
  *
  */
 
-import type {JSX} from 'react';
+import type {LexicalEditor} from 'lexical';
 
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
-import {LexicalEditor} from 'lexical';
-import {useEffect, useState} from 'react';
+import {type JSX, useEffect, useState} from 'react';
 
 import Button from '../ui/Button';
 import {DialogActions} from '../ui/Dialog';

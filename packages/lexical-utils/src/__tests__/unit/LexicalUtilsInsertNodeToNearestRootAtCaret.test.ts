@@ -17,8 +17,8 @@ import {
   $getTextPointCaret,
   $insertNodeToNearestRootAtCaret,
   $isElementNode,
-  LexicalNode,
-  SplitAtPointCaretNextOptions,
+  type LexicalNode,
+  type SplitAtPointCaretNextOptions,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 

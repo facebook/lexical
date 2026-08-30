@@ -6,9 +6,7 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code';
-
-import {$createCodeNode} from '@lexical/code';
+import {$createCodeNode, type CodeNode} from '@lexical/code';
 import {CodeShikiExtension, ShikiTokenizer} from '@lexical/code-shiki';
 import {buildEditorFromExtensions, configExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';

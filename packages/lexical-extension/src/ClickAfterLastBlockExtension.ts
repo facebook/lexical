@@ -12,8 +12,9 @@ import {
   $isDecoratorNode,
   $isElementNode,
   defineExtension,
-  LexicalEditor,
-  LexicalNode,
+  type LexicalEditor,
+  type LexicalNode,
+  registerEventListeners,
   safeCast,
   stopLexicalPropagation,
 } from 'lexical';
@@ -127,9 +128,9 @@ function shouldClaimClick(
  *
  * Closes #8544.
  */
-export const ClickAfterLastBlockExtension = /* @__PURE__ */ defineExtension({
+export const ClickAfterLastBlockExtension = defineExtension({
   build: (_editor, config): ClickAfterLastBlockOutput => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<ClickAfterLastBlockConfig>({
+  config: safeCast<ClickAfterLastBlockConfig>({
     $shouldInsertAfter: $defaultShouldInsertAfter,
     disabled: false,
   }),
@@ -213,12 +214,11 @@ export const ClickAfterLastBlockExtension = /* @__PURE__ */ defineExtension({
         // Capture phase so the mousedown preventDefault runs before any
         // bubble-phase handler can react, and so the click flag is set
         // before lexical core's bubble-phase onClick reads it.
-        rootElement.addEventListener('mousedown', onMouseDown, true);
-        rootElement.addEventListener('click', onClick, true);
-        return () => {
-          rootElement.removeEventListener('mousedown', onMouseDown, true);
-          rootElement.removeEventListener('click', onClick, true);
-        };
+        return registerEventListeners(
+          rootElement,
+          {click: onClick, mousedown: onMouseDown},
+          true,
+        );
       });
     }),
 });

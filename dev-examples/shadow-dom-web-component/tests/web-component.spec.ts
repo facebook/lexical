@@ -6,7 +6,7 @@
  *
  */
 
-import {expect, Locator, Page, test} from '@playwright/test';
+import {expect, type Locator, type Page, test} from '@playwright/test';
 
 const editor = (page: Page, name: string): Locator =>
   page.locator(`lexical-editor[name="${name}"] [data-lexical-editor]`);

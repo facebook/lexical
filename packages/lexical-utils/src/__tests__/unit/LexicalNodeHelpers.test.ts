@@ -20,10 +20,10 @@ import {
   $getNodeByKey,
   $getRoot,
   $isElementNode,
-  ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
+  type ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
 } from 'lexical';
 import {
   $assertNodeType,

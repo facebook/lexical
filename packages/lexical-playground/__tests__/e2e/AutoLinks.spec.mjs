@@ -613,9 +613,6 @@ test.describe('Auto Links', () => {
       'htp://example.com', // Typo in protocol
       'htps://example.com', // Typo in protocol
 
-      // Invalid TLDs
-      'http://example.abcdefg', // TLD too long
-
       // Spaces and Invalid Characters
       'http://exa mple.com', // Space in domain
       'https://example .com', // Space in domain
@@ -991,6 +988,54 @@ test.describe('Auto Links', () => {
         </p>
         <p dir="auto">
           <span data-lexical-text="true">m</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can convert Unicode url-like text with Arabic path into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.insertText('مرحبا https://qabilah.com/posts/عربي end');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">مرحبا</span>
+          <a href="https://qabilah.com/posts/عربي">
+            <span data-lexical-text="true">https://qabilah.com/posts/عربي</span>
+          </a>
+          <span data-lexical-text="true">end</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can convert Unicode url-like text with Korean IDN into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.insertText('go http://예시.한국/경로?키=값#부분 done');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">go</span>
+          <a href="http://예시.한국/경로?키=값#부분">
+            <span data-lexical-text="true">
+              http://예시.한국/경로?키=값#부분
+            </span>
+          </a>
+          <span data-lexical-text="true">done</span>
         </p>
       `,
       undefined,

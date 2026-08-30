@@ -6,10 +6,16 @@
  *
  */
 
-import type {ListNode} from '@lexical/list';
+import type {
+  ElementTransformer,
+  MultilineElementTransformer,
+  TextFormatTransformer,
+  TextMatchTransformer,
+  Transformer,
+} from './MarkdownTransformers';
 
 import {$isCodeNode} from '@lexical/code-core';
-import {$isListItemNode, $isListNode} from '@lexical/list';
+import {$isListItemNode, $isListNode, type ListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
 import {
   $isParagraphNode,
@@ -18,14 +24,6 @@ import {
   type LexicalNode,
   type TextFormatType,
 } from 'lexical';
-
-import {
-  ElementTransformer,
-  MultilineElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from './MarkdownTransformers';
 
 type MarkdownFormatKind =
   | 'noTransformation'

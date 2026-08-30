@@ -7,7 +7,7 @@
  */
 
 import ElementOverlay from './element-overlay';
-import {ElementOverlayOptions, getElementBounds} from './utils';
+import {type ElementOverlayOptions, getElementBounds} from './utils';
 
 type ElementCallback<T> = (el: HTMLElement) => T;
 type ElementPickerOptions = {

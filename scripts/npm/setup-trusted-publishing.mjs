@@ -16,7 +16,14 @@ import path from 'node:path';
 import {exec} from '../shared/childProcess.mjs';
 import {packagesManager} from '../shared/packagesManager.mjs';
 
-const argv = minimist(process.argv.slice(2));
+// Declare the boolean flags explicitly. Otherwise minimist greedily
+// consumes the following token as the flag's value, so
+// `--setup-trust @lexical/a11y` parses as {'setup-trust': '@lexical/a11y'}
+// with an empty `_` — the positional package name is swallowed and every
+// package gets processed instead of just the one requested.
+const argv = minimist(process.argv.slice(2), {
+  boolean: ['bootstrap', 'setup-trust', 'dry-run', 'replace'],
+});
 const bootstrap = !!argv.bootstrap;
 const setupTrust = !!argv['setup-trust'];
 const dryRun = !!argv['dry-run'];
@@ -51,6 +58,17 @@ if (!repoOwner || !repoName) {
   console.error(`Invalid --repo value '${repo}'. Expected owner/name.`);
   process.exit(1);
 }
+
+// Optional package targeting. Positional args and/or repeated `--package`
+// restrict the run to just those packages (matched by npm name, e.g.
+// `@lexical/a11y`, or the unscoped short name, e.g. `a11y`). The common
+// workflow going forward is bootstrapping one new package and configuring its
+// trust without re-touching the 30+ already-configured ones. With no targets,
+// every public package is processed (the original behavior).
+const targetNames = [
+  ...argv._.map(String),
+  ...(argv.package === undefined ? [] : [].concat(argv.package).map(String)),
+];
 
 /**
  * @param {string} name
@@ -113,22 +131,43 @@ async function publishStub(pkg) {
       console.log(`[dry-run] Would publish ${name}@${stubVersion}`);
       return;
     }
-    await exec(
-      `cd ${tmpDir} && npm publish --registry ${registry} --access public --tag bootstrap`,
+    // Publish via runNpm so stdin/stdout stay TTYs and npm can run its
+    // interactive OTP / web-auth recovery — a captured exec() dies with
+    // EOTP instead of prompting.
+    console.log(
+      `\nPublishing ${name}@${stubVersion} (npm may prompt for OTP / web auth):`,
     );
+    const {code} = await runNpm(
+      [
+        'publish',
+        '--registry',
+        registry,
+        '--access',
+        'public',
+        '--tag',
+        'bootstrap',
+      ],
+      {cwd: tmpDir},
+    );
+    if (code !== 0) {
+      throw new Error(`npm publish exited with code ${code}`);
+    }
     console.log(`Published ${name}@${stubVersion}`);
     // Mark the stub as deprecated so anyone who accidentally installs it
     // sees a warning. Failure here is non-fatal — the stub is already
     // published, which is what unblocks trusted publishing setup.
-    await exec(
-      `npm deprecate --registry ${registry} ${name}@${stubVersion} "Bootstrap placeholder for trusted publishing setup; do not install"`,
-    ).catch(err => {
+    const deprecateResult = await runNpm([
+      'deprecate',
+      '--registry',
+      registry,
+      `${name}@${stubVersion}`,
+      'Bootstrap placeholder for trusted publishing setup; do not install',
+    ]);
+    if (deprecateResult.code !== 0) {
       console.warn(
-        `(Could not deprecate ${name}@${stubVersion}: ${
-          err instanceof Error ? err.message : String(err)
-        })`,
+        `(Could not deprecate ${name}@${stubVersion}: npm exit ${deprecateResult.code})`,
       );
-    });
+    }
   } finally {
     await fs.remove(tmpDir);
   }
@@ -283,9 +322,14 @@ function configMatches(config) {
   if (configEnvironment(config)) {
     return false;
   }
+  // The config must grant the publish permission we register with
+  // (`--allow-publish`). npm has used more than one label for this over
+  // 11.x (`publish`, and previously `createPackage`), so accept either
+  // rather than reporting a spurious CONFLICT on re-runs.
   return (
     Array.isArray(config.permissions) &&
-    config.permissions.includes('createPackage')
+    (config.permissions.includes('publish') ||
+      config.permissions.includes('createPackage'))
   );
 }
 
@@ -328,15 +372,16 @@ function npmCleanEnv() {
  * captured call — warm the auth session first (see warmTrustAuth).
  *
  * @param {string[]} args
- * @param {{captureStdout?: boolean}} [options]
+ * @param {{captureStdout?: boolean, cwd?: string}} [options]
  * @returns {Promise<{code: number | null, stdout: string, stderr: string}>}
  */
-function runNpm(args, {captureStdout = false} = {}) {
+function runNpm(args, {captureStdout = false, cwd} = {}) {
   return new Promise(resolve => {
     // Lazy import; keeps top of file tidy and avoids extra weight on
     // dry-run/check-only paths.
     import('node:child_process').then(({spawn: spawnCb}) => {
       const child = spawnCb('npm', args, {
+        cwd,
         env: npmCleanEnv(),
         stdio: ['inherit', captureStdout ? 'pipe' : 'inherit', 'pipe'],
       });
@@ -459,9 +504,13 @@ async function addTrustConfig(pkg) {
     workflow,
     '--repo',
     repo,
+    // A permission flag is required: recent npm (>= 11.18) rejects
+    // `npm trust github` with "At least one permission flag is required
+    // (--allow-publish, --allow-stage-publish)" when none is given.
+    // `--allow-publish` grants the ordinary publish permission.
+    '--allow-publish',
     '--registry',
     registry,
-    '--allow-publish',
     '-y',
   ];
   if (dryRun) {
@@ -587,7 +636,40 @@ function printManualSetup(entries) {
 }
 
 async function main() {
-  const pkgs = packagesManager.getPublicPackages();
+  let pkgs = packagesManager.getPublicPackages();
+  if (targetNames.length > 0) {
+    /** @type {Map<string, (typeof pkgs)[number]>} */
+    const byKey = new Map();
+    for (const pkg of pkgs) {
+      const npmName = pkg.getNpmName();
+      byKey.set(npmName, pkg);
+      const slash = npmName.indexOf('/');
+      if (slash !== -1) {
+        byKey.set(npmName.slice(slash + 1), pkg);
+      }
+    }
+    /** @type {typeof pkgs} */
+    const selected = [];
+    const seen = new Set();
+    const unknown = [];
+    for (const name of targetNames) {
+      const pkg = byKey.get(name);
+      if (!pkg) {
+        unknown.push(name);
+      } else if (!seen.has(pkg.getNpmName())) {
+        seen.add(pkg.getNpmName());
+        selected.push(pkg);
+      }
+    }
+    if (unknown.length > 0) {
+      console.error(
+        `Unknown package(s): ${unknown.join(', ')}\n` +
+          `Valid names: ${pkgs.map(p => p.getNpmName()).join(', ')}`,
+      );
+      process.exit(1);
+    }
+    pkgs = selected;
+  }
   console.log(
     `Checking ${pkgs.length} public package(s) against ${registry}\n`,
   );

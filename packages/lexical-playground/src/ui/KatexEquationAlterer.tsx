@@ -6,14 +6,12 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import './KatexEquationAlterer.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import * as React from 'react';
-import {useCallback, useState} from 'react';
+import {type JSX, useCallback, useState} from 'react';
 
 import Button from '../ui/Button';
 import KatexRenderer from './KatexRenderer';

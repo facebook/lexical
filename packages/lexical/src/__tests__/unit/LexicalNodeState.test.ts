@@ -18,15 +18,15 @@ import {
   createEditor,
   createState,
   ElementNode,
-  LexicalExportJSON,
+  type LexicalExportJSON,
   NODE_STATE_DIRECT,
   NODE_STATE_KEY,
   type NodeStateJSON,
   ParagraphNode,
-  RootNode,
+  type RootNode,
   type SerializedElementNode,
   type SerializedLexicalNode,
-  StateValueOrUpdater,
+  type StateValueOrUpdater,
 } from 'lexical';
 import {beforeEach, describe, expect, expectTypeOf, test} from 'vitest';
 

@@ -21,7 +21,7 @@ import {
   $isDecoratorNode,
   $isRangeSelection,
   $setSelection,
-  LexicalEditor,
+  type LexicalEditor,
   TextNode,
 } from 'lexical';
 import {
@@ -30,7 +30,15 @@ import {
   initializeUnitTest,
   invariant,
 } from 'lexical/src/__tests__/utils';
-import {afterEach, beforeEach, describe, expect, Mock, test, vi} from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  type Mock,
+  test,
+  vi,
+} from 'vitest';
 
 const caretFromPointState = vi.hoisted(() => ({
   current: (_x: number, _y: number): null | {node: Node; offset: number} =>

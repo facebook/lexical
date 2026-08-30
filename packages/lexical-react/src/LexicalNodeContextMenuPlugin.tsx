@@ -22,8 +22,20 @@ import {
   useTypeahead,
 } from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getNearestNodeFromDOMNode, $getRoot, LexicalNode} from 'lexical';
-import {forwardRef, JSX, RefObject, useEffect, useRef, useState} from 'react';
+import {
+  $getNearestNodeFromDOMNode,
+  $getRoot,
+  type LexicalNode,
+  registerEventListener,
+} from 'lexical';
+import {
+  forwardRef,
+  type JSX,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 class MenuOption {
   key: string;
@@ -209,6 +221,27 @@ const NodeContextMenuPlugin = forwardRef<
 
   useEffect(() => {
     function onContextMenu(e: MouseEvent) {
+      let visibleItems: ContextMenuType[] = [];
+      if (items) {
+        editor.read(() => {
+          const node =
+            $getNearestNodeFromDOMNode(e.target as Element) ?? $getRoot();
+          if (node) {
+            visibleItems = items!.filter(option =>
+              option.$showOn ? option.$showOn(node) : true,
+            );
+          }
+        });
+      }
+
+      // Nothing is left to show for this node -- separators on their own draw
+      // a menu with no items in it -- so let the browser's own context menu
+      // open rather than suppressing it and mounting a scroll-locking overlay
+      // around nothing.
+      if (!visibleItems.some(option => option.type !== 'separator')) {
+        return;
+      }
+
       e.preventDefault();
 
       refs.setPositionReference({
@@ -225,19 +258,6 @@ const NodeContextMenuPlugin = forwardRef<
           };
         },
       });
-
-      let visibleItems: ContextMenuType[] = [];
-      if (items) {
-        editor.read(() => {
-          const node =
-            $getNearestNodeFromDOMNode(e.target as Element) ?? $getRoot();
-          if (node) {
-            visibleItems = items!.filter(option =>
-              option.$showOn ? option.$showOn(node) : true,
-            );
-          }
-        });
-      }
 
       const renderableItems = visibleItems.map((option, index) => {
         if (option.type === 'separator') {
@@ -272,9 +292,7 @@ const NodeContextMenuPlugin = forwardRef<
 
     return editor.registerRootListener(rootElement => {
       if (rootElement !== null) {
-        rootElement.addEventListener('contextmenu', onContextMenu);
-        return () =>
-          rootElement.removeEventListener('contextmenu', onContextMenu);
+        return registerEventListener(rootElement, 'contextmenu', onContextMenu);
       }
     });
   }, [items, itemClassName, separatorClassName, refs, editor]);

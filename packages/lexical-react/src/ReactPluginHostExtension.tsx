@@ -6,7 +6,6 @@
  *
  */
 import type {DecoratorComponentProps} from './shared/types';
-import type {JSX} from 'react';
 
 import {
   effect,
@@ -29,7 +28,7 @@ import {
   mergeRegister,
 } from 'lexical';
 import * as React from 'react';
-import {Suspense, useEffect, useState} from 'react';
+import {type JSX, Suspense, useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {type Container, createRoot, type Root} from 'react-dom/client';
 
@@ -153,9 +152,7 @@ export function mountReactPluginHost(
  * {@link ReactPluginHostExtension}.
  */
 export const REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND =
-  /* @__PURE__ */ createCommand<HostMountCommandArg>(
-    'REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND',
-  );
+  createCommand<HostMountCommandArg>('REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND');
 /**
  * Command dispatched by the mount helpers to add, update, or remove a piece of
  * React content in the plugin host. Its payload is a
@@ -163,7 +160,7 @@ export const REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND =
  * {@link ReactPluginHostExtension}.
  */
 export const REACT_PLUGIN_HOST_MOUNT_PLUGIN_COMMAND =
-  /* @__PURE__ */ createCommand<MountPluginCommandArg>(
+  createCommand<MountPluginCommandArg>(
     'REACT_PLUGIN_HOST_MOUNT_PLUGIN_COMMAND',
   );
 
@@ -213,7 +210,7 @@ function PluginHostDecorator({
  * {@link mountReactPluginElement} can be used to render
  * legacy React plug-ins (or any React content).
  */
-export const ReactPluginHostExtension = /* @__PURE__ */ defineExtension({
+export const ReactPluginHostExtension = defineExtension({
   build(editor, config, state) {
     const mountedPluginsStore = signal({
       plugins: new Map<MountPluginCommandArg['key'], MountPluginCommandArg>(),
@@ -233,7 +230,7 @@ export const ReactPluginHostExtension = /* @__PURE__ */ defineExtension({
   },
   dependencies: [
     ReactProviderExtension,
-    /* @__PURE__ */ configExtension(ReactExtension, {
+    configExtension(ReactExtension, {
       decorators: [PluginHostDecorator],
     }),
   ],

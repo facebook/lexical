@@ -6,14 +6,14 @@
  *
  */
 
+import type {SerializedRawEditorState} from './types';
+
 import {
   initPegasusZustandStoreBackend,
   pegasusZustandStoreReady,
 } from '@webext-pegasus/store-zustand';
 import {create} from 'zustand';
 import {subscribeWithSelector} from 'zustand/middleware';
-
-import {SerializedRawEditorState} from './types';
 
 export interface ExtensionState {
   lexicalState: {

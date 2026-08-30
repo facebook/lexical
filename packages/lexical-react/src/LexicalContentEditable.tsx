@@ -7,16 +7,16 @@
  */
 
 import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
+import {forwardRef, type JSX, type Ref, useState} from 'react';
 
 import {
   ContentEditableElement,
   type ContentEditableElementProps,
 } from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
+import useLayoutEffect from './shared/useLayoutEffect';
 
 export {ContentEditableElement, type ContentEditableElementProps};
 
@@ -77,7 +77,6 @@ function Placeholder({
 
   const [isEditable, setEditable] = useState(editor.isEditable());
   useLayoutEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEditable(editor.isEditable());
     return editor.registerEditableListener(currentIsEditable => {
       setEditable(currentIsEditable);

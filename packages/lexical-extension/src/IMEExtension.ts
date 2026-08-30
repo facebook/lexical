@@ -18,6 +18,7 @@ import {
   type LexicalEditor,
   mergeRegister,
   type NodeKey,
+  registerEventListener,
   type TextNode,
 } from 'lexical';
 
@@ -48,7 +49,7 @@ import {effect, type Signal, signal} from './signals';
  *   new TextNode.
  *
  */
-export const IMEExtension = /* @__PURE__ */ defineExtension({
+export const IMEExtension = defineExtension({
   build(_editor: LexicalEditor): {
     compositionKey: Signal<null | NodeKey>;
     composingTextNode: Signal<null | TextNode>;
@@ -126,10 +127,11 @@ export const IMEExtension = /* @__PURE__ */ defineExtension({
       const onCompositionEnd = () => {
         compositionKey.value = null;
       };
-      rootElem.addEventListener('compositionend', onCompositionEnd);
-      return () => {
-        rootElem.removeEventListener('compositionend', onCompositionEnd);
-      };
+      return registerEventListener(
+        rootElem,
+        'compositionend',
+        onCompositionEnd,
+      );
     });
 
     return mergeRegister(

@@ -21,7 +21,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   defineExtension,
-  LexicalEditor,
+  type LexicalEditor,
   UNDO_COMMAND,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
@@ -121,6 +121,24 @@ describe('LINK', () => {
       assert($isLinkNode(linkNode), 'Second child must be a LinkNode');
       expect(linkNode.getTextContent()).toBe('b');
       expect(linkNode.getURL()).toBe('https://b.example.com');
+    });
+  });
+
+  test('a destination between angle brackets keeps the whitespace in the URL', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '[test](<https://example.com/a b>)');
+
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+
+      expect(children).toHaveLength(1);
+
+      const linkNode = children[0];
+      assert($isLinkNode(linkNode), 'First child must be a LinkNode');
+      expect(linkNode.getTextContent()).toBe('test');
+      expect(linkNode.getURL()).toBe('https://example.com/a b');
     });
   });
 
@@ -308,7 +326,7 @@ describe('HISTORY', () => {
 
     editor.update(
       () => {
-        editor.dispatchCommand(UNDO_COMMAND, undefined);
+        editor.dispatchCommand(UNDO_COMMAND);
       },
       {discrete: true},
     );

@@ -13,10 +13,18 @@ permissions: {}
 
 jobs:
   dependency-check:
+    if: github.repository == 'facebook/lexical'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v7
+      - id: auth
+        uses: ./.github/actions/internal-registry/auth
+        with:
+          write-npmrc: 'false'
+          on-missing-oidc: skip
       - uses: ./.github/actions/internal-registry/dependency-check
+        with:
+          token: ${{ steps.auth.outputs.token }}

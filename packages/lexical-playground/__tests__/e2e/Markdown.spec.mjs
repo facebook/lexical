@@ -9,6 +9,7 @@
 import {
   moveLeft,
   moveRight,
+  moveToLineBeginning,
   redo,
   selectAll,
   selectCharacters,
@@ -935,7 +936,7 @@ test.describe('Markdown', () => {
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 800px; width: inherit" />
+                style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
           <br data-lexical-managed-linebreak="true" />
@@ -975,13 +976,15 @@ test.describe('Markdown', () => {
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 800px; width: inherit" />
+                style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
           <span data-lexical-text="true">just text in between</span>
           <span
             class="editor-equation"
             contenteditable="false"
+            role="math"
+            aria-label="Equation: 1"
             data-lexical-decorator="true">
             <img
               alt=""
@@ -1056,6 +1059,25 @@ test.describe('Markdown', () => {
       focusOffset: 0,
       focusPath: [0, 2, 0],
     });
+  });
+
+  // The hashtag entity claims the "#Welcome" inside "##Welcome", which moves
+  // the caret into a different leaf while the shortcut is being typed.
+  test('can type a heading shortcut in front of existing text (#5366)', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('Welcome to the playground');
+    await moveToLineBeginning(page);
+    await page.keyboard.type('## ');
+    await assertHTML(
+      page,
+      html`
+        <h2 class="PlaygroundEditorTheme__h2" dir="auto">
+          <span data-lexical-text="true">Welcome to the playground</span>
+        </h2>
+      `,
+    );
   });
 
   test('keep list marker on its own items', async ({page}) => {

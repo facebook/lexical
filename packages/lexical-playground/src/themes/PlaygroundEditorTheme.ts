@@ -89,6 +89,7 @@ const theme: EditorThemeClasses = {
   markOverlap: 'PlaygroundEditorTheme__markOverlap',
   paragraph: 'PlaygroundEditorTheme__paragraph',
   quote: 'PlaygroundEditorTheme__quote',
+  ruby: 'PlaygroundEditorTheme__ruby',
   specialText: 'PlaygroundEditorTheme__specialText',
   tab: 'PlaygroundEditorTheme__tabNode',
   table: 'PlaygroundEditorTheme__table',
@@ -111,6 +112,7 @@ const theme: EditorThemeClasses = {
   tableScrollableWrapper: 'PlaygroundEditorTheme__tableScrollableWrapper',
   tableSelected: 'PlaygroundEditorTheme__tableSelected',
   tableSelection: 'PlaygroundEditorTheme__tableSelection',
+  tableStickyScrollbar: 'PlaygroundEditorTheme__tableStickyScrollbar',
   text: {
     bold: 'PlaygroundEditorTheme__textBold',
     capitalize: 'PlaygroundEditorTheme__textCapitalize',

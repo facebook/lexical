@@ -6,20 +6,27 @@
  *
  */
 
-import type {BaseSelection, LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {IS_APPLE} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  type BaseSelection,
   getDOMSelection,
   getDOMSelectionPoints,
+  IS_APPLE,
+  type LexicalEditor,
+  registerEventListeners,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {
+  type JSX,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 const copy = (text: string | null) => {
   const textArea = document.createElement('textarea');
@@ -290,12 +297,10 @@ ${steps.map(formatStep).join(`\n`)}
 
     return editor.registerRootListener(rootElement => {
       if (rootElement) {
-        rootElement.addEventListener('keydown', onKeyDown);
-        rootElement.addEventListener('keyup', onKeyUp);
-        return () => {
-          rootElement.removeEventListener('keydown', onKeyDown);
-          rootElement.removeEventListener('keyup', onKeyUp);
-        };
+        return registerEventListeners(rootElement, {
+          keydown: onKeyDown,
+          keyup: onKeyUp,
+        });
       }
     });
   }, [editor, isRecording, pushStep]);

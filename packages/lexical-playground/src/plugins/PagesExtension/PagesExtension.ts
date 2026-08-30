@@ -23,14 +23,15 @@ import {
   DELETE_CHARACTER_COMMAND,
   HISTORY_MERGE_TAG,
   mergeRegister,
-  NodeKey,
+  type NodeKey,
+  registerEventListeners,
   RootNode,
   safeCast,
   SELECTION_CHANGE_COMMAND,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 
-import {$isPageBreakNode, PageBreakNode} from '../../nodes/PageBreakNode';
+import {$isPageBreakNode, type PageBreakNode} from '../../nodes/PageBreakNode';
 import {PageBreakExtension} from '../PageBreakExtension';
 import {PAGE_SIZES} from './constants';
 import {
@@ -47,7 +48,7 @@ export interface PagesConfig {
   pageClass: string;
 }
 
-export const PagesExtension = /* @__PURE__ */ defineExtension({
+export const PagesExtension = defineExtension({
   build: (editor, config) => {
     const getPageSetup = () => editor.read('latest', $getPageSetup);
 
@@ -60,7 +61,7 @@ export const PagesExtension = /* @__PURE__ */ defineExtension({
       ),
     };
   },
-  config: /* @__PURE__ */ safeCast<PagesConfig>({
+  config: safeCast<PagesConfig>({
     disabled: false,
     pageClass: 'PlaygroundEditorTheme__page',
     pageContentClass: 'PlaygroundEditorTheme__pageContent',
@@ -743,27 +744,31 @@ export const PagesExtension = /* @__PURE__ */ defineExtension({
             }
           };
 
-          window.addEventListener('beforeprint', handleBeforePrint);
-          window.addEventListener('afterprint', handleAfterPrint);
-
-          return () => {
-            rootObserver.disconnect();
-            pageObserver.disconnect();
-            if (rafId !== null) {
-              cancelAnimationFrame(rafId);
-            }
-            clearMeasurementFlags();
-            removeCommandListeners();
-            removePageTransform();
-            removeRootTransform();
-            removePageContentTransform();
-            removeMutationListeners();
-            window.removeEventListener('beforeprint', handleBeforePrint);
-            window.removeEventListener('afterprint', handleAfterPrint);
-            if (output.disabled.peek()) {
-              destroyPageStructure();
-            }
-          };
+          return mergeRegister(
+            // Placed first so mergeRegister's reverse (LIFO) teardown runs it
+            // last, only after every listener and transform below has been
+            // torn down.
+            () => {
+              if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+              }
+              pageObserver.disconnect();
+              rootObserver.disconnect();
+              if (output.disabled.peek()) {
+                destroyPageStructure();
+              }
+            },
+            clearMeasurementFlags,
+            removeCommandListeners,
+            removePageTransform,
+            removeRootTransform,
+            removePageContentTransform,
+            removeMutationListeners,
+            registerEventListeners(window, {
+              afterprint: handleAfterPrint,
+              beforeprint: handleBeforePrint,
+            }),
+          );
         });
       });
     }),

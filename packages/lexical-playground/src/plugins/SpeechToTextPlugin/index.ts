@@ -6,14 +6,15 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor, RangeSelection} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
+  type LexicalCommand,
+  type LexicalEditor,
+  type RangeSelection,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
@@ -21,8 +22,9 @@ import {useEffect, useRef, useState} from 'react';
 
 import useReport from '../../hooks/useReport';
 
-export const SPEECH_TO_TEXT_COMMAND: LexicalCommand<boolean> =
-  /* @__PURE__ */ createCommand('SPEECH_TO_TEXT_COMMAND');
+export const SPEECH_TO_TEXT_COMMAND: LexicalCommand<boolean> = createCommand(
+  'SPEECH_TO_TEXT_COMMAND',
+);
 
 const VOICE_COMMANDS: Readonly<
   Record<
@@ -34,10 +36,10 @@ const VOICE_COMMANDS: Readonly<
     selection.insertParagraph();
   },
   redo: ({editor}) => {
-    editor.dispatchCommand(REDO_COMMAND, undefined);
+    editor.dispatchCommand(REDO_COMMAND);
   },
   undo: ({editor}) => {
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
   },
 };
 

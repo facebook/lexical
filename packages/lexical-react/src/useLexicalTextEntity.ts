@@ -6,12 +6,9 @@
  *
  */
 
-import type {EntityMatch} from '@lexical/text';
-import type {Klass, TextNode} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {registerLexicalTextEntity} from '@lexical/text';
-import {mergeRegister} from 'lexical';
+import {type EntityMatch, registerLexicalTextEntity} from '@lexical/text';
+import {type Klass, mergeRegister, type TextNode} from 'lexical';
 import {useEffect} from 'react';
 
 /**

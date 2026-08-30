@@ -6,21 +6,11 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  EditorConfig,
-  ElementDOMSlot,
-  LexicalEditor,
-  LexicalNode,
-  NodeStateVersion,
-  StateConfigValue,
-  StateValueOrUpdater,
-} from 'lexical';
-
 import {$appendNodeToHTML} from '@lexical/html';
 import {
   $create,
   $createParagraphNode,
+  $getDocument,
   $getEditor,
   $getSlot,
   $getState,
@@ -29,14 +19,22 @@ import {
   $setSlot,
   $setState,
   createState,
+  type DOMExportOutput,
+  type EditorConfig,
+  type ElementDOMSlot,
   ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeStateVersion,
   setDOMUnmanaged,
+  type StateConfigValue,
+  type StateValueOrUpdater,
 } from 'lexical';
 
 // The star rating (0–5), persisted as NodeState rather than a bespoke
 // serialized field, so it rides copy/paste, undo, collab and JSON for free.
 // parse() doubles as the default (0) and the clamp for untrusted input.
-const ratingState = /* @__PURE__ */ createState('rating', {
+const ratingState = createState('rating', {
   parse: (v): number =>
     typeof v === 'number' && v >= 0 && v <= 5 ? Math.round(v) : 0,
 });
@@ -71,7 +69,7 @@ export class ReviewNode extends ElementNode {
   }
 
   createDOM(_config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    const dom = document.createElement('div');
+    const dom = $getDocument().createElement('div');
     dom.className = 'lexical-review-node';
     // The shell is chrome: only the slot containers and the children element
     // flip back to contentEditable=true (the reconciler opts slot containers
@@ -88,7 +86,7 @@ export class ReviewNode extends ElementNode {
     // containers, applied to the getDOMSlot channel. The reconciler renders the
     // linked-list children into it synchronously wherever it sits; the React
     // chrome attaches and reveals it.
-    const children = document.createElement('div');
+    const children = $getDocument().createElement('div');
     children.className = 'lexical-review-children';
     children.style.display = 'none';
     // The body is a getDOMSlot editable island inside the contentEditable=false
@@ -137,12 +135,12 @@ export class ReviewNode extends ElementNode {
   // implicitly either; round-trip it as a data attribute the import reads back
   // through setRating().
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = document.createElement('div');
+    const element = $getDocument().createElement('div');
     element.className = 'lexical-review-node';
     element.setAttribute('data-rating', String(this.getRating()));
     const author = $getSlot(this, 'author');
     if ($isElementNode(author)) {
-      const wrapper = document.createElement('div');
+      const wrapper = $getDocument().createElement('div');
       wrapper.setAttribute('data-lexical-slot', 'author');
       $appendNodeToHTML(editor, author, wrapper);
       element.append(wrapper);

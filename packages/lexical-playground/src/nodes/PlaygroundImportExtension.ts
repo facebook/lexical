@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalNode} from 'lexical';
-
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
 import {
   CoreImportExtension,
@@ -21,6 +19,7 @@ import {
   $isTextNode,
   configExtension,
   defineExtension,
+  type LexicalNode,
 } from 'lexical';
 
 import {parseAllowedFontSize} from '../plugins/ToolbarPlugin/fontSize';
@@ -66,7 +65,7 @@ function $appendStyleToTextDescendants(
  * style of every TextNode descendant produced by the lower-priority
  * `InlineFormatRule`.
  */
-const PlaygroundInlineStyleRule = /* @__PURE__ */ defineImportRule({
+const PlaygroundInlineStyleRule = defineImportRule({
   $import: (_ctx, el, $next) => {
     const extraStyle = getPlaygroundExtraStyles(el);
     const result = $next();
@@ -120,12 +119,12 @@ export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
  * node set per mode, and plain-text mode never pulls in `RichTextExtension`
  * (which *conflicts* with `PlainTextExtension`).
  */
-export const PlaygroundImportExtension = /* @__PURE__ */ defineExtension({
+export const PlaygroundImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
     LinkExtension,
     ClipboardDOMImportExtension,
-    /* @__PURE__ */ configExtension(DOMImportExtension, {
+    configExtension(DOMImportExtension, {
       rules: PlaygroundImportRules,
     }),
   ],

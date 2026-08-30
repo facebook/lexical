@@ -5,17 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {Orientation, PageSetup, PageSize} from './types';
+
 import {
   $getRoot,
   $getState,
   $setState,
   createState,
-  NodeStateVersion,
-  StateValueOrUpdater,
+  type NodeStateVersion,
+  type StateValueOrUpdater,
 } from 'lexical';
 
 import {DEFAULT_PAGE_SETUP, PAGE_SIZES} from './constants';
-import {Orientation, PageSetup, PageSize} from './types';
 
 export function marginsIsEqual(
   a: PageSetup['margins'],
@@ -54,7 +55,7 @@ function parseMargins(v: unknown): PageSetup['margins'] {
   return DEFAULT_PAGE_SETUP.margins;
 }
 
-export const pageSetupState = /* @__PURE__ */ createState('pageSetup', {
+export const pageSetupState = createState('pageSetup', {
   isEqual: (a: null | PageSetup, b: null | PageSetup) =>
     a === b ||
     (a != null &&

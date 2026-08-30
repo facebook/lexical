@@ -5,13 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {CodeNode} from '@lexical/code';
-import type {LexicalCommand} from 'lexical';
 
 import {
   $createCodeNode,
   $isCodeHighlightNode,
   $isCodeNode,
+  type CodeNode,
 } from '@lexical/code';
 import {CodeIndentExtension} from '@lexical/code-core';
 import {
@@ -37,6 +36,7 @@ import {
   $isLineBreakNode,
   $isTabNode,
   $setSelectionFromCaretRange,
+  type AnyLexicalCommand,
   configExtension,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
@@ -247,7 +247,7 @@ describe('LexicalCodeNode tests', () => {
               // selectionTarget.getBoundingClientRect is not a function Error
               editor.dispatchCommand(
                 ...(getDispatchArgs(scenario[2]) as [
-                  LexicalCommand<unknown>,
+                  AnyLexicalCommand,
                   unknown,
                 ]),
               );

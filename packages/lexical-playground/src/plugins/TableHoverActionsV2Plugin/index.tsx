@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {JSX} from 'react';
 
 import './index.css';
 
@@ -42,8 +41,10 @@ import {
   getComposedEventTarget,
   isDOMNode,
   isHTMLElement,
+  mergeRegister,
+  registerEventListener,
 } from 'lexical';
-import {useEffect, useRef, useState} from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import DropDown, {DropDownItem} from '../../ui/DropDown';
@@ -337,13 +338,13 @@ function TableHoverActionsV2({
       }
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      setIsVisible(false);
-      setIsLeftVisible(false);
-    };
+    return mergeRegister(
+      registerEventListener(document, 'mousemove', handleMouseMove),
+      () => {
+        setIsVisible(false);
+        setIsLeftVisible(false);
+      },
+    );
   }, [
     editor,
     anchorElem,
@@ -378,9 +379,11 @@ function TableHoverActionsV2({
 
     return editor.registerRootListener(rootElement => {
       if (rootElement) {
-        rootElement.addEventListener('mouseleave', handleMouseLeave);
-        return () =>
-          rootElement.removeEventListener('mouseleave', handleMouseLeave);
+        return registerEventListener(
+          rootElement,
+          'mouseleave',
+          handleMouseLeave,
+        );
       }
     });
   }, [editor]);

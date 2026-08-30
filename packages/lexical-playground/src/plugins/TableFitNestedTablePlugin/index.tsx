@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalNode} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isTableNode, TableNode} from '@lexical/table';
 import {$dfsWithSlots} from '@lexical/utils';
@@ -15,7 +13,8 @@ import {
   $findMatchingParent,
   $getNodeByKey,
   $isRootOrShadowRoot,
-  LexicalEditor,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 import {useEffect} from 'react';
 

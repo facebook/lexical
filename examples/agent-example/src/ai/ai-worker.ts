@@ -10,9 +10,9 @@
 
 import {
   pipeline,
-  TextGenerationPipeline,
+  type TextGenerationPipeline,
   TextStreamer,
-  TokenClassificationPipeline,
+  type TokenClassificationPipeline,
 } from '@huggingface/transformers';
 
 import {mergeEntities, type NERToken} from './mergeEntities';

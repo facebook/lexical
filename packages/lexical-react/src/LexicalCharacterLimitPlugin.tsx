@@ -6,11 +6,9 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
-import {useMemo, useState} from 'react';
+import {type JSX, useMemo, useState} from 'react';
 
 import {useCharacterLimit} from './shared/useCharacterLimit';
 
@@ -18,11 +16,13 @@ const CHARACTER_LIMIT = 5;
 let textEncoderInstance: null | TextEncoder = null;
 
 function textEncoder(): null | TextEncoder {
+  // eslint-disable-next-line no-restricted-syntax
   if (window.TextEncoder === undefined) {
     return null;
   }
 
   if (textEncoderInstance === null) {
+    // eslint-disable-next-line no-restricted-syntax
     textEncoderInstance = new window.TextEncoder();
   }
 

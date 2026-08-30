@@ -6,14 +6,13 @@
  *
  */
 
-import type {CSSProperties, ReactNode} from 'react';
+import type {Example} from '../pluginList';
+import type {Tag} from '../tagList';
 
 import Heading from '@theme/Heading';
 import clsx from 'clsx';
-import React, {useMemo} from 'react';
+import React, {type CSSProperties, type ReactNode, useMemo} from 'react';
 
-import {Example} from '../pluginList';
-import {Tag} from '../tagList';
 import styles from './styles.module.css';
 import TagSelect from './TagSelect';
 

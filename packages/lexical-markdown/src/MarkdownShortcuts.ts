@@ -6,21 +6,13 @@
  *
  */
 
-import type {
-  ElementTransformer,
-  MultilineElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from './MarkdownTransformers';
-import type {ElementNode, LexicalEditor, LexicalNode, TextNode} from 'lexical';
-
 import {$isCodeNode} from '@lexical/code-core';
 import invariant from '@lexical/internal/invariant';
 import {
   $addUpdateTag,
   $createRangeSelection,
   $getSelection,
+  $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
@@ -29,15 +21,27 @@ import {
   COLLABORATION_TAG,
   COMMAND_PRIORITY_LOW,
   COMPOSITION_END_TAG,
+  type ElementNode,
   HISTORIC_TAG,
   HISTORY_PUSH_TAG,
   KEY_ENTER_COMMAND,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
+  type PointType,
   TEXT_TYPE_TO_FORMAT,
+  type TextNode,
 } from 'lexical';
 
 import {canContainTransformableMarkdown} from './importTextTransformers';
-import {TRANSFORMERS} from './MarkdownTransformers';
+import {
+  type ElementTransformer,
+  type MultilineElementTransformer,
+  type TextFormatTransformer,
+  type TextMatchTransformer,
+  type Transformer,
+  TRANSFORMERS,
+} from './MarkdownTransformers';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 function runElementTransformers(
@@ -416,6 +420,47 @@ function getOpenTagStartIndex(
   return -1;
 }
 
+/**
+ * Text coordinate of a point, measured in characters from the start of its
+ * parent element rather than from the start of its own node.
+ *
+ * The "did the user type exactly one character?" heuristic compares the anchor
+ * offset before and after an update, but node transforms (hashtags, autolinks,
+ * ...) can split or merge the leaves around the caret within that same update.
+ * The anchor then lands in a different node and the two raw offsets are no
+ * longer comparable, so a single typed character can look like a large jump and
+ * the shortcut is skipped (#5366). Rebasing both offsets on the parent element
+ * keeps them comparable; when the leaves around the caret are unchanged this is
+ * the previous offset plus a constant on both sides, so the comparison is
+ * unaffected.
+ */
+function $getOffsetInParent(point: PointType): number {
+  const node = point.getNode();
+
+  // A text point's offset is already a character count within its own node. An
+  // element point's is a child index, so the characters it stands after are
+  // those of the children before it.
+  let offset = 0;
+
+  if ($isTextNode(node)) {
+    offset = point.offset;
+  } else if ($isElementNode(node)) {
+    for (const child of node.getChildren().slice(0, point.offset)) {
+      offset += child.getTextContentSize();
+    }
+  }
+
+  for (
+    let sibling = node.getPreviousSibling();
+    sibling !== null;
+    sibling = sibling.getPreviousSibling()
+  ) {
+    offset += sibling.getTextContentSize();
+  }
+
+  return offset;
+}
+
 function isEqualSubString(
   stringA: string,
   aStart: number,
@@ -572,12 +617,18 @@ export function registerMarkdownShortcuts(
 
         const anchorNode = editorState._nodeMap.get(anchorKey);
 
+        if (!$isTextNode(anchorNode) || !dirtyLeaves.has(anchorKey)) {
+          return;
+        }
+
         if (
-          !$isTextNode(anchorNode) ||
-          !dirtyLeaves.has(anchorKey) ||
-          (!isCompositionEnd &&
-            anchorOffset !== 1 &&
-            anchorOffset > prevSelection.anchor.offset + 1)
+          !isCompositionEnd &&
+          anchorOffset !== 1 &&
+          editorState.read(() => $getOffsetInParent(selection.anchor)) >
+            prevEditorState.read(() =>
+              $getOffsetInParent(prevSelection.anchor),
+            ) +
+              1
         ) {
           return;
         }

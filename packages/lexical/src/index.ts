@@ -31,6 +31,7 @@ export {
   $comparePointCaretNext,
   $extendCaretToRange,
   $getAdjacentChildCaret,
+  $getCaretInDirection,
   $getCaretRange,
   $getChildCaret,
   $getChildCaretOrSelf,
@@ -53,10 +54,10 @@ export {
   $caretFromPoint,
   $caretRangeFromSelection,
   $getAdjacentSiblingOrParentSiblingCaret,
-  $getCaretInDirection,
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,
   $insertNodeToNearestRootAtCaret,
+  $isBlockFullySelected,
   $isExtendableTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
@@ -118,6 +119,7 @@ export {
   SELECT_ALL_COMMAND,
   SELECTION_CHANGE_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
+  SET_TEXT_FORMAT_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
 export {
@@ -136,9 +138,11 @@ export {
 export type {DOMSlot} from './LexicalDOMSlot';
 export type {ElementDOMSlot} from './LexicalDOMSlot';
 export type {
+  AnyLexicalCommand,
   CommandListener,
   CommandListenerPriority,
   CommandListenerPriorityBefore,
+  CommandPayloadArgs,
   CommandPayloadType,
   CreateEditorArgs,
   DOMSlotForNode,
@@ -187,8 +191,16 @@ export type {
   SerializedEditorState,
 } from './LexicalEditorState';
 export {$isEditorState} from './LexicalEditorState';
-export type {EventHandler} from './LexicalEvents';
+export type {EventHandler, KeyDownShortcut} from './LexicalEvents';
 export {stopLexicalPropagation} from './LexicalEvents';
+export type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
+export {
+  compileKeyboardShortcuts,
+  CONTROL_OR_ALT,
+  CONTROL_OR_META,
+  type KeyboardShortcut,
+  type KeyboardShortcutMatch,
+} from './LexicalKeyboardShortcuts';
 export type {
   AbstractStaticNodeConfigRecord,
   BaseStaticNodeConfig,
@@ -237,6 +249,8 @@ export {
   type ValueOrUpdater,
 } from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
+export type {RefCountedRegistry} from './LexicalRefCountedRegistry';
+export {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 export type {
   BaseSelection,
   ElementPointType as ElementPoint,
@@ -261,12 +275,14 @@ export {
   $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $setTextFormat,
   $updateDOMSelection,
   type RawTextVisitor,
   tokenizeRawText,
 } from './LexicalSelection';
 export type {SlotName} from './LexicalSlot';
 export {
+  $getSelectionSlotFrame,
   $getSlot,
   $getSlotFrame,
   $getSlotHost,
@@ -280,6 +296,7 @@ export {
 } from './LexicalSlot';
 export {
   $assumeActiveEditor,
+  $flushSyncAfterUpdate,
   $fullReconcile,
   $parseSerializedNode,
   isCurrentlyReadOnlyMode,
@@ -294,6 +311,7 @@ export {
   $createChildrenArray,
   $findMatchingParent,
   $getAdjacentNode,
+  $getDocument,
   $getDOMSlot,
   $getDOMTextNode,
   $getEditor,
@@ -325,6 +343,7 @@ export {
   $setFormatFromDOM,
   $setSelection,
   $splitNode,
+  CONTROL_OR_OTHER_KEY,
   type DOMSelectionBoundaryPoints,
   findAllLexicalElementsDeep,
   getActiveElement,
@@ -368,6 +387,10 @@ export {
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   iterStaticNodeConfigChain,
+  type KeyboardEventControlOrOther,
+  keyboardEventMaskForPlatform,
+  type KeyboardEventModifierMask,
+  type KeyboardEventModifiers,
   mountSlotContainer,
   type OwnStaticNodeConfig,
   removeFromParent,
@@ -486,6 +509,9 @@ export {
   removeClassNamesFromElement,
 } from './utils/classNames';
 export {mergeRegister} from './utils/mergeRegister';
+export {registerEventListener} from './utils/registerEventListener';
+export type {EventListenerMap} from './utils/registerEventListeners';
+export {registerEventListeners} from './utils/registerEventListeners';
 export {
   getStyleObjectFromCSS,
   setDOMStyleFromCSS,

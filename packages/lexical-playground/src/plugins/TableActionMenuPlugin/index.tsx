@@ -6,18 +6,15 @@
  *
  */
 
-import type {ElementNode, LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
-  $computeTableMapSkipCellCheck,
+  $computeTableCellRectBoundary,
+  $computeTableMap,
   $deleteTableColumnAtSelection,
   $deleteTableRowAtSelection,
   $getNodeTriplet,
   $getTableCellNodeFromLexicalNode,
-  $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
   $insertTableColumnAtSelection,
@@ -25,13 +22,15 @@ import {
   $isTableCellNode,
   $isTableSelection,
   $mergeCells,
+  $setTableColumnIsHeader,
+  $setTableRowIsHeader,
   $unmergeCell,
   getTableElement,
   getTableObserverFromTableElement,
   TableCellHeaderStates,
   TableCellNode,
-  TableObserver,
-  TableSelection,
+  type TableObserver,
+  type TableSelection,
 } from '@lexical/table';
 import {
   $getSelection,
@@ -40,30 +39,55 @@ import {
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
+  type ElementNode,
   getActiveElementDeep,
   getDOMSelection,
   getDOMSelectionPoints,
   getRootOwnerDocument,
   isDOMNode,
+  type LexicalEditor,
   mergeRegister,
+  registerEventListener,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
+import {
+  type JSX,
+  type ReactPortal,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {createPortal} from 'react-dom';
 
 import useModal from '../../hooks/useModal';
 import ColorPicker from '../../ui/ColorPicker';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 
-function computeSelectionCount(selection: TableSelection): {
+function $computeSelectionCounts(selection: TableSelection): {
   columns: number;
   rows: number;
 } {
-  const selectionShape = selection.getShape();
+  const anchorCell = selection.anchor.getNode();
+  const focusCell = selection.focus.getNode();
+  if (!$isTableCellNode(anchorCell) || !$isTableCellNode(focusCell)) {
+    return {columns: 1, rows: 1};
+  }
+  const tableNode = $getTableNodeFromLexicalNodeOrThrow(anchorCell);
+  const [map, cellAMap, cellBMap] = $computeTableMap(
+    tableNode,
+    anchorCell,
+    focusCell,
+  );
+  const {minColumn, maxColumn, minRow, maxRow} = $computeTableCellRectBoundary(
+    map,
+    cellAMap,
+    cellBMap,
+  );
   return {
-    columns: selectionShape.toX - selectionShape.fromX + 1,
-    rows: selectionShape.toY - selectionShape.fromY + 1,
+    columns: maxColumn - minColumn + 1,
+    rows: maxRow - minRow + 1,
   };
 }
 
@@ -160,8 +184,8 @@ function TableActionMenu({
       const selection = $getSelection();
       // Merge cells
       if ($isTableSelection(selection)) {
-        const currentSelectionCounts = computeSelectionCount(selection);
-        updateSelectionCounts(computeSelectionCount(selection));
+        const currentSelectionCounts = $computeSelectionCounts(selection);
+        updateSelectionCounts($computeSelectionCounts(selection));
         const isCollapsedTableSelection = selection.anchor.is(selection.focus);
         setCanMergeCells(
           !isCollapsedTableSelection &&
@@ -222,9 +246,7 @@ function TableActionMenu({
       }
     }
 
-    window.addEventListener('click', handleClickOutside);
-
-    return () => window.removeEventListener('click', handleClickOutside);
+    return registerEventListener(window, 'click', handleClickOutside);
   }, [setIsMenuOpen, contextRef]);
 
   const clearTableSelection = useCallback(() => {
@@ -330,28 +352,9 @@ function TableActionMenu({
   const toggleTableRowIsHeader = useCallback(() => {
     editor.update(() => {
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-      const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
-
-      const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
-
-      const rowCells = new Set<TableCellNode>();
-
-      const newStyle =
-        tableCellNode.getHeaderStyles() ^ TableCellHeaderStates.ROW;
-
-      for (let col = 0; col < gridMap[tableRowIndex].length; col++) {
-        const mapCell = gridMap[tableRowIndex][col];
-
-        if (!mapCell?.cell) {
-          continue;
-        }
-
-        if (!rowCells.has(mapCell.cell)) {
-          rowCells.add(mapCell.cell);
-          mapCell.cell.setHeaderStyles(newStyle, TableCellHeaderStates.ROW);
-        }
-      }
+      const rowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
+      const isHeader = !tableCellNode.hasHeaderState(TableCellHeaderStates.ROW);
+      $setTableRowIsHeader(tableNode, rowIndex, isHeader);
       clearTableSelection();
       onClose();
     });
@@ -360,28 +363,20 @@ function TableActionMenu({
   const toggleTableColumnIsHeader = useCallback(() => {
     editor.update(() => {
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-      const tableColumnIndex =
-        $getTableColumnIndexFromTableCellNode(tableCellNode);
-
-      const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
-
-      const columnCells = new Set<TableCellNode>();
-      const newStyle =
-        tableCellNode.getHeaderStyles() ^ TableCellHeaderStates.COLUMN;
-
-      for (let row = 0; row < gridMap.length; row++) {
-        const mapCell = gridMap[row][tableColumnIndex];
-
-        if (!mapCell?.cell) {
-          continue;
-        }
-
-        if (!columnCells.has(mapCell.cell)) {
-          columnCells.add(mapCell.cell);
-          mapCell.cell.setHeaderStyles(newStyle, TableCellHeaderStates.COLUMN);
-        }
-      }
+      // $setTableColumnIsHeader indexes the table grid, so the cell's position
+      // has to come from the table map rather than from its index among its
+      // row's children — the two diverge once an earlier cell in the row spans
+      // more than one column.
+      const [, cellMap] = $computeTableMap(
+        tableNode,
+        tableCellNode,
+        tableCellNode,
+      );
+      const columnIndex = cellMap.startColumn;
+      const isHeader = !tableCellNode.hasHeaderState(
+        TableCellHeaderStates.COLUMN,
+      );
+      $setTableColumnIsHeader(tableNode, columnIndex, isHeader);
       clearTableSelection();
       onClose();
     });
@@ -681,7 +676,7 @@ function TableActionMenu({
         </span>
       </button>
     </div>,
-    document.body,
+    editor.getRootElement()?.ownerDocument?.body ?? document.body,
   );
 }
 
@@ -880,10 +875,12 @@ function TableCellActionMenuContainer({
       ),
       editor.registerRootListener((rootElement, prevRootElement) => {
         if (rootElement) {
-          rootElement.addEventListener('pointerup', delayedCallback);
           delayedCallback();
-          return () =>
-            rootElement.removeEventListener('pointerup', delayedCallback);
+          return registerEventListener(
+            rootElement,
+            'pointerup',
+            delayedCallback,
+          );
         }
       }),
       () => clearTimeout(timeoutId),
@@ -914,7 +911,6 @@ function TableCellActionMenuContainer({
             ref={menuRootRef}>
             <i className="chevron-down" />
           </button>
-          {colorPickerModal}
           {isMenuOpen && (
             <TableActionMenu
               contextRef={menuRootRef}
@@ -927,6 +923,7 @@ function TableCellActionMenuContainer({
           )}
         </>
       )}
+      {colorPickerModal}
     </div>
   );
 }

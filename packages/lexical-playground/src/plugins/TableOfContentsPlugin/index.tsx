@@ -5,17 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {TableOfContentsEntry} from '@lexical/react/LexicalTableOfContentsPlugin';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {NodeKey} from 'lexical';
-import type {JSX} from 'react';
 
 import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
+import {
+  type TableOfContentsEntry,
+  TableOfContentsPlugin as LexicalTableOfContentsPlugin,
+} from '@lexical/react/LexicalTableOfContentsPlugin';
+import {type NodeKey, registerEventListener} from 'lexical';
 import * as React from 'react';
-import {useEffect, useRef, useState} from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 
 const MARGIN_ABOVE_EDITOR = 624;
 const HEADING_WIDTH = 9;
@@ -133,8 +134,7 @@ function TableOfContentsList({
       debounceFunction(scrollCallback, 10);
     }
 
-    document.addEventListener('scroll', onScroll);
-    return () => document.removeEventListener('scroll', onScroll);
+    return registerEventListener(document, 'scroll', onScroll);
   }, [tableOfContents, editor]);
 
   return (

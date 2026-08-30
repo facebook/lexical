@@ -61,8 +61,10 @@ export function wrapTableHtml(
           m => [m[1], m[2]],
         );
         const dirAttr = attrs.find(([k]) => k === 'dir');
-        const divAttrs = [
-          dirAttr,
+        const outerDivAttrs = [dirAttr]
+          .filter(Boolean)
+          .map(([k, v]) => `${k}="${v}"`);
+        const innerDivAttrs = [
           !ignoreClasses && [
             'class',
             'PlaygroundEditorTheme__tableScrollableWrapper',
@@ -73,9 +75,9 @@ export function wrapTableHtml(
         const tableAttrs = attrs
           .filter(([k]) => k !== 'dir')
           .map(([k, v]) => `${k}="${v}"`);
-        return `<div ${divAttrs.join(' ')}><table ${tableAttrs.join(' ')}>`;
+        return `<div ${outerDivAttrs.join(' ')}><div ${innerDivAttrs.join(' ')}><table ${tableAttrs.join(' ')}>`;
       })
-      .replace(/<\/table>/g, '</table></div>')}
+      .replace(/<\/table>/g, '</table></div></div>')}
   `;
 }
 
@@ -218,6 +220,56 @@ function rejectOnPageError(page) {
 }
 
 /**
+ * Wait for one collab iframe to finish booting: its toolbar toggle reports a
+ * live provider ("Disconnect" is what it offers once connected) and the editor
+ * has rendered at least one paragraph.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {'left' | 'right'} name the iframe's name attribute
+ */
+export async function waitForCollabFrame(page, name) {
+  const frameLocator = page.frameLocator(`[name="${name}"]`);
+  await expect(frameLocator.locator('.action-button.connect')).toHaveAttribute(
+    'title',
+    /Disconnect/,
+    {timeout: 15000},
+  );
+  await expect(
+    frameLocator.locator('[data-lexical-editor="true"] p').first(),
+  ).toBeVisible({timeout: 15000});
+}
+
+/**
+ * Reload a single collab iframe and wait until it has booted and reconnected.
+ *
+ * A bare `contentDocument.location.reload()` returns as soon as the navigation
+ * is *scheduled*, so a following `assertHTML` has to absorb the whole reload —
+ * bundle fetch, editor mount, websocket connect and the initial Yjs sync —
+ * inside its own 5s polling budget. On a loaded CI runner that overruns, and
+ * the assertion fails while the frame is still booting (the contenteditable
+ * isn't in the DOM yet), which is an intermittent failure that has nothing to
+ * do with what the test is checking. Wait for the navigation to actually start
+ * and for the frame to come back up, so the assertion that follows measures the
+ * restored document rather than the page load.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {'left' | 'right'} name the iframe's name attribute
+ */
+export async function reloadCollabFrame(page, name) {
+  const navigated = page.waitForEvent(
+    'framenavigated',
+    frame => frame.name() === name,
+  );
+  await page.evaluate(frameName => {
+    document
+      .querySelector(`iframe[name="${frameName}"]`)
+      .contentDocument.location.reload();
+  }, name);
+  await navigated;
+  await waitForCollabFrame(page, name);
+}
+
+/**
  * @param {import('@playwright/test').Page} page
  * @param {Promise<never> | null} pageError a promise that rejects if the page
  *   throws an uncaught error, so a broken load fails fast instead of waiting
@@ -234,15 +286,7 @@ async function exposeLexicalEditor(page, pageError = null) {
     // boot/connect hiccup during setup doesn't fail the whole test.
     const waitForCollabFramesReady = () =>
       Promise.all(
-        ['left', 'right'].map(async name => {
-          const frameLocator = page.frameLocator(`[name="${name}"]`);
-          await expect(
-            frameLocator.locator('.action-button.connect'),
-          ).toHaveAttribute('title', /Disconnect/, {timeout: 15000});
-          await expect(
-            frameLocator.locator('[data-lexical-editor="true"] p'),
-          ).toBeVisible({timeout: 15000});
-        }),
+        ['left', 'right'].map(name => waitForCollabFrame(page, name)),
       );
     for (let attempt = 0; ; attempt++) {
       try {
@@ -338,8 +382,28 @@ function removeSafariLinebreakImgHack(actualHtml) {
     : actualHtml;
 }
 
+/**
+ * The reconciler parks a zero-size, out-of-flow `<img>` outside a leading or
+ * trailing block DecoratorNode so browsers keep painting the selection
+ * highlight for a range that ends on that boundary (#8922). It is invisible
+ * scaffolding, so keep it out of the HTML the specs assert on.
+ */
+function removeDecoratorBoundaryAnchors(actualHtml) {
+  return actualHtml.replaceAll(
+    /<img (?:[^>]+ )?data-lexical-decorator-boundary="true"(?: [^>]+)?>/g,
+    '',
+  );
+}
+
 function removeDropTargetAttributes(actualHtml) {
   return actualHtml.replaceAll(/ data-drop-target-for-element="true"/g, '');
+}
+
+function removeStickyScrollbar(actualHtml) {
+  return actualHtml
+    .replace(/<div[^>]*\baria-hidden="true"[^>]*><div[^>]*><\/div><\/div>/g, '')
+    .replace(/\s*data-lexical-sticky-scrollbar="true"/g, '')
+    .replace(/\s*style="scrollbar-width: none;?"/g, '');
 }
 
 /**
@@ -360,12 +424,16 @@ async function assertHTMLOnPageOrFrame(
     ignoreInlineStyles,
   });
   return await expect(async () => {
-    const actualHtml = removeDropTargetAttributes(
-      removeSafariLinebreakImgHack(
-        await pageOrFrame
-          .locator('div[contenteditable="true"]')
-          .first()
-          .innerHTML(),
+    const actualHtml = removeStickyScrollbar(
+      removeDropTargetAttributes(
+        removeDecoratorBoundaryAnchors(
+          removeSafariLinebreakImgHack(
+            await pageOrFrame
+              .locator('div[contenteditable="true"]')
+              .first()
+              .innerHTML(),
+          ),
+        ),
       ),
     );
     let actual = await prettifyHTML(actualHtml.replace(/\n/gm, ''), {
@@ -523,6 +591,24 @@ async function assertSelectionOnPageOrFrame(page, expected) {
   const selection = await page.evaluate(() => {
     const rootElement = document.querySelector('div[contenteditable="true"]');
 
+    // The zero-size anchors the reconciler parks outside a leading / trailing
+    // block decorator (#8922) occupy a DOM child slot but no lexical one, so
+    // discount them from both paths and offsets.
+    const boundaryAnchorsBefore = (parent, index) => {
+      const children = parent.childNodes;
+      let count = 0;
+      for (let i = 0; i < index && i < children.length; i++) {
+        const child = children[i];
+        if (
+          child.nodeType === Node.ELEMENT_NODE &&
+          child.getAttribute('data-lexical-decorator-boundary') === 'true'
+        ) {
+          count++;
+        }
+      }
+      return count;
+    };
+
     const getPathFromNode = node => {
       const path = [];
       if (node === rootElement) {
@@ -533,13 +619,17 @@ async function assertSelectionOnPageOrFrame(page, expected) {
         if (parent === null || node === rootElement) {
           break;
         }
-        path.push(Array.from(parent.childNodes).indexOf(node));
+        const index = Array.from(parent.childNodes).indexOf(node);
+        path.push(index - boundaryAnchorsBefore(parent, index));
         node = parent;
       }
       return path.reverse();
     };
 
     const fixOffset = (node, offset) => {
+      if (node && node.nodeType === Node.ELEMENT_NODE) {
+        offset -= boundaryAnchorsBefore(node, offset);
+      }
       // If the selection offset is at the br of a webkit img+br linebreak
       // then move the offset to the img so the tests are consistent across
       // browsers
@@ -710,7 +800,7 @@ async function pasteWithClipboardDataFromPageOrFrame(
         eventClipboardData = {
           files,
           getData(type, value) {
-            return _clipboardData[type];
+            return _clipboardData[type] || '';
           },
           types: [...Object.keys(_clipboardData), 'Files'],
         };
@@ -718,7 +808,7 @@ async function pasteWithClipboardDataFromPageOrFrame(
         eventClipboardData = {
           files,
           getData(type, value) {
-            return _clipboardData[type];
+            return _clipboardData[type] || '';
           },
           types: Object.keys(_clipboardData),
         };
@@ -1433,6 +1523,50 @@ export async function enableCompositionKeyEvents(page) {
       true,
     );
   });
+}
+
+/**
+ * CDP-based IME composition helper for e2e tests.
+ *
+ * Plays an IME composition sequence through Chrome DevTools Protocol,
+ * replacing the verbose per-step client.send() calls that are
+ * copy-pasted across Composition.spec tests.
+ *
+ * @param {import('@playwright/test').CDPSession} client
+ * @param {string[]} steps - Intermediate composing text at each keystroke.
+ * @param {string} [commitText] - Final committed text. Defaults to last step.
+ */
+export async function imeCompose(client, steps, commitText) {
+  const finalText = commitText ?? steps[steps.length - 1];
+  for (const text of steps) {
+    await client.send('Input.imeSetComposition', {
+      selectionEnd: text.length,
+      selectionStart: text.length,
+      text,
+    });
+  }
+  await client.send('Input.insertText', {text: finalText});
+}
+
+// Pre-built Hiragana sequences used across multiple e2e tests.
+export const HIRAGANA_SUSHI = {
+  commitText: 'すし',
+  steps: ['ｓ', 'す', 'すｓ', 'すｓｈ', 'すし'],
+};
+
+export const HIRAGANA_MOJIA = {
+  commitText: 'もじあ',
+  steps: ['m', 'も', 'もj', 'もじ', 'もじあ'],
+};
+
+/**
+ * Types "すし もじあ" using CDP IME — the full sequence used in most
+ * Composition.spec tests.
+ */
+export async function typeSushiMojia(client, page) {
+  await imeCompose(client, HIRAGANA_SUSHI.steps, HIRAGANA_SUSHI.commitText);
+  await client.send('Input.insertText', {text: ' '});
+  await imeCompose(client, HIRAGANA_MOJIA.steps, HIRAGANA_MOJIA.commitText);
 }
 
 export async function pressToggleBold(page) {

@@ -15,10 +15,10 @@ import {
   BEFORE_INPUT_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   DecoratorNode,
-  EditorConfig,
+  type EditorConfig,
   INPUT_COMMAND,
   isHTMLElement,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';
 

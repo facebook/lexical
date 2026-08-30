@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {LexicalHTMLElement} from '../../../types';
+
 import {findAllLexicalElementsDeep} from 'lexical';
 
-import {LexicalHTMLElement} from '../../../types';
 import {isLexicalNode} from '../../../utils/isLexicalNode';
 
 export default function queryLexicalNodes(): LexicalHTMLElement[] {

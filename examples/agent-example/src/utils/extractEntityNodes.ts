@@ -6,7 +6,8 @@
  *
  */
 
-import {type DecoratorTextNode} from '@lexical/extension';
+import type {DecoratorTextNode} from '@lexical/extension';
+
 import {
   $getNodeByKey,
   $getRoot,

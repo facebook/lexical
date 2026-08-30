@@ -6,30 +6,20 @@
  *
  */
 
-import {$isCodeNode, CodeNode} from '@lexical/code-core';
-import {createHeadlessEditor} from '@lexical/headless';
-import {LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
+import {$isCodeNode} from '@lexical/code-core';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   TRANSFORMERS,
 } from '@lexical/markdown';
-import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$getRoot} from 'lexical';
 import {describe, expect, it} from 'vitest';
 
-function createEditor() {
-  return createHeadlessEditor({
-    nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, CodeNode, LinkNode],
-    onError: error => {
-      throw error;
-    },
-  });
-}
+import {MarkdownTestExtension} from '../utils';
 
-function importCodeText(markdown: string): string {
-  const editor = createEditor();
+function importCodeText(markdown: string): string | null {
+  using editor = buildEditorFromExtensions([MarkdownTestExtension]);
   let text: string | null = null;
   editor.update(
     () => {
@@ -39,11 +29,11 @@ function importCodeText(markdown: string): string {
     },
     {discrete: true},
   );
-  return text as unknown as string;
+  return text;
 }
 
 function roundTrip(markdown: string): string {
-  const editor = createEditor();
+  using editor = buildEditorFromExtensions([MarkdownTestExtension]);
   editor.update(
     () => {
       $convertFromMarkdownString(markdown, TRANSFORMERS);

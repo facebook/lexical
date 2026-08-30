@@ -6,25 +6,19 @@
  *
  */
 
-import {$isCodeNode, CodeNode} from '@lexical/code-core';
-import {createHeadlessEditor} from '@lexical/headless';
-import {LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
+import {$isCodeNode} from '@lexical/code-core';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {$convertFromMarkdownString, TRANSFORMERS} from '@lexical/markdown';
-import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$getRoot} from 'lexical';
 import {describe, expect, it} from 'vitest';
+
+import {MarkdownTestExtension} from '../utils';
 
 function importCodeBlock(markdown: string): {
   language: string | null | undefined;
   text: string | null;
 } {
-  const editor = createHeadlessEditor({
-    nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, CodeNode, LinkNode],
-    onError: error => {
-      throw error;
-    },
-  });
+  using editor = buildEditorFromExtensions([MarkdownTestExtension]);
   let result: {language: string | null | undefined; text: string | null} = {
     language: undefined,
     text: null,

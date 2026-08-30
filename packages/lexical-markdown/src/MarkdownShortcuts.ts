@@ -420,8 +420,10 @@ function getOpenTagStartIndex(
 }
 
 /**
- * Offset of a text point measured from the start of its parent element rather
- * than from the start of its own node.
+ * Text coordinate of a point, measured in characters from the start of its
+ * parent element rather than from the start of its own node. An element point
+ * sits between two children, which is a boundary in that same coordinate
+ * space, so it contributes nothing of its own.
  *
  * The "did the user type exactly one character?" heuristic compares the anchor
  * offset before and after an update, but node transforms (hashtags, autolinks,
@@ -436,11 +438,9 @@ function getOpenTagStartIndex(
 function $getOffsetInParent(point: PointType): number {
   const node = point.getNode();
 
-  if (!$isTextNode(node)) {
-    return point.offset;
-  }
-
-  let offset = point.offset;
+  // A text point's offset is already a character count within its own node; an
+  // element point's is a child index, which is not a text coordinate at all.
+  let offset = $isTextNode(node) ? point.offset : 0;
 
   for (
     let sibling = node.getPreviousSibling();

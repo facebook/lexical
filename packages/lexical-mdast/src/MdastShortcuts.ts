@@ -276,6 +276,10 @@ function $isShortcutParagraph(
   );
 }
 
+const ShortcutQuoteBrand: unique symbol = Symbol.for(
+  '@lexical/mdast/ShortcutQuoteBrand',
+);
+
 /**
  * A blockquote imported by the default handler holds inline content directly,
  * so a block marker typed at its start has no enclosing paragraph to convert.
@@ -288,7 +292,7 @@ function $isShortcutParagraph(
 function $isShortcutQuote(
   node: LexicalNode,
   anchorNode: TextNode,
-): node is QuoteNode {
+): node is QuoteNode & {[ShortcutQuoteBrand]: never} {
   return (
     $isQuoteNode(node) &&
     !node.isShadowRoot() &&

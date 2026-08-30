@@ -6,12 +6,8 @@
  *
  */
 
-import {CodeNode} from '@lexical/code-core';
-import {createHeadlessEditor} from '@lexical/headless';
-import {LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {$convertFromMarkdownString, TRANSFORMERS} from '@lexical/markdown';
-import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$getRoot} from 'lexical';
 import {describe, expect, it} from 'vitest';
 
@@ -19,6 +15,7 @@ import {
   normalizeMarkdown,
   parseMarkdownHardLineBreak,
 } from '../../MarkdownTransformers';
+import {MarkdownTestExtension} from '../utils';
 
 // Single-quoted TS strings: '\\' is one literal backslash.
 const ONE = 'foo\\';
@@ -26,12 +23,7 @@ const TWO = 'foo\\\\';
 const THREE = 'foo\\\\\\';
 
 function importText(markdown: string): string {
-  const editor = createHeadlessEditor({
-    nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, CodeNode, LinkNode],
-    onError: error => {
-      throw error;
-    },
-  });
+  using editor = buildEditorFromExtensions([MarkdownTestExtension]);
   let text = '';
   editor.update(
     () => {

@@ -97,6 +97,8 @@ defineExtension({ name: '[main]', namespace: 'shared', dependencies: [configExte
 defineExtension({ name: '[sidebar]', namespace: 'shared', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'sidebar'})] })
 ```
 
+A nested editor inherits its parent's namespace, so the two are not isolated from each other automatically the way independent editors are; give the nested editor a distinct `id`. In development, sharing a key with the parent is warned about.
+
 Saved state belongs to the namespace and `id` for as long as the page lives, not to the reload that produced it. An editor that is unmounted and later remounted under the same key during development restores what the previous one had rather than its own `$initialEditorState` — so two editors showing different documents need distinct namespaces even when they are never on screen at the same time.
 
 ### Fast Refresh compatibility

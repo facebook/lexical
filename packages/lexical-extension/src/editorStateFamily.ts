@@ -324,6 +324,14 @@ function $restoreSelection(
  * whose nodes cannot all be rebuilt — a node class the new editor no longer
  * registers, say — comes back as `null` rather than failing the whole family.
  *
+ * The states come back with `_parsed` false, like the live states they
+ * reproduce. A caller that hydrates one of them into an editor — where the
+ * node classes are seeing this JSON for the first time — should set the flag
+ * on that one state, so that `setEditorState` normalizes it. Leaving it set on
+ * the others would make every `setEditorState` of them (each undo into a
+ * history entry, over and over) dirty-mark the whole document and re-run every
+ * transform on it.
+ *
  * @internal
  */
 export function deserializeEditorStateFamily(
@@ -397,6 +405,8 @@ export function deserializeEditorStateFamily(
     );
     state._nodeMap = nodeMap;
     state._slotsUsed = slotsUsed;
+    // Inherited from the scratch parse; see the note above.
+    state._parsed = false;
     return state;
   });
 }

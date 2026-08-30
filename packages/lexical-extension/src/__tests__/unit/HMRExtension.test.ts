@@ -29,6 +29,7 @@ import {
   $isRangeSelection,
   $setSelection,
   $setState,
+  createEditor as createPlainEditor,
   createState,
   defineExtension,
   type EditorState,
@@ -147,7 +148,7 @@ interface SavedPayload {
 }
 
 /** An editor whose document is large enough for sharing to be measurable. */
-function createSeededEditor(hot: HotContext, namespace: string) {
+function createSeededEditor(hot: HotContext | null, namespace: string) {
   return buildEditorFromExtensions(
     defineExtension({
       $initialEditorState: () => {
@@ -160,7 +161,10 @@ function createSeededEditor(hot: HotContext, namespace: string) {
           );
         }
       },
-      dependencies: [HistoryExtension, configExtension(HMRExtension, {hot})],
+      dependencies: [
+        HistoryExtension,
+        ...(hot === null ? [] : [configExtension(HMRExtension, {hot})]),
+      ],
       name: `seeded-${namespace}`,
       namespace,
     }),
@@ -1048,6 +1052,151 @@ describe('HMRExtension', () => {
     // happened before the reload
     expect(countSerializedNodesForCycle(2)).toBe(1);
     expect(countSerializedNodesForCycle(50)).toBe(1);
+  });
+
+  test('does not re-run transforms over the document on every undo', () => {
+    const hot = createMockHotContext();
+    let transforms = 0;
+    const createCounting = (hotContext: HotContext | null) => {
+      const editor = createSeededEditor(hotContext, 'transform-ns');
+      editor.registerNodeTransform(TextNode, () => {
+        transforms++;
+      });
+      return editor;
+    };
+    const $edit = (index: number) => {
+      $getRoot()
+        .getChildAtIndex<ElementNode>(index)!
+        .append($createTextNode(` edit ${index}`));
+    };
+    const undoTransforms = (editor: LexicalEditor): number => {
+      transforms = 0;
+      editor.dispatchCommand(UNDO_COMMAND, undefined);
+      return transforms;
+    };
+    const $editTwice = (editor: LexicalEditor) => {
+      for (const index of [0, 1]) {
+        editor.update(() => $edit(index), {
+          discrete: true,
+          tag: HISTORY_PUSH_TAG,
+        });
+      }
+    };
+
+    // What an undo costs with no HMR in the picture at all
+    let baseline = -1;
+    {
+      using editor = createCounting(null);
+      $editTwice(editor);
+      baseline = undoTransforms(editor);
+    }
+
+    {
+      using editor = createCounting(hot);
+      $editTwice(editor);
+    }
+
+    {
+      using editor = createCounting(hot);
+      // A restored history entry is a reproduction of a state that was once
+      // live, not a freshly parsed document: undoing into it must not mark
+      // every node dirty and re-run every transform, and must not keep doing
+      // so on every undo after that
+      expect(undoTransforms(editor)).toBe(baseline);
+      expect(undoTransforms(editor)).toBe(baseline);
+    }
+  });
+
+  test('preserves state for a nested editor under a plain unnamespaced parent', () => {
+    const hot = createMockHotContext();
+    const createNested = () => {
+      // A parent built by createEditor rather than from extensions: nothing
+      // records whether the namespace it is using was chosen or generated, and
+      // this one was generated
+      const parent = createPlainEditor();
+      const nested = buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $setupContent('initial'),
+          dependencies: [configExtension(HMRExtension, {hot})],
+          name: 'plain-parent-nested',
+          parentEditor: parent,
+        }),
+      );
+      expect(nested._config.namespace).toBe(parent._config.namespace);
+      return nested;
+    };
+
+    {
+      const nested = createNested();
+      nested.update(() => $setupContent('nested content'), {discrete: true});
+      nested.dispose();
+    }
+
+    {
+      const nested = createNested();
+      nested.read(() => {
+        expect($getRoot().getTextContent()).toBe('nested content');
+      });
+      nested.dispose();
+    }
+
+    // One key, not one per reload each pinning an EditorState
+    expect(Object.keys(hot.data)).toEqual(['lexicalHMR:']);
+  });
+
+  test('warns when a nested editor shares its parent HMR key', () => {
+    const hot = createMockHotContext();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      using parent = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [configExtension(HMRExtension, {hot})],
+          name: 'nesting-parent',
+          namespace: 'nesting-ns',
+        }),
+      );
+      using nested = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [configExtension(HMRExtension, {hot})],
+          name: 'nesting-child',
+          parentEditor: parent,
+        }),
+      );
+      // The nested editor inherited the namespace, so `namespace` alone does
+      // not tell the two apart the way it does for independent editors
+      expect(nested._config.namespace).toBe(parent._config.namespace);
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('nested inside another and inherits'),
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('does not warn when a nested editor is given an id', () => {
+    const hot = createMockHotContext();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      using parent = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [configExtension(HMRExtension, {hot})],
+          name: 'id-parent',
+          namespace: 'id-ns',
+        }),
+      );
+      using _nested = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [configExtension(HMRExtension, {hot, id: 'nested'})],
+          name: 'id-child',
+          parentEditor: parent,
+        }),
+      );
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   test('preserves NodeState on the root through an HMR cycle', () => {

@@ -65,8 +65,9 @@ export interface HMRConfig {
    * context and the same `namespace` (set via
    * `defineExtension({ namespace: '...' })` or
    * `createEditor({ namespace: '...' })`); editors with distinct namespaces
-   * are isolated automatically, and editors with no configured namespace all
-   * share one key. Must be a non-empty string when provided;
+   * are isolated automatically, editors with no configured namespace all share
+   * one key, and a nested editor shares its parent's namespace and so needs an
+   * `id` of its own. Must be a non-empty string when provided;
    * passing `''` triggers a dev warning and is treated as no `id`. Neither
    * `namespace` nor `id` should contain a colon (`:`), as that character is
    * used as a key separator internally.
@@ -76,10 +77,53 @@ export interface HMRConfig {
 
 const HMR_KEY = 'lexicalHMR';
 const HISTORY_EXTENSION_NAME = '@lexical/history/History';
+const HMR_EXTENSION_NAME = '@lexical/extension/HMR';
 
 function getHMRKey(id: string | undefined, namespace: string): string {
   const base = `${HMR_KEY}:${namespace}`;
   return id !== undefined ? `${base}:${id}` : base;
+}
+
+/** The key `editor` saves under, given the `id` its HMRExtension was configured with. */
+function getEditorHMRKey(
+  editor: LexicalEditor,
+  configId: string | undefined,
+): string {
+  // An unconfigured namespace is a random string that changes on every
+  // reload, so it is left out of the key rather than making it unmatchable.
+  const namespace = hasConfiguredNamespace(editor)
+    ? editor._config.namespace
+    : '';
+  // Normalize '' to undefined: empty string is invalid and treated as no id.
+  return getHMRKey(configId === '' ? undefined : configId, namespace);
+}
+
+/**
+ * The HMR key this editor shares with the editor it is nested inside, if it
+ * does. A nested editor inherits its parent's namespace, so namespaces do not
+ * isolate the two the way they isolate independent editors, and nothing about
+ * a nested editor is stable enough across reloads to key it on automatically.
+ */
+function getSharedParentKey(
+  editor: LexicalEditor,
+  hmrKey: string,
+): string | null {
+  const parentEditor = editor._parentEditor;
+  if (parentEditor === null) {
+    return null;
+  }
+  const peer = getPeerDependencyFromEditor<typeof HMRExtension>(
+    parentEditor,
+    HMR_EXTENSION_NAME,
+  );
+  // A parent that does not preserve its own state across reloads is not
+  // competing for the key.
+  if (peer === undefined) {
+    return null;
+  }
+  return getEditorHMRKey(parentEditor, peer.config.id) === hmrKey
+    ? hmrKey
+    : null;
 }
 
 /**
@@ -98,9 +142,14 @@ function getHMRKey(id: string | undefined, namespace: string): string {
 function hasConfiguredNamespace(editor: LexicalEditor): boolean {
   const builder = LexicalBuilder.maybeFromEditor(editor);
   if (!builder) {
-    // Built by createEditor rather than from extensions, so there is nothing
-    // to read the namespace's provenance from; take it as chosen.
-    return true;
+    // An ancestor built by createEditor rather than from extensions: nothing
+    // records whether its namespace was chosen or generated. Treating it as
+    // generated is the safe way to be wrong — a namespace that was in fact
+    // chosen only costs this editor its automatic isolation, which the
+    // shared-key warning reports and an `id` settles, where treating a
+    // generated one as chosen means nothing is ever restored and every reload
+    // orphans another entry.
+    return false;
   }
   for (const rep of builder.extensionNameMap.values()) {
     if (rep.extension.namespace !== undefined) {
@@ -403,6 +452,10 @@ function restoreHistoryState(
  * reload replaced, so those entries are left behind rather than re-pointed at
  * whichever editor happens to restore the history.
  *
+ * A nested editor inherits its parent's namespace, so namespaces do not
+ * isolate it from its parent: give it a distinct `id` (or its own
+ * `namespace`), which is warned about in dev when both use HMRExtension.
+ *
  * An editor that was given no `namespace` at all is keyed without one, because
  * the namespace `createEditor` generates for it is a fresh random string on
  * every reload — a key built from that would never match what the previous
@@ -422,20 +475,21 @@ export const HMRExtension = defineExtension({
       return () => {};
     }
 
-    // An unconfigured namespace is a random string that changes on every
-    // reload, so it is left out of the key rather than making it unmatchable.
-    const namespace = hasConfiguredNamespace(editor)
-      ? editor._config.namespace
-      : '';
-    // Normalize '' to undefined: empty string is invalid and treated as no id.
-    const id = configId === '' ? undefined : configId;
-    const hmrKey = getHMRKey(id, namespace);
+    const hmrKey = getEditorHMRKey(editor, configId);
 
-    if (__DEV__ && configId === '') {
-      console.warn(
-        'HMR: `id` must not be an empty string. ' +
-          'Use a stable non-empty string literal (e.g. `"main"`, `"sidebar"`).',
-      );
+    if (__DEV__) {
+      if (configId === '') {
+        console.warn(
+          'HMR: `id` must not be an empty string. ' +
+            'Use a stable non-empty string literal (e.g. `"main"`, `"sidebar"`).',
+        );
+      }
+      if (getSharedParentKey(editor, hmrKey) !== null) {
+        console.warn(
+          `HMR: This editor is nested inside another and inherits its namespace, so both use the HMR key "${hmrKey}" and will overwrite each other. ` +
+            'Give the nested editor a distinct `HMRConfig.id` (or its own `namespace`).',
+        );
+      }
     }
 
     const historyPeer = getPeerDependencyFromEditor<typeof HistoryExtension>(
@@ -478,6 +532,13 @@ export const HMRExtension = defineExtension({
               );
             }
           } else if (!restoredState.isEmpty()) {
+            // This is the one state whose JSON the new node classes have never
+            // seen, so let setEditorState normalize it the way it normalizes
+            // anything freshly parsed. The history entries deliberately keep
+            // the flag clear: they are reproductions of states that were once
+            // live, and every undo into one would otherwise dirty-mark the
+            // whole document and re-run every transform over it.
+            restoredState._parsed = true;
             editor.setEditorState(restoredState, {tag: HISTORY_MERGE_TAG});
             if (serialized.history !== null) {
               if (historyPeer) {
@@ -547,5 +608,5 @@ export const HMRExtension = defineExtension({
     RootElementExtension,
     WatchEditableExtension,
   ],
-  name: '@lexical/extension/HMR',
+  name: HMR_EXTENSION_NAME,
 });

@@ -414,7 +414,6 @@ export {
   $createLineBreakNode,
   $isLineBreakNode,
   isLastChildInBlockNode,
-  isManagedLineBreak,
   isOnlyChildInBlockNode,
   LineBreakNode,
 } from './nodes/LexicalLineBreakNode';

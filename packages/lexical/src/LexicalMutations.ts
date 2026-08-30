@@ -59,10 +59,7 @@ function initTextEntryListener(editor: LexicalEditor): void {
 
 // True when `dom` is a line break the editor is actively managing in the
 // live DOM — identified by the `__lexicalLineBreak` slot reference or by
-// having a node key. This is distinct from `isManagedLineBreak` in
-// LexicalLineBreakNode, which inspects serialized markup (the
-// `data-lexical-managed-linebreak` attribute / Apple-interchange class)
-// to decide whether a parsed `<br>` should be dropped on import.
+// having a node key.
 function isEditorManagedLineBreak(
   dom: Node,
   target: Node & LexicalPrivateDOM,

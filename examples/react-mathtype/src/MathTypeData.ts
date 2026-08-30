@@ -6,6 +6,8 @@
  *
  */
 
+import {getWirisPlugin} from './MathTypeGlobals';
+
 export const WIRIS_FORMULA_CLASS = 'Wirisformula';
 export const WIRIS_MATHML_ATTRIBUTE = 'data-mathml';
 export const WIRIS_CUSTOM_EDITOR_ATTRIBUTE = 'data-custom-editor';
@@ -19,6 +21,23 @@ export type MathTypeFormula = {
   width: null | number;
 };
 
+/**
+ * True for the `img` elements MathType uses to represent a formula, either
+ * because they carry MathType's class or because they carry the encoded
+ * MathML. Checks `nodeName` rather than `instanceof HTMLImageElement` so it
+ * still works for a node from another realm (an iframe or a clipboard
+ * document).
+ */
+export function isWirisFormulaImage(
+  domNode: HTMLElement,
+): domNode is HTMLImageElement {
+  return (
+    domNode.nodeName === 'IMG' &&
+    (domNode.classList.contains(WIRIS_FORMULA_CLASS) ||
+      domNode.hasAttribute(WIRIS_MATHML_ATTRIBUTE))
+  );
+}
+
 export function parseOptionalNumber(value: string | null): null | number {
   if (value === null || value === '') {
     return null;
@@ -28,51 +47,11 @@ export function parseOptionalNumber(value: string | null): null | number {
 }
 
 export function encodeMathML(mathML: string): string {
-  const wirisPlugin = window.WirisPlugin;
-  const wirisMathML =
-    wirisPlugin === undefined ? undefined : wirisPlugin.MathML;
-  if (wirisMathML) {
-    return wirisMathML.safeXmlEncode(mathML);
-  }
-  return mathML
-    .split('&')
-    .join('\u00a7')
-    .split('<')
-    .join('\u00ab')
-    .split('>')
-    .join('\u00bb')
-    .split('"')
-    .join('\u00a8')
-    .split("'")
-    .join('`');
+  return getWirisPlugin().MathML.safeXmlEncode(mathML);
 }
 
 export function decodeMathML(encodedMathML: string): string {
-  const wirisPlugin = window.WirisPlugin;
-  const wirisMathML =
-    wirisPlugin === undefined ? undefined : wirisPlugin.MathML;
-  if (wirisMathML) {
-    return wirisMathML.safeXmlDecode(encodedMathML);
-  }
-  return encodedMathML
-    .split('&laquo;')
-    .join('<')
-    .split('&raquo;')
-    .join('>')
-    .split('&uml;')
-    .join('"')
-    .split('&quot;')
-    .join('"')
-    .split('\u00ab')
-    .join('<')
-    .split('\u00bb')
-    .join('>')
-    .split('\u00a8')
-    .join('"')
-    .split('\u00a7')
-    .join('&')
-    .split('`')
-    .join("'");
+  return getWirisPlugin().MathML.safeXmlDecode(encodedMathML);
 }
 
 export function createFormulaFromImage(
@@ -93,10 +72,17 @@ export function createFormulaFromImage(
   };
 }
 
+/**
+ * Builds the `img.Wirisformula` shape MathType's parser expects. The owning
+ * `Document` is always passed in rather than read from the `document` global
+ * so the element is created in the editor's realm (see the Shadow DOM and
+ * iframe notes in the repository AGENTS.md).
+ */
 export function createImageFromFormula(
   formula: MathTypeFormula,
+  ownerDocument: Document,
 ): HTMLImageElement {
-  const image = document.createElement('img');
+  const image = ownerDocument.createElement('img');
   image.align = 'middle';
   image.className = WIRIS_FORMULA_CLASS;
   image.src = formula.src;

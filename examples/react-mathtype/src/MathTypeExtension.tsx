@@ -8,27 +8,24 @@
 
 import type {MathTypeFormula} from './MathTypeData';
 import type {MathTypeIntegrationInstance} from './MathTypeGlobals';
-import type {EditorChildrenComponentProps} from '@lexical/react/ReactExtension';
 import type {LexicalEditor, NodeKey} from 'lexical';
-import type {JSX, MutableRefObject} from 'react';
+import type {JSX} from 'react';
 
 import '@wiris/mathtype-generic';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ReactExtension} from '@lexical/react/ReactExtension';
+import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {
   $createParagraphNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
   $isRangeSelection,
-  configExtension,
   defineExtension,
 } from 'lexical';
-import {useCallback, useEffect, useRef} from 'react';
+import {useEffect, useRef} from 'react';
 
-import {MathTypeProvider, useMathTypeContext} from './MathTypeContext';
-import {createFormulaFromImage} from './MathTypeData';
+import {createFormulaFromImage, createImageFromFormula} from './MathTypeData';
 import {getWirisPlugin} from './MathTypeGlobals';
 import {
   $createMathTypeNode,
@@ -41,6 +38,33 @@ type InsertFormulaResult = {
   node: HTMLImageElement;
   windowTarget: Window;
 };
+
+/**
+ * The mutable bridge state, created once per editor by
+ * {@link MathTypeExtension}'s `build`. It deliberately stays private to that
+ * closure: the extension output exposes functions that operate on it rather
+ * than the object itself, so nothing that crosses a React hook boundary is
+ * mutable.
+ */
+type MathTypeSession = {
+  /** The MathType integration, while {@link MathTypeIntegrationComponent} is mounted. */
+  integration: MathTypeIntegrationInstance | null;
+  /**
+   * The node the open MathType dialog is editing, or `null` when the dialog
+   * will insert a new formula.
+   */
+  pendingNodeKey: NodeKey | null;
+};
+
+/**
+ * The document that owns the editor. MathType elements are built here rather
+ * than from the `document` global so they come from the editor's realm when it
+ * lives in an iframe (see the Shadow DOM notes in the repository AGENTS.md).
+ */
+function getEditorDocument(editor: LexicalEditor): Document {
+  const rootElement = editor.getRootElement();
+  return rootElement !== null ? rootElement.ownerDocument : globalThis.document;
+}
 
 function $commitFormula(
   nodeKey: NodeKey | null,
@@ -66,9 +90,9 @@ function $commitFormula(
 
 function createIntegration(
   editor: LexicalEditor,
+  session: MathTypeSession,
   target: HTMLElement,
   toolbar: HTMLElement,
-  pendingNodeKeyRef: MutableRefObject<NodeKey | null>,
 ): MathTypeIntegrationInstance {
   const wirisPlugin = getWirisPlugin();
   const integration = new wirisPlugin.GenericIntegration({
@@ -80,7 +104,14 @@ function createIntegration(
   const openNewFormulaEditor =
     integration.openNewFormulaEditor.bind(integration);
   integration.openNewFormulaEditor = () => {
-    pendingNodeKeyRef.current = null;
+    session.pendingNodeKey = null;
+    // GenericIntegration.openNewFormulaEditor() reopens the *existing* formula
+    // editor whenever editionProperties.temporalImage is still set. editFormula
+    // sets it and only a completed insertion clears it, so without this reset a
+    // cancelled edit would reopen the dismissed formula here and then insert it
+    // as a second node. Clearing it is enough: the base implementation restores
+    // dbclick and isNewElement itself once it takes the new-formula branch.
+    integration.core.editionProperties.temporalImage = null;
     wirisPlugin.currentInstance = integration;
     openNewFormulaEditor();
   };
@@ -92,20 +123,24 @@ function createIntegration(
     wirisProperties: null | object,
   ): InsertFormulaResult => {
     const image = wirisPlugin.Parser.mathmlToImgObject(
-      document,
+      target.ownerDocument,
       mathML,
       wirisProperties,
     );
     const formula = createFormulaFromImage(image, mathML);
-    const nodeKey = pendingNodeKeyRef.current;
-    pendingNodeKeyRef.current = null;
+    const nodeKey = session.pendingNodeKey;
+    session.pendingNodeKey = null;
 
-    editor.update(() => {
-      $commitFormula(nodeKey, formula);
-    });
+    editor.update(
+      () => {
+        $commitFormula(nodeKey, formula);
+      },
+      // Focus once the formula is on screen; editor.update() is batched, so
+      // focusing straight after it would run before reconciliation.
+      {onUpdate: () => editor.focus()},
+    );
 
     integration.core.editionProperties.temporalImage = null;
-    editor.focus();
 
     return {focusElement, node: image, windowTarget};
   };
@@ -113,19 +148,72 @@ function createIntegration(
   return integration;
 }
 
-function MathTypeIntegrationComponent(): JSX.Element {
-  const [editor] = useLexicalComposerContext();
+/**
+ * Creates the MathType integration for the given toolbar and edition target,
+ * returning the function that tears it down again.
+ */
+function mountIntegration(
+  editor: LexicalEditor,
+  session: MathTypeSession,
+  target: HTMLElement,
+  toolbar: HTMLElement,
+): () => void {
+  const integration = createIntegration(editor, session, target, toolbar);
+  integration.init();
+  integration.listeners.fire('onTargetReady', {});
+  session.integration = integration;
+
+  return () => {
+    if (session.integration === integration) {
+      session.integration = null;
+    }
+    toolbar.textContent = '';
+    integration.destroy();
+  };
+}
+
+/**
+ * Opens the MathType dialog for an existing formula node. Returns false if the
+ * integration has not mounted yet.
+ */
+function editFormula(
+  editor: LexicalEditor,
+  session: MathTypeSession,
+  nodeKey: NodeKey,
+  formula: MathTypeFormula,
+): boolean {
+  const integration = session.integration;
+  if (integration === null) {
+    return false;
+  }
+  session.pendingNodeKey = nodeKey;
+  const {editionProperties} = integration.core;
+  editionProperties.temporalImage = createImageFromFormula(
+    formula,
+    getEditorDocument(editor),
+  );
+  editionProperties.dbclick = true;
+  editionProperties.isNewElement = false;
+
+  const customEditors = integration.core.getCustomEditors();
+  customEditors.disable();
+  if (formula.customEditor !== null) {
+    customEditors.enable(formula.customEditor);
+  }
+
+  integration.openExistingFormulaEditor();
+  return true;
+}
+
+/**
+ * Renders the MathType toolbar and the hidden element the MathType dialog uses
+ * as its edition target. Mount it anywhere inside the editor with
+ * `<ExtensionComponent lexical:extension={MathTypeExtension} />`.
+ */
+export function MathTypeIntegrationComponent(): JSX.Element {
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const targetRef = useRef<HTMLDivElement | null>(null);
-  const {integrationRef, pendingNodeKeyRef} = useMathTypeContext();
-
-  const setRefs = useCallback(
-    (toolbar: HTMLDivElement | null, target: HTMLDivElement | null) => {
-      toolbarRef.current = toolbar;
-      targetRef.current = target;
-    },
-    [],
-  );
+  const extension = useExtensionDependency(MathTypeExtension).output;
 
   useEffect(() => {
     const toolbar = toolbarRef.current;
@@ -133,65 +221,51 @@ function MathTypeIntegrationComponent(): JSX.Element {
     if (toolbar === null || target === null) {
       return;
     }
-
-    const integration = createIntegration(
-      editor,
-      target,
-      toolbar,
-      pendingNodeKeyRef,
-    );
-    integration.init();
-    integration.listeners.fire('onTargetReady', {});
-    integrationRef.current = integration;
-
-    return () => {
-      if (integrationRef.current === integration) {
-        integrationRef.current = null;
-      }
-      toolbar.textContent = '';
-      integration.destroy();
-    };
-  }, [editor, integrationRef, pendingNodeKeyRef]);
+    return extension.mountIntegration(target, toolbar);
+  }, [extension]);
 
   return (
     <>
-      <div
-        className="mathtype-toolbar"
-        ref={toolbar => {
-          setRefs(toolbar, targetRef.current);
-        }}
-      />
+      <div className="mathtype-toolbar" ref={toolbarRef} />
+      {/*
+        MathType needs a contenteditable element to anchor its dialog, but this
+        editor commits formulas to Lexical nodes instead, so the element is kept
+        offscreen and hidden from assistive technology. tabIndex={-1} keeps it
+        out of the tab order: a contenteditable element is focusable by default,
+        and an aria-hidden element must never be reachable by keyboard.
+      */}
       <div
         aria-hidden="true"
         className="mathtype-target"
         contentEditable={true}
-        ref={target => {
-          setRefs(toolbarRef.current, target);
-        }}
+        ref={targetRef}
+        tabIndex={-1}
       />
     </>
   );
 }
 
-function MathTypeEditorChildren({
-  children,
-  contentEditable,
-}: EditorChildrenComponentProps): JSX.Element {
-  return (
-    <MathTypeProvider>
-      {contentEditable}
-      {children}
-    </MathTypeProvider>
-  );
-}
-
-export const MathTypeExtension = /* @__PURE__ */ defineExtension({
-  build: () => ({Component: MathTypeIntegrationComponent}),
-  dependencies: [
-    /* @__PURE__ */ configExtension(ReactExtension, {
-      EditorChildrenComponent: MathTypeEditorChildren,
-    }),
-  ],
+/**
+ * Bridges the WIRIS MathType generic integration to Lexical: it renders the
+ * MathType toolbar, stores formulas as {@link MathTypeNode} instead of letting
+ * MathType write into the contenteditable, and reopens MathType when a formula
+ * is double-clicked.
+ */
+export const MathTypeExtension = defineExtension({
+  build(editor) {
+    const session: MathTypeSession = {integration: null, pendingNodeKey: null};
+    return {
+      Component: MathTypeIntegrationComponent,
+      editFormula: (nodeKey: NodeKey, formula: MathTypeFormula) =>
+        editFormula(editor, session, nodeKey, formula),
+      mountIntegration: (target: HTMLElement, toolbar: HTMLElement) =>
+        mountIntegration(editor, session, target, toolbar),
+    };
+  },
+  dependencies: [ReactExtension],
   name: '@lexical/react-mathtype-example/MathType',
-  nodes: [MathTypeNode],
+  // Referenced lazily: MathTypeNode imports this module back for
+  // useExtensionDependency, and an eager reference would be a temporal dead
+  // zone error when MathTypeNode is the module the bundle evaluates first.
+  nodes: () => [MathTypeNode],
 });

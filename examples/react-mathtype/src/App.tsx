@@ -27,7 +27,7 @@ const theme = {
   paragraph: 'editor-paragraph',
 };
 
-const appExtension = /* @__PURE__ */ defineExtension({
+const appExtension = defineExtension({
   $initialEditorState: () => {
     $getRoot().append(
       $createParagraphNode().append(

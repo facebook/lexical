@@ -80,6 +80,13 @@ declare global {
   }
 }
 
+/**
+ * The MathType generic integration installs itself as a `window.WirisPlugin`
+ * singleton when `@wiris/mathtype-generic` is imported. `MathTypeExtension`
+ * imports it eagerly at module scope so that every consumer of this
+ * accessor - including {@link MathTypeNode.decorate}, which can render a
+ * formula on the first paint - always finds it loaded.
+ */
 export function getWirisPlugin(): WirisPluginGlobal {
   const {WirisPlugin} = window;
   if (WirisPlugin === undefined) {

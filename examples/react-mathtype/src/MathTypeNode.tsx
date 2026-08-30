@@ -18,10 +18,12 @@ import type {
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {
   $create,
+  $getDocument,
   $getState,
   $setState,
   buildImportMap,
@@ -32,49 +34,43 @@ import {
 } from 'lexical';
 import {useCallback, useEffect} from 'react';
 
-import {useMathTypeContext} from './MathTypeContext';
 import {
   createFormulaFromImage,
   createImageFromFormula,
   encodeMathML,
+  isWirisFormulaImage,
   WIRIS_FORMULA_CLASS,
-  WIRIS_MATHML_ATTRIBUTE,
 } from './MathTypeData';
+import {MathTypeExtension} from './MathTypeExtension';
 
-const mathMLState = /* @__PURE__ */ createState('mathML', {
+const mathMLState = createState('mathML', {
   parse: value => (typeof value === 'string' ? value : ''),
 });
 
-const srcState = /* @__PURE__ */ createState('src', {
+const srcState = createState('src', {
   parse: value => (typeof value === 'string' ? value : ''),
 });
 
-const altTextState = /* @__PURE__ */ createState('altText', {
+const altTextState = createState('altText', {
   parse: value => (typeof value === 'string' ? value : ''),
 });
 
-const widthState = /* @__PURE__ */ createState('width', {
+const widthState = createState('width', {
   parse: value => (typeof value === 'number' ? value : null),
 });
 
-const heightState = /* @__PURE__ */ createState('height', {
+const heightState = createState('height', {
   parse: value => (typeof value === 'number' ? value : null),
 });
 
-const customEditorState = /* @__PURE__ */ createState('customEditor', {
+const customEditorState = createState('customEditor', {
   parse: value => (typeof value === 'string' ? value : null),
 });
 
 function $convertMathTypeImage(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
-  if (!(domNode instanceof HTMLImageElement)) {
-    return null;
-  }
-  const hasWirisFormula =
-    domNode.classList.contains(WIRIS_FORMULA_CLASS) ||
-    domNode.hasAttribute(WIRIS_MATHML_ATTRIBUTE);
-  if (!hasWirisFormula) {
+  if (!isWirisFormulaImage(domNode)) {
     return null;
   }
   return {node: $createMathTypeNode(createFormulaFromImage(domNode))};
@@ -86,9 +82,7 @@ export class MathTypeNode extends DecoratorNode<JSX.Element> {
       extends: DecoratorNode,
       importDOM: buildImportMap({
         img: domNode =>
-          domNode instanceof HTMLImageElement &&
-          (domNode.classList.contains(WIRIS_FORMULA_CLASS) ||
-            domNode.hasAttribute(WIRIS_MATHML_ATTRIBUTE))
+          isWirisFormulaImage(domNode)
             ? {conversion: $convertMathTypeImage, priority: 3}
             : null,
       }),
@@ -104,7 +98,7 @@ export class MathTypeNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(_config: EditorConfig): HTMLElement {
-    const element = document.createElement('span');
+    const element = $getDocument().createElement('span');
     element.className = 'editor-mathtype';
     return element;
   }
@@ -156,7 +150,7 @@ export class MathTypeNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(): DOMExportOutput {
-    return {element: createImageFromFormula(this.getFormula())};
+    return {element: createImageFromFormula(this.getFormula(), $getDocument())};
   }
 
   getTextContent(): string {
@@ -195,7 +189,7 @@ function MathTypeFormulaComponent({
   const isEditable = useLexicalEditable();
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
-  const {editFormula} = useMathTypeContext();
+  const {editFormula} = useExtensionDependency(MathTypeExtension).output;
 
   const onClick = useCallback(
     (event: MouseEvent) => {

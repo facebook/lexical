@@ -800,25 +800,35 @@ function $setPoint(point: Point, key: NodeKey, offset: number): void {
 }
 
 /**
- * Whether `collabNode` belongs to this binding's tree.
+ * Whether `sharedType` is inside the subtree this binding is bound to.
  *
  * Several editors can share one Yjs `Doc` (see the `rootName` and `getXmlText`
- * binding options), and V1 caches the collab node that materialized a shared
- * type on the type itself (`sharedType._collabNode`). A peer editing another
- * editor's subtree therefore resolves to a collab node owned by that other
- * binding, whose `NodeKey`s only mean something in that other editor. Treat
- * anything outside this binding's root as an unresolvable cursor position
- * rather than painting it at whatever node happens to share the key here.
+ * binding options), which also puts them on one awareness channel, so a peer's
+ * position can describe a place in another editor's subtree. V1 resolves a
+ * position through the collab node cached on the shared type
+ * (`sharedType._collabNode`), which belongs to whichever binding materialized
+ * it and carries `NodeKey`s that only mean something in that binding's editor.
+ *
+ * The test walks the yjs type tree rather than the collab nodes: a cached
+ * collab node outlives the binding that created it (`destroy` does not clear
+ * `_collabNode`, and a later binding reuses the node without re-parenting it),
+ * so its `_parent` chain can still end at a previous binding's root even for a
+ * position that is squarely inside this one.
  */
-function isCollabNodeInBinding(
+function isSharedTypeInBinding(
   binding: Binding,
-  collabNode: AnyCollabNode,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sharedType: any,
 ): boolean {
-  let node: null | AnyCollabNode = collabNode;
-  while (node !== null && node !== binding.root) {
-    node = node._parent;
+  const rootSharedType = binding.root.getSharedType();
+  let type: null | {parent: unknown} = sharedType;
+  while (type != null) {
+    if (type === rootSharedType) {
+      return true;
+    }
+    type = type.parent as null | {parent: unknown};
   }
-  return node === binding.root;
+  return false;
 }
 
 function getCollabNodeAndOffset(
@@ -829,7 +839,7 @@ function getCollabNodeAndOffset(
 ): [null | AnyCollabNode, number] {
   const collabNode = sharedType._collabNode;
 
-  if (collabNode === undefined || !isCollabNodeInBinding(binding, collabNode)) {
+  if (collabNode === undefined || !isSharedTypeInBinding(binding, sharedType)) {
     return [null, 0];
   }
 

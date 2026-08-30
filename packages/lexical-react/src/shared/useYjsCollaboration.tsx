@@ -88,21 +88,6 @@ type OnYjsTreeChanges = (
   transaction: Transaction,
 ) => void;
 
-/**
- * Capture `value` as of the first render, ignoring later changes.
- *
- * The Yjs root an editor is bound to is fixed for the life of its binding:
- * nothing reloads a mounted editor from a different root, so repointing one
- * would either leave the editor bound to a destroyed binding (V1, whose effect
- * creates the binding once) or overwrite the newly selected root with the
- * previous document's content on the next local edit (V2). To edit a different
- * document, remount the plugin (e.g. with a React `key`).
- */
-export function useInitialValue<T>(value: T): T {
-  const [initialValue] = useState<T>(() => value);
-  return initialValue;
-}
-
 export function useYjsCollaboration(
   editor: LexicalEditor,
   id: string,
@@ -239,29 +224,23 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     selectionHighlight = false,
     __shouldBootstrapUnsafe: shouldBootstrap,
   } = options;
-  // The root is chosen when the binding is created; see useInitialValue.
-  const initialRootName = useInitialValue(rootName);
-  const initialGetXmlElement = useInitialValue(getXmlElement);
 
   // Note: v2 does not support 'reload' event, which is not an actual Yjs event type.
   const isReloadingDoc = useMemo(() => ({current: false}), []);
 
-  const binding = useMemo(
-    () =>
-      createBindingV2__EXPERIMENTAL(editor, id, doc, docMap, {
-        excludedProperties,
-        getXmlElement: initialGetXmlElement,
-        rootName: initialRootName,
-      }),
-    [
-      editor,
-      id,
-      doc,
-      docMap,
+  // Built once for this mount, in state rather than a memo: `useMemo` is a
+  // hint React may discard, and its inputs include values (an inline
+  // `excludedProperties` map, an inline root resolver) whose identity changes
+  // on every render. Rebuilding would re-run `getXmlElement` -- which the
+  // caller may use to create shared types -- and hand the editor a binding on
+  // another root, which the next local update would then overwrite with this
+  // editor's current content. Remount to edit a different document.
+  const [binding] = useState(() =>
+    createBindingV2__EXPERIMENTAL(editor, id, doc, docMap, {
       excludedProperties,
-      initialRootName,
-      initialGetXmlElement,
-    ],
+      getXmlElement,
+      rootName,
+    }),
   );
 
   useEffect(() => {

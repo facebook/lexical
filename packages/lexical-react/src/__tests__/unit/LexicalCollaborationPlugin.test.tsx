@@ -576,6 +576,121 @@ describe(`LexicalCollaborationPlugin`, () => {
       expect(provider.awareness.getLocalState()!.anchorPos).not.toBeNull();
     });
 
+    test(`a root that only resolves after mount is still used`, async () => {
+      const doc = new Y.Doc();
+      const notes = doc.getMap<Y.XmlText>('notes');
+      notes.set('a', new Y.XmlText());
+      const provider = createSyncedProvider();
+      let editor: LexicalEditor | null = null;
+
+      function CaptureEditor() {
+        [editor] = useLexicalComposerContext();
+        return null;
+      }
+
+      // The doc is only registered for the id the second render passes, so the
+      // binding is created on a later effect pass than the first render -- the
+      // window in which an asynchronously resolved root arrives.
+      const providerFactory = (id: string, yjsDocMap: Map<string, Y.Doc>) => {
+        if (id === 'main') {
+          yjsDocMap.set(id, doc);
+        }
+        return provider;
+      };
+
+      function App({
+        getXmlText,
+        id,
+      }: {
+        getXmlText?: (ydoc: Y.Doc) => Y.XmlText;
+        id: string;
+      }) {
+        return (
+          <LexicalCollaboration>
+            <LexicalComposer initialConfig={editorConfig}>
+              <CaptureEditor />
+              <CollaborationPlugin
+                id={id}
+                providerFactory={providerFactory}
+                shouldBootstrap={false}
+                getXmlText={getXmlText}
+              />
+              <RichTextPlugin
+                contentEditable={<ContentEditable />}
+                placeholder={<></>}
+                ErrorBoundary={LexicalErrorBoundary}
+              />
+            </LexicalComposer>
+          </LexicalCollaboration>
+        );
+      }
+
+      await act(async () => {
+        reactRoot.render(<App id="pending" />);
+      });
+
+      await act(async () => {
+        reactRoot.render(
+          <App
+            id="main"
+            getXmlText={ydoc => ydoc.getMap<Y.XmlText>('notes').get('a')!}
+          />,
+        );
+      });
+      await act(async () => {
+        editor!.update(() => $appendParagraph('hello'));
+      });
+
+      expect(notes.get('a')!.toString()).toContain('hello');
+      expect(doc.share.has('root')).toBe(false);
+    });
+
+    test(`re-rendering does not re-run the V2 root resolver`, async () => {
+      const doc = new Y.Doc();
+      const notes = doc.getMap<Y.XmlElement>('notes');
+      notes.set('a', new Y.XmlElement());
+      const provider = createSyncedProvider();
+      const getXmlElement = vi.fn(
+        (ydoc: Y.Doc) => ydoc.getMap<Y.XmlElement>('notes').get('a')!,
+      );
+
+      function App() {
+        return (
+          <LexicalCollaboration>
+            <LexicalComposer initialConfig={editorConfig}>
+              <CollaborationPluginV2__EXPERIMENTAL
+                id="main"
+                doc={doc}
+                provider={provider}
+                // A fresh identity on every render, the way an inline prop has
+                excludedProperties={new Map()}
+                getXmlElement={getXmlElement}
+              />
+              <RichTextPlugin
+                contentEditable={<ContentEditable />}
+                placeholder={<></>}
+                ErrorBoundary={LexicalErrorBoundary}
+              />
+            </LexicalComposer>
+          </LexicalCollaboration>
+        );
+      }
+
+      await act(async () => {
+        reactRoot.render(<App />);
+      });
+      await act(async () => {
+        reactRoot.render(<App />);
+      });
+      await act(async () => {
+        reactRoot.render(<App />);
+      });
+
+      // The resolver may create shared types, so re-running it on a render is
+      // a document mutation, not just wasted work.
+      expect(getXmlElement).toHaveBeenCalledTimes(1);
+    });
+
     test(`changing getXmlElement leaves the mounted V2 editor on its own root`, async () => {
       const doc = new Y.Doc();
       const notes = doc.getMap<Y.XmlElement>('notes');

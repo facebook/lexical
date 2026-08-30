@@ -157,7 +157,12 @@ sticky notes or comment threads usually want:
 - `rootName` picks a different top-level shared type, one per editor:
 
 ```jsx
-<CollaborationPlugin id="notes" providerFactory={providerFactory} rootName={`note-${noteId}`} shouldBootstrap={true} />
+<CollaborationPlugin
+  id={`note-${noteId}`}
+  providerFactory={providerFactory}
+  rootName={`note-${noteId}`}
+  shouldBootstrap={true}
+/>
 ```
 
 - `getXmlText` resolves the root yourself, for roots that are not top-level
@@ -171,23 +176,27 @@ const getXmlText = useCallback(
 );
 
 <CollaborationPlugin
-  key={noteId}
-  id="notes"
+  id={`note-${noteId}`}
   providerFactory={providerFactory}
   getXmlText={getXmlText}
   shouldBootstrap={true}
 />
 ```
 
+Give each editor its own `id`, as above: the `id` keys the document map and the
+remote-cursor highlight registry, both of which are shared across the page, so
+two editors mounted under one `id` overwrite each other's entries.
+
 Both options are also available on `createYjsBinding` for non-React usage.
 
 :::warning
 
-The root is chosen once, when the binding is created, and a mounted editor
-cannot be repointed at another root: changing `rootName` or `getXmlText` on a
-mounted plugin has no effect. Give the plugin a `key` that changes with the
-document (as above) so React remounts it, which builds a new binding and a new
-editor state.
+The root is chosen when the binding is created, and a mounted editor cannot be
+repointed at another root: changing `rootName` or `getXmlText` afterwards has no
+effect. To switch documents, remount the **editor** — put a `key` that changes
+with the document on the component that owns the `LexicalComposer`. Remounting
+only the plugin is not enough: the editor would keep the previous document's
+content and write it into the newly selected root.
 
 :::
 
@@ -195,12 +204,15 @@ editor state.
 synced, so it has to resolve the root from whatever the local `Doc` holds at
 that moment — reaching into a `Y.Array` that the server has not sent yet throws.
 Either mount the editor only once the note exists locally, or have the callback
-create the missing shared type (create it in one place, so two clients cannot
-race to overwrite each other's).
+create the missing shared type. Write it to be idempotent: it can run more than
+once for one editor (React StrictMode double-invokes render, and a remount
+builds a new binding), and a callback that unconditionally stores a new
+`XmlText` would throw away what the previous call stored.
 
-The returned `XmlText` must already be integrated into the document and must
-not be shared with another binding; both are checked when the binding is
-created.
+The returned `XmlText` is checked to be an `XmlText` that is integrated into the
+document; that it is not already driving another live binding is yours to
+guarantee, since a second binding over one root takes over the collab nodes
+cached on its shared types.
 
 The experimental `CollaborationPluginV2__EXPERIMENTAL` (and
 `createBindingV2__EXPERIMENTAL`) take the same two options, except that its

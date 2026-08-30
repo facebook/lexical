@@ -110,13 +110,19 @@ export interface CreateYjsBindingOptions {
    * a top-level shared type (e.g. an `XmlText` held in a `Y.Map` or `Y.Array`,
    * as when one `Doc` stores many independently editable documents).
    *
-   * Called once, while the binding is constructed — before any provider has
-   * synced — so it must resolve (or create) the root from whatever the `Doc`
-   * holds locally at that moment. The returned type must already be integrated
-   * into `doc` (reachable from a top-level shared type) and must not be shared
-   * with another binding; a binding cannot be repointed at a different root
-   * afterwards. When given, it takes precedence over
-   * {@link CreateYjsBindingOptions.rootName}.
+   * Called while the binding is constructed — before any provider has synced —
+   * so it must resolve (or create) the root from whatever the `Doc` holds
+   * locally at that moment, and it must be idempotent: a caller may build more
+   * than one binding over the same root (React StrictMode's double-invoked
+   * render, a remount), and creating a shared type twice would replace what the
+   * first call created.
+   *
+   * The returned type is checked to be an `XmlText` integrated into `doc`
+   * (reachable from a top-level shared type). It must also not be in use by
+   * another live binding, which cannot be checked — a second binding over one
+   * root replaces the collab nodes cached on its shared types. A binding cannot
+   * be repointed at a different root afterwards. When given, this takes
+   * precedence over {@link CreateYjsBindingOptions.rootName}.
    */
   getXmlText?: (doc: Doc) => XmlText;
 }
@@ -181,16 +187,18 @@ export interface CreateBindingV2Options__EXPERIMENTAL {
    * not a top-level shared type (e.g. an `XmlElement` held in a `Y.Map` or
    * `Y.Array`, as when one `Doc` stores many independently editable
    * documents). The V2 equivalent of
-   * {@link CreateYjsBindingOptions.getXmlText}, with the same call-once,
-   * before-any-sync timing.
+   * {@link CreateYjsBindingOptions.getXmlText}, with the same before-any-sync
+   * timing and the same idempotency requirement.
    *
-   * The returned type must already be integrated into `doc` (reachable from a
-   * top-level shared type), must not be shared with another binding, and must
-   * have been created as `new XmlElement()` without a `nodeName` (the root is
-   * identified by its default `'UNDEFINED'` node name, which is also what
-   * `doc.get(rootName, XmlElement)` produces). Each of these is checked, and
-   * fails with an invariant rather than corrupting the document. When given, it
-   * takes precedence over {@link CreateBindingV2Options__EXPERIMENTAL.rootName}.
+   * The returned type is checked to be an `XmlElement` integrated into `doc`
+   * (reachable from a top-level shared type) that was created as
+   * `new XmlElement()` without a `nodeName` — the root is identified by its
+   * default `'UNDEFINED'` node name, which is also what
+   * `doc.get(rootName, XmlElement)` produces — and fails with an invariant
+   * rather than corrupting the document. As in V1, that it is not in use by
+   * another live binding cannot be checked and is the caller's to guarantee.
+   * When given, it takes precedence over
+   * {@link CreateBindingV2Options__EXPERIMENTAL.rootName}.
    */
   getXmlElement?: (doc: Doc) => XmlElement;
 }

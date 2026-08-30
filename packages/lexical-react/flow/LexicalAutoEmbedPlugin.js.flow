@@ -36,13 +36,13 @@ export const INSERT_EMBED_COMMAND: LexicalCommand<EmbedConfig['type']> =
   createCommand('INSERT_EMBED_COMMAND');
 
 type LexicalAutoEmbedPluginProps<TEmbedConfig> = {
-  embedConfigs: Array<TEmbedConfig>,
+  embedConfigs: TEmbedConfig[],
   onOpenEmbedModalForConfig: (embedConfig: TEmbedConfig) => void,
   getMenuOptions: (
     activeEmbedConfig: TEmbedConfig,
     embedFn: () => void,
     dismissFn: () => void,
-  ) => Array<AutoEmbedOption>,
+  ) => AutoEmbedOption[],
   menuRenderFn?: MenuRenderFn<AutoEmbedOption>,
 };
 

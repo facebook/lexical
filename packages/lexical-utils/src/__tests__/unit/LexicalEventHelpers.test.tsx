@@ -6,6 +6,8 @@
  *
  */
 
+import type {LexicalEditor} from 'lexical';
+
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
@@ -22,7 +24,6 @@ import {
   pasteHTML,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {LexicalEditor} from 'lexical';
 import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
 import {act} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -170,7 +171,7 @@ describe('LexicalEventHelpers', () => {
 
   test('Expect initial output to be a block with no text', () => {
     expect(container!.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="auto"><br></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
     );
   });
 
@@ -507,7 +508,8 @@ describe('LexicalEventHelpers', () => {
           name: 'collapsibles and neighbors (4)',
         },
         {
-          expectedHTML: '<p class="editor-paragraph" dir="auto"><br></p>',
+          expectedHTML:
+            '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>',
           inputs: [
             pasteHTML(`
               <p>
@@ -612,13 +614,13 @@ describe('LexicalEventHelpers', () => {
         // the implementation of DOMParser, it works correctly in Safari
         {
           expectedHTML:
-            '<code class="editor-code" spellcheck="false" dir="auto"><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span><br><br></code>',
+            '<code class="editor-code" spellcheck="false" dir="auto"><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span><br><br data-lexical-managed-linebreak="true"></code>',
           inputs: [pasteHTML(`<pre>\na\r\nb\r\n</pre>`)],
           name: 'pre (no touchy) (1)',
         },
         {
           expectedHTML:
-            '<code class="editor-code" spellcheck="false" dir="auto"><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span><br><br></code>',
+            '<code class="editor-code" spellcheck="false" dir="auto"><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span><br><br data-lexical-managed-linebreak="true"></code>',
           inputs: [
             pasteHTML(`
               <pre>\na\r\nb\r\n</pre>
@@ -628,7 +630,7 @@ describe('LexicalEventHelpers', () => {
         },
         {
           expectedHTML:
-            '<p class="editor-paragraph" dir="auto"><br><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span><br><br></p>',
+            '<p class="editor-paragraph" dir="auto"><br><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span><br><br data-lexical-managed-linebreak="true"></p>',
           inputs: [
             pasteHTML(`<span style="white-space: pre">\na\r\nb\r\n</span>`),
           ],
@@ -646,7 +648,7 @@ describe('LexicalEventHelpers', () => {
         },
         {
           expectedHTML:
-            '<p class="editor-paragraph" dir="auto"><span data-lexical-text="true">line 1</span><br><span data-lexical-text="true">line 2</span></p><p class="editor-paragraph" dir="auto"><br></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">paragraph 1</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">paragraph 2</span></p>',
+            '<p class="editor-paragraph" dir="auto"><span data-lexical-text="true">line 1</span><br><span data-lexical-text="true">line 2</span></p><p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">paragraph 1</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">paragraph 2</span></p>',
           inputs: [
             pasteHTML(
               '\n<p class="p1">line 1<br>\nline 2</p>\n<p class="p2"><br></p>\n<p class="p1">paragraph 1</p>\n<p class="p1">paragraph 2</p>\n',
@@ -656,7 +658,7 @@ describe('LexicalEventHelpers', () => {
         },
         {
           expectedHTML:
-            '<p class="editor-paragraph" dir="auto"><span data-lexical-text="true">line 1</span><br><span data-lexical-text="true">line 2</span></p><p class="editor-paragraph" dir="auto"><br></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">paragraph 1</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">paragraph 2</span></p>',
+            '<p class="editor-paragraph" dir="auto"><span data-lexical-text="true">line 1</span><br><span data-lexical-text="true">line 2</span></p><p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">paragraph 1</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">paragraph 2</span></p>',
           inputs: [
             pasteHTML(
               '\n<p class="p1">line 1<br>\nline 2</p>\n<p class="p2">\n<br>\n</p>\n<p class="p1">paragraph 1</p>\n<p class="p1">paragraph 2</p>\n',
@@ -676,7 +678,25 @@ describe('LexicalEventHelpers', () => {
         },
         {
           expectedHTML:
-            '<ol class="editor-list-ol" dir="auto"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span><br><span data-lexical-text="true">2</span></li><li value="2" class="editor-listitem"><br></li><li value="3" class="editor-listitem"><span data-lexical-text="true">3</span></li></ol>',
+            '<p class="editor-paragraph" dir="auto"><span data-lexical-text="true">a</span></p><p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+          inputs: [pasteHTML('<p>a</p><br>')],
+          name: 'lone trailing block-level br collapses to an empty paragraph',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="auto"><span data-lexical-text="true">a</span></p><p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">b</span></p>',
+          inputs: [pasteHTML('<p>a</p><br><p>b</p>')],
+          name: 'lone block-level br between paragraphs collapses to an empty paragraph',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="auto"><br><span data-lexical-text="true">a</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">b</span></p>',
+          inputs: [pasteHTML('<br>a<p>b</p>')],
+          name: 'block-level br followed by inline content is preserved',
+        },
+        {
+          expectedHTML:
+            '<ol class="editor-list-ol" dir="auto"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span><br><span data-lexical-text="true">2</span></li><li value="2" class="editor-listitem"><br data-lexical-managed-linebreak="true"></li><li value="3" class="editor-listitem"><span data-lexical-text="true">3</span></li></ol>',
           inputs: [
             pasteHTML('<ol><li>1<div></div>2</li><li></li><li>3</li></ol>'),
           ],
@@ -712,7 +732,7 @@ describe('LexicalEventHelpers', () => {
         },
         {
           expectedHTML:
-            '<ol class="editor-list-ol" dir="auto"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span></li><li value="2" class="editor-listitem"><br></li><li value="3" class="editor-listitem"><span data-lexical-text="true">3</span></li></ol>',
+            '<ol class="editor-list-ol" dir="auto"><li value="1" class="editor-listitem"><span data-lexical-text="true">1</span></li><li value="2" class="editor-listitem"><br data-lexical-managed-linebreak="true"></li><li value="3" class="editor-listitem"><span data-lexical-text="true">3</span></li></ol>',
           inputs: [pasteHTML('<ol><li>1</li><li><br /></li><li>3</li></ol>')],
           name: 'only br in a li',
         },

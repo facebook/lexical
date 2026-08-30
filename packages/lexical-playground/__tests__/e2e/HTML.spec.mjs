@@ -62,7 +62,7 @@ test.describe('HTML', () => {
           data-lexical-decorator="true">
           <div class="dateTimePill bold italic">*</div>
         </span>
-        <br />
+        <br data-lexical-managed-linebreak="true" />
       </p>
     `;
     await await assertHTML(

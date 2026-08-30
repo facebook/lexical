@@ -22,8 +22,20 @@ import {
   useTypeahead,
 } from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getNearestNodeFromDOMNode, $getRoot, LexicalNode} from 'lexical';
-import {forwardRef, JSX, RefObject, useEffect, useRef, useState} from 'react';
+import {
+  $getNearestNodeFromDOMNode,
+  $getRoot,
+  type LexicalNode,
+  registerEventListener,
+} from 'lexical';
+import {
+  forwardRef,
+  type JSX,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 class MenuOption {
   key: string;
@@ -40,6 +52,12 @@ class MenuOption {
   }
 }
 
+/**
+ * A selectable item in a {@link NodeContextMenuPlugin}. It pairs a `title` (and
+ * optional `icon`/`disabled` state) with a `$onSelect` callback that runs in an
+ * editor update when chosen, and an optional `$showOn` predicate that decides,
+ * per node, whether the item is shown for the right-clicked node.
+ */
 class NodeContextMenuOption extends MenuOption {
   type: string;
   title: string;
@@ -69,6 +87,11 @@ class NodeContextMenuOption extends MenuOption {
   }
 }
 
+/**
+ * A non-interactive divider between groups of {@link NodeContextMenuOption}s in
+ * a {@link NodeContextMenuPlugin}. Like menu options, it accepts an optional
+ * `$showOn` predicate to control when it is displayed.
+ */
 class NodeContextMenuSeparator extends MenuOption {
   type: string;
   $showOn?: (node: LexicalNode) => boolean;
@@ -137,6 +160,16 @@ interface Props {
   items: ContextMenuType[];
 }
 
+/**
+ * Renders a custom context menu (replacing the browser's) when the user
+ * right-clicks inside the editor. Pass the `items` to display as
+ * {@link NodeContextMenuOption}s and {@link NodeContextMenuSeparator}s; each
+ * item's optional `$showOn` predicate is evaluated against the node nearest the
+ * click so the menu can adapt to its target. Supports keyboard navigation and
+ * type-ahead.
+ *
+ * @returns A portal containing the floating context menu while it is open.
+ */
 const NodeContextMenuPlugin = forwardRef<
   HTMLButtonElement,
   Props & React.HTMLProps<HTMLButtonElement>
@@ -145,8 +178,8 @@ const NodeContextMenuPlugin = forwardRef<
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const listItemsRef = useRef<Array<HTMLButtonElement | null>>([]);
-  const listContentRef = useRef<Array<string | null>>([]);
+  const listItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const listContentRef = useRef<(string | null)[]>([]);
 
   const {refs, floatingStyles, context} = useFloating({
     middleware: [
@@ -188,6 +221,27 @@ const NodeContextMenuPlugin = forwardRef<
 
   useEffect(() => {
     function onContextMenu(e: MouseEvent) {
+      let visibleItems: ContextMenuType[] = [];
+      if (items) {
+        editor.read(() => {
+          const node =
+            $getNearestNodeFromDOMNode(e.target as Element) ?? $getRoot();
+          if (node) {
+            visibleItems = items!.filter(option =>
+              option.$showOn ? option.$showOn(node) : true,
+            );
+          }
+        });
+      }
+
+      // Nothing is left to show for this node -- separators on their own draw
+      // a menu with no items in it -- so let the browser's own context menu
+      // open rather than suppressing it and mounting a scroll-locking overlay
+      // around nothing.
+      if (!visibleItems.some(option => option.type !== 'separator')) {
+        return;
+      }
+
       e.preventDefault();
 
       refs.setPositionReference({
@@ -204,19 +258,6 @@ const NodeContextMenuPlugin = forwardRef<
           };
         },
       });
-
-      let visibleItems: ContextMenuType[] = [];
-      if (items) {
-        editor.read(() => {
-          const node =
-            $getNearestNodeFromDOMNode(e.target as Element) ?? $getRoot();
-          if (node) {
-            visibleItems = items!.filter(option =>
-              option.$showOn ? option.$showOn(node) : true,
-            );
-          }
-        });
-      }
 
       const renderableItems = visibleItems.map((option, index) => {
         if (option.type === 'separator') {
@@ -251,9 +292,7 @@ const NodeContextMenuPlugin = forwardRef<
 
     return editor.registerRootListener(rootElement => {
       if (rootElement !== null) {
-        rootElement.addEventListener('contextmenu', onContextMenu);
-        return () =>
-          rootElement.removeEventListener('contextmenu', onContextMenu);
+        return registerEventListener(rootElement, 'contextmenu', onContextMenu);
       }
     });
   }, [items, itemClassName, separatorClassName, refs, editor]);

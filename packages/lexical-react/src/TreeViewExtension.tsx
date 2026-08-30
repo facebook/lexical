@@ -13,7 +13,19 @@ import {ReactExtension} from '@lexical/react/ReactExtension';
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {defineExtension} from 'lexical';
 
+/**
+ * Configuration for {@link TreeViewExtensionComponent}: the props of
+ * {@link TreeView} except `editor` (which is taken from the composer context),
+ * i.e. the set of CSS class names used by the debug view.
+ */
 export type TreeViewConfig = Omit<Parameters<typeof TreeView>[0], 'editor'>;
+/**
+ * Renders the {@link TreeView} debugging panel for the current editor, merging
+ * the {@link TreeViewExtension} configuration with any `props` you pass. Use it
+ * inside an extension-based editor to inspect the editor state tree.
+ *
+ * @returns The TreeView element.
+ */
 export function TreeViewExtensionComponent(
   props: Partial<TreeViewConfig>,
 ): JSX.Element {

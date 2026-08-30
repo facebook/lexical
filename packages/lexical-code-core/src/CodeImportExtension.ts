@@ -6,29 +6,24 @@
  *
  */
 
-import type {DOMPreprocessFn} from '@lexical/html';
-
 import {
-  CoreImportExtension,
   defineImportRule,
   defineOverlayRules,
-  DOMImportExtension,
+  type DOMPreprocessFn,
   ImportOverlays,
   sel,
 } from '@lexical/html';
 import {
   $generateNodesFromRawText,
-  configExtension,
-  defineExtension,
   isDOMDocumentNode,
   isDOMTextNode,
   isHTMLElement,
 } from 'lexical';
 
-import {CodeExtension} from './CodeExtension';
 import {$createCodeNode} from './CodeNode';
 
 const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
+const THEME_DATA_ATTRIBUTE = 'data-theme';
 
 /**
  * True for elements whose `font-family` mentions `monospace` — the
@@ -69,11 +64,10 @@ const GitHubCodeTableOverlayRules = defineOverlayRules([
 
 const PreRule = defineImportRule({
   $import: (ctx, el) => [
-    $createCodeNode(el.getAttribute(LANGUAGE_DATA_ATTRIBUTE)).splice(
-      0,
-      0,
-      ctx.$importChildren(el),
-    ),
+    $createCodeNode(
+      el.getAttribute(LANGUAGE_DATA_ATTRIBUTE),
+      el.getAttribute(THEME_DATA_ATTRIBUTE),
+    ).splice(0, 0, ctx.$importChildren(el)),
   ],
   match: sel.tag('pre'),
   name: '@lexical/code/pre',
@@ -93,11 +87,10 @@ const MultilineCodeRule = defineImportRule({
       return $next();
     }
     return [
-      $createCodeNode(el.getAttribute(LANGUAGE_DATA_ATTRIBUTE)).splice(
-        0,
-        0,
-        ctx.$importChildren(el),
-      ),
+      $createCodeNode(
+        el.getAttribute(LANGUAGE_DATA_ATTRIBUTE),
+        el.getAttribute(THEME_DATA_ATTRIBUTE),
+      ).splice(0, 0, ctx.$importChildren(el)),
     ];
   },
   match: sel.tag('code'),
@@ -371,6 +364,12 @@ const GitHubCodeCellByClassRule = defineImportRule({
  * registered before the generic `<table>` / `<tr>` / `<td>` rules so
  * they win dispatch.
  *
+ * Registered by {@link CodeExtension} itself (together with
+ * `CoreImportExtension` and the {@link $installVscodeCodePasteOverlay}
+ * preprocess), so any editor that uses the code extension can import
+ * these shapes through the `DOMImportExtension` pipeline without further
+ * configuration.
+ *
  * @experimental
  */
 export const CodeImportRules = [
@@ -381,23 +380,3 @@ export const CodeImportRules = [
   PreRule,
   DivRule,
 ];
-
-/**
- * Bundles {@link CodeImportRules} (plus {@link CoreImportExtension}) into
- * a single dependency. The legacy {@link CodeNode.importDOM} continues to
- * work in parallel; depend on this extension to opt into the new
- * pipeline.
- *
- * @experimental
- */
-export const CodeImportExtension = defineExtension({
-  dependencies: [
-    CoreImportExtension,
-    CodeExtension,
-    configExtension(DOMImportExtension, {
-      preprocess: [$installVscodeCodePasteOverlay],
-      rules: CodeImportRules,
-    }),
-  ],
-  name: '@lexical/code/Import',
-});

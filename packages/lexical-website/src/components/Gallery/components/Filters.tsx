@@ -6,14 +6,13 @@
  *
  */
 
-import type {CSSProperties, ReactNode} from 'react';
+import type {Example} from '../pluginList';
+import type {Tag} from '../tagList';
 
 import Heading from '@theme/Heading';
 import clsx from 'clsx';
-import React, {useMemo} from 'react';
+import React, {type CSSProperties, type ReactNode, useMemo} from 'react';
 
-import {Example} from '../pluginList';
-import {Tag} from '../tagList';
 import styles from './styles.module.css';
 import TagSelect from './TagSelect';
 
@@ -85,7 +84,7 @@ function TagList({
   );
 }
 
-function HeadingText({filteredPlugins}: {filteredPlugins: Array<Example>}) {
+function HeadingText({filteredPlugins}: {filteredPlugins: Example[]}) {
   return (
     <div className={styles.headingText}>
       <Heading as="h2">Filters</Heading>
@@ -98,7 +97,7 @@ function HeadingText({filteredPlugins}: {filteredPlugins: Array<Example>}) {
   );
 }
 
-function HeadingRow({filteredPlugins}: {filteredPlugins: Array<Example>}) {
+function HeadingRow({filteredPlugins}: {filteredPlugins: Example[]}) {
   return (
     <div className={clsx('margin-bottom--sm', styles.headingRow)}>
       <HeadingText filteredPlugins={filteredPlugins} />
@@ -111,8 +110,8 @@ export default function Filters({
   filteredPlugins,
   tagList,
 }: {
-  allPlugins: Array<Example>;
-  filteredPlugins: Array<Example>;
+  allPlugins: Example[];
+  filteredPlugins: Example[];
   tagList: {[type in string]: Tag};
 }): ReactNode {
   const tagCounts = useMemo(() => {

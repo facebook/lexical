@@ -8,11 +8,13 @@
 
 import {
   centerAlign,
+  clearFormatting,
   indent,
   moveToPrevWord,
   outdent,
   rightAlign,
   selectAll,
+  selectCharacters,
   toggleBold,
   toggleItalic,
   toggleUnderline,
@@ -20,9 +22,11 @@ import {
 import {
   assertHTML,
   clearEditor,
+  expect,
   focusEditor,
   html,
   initialize,
+  locate,
   pasteFromClipboard,
   selectFromAdditionalStylesDropdown,
   selectFromBackgroundColorPicker,
@@ -196,7 +200,7 @@ test.describe('Clear All Formatting', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello World Test</span>
         </p>
       `,
@@ -217,7 +221,7 @@ test.describe('Clear All Formatting', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello World Test</span>
         </p>
       `,
@@ -238,7 +242,7 @@ test.describe('Clear All Formatting', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello World Test</span>
         </p>
       `,
@@ -265,8 +269,27 @@ test.describe('Clear All Formatting', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello World Test</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can clear alignment and indent with a collapsed selection`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello World');
+    await rightAlign(page);
+    await indent(page);
+    await clearFormatting(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello World</span>
         </p>
       `,
     );
@@ -309,5 +332,41 @@ test.describe('Clear All Formatting', () => {
         </p>
       `,
     );
+  });
+
+  test(`Should reset the toolbar state after clearing formatting (#8881)`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    // Bold a word in the middle of the paragraph, so that clearing splits and
+    // merges text nodes rather than reformatting the whole block
+    await page.keyboard.type('Hello World Test');
+    await moveToPrevWord(page);
+    await moveToPrevWord(page);
+    await selectCharacters(page, 'right', 'World'.length);
+    await toggleBold(page);
+
+    // locate() (not page.locator()) so this resolves inside the left frame in
+    // collab mode, where the playground runs in a two-iframe split view
+    const boldButton = locate(
+      page,
+      '.toolbar-item[aria-label^="Format text as bold"]',
+    );
+    await expect(boldButton).toHaveClass(/active/);
+
+    await selectFromAdditionalStylesDropdown(page, '.clear');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello World Test</span>
+        </p>
+      `,
+    );
+    // The formatting is gone, so the button must not stay stuck in the active
+    // state - otherwise it takes two clicks to bold the selection again
+    await expect(boldButton).not.toHaveClass(/active/);
   });
 });

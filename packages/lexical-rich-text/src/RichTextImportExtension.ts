@@ -6,12 +6,10 @@
  *
  */
 
-import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
+import {BlockSchema, defineImportRule, sel} from '@lexical/html';
 import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
-  configExtension,
-  defineExtension,
   isHTMLElement,
   setNodeIndentFromDOM,
 } from 'lexical';
@@ -21,7 +19,6 @@ import {
   $createQuoteNode,
   type HeadingTagType,
 } from './index';
-import {RichTextExtension} from './LexicalRichTextExtension';
 
 /**
  * Heuristic copied (in spirit) from the legacy `isGoogleDocsTitle`:
@@ -63,6 +60,52 @@ const QuoteRule = defineImportRule({
 });
 
 /**
+ * Opt-in replacement for the default `<blockquote>` rule that imports the
+ * quote as a shadow root {@link QuoteNode} (see `quoteShadowRootState`).
+ * Block-level children such as `<p>` are preserved as blocks and runs of
+ * inline content are wrapped in paragraphs (`BlockSchema`), so structured
+ * blockquote HTML round-trips faithfully instead of being flattened to
+ * inline content.
+ *
+ * Not part of {@link RichTextImportRules}; without it `<blockquote>`
+ * import behavior is unchanged. To opt in, contribute it from somewhere
+ * that outranks {@link RichTextImportRules} in the compiled rule list —
+ * either directly to the editor builder:
+ * ```ts
+ * buildEditorFromExtensions(
+ *   MyExtension,
+ *   configExtension(DOMImportExtension, {rules: [ShadowRootQuoteRule]}),
+ * )
+ * ```
+ * or from an extension that depends on {@link RichTextExtension}:
+ * ```ts
+ * defineExtension({
+ *   dependencies: [
+ *     RichTextExtension,
+ *     configExtension(DOMImportExtension, {rules: [ShadowRootQuoteRule]}),
+ *   ],
+ *   name: '@app/quotes',
+ * })
+ * ```
+ * Either way the contribution is merged after rich-text's and therefore
+ * prepended in front of it, so this rule is reached first and shadows the
+ * default `@lexical/rich-text/blockquote` rule.
+ *
+ * @experimental
+ */
+export const ShadowRootQuoteRule = defineImportRule({
+  $import: (ctx, el) => {
+    const node = $createQuoteNode({shadowRoot: true});
+    $setFormatFromDOM(node, el);
+    setNodeIndentFromDOM(el, node);
+    $setDirectionFromDOM(node, el);
+    return [node.splice(0, 0, ctx.$importChildren(el, {schema: BlockSchema}))];
+  },
+  match: sel.tag('blockquote'),
+  name: '@lexical/rich-text/blockquote-shadow-root',
+});
+
+/**
  * Google-Docs paragraph wrapper around a title span: drop the paragraph,
  * let the span rule below promote to a heading. The body deliberately
  * returns the children unwrapped (no schema, no own node) so the
@@ -93,9 +136,16 @@ const GoogleDocsTitleSpanRule = defineImportRule({
 /**
  * Import rules for {@link HeadingNode} and {@link QuoteNode}, including
  * the Google Docs title heuristic that the legacy `HeadingNode.importDOM`
- * declared. The Google-Docs rules are registered last (highest priority)
- * so they precede the generic `<p>` and `<span>` rules from
- * {@link CoreImportRules}.
+ * declared. This whole array is contributed by {@link RichTextExtension},
+ * which depends on `CoreImportExtension`, so it is prepended in front of
+ * {@link CoreImportRules}: the Google-Docs `<p>` / `<span>` rules here are
+ * reached before the generic `<p>` and `<span>` rules from core, and defer
+ * to them via `$next()` when the Google-Docs heuristic doesn't match.
+ *
+ * Registered by {@link RichTextExtension} itself (together with
+ * `CoreImportExtension`), so any editor that uses the rich-text
+ * extension can import these tags through the `DOMImportExtension`
+ * pipeline without further configuration.
  *
  * @experimental
  */
@@ -105,20 +155,3 @@ export const RichTextImportRules = [
   GoogleDocsTitleParagraphRule,
   GoogleDocsTitleSpanRule,
 ];
-
-/**
- * Bundles {@link RichTextImportRules} together with the runtime
- * {@link RichTextExtension}. The application is expected to already
- * have `CoreImportExtension` (or some equivalent) in its dependency
- * graph — the core/text/paragraph/inline-format rules are a shared
- * baseline, not something this leaf importer should re-declare.
- *
- * @experimental
- */
-export const RichTextImportExtension = defineExtension({
-  dependencies: [
-    RichTextExtension,
-    configExtension(DOMImportExtension, {rules: RichTextImportRules}),
-  ],
-  name: '@lexical/rich-text/Import',
-});

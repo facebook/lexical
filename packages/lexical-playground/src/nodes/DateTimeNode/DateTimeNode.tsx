@@ -11,17 +11,18 @@ import type {JSX} from 'react';
 import {
   applyFormatToDom,
   DecoratorTextNode,
-  SerializedDecoratorTextNode,
+  type SerializedDecoratorTextNode,
 } from '@lexical/extension';
 import {
+  $getDocument,
   $getState,
   $setState,
   createState,
-  DOMExportOutput,
-  LexicalNode,
-  Spread,
-  StateConfigValue,
-  StateValueOrUpdater,
+  type DOMExportOutput,
+  type LexicalNode,
+  type Spread,
+  type StateConfigValue,
+  type StateValueOrUpdater,
 } from 'lexical';
 import * as React from 'react';
 
@@ -85,8 +86,8 @@ export class DateTimeNode extends DecoratorTextNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('span');
-    const textDom: HTMLElement | Text = document.createTextNode(
+    const element = $getDocument().createElement('span');
+    const textDom: HTMLElement | Text = $getDocument().createTextNode(
       getDateTimeText(this.getDateTime()),
     );
     element.setAttribute(
@@ -99,7 +100,7 @@ export class DateTimeNode extends DecoratorTextNode {
   }
 
   createDOM(): HTMLElement {
-    const element = document.createElement('span');
+    const element = $getDocument().createElement('span');
     element.setAttribute(
       'data-lexical-datetime',
       this.getDateTime()?.toString() || '',

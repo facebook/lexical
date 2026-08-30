@@ -11,21 +11,21 @@ import {
   $createTextNode,
   $getRoot,
   $getState,
+  $isParagraphNode,
   $isTextNode,
   $setState,
   createState,
-  ParagraphNode,
-  TextNode,
   UNDO_COMMAND,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {act} from 'react';
 import {afterEach, assert, beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
 
 import {
-  Client,
+  type Client,
   createTestConnection,
-  TestConnection,
+  type TestConnection,
   waitForReact,
 } from '../utils';
 
@@ -54,7 +54,9 @@ describe('Collaboration', () => {
     // Wait for clients to render the initial content
     await Promise.resolve().then();
 
-    expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+    expect(client1.getHTML()).toEqual(
+      '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+    );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
   }
@@ -78,11 +80,14 @@ describe('Collaboration', () => {
           client1.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>();
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
 
             const text = $createTextNode('Hello world');
 
-            paragraph!.append(text);
+            paragraph.append(text);
           });
         });
 
@@ -97,8 +102,14 @@ describe('Collaboration', () => {
           client2.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
-            const text = paragraph.getFirstChild<TextNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
+            const text = $assertNodeType(
+              paragraph.getFirstChild(),
+              $isTextNode,
+            );
 
             text.spliceText(6, 5, 'metaverse');
           });
@@ -132,7 +143,10 @@ describe('Collaboration', () => {
           client1.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
             const text = $createTextNode('Hello world');
 
             paragraph.append(text);
@@ -141,14 +155,19 @@ describe('Collaboration', () => {
         expect(client1.getHTML()).toEqual(
           '<p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
         );
-        expect(client2.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client2.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
 
         // Insert some a text node on client 1
         await waitForReact(() => {
           client2.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
             const text = $createTextNode('Hello world');
 
             paragraph.append(text);
@@ -177,8 +196,14 @@ describe('Collaboration', () => {
           client1.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
-            const text = paragraph.getFirstChild<TextNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
+            const text = $assertNodeType(
+              paragraph.getFirstChild(),
+              $isTextNode,
+            );
 
             text.spliceText(11, 11, '');
           });
@@ -195,8 +220,14 @@ describe('Collaboration', () => {
           client2.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
-            const text = paragraph.getFirstChild<TextNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
+            const text = $assertNodeType(
+              paragraph.getFirstChild(),
+              $isTextNode,
+            );
 
             text.spliceText(11, 11, '!');
           });
@@ -230,7 +261,10 @@ describe('Collaboration', () => {
           client1.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
             const text = $createTextNode('Hello world');
             paragraph.append(text);
           });
@@ -249,12 +283,17 @@ describe('Collaboration', () => {
           client1.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
             paragraph.getFirstChild()!.remove();
           });
         });
 
-        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
         expect(client2.getHTML()).toEqual(
           '<p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
         );
@@ -264,15 +303,22 @@ describe('Collaboration', () => {
           client2.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
 
-            paragraph
-              .getFirstChild<TextNode>()!
-              .spliceText(11, 0, 'Hello world');
+            $assertNodeType(paragraph.getFirstChild(), $isTextNode).spliceText(
+              11,
+              0,
+              'Hello world',
+            );
           });
         });
 
-        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
         expect(client2.getHTML()).toEqual(
           '<p dir="auto"><span data-lexical-text="true">Hello worldHello world</span></p>',
         );
@@ -293,7 +339,9 @@ describe('Collaboration', () => {
           // fallback maps. For now though, if a user clears all text nodes from an element
           // and another user inserts some text into the same element at the same time, the
           // deletion will take precedence on conflicts.
-          expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+          expect(client1.getHTML()).toEqual(
+            '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+          );
         }
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
@@ -327,7 +375,10 @@ describe('Collaboration', () => {
         // Override direction
         await waitForReact(() => {
           client1.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            );
             paragraph.setDirection('rtl');
           });
         });
@@ -425,12 +476,14 @@ describe('Collaboration', () => {
 
         await waitForReact(() => {
           // Undo the insertion of the initial paragraph and text node
-          client1.getEditor().dispatchCommand(UNDO_COMMAND, undefined);
+          client1.getEditor().dispatchCommand(UNDO_COMMAND);
         });
 
         // We expect the safety check in syncYjsChangesToLexical to
         // insert a new paragraph node and prevent the document from being empty
-        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
@@ -447,7 +500,7 @@ describe('Collaboration', () => {
         });
 
         expect(client1.getHTML()).toEqual(
-          '<p dir="auto"><br></p><p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p><p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
         );
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
@@ -480,11 +533,16 @@ describe('Collaboration', () => {
         // Yjs→Lexical recovery guard and mask the missing Lexical→Yjs guard
         client1.start(container!);
         await Promise.resolve().then();
-        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
 
         await waitForReact(() => {
           client1.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            );
             paragraph.append($createTextNode('Hello'));
           });
         });
@@ -504,7 +562,9 @@ describe('Collaboration', () => {
 
         // client1's own Lexical view should recover (the fix schedules
         // $ensureEditorNotEmpty in a tag-free update that also syncs back to Yjs)
-        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
 
         // client2 cold-starts and applies all queued Yjs updates from client1.
         // Regression assertion: without the fix, client2 receives only the clear
@@ -513,7 +573,9 @@ describe('Collaboration', () => {
         client2.start(container!);
         await Promise.resolve().then();
 
-        expect(client2.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client2.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
@@ -527,7 +589,7 @@ describe('Collaboration', () => {
         });
 
         expect(client1.getHTML()).toEqual(
-          '<p dir="auto"><br></p><p dir="auto"><span data-lexical-text="true">World</span></p>',
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p><p dir="auto"><span data-lexical-text="true">World</span></p>',
         );
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
@@ -644,7 +706,10 @@ describe('Collaboration', () => {
       client1.getEditor().update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>()!;
+        const paragraph = $assertNodeType(
+          root.getFirstChild(),
+          $isParagraphNode,
+        );
         paragraph.append($createTextNode('1'));
       });
     });
@@ -720,7 +785,10 @@ describe('Collaboration', () => {
 
       editor.update(
         () => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           $setState(paragraph, state, 'bar');
           // Include another update otherwise equalYTypePNode would return true
           paragraph.append($createTextNode('!'));
@@ -748,21 +816,30 @@ describe('Collaboration', () => {
         });
       });
 
-      let editor2State = client2.getEditorState().read(() => {
-        const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+      let editor2State = client2.getEditor().read('latest', () => {
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         return $getState(paragraph, state);
       });
       expect(editor2State).toEqual('bar');
 
       await waitForReact(() => {
         client1.update(() => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           $setState(paragraph, state, undefined);
         });
       });
 
-      editor2State = client2.getEditorState().read(() => {
-        const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+      editor2State = client2.getEditor().read('latest', () => {
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         return $getState(paragraph, state);
       });
       expect(editor2State).toBeUndefined();

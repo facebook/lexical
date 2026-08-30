@@ -6,29 +6,27 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  ParagraphNode,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
-
-import {addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
+  $getDocument,
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
+  $setDirectionFromDOM,
+  addClassNamesToElement,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
   ElementNode,
   isHTMLElement,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type ParagraphNode,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
@@ -70,17 +68,20 @@ export class TableCellNode extends ElementNode {
   /** @internal */
   __verticalAlign?: undefined | string;
 
-  static getType(): string {
-    return 'tablecell';
-  }
-
-  static clone(node: TableCellNode): TableCellNode {
-    return new TableCellNode(
-      node.__headerState,
-      node.__colSpan,
-      node.__width,
-      node.__key,
-    );
+  $config() {
+    return this.config('tablecell', {
+      extends: ElementNode,
+      importDOM: {
+        td: () => ({
+          conversion: $convertTableCellNodeElement,
+          priority: 0,
+        }),
+        th: () => ({
+          conversion: $convertTableCellNodeElement,
+          priority: 0,
+        }),
+      },
+    });
   }
 
   afterCloneFrom(node: this): void {
@@ -91,23 +92,6 @@ export class TableCellNode extends ElementNode {
     this.__colSpan = node.__colSpan;
     this.__headerState = node.__headerState;
     this.__width = node.__width;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      td: (node: Node) => ({
-        conversion: $convertTableCellNodeElement,
-        priority: 0,
-      }),
-      th: (node: Node) => ({
-        conversion: $convertTableCellNodeElement,
-        priority: 0,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
-    return $createTableCellNode().updateFromJSON(serializedNode);
   }
 
   updateFromJSON(
@@ -139,7 +123,7 @@ export class TableCellNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): HTMLTableCellElement {
-    const element = document.createElement(this.getTag());
+    const element = $getDocument().createElement(this.getTag());
 
     if (this.__width) {
       element.style.width = `${this.__width}px`;
@@ -278,10 +262,15 @@ export class TableCellNode extends ElementNode {
   toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): this {
     const self = this.getWritable();
 
+    // The test is bitwise ("does it already have all of these bits") so the
+    // mutation has to be too. `+=`/`-=` happen to agree for a single-bit
+    // argument, but for BOTH they overflow the enum: toggling BOTH on a cell
+    // that only has ROW produced __headerState 4, which is neither ROW, COLUMN,
+    // BOTH nor NO_STATUS.
     if ((self.__headerState & headerStateToToggle) === headerStateToToggle) {
-      self.__headerState -= headerStateToToggle;
+      self.__headerState &= ~headerStateToToggle;
     } else {
-      self.__headerState += headerStateToToggle;
+      self.__headerState |= headerStateToToggle;
     }
 
     return self;
@@ -387,6 +376,7 @@ export function $convertTableCellNodeElement(
   if (isValidVerticalAlign(verticalAlign)) {
     tableCellNode.__verticalAlign = verticalAlign;
   }
+  $setDirectionFromDOM(tableCellNode, domNode_);
 
   const style = domNode_.style;
   const textDecoration = ((style && style.textDecoration) || '').split(' ');

@@ -8,30 +8,30 @@
 
 import {$createMarkNode, $isMarkNode} from '@lexical/mark';
 import {
-  $createParagraphNode,
-  $createTextNode,
-  $getNodeByKey,
-  $getRoot,
-  $isElementNode,
-  ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-} from 'lexical';
-import {
-  $createTestElementNode,
-  initializeUnitTest,
-  invariant,
-} from 'lexical/src/__tests__/utils';
-import {beforeEach, describe, expect, test} from 'vitest';
-
-import {
   $dfs,
   $firstToLastIterator,
   $getNextSiblingOrParentSibling,
   $lastToFirstIterator,
   $reverseDfs,
-} from '../..';
+} from '@lexical/utils';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getNodeByKey,
+  $getRoot,
+  $isElementNode,
+  type ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+} from 'lexical';
+import {
+  $assertNodeType,
+  $createTestElementNode,
+  initializeUnitTest,
+  invariant,
+} from 'lexical/src/__tests__/utils';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 interface DFSKeyPair {
   depth: number;
@@ -142,7 +142,7 @@ describe('LexicalNodeHelpers tests', () => {
 
       test('DFS node order', async () => {
         const editor: LexicalEditor = testEnv.editor;
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           const expectedNodes = expectedKeys.map(({depth, node: nodeKey}) => ({
             depth,
             node: $getNodeByKey(nodeKey)!.getLatest(),
@@ -164,7 +164,7 @@ describe('LexicalNodeHelpers tests', () => {
 
       test('Reverse DFS node order', async () => {
         const editor: LexicalEditor = testEnv.editor;
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           const expectedNodes = reverseExpectedKeys.map(
             ({depth, node: nodeKey}) => ({
               depth,
@@ -202,7 +202,10 @@ describe('LexicalNodeHelpers tests', () => {
                 ),
               );
 
-            const paragraph = root.getFirstChildOrThrow<ElementNode>();
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isElementNode,
+            );
             const children = paragraph.getChildren();
             expect($dfs(children[1])).toEqual([{depth: 2, node: children[1]}]);
           },

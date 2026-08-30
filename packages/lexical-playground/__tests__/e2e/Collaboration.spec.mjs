@@ -25,6 +25,7 @@ import {
   freezeCollabUndoGrouping,
   html,
   initialize,
+  reloadCollabFrame,
   test,
 } from '../utils/index.mjs';
 
@@ -88,7 +89,7 @@ test.describe('Collaboration', () => {
           <span data-lexical-text="true">hello</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">world</span>
@@ -139,7 +140,7 @@ test.describe('Collaboration', () => {
             tabindex="-1"
             value="3"
             aria-checked="false">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </li>
         </ul>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -163,7 +164,7 @@ test.describe('Collaboration', () => {
           <span data-lexical-text="true">hello</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">world</span>
@@ -235,6 +236,11 @@ test.describe('Collaboration', () => {
 
     // Left collaborator types two paragraphs of text
     await focusEditor(page);
+    // The undo below expects to revert the whole "This is a test. " burst as a
+    // unit, so drop the Yjs UndoManager's wall-clock capture window — a CI
+    // stall between two keystrokes must not split the burst across stack items
+    // and leave a partial revert behind. See the helper's doc.
+    await freezeCollabUndoGrouping(page);
     await page.keyboard.type('Line 1');
     await page.keyboard.press('Enter');
     await advanceHistoryClock(page);
@@ -280,16 +286,14 @@ test.describe('Collaboration', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Line 1</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
     // Left collaborator refreshes their page
-    await page.evaluate(() => {
-      document
-        .querySelector('iframe[name="left"]')
-        .contentDocument.location.reload();
-    });
+    await reloadCollabFrame(page, 'left');
 
     // Page content should be the same as before the refresh
     await assertHTML(
@@ -298,7 +302,9 @@ test.describe('Collaboration', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Line 1</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -313,6 +319,10 @@ test.describe('Collaboration', () => {
 
     // Left collaborator types two pieces of text in the same paragraph, but with different styling.
     await focusEditor(page);
+    // The undo below expects to revert the bold format *and* the "bold" burst
+    // it applies to as a unit, so drop the Yjs UndoManager's wall-clock capture
+    // window — see the helper's doc.
+    await freezeCollabUndoGrouping(page);
     await page.keyboard.type('normal');
     await assertHTML(
       page,
@@ -382,11 +392,7 @@ test.describe('Collaboration', () => {
     );
 
     // Left collaborator refreshes their page
-    await page.evaluate(() => {
-      document
-        .querySelector('iframe[name="left"]')
-        .contentDocument.location.reload();
-    });
+    await reloadCollabFrame(page, 'left');
 
     // Page content should be the same as before the refresh
     await assertHTML(

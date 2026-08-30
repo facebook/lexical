@@ -17,6 +17,7 @@ import {
   selectCharacters,
   STANDARD_KEYPRESS_DELAY_MS,
   toggleBold,
+  undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -393,7 +394,9 @@ test.describe('Links', () => {
       page,
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
           <li class="PlaygroundEditorTheme__listItem" value="2">
             <a
               class="PlaygroundEditorTheme__link"
@@ -716,15 +719,13 @@ test.describe('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text before a start-of-paragraph link, via pasting HTML`, async ({
+        test(`Can insert text before a start-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text before a start-of-paragraph link, via pasting Lexical text`, async ({
+        test(`Can insert text before a start-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -860,15 +861,13 @@ test.describe('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text before an end-of-paragraph link, via pasting HTML`, async ({
+        test(`Can insert text before an end-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text before an end-of-paragraph link, via pasting Lexical text`, async ({
+        test(`Can insert text before an end-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -935,15 +934,13 @@ test.describe('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after a start-of-paragraph link, via pasting HTML`, async ({
+        test(`Can insert text after a start-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after a start-of-paragraph link, via pasting Lexical text`, async ({
+        test(`Can insert text after a start-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -1009,15 +1006,13 @@ test.describe('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after a mid-paragraph link, via pasting HTML`, async ({
+        test(`Can insert text after a mid-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after a mid-paragraph link, via pasting Lexical text`, async ({
+        test(`Can insert text after a mid-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -1082,15 +1077,13 @@ test.describe('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after an end-of-paragraph link, via pasting HTML`, async ({
+        test(`Can insert text after an end-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after an end-of-paragraph link, via pasting Lexical text`, async ({
+        test(`Can insert text after an end-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -1926,7 +1919,7 @@ test.describe('Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <p dir="auto">
           <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello awesome</span>
@@ -2116,7 +2109,7 @@ test.describe('Links', () => {
               <div class="image-resizer image-resizer-nw"></div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
       undefined,
@@ -2344,7 +2337,7 @@ test.describe('Links', () => {
               <div class="image-resizer image-resizer-nw"></div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
@@ -2371,11 +2364,60 @@ test.describe('Links', () => {
               <div class="image-resizer image-resizer-nw"></div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
       undefined,
       {ignoreClasses: false},
+    );
+  });
+
+  test('Undo from the link URL input undoes in the editor rather than natively (#6714)', async ({
+    page,
+    browserName,
+    isCollab,
+  }) => {
+    // Firefox keeps the undo scoped to the focused control and never
+    // dispatches `beforeinput`/`historyUndo` on the editor root, so there is
+    // nothing for the editor to mishandle.
+    test.skip(browserName === 'firefox' || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Hello world ');
+    await withExclusiveClipboardAccess(async () => {
+      await pasteFromClipboard(page, {'text/plain': 'https://lexical.dev'});
+    });
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello world</span>
+          <a class="PlaygroundEditorTheme__link" href="https://lexical.dev">
+            <span data-lexical-text="true">https://lexical.dev</span>
+          </a>
+        </p>
+      `,
+    );
+
+    // Open the URL field of the link popup, which moves focus out of the
+    // editor and leaves the editor without a selection.
+    await click(page, '.link-edit');
+    await focus(page, '.link-input');
+
+    // Chromium and WebKit exhaust the URL field's own (empty) undo stack and
+    // then dispatch the undo at the editor root. Nothing has been typed into
+    // the URL field, so this is the very first undo the user presses.
+    await undo(page);
+
+    // The pasted link is undone. Before the fix the browser ran its native
+    // undo over the editor's DOM instead, producing "Hhttps://lexical.dev":
+    // a state that was never in Lexical's history.
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello world</span>
+        </p>
+      `,
     );
   });
 });

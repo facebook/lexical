@@ -6,7 +6,7 @@
  *
  */
 
-import {BoundingBox, ElementOverlayOptions} from './utils';
+import type {BoundingBox, ElementOverlayOptions} from './utils';
 
 export default class ElementOverlay {
   overlay: HTMLDivElement;

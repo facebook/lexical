@@ -9,7 +9,7 @@
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextExtension} from '@lexical/rich-text';
-import {defineExtension, EditorState, LexicalEditor} from 'lexical';
+import {defineExtension, type EditorState, type LexicalEditor} from 'lexical';
 import {useMemo} from 'react';
 
 const chatMessageTheme = {

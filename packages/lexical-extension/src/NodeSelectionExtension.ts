@@ -14,7 +14,7 @@ import {
 } from 'lexical';
 
 import {EditorStateExtension} from './EditorStateExtension';
-import {computed, effect, ReadonlySignal, signal} from './signals';
+import {computed, effect, type ReadonlySignal, signal} from './signals';
 import {watchedSignal} from './watchedSignal';
 
 const EMPTY_SET = new Set<NodeKey>();

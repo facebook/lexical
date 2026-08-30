@@ -6,17 +6,22 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
-
-import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $findMatchingParent,
   $getNodeByKey,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_LOW,
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
+  KEY_BACKSPACE_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
+  type NodeKey,
   TextNode,
 } from 'lexical';
 
@@ -99,6 +104,36 @@ export function registerList(
         return $handleListInsertParagraph(!!shouldRestore);
       },
       COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      KEY_BACKSPACE_COMMAND,
+      event => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+        const {anchor} = selection;
+        if (anchor.offset !== 0) {
+          return false;
+        }
+        let current: LexicalNode = anchor.getNode();
+        while (!$isListItemNode(current)) {
+          if (current.getPreviousSibling() !== null) {
+            return false;
+          }
+          const parent = current.getParent();
+          if (parent === null) {
+            return false;
+          }
+          current = parent;
+        }
+        if ($isListItemNode(current) && current.collapseAtStart(selection)) {
+          event.preventDefault();
+          return true;
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_BEFORE_EDITOR,
     ),
     editor.registerNodeTransform(ListItemNode, node => {
       const firstChild = node.getFirstChild();

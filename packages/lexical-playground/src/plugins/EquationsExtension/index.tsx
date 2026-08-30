@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import 'katex/dist/katex.css';
 
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
@@ -23,12 +21,16 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
-  LexicalEditor,
+  type LexicalCommand,
+  type LexicalEditor,
 } from 'lexical';
-import {useCallback} from 'react';
+import {type JSX, useCallback} from 'react';
 
-import {$createEquationNode, EquationNode} from '../../nodes/EquationNode';
+import {
+  $createEquationNode,
+  decodeEquation,
+  EquationNode,
+} from '../../nodes/EquationNode';
 import KatexEquationAlterer from '../../ui/KatexEquationAlterer';
 
 type CommandPayload = {
@@ -44,7 +46,7 @@ function $convertEquationElement(el: HTMLElement) {
   if (!encoded) {
     return null;
   }
-  const equation = atob(encoded);
+  const equation = decodeEquation(encoded);
   if (!equation) {
     return null;
   }
@@ -63,12 +65,14 @@ const EquationImportRule = defineImportRule({
 
 export const EquationsExtension = defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {rules: [EquationImportRule]}),
+    configExtension(DOMImportExtension, {
+      rules: [EquationImportRule],
+    }),
   ],
   name: '@lexical/playground/Equations',
   nodes: [EquationNode],
   register: editor =>
-    editor.registerCommand<CommandPayload>(
+    editor.registerCommand(
       INSERT_EQUATION_COMMAND,
       payload => {
         const {equation, inline} = payload;

@@ -5,13 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import invariant from '@lexical/internal/invariant';
 import {
+  $cloneWithProperties,
   $create,
   $createLineBreakNode,
+  $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
+  $createTextNode,
   $getNodeByKey,
   $getNodeByKeyOrThrow,
   $getRoot,
@@ -23,15 +25,13 @@ import {
   $setSelection,
   createEditor,
   DecoratorNode,
-  EditorConfig,
+  type EditorConfig,
   ElementNode,
-  LexicalEditor,
-  NodeKey,
+  type LexicalEditor,
+  type NodeKey,
   ParagraphNode,
-  RangeSelection,
-  SerializedLexicalNode,
-  SerializedTextNode,
-  TabNode,
+  type RangeSelection,
+  type TabNode,
   TextNode,
 } from 'lexical';
 import {
@@ -46,8 +46,6 @@ import {
 } from 'vitest';
 
 import {LexicalNode} from '../../LexicalNode';
-import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
-import {$createTextNode} from '../../nodes/LexicalTextNode';
 import {
   $createTestElementNode,
   $createTestInlineElementNode,
@@ -57,34 +55,18 @@ import {
 } from '../utils';
 
 export class TestNode extends LexicalNode {
-  static getType(): string {
-    return 'test';
-  }
-
-  static clone(node: TestNode) {
-    return new TestNode(node.__key);
+  $config() {
+    return this.config('test', {extends: LexicalNode});
   }
 
   createDOM() {
     return document.createElement('div');
   }
-
-  static importJSON(serializedNode: SerializedLexicalNode) {
-    return new TestNode().updateFromJSON(serializedNode);
-  }
 }
 
 class InlineDecoratorNode extends DecoratorNode<string> {
-  static getType(): string {
-    return 'inline-decorator';
-  }
-
-  static clone(): InlineDecoratorNode {
-    return new InlineDecoratorNode();
-  }
-
-  static importJSON(serializedNode: SerializedLexicalNode) {
-    return new InlineDecoratorNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('inline-decorator', {extends: DecoratorNode});
   }
 
   createDOM(): HTMLElement {
@@ -101,6 +83,24 @@ class InlineDecoratorNode extends DecoratorNode<string> {
 
   decorate() {
     return 'inline-decorator';
+  }
+}
+
+class BlockDecoratorNode extends DecoratorNode<string> {
+  $config() {
+    return this.config('block-decorator', {extends: DecoratorNode});
+  }
+
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+
+  isInline(): false {
+    return false;
+  }
+
+  decorate() {
+    return 'block-decorator';
   }
 }
 
@@ -148,6 +148,8 @@ describe('LexicalNode tests', () => {
           expect(node.__parent).toBe(null);
         });
 
+        // Intentionally read without an active editor (no {editor} context)
+        // so that constructing a keyed node throws via getActiveEditor().
         await editor.getEditorState().read(() => {
           expect(() => new LexicalNode()).toThrow();
           expect(() => new LexicalNode('__custom_key__')).toThrow();
@@ -180,14 +182,8 @@ describe('LexicalNode tests', () => {
         class VersionedTextNode extends TextNode {
           // declare ['constructor']: KlassConstructor<typeof VersionedTextNode>;
           __version = 0;
-          static getType(): 'vtext' {
-            return 'vtext';
-          }
-          static clone(node: VersionedTextNode): VersionedTextNode {
-            return new VersionedTextNode(node.__text, node.__key);
-          }
-          static importJSON(node: SerializedTextNode): VersionedTextNode {
-            throw new Error('Not implemented');
+          $config() {
+            return this.config('vtext', {extends: TextNode});
           }
           afterCloneFrom(node: this): void {
             super.afterCloneFrom(node);
@@ -260,7 +256,7 @@ describe('LexicalNode tests', () => {
           node = new LexicalNode('__custom_key__');
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(node.isAttached()).toBe(false);
           expect(textNode.isAttached()).toBe(true);
           expect(paragraphNode.isAttached()).toBe(true);
@@ -277,7 +273,7 @@ describe('LexicalNode tests', () => {
           node = new LexicalNode('__custom_key__');
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(node.isSelected()).toBe(false);
           expect(textNode.isSelected()).toBe(false);
           expect(paragraphNode.isSelected()).toBe(false);
@@ -287,7 +283,7 @@ describe('LexicalNode tests', () => {
           textNode.select(0, 0);
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isSelected()).toBe(true);
         });
 
@@ -297,7 +293,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.isSelected(): selected text node', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(paragraphNode.isSelected()).toBe(false);
           expect(textNode.isSelected()).toBe(false);
         });
@@ -306,7 +302,7 @@ describe('LexicalNode tests', () => {
           textNode.select(0, 0);
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isSelected()).toBe(true);
           expect(paragraphNode.isSelected()).toBe(false);
         });
@@ -563,7 +559,7 @@ describe('LexicalNode tests', () => {
           expect(node.getParent()).toBe(null);
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           const rootNode = $getRoot();
           expect(textNode.getParent()).toBe(paragraphNode);
           expect(paragraphNode.getParent()).toBe(rootNode);
@@ -579,7 +575,7 @@ describe('LexicalNode tests', () => {
           expect(() => node.getParentOrThrow()).toThrow();
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           const rootNode = $getRoot();
           expect(textNode.getParent()).toBe(paragraphNode);
           expect(paragraphNode.getParent()).toBe(rootNode);
@@ -595,18 +591,18 @@ describe('LexicalNode tests', () => {
           expect(node.getTopLevelElement()).toBe(null);
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getTopLevelElement()).toBe(paragraphNode);
           expect(paragraphNode.getTopLevelElement()).toBe(paragraphNode);
         });
         expect(() => textNode.getTopLevelElement()).toThrow();
         await editor.update(() => {
-          const node = new InlineDecoratorNode();
+          const node = new BlockDecoratorNode();
           expect(node.getTopLevelElement()).toBe(null);
           $getRoot().append(node);
           expect(node.getTopLevelElement()).toBe(node);
         });
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           const elementNodes: ElementNode[] = [];
           const decoratorNodes: DecoratorNode<unknown>[] = [];
           for (const child of $getRoot().getChildren()) {
@@ -634,7 +630,7 @@ describe('LexicalNode tests', () => {
           expect(() => node.getTopLevelElementOrThrow()).toThrow();
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getTopLevelElementOrThrow()).toBe(paragraphNode);
           expect(paragraphNode.getTopLevelElementOrThrow()).toBe(paragraphNode);
         });
@@ -659,7 +655,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           const rootNode = $getRoot();
           expect(textNode.getParents()).toEqual([paragraphNode, rootNode]);
           expect(paragraphNode.getParents()).toEqual([rootNode]);
@@ -681,7 +677,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(barTextNode.getPreviousSibling()).toEqual({
             ...textNode,
             __next: '3',
@@ -708,7 +704,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(bazTextNode.getPreviousSiblings()).toEqual([
             {
               ...textNode,
@@ -744,7 +740,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(barTextNode.getNextSibling()).toEqual(null);
           expect(textNode.getNextSibling()).toEqual(barTextNode);
         });
@@ -768,7 +764,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(bazTextNode.getNextSiblings()).toEqual([]);
           expect(barTextNode.getNextSiblings()).toEqual([bazTextNode]);
           expect(textNode.getNextSiblings()).toEqual([
@@ -816,7 +812,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">qux</span></p><p dir="auto"><span data-lexical-text="true">bar</span></p><p dir="auto"><span data-lexical-text="true">baz</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           const rootNode = $getRoot();
           expect(textNode.getCommonAncestor(rootNode)).toBe(rootNode);
           expect(quxTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
@@ -849,7 +845,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isBefore(textNode)).toBe(false);
           expect(textNode.isBefore(barTextNode)).toBe(true);
           expect(textNode.isBefore(bazTextNode)).toBe(true);
@@ -863,7 +859,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.isParentOf()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           const rootNode = $getRoot();
           expect(rootNode.isParentOf(textNode)).toBe(true);
           expect(rootNode.isParentOf(paragraphNode)).toBe(true);
@@ -900,7 +896,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p><p dir="auto"><span data-lexical-text="true">qux</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getNodesBetween(textNode)).toEqual([textNode]);
           expect(textNode.getNodesBetween(barTextNode)).toEqual([
             textNode,
@@ -936,7 +932,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">token</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isToken()).toBe(false);
           expect(tokenTextNode.isToken()).toBe(true);
         });
@@ -956,7 +952,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">segmented</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isSegmented()).toBe(false);
           expect(segmentedTextNode.isSegmented()).toBe(true);
         });
@@ -979,7 +975,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">directionless</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isDirectionless()).toBe(false);
           expect(directionlessTextNode.isDirectionless()).toBe(true);
         });
@@ -989,7 +985,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.getLatest()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getLatest()).toBe(textNode);
         });
         expect(() => textNode.getLatest()).toThrow();
@@ -1025,7 +1021,7 @@ describe('LexicalNode tests', () => {
           expect(node.getTextContent()).toBe('');
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getTextContent()).toBe('foo');
         });
         expect(() => textNode.getTextContent()).toThrow();
@@ -1034,7 +1030,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.getTextContentSize()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getTextContentSize()).toBe('foo'.length);
         });
         expect(() => textNode.getTextContentSize()).toThrow();
@@ -1070,7 +1066,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.remove()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(() => textNode.remove()).toThrow();
         });
 
@@ -1088,7 +1084,7 @@ describe('LexicalNode tests', () => {
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
         );
         expect(() => textNode.remove()).toThrow();
       });
@@ -1096,7 +1092,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.replace()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           // @ts-expect-error
           expect(() => textNode.replace()).toThrow();
         });
@@ -1128,7 +1124,29 @@ describe('LexicalNode tests', () => {
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">bar</span></p><p dir="auto"><br></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">bar</span></p><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
+        );
+      });
+
+      test('LexicalNode.replace(): with a sibling in the same parent', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const paragraph = textNode.getParentOrThrow();
+          const barTextNode = new TextNode('bar');
+          paragraph.append(barTextNode);
+
+          // Replacing a node with one of its own siblings must not leave the
+          // parent's __size counting the sibling twice.
+          textNode.replace(barTextNode);
+
+          expect(paragraph.getChildrenSize()).toBe(1);
+          expect(paragraph.getChildren()).toHaveLength(1);
+          expect(paragraph.getFirstChild()!.getTextContent()).toBe('bar');
+        });
+
+        expect(testEnv.outerHTML).toBe(
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">bar</span></p></div>',
         );
       });
 
@@ -1230,7 +1248,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.insertAfter()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           // @ts-expect-error
           expect(() => textNode.insertAfter()).toThrow();
         });
@@ -1383,14 +1401,14 @@ describe('LexicalNode tests', () => {
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p><p dir="auto"><br></p><p dir="auto"><span data-lexical-text="true">C</span><span data-lexical-text="true">B</span><span data-lexical-text="true">A</span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p><p dir="auto"><br data-lexical-managed-linebreak="true"></p><p dir="auto"><span data-lexical-text="true">C</span><span data-lexical-text="true">B</span><span data-lexical-text="true">A</span></p></div>',
         );
       });
 
       test('LexicalNode.insertBefore()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           // @ts-expect-error
           expect(() => textNode.insertBefore()).toThrow();
         });
@@ -1625,11 +1643,154 @@ describe('LexicalNode tests', () => {
             {discrete: true},
           );
         });
+        // Regression test for the $config() clone auto-synthesis BC break:
+        // a node that drops its explicit static clone() in favor of $config()
+        // gets a zero-arg auto-clone. When that auto-clone is invoked directly
+        // (NodeClass.clone(node) / node.constructor.clone(node)) rather than
+        // through $cloneWithProperties, it must still copy the source node's
+        // properties via afterCloneFrom, otherwise callers silently get a
+        // default-constructed node with lost state.
+        test('direct clone() of an auto-synthesized node preserves properties', () => {
+          class ConfigTagNode extends ElementNode {
+            __tag: string = 'default';
+            $config() {
+              return this.config('config-tag', {extends: ElementNode});
+            }
+            afterCloneFrom(node: this): void {
+              super.afterCloneFrom(node);
+              this.__tag = node.__tag;
+            }
+            setTag(tag: string): this {
+              const self = this.getWritable();
+              self.__tag = tag;
+              return self;
+            }
+          }
+          const editor = createEditor({
+            nodes: [ConfigTagNode],
+            onError(err) {
+              throw err;
+            },
+          });
+          editor.update(
+            () => {
+              const source = $create(ConfigTagNode).setTag('custom');
+              $getRoot().append(source);
+              expect(source.__tag).toBe('custom');
+              // Direct call to the auto-synthesized clone (the idiomatic,
+              // pre-#8640 pattern) must not lose __tag.
+              const directClone = ConfigTagNode.clone(source) as ConfigTagNode;
+              expect(directClone.__tag).toBe('custom');
+              // Going through $cloneWithProperties must remain correct too.
+              const wrapperClone = $cloneWithProperties(source);
+              expect(wrapperClone.__tag).toBe('custom');
+            },
+            {discrete: true},
+          );
+        });
+        // afterCloneFrom is not guaranteed idempotent — some nodes accumulate
+        // state there (e.g. incrementing a version counter). It must therefore
+        // run exactly once per clone regardless of call path, so the direct-call
+        // fix above must NOT cause $cloneWithProperties to double-apply it.
+        test('afterCloneFrom runs exactly once for auto-synthesized clone', () => {
+          class ConfigVersionNode extends ElementNode {
+            __version: number = 0;
+            $config() {
+              return this.config('config-version', {extends: ElementNode});
+            }
+            afterCloneFrom(node: this): void {
+              super.afterCloneFrom(node);
+              this.__version = node.__version + 1;
+            }
+          }
+          const editor = createEditor({
+            nodes: [ConfigVersionNode],
+            onError(err) {
+              throw err;
+            },
+          });
+          editor.update(
+            () => {
+              const source = $create(ConfigVersionNode);
+              $getRoot().append(source);
+              expect(source.__version).toBe(0);
+              // One clone => exactly one afterCloneFrom => version + 1.
+              const cloned = $cloneWithProperties(source);
+              expect(cloned.__version).toBe(1);
+            },
+            {discrete: true},
+          );
+        });
+        // Guards the reentrancy concern with the auto-clone fix: a direct
+        // clone of one auto-synthesized node performed from within another
+        // node's clone/afterCloneFrom logic must still copy its own source
+        // properties. The signal that suppresses the wrapper-driven
+        // afterCloneFrom must be per-call (not a shared/module-global flag),
+        // otherwise a nested direct clone would wrongly inherit the outer
+        // node's "skip" state and silently drop its properties.
+        test('reentrant direct clone during another clone preserves properties', () => {
+          class InnerTagNode extends ElementNode {
+            __tag: string = 'default';
+            $config() {
+              return this.config('inner-tag', {extends: ElementNode});
+            }
+            afterCloneFrom(node: this): void {
+              super.afterCloneFrom(node);
+              this.__tag = node.__tag;
+            }
+            setTag(tag: string): this {
+              const self = this.getWritable();
+              self.__tag = tag;
+              return self;
+            }
+          }
+          class OuterNode extends ElementNode {
+            // Populated during clone by directly cloning `__templateSource`.
+            __reentrantClone: InnerTagNode | null = null;
+            __templateSource: InnerTagNode | null = null;
+            $config() {
+              return this.config('outer-reentrant', {extends: ElementNode});
+            }
+            afterCloneFrom(node: this): void {
+              super.afterCloneFrom(node);
+              // Reentrant DIRECT clone of a different auto-synthesized node,
+              // performed while this OuterNode is itself being cloned.
+              if (node.__templateSource) {
+                this.__reentrantClone = InnerTagNode.clone(
+                  node.__templateSource,
+                ) as InnerTagNode;
+              }
+            }
+            setTemplateSource(source: InnerTagNode): this {
+              const self = this.getWritable();
+              self.__templateSource = source;
+              return self;
+            }
+          }
+          const editor = createEditor({
+            nodes: [InnerTagNode, OuterNode],
+            onError(err) {
+              throw err;
+            },
+          });
+          editor.update(
+            () => {
+              const inner = $create(InnerTagNode).setTag('custom');
+              const outer = $create(OuterNode).setTemplateSource(inner);
+              $getRoot().append(inner, outer);
+              const clonedOuter = $cloneWithProperties(outer);
+              // The reentrant direct clone must have copied inner's tag.
+              expect(clonedOuter.__reentrantClone).not.toBeNull();
+              expect(clonedOuter.__reentrantClone!.__tag).toBe('custom');
+            },
+            {discrete: true},
+          );
+        });
       });
     },
     {
       namespace: '',
-      nodes: [LexicalNode, TestNode, InlineDecoratorNode],
+      nodes: [LexicalNode, TestNode, InlineDecoratorNode, BlockDecoratorNode],
       theme: {},
     },
   );
@@ -1642,7 +1803,7 @@ describe('Element-anchored selection on old parent (#6031)', () => {
     act: Mover;
     actNoRestore: Mover | null;
   };
-  const methods: ReadonlyArray<MethodSpec> = [
+  const methods: readonly MethodSpec[] = [
     {
       act: (target, mover) => target.insertBefore(mover),
       actNoRestore: (target, mover) => target.insertBefore(mover, false),
@@ -1818,6 +1979,12 @@ describe('Element-anchored selection on old parent (#6031)', () => {
         ({actNoRestore}) => {
           const {editor} = testEnv;
           let sourceKey = '';
+          // Skipping the shift leaves the offset (3) past the parent's new
+          // child count (2), so applying the selection to the DOM throws an
+          // IndexSizeError that the reconciler catches and warns about.
+          const mockWarning = vi
+            .spyOn(console, 'warn')
+            .mockImplementation(() => {});
           editor.update(
             () => {
               const refs = {} as Refs;
@@ -1828,6 +1995,8 @@ describe('Element-anchored selection on old parent (#6031)', () => {
             },
             {discrete: true},
           );
+          expect(mockWarning).toHaveBeenCalledWith(expect.any(DOMException));
+          mockWarning.mockRestore();
           editor.read(() => {
             const sel = $getSelection();
             invariant($isRangeSelection(sel));
@@ -2100,6 +2269,109 @@ describe('LexicalNode.$config() without registration', () => {
     }
   });
 
+  test('subclass static getType() is not shadowed by a superclass synthesized getType', () => {
+    // Regression for the $config() protocol (#8640): getStaticNodeConfig
+    // synthesizes `klass.getType = () => ownNodeType` for a class that derives
+    // its type from $config(). If the superclass is resolved first, that
+    // synthesized closure lives as an *own* static on the superclass. A
+    // subclass that has not yet had its own getType synthesized then *inherits*
+    // that closure via the prototype chain and returns the SUPERCLASS's
+    // hardcoded type. In an editor this makes the subclass register under the
+    // superclass's type and collide with it (e.g. CodeHighlightNode/HashtagNode
+    // resolving to 'text' and clashing with the registered TextNode).
+    class ParentConfigNode extends TextNode {
+      $config() {
+        return this.config('parent-config-node', {extends: TextNode});
+      }
+    }
+    class ChildConfigNode extends ParentConfigNode {
+      $config() {
+        return this.config('child-config-node', {extends: ParentConfigNode});
+      }
+    }
+    class SiblingConfigNode extends ParentConfigNode {
+      $config() {
+        return this.config('sibling-config-node', {extends: ParentConfigNode});
+      }
+    }
+
+    // Resolve the parent FIRST so its getType() is synthesized as an own
+    // static, then read the subclasses (which would otherwise inherit it).
+    expect(ParentConfigNode.getType()).toBe('parent-config-node');
+    expect(ChildConfigNode.getType()).toBe('child-config-node');
+    expect(SiblingConfigNode.getType()).toBe('sibling-config-node');
+
+    // Idempotent: repeated reads keep returning each class's own type, and
+    // reading the parent again does not get poisoned by the children.
+    expect(ParentConfigNode.getType()).toBe('parent-config-node');
+    expect(ChildConfigNode.getType()).toBe('child-config-node');
+  });
+
+  test('subclass static getType() resolves correctly when read before the superclass', () => {
+    // The reverse ordering of the regression above: reading the subclass first
+    // must also stay correct and must not poison the superclass.
+    class OuterConfigNode extends TextNode {
+      $config() {
+        return this.config('outer-config-node', {extends: TextNode});
+      }
+    }
+    class InnerConfigNode extends OuterConfigNode {
+      $config() {
+        return this.config('inner-config-node', {extends: OuterConfigNode});
+      }
+    }
+
+    expect(InnerConfigNode.getType()).toBe('inner-config-node');
+    expect(OuterConfigNode.getType()).toBe('outer-config-node');
+    expect(InnerConfigNode.getType()).toBe('inner-config-node');
+  });
+
+  test('synthesized getType() inherited as an own static on a subclass does not recurse (#8867 follow-up)', () => {
+    // Regression for a stack-overflow that only reproduces under *compiled*
+    // class output (e.g. Meta's www bundle), where a superclass's synthesized
+    // getType() closure can end up as an *own* static on a subclass whose
+    // identity differs from the closure's captured `synthesizedForKlass`.
+    //
+    // Pre-fix cycle:
+    //   getStaticNodeConfig(Sub)  -> calls Sub.getType() (own, synthesized)
+    //     -> closure sees `this !== synthesizedForKlass` -> LexicalNode.getType.call(Sub)
+    //       -> getStaticNodeConfig(Sub) -> ... RangeError: Maximum call stack size exceeded
+    //
+    // Native ES classes don't inherit statics as own properties, so this must
+    // be constructed explicitly to mirror the compiled shape.
+    class ParentSynthNode extends TextNode {
+      $config() {
+        return this.config('parent-synth-node', {extends: TextNode});
+      }
+    }
+    class ChildSynthNode extends ParentSynthNode {
+      $config() {
+        return this.config('child-synth-node', {extends: ParentSynthNode});
+      }
+    }
+
+    // Force the parent's getType() to be synthesized as an own static.
+    expect(ParentSynthNode.getType()).toBe('parent-synth-node');
+    const parentSynthesizedGetType = Object.getOwnPropertyDescriptor(
+      ParentSynthNode,
+      'getType',
+    );
+    expect(parentSynthesizedGetType).toBeDefined();
+
+    // Simulate the compiled bundle copying that synthesized closure down onto
+    // the subclass as an OWN static (its captured `synthesizedForKlass` is
+    // still ParentSynthNode, not ChildSynthNode).
+    Object.defineProperty(ChildSynthNode, 'getType', {
+      configurable: true,
+      value: (parentSynthesizedGetType as PropertyDescriptor).value,
+      writable: true,
+    });
+
+    // Must not recurse; must resolve the child's own $config-derived type.
+    expect(() => ChildSynthNode.getType()).not.toThrow();
+    expect(ChildSynthNode.getType()).toBe('child-synth-node');
+  });
+
   test('abstract base class declares shared $config under a Symbol key', () => {
     // An abstract base class has no concrete node `type`, so it publishes the
     // configuration it shares with its subclasses (here a $transform) under a
@@ -2193,11 +2465,9 @@ describe('LexicalNode.$config() without registration', () => {
         node.getPreviousSibling(),
       ).toEqualTypeOf<LexicalNode | null>();
       expectTypeOf(node.getNextSibling()).toEqualTypeOf<LexicalNode | null>();
-      expectTypeOf(node.getPreviousSiblings()).toEqualTypeOf<
-        Array<LexicalNode>
-      >();
-      expectTypeOf(node.getNextSiblings()).toEqualTypeOf<Array<LexicalNode>>();
-      expectTypeOf(element.getChildren()).toEqualTypeOf<Array<LexicalNode>>();
+      expectTypeOf(node.getPreviousSiblings()).toEqualTypeOf<LexicalNode[]>();
+      expectTypeOf(node.getNextSiblings()).toEqualTypeOf<LexicalNode[]>();
+      expectTypeOf(element.getChildren()).toEqualTypeOf<LexicalNode[]>();
       expectTypeOf(
         element.getChildAtIndex(0),
       ).toEqualTypeOf<LexicalNode | null>();

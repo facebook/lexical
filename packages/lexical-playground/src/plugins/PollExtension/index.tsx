@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {$wrapNodeInElement} from '@lexical/utils';
 import {
@@ -18,10 +16,10 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
-  LexicalEditor,
+  type LexicalCommand,
+  type LexicalEditor,
 } from 'lexical';
-import {useState} from 'react';
+import {type JSX, useState} from 'react';
 
 import {
   $createPollNode,
@@ -56,12 +54,14 @@ const PollImportRule = defineImportRule({
 
 export const PollExtension = defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {rules: [PollImportRule]}),
+    configExtension(DOMImportExtension, {
+      rules: [PollImportRule],
+    }),
   ],
   name: '@lexical/playground/Poll',
   nodes: [PollNode],
   register: editor =>
-    editor.registerCommand<string>(
+    editor.registerCommand(
       INSERT_POLL_COMMAND,
       payload => {
         const pollNode = $createPollNode(payload, [
@@ -94,7 +94,12 @@ export function InsertPollDialog({
 
   return (
     <>
-      <TextInput label="Question" onChange={setQuestion} value={question} />
+      <TextInput
+        autoFocus={true}
+        label="Question"
+        onChange={setQuestion}
+        value={question}
+      />
       <DialogActions>
         <Button disabled={question.trim() === ''} onClick={onClick}>
           Confirm

@@ -13,7 +13,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
 
 import {$createYouTubeNode, YouTubeNode} from '../../nodes/YouTubeNode';
@@ -32,12 +32,14 @@ const YouTubeImportRule = defineImportRule({
 
 export const YouTubeExtension = defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {rules: [YouTubeImportRule]}),
+    configExtension(DOMImportExtension, {
+      rules: [YouTubeImportRule],
+    }),
   ],
   name: '@lexical/playground/YouTube',
   nodes: [YouTubeNode],
   register: editor =>
-    editor.registerCommand<string>(
+    editor.registerCommand(
       INSERT_YOUTUBE_COMMAND,
       payload => {
         const youTubeNode = $createYouTubeNode(payload);

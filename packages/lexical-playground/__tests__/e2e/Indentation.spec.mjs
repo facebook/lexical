@@ -112,7 +112,9 @@ test.describe('Identation', () => {
           data-gutter="1">
           <span data-lexical-text="true">code</span>
         </code>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
           dir="auto">
@@ -129,7 +131,9 @@ test.describe('Identation', () => {
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -188,7 +192,7 @@ test.describe('Identation', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
@@ -213,7 +217,7 @@ test.describe('Identation', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -279,7 +283,7 @@ test.describe('Identation', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
@@ -304,7 +308,7 @@ test.describe('Identation', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -364,7 +368,7 @@ test.describe('Identation', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
@@ -389,7 +393,7 @@ test.describe('Identation', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -400,13 +404,13 @@ test.describe('Identation', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">foo</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">bar</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
@@ -430,8 +434,8 @@ test.describe('Identation', () => {
           data-gutter="1">
           <span data-lexical-text="true">code</span>
         </code>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
-          <br />
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
@@ -443,14 +447,14 @@ test.describe('Identation', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
-          <br />
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -465,7 +469,7 @@ test.describe('Identation', () => {
     await clickIndentButton(page, MAX_INDENT);
 
     const expectedHTML =
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent" dir="auto" style="padding-inline-start: calc(6 * var(--lexical-indent-base-value, 40px))"><br /></p>';
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent" dir="auto" style="padding-inline-start: calc(6 * var(--lexical-indent-base-value, 40px))"><br data-lexical-managed-linebreak="true" /></p>';
 
     await assertHTML(page, expectedHTML);
     await clickIndentButton(page, MAX_INDENT);
@@ -515,7 +519,7 @@ test.describe('Identation', () => {
                                   <li
                                     class="PlaygroundEditorTheme__listItem"
                                     value="1">
-                                    <br />
+                                    <br data-lexical-managed-linebreak="true" />
                                   </li>
                                 </ul>
                               </li>
@@ -567,7 +571,7 @@ test.describe('Identation', () => {
                                   <li
                                     class="PlaygroundEditorTheme__listItem"
                                     value="1">
-                                    <br />
+                                    <br data-lexical-managed-linebreak="true" />
                                   </li>
                                 </ul>
                               </li>
@@ -758,7 +762,7 @@ test.describe('Identation', () => {
                             <span data-lexical-text="true">side</span>
                           </li>
                           <li class="PlaygroundEditorTheme__listItem" value="2">
-                            <br />
+                            <br data-lexical-managed-linebreak="true" />
                           </li>
                         </ul>
                       </li>
@@ -829,7 +833,7 @@ test.describe('Identation', () => {
                                   <li
                                     class="PlaygroundEditorTheme__listItem"
                                     value="3">
-                                    <br />
+                                    <br data-lexical-managed-linebreak="true" />
                                   </li>
                                 </ul>
                               </li>
@@ -906,7 +910,7 @@ test.describe('Identation', () => {
                                   <li
                                     class="PlaygroundEditorTheme__listItem"
                                     value="6">
-                                    <br />
+                                    <br data-lexical-managed-linebreak="true" />
                                   </li>
                                 </ul>
                               </li>
@@ -983,7 +987,7 @@ test.describe('Identation', () => {
                                   <li
                                     class="PlaygroundEditorTheme__listItem"
                                     value="6">
-                                    <br />
+                                    <br data-lexical-managed-linebreak="true" />
                                   </li>
                                 </ul>
                               </li>

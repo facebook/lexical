@@ -24,7 +24,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
 
 import {
@@ -40,9 +40,17 @@ export const INSERT_DATETIME_COMMAND: LexicalCommand<CommandPayload> =
   createCommand('INSERT_DATETIME_COMMAND');
 
 const DateTimeRule = defineImportRule({
-  $import: (ctx, el) => {
+  $import: (ctx, el, $next) => {
     const dateTimeValue = el.getAttribute('data-lexical-datetime')!;
-    const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
+    const parsedDate = Date.parse(dateTimeValue);
+    // An unparseable attribute would build a node around an Invalid Date,
+    // whose dateTime state cannot be serialized (toISOString throws). Fall
+    // through and keep the element's own content instead, the same way
+    // GoogleDocsDateRule below does.
+    if (isNaN(parsedDate)) {
+      return $next();
+    }
+    const node = $createDateTimeNode(new Date(parsedDate));
     const [firstChild] = ctx.$importChildren(el);
     if ($isTextNode(firstChild)) {
       node.setFormat(firstChild.getFormat());
@@ -93,7 +101,7 @@ export const DateTimeExtension = defineExtension({
   name: '@lexical/playground/DateTime',
   nodes: [DateTimeNode],
   register: editor =>
-    editor.registerCommand<CommandPayload>(
+    editor.registerCommand(
       INSERT_DATETIME_COMMAND,
       payload => {
         const {dateTime} = payload;

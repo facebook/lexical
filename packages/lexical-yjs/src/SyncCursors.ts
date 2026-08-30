@@ -6,13 +6,10 @@
  *
  */
 
-import type {
-  BaseSelection,
-  LexicalNode,
-  NodeKey,
-  NodeMap,
-  Point,
-} from 'lexical';
+import type {Provider, UserState} from '.';
+import type {CollabDecoratorNode} from './CollabDecoratorNode';
+import type {CollabLineBreakNode} from './CollabLineBreakNode';
+import type {CollabV2Mapping} from './CollabV2Mapping';
 
 import invariant from '@lexical/internal/invariant';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
@@ -23,31 +20,34 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  type BaseSelection,
+  getRootOwnerDocument,
+  isDOMShadowRoot,
+  type LexicalNode,
+  type NodeKey,
+  type NodeMap,
+  type Point,
   setDOMStyleObject,
 } from 'lexical';
 import {
-  AbsolutePosition,
+  type AbsolutePosition,
   compareRelativePositions,
   createAbsolutePositionFromRelativePosition,
   createRelativePositionFromTypeIndex,
-  RelativePosition,
+  type RelativePosition,
   XmlElement,
-  XmlText,
+  type XmlText,
 } from 'yjs';
 
-import {Provider, UserState} from '.';
 import {
-  AnyBinding,
+  type AnyBinding,
   type BaseBinding,
   type Binding,
   type BindingV2,
   isBindingV1,
 } from './Bindings';
-import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
-import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
-import {CollabV2Mapping} from './CollabV2Mapping';
 import {getPositionFromElementAndOffset} from './Utils';
 
 export type CursorSelection = {
@@ -66,7 +66,7 @@ export type CursorSelection = {
   highlightName: string;
   name: HTMLSpanElement;
   /** Legacy fallback only: absolutely-positioned rect spans, one per visual rect. */
-  selections: Array<HTMLElement>;
+  selections: HTMLElement[];
 };
 
 const SUPPORTS_CSS_HIGHLIGHTS =
@@ -75,22 +75,50 @@ const SUPPORTS_CSS_HIGHLIGHTS =
   'highlights' in CSS;
 
 /**
- * Resolve the per-binding stylesheet that hosts `::highlight(...)` rules.
+ * The subset of a binding that {@link getCursorHighlightSheet} reads. Declared
+ * structurally so callers pass a full binding and tests pass a lightweight stub,
+ * neither needing a cast.
+ *
+ * @internal
  */
-function getCursorHighlightSheet(binding: BaseBinding): CSSStyleSheet {
-  if (binding.cursorHighlightSheet === null) {
-    const rootElement = binding.editor.getRootElement();
-    const ownerDocument =
-      rootElement !== null ? rootElement.ownerDocument : document;
+export interface CursorHighlightSheetBinding {
+  cursorHighlightSheet: CSSStyleSheet | null;
+  editor: {getRootElement: () => HTMLElement | null};
+}
+
+/**
+ * Resolve the per-binding stylesheet that hosts `::highlight(...)` rules,
+ * re-adopting it into the editor's current tree scope (document or shadow
+ * root) on every call.
+ *
+ * The editor root can move between the light DOM and a shadow root (a
+ * shadow-DOM toggle) without recreating the binding, and `::highlight()` rules
+ * only apply in the tree scope that owns the highlighted ranges, so the sheet
+ * is re-homed each call. A leftover adoption in a previously-used scope is
+ * harmless: shadow encapsulation means a rule there cannot match ranges in the
+ * new scope.
+ *
+ * @internal Exported for tests; not part of the package's public API.
+ */
+export function getCursorHighlightSheet(
+  binding: CursorHighlightSheetBinding,
+): CSSStyleSheet {
+  const rootElement = binding.editor.getRootElement();
+  const ownerDocument = getRootOwnerDocument(rootElement);
+  let sheet = binding.cursorHighlightSheet;
+  if (sheet === null) {
     const view = ownerDocument.defaultView || window;
-    const sheet = new view.CSSStyleSheet();
-    ownerDocument.adoptedStyleSheets = [
-      ...ownerDocument.adoptedStyleSheets,
-      sheet,
-    ];
+    sheet = new view.CSSStyleSheet();
     binding.cursorHighlightSheet = sheet;
   }
-  return binding.cursorHighlightSheet;
+  const root = rootElement !== null ? rootElement.getRootNode() : null;
+  const target: Document | ShadowRoot = isDOMShadowRoot(root)
+    ? root
+    : ownerDocument;
+  if (!target.adoptedStyleSheets.includes(sheet)) {
+    target.adoptedStyleSheets = [...target.adoptedStyleSheets, sheet];
+  }
+  return sheet;
 }
 
 function addCursorHighlightRule(
@@ -214,19 +242,34 @@ function createRelativePositionV2(
     return createRelativePositionFromTypeIndex(yType, adjustedOffset, assoc);
   } else if (point.type === 'element') {
     invariant($isElementNode(node), 'Element point must be an element node');
-    let i = 0;
+    // `offset` counts lexical children, but the index handed to yjs counts
+    // yjs children, and normalizeNodeContent collapses a run of adjacent
+    // TextNodes into a single XmlText child. Advance a lexical cursor to
+    // `offset` while counting each text run as one yjs child, mirroring
+    // $getNodeAndOffsetV2, which consumes one yjs offset per child and then
+    // skips the remainder of a text run.
+    //
+    // Only offsets that fall on a run boundary round trip exactly: yjs has no
+    // index for a position *inside* a collapsed run, so an element point in
+    // the middle of one (children [Text, Text], offset 1) necessarily decodes
+    // back to the end of that run. That is inherent to the serialization, not
+    // to this loop.
+    let yIndex = 0;
+    let lexicalIndex = 0;
     let child = node.getFirstChild();
-    while (child !== null && i < offset) {
+    while (child !== null && lexicalIndex < offset) {
+      let nextSibling = child.getNextSibling();
+      lexicalIndex++;
       if ($isTextNode(child)) {
-        let nextSibling = child.getNextSibling();
         while ($isTextNode(nextSibling)) {
           nextSibling = nextSibling.getNextSibling();
+          lexicalIndex++;
         }
       }
-      i++;
-      child = child.getNextSibling();
+      yIndex++;
+      child = nextSibling;
     }
-    return createRelativePositionFromTypeIndex(yType, i, assoc);
+    return createRelativePositionFromTypeIndex(yType, yIndex, assoc);
   }
   return null;
 }
@@ -307,7 +350,8 @@ function createCursorSelection(
   } = {},
 ): CursorSelection {
   const color = cursor.color;
-  const caret = document.createElement('span');
+  const ownerDocument = getRootOwnerDocument(binding.editor.getRootElement());
+  const caret = ownerDocument.createElement('span');
   if (theme.cursor) {
     caret.className = theme.cursor;
     setDOMStyleObject(caret.style, {
@@ -328,7 +372,7 @@ function createCursorSelection(
       'z-index': '10',
     });
   }
-  const name = document.createElement('span');
+  const name = ownerDocument.createElement('span');
   name.textContent = cursor.name;
   if (theme.cursorName) {
     name.className = theme.cursorName;
@@ -399,6 +443,7 @@ function updateCursor(
     return;
   }
 
+  const ownerDocument = getRootOwnerDocument(rootElement);
   const cursorsContainerOffsetParent = cursorsContainer.offsetParent;
   if (cursorsContainerOffsetParent === null) {
     return;
@@ -486,7 +531,7 @@ function updateCursor(
 
   // legacy fallback path: per-rect absolutely-positioned span
   const selections = nextSelection.selections;
-  let selectionRects: Array<DOMRect>;
+  let selectionRects: DOMRect[];
 
   // In the case of a collapsed selection on a linebreak, we need
   // to improvise as the browser will return nothing here as <br>
@@ -521,9 +566,9 @@ function updateCursor(
     let selection = selections[i];
 
     if (selection === undefined) {
-      selection = document.createElement('span');
+      selection = ownerDocument.createElement('span');
       selections[i] = selection;
-      const selectionBg = document.createElement('span');
+      const selectionBg = ownerDocument.createElement('span');
       if (theme.selectionBg) {
         selectionBg.className = theme.selectionBg;
       }
@@ -882,6 +927,17 @@ export function syncCursorPositions(
       if (cursor === undefined) {
         cursor = createCursor(name, color);
         cursors.set(clientID, cursor);
+      } else if (cursor.name !== name || cursor.color !== color) {
+        // Awareness is mutable: a peer can rename itself or change colour at
+        // any time (the React plugin republishes local state whenever its
+        // `username` / `cursorColor` props change). The name and colour are
+        // baked into the caret DOM and the ::highlight() rule when the
+        // selection is built, so drop the stale selection here and let the
+        // code below rebuild it from the new values.
+        destroyCursor(binding, cursor);
+        cursor.name = name;
+        cursor.color = color;
+        cursor.selection = null;
       }
 
       if (focusing) {

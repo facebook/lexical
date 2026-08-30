@@ -13,7 +13,7 @@ import {
   $getSelection,
   $isRangeSelection,
   defineExtension,
-  EditorState,
+  type EditorState,
   RootNode,
   safeCast,
 } from 'lexical';
@@ -25,7 +25,10 @@ export interface MaxLengthConfig {
 
 export const MaxLengthExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: safeCast<MaxLengthConfig>({disabled: true, maxLength: 30}),
+  config: safeCast<MaxLengthConfig>({
+    disabled: true,
+    maxLength: 30,
+  }),
   name: '@lexical/playground/MaxLength',
   register: (editor, config, state) =>
     effect(() => {

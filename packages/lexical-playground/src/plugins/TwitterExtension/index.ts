@@ -13,7 +13,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
 
 import {$createTweetNode, TweetNode} from '../../nodes/TweetNode';
@@ -30,12 +30,14 @@ const TweetImportRule = defineImportRule({
 
 export const TwitterExtension = defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {rules: [TweetImportRule]}),
+    configExtension(DOMImportExtension, {
+      rules: [TweetImportRule],
+    }),
   ],
   name: '@lexical/playground/Twitter',
   nodes: [TweetNode],
   register: editor =>
-    editor.registerCommand<string>(
+    editor.registerCommand(
       INSERT_TWEET_COMMAND,
       payload => {
         const tweetNode = $createTweetNode(payload);

@@ -6,7 +6,6 @@
  *
  */
 
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -17,7 +16,9 @@ import {
   COMPOSITION_START_TAG,
   defineExtension,
   type LexicalEditor,
+  mergeRegister,
   type NodeKey,
+  registerEventListener,
   type TextNode,
 } from 'lexical';
 
@@ -89,7 +90,7 @@ export const IMEExtension = defineExtension({
         composingTextNode.value = null;
         return;
       }
-      composingTextNode.value = editor.getEditorState().read(() => {
+      composingTextNode.value = editor.read('latest', () => {
         const node = $getNodeByKey(key);
         return $isTextNode(node) ? node : null;
       });
@@ -126,10 +127,11 @@ export const IMEExtension = defineExtension({
       const onCompositionEnd = () => {
         compositionKey.value = null;
       };
-      rootElem.addEventListener('compositionend', onCompositionEnd);
-      return () => {
-        rootElem.removeEventListener('compositionend', onCompositionEnd);
-      };
+      return registerEventListener(
+        rootElem,
+        'compositionend',
+        onCompositionEnd,
+      );
     });
 
     return mergeRegister(

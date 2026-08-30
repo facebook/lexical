@@ -146,14 +146,14 @@ test.describe('Grapheme deleteCharacter', () => {
               <p dir="auto">
                 <span data-lexical-text="true">${description}</span>
                 <br />
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             `
           : html`
               <p dir="auto">
                 <span data-lexical-text="true">${description}</span>
               </p>
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             `;
         const expectedGraphemeHTML = isPlainText
           ? html`

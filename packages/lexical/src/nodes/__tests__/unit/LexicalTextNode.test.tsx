@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   $createParagraphNode,
   $createTextNode,
@@ -13,16 +12,25 @@ import {
   $getRoot,
   $getSelection,
   $getState,
+  $isElementNode,
   $isNodeSelection,
+  $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
   $setState,
   createState,
-  ElementNode,
-  LexicalEditor,
-  ParagraphNode,
-  TextFormatType,
-  TextModeType,
-  TextNode,
+  IS_BOLD,
+  IS_CODE,
+  IS_HIGHLIGHT,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
+  IS_SUBSCRIPT,
+  IS_SUPERSCRIPT,
+  IS_UNDERLINE,
+  type LexicalEditor,
+  type TextFormatType,
+  type TextModeType,
+  type TextNode,
 } from 'lexical';
 import * as React from 'react';
 import {act, createRef, useEffect, useMemo} from 'react';
@@ -30,20 +38,13 @@ import {createRoot} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 import {
+  $assertNodeType,
   $createTestSegmentedNode,
   createTestEditor,
 } from '../../../__tests__/utils';
 import {
-  IS_BOLD,
   IS_CAPITALIZE,
-  IS_CODE,
-  IS_HIGHLIGHT,
-  IS_ITALIC,
   IS_LOWERCASE,
-  IS_STRIKETHROUGH,
-  IS_SUBSCRIPT,
-  IS_SUPERSCRIPT,
-  IS_UNDERLINE,
   IS_UPPERCASE,
 } from '../../../LexicalConstants';
 import {
@@ -163,11 +164,13 @@ describe('LexicalTextNode tests', () => {
         expect(textNode.getTextContent()).toBe('Text');
         expect(textNode.__text).toBe('Text');
 
-        $getRoot().getFirstChild<ElementNode>()!.append(textNode);
+        $assertNodeType($getRoot().getFirstChild(), $isElementNode).append(
+          textNode,
+        );
       });
 
       expect(
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           const root = $getRoot();
           return root.__cachedText;
         }),
@@ -184,14 +187,17 @@ describe('LexicalTextNode tests', () => {
     test('prepend node', async () => {
       await update(() => {
         const textNode = $createTextNode('World').toggleUnmergeable();
-        $getRoot().getFirstChild<ElementNode>()!.append(textNode);
+        $assertNodeType($getRoot().getFirstChild(), $isElementNode).append(
+          textNode,
+        );
       });
 
       await update(() => {
         const textNode = $createTextNode('Hello ').toggleUnmergeable();
-        const previousTextNode = $getRoot()
-          .getFirstChild<ElementNode>()!
-          .getFirstChild()!;
+        const previousTextNode = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        ).getFirstChild()!;
         previousTextNode.insertBefore(textNode);
       });
 
@@ -231,8 +237,14 @@ describe('LexicalTextNode tests', () => {
     test(`getFormatFlags(${formatFlag})`, async () => {
       await update(() => {
         const root = $getRoot();
-        const paragraphNode = root.getFirstChild<ParagraphNode>()!;
-        const textNode = paragraphNode.getFirstChild<TextNode>()!;
+        const paragraphNode = $assertNodeType(
+          root.getFirstChild(),
+          $isParagraphNode,
+        );
+        const textNode = $assertNodeType(
+          paragraphNode.getFirstChild(),
+          $isTextNode,
+        );
         const newFormat = textNode.getFormatFlags(formatFlag, null);
 
         expect(newFormat).toBe(stateFormat);
@@ -247,8 +259,14 @@ describe('LexicalTextNode tests', () => {
     test(`predicate for ${formatFlag}`, async () => {
       await update(() => {
         const root = $getRoot();
-        const paragraphNode = root.getFirstChild<ParagraphNode>()!;
-        const textNode = paragraphNode.getFirstChild<TextNode>()!;
+        const paragraphNode = $assertNodeType(
+          root.getFirstChild(),
+          $isParagraphNode,
+        );
+        const textNode = $assertNodeType(
+          paragraphNode.getFirstChild(),
+          $isTextNode,
+        );
 
         textNode.setFormat(stateFormat);
 
@@ -264,8 +282,14 @@ describe('LexicalTextNode tests', () => {
 
       await update(() => {
         const root = $getRoot();
-        const paragraphNode = root.getFirstChild<ParagraphNode>()!;
-        const textNode = paragraphNode.getFirstChild<TextNode>()!;
+        const paragraphNode = $assertNodeType(
+          root.getFirstChild(),
+          $isParagraphNode,
+        );
+        const textNode = $assertNodeType(
+          paragraphNode.getFirstChild(),
+          $isTextNode,
+        );
 
         expect(flagPredicate(textNode)).toBe(false);
 
@@ -996,7 +1020,10 @@ describe('LexicalTextNode tests', () => {
 
   test('mergeWithSibling', async () => {
     await update(() => {
-      const paragraph = $getRoot().getFirstChild<ElementNode>()!;
+      const paragraph = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isElementNode,
+      );
       const textNode1 = $createTextNode('1');
       const textNode2 = $createTextNode('2');
       const textNode3 = $createTextNode('3');

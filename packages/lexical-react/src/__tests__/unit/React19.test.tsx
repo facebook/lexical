@@ -8,7 +8,7 @@
 
 import * as React from 'react';
 import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
 const IS_REACT_19 = parseInt(React.version.split('.')[0], 10) >= 19;

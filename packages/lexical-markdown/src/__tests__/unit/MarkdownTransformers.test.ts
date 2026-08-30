@@ -40,7 +40,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   defineExtension,
-  LexicalEditor,
+  type LexicalEditor,
   UNDO_COMMAND,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
@@ -143,6 +143,24 @@ describe('LINK', () => {
     });
   });
 
+  test('a destination between angle brackets keeps the whitespace in the URL', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '[test](<https://example.com/a b>)');
+
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+
+      expect(children).toHaveLength(1);
+
+      const linkNode = children[0];
+      assert($isLinkNode(linkNode), 'First child must be a LinkNode');
+      expect(linkNode.getTextContent()).toBe('test');
+      expect(linkNode.getURL()).toBe('https://example.com/a b');
+    });
+  });
+
   test('markdown link should not be created inside another link.', async () => {
     using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
     editor.update(
@@ -217,18 +235,17 @@ describe('BLOCK QUOTE + HEADING', () => {
     });
   });
 
-  test('typing "> # SOME HEADER" replaces the quote with a heading by default', () => {
+  test('typing "> # SOME HEADER" declines the heading by default', () => {
     const editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
     typeMarkdown(editor, '> # SOME HEADER');
     editor.read(() => {
       const root = $getRoot();
       const firstChild = root.getFirstChildOrThrow();
       assert(
-        $isHeadingNode(firstChild),
-        'Root child must be a HeadingNode (default behavior)',
+        $isQuoteNode(firstChild),
+        'Root child must be a QuoteNode (default behavior)',
       );
-      expect(firstChild.getTag()).toBe('h1');
-      expect(firstChild.getTextContent()).toBe('SOME HEADER');
+      expect(firstChild.getTextContent()).toBe('# SOME HEADER');
     });
   });
 
@@ -440,6 +457,63 @@ describe('CODE_SPAN_PRECEDENCE', () => {
   });
 });
 
+describe('WRAPPING_PRESERVES_FORMAT', () => {
+  test('**...** around already-bold text preserves bold', () => {
+    // https://github.com/facebook/lexical/issues/8727
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    editor.update(
+      () => {
+        const textNode = $createTextNode('**bold*').toggleFormat('bold');
+        $getRoot()
+          .selectEnd()
+          .insertNodes([$createParagraphNode().append(textNode)]);
+        textNode.selectEnd().setFormat(textNode.getFormat());
+      },
+      {discrete: true},
+    );
+    typeMarkdown(editor, '*');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      expect(children).toHaveLength(1);
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('bold');
+      expect(textNode.hasFormat('bold')).toBe(true);
+    });
+  });
+
+  test('**...** around mixed-format text formats every wrapped node bold', () => {
+    // https://github.com/facebook/lexical/issues/8727
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    editor.update(
+      () => {
+        const plainNode = $createTextNode('**foo');
+        const boldNode = $createTextNode('bar*');
+        boldNode.toggleFormat('bold');
+        $getRoot()
+          .selectEnd()
+          .insertNodes([
+            $createParagraphNode().append(plainNode).append(boldNode),
+          ]);
+        boldNode.selectEnd().setFormat(boldNode.getFormat());
+      },
+      {discrete: true},
+    );
+    typeMarkdown(editor, '*');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      expect(paragraph.getTextContent()).toBe('foobar');
+      const textNodes = paragraph
+        .getChildren()
+        .filter(node => $isTextNode(node));
+      expect(textNodes.every(node => node.hasFormat('bold'))).toBe(true);
+    });
+  });
+});
+
 describe('HISTORY', () => {
   test('undo after markdown format transform preserves typed markdown text', () => {
     using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
@@ -447,7 +521,7 @@ describe('HISTORY', () => {
 
     editor.update(
       () => {
-        editor.dispatchCommand(UNDO_COMMAND, undefined);
+        editor.dispatchCommand(UNDO_COMMAND);
       },
       {discrete: true},
     );

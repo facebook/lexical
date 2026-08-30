@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {
   CoreImportExtension,
   defineImportRule,
@@ -18,11 +16,11 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalTypeaheadMenuPlugin,
   MenuOption,
-  MenuTextMatch,
+  type MenuTextMatch,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
-import {configExtension, defineExtension, TextNode} from 'lexical';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {configExtension, defineExtension, type TextNode} from 'lexical';
+import {type JSX, useCallback, useEffect, useMemo, useState} from 'react';
 
 import {$createMentionNode, MentionNode} from '../../nodes/MentionNode';
 
@@ -44,7 +42,9 @@ export const MentionsExtension = defineExtension({
   // to the import baseline.
   dependencies: [
     CoreImportExtension,
-    configExtension(DOMImportExtension, {rules: [MentionImportRule]}),
+    configExtension(DOMImportExtension, {
+      rules: [MentionImportRule],
+    }),
   ],
   name: '@lexical/playground/Mentions',
   nodes: [MentionNode],
@@ -522,7 +522,7 @@ const dummyMentionsData = [
 ];
 
 const dummyLookupService = {
-  search(string: string, callback: (results: Array<string>) => void): void {
+  search(string: string, callback: (results: string[]) => void): void {
     setTimeout(() => {
       const results = dummyMentionsData.filter(mention =>
         mention.toLowerCase().includes(string.toLowerCase()),
@@ -533,7 +533,7 @@ const dummyLookupService = {
 };
 
 function useMentionLookupService(mentionString: string | null) {
-  const [results, setResults] = useState<Array<string>>([]);
+  const [results, setResults] = useState<string[]>([]);
 
   useEffect(() => {
     const cachedResults = mentionsCache.get(mentionString);

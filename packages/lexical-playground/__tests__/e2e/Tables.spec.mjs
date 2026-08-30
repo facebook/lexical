@@ -46,8 +46,6 @@ import {
   insertTableColumnBefore,
   insertTableRowAbove,
   insertTableRowBelow,
-  IS_COLLAB,
-  IS_LINUX,
   IS_TABLE_HORIZONTAL_SCROLL,
   mergeTableCells,
   pasteFromClipboard,
@@ -87,10 +85,10 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('c');
 }
 
-const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0] : [];
+const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0, 0] : [];
 const nthTableSelector = nth =>
   IS_TABLE_HORIZONTAL_SCROLL
-    ? `div.PlaygroundEditorTheme__tableScrollableWrapper:nth-of-type(${nth}) > table`
+    ? `div:nth-of-type(${nth}) > div.PlaygroundEditorTheme__tableScrollableWrapper > table`
     : `table:nth-of-type(${nth})`;
 
 test.describe('Tables', () => {
@@ -108,7 +106,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -116,22 +114,22 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -274,7 +272,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -285,19 +283,19 @@ test.describe('Tables', () => {
               <p dir="auto"><span data-lexical-text="true">abc</span></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -484,7 +482,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -492,18 +490,18 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
@@ -531,7 +529,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -539,22 +537,22 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -589,7 +587,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -597,18 +595,18 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
@@ -638,7 +636,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -646,18 +644,18 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
@@ -677,7 +675,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -685,18 +683,18 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
@@ -756,7 +754,7 @@ test.describe('Tables', () => {
       await assertHTML(
         page,
         html`
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
           <table dir="auto">
             <colgroup>
               <col style="width: 92px" />
@@ -764,22 +762,22 @@ test.describe('Tables', () => {
             </colgroup>
             <tr dir="auto">
               <th dir="auto">
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               </th>
               <th dir="auto">
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               </th>
             </tr>
             <tr dir="auto">
               <th dir="auto">
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               </th>
               <td dir="auto">
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               </td>
             </tr>
           </table>
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         `,
         undefined,
         {ignoreClasses: true},
@@ -938,7 +936,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -968,7 +966,7 @@ test.describe('Tables', () => {
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -1011,7 +1009,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -1042,17 +1040,17 @@ test.describe('Tables', () => {
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true, ignoreInlineStyles: true},
@@ -1087,7 +1085,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -1117,7 +1115,7 @@ test.describe('Tables', () => {
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -1180,7 +1178,7 @@ test.describe('Tables', () => {
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -1252,7 +1250,7 @@ test.describe('Tables', () => {
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -1345,7 +1343,7 @@ test.describe('Tables', () => {
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -1378,7 +1376,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -1387,10 +1385,10 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
               <p dir="auto"><span data-lexical-text="true">cc</span></p>
@@ -1398,17 +1396,17 @@ test.describe('Tables', () => {
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
               <p dir="auto"><span data-lexical-text="true">f</span></p>
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -1434,7 +1432,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -1442,14 +1440,14 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th class="PlaygroundEditorTheme__tableCellSelected" dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th class="PlaygroundEditorTheme__tableCellSelected" dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -1483,28 +1481,28 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th class="PlaygroundEditorTheme__tableCellSelected" dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th class="PlaygroundEditorTheme__tableCellSelected" dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th class="PlaygroundEditorTheme__tableCellSelected" dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th class="PlaygroundEditorTheme__tableCellSelected" dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td class="PlaygroundEditorTheme__tableCellSelected" dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td class="PlaygroundEditorTheme__tableCellSelected" dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -1530,7 +1528,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -1556,11 +1556,15 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     // Select all but from the table
@@ -1572,7 +1576,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -1589,7 +1595,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -1599,14 +1605,14 @@ test.describe('Tables', () => {
             <th dir="auto">
               <p dir="auto"><span data-lexical-text="true">123</span></p>
               <hr contenteditable="false" data-lexical-decorator="true" />
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -1640,7 +1646,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -1658,7 +1666,7 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
           </tr>
@@ -1667,7 +1675,7 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
@@ -1678,7 +1686,9 @@ test.describe('Tables', () => {
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -1705,7 +1715,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -1731,7 +1743,9 @@ test.describe('Tables', () => {
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -1739,7 +1753,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -1756,11 +1772,15 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -1798,7 +1818,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -1808,7 +1830,9 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
               ${collapsibleOpeningTag}
               <summary class="Collapsible__title" dir="auto">
                 <p class="PlaygroundEditorTheme__paragraph">
@@ -1820,26 +1844,32 @@ test.describe('Tables', () => {
                   <span data-lexical-text="true">123</span>
                 </p>
                 <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
+                  <br data-lexical-managed-linebreak="true" />
                 </p>
                 <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
+                  <br data-lexical-managed-linebreak="true" />
                 </p>
                 <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
+                  <br data-lexical-managed-linebreak="true" />
                 </p>
               </div>
               ${collapsibleClosingTag}
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -1847,7 +1877,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -1857,7 +1889,9 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
               ${collapsibleOpeningTag}
               <summary class="Collapsible__title" dir="auto">
                 <p class="PlaygroundEditorTheme__paragraph">
@@ -1866,20 +1900,26 @@ test.describe('Tables', () => {
               </summary>
               <div class="Collapsible__content" dir="auto">
                 <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
+                  <br data-lexical-managed-linebreak="true" />
                 </p>
               </div>
               ${collapsibleClosingTag}
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -1890,10 +1930,6 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    test.fixme(
-      isCollab && IS_LINUX && browserName === 'firefox',
-      'Flaky on Linux + Collab',
-    );
     test.skip(isPlainText);
     await initialize({isCollab, page});
 
@@ -1924,7 +1960,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -1937,34 +1975,48 @@ test.describe('Tables', () => {
               colspan="2"
               dir="auto"
               rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -2004,7 +2056,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 142px" />
@@ -2018,21 +2072,21 @@ test.describe('Tables', () => {
               dir="auto"
               rowspan="2">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
@@ -2041,22 +2095,24 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -2068,7 +2124,6 @@ test.describe('Tables', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
-    test.fixme(IS_COLLAB && IS_LINUX && browserName === 'firefox');
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -2098,7 +2153,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -2111,34 +2168,48 @@ test.describe('Tables', () => {
               colspan="2"
               dir="auto"
               rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto" style="height: 89px">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
       undefined,
       {
@@ -2178,7 +2249,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -2189,7 +2262,9 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -2204,14 +2279,18 @@ test.describe('Tables', () => {
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await unmergeTableCell(page);
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -2222,7 +2301,9 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -2237,11 +2318,15 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -2270,7 +2355,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -2281,7 +2368,9 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -2302,25 +2391,33 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell"
               colspan="2"
               dir="auto"
               rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -2328,7 +2425,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -2339,7 +2438,9 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -2360,30 +2461,44 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -2462,7 +2577,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px;" />
@@ -2476,35 +2593,35 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
           </tr>
@@ -2513,27 +2630,27 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
@@ -2542,7 +2659,7 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td
@@ -2571,7 +2688,7 @@ test.describe('Tables', () => {
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
@@ -2580,12 +2697,12 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
@@ -2594,17 +2711,19 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -2612,7 +2731,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px;" />
@@ -2626,35 +2747,35 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
           </tr>
@@ -2663,27 +2784,27 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
@@ -2692,7 +2813,7 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
@@ -2717,46 +2838,17 @@ test.describe('Tables', () => {
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
-              </p>
-            </td>
-          </tr>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
-              </p>
-            </th>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
-              </p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
-              </p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
-              </p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
@@ -2765,32 +2857,63 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -2828,7 +2951,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -2840,38 +2965,54 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               colspan="2"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await click(page, '.PlaygroundEditorTheme__tableCell');
@@ -2883,7 +3024,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -2980,7 +3123,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -2992,38 +3137,54 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               colspan="2"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await click(page, ':nth-match(.PlaygroundEditorTheme__tableCell, 7)');
@@ -3096,7 +3257,9 @@ test.describe('Tables', () => {
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -3129,7 +3292,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -3140,24 +3305,32 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell"
@@ -3182,11 +3355,15 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -3235,7 +3412,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
           dir="auto">
@@ -3250,7 +3429,7 @@ test.describe('Tables', () => {
               dir="auto"
               rowspan="2">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
@@ -3258,7 +3437,7 @@ test.describe('Tables', () => {
               colspan="2"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
           </tr>
@@ -3267,14 +3446,14 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
@@ -3283,25 +3462,29 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -3314,7 +3497,7 @@ test.describe('Tables', () => {
               dir="auto"
               rowspan="2">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
@@ -3322,19 +3505,19 @@ test.describe('Tables', () => {
               colspan="2"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
@@ -3343,22 +3526,24 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -3408,7 +3593,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -3422,32 +3609,34 @@ test.describe('Tables', () => {
               dir="auto"
               rowspan="2">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
           </tr>
-          <tr dir="auto"><br /></tr>
+          <tr dir="auto"><br data-lexical-managed-linebreak="true" /></tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -3463,7 +3652,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -3475,44 +3666,21 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
-              </p>
-            </th>
-          </tr>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
-              </p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
-              </p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
           </tr>
@@ -3521,22 +3689,47 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </th>
+          </tr>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -3569,7 +3762,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -3579,31 +3774,41 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               rowspan="3">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -3637,7 +3842,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -3649,24 +3856,34 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               colspan="3"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -3697,7 +3914,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -3707,24 +3926,32 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -3754,7 +3981,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -3766,42 +3995,60 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -3840,7 +4087,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -3851,12 +4100,12 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto" rowspan="2">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </td>
           </tr>
@@ -3865,12 +4114,14 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -3909,7 +4160,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -3922,65 +4175,95 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
@@ -3988,84 +4271,130 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               rowspan="4">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-          </tr>
-          <tr dir="auto">
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -4104,7 +4433,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -4117,65 +4448,95 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
@@ -4183,89 +4544,137 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               rowspan="3">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-          </tr>
-          <tr dir="auto">
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -4304,7 +4713,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -4317,84 +4728,124 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
@@ -4402,70 +4853,108 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               rowspan="3">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-          </tr>
-          <tr dir="auto">
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -4504,7 +4993,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -4514,21 +5005,29 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" colspan="2" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -4554,7 +5053,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -4564,7 +5065,7 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
           </tr>
@@ -4573,12 +5074,14 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -4608,7 +5111,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -4617,18 +5122,24 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -4671,7 +5182,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -4681,11 +5194,15 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               style="background-color: rgb(208, 2, 27)">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -4744,7 +5261,9 @@ test.describe('Tables', () => {
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -4754,10 +5273,14 @@ test.describe('Tables', () => {
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -4859,7 +5382,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -4871,65 +5396,89 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </th>
-          </tr>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </th>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </th>
+          </tr>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               colspan="3"
               dir="auto"
               rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -4959,7 +5508,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -5009,11 +5558,49 @@ test.describe('Tables', () => {
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
     );
+  });
+
+  test('Aligns the table itself (not cell text) when the whole table is selected in reverse, e.g. bottom-right to top-left (#8880)', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+    await insertTable(page, 3, 3);
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 2, y: 2},
+      {x: 0, y: 0},
+      false,
+      true,
+    );
+
+    await selectFromAlignDropdown(page, '.center-align');
+
+    const tableIsCenterAligned = await evaluate(page, () => {
+      const table = document.querySelector('div[contenteditable="true"] table');
+      return table.classList.contains(
+        'PlaygroundEditorTheme__tableAlignmentCenter',
+      );
+    });
+    expect(tableIsCenterAligned).toBe(true);
+
+    const cellParagraphsWithTextAlign = await evaluate(page, () => {
+      const paragraphs = document.querySelectorAll(
+        'div[contenteditable="true"] table th p, div[contenteditable="true"] table td p',
+      );
+      return Array.from(paragraphs).filter(p => p.hasAttribute('style')).length;
+    });
+    expect(cellParagraphsWithTextAlign).toBe(0);
   });
 
   test('Paste and insert new lines after unmerging cells', async ({
@@ -5041,7 +5628,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -5052,42 +5641,56 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell"
               colspan="2"
               dir="auto"
               rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -5130,7 +5733,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -5141,47 +5746,67 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">HelloHelloHello</span>
               </p>
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">Hello</span>
               </p>
@@ -5226,7 +5851,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -5239,95 +5866,139 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto" rowspan="3">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto" rowspan="3">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-          </tr>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </th>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -5344,7 +6015,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -5357,82 +6030,120 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto" rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto" rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -5468,7 +6179,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -5482,87 +6195,129 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               rowspan="4">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               rowspan="3">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-          </tr>
-          <tr dir="auto">
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -5579,7 +6334,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -5593,76 +6350,112 @@ test.describe('Tables', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               rowspan="3">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto"
               rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -5693,7 +6486,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
           dir="auto">
@@ -5708,188 +6503,270 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-          </tr>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-          </tr>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -5920,7 +6797,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
           dir="auto">
@@ -5935,188 +6814,270 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -6150,7 +7111,7 @@ test.describe('Tables', () => {
       await assertHTML(
         page,
         html`
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
           <table dir="auto">
             <colgroup>
               <col style="width: 92px" />
@@ -6180,7 +7141,7 @@ test.describe('Tables', () => {
               </td>
             </tr>
           </table>
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         `,
         undefined,
         {ignoreClasses: true},
@@ -6200,7 +7161,7 @@ test.describe('Tables', () => {
       await assertHTML(
         page,
         html`
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
           <table dir="auto">
             <colgroup>
               <col style="width: 92px" />
@@ -6209,10 +7170,10 @@ test.describe('Tables', () => {
             </colgroup>
             <tr dir="auto">
               <th dir="auto">
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               </th>
               <th dir="auto">
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               </th>
               <th dir="auto">
                 <p dir="auto"><span data-lexical-text="true">cc</span></p>
@@ -6220,17 +7181,17 @@ test.describe('Tables', () => {
             </tr>
             <tr dir="auto">
               <th dir="auto">
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               </th>
               <td dir="auto">
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               </td>
               <td dir="auto">
                 <p dir="auto"><span data-lexical-text="true">f</span></p>
               </td>
             </tr>
           </table>
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         `,
         undefined,
         {ignoreClasses: true},
@@ -6256,7 +7217,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -6264,22 +7225,22 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -6315,7 +7276,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -6323,22 +7284,22 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -6373,7 +7334,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table>
           <colgroup>
             <col style="width: 92px" />
@@ -6381,7 +7342,7 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               <table>
                 <colgroup>
                   <col style="width: 92px" />
@@ -6394,34 +7355,40 @@ test.describe('Tables', () => {
                     </p>
                   </th>
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                 </tr>
                 <tr dir="auto">
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                   <td dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </td>
                 </tr>
               </table>
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true, ignoreDir: true},
@@ -6470,7 +7437,7 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <table>
           <colgroup>
             <col style="width: 142px" />
@@ -6478,7 +7445,7 @@ test.describe('Tables', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               <table>
                 <colgroup>
                   <col style="width: 62.5px" />
@@ -6491,34 +7458,40 @@ test.describe('Tables', () => {
                     </p>
                   </th>
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                 </tr>
                 <tr dir="auto">
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                   <td dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </td>
                 </tr>
               </table>
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {ignoreClasses: true, ignoreDir: true},
@@ -6541,7 +7514,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px;" />
@@ -6554,107 +7529,159 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -6675,7 +7702,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
           dir="auto">
@@ -6690,125 +7719,177 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     // Drag to change the selection to a 4x2 box (releasing the mouse)
@@ -6827,7 +7908,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
           dir="auto">
@@ -6842,123 +7925,175 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -6970,7 +8105,6 @@ test.describe('Tables', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
-    test.fixme(IS_COLLAB && IS_LINUX && browserName === 'firefox');
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -7010,7 +8144,9 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
@@ -7023,25 +8159,35 @@ test.describe('Tables', () => {
               colspan="3"
               dir="auto"
               rowspan="2">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
-          <tr dir="auto"><br /></tr>
+          <tr dir="auto"><br data-lexical-managed-linebreak="true" /></tr>
           <tr dir="auto">
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
       undefined,
       {
@@ -7233,7 +8379,9 @@ test.describe('Tables', () => {
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p
@@ -7319,7 +8467,9 @@ test.describe('Tables', () => {
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto" style="height: 38px">
@@ -7476,7 +8626,9 @@ test.describe('Tables', () => {
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto" style="height: 38px">
@@ -7515,7 +8667,9 @@ test.describe('Tables', () => {
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
           </tr>
           <tr dir="auto">
@@ -7550,7 +8704,9 @@ test.describe('Tables', () => {
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell" colspan="2" dir="auto">
               <p
@@ -7644,7 +8800,9 @@ test.describe('Tables', () => {
           </tr>
           <tr dir="auto">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </td>
             <td
               class="PlaygroundEditorTheme__tableCell"
@@ -7831,8 +8989,12 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -8202,6 +9364,71 @@ test.describe('Tables', () => {
     ).toHaveCount(0);
   });
 
+  test(`Drag-selecting to the edge of a scrollable table auto-scrolls it #7153`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    // The horizontal scroll wrapper only exists when scrollable tables are on.
+    test.skip(!IS_TABLE_HORIZONTAL_SCROLL);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    // A table with many columns overflows the editor width, so it becomes
+    // horizontally scrollable.
+    await insertTable(page, 3, 15);
+
+    const wrapperSelector = 'div.PlaygroundEditorTheme__tableScrollableWrapper';
+    const getScroll = () =>
+      evaluate(
+        page,
+        selector => {
+          const wrapper = document.querySelector(selector);
+          return {
+            left: wrapper.scrollLeft,
+            max: wrapper.scrollWidth - wrapper.clientWidth,
+          };
+        },
+        wrapperSelector,
+      );
+
+    // Sanity check: the table is actually wider than its scroll container.
+    const {max} = await getScroll();
+    expect(max).toBeGreaterThan(0);
+
+    // Start a drag in a left-hand cell and hold the pointer just inside the
+    // right edge of the scroll container (within the auto-scroll edge zone),
+    // leaving the mouse button down.
+    const anchorBox = await selectorBoundingBox(
+      page,
+      `${nthTableSelector(1)} > tr:nth-of-type(2) > td:nth-child(2)`,
+    );
+    const wrapperBox = await selectorBoundingBox(page, wrapperSelector);
+    const holdY = anchorBox.y + anchorBox.height / 2;
+    await dragMouse(
+      page,
+      anchorBox,
+      {height: 0, width: 0, x: wrapperBox.x + wrapperBox.width - 5, y: holdY},
+      {mouseDown: true, mouseUp: false, slow: true},
+    );
+
+    // While the pointer is held near the edge, the requestAnimationFrame loop
+    // scrolls the wrapper all the way to the end...
+    await expect
+      .poll(async () => (await getScroll()).left, {timeout: 5000})
+      .toBeGreaterThanOrEqual(max - 1);
+
+    // ...and the selection focus reaches the last column (index 14), which was
+    // initially off-screen — the behavior that regressed in #7153.
+    await assertTableSelectionCoordinates(page, {
+      anchor: {x: 1},
+      focus: {x: 14},
+    });
+
+    await page.mouse.up();
+  });
+
   test.describe('shift-selection tests', () => {
     test('Range-select from above table into it selects the entire table', async ({
       page,
@@ -8347,8 +9574,8 @@ test.describe('Tables', () => {
   });
 
   test.describe('nested table shift-selection tests', () => {
-    const END_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, 0, 2, 1]; // paragraph in the last cell
-    const START_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, 0, 1, 0]; // paragraph in the first cell
+    const END_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, ...WRAPPER, 2, 1]; // paragraph in the last cell
+    const START_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, ...WRAPPER, 1, 0]; // paragraph in the first cell
     const TEXT_BEFORE_NESTED_TABLE = [1, ...WRAPPER, 2, 1, 0, 0, 0]; // the word "before"
     const TEXT_AFTER_NESTED_TABLE = [1, ...WRAPPER, 2, 1, 2, 0, 0]; // the word "after"
 
@@ -8365,17 +9592,12 @@ test.describe('Tables', () => {
     }
 
     test('Range-select from above nested table into it selects the entire table, but not the outer table', async ({
-      browserName,
       page,
       isPlainText,
       isCollab,
     }) => {
       test.skip(isPlainText);
       test.skip(isCollab);
-      test.fixme(
-        browserName === 'firefox',
-        'Erroneously selects the text after the table as well',
-      );
       await initialize({hasNestedTables: true, page});
 
       await setupTables(page);
@@ -8404,7 +9626,6 @@ test.describe('Tables', () => {
     });
 
     test('Range-select from below nested table into it selects the entire table, but not the outer table', async ({
-      browserName,
       page,
       isPlainText,
       isCollab,
@@ -8443,7 +9664,7 @@ test.describe('Tables', () => {
       test.skip(isCollab);
       test.fixme(
         browserName === 'firefox',
-        'Erroneously selects the entire outer cell',
+        'Firefox resolves this shift-click as whole cells of the nested table, so what is imported is a TableSelection rather than a range and $fixRangeSelectionForSelectedTable never gets to clamp the anchor',
       );
       await initialize({hasNestedTables: true, page});
 
@@ -8481,7 +9702,9 @@ test.describe('Tables', () => {
       test.skip(isCollab);
       test.fixme(
         browserName === 'firefox',
-        'Erroneously selects the entire outer cell',
+        'No longer selects the entire outer cell, but the rest is left to the ' +
+          'engine and only linux Firefox resolves it the same way as the other ' +
+          'engines -- on windows the focus stays at offset 0 of the text below',
       );
       await initialize({hasNestedTables: true, page});
 

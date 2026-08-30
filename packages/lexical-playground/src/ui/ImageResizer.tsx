@@ -6,12 +6,10 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
 import {calculateZoomLevel} from '@lexical/utils';
+import {type LexicalEditor, registerEventListeners} from 'lexical';
 import * as React from 'react';
-import {useRef} from 'react';
+import {type JSX, useEffect, useRef} from 'react';
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -46,6 +44,8 @@ export default function ImageResizer({
   captionsEnabled: boolean;
 }): JSX.Element {
   const controlWrapperRef = useRef<HTMLDivElement>(null);
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => resizeCleanupRef.current?.(), []);
   const userSelect = useRef({
     priority: '',
     value: 'default',
@@ -102,23 +102,16 @@ export default function ImageResizer({
         'important',
       );
     }
-    if (document.body !== null) {
-      document.body.style.setProperty(
-        'cursor',
-        `${cursorDir}-resize`,
-        'important',
-      );
-      userSelect.current.value = document.body.style.getPropertyValue(
+    const body = imageRef.current?.ownerDocument?.body;
+    if (body != null) {
+      body.style.setProperty('cursor', `${cursorDir}-resize`, 'important');
+      userSelect.current.value = body.style.getPropertyValue(
         '-webkit-user-select',
       );
-      userSelect.current.priority = document.body.style.getPropertyPriority(
+      userSelect.current.priority = body.style.getPropertyPriority(
         '-webkit-user-select',
       );
-      document.body.style.setProperty(
-        '-webkit-user-select',
-        `none`,
-        'important',
-      );
+      body.style.setProperty('-webkit-user-select', `none`, 'important');
     }
   };
 
@@ -126,9 +119,10 @@ export default function ImageResizer({
     if (editorRootElement !== null) {
       editorRootElement.style.setProperty('cursor', 'text');
     }
-    if (document.body !== null) {
-      document.body.style.setProperty('cursor', 'default');
-      document.body.style.setProperty(
+    const body = imageRef.current?.ownerDocument?.body;
+    if (body != null) {
+      body.style.setProperty('cursor', 'default');
+      body.style.setProperty(
         '-webkit-user-select',
         userSelect.current.value,
         userSelect.current.priority,
@@ -169,8 +163,12 @@ export default function ImageResizer({
       image.style.height = `${height}px`;
       image.style.width = `${width}px`;
 
-      document.addEventListener('pointermove', handlePointerMove);
-      document.addEventListener('pointerup', handlePointerUp);
+      const doc = image.ownerDocument;
+      resizeCleanupRef.current?.();
+      resizeCleanupRef.current = registerEventListeners(doc, {
+        pointermove: handlePointerMove,
+        pointerup: handlePointerUp,
+      });
     }
   };
   const handlePointerMove = (event: PointerEvent) => {
@@ -248,8 +246,8 @@ export default function ImageResizer({
       setEndCursor();
       onResizeEnd(width, height);
 
-      document.removeEventListener('pointermove', handlePointerMove);
-      document.removeEventListener('pointerup', handlePointerUp);
+      resizeCleanupRef.current?.();
+      resizeCleanupRef.current = null;
     }
   };
   return (

@@ -6,9 +6,6 @@
  *
  */
 
-import type {ListType} from '@lexical/list';
-import type {HeadingTagType} from '@lexical/rich-text';
-
 import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code-core';
 import {
   $createLinkNode,
@@ -23,6 +20,7 @@ import {
   $isListNode,
   ListItemNode,
   ListNode,
+  type ListType,
 } from '@lexical/list';
 import {
   $createHeadingNode,
@@ -30,6 +28,7 @@ import {
   $isHeadingNode,
   $isQuoteNode,
   HeadingNode,
+  type HeadingTagType,
   QuoteNode,
 } from '@lexical/rich-text';
 import {
@@ -40,14 +39,14 @@ import {
   $isLineBreakNode,
   $isTextNode,
   $setState,
-  BaseSelection,
+  type BaseSelection,
   createState,
-  ElementNode,
-  Klass,
-  LexicalNode,
-  LineBreakNode,
-  TextFormatType,
-  TextNode,
+  type ElementNode,
+  type Klass,
+  type LexicalNode,
+  type LineBreakNode,
+  type TextFormatType,
+  type TextNode,
 } from 'lexical';
 
 import {unescapeText} from './utils';
@@ -59,7 +58,7 @@ export type Transformer =
   | TextMatchTransformer;
 
 export type ElementTransformer = {
-  dependencies: Array<Klass<LexicalNode>>;
+  dependencies: Klass<LexicalNode>[];
   /**
    * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
    *
@@ -80,8 +79,8 @@ export type ElementTransformer = {
    */
   replace: (
     parentNode: ElementNode,
-    children: Array<LexicalNode>,
-    match: Array<string>,
+    children: LexicalNode[],
+    match: string[],
     /**
      * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
      */
@@ -104,13 +103,13 @@ export type MultilineElementTransformer = {
    * @returns a tuple or null. The first element of the returned tuple is a boolean indicating if a multiline element was imported. The second element is the index of the last line that was processed. If null is returned, the next multilineElementTransformer will be tried. If undefined is returned, the default behavior will be used.
    */
   handleImportAfterStartMatch?: (args: {
-    lines: Array<string>;
+    lines: string[];
     rootNode: ElementNode;
     startLineIndex: number;
     startMatch: RegExpMatchArray;
     transformer: MultilineElementTransformer;
   }) => [boolean, number] | null | undefined;
-  dependencies: Array<Klass<LexicalNode>>;
+  dependencies: Klass<LexicalNode>[];
   /**
    * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
    *
@@ -151,14 +150,14 @@ export type MultilineElementTransformer = {
      * During markdown shortcut transforms, children nodes may be provided to the transformer. If this is the case, no `linesInBetween` will be provided and
      * the children nodes should be used instead of the `linesInBetween` to create the new node.
      */
-    children: Array<LexicalNode> | null,
-    startMatch: Array<string>,
-    endMatch: Array<string> | null,
+    children: LexicalNode[] | null,
+    startMatch: string[],
+    endMatch: string[] | null,
     /**
      * linesInBetween includes the text between the start & end matches, split up by lines, not including the matches themselves.
      * This is null when the transformer is triggered through markdown shortcuts (by typing in the editor)
      */
-    linesInBetween: Array<string> | null,
+    linesInBetween: string[] | null,
     /**
      * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
      */
@@ -168,14 +167,14 @@ export type MultilineElementTransformer = {
 };
 
 export type TextFormatTransformer = Readonly<{
-  format: ReadonlyArray<TextFormatType>;
+  format: readonly TextFormatType[];
   tag: string;
   intraword?: boolean;
   type: 'text-format';
 }>;
 
 export type TextMatchTransformer = Readonly<{
-  dependencies: Array<Klass<LexicalNode>>;
+  dependencies: Klass<LexicalNode>[];
   /**
    * Determines how a node should be exported to markdown
    */
@@ -297,6 +296,16 @@ export const codeFenceState = createState('mdCodeFence', {
   resetOnCopyNode: true,
 });
 
+/**
+ * The info-string tail after a fenced code block's language (e.g. `title="x"`
+ * in ```` ```js title="x" ````). `CodeNode` models only the language, so the
+ * rest is kept here to survive the round trip.
+ */
+export const codeMetaState = createState('mdCodeMeta', {
+  parse: val => (typeof val === 'string' ? val : ''),
+  resetOnCopyNode: true,
+});
+
 export type MarkdownHardLineBreak = string;
 
 export const hardLineBreakState = createState('mdHardLineBreak', {
@@ -313,7 +322,15 @@ export function parseMarkdownHardLineBreak(
   line: string,
 ): [string, MarkdownHardLineBreak] | null {
   if (line.endsWith('\\')) {
-    return [line.slice(0, -1), '\\'];
+    // A trailing backslash is a hard line break only when it is not itself
+    // escaped. `foo\\` is an escaped backslash — a literal `\` followed by an
+    // ordinary (soft) line ending — so only an odd-length run counts.
+    // https://spec.commonmark.org/0.31.2/#backslash-escapes
+    let backslashes = 0;
+    for (let i = line.length - 1; i >= 0 && line[i] === '\\'; i--) {
+      backslashes++;
+    }
+    return backslashes % 2 === 1 ? [line.slice(0, -1), '\\'] : null;
   }
 
   const spaces = line.match(/^(.*?\S)( {2,})$/);
@@ -321,7 +338,7 @@ export function parseMarkdownHardLineBreak(
 }
 
 function hasNonWhitespaceContentOnLine(
-  children: Array<LexicalNode>,
+  children: LexicalNode[],
   endIndex: number,
 ): boolean {
   for (let i = endIndex - 1; i >= 0; i--) {
@@ -379,8 +396,45 @@ export function $createMarkdownLineBreakNode(
   return lineBreakNode;
 }
 
+/**
+ * Block-level shortcuts convert by replacing the enclosing block, which
+ * discards it. A QuoteNode holds inline content, so there is nowhere to nest
+ * the new block and the quote would simply be lost. Import already refuses:
+ * `$convertFromMarkdownString('> # x')` keeps the quote and leaves `# x` as
+ * literal text, so the shortcut declines too rather than dropping the quote
+ * out from under the caret. See #7407.
+ */
+function $isUnreplaceableBlock(parentNode: ElementNode): boolean {
+  return $isQuoteNode(parentNode);
+}
+
+/**
+ * CommonMark: "If the leading code fence is indented N spaces, then up to N
+ * spaces of indentation are removed from each line of the content (if
+ * present)." https://spec.commonmark.org/0.31.2/#fenced-code-blocks
+ */
+function stripFenceIndent(line: string, indent: number): string {
+  let index = 0;
+  while (index < indent && (line[index] === ' ' || line[index] === '\t')) {
+    index++;
+  }
+  return line.slice(index);
+}
+
+/**
+ * Attaches the opening fence's info-string tail to the `CodeNode` that
+ * `CODE.replace` just appended. `replace` takes the match rather than the
+ * source line, so the tail is applied here, where the line is in hand.
+ */
+function $setCodeMeta(parentNode: ElementNode, meta: string): void {
+  const codeNode = parentNode.getLastChild();
+  if (meta && $isCodeNode(codeNode)) {
+    $setState(codeNode, codeMetaState, meta);
+  }
+}
+
 const createBlockNode = (
-  createNode: (match: Array<string>) => ElementNode,
+  createNode: (match: string[]) => ElementNode,
 ): ElementTransformer['replace'] => {
   return (parentNode, children, match, isImport) => {
     const node = createNode(match);
@@ -415,6 +469,13 @@ function getIndent(whitespaces: string): number {
 
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   return (parentNode, children, match, isImport) => {
+    if (
+      $isHeadingNode(parentNode) ||
+      (!isImport && $isUnreplaceableBlock(parentNode))
+    ) {
+      return false;
+    }
+
     const previousNode = parentNode.getPreviousSibling();
     const nextNode = parentNode.getNextSibling();
     const listItem = $createListItemNode(
@@ -437,6 +498,11 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
         // should never happen, but let's handle gracefully, just in case.
         nextNode.append(listItem);
       }
+      // The new list item lands at index 0, so the typed number becomes the
+      // list's starting value. #8677.
+      if (listType === 'number') {
+        nextNode.setStart(Number(match[2]));
+      }
       parentNode.remove();
     } else if (
       $isListNode(previousNode) &&
@@ -445,6 +511,8 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       if (listMarker) {
         $setState(previousNode, listMarkerState, listMarker);
       }
+      // The new item is appended at the end and inherits the existing
+      // sequence, so the typed number is intentionally ignored here.
       previousNode.append(listItem);
       parentNode.remove();
     } else {
@@ -539,6 +607,10 @@ export function $createHeadingTransformer(options?: {
     },
     regExp: HEADING_REGEX,
     replace: (parentNode, children, match, isImport) => {
+      if (!nestInBlockquote && !isImport && $isUnreplaceableBlock(parentNode)) {
+        return false;
+      }
+
       const tag = ('h' + match[1].length) as HeadingTagType;
       const headingNode = $createHeadingNode(tag);
       headingNode.append(...children);
@@ -659,9 +731,13 @@ export const CODE: MultilineElementTransformer = {
         fence = '`'.repeat(maxLength + 1);
       }
     }
+    const language = node.getLanguage() || '';
+    const meta = language ? $getState(node, codeMetaState) : '';
+
     return (
       fence +
-      (node.getLanguage() || '') +
+      language +
+      (meta ? ' ' + meta : '') +
       (textContent ? '\n' + textContent : '') +
       '\n' +
       fence
@@ -708,10 +784,28 @@ export const CODE: MultilineElementTransformer = {
         const endMatch = line.match(multilineEndRegex);
         const linesInBetween = lines.slice(startLineIndex + 1, i);
 
-        const afterFullMatch = currentLine.slice(startMatch[0].length);
-        if (afterFullMatch.length > 0) {
-          linesInBetween.unshift(afterFullMatch);
-        }
+        // Everything after the opening fence is the info string, and only its
+        // first word is the language. When a language was captured, whatever
+        // follows it on that line is metadata (```js title="x", ```ts {1,3})
+        // and must not be prepended to the block's content.
+        // https://spec.commonmark.org/0.31.2/#fenced-code-blocks
+        //
+        // With no language captured the fence carries no info string, so the
+        // remainder is kept as content (``` code) as before.
+        //
+        // Either way the slot itself is always occupied: `replace` follows the
+        // default $importMultiline contract, where linesInBetween[0] is the
+        // remainder of the opening fence line and is discarded when blank. So
+        // an empty placeholder goes in when the remainder is metadata, and a
+        // blank remainder is unshifted rather than skipped — otherwise a code
+        // block that genuinely starts with a blank line would have that line
+        // mistaken for the (empty) remainder and dropped.
+        const meta = startMatch[2]
+          ? currentLine.slice(startMatch[0].length).trim()
+          : '';
+        linesInBetween.unshift(
+          meta ? '' : currentLine.slice(startMatch[0].length),
+        );
 
         CODE.replace(
           rootNode,
@@ -721,15 +815,13 @@ export const CODE: MultilineElementTransformer = {
           linesInBetween,
           true,
         );
+        $setCodeMeta(rootNode, meta);
         return [true, i];
       }
     }
 
     const linesInBetween = lines.slice(startLineIndex + 1);
-    const afterFullMatch = currentLine.slice(startMatch[0].length);
-    if (afterFullMatch.length > 0) {
-      linesInBetween.unshift(afterFullMatch);
-    }
+    linesInBetween.unshift(currentLine.slice(startMatch[0].length));
 
     CODE.replace(rootNode, null, startMatch, null, linesInBetween, true);
     return [true, lines.length - 1];
@@ -754,12 +846,16 @@ export const CODE: MultilineElementTransformer = {
 
     const fence = startMatch[1] ? startMatch[1].trim() : '```';
     const language = startMatch[2] || undefined;
+    // `startMatch[1]` keeps the whitespace that precedes the opening fence.
+    const fenceIndent = startMatch[1]
+      ? startMatch[1].length - startMatch[1].trimStart().length
+      : 0;
 
     if (!children && linesInBetween) {
       if (linesInBetween.length === 1) {
         if (endMatch) {
           codeBlockNode = $createCodeNode(language);
-          code = linesInBetween[0];
+          code = stripFenceIndent(linesInBetween[0], fenceIndent);
         } else {
           codeBlockNode = $createCodeNode(language);
           code = linesInBetween[0].startsWith(' ')
@@ -784,7 +880,9 @@ export const CODE: MultilineElementTransformer = {
           linesInBetween.pop();
         }
 
-        code = linesInBetween.join('\n');
+        code = linesInBetween
+          .map(line => stripFenceIndent(line, fenceIndent))
+          .join('\n');
       }
 
       $setState(codeBlockNode, codeFenceState, fence);
@@ -793,6 +891,9 @@ export const CODE: MultilineElementTransformer = {
       codeBlockNode.append(textNode);
       rootNode.append(codeBlockNode);
     } else if (children) {
+      if (!isImport && $isUnreplaceableBlock(rootNode)) {
+        return false;
+      }
       createBlockNode(match => {
         return $createCodeNode(match ? match[2] : undefined);
       })(rootNode, children, startMatch, isImport);
@@ -847,6 +948,25 @@ export const INLINE_CODE: TextFormatTransformer = {
   type: 'text-format',
 };
 
+// Computes a CommonMark-compliant fence and padded content for an inline code
+// span: https://spec.commonmark.org/#code-spans
+export function getCodeSpanDelimiter(content: string): {
+  fence: string;
+  padded: string;
+} {
+  const backtickRuns = content.match(/`+/g);
+  const longestRun = backtickRuns
+    ? Math.max(...backtickRuns.map(run => run.length))
+    : 0;
+  const fence = '`'.repeat(longestRun + 1);
+  const needsPadding =
+    content.length === 0 ||
+    content.includes('`') ||
+    (/^\s/.test(content) && /\s$/.test(content));
+  const padded = needsPadding ? ` ${content} ` : content;
+  return {fence, padded};
+}
+
 export const HIGHLIGHT: TextFormatTransformer = {
   format: ['highlight'],
   tag: '==',
@@ -898,6 +1018,19 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
   type: 'text-format',
 };
 
+// `unescapeText` decodes a numeric character reference and a CommonMark reader
+// decodes the named ones too, so an `&` that begins one cannot be written raw
+// in a link destination or the URL comes back as the character it names. It
+// goes out as `&#38;` instead, which both of them read back as a single `&`.
+// An `&` that begins nothing is an ordinary character and stays as it is, so a
+// query string keeps the separators it was written with.
+function escapeCharacterReferences(value: string): string {
+  return value.replace(
+    /&(?=#\d+;|#[Xx][\dA-Fa-f]+;|[A-Za-z][\dA-Za-z]*;)/g,
+    '&#38;',
+  );
+}
+
 // Order of text transformers matters:
 //
 // - code should go first as it prevents any transformations inside
@@ -911,28 +1044,97 @@ export const LINK: TextMatchTransformer = {
     const textContent = exportChildren(node);
     let title = node.getTitle();
 
+    // A title is read back through `unescapeText` as well, so a character
+    // reference in it needs the same treatment the destination gets below.
     if (title != null) {
-      title = title.replace(/([\\"])/g, '\\$1');
+      title = escapeCharacterReferences(title).replace(/([\\"])/g, '\\$1');
     }
 
+    // A raw destination cannot hold whitespace, so a URL that has any is
+    // written in the pointy form, where only `<`, `>` and a backslash need an
+    // escape. An empty URL goes there too, since the raw form has nothing left
+    // to match. Everywhere else the destination is written raw, where a
+    // parenthesis would close it early, a backslash would start an escape, and
+    // only a `<` in first place turns it into the pointy form. An angle
+    // bracket anywhere else is an ordinary character and goes out as it is.
+    //
+    // Neither shape may hold a line ending, so a literal one would leave a
+    // destination that no reader can close and would split the paragraph in
+    // two. It goes out as the character reference that `unescapeText` and a
+    // CommonMark reader both turn back into the line ending.
+    //
+    // That spelling only survives because a reader decodes it, so an `&` that
+    // already begins a character reference has to go out as one itself, or the
+    // URL comes back as whatever the reference names. Escaping it first keeps
+    // the references written for the line endings below out of its way.
+    const rawUrl = node.getURL();
+    const escapedUrl = escapeCharacterReferences(rawUrl);
+    const url =
+      rawUrl === '' || /\s/.test(rawUrl)
+        ? `<${escapedUrl
+            .replace(/([\\<>])/g, '\\$1')
+            .replace(/\r/g, '&#13;')
+            .replace(/\n/g, '&#10;')}>`
+        : escapedUrl.replace(/([\\()])/g, '\\$1').replace(/^</, '\\<');
+
     const linkContent = title
-      ? `[${textContent}](${node.getURL()} "${title}")`
-      : `[${textContent}](${node.getURL()})`;
+      ? `[${textContent}](${url} "${title}")`
+      : `[${textContent}](${url})`;
 
     return linkContent;
   },
+  // A link destination comes in two shapes, is itself optional, and may have
+  // whitespace on either side of it inside the parentheses. Between `<` and
+  // `>` it holds anything but a line ending and an unescaped angle bracket,
+  // whitespace included. Written raw it may not begin with `<`, and it holds a
+  // backslash and whatever follows it, a balanced pair of parentheses, or any
+  // other character that is not a space, a parenthesis or a backslash. An
+  // angle bracket anywhere but the first character is an ordinary character
+  // there. A backslash in front of whitespace escapes nothing, so that branch
+  // takes the backslash on its own and lets the whitespace end the
+  // destination.
+  //
+  // The parentheses nest three deep. A regular expression cannot count them,
+  // so the depth is a limit written down rather than a general rule, and no
+  // URL in the wild reaches past the one level a disambiguated Wikipedia
+  // article needs.
+  //
+  // A title comes after the destination and whitespace, in any of the three
+  // spellings CommonMark gives it. Inside every shape here no two alternatives
+  // can match at the same place, so none of them has anything to backtrack
+  // over.
+  //
+  // The trailing whitespace sits inside the optional group with the
+  // destination rather than after it. Outside, it would neighbour the leading
+  // `\s*` whenever the destination is absent, and two runs of the same
+  // whitespace side by side can be split between them in as many ways as there
+  // are characters, which costs a quadratic walk of every run that never
+  // reaches the closing parenthesis.
   importRegExp:
-    /(?:\[(.+?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
+    /(?:\[(.+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))/,
   regExp:
-    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
+    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
     if ($findMatchingParent(textNode, $isLinkNode)) {
       return;
     }
-    const [, linkText, rawLinkUrl, rawLinkTitle] = match;
+    const [
+      ,
+      linkText,
+      pointyLinkUrl,
+      rawLinkUrl,
+      quotedTitle,
+      apostrophedTitle,
+      parenthesizedTitle,
+    ] = match;
 
-    const linkUrl = rawLinkUrl != null ? unescapeText(rawLinkUrl) : undefined;
+    // At most one destination shape matched, either may legitimately be empty,
+    // and `[a]()` matches with no destination at all, so none of this can fall
+    // back on truthiness.
+    const linkUrl = unescapeText(pointyLinkUrl ?? rawLinkUrl ?? '');
+    // A title has three spellings and only the one that matched is defined.
+    const rawLinkTitle = quotedTitle ?? apostrophedTitle ?? parenthesizedTitle;
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
@@ -961,21 +1163,22 @@ export const LINK: TextMatchTransformer = {
   type: 'text-match',
 };
 
-export const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
+export const ELEMENT_TRANSFORMERS: ElementTransformer[] = [
   HEADING,
   QUOTE,
   UNORDERED_LIST,
   ORDERED_LIST,
 ];
 
-export const MULTILINE_ELEMENT_TRANSFORMERS: Array<MultilineElementTransformer> =
-  [CODE];
+export const MULTILINE_ELEMENT_TRANSFORMERS: MultilineElementTransformer[] = [
+  CODE,
+];
 
 // Order of text format transformers matters:
 //
 // - code should go first as it prevents any transformations inside
 // - then longer tags match (e.g. ** or __ should go before * or _)
-export const TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer> = [
+export const TEXT_FORMAT_TRANSFORMERS: TextFormatTransformer[] = [
   INLINE_CODE,
   BOLD_ITALIC_STAR,
   BOLD_ITALIC_UNDERSCORE,
@@ -987,9 +1190,9 @@ export const TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer> = [
   STRIKETHROUGH,
 ];
 
-export const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [LINK];
+export const TEXT_MATCH_TRANSFORMERS: TextMatchTransformer[] = [LINK];
 
-export const TRANSFORMERS: Array<Transformer> = [
+export const TRANSFORMERS: Transformer[] = [
   ...ELEMENT_TRANSFORMERS,
   ...MULTILINE_ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
@@ -1001,7 +1204,7 @@ export function normalizeMarkdown(
   shouldMergeAdjacentLines = false,
 ): string {
   const lines = input.split('\n');
-  let inCodeBlock = false;
+  let codeBlockFenceLength = 0;
   const sanitizedLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
@@ -1019,15 +1222,27 @@ export function normalizeMarkdown(
       continue;
     }
 
-    // Detect the start or end of a code block
-    if (CODE_START_REGEX.test(line) || CODE_END_REGEX.test(line)) {
-      inCodeBlock = !inCodeBlock;
-      sanitizedLines.push(line);
-      continue;
-    }
-
-    // If we are inside a code block, keep the line unchanged
-    if (inCodeBlock) {
+    if (codeBlockFenceLength === 0) {
+      // An opening fence may carry an info string (e.g. ```ts)
+      const openMatch = line.match(CODE_START_REGEX);
+      if (openMatch) {
+        codeBlockFenceLength = openMatch[1].trim().length;
+        sanitizedLines.push(line);
+        continue;
+      }
+    } else {
+      // A code block is closed only by a bare fence (no info string) that is at
+      // least as long as the opening fence. Fence-like lines that carry an info
+      // string (e.g. a nested ```ts) are part of the code block's content.
+      if (
+        CODE_END_REGEX.test(line) &&
+        line.trim().length >= codeBlockFenceLength
+      ) {
+        codeBlockFenceLength = 0;
+        sanitizedLines.push(line);
+        continue;
+      }
+      // Inside a code block, keep the line unchanged
       sanitizedLines.push(rawLine);
       continue;
     }

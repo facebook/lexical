@@ -12,11 +12,11 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import * as React from 'react';
 import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('LexicalComposer tests', () => {
@@ -157,7 +157,7 @@ describe('LexicalComposer tests', () => {
           // otherwise you could see 'initial stateinitial state'.
           expect([
             i,
-            editor.getEditorState().read(() => $getRoot().getTextContent()),
+            editor.read('latest', () => $getRoot().getTextContent()),
           ]).toEqual([i, 'initial state']);
         });
         // Only one context is created in both cases though!

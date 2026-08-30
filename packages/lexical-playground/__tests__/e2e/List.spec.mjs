@@ -166,6 +166,344 @@ test.describe('Checklist focus option', () => {
   });
 });
 
+test.describe('Checklist space key', () => {
+  // Pressing the mouse anywhere in an item focuses the <li>, which carries
+  // tabIndex="-1" for its checkbox role. Firefox left focus there, and the
+  // key handlers read a focused item as "the checkbox is what the keyboard is
+  // operating", so Space toggled the item instead of typing a space.
+  test('typing a space in the label leaves the checkbox alone', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+    await expect(item).toHaveAttribute('aria-checked', 'false');
+
+    // Click the text itself, well clear of the marker on the left.
+    const textBox = await page.getByText('Task', {exact: true}).boundingBox();
+    await page.mouse.click(
+      textBox.x + textBox.width / 2,
+      textBox.y + textBox.height / 2,
+    );
+
+    // The click is in the label, so the editor holds the focus. The item is
+    // the active element only when its checkbox is what was clicked.
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
+
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'false');
+    await expect(item).toHaveText('Ta sk');
+  });
+
+  test('space toggles the item after its checkbox is clicked', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+    const box = await item.boundingBox();
+
+    // Click the marker, which is the flow that hands the item keyboard focus.
+    await page.mouse.click(box.x + 5, box.y + box.height / 2);
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+    expect(
+      await page.evaluate(
+        () =>
+          document.activeElement ===
+          document.querySelector('li[role="checkbox"]'),
+      ),
+    ).toBe(true);
+
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'false');
+    await expect(item).toHaveText('Task');
+  });
+
+  test('clicking the label after the checkbox gives focus back', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+    const box = await item.boundingBox();
+
+    // The checkbox click leaves the item focused, and the click that follows
+    // lands in the label, so the editor has to take the focus back.
+    await page.mouse.click(box.x + 5, box.y + box.height / 2);
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+
+    const textBox = await page.getByText('Task', {exact: true}).boundingBox();
+    await page.mouse.click(
+      textBox.x + textBox.width / 2,
+      textBox.y + textBox.height / 2,
+    );
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+    await expect(item).toHaveText('Ta sk');
+  });
+
+  test('space toggles the item the arrow key moved onto', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+
+    const first = page.locator('li[role="checkbox"]').first();
+    const second = page.locator('li[role="checkbox"]').nth(1);
+    const box = await first.boundingBox();
+
+    await page.mouse.click(box.x + 5, box.y + box.height / 2);
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Space');
+
+    await expect(second).toHaveAttribute('aria-checked', 'true');
+    await expect(second).toHaveText('Two');
+  });
+
+  test('space toggles the item the left arrow moved onto', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+
+    // The left arrow at the start of the label is the third way onto the
+    // checkbox, with the caret never having left the item.
+    await moveToLineBeginning(page);
+    await moveLeft(page);
+    expect(
+      await page.evaluate(
+        () =>
+          document.activeElement ===
+          document.querySelector('li[role="checkbox"]'),
+      ),
+    ).toBe(true);
+
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+    await expect(item).toHaveText('Task');
+  });
+
+  test('the item does not hold the focus for the length of the press', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    // Press the label and hold: the item is the caret's nearest focusable
+    // ancestor, so the browser focuses it, and it should not stay focused
+    // while the button is down.
+    const textBox = await page.getByText('Task', {exact: true}).boundingBox();
+    await page.mouse.move(
+      textBox.x + textBox.width / 2,
+      textBox.y + textBox.height / 2,
+    );
+    await page.mouse.down();
+
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
+
+    await page.mouse.up();
+  });
+
+  test('an arrow key that moves the caret hands focus back to the editor', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+    const box = await item.boundingBox();
+
+    // Click the check mark, so the item holds the focus.
+    await page.mouse.click(box.x + 5, box.y + box.height / 2);
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+
+    // Moving the caret through the label is operating the text, not the
+    // checkbox, so the editor takes the focus back.
+    await moveLeft(page);
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
+
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+    await expect(item).toHaveText('Tas k');
+  });
+
+  test('the left arrow leaves the item when the checkbox already holds focus', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+
+    const first = page.locator('li[role="checkbox"]').first();
+    const second = page.locator('li[role="checkbox"]').nth(1);
+
+    // The first left arrow reaches the checkbox of the second item.
+    await moveToLineBeginning(page);
+    await moveLeft(page);
+    expect(
+      await page.evaluate(
+        () =>
+          document.activeElement ===
+          document.querySelectorAll('li[role="checkbox"]')[1],
+      ),
+    ).toBe(true);
+
+    // The second one leaves the item, so the caret carries on into the item
+    // before it and the focus goes with it.
+    await moveLeft(page);
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
+
+    await page.keyboard.type('X');
+
+    await expect(first).toHaveText('OneX');
+    await expect(second).toHaveText('Two');
+    await expect(second).toHaveAttribute('aria-checked', 'false');
+  });
+
+  test('the right arrow moves the caret off a checkbox the left arrow reached', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+
+    // Left at the start of the label puts the focus on the checkbox.
+    await moveToLineBeginning(page);
+    await moveLeft(page);
+    expect(
+      await page.evaluate(
+        () =>
+          document.activeElement ===
+          document.querySelector('li[role="checkbox"]'),
+      ),
+    ).toBe(true);
+
+    // Right moves the caret back into the label, so the checkbox is no
+    // longer what the keyboard is operating.
+    await moveRight(page, 1);
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
+
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'false');
+    await expect(item).toHaveText('T ask');
+  });
+
+  test('typing in the label hands focus back to the editor', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const item = page.locator('li[role="checkbox"]').first();
+    const box = await item.boundingBox();
+
+    // Click the check mark, so the item holds the focus and the caret is
+    // still sitting in the label.
+    await page.mouse.click(box.x + 5, box.y + box.height / 2);
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+
+    // Typing is text entry, so the editor takes the focus back and the next
+    // Space is a space rather than a toggle.
+    await page.keyboard.type('X');
+    expect(
+      await page.evaluate(
+        () => document.activeElement === window.lexicalEditor.getRootElement(),
+      ),
+    ).toBe(true);
+
+    await moveLeft(page);
+    await page.keyboard.press('Space');
+
+    await expect(item).toHaveAttribute('aria-checked', 'true');
+    await expect(item).toHaveText('Task X');
+  });
+});
+
 test.describe('Nested List', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
@@ -249,7 +587,7 @@ test.describe('Nested List', () => {
                     value="1">
                     <ul class="PlaygroundEditorTheme__ul">
                       <li class="PlaygroundEditorTheme__listItem" value="1">
-                        <br />
+                        <br data-lexical-managed-linebreak="true" />
                       </li>
                     </ul>
                   </li>
@@ -279,7 +617,7 @@ test.describe('Nested List', () => {
                 value="1">
                 <ul class="PlaygroundEditorTheme__ul">
                   <li class="PlaygroundEditorTheme__listItem" value="1">
-                    <br />
+                    <br data-lexical-managed-linebreak="true" />
                   </li>
                 </ul>
               </li>
@@ -302,7 +640,9 @@ test.describe('Nested List', () => {
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
             value="2">
             <ul class="PlaygroundEditorTheme__ul">
-              <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+              <li class="PlaygroundEditorTheme__listItem" value="1">
+                <br data-lexical-managed-linebreak="true" />
+              </li>
             </ul>
           </li>
         </ul>
@@ -452,7 +792,9 @@ test.describe('Nested List', () => {
       page,
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -721,7 +1063,9 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -926,7 +1270,9 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -1244,7 +1590,9 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -1331,7 +1679,9 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -1369,11 +1719,15 @@ test.describe('Nested List', () => {
             <span data-lexical-text="true">from</span>
           </li>
         </ul>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">the</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
           <li class="PlaygroundEditorTheme__listItem" value="1">
             <span data-lexical-text="true">other</span>
@@ -1398,11 +1752,15 @@ test.describe('Nested List', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">from</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">the</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">other</span>
         </p>
@@ -1424,11 +1782,15 @@ test.describe('Nested List', () => {
           <li class="PlaygroundEditorTheme__listItem" value="2">
             <span data-lexical-text="true">from</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="3"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="3">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
           <li class="PlaygroundEditorTheme__listItem" value="4">
             <span data-lexical-text="true">the</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="5"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="5">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
           <li class="PlaygroundEditorTheme__listItem" value="6">
             <span data-lexical-text="true">other</span>
           </li>
@@ -1453,7 +1815,9 @@ test.describe('Nested List', () => {
       page,
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -1464,7 +1828,9 @@ test.describe('Nested List', () => {
       page,
       html`
         <ol class="PlaygroundEditorTheme__ol1" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ol>
       `,
     );
@@ -1475,7 +1841,9 @@ test.describe('Nested List', () => {
       page,
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -1640,7 +2008,9 @@ test.describe('Nested List', () => {
           <li class="PlaygroundEditorTheme__listItem" value="4">
             <span data-lexical-text="true">other</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="5"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="5">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -1663,7 +2033,9 @@ test.describe('Nested List', () => {
           <li class="PlaygroundEditorTheme__listItem" value="4">
             <span data-lexical-text="true">other</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="5"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="5">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ol>
       `,
     );
@@ -1686,7 +2058,9 @@ test.describe('Nested List', () => {
           <li class="PlaygroundEditorTheme__listItem" value="4">
             <span data-lexical-text="true">other</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="5"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="5">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -2276,7 +2650,7 @@ test.describe('Nested List', () => {
     // undo case is when the user presses undo.
 
     const forwardHTML =
-      '<ol start="321" class="PlaygroundEditorTheme__ol1" dir="auto"><li value="321" class="PlaygroundEditorTheme__listItem"><br></li></ol>';
+      '<ol start="321" class="PlaygroundEditorTheme__ol1" dir="auto"><li value="321" class="PlaygroundEditorTheme__listItem"><br data-lexical-managed-linebreak="true"></li></ol>';
 
     const undoHTML = html`
       <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -2333,7 +2707,9 @@ test.describe('Nested List', () => {
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
             value="2">
             <ul class="PlaygroundEditorTheme__ul">
-              <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+              <li class="PlaygroundEditorTheme__listItem" value="1">
+                <br data-lexical-managed-linebreak="true" />
+              </li>
             </ul>
           </li>
         </ul>
@@ -2347,7 +2723,9 @@ test.describe('Nested List', () => {
           <li class="PlaygroundEditorTheme__listItem" value="1">
             <span data-lexical-text="true">a</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="2"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="2">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -2360,7 +2738,9 @@ test.describe('Nested List', () => {
             <span data-lexical-text="true">a</span>
           </li>
         </ul>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -2718,7 +3098,7 @@ test.describe('Nested List', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -2760,7 +3140,7 @@ test.describe('Nested List', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
           <li class="PlaygroundEditorTheme__listItem" value="1">
@@ -2822,7 +3202,7 @@ test.describe('Nested List', () => {
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
           <li class="PlaygroundEditorTheme__listItem" value="1">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </li>
         </ul>
       `,
@@ -2831,7 +3211,9 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });

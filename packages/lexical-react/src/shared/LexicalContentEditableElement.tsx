@@ -7,14 +7,29 @@
  */
 
 import type {LexicalEditor} from 'lexical';
-import type {ForwardedRef, JSX, RefCallback} from 'react';
 
 import * as React from 'react';
-import {forwardRef, useCallback, useMemo, useState} from 'react';
+import {
+  type ForwardedRef,
+  forwardRef,
+  type JSX,
+  type RefCallback,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 
 import {mergeRefs} from './mergeRefs';
 import useLayoutEffect from './useLayoutEffect';
 
+/**
+ * Props for the {@link ContentEditableElement} component. In addition to an
+ * `editor`, it accepts the standard `<div>` HTML attributes (except
+ * `placeholder`), including the hyphenated `aria-*` attributes, which are the
+ * preferred way to set ARIA properties. The camelCase `aria*` props (such as
+ * `ariaLabel`) are also accepted but are retained only for backwards
+ * compatibility.
+ */
 export type ContentEditableElementProps = {
   editor: LexicalEditor;
   ariaActiveDescendant?: React.AriaAttributes['aria-activedescendant'];
@@ -117,10 +132,18 @@ function ContentEditableElementImpl(
       role={role}
       spellCheck={spellCheck}
       style={style}
-      tabIndex={tabIndex}
+      tabIndex={tabIndex ?? (isEditable ? undefined : -1)}
       {...rest}
     />
   );
 }
 
+/**
+ * A lower-level building block for the editor's editable `<div>`. It binds the
+ * given `editor` to the rendered element via
+ * {@link LexicalEditor.setRootElement}, reflects the editor's editable state on
+ * the `contentEditable` attribute, and applies the provided ARIA and HTML
+ * attributes. Prefer {@link ContentEditable}, which reads the editor from
+ * context and adds placeholder support, unless you need this extra control.
+ */
 export const ContentEditableElement = forwardRef(ContentEditableElementImpl);

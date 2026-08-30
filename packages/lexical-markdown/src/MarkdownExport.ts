@@ -6,15 +6,6 @@
  *
  */
 
-import type {
-  BaseSelection,
-  ElementNode,
-  LexicalNode,
-  LineBreakNode,
-  TextFormatType,
-  TextNode,
-} from 'lexical';
-
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
@@ -23,15 +14,22 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
+  type BaseSelection,
+  type ElementNode,
+  type LexicalNode,
+  type LineBreakNode,
+  type TextFormatType,
+  type TextNode,
 } from 'lexical';
 
 import {
-  ElementTransformer,
+  type ElementTransformer,
+  getCodeSpanDelimiter,
   hardLineBreakState,
-  MultilineElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
+  type MultilineElementTransformer,
+  type TextFormatTransformer,
+  type TextMatchTransformer,
+  type Transformer,
 } from './MarkdownTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
 
@@ -39,7 +37,7 @@ import {isEmptyParagraph, transformersByType} from './utils';
  * Renders string from markdown. The selection is moved to the start after the operation.
  */
 export function createMarkdownExport(
-  transformers: Array<Transformer>,
+  transformers: Transformer[],
   shouldPreserveNewLines: boolean = false,
 ): (node?: ElementNode) => string {
   const byType = transformersByType(transformers);
@@ -115,10 +113,13 @@ export function createSelectionMarkdownExport(
 
   return selection => {
     const output = [];
-    const children = $getRoot().getChildren();
+    // The separator depends on the previously *emitted* block, not on the
+    // previous root child: unselected children produce no output, so keying
+    // off the child index would prefix a newline to the first emitted block
+    // whenever the selection starts below the top of the document.
+    let previousExported: LexicalNode | null = null;
 
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
+    for (const child of $getRoot().getChildren()) {
       const {shouldInclude, markdown} = $processNodeForSelection(
         child,
         selection,
@@ -131,12 +132,13 @@ export function createSelectionMarkdownExport(
       if (shouldInclude && markdown != null) {
         output.push(
           isNewlineDelimited &&
-            i > 0 &&
+            previousExported !== null &&
             !isEmptyParagraph(child) &&
-            !isEmptyParagraph(children[i - 1])
+            !isEmptyParagraph(previousExported)
             ? '\n'.concat(markdown)
             : markdown,
         );
+        previousExported = child;
       }
     }
     return output.join('\n');
@@ -343,9 +345,9 @@ function $exportChildrenForSelection(
 
 function $exportTopLevelElements(
   node: LexicalNode,
-  elementTransformers: Array<ElementTransformer | MultilineElementTransformer>,
-  textTransformersIndex: Array<TextFormatTransformer>,
-  textMatchTransformers: Array<TextMatchTransformer>,
+  elementTransformers: (ElementTransformer | MultilineElementTransformer)[],
+  textTransformersIndex: TextFormatTransformer[],
+  textMatchTransformers: TextMatchTransformer[],
   shouldPreserveNewLines: boolean,
 ): string | null {
   for (const transformer of elementTransformers) {
@@ -386,10 +388,10 @@ function $exportTopLevelElements(
 
 function $exportChildren(
   node: ElementNode,
-  textTransformersIndex: Array<TextFormatTransformer>,
-  textMatchTransformers: Array<TextMatchTransformer>,
-  unclosedTags?: Array<{format: TextFormatType; tag: string}>,
-  unclosableTags?: Array<{format: TextFormatType; tag: string}>,
+  textTransformersIndex: TextFormatTransformer[],
+  textMatchTransformers: TextMatchTransformer[],
+  unclosedTags?: {format: TextFormatType; tag: string}[],
+  unclosableTags?: {format: TextFormatType; tag: string}[],
   shouldPreserveNewLines: boolean = false,
 ): string {
   const output = [];
@@ -481,10 +483,10 @@ function $exportLineBreak(node: LineBreakNode): string {
 function exportTextFormat(
   node: TextNode,
   textContent: string,
-  textTransformers: Array<TextFormatTransformer>,
+  textTransformers: TextFormatTransformer[],
   // unclosed tags include the markdown tags that haven't been closed yet, and their associated formats
-  unclosedTags: Array<{format: TextFormatType; tag: string}>,
-  unclosableTags?: Array<{format: TextFormatType; tag: string}>,
+  unclosedTags: {format: TextFormatType; tag: string}[],
+  unclosableTags?: {format: TextFormatType; tag: string}[],
   shouldPreserveNewLines: boolean = false,
 ): string {
   // This function handles the case of a string looking like this: "   foo   "
@@ -493,21 +495,38 @@ function exportTextFormat(
   // Otherwise, we escape leading and trailing whitespaces to their corresponding code points,
   // ensuring the returned string maintains its original formatting, e.g., "**&#32;&#32;&#32;foo&#32;&#32;&#32;**".
 
+  const isCode = node.hasFormat('code');
+
   let output = textContent;
-  if (!node.hasFormat('code')) {
+  if (!isCode) {
     // Preserve literal backslashes when preserving source newlines.
     output = shouldPreserveNewLines
       ? output.replace(/([*_`~])/g, '\\$1')
       : output.replace(/([*_`~\\])/g, '\\$1');
   }
 
-  // Extract leading and trailing whitespaces.
-  // CommonMark flanking rules require formatting tags to be adjacent to non-whitespace characters.
-  const match = output.match(/^(\s*)(.*?)(\s*)$/s) || ['', '', output, ''];
-  const leadingSpace = match[1];
-  const trimmedOutput = match[2];
-  const trailingSpace = match[3];
-  const isWhitespaceOnly = trimmedOutput === '';
+  let leadingSpace: string;
+  let trimmedOutput: string;
+  let trailingSpace: string;
+  let isWhitespaceOnly: boolean;
+
+  if (isCode) {
+    // Inline code is an atomic literal span with a content-derived fence, so
+    // its whitespace stays inside the fence and other formats wrap around it.
+    const {fence, padded} = getCodeSpanDelimiter(textContent);
+    leadingSpace = '';
+    trailingSpace = '';
+    trimmedOutput = fence + padded + fence;
+    isWhitespaceOnly = false;
+  } else {
+    // Extract leading and trailing whitespaces.
+    // CommonMark flanking rules require formatting tags to be adjacent to non-whitespace characters.
+    const match = output.match(/^(\s*)(.*?)(\s*)$/s) || ['', '', output, ''];
+    leadingSpace = match[1];
+    trimmedOutput = match[2];
+    trailingSpace = match[3];
+    isWhitespaceOnly = trimmedOutput === '';
+  }
 
   // the opening tags to be added to the result
   let openingTags = '';
@@ -524,8 +543,23 @@ function exportTextFormat(
     const format = transformer.format[0];
     const tag = transformer.tag;
 
+    // Inline code uses a content-derived fence handled above, not a static tag.
+    if (format === 'code') {
+      continue;
+    }
+
     // dedup applied formats
-    if (checkHasFormat(node, format) && !applied.has(format)) {
+    // `checkHasFormat` reads the node's whole text, but the text being
+    // exported may be a selection slice of it. When the slice is entirely
+    // whitespace the tags are dropped by the early return below, so
+    // registering them here would leave an unclosed tag for a later node to
+    // close. In the full-document path `checkHasFormat` already rejects
+    // whitespace-only nodes, so this guard only affects sliced content.
+    if (
+      !isWhitespaceOnly &&
+      checkHasFormat(node, format) &&
+      !applied.has(format)
+    ) {
       applied.add(format);
 
       // append the tag to openingTags, if it's not applied to the previous nodes,

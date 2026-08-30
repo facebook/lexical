@@ -6,13 +6,12 @@
  *
  */
 
-import type {ChildSchema, DOMImportContext} from '@lexical/html';
-
 import {
   $isBlockLevel,
   $propagateTextAlignToBlockChildren,
+  type ChildSchema,
   defineImportRule,
-  DOMImportExtension,
+  type DOMImportContext,
   isElementOfTag,
   sel,
 } from '@lexical/html';
@@ -22,18 +21,15 @@ import {
   $isParagraphNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
-  configExtension,
-  defineExtension,
   type LexicalNode,
 } from 'lexical';
 
-import {ListExtension} from './LexicalListExtension';
 import {
   $createListItemNode,
   $isListItemNode,
   type ListItemNode,
 } from './LexicalListItemNode';
-import {$createListNode, $isListNode} from './LexicalListNode';
+import {$createListNode, $isListNode, type ListNode} from './LexicalListNode';
 
 /**
  * Mirrors the legacy `isDomChecklist` heuristic from
@@ -51,8 +47,15 @@ function isDomChecklist(domNode: HTMLElement): boolean {
  * Lift nested `ListNode`s out of `ListItemNode`s into sibling
  * `ListItemNode`s (the legacy `$normalizeChildren` shape). Also wraps any
  * non-`ListItemNode` children in a new `ListItemNode`.
+ *
+ * The wrapper items come from `listNode.createListItemNode()` — the same
+ * subclass hook the legacy `$normalizeChildren` uses — so a `ListNode`
+ * subclass gets its own item type here too.
  */
-function $normalizeListChildren(children: LexicalNode[]): ListItemNode[] {
+function $normalizeListChildren(
+  children: LexicalNode[],
+  listNode: ListNode,
+): ListItemNode[] {
   const out: ListItemNode[] = [];
   for (const child of children) {
     if ($isListItemNode(child)) {
@@ -61,12 +64,12 @@ function $normalizeListChildren(children: LexicalNode[]): ListItemNode[] {
       if (innerChildren.length > 1) {
         for (const inner of innerChildren) {
           if ($isListNode(inner)) {
-            out.push($createListItemNode().append(inner));
+            out.push(listNode.createListItemNode().append(inner));
           }
         }
       }
     } else {
-      out.push($createListItemNode().append(child));
+      out.push(listNode.createListItemNode().append(child));
     }
   }
   return out;
@@ -93,7 +96,7 @@ const ListRule = defineImportRule({
         0,
         0,
         $propagateTextAlignToBlockChildren(
-          $normalizeListChildren(ctx.$importChildren(el)),
+          $normalizeListChildren(ctx.$importChildren(el), node),
           el,
         ),
       ),
@@ -289,6 +292,11 @@ export const ListSchema: ChildSchema = {
  * Import rules for {@link ListNode} and {@link ListItemNode}, including
  * GitHub task-list and Joplin checkbox heuristics.
  *
+ * Registered by {@link ListExtension} itself (together with
+ * `CoreImportExtension`), so any editor that uses the list extension can
+ * import these tags through the `DOMImportExtension` pipeline without
+ * further configuration.
+ *
  * @experimental
  */
 export const ListImportRules = [
@@ -300,20 +308,3 @@ export const ListImportRules = [
   ListRule,
   ListItemRule,
 ];
-
-/**
- * Bundles {@link ListImportRules} together with the runtime
- * {@link ListExtension}. The application is expected to already have
- * `CoreImportExtension` (or some equivalent) in its dependency graph —
- * the core/text/paragraph/inline-format rules are a shared baseline,
- * not something this leaf importer should re-declare.
- *
- * @experimental
- */
-export const ListImportExtension = defineExtension({
-  dependencies: [
-    ListExtension,
-    configExtension(DOMImportExtension, {rules: ListImportRules}),
-  ],
-  name: '@lexical/list/Import',
-});

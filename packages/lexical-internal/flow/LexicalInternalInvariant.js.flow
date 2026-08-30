@@ -10,5 +10,5 @@
 declare export default function invariant(
   cond?: boolean,
   message?: string,
-  ...args: Array<string>
+  ...args: string[]
 ): void;

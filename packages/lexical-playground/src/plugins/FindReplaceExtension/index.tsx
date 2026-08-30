@@ -653,16 +653,11 @@ export const FindReplaceExtension = defineExtension({
                 output.caseSensitive.peek(),
               )
             : null;
-          editor.update(
-            () => {
-              const offsetMap = $buildOffsetMap();
-              const points = $resolveMatchToPoints(m[idx], offsetMap);
-              if (points) {
-                $replaceMatch(points, replaceText, m[idx], regex);
-              }
-            },
-            {discrete: true},
-          );
+          const offsetMap = $buildOffsetMap();
+          const points = $resolveMatchToPoints(m[idx], offsetMap);
+          if (points) {
+            $replaceMatch(points, replaceText, m[idx], regex);
+          }
           return true;
         },
         COMMAND_PRIORITY_LOW,
@@ -682,13 +677,8 @@ export const FindReplaceExtension = defineExtension({
                 output.caseSensitive.peek(),
               )
             : null;
-          editor.update(
-            () => {
-              const offsetMap = $buildOffsetMap();
-              $replaceAllMatches(m, offsetMap, replaceText, regex);
-            },
-            {discrete: true},
-          );
+          const offsetMap = $buildOffsetMap();
+          $replaceAllMatches(m, offsetMap, replaceText, regex);
           return true;
         },
         COMMAND_PRIORITY_LOW,

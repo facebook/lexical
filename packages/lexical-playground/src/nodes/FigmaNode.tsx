@@ -14,11 +14,12 @@ import type {
   NodeKey,
   Spread,
 } from 'lexical';
+import type {JSX} from 'react';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
   DecoratorBlockNode,
-  SerializedDecoratorBlockNode,
+  type SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 
@@ -64,8 +65,8 @@ export type SerializedFigmaNode = Spread<
 export class FigmaNode extends DecoratorBlockNode {
   __id: string;
 
-  static getType(): string {
-    return 'figma';
+  $config() {
+    return this.config('figma', {extends: DecoratorBlockNode});
   }
 
   static clone(node: FigmaNode): FigmaNode {
@@ -73,17 +74,15 @@ export class FigmaNode extends DecoratorBlockNode {
   }
 
   static importJSON(serializedNode: SerializedFigmaNode): FigmaNode {
-    const node = $createFigmaNode(serializedNode.documentID);
-    node.setFormat(serializedNode.format);
-    return node;
+    return $createFigmaNode(serializedNode.documentID).updateFromJSON(
+      serializedNode,
+    );
   }
 
   exportJSON(): SerializedFigmaNode {
     return {
       ...super.exportJSON(),
       documentID: this.__id,
-      type: 'figma',
-      version: 1,
     };
   }
 
@@ -97,7 +96,7 @@ export class FigmaNode extends DecoratorBlockNode {
   }
 
   getId(): string {
-    return this.__id;
+    return this.getLatest().__id;
   }
 
   getTextContent(

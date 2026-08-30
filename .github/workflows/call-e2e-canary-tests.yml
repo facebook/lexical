@@ -3,19 +3,20 @@ name: Lexical e2e canary test
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   canary:
     strategy:
       matrix:
         os: ['ubuntu-latest']
-        node-version: [18.18.0]
+        node-version: [24.x]
         browser: ['chromium']
         editor-mode: ['rich-text']
-        events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: ${{ matrix.os }}
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
-      events-mode: ${{ matrix.events-mode }}
+      fail-on-cache-miss: false

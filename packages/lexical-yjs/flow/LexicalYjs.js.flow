@@ -21,7 +21,7 @@ import type {
   TextNode,
 } from 'lexical';
 
-// $FlowFixMe: todo
+// $FlowFixMe[unclear-type]: todo
 export type YjsEvent = Object;
 
 export type UserState = {
@@ -37,7 +37,7 @@ export type ProviderAwareness = {
   getStates: () => Map<number, UserState>,
   off: (type: 'update', cb: () => void) => void,
   on: (type: 'update', cb: () => void) => void,
-  setLocalState: (UserState) => void,
+  setLocalState: (UserState | null) => void,
 };
 
 declare interface Provider {
@@ -45,31 +45,37 @@ declare interface Provider {
   connect(): void | Promise<void>;
   disconnect(): void;
   off(type: 'sync', cb: (isSynced: boolean) => void): void;
-  // $FlowFixMe: temp
+  // $FlowFixMe[unclear-type]: temp
   off(type: 'update', cb: (any) => void): void;
   off(type: 'status', cb: ({status: string}) => void): void;
   off(type: 'reload', cb: (doc: Doc) => void): void;
   on(type: 'sync', cb: (isSynced: boolean) => void): void;
   on(type: 'status', cb: ({status: string}) => void): void;
-  // $FlowFixMe: temp
+  // $FlowFixMe[unclear-type]: temp
   on(type: 'update', cb: (any) => void): void;
   on(type: 'reload', cb: (doc: Doc) => void): void;
 }
 
 export type ClientID = number;
-// $FlowFixMe: work around for internal
+// $FlowFixMe[unclear-type]: work around for internal
 export type XmlElement = Object;
-// $FlowFixMe: work around for internal
+// $FlowFixMe[unclear-type]: work around for internal
 export type YMap = Object;
-// $FlowFixMe: work around for internal
 export type TextOperation = {
-  insert?: string | mixed,
+  insert?: string | unknown,
   delete?: number,
   retain?: number,
   attributes?: {
-    [x: string]: mixed,
+    [x: string]: unknown,
   },
 };
+
+// CSS Custom Highlight API; lib.dom in TS but not in Flow's bundled defs.
+declare class Highlight {
+  constructor(...initialRanges: Range[]): void;
+  add(range: Range): Highlight;
+  clear(): void;
+}
 
 export type CursorSelection = {
   anchor: {
@@ -82,8 +88,10 @@ export type CursorSelection = {
     key: NodeKey,
     offset: number,
   },
+  highlight: Highlight | null,
+  highlightName: string,
   name: HTMLSpanElement,
-  selections: Array<HTMLElement>,
+  selections: HTMLElement[],
 };
 
 export type Cursor = {
@@ -92,8 +100,22 @@ export type Cursor = {
   selection: null | CursorSelection,
 };
 
-export type Binding = {
+export type BaseBinding = {
   clientID: number,
+  cursorHighlightSheet: CSSStyleSheet | null,
+  cursors: Map<ClientID, Cursor>,
+  cursorsContainer: null | HTMLElement,
+  doc: Doc,
+  docMap: Map<string, Doc>,
+  editor: LexicalEditor,
+  excludedProperties: ExcludedProperties,
+  id: string,
+  isBootstrapping: boolean,
+  nodeProperties: Map<string, {[property: string]: unknown}>,
+};
+
+export type Binding = {
+  ...BaseBinding,
   collabNodeMap: Map<
     NodeKey,
     | CollabElementNode
@@ -101,15 +123,23 @@ export type Binding = {
     | CollabDecoratorNode
     | CollabLineBreakNode,
   >,
-  cursors: Map<ClientID, Cursor>,
-  cursorsContainer: null | HTMLElement,
-  doc: Doc,
-  docMap: Map<string, Doc>,
-  editor: LexicalEditor,
-  id: string,
-  nodeProperties: Map<string, Array<string>>,
   root: CollabElementNode,
 };
+
+// CollabV2Mapping is an internal class with no public TypeScript export; model
+// it as an opaque nominal type (like Highlight above) so the v2 binding's
+// `mapping` field is distinct rather than `any`/`Object`.
+declare class CollabV2Mapping {}
+
+export type BindingV2 = {
+  ...BaseBinding,
+  mapping: CollabV2Mapping,
+  root: XmlElement,
+};
+
+// AnyBinding is not part of the public TypeScript export surface; it is kept
+// local so it can type the binding parameter below.
+type AnyBinding = Binding | BindingV2;
 
 export type ExcludedProperties = Map<Class<LexicalNode>, Set<string>>;
 
@@ -226,12 +256,12 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 declare export class CollabElementNode {
   _key: NodeKey;
-  _children: Array<
+  _children: (
     | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
-    | CollabLineBreakNode,
-  >;
+    | CollabLineBreakNode
+  )[];
   _xmlText: XmlText;
   _type: string;
   _parent: null | CollabElementNode;
@@ -263,7 +293,7 @@ declare export class CollabElementNode {
     keysChanged: null | Set<string>,
   ): void;
 
-  applyChildrenYjsDelta(binding: Binding, deltas: Array<TextOperation>): void;
+  applyChildrenYjsDelta(binding: Binding, deltas: TextOperation[]): void;
 
   syncChildrenFromYjs(binding: Binding): void;
 
@@ -345,13 +375,33 @@ declare export function createBinding(
   id: string,
   doc: ?Doc,
   docMap: Map<string, Doc>,
-  getXmlText: ?(ydoc: Doc) => XmlText
 ): Binding;
+
+export type SyncCursorPositionsOptions = {
+  getAwarenessStates?: (
+    binding: Binding,
+    provider: Provider,
+  ) => Map<number, UserState>,
+  selectionHighlight?: boolean,
+};
 
 declare export function syncCursorPositions(
   binding: Binding,
   provider: Provider,
+  options?: SyncCursorPositionsOptions,
 ): void;
+
+declare export function removeCursorHighlightRule(highlightName: string): void;
+
+declare export function $getAnchorAndFocusForUserState(
+  binding: AnyBinding,
+  userState: UserState,
+): {
+  anchorKey: NodeKey | null,
+  anchorOffset: number,
+  focusKey: NodeKey | null,
+  focusOffset: number,
+};
 
 declare export function syncLexicalUpdateToYjs(
   binding: Binding,
@@ -367,7 +417,7 @@ declare export function syncLexicalUpdateToYjs(
 declare export function syncYjsChangesToLexical(
   binding: Binding,
   provider: Provider,
-  events: Array<YjsEvent>,
+  events: YjsEvent[],
 ): void;
 
 declare export var CONNECTED_COMMAND: LexicalCommand<boolean>;

@@ -6,9 +6,8 @@
  *
  */
 
+import type {SerializedRawEditorState} from './types';
 import type {EditorState} from 'lexical';
-
-import {SerializedRawEditorState} from './types';
 
 // Because we want to restore state to it's original form as it comes back from the store we need to keep original references
 // this is a temporary solution that shall be replaced with a deserialization from serialized form

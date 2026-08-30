@@ -17,12 +17,12 @@ export type HistoryStateEntry = {
 
 export type HistoryState = {
   current: null | HistoryStateEntry,
-  redoStack: Array<HistoryStateEntry>,
-  undoStack: Array<HistoryStateEntry>,
+  redoStack: HistoryStateEntry[],
+  undoStack: HistoryStateEntry[],
 };
 
 declare export function HistoryPlugin({
   externalHistoryState?: HistoryState,
-}): React$Node;
+}): React.Node;
 
 declare export function createEmptyHistoryState(): HistoryState;

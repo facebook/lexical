@@ -6,12 +6,20 @@
  *
  */
 
-import type {Binding} from './Bindings';
-import type {LexicalCommand} from 'lexical';
-import type {Doc, RelativePosition, UndoManager, XmlText} from 'yjs';
+import type {BaseBinding} from './Bindings';
 
-import {createCommand} from 'lexical';
-import {UndoManager as YjsUndoManager} from 'yjs';
+import './types';
+
+import {createCommand, type LexicalCommand} from 'lexical';
+import {
+  type Doc,
+  type RelativePosition,
+  type Snapshot,
+  type UndoManager,
+  UndoManager as YjsUndoManager,
+  type XmlElement,
+  type XmlText,
+} from 'yjs';
 
 export type UserState = {
   anchorPos: null | RelativePosition;
@@ -20,18 +28,31 @@ export type UserState = {
   focusPos: null | RelativePosition;
   name: string;
   awarenessData: object;
+  [key: string]: unknown;
 };
 export const CONNECTED_COMMAND: LexicalCommand<boolean> =
   createCommand('CONNECTED_COMMAND');
 export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> = createCommand(
   'TOGGLE_CONNECT_COMMAND',
 );
+
+export const DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<{
+  // Starting snapshot if defined, otherwise compare since start of time.
+  prevSnapshot?: Snapshot;
+  // Ending snapshot if defined, otherwise compare against current state of the Yjs document.
+  snapshot?: Snapshot;
+}> = createCommand('DIFF_VERSIONS_COMMAND');
+export const CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<void> =
+  createCommand('CLEAR_DIFF_VERSIONS_COMMAND');
+export {$getYChangeState, renderSnapshot__EXPERIMENTAL} from './RenderSnapshot';
+
 export type ProviderAwareness = {
   getLocalState: () => UserState | null;
   getStates: () => Map<number, UserState>;
   off: (type: 'update', cb: () => void) => void;
   on: (type: 'update', cb: () => void) => void;
-  setLocalState: (arg0: UserState) => void;
+  setLocalState: (arg0: UserState | null) => void;
+  setLocalStateField: (field: string, value: unknown) => void;
 };
 declare interface Provider {
   awareness: ProviderAwareness;
@@ -52,18 +73,33 @@ export type Operation = {
   };
   insert: string | Record<string, unknown>;
 };
-export type Delta = Array<Operation>;
+export type Delta = Operation[];
 export type YjsNode = Record<string, unknown>;
 export type YjsEvent = Record<string, unknown>;
 export type {Provider};
-export type {Binding, ClientID, ExcludedProperties} from './Bindings';
-export {createBinding} from './Bindings';
+export type {
+  BaseBinding,
+  Binding,
+  BindingV2,
+  ClientID,
+  CreateYjsBindingOptions,
+  ExcludedProperties,
+} from './Bindings';
+export {
+  createBinding,
+  createBindingV2__EXPERIMENTAL,
+  createYjsBinding,
+} from './Bindings';
 
 export function createUndoManager(
-  binding: Binding,
-  root: XmlText,
+  binding: BaseBinding,
+  root: XmlText | XmlElement,
 ): UndoManager {
   return new YjsUndoManager(root, {
+    // Bootstrapping the initial editor state is not a user edit, so it must not
+    // become an undo entry (matching a non-collab editor, where the initial
+    // state is applied with HISTORY_MERGE_TAG). See #7110.
+    captureTransaction: () => !binding.isBootstrapping,
     trackedOrigins: new Set([binding, null]),
   });
 }
@@ -109,8 +145,17 @@ export function setLocalStateFocus(
   localState.focusing = focusing;
   awareness.setLocalState(localState);
 }
-export {syncCursorPositions} from './SyncCursors';
+export {
+  $getAnchorAndFocusForUserState,
+  getAnchorAndFocusCollabNodesForUserState,
+  removeCursorHighlightRule,
+  syncCursorPositions,
+  type SyncCursorPositionsFn,
+} from './SyncCursors';
 export {
   syncLexicalUpdateToYjs,
+  syncLexicalUpdateToYjsV2__EXPERIMENTAL,
   syncYjsChangesToLexical,
+  syncYjsChangesToLexicalV2__EXPERIMENTAL,
+  syncYjsStateToLexicalV2__EXPERIMENTAL,
 } from './SyncEditorStates';

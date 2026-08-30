@@ -6,29 +6,34 @@
  *
  */
 
-import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getNodeByKey,
   COMMAND_PRIORITY_LOW,
-  CommandListenerPriority,
-  NodeKey,
-  TextNode,
+  type CommandListenerPriority,
+  type NodeKey,
+  type TextNode,
 } from 'lexical';
-import {useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
+import {
+  type JSX,
+  startTransition,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 
-import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
+import {
+  LexicalMenu,
+  MenuOption,
+  type MenuRenderFn,
+  type MenuResolution,
+  useMenuAnchorRef,
+} from './shared/LexicalMenu';
 
-function startTransition(callback: () => void) {
-  if (React.startTransition) {
-    React.startTransition(callback);
-  } else {
-    callback();
-  }
-}
-
+/**
+ * Props for the {@link LexicalNodeMenuPlugin} component.
+ */
 export type NodeMenuPluginProps<TOption extends MenuOption> = {
   onSelectOption: (
     option: TOption,
@@ -36,16 +41,25 @@ export type NodeMenuPluginProps<TOption extends MenuOption> = {
     closeMenu: () => void,
     matchingString: string,
   ) => void;
-  options: Array<TOption>;
+  options: TOption[];
   nodeKey: NodeKey | null;
+  menuRenderFn?: MenuRenderFn<TOption>;
   onClose?: () => void;
   onOpen?: (resolution: MenuResolution) => void;
-  menuRenderFn: MenuRenderFn<TOption>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
   parent?: HTMLElement;
 };
 
+/**
+ * Renders a floating menu anchored to a specific node (identified by
+ * `nodeKey`), for example to offer actions on a just-inserted node. It is the
+ * node-anchored counterpart to {@link LexicalTypeaheadMenuPlugin}: provide the
+ * `options` to show and an `onSelectOption` handler, and the menu opens while
+ * `nodeKey` refers to a node and closes when it becomes `null`.
+ *
+ * @returns The floating menu element, or `null` when the menu is closed.
+ */
 export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
   options,
   nodeKey,
@@ -104,6 +118,7 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
   }, [closeNodeMenu, editor, nodeKey, openNodeMenu, resolution]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     positionOrCloseMenu();
   }, [positionOrCloseMenu, nodeKey]);
 
@@ -117,7 +132,9 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
     }
   }, [editor, positionOrCloseMenu, nodeKey]);
 
-  return resolution === null || editor === null ? null : (
+  return anchorElementRef.current === null ||
+    resolution === null ||
+    editor === null ? null : (
     <LexicalMenu
       close={closeNodeMenu}
       resolution={resolution}

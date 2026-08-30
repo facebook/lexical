@@ -6,7 +6,13 @@
  *
  */
 
-import {ReactNode} from 'react';
+import type {ReactNode} from 'react';
+
+import {
+  buildStackBlitzUri,
+  galleryExamples,
+  getScreenshotPreview,
+} from './galleryExamples';
 
 export type Example = {
   description: string;
@@ -14,28 +20,14 @@ export type Example = {
   uri?: string;
   preview?: string;
   renderPreview?: () => ReactNode;
-  tags: Array<string>;
+  tags: string[];
 };
 
-export const plugins = (customFields: {
-  [key: string]: unknown;
-}): Array<Example> => [
-  {
-    description: 'Learn how to create an editor with Emojis',
-    tags: ['opensource'],
-    title: 'EmojiPlugin',
-    uri: `${customFields.STACKBLITZ_PREFIX}examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0&ctl=0`,
-  },
-  {
-    description: 'Learn how to create an editor with Real Time Collaboration',
-    tags: ['opensource', 'favorite'],
-    title: 'Collab RichText',
-    uri: 'https://stackblitz.com/github/facebook/lexical/tree/fix/collab_example/examples/react-rich-collab?ctl=0&file=src%2Fmain.tsx&terminalHeight=0&embed=1',
-  },
-  {
-    description: 'Learn how to create an editor with Tables',
-    tags: ['opensource', 'favorite'],
-    title: 'TablePlugin',
-    uri: `${customFields.STACKBLITZ_PREFIX}examples/react-table?embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0`,
-  },
-];
+export const plugins = (customFields: {[key: string]: unknown}): Example[] =>
+  galleryExamples.map(example => ({
+    description: example.description,
+    preview: getScreenshotPreview(example),
+    tags: example.tags,
+    title: example.title,
+    uri: buildStackBlitzUri(example, customFields.STACKBLITZ_PREFIX as string),
+  }));

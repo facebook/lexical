@@ -6,10 +6,18 @@
  *
  */
 
+import type {LexicalCommandLog} from './useLexicalCommandsLog';
 import type {EditorSetOptions, EditorState} from 'lexical';
 
 import * as React from 'react';
-import {forwardRef, useCallback, useEffect, useRef, useState} from 'react';
+import {
+  forwardRef,
+  type JSX,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 const LARGE_EDITOR_STATE_SIZE = 1000;
 
@@ -17,15 +25,16 @@ export const TreeView = forwardRef<
   HTMLPreElement,
   {
     editorState: EditorState;
-    treeTypeButtonClassName: string;
-    timeTravelButtonClassName: string;
-    timeTravelPanelButtonClassName: string;
-    timeTravelPanelClassName: string;
-    timeTravelPanelSliderClassName: string;
-    viewClassName: string;
+    treeTypeButtonClassName?: string;
+    timeTravelButtonClassName?: string;
+    timeTravelPanelButtonClassName?: string;
+    timeTravelPanelClassName?: string;
+    timeTravelPanelSliderClassName?: string;
+    viewClassName?: string;
     generateContent: (exportDOM: boolean) => Promise<string>;
     setEditorState: (state: EditorState, options?: EditorSetOptions) => void;
     setEditorReadOnly: (isReadonly: boolean) => void;
+    commandsLog?: LexicalCommandLog;
   }
 >(function TreeViewWrapped(
   {
@@ -39,11 +48,12 @@ export const TreeView = forwardRef<
     setEditorState,
     setEditorReadOnly,
     generateContent,
+    commandsLog = [],
   },
   ref,
 ): JSX.Element {
   const [timeStampedEditorStates, setTimeStampedEditorStates] = useState<
-    Array<[number, EditorState]>
+    [number, EditorState][]
   >([]);
   const [content, setContent] = useState<string>('');
   const [timeTravelEnabled, setTimeTravelEnabled] = useState(false);
@@ -53,19 +63,20 @@ export const TreeView = forwardRef<
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLimited, setIsLimited] = useState(false);
   const [showLimited, setShowLimited] = useState(false);
-  const lastEditorStateRef = useRef<null | EditorState>();
+  const lastEditorStateRef = useRef<null | EditorState>(null);
+  const lastCommandsLogRef = useRef<LexicalCommandLog>([]);
   const lastGenerationID = useRef(0);
 
   const generateTree = useCallback(
     (exportDOM: boolean) => {
       const myID = ++lastGenerationID.current;
       generateContent(exportDOM)
-        .then((treeText) => {
+        .then(treeText => {
           if (myID === lastGenerationID.current) {
             setContent(treeText);
           }
         })
-        .catch((err) => {
+        .catch(err => {
           if (myID === lastGenerationID.current) {
             setContent(
               `Error rendering tree: ${err.message}\n\nStack:\n${err.stack}`,
@@ -84,13 +95,22 @@ export const TreeView = forwardRef<
       }
     }
 
-    // Prevent re-rendering if the editor state hasn't changed
-    if (lastEditorStateRef.current !== editorState) {
+    // Update view when either editor state changes or new commands are logged
+    const shouldUpdate =
+      lastEditorStateRef.current !== editorState ||
+      lastCommandsLogRef.current !== commandsLog;
+
+    if (shouldUpdate) {
+      // Check if it's a real editor state change
+      const isEditorStateChange = lastEditorStateRef.current !== editorState;
+
       lastEditorStateRef.current = editorState;
+      lastCommandsLogRef.current = commandsLog;
       generateTree(showExportDOM);
 
-      if (!timeTravelEnabled) {
-        setTimeStampedEditorStates((currentEditorStates) => [
+      // Only record in time travel if there was an actual editor state change
+      if (!timeTravelEnabled && isEditorStateChange) {
+        setTimeStampedEditorStates(currentEditorStates => [
           ...currentEditorStates,
           [Date.now(), editorState],
         ]);
@@ -102,6 +122,7 @@ export const TreeView = forwardRef<
     showExportDOM,
     showLimited,
     timeTravelEnabled,
+    commandsLog,
   ]);
 
   const totalEditorStates = timeStampedEditorStates.length;
@@ -209,7 +230,7 @@ export const TreeView = forwardRef<
           <input
             className={timeTravelPanelSliderClassName}
             ref={inputRef}
-            onChange={(event) => {
+            onChange={event => {
               const editorStateIndex = Number(event.target.value);
               const timeStampedEditorState =
                 timeStampedEditorStates[editorStateIndex];

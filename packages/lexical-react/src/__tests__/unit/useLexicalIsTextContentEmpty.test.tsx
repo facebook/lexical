@@ -6,20 +6,19 @@
  *
  */
 
+import {useLexicalIsTextContentEmpty} from '@lexical/react/useLexicalIsTextContentEmpty';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   createEditor,
-  LexicalEditor,
+  type LexicalEditor,
   ParagraphNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef} from 'react';
-import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
-
-import {useLexicalIsTextContentEmpty} from '../../useLexicalIsTextContentEmpty';
+import {act, createRef} from 'react';
+import {createRoot, type Root} from 'react-dom/client';
+import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 describe('useLexicalIsTextContentEmpty', () => {
   let container: HTMLDivElement | null = null;
@@ -35,17 +34,19 @@ describe('useLexicalIsTextContentEmpty', () => {
     document.body.removeChild(container!);
     container = null;
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
-  function useLexicalEditor(rootElementRef: React.RefObject<HTMLDivElement>) {
+  function useLexicalEditor(
+    rootElementRef: React.RefObject<null | HTMLDivElement>,
+  ) {
     const editor = React.useMemo(
       () =>
         createEditor({
           namespace: '',
           nodes: [ParagraphNode],
-          onError: () => {
-            throw Error();
+          onError: err => {
+            throw err;
           },
         }),
       [],
@@ -60,7 +61,7 @@ describe('useLexicalIsTextContentEmpty', () => {
   }
 
   test('hook works', async () => {
-    const ref = createRef<HTMLDivElement>();
+    const ref = createRef<null | HTMLDivElement>();
     let editor: LexicalEditor;
     let hasText = false;
 
@@ -73,11 +74,11 @@ describe('useLexicalIsTextContentEmpty', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase />);
     });
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
 

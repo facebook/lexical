@@ -7,32 +7,40 @@
  */
 
 import type {KlassConstructor} from '../LexicalEditor';
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  NodeKey,
-  SerializedLexicalNode,
-} from '../LexicalNode';
 
-import {DOM_TEXT_TYPE} from '../LexicalConstants';
-import {LexicalNode} from '../LexicalNode';
-import {$applyNodeReplacement, isBlockDomNode} from '../LexicalUtils';
+import {
+  type DOMConversionOutput,
+  LexicalNode,
+  type SerializedLexicalNode,
+} from '../LexicalNode';
+import {
+  $applyNodeReplacement,
+  $getDocument,
+  isBlockDomNode,
+  isDOMTextNode,
+} from '../LexicalUtils';
 
 export type SerializedLineBreakNode = SerializedLexicalNode;
 
 /** @noInheritDoc */
 export class LineBreakNode extends LexicalNode {
-  ['constructor']!: KlassConstructor<typeof LineBreakNode>;
-  static getType(): string {
-    return 'linebreak';
-  }
+  /** @internal */
+  declare ['constructor']: KlassConstructor<typeof LineBreakNode>;
 
-  static clone(node: LineBreakNode): LineBreakNode {
-    return new LineBreakNode(node.__key);
-  }
-
-  constructor(key?: NodeKey) {
-    super(key);
+  $config() {
+    return this.config('linebreak', {
+      importDOM: {
+        br: (node: Node) => {
+          if (isOnlyChildInBlockNode(node) || isLastChildInBlockNode(node)) {
+            return null;
+          }
+          return {
+            conversion: $convertLineBreakElement,
+            priority: 0,
+          };
+        },
+      },
+    });
   }
 
   getTextContent(): '\n' {
@@ -40,38 +48,15 @@ export class LineBreakNode extends LexicalNode {
   }
 
   createDOM(): HTMLElement {
-    return document.createElement('br');
+    return $getDocument().createElement('br');
   }
 
   updateDOM(): false {
     return false;
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      br: (node: Node) => {
-        if (isOnlyChildInBlockNode(node) || isLastChildInBlockNode(node)) {
-          return null;
-        }
-        return {
-          conversion: $convertLineBreakElement,
-          priority: 0,
-        };
-      },
-    };
-  }
-
-  static importJSON(
-    serializedLineBreakNode: SerializedLineBreakNode,
-  ): LineBreakNode {
-    return $createLineBreakNode();
-  }
-
-  exportJSON(): SerializedLexicalNode {
-    return {
-      type: 'linebreak',
-      version: 1,
-    };
+  isInline(): true {
+    return true;
   }
 }
 
@@ -79,17 +64,27 @@ function $convertLineBreakElement(node: Node): DOMConversionOutput {
   return {node: $createLineBreakNode()};
 }
 
+/** Creates a LineBreakNode representing a soft line break (Shift+Enter). */
 export function $createLineBreakNode(): LineBreakNode {
   return $applyNodeReplacement(new LineBreakNode());
 }
 
+/** Returns true if the given node is a LineBreakNode. */
 export function $isLineBreakNode(
   node: LexicalNode | null | undefined,
 ): node is LineBreakNode {
   return node instanceof LineBreakNode;
 }
 
-function isOnlyChildInBlockNode(node: Node): boolean {
+/**
+ * True when `node` is the sole non-whitespace child of a block DOM
+ * element. Used by the LineBreak importer to drop stray `<br>` elements
+ * that the legacy `$generateNodesFromDOM` also skipped (matches the
+ * behavior of `LineBreakNode.importDOM`).
+ *
+ * @experimental
+ */
+export function isOnlyChildInBlockNode(node: Node): boolean {
   const parentElement = node.parentElement;
   if (parentElement !== null && isBlockDomNode(parentElement)) {
     const firstChild = parentElement.firstChild!;
@@ -110,10 +105,18 @@ function isOnlyChildInBlockNode(node: Node): boolean {
   return false;
 }
 
-function isLastChildInBlockNode(node: Node): boolean {
+/**
+ * True when `node` is the trailing non-whitespace child of a block DOM
+ * element (excluding the only-child case). Used by the LineBreak
+ * importer to drop trailing `<br>` elements like the Apple-interchange
+ * clipboard artifact (matches `LineBreakNode.importDOM`).
+ *
+ * @experimental
+ */
+export function isLastChildInBlockNode(node: Node): boolean {
   const parentElement = node.parentElement;
   if (parentElement !== null && isBlockDomNode(parentElement)) {
-    // check if node is first child, because only childs dont count
+    // check if node is first child, because only child dont count
     const firstChild = parentElement.firstChild!;
     if (
       firstChild === node ||
@@ -135,8 +138,5 @@ function isLastChildInBlockNode(node: Node): boolean {
 }
 
 function isWhitespaceDomTextNode(node: Node): boolean {
-  return (
-    node.nodeType === DOM_TEXT_TYPE &&
-    /^( |\t|\r?\n)+$/.test(node.textContent || '')
-  );
+  return isDOMTextNode(node) && /^( |\t|\r?\n)+$/.test(node.textContent || '');
 }

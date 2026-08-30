@@ -6,50 +6,35 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  RangeSelection,
-  SerializedElementNode,
+import {
+  $applyNodeReplacement,
+  $getDocument,
+  defineExtension,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+  type RangeSelection,
+  type SerializedElementNode,
 } from 'lexical';
-
-import {$applyNodeReplacement, ElementNode} from 'lexical';
 
 export type SerializedOverflowNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class OverflowNode extends ElementNode {
-  static getType(): string {
-    return 'overflow';
-  }
-
-  static clone(node: OverflowNode): OverflowNode {
-    return new OverflowNode(node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedOverflowNode): OverflowNode {
-    return $createOverflowNode();
-  }
-
-  static importDOM(): null {
-    return null;
-  }
-
-  constructor(key?: NodeKey) {
-    super(key);
-    this.__type = 'overflow';
-  }
-
-  exportJSON(): SerializedElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'overflow',
-    };
+  /** @internal */
+  $config() {
+    return this.config('overflow', {
+      $transform(node: OverflowNode) {
+        if (node.isEmpty()) {
+          node.remove();
+        }
+      },
+      extends: ElementNode,
+    });
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const div = document.createElement('span');
+    const div = $getDocument().createElement('span');
     const className = config.theme.characterLimit;
     if (typeof className === 'string') {
       div.className = className;
@@ -57,7 +42,7 @@ export class OverflowNode extends ElementNode {
     return div;
   }
 
-  updateDOM(prevNode: OverflowNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
   }
 
@@ -83,3 +68,11 @@ export function $isOverflowNode(
 ): node is OverflowNode {
   return node instanceof OverflowNode;
 }
+
+/**
+ * Configures {@link OverflowNode}
+ */
+export const OverflowExtension = defineExtension({
+  name: '@lexical/overflow',
+  nodes: () => [OverflowNode],
+});

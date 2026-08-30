@@ -6,7 +6,7 @@
  *
  */
 
-import {TextNode} from 'lexical';
+import type {TextNode} from 'lexical';
 
 export type TextNodeWithOffset = {
   node: TextNode;

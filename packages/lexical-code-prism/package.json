@@ -1,0 +1,78 @@
+{
+  "name": "@lexical/code-prism",
+  "description": "This package contains the code highlighter for Lexical using the prism engine",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "code"
+  ],
+  "license": "MIT",
+  "version": "0.49.0",
+  "main": "./dist/LexicalCodePrism.js",
+  "types": "./dist/typescript-too-old.d.ts",
+  "dependencies": {
+    "@lexical/code-core": "workspace:*",
+    "@lexical/extension": "workspace:*",
+    "lexical": "workspace:*",
+    "prismjs": "^1.30.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-code-prism"
+  },
+  "devDependencies": {
+    "@types/prismjs": "^1.26.6"
+  },
+  "module": "./dist/LexicalCodePrism.mjs",
+  "sideEffects": true,
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalCodePrism.dev.mjs",
+        "production": "./dist/LexicalCodePrism.prod.mjs",
+        "node": "./dist/LexicalCodePrism.node.mjs",
+        "default": "./dist/LexicalCodePrism.mjs"
+      },
+      "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalCodePrism.dev.js",
+        "production": "./dist/LexicalCodePrism.prod.js",
+        "default": "./dist/LexicalCodePrism.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "typescript": ">=5.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
+}

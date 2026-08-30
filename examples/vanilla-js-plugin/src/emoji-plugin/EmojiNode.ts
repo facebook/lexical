@@ -6,9 +6,13 @@
  *
  */
 
-import type {EditorConfig, NodeKey, SerializedTextNode, Spread} from 'lexical';
-
-import {TextNode} from 'lexical';
+import {
+  type EditorConfig,
+  type NodeKey,
+  type SerializedTextNode,
+  type Spread,
+  TextNode,
+} from 'lexical';
 
 export type SerializedEmojiNode = Spread<
   {
@@ -24,8 +28,8 @@ const BASE_EMOJI_URI = new URL(`@emoji-datasource-facebook/`, import.meta.url)
 export class EmojiNode extends TextNode {
   __unifiedID: string;
 
-  static getType(): string {
-    return 'emoji';
+  $config() {
+    return this.config('emoji', {extends: TextNode});
   }
 
   static clone(node: EmojiNode): EmojiNode {
@@ -34,7 +38,7 @@ export class EmojiNode extends TextNode {
 
   constructor(unifiedID: string, key?: NodeKey) {
     const unicodeEmoji = String.fromCodePoint(
-      ...unifiedID.split('-').map((v) => parseInt(v, 16)),
+      ...unifiedID.split('-').map(v => parseInt(v, 16)),
     );
     super(unicodeEmoji, key);
 
@@ -60,7 +64,6 @@ export class EmojiNode extends TextNode {
   exportJSON(): SerializedEmojiNode {
     return {
       ...super.exportJSON(),
-      type: 'emoji',
       unifiedID: this.__unifiedID,
     };
   }

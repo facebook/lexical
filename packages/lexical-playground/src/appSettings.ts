@@ -12,15 +12,26 @@ export const isDevPlayground: boolean =
   hostName !== 'lexical-playground.vercel.app';
 
 export const DEFAULT_SETTINGS = {
-  disableBeforeInput: false,
   emptyEditor: isDevPlayground,
+  hasFitNestedTables: false,
+  hasLinkAttributes: false,
+  hasNestedTables: false,
   isAutocomplete: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
+  isCodeHighlighted: true,
+  isCodeShiki: false,
   isCollab: false,
   isMaxLength: false,
   isRichText: true,
+  isShadowDOM: false,
+  isVisibleNonPrinting: false,
+  listStrictIndent: false,
   measureTypingPerf: false,
+  selectBlock: true,
+  selectionAlwaysOnDisplay: false,
+  shouldAllowHighlightingWithBrackets: false,
+  shouldDisableFocusOnClickChecklist: false,
   shouldPreserveNewLinesInMarkdown: false,
   shouldUseLexicalContextMenu: false,
   showNestedEditorTreeView: false,
@@ -28,6 +39,8 @@ export const DEFAULT_SETTINGS = {
   showTreeView: true,
   tableCellBackgroundColor: true,
   tableCellMerge: true,
+  tableHorizontalScroll: true,
+  useCollabV2: false,
 } as const;
 
 // These are mutated in setupEnv

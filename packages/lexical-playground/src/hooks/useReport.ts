@@ -51,7 +51,7 @@ export default function useReport(): (
   }, [cleanup]);
 
   return useCallback(
-    (content) => {
+    content => {
       // eslint-disable-next-line no-console
       console.log(content);
       const element = getElement();

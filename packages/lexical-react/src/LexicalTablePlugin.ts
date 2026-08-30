@@ -6,217 +6,95 @@
  *
  */
 
-import type {
-  HTMLTableElementWithWithTableSelectionState,
-  InsertTableCommandPayload,
-  TableObserver,
-} from '@lexical/table';
-import type {NodeKey} from 'lexical';
-
+import {type Signal, signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  $computeTableMap,
-  $computeTableMapSkipCellCheck,
-  $createTableCellNode,
-  $createTableNodeWithDimensions,
-  $getNodeTriplet,
-  $isTableCellNode,
-  $isTableNode,
-  $isTableRowNode,
-  applyTableHandlers,
-  INSERT_TABLE_COMMAND,
+  $isScrollableTablesActive,
+  registerTableCellUnmergeTransform,
+  registerTablePlugin,
+  registerTableSelectionObserver,
+  setScrollableTablesActive,
   TableCellNode,
-  TableNode,
-  TableRowNode,
 } from '@lexical/table';
-import {
-  $insertFirst,
-  $insertNodeToNearestRoot,
-  mergeRegister,
-} from '@lexical/utils';
-import {
-  $createParagraphNode,
-  $getNodeByKey,
-  $isTextNode,
-  COMMAND_PRIORITY_EDITOR,
-} from 'lexical';
-import {useEffect} from 'react';
-import invariant from 'shared/invariant';
+import {$fullReconcile} from 'lexical';
+import {type JSX, useEffect, useState} from 'react';
 
+/**
+ * Props for the {@link TablePlugin} component.
+ */
+export interface TablePluginProps {
+  /**
+   * When `false` (default `true`), merged cell support (colspan and rowspan) will be disabled and all
+   * tables will be forced into a regular grid with 1x1 table cells.
+   */
+  hasCellMerge?: boolean;
+  /**
+   * When `false` (default `true`), the background color of TableCellNode will always be removed.
+   */
+  hasCellBackgroundColor?: boolean;
+  /**
+   * When `true` (default `true`), the tab key can be used to navigate table cells.
+   */
+  hasTabHandler?: boolean;
+  /**
+   * When `true` (default `false`), tables will be wrapped in a `<div>` to enable horizontal scrolling
+   */
+  hasHorizontalScroll?: boolean;
+  /**
+   * When `true` (default `false`), nested tables will be allowed.
+   *
+   * @experimental Nested tables are not officially supported.
+   */
+  hasNestedTables?: boolean;
+}
+
+/**
+ * A plugin to enable all of the features of Lexical's TableNode.
+ *
+ * @param props - See type for documentation
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link TableExtension} instead.
+ *
+ * @returns An element to render in your LexicalComposer
+ */
 export function TablePlugin({
   hasCellMerge = true,
   hasCellBackgroundColor = true,
   hasTabHandler = true,
-}: {
-  hasCellMerge?: boolean;
-  hasCellBackgroundColor?: boolean;
-  hasTabHandler?: boolean;
-}): JSX.Element | null {
+  hasHorizontalScroll = false,
+  hasNestedTables = false,
+}: TablePluginProps): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    if (!editor.hasNodes([TableNode, TableCellNode, TableRowNode])) {
-      invariant(
-        false,
-        'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
-      );
+    const hadHorizontalScroll = $isScrollableTablesActive(editor);
+    if (hadHorizontalScroll !== hasHorizontalScroll) {
+      setScrollableTablesActive(editor, hasHorizontalScroll);
+      // Re-render existing tables through the new scroll-wrapper config without
+      // cloning every TableNode the way marking them dirty would. A full
+      // reconcile marks no nodes dirty, so it's deferred (no synchronous render
+      // from this effect) and produces no history entry.
+      editor.update($fullReconcile);
     }
+  }, [editor, hasHorizontalScroll]);
 
-    return mergeRegister(
-      editor.registerCommand<InsertTableCommandPayload>(
-        INSERT_TABLE_COMMAND,
-        ({columns, rows, includeHeaders}) => {
-          const tableNode = $createTableNodeWithDimensions(
-            Number(rows),
-            Number(columns),
-            includeHeaders,
-          );
-          $insertNodeToNearestRoot(tableNode);
+  const hasNestedTablesSignal = usePropSignal(hasNestedTables);
 
-          const firstDescendant = tableNode.getFirstDescendant();
-          if ($isTextNode(firstDescendant)) {
-            firstDescendant.select();
-          }
+  useEffect(
+    () => registerTablePlugin(editor, {hasNestedTables: hasNestedTablesSignal}),
+    [editor, hasNestedTablesSignal],
+  );
 
-          return true;
-        },
-        COMMAND_PRIORITY_EDITOR,
-      ),
-      editor.registerNodeTransform(TableNode, (node) => {
-        const [gridMap] = $computeTableMapSkipCellCheck(node, null, null);
-        const maxRowLength = gridMap.reduce((curLength, row) => {
-          return Math.max(curLength, row.length);
-        }, 0);
-        for (let i = 0; i < gridMap.length; ++i) {
-          const rowLength = gridMap[i].length;
-          if (rowLength === maxRowLength) {
-            continue;
-          }
-          const lastCellMap = gridMap[i][rowLength - 1];
-          const lastRowCell = lastCellMap.cell;
-          for (let j = rowLength; j < maxRowLength; ++j) {
-            // TODO: inherit header state from another header or body
-            const newCell = $createTableCellNode(0);
-            newCell.append($createParagraphNode());
-            if (lastRowCell !== null) {
-              lastRowCell.insertAfter(newCell);
-            } else {
-              $insertFirst(lastRowCell, newCell);
-            }
-          }
-        }
-      }),
-    );
-  }, [editor]);
-
-  useEffect(() => {
-    const tableSelections = new Map<NodeKey, TableObserver>();
-
-    const initializeTableNode = (tableNode: TableNode) => {
-      const nodeKey = tableNode.getKey();
-      const tableElement = editor.getElementByKey(
-        nodeKey,
-      ) as HTMLTableElementWithWithTableSelectionState;
-      if (tableElement && !tableSelections.has(nodeKey)) {
-        const tableSelection = applyTableHandlers(
-          tableNode,
-          tableElement,
-          editor,
-          hasTabHandler,
-        );
-        tableSelections.set(nodeKey, tableSelection);
-      }
-    };
-
-    const unregisterMutationListener = editor.registerMutationListener(
-      TableNode,
-      (nodeMutations) => {
-        for (const [nodeKey, mutation] of nodeMutations) {
-          if (mutation === 'created') {
-            editor.getEditorState().read(() => {
-              const tableNode = $getNodeByKey<TableNode>(nodeKey);
-              if ($isTableNode(tableNode)) {
-                initializeTableNode(tableNode);
-              }
-            });
-          } else if (mutation === 'destroyed') {
-            const tableSelection = tableSelections.get(nodeKey);
-
-            if (tableSelection !== undefined) {
-              tableSelection.removeListeners();
-              tableSelections.delete(nodeKey);
-            }
-          }
-        }
-      },
-      {skipInitialization: false},
-    );
-
-    return () => {
-      unregisterMutationListener();
-      // Hook might be called multiple times so cleaning up tables listeners as well,
-      // as it'll be reinitialized during recurring call
-      for (const [, tableSelection] of tableSelections) {
-        tableSelection.removeListeners();
-      }
-    };
-  }, [editor, hasTabHandler]);
+  useEffect(
+    () => registerTableSelectionObserver(editor, hasTabHandler),
+    [editor, hasTabHandler],
+  );
 
   // Unmerge cells when the feature isn't enabled
   useEffect(() => {
-    if (hasCellMerge) {
-      return;
+    if (!hasCellMerge) {
+      return registerTableCellUnmergeTransform(editor);
     }
-    return editor.registerNodeTransform(TableCellNode, (node) => {
-      if (node.getColSpan() > 1 || node.getRowSpan() > 1) {
-        // When we have rowSpan we have to map the entire Table to understand where the new Cells
-        // fit best; let's analyze all Cells at once to save us from further transform iterations
-        const [, , gridNode] = $getNodeTriplet(node);
-        const [gridMap] = $computeTableMap(gridNode, node, node);
-        // TODO this function expects Tables to be normalized. Look into this once it exists
-        const rowsCount = gridMap.length;
-        const columnsCount = gridMap[0].length;
-        let row = gridNode.getFirstChild();
-        invariant(
-          $isTableRowNode(row),
-          'Expected TableNode first child to be a RowNode',
-        );
-        const unmerged = [];
-        for (let i = 0; i < rowsCount; i++) {
-          if (i !== 0) {
-            row = row.getNextSibling();
-            invariant(
-              $isTableRowNode(row),
-              'Expected TableNode first child to be a RowNode',
-            );
-          }
-          let lastRowCell: null | TableCellNode = null;
-          for (let j = 0; j < columnsCount; j++) {
-            const cellMap = gridMap[i][j];
-            const cell = cellMap.cell;
-            if (cellMap.startRow === i && cellMap.startColumn === j) {
-              lastRowCell = cell;
-              unmerged.push(cell);
-            } else if (cell.getColSpan() > 1 || cell.getRowSpan() > 1) {
-              invariant(
-                $isTableCellNode(cell),
-                'Expected TableNode cell to be a TableCellNode',
-              );
-              const newCell = $createTableCellNode(cell.__headerState);
-              if (lastRowCell !== null) {
-                lastRowCell.insertAfter(newCell);
-              } else {
-                $insertFirst(row, newCell);
-              }
-            }
-          }
-        }
-        for (const cell of unmerged) {
-          cell.setColSpan(1);
-          cell.setRowSpan(1);
-        }
-      }
-    });
   }, [editor, hasCellMerge]);
 
   // Remove cell background color when feature is disabled
@@ -224,7 +102,7 @@ export function TablePlugin({
     if (hasCellBackgroundColor) {
       return;
     }
-    return editor.registerNodeTransform(TableCellNode, (node) => {
+    return editor.registerNodeTransform(TableCellNode, node => {
       if (node.getBackgroundColor() !== null) {
         node.setBackgroundColor(null);
       }
@@ -232,4 +110,13 @@ export function TablePlugin({
   }, [editor, hasCellBackgroundColor, hasCellMerge]);
 
   return null;
+}
+
+function usePropSignal<T>(value: T): Signal<T> {
+  const [configSignal] = useState(() => signal(value));
+  if (configSignal.peek() !== value) {
+    // eslint-disable-next-line react-hooks/immutability
+    configSignal.value = value;
+  }
+  return configSignal;
 }

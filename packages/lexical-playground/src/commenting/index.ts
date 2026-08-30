@@ -6,17 +6,15 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
-import {Provider, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
-import {COMMAND_PRIORITY_LOW} from 'lexical';
+import {type Provider, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
+import {COMMAND_PRIORITY_LOW, type LexicalEditor} from 'lexical';
 import {useEffect, useState} from 'react';
 import {
   Array as YArray,
   Map as YMap,
-  Transaction,
+  type Transaction,
   YArrayEvent,
-  YEvent,
+  type YEvent,
 } from 'yjs';
 
 export type Comment = {
@@ -29,19 +27,19 @@ export type Comment = {
 };
 
 export type Thread = {
-  comments: Array<Comment>;
+  comments: Comment[];
   id: string;
   quote: string;
   type: 'thread';
 };
 
-export type Comments = Array<Thread | Comment>;
+export type Comments = (Thread | Comment)[];
 
 function createUID(): string {
   return Math.random()
     .toString(36)
     .replace(/[^a-z]+/g, '')
-    .substr(0, 5);
+    .substring(0, 5);
 }
 
 export function createComment(
@@ -56,14 +54,17 @@ export function createComment(
     content,
     deleted: deleted === undefined ? false : deleted,
     id: id === undefined ? createUID() : id,
-    timeStamp: timeStamp === undefined ? performance.now() : timeStamp,
+    timeStamp:
+      timeStamp === undefined
+        ? performance.timeOrigin + performance.now()
+        : timeStamp,
     type: 'comment',
   };
 }
 
 export function createThread(
   quote: string,
-  comments: Array<Comment>,
+  comments: Comment[],
   id?: string,
 ): Thread {
   return {
@@ -212,7 +213,7 @@ export class CommentStore {
     if (commentOrThread.type === 'comment') {
       return {
         index: commentIndex as number,
-        markedComment: markDeleted(commentOrThread as Comment),
+        markedComment: markDeleted(commentOrThread),
       };
     }
 
@@ -293,14 +294,14 @@ export class CommentStore {
     const disconnect = () => {
       try {
         provider.disconnect();
-      } catch (e) {
+      } catch (_e) {
         // Do nothing
       }
     };
 
     const unsubscribe = this._editor.registerCommand(
       TOGGLE_CONNECT_COMMAND,
-      (payload) => {
+      payload => {
         if (connect !== undefined && disconnect !== undefined) {
           const shouldConnect = payload;
 
@@ -323,7 +324,7 @@ export class CommentStore {
     const onSharedCommentChanges = (
       // The YJS types explicitly use `any` as well.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      events: Array<YEvent<any>>,
+      events: YEvent<any>[],
       transaction: Transaction,
     ) => {
       if (transaction.origin !== this) {
@@ -345,7 +346,7 @@ export class CommentStore {
                 target === sharedCommentsArray
                   ? undefined
                   : parent instanceof YMap &&
-                    (this._comments.find((t) => t.id === parent.get('id')) as
+                    (this._comments.find(t => t.id === parent.get('id')) as
                       | Thread
                       | undefined);
 

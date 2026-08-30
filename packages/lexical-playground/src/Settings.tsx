@@ -6,10 +6,9 @@
  *
  */
 
-import {CAN_USE_BEFORE_INPUT} from '@lexical/utils';
-import {useEffect, useMemo, useState} from 'react';
+import {type JSX, useMemo, useState} from 'react';
 
-import {INITIAL_SETTINGS, isDevPlayground} from './appSettings';
+import {isDevPlayground} from './appSettings';
 import {useSettings} from './context/SettingsContext';
 import Switch from './ui/Switch';
 
@@ -21,25 +20,27 @@ export default function Settings(): JSX.Element {
       measureTypingPerf,
       isCollab,
       isRichText,
+      hasNestedTables,
+      hasFitNestedTables,
       isMaxLength,
+      hasLinkAttributes,
       isCharLimit,
       isCharLimitUtf8,
       isAutocomplete,
+      isVisibleNonPrinting,
       showTreeView,
       showNestedEditorTreeView,
-      disableBeforeInput,
       showTableOfContents,
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
+      shouldAllowHighlightingWithBrackets,
+      selectionAlwaysOnDisplay,
+      selectBlock,
+      isCodeHighlighted,
+      isCodeShiki,
+      isShadowDOM,
     },
   } = useSettings();
-  useEffect(() => {
-    if (INITIAL_SETTINGS.disableBeforeInput && CAN_USE_BEFORE_INPUT) {
-      console.error(
-        `Legacy events are enabled (disableBeforeInput) but CAN_USE_BEFORE_INPUT is true`,
-      );
-    }
-  }, []);
   const [showSettings, setShowSettings] = useState(false);
   const [isSplitScreen, search] = useMemo(() => {
     const parentWindow = window.parent;
@@ -53,6 +54,7 @@ export default function Settings(): JSX.Element {
     <>
       <button
         id="options-button"
+        data-test-id="options-button"
         className={`editor-dev-button ${showSettings ? 'active' : ''}`}
         onClick={() => setShowSettings(!showSettings)}
       />
@@ -107,6 +109,20 @@ export default function Settings(): JSX.Element {
             text="Rich Text"
           />
           <Switch
+            onClick={() => {
+              setOption('hasNestedTables', !hasNestedTables);
+            }}
+            checked={hasNestedTables}
+            text="Nested Tables"
+          />
+          <Switch
+            onClick={() => {
+              setOption('hasFitNestedTables', !hasFitNestedTables);
+            }}
+            checked={hasFitNestedTables}
+            text="Fit nested tables"
+          />
+          <Switch
             onClick={() => setOption('isCharLimit', !isCharLimit)}
             checked={isCharLimit}
             text="Char Limit"
@@ -115,6 +131,11 @@ export default function Settings(): JSX.Element {
             onClick={() => setOption('isCharLimitUtf8', !isCharLimitUtf8)}
             checked={isCharLimitUtf8}
             text="Char Limit (UTF-8)"
+          />
+          <Switch
+            onClick={() => setOption('hasLinkAttributes', !hasLinkAttributes)}
+            checked={hasLinkAttributes}
+            text="Link Attributes"
           />
           <Switch
             onClick={() => setOption('isMaxLength', !isMaxLength)}
@@ -127,12 +148,11 @@ export default function Settings(): JSX.Element {
             text="Autocomplete"
           />
           <Switch
-            onClick={() => {
-              setOption('disableBeforeInput', !disableBeforeInput);
-              setTimeout(() => window.location.reload(), 500);
-            }}
-            checked={disableBeforeInput}
-            text="Legacy Events"
+            onClick={() =>
+              setOption('isVisibleNonPrinting', !isVisibleNonPrinting)
+            }
+            checked={isVisibleNonPrinting}
+            text="Visible Non-Printing"
           />
           <Switch
             onClick={() => {
@@ -160,6 +180,56 @@ export default function Settings(): JSX.Element {
             }}
             checked={shouldPreserveNewLinesInMarkdown}
             text="Preserve newlines in Markdown"
+          />
+          <Switch
+            onClick={() => {
+              setOption(
+                'shouldAllowHighlightingWithBrackets',
+                !shouldAllowHighlightingWithBrackets,
+              );
+            }}
+            checked={shouldAllowHighlightingWithBrackets}
+            text="Use Brackets for Highlighting"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption('selectionAlwaysOnDisplay', !selectionAlwaysOnDisplay);
+            }}
+            checked={selectionAlwaysOnDisplay}
+            text="Retain selection"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption('selectBlock', !selectBlock);
+            }}
+            checked={selectBlock}
+            text="Block selection"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption('isCodeHighlighted', !isCodeHighlighted);
+            }}
+            checked={isCodeHighlighted}
+            text="Enable Code Highlighting"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption('isCodeShiki', !isCodeShiki);
+            }}
+            checked={isCodeShiki}
+            text="Use Shiki for Code Highlighting"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption('isShadowDOM', !isShadowDOM);
+            }}
+            checked={isShadowDOM}
+            text="Render in Shadow DOM"
           />
         </div>
       ) : null}

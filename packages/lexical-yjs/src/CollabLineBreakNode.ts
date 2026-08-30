@@ -8,10 +8,14 @@
 
 import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
-import type {LineBreakNode, NodeKey} from 'lexical';
 import type {Map as YMap} from 'yjs';
 
-import {$getNodeByKey, $isLineBreakNode} from 'lexical';
+import {
+  $getNodeByKey,
+  $isLineBreakNode,
+  type LineBreakNode,
+  type NodeKey,
+} from 'lexical';
 
 export class CollabLineBreakNode {
   _map: YMap<unknown>;
@@ -54,7 +58,9 @@ export class CollabLineBreakNode {
 
   destroy(binding: Binding): void {
     const collabNodeMap = binding.collabNodeMap;
-    collabNodeMap.delete(this._key);
+    if (collabNodeMap.get(this._key) === this) {
+      collabNodeMap.delete(this._key);
+    }
   }
 }
 

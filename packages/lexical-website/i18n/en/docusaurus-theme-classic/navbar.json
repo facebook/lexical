@@ -1,8 +1,4 @@
 {
-  "item.label.Tutorial": {
-    "message": "Tutorial",
-    "description": "Navbar item with label Tutorial"
-  },
   "item.label.Playground": {
     "message": "Playground",
     "description": "Navbar item with label Playground"
@@ -15,12 +11,16 @@
     "message": "Community",
     "description": "Navbar item with label Community"
   },
-  "item.label.GitHub": {
-    "message": "GitHub",
-    "description": "Navbar item with label GitHub"
-  },
   "item.label.Demos": {
     "message": "Demos",
     "description": "Navbar item with label Demos"
+  },
+  "logo.alt": {
+    "message": "Lexical",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.API": {
+    "message": "API",
+    "description": "Navbar item with label API"
   }
 }

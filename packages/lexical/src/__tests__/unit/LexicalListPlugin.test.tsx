@@ -5,15 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import {ListItemNode, ListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {$setBlocksType} from '@lexical/selection';
 import {
+  $createParagraphNode,
+  $createTextNode,
+  $getSelection,
+  $insertNodes,
   INDENT_CONTENT_COMMAND,
-  LexicalEditor,
+  KEY_ENTER_COMMAND,
+  type LexicalEditor,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {
@@ -21,8 +28,9 @@ import {
   html,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
-import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {act, type JSX} from 'react';
+import {createRoot, type Root} from 'react-dom/client';
+import {afterEach, beforeEach, describe, test, vi} from 'vitest';
 
 import {
   INSERT_UNORDERED_LIST_COMMAND,
@@ -44,7 +52,7 @@ describe('@lexical/list tests', () => {
     // @ts-ignore
     container = null;
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   // Shared instance across tests
@@ -73,14 +81,14 @@ describe('@lexical/list tests', () => {
   }
 
   test('Toggle an empty list on/off', async () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<Test key="MegaSeeds, Morty!" />);
     });
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
       });
     });
 
@@ -93,19 +101,19 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
+          <ul dir="auto">
             <li value="1">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
           </ul>
         </div>
       `,
     );
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
+        editor.dispatchCommand(REMOVE_LIST_COMMAND);
       });
     });
 
@@ -118,8 +126,8 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <p>
-            <br />
+          <p dir="auto">
+            <br data-lexical-managed-linebreak="true" />
           </p>
         </div>
         <div class="editor-placeholder">Enter some text...</div>
@@ -128,14 +136,14 @@ describe('@lexical/list tests', () => {
   });
 
   test('Can create a list and indent/outdent it', async () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<Test key="MegaSeeds, Morty!" />);
     });
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
       });
     });
 
@@ -148,19 +156,19 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
+          <ul dir="auto">
             <li value="1">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
           </ul>
         </div>
       `,
     );
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+        editor.dispatchCommand(INDENT_CONTENT_COMMAND);
       });
     });
 
@@ -173,10 +181,10 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
+          <ul dir="auto">
             <li value="1">
               <ul>
-                <li value="1"><br /></li>
+                <li value="1"><br data-lexical-managed-linebreak="true" /></li>
               </ul>
             </li>
           </ul>
@@ -184,10 +192,10 @@ describe('@lexical/list tests', () => {
       `,
     );
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+        editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
       });
     });
 
@@ -200,11 +208,96 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
+          <ul dir="auto">
             <li value="1">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
           </ul>
+        </div>
+      `,
+    );
+  });
+
+  test('$setBlocksType does not cause invalid ListItemNode children - regression #7036', async () => {
+    act(() => {
+      reactRoot.render(<Test key="MegaSeeds, Morty!" />);
+    });
+
+    await act(async () => {
+      await editor.update(() => {
+        editor.focus();
+        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
+        $insertNodes([$createTextNode('First item')]);
+        editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        editor.dispatchCommand(INDENT_CONTENT_COMMAND);
+        $insertNodes([$createTextNode('Nested item')]);
+        editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        $setBlocksType($getSelection(), $createParagraphNode);
+      });
+    });
+    expectHtmlToBeEqual(
+      container.innerHTML,
+      html`
+        <div
+          contenteditable="true"
+          role="textbox"
+          spellcheck="true"
+          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+          data-lexical-editor="true">
+          <ul dir="auto">
+            <li value="1">
+              <span data-lexical-text="true">First item</span>
+            </li>
+            <li value="2">
+              <ul>
+                <li value="1">
+                  <span data-lexical-text="true">Nested item</span>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <p
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        </div>
+      `,
+    );
+    await act(async () => {
+      await editor.update(() => {
+        $insertNodes([$createTextNode('more text')]);
+        editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        $insertNodes([$createTextNode('even more text')]);
+      });
+    });
+    expectHtmlToBeEqual(
+      container.innerHTML,
+      html`
+        <div
+          contenteditable="true"
+          role="textbox"
+          spellcheck="true"
+          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+          data-lexical-editor="true">
+          <ul dir="auto">
+            <li value="1">
+              <span data-lexical-text="true">First item</span>
+            </li>
+            <li value="2">
+              <ul>
+                <li value="1">
+                  <span data-lexical-text="true">Nested item</span>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <p
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <span data-lexical-text="true">more text</span>
+          </p>
+          <p dir="auto"><span data-lexical-text="true">even more text</span></p>
         </div>
       `,
     );

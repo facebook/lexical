@@ -6,19 +6,22 @@
  *
  */
 
-import type {SettingName} from '../appSettings';
-
 import * as React from 'react';
 import {
   createContext,
-  ReactNode,
+  type JSX,
+  type ReactNode,
   useCallback,
   useContext,
   useMemo,
   useState,
 } from 'react';
 
-import {DEFAULT_SETTINGS, INITIAL_SETTINGS} from '../appSettings';
+import {
+  DEFAULT_SETTINGS,
+  INITIAL_SETTINGS,
+  type SettingName,
+} from '../appSettings';
 
 type SettingsContextShape = {
   setOption: (name: SettingName, value: boolean) => void;
@@ -40,7 +43,7 @@ export const SettingsContext = ({
   const [settings, setSettings] = useState(INITIAL_SETTINGS);
 
   const setOption = useCallback((setting: SettingName, value: boolean) => {
-    setSettings((options) => ({
+    setSettings(options => ({
       ...options,
       [setting]: value,
     }));

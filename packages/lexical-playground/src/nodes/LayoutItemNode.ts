@@ -6,29 +6,34 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  EditorConfig,
-  LexicalNode,
-  SerializedElementNode,
+import {
+  $getDocument,
+  $isParagraphNode,
+  addClassNamesToElement,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+  type SerializedElementNode,
 } from 'lexical';
-
-import {addClassNamesToElement} from '@lexical/utils';
-import {ElementNode} from 'lexical';
 
 export type SerializedLayoutItemNode = SerializedElementNode;
 
-export class LayoutItemNode extends ElementNode {
-  static getType(): string {
-    return 'layout-item';
+export function $isEmptyLayoutItemNode(node: LexicalNode): boolean {
+  if (!$isLayoutItemNode(node) || node.getChildrenSize() !== 1) {
+    return false;
   }
+  const firstChild = node.getFirstChild();
+  return $isParagraphNode(firstChild) && firstChild.isEmpty();
+}
 
-  static clone(node: LayoutItemNode): LayoutItemNode {
-    return new LayoutItemNode(node.__key);
+export class LayoutItemNode extends ElementNode {
+  $config() {
+    return this.config('layout-item', {extends: ElementNode});
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('div');
+    const dom = $getDocument().createElement('div');
+    dom.setAttribute('data-lexical-layout-item', 'true');
     if (typeof config.theme.layoutItem === 'string') {
       addClassNamesToElement(dom, config.theme.layoutItem);
     }
@@ -39,24 +44,20 @@ export class LayoutItemNode extends ElementNode {
     return false;
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {};
-  }
-
-  static importJSON(): LayoutItemNode {
-    return $createLayoutItemNode();
+  collapseAtStart(): boolean {
+    const parent = this.getParentOrThrow();
+    if (
+      this.is(parent.getFirstChild()) &&
+      parent.getChildren().every($isEmptyLayoutItemNode)
+    ) {
+      parent.remove();
+      return true;
+    }
+    return false;
   }
 
   isShadowRoot(): boolean {
     return true;
-  }
-
-  exportJSON(): SerializedLayoutItemNode {
-    return {
-      ...super.exportJSON(),
-      type: 'layout-item',
-      version: 1,
-    };
   }
 }
 

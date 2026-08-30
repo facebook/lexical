@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$isElementNode, $isTextNode, RootNode, TextNode} from 'lexical';
+import {
+  $isElementNode,
+  $isTextNode,
+  type RootNode,
+  type TextNode,
+} from 'lexical';
 
 /**
  * Finds a TextNode with a size larger than targetCharacters and returns
@@ -13,6 +18,7 @@ import {$isElementNode, $isTextNode, RootNode, TextNode} from 'lexical';
  * @param root - The RootNode.
  * @param targetCharacters - The number of characters whose TextNode must be larger than.
  * @returns The TextNode and the intersections offset, or null if no TextNode is found.
+ * @deprecated $findTextIntersectionFromCharacters has never worked correctly and will be removed
  */
 export function $findTextIntersectionFromCharacters(
   root: RootNode,

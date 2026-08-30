@@ -6,29 +6,25 @@
  *
  */
 
-import type {ElementFormatType, NodeKey} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {
-  $getNearestBlockElementAncestorOrThrow,
-  mergeRegister,
-} from '@lexical/utils';
+import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
-  $isDecoratorNode,
   $isNodeSelection,
   $isRangeSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  type ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
+  getComposedEventTarget,
+  mergeRegister,
+  type NodeKey,
 } from 'lexical';
 import * as React from 'react';
-import {ReactNode, useCallback, useEffect, useRef} from 'react';
+import {type JSX, type ReactNode, useEffect, useRef} from 'react';
 
 type Props = Readonly<{
   children: ReactNode;
@@ -40,6 +36,15 @@ type Props = Readonly<{
   }>;
 }>;
 
+/**
+ * A wrapper component for the contents of a {@link DecoratorBlockNode} that
+ * keeps the block in sync with node selection and element alignment. It renders
+ * its `children` inside a container that reflects the node's `format`
+ * alignment, responds to `FORMAT_ELEMENT_COMMAND` to update that alignment, and
+ * toggles the node's selection when the container is clicked.
+ *
+ * @returns The element to render for the decorator block.
+ */
 export function BlockWithAlignableContents({
   children,
   format,
@@ -52,27 +57,11 @@ export function BlockWithAlignableContents({
     useLexicalNodeSelection(nodeKey);
   const ref = useRef(null);
 
-  const $onDelete = useCallback(
-    (event: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
-        event.preventDefault();
-        const node = $getNodeByKey(nodeKey);
-        if ($isDecoratorNode(node)) {
-          node.remove();
-          return true;
-        }
-      }
-
-      return false;
-    },
-    [isSelected, nodeKey],
-  );
-
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand<ElementFormatType>(
+      editor.registerCommand(
         FORMAT_ELEMENT_COMMAND,
-        (formatType) => {
+        formatType => {
           if (isSelected) {
             const selection = $getSelection();
 
@@ -102,10 +91,10 @@ export function BlockWithAlignableContents({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand<MouseEvent>(
+      editor.registerCommand(
         CLICK_COMMAND,
-        (event) => {
-          if (event.target === ref.current) {
+        event => {
+          if (getComposedEventTarget(event) === ref.current) {
             event.preventDefault();
             if (!event.shiftKey) {
               clearSelection();
@@ -119,18 +108,8 @@ export function BlockWithAlignableContents({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        KEY_DELETE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_BACKSPACE_COMMAND,
-        $onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
     );
-  }, [clearSelection, editor, isSelected, nodeKey, $onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, nodeKey, setSelected]);
 
   return (
     <div

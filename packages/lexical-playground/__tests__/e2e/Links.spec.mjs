@@ -12,10 +12,12 @@ import {
   moveRight,
   moveToLineBeginning,
   moveToLineEnd,
+  paste,
   selectAll,
   selectCharacters,
   STANDARD_KEYPRESS_DELAY_MS,
   toggleBold,
+  undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -25,18 +27,20 @@ import {
   focusEditor,
   html,
   initialize,
-  IS_LINUX,
+  insertSampleImage,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   pasteFromClipboard,
+  SAMPLE_IMAGE_URL,
   test,
+  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 test.beforeEach(({isPlainText}) => {
   test.skip(isPlainText);
 });
 
-test.describe.parallel('Links', () => {
+test.describe('Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can convert a text node into a link`, async ({page}) => {
     await focusEditor(page);
@@ -46,9 +50,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
         </p>
       `,
@@ -61,12 +63,9 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
@@ -88,12 +87,9 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://facebook.com"
             rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
@@ -115,9 +111,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
         </p>
       `,
@@ -162,9 +156,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">abc</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -198,11 +190,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true"></span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">abc</span>
@@ -227,11 +218,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true"></span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://facebook.com"
             rel="noreferrer">
             <span data-lexical-text="true">abc</span>
@@ -283,9 +273,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">abc</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -319,11 +307,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true"></span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">abc</span>
@@ -348,11 +335,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true"></span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://facebook.com"
             rel="noreferrer">
             <span data-lexical-text="true">abc</span>
@@ -389,14 +375,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
+        <ul class="PlaygroundEditorTheme__ul" dir="auto">
+          <li class="PlaygroundEditorTheme__listItem" value="1">
             <a
-              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-              dir="ltr"
+              class="PlaygroundEditorTheme__link"
               href="https://"
               rel="noreferrer">
               <span data-lexical-text="true">hello</span>
@@ -411,12 +393,13 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <ul class="PlaygroundEditorTheme__ul">
-          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+        <ul class="PlaygroundEditorTheme__ul" dir="auto">
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
           <li class="PlaygroundEditorTheme__listItem" value="2">
             <a
-              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-              dir="ltr"
+              class="PlaygroundEditorTheme__link"
               href="https://"
               rel="noreferrer">
               <span data-lexical-text="true">hello</span>
@@ -442,13 +425,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true"></span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">abc</span>
@@ -465,22 +445,18 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true"></span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">ab</span>
           </a>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">c</span>
@@ -495,25 +471,67 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true"></span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">abc</span>
+          </a>
+          <span data-lexical-text="true">def</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can backspace across a link and it deletes text, not the whole link`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc def ');
+    await moveLeft(page, 5);
+    await selectCharacters(page, 'left', 3);
+
+    // link
+    await click(page, '.link');
+    await click(page, '.link-confirm');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">abc</span>
+          </a>
+          <span data-lexical-text="true">def</span>
+        </p>
+      `,
+    );
+
+    await moveRight(page, 4);
+
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Backspace');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">ab</span>
           </a>
-          <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            href="https://"
-            rel="noreferrer">
-            <span data-lexical-text="true">c</span>
-          </a>
-          <span data-lexical-text="true">def</span>
+          <span data-lexical-text="true">f</span>
         </p>
       `,
     );
@@ -533,11 +551,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true"></span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">abc</span>
@@ -552,9 +569,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">a</span>
         </p>
       `,
@@ -580,9 +595,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">a</span>
         </p>
       `,
@@ -608,13 +621,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true"></span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">a</span>
@@ -674,8 +684,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 
@@ -683,13 +693,10 @@ test.describe.parallel('Links', () => {
           await assertHTML(
             page,
             html`
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">x</span>
                 <a
-                  class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-                  dir="ltr"
+                  class="PlaygroundEditorTheme__link"
                   href="https://"
                   rel="noreferrer">
                   <span data-lexical-text="true">a</span>
@@ -712,15 +719,13 @@ test.describe.parallel('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text before a start-of-paragraph link, via pasting HTML`, async ({
+        test(`Can insert text before a start-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text before a start-of-paragraph link, via pasting Lexical text`, async ({
+        test(`Can insert text before a start-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -751,8 +756,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 
@@ -760,13 +765,10 @@ test.describe.parallel('Links', () => {
           await assertHTML(
             page,
             html`
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">ax</span>
                 <a
-                  class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-                  dir="ltr"
+                  class="PlaygroundEditorTheme__link"
                   href="https://"
                   rel="noreferrer">
                   <span data-lexical-text="true">b</span>
@@ -825,8 +827,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 
@@ -834,13 +836,10 @@ test.describe.parallel('Links', () => {
           await assertHTML(
             page,
             html`
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">ax</span>
                 <a
-                  class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-                  dir="ltr"
+                  class="PlaygroundEditorTheme__link"
                   href="https://"
                   rel="noreferrer">
                   <span data-lexical-text="true">b</span>
@@ -862,15 +861,13 @@ test.describe.parallel('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text before an end-of-paragraph link, via pasting HTML`, async ({
+        test(`Can insert text before an end-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text before an end-of-paragraph link, via pasting Lexical text`, async ({
+        test(`Can insert text before an end-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -903,8 +900,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 
@@ -912,12 +909,9 @@ test.describe.parallel('Links', () => {
           await assertHTML(
             page,
             html`
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <a
-                  class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-                  dir="ltr"
+                  class="PlaygroundEditorTheme__link"
                   href="https://"
                   rel="noreferrer">
                   <span data-lexical-text="true">a</span>
@@ -940,15 +934,13 @@ test.describe.parallel('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after a start-of-paragraph link, via pasting HTML`, async ({
+        test(`Can insert text after a start-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after a start-of-paragraph link, via pasting Lexical text`, async ({
+        test(`Can insert text after a start-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -979,8 +971,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 
@@ -988,13 +980,10 @@ test.describe.parallel('Links', () => {
           await assertHTML(
             page,
             html`
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">a</span>
                 <a
-                  class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-                  dir="ltr"
+                  class="PlaygroundEditorTheme__link"
                   href="https://"
                   rel="noreferrer">
                   <span data-lexical-text="true">b</span>
@@ -1017,15 +1006,13 @@ test.describe.parallel('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after a mid-paragraph link, via pasting HTML`, async ({
+        test(`Can insert text after a mid-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after a mid-paragraph link, via pasting Lexical text`, async ({
+        test(`Can insert text after a mid-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -1055,8 +1042,8 @@ test.describe.parallel('Links', () => {
               insertMethod === 'paste:plain'
                 ? clipboardData.plain
                 : insertMethod === 'paste:html'
-                ? clipboardData.html
-                : clipboardData.lexical;
+                  ? clipboardData.html
+                  : clipboardData.lexical;
             await pasteFromClipboard(page, data);
           }
 
@@ -1064,13 +1051,10 @@ test.describe.parallel('Links', () => {
           await assertHTML(
             page,
             html`
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                 <span data-lexical-text="true">a</span>
                 <a
-                  class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-                  dir="ltr"
+                  class="PlaygroundEditorTheme__link"
                   href="https://"
                   rel="noreferrer">
                   <span data-lexical-text="true">b</span>
@@ -1093,15 +1077,13 @@ test.describe.parallel('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after an end-of-paragraph link, via pasting HTML`, async ({
+        test(`Can insert text after an end-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // TODO: https://github.com/facebook/lexical/issues/4295
-        test.skip(`Can insert text after an end-of-paragraph link, via pasting Lexical text`, async ({
+        test(`Can insert text after an end-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -1141,9 +1123,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">abc</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -1177,11 +1157,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true"></span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">abc</span>
@@ -1207,13 +1186,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true"></span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">abc</span>
@@ -1258,12 +1234,9 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">${linkText}</span>
@@ -1285,12 +1258,9 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">This is the</span>
@@ -1314,12 +1284,9 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">This is the</span>
@@ -1352,12 +1319,9 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">${linkText}</span>
@@ -1380,12 +1344,9 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">This is a</span>
@@ -1411,12 +1372,9 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">This is the</span>
@@ -1442,17 +1400,16 @@ test.describe.parallel('Links', () => {
 
     await assertHTML(
       page,
-      `<p
-    class=\"PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr\"
-    dir=\"ltr\">
-    <a
-      class=\"PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr\"
-      dir=\"ltr\"
-      href=\"https://\"
-      rel=\"noreferrer\">
-      <span data-lexical-text=\"true\">A link</span>
-    </a>
-  </p>`,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <a
+            class="PlaygroundEditorTheme__link"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">A link</span>
+          </a>
+        </p>
+      `,
     );
 
     await moveToLineBeginning(page);
@@ -1460,17 +1417,16 @@ test.describe.parallel('Links', () => {
 
     await assertHTML(
       page,
-      `<p
-    class=\"PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr\"
-    dir=\"ltr\">
-    <a
-      class=\"PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr\"
-      dir=\"ltr\"
-      href=\"https://facebook.com\"
-      rel=\"noreferrer\">
-      <span data-lexical-text=\"true\">A link</span>
-    </a>
-  </p>`,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <a
+            class="PlaygroundEditorTheme__link"
+            href="https://facebook.com"
+            rel="noreferrer">
+            <span data-lexical-text="true">A link</span>
+          </a>
+        </p>
+      `,
     );
   });
 
@@ -1481,9 +1437,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">An Awesome Website</span>
         </p>
       `,
@@ -1495,12 +1449,9 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">An Awesome Website</span>
@@ -1517,13 +1468,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hey, check this out:</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">An Awesome Website</span>
@@ -1544,9 +1492,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">
             This is an Awesome Website right?
           </span>
@@ -1562,14 +1508,14 @@ test.describe.parallel('Links', () => {
       page,
       `
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto">
           <span data-lexical-text="true">This is an</span>
           <a
             href="https://"
             rel="noreferrer"
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
+            class="PlaygroundEditorTheme__link"
+>
             <span data-lexical-text="true">Awesome Website</span>
           </a>
           <span data-lexical-text="true"> right?</span>
@@ -1586,13 +1532,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">This is an</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">Awesome Website</span>
@@ -1613,9 +1556,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello world</span>
         </p>
       `,
@@ -1631,13 +1572,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">world</span>
@@ -1647,7 +1585,9 @@ test.describe.parallel('Links', () => {
     );
     await assertSelection(page, {
       anchorOffset: 0,
-      anchorPath: [0, 1],
+      // Previous to #7046 NodeCaret the selection anchor would've been
+      // inside the <a> tag but now it's normalized to the text
+      anchorPath: [0, 1, 0, 0],
       focusOffset: 5,
       focusPath: [0, 1, 0, 0],
     });
@@ -1657,13 +1597,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://facebook.com"
             rel="noreferrer">
             <span data-lexical-text="true">world</span>
@@ -1672,21 +1609,14 @@ test.describe.parallel('Links', () => {
       `,
     );
 
-    if (browserName === 'webkit') {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0, 0],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0, 0],
-      });
-    }
+    // Previous to #7046 NodeCaret the selection anchor would've been
+    // inside the <a> tag but now it's normalized to the text
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 5,
+      focusPath: [0, 1, 0, 0],
+    });
 
     // unlink
     await click(page, '.link');
@@ -1694,9 +1624,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello world</span>
         </p>
       `,
@@ -1720,9 +1648,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello world</span>
         </p>
       `,
@@ -1737,13 +1663,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">world</span>
@@ -1752,34 +1675,22 @@ test.describe.parallel('Links', () => {
       `,
     );
 
-    if (browserName === 'chromium') {
-      await assertSelection(page, {
-        anchorOffset: 5,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [0, 1],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 5,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 0,
-        focusPath: [0, 1],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 5,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 0,
+      focusPath: [0, 1, 0, 0],
+    });
 
     await setURL(page, 'facebook.com');
 
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://facebook.com"
             rel="noreferrer">
             <span data-lexical-text="true">world</span>
@@ -1817,9 +1728,7 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello world</span>
         </p>
       `,
@@ -1848,13 +1757,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">world</span>
@@ -1871,13 +1777,10 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <h1
-          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <h1 class="PlaygroundEditorTheme__h1" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">world</span>
@@ -1902,18 +1805,18 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
+        <p dir="auto">
+          <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello world</span>
           </a>
         </p>
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
+        <p dir="auto">
+          <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello world</span>
           </a>
         </p>
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
+        <p dir="auto">
+          <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello world</span>
           </a>
         </p>
@@ -1940,13 +1843,13 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
+        <p dir="auto">
+          <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
           </a>
         </p>
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
+        <p dir="auto">
+          <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">awesome</span>
           </a>
           <span data-lexical-text="true">world</span>
@@ -1961,7 +1864,6 @@ test.describe.parallel('Links', () => {
     page,
     isCollab,
   }) => {
-    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
     await focusEditor(page);
     await page.keyboard.type('Hello ');
     await toggleBold(page);
@@ -1982,13 +1884,13 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
+        <p dir="auto">
+          <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
           </a>
         </p>
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
+        <p dir="auto">
+          <a href="https://" rel="noreferrer">
             <strong data-lexical-text="true">awe</strong>
             <span data-lexical-text="true">some</span>
           </a>
@@ -2000,39 +1902,35 @@ test.describe.parallel('Links', () => {
     );
   });
 
-  test(
-    'Can handle pressing Enter at the beginning of a Link',
-    {
-      tag: '@flaky',
-    },
-    async ({page}) => {
-      await focusEditor(page);
-      await page.keyboard.type('Hello awesome');
-      await selectAll(page);
-      await click(page, '.link');
-      await click(page, '.link-confirm');
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.type(' world');
+  test('Can handle pressing Enter at the beginning of a Link', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('Hello awesome');
+    await selectAll(page);
+    await click(page, '.link');
+    await click(page, '.link-confirm');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.type(' world');
 
-      await moveToLineBeginning(page);
-      await page.keyboard.press('Enter');
+    await moveToLineBeginning(page);
+    await page.keyboard.press('Enter');
 
-      await assertHTML(
-        page,
-        html`
-          <p><br /></p>
-          <p dir="ltr">
-            <a dir="ltr" href="https://" rel="noreferrer">
-              <span data-lexical-text="true">Hello awesome</span>
-            </a>
-            <span data-lexical-text="true">world</span>
-          </p>
-        `,
-        undefined,
-        {ignoreClasses: true},
-      );
-    },
-  );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+        <p dir="auto">
+          <a href="https://" rel="noreferrer">
+            <span data-lexical-text="true">Hello awesome</span>
+          </a>
+          <span data-lexical-text="true">world</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
 
   test('Can handle pressing Enter at the end of a Link', async ({
     isCollab,
@@ -2054,18 +1952,514 @@ test.describe.parallel('Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
+        <p dir="auto">
+          <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello awesome</span>
           </a>
         </p>
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">world</span>
         </p>
       `,
       undefined,
       {ignoreClasses: true},
     );
+  });
+
+  test('Can add, edit and remove links on images', async ({
+    page,
+    isCollab,
+    browserName,
+  }) => {
+    // Skip for collaborative mode and Firefox on Linux
+    test.skip(
+      isCollab || (browserName === 'firefox' && process.platform === 'linux'),
+    );
+    await focusEditor(page);
+
+    // Insert image
+    await insertSampleImage(page);
+
+    // Add link to image
+    await click(page, '.editor-image img');
+    await click(page, '.link');
+    await focus(page, '.link-input');
+    await page.keyboard.type('lexical.dev');
+    await click(page, '.link-confirm');
+
+    // Verify link was added
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <a
+            class="PlaygroundEditorTheme__link"
+            href="https://lexical.dev"
+            rel="noreferrer">
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="true">
+                <img
+                  class="focused draggable"
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+              <div>
+                <button class="image-caption-button">Add Caption</button>
+                <div class="image-resizer image-resizer-n"></div>
+                <div class="image-resizer image-resizer-ne"></div>
+                <div class="image-resizer image-resizer-e"></div>
+                <div class="image-resizer image-resizer-se"></div>
+                <div class="image-resizer image-resizer-s"></div>
+                <div class="image-resizer image-resizer-sw"></div>
+                <div class="image-resizer image-resizer-w"></div>
+                <div class="image-resizer image-resizer-nw"></div>
+              </div>
+            </span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: false},
+    );
+
+    // Edit link
+    await click(page, '.editor-image img');
+    await click(page, '.link-edit');
+    await focus(page, '.link-input');
+    await selectAll(page);
+    await page.keyboard.press('Backspace');
+    await page.keyboard.type('https://github.com/facebook/lexical');
+    await click(page, '.link-confirm');
+
+    // Verify link was updated
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <a
+            class="PlaygroundEditorTheme__link"
+            href="https://github.com/facebook/lexical"
+            rel="noreferrer">
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="true">
+                <img
+                  class="focused draggable"
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+              <div>
+                <button class="image-caption-button">Add Caption</button>
+                <div class="image-resizer image-resizer-n"></div>
+                <div class="image-resizer image-resizer-ne"></div>
+                <div class="image-resizer image-resizer-e"></div>
+                <div class="image-resizer image-resizer-se"></div>
+                <div class="image-resizer image-resizer-s"></div>
+                <div class="image-resizer image-resizer-sw"></div>
+                <div class="image-resizer image-resizer-w"></div>
+                <div class="image-resizer image-resizer-nw"></div>
+              </div>
+            </span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: false},
+    );
+
+    // Remove link
+    await click(page, '.editor-image img');
+    await click(page, '.link-trash');
+
+    // Verify link was removed but image remains
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="true">
+              <img
+                class="focused draggable"
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+            <div>
+              <button class="image-caption-button">Add Caption</button>
+              <div class="image-resizer image-resizer-n"></div>
+              <div class="image-resizer image-resizer-ne"></div>
+              <div class="image-resizer image-resizer-e"></div>
+              <div class="image-resizer image-resizer-se"></div>
+              <div class="image-resizer image-resizer-s"></div>
+              <div class="image-resizer image-resizer-sw"></div>
+              <div class="image-resizer image-resizer-w"></div>
+              <div class="image-resizer image-resizer-nw"></div>
+            </div>
+          </span>
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: false},
+    );
+  });
+
+  test('Can add, edit and remove links on multiple selected images', async ({
+    page,
+    isCollab,
+    browserName,
+  }) => {
+    // Skip for collaborative mode and Firefox on Linux
+    test.skip(
+      isCollab || (browserName === 'firefox' && process.platform === 'linux'),
+    );
+    await focusEditor(page);
+
+    // Insert first image
+    await insertSampleImage(page);
+    await page.keyboard.press('Enter');
+
+    // Insert second image
+    await insertSampleImage(page);
+
+    // Select both images
+    await click(page, 'p:nth-child(1) .editor-image img');
+    await page.keyboard.down('Shift');
+    await click(page, 'p:nth-child(2) .editor-image img');
+    await page.keyboard.up('Shift');
+
+    // Add link to both images
+    await click(page, '.link');
+    await focus(page, '.link-input');
+    await page.keyboard.type('lexical.dev');
+    await click(page, '.link-confirm');
+
+    // Verify both images are linked
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <a
+            class="PlaygroundEditorTheme__link"
+            href="https://lexical.dev"
+            rel="noreferrer">
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="true">
+                <img
+                  class="focused draggable"
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+              <div>
+                <button class="image-caption-button">Add Caption</button>
+                <div class="image-resizer image-resizer-n"></div>
+                <div class="image-resizer image-resizer-ne"></div>
+                <div class="image-resizer image-resizer-e"></div>
+                <div class="image-resizer image-resizer-se"></div>
+                <div class="image-resizer image-resizer-s"></div>
+                <div class="image-resizer image-resizer-sw"></div>
+                <div class="image-resizer image-resizer-w"></div>
+                <div class="image-resizer image-resizer-nw"></div>
+              </div>
+            </span>
+          </a>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <a
+            class="PlaygroundEditorTheme__link"
+            href="https://lexical.dev"
+            rel="noreferrer">
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="true">
+                <img
+                  class="focused draggable"
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+              <div>
+                <button class="image-caption-button">Add Caption</button>
+                <div class="image-resizer image-resizer-n"></div>
+                <div class="image-resizer image-resizer-ne"></div>
+                <div class="image-resizer image-resizer-e"></div>
+                <div class="image-resizer image-resizer-se"></div>
+                <div class="image-resizer image-resizer-s"></div>
+                <div class="image-resizer image-resizer-sw"></div>
+                <div class="image-resizer image-resizer-w"></div>
+                <div class="image-resizer image-resizer-nw"></div>
+              </div>
+            </span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: false},
+    );
+
+    // Edit link for both images
+    await click(page, 'p:nth-child(1) .editor-image img');
+    await page.keyboard.down('Shift');
+    await click(page, 'p:nth-child(2) .editor-image img');
+    await page.keyboard.up('Shift');
+    await click(page, '.link-edit');
+    await focus(page, '.link-input');
+    await selectAll(page);
+    await page.keyboard.press('Backspace');
+    await page.keyboard.type('https://github.com/facebook/lexical');
+    await click(page, '.link-confirm');
+
+    // Verify both links were updated
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <a
+            class="PlaygroundEditorTheme__link"
+            href="https://github.com/facebook/lexical"
+            rel="noreferrer">
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="true">
+                <img
+                  class="focused draggable"
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+              <div>
+                <button class="image-caption-button">Add Caption</button>
+                <div class="image-resizer image-resizer-n"></div>
+                <div class="image-resizer image-resizer-ne"></div>
+                <div class="image-resizer image-resizer-e"></div>
+                <div class="image-resizer image-resizer-se"></div>
+                <div class="image-resizer image-resizer-s"></div>
+                <div class="image-resizer image-resizer-sw"></div>
+                <div class="image-resizer image-resizer-w"></div>
+                <div class="image-resizer image-resizer-nw"></div>
+              </div>
+            </span>
+          </a>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <a
+            class="PlaygroundEditorTheme__link"
+            href="https://github.com/facebook/lexical"
+            rel="noreferrer">
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="true">
+                <img
+                  class="focused draggable"
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+              <div>
+                <button class="image-caption-button">Add Caption</button>
+                <div class="image-resizer image-resizer-n"></div>
+                <div class="image-resizer image-resizer-ne"></div>
+                <div class="image-resizer image-resizer-e"></div>
+                <div class="image-resizer image-resizer-se"></div>
+                <div class="image-resizer image-resizer-s"></div>
+                <div class="image-resizer image-resizer-sw"></div>
+                <div class="image-resizer image-resizer-w"></div>
+                <div class="image-resizer image-resizer-nw"></div>
+              </div>
+            </span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: false},
+    );
+
+    // Remove links from both images
+    await click(page, 'p:nth-child(1) .editor-image img');
+    await page.keyboard.down('Shift');
+    await click(page, 'p:nth-child(2) .editor-image img');
+    await page.keyboard.up('Shift');
+    await click(page, '.link-trash');
+
+    // Verify links were removed but images remain
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="true">
+              <img
+                class="focused draggable"
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+            <div>
+              <button class="image-caption-button">Add Caption</button>
+              <div class="image-resizer image-resizer-n"></div>
+              <div class="image-resizer image-resizer-ne"></div>
+              <div class="image-resizer image-resizer-e"></div>
+              <div class="image-resizer image-resizer-se"></div>
+              <div class="image-resizer image-resizer-s"></div>
+              <div class="image-resizer image-resizer-sw"></div>
+              <div class="image-resizer image-resizer-w"></div>
+              <div class="image-resizer image-resizer-nw"></div>
+            </div>
+          </span>
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="true">
+              <img
+                class="focused draggable"
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+            <div>
+              <button class="image-caption-button">Add Caption</button>
+              <div class="image-resizer image-resizer-n"></div>
+              <div class="image-resizer image-resizer-ne"></div>
+              <div class="image-resizer image-resizer-e"></div>
+              <div class="image-resizer image-resizer-se"></div>
+              <div class="image-resizer image-resizer-s"></div>
+              <div class="image-resizer image-resizer-sw"></div>
+              <div class="image-resizer image-resizer-w"></div>
+              <div class="image-resizer image-resizer-nw"></div>
+            </div>
+          </span>
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: false},
+    );
+  });
+
+  test('Undo from the link URL input undoes in the editor rather than natively (#6714)', async ({
+    page,
+    browserName,
+    isCollab,
+  }) => {
+    // Firefox keeps the undo scoped to the focused control and never
+    // dispatches `beforeinput`/`historyUndo` on the editor root, so there is
+    // nothing for the editor to mishandle.
+    test.skip(browserName === 'firefox' || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Hello world ');
+    await withExclusiveClipboardAccess(async () => {
+      await pasteFromClipboard(page, {'text/plain': 'https://lexical.dev'});
+    });
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello world</span>
+          <a class="PlaygroundEditorTheme__link" href="https://lexical.dev">
+            <span data-lexical-text="true">https://lexical.dev</span>
+          </a>
+        </p>
+      `,
+    );
+
+    // Open the URL field of the link popup, which moves focus out of the
+    // editor and leaves the editor without a selection.
+    await click(page, '.link-edit');
+    await focus(page, '.link-input');
+
+    // Chromium and WebKit exhaust the URL field's own (empty) undo stack and
+    // then dispatch the undo at the editor root. Nothing has been typed into
+    // the URL field, so this is the very first undo the user presses.
+    await undo(page);
+
+    // The pasted link is undone. Before the fix the browser ran its native
+    // undo over the editor's DOM instead, producing "Hhttps://lexical.dev":
+    // a state that was never in Lexical's history.
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello world</span>
+        </p>
+      `,
+    );
+  });
+});
+
+test.describe('Link attributes', () => {
+  test.use({hasLinkAttributes: true});
+  test.beforeEach(({isCollab, hasLinkAttributes, page}) =>
+    initialize({hasLinkAttributes, isCollab, page}),
+  );
+  test('Can add attributes with paste', async ({
+    page,
+    context,
+    hasLinkAttributes,
+    browserName,
+  }) => {
+    if (browserName === 'chromium') {
+      await focusEditor(page);
+      await page.keyboard.type('Hello awesome');
+      await focusEditor(page);
+      await selectAll(page);
+      await withExclusiveClipboardAccess(async () => {
+        await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        await page.evaluate(() =>
+          navigator.clipboard.writeText('https://facebook.com'),
+        );
+        await paste(page);
+      });
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <a
+              class="PlaygroundEditorTheme__link"
+              href="https://facebook.com"
+              rel="noopener noreferrer"
+              target="_blank">
+              <span data-lexical-text="true">Hello awesome</span>
+            </a>
+          </p>
+        `,
+      );
+    }
   });
 });
 

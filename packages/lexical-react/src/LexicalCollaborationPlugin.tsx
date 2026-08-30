@@ -6,7 +6,9 @@
  *
  */
 
-import type {Doc, XmlText} from 'yjs';
+import type {InitialEditorStateType} from './LexicalComposer';
+import type {LexicalEditor} from 'lexical';
+import type {Doc} from 'yjs';
 
 import {
   type CollaborationContextType,
@@ -14,29 +16,29 @@ import {
 } from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  Binding,
-  createBinding,
-  ExcludedProperties,
-  Provider,
+  type Binding,
+  createYjsBinding,
+  type ExcludedProperties,
+  type Provider,
+  type SyncCursorPositionsFn,
 } from '@lexical/yjs';
-import {LexicalEditor} from 'lexical';
-import {useEffect, useRef, useState} from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 
-import {InitialEditorStateType} from './LexicalComposer';
 import {
-  CursorsContainerRef,
+  type CursorsContainerRef,
   useYjsCollaboration,
+  useYjsCollaborationV2__EXPERIMENTAL,
+  useYjsCursors,
   useYjsFocusTracking,
   useYjsHistory,
+  useYjsHistoryV2,
 } from './shared/useYjsCollaboration';
 
-type Props = {
+type ProviderFactory = (id: string, yjsDocMap: Map<string, Doc>) => Provider;
+
+type CollaborationPluginProps = {
   id: string;
-  providerFactory: (
-    // eslint-disable-next-line no-shadow
-    id: string,
-    yjsDocMap: Map<string, Doc>,
-  ) => Provider;
+  providerFactory: ProviderFactory;
   shouldBootstrap: boolean;
   username?: string;
   cursorColor?: string;
@@ -45,9 +47,24 @@ type Props = {
   excludedProperties?: ExcludedProperties;
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
-  getXmlText?: (doc: Doc) => XmlText;
+  syncCursorPositionsFn?: SyncCursorPositionsFn;
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
+  selectionHighlight?: boolean;
+  /** Customize the Yjs shared-type key used for the root `XmlText`. Defaults to `'root'`. */
+  rootName?: string;
 };
 
+/**
+ * Connects the editor to a Yjs document for real-time collaboration, syncing
+ * editor state and rendering remote users' cursors and selections. Provide a
+ * `providerFactory` that creates the Yjs {@link Provider} for the given
+ * document `id`. Must be used within a {@link LexicalCollaboration} provider.
+ *
+ * @returns The element that renders collaborators' cursors (or an empty
+ * fragment until the provider and binding are initialized).
+ */
 export function CollaborationPlugin({
   id,
   providerFactory,
@@ -58,47 +75,72 @@ export function CollaborationPlugin({
   initialEditorState,
   excludedProperties,
   awarenessData,
-  getXmlText,
-}: Props): JSX.Element {
+  syncCursorPositionsFn,
+  selectionHighlight,
+  rootName,
+}: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
-  const isProviderInitialized = useRef(false);
+  // The inputs that produced the current Provider. A ref rather than the effect
+  // deps alone because the effect must be idempotent: React StrictMode (and
+  // React 18+ remounts in general) re-runs the effect with unchanged inputs and
+  // must not create a second Provider.
+  const providerInputs = useRef<null | {
+    id: string;
+    providerFactory: ProviderFactory;
+    yjsDocMap: Map<string, Doc>;
+  }>(null);
+  const providerRef = useRef<Provider | null>(null);
 
   const collabContext = useCollaborationContext(username, cursorColor);
-
   const {yjsDocMap, name, color} = collabContext;
 
   const [editor] = useLexicalComposerContext();
 
-  useEffect(() => {
-    collabContext.isCollabActive = true;
-
-    return () => {
-      // Reseting flag only when unmount top level editor collab plugin. Nested
-      // editors (e.g. image caption) should unmount without affecting it
-      if (editor._parentEditor == null) {
-        collabContext.isCollabActive = false;
-      }
-    };
-  }, [collabContext, editor]);
+  useCollabActive(collabContext, editor);
 
   const [provider, setProvider] = useState<Provider>();
+  const [doc, setDoc] = useState<Doc>();
 
   useEffect(() => {
-    if (isProviderInitialized.current) {
+    const prevInputs = providerInputs.current;
+    if (
+      prevInputs !== null &&
+      prevInputs.id === id &&
+      prevInputs.providerFactory === providerFactory &&
+      prevInputs.yjsDocMap === yjsDocMap
+    ) {
       return;
     }
 
-    isProviderInitialized.current = true;
+    providerInputs.current = {id, providerFactory, yjsDocMap};
 
     const newProvider = providerFactory(id, yjsDocMap);
+    const previousProvider = providerRef.current;
+    // Disconnected here rather than from this effect's cleanup, and only when
+    // something really did replace it. A `providerFactory` declared inline --
+    // the shape this package's own test harness uses -- has a fresh identity
+    // every render, so a cleanup-based disconnect tears down the live provider
+    // on every parent render; and when such a factory hands back a cached
+    // provider, setProvider() bails on the identical value, nothing re-runs,
+    // and the editor is left permanently disconnected.
+    if (previousProvider !== null && previousProvider !== newProvider) {
+      previousProvider.disconnect();
+    }
+    providerRef.current = newProvider;
     setProvider(newProvider);
-
-    return () => {
-      newProvider.disconnect();
-    };
+    setDoc(yjsDocMap.get(id));
   }, [id, providerFactory, yjsDocMap]);
 
-  const [doc, setDoc] = useState(yjsDocMap.get(id));
+  useEffect(() => {
+    return () => {
+      const currentProvider = providerRef.current;
+      if (currentProvider !== null) {
+        providerRef.current = null;
+        currentProvider.disconnect();
+      }
+    };
+  }, []);
+
   const [binding, setBinding] = useState<Binding>();
 
   useEffect(() => {
@@ -110,23 +152,27 @@ export function CollaborationPlugin({
       return;
     }
 
-    isBindingInitialized.current = true;
+    const resolvedDoc = doc || yjsDocMap.get(id);
+    if (!resolvedDoc) {
+      return;
+    }
 
-    const newBinding = createBinding(
+    isBindingInitialized.current = true;
+    const newBinding = createYjsBinding({
+      doc: resolvedDoc,
+      docMap: yjsDocMap,
       editor,
-      provider,
-      id,
-      doc || yjsDocMap.get(id),
-      yjsDocMap,
       excludedProperties,
-      getXmlText,
-    );
+      id,
+      rootName,
+    });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBinding(newBinding);
 
     return () => {
       newBinding.root.destroy(newBinding);
     };
-  }, [editor, provider, id, yjsDocMap, doc, excludedProperties, getXmlText]);
+  }, [editor, provider, id, yjsDocMap, doc, excludedProperties, rootName]);
 
   if (!provider || !binding) {
     return <></>;
@@ -147,6 +193,8 @@ export function CollaborationPlugin({
       setDoc={setDoc}
       shouldBootstrap={shouldBootstrap}
       yjsDocMap={yjsDocMap}
+      syncCursorPositionsFn={syncCursorPositionsFn}
+      selectionHighlight={selectionHighlight}
     />
   );
 }
@@ -165,6 +213,8 @@ function YjsCollaborationCursors({
   collabContext,
   binding,
   setDoc,
+  syncCursorPositionsFn,
+  selectionHighlight,
 }: {
   editor: LexicalEditor;
   id: string;
@@ -179,6 +229,11 @@ function YjsCollaborationCursors({
   initialEditorState?: InitialEditorStateType | undefined;
   awarenessData?: object;
   collabContext: CollaborationContextType;
+  syncCursorPositionsFn?: SyncCursorPositionsFn;
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
+  selectionHighlight?: boolean;
 }) {
   const cursors = useYjsCollaboration(
     editor,
@@ -193,12 +248,99 @@ function YjsCollaborationCursors({
     cursorsContainerRef,
     initialEditorState,
     awarenessData,
+    syncCursorPositionsFn,
+    selectionHighlight,
   );
-
-  collabContext.clientID = binding.clientID;
 
   useYjsHistory(editor, binding);
   useYjsFocusTracking(editor, provider, name, color, awarenessData);
 
   return cursors;
 }
+
+type CollaborationPluginV2Props = {
+  id: string;
+  doc: Doc;
+  provider: Provider;
+  __shouldBootstrapUnsafe?: boolean;
+  username?: string;
+  cursorColor?: string;
+  cursorsContainerRef?: CursorsContainerRef;
+  excludedProperties?: ExcludedProperties;
+  // `awarenessData` parameter allows arbitrary data to be added to the awareness.
+  awarenessData?: object;
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
+  selectionHighlight?: boolean;
+  /** Customize the Yjs shared-type key used for the root `XmlElement`. Defaults to `'root-v2'`. */
+  rootName?: string;
+};
+
+/**
+ * A variant of {@link CollaborationPlugin} that takes an already-created Yjs
+ * `doc` and {@link Provider} directly instead of a provider factory, giving the
+ * application full control over their lifecycle. Must be used within a
+ * {@link LexicalCollaboration} provider.
+ *
+ * @experimental The API may change in a future release.
+ * @returns The element that renders collaborators' cursors.
+ */
+export function CollaborationPluginV2__EXPERIMENTAL({
+  id,
+  doc,
+  provider,
+  __shouldBootstrapUnsafe,
+  username,
+  cursorColor,
+  cursorsContainerRef,
+  excludedProperties,
+  awarenessData,
+  selectionHighlight,
+  rootName,
+}: CollaborationPluginV2Props): JSX.Element {
+  const collabContext = useCollaborationContext(username, cursorColor);
+  const {yjsDocMap, name, color} = collabContext;
+
+  const [editor] = useLexicalComposerContext();
+  useCollabActive(collabContext, editor);
+
+  const binding = useYjsCollaborationV2__EXPERIMENTAL(
+    editor,
+    id,
+    doc,
+    provider,
+    yjsDocMap,
+    name,
+    color,
+    {
+      __shouldBootstrapUnsafe,
+      awarenessData,
+      excludedProperties,
+      rootName,
+      selectionHighlight,
+    },
+  );
+
+  useYjsHistoryV2(editor, binding);
+  useYjsFocusTracking(editor, provider, name, color, awarenessData);
+  return useYjsCursors(binding, cursorsContainerRef);
+}
+
+const useCollabActive = (
+  collabContext: CollaborationContextType,
+  editor: LexicalEditor,
+) => {
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability
+    collabContext.isCollabActive = true;
+
+    return () => {
+      // Resetting flag only when unmount top level editor collab plugin. Nested
+      // editors (e.g. image caption) should unmount without affecting it
+      if (editor._parentEditor == null) {
+        collabContext.isCollabActive = false;
+      }
+    };
+  }, [collabContext, editor]);
+};

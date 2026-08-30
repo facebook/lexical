@@ -6,15 +6,16 @@
  *
  */
 import type {Provider} from '@lexical/yjs';
+import type * as Y from 'yjs';
 
+import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {Fragment, useCallback, useEffect, useRef, useState} from 'react';
-import * as Y from 'yjs';
 
 import Editor from './Editor';
 import ExampleTheme from './ExampleTheme';
-import {getRandomUserProfile, UserProfile} from './getRandomUserProfile';
+import {getRandomUserProfile, type UserProfile} from './getRandomUserProfile';
 import {createWebRTCProvider, createWebsocketProvider} from './providers';
 
 interface ActiveUserProfile extends UserProfile {
@@ -85,7 +86,7 @@ export default function App() {
         providerName === 'webrtc'
           ? createWebRTCProvider(id, yjsDocMap)
           : createWebsocketProvider(id, yjsDocMap);
-      provider.on('status', (event) => {
+      provider.on('status', event => {
         setConnected(
           // Websocket provider
           event.status === 'connected' ||
@@ -130,15 +131,15 @@ export default function App() {
         <input
           type="text"
           value={userProfile.name}
-          onChange={(e) =>
-            setUserProfile((profile) => ({...profile, name: e.target.value}))
+          onChange={e =>
+            setUserProfile(profile => ({...profile, name: e.target.value}))
           }
         />{' '}
         <input
           type="color"
           value={userProfile.color}
-          onChange={(e) =>
-            setUserProfile((profile) => ({...profile, color: e.target.value}))
+          onChange={e =>
+            setUserProfile(profile => ({...profile, color: e.target.value}))
           }
         />
       </p>
@@ -151,20 +152,22 @@ export default function App() {
           </Fragment>
         ))}
       </p>
-      <LexicalComposer initialConfig={editorConfig}>
-        {/* With CollaborationPlugin - we MUST NOT use @lexical/react/LexicalHistoryPlugin */}
-        <CollaborationPlugin
-          id="lexical/react-rich-collab"
-          providerFactory={providerFactory}
-          // Unless you have a way to avoid race condition between 2+ users trying to do bootstrap simultaneously
-          // you should never try to bootstrap on client. It's better to perform bootstrap within Yjs server.
-          shouldBootstrap={false}
-          username={userProfile.name}
-          cursorColor={userProfile.color}
-          cursorsContainerRef={containerRef}
-        />
-        <Editor />
-      </LexicalComposer>
+      <LexicalCollaboration>
+        <LexicalComposer initialConfig={editorConfig}>
+          {/* With CollaborationPlugin - we MUST NOT use @lexical/react/LexicalHistoryPlugin */}
+          <CollaborationPlugin
+            id="lexical/react-rich-collab"
+            providerFactory={providerFactory}
+            // Unless you have a way to avoid race condition between 2+ users trying to do bootstrap simultaneously
+            // you should never try to bootstrap on client. It's better to perform bootstrap within Yjs server.
+            shouldBootstrap={false}
+            username={userProfile.name}
+            cursorColor={userProfile.color}
+            cursorsContainerRef={containerRef}
+          />
+          <Editor />
+        </LexicalComposer>
+      </LexicalCollaboration>
     </div>
   );
 }

@@ -6,20 +6,37 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  SerializedEditor,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
+import type {JSX} from 'react';
 
-import {$setSelection, createEditor, DecoratorNode} from 'lexical';
+import {
+  buildEditorFromExtensions,
+  NestedEditorExtension,
+} from '@lexical/extension';
+import {SharedHistoryExtension} from '@lexical/history';
+import {PlainTextExtension} from '@lexical/plain-text';
+import {ReactExtension} from '@lexical/react/ReactExtension';
+import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
+import {
+  $getDocument,
+  $setSelection,
+  configExtension,
+  DecoratorNode,
+  defineExtension,
+  type EditorConfig,
+  type LexicalEditor,
+  type LexicalEditorWithDispose,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type SerializedEditor,
+  type SerializedLexicalNode,
+  type Spread,
+} from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 import {createPortal} from 'react-dom';
+
+import StickyEditorTheme from '../themes/StickyEditorTheme';
+import ContentEditable from '../ui/ContentEditable';
 
 const StickyComponent = React.lazy(() => import('./StickyComponent'));
 
@@ -35,14 +52,35 @@ export type SerializedStickyNode = Spread<
   SerializedLexicalNode
 >;
 
+const StickyEditorExtension = defineExtension({
+  dependencies: [
+    SharedHistoryExtension,
+    PlainTextExtension,
+    ReactProviderExtension,
+    NestedEditorExtension,
+    configExtension(ReactExtension, {
+      contentEditable: (
+        <ContentEditable
+          placeholder="What's up?"
+          placeholderClassName="StickyNode__placeholder"
+          className="StickyNode__contentEditable"
+        />
+      ),
+    }),
+  ],
+  name: '@lexical/playground/StickyEditor',
+  namespace: '@lexical/playground/StickyEditor',
+  theme: StickyEditorTheme,
+});
+
 export class StickyNode extends DecoratorNode<JSX.Element> {
   __x: number;
   __y: number;
   __color: StickyNoteColor;
-  __caption: LexicalEditor;
+  __caption: LexicalEditorWithDispose;
 
-  static getType(): string {
-    return 'sticky';
+  $config() {
+    return this.config('sticky', {extends: DecoratorNode});
   }
 
   static clone(node: StickyNode): StickyNode {
@@ -55,11 +93,17 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     );
   }
   static importJSON(serializedNode: SerializedStickyNode): StickyNode {
-    const stickyNode = new StickyNode(
+    return new StickyNode(
       serializedNode.xOffset,
       serializedNode.yOffset,
       serializedNode.color,
-    );
+    ).updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedStickyNode>,
+  ): this {
+    const stickyNode = super.updateFromJSON(serializedNode);
     const caption = serializedNode.caption;
     const nestedEditor = stickyNode.__caption;
     const editorState = nestedEditor.parseEditorState(caption.editorState);
@@ -73,29 +117,29 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     x: number,
     y: number,
     color: 'pink' | 'yellow',
-    caption?: LexicalEditor,
+    caption?: LexicalEditorWithDispose,
     key?: NodeKey,
   ) {
     super(key);
     this.__x = x;
     this.__y = y;
-    this.__caption = caption || createEditor();
+    this.__caption =
+      caption || buildEditorFromExtensions(StickyEditorExtension);
     this.__color = color;
   }
 
   exportJSON(): SerializedStickyNode {
     return {
+      ...super.exportJSON(),
       caption: this.__caption.toJSON(),
       color: this.__color,
-      type: 'sticky',
-      version: 1,
       xOffset: this.__x,
       yOffset: this.__y,
     };
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const div = document.createElement('div');
+    const div = $getDocument().createElement('div');
     div.style.display = 'contents';
     return div;
   }
@@ -104,30 +148,30 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     return false;
   }
 
-  setPosition(x: number, y: number): void {
+  setPosition(x: number, y: number): this {
     const writable = this.getWritable();
     writable.__x = x;
     writable.__y = y;
     $setSelection(null);
+    return writable;
   }
 
-  toggleColor(): void {
+  toggleColor(): this {
     const writable = this.getWritable();
     writable.__color = writable.__color === 'pink' ? 'yellow' : 'pink';
+    return writable;
   }
 
   decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
     return createPortal(
-      <Suspense fallback={null}>
-        <StickyComponent
-          color={this.__color}
-          x={this.__x}
-          y={this.__y}
-          nodeKey={this.getKey()}
-          caption={this.__caption}
-        />
-      </Suspense>,
-      document.body,
+      <StickyComponent
+        color={this.__color}
+        x={this.__x}
+        y={this.__y}
+        nodeKey={this.getKey()}
+        caption={this.__caption}
+      />,
+      editor.getRootElement()?.ownerDocument?.body ?? document.body,
     );
   }
 

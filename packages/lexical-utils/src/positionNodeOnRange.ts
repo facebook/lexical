@@ -6,11 +6,11 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
+import invariant from '@lexical/internal/invariant';
 import {createRectsFromDOMRange} from '@lexical/selection';
-import invariant from 'shared/invariant';
+import {getRootOwnerDocument, isHTMLElement, type LexicalEditor} from 'lexical';
 
+import dedupeSelectionRects from './dedupeSelectionRects';
 import px from './px';
 
 const mutationObserverConfig = {
@@ -20,43 +20,63 @@ const mutationObserverConfig = {
   subtree: true,
 };
 
-export default function positionNodeOnRange(
+function prependDOMNode(parent: HTMLElement, node: HTMLElement) {
+  parent.insertBefore(node, parent.firstChild);
+}
+
+/**
+ * Place one or multiple newly created Nodes at the passed Range's position.
+ * Multiple nodes will only be created when the Range spans multiple lines (aka
+ * client rects).
+ *
+ * This function can come particularly useful to highlight particular parts of
+ * the text without interfering with the EditorState, that will often replicate
+ * the state across collab and clipboard.
+ *
+ * This function accounts for DOM updates which can modify the passed Range.
+ * Hence, the function return to remove the listener.
+ */
+export default function mlcPositionNodeOnRange(
   editor: LexicalEditor,
   range: Range,
-  onReposition: (node: Array<HTMLElement>) => void,
+  onReposition: (node: HTMLElement[]) => void,
 ): () => void {
   let rootDOMNode: null | HTMLElement = null;
   let parentDOMNode: null | HTMLElement = null;
   let observer: null | MutationObserver = null;
-  let lastNodes: Array<HTMLElement> = [];
-  const wrapperNode = document.createElement('div');
+  let lastNodes: HTMLElement[] = [];
+  const wrapperNode = getRootOwnerDocument(
+    editor.getRootElement(),
+  ).createElement('div');
+  wrapperNode.style.position = 'relative';
 
   function position(): void {
     invariant(rootDOMNode !== null, 'Unexpected null rootDOMNode');
     invariant(parentDOMNode !== null, 'Unexpected null parentDOMNode');
-    const {left: rootLeft, top: rootTop} = rootDOMNode.getBoundingClientRect();
-    const parentDOMNode_ = parentDOMNode;
-    const rects = createRectsFromDOMRange(editor, range);
+    const {left: parentLeft, top: parentTop} =
+      parentDOMNode.getBoundingClientRect();
+    const rects = dedupeSelectionRects(createRectsFromDOMRange(editor, range));
     if (!wrapperNode.isConnected) {
-      parentDOMNode_.append(wrapperNode);
+      prependDOMNode(parentDOMNode, wrapperNode);
     }
     let hasRepositioned = false;
     for (let i = 0; i < rects.length; i++) {
       const rect = rects[i];
       // Try to reuse the previously created Node when possible, no need to
       // remove/create on the most common case reposition case
-      const rectNode = lastNodes[i] || document.createElement('div');
+      const rectNode =
+        lastNodes[i] || getRootOwnerDocument(rootDOMNode).createElement('div');
       const rectNodeStyle = rectNode.style;
       if (rectNodeStyle.position !== 'absolute') {
         rectNodeStyle.position = 'absolute';
         hasRepositioned = true;
       }
-      const left = px(rect.left - rootLeft);
+      const left = px(rect.left - parentLeft);
       if (rectNodeStyle.left !== left) {
         rectNodeStyle.left = left;
         hasRepositioned = true;
       }
-      const top = px(rect.top - rootTop);
+      const top = px(rect.top - parentTop);
       if (rectNodeStyle.top !== top) {
         rectNode.style.top = top;
         hasRepositioned = true;
@@ -78,7 +98,10 @@ export default function positionNodeOnRange(
       lastNodes[i] = rectNode;
     }
     while (lastNodes.length > rects.length) {
-      lastNodes.pop();
+      const node = lastNodes.pop();
+      if (node != null) {
+        node.remove();
+      }
     }
     if (hasRepositioned) {
       onReposition(lastNodes);
@@ -105,13 +128,13 @@ export default function positionNodeOnRange(
       return stop();
     }
     const currentParentDOMNode = currentRootDOMNode.parentElement;
-    if (!(currentParentDOMNode instanceof HTMLElement)) {
+    if (!isHTMLElement(currentParentDOMNode)) {
       return stop();
     }
     stop();
     rootDOMNode = currentRootDOMNode;
     parentDOMNode = currentParentDOMNode;
-    observer = new MutationObserver((mutations) => {
+    observer = new MutationObserver(mutations => {
       const nextRootDOMNode = editor.getRootElement();
       const nextParentDOMNode =
         nextRootDOMNode && nextRootDOMNode.parentElement;
@@ -132,7 +155,19 @@ export default function positionNodeOnRange(
     position();
   }
 
-  const removeRootListener = editor.registerRootListener(restart);
+  // Returning stop() hands the teardown to the root listener registry.
+  // registerRootListener runs the previous invocation's cleanup before it
+  // re-invokes the listener, and runs it again when the listener is
+  // unregistered, so the wrapper element and the MutationObserver never
+  // outlive the invocation of restart() that created them. Without a cleanup
+  // to call, an invocation that lands after this positionNodeOnRange has
+  // already been disposed of (root listeners are triggered from a snapshot of
+  // the registry, so a listener removed mid-pass is still called) would leave
+  // its wrapper element in the document with nothing left to remove it.
+  const removeRootListener = editor.registerRootListener(() => {
+    restart();
+    return stop;
+  });
 
   return () => {
     removeRootListener();

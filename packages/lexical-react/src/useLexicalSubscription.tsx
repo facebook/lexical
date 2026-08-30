@@ -10,8 +10,14 @@ import type {LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useMemo, useRef, useState} from 'react';
-import useLayoutEffect from 'shared/useLayoutEffect';
 
+import useLayoutEffect from './shared/useLayoutEffect';
+
+/**
+ * Describes how {@link useLexicalSubscription} reads a value from the editor: an
+ * `initialValueFn` that computes the current value, and a `subscribe` function
+ * that registers a listener for changes and returns an unsubscribe callback.
+ */
 export type LexicalSubscription<T> = {
   initialValueFn: () => T;
   subscribe: (callback: (value: T) => void) => () => void;
@@ -29,8 +35,10 @@ export function useLexicalSubscription<T>(
     () => subscription(editor),
     [editor, subscription],
   );
-  const valueRef = useRef<T>(initializedSubscription.initialValueFn());
-  const [value, setValue] = useState<T>(valueRef.current);
+  const [value, setValue] = useState<T>(() =>
+    initializedSubscription.initialValueFn(),
+  );
+  const valueRef = useRef<T>(value);
   useLayoutEffect(() => {
     const {initialValueFn, subscribe} = initializedSubscription;
     const currentValue = initialValueFn();
@@ -47,7 +55,3 @@ export function useLexicalSubscription<T>(
 
   return value;
 }
-
-/** @deprecated use the named export {@link useLexicalSubscription} */
-// eslint-disable-next-line no-restricted-exports
-export default useLexicalSubscription;

@@ -6,9 +6,7 @@
  *
  */
 
-import type {CreateEditorArgs, LexicalEditor} from 'lexical';
-
-import {createEditor} from 'lexical';
+import {createEditor, type CreateEditorArgs, type LexicalEditor} from 'lexical';
 
 /**
  * Generates a headless editor that allows lexical to be used without the need for a DOM, eg in Node.js.
@@ -33,7 +31,7 @@ export function createHeadlessEditor(
     'blur',
   ] as const;
 
-  unsupportedMethods.forEach((method: typeof unsupportedMethods[number]) => {
+  unsupportedMethods.forEach((method: (typeof unsupportedMethods)[number]) => {
     editor[method] = () => {
       throw new Error(`${method} is not supported in headless mode`);
     };

@@ -6,75 +6,65 @@
  *
  */
 
-import type {ExcalidrawInitialElements} from './ExcalidrawModal';
-import type {NodeKey} from 'lexical';
+import type {ExcalidrawInitialElements} from '../../ui/ExcalidrawModal';
+import type {AppState, BinaryFiles} from '@excalidraw/excalidraw/types';
 
-import {AppState, BinaryFiles} from '@excalidraw/excalidraw/types/types';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
-  $getSelection,
-  $isNodeSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
+  isDOMNode,
+  mergeRegister,
+  type NodeKey,
 } from 'lexical';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
+import {
+  type JSX,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
+import ExcalidrawModal from '../../ui/ExcalidrawModal';
 import ImageResizer from '../../ui/ImageResizer';
 import {$isExcalidrawNode} from '.';
 import ExcalidrawImage from './ExcalidrawImage';
-import ExcalidrawModal from './ExcalidrawModal';
 
 export default function ExcalidrawComponent({
   nodeKey,
   data,
+  width,
+  height,
 }: {
   data: string;
   nodeKey: NodeKey;
+  width: 'inherit' | number;
+  height: 'inherit' | number;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
+  const isEditable = useLexicalEditable();
   const [isModalOpen, setModalOpen] = useState<boolean>(
     data === '[]' && editor.isEditable(),
   );
-  const imageContainerRef = useRef<HTMLImageElement | null>(null);
+  const imageContainerRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const captionButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
 
-  const onDelete = useCallback(
-    (event: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
-        event.preventDefault();
-        editor.update(() => {
-          const node = $getNodeByKey(nodeKey);
-          if ($isExcalidrawNode(node)) {
-            node.remove();
-            return true;
-          }
-        });
+  useEffect(() => {
+    if (!isEditable) {
+      if (isSelected) {
+        clearSelection();
       }
-      return false;
-    },
-    [editor, isSelected, nodeKey],
-  );
-
-  // Set editor to readOnly if excalidraw is open to prevent unwanted changes
-  useEffect(() => {
-    if (isModalOpen) {
-      editor.setEditable(false);
-    } else {
-      editor.setEditable(true);
+      return;
     }
-  }, [isModalOpen, editor]);
-
-  useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
         CLICK_COMMAND,
@@ -86,7 +76,11 @@ export default function ExcalidrawComponent({
             return true;
           }
 
-          if (buttonElem !== null && buttonElem.contains(eventTarget as Node)) {
+          if (
+            buttonElem !== null &&
+            isDOMNode(eventTarget) &&
+            buttonElem.contains(eventTarget)
+          ) {
             if (!event.shiftKey) {
               clearSelection();
             }
@@ -101,24 +95,14 @@ export default function ExcalidrawComponent({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        KEY_DELETE_COMMAND,
-        onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_BACKSPACE_COMMAND,
-        onDelete,
-        COMMAND_PRIORITY_LOW,
-      ),
     );
-  }, [clearSelection, editor, isSelected, isResizing, onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, isResizing, setSelected, isEditable]);
 
   const deleteNode = useCallback(() => {
     setModalOpen(false);
     return editor.update(() => {
       const node = $getNodeByKey(nodeKey);
-      if ($isExcalidrawNode(node)) {
+      if (node) {
         node.remove();
       }
     });
@@ -129,9 +113,6 @@ export default function ExcalidrawComponent({
     aps: Partial<AppState>,
     fls: BinaryFiles,
   ) => {
-    if (!editor.isEditable()) {
-      return;
-    }
     return editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isExcalidrawNode(node)) {
@@ -183,22 +164,35 @@ export default function ExcalidrawComponent({
     appState = {},
   } = useMemo(() => JSON.parse(data), [data]);
 
+  const closeModal = useCallback(() => {
+    setModalOpen(false);
+    if (elements.length === 0) {
+      editor.update(() => {
+        const node = $getNodeByKey(nodeKey);
+        if (node) {
+          node.remove();
+        }
+      });
+    }
+  }, [editor, nodeKey, elements.length]);
+
   return (
     <>
-      <ExcalidrawModal
-        initialElements={elements}
-        initialFiles={files}
-        initialAppState={appState}
-        isShown={isModalOpen}
-        onDelete={deleteNode}
-        onClose={() => setModalOpen(false)}
-        onSave={(els, aps, fls) => {
-          editor.setEditable(true);
-          setData(els, aps, fls);
-          setModalOpen(false);
-        }}
-        closeOnClickOutside={false}
-      />
+      {isEditable && isModalOpen && (
+        <ExcalidrawModal
+          initialElements={elements}
+          initialFiles={files}
+          initialAppState={appState}
+          isShown={isModalOpen}
+          onDelete={deleteNode}
+          onClose={closeModal}
+          onSave={(els, aps, fls) => {
+            setData(els, aps, fls);
+            setModalOpen(false);
+          }}
+          closeOnClickOutside={false}
+        />
+      )}
       {elements.length > 0 && (
         <button
           ref={buttonRef}
@@ -209,17 +203,19 @@ export default function ExcalidrawComponent({
             elements={elements}
             files={files}
             appState={appState}
+            width={width}
+            height={height}
           />
-          {isSelected && (
+          {isSelected && isEditable && (
             <div
               className="image-edit-button"
               role="button"
               tabIndex={0}
-              onMouseDown={(event) => event.preventDefault()}
+              onMouseDown={event => event.preventDefault()}
               onClick={openModal}
             />
           )}
-          {(isSelected || isResizing) && (
+          {(isSelected || isResizing) && isEditable && (
             <ImageResizer
               buttonRef={captionButtonRef}
               showCaption={true}

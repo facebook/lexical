@@ -6,23 +6,20 @@
  *
  */
 
-import type {
-  EditorState,
-  ElementNode,
-  LexicalEditor,
-  NodeKey,
-  NodeMap,
-  RangeSelection,
-  RootNode,
-} from 'lexical';
-
+import invariant from '@lexical/internal/invariant';
 import {
+  $createChildrenArray as $createChildrenArray_,
   $createRangeSelection,
   $getNodeByKey,
   $isElementNode,
   $isTextNode,
+  type EditorState,
+  type LexicalEditor,
+  type NodeKey,
+  type NodeMap,
+  type RangeSelection,
+  type RootNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 type OffsetElementNode = {
   child: null | OffsetNode;
@@ -57,6 +54,7 @@ type OffsetInlineNode = {
 type OffsetNode = OffsetElementNode | OffsetTextNode | OffsetInlineNode;
 type OffsetMap = Map<NodeKey, OffsetNode>;
 
+/** @deprecated OffsetView has never worked correctly and will be removed */
 export class OffsetView {
   _offsetMap: OffsetMap;
   _firstNode: null | OffsetNode;
@@ -501,7 +499,7 @@ function $createOffsetChild(
     offset: number;
     prevIsBlock: boolean;
   },
-  children: Array<NodeKey>,
+  children: NodeKey[],
   parent: null | OffsetElementNode,
   nodeMap: NodeMap,
   offsetMap: OffsetMap,
@@ -537,26 +535,10 @@ function $createOffsetChild(
   return firstNode;
 }
 
-export function $createChildrenArray(
-  element: ElementNode,
-  nodeMap: null | NodeMap,
-): Array<NodeKey> {
-  const children = [];
-  let nodeKey = element.__first;
-  while (nodeKey !== null) {
-    const node =
-      nodeMap === null ? $getNodeByKey(nodeKey) : nodeMap.get(nodeKey);
-    if (node === null || node === undefined) {
-      invariant(false, '$createChildrenArray: node does not exist in nodeMap');
-    }
-    children.push(nodeKey);
-    nodeKey = node.__next;
-  }
-  return children;
-}
-/** @deprecated renamed to {@link $createChildrenArray} by @lexical/eslint-plugin rules-of-lexical */
-export const createChildrenArray = $createChildrenArray;
+/** @deprecated moved to `lexical` */
+export const $createChildrenArray = $createChildrenArray_;
 
+/** @deprecated OffsetView has never worked correctly and will be removed */
 export function $createOffsetView(
   editor: LexicalEditor,
   blockOffsetSize = 1,

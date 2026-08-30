@@ -6,12 +6,24 @@
  *
  */
 
-import type {SerializedMarkNode} from './MarkNode';
-import type {LexicalNode, RangeSelection, TextNode} from 'lexical';
+import {
+  $createRangeSelection,
+  $isDecoratorNode,
+  $isElementNode,
+  $isTextNode,
+  defineExtension,
+  type ElementNode,
+  type LexicalNode,
+  type RangeSelection,
+  type TextNode,
+} from 'lexical';
 
-import {$isElementNode, $isTextNode} from 'lexical';
-
-import {$createMarkNode, $isMarkNode, MarkNode} from './MarkNode';
+import {
+  $createMarkNode,
+  $isMarkNode,
+  MarkNode,
+  type SerializedMarkNode,
+} from './MarkNode';
 
 export function $unwrapMarkNode(node: MarkNode): void {
   const children = node.getChildren();
@@ -32,23 +44,32 @@ export function $wrapSelectionInMarkNode(
   selection: RangeSelection,
   isBackward: boolean,
   id: string,
-  createNode?: (ids: Array<string>) => MarkNode,
+  createNode?: (ids: string[]) => MarkNode,
 ): void {
-  const nodes = selection.getNodes();
-  const anchorOffset = selection.anchor.offset;
-  const focusOffset = selection.focus.offset;
-  const nodesLength = nodes.length;
-  const startOffset = isBackward ? focusOffset : anchorOffset;
-  const endOffset = isBackward ? anchorOffset : focusOffset;
-  let currentNodeParent;
-  let lastCreatedMarkNode;
+  // Force a forwards selection since append is used, ignore the argument.
+  // A new selection is used to avoid side-effects of flipping the given
+  // selection
+  const forwardSelection = $createRangeSelection();
+  const [startPoint, endPoint] = selection.isBackward()
+    ? [selection.focus, selection.anchor]
+    : [selection.anchor, selection.focus];
+  forwardSelection.anchor.set(
+    startPoint.key,
+    startPoint.offset,
+    startPoint.type,
+  );
+  forwardSelection.focus.set(endPoint.key, endPoint.offset, endPoint.type);
 
+  let currentNodeParent: ElementNode | null | undefined;
+  let lastCreatedMarkNode: MarkNode | undefined;
+
+  // Note that extract will split text nodes at the boundaries
+  const nodes = forwardSelection.extract();
   // We only want wrap adjacent text nodes, line break nodes
   // and inline element nodes. For decorator nodes and block
   // element nodes, we step out of their boundary and start
   // again after, if there are more nodes.
-  for (let i = 0; i < nodesLength; i++) {
-    const node = nodes[i];
+  for (const node of nodes) {
     if (
       $isElementNode(lastCreatedMarkNode) &&
       lastCreatedMarkNode.isParentOf(node)
@@ -56,37 +77,24 @@ export function $wrapSelectionInMarkNode(
       // If the current node is a child of the last created mark node, there is nothing to do here
       continue;
     }
-    const isFirstNode = i === 0;
-    const isLastNode = i === nodesLength - 1;
     let targetNode: LexicalNode | null = null;
 
     if ($isTextNode(node)) {
-      // Case 1: The node is a text node and we can split it
-      const textContentSize = node.getTextContentSize();
-      const startTextOffset = isFirstNode ? startOffset : 0;
-      const endTextOffset = isLastNode ? endOffset : textContentSize;
-      if (startTextOffset === 0 && endTextOffset === 0) {
-        continue;
-      }
-      const splitNodes = node.splitText(startTextOffset, endTextOffset);
-      targetNode =
-        splitNodes.length > 1 &&
-        (splitNodes.length === 3 ||
-          (isFirstNode && !isLastNode) ||
-          endTextOffset === textContentSize)
-          ? splitNodes[1]
-          : splitNodes[0];
+      // Case 1: The node is a text node and we can include it
+      targetNode = node;
     } else if ($isMarkNode(node)) {
       // Case 2: the node is a mark node and we can ignore it as a target,
       // moving on to its children. Note that when we make a mark inside
-      // another mark, it may utlimately be unnested by a call to
+      // another mark, it may ultimately be unnested by a call to
       // `registerNestedElementResolver<MarkNode>` somewhere else in the
       // codebase.
-
       continue;
-    } else if ($isElementNode(node) && node.isInline()) {
-      // Case 3: inline element nodes can be added in their entirety to the new
-      // mark
+    } else if (
+      ($isElementNode(node) || $isDecoratorNode(node)) &&
+      node.isInline()
+    ) {
+      // Case 3: inline element/decorator nodes can be added in their entirety
+      // to the new mark
       targetNode = node;
     }
 
@@ -125,17 +133,15 @@ export function $wrapSelectionInMarkNode(
   }
   // Make selection collapsed at the end
   if ($isElementNode(lastCreatedMarkNode)) {
-    // eslint-disable-next-line no-unused-expressions
-    isBackward
-      ? lastCreatedMarkNode.selectStart()
-      : lastCreatedMarkNode.selectEnd();
+    if (isBackward) {
+      lastCreatedMarkNode.selectStart();
+    } else {
+      lastCreatedMarkNode.selectEnd();
+    }
   }
 }
 
-export function $getMarkIDs(
-  node: TextNode,
-  offset: number,
-): null | Array<string> {
+export function $getMarkIDs(node: TextNode, offset: number): null | string[] {
   let currentNode: LexicalNode | null = node;
   while (currentNode !== null) {
     if ($isMarkNode(currentNode)) {
@@ -153,5 +159,13 @@ export function $getMarkIDs(
   }
   return null;
 }
+
+/**
+ * Configures {@link MarkNode}
+ */
+export const MarkExtension = defineExtension({
+  name: '@lexical/mark',
+  nodes: () => [MarkNode],
+});
 
 export {$createMarkNode, $isMarkNode, MarkNode, SerializedMarkNode};

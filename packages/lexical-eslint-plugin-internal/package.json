@@ -1,0 +1,14 @@
+{
+  "name": "@lexical/eslint-plugin-internal",
+  "version": "0.49.0",
+  "description": "Internal ESLint plugin for the lexical monorepo",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "private": true,
+  "peerDependencies": {
+    "eslint": ">=9"
+  }
+}

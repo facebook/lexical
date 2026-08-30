@@ -19,13 +19,20 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 
+/**
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link HorizontalRuleExtension} instead.
+ *
+ * @deprecated A pure Lexical implementation is available in `@lexical/extension`
+ * as {@link HorizontalRuleExtension}
+ */
 export function HorizontalRulePlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     return editor.registerCommand(
       INSERT_HORIZONTAL_RULE_COMMAND,
-      (type) => {
+      type => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {

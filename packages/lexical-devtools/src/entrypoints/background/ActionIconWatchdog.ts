@@ -5,12 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {Tabs} from 'wxt/browser';
+import type {ExtensionState} from '../../store';
 import type {StoreApi} from 'zustand';
 
-import {IS_FIREFOX, IS_SAFARI} from 'shared/environment';
-
-import {ExtensionState} from '../../store';
+import {IS_FIREFOX, IS_SAFARI} from 'lexical';
 
 export default class ActionIconWatchdog {
   private constructor(
@@ -27,7 +25,7 @@ export default class ActionIconWatchdog {
       tabs.map(this.checkAndHandleRestrictedPageIfSo.bind(this)),
     );
 
-    browser.tabs.onCreated.addListener((tab) => {
+    browser.tabs.onCreated.addListener(tab => {
       this.checkAndHandleRestrictedPageIfSo(tab);
     });
 
@@ -76,7 +74,7 @@ export default class ActionIconWatchdog {
   private handleTabsUpdatedEvent(
     tabId: number,
     _changeInfo: unknown,
-    tab: Tabs.Tab,
+    tab: Browser.tabs.Tab,
   ): void {
     this.checkAndHandleRestrictedPageIfSo(tab);
   }
@@ -88,7 +86,7 @@ export default class ActionIconWatchdog {
     );
   }
 
-  private async checkAndHandleRestrictedPageIfSo(tab: Tabs.Tab) {
+  private async checkAndHandleRestrictedPageIfSo(tab: Browser.tabs.Tab) {
     if (tab.id == null) {
       return;
     }

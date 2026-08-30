@@ -6,13 +6,16 @@
  *
  */
 
-import type {ElementNode, LexicalEditor} from 'lexical';
-
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$getRoot, $isElementNode} from 'lexical';
+import {$splitNode} from '@lexical/utils';
+import {
+  $getRoot,
+  $isElementNode,
+  type ElementNode,
+  type LexicalEditor,
+} from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
-
-import {$splitNode} from '../../index';
+import {beforeEach, describe, expect, it} from 'vitest';
 
 describe('LexicalUtils#splitNode', () => {
   let editor: LexicalEditor;
@@ -27,14 +30,14 @@ describe('LexicalUtils#splitNode', () => {
     editor._headless = true;
   });
 
-  const testCases: Array<{
+  const testCases: {
     _: string;
     expectedHtml: string;
     initialHtml: string;
-    splitPath: Array<number>;
+    splitPath: number[];
     splitOffset: number;
     only?: boolean;
-  }> = [
+  }[] = [
     {
       _: 'split paragraph in between two text nodes',
       expectedHtml:
@@ -81,8 +84,7 @@ describe('LexicalUtils#splitNode', () => {
       _: 'split nested list items',
       expectedHtml:
         '<ul>' +
-        '<li><span style="white-space: pre-wrap;">Before</span></li>' +
-        '<li><ul><li><span style="white-space: pre-wrap;">Hello</span></li></ul></li>' +
+        '<li><span style="white-space: pre-wrap;">Before</span><ul><li><span style="white-space: pre-wrap;">Hello</span></li></ul></li>' +
         '</ul>' +
         '<ul>' +
         '<li><ul><li><span style="white-space: pre-wrap;">world</span></li></ul></li>' +
@@ -115,10 +117,11 @@ describe('LexicalUtils#splitNode', () => {
 
         let nodeToSplit: ElementNode = $getRoot();
         for (const index of testCase.splitPath) {
-          nodeToSplit = nodeToSplit.getChildAtIndex(index)!;
-          if (!$isElementNode(nodeToSplit)) {
+          const child = nodeToSplit.getChildAtIndex(index)!;
+          if (!$isElementNode(child)) {
             throw new Error('Expected node to be element');
           }
+          nodeToSplit = child;
         }
 
         $splitNode(nodeToSplit, testCase.splitOffset);

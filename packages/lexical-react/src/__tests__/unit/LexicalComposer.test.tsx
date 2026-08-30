@@ -6,18 +6,18 @@
  *
  */
 
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import * as React from 'react';
-import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
-
-import {LexicalComposer} from '../../LexicalComposer';
+import {act} from 'react';
+import {createRoot, type Root} from 'react-dom/client';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('LexicalComposer tests', () => {
   let container: HTMLDivElement | null = null;
@@ -33,7 +33,7 @@ describe('LexicalComposer tests', () => {
     document.body.removeChild(container!);
     container = null;
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('LexicalComposerContext', async () => {
@@ -51,8 +51,8 @@ describe('LexicalComposer tests', () => {
           initialConfig={{
             namespace: '',
             nodes: [],
-            onError: () => {
-              throw Error();
+            onError: err => {
+              throw err;
             },
             theme,
           }}>
@@ -61,9 +61,48 @@ describe('LexicalComposer tests', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
+  });
+
+  it('forwards initialConfig.onWarn to the editor as a (error, editor) handler', async () => {
+    const onWarn = vi.fn();
+    let capturedEditor: LexicalEditor | null = null;
+
+    function CaptureEditor() {
+      capturedEditor = useLexicalComposerContext()[0];
+      return null;
+    }
+
+    function App() {
+      return (
+        <LexicalComposer
+          initialConfig={{
+            namespace: '',
+            nodes: [],
+            onError: err => {
+              throw err;
+            },
+            onWarn,
+          }}>
+          <CaptureEditor />
+        </LexicalComposer>
+      );
+    }
+
+    await act(async () => {
+      reactRoot.render(<App />);
+    });
+
+    expect(capturedEditor).not.toBeNull();
+    // The composer must forward onWarn into the core editor; without the
+    // passthrough, `_onWarn` falls back to the default and the embedder's
+    // handler never fires.
+    const error = new Error('test warning');
+    capturedEditor!._onWarn(error);
+    expect(onWarn).toHaveBeenCalledTimes(1);
+    expect(onWarn).toHaveBeenCalledWith(error, capturedEditor);
   });
 
   describe('LexicalComposerContext editor identity', () => {
@@ -94,8 +133,8 @@ describe('LexicalComposer tests', () => {
               },
               namespace: '',
               nodes: [],
-              onError: () => {
-                throw Error();
+              onError: err => {
+                throw err;
               },
             }}>
             <Plugin />
@@ -103,7 +142,7 @@ describe('LexicalComposer tests', () => {
         );
       }
       it(`renders ${size} editors under ${name}`, async () => {
-        await ReactTestUtils.act(async () => {
+        await act(async () => {
           reactRoot.render(
             <Wrapper>
               <App />
@@ -118,7 +157,7 @@ describe('LexicalComposer tests', () => {
           // otherwise you could see 'initial stateinitial state'.
           expect([
             i,
-            editor.getEditorState().read(() => $getRoot().getTextContent()),
+            editor.read('latest', () => $getRoot().getTextContent()),
           ]).toEqual([i, 'initial state']);
         });
         // Only one context is created in both cases though!

@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 .draggable-block-menu {
   border-radius: 4px;
   padding: 2px 1px;
@@ -6,7 +14,12 @@
   position: absolute;
   left: 0;
   top: 0;
-  will-change: transform;
+  will-change: transform, opacity;
+  display: flex;
+  gap: 2px;
+  transition:
+    transform 140ms ease-in-out,
+    opacity 160ms ease-in-out;
 }
 
 .draggable-block-menu .icon {
@@ -16,11 +29,19 @@
   background-image: url(../../images/icons/draggable-block-menu.svg);
 }
 
+.draggable-block-menu .icon-plus {
+  display: inline-block;
+  border: none;
+  cursor: pointer;
+  background-color: transparent;
+  background-image: url(../../images/icons/plus.svg);
+}
+
 .draggable-block-menu:active {
   cursor: grabbing;
 }
 
-.draggable-block-menu:hover {
+.draggable-block-menu .icon:hover {
   background-color: #efefef;
 }
 
@@ -33,4 +54,18 @@
   top: 0;
   opacity: 0;
   will-change: transform;
+}
+
+.draggable-block-component-picker {
+  max-width: 260px;
+}
+
+.draggable-block-component-picker .component-picker-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 0;
+  outline: none;
+  font-size: 14px;
+  border-radius: 8px 8px 0 0;
 }

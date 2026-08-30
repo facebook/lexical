@@ -12,8 +12,8 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
-  LexicalEditor,
-  PointType,
+  type LexicalEditor,
+  type PointType,
 } from 'lexical';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
@@ -37,7 +37,7 @@ if (!Selection.prototype.modify) {
     /[\s.,\\/#!$%^&*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF\u3000-\u303F]/u;
 
   const pushSegment = function (
-    segments: Array<Segment>,
+    segments: Segment[],
     index: number,
     str: string,
     isWordLike: boolean,
@@ -49,7 +49,7 @@ if (!Selection.prototype.modify) {
     });
   };
 
-  const getWordsFromString = function (string: string): Array<Segment> {
+  const getWordsFromString = function (string: string): Segment[] {
     const segments: Segment[] = [];
     let wordString = '';
     let nonWordString = '';
@@ -115,19 +115,21 @@ if (!Selection.prototype.modify) {
           let prevSibling = anchorNode.previousSibling;
 
           if (prevSibling === null) {
-            prevSibling = anchorNode.parentElement.previousSibling.lastChild;
+            prevSibling =
+              anchorNode.parentElement.previousSibling?.lastChild ?? null;
           }
+          if (prevSibling) {
+            if (prevSibling.nodeName === 'P') {
+              prevSibling = prevSibling.firstChild;
+            }
 
-          if (prevSibling.nodeName === 'P') {
-            prevSibling = prevSibling.firstChild;
-          }
-
-          if (prevSibling.nodeName === 'BR') {
-            anchor.node = prevSibling;
-            anchor.offset = 0;
-          } else {
-            anchor.node = prevSibling.firstChild;
-            anchor.offset = anchor.node.nodeValue.length - 1;
+            if (prevSibling.nodeName === 'BR') {
+              anchor.node = prevSibling;
+              anchor.offset = 0;
+            } else {
+              anchor.node = prevSibling.firstChild;
+              anchor.offset = anchor.node.nodeValue.length - 1;
+            }
           }
         } else if (!_$isTextNode) {
           anchor.node = anchorNode.childNodes[anchorOffset - 1];
@@ -890,10 +892,7 @@ export function $setAnchorPoint(
     return;
   }
 
-  const anchor = selection.anchor;
-  anchor.type = point.type;
-  anchor.offset = point.offset;
-  anchor.key = point.key;
+  selection.anchor.set(point.key, point.offset, point.type);
 }
 
 export function $setFocusPoint(
@@ -911,8 +910,5 @@ export function $setFocusPoint(
     return;
   }
 
-  const focus = selection.focus;
-  focus.type = point.type;
-  focus.offset = point.offset;
-  focus.key = point.key;
+  selection.focus.set(point.key, point.offset, point.type);
 }

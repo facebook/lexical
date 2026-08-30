@@ -9,18 +9,36 @@
 import type {LexicalEditor} from 'lexical';
 
 import * as React from 'react';
-import {forwardRef, Ref, useCallback, useMemo, useState} from 'react';
-import useLayoutEffect from 'shared/useLayoutEffect';
+import {
+  type ForwardedRef,
+  forwardRef,
+  type JSX,
+  type RefCallback,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 
 import {mergeRefs} from './mergeRefs';
+import useLayoutEffect from './useLayoutEffect';
 
-export type Props = {
+/**
+ * Props for the {@link ContentEditableElement} component. In addition to an
+ * `editor`, it accepts the standard `<div>` HTML attributes (except
+ * `placeholder`), including the hyphenated `aria-*` attributes, which are the
+ * preferred way to set ARIA properties. The camelCase `aria*` props (such as
+ * `ariaLabel`) are also accepted but are retained only for backwards
+ * compatibility.
+ */
+export type ContentEditableElementProps = {
   editor: LexicalEditor;
   ariaActiveDescendant?: React.AriaAttributes['aria-activedescendant'];
   ariaAutoComplete?: React.AriaAttributes['aria-autocomplete'];
   ariaControls?: React.AriaAttributes['aria-controls'];
   ariaDescribedBy?: React.AriaAttributes['aria-describedby'];
+  ariaErrorMessage?: React.AriaAttributes['aria-errormessage'];
   ariaExpanded?: React.AriaAttributes['aria-expanded'];
+  ariaInvalid?: React.AriaAttributes['aria-invalid'];
   ariaLabel?: React.AriaAttributes['aria-label'];
   ariaLabelledBy?: React.AriaAttributes['aria-labelledby'];
   ariaMultiline?: React.AriaAttributes['aria-multiline'];
@@ -37,7 +55,9 @@ function ContentEditableElementImpl(
     ariaAutoComplete,
     ariaControls,
     ariaDescribedBy,
+    ariaErrorMessage,
     ariaExpanded,
+    ariaInvalid,
     ariaLabel,
     ariaLabelledBy,
     ariaMultiline,
@@ -52,13 +72,13 @@ function ContentEditableElementImpl(
     tabIndex,
     'data-testid': testid,
     ...rest
-  }: Props,
-  ref: Ref<HTMLDivElement>,
+  }: ContentEditableElementProps,
+  ref: ForwardedRef<HTMLDivElement>,
 ): JSX.Element {
   const [isEditable, setEditable] = useState(editor.isEditable());
 
-  const handleRef = useCallback(
-    (rootElement: null | HTMLElement) => {
+  const handleRef = useCallback<RefCallback<HTMLDivElement>>(
+    rootElement => {
       // defaultView is required for a root element.
       // In multi-window setups, the defaultView may not exist at certain points.
       if (
@@ -77,21 +97,26 @@ function ContentEditableElementImpl(
 
   useLayoutEffect(() => {
     setEditable(editor.isEditable());
-    return editor.registerEditableListener((currentIsEditable) => {
+    return editor.registerEditableListener(currentIsEditable => {
       setEditable(currentIsEditable);
     });
   }, [editor]);
 
   return (
     <div
-      {...rest}
       aria-activedescendant={isEditable ? ariaActiveDescendant : undefined}
       aria-autocomplete={isEditable ? ariaAutoComplete : 'none'}
       aria-controls={isEditable ? ariaControls : undefined}
       aria-describedby={ariaDescribedBy}
+      // for compat, only override aria-errormessage if ariaErrorMessage is defined
+      {...(ariaErrorMessage != null
+        ? {'aria-errormessage': ariaErrorMessage}
+        : {})}
       aria-expanded={
         isEditable && role === 'combobox' ? !!ariaExpanded : undefined
       }
+      // for compat, only override aria-invalid if ariaInvalid is defined
+      {...(ariaInvalid != null ? {'aria-invalid': ariaInvalid} : {})}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-multiline={ariaMultiline}
@@ -104,12 +129,21 @@ function ContentEditableElementImpl(
       data-testid={testid}
       id={id}
       ref={mergedRefs}
-      role={isEditable ? role : undefined}
+      role={role}
       spellCheck={spellCheck}
       style={style}
-      tabIndex={tabIndex}
+      tabIndex={tabIndex ?? (isEditable ? undefined : -1)}
+      {...rest}
     />
   );
 }
 
+/**
+ * A lower-level building block for the editor's editable `<div>`. It binds the
+ * given `editor` to the rendered element via
+ * {@link LexicalEditor.setRootElement}, reflects the editor's editable state on
+ * the `contentEditable` attribute, and applies the provided ARIA and HTML
+ * attributes. Prefer {@link ContentEditable}, which reads the editor from
+ * context and adds placeholder support, unless you need this extra control.
+ */
 export const ContentEditableElement = forwardRef(ContentEditableElementImpl);

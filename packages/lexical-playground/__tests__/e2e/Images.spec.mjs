@@ -22,16 +22,20 @@ import {
   insertSampleImage,
   insertUploadImage,
   insertUrlImage,
+  IS_COLLAB_V2,
   IS_WINDOWS,
-  LEGACY_EVENTS,
   SAMPLE_IMAGE_URL,
   SAMPLE_LANDSCAPE_IMAGE_URL,
+  SAMPLE_SVG_URL,
   selectorBoundingBox,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
 
 test.describe('Images', () => {
+  // TODO(collab-v2): nested editors are not supported yet
+  test.skip(IS_COLLAB_V2);
+
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can create a decorator and move selection around it`, async ({
     page,
@@ -48,7 +52,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -61,7 +65,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -98,7 +102,9 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await assertSelection(page, {
@@ -116,7 +122,7 @@ test.describe('Images', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span
               class="editor-image"
               contenteditable="false"
@@ -141,7 +147,7 @@ test.describe('Images', () => {
                 <div class="image-resizer image-resizer-nw"></div>
               </div>
             </span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
         true,
@@ -153,7 +159,9 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -168,7 +176,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -181,7 +189,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -200,7 +208,9 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -230,7 +240,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -255,7 +265,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -270,7 +280,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -283,7 +293,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -298,7 +308,9 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await assertSelection(page, {
@@ -318,9 +330,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Test</span>
           <span
             class="editor-image"
@@ -346,7 +356,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -360,9 +370,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Test</span>
           <span
             class="editor-image"
@@ -376,7 +384,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -388,16 +396,16 @@ test.describe('Images', () => {
     });
   });
 
-  test('Can add images by arbitrary URL', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Can add images by arbitrary URL', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab, 'Skip in plain text and collab mode');
 
     await focusEditor(page);
 
-    await insertUrlImage(
-      page,
-      'https://lexical.dev/img/logo.svg',
-      'lexical logo',
-    );
+    await insertUrlImage(page, SAMPLE_SVG_URL, 'lexical logo');
 
     await insertUploadImage(
       page,
@@ -408,7 +416,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -417,8 +425,8 @@ test.describe('Images', () => {
               <img
                 alt="lexical logo"
                 draggable="false"
-                src="https://lexical.dev/img/logo.svg"
-                style="height: inherit; max-width: 500px; width: inherit;" />
+                src="${SAMPLE_SVG_URL}"
+                style="height: 112px; max-width: 500px; width: 500px" />
             </div>
           </span>
           <span
@@ -433,7 +441,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -474,9 +482,7 @@ test.describe('Images', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">HelloWorld</span>
             <span
               class="editor-image"
@@ -490,10 +496,10 @@ test.describe('Images', () => {
                   style="height: inherit; max-width: 500px; width: inherit" />
               </div>
             </span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
-          <p class="PlaygroundEditorTheme__paragraph">
-            <br />
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -510,9 +516,7 @@ test.describe('Images', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Hello</span>
             <span
               class="editor-image"
@@ -528,8 +532,8 @@ test.describe('Images', () => {
             </span>
             <span data-lexical-text="true">World</span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph">
-            <br />
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -556,12 +560,10 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">HelloWorld</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -574,7 +576,7 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -590,11 +592,6 @@ test.describe('Images', () => {
     test.fixme(isCollab);
     test.skip(isPlainText);
 
-    await page.setViewportSize({
-      height: 1000,
-      width: 2000,
-    });
-
     await focusEditor(page);
 
     await page.keyboard.type('HelloWorld');
@@ -606,9 +603,12 @@ test.describe('Images', () => {
       page,
       'span[data-lexical-text="true"]',
     );
-    await dragMouse(page, textBoundingBox, textBoundingBox, 'start', 'middle');
+    await dragMouse(page, textBoundingBox, textBoundingBox, {
+      positionEnd: 'middle',
+      positionStart: 'start',
+    });
 
-    const lexicalSelection = await evaluate(page, (editor) => {
+    const lexicalSelection = await evaluate(page, editor => {
       return window.lexicalEditor._editorState._selection;
     });
     expect(lexicalSelection.anchor).toBeTruthy();
@@ -620,8 +620,6 @@ test.describe('Images', () => {
     isPlainText,
     browserName,
   }) => {
-    // It doesn't work in legacy events mode in WebKit #5673
-    test.fixme(LEGACY_EVENTS && browserName === 'webkit');
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -639,12 +637,10 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text1</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -657,14 +653,12 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text2</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -677,11 +671,9 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text3</span>
         </p>
       `,
@@ -704,20 +696,16 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text1</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text2</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -732,9 +720,7 @@ test.describe('Images', () => {
           </span>
           <span data-lexical-text="true">&lt;- it works!</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text3</span>
         </p>
       `,
@@ -766,9 +752,7 @@ test.describe('Images', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">HelloWorld</span>
           <span
             class="editor-image"
@@ -782,9 +766,92 @@ test.describe('Images', () => {
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
+  });
+
+  test(`Verifies image dimensions are properly calculated for both SVG and JPG formats`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab, 'Skip in plain text and collab mode');
+
+    await focusEditor(page);
+
+    // Insert an SVG image using the Lexical logo
+    await insertUrlImage(page, SAMPLE_SVG_URL, 'lexical logo');
+
+    // Insert a JPG image
+    await insertUrlImage(page, SAMPLE_IMAGE_URL, 'sample image');
+
+    // Verify both images are inserted with proper dimensions and styling
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="lexical logo"
+                draggable="false"
+                src="${SAMPLE_SVG_URL}"
+                style="height: 112px; max-width: 500px; width: 500px" />
+            </div>
+          </span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="sample image"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit;" />
+            </div>
+          </span>
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+    );
+  });
+
+  test('Dimensionless SVG renders with a visible bounding box instead of collapsing', async ({
+    page,
+    isRichText,
+    isCollab,
+  }) => {
+    test.skip(!isRichText || isCollab);
+    await initialize({page});
+    await focusEditor(page);
+
+    await focusEditor(page);
+
+    // 1. Create a raw SVG without width/height attributes
+    const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="red"/></svg>`;
+    const base64Svg = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
+
+    // 2. Use the repository's native helper instead of hacking the clipboard!
+    await insertUrlImage(page, base64Svg, 'dimensionless-svg');
+
+    // 3. Locator for the image (using the same selector pattern as the other tests)
+    const imageLocator = page.locator(
+      '.editor-image img[alt="dimensionless-svg"]',
+    );
+    await imageLocator.waitFor({state: 'attached', timeout: 5000});
+
+    // 4. Verification: The bounding box should NOT be 0x0
+    const boundingBox = await imageLocator.boundingBox();
+    expect(boundingBox).not.toBeNull();
+
+    // This verifies your fix in ImageComponent.tsx
+    expect(boundingBox.width).toBeGreaterThan(0);
+    expect(boundingBox.height).toBeGreaterThan(0);
   });
 });

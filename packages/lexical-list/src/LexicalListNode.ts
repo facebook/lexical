@@ -7,35 +7,34 @@
  */
 
 import {
-  addClassNamesToElement,
-  isHTMLElement,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-import {
   $applyNodeReplacement,
-  $createTextNode,
+  $getDocument,
   $isElementNode,
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  EditorThemeClasses,
+  $setDirectionFromDOM,
+  addClassNamesToElement,
+  buildImportMap,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
+  type EditorThemeClasses,
   ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  SerializedElementNode,
-  Spread,
+  isHTMLElement,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  normalizeClassNames,
+  removeClassNamesFromElement,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
-import invariant from 'shared/invariant';
-import normalizeClassNames from 'shared/normalizeClassNames';
 
-import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
+import {$createListItemNode, $isListItemNode, type ListItemNode} from '.';
 import {
   mergeNextSiblingListIfSameType,
   updateChildrenListItemValue,
 } from './formatList';
-import {$getListDepth, $wrapInListItem} from './utils';
+import {$getListDepth} from './utils';
 
 export type SerializedListNode = Spread<
   {
@@ -59,17 +58,28 @@ export class ListNode extends ElementNode {
   /** @internal */
   __listType: ListType;
 
-  static getType(): string {
-    return 'list';
+  /** @internal */
+  $config() {
+    return this.config('list', {
+      $transform: (node: ListNode): void => {
+        mergeNextSiblingListIfSameType(node);
+        updateChildrenListItemValue(node);
+      },
+      extends: ElementNode,
+      importDOM: buildImportMap({
+        ol: () => ({
+          conversion: $convertListNode,
+          priority: 0,
+        }),
+        ul: () => ({
+          conversion: $convertListNode,
+          priority: 0,
+        }),
+      }),
+    });
   }
 
-  static clone(node: ListNode): ListNode {
-    const listType = node.__listType || TAG_TO_LIST_TYPE[node.__tag];
-
-    return new ListNode(listType, node.__start, node.__key);
-  }
-
-  constructor(listType: ListType, start: number, key?: NodeKey) {
+  constructor(listType: ListType = 'number', start: number = 1, key?: NodeKey) {
     super(key);
     const _listType = TAG_TO_LIST_TYPE[listType] || listType;
     this.__listType = _listType;
@@ -77,29 +87,43 @@ export class ListNode extends ElementNode {
     this.__start = start;
   }
 
-  getTag(): ListNodeTagType {
-    return this.__tag;
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__listType = prevNode.__listType;
+    this.__tag = prevNode.__tag;
+    this.__start = prevNode.__start;
   }
 
-  setListType(type: ListType): void {
+  getTag(): ListNodeTagType {
+    return this.getLatest().__tag;
+  }
+
+  setListType(type: ListType): this {
     const writable = this.getWritable();
     writable.__listType = type;
     writable.__tag = type === 'number' ? 'ol' : 'ul';
+    return writable;
   }
 
   getListType(): ListType {
-    return this.__listType;
+    return this.getLatest().__listType;
   }
 
   getStart(): number {
-    return this.__start;
+    return this.getLatest().__start;
+  }
+
+  setStart(start: number): this {
+    const self = this.getWritable();
+    self.__start = start;
+    return self;
   }
 
   // View
 
   createDOM(config: EditorConfig, _editor?: LexicalEditor): HTMLElement {
     const tag = this.__tag;
-    const dom = document.createElement(tag);
+    const dom = $getDocument().createElement(tag);
 
     if (this.__start !== 1) {
       dom.setAttribute('start', String(this.__start));
@@ -111,57 +135,45 @@ export class ListNode extends ElementNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: ListNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
-    if (prevNode.__tag !== this.__tag) {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    if (
+      prevNode.__tag !== this.__tag ||
+      prevNode.__listType !== this.__listType
+    ) {
       return true;
     }
 
     $setListThemeClassNames(dom, config.theme, this);
 
+    if (prevNode.__start !== this.__start) {
+      dom.setAttribute('start', String(this.__start));
+    }
+
     return false;
   }
 
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant($isListNode(node), 'node is not a ListNode');
-      mergeNextSiblingListIfSameType(node);
-      updateChildrenListItemValue(node);
-    };
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      ol: () => ({
-        conversion: $convertListNode,
-        priority: 0,
-      }),
-      ul: () => ({
-        conversion: $convertListNode,
-        priority: 0,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedListNode): ListNode {
-    const node = $createListNode(serializedNode.listType, serializedNode.start);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedListNode>): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setListType(serializedNode.listType)
+      .setStart(serializedNode.start);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const {element} = super.exportDOM(editor);
-    if (element && isHTMLElement(element)) {
+    const element = this.createDOM(editor._config, editor);
+    if (isHTMLElement(element)) {
       if (this.__start !== 1) {
         element.setAttribute('start', String(this.__start));
       }
       if (this.__listType === 'check') {
         element.setAttribute('__lexicalListType', 'check');
+      }
+      // $convertListNode reads `dir` back off the <ol>/<ul>, so it has to be
+      // written here — this override does not call super.exportDOM, which is
+      // where ElementNode would otherwise emit it.
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
       }
     }
     return {
@@ -175,8 +187,6 @@ export class ListNode extends ElementNode {
       listType: this.getListType(),
       start: this.getStart(),
       tag: this.getTag(),
-      type: 'list',
-      version: 1,
     };
   }
 
@@ -188,31 +198,47 @@ export class ListNode extends ElementNode {
     return false;
   }
 
-  append(...nodesToAppend: LexicalNode[]): this {
-    for (let i = 0; i < nodesToAppend.length; i++) {
-      const currentNode = nodesToAppend[i];
-
-      if ($isListItemNode(currentNode)) {
-        super.append(currentNode);
-      } else {
-        const listItemNode = $createListItemNode();
-
-        if ($isListNode(currentNode)) {
-          listItemNode.append(currentNode);
-        } else if ($isElementNode(currentNode)) {
-          const textNode = $createTextNode(currentNode.getTextContent());
-          listItemNode.append(textNode);
-        } else {
-          listItemNode.append(currentNode);
+  splice(
+    start: number,
+    deleteCount: number,
+    nodesToInsert: LexicalNode[],
+  ): this {
+    let listItemNodesToInsert = nodesToInsert;
+    for (let i = 0; i < nodesToInsert.length; i++) {
+      const node = nodesToInsert[i];
+      if (!$isListItemNode(node)) {
+        if (listItemNodesToInsert === nodesToInsert) {
+          listItemNodesToInsert = [...nodesToInsert];
         }
-        super.append(listItemNode);
+        const listItem = this.createListItemNode();
+        if ($isElementNode(node) && !($isListNode(node) || node.isInline())) {
+          // A block can't stay a block inside a list item, so it is unwrapped
+          // into its own children — the same conversion $createListOrMerge and
+          // ListItemNode.append already perform. Stringifying it with
+          // getTextContent() instead would drop every text format and style and
+          // replace inline nodes (links, mentions, …) with plain text.
+          listItem.append(...node.getChildren());
+        } else {
+          listItem.append(node);
+        }
+        listItemNodesToInsert[i] = listItem;
       }
     }
-    return this;
+    return super.splice(start, deleteCount, listItemNodesToInsert);
   }
 
   extractWithChild(child: LexicalNode): boolean {
     return $isListItemNode(child);
+  }
+
+  /**
+   * Create an appropriate ListItemNode to be a child of this ListNode,
+   * {@link $createListItemNode} is the default implementation.
+   *
+   * @returns A new ListItemNode.
+   */
+  createListItemNode(): ListItemNode {
+    return $createListItemNode();
   }
 }
 
@@ -251,7 +277,7 @@ function $setListThemeClassNames(
       classesToAdd.push(...normalizeClassNames(listLevelClassName));
       for (let i = 0; i < listLevelsClassNames.length; i++) {
         if (i !== normalizedListDepth) {
-          classesToRemove.push(node.__tag + i);
+          classesToRemove.push(...normalizeClassNames(listLevelsClassNames[i]));
         }
       }
     }
@@ -281,22 +307,27 @@ function $setListThemeClassNames(
  * ensuring that they are all ListItemNodes and contain either a single nested ListNode
  * or some other inline content.
  */
-function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
-  const normalizedListItems: Array<ListItemNode> = [];
+function $normalizeChildren(
+  nodes: LexicalNode[],
+  listNode: ListNode,
+): ListItemNode[] {
+  const $createWrapperItem = listNode.createListItemNode.bind(listNode);
+
+  const normalizedListItems: ListItemNode[] = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     if ($isListItemNode(node)) {
       normalizedListItems.push(node);
       const children = node.getChildren();
       if (children.length > 1) {
-        children.forEach((child) => {
+        children.forEach(child => {
           if ($isListNode(child)) {
-            normalizedListItems.push($wrapInListItem(child));
+            normalizedListItems.push($createWrapperItem().append(child));
           }
         });
       }
     } else {
-      normalizedListItems.push($wrapInListItem(node));
+      normalizedListItems.push($createWrapperItem().append(node));
     }
   }
   return normalizedListItems;
@@ -306,7 +337,9 @@ function isDomChecklist(domNode: HTMLElement) {
   if (
     domNode.getAttribute('__lexicallisttype') === 'check' ||
     // is github checklist
-    domNode.classList.contains('contains-task-list')
+    domNode.classList.contains('contains-task-list') ||
+    // is joplin checklist
+    domNode.getAttribute('data-is-checklist') === '1'
   ) {
     return true;
   }
@@ -319,23 +352,25 @@ function isDomChecklist(domNode: HTMLElement) {
   return false;
 }
 
-function $convertListNode(domNode: HTMLElement): DOMConversionOutput {
-  const nodeName = domNode.nodeName.toLowerCase();
-  let node = null;
-  if (nodeName === 'ol') {
-    // @ts-ignore
+function isHTMLOListElement(node: unknown): node is HTMLOListElement {
+  return isHTMLElement(node) && node.nodeName.toLowerCase() === 'ol';
+}
+
+function $convertListNode(
+  domNode: HTMLOListElement | HTMLUListElement,
+): DOMConversionOutput {
+  let node: ListNode;
+  if (isHTMLOListElement(domNode)) {
     const start = domNode.start;
     node = $createListNode('number', start);
-  } else if (nodeName === 'ul') {
-    if (isDomChecklist(domNode)) {
-      node = $createListNode('check');
-    } else {
-      node = $createListNode('bullet');
-    }
+  } else if (isDomChecklist(domNode)) {
+    node = $createListNode('check');
+  } else {
+    node = $createListNode('bullet');
   }
-
+  $setDirectionFromDOM(node, domNode);
   return {
-    after: $normalizeChildren,
+    after: children => $normalizeChildren(children, node),
     node,
   };
 }
@@ -351,7 +386,10 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
  * @param start - Where an ordered list starts its count, start = 1 if left undefined.
  * @returns The new ListNode
  */
-export function $createListNode(listType: ListType, start = 1): ListNode {
+export function $createListNode(
+  listType: ListType = 'number',
+  start = 1,
+): ListNode {
   return $applyNodeReplacement(new ListNode(listType, start));
 }
 

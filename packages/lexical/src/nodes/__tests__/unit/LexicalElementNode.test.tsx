@@ -5,26 +5,41 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
+  $applyNodeReplacement,
+  $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
+  createEditor,
+  type ElementDOMSlot,
   ElementNode,
-  LexicalEditor,
-  LexicalNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type SerializedElementNode,
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef, useEffect} from 'react';
+import {act, createRef, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  test,
+} from 'vitest';
 
 import {
+  $assertNodeType,
   $createTestElementNode,
   createTestEditor,
 } from '../../../__tests__/utils';
+import {indexPath} from '../../../LexicalDOMSlot';
 
 describe('LexicalElementNode tests', () => {
   let container: HTMLElement;
@@ -47,7 +62,9 @@ describe('LexicalElementNode tests', () => {
     return Promise.resolve().then();
   }
 
-  function useLexicalEditor(rootElementRef: React.RefObject<HTMLDivElement>) {
+  function useLexicalEditor(
+    rootElementRef: React.RefObject<null | HTMLDivElement>,
+  ) {
     const editor = React.useMemo(() => createTestEditor(), []);
 
     useEffect(() => {
@@ -69,7 +86,7 @@ describe('LexicalElementNode tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       createRoot(container).render(<TestBase />);
     });
 
@@ -97,7 +114,7 @@ describe('LexicalElementNode tests', () => {
         // If you broke this test, you changed the public interface of a
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
-        // to accomodate these changes.
+        // to accommodate these changes.
 
         expect(node.exportJSON()).toStrictEqual({
           children: [],
@@ -108,6 +125,65 @@ describe('LexicalElementNode tests', () => {
           version: 1,
         });
       });
+    });
+    test('serializes only the first TextNode style and format', async () => {
+      await update(() => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('a').toggleFormat('bold'),
+              $createTextNode('b').setStyle('color:green;'),
+            ),
+          );
+      });
+      editor.read(() => {
+        expect(editor.toJSON().editorState.root.children[0]).toEqual({
+          children: [
+            {
+              detail: 0,
+              format: 1,
+              mode: 'normal',
+              style: '',
+              text: 'a',
+              type: 'text',
+              version: 1,
+            },
+            {
+              detail: 0,
+              format: 0,
+              mode: 'normal',
+              style: 'color:green;',
+              text: 'b',
+              type: 'text',
+              version: 1,
+            },
+          ],
+          direction: null,
+          format: '',
+          indent: 0,
+          textFormat: 1,
+          textStyle: '',
+          type: 'paragraph',
+          version: 1,
+        });
+      });
+    });
+    test('serializes the same way without a root element', async () => {
+      function $initialState() {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('a').toggleFormat('bold'),
+              $createTextNode('b').setStyle('color:green;'),
+            ),
+          );
+      }
+      await update($initialState);
+      const headless = createEditor();
+      headless.update($initialState, {discrete: true});
+      expect(headless.toJSON()).toEqual(editor.toJSON());
     });
   });
 
@@ -123,7 +199,10 @@ describe('LexicalElementNode tests', () => {
 
     test('some children', async () => {
       await update(() => {
-        const children = $getRoot().getFirstChild<ElementNode>()!.getChildren();
+        const children = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        ).getChildren();
         expect(children).toHaveLength(3);
       });
     });
@@ -132,9 +211,10 @@ describe('LexicalElementNode tests', () => {
   describe('getAllTextNodes()', () => {
     test('basic', async () => {
       await update(() => {
-        const textNodes = $getRoot()
-          .getFirstChild<ElementNode>()!
-          .getAllTextNodes();
+        const textNodes = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        ).getAllTextNodes();
         expect(textNodes).toHaveLength(3);
       });
     });
@@ -174,8 +254,7 @@ describe('LexicalElementNode tests', () => {
     test('basic', async () => {
       await update(() => {
         expect(
-          $getRoot()
-            .getFirstChild<ElementNode>()!
+          $assertNodeType($getRoot().getFirstChild(), $isElementNode)
             .getFirstChild()!
             .getTextContent(),
         ).toBe('Foo');
@@ -194,8 +273,7 @@ describe('LexicalElementNode tests', () => {
     test('basic', async () => {
       await update(() => {
         expect(
-          $getRoot()
-            .getFirstChild<ElementNode>()!
+          $assertNodeType($getRoot().getFirstChild(), $isElementNode)
             .getLastChild()!
             .getTextContent(),
         ).toBe('Baz');
@@ -279,17 +357,19 @@ describe('LexicalElementNode tests', () => {
 
     beforeEach(async () => {
       await update(() => {
-        block = $getRoot().getFirstChildOrThrow();
+        const firstChild = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(firstChild), 'Expected an ElementNode');
+        block = firstChild;
       });
     });
 
-    const BASE_INSERTIONS: Array<{
+    const BASE_INSERTIONS: {
       deleteCount: number;
       deleteOnly: boolean | null | undefined;
       expectedText: string;
       name: string;
       start: number;
-    }> = [
+    }[] = [
       // Do nothing
       {
         deleteCount: 0,
@@ -380,7 +460,7 @@ describe('LexicalElementNode tests', () => {
       },
     ];
 
-    BASE_INSERTIONS.forEach((testCase) => {
+    BASE_INSERTIONS.forEach(testCase => {
       it(`Plain text: ${testCase.name}`, async () => {
         await update(() => {
           block.splice(
@@ -398,7 +478,7 @@ describe('LexicalElementNode tests', () => {
 
     let nodes: Record<string, LexicalNode> = {};
 
-    const NESTED_ELEMENTS_TESTS: Array<{
+    const NESTED_ELEMENTS_TESTS: {
       deleteCount: number;
       deleteOnly?: boolean;
       expectedSelection: () => {
@@ -416,7 +496,7 @@ describe('LexicalElementNode tests', () => {
       expectedText: string;
       name: string;
       start: number;
-    }> = [
+    }[] = [
       {
         deleteCount: 0,
         deleteOnly: true,
@@ -523,7 +603,7 @@ describe('LexicalElementNode tests', () => {
       },
     ];
 
-    NESTED_ELEMENTS_TESTS.forEach((testCase) => {
+    NESTED_ELEMENTS_TESTS.forEach(testCase => {
       it(`Nested elements: ${testCase.name}`, async () => {
         await update(() => {
           const text1 = $createTextNode('Foo');
@@ -591,7 +671,7 @@ describe('LexicalElementNode tests', () => {
       const transforms = new Set();
       const expectedTransforms: string[] = [];
 
-      const removeTransform = editor.registerNodeTransform(TextNode, (node) => {
+      const removeTransform = editor.registerNodeTransform(TextNode, node => {
         transforms.add(node.__key);
       });
 
@@ -618,7 +698,10 @@ describe('LexicalElementNode tests', () => {
 
       await update(() => {
         block.splice(1, 0, [
-          $getRoot().getLastChild<ElementNode>()!.getChildAtIndex(1)!,
+          $assertNodeType(
+            $getRoot().getLastChild(),
+            $isElementNode,
+          ).getChildAtIndex(1)!,
         ]);
       });
 
@@ -626,10 +709,192 @@ describe('LexicalElementNode tests', () => {
 
       await update(() => {
         expect(block.getTextContent()).toEqual('Foo2BarBaz');
-        expectedTransforms.forEach((key) => {
+        expectedTransforms.forEach(key => {
           expect(transforms).toContain(key);
         });
       });
     });
+
+    // The assertions run inside the same update as the splice so that a
+    // failure aborts before a corrupt sibling list can reach the reconciler.
+    it('Re-inserting the node after the range does not create a cycle', async () => {
+      await update(() => {
+        const [first, second, third] = block.getChildren();
+
+        // A no-op splice: the node already sits at this position.
+        block.splice(1, 0, [second]);
+
+        // Checked before any sibling walk so a cycle fails fast.
+        expect(second.getNextSibling()!.getKey()).toEqual(third.getKey());
+        expect(block.getChildrenSize()).toEqual(3);
+        expect(block.getChildrenKeys()).toEqual([
+          first.getKey(),
+          second.getKey(),
+          third.getKey(),
+        ]);
+        expect(block.getLastChild()!.getKey()).toEqual(third.getKey());
+        expect(block.getTextContent()).toEqual('FooBarBaz');
+      });
+    });
+
+    it('Replacing a node with a later sibling does not create a cycle', async () => {
+      await update(() => {
+        const [first, , third] = block.getChildren();
+
+        // Delete "Bar" and move "Baz" into its place.
+        block.splice(1, 1, [third]);
+
+        // Checked before any sibling walk so a cycle fails fast.
+        expect(third.getNextSibling()).toBe(null);
+        expect(block.getChildrenSize()).toEqual(2);
+        expect(block.getChildrenKeys()).toEqual([
+          first.getKey(),
+          third.getKey(),
+        ]);
+        expect(block.getLastChild()!.getKey()).toEqual(third.getKey());
+        expect(block.getTextContent()).toEqual('FooBaz');
+      });
+    });
+  });
+});
+
+describe('getDOMSlot tests', () => {
+  let container: HTMLElement;
+  let editor: LexicalEditor;
+
+  beforeEach(async () => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    editor = createEditor({
+      nodes: [WrapperElementNode],
+      onError: error => {
+        throw error;
+      },
+    });
+    editor.setRootElement(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+    // @ts-ignore
+    container = null;
+  });
+
+  class WrapperElementNode extends ElementNode {
+    static getType() {
+      return 'wrapper';
+    }
+    static clone(node: WrapperElementNode): WrapperElementNode {
+      return new WrapperElementNode(node.__key);
+    }
+    createDOM() {
+      const el = document.createElement('main');
+      el.appendChild(document.createElement('section'));
+      return el;
+    }
+    updateDOM() {
+      return false;
+    }
+    getDOMSlot(dom: HTMLElement): ElementDOMSlot {
+      return super.getDOMSlot(dom).withElement(dom.querySelector('section')!);
+    }
+    exportJSON(): SerializedElementNode {
+      throw new Error('Not implemented');
+    }
+    static importJSON(): WrapperElementNode {
+      throw new Error('Not implemented');
+    }
+  }
+  function $createWrapperElementNode(): WrapperElementNode {
+    return $applyNodeReplacement(new WrapperElementNode());
+  }
+
+  test('can create wrapper', () => {
+    let wrapper: WrapperElementNode;
+    editor.update(
+      () => {
+        wrapper = $createWrapperElementNode().append(
+          $createTextNode('test text').setMode('token'),
+        );
+        $getRoot().clear().append(wrapper);
+      },
+      {discrete: true},
+    );
+    expect(container.innerHTML).toBe(
+      `<main dir="auto"><section><span data-lexical-text="true">test text</span></section></main>`,
+    );
+    editor.update(
+      () => {
+        wrapper.append($createTextNode('more text').setMode('token'));
+      },
+      {discrete: true},
+    );
+    expect(container.innerHTML).toBe(
+      `<main dir="auto"><section><span data-lexical-text="true">test text</span><span data-lexical-text="true">more text</span></section></main>`,
+    );
+    editor.update(
+      () => {
+        wrapper.clear();
+      },
+      {discrete: true},
+    );
+    expect(container.innerHTML).toBe(
+      `<main dir="auto"><section><br data-lexical-managed-linebreak="true"></section></main>`,
+    );
+  });
+
+  test('DOM selection uses getDOMSlot element for element selections', () => {
+    editor.update(
+      () => {
+        const wrapper = $createWrapperElementNode().append(
+          $createParagraphNode().append($createTextNode('A')),
+          $createParagraphNode().append($createTextNode('B')),
+          $createParagraphNode().append($createTextNode('C')),
+        );
+        $getRoot().clear().append(wrapper);
+        // Create element-type selection on wrapper
+        wrapper.select(0, wrapper.getChildrenSize());
+      },
+      {discrete: true},
+    );
+
+    const domSelection = window.getSelection();
+    expect(domSelection!.anchorNode!.nodeName).toBe('SECTION');
+    expect(domSelection!.anchorOffset).toBe(0);
+    expect(domSelection!.focusNode!.nodeName).toBe('SECTION');
+    expect(domSelection!.focusOffset).toBe(3);
+  });
+});
+
+describe('indexPath', () => {
+  test('no path', () => {
+    const root = document.createElement('div');
+    expect(indexPath(root, root)).toEqual([]);
+  });
+  test('only child', () => {
+    const root = document.createElement('div');
+    const child = document.createElement('div');
+    root.appendChild(child);
+    expect(indexPath(root, child)).toEqual([0]);
+  });
+  test('nested child', () => {
+    const root = document.createElement('div');
+    const parent = document.createElement('div');
+    const child = document.createElement('div');
+    root.appendChild(parent);
+    parent.appendChild(child);
+    expect(indexPath(root, child)).toEqual([0, 0]);
+  });
+  test('nested child with siblings', () => {
+    const root = document.createElement('div');
+    const parent = document.createElement('div');
+    const child = document.createElement('div');
+    root.appendChild(document.createElement('span'));
+    root.appendChild(parent);
+    root.appendChild(document.createElement('span'));
+    parent.appendChild(document.createElement('span'));
+    parent.appendChild(child);
+    parent.appendChild(document.createElement('span'));
+    expect(indexPath(root, child)).toEqual([1, 1]);
   });
 });

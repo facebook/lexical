@@ -13,8 +13,11 @@ import {
   moveToLineEnd,
   selectCharacters,
   toggleBold,
+  toggleCapitalize,
   toggleItalic,
+  toggleLowercase,
   toggleUnderline,
+  toggleUppercase,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -24,15 +27,14 @@ import {
   expect,
   fill,
   focusEditor,
+  getExpectedDateTimeHtml,
   html,
   initialize,
-  insertSampleImage,
-  SAMPLE_IMAGE_URL,
+  insertDateTime,
   test,
-  waitForSelector,
 } from '../utils/index.mjs';
 
-test.describe.parallel('TextFormatting', () => {
+test.describe('TextFormatting', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can create bold text using the shortcut`, async ({
     page,
@@ -47,9 +49,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -71,9 +71,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -105,9 +103,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <em
             class="PlaygroundEditorTheme__textItalic"
@@ -129,9 +125,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <em
             class="PlaygroundEditorTheme__textItalic"
@@ -171,9 +165,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -195,9 +187,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello world!</span>
         </p>
       `,
@@ -238,18 +228,14 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
             data-lexical-text="true">
             hello world
           </strong>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">hello world</span>
         </p>
       `,
@@ -277,9 +263,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <em
             class="PlaygroundEditorTheme__textItalic"
@@ -301,9 +285,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello world!</span>
         </p>
       `,
@@ -337,9 +319,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <span
             class="PlaygroundEditorTheme__textUnderline"
@@ -361,9 +341,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello world!</span>
         </p>
       `,
@@ -382,9 +360,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <span
             class="PlaygroundEditorTheme__textUnderlineStrikethrough"
@@ -407,9 +383,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <span
             class="PlaygroundEditorTheme__textUnderline"
@@ -425,6 +399,133 @@ test.describe.parallel('TextFormatting', () => {
       anchorPath: [0, 1, 0],
       focusOffset: 0,
       focusPath: [0, 1, 0],
+    });
+  });
+
+  const capitalizationFormats = [
+    {
+      applyCapitalization: toggleLowercase,
+      className: 'PlaygroundEditorTheme__textLowercase',
+      format: 'lowercase',
+    },
+    {
+      applyCapitalization: toggleUppercase,
+      className: 'PlaygroundEditorTheme__textUppercase',
+      format: 'uppercase',
+    },
+    {
+      applyCapitalization: toggleCapitalize,
+      className: 'PlaygroundEditorTheme__textCapitalize',
+      format: 'capitalize',
+    },
+  ];
+
+  capitalizationFormats.forEach(({className, format, applyCapitalization}) => {
+    test(`Can select text and change it to ${format}`, async ({
+      page,
+      isPlainText,
+    }) => {
+      test.skip(isPlainText);
+
+      await focusEditor(page);
+      await page.keyboard.type('Hello world!');
+      await moveLeft(page);
+      await selectCharacters(page, 'left', 5);
+
+      await assertSelection(page, {
+        anchorOffset: 11,
+        anchorPath: [0, 0, 0],
+        focusOffset: 6,
+        focusPath: [0, 0, 0],
+      });
+
+      await applyCapitalization(page);
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Hello</span>
+            <span class="${className}" data-lexical-text="true">world</span>
+            <span data-lexical-text="true">!</span>
+          </p>
+        `,
+      );
+
+      await assertSelection(page, {
+        anchorOffset: 5,
+        anchorPath: [0, 1, 0],
+        focusOffset: 0,
+        focusPath: [0, 1, 0],
+      });
+    });
+  });
+
+  const capitalizationResettingTestCases = [
+    {
+      expectedFinalHTML: html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span class="$formatClassName" data-lexical-text="true">Hello</span>
+          <span data-lexical-text="true">world!</span>
+        </p>
+      `,
+      key: 'Space',
+    },
+    {
+      expectedFinalHTML: html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span class="$formatClassName" data-lexical-text="true">Hello</span>
+          <span
+            class="PlaygroundEditorTheme__tabNode"
+            data-lexical-text="true"></span>
+          <span data-lexical-text="true">world!</span>
+        </p>
+      `,
+      key: 'Tab',
+    },
+    {
+      expectedFinalHTML: html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span class="$formatClassName" data-lexical-text="true">Hello</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">world!</span>
+        </p>
+      `,
+      key: 'Enter',
+    },
+  ];
+
+  capitalizationFormats.forEach(({format, className, applyCapitalization}) => {
+    capitalizationResettingTestCases.forEach(({key, expectedFinalHTML}) => {
+      test(`Pressing ${key} resets ${format} format`, async ({
+        page,
+        isPlainText,
+      }) => {
+        test.skip(isPlainText);
+
+        await focusEditor(page);
+
+        await applyCapitalization(page);
+        await page.keyboard.type('Hello');
+
+        await assertHTML(
+          page,
+          html`
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <span class="${className}" data-lexical-text="true">Hello</span>
+            </p>
+          `,
+        );
+
+        // Pressing the key should reset the format
+        await page.keyboard.press(key);
+        await page.keyboard.type(' world!');
+
+        await assertHTML(
+          page,
+          expectedFinalHTML.replace('$formatClassName', className),
+        );
+      });
     });
   });
 
@@ -451,11 +552,9 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <span style="font-size: 17px;" data-lexical-text="true">world</span>
+          <span style="font-size: 18px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -486,11 +585,9 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span style="font-size: 17px;" data-lexical-text="true">Hello</span>
-          <span style="font-size: 19px;" data-lexical-text="true">world!</span>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span style="font-size: 18px;" data-lexical-text="true">Hello</span>
+          <span style="font-size: 20px;" data-lexical-text="true">world!</span>
         </p>
       `,
     );
@@ -519,11 +616,9 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <span style="font-size: 13px;" data-lexical-text="true">world</span>
+          <span style="font-size: 14px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -554,10 +649,8 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span style="font-size: 13px;" data-lexical-text="true">Hello</span>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span style="font-size: 14px;" data-lexical-text="true">Hello</span>
           <span style="font-size: 12px;" data-lexical-text="true">world!</span>
         </p>
       `,
@@ -588,11 +681,9 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <span style="font-size: 17px;" data-lexical-text="true">world</span>
+          <span style="font-size: 18px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -611,12 +702,10 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <span
-            style="font-size: 17px; font-family: Georgia;"
+            style="font-size: 18px; font-family: Georgia;"
             data-lexical-text="true">
             world
           </span>
@@ -637,12 +726,10 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <span
-            style="font-size: 15px; font-family: Georgia;"
+            style="font-size: 16px; font-family: Georgia;"
             data-lexical-text="true">
             world
           </span>
@@ -677,15 +764,14 @@ test.describe.parallel('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
+    await click(page, '.font-size-input');
     await fill(page, '.font-size-input', '20');
     await page.keyboard.press('Enter');
 
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <span style="font-size: 20px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
@@ -719,9 +805,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span style="font-size: 20px;" data-lexical-text="true">
             Hello world!
           </span>
@@ -752,9 +836,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -786,9 +868,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -820,9 +900,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -854,42 +932,50 @@ test.describe.parallel('TextFormatting', () => {
     await selectCharacters(page, 'right', 5);
 
     await toggleBold(page);
+    // selection.format = AND(bold "w", italic "or", bold "ld") = 0 → bold toggled ON
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello w</span>
-          <em
-            class="PlaygroundEditorTheme__textItalic"
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            w
+          </strong>
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             data-lexical-text="true">
             or
-          </em>
-          <span data-lexical-text="true">ld!</span>
+          </strong>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            ld
+          </strong>
+          <span data-lexical-text="true">!</span>
         </p>
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 6,
-      anchorPath: [0, 0, 0],
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
       focusOffset: 2,
-      focusPath: [0, 2, 0],
+      focusPath: [0, 3, 0],
     });
 
     await toggleItalic(page);
+    // selection.format = AND(bold, bold+italic, bold) = bold → italic toggled ON
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <em
-            class="PlaygroundEditorTheme__textItalic"
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             data-lexical-text="true">
             world
-          </em>
+          </strong>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -903,21 +989,26 @@ test.describe.parallel('TextFormatting', () => {
     });
 
     await toggleItalic(page);
+    // selection.format = bold+italic → italic toggled OFF → bold only
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello world!</span>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            world
+          </strong>
+          <span data-lexical-text="true">!</span>
         </p>
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 6,
-      anchorPath: [0, 0, 0],
-      focusOffset: 11,
-      focusPath: [0, 0, 0],
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
+      focusOffset: 5,
+      focusPath: [0, 1, 0],
     });
   });
 
@@ -955,9 +1046,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">123</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -1006,9 +1095,7 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">12z</span>
         </p>
       `,
@@ -1042,32 +1129,33 @@ test.describe.parallel('TextFormatting', () => {
     await page.keyboard.up('Shift');
     await toggleBold(page);
 
+    // selection.format = AND(bold "3", plain "456") = 0 → bold toggled ON
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            123456
+          </strong>
+        </p>
+      `,
+    );
+
+    // Toggle once more — now all selected text is bold → bold toggled OFF
+    await toggleBold(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
             data-lexical-text="true">
             12
           </strong>
           <span data-lexical-text="true">3456</span>
-        </p>
-      `,
-    );
-
-    // Toggle once more
-    await toggleBold(page);
-
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph">
-          <strong
-            class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true">
-            123456
-          </strong>
         </p>
       `,
     );
@@ -1120,34 +1208,19 @@ test.describe.parallel('TextFormatting', () => {
     await focusEditor(page);
 
     await page.keyboard.type('A');
-    await insertSampleImage(page);
+    await insertDateTime(page);
     await page.keyboard.type('BC');
 
     await moveLeft(page, 1);
     await selectCharacters(page, 'left', 2);
 
     if (!isCollab) {
-      await waitForSelector(page, '.editor-image img');
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">A</span>
-            <span
-              class="editor-image"
-              contenteditable="false"
-              data-lexical-decorator="true">
-              <div draggable="false">
-                <img
-                  class="focused"
-                  alt="Yellow flower in tilt shift lens"
-                  draggable="false"
-                  src="${SAMPLE_IMAGE_URL}"
-                  style="height: inherit; max-width: 500px; width: inherit" />
-              </div>
-            </span>
+            ${getExpectedDateTimeHtml({selected: true})}
             <span data-lexical-text="true">BC</span>
           </p>
         `,
@@ -1157,22 +1230,9 @@ test.describe.parallel('TextFormatting', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">A</span>
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <div draggable="false">
-              <img
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit" />
-            </div>
-          </span>
+          ${getExpectedDateTimeHtml({formats: ['bold']})}
           <strong
             class="PlaygroundEditorTheme__textBold"
             data-lexical-text="true">
@@ -1185,23 +1245,12 @@ test.describe.parallel('TextFormatting', () => {
     await toggleBold(page);
     await assertHTML(
       page,
+      // After formatting, the selection resets to just the TextNode "B".
+      // The DecoratorTextNode is no longer selected, so it retains its bold format.
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">A</span>
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <div draggable="false">
-              <img
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit" />
-            </div>
-          </span>
+          ${getExpectedDateTimeHtml({formats: ['bold']})}
           <span data-lexical-text="true">BC</span>
         </p>
       `,

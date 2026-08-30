@@ -6,10 +6,10 @@
  *
  */
 
+import type {Example} from './pluginList';
+
 import {useQueryString, useQueryStringList} from '@docusaurus/theme-common';
 import {useMemo} from 'react';
-
-import {Example} from './pluginList';
 
 export function useSearchName() {
   return useQueryString('title');
@@ -24,24 +24,24 @@ function filterExamples({
   searchName,
   tags,
 }: {
-  examples: Array<Example>;
+  examples: Example[];
   searchName: string;
-  tags: Array<string>;
+  tags: string[];
 }) {
   if (searchName) {
-    examples = examples.filter((example) =>
+    examples = examples.filter(example =>
       example.title.toLowerCase().includes(searchName.toLowerCase()),
     );
   }
   if (tags.length !== 0) {
-    examples = examples.filter((example) =>
-      example.tags.some((tag) => tags.includes(tag)),
+    examples = examples.filter(example =>
+      example.tags.some(tag => tags.includes(tag)),
     );
   }
   return examples;
 }
 
-export function useFilteredExamples(examples: Array<Example>) {
+export function useFilteredExamples(examples: Example[]) {
   const [searchName] = useSearchName();
   const [tags] = useTags();
   return useMemo(

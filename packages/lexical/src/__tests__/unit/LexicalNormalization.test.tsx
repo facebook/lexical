@@ -5,13 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  RangeSelection,
+  type RangeSelection,
 } from 'lexical';
+import {describe, expect, test} from 'vitest';
 
 import {$normalizeSelection} from '../../LexicalNormalization';
 import {
@@ -21,7 +21,7 @@ import {
 } from '../utils';
 
 describe('LexicalNormalization tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     describe('$normalizeSelection', () => {
       for (const reversed of [false, true]) {
         const getAnchor = (x: RangeSelection) =>

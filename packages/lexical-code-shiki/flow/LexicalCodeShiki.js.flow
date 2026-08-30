@@ -1,0 +1,36 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+import type {
+  LexicalExtension,
+  LexicalNode,
+  ExtensionConfigBase,
+} from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension';
+import type {CodeNode} from '@lexical/code';
+
+/**
+ * LexicalCodeShiki
+ */
+
+export type Tokenizer = {
+  defaultLanguage: string | null;
+  defaultTheme: string;
+  $tokenize: (codeNode: CodeNode, language?: string) => LexicalNode[];
+}
+export type CodeShikiConfig = {
+  disabled: boolean,
+  tokenizer: Tokenizer,
+};
+declare export var ShikiTokenizer: Tokenizer;
+declare export var CodeShikiExtension: LexicalExtension<CodeShikiConfig, "@lexical/code-shiki", NamedSignalsOutput<CodeShikiConfig>, void>;
+
+/** @deprecated Use CodeShikiExtension instead */
+export type CodeHighlighterShikiConfig = Tokenizer;
+/** @deprecated Use CodeShikiExtension instead */
+declare export var CodeHighlighterShikiExtension: LexicalExtension<CodeHighlighterShikiConfig, "@lexical/code-shiki/legacy", void, void>;

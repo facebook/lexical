@@ -6,15 +6,28 @@
  *
  */
 
-import type {Klass, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$findMatchingParent} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode} from 'lexical';
+import {
+  $findMatchingParent,
+  $getNearestNodeFromDOMNode,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  registerEventListener,
+} from 'lexical';
 import {useEffect, useRef} from 'react';
 
 const capturedEvents = new Set<string>(['mouseenter', 'mouseleave']);
 
+/**
+ * Attaches a DOM event listener to the editor's root element and invokes
+ * `eventListener` whenever an event of `eventType` targets a node that is (or
+ * is contained by) an instance of `nodeType`. The listener receives the DOM
+ * event, the editor, and the matching node's {@link NodeKey}.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function NodeEventPlugin({
   nodeType,
   eventType,
@@ -46,7 +59,7 @@ export function NodeEventPlugin({
               : null
             : $findMatchingParent(
                 nearestNode,
-                (node) => node instanceof nodeType,
+                node => node instanceof nodeType,
               );
           if (targetNode !== null) {
             listenerRef.current(event, editor, targetNode.getKey());
@@ -56,13 +69,14 @@ export function NodeEventPlugin({
       });
     };
 
-    return editor.registerRootListener((rootElement, prevRootElement) => {
+    return editor.registerRootListener(rootElement => {
       if (rootElement) {
-        rootElement.addEventListener(eventType, onEvent, isCaptured);
-      }
-
-      if (prevRootElement) {
-        prevRootElement.removeEventListener(eventType, onEvent, isCaptured);
+        return registerEventListener(
+          rootElement,
+          eventType,
+          onEvent,
+          isCaptured,
+        );
       }
     });
     // We intentionally don't respect changes to eventType.

@@ -9,16 +9,26 @@
 import './ColorPicker.css';
 
 import {calculateZoomLevel} from '@lexical/utils';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {registerEventListeners} from 'lexical';
 import * as React from 'react';
+import {type JSX, useEffect, useMemo, useRef, useState} from 'react';
 
+import {isKeyboardInput} from '../utils/focusUtils';
 import TextInput from './TextInput';
 
 let skipAddingToHistoryStack = false;
 
 interface ColorPickerProps {
   color: string;
-  onChange?: (value: string, skipHistoryStack: boolean) => void;
+  onChange?: (
+    value: string,
+    skipHistoryStack: boolean,
+    skipRefocus: boolean,
+  ) => void;
+}
+
+export function parseAllowedColor(input: string) {
+  return /^rgb\(\d+, \d+, \d+\)$/.test(input) ? input : '';
 }
 
 const basicColors = [
@@ -47,7 +57,9 @@ export default function ColorPicker({
   onChange,
 }: Readonly<ColorPickerProps>): JSX.Element {
   const [selfColor, setSelfColor] = useState(transformColor('hex', color));
-  const [inputColor, setInputColor] = useState(color);
+  const [inputColor, setInputColor] = useState(
+    transformColor('hex', color).hex,
+  );
   const innerDivRef = useRef(null);
 
   const saturationPosition = useMemo(
@@ -65,11 +77,19 @@ export default function ColorPicker({
     [selfColor.hsv],
   );
 
+  const emitOnChange = (newColor: string, skipRefocus: boolean = false) => {
+    // Check if the dropdown is actually active
+    if (innerDivRef.current !== null && onChange) {
+      onChange(newColor, skipAddingToHistoryStack, skipRefocus);
+    }
+  };
+
   const onSetHex = (hex: string) => {
     setInputColor(hex);
     if (/^#[0-9A-Fa-f]{6}$/i.test(hex)) {
       const newColor = transformColor('hex', hex);
       setSelfColor(newColor);
+      emitOnChange(newColor.hex);
     }
   };
 
@@ -82,6 +102,7 @@ export default function ColorPicker({
     const newColor = transformColor('hsv', newHsv);
     setSelfColor(newColor);
     setInputColor(newColor.hex);
+    emitOnChange(newColor.hex);
   };
 
   const onMoveHue = ({x}: Position) => {
@@ -90,24 +111,16 @@ export default function ColorPicker({
 
     setSelfColor(newColor);
     setInputColor(newColor.hex);
+    emitOnChange(newColor.hex);
   };
 
-  useEffect(() => {
-    // Check if the dropdown is actually active
-    if (innerDivRef.current !== null && onChange) {
-      onChange(selfColor.hex, skipAddingToHistoryStack);
-      setInputColor(selfColor.hex);
-    }
-  }, [selfColor, onChange]);
+  const onBasicColorClick = (e: React.MouseEvent, basicColor: string) => {
+    const newColor = transformColor('hex', basicColor);
 
-  useEffect(() => {
-    if (color === undefined) {
-      return;
-    }
-    const newColor = transformColor('hex', color);
     setSelfColor(newColor);
     setInputColor(newColor.hex);
-  }, [color]);
+    emitOnChange(newColor.hex, isKeyboardInput(e));
+  };
 
   return (
     <div
@@ -116,15 +129,12 @@ export default function ColorPicker({
       ref={innerDivRef}>
       <TextInput label="Hex" onChange={onSetHex} value={inputColor} />
       <div className="color-picker-basic-color">
-        {basicColors.map((basicColor) => (
+        {basicColors.map(basicColor => (
           <button
-            className={basicColor === selfColor.hex ? ' active' : ''}
+            className={basicColor === selfColor.hex ? 'active' : ''}
             key={basicColor}
             style={{backgroundColor: basicColor}}
-            onClick={() => {
-              setInputColor(basicColor);
-              setSelfColor(transformColor('hex', basicColor));
-            }}
+            onClick={e => onBasicColorClick(e, basicColor)}
           />
         ))}
       </div>
@@ -173,6 +183,8 @@ interface MoveWrapperProps {
 function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
   const divRef = useRef<HTMLDivElement>(null);
   const draggedRef = useRef(false);
+  const dragCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => dragCleanupRef.current?.(), []);
 
   const move = (e: React.MouseEvent | MouseEvent): void => {
     if (divRef.current) {
@@ -193,26 +205,37 @@ function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
 
     move(e);
 
+    const div = divRef.current;
+    if (div === null) {
+      return;
+    }
+
     const onMouseMove = (_e: MouseEvent): void => {
       draggedRef.current = true;
       skipAddingToHistoryStack = true;
       move(_e);
     };
 
+    const doc = div.ownerDocument;
+
     const onMouseUp = (_e: MouseEvent): void => {
       if (draggedRef.current) {
         skipAddingToHistoryStack = false;
       }
 
-      document.removeEventListener('mousemove', onMouseMove, false);
-      document.removeEventListener('mouseup', onMouseUp, false);
+      dragCleanupRef.current?.();
+      dragCleanupRef.current = null;
 
       move(_e);
       draggedRef.current = false;
     };
 
-    document.addEventListener('mousemove', onMouseMove, false);
-    document.addEventListener('mouseup', onMouseUp, false);
+    dragCleanupRef.current?.();
+    dragCleanupRef.current = registerEventListeners(
+      doc,
+      {mousemove: onMouseMove, mouseup: onMouseUp},
+      false,
+    );
   };
 
   return (
@@ -280,7 +303,7 @@ function hex2rgb(hex: string): RGB {
       )
       .substring(1)
       .match(/.{2}/g) || []
-  ).map((x) => parseInt(x, 16));
+  ).map(x => parseInt(x, 16));
 
   return {
     b: rbgArr[2],
@@ -301,8 +324,8 @@ function rgb2hsv({r, g, b}: RGB): HSV {
     ? (max === r
         ? (g - b) / d + (g < b ? 6 : 0)
         : max === g
-        ? 2 + (b - r) / d
-        : 4 + (r - g) / d) * 60
+          ? 2 + (b - r) / d
+          : 4 + (r - g) / d) * 60
     : 0;
   const s = max ? (d / max) * 100 : 0;
   const v = max * 100;
@@ -329,7 +352,7 @@ function hsv2rgb({h, s, v}: HSV): RGB {
 }
 
 function rgb2hex({b, g, r}: RGB): string {
-  return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
+  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
 function transformColor<M extends keyof Color, C extends Color[M]>(

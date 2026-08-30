@@ -40,7 +40,7 @@ function getIdentifierVariable(sourceCode, identifier) {
   ) {
     const variable = scopeManager
       .getDeclaredVariables(node)
-      .find((v) => v.identifiers.includes(identifier));
+      .find(v => v.identifiers.includes(identifier));
     if (variable) {
       return variable;
     }
@@ -141,6 +141,7 @@ function getLexicalFunctionName(node) {
   }
   const nodeParent = node.parent;
   if (
+    nodeParent != null &&
     nodeParent.type === 'CallExpression' &&
     nodeParent.arguments[0] === node
   ) {
@@ -148,7 +149,7 @@ function getLexicalFunctionName(node) {
       /** @type {Node} */ (nodeParent.callee),
     );
     if (isHookFunctionIdentifier(parentName)) {
-      return getParentAssignmentName(nodeParent);
+      return getParentAssignmentName(/** @type {Node} */ (nodeParent));
     }
   }
 }
@@ -202,16 +203,19 @@ function getSuggestName(nameIdentifier, variable) {
  */
 function getExportDeclaration(variable) {
   if (variable && variable.defs.length === 1) {
-    const [{node}] = variable.defs;
-    if (node.parent.type === 'ExportNamedDeclaration') {
+    const defNode = /** @type {Node} */ (variable.defs[0].node);
+    const defParent = defNode.parent;
+    if (defParent != null && defParent.type === 'ExportNamedDeclaration') {
       // export function foo();
-      return node.parent;
+      return defParent;
     } else if (
-      node.parent.type === 'VariableDeclaration' &&
-      node.parent.parent.type === 'ExportNamedDeclaration'
+      defParent != null &&
+      defParent.type === 'VariableDeclaration' &&
+      defParent.parent != null &&
+      defParent.parent.type === 'ExportNamedDeclaration'
     ) {
       // export const foo = () => {};
-      return node.parent.parent;
+      return defParent.parent;
     }
   }
 }
@@ -239,7 +243,10 @@ function parseMatcherOption(context, optionName) {
 
 /** @param {RuleContext} context */
 function getSourceCode(context) {
-  // Deprecated in 8.x but we are still on 7.x
+  if (context.sourceCode) {
+    return context.sourceCode;
+  }
+  // @ts-expect-error -- getSourceCode() removed from types in ESLint 10, kept for ESLint 8 compat
   return context.getSourceCode();
 }
 
@@ -280,7 +287,11 @@ module.exports.rulesOfLexical = {
       }
       // Ignore property assignments
       const lastFunction = funStack[funStack.length - 1];
-      return lastFunction && lastFunction.node.parent.type === 'Property';
+      return (
+        lastFunction &&
+        lastFunction.node.parent != null &&
+        lastFunction.node.parent.type === 'Property'
+      );
     };
     const pushIgnoredNode = (/** @type {Node} */ node) => ignoreSet.add(node);
     const popIgnoredNode = (/** @type {Node} */ node) => ignoreSet.delete(node);
@@ -312,7 +323,7 @@ module.exports.rulesOfLexical = {
     return {
       ArrowFunctionExpression: pushFunction,
       'ArrowFunctionExpression:exit': popFunction,
-      CallExpression: (node) => {
+      CallExpression: node => {
         if (shouldIgnore()) {
           return;
         }
@@ -343,7 +354,7 @@ module.exports.rulesOfLexical = {
           suggestName,
         };
         /** @type {ReportFixer} */
-        const fix = (fixer) => {
+        const fix = fixer => {
           /** @type {Set<Identifier>} */
           const replaced = new Set();
           /** @type {Fix[]} */

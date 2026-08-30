@@ -6,99 +6,89 @@
  *
  */
 
-import type {ElementNode, LexicalEditor} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
-  $deleteTableColumn__EXPERIMENTAL,
-  $deleteTableRow__EXPERIMENTAL,
+  $computeTableCellRectBoundary,
+  $computeTableMap,
+  $deleteTableColumnAtSelection,
+  $deleteTableRowAtSelection,
   $getNodeTriplet,
   $getTableCellNodeFromLexicalNode,
-  $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
-  $insertTableColumn__EXPERIMENTAL,
-  $insertTableRow__EXPERIMENTAL,
+  $insertTableColumnAtSelection,
+  $insertTableRowAtSelection,
   $isTableCellNode,
-  $isTableRowNode,
   $isTableSelection,
+  $mergeCells,
+  $setTableColumnIsHeader,
+  $setTableRowIsHeader,
   $unmergeCell,
+  getTableElement,
   getTableObserverFromTableElement,
-  HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
   TableCellNode,
-  TableRowNode,
-  TableSelection,
+  type TableObserver,
+  type TableSelection,
 } from '@lexical/table';
 import {
-  $createParagraphNode,
-  $getRoot,
   $getSelection,
   $isElementNode,
-  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
+  $setSelection,
+  COMMAND_PRIORITY_CRITICAL,
+  type ElementNode,
+  getActiveElementDeep,
+  getDOMSelection,
+  getDOMSelectionPoints,
+  getRootOwnerDocument,
+  isDOMNode,
+  type LexicalEditor,
+  mergeRegister,
+  registerEventListener,
+  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
+import {
+  type JSX,
+  type ReactPortal,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {createPortal} from 'react-dom';
-import invariant from 'shared/invariant';
 
 import useModal from '../../hooks/useModal';
 import ColorPicker from '../../ui/ColorPicker';
+import DropDown, {DropDownItem} from '../../ui/DropDown';
 
-function computeSelectionCount(selection: TableSelection): {
+function $computeSelectionCounts(selection: TableSelection): {
   columns: number;
   rows: number;
 } {
-  const selectionShape = selection.getShape();
-  return {
-    columns: selectionShape.toX - selectionShape.fromX + 1,
-    rows: selectionShape.toY - selectionShape.fromY + 1,
-  };
-}
-
-// This is important when merging cells as there is no good way to re-merge weird shapes (a result
-// of selecting merged cells and non-merged)
-function isTableSelectionRectangular(selection: TableSelection): boolean {
-  const nodes = selection.getNodes();
-  const currentRows: Array<number> = [];
-  let currentRow = null;
-  let expectedColumns = null;
-  let currentColumns = 0;
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    if ($isTableCellNode(node)) {
-      const row = node.getParentOrThrow();
-      invariant(
-        $isTableRowNode(row),
-        'Expected CellNode to have a RowNode parent',
-      );
-      if (currentRow !== row) {
-        if (expectedColumns !== null && currentColumns !== expectedColumns) {
-          return false;
-        }
-        if (currentRow !== null) {
-          expectedColumns = currentColumns;
-        }
-        currentRow = row;
-        currentColumns = 0;
-      }
-      const colSpan = node.__colSpan;
-      for (let j = 0; j < colSpan; j++) {
-        if (currentRows[currentColumns + j] === undefined) {
-          currentRows[currentColumns + j] = 0;
-        }
-        currentRows[currentColumns + j] += node.__rowSpan;
-      }
-      currentColumns += colSpan;
-    }
+  const anchorCell = selection.anchor.getNode();
+  const focusCell = selection.focus.getNode();
+  if (!$isTableCellNode(anchorCell) || !$isTableCellNode(focusCell)) {
+    return {columns: 1, rows: 1};
   }
-  return (
-    (expectedColumns === null || currentColumns === expectedColumns) &&
-    currentRows.every((v) => v === currentRows[0])
+  const tableNode = $getTableNodeFromLexicalNodeOrThrow(anchorCell);
+  const [map, cellAMap, cellBMap] = $computeTableMap(
+    tableNode,
+    anchorCell,
+    focusCell,
   );
+  const {minColumn, maxColumn, minRow, maxRow} = $computeTableCellRectBoundary(
+    map,
+    cellAMap,
+    cellBMap,
+  );
+  return {
+    columns: maxColumn - minColumn + 1,
+    rows: maxRow - minRow + 1,
+  };
 }
 
 function $canUnmerge(): boolean {
@@ -114,17 +104,6 @@ function $canUnmerge(): boolean {
   return cell.__colSpan > 1 || cell.__rowSpan > 1;
 }
 
-function $cellContainsEmptyParagraph(cell: TableCellNode): boolean {
-  if (cell.getChildrenSize() !== 1) {
-    return false;
-  }
-  const firstChild = cell.getFirstChildOrThrow();
-  if (!$isParagraphNode(firstChild) || !firstChild.isEmpty()) {
-    return false;
-  }
-  return true;
-}
-
 function $selectLastDescendant(node: ElementNode): void {
   const lastDescendant = node.getLastDescendant();
   if ($isTextNode(lastDescendant)) {
@@ -137,7 +116,7 @@ function $selectLastDescendant(node: ElementNode): void {
 }
 
 function currentCellBackgroundColor(editor: LexicalEditor): null | string {
-  return editor.getEditorState().read(() => {
+  return editor.read('latest', () => {
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
       const [cell] = $getNodeTriplet(selection.anchor);
@@ -185,12 +164,12 @@ function TableActionMenu({
   useEffect(() => {
     return editor.registerMutationListener(
       TableCellNode,
-      (nodeMutations) => {
+      nodeMutations => {
         const nodeUpdated =
           nodeMutations.get(tableCellNode.getKey()) === 'updated';
 
         if (nodeUpdated) {
-          editor.getEditorState().read(() => {
+          editor.read('latest', () => {
             updateTableCellNode(tableCellNode.getLatest());
           });
           setBackgroundColor(currentCellBackgroundColor(editor) || '');
@@ -201,14 +180,15 @@ function TableActionMenu({
   }, [editor, tableCellNode]);
 
   useEffect(() => {
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const selection = $getSelection();
       // Merge cells
       if ($isTableSelection(selection)) {
-        const currentSelectionCounts = computeSelectionCount(selection);
-        updateSelectionCounts(computeSelectionCount(selection));
+        const currentSelectionCounts = $computeSelectionCounts(selection);
+        updateSelectionCounts($computeSelectionCounts(selection));
+        const isCollapsedTableSelection = selection.anchor.is(selection.focus);
         setCanMergeCells(
-          isTableSelectionRectangular(selection) &&
+          !isCollapsedTableSelection &&
             (currentSelectionCounts.columns > 1 ||
               currentSelectionCounts.rows > 1),
         );
@@ -247,9 +227,9 @@ function TableActionMenu({
       let topPosition = menuButtonRect.top;
       if (topPosition + dropDownElementRect.height > window.innerHeight) {
         const position = menuButtonRect.bottom - dropDownElementRect.height;
-        topPosition = (position < 0 ? margin : position) + window.pageYOffset;
+        topPosition = position < 0 ? margin : position;
       }
-      dropDownElement.style.top = `${topPosition + +window.pageYOffset}px`;
+      dropDownElement.style.top = `${topPosition}px`;
     }
   }, [contextRef, dropDownRef, editor]);
 
@@ -258,80 +238,57 @@ function TableActionMenu({
       if (
         dropDownRef.current != null &&
         contextRef.current != null &&
-        !dropDownRef.current.contains(event.target as Node) &&
-        !contextRef.current.contains(event.target as Node)
+        isDOMNode(event.target) &&
+        !dropDownRef.current.contains(event.target) &&
+        !contextRef.current.contains(event.target)
       ) {
         setIsMenuOpen(false);
       }
     }
 
-    window.addEventListener('click', handleClickOutside);
-
-    return () => window.removeEventListener('click', handleClickOutside);
+    return registerEventListener(window, 'click', handleClickOutside);
   }, [setIsMenuOpen, contextRef]);
 
   const clearTableSelection = useCallback(() => {
     editor.update(() => {
       if (tableCellNode.isAttached()) {
         const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-        const tableElement = editor.getElementByKey(
-          tableNode.getKey(),
-        ) as HTMLTableElementWithWithTableSelectionState;
+        const tableElement = getTableElement(
+          tableNode,
+          editor.getElementByKey(tableNode.getKey()),
+        );
 
-        if (!tableElement) {
-          throw new Error('Expected to find tableElement in DOM');
+        if (tableElement === null) {
+          throw new Error(
+            'TableActionMenu: Expected to find tableElement in DOM',
+          );
         }
 
-        const tableSelection = getTableObserverFromTableElement(tableElement);
-        if (tableSelection !== null) {
-          tableSelection.clearHighlight();
+        const tableObserver = getTableObserverFromTableElement(tableElement);
+        if (tableObserver !== null) {
+          tableObserver.$clearHighlight();
         }
 
         tableNode.markDirty();
         updateTableCellNode(tableCellNode.getLatest());
       }
-
-      const rootNode = $getRoot();
-      rootNode.selectStart();
+      $setSelection(null);
     });
   }, [editor, tableCellNode]);
 
   const mergeTableCellsAtSelection = () => {
     editor.update(() => {
       const selection = $getSelection();
-      if ($isTableSelection(selection)) {
-        const {columns, rows} = computeSelectionCount(selection);
-        const nodes = selection.getNodes();
-        let firstCell: null | TableCellNode = null;
-        for (let i = 0; i < nodes.length; i++) {
-          const node = nodes[i];
-          if ($isTableCellNode(node)) {
-            if (firstCell === null) {
-              node.setColSpan(columns).setRowSpan(rows);
-              firstCell = node;
-              const isEmpty = $cellContainsEmptyParagraph(node);
-              let firstChild;
-              if (
-                isEmpty &&
-                $isParagraphNode((firstChild = node.getFirstChild()))
-              ) {
-                firstChild.remove();
-              }
-            } else if ($isTableCellNode(firstCell)) {
-              const isEmpty = $cellContainsEmptyParagraph(node);
-              if (!isEmpty) {
-                firstCell.append(...node.getChildren());
-              }
-              node.remove();
-            }
-          }
-        }
-        if (firstCell !== null) {
-          if (firstCell.getChildrenSize() === 0) {
-            firstCell.append($createParagraphNode());
-          }
-          $selectLastDescendant(firstCell);
-        }
+      if (!$isTableSelection(selection)) {
+        return;
+      }
+
+      const nodes = selection.getNodes();
+      const tableCells = nodes.filter($isTableCellNode);
+      const targetCell = $mergeCells(tableCells);
+
+      if (targetCell) {
+        $selectLastDescendant(targetCell);
         onClose();
       }
     });
@@ -341,23 +298,26 @@ function TableActionMenu({
     editor.update(() => {
       $unmergeCell();
     });
+    clearTableSelection();
   };
 
   const insertTableRowAtSelection = useCallback(
     (shouldInsertAfter: boolean) => {
       editor.update(() => {
-        $insertTableRow__EXPERIMENTAL(shouldInsertAfter);
+        for (let i = 0; i < selectionCounts.rows; i++) {
+          $insertTableRowAtSelection(shouldInsertAfter);
+        }
         onClose();
       });
     },
-    [editor, onClose],
+    [editor, onClose, selectionCounts.rows],
   );
 
   const insertTableColumnAtSelection = useCallback(
     (shouldInsertAfter: boolean) => {
       editor.update(() => {
         for (let i = 0; i < selectionCounts.columns; i++) {
-          $insertTableColumn__EXPERIMENTAL(shouldInsertAfter);
+          $insertTableColumnAtSelection(shouldInsertAfter);
         }
         onClose();
       });
@@ -367,7 +327,7 @@ function TableActionMenu({
 
   const deleteTableRowAtSelection = useCallback(() => {
     editor.update(() => {
-      $deleteTableRow__EXPERIMENTAL();
+      $deleteTableRowAtSelection();
       onClose();
     });
   }, [editor, onClose]);
@@ -384,7 +344,7 @@ function TableActionMenu({
 
   const deleteTableColumnAtSelection = useCallback(() => {
     editor.update(() => {
-      $deleteTableColumn__EXPERIMENTAL();
+      $deleteTableColumnAtSelection();
       onClose();
     });
   }, [editor, onClose]);
@@ -392,29 +352,9 @@ function TableActionMenu({
   const toggleTableRowIsHeader = useCallback(() => {
     editor.update(() => {
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-      const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
-
-      const tableRows = tableNode.getChildren();
-
-      if (tableRowIndex >= tableRows.length || tableRowIndex < 0) {
-        throw new Error('Expected table cell to be inside of table row.');
-      }
-
-      const tableRow = tableRows[tableRowIndex];
-
-      if (!$isTableRowNode(tableRow)) {
-        throw new Error('Expected table row');
-      }
-
-      tableRow.getChildren().forEach((tableCell) => {
-        if (!$isTableCellNode(tableCell)) {
-          throw new Error('Expected table cell');
-        }
-
-        tableCell.toggleHeaderStyle(TableCellHeaderStates.ROW);
-      });
-
+      const rowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
+      const isHeader = !tableCellNode.hasHeaderState(TableCellHeaderStates.ROW);
+      $setTableRowIsHeader(tableNode, rowIndex, isHeader);
       clearTableSelection();
       onClose();
     });
@@ -423,41 +363,61 @@ function TableActionMenu({
   const toggleTableColumnIsHeader = useCallback(() => {
     editor.update(() => {
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-      const tableColumnIndex =
-        $getTableColumnIndexFromTableCellNode(tableCellNode);
-
-      const tableRows = tableNode.getChildren<TableRowNode>();
-      const maxRowsLength = Math.max(
-        ...tableRows.map((row) => row.getChildren().length),
+      // $setTableColumnIsHeader indexes the table grid, so the cell's position
+      // has to come from the table map rather than from its index among its
+      // row's children — the two diverge once an earlier cell in the row spans
+      // more than one column.
+      const [, cellMap] = $computeTableMap(
+        tableNode,
+        tableCellNode,
+        tableCellNode,
       );
+      const columnIndex = cellMap.startColumn;
+      const isHeader = !tableCellNode.hasHeaderState(
+        TableCellHeaderStates.COLUMN,
+      );
+      $setTableColumnIsHeader(tableNode, columnIndex, isHeader);
+      clearTableSelection();
+      onClose();
+    });
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
 
-      if (tableColumnIndex >= maxRowsLength || tableColumnIndex < 0) {
-        throw new Error('Expected table cell to be inside of table row.');
+  const toggleRowStriping = useCallback(() => {
+    editor.update(() => {
+      if (tableCellNode.isAttached()) {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        if (tableNode) {
+          tableNode.setRowStriping(!tableNode.getRowStriping());
+        }
       }
+      clearTableSelection();
+      onClose();
+    });
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
 
-      for (let r = 0; r < tableRows.length; r++) {
-        const tableRow = tableRows[r];
-
-        if (!$isTableRowNode(tableRow)) {
-          throw new Error('Expected table row');
+  const toggleFirstRowFreeze = useCallback(() => {
+    editor.update(() => {
+      if (tableCellNode.isAttached()) {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        if (tableNode) {
+          tableNode.setFrozenRows(tableNode.getFrozenRows() === 0 ? 1 : 0);
         }
-
-        const tableCells = tableRow.getChildren();
-        if (tableColumnIndex >= tableCells.length) {
-          // if cell is outside of bounds for the current row (for example various merge cell cases) we shouldn't highlight it
-          continue;
-        }
-
-        const tableCell = tableCells[tableColumnIndex];
-
-        if (!$isTableCellNode(tableCell)) {
-          throw new Error('Expected table cell');
-        }
-
-        tableCell.toggleHeaderStyle(TableCellHeaderStates.COLUMN);
       }
+      clearTableSelection();
+      onClose();
+    });
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
 
+  const toggleFirstColumnFreeze = useCallback(() => {
+    editor.update(() => {
+      if (tableCellNode.isAttached()) {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        if (tableNode) {
+          tableNode.setFrozenColumns(
+            tableNode.getFrozenColumns() === 0 ? 1 : 0,
+          );
+        }
+      }
       clearTableSelection();
       onClose();
     });
@@ -489,6 +449,29 @@ function TableActionMenu({
     [editor],
   );
 
+  const formatVerticalAlign = (value: string) => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+        const [cell] = $getNodeTriplet(selection.anchor);
+        if ($isTableCellNode(cell)) {
+          cell.setVerticalAlign(value);
+        }
+
+        if ($isTableSelection(selection)) {
+          const nodes = selection.getNodes();
+
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if ($isTableCellNode(node)) {
+              node.setVerticalAlign(value);
+            }
+          }
+        }
+      }
+    });
+  };
+
   let mergeCellButton: null | JSX.Element = null;
   if (cellMerge) {
     if (canMergeCells) {
@@ -498,7 +481,7 @@ function TableActionMenu({
           className="item"
           onClick={() => mergeTableCellsAtSelection()}
           data-test-id="table-merge-cells">
-          Merge cells
+          <span className="text">Merge cells</span>
         </button>
       );
     } else if (canUnmergeCell) {
@@ -508,7 +491,7 @@ function TableActionMenu({
           className="item"
           onClick={() => unmergeTableCellsAtSelection()}
           data-test-id="table-unmerge-cells">
-          Unmerge cells
+          <span className="text">Unmerge cells</span>
         </button>
       );
     }
@@ -519,7 +502,7 @@ function TableActionMenu({
     <div
       className="dropdown"
       ref={dropDownRef}
-      onClick={(e) => {
+      onClick={e => {
         e.stopPropagation();
       }}>
       {mergeCellButton}
@@ -536,6 +519,62 @@ function TableActionMenu({
         }
         data-test-id="table-background-color">
         <span className="text">Background color</span>
+      </button>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleRowStriping()}
+        data-test-id="table-row-striping">
+        <span className="text">Toggle Row Striping</span>
+      </button>
+      <DropDown
+        buttonLabel="Vertical Align"
+        buttonClassName="item"
+        buttonAriaLabel="Formatting options for vertical alignment">
+        <DropDownItem
+          onClick={() => {
+            formatVerticalAlign('top');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon vertical-top" />
+            <span className="text">Top Align</span>
+          </div>
+        </DropDownItem>
+        <DropDownItem
+          onClick={() => {
+            formatVerticalAlign('middle');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon vertical-middle" />
+            <span className="text">Middle Align</span>
+          </div>
+        </DropDownItem>
+        <DropDownItem
+          onClick={() => {
+            formatVerticalAlign('bottom');
+          }}
+          className="item wide">
+          <div className="icon-text-container">
+            <i className="icon vertical-bottom" />
+            <span className="text">Bottom Align</span>
+          </div>
+        </DropDownItem>
+      </DropDown>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleFirstRowFreeze()}
+        data-test-id="table-freeze-first-row">
+        <span className="text">Toggle First Row Freeze</span>
+      </button>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleFirstColumnFreeze()}
+        data-test-id="table-freeze-first-column">
+        <span className="text">Toggle First Column Freeze</span>
       </button>
       <hr />
       <button
@@ -613,7 +652,8 @@ function TableActionMenu({
       <button
         type="button"
         className="item"
-        onClick={() => toggleTableRowIsHeader()}>
+        onClick={() => toggleTableRowIsHeader()}
+        data-test-id="table-row-header">
         <span className="text">
           {(tableCellNode.__headerState & TableCellHeaderStates.ROW) ===
           TableCellHeaderStates.ROW
@@ -636,7 +676,7 @@ function TableActionMenu({
         </span>
       </button>
     </div>,
-    document.body,
+    editor.getRootElement()?.ownerDocument?.body ?? document.body,
   );
 }
 
@@ -649,8 +689,8 @@ function TableCellActionMenuContainer({
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
-  const menuButtonRef = useRef(null);
-  const menuRootRef = useRef(null);
+  const menuButtonRef = useRef<HTMLDivElement | null>(null);
+  const menuRootRef = useRef<HTMLButtonElement | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [tableCellNode, setTableMenuCellNode] = useState<TableCellNode | null>(
@@ -659,80 +699,193 @@ function TableCellActionMenuContainer({
 
   const [colorPickerModal, showColorPickerModal] = useModal();
 
+  const checkTableCellOverflow = useCallback(
+    (tableCellParentNodeDOM: HTMLElement): boolean => {
+      const scrollableContainer = tableCellParentNodeDOM.closest(
+        '.PlaygroundEditorTheme__tableScrollableWrapper',
+      );
+      if (scrollableContainer) {
+        const containerRect = (
+          scrollableContainer as HTMLElement
+        ).getBoundingClientRect();
+        const cellRect = tableCellParentNodeDOM.getBoundingClientRect();
+
+        // Calculate where the action button would be positioned (5px from right edge of cell)
+        // Also account for the button width and table cell padding (8px)
+        const actionButtonRight = cellRect.right - 5;
+        const actionButtonLeft = actionButtonRight - 28; // 20px width + 8px padding
+
+        // Only hide if the action button would overflow the container
+        if (
+          actionButtonRight > containerRect.right ||
+          actionButtonLeft < containerRect.left
+        ) {
+          return true;
+        }
+      }
+      return false;
+    },
+    [],
+  );
+
   const $moveMenu = useCallback(() => {
     const menu = menuButtonRef.current;
     const selection = $getSelection();
-    const nativeSelection = window.getSelection();
-    const activeElement = document.activeElement;
+    const nativeSelection = getDOMSelection(editor._window);
+    // getActiveElementDeep rather than document.activeElement, which reports
+    // the shadow host (not the focused element) when the editor is in a
+    // shadow root.
+    const activeElement = getActiveElementDeep(
+      getRootOwnerDocument(editor.getRootElement()),
+    );
+    function disable() {
+      if (menu) {
+        menu.classList.remove('table-cell-action-button-container--active');
+        menu.classList.add('table-cell-action-button-container--inactive');
+      }
+      setTableMenuCellNode(null);
+    }
 
     if (selection == null || menu == null) {
-      setTableMenuCellNode(null);
-      return;
+      return disable();
     }
 
     const rootElement = editor.getRootElement();
+    let tableObserver: TableObserver | null = null;
+    let tableCellParentNodeDOM: HTMLElement | null = null;
 
     if (
       $isRangeSelection(selection) &&
       rootElement !== null &&
       nativeSelection !== null &&
-      rootElement.contains(nativeSelection.anchorNode)
+      rootElement.contains(
+        getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
+      )
     ) {
       const tableCellNodeFromSelection = $getTableCellNodeFromLexicalNode(
         selection.anchor.getNode(),
       );
 
       if (tableCellNodeFromSelection == null) {
-        setTableMenuCellNode(null);
-        return;
+        return disable();
       }
 
-      const tableCellParentNodeDOM = editor.getElementByKey(
+      tableCellParentNodeDOM = editor.getElementByKey(
         tableCellNodeFromSelection.getKey(),
       );
 
-      if (tableCellParentNodeDOM == null) {
-        setTableMenuCellNode(null);
-        return;
+      if (
+        tableCellParentNodeDOM == null ||
+        !tableCellNodeFromSelection.isAttached()
+      ) {
+        return disable();
       }
 
+      if (checkTableCellOverflow(tableCellParentNodeDOM)) {
+        return disable();
+      }
+
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(
+        tableCellNodeFromSelection,
+      );
+      const tableElement = getTableElement(
+        tableNode,
+        editor.getElementByKey(tableNode.getKey()),
+      );
+
+      if (tableElement === null) {
+        throw new Error(
+          'TableActionMenu: Expected to find tableElement in DOM',
+        );
+      }
+
+      tableObserver = getTableObserverFromTableElement(tableElement);
       setTableMenuCellNode(tableCellNodeFromSelection);
-    } else if (!activeElement) {
-      setTableMenuCellNode(null);
-    }
-  }, [editor]);
-
-  useEffect(() => {
-    return editor.registerUpdateListener(() => {
-      editor.getEditorState().read(() => {
-        $moveMenu();
-      });
-    });
-  });
-
-  useEffect(() => {
-    const menuButtonDOM = menuButtonRef.current as HTMLButtonElement | null;
-
-    if (menuButtonDOM != null && tableCellNode != null) {
-      const tableCellNodeDOM = editor.getElementByKey(tableCellNode.getKey());
-
-      if (tableCellNodeDOM != null) {
-        const tableCellRect = tableCellNodeDOM.getBoundingClientRect();
-        const menuRect = menuButtonDOM.getBoundingClientRect();
-        const anchorRect = anchorElem.getBoundingClientRect();
-
-        const top = tableCellRect.top - anchorRect.top + 4;
-        const left =
-          tableCellRect.right - menuRect.width - 10 - anchorRect.left;
-
-        menuButtonDOM.style.opacity = '1';
-        menuButtonDOM.style.transform = `translate(${left}px, ${top}px)`;
-      } else {
-        menuButtonDOM.style.opacity = '0';
-        menuButtonDOM.style.transform = 'translate(-10000px, -10000px)';
+    } else if ($isTableSelection(selection)) {
+      const anchorNode = $getTableCellNodeFromLexicalNode(
+        selection.anchor.getNode(),
+      );
+      if (!$isTableCellNode(anchorNode)) {
+        throw new Error('TableSelection anchorNode must be a TableCellNode');
       }
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(anchorNode);
+      const tableElement = getTableElement(
+        tableNode,
+        editor.getElementByKey(tableNode.getKey()),
+      );
+      if (tableElement === null) {
+        throw new Error(
+          'TableActionMenu: Expected to find tableElement in DOM',
+        );
+      }
+      tableObserver = getTableObserverFromTableElement(tableElement);
+      tableCellParentNodeDOM = editor.getElementByKey(anchorNode.getKey());
+
+      if (tableCellParentNodeDOM === null) {
+        return disable();
+      }
+
+      if (checkTableCellOverflow(tableCellParentNodeDOM)) {
+        return disable();
+      }
+    } else if (!activeElement) {
+      return disable();
     }
-  }, [menuButtonRef, tableCellNode, editor, anchorElem]);
+    if (tableObserver === null || tableCellParentNodeDOM === null) {
+      return disable();
+    }
+    const enabled = !tableObserver || !tableObserver.isSelecting;
+    menu.classList.toggle(
+      'table-cell-action-button-container--active',
+      enabled,
+    );
+    menu.classList.toggle(
+      'table-cell-action-button-container--inactive',
+      !enabled,
+    );
+    if (enabled) {
+      const tableCellRect = tableCellParentNodeDOM.getBoundingClientRect();
+      const anchorRect = anchorElem.getBoundingClientRect();
+      const top = tableCellRect.top - anchorRect.top;
+      const left = tableCellRect.right - anchorRect.left;
+      menu.style.transform = `translate(${left}px, ${top}px)`;
+    }
+  }, [editor, anchorElem, checkTableCellOverflow]);
+
+  useEffect(() => {
+    // We call the $moveMenu callback every time the selection changes,
+    // once up front, and once after each pointerUp
+    let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
+    const callback = () => {
+      timeoutId = undefined;
+      editor.read('latest', $moveMenu);
+    };
+    const delayedCallback = () => {
+      if (timeoutId === undefined) {
+        timeoutId = setTimeout(callback, 0);
+      }
+      return false;
+    };
+    return mergeRegister(
+      editor.registerUpdateListener(delayedCallback),
+      editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        delayedCallback,
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+      editor.registerRootListener((rootElement, prevRootElement) => {
+        if (rootElement) {
+          delayedCallback();
+          return registerEventListener(
+            rootElement,
+            'pointerup',
+            delayedCallback,
+          );
+        }
+      }),
+      () => clearTimeout(timeoutId),
+    );
+  });
 
   const prevTableCellDOM = useRef(tableCellNode);
 
@@ -751,14 +904,13 @@ function TableCellActionMenuContainer({
           <button
             type="button"
             className="table-cell-action-button chevron-down"
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
               setIsMenuOpen(!isMenuOpen);
             }}
             ref={menuRootRef}>
             <i className="chevron-down" />
           </button>
-          {colorPickerModal}
           {isMenuOpen && (
             <TableActionMenu
               contextRef={menuRootRef}
@@ -771,6 +923,7 @@ function TableCellActionMenuContainer({
           )}
         </>
       )}
+      {colorPickerModal}
     </div>
   );
 }

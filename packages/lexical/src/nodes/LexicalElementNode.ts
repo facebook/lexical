@@ -6,44 +6,70 @@
  *
  */
 
-import type {NodeKey, SerializedLexicalNode} from '../LexicalNode';
 import type {
-  BaseSelection,
-  PointType,
-  RangeSelection,
-} from '../LexicalSelection';
-import type {KlassConstructor, Spread} from 'lexical';
+  BaseStaticNodeConfig,
+  KlassConstructor,
+  LexicalEditor,
+  LexicalUpdateJSON,
+  Spread,
+  TextFormatType,
+} from 'lexical';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
-import {$isTextNode, TextNode} from '../index';
+import {$isTextNode, type TextNode} from '../index';
 import {
   DOUBLE_LINE_BREAK,
   ELEMENT_FORMAT_TO_TYPE,
   ELEMENT_TYPE_TO_FORMAT,
+  TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
-import {LexicalNode} from '../LexicalNode';
+import {ElementDOMSlot} from '../LexicalDOMSlot';
+import {
+  $isEphemeral,
+  type DOMExportOutput,
+  LexicalNode,
+  type NodeKey,
+  type SerializedLexicalNode,
+  type SlotChildNode,
+  type SlotHostNode,
+} from '../LexicalNode';
 import {
   $getSelection,
   $internalMakeRangeSelection,
   $isRangeSelection,
+  type BaseSelection,
   moveSelectionPointToSibling,
+  type PointType,
+  type RangeSelection,
 } from '../LexicalSelection';
+import {
+  $errorOnSlotCycleChild,
+  $getSlot,
+  $getSlotNames,
+  $getSlotsTextContent,
+  $getSlotsTextContentSize,
+} from '../LexicalSlot';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
+  $getDOMSlot,
   $getNodeByKey,
   $isRootOrShadowRoot,
-  removeFromParent,
+  $removeFromParent,
+  isHTMLElement,
+  toggleTextFormatType,
 } from '../LexicalUtils';
 
 export type SerializedElementNode<
   T extends SerializedLexicalNode = SerializedLexicalNode,
 > = Spread<
   {
-    children: Array<T>;
+    children: T[];
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;
+    textFormat?: number;
+    textStyle?: string;
   },
   SerializedLexicalNode
 >;
@@ -57,6 +83,33 @@ export type ElementFormatType =
   | 'justify'
   | '';
 
+/**
+ * Wrap any shadow-root child of `node` that is neither an ElementNode nor a
+ * DecoratorNode in a paragraph, so the slot-frame invariant set by
+ * `getTopLevelElement` continues to hold for external inputs (URL doc
+ * payloads, imported JSON, paste round-trips) that may carry shapes the
+ * in-editor mutation paths can no longer produce.
+ *
+ * Single-node helper: runs as the `$config` `$transform` on ElementNode so
+ * the existing dirty-node transform cycle drives the normalization. The
+ * in-editor mutation paths (insertText, insertNodes, append/splice via the
+ * public API) still fail-fast on the invariant.
+ *
+ * @internal
+ */
+function $normalizeShadowRootChildren(node: ElementNode): void {
+  if ($isRootOrShadowRoot(node)) {
+    let block: ElementNode | null = null;
+    for (const child of node.getChildren()) {
+      block = child.isInline()
+        ? (block || child.replace(child.createParentElementNode())).append(
+            child,
+          )
+        : null;
+    }
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ElementNode {
   getTopLevelElement(): ElementNode | null;
@@ -65,8 +118,12 @@ export interface ElementNode {
 
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class ElementNode extends LexicalNode {
-  ['constructor']!: KlassConstructor<typeof ElementNode>;
+export class ElementNode
+  extends LexicalNode
+  implements SlotHostNode, SlotChildNode
+{
+  /** @internal */
+  declare ['constructor']: KlassConstructor<typeof ElementNode>;
   /** @internal */
   __first: null | NodeKey;
   /** @internal */
@@ -81,6 +138,37 @@ export class ElementNode extends LexicalNode {
   __indent: number;
   /** @internal */
   __dir: 'ltr' | 'rtl' | null;
+  /** @internal */
+  __textFormat: number;
+  /** @internal */
+  __textStyle: string;
+  /** @internal */
+  __slotHost: null | NodeKey;
+  /** @internal */
+  __slots: null | Map<string, NodeKey>;
+
+  // Specific type information is discarded for backwards compatibility,
+  // there is nothing meaninful to gain from requiring `{extends: ElementNode}`
+  // with the current shape here (just a `$transform`)
+  $config(): BaseStaticNodeConfig {
+    return this.config(Symbol.for('ElementNode'), {
+      /*
+       * Built-in normalize for shadow-root ElementNodes: wraps any direct child
+       * that is neither an ElementNode nor a DecoratorNode in a paragraph, so
+       * the slot-frame invariant set by `getTopLevelElement` continues to hold
+       * for external inputs (URL doc payloads, imported JSON, paste round-trips)
+       * that may carry shapes the in-editor mutation paths can no longer
+       * produce. In-editor mutation paths still fail-fast on the invariant.
+       *
+       * Runs as a static transform so the existing dirty-node transform cycle
+       * drives it — typing paths cover their own dirty bookkeeping, hydrate
+       * paths (`setEditorState`) dirty-mark slot hosts so the cycle picks them
+       * up.
+       */
+      $transform: $normalizeShadowRootChildren,
+      extends: LexicalNode,
+    });
+  }
 
   constructor(key?: NodeKey) {
     super(key);
@@ -91,6 +179,37 @@ export class ElementNode extends LexicalNode {
     this.__style = '';
     this.__indent = 0;
     this.__dir = null;
+    this.__textFormat = 0;
+    this.__textStyle = '';
+    this.__slotHost = null;
+    this.__slots = null;
+  }
+
+  afterCloneFrom(prevNode: this) {
+    super.afterCloneFrom(prevNode);
+    if (this.__key === prevNode.__key) {
+      this.__first = prevNode.__first;
+      this.__last = prevNode.__last;
+      this.__size = prevNode.__size;
+      this.__slotHost = prevNode.__slotHost;
+      invariant(
+        this.__slotHost === null || this.__parent === null,
+        'ElementNode: node %s is both slotted into host %s and a child of parent %s; __slotHost and __parent are mutually exclusive',
+        this.__key,
+        String(this.__slotHost),
+        String(this.__parent),
+      );
+      // Copy-on-write: share the map across versions; the LexicalSlot
+      // mutators clone it on a version's first write (owner ledger), so a
+      // host cloned for any non-slot change pays no per-version Map copy.
+      this.__slots = prevNode.__slots;
+    }
+    this.__indent = prevNode.__indent;
+    this.__format = prevNode.__format;
+    this.__style = prevNode.__style;
+    this.__dir = prevNode.__dir;
+    this.__textFormat = prevNode.__textFormat;
+    this.__textStyle = prevNode.__textStyle;
   }
 
   getFormat(): number {
@@ -109,18 +228,29 @@ export class ElementNode extends LexicalNode {
     const self = this.getLatest();
     return self.__indent;
   }
-  getChildren<T extends LexicalNode>(): Array<T> {
-    const children: Array<T> = [];
-    let child: T | null = this.getFirstChild();
+  /**
+   * Returns the children of this node, in document order.
+   */
+  getChildren(): LexicalNode[];
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getChildren() as T[]`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the results with a type guard instead.
+   */
+  getChildren<T extends LexicalNode>(): T[];
+  getChildren(): LexicalNode[] {
+    const children: LexicalNode[] = [];
+    let child = this.getFirstChild();
     while (child !== null) {
       children.push(child);
       child = child.getNextSibling();
     }
     return children;
   }
-  getChildrenKeys(): Array<NodeKey> {
-    const children: Array<NodeKey> = [];
-    let child: LexicalNode | null = this.getFirstChild();
+  getChildrenKeys(): NodeKey[] {
+    const children: NodeKey[] = [];
+    let child = this.getFirstChild();
     while (child !== null) {
       children.push(child.__key);
       child = child.getNextSibling();
@@ -132,7 +262,10 @@ export class ElementNode extends LexicalNode {
     return self.__size;
   }
   isEmpty(): boolean {
-    return this.getChildrenSize() === 0;
+    // A host that holds content only in its slots is not empty: otherwise
+    // $removeNode would cascade-prune it once its last child is gone and orphan
+    // the slot subtrees.
+    return this.getChildrenSize() === 0 && $getSlotNames(this).length === 0;
   }
   isDirty(): boolean {
     const editor = getActiveEditor();
@@ -144,8 +277,20 @@ export class ElementNode extends LexicalNode {
     const parentLastChild = this.getParentOrThrow().getLastChild();
     return parentLastChild !== null && parentLastChild.is(self);
   }
-  getAllTextNodes(): Array<TextNode> {
-    const textNodes = [];
+  getAllTextNodes(): TextNode[] {
+    const textNodes: TextNode[] = [];
+    // Slots are read slots-first, ahead of the linked-list children, to match
+    // getTextContent. This is a content read; descendant navigation
+    // (getFirstDescendant / getLastDescendant) stays children-only so slots
+    // never leak into selection placement. A slot value is always a non-inline
+    // element or decorator (setSlot enforces this), so only element slots
+    // contribute text nodes.
+    for (const name of $getSlotNames(this)) {
+      const slot = $getSlot(this, name);
+      if ($isElementNode(slot)) {
+        textNodes.push(...slot.getAllTextNodes());
+      }
+    }
     let child: LexicalNode | null = this.getFirstChild();
     while (child !== null) {
       if ($isTextNode(child)) {
@@ -159,10 +304,25 @@ export class ElementNode extends LexicalNode {
     }
     return textNodes;
   }
-  getFirstDescendant<T extends LexicalNode>(): null | T {
-    let node = this.getFirstChild<T>();
+  /**
+   * Returns the deepest first descendant of this node,
+   * or null if it has no children.
+   *
+   * Descendant navigation is children-only by design: it feeds selectStart /
+   * selectEnd and selection, which must not see slots (slots are isolated).
+   */
+  getFirstDescendant(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getFirstDescendant() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getFirstDescendant<T extends LexicalNode>(): null | T;
+  getFirstDescendant(): null | LexicalNode {
+    let node = this.getFirstChild();
     while ($isElementNode(node)) {
-      const child = node.getFirstChild<T>();
+      const child = node.getFirstChild();
       if (child === null) {
         break;
       }
@@ -170,10 +330,22 @@ export class ElementNode extends LexicalNode {
     }
     return node;
   }
-  getLastDescendant<T extends LexicalNode>(): null | T {
-    let node = this.getLastChild<T>();
+  /**
+   * Returns the deepest last descendant of this node,
+   * or null if it has no children.
+   */
+  getLastDescendant(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getLastDescendant() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getLastDescendant<T extends LexicalNode>(): null | T;
+  getLastDescendant(): null | LexicalNode {
+    let node = this.getLastChild();
     while ($isElementNode(node)) {
-      const child = node.getLastChild<T>();
+      const child = node.getLastChild();
       if (child === null) {
         break;
       }
@@ -181,8 +353,20 @@ export class ElementNode extends LexicalNode {
     }
     return node;
   }
-  getDescendantByIndex<T extends LexicalNode>(index: number): null | T {
-    const children = this.getChildren<T>();
+  /**
+   * Returns the deepest descendant corresponding to the child at the given
+   * index, or null if this node has no children.
+   */
+  getDescendantByIndex(index: number): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getDescendantByIndex(index) as T | null`, and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
+  getDescendantByIndex<T extends LexicalNode>(index: number): null | T;
+  getDescendantByIndex(index: number): null | LexicalNode {
+    const children = this.getChildren();
     const childrenLength = children.length;
     // For non-empty element nodes, we resolve its descendant
     // (either a leaf node or the bottom-most element)
@@ -201,36 +385,92 @@ export class ElementNode extends LexicalNode {
       null
     );
   }
-  getFirstChild<T extends LexicalNode>(): null | T {
+  /**
+   * Returns the first child of this node, or null if it has no children.
+   */
+  getFirstChild(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getFirstChild() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getFirstChild<T extends LexicalNode>(): null | T;
+  getFirstChild(): null | LexicalNode {
     const self = this.getLatest();
     const firstKey = self.__first;
-    return firstKey === null ? null : $getNodeByKey<T>(firstKey);
+    return firstKey === null ? null : $getNodeByKey(firstKey);
   }
-  getFirstChildOrThrow<T extends LexicalNode>(): T {
-    const firstChild = this.getFirstChild<T>();
+  /**
+   * Returns the first child of this node, or throws if it has no children.
+   */
+  getFirstChildOrThrow(): LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getFirstChildOrThrow() as T`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getFirstChildOrThrow<T extends LexicalNode>(): T;
+  getFirstChildOrThrow(): LexicalNode {
+    const firstChild = this.getFirstChild();
     if (firstChild === null) {
       invariant(false, 'Expected node %s to have a first child.', this.__key);
     }
     return firstChild;
   }
-  getLastChild<T extends LexicalNode>(): null | T {
+  /**
+   * Returns the last child of this node, or null if it has no children.
+   */
+  getLastChild(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getLastChild() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getLastChild<T extends LexicalNode>(): null | T;
+  getLastChild(): null | LexicalNode {
     const self = this.getLatest();
     const lastKey = self.__last;
-    return lastKey === null ? null : $getNodeByKey<T>(lastKey);
+    return lastKey === null ? null : $getNodeByKey(lastKey);
   }
-  getLastChildOrThrow<T extends LexicalNode>(): T {
-    const lastChild = this.getLastChild<T>();
+  /**
+   * Returns the last child of this node, or throws if it has no children.
+   */
+  getLastChildOrThrow(): LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getLastChildOrThrow() as T`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getLastChildOrThrow<T extends LexicalNode>(): T;
+  getLastChildOrThrow(): LexicalNode {
+    const lastChild = this.getLastChild();
     if (lastChild === null) {
       invariant(false, 'Expected node %s to have a last child.', this.__key);
     }
     return lastChild;
   }
-  getChildAtIndex<T extends LexicalNode>(index: number): null | T {
+  /**
+   * Returns the child of this node at the given index, or null if
+   * the index is out of range.
+   */
+  getChildAtIndex(index: number): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getChildAtIndex(index) as T | null`, and will
+   * be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
+  getChildAtIndex<T extends LexicalNode>(index: number): null | T;
+  getChildAtIndex(index: number): null | LexicalNode {
     const size = this.getChildrenSize();
-    let node: null | T;
+    let node: null | LexicalNode;
     let i;
     if (index < size / 2) {
-      node = this.getFirstChild<T>();
+      node = this.getFirstChild();
       i = 0;
       while (node !== null && i <= index) {
         if (i === index) {
@@ -241,7 +481,7 @@ export class ElementNode extends LexicalNode {
       }
       return null;
     }
-    node = this.getLastChild<T>();
+    node = this.getLastChild();
     i = size - 1;
     while (node !== null && i >= index) {
       if (i === index) {
@@ -253,13 +493,15 @@ export class ElementNode extends LexicalNode {
     return null;
   }
   getTextContent(): string {
-    let textContent = '';
+    // Slots are read slots-first, ahead of the linked-list children.
+    let textContent = $getSlotsTextContent(this);
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
       textContent += child.getTextContent();
       if (
+        // this is an inline $textContentRequiresDoubleLinebreakAtEnd(child)
         $isElementNode(child) &&
         i !== childrenLength - 1 &&
         !child.isInline()
@@ -270,13 +512,15 @@ export class ElementNode extends LexicalNode {
     return textContent;
   }
   getTextContentSize(): number {
-    let textContentSize = 0;
+    // Slots are counted slots-first, ahead of the linked-list children.
+    let textContentSize = $getSlotsTextContentSize(this);
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
       textContentSize += child.getTextContentSize();
       if (
+        // This is an inline $textContentRequiresDoubleLinebreakAtEnd(child)
         $isElementNode(child) &&
         i !== childrenLength - 1 &&
         !child.isInline()
@@ -290,12 +534,35 @@ export class ElementNode extends LexicalNode {
     const self = this.getLatest();
     return self.__dir;
   }
+  getTextFormat(): number {
+    const self = this.getLatest();
+    return self.__textFormat;
+  }
   hasFormat(type: ElementFormatType): boolean {
     if (type !== '') {
       const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];
       return (this.getFormat() & formatFlag) !== 0;
     }
     return false;
+  }
+  hasTextFormat(type: TextFormatType): boolean {
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (this.getTextFormat() & formatFlag) !== 0;
+  }
+  /**
+   * Returns the format flags applied to the node as a 32-bit integer.
+   *
+   * @returns a number representing the TextFormatTypes applied to the node.
+   */
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
+    const self = this.getLatest();
+    const format = self.__textFormat;
+    return toggleTextFormatType(format, type, alignWithFormat);
+  }
+
+  getTextStyle(): string {
+    const self = this.getLatest();
+    return self.__textStyle;
   }
 
   // Mutators
@@ -356,7 +623,7 @@ export class ElementNode extends LexicalNode {
   clear(): this {
     const writableSelf = this.getWritable();
     const children = this.getChildren();
-    children.forEach((child) => child.remove());
+    children.forEach(child => child.remove());
     return writableSelf;
   }
   append(...nodesToAppend: LexicalNode[]): this {
@@ -369,13 +636,23 @@ export class ElementNode extends LexicalNode {
   }
   setFormat(type: ElementFormatType): this {
     const self = this.getWritable();
-    self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] : 0;
+    self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] || 0 : 0;
     return this;
   }
   setStyle(style: string): this {
     const self = this.getWritable();
     self.__style = style || '';
     return this;
+  }
+  setTextFormat(type: number): this {
+    const self = this.getWritable();
+    self.__textFormat = type;
+    return self;
+  }
+  setTextStyle(style: string): this {
+    const self = this.getWritable();
+    self.__textStyle = style;
+    return self;
   }
   setIndent(indentLevel: number): this {
     const self = this.getWritable();
@@ -385,17 +662,34 @@ export class ElementNode extends LexicalNode {
   splice(
     start: number,
     deleteCount: number,
-    nodesToInsert: Array<LexicalNode>,
+    nodesToInsert: LexicalNode[],
   ): this {
-    const nodesToInsertLength = nodesToInsert.length;
+    invariant(
+      !$isEphemeral(this),
+      'ElementNode.splice: Ephemeral nodes can not mutate their children (key %s type %s)',
+      this.__key,
+      this.__type,
+    );
     const oldSize = this.getChildrenSize();
     const writableSelf = this.getWritable();
+    invariant(
+      start + deleteCount <= oldSize,
+      'ElementNode.splice: start + deleteCount > oldSize (%s + %s > %s)',
+      String(start),
+      String(deleteCount),
+      String(oldSize),
+    );
+    // Before any mutation: a child insertion must not close a cycle through a
+    // slot up-link (the reverse direction of $setSlot's cycle invariant).
+    for (const nodeToInsert of nodesToInsert) {
+      $errorOnSlotCycleChild(writableSelf, nodeToInsert);
+    }
     const writableSelfKey = writableSelf.__key;
     const nodesToInsertKeys = [];
     const nodesToRemoveKeys = [];
-    const nodeAfterRange = this.getChildAtIndex(start + deleteCount);
+    let nodeAfterRange = this.getChildAtIndex(start + deleteCount);
     let nodeBeforeRange = null;
-    let newSize = oldSize - deleteCount + nodesToInsertLength;
+    let newSize = oldSize - deleteCount + nodesToInsert.length;
 
     if (start !== 0) {
       if (start === oldSize) {
@@ -420,23 +714,25 @@ export class ElementNode extends LexicalNode {
         const nextSibling = nodeToDelete.getNextSibling();
         const nodeKeyToDelete = nodeToDelete.__key;
         const writableNodeToDelete = nodeToDelete.getWritable();
-        removeFromParent(writableNodeToDelete);
+        $removeFromParent(writableNodeToDelete);
         nodesToRemoveKeys.push(nodeKeyToDelete);
         nodeToDelete = nextSibling;
       }
     }
 
     let prevNode = nodeBeforeRange;
-    for (let i = 0; i < nodesToInsertLength; i++) {
-      const nodeToInsert = nodesToInsert[i];
+    for (const nodeToInsert of nodesToInsert) {
       if (prevNode !== null && nodeToInsert.is(prevNode)) {
         nodeBeforeRange = prevNode = prevNode.getPreviousSibling();
+      }
+      if (nodeAfterRange !== null && nodeToInsert.is(nodeAfterRange)) {
+        nodeAfterRange = nodeAfterRange.getNextSibling();
       }
       const writableNodeToInsert = nodeToInsert.getWritable();
       if (writableNodeToInsert.__parent === writableSelfKey) {
         newSize--;
       }
-      removeFromParent(writableNodeToInsert);
+      $removeFromParent(writableNodeToInsert);
       const nodeKeyToInsert = nodeToInsert.__key;
       if (prevNode === null) {
         writableSelf.__first = nodeKeyToInsert;
@@ -455,13 +751,13 @@ export class ElementNode extends LexicalNode {
       prevNode = nodeToInsert;
     }
 
-    if (start + deleteCount === oldSize) {
+    if (nodeAfterRange === null) {
       if (prevNode !== null) {
         const writablePrevNode = prevNode.getWritable();
         writablePrevNode.__next = null;
         writableSelf.__last = prevNode.__key;
       }
-    } else if (nodeAfterRange !== null) {
+    } else {
       const writableNodeAfterRange = nodeAfterRange.getWritable();
       if (prevNode !== null) {
         const writablePrevNode = prevNode.getWritable();
@@ -512,16 +808,84 @@ export class ElementNode extends LexicalNode {
 
     return writableSelf;
   }
+  /**
+   * @experimental
+   *
+   * An ElementNode subclass can override this to control where its children
+   * are inserted into the DOM, e.g. to add a wrapping node or accessory nodes
+   * before or after the children. The root of the node returned by createDOM
+   * must still be exactly one HTMLElement.
+   */
+  getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement> {
+    return new ElementDOMSlot(element);
+  }
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+    if (isHTMLElement(element)) {
+      const indent = this.getIndent();
+      if (indent > 0) {
+        // padding-inline-start is not widely supported in email HTML
+        // (see https://www.caniemail.com/features/css-padding-inline-start-end/),
+        // If you want to use HTML output for email, consider overriding the serialization
+        // to use `padding-right` in RTL languages, `padding-left` in `LTR` languages, or
+        // `text-indent` if you are ok with first-line indents.
+        // We recommend keeping multiples of 40px to maintain consistency with list-items
+        // (see https://github.com/facebook/lexical/pull/4025)
+        element.style.paddingInlineStart = `${indent * 40}px`;
+        // Authoritative round-trip signal. padding-inline-start can be a
+        // non-40px multiple (custom `--lexical-indent-base-value`) or a
+        // `calc(...)` expression on the live DOM, neither of which the
+        // padding-based heuristic in setNodeIndentFromDOM can recover.
+        element.setAttribute('data-lexical-indent', String(indent));
+      }
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
+    }
+
+    return {element};
+  }
   // JSON serialization
   exportJSON(): SerializedElementNode {
-    return {
+    const json: SerializedElementNode = {
       children: [],
       direction: this.getDirection(),
       format: this.getFormatType(),
       indent: this.getIndent(),
-      type: 'element',
-      version: 1,
+      // As an exception here we invoke super at the end for historical reasons.
+      // Namely, to preserve the order of the properties and not to break the tests
+      // that use the serialized string representation.
+      ...super.exportJSON(),
     };
+    const textFormat = this.getTextFormat();
+    const textStyle = this.getTextStyle();
+    // Only persist for cases when there are no TextNode children from which
+    // these would be set on reconcile (#7968)
+    if (
+      (textFormat !== 0 || textStyle !== '') &&
+      !$isRootOrShadowRoot(this) &&
+      !this.getChildren().some($isTextNode)
+    ) {
+      if (textFormat !== 0) {
+        json.textFormat = textFormat;
+      }
+      if (textStyle !== '') {
+        json.textStyle = textStyle;
+      }
+    }
+    return json;
+  }
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedElementNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setFormat(serializedNode.format)
+      .setIndent(serializedNode.indent)
+      .setDirection(serializedNode.direction)
+      .setTextFormat(serializedNode.textFormat || 0)
+      .setTextStyle(serializedNode.textStyle || '');
   }
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(
@@ -534,9 +898,15 @@ export class ElementNode extends LexicalNode {
     return true;
   }
   /*
-   * This method controls the behavior of a the node during backwards
+   * This method controls the behavior of the node during backwards
    * deletion (i.e., backspace) when selection is at the beginning of
-   * the node (offset 0)
+   * the node (offset 0). You may use this to have the node replace
+   * itself, change its state, or do nothing. When you do make such
+   * a change, you should return true.
+   *
+   * When true is returned, the collapse phase will stop.
+   * When false is returned, and isInline() is true, and getPreviousSibling() is null,
+   * then this function will be called on its parent.
    */
   collapseAtStart(selection: RangeSelection): boolean {
     return false;
@@ -561,11 +931,16 @@ export class ElementNode extends LexicalNode {
   canInsertTextAfter(): boolean {
     return true;
   }
+
+  /**
+   * If the method is overridden and returns true, ensure that `canBeEmpty()`
+   * returns false for the inline node to work correctly
+   */
   isInline(): boolean {
     return false;
   }
   // A shadow root is a Node that behaves like RootNode. The shadow root (and RootNode) mark the
-  // end of the hiercharchy, most implementations should treat it as there's nothing (upwards)
+  // end of the hierarchy, most implementations should treat it as there's nothing (upwards)
   // beyond this point. For example, node.getTopLevelElement(), when performed inside a TableCellNode
   // will return the immediate first child underneath TableCellNode instead of RootNode.
   isShadowRoot(): boolean {
@@ -582,8 +957,52 @@ export class ElementNode extends LexicalNode {
   ): boolean {
     return false;
   }
+
+  /**
+   * Determines whether this node, when empty, can merge with a first block
+   * of nodes being inserted.
+   *
+   * This method is specifically called in {@link RangeSelection.insertNodes}
+   * to determine merging behavior during nodes insertion.
+   *
+   * @example
+   * // In a ListItemNode or QuoteNode implementation:
+   * canMergeWhenEmpty(): true {
+   *  return true;
+   * }
+   */
+  canMergeWhenEmpty(): boolean {
+    return false;
+  }
+
+  /** @internal */
+  reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
+    const slot = $getDOMSlot(this, dom, editor);
+    let currentDOM = slot.getFirstChild();
+    for (
+      let currentNode = this.getFirstChild();
+      currentNode;
+      currentNode = currentNode.getNextSibling()
+    ) {
+      const correctDOM = editor.getElementByKey(currentNode.getKey());
+
+      if (correctDOM === null) {
+        continue;
+      }
+
+      if (currentDOM == null) {
+        slot.insertChild(correctDOM);
+        currentDOM = correctDOM;
+      } else if (currentDOM !== correctDOM) {
+        slot.replaceChild(correctDOM, currentDOM);
+      }
+
+      currentDOM = currentDOM.nextSibling;
+    }
+  }
 }
 
+/** Returns true if the given node is an ElementNode. */
 export function $isElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode {

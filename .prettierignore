@@ -11,9 +11,9 @@
 packages/**/.wxt/**
 packages/playwright
 packages/playwright-core
-packages/**/vite.config.js
-packages/**/vite.prod.config.js
 packages/lexical-website/docs/api
+packages/lexical-website/fb/*.json
+examples/*svelte*
 **/*.md
 **/*.js.flow
 **/node_modules
@@ -23,3 +23,9 @@ flow-typed
 .prettierignore
 **/.docusaurus
 /playwright-report
+test-results
+/libdefs/*.js
+pnpm-lock.yaml
+**/.next/**
+# Verbatim clipboard payloads — preserved exactly as the source app emitted.
+dev-examples/dom-import/src/fixtures/

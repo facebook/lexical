@@ -7,10 +7,11 @@
  */
 
 import {
+  $createCodeHighlightNode,
   $createCodeNode,
   $isCodeHighlightNode,
-  registerCodeHighlighting,
 } from '@lexical/code';
+import {registerCodeHighlighting} from '@lexical/code-prism';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
 import {registerRichText} from '@lexical/rich-text';
 import {$dfs} from '@lexical/utils';
@@ -27,19 +28,23 @@ import {
   $isTabNode,
   $isTextNode,
   $setSelection,
+  HISTORY_MERGE_TAG,
+  INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalEditor,
   MOVE_TO_END,
   MOVE_TO_START,
 } from 'lexical';
 import {
+  expectHtmlToBeEqual,
   initializeUnitTest,
   invariant,
-  KeyboardEventMock,
   shiftTabKeyboardEvent,
   tabKeyboardEvent,
 } from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -51,7 +56,7 @@ const editorConfig = Object.freeze({
 const SPACES4 = ' '.repeat(4);
 
 describe('LexicalCodeNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('CodeNode.constructor', async () => {
       const {editor} = testEnv;
 
@@ -108,7 +113,7 @@ describe('LexicalCodeNode tests', () => {
         // If you broke this test, you changed the public interface of a
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
-        // to accomodate these changes.import { moveSelectionPointToSibling } from '../../../../lexical/src/LexicalSelection';
+        // to accommodate these changes.import { moveSelectionPointToSibling } from '../../../../lexical/src/LexicalSelection';
 
         expect(node.exportJSON()).toStrictEqual({
           children: [],
@@ -116,6 +121,7 @@ describe('LexicalCodeNode tests', () => {
           format: '',
           indent: 0,
           language: 'javascript',
+          theme: undefined,
           type: 'code',
           version: 1,
         });
@@ -143,7 +149,7 @@ describe('LexicalCodeNode tests', () => {
         });
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span>foo</span></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span>foo</span></p></div>',
       );
 
       await editor.update(() => {
@@ -182,7 +188,7 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">function</span><span data-lexical-text="true">\t</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">function</span><span data-lexical-text="true">\t</span></code>',
       );
 
       // CodeNode should only render diffs, make sure that the TabNode is not cloned when
@@ -195,12 +201,12 @@ describe('LexicalCodeNode tests', () => {
         $getSelection()!.insertText('foo');
       });
       expect(
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           return $getNodeByKey(tabKey) !== null;
         }),
       );
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">function</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">foo</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">function</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">foo</span></code>',
       );
     });
 
@@ -224,11 +230,11 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span></code>',
       );
     });
 
-    test('can indent/outdent one line by selecting all line (with tabs)', async () => {
+    test('can indent/outdent one line by forward selecting all line (with tabs)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
       registerTabIndentation(editor);
@@ -244,24 +250,67 @@ describe('LexicalCodeNode tests', () => {
       await editor.update(() => {
         const codeText = $getRoot().getFirstDescendant();
         invariant($isTextNode(codeText));
+        // forward selection
         codeText.select(0, 'function'.length);
       });
+      const HTMLTabNode = '<span data-lexical-text="true">\t</span>';
+      const HTMLTextNode = '<span data-lexical-text="true">function</span>';
+
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">\t</span><span data-lexical-text="true">function</span></code>',
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTabNode}${HTMLTextNode}</code>`,
       );
 
-      await editor.update(() => {
-        const root = $getRoot();
-        const codeTab = root.getFirstDescendant()!;
-        const codeText = root.getLastDescendant()!;
-        const selection = $createRangeSelection();
-        selection.anchor.set(codeTab.getKey(), 0, 'text');
-        selection.focus.set(codeText.getKey(), 'function'.length, 'text');
-      });
+      // test 2nd Tab Keypress (cf github issue #7541)
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
+      expect(testEnv.innerHTML).toBe(
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTabNode}${HTMLTabNode}${HTMLTextNode}</code>`,
+      );
+
+      await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">function</span></code>',
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTextNode}</code>`,
+      );
+    });
+
+    test('can indent/outdent one line by backward selecting all line (with tabs)', async () => {
+      const {editor} = testEnv;
+      registerRichText(editor);
+      registerTabIndentation(editor);
+      registerCodeHighlighting(editor);
+      await editor.update(() => {
+        const root = $getRoot();
+        const code = $createCodeNode();
+        root.append(code);
+        code.selectStart();
+        $getSelection()!.insertText('function');
+      });
+      // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
+      await editor.update(() => {
+        const codeText = $getRoot().getFirstDescendant();
+        invariant($isTextNode(codeText));
+        // backward selection
+        codeText.select('function'.length, 0);
+      });
+      const HTMLTabNode = '<span data-lexical-text="true">\t</span>';
+      const HTMLTextNode = '<span data-lexical-text="true">function</span>';
+
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
+      expect(testEnv.innerHTML).toBe(
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTabNode}${HTMLTextNode}</code>`,
+      );
+
+      // test 2nd Tab Keypress (cf github issue #7541)
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
+      expect(testEnv.innerHTML).toBe(
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTabNode}${HTMLTabNode}${HTMLTextNode}</code>`,
+      );
+
+      await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
+      await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
+      expect(testEnv.innerHTML).toBe(
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTextNode}</code>`,
       );
     });
 
@@ -285,7 +334,7 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">\t</span><span data-lexical-text="true">function</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">\t</span><span data-lexical-text="true">function</span></code>',
       );
 
       await editor.update(() => {
@@ -299,7 +348,7 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">function</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">function</span></code>',
       );
     });
 
@@ -326,13 +375,13 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2"><span data-lexical-text="true">\t</span><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">\t</span><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></code>`,
       );
 
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></code>`,
       );
     });
@@ -351,8 +400,34 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML)
-        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2"><span data-lexical-text="true">hello</span><br><span data-lexical-text="true">\t</span></code>`);
+    });
+
+    test('can indent when selection has a CodeNode element (with indent)', async () => {
+      const {editor} = testEnv;
+      registerRichText(editor);
+      registerTabIndentation(editor);
+      registerCodeHighlighting(editor);
+      await editor.update(() => {
+        const root = $getRoot();
+        const code = $createCodeNode();
+        root.append(code);
+        code.selectStart();
+        $getSelection()!.insertRawText('\nhello');
+      });
+      await editor.update(() => {
+        const firstCode = $getRoot().getFirstChild()!;
+        const lastCodeText = $getRoot().getLastDescendant()!;
+        const selection = $createRangeSelection();
+        selection.anchor.set(firstCode.getKey(), 0, 'element');
+        selection.focus.set(lastCodeText.getKey(), 3, 'text');
+        $setSelection(selection);
+      });
+      await editor.dispatchCommand(INDENT_CONTENT_COMMAND);
+      expect(testEnv.innerHTML)
+        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
+2"><br><span data-lexical-text="true">\t</span><span data-lexical-text="true">hello</span></code>`);
     });
 
     test('can outdent at arbitrary points in the line (with tabs)', async () => {
@@ -375,7 +450,7 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">hello</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">hello</span></code>',
       );
     });
 
@@ -391,11 +466,13 @@ describe('LexicalCodeNode tests', () => {
         code.selectStart();
         $getSelection()!.insertRawText('abc\tdef\nghi\tjkl');
       });
-      const keyEvent = new KeyboardEventMock();
-      keyEvent.altKey = true;
+      const keyEvent = new KeyboardEvent('keydown', {
+        altKey: true,
+        key: 'ArrowUp',
+      });
       await editor.dispatchCommand(KEY_ARROW_UP_COMMAND, keyEvent);
       expect(testEnv.innerHTML)
-        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2"><span data-lexical-text="true">ghi</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">jkl</span><br><span data-lexical-text="true">abc</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">def</span></code>`);
     });
 
@@ -424,19 +501,134 @@ describe('LexicalCodeNode tests', () => {
         selection.focus.set(secondCodeText.getKey(), 1, 'text');
         $setSelection(selection);
       });
-      const keyEvent = new KeyboardEventMock();
-      keyEvent.altKey = true;
+      const keyEvent = new KeyboardEvent('keydown', {
+        altKey: true,
+        key: 'ArrowDown',
+      });
       await editor.dispatchCommand(KEY_ARROW_DOWN_COMMAND, keyEvent);
       expect(testEnv.innerHTML)
-        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2
 3"><span data-lexical-text="true">mno</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">pqr</span><br><span data-lexical-text="true">abc</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">def</span><br><span data-lexical-text="true">ghi</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">jkl</span></code>`);
     });
 
     describe('arrows', () => {
+      describe('rtl code lines', () => {
+        const RTL_TEXT = 'تجربة';
+
+        async function setupRTLCode(editor: LexicalEditor) {
+          registerRichText(editor);
+          registerTabIndentation(editor);
+          registerCodeHighlighting(editor);
+          await editor.update(() => {
+            const root = $getRoot();
+            const code = $createCodeNode('plaintext');
+            root.append(code);
+            code.selectStart();
+            $getSelection()!.insertRawText(RTL_TEXT);
+          });
+          await editor.update(() => {
+            const highlightNode = $dfs().find(({node}) =>
+              $isCodeHighlightNode(node),
+            )!.node;
+            invariant($isTextNode(highlightNode));
+            highlightNode.select(1, 1);
+          });
+        }
+
+        test('MOVE_TO_END moves caret to visual right', async () => {
+          const {editor} = testEnv;
+          await setupRTLCode(editor);
+
+          await editor.dispatchCommand(
+            MOVE_TO_END,
+            new KeyboardEvent('keydown'),
+          );
+
+          await editor.update(() => {
+            const selection = $getSelection();
+            invariant(
+              $isRangeSelection(selection),
+              'Expected selection to be RangeSelection',
+            );
+            expect(selection.isCollapsed()).toBe(true);
+            const anchorNode = selection.anchor.getNode();
+            invariant($isTextNode(anchorNode));
+            expect(selection.anchor.offset).toBe(0);
+          });
+        });
+
+        test('MOVE_TO_START moves caret to visual left', async () => {
+          const {editor} = testEnv;
+          await setupRTLCode(editor);
+
+          await editor.dispatchCommand(
+            MOVE_TO_START,
+            new KeyboardEvent('keydown'),
+          );
+
+          await editor.update(() => {
+            const selection = $getSelection();
+            invariant(
+              $isRangeSelection(selection),
+              'Expected selection to be RangeSelection',
+            );
+            expect(selection.isCollapsed()).toBe(true);
+            const anchorNode = selection.anchor.getNode();
+            invariant($isTextNode(anchorNode));
+            expect(selection.anchor.offset).toBe(
+              anchorNode.getTextContentSize(),
+            );
+          });
+        });
+
+        test('Shift+MOVE_TO_END preserves anchor and extends focus', async () => {
+          const {editor} = testEnv;
+          await setupRTLCode(editor);
+          const event = new KeyboardEvent('keydown', {shiftKey: true});
+
+          const before = editor.read(() => {
+            const s = $getSelection();
+            invariant($isRangeSelection(s));
+            return {key: s.anchor.key, offset: s.anchor.offset};
+          });
+
+          editor.dispatchCommand(MOVE_TO_END, event);
+
+          editor.read(() => {
+            const selection = $getSelection();
+            invariant($isRangeSelection(selection));
+            expect(selection.isCollapsed()).toBe(false);
+            expect(selection.anchor.key).toBe(before.key);
+            expect(selection.anchor.offset).toBe(before.offset);
+          });
+        });
+
+        test('Shift+MOVE_TO_START preserves anchor and extends focus', async () => {
+          const {editor} = testEnv;
+          await setupRTLCode(editor);
+          const event = new KeyboardEvent('keydown', {shiftKey: true});
+
+          const before = editor.read(() => {
+            const s = $getSelection();
+            invariant($isRangeSelection(s));
+            return {key: s.anchor.key, offset: s.anchor.offset};
+          });
+
+          editor.dispatchCommand(MOVE_TO_START, event);
+
+          editor.read(() => {
+            const selection = $getSelection();
+            invariant($isRangeSelection(selection));
+            expect(selection.isCollapsed()).toBe(false);
+            expect(selection.anchor.key).toBe(before.key);
+            expect(selection.anchor.offset).toBe(before.offset);
+          });
+        });
+      });
+
       for (const moveTo of ['start', 'end']) {
         for (const tabOrSpaces of ['tab', 'spaces']) {
-          // eslint-disable-next-line no-inner-declarations
           function testMoveTo(
             name: string,
             $beforeFn: () => void,
@@ -470,12 +662,12 @@ describe('LexicalCodeNode tests', () => {
               if (moveTo === 'start') {
                 await editor.dispatchCommand(
                   MOVE_TO_START,
-                  new KeyboardEventMock('keydown'),
+                  new KeyboardEvent('keydown'),
                 );
               } else {
                 await editor.dispatchCommand(
                   MOVE_TO_END,
-                  new KeyboardEventMock('keydown'),
+                  new KeyboardEvent('keydown'),
                 );
               }
               await editor.update(() => {
@@ -526,7 +718,7 @@ describe('LexicalCodeNode tests', () => {
             'caret at start of line (second line)',
             () => {
               const nodes = $dfs();
-              const linebreak = nodes.filter((dfsNode) =>
+              const linebreak = nodes.filter(dfsNode =>
                 $isLineBreakNode(dfsNode.node),
               )[0].node;
               linebreak.selectNext(0, 0);
@@ -601,7 +793,7 @@ describe('LexicalCodeNode tests', () => {
             'caret immediately before code (second line)',
             () => {
               const nodes = $dfs();
-              const linebreak = nodes.filter((dfsNode) =>
+              const linebreak = nodes.filter(dfsNode =>
                 $isLineBreakNode(dfsNode.node),
               )[0].node;
               if (tabOrSpaces === 'tab') {
@@ -620,7 +812,7 @@ describe('LexicalCodeNode tests', () => {
               expect(selection.isCollapsed()).toBe(true);
               if (moveTo === 'start') {
                 const nodes = $dfs();
-                const linebreak = nodes.filter((dfsNode) =>
+                const linebreak = nodes.filter(dfsNode =>
                   $isLineBreakNode(dfsNode.node),
                 )[0].node;
                 const tabOrSpace = linebreak.getNextSibling();
@@ -683,7 +875,7 @@ describe('LexicalCodeNode tests', () => {
             'caret in between space (second line)',
             () => {
               const nodes = $dfs();
-              const linebreak = nodes.filter((dfsNode) =>
+              const linebreak = nodes.filter(dfsNode =>
                 $isLineBreakNode(dfsNode.node),
               )[0].node;
               if (tabOrSpaces === 'tab') {
@@ -728,7 +920,7 @@ describe('LexicalCodeNode tests', () => {
             'caret in between code',
             () => {
               const nodes = $dfs();
-              const codeHighlight = nodes.filter((dfsNode) =>
+              const codeHighlight = nodes.filter(dfsNode =>
                 $isCodeHighlightNode(dfsNode.node),
               )[tabOrSpaces === 'tab' ? 0 : 1].node;
               const index = codeHighlight.getTextContent().indexOf('tion');
@@ -770,7 +962,7 @@ describe('LexicalCodeNode tests', () => {
             'caret in between code (after space)',
             () => {
               const nodes = $dfs();
-              const codeHighlight = nodes.filter((dfsNode) =>
+              const codeHighlight = nodes.filter(dfsNode =>
                 $isCodeHighlightNode(dfsNode.node),
               )[tabOrSpaces === 'tab' ? 1 : 2].node;
               const index = codeHighlight.getTextContent().indexOf('oo');
@@ -812,7 +1004,7 @@ describe('LexicalCodeNode tests', () => {
             'non-collapsed multi-line selection',
             () => {
               const nodes = $dfs();
-              const codeHighlightDFSNodes = nodes.filter((dfsNode) =>
+              const codeHighlightDFSNodes = nodes.filter(dfsNode =>
                 $isCodeHighlightNode(dfsNode.node),
               );
               const secondCodeHighlight = codeHighlightDFSNodes[1].node;
@@ -855,6 +1047,35 @@ describe('LexicalCodeNode tests', () => {
           );
         }
       }
+    });
+    describe('initial editor state before transforms', () => {
+      test('can be registered after initial editor state (regression #7014)', async () => {
+        const {editor} = testEnv;
+        await editor.update(
+          () => {
+            const root = $getRoot();
+            const codeBlock = $createCodeNode('javascript');
+            codeBlock.append(
+              $createCodeHighlightNode('const lexical = "awesome"'),
+            );
+            root.append(codeBlock);
+          },
+          {tag: HISTORY_MERGE_TAG},
+        );
+        // before transform
+        expect(testEnv.innerHTML).toBe(
+          '<code spellcheck="false" data-language="javascript" dir="auto"><span data-lexical-text="true">const lexical = "awesome"</span></code>',
+        );
+        registerRichText(editor);
+        registerTabIndentation(editor);
+        registerCodeHighlighting(editor);
+        await Promise.resolve(undefined);
+        // after transforms
+        expectHtmlToBeEqual(
+          testEnv.innerHTML,
+          '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">const</span><span data-lexical-text="true"> lexical </span><span data-lexical-text="true">=</span><span data-lexical-text="true"> </span><span data-lexical-text="true">"awesome"</span></code>',
+        );
+      });
     });
   });
 });

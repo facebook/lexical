@@ -1,0 +1,83 @@
+{
+  "name": "@lexical/tailwind",
+  "keywords": [
+    "lexical",
+    "editor",
+    "tailwind",
+    "theme",
+    "css"
+  ],
+  "version": "0.49.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-tailwind"
+  },
+  "main": "./dist/LexicalTailwind.js",
+  "types": "./dist/typescript-too-old.d.ts",
+  "bugs": {
+    "url": "https://github.com/facebook/lexical/issues"
+  },
+  "homepage": "https://github.com/facebook/lexical#readme",
+  "dependencies": {
+    "@lexical/extension": "workspace:*",
+    "lexical": "workspace:*"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.0",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.0"
+  },
+  "description": "This package contains an extension to use Tailwind for the editor theme",
+  "sideEffects": false,
+  "module": "./dist/LexicalTailwind.mjs",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalTailwind.dev.mjs",
+        "production": "./dist/LexicalTailwind.prod.mjs",
+        "node": "./dist/LexicalTailwind.node.mjs",
+        "default": "./dist/LexicalTailwind.mjs"
+      },
+      "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalTailwind.dev.js",
+        "production": "./dist/LexicalTailwind.prod.js",
+        "default": "./dist/LexicalTailwind.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "typescript": ">=5.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
+}

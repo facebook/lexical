@@ -32,7 +32,7 @@ declare module 'yjs' {
     on(type: string, () => void): void;
     parent: null | XmlText | XmlElement;
     setAttribute(string: string, value: string | number | YDoc): void;
-    toDelta(): Array<TextOperation>;
+    toDelta(): TextOperation[];
     toJSON(): Object;
     unobserve(fn: Function): void;
     unobserveDeep(fn: Function): void;
@@ -65,7 +65,6 @@ declare module 'yjs' {
     unobserveDeep(fn: Function): void;
   }
 
-  // $FlowFixMe: needs fixing
   declare type YMapEventKeyChanges = any;
 
   declare type Operation = {
@@ -73,13 +72,13 @@ declare module 'yjs' {
     insert: string | {...},
   };
 
-  declare type Delta = Array<Operation>;
+  declare type Delta = Operation[];
 
   declare export interface YMapEvent extends YEvent {
     changes: {
       keys: YMapEventKeyChanges,
     };
-    delta: Array<TextOperation>;
+    delta: TextOperation[];
     keysChanged: Set<string>;
   }
 
@@ -91,7 +90,7 @@ declare module 'yjs' {
 
   declare export interface YTextEvent extends YEvent {
     childListChanged: boolean;
-    delta: Array<TextOperation>;
+    delta: TextOperation[];
     keysChanged: Set<string>;
     target: XmlText;
   }
@@ -99,7 +98,7 @@ declare module 'yjs' {
   declare export interface YXmlEvent extends YEvent {
     attributesChanged: Set<string>;
     childListChanged: boolean;
-    delta: Array<TextOperation>;
+    delta: TextOperation[];
     keysChanged: Set<string>;
     target: XmlText;
   }
@@ -307,7 +306,7 @@ declare module 'yjs' {
     /**
      * An alternative constructor to create a Y.Array based on existing content.
      */
-    static from(Array<T>): YArray<T>;
+    static from(T[]): YArray<T>;
 
     /**
      * Retrieve the n-th element.
@@ -319,7 +318,7 @@ declare module 'yjs' {
      * content is always an array of elements. I.e. yarray.insert(0, [1]) inserts
      * 1 at position 0.
      */
-    insert(index: number, content: Array<T>): void;
+    insert(index: number, content: T[]): void;
 
     /**
      * The number of elements that this Y.Array holds.
@@ -330,7 +329,7 @@ declare module 'yjs' {
      * Creates a new Array filled with the results of calling the provided
      * function on each element in the Y.Array.
      */
-    map<M>(f: (item: T, index: number, array: YArray<T>) => M): Array<M>;
+    map<M>(f: (item: T, index: number, array: YArray<T>) => M): M[];
 
     /**
      * Registers a change observer that will be called synchronously every time
@@ -348,7 +347,7 @@ declare module 'yjs' {
      * Events created by itself or any of its children.
      */
     observeDeep(
-      observer: (events: Array<YEvent>, transaction?: Transaction) => void,
+      observer: (events: YEvent[], transaction?: Transaction) => void,
     ): void;
 
     /**
@@ -361,7 +360,7 @@ declare module 'yjs' {
      * Append content at the end of the Y.Array. Same as
      * yarray.insert(yarray.length, content).
      */
-    push(content: Array<T>): void;
+    push(content: T[]): void;
 
     /**
      * Retrieve a range of content starting from index start (inclusive) to index
@@ -370,9 +369,9 @@ declare module 'yjs' {
      * yarray.slice(0, -1) returns all but the last element. Works similarly to
      * the Array.slice method.
      */
-    slice(start?: number, end?: number): Array<T>;
+    slice(start?: number, end?: number): T[];
 
-    toArray(): Array<T>;
+    toArray(): T[];
 
     /**
      * Retrieve the JSON representation of this type. The result is a fresh Array
@@ -394,14 +393,14 @@ declare module 'yjs' {
      * yarray.observeDeep.
      */
     unobserveDeep(
-      observer: (events: Array<YEvent>, transaction?: Transaction) => void,
+      observer: (events: YEvent[], transaction?: Transaction) => void,
     ): void;
 
     /**
      * Prepend content to the beginning of the Y.Array. Same as yarray.insert(0,
      * content).
      */
-    unshift(content: Array<T>): void;
+    unshift(content: T[]): void;
   }
 
   /**
@@ -477,7 +476,7 @@ declare module 'yjs' {
      * Events created by itself or any of its children.
      */
     observeDeep(
-      observer: (events: Array<YEvent>, transaction?: Transaction) => void,
+      observer: (events: YEvent[], transaction?: Transaction) => void,
     ): void;
 
     /**
@@ -515,7 +514,7 @@ declare module 'yjs' {
      * ymap.observeDeep.
      */
     unobserveDeep(
-      observer: (events: Array<YEvent>, transaction?: Transaction) => void,
+      observer: (events: YEvent[], transaction?: Transaction) => void,
     ): void;
 
     /**
@@ -594,7 +593,7 @@ declare module 'yjs' {
      * Events created by itself or any of its children.
      */
     observeDeep(
-      observer: (events: Array<YEvent>, transaction?: Transaction) => void,
+      observer: (events: YEvent[], transaction?: Transaction) => void,
     ): void;
 
     /**
@@ -631,7 +630,7 @@ declare module 'yjs' {
      * ytext.observeDeep.
      */
     unobserveDeep(
-      observer: (events: Array<YEvent>, transaction?: Transaction) => void,
+      observer: (events: YEvent[], transaction?: Transaction) => void,
     ): void;
   }
 
@@ -644,7 +643,7 @@ declare module 'yjs' {
   };
 
   declare type StackItem = {
-    meta: Map<mixed, mixed>,
+    meta: Map,
     type: 'undo' | 'redo',
   };
 
@@ -726,6 +725,7 @@ declare module 'yjs' {
   declare export function createRelativePositionFromTypeIndex(
     type: XmlText | Map | XmlElement,
     index: number,
+    assoc?: number,
   ): RelativePosition;
 
   declare export function createRelativePositionFromJSON(

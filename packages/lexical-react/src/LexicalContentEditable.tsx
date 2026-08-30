@@ -6,18 +6,28 @@
  *
  */
 
-import type {Props as ElementProps} from './shared/LexicalContentEditableElement';
 import type {LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
+import {forwardRef, type JSX, type Ref, useState} from 'react';
 
-import {ContentEditableElement} from './shared/LexicalContentEditableElement';
+import {
+  ContentEditableElement,
+  type ContentEditableElementProps,
+} from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
+import useLayoutEffect from './shared/useLayoutEffect';
 
-export type Props = Omit<ElementProps, 'editor'> & {
-  editor__DEPRECATED?: LexicalEditor;
-} & (
+export {ContentEditableElement, type ContentEditableElementProps};
+
+/**
+ * Props for the {@link ContentEditable} component. These are the
+ * {@link ContentEditableElementProps} (minus `editor`, which is read from
+ * context) plus an optional `placeholder`; when a `placeholder` is provided an
+ * `aria-placeholder` string is also required for accessibility.
+ */
+export type ContentEditableProps = Omit<ContentEditableElementProps, 'editor'> &
+  (
     | {
         'aria-placeholder'?: void;
         placeholder?: null;
@@ -30,16 +40,21 @@ export type Props = Omit<ElementProps, 'editor'> & {
       }
   );
 
+/**
+ * The editable surface of a Lexical editor: the `contentEditable` element that
+ * users type into. Render it inside a {@link LexicalComposer} (it reads the
+ * editor from context) and pass it to {@link RichTextPlugin} or
+ * {@link PlainTextPlugin}. An optional `placeholder` is shown while the editor
+ * is empty. The `ref` is forwarded to the underlying `<div>`.
+ */
 export const ContentEditable = forwardRef(ContentEditableImpl);
 
 function ContentEditableImpl(
-  props: Props,
+  props: ContentEditableProps,
   ref: Ref<HTMLDivElement>,
 ): JSX.Element {
-  const {placeholder, editor__DEPRECATED, ...rest} = props;
-  // editor__DEPRECATED will always be defined for non MLC surfaces
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const editor = editor__DEPRECATED || useLexicalComposerContext()[0];
+  const {placeholder, ...rest} = props;
+  const [editor] = useLexicalComposerContext();
 
   return (
     <>
@@ -63,7 +78,7 @@ function Placeholder({
   const [isEditable, setEditable] = useState(editor.isEditable());
   useLayoutEffect(() => {
     setEditable(editor.isEditable());
-    return editor.registerEditableListener((currentIsEditable) => {
+    return editor.registerEditableListener(currentIsEditable => {
       setEditable(currentIsEditable);
     });
   }, [editor]);

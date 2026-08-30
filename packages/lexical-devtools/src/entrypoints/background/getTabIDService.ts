@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {PegasusRPCMessage} from '@webext-pegasus/rpc';
+import type {PegasusRPCMessage} from '@webext-pegasus/rpc';
 
 export type ITabIDService = typeof getTabIDService;
 

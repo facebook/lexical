@@ -6,10 +6,10 @@
  *
  */
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
+  COMMAND_PRIORITY_LOW,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   FORMAT_ELEMENT_COMMAND,
@@ -17,11 +17,10 @@ import {
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
+  mergeRegister,
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
 // import * as React from 'react';
-
-const LowPriority = 1;
 
 function Divider() {
   return <div className="divider" />;
@@ -61,7 +60,7 @@ export default function ToolbarPlugin() {
           updateToolbar();
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         CAN_UNDO_COMMAND,
@@ -69,7 +68,7 @@ export default function ToolbarPlugin() {
           setCanUndo(payload);
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         CAN_REDO_COMMAND,
@@ -77,7 +76,7 @@ export default function ToolbarPlugin() {
           setCanRedo(payload);
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
     );
   }, [editor, updateToolbar]);

@@ -13,9 +13,7 @@ When registering a `command` you supply a `priority` and can return `true` to ma
 You can view all of the existing commands in [`LexicalCommands.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.ts), but if you need a custom command for your own use case check out the typed `createCommand(...)` function.
 
 ```js
-const HELLO_WORLD_COMMAND: LexicalCommand<string> = createCommand();
-
-editor.dispatchCommand(HELLO_WORLD_COMMAND, 'Hello World!');
+const HELLO_WORLD_COMMAND: LexicalCommand<string> = createCommand('HELLO_WORLD');
 
 editor.registerCommand(
   HELLO_WORLD_COMMAND,
@@ -23,13 +21,17 @@ editor.registerCommand(
     console.log(payload); // Hello World!
     return false;
   },
-  LowPriority,
+  COMMAND_PRIORITY_EDITOR,
 );
+
+editor.dispatchCommand(HELLO_WORLD_COMMAND, 'Hello World!');
 ```
 
 ## `editor.dispatchCommand(...)`
 
 Commands can be dispatched from anywhere you have access to the `editor` such as a Toolbar Button, an event listener, or a Plugin, but most of the core commands are dispatched from [`LexicalEvents.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalEvents.ts).
+
+Calling `dispatchCommand` will implicitly call `editor.update` to trigger its command listeners if it was not called from inside `editor.update`.
 
 ```js
 editor.dispatchCommand(command, payload);
@@ -53,13 +55,13 @@ const formatBulletList = () => {
 };
 ```
 
-Which is later handled in [`useList`](https://github.com/facebook/lexical/blob/1f62ace08e15d55515f3750840133efecd6d7d01/packages/lexical-react/src/shared/useList.js#L65) to insert the list into the editor.
+Which is later handled in [`registerList`](https://github.com/facebook/lexical/blob/main/packages/lexical-list/src/index.ts) to insert the list into the editor.
 
 ```js
 editor.registerCommand(
   INSERT_UNORDERED_LIST_COMMAND,
   () => {
-    insertList(editor, 'ul');
+    $insertList('ul');
     return true;
   },
   COMMAND_PRIORITY_LOW,
@@ -69,6 +71,10 @@ editor.registerCommand(
 ## `editor.registerCommand(...)`
 
 You can register a command from anywhere you have access to the `editor` object, but it's important that you remember to clean up the listener with its remove listener callback when it's no longer needed.
+
+The command listener will always be called from an `editor.update`, so you may use dollar functions. You should not use
+`editor.update` (and *never* call `editor.read(...)` or `editor.read('force-commit', ...)`) synchronously from within a command listener. It is safe to call
+`editor.read('latest', ...)` or `editor.getEditorState().read` if you need to read the previous state after updates have already been made.
 
 ```js
 const removeListener = editor.registerCommand(
@@ -98,7 +104,7 @@ useEffect(() => {
 
 And as seen above and below, `registerCommand`'s callback can return `true` to signal to the other listeners that the command has been handled and propagation will be stopped.
 
-Here's a simplified example of handling a `KEY_TAB_COMMAND` from the [`RichTextPlugin`](https://github.com/facebook/lexical/blob/76b28f4e2b70f1194cc8148dcc30c9f9ec61f811/packages/lexical-rich-text/src/index.js#L625), which is used to dispatch a `OUTDENT_CONTENT_COMMAND` or `INDENT_CONTENT_COMMAND`.
+Here's a simplified example of handling a `KEY_TAB_COMMAND` from the [`TabIndentationPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-react/src/LexicalTabIndentationPlugin.tsx), which is used to dispatch a `OUTDENT_CONTENT_COMMAND` or `INDENT_CONTENT_COMMAND`.
 
 ```js
 editor.registerCommand(
@@ -114,4 +120,45 @@ editor.registerCommand(
 );
 ```
 
-Note that the same `KEY_TAB_COMMAND` command is registered by [`LexicalTableSelectionHelpers.js`](https://github.com/facebook/lexical/blob/1f62ace08e15d55515f3750840133efecd6d7d01/packages/lexical-table/src/LexicalTableSelectionHelpers.js#L733), which handles moving focus to the next or previous cell within a `Table`, but the priority is the highest it can be (`4`) because this behavior is very important.
+Note that the same `KEY_TAB_COMMAND` command is registered by [`LexicalTableSelectionHelpers.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical-table/src/LexicalTableSelectionHelpers.ts), which handles moving focus to the next or previous cell within a `TableNode`, but the priority is high (`COMMAND_PRIORITY_HIGH`) because this behavior is very important.
+
+### Priorities and ordering
+
+Command listeners are called in the following order until a listener returns `true`:
+
+- From priority highest to lowest (critical, high, normal, low, editor)
+- All `COMMAND_PRIORITY_BEFORE_${priority}` listeners, most recently registered first
+- All `COMMAND_PRIORITY_${priority}` listeners, in registration order
+
+:::note
+
+As of v0.44.0 there are new `COMMAND_PRIORITY_BEFORE_*` priorities available
+which make it much easier to override default behavior without escalating the priority.
+
+:::
+
+It is best practice to use the lowest priority possible, so most commands will
+be registered with `COMMAND_PRIORITY_EDITOR` for the default behavior, then
+commands to override that behavior can be registered with
+`COMMAND_PRIORITY_BEFORE_EDITOR`. The higher priorities mostly serve purposes
+such as being able to observe-but-not-handle events and to support legacy code
+that predates the availability of `COMMAND_PRIORITY_BEFORE_*`.
+
+A modern lexical app will typically only need the
+`COMMAND_PRIORITY_BEFORE_EDITOR` priority since the
+last-registered-called-first ordering is suitable for almost all use cases. The
+older priorities without BEFORE can be considered legacy and are primarily
+offered for compatibility.
+
+Here is the full ordering of priorities, from lowest to highest:
+
+- `COMMAND_PRIORITY_EDITOR`
+- `COMMAND_PRIORITY_BEFORE_EDITOR`
+- `COMMAND_PRIORITY_LOW`
+- `COMMAND_PRIORITY_BEFORE_LOW`
+- `COMMAND_PRIORITY_NORMAL`
+- `COMMAND_PRIORITY_BEFORE_NORMAL`
+- `COMMAND_PRIORITY_HIGH`
+- `COMMAND_PRIORITY_BEFORE_HIGH`
+- `COMMAND_PRIORITY_CRITICAL`
+- `COMMAND_PRIORITY_BEFORE_CRITICAL`

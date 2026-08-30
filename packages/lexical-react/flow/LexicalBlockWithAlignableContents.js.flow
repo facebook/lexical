@@ -15,14 +15,14 @@ import type {
   NodeKey,
 } from 'lexical';
 
-type Props = $ReadOnly<{
-  children: React$Node,
+type Props = Readonly<{
+  children: React.Node,
   format: ?ElementFormatType,
   nodeKey: NodeKey,
-  className: $ReadOnly<{
+  className: Readonly<{
     base: string,
     focus: string,
   }>,
 }>;
 
-declare export function BlockWithAlignableContents(Props): React$Node;
+declare export function BlockWithAlignableContents(Props): React.Node;

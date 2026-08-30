@@ -6,9 +6,10 @@
  *
  */
 
+import type {LexicalEditor} from 'lexical';
+import type {RefObject} from 'react';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {LexicalEditor} from 'lexical';
-import {MutableRefObject} from 'react';
 import * as React from 'react';
 
 /**
@@ -23,14 +24,15 @@ export function EditorRefPlugin({
 }: {
   editorRef:
     | React.RefCallback<LexicalEditor>
-    | MutableRefObject<LexicalEditor | null | undefined>;
+    | RefObject<LexicalEditor | null | undefined>;
 }): null {
   const [editor] = useLexicalComposerContext();
 
   React.useEffect(() => {
     if (typeof editorRef === 'function') {
       editorRef(editor);
-    } else if (typeof editorRef === 'object') {
+    } else if (typeof editorRef === 'object' && editorRef !== null) {
+      // eslint-disable-next-line react-hooks/immutability
       editorRef.current = editor;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -8,20 +8,27 @@
 
 import './index.css';
 
+import {$isCodeNode, CodeNode} from '@lexical/code';
+import {DEFAULT_CODE_LANGUAGE} from '@lexical/code-core';
 import {
-  $isCodeNode,
-  CodeNode,
   getLanguageFriendlyName,
-  normalizeCodeLang,
-} from '@lexical/code';
+  normalizeCodeLanguage,
+} from '@lexical/code-prism';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getNearestNodeFromDOMNode} from 'lexical';
-import {useEffect, useRef, useState} from 'react';
+import {
+  $getNearestNodeFromDOMNode,
+  getComposedEventTarget,
+  isHTMLElement,
+  mergeRegister,
+  registerEventListener,
+} from 'lexical';
 import * as React from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {CopyButton} from './components/CopyButton';
-import {canBePrettier, PrettierButton} from './components/PrettierButton';
+import {PrettierButton} from './components/PrettierButton';
+import {canBePrettier} from './formatCodeWithPrettier';
 import {useDebounce} from './utils';
 
 const CODE_PADDING = 8;
@@ -100,20 +107,20 @@ function CodeActionMenuContainer({
       return;
     }
 
-    document.addEventListener('mousemove', debouncedOnMouseMove);
-
-    return () => {
-      setShown(false);
-      debouncedOnMouseMove.cancel();
-      document.removeEventListener('mousemove', debouncedOnMouseMove);
-    };
+    return mergeRegister(
+      registerEventListener(document, 'mousemove', debouncedOnMouseMove),
+      () => {
+        setShown(false);
+        debouncedOnMouseMove.cancel();
+      },
+    );
   }, [shouldListenMouseMove, debouncedOnMouseMove]);
 
   useEffect(() => {
     return editor.registerMutationListener(
       CodeNode,
-      (mutations) => {
-        editor.getEditorState().read(() => {
+      mutations => {
+        editor.read('latest', () => {
           for (const [key, type] of mutations) {
             switch (type) {
               case 'created':
@@ -135,8 +142,15 @@ function CodeActionMenuContainer({
     );
   }, [editor]);
 
-  const normalizedLang = normalizeCodeLang(lang);
-  const codeFriendlyName = getLanguageFriendlyName(lang);
+  // Code blocks created without an explicit language (markdown ``` with
+  // no info string, the `/code` slash menu) leave `__language` as
+  // `undefined`, which surfaces here as an empty `lang`. Show the same
+  // `(No language)` label the main toolbar uses, but still hand prettier
+  // the highlight default so users can format these blocks.
+  const normalizedLang = normalizeCodeLanguage(lang || DEFAULT_CODE_LANGUAGE);
+  const codeFriendlyName = lang
+    ? getLanguageFriendlyName(lang)
+    : '(No language)';
 
   return (
     <>
@@ -161,9 +175,9 @@ function getMouseInfo(event: MouseEvent): {
   codeDOMNode: HTMLElement | null;
   isOutside: boolean;
 } {
-  const target = event.target;
+  const target = getComposedEventTarget(event);
 
-  if (target && target instanceof HTMLElement) {
+  if (isHTMLElement(target)) {
     const codeDOMNode = target.closest<HTMLElement>(
       'code.PlaygroundEditorTheme__code',
     );

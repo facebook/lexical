@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-type Props = $ReadOnly<{
+type Props = Readonly<{
   onClear?: () => void,
 }>;
 
-declare export function ClearEditorPlugin(Props): React$Node;
+declare export function ClearEditorPlugin(Props): React.Node;

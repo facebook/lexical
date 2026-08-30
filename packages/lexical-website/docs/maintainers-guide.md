@@ -9,9 +9,9 @@ configurations.
 ### Workspaces
 
 The top-level `package.json` uses
-[npm workspaces](https://docs.npmjs.com/cli/v10/using-npm/workspaces) to
+[pnpm workspaces](https://pnpm.io/workspaces) to
 configure the monorepo. This mostly means that all packages share a
-top-level `package-lock.json` and `npm run {command} -w {package}` is often
+top-level `pnpm-lock.yaml` and `pnpm -C {package} run {command}` is often
 used to run a command from a nested package's package.json.
 
 ### Private
@@ -24,11 +24,20 @@ Some packages in the monorepo do not get published to npm, for example:
   [playground.lexical.dev](https://playground.lexical.dev/) demo site
 * `packages/lexical-website` - the [lexical.dev](https://lexical.dev/)
   docusaurus website that you may even be reading right now
-* `packages/shared` - internal code that is used by more than one repository
-  but should not be a public API
+* `packages/lexical-test-utils` - `@lexical/test-utils`, private React
+  testing helpers shared across package unit tests
 
-It is required that these packages, and any other package that should not be
-published to npm, have a `"private": true` property in their `package.json`.
+Internal runtime code shared by more than one package lives in
+`packages/lexical-internal` (`@lexical/internal`). Unlike the others above
+it **is** published, but only so its source resolves through normal package
+resolution (the `source` export condition used by linked-checkout
+consumers); the compiled packages inline it, so it is never executed as a
+separate runtime dependency. It is not a public API and has no semver
+guarantees — see [Developing against a local Lexical
+checkout](./maintainers-guide-link.md).
+
+It is required that private packages, and any other package that should not
+be published to npm, have a `"private": true` property in their `package.json`.
 If you have an in-progress package that will eventually be public, but is
 not ready for consumption, it should probably still be set to
 `"private": true` otherwise the tooling will find it and publish it.
@@ -57,26 +66,24 @@ In that scenario, there should be no `index.ts` entrypoint file and every module
 at the top-level should be an entrypoint. All entrypoints should be a
 TypeScript file, not a subdirectory containing an index.ts file.
 
-The [update-packages](#npm-run-update-packages) script will ensure that the
+The [update-packages](#pnpm-run-update-packages) script will ensure that the
 exports match the files on disk.
 
 ## Creating a new package
 
-The first step in creating a new package is to create the workspace, there
-is a [npm-init](https://docs.npmjs.com/cli/v10/commands/npm-init) template
-that will fill in some of the defaults for you based on conventions.
-
-The example we will use is the steps that were used to create the
-`lexical-eslint-plugin`, which will be published to npm as
+The first step in creating a new package is to create the workspace directory
+and package.json file. The example we will use is the steps that were used
+to create the `lexical-eslint-plugin`, which will be published to npm as
 `@lexical/eslint-plugin`.
 
 ### Create the workspace
 
-```
-npm init -w packages/lexical-eslint-plugin
+```bash
+mkdir -p packages/lexical-eslint-plugin
 ```
 
-This only automates the first step, creating a single file:
+Create the initial `package.json` file (you can base it on an existing package
+or use the template below):
 
 <details><summary>
 
@@ -144,7 +151,7 @@ export default plugin;
 ### Run update-packages to generate boilerplate docs & config
 
 ```
-npm run update-packages
+pnpm run update-packages
 ```
 
 This will set up the tsconfig, flow, etc. configuration to recognize your
@@ -179,7 +186,7 @@ describe('LexicalEslintPlugin', () => {
 
 ## Scripts for development
 
-### npm run update-packages
+### pnpm run update-packages
 
 This script runs: update-version, update-tsconfig, update-flowconfig,
 create-docs, and create-www-stubs. This is safe to do at any time and will
@@ -190,45 +197,57 @@ various defaults are filled in.
 These scripts can be run individually, but unless you're working on one
 of these scripts you might as well run them all.
 
-### npm run prepare-release
+### pnpm run prepare-release
 
-This runs all of the pre-release steps and will let you inspect the artifacts
-that would be uploaded to npm. Each public package will have a npm directory, e.g.
-`packages/lexical/npm` that contains those artifacts.
+This runs `build-release` to produce all of the artifacts each public
+package needs (the `dev`/`prod`/`node` ESM and CJS variants plus their
+fork modules, `.d.ts` declarations, and `.flow` stubs under
+`packages/<name>/dist/`), then runs the publish-time guard in
+`scripts/npm/prepare-release.mjs` to confirm every path the package's
+`exports`/`main`/`module`/`types` fields reference actually exists on
+disk. The guard fails the build if e.g. you ran `pnpm run build` (dev
+only) and then tried to publish — the `.prod.{js,mjs}` files would be
+missing.
 
-This will also update scripts/error-codes/codes.json, the mapping of
-production error codes to error messages. It's imperative to commit the result
-of this before tagging a release.
+Each package is its own publish root: `packages/<name>/` IS the
+publishable npm package after `build-release`. `pnpm publish` is run
+directly from that directory by `scripts/npm/release.mjs` so pnpm's
+automatic `workspace:*` rewriting and the `files` whitelist do the
+right thing without an intermediate `npm/` copy step.
 
-### npm run ci-check
+This will also update `scripts/error-codes/codes.json`, the mapping of
+production error codes to error messages. It's imperative to commit the
+result of this before tagging a release.
+
+### pnpm run ci-check
 
 Check flow, TypeScript, prettier and eslint for issues. A good command to run
 after committing (which will auto-fix most prettier issues) and before pushing
 a PR.
 
-### npm run flow
+### pnpm run flow
 
 Check the Flow types
 
-### npm run tsc
+### pnpm run tsc
 
 Check the TypeScript types
 
-### npm run tsc-extension
+### pnpm run tsc-extension
 
 Check the TypeScript types of the lexical-devtools extension
 
-### npm run test-unit
+### pnpm run test-unit
 
 Run the unit tests
 
-### npm run lint
+### pnpm run lint
 
 Run eslint
 
 ## Scripts for release managers
 
-### npm run extract-codes
+### pnpm run extract-codes
 
 This will run a build that also extracts the generated error codes.json file.
 
@@ -243,33 +262,161 @@ as a failsafe to ensure that these codes are up to date in a release.
 This command runs a development build to extract the codes which is much
 faster as it is not doing any optimization/minification steps.
 
-### npm run increment-version
+### pnpm run increment-version
 
 Increment the monorepo version. The `-i` argument must be one of
 `minor` | `patch` | `prerelease`.
 
 The postversion script will:
 - Create a local `${npm_package_version}__release` branch
-- `npm run update-version` to update example and sub-package monorepo dependencies
-- `npm install` to update the package-lock.json
-- `npm run update-packages` to update other generated config
-- `npm run extract-codes` to extract the error codes
-- `npm run update-changelog` to update the changelog (if it's not a prerelease)
+- `pnpm run update-version` to update example and sub-package monorepo dependencies
+- `pnpm install` to update the pnpm-lock.yaml
+- `pnpm run update-packages` to update other generated config
+- `pnpm run extract-codes` to extract the error codes
+- `pnpm run update-changelog` to update the changelog (if it's not a prerelease)
 - Create a version commit and tag from the branch
 
 This is typically executed through the `version.yml` GitHub Workflow which
 will also push the tag and branch.
 
-### npm run changelog
+### pnpm run changelog
 
 Update the changelog from git history.
 
-### npm run release
+### pnpm run release
 
 *Prerequisites:* all of the previous release manager scripts,
 plus creating a tag in git, and likely other steps.
 
 Runs prepare-release to do a full build and then uploads to npm.
+
+### pnpm run setup-trusted-publishing
+
+One-time (idempotent) helper to register every public package with
+[npm trusted publishing](https://docs.npmjs.com/trusted-publishers).
+Re-run it whenever a new public package is added.
+
+#### Prerequisites
+
+- Node.js — whatever the repo's root `package.json#engines.node` says (currently `>=20.19.0`). Running with Node 24+ is recommended because that's what CI uses for publishes.
+- pnpm — pinned by `package.json#packageManager` (currently `pnpm@10.34.1`). Activate with [corepack](https://nodejs.org/api/corepack.html) or install directly.
+- npm CLI — **`npm ≥ 11.10`** (`npm i -g npm@latest`). The `npm trust` subcommand was added in npm 11; older versions will fail the preflight check.
+- An authenticated npm session (`npm login --registry https://registry.npmjs.org`) on a publisher account that has **account-level 2FA enabled** and write access to every `@lexical/*` package.
+
+#### Usage
+
+Run in check-only mode first:
+
+```bash
+pnpm run setup-trusted-publishing
+```
+
+For each public package in the monorepo, it queries
+`https://registry.npmjs.org` and reports whether the name is already
+claimed. Packages that *don't* exist on the registry are listed; you
+can re-run with `--bootstrap` to publish a deprecated
+`0.0.0-bootstrap.0` placeholder under the `bootstrap` dist-tag so the
+name can be claimed:
+
+```bash
+npm login --registry https://registry.npmjs.org
+pnpm run setup-trusted-publishing --bootstrap
+```
+
+Once a package exists on the registry, you can configure trusted
+publishing for it programmatically by adding `--setup-trust`. This
+runs `npm trust github` under the hood (requires `npm` ≥ 11.10 and an
+authenticated session with account-level 2FA on the publishing
+account), and is idempotent — the script reads the existing trust
+configuration for each package via a read-only registry call (no OTP)
+and skips packages whose config already matches:
+
+```bash
+npm login --registry https://registry.npmjs.org
+pnpm run setup-trusted-publishing --setup-trust
+```
+
+`npm trust github` is a write operation, so each package that *does*
+need configuring will trigger a one-time-password / web-auth prompt.
+On the first prompt npm prints a URL; open it in a browser, sign in,
+and tick **"Skip two-factor authentication for the next 5 minutes"**.
+Subsequent packages in the same run will then go through without
+re-prompting. The script also inserts a small (~2 s) pause between
+calls to stay under the registry's `E429` rate limit.
+
+For full first-time setup of a brand-new monorepo, combine both flags:
+
+```bash
+pnpm run setup-trusted-publishing --bootstrap --setup-trust
+```
+
+When adding a **single** new package to an existing monorepo — the common
+case going forward — pass its name so the run only touches that package
+instead of re-checking all 30+ already-configured ones (which just prints a
+wall of `CONFLICT` lines). The name can be the full npm name or the unscoped
+short name, and `--package` / positional args are interchangeable and
+repeatable:
+
+```bash
+pnpm run setup-trusted-publishing --bootstrap --setup-trust @lexical/a11y
+# equivalently: --package a11y
+```
+
+Useful flags:
+
+- `--package <name>` (or a positional `<name>`, repeatable) — restrict the run to the given package(s), matched by full npm name (`@lexical/a11y`) or unscoped short name (`a11y`). Omit to process every public package.
+- `--dry-run` — print what would happen without touching the registry (works with both `--bootstrap` and `--setup-trust`)
+- `--workflow <filename>` — override the workflow filename (default `pre-release.yml`)
+- `--repo <owner/name>` — override the GitHub repo (default `facebook/lexical`)
+- `--stub-version <semver>` — override the placeholder version (default `0.0.0-bootstrap.0`)
+- `--registry <url>` — override the npm registry
+
+In the default (check-only) mode the script also prints the npmjs.com
+`/access` URL for each existing package and the exact values to enter
+manually, as a fallback for when `npm trust github` isn't an option.
+
+### Testing trusted publishing from a PR branch
+
+The "Publish to NPM" workflow (`pre-release.yml`) exposes `ref`,
+`channel`, and `increment-version` inputs so it doubles as a test
+harness. Picking a branch in the "Run workflow" dropdown selects
+which version of the workflow files run, and the inputs determine
+what actually gets published. The workflow has no NPM_TOKEN secret to
+fall back on — publishes always go through OIDC trusted publishing —
+so a misconfigured trust setup fails loudly rather than silently
+falling through to token auth.
+
+A safe end-to-end test looks like:
+
+| Input | Value |
+| -- | -- |
+| Branch (dropdown) | your PR branch |
+| `ref` | your PR branch (same value) |
+| `channel` | `dev` |
+| `increment-version` | checked |
+| `ignore-previously-published` | unchecked |
+
+With `increment-version` on, the run bumps `package.json` to a fresh
+prerelease (e.g. `0.46.0-dev.0`), commits + tags it on a `dev__release`
+branch on origin, and publishes the monorepo under the `dev` dist-tag
+via OIDC. The `latest` tag is untouched, so default `npm install`
+users are unaffected. After it succeeds:
+
+```bash
+npm view lexical@dev version     # → the just-published prerelease
+npm view lexical@latest version  # → unchanged
+```
+
+Cleanup (the prerelease itself can't be reused, but the git refs
+should go):
+
+```bash
+git push --delete origin v0.46.0-dev.0 dev__release 0.46.0-dev.0__release
+```
+
+The `increment-version=true + channel=latest` combination is refused
+by the workflow's guard job — real `latest` releases must go through
+`version.yml` first.
 
 ## Release Procedure
 
@@ -287,3 +434,26 @@ from main in step 4).
 4. After PR is merged to main, publish to NPM with the Github Actions "Publish to NPM" workflow (`pre-release.yml`)
 5. Create a GitHub release from the tag created in step 1, manually editing the release notes
 6. Announce the release in #announcements on Discord
+
+## Release Protocol
+
+1. All PRs with breaking changes must have `[Breaking Change]` in the PR's title with documentation of what followup actions consumers of the lexical library need to be aware of.
+2. Monthly releases happen on the last week of the month, with a minor increment (eg. v0.20+1.0).
+3. Anything in between will be a patch increment (eg. 0.20.0+1), unless there is a breaking change. 
+
+## Website Team Page
+
+The [team page](https://lexical.dev/community) displays core team
+members, emeriti, and distinguished contributors. The `team.json` data is
+generated from GitHub contributor information and some predetermined decisions in
+the script to acknowledge emeriti and historically important distinguished contributors.
+
+To update the team page data:
+
+```bash
+pnpm run update-team-data
+```
+
+This fetches the latest contributor data from GitHub and categorizes team members
+based on recent activity (last 12 months). See `packages/lexical-website/src/data/README.md`
+for more details on configuration and team categorization logic.

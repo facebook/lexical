@@ -6,45 +6,62 @@
  *
  */
 
-import type {SerializedListItemNode} from './LexicalListItemNode';
-import type {ListType, SerializedListNode} from './LexicalListNode';
-import type {LexicalCommand} from 'lexical';
-
-import {createCommand} from 'lexical';
-
-import {$handleListInsertParagraph, insertList, removeList} from './formatList';
+import {INSERT_CHECK_LIST_COMMAND, registerCheckList} from './checkList';
+import {
+  $handleListInsertParagraph,
+  $insertList,
+  $removeList,
+} from './formatList';
 import {
   $createListItemNode,
   $isListItemNode,
   ListItemNode,
+  type SerializedListItemNode,
 } from './LexicalListItemNode';
-import {$createListNode, $isListNode, ListNode} from './LexicalListNode';
+import {
+  $createListNode,
+  $isListNode,
+  ListNode,
+  type ListNodeTagType,
+  type ListType,
+  type SerializedListNode,
+} from './LexicalListNode';
 import {$getListDepth} from './utils';
+
+export {
+  type CheckListConfig,
+  CheckListExtension,
+  type ListConfig,
+  ListExtension,
+  ListImportExtension,
+} from './LexicalListExtension';
+export {ListImportRules, ListSchema} from './ListImportExtension';
+export {
+  INSERT_ORDERED_LIST_COMMAND,
+  INSERT_UNORDERED_LIST_COMMAND,
+  registerList,
+  type RegisterListOptions,
+  registerListStrictIndentTransform,
+  REMOVE_LIST_COMMAND,
+  UPDATE_LIST_START_COMMAND,
+} from './registerList';
+export {WordListImportExtension} from './WordListImportExtension';
 
 export {
   $createListItemNode,
   $createListNode,
   $getListDepth,
   $handleListInsertParagraph,
+  $insertList,
   $isListItemNode,
   $isListNode,
-  insertList,
+  $removeList,
+  INSERT_CHECK_LIST_COMMAND,
   ListItemNode,
   ListNode,
+  ListNodeTagType,
   ListType,
-  removeList,
+  registerCheckList,
   SerializedListItemNode,
   SerializedListNode,
 };
-
-export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =
-  createCommand('INSERT_UNORDERED_LIST_COMMAND');
-export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_ORDERED_LIST_COMMAND',
-);
-export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_CHECK_LIST_COMMAND',
-);
-export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
-  'REMOVE_LIST_COMMAND',
-);

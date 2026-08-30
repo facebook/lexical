@@ -11,14 +11,15 @@ import babel from '@rollup/plugin-babel';
 import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import * as path from 'path';
-import {defineConfig, UserManifest} from 'wxt';
+import {defineConfig, type UserManifest} from 'wxt';
 
-import moduleResolution from '../shared/viteModuleResolution';
+import transformErrorMessages from '../../scripts/error-codes/transform-error-messages.mjs';
+import moduleResolution from '../../scripts/vite/viteModuleResolution';
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   debug: !!process.env.DEBUG_WXT,
-  manifest: (configEnv) => {
+  manifest: configEnv => {
     const browserName =
       configEnv.browser.charAt(0).toUpperCase() + configEnv.browser.slice(1);
 
@@ -41,7 +42,6 @@ export default defineConfig({
     }
 
     const manifestConf: UserManifest = {
-      author: 'Lexical',
       description: `Adds Lexical debugging tools to the ${browserName} Developer Tools.`,
       homepage_url: 'https://lexical.dev/',
       icons: {
@@ -55,7 +55,6 @@ export default defineConfig({
       version: version + `.${buildVersion}`,
       web_accessible_resources: [
         {
-          extension_ids: [],
           matches: ['<all_urls>'],
           resources: ['injected.js'],
         },
@@ -74,14 +73,65 @@ export default defineConfig({
       // $ openssl genrsa 2048 | openssl pkcs8 -topk8 -nocrypt -out key.pem # private key
       // $ openssl rsa -in key.pem -pubout -outform DER | openssl base64 -A # this key below (strip % at the end)
       // $ openssl rsa -in key.pem -pubout -outform DER | shasum -a 256 | head -c32 | tr 0-9a-f a-p # extension ID
-      // @ts-expect-error https://github.com/wxt-dev/wxt/issues/521#issuecomment-1978147707
       manifestConf.key =
         'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAve7nOT9MtnECslFqKw5x0a/OvR/ZzsDBvcR3SIpQg446O7tKwFZTOQWgmceKZJAPT03Ztwdj7qJfAteSwaW4Aeoo6gK5BU7lAAAXeZNhzmuLSJhE4eu8KVDwck16iEx1C/IBKCypM+7H1wjwSVsjGpij2EDiH4Pw/aJ9LLRia7LO3xXTQTYzaJCzx1A+5JiFo5Y9tTtORdyFV/5bfaxibentXNxm52sj3spBe3wC7BuNoYmto9YdKhYk8Xsvs0u8tC7lRae9h57flLCmqPTi9ho4PkJXs4v/okxtGN2Lhwf3Az3ws1LAUqzGJrNK598IRU70a5ONtqXUc3vdGVJxtwIDAQAB';
     }
 
     return manifestConf;
   },
-  runner: {
+  srcDir: './src',
+  vite: configEnv => {
+    const isProd = configEnv.mode !== 'development';
+    const {version} = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, 'package.json'), {
+        encoding: 'utf8',
+      }),
+    );
+
+    return {
+      define: {
+        __DEV__: !isProd,
+        'process.env.LEXICAL_VERSION': JSON.stringify(
+          `${version}+${isProd ? 'prod' : 'dev'}.devtools`,
+        ),
+      },
+      plugins: [
+        babel({
+          babelHelpers: 'bundled',
+          babelrc: false,
+          configFile: false,
+          exclude: '**/node_modules/**',
+          extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
+          plugins: [
+            '@babel/plugin-transform-flow-strip-types',
+            [
+              transformErrorMessages,
+              {
+                noMinify: true,
+              },
+            ],
+          ],
+          presets: [['@babel/preset-react', {runtime: 'automatic'}]],
+        }),
+        react(),
+      ],
+      resolve: {
+        alias: [
+          // See lexicalForExtension.ts for more details
+          {
+            find: /lexical$/,
+            replacement: path.resolve('./src/lexicalForExtension.ts'),
+          },
+          {
+            find: 'lexicalOriginal',
+            replacement: path.resolve('../lexical/src/index.ts'),
+          },
+          ...(moduleResolution('source') as Alias[]),
+        ],
+      },
+    };
+  },
+  webExt: {
     binaries: {
       edge: '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
     },
@@ -100,46 +150,6 @@ export default defineConfig({
       // 'chrome://inspect/#service-workers',
     ],
   },
-  srcDir: './src',
-  vite: (configEnv) => ({
-    define: {
-      __DEV__: configEnv.mode === 'development',
-    },
-    plugins: [
-      babel({
-        babelHelpers: 'bundled',
-        babelrc: false,
-        configFile: false,
-        exclude: '/**/node_modules/**',
-        extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
-        plugins: [
-          '@babel/plugin-transform-flow-strip-types',
-          [
-            require('../../scripts/error-codes/transform-error-messages'),
-            {
-              noMinify: true,
-            },
-          ],
-        ],
-        presets: [['@babel/preset-react', {runtime: 'automatic'}]],
-      }),
-      react(),
-    ],
-    resolve: {
-      alias: [
-        // See lexicalForExtension.ts for more details
-        {
-          find: /lexical$/,
-          replacement: path.resolve('./src/lexicalForExtension.ts'),
-        },
-        {
-          find: 'lexicalOriginal',
-          replacement: path.resolve('../lexical/src/index.ts'),
-        },
-        ...(moduleResolution('source') as Alias[]),
-      ],
-    },
-  }),
   zip: {
     sourcesRoot: path.resolve('../..'),
   },

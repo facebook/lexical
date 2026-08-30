@@ -17,7 +17,7 @@ import type {
 declare export function createHeadlessEditor(editorConfig?: {
   editorState?: EditorState,
   namespace?: string,
-  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
+  nodes?: ReadonlyArray<Class<LexicalNode>>,
   onError?: (error: Error) => void,
   parentEditor?: LexicalEditor,
   editable?: boolean,

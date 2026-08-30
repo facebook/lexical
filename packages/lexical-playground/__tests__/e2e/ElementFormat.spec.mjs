@@ -38,14 +38,11 @@ test.describe('Element format', () => {
       page,
       html`
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
-          dir="ltr"
-          style="padding-inline-start: calc(80px); text-align: center;">
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+          dir="auto"
+          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px)); text-align: center;">
           <span data-lexical-text="true">Hello</span>
-          <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            href="https://lexical.io">
+          <a class="PlaygroundEditorTheme__link" href="https://lexical.io">
             <span data-lexical-text="true">https://lexical.io</span>
           </a>
           <span data-lexical-text="true">world</span>
@@ -67,8 +64,11 @@ test.describe('Element format', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" style="text-align: center">
-          <br />
+        <p
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto"
+          style="text-align: center">
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

@@ -23,236 +23,250 @@ import {
   html,
   initialize,
   insertSampleImage,
+  IS_COLLAB_V2,
   SAMPLE_IMAGE_URL,
   selectFromAlignDropdown,
   selectFromInsertDropdown,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 test.describe('Toolbar', () => {
   test.beforeEach(({isCollab, page}) =>
-    initialize({isCollab, page, showNestedEditorTreeView: false}),
+    initialize({
+      isCollab,
+      page,
+      showNestedEditorTreeView: false,
+      tableHorizontalScroll: false,
+    }),
   );
 
-  test(
-    'Insert image caption + table',
-    {
-      tag: '@flaky',
-    },
-    async ({page, isPlainText}) => {
-      test.skip(isPlainText);
-      await focusEditor(page);
+  test('Insert image caption + table', async ({page, isPlainText}) => {
+    // TODO(collab-v2): nested editors are not supported yet
+    test.skip(isPlainText || IS_COLLAB_V2);
+    await focusEditor(page);
 
-      // Add caption
-      await insertSampleImage(page);
-      // Catch flakiness earlier
-      await assertHTML(
-        page,
-        html`
-          <p>
-            <span contenteditable="false" data-lexical-decorator="true">
-              <div draggable="false">
-                <img
-                  alt="Yellow flower in tilt shift lens"
-                  draggable="false"
-                  src="${SAMPLE_IMAGE_URL}" />
+    // Add caption
+    await insertSampleImage(page);
+    // The image is rendered behind React.Suspense (fallback={null}) and only
+    // appears once the sample asset finishes loading; under parallel load
+    // that can exceed assertHTML's 5s retry window, leaving an empty
+    // decorator. Wait for the <img> explicitly before asserting.
+    await waitForSelector(page, '.editor-image img', {timeout: 30000});
+    // Catch flakiness earlier
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span contenteditable="false" data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}" />
+            </div>
+          </span>
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+      undefined,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
+    );
+    await click(page, '.editor-image img');
+    await click(page, '.image-caption-button');
+    await focus(page, '.ImageNode__contentEditable');
+    await page.keyboard.type('Yellow flower in tilt shift lens');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span contenteditable="false" data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}" />
+            </div>
+            <div>
+              <div
+                contenteditable="true"
+                role="textbox"
+                spellcheck="true"
+                aria-placeholder="Enter a caption..."
+                data-lexical-editor="true">
+                <p dir="auto">
+                  <span data-lexical-text="true">
+                    Yellow flower in tilt shift lens
+                  </span>
+                </p>
               </div>
-            </span>
-            <br />
-          </p>
-        `,
-        undefined,
-        {
-          ignoreClasses: true,
-          ignoreInlineStyles: true,
-        },
-      );
-      await click(page, '.editor-image img');
-      await click(page, '.image-caption-button');
-      await focus(page, '.ImageNode__contentEditable');
-      await page.keyboard.type('Yellow flower in tilt shift lens');
-      await assertHTML(
-        page,
-        html`
-          <p>
-            <span contenteditable="false" data-lexical-decorator="true">
-              <div draggable="false">
-                <img
-                  alt="Yellow flower in tilt shift lens"
-                  draggable="false"
-                  src="${SAMPLE_IMAGE_URL}" />
-              </div>
-              <div>
-                <div
-                  contenteditable="true"
-                  role="textbox"
-                  spellcheck="true"
-                  aria-placeholder="Enter a caption..."
-                  data-lexical-editor="true">
-                  <p dir="ltr">
-                    <span data-lexical-text="true">
-                      Yellow flower in tilt shift lens
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </span>
-            <br />
-          </p>
-        `,
-        undefined,
-        {
-          ignoreClasses: true,
-          ignoreInlineStyles: true,
-        },
-        (actualHtml) =>
-          // flaky fix: remove the extra <p><br /></p> that appears occasionally in CI runs
-          actualHtml.replace(
-            html`
-              <p dir="ltr">
-                <span data-lexical-text="true">
-                  Yellow flower in tilt shift lens
-                </span>
-              </p>
-              <p><br /></p>
-            `,
-            html`
-              <p dir="ltr">
-                <span data-lexical-text="true">
-                  Yellow flower in tilt shift lens
-                </span>
-              </p>
-            `,
-          ),
-      );
+            </div>
+          </span>
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+      undefined,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
+      actualHtml =>
+        // flaky fix: remove the extra <p dir="auto"><br data-lexical-managed-linebreak="true" /></p> that appears occasionally in CI runs
+        actualHtml.replace(
+          html`
+            <p dir="auto">
+              <span data-lexical-text="true">
+                Yellow flower in tilt shift lens
+              </span>
+            </p>
+            <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+          `,
+          html`
+            <p dir="auto">
+              <span data-lexical-text="true">
+                Yellow flower in tilt shift lens
+              </span>
+            </p>
+          `,
+        ),
+    );
 
-      // Delete image
-      // TODO Revisit the a11y side of NestedEditors
-      await evaluate(page, () => {
-        const p = document.querySelector('[contenteditable="true"] p');
-        document.getSelection().setBaseAndExtent(p, 0, p, 0);
-      });
-      await selectAll(page);
-      await page.keyboard.press('Delete');
-      await assertHTML(
-        page,
-        html`
-          <p><br /></p>
-        `,
-        undefined,
-        {
-          ignoreClasses: true,
-          ignoreInlineStyles: true,
-        },
-      );
+    // Delete image
+    // TODO Revisit the a11y side of NestedEditors
+    await evaluate(page, () => {
+      const p = document.querySelector('[contenteditable="true"] p');
+      document.getSelection().setBaseAndExtent(p, 0, p, 0);
+    });
+    await selectAll(page);
+    await page.keyboard.press('Delete');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+      `,
+      undefined,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
+    );
 
-      // Add table
-      await selectFromInsertDropdown(page, '.table');
-      await click(page, '[data-test-id="table-model-confirm-insert"] button');
+    // Add table
+    await selectFromInsertDropdown(page, '.table');
+    await click(page, '[data-test-id="table-model-confirm-insert"] button');
 
-      await assertHTML(
-        page,
-        html`
-          <p>
-            <br />
-          </p>
-          <table>
-            <tr>
-              <th>
-                <p><br /></p>
-              </th>
-              <th>
-                <p><br /></p>
-              </th>
-              <th>
-                <p><br /></p>
-              </th>
-              <th>
-                <p><br /></p>
-              </th>
-              <th>
-                <p><br /></p>
-              </th>
-            </tr>
-            <tr>
-              <th>
-                <p><br /></p>
-              </th>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <p><br /></p>
-              </th>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <p><br /></p>
-              </th>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <p><br /></p>
-              </th>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-              <td>
-                <p><br /></p>
-              </td>
-            </tr>
-          </table>
-          <p><br /></p>
-        `,
-        undefined,
-        {
-          ignoreClasses: true,
-          ignoreInlineStyles: true,
-        },
-      );
-    },
-  );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+        <table dir="auto">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr dir="auto">
+            <th dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </th>
+            <th dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </th>
+            <th dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </th>
+            <th dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </th>
+            <th dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </th>
+          </tr>
+          <tr dir="auto">
+            <th dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </th>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </th>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </th>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </th>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+            </td>
+          </tr>
+        </table>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
+      `,
+      undefined,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
+    );
+  });
 
   test('Center align image', async ({page, isPlainText, isCollab}) => {
     // Image selection can't be synced in collab
@@ -264,7 +278,7 @@ test.describe('Toolbar', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -289,7 +303,7 @@ test.describe('Toolbar', () => {
               <div class="image-resizer image-resizer-nw"></div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -300,7 +314,10 @@ test.describe('Toolbar', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" style="text-align: center">
+        <p
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto"
+          style="text-align: center">
           <span
             class="editor-image"
             contenteditable="false"
@@ -325,7 +342,7 @@ test.describe('Toolbar', () => {
               <div class="image-resizer image-resizer-nw"></div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

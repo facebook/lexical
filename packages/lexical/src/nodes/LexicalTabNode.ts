@@ -6,17 +6,17 @@
  *
  */
 
-import type {DOMConversionMap, NodeKey} from '../LexicalNode';
+import type {EditorConfig} from '../LexicalEditor';
+import type {LexicalNode, NodeKey} from '../LexicalNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
-import {LexicalNode} from '../LexicalNode';
-import {$applyNodeReplacement} from '../LexicalUtils';
+import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {
-  SerializedTextNode,
-  TextDetailType,
-  TextModeType,
+  type SerializedTextNode,
+  type TextDetailType,
+  type TextModeType,
   TextNode,
 } from './LexicalTextNode';
 
@@ -24,53 +24,66 @@ export type SerializedTabNode = SerializedTextNode;
 
 /** @noInheritDoc */
 export class TabNode extends TextNode {
-  static getType(): string {
-    return 'tab';
+  $config() {
+    return this.config('tab', {extends: TextNode});
   }
 
-  static clone(node: TabNode): TabNode {
-    const newNode = new TabNode(node.__key);
-    // TabNode __text can be either '\t' or ''. insertText will remove the empty Node
-    newNode.__text = node.__text;
-    newNode.__format = node.__format;
-    newNode.__style = node.__style;
-    return newNode;
-  }
-
-  constructor(key?: NodeKey) {
+  // `key` carries an explicit `undefined` default (rather than the usual `?`)
+  // so the constructor reports zero required arguments, which lets `$config`
+  // synthesize the static `clone` by invoking the no-argument constructor.
+  constructor(key: NodeKey | undefined = undefined) {
     super('\t', key);
     this.__detail = IS_UNMERGEABLE;
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return null;
+  createDOM(config: EditorConfig): HTMLElement {
+    const dom = super.createDOM(config);
+    const classNames = getCachedClassNameArray(config.theme, 'tab');
+
+    if (classNames !== undefined) {
+      const domClassList = dom.classList;
+      domClassList.add(...classNames);
+    }
+    return dom;
   }
 
-  static importJSON(serializedTabNode: SerializedTabNode): TabNode {
-    const node = $createTabNode();
-    node.setFormat(serializedTabNode.format);
-    node.setStyle(serializedTabNode.style);
-    return node;
-  }
-
-  exportJSON(): SerializedTabNode {
-    return {
-      ...super.exportJSON(),
-      type: 'tab',
-      version: 1,
-    };
-  }
-
+  /**
+   * Always normalizes the stored content to `'\t'` regardless of input — see
+   * comment below for the rationale.
+   */
   setTextContent(_text: string): this {
-    invariant(false, 'TabNode does not support setTextContent');
+    // The stored content is canonical regardless of input. Safari's
+    // MutationObserver can deliver mid-IME-composition writes onto the
+    // TabNode's `\t` text node (verified with Korean), and `flushMutations`
+    // then calls this with the in-flight composition payload; throwing here
+    // cascaded through `onError` and froze the editor (#8596). The dropped
+    // check was guarding caller assumptions, not stored state — the
+    // reconciler renders the canonical content on the next update.
+    return super.setTextContent('\t');
   }
 
-  setDetail(_detail: TextDetailType | number): this {
-    invariant(false, 'TabNode does not support setDetail');
+  spliceText(
+    offset: number,
+    delCount: number,
+    newText: string,
+    moveSelection?: boolean,
+  ): TextNode {
+    invariant(
+      (newText === '' && delCount === 0) ||
+        (newText === '\t' && delCount === 1),
+      'TabNode does not support spliceText',
+    );
+    return this;
   }
 
-  setMode(_type: TextModeType): this {
-    invariant(false, 'TabNode does not support setMode');
+  setDetail(detail: TextDetailType | number): this {
+    invariant(detail === IS_UNMERGEABLE, 'TabNode does not support setDetail');
+    return this;
+  }
+
+  setMode(type: TextModeType): this {
+    invariant(type === 'normal', 'TabNode does not support setMode');
+    return this;
   }
 
   canInsertTextBefore(): boolean {
@@ -82,10 +95,12 @@ export class TabNode extends TextNode {
   }
 }
 
+/** Creates a TabNode representing a horizontal tab character. */
 export function $createTabNode(): TabNode {
   return $applyNodeReplacement(new TabNode());
 }
 
+/** Returns true if the given node is a TabNode. */
 export function $isTabNode(
   node: LexicalNode | null | undefined,
 ): node is TabNode {

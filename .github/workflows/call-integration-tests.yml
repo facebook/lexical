@@ -3,21 +3,23 @@ name: Lexical Integration Tests
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   integration:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20.15.1]
+        node-version: [24.x]
     env:
       CI: true
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-pnpm
         with:
           node-version: ${{ matrix.node-version }}
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - run: npm run test-integration
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: pnpm run test-integration
+      - run: pnpm run test-eslint-integration

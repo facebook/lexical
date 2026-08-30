@@ -6,25 +6,48 @@
  *
  */
 
-export {
-  getEndOfCodeInLine,
-  getStartOfCodeInLine,
-  PrismTokenizer,
-  registerCodeHighlighting,
-} from './CodeHighlighter';
+import * as LexicalCodePrism from '@lexical/code-prism';
+
+export type {SerializedCodeNode} from '@lexical/code-core';
 export {
   $createCodeHighlightNode,
+  $createCodeNode,
+  $getCodeLineDirection,
+  $getEndOfCodeInLine,
+  $getFirstCodeNodeOfLine,
+  $getLastCodeNodeOfLine,
+  $getStartOfCodeInLine,
   $isCodeHighlightNode,
-  CODE_LANGUAGE_FRIENDLY_NAME_MAP,
-  CODE_LANGUAGE_MAP,
+  $isCodeNode,
+  $outdentLeadingSpaces,
+  CodeExtension,
   CodeHighlightNode,
+  type CodeIndentConfig,
+  CodeIndentExtension,
+  CodeNode,
   DEFAULT_CODE_LANGUAGE,
-  getCodeLanguages,
   getDefaultCodeLanguage,
-  getFirstCodeNodeOfLine,
-  getLanguageFriendlyName,
-  getLastCodeNodeOfLine,
-  normalizeCodeLang,
-} from './CodeHighlightNode';
-export type {SerializedCodeNode} from './CodeNode';
-export {$createCodeNode, $isCodeNode, CodeNode} from './CodeNode';
+} from '@lexical/code-core';
+
+/** @deprecated moved to `@lexical/code-prism` */
+export const CODE_LANGUAGE_FRIENDLY_NAME_MAP =
+  LexicalCodePrism.CODE_LANGUAGE_FRIENDLY_NAME_MAP;
+/** @deprecated moved to `@lexical/code-prism` */
+export const CODE_LANGUAGE_MAP = LexicalCodePrism.CODE_LANGUAGE_MAP;
+/** @deprecated moved to `@lexical/code-prism` */
+export const getCodeLanguageOptions = LexicalCodePrism.getCodeLanguageOptions;
+/** @deprecated moved to `@lexical/code-prism` */
+export const getCodeLanguages = LexicalCodePrism.getCodeLanguages;
+/** @deprecated moved to `@lexical/code-prism` */
+export const getCodeThemeOptions = LexicalCodePrism.getCodeThemeOptions;
+/** @deprecated moved to `@lexical/code-prism` */
+export const getLanguageFriendlyName = LexicalCodePrism.getLanguageFriendlyName;
+/** @deprecated renamed to `normalizeCodeLanguage` and moved to `@lexical/code-prism` */
+export const normalizeCodeLang = LexicalCodePrism.normalizeCodeLanguage;
+/** @deprecated moved to `@lexical/code-prism` */
+export const normalizeCodeLanguage = LexicalCodePrism.normalizeCodeLanguage;
+/** @deprecated moved to `@lexical/code-prism` */
+export const PrismTokenizer = LexicalCodePrism.PrismTokenizer;
+/** @deprecated moved to `@lexical/code-prism` */
+export const registerCodeHighlighting =
+  LexicalCodePrism.registerCodeHighlighting;

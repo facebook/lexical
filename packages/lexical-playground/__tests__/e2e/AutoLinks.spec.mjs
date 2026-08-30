@@ -38,19 +38,19 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="ltr" href="http://example.com">
+          <a href="http://example.com">
             <span data-lexical-text="true">http://example.com</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="ltr" href="https://example.com/path?with=query#and-hash">
+          <a href="https://example.com/path?with=query#and-hash">
             <span data-lexical-text="true">
               https://example.com/path?with=query#and-hash
             </span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="ltr" href="https://www.example.com">
+          <a href="https://www.example.com">
             <span data-lexical-text="true">www.example.com</span>
           </a>
         </p>
@@ -72,13 +72,13 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="ltr" href="mailto:name@example.com">
+          <a href="mailto:name@example.com">
             <span data-lexical-text="true">name@example.com</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="ltr" href="mailto:anothername@test.example.uk">
+          <a href="mailto:anothername@test.example.uk">
             <span data-lexical-text="true">anothername@test.example.uk</span>
           </a>
           <span data-lexical-text="true">!</span>
@@ -95,8 +95,8 @@ test.describe('Auto Links', () => {
   }) => {
     test.skip(isPlainText);
     const htmlWithLink = html`
-      <p dir="ltr">
-        <a dir="ltr" href="http://example.com">
+      <p dir="auto">
+        <a href="http://example.com">
           <span data-lexical-text="true">http://example.com</span>
         </a>
       </p>
@@ -111,7 +111,7 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">http://example.com!</span>
         </p>
       `,
@@ -127,7 +127,7 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">!http://example.com</span>
         </p>
       `,
@@ -144,7 +144,7 @@ test.describe('Auto Links', () => {
       page,
       htmlWithLink +
         html`
-          <p><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         `,
       undefined,
       {ignoreClasses: true},
@@ -166,19 +166,19 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="ltr" href="http://example.com">
+          <a href="http://example.com">
             <span data-lexical-text="true">http://example.com</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="ltr" href="https://example.com/path?with=query#and-hash">
+          <a href="https://example.com/path?with=query#and-hash">
             <span data-lexical-text="true">
               https://example.com/path?with=query#and-hash
             </span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="ltr" href="https://www.example.com">
+          <a href="https://www.example.com">
             <span data-lexical-text="true">www.example.com</span>
           </a>
         </p>
@@ -201,17 +201,17 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="ltr" href="mailto:name@example.com">
+          <a href="mailto:name@example.com">
             <span data-lexical-text="true">name@example.com</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="ltr" href="mailto:anothername@test.example.uk">
+          <a href="mailto:anothername@test.example.uk">
             <span data-lexical-text="true">anothername@test.example.uk</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a dir="ltr" href="https://www.example.com">
+          <a href="https://www.example.com">
             <span data-lexical-text="true">www.example.com</span>
           </a>
           <span data-lexical-text="true">!</span>
@@ -234,8 +234,8 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
+        <p dir="auto">
+          <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">hm</span>
           </a>
         </p>
@@ -249,8 +249,8 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noreferrer">
+        <p dir="auto">
+          <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">https://facebook.com</span>
           </a>
         </p>
@@ -273,20 +273,20 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p>
-          <a dir="ltr" href="https://1.com/">
+        <p dir="auto">
+          <a href="https://1.com/">
             <span data-lexical-text="true">https://1.com/</span>
           </a>
           <span data-lexical-text="true">,</span>
-          <a dir="ltr" href="https://2.com/">
+          <a href="https://2.com/">
             <span data-lexical-text="true">https://2.com/</span>
           </a>
           <span data-lexical-text="true">;;;</span>
-          <a dir="ltr" href="https://3.com">
+          <a href="https://3.com">
             <span data-lexical-text="true">https://3.com</span>
           </a>
           <span data-lexical-text="true">;</span>
-          <a dir="ltr" href="mailto:name@domain.uk">
+          <a href="mailto:name@domain.uk">
             <span data-lexical-text="true">name@domain.uk</span>
           </a>
           <span data-lexical-text="true">;</span>
@@ -307,24 +307,24 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p>
-          <a dir="ltr" href="https://1.com/">
+        <p dir="auto">
+          <a href="https://1.com/">
             <span data-lexical-text="true">https://1.com/</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a dir="ltr" href="https://2.com/">
+          <a href="https://2.com/">
             <span data-lexical-text="true">https://2.com/</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a dir="ltr" href="https://3.com/">
+          <a href="https://3.com/">
             <span data-lexical-text="true">https://3.com/</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a dir="ltr" href="https://4.com/">
+          <a href="https://4.com/">
             <span data-lexical-text="true">https://4.com/</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a dir="ltr" href="mailto:name-lastname@meta.com">
+          <a href="mailto:name-lastname@meta.com">
             <span data-lexical-text="true">name-lastname@meta.com</span>
           </a>
         </p>
@@ -345,9 +345,9 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">Hellohttps://example.com</span>
-          <a dir="ltr" href="https://example.com">
+          <a href="https://example.com">
             <span data-lexical-text="true">https://example.com</span>
           </a>
         </p>
@@ -370,15 +370,15 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">
             Hello name@example.c name@example.1
           </span>
-          <a dir="ltr" href="mailto:name-lastname@example.com">
+          <a href="mailto:name-lastname@example.com">
             <span data-lexical-text="true">name-lastname@example.com</span>
           </a>
           <span data-lexical-text="true"></span>
-          <a dir="ltr" href="mailto:name.lastname@meta.com">
+          <a href="mailto:name.lastname@meta.com">
             <span data-lexical-text="true">name.lastname@meta.com</span>
           </a>
         </p>
@@ -405,7 +405,7 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">Hellohttp://example.</span>
           <strong data-lexical-text="true">com</strong>
           <span data-lexical-text="true">and more</span>
@@ -423,9 +423,9 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="ltr" href="http://example.com">
+          <a href="http://example.com">
             <span data-lexical-text="true">http://example.</span>
             <strong data-lexical-text="true">com</strong>
           </a>
@@ -453,8 +453,8 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
-          <span style="font-size: 19px;" data-lexical-text="true">
+        <p dir="auto">
+          <span style="font-size: 20px;" data-lexical-text="true">
             Hellohttp://example.com and more
           </span>
         </p>
@@ -471,14 +471,14 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
-          <span style="font-size: 19px;" data-lexical-text="true">Hello</span>
-          <a dir="ltr" href="http://example.com">
-            <span style="font-size: 19px;" data-lexical-text="true">
+        <p dir="auto">
+          <span style="font-size: 20px;" data-lexical-text="true">Hello</span>
+          <a href="http://example.com">
+            <span style="font-size: 20px;" data-lexical-text="true">
               http://example.com
             </span>
           </a>
-          <span style="font-size: 19px;" data-lexical-text="true">
+          <span style="font-size: 20px;" data-lexical-text="true">
             and more
           </span>
         </p>
@@ -488,8 +488,8 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Can convert URLs into links', async ({page, isPlainText}) => {
-    const testUrls = [
+  test.describe('Can convert URL into an autolink', () => {
+    [
       // Basic URLs
       'http://example.com', // Standard HTTP URL
       'https://example.com', // Standard HTTPS URL
@@ -538,41 +538,34 @@ test.describe('Auto Links', () => {
       // Edge Cases
       'http://foo.bar', // Minimal URL with uncommon TLD
       'https://foo.bar', // HTTPS minimal URL with uncommon TLD
-    ];
+    ].forEach(testUrl =>
+      test(testUrl, async ({page, isPlainText}) => {
+        test.skip(isPlainText);
+        await focusEditor(page);
+        await page.keyboard.type(`${testUrl} ltr`);
 
-    test.skip(isPlainText);
-    await focusEditor(page);
-    await page.keyboard.type(testUrls.join(' ') + ' ');
+        const rawUrl = testUrl.replaceAll(/&/g, '&amp;');
+        const url = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
 
-    let expectedHTML = '';
-    for (let url of testUrls) {
-      url = url.replaceAll(/&/g, '&amp;');
-      const rawUrl = url;
-
-      if (!url.startsWith('http')) {
-        url = `https://${url}`;
-      }
-
-      expectedHTML += `
-          <a href="${url}" dir="ltr">
-            <span data-lexical-text="true">${rawUrl}</span>
-          </a>
-          <span data-lexical-text="true"></span>
-      `;
-    }
-
-    await assertHTML(
-      page,
-      html`
-        <p dir="ltr">${expectedHTML}</p>
-      `,
-      undefined,
-      {ignoreClasses: true},
+        await assertHTML(
+          page,
+          html`
+            <p dir="auto">
+              <a href="${url}">
+                <span data-lexical-text="true">${rawUrl}</span>
+              </a>
+              <span data-lexical-text="true">ltr</span>
+            </p>
+          `,
+          undefined,
+          {ignoreClasses: true},
+        );
+      }),
     );
   });
 
-  test('Can convert URLs into email links', async ({page, isPlainText}) => {
-    const testUrls = [
+  test.describe('Can convert URL into an email autolink', () => {
+    [
       // Email usecases
       'email@domain.com',
       'firstname.lastname@domain.com',
@@ -586,29 +579,28 @@ test.describe('Auto Links', () => {
       'email@domain.name',
       'email@domain.co.uk',
       'firstname-lastname@domain.com',
-    ];
-
-    test.skip(isPlainText);
-    await focusEditor(page);
-    await page.keyboard.type(testUrls.join(' ') + ' ');
-
-    let expectedHTML = '';
-    for (const url of testUrls) {
-      expectedHTML += `
-          <a href='mailto:${url}' dir="ltr">
-            <span data-lexical-text="true">${url}</span>
-          </a>
-          <span data-lexical-text="true"></span>
-      `;
-    }
-
-    await assertHTML(
-      page,
-      html`
-        <p dir="ltr">${expectedHTML}</p>
-      `,
-      undefined,
-      {ignoreClasses: true},
+    ].forEach(testUrl =>
+      test(testUrl, async ({page, isPlainText}) => {
+        test.skip(isPlainText);
+        await focusEditor(page);
+        await page.keyboard.type(`${testUrl} ltr`);
+        const url = testUrl;
+        // prevent linter from rewriting this to use double quotes
+        const href = `href='mailto:${url}'`;
+        await assertHTML(
+          page,
+          html`
+            <p dir="auto">
+              <a ${href}>
+                <span data-lexical-text="true">${url}</span>
+              </a>
+              <span data-lexical-text="true">ltr</span>
+            </p>
+          `,
+          undefined,
+          {ignoreClasses: true},
+        );
+      }),
     );
   });
 
@@ -620,9 +612,6 @@ test.describe('Auto Links', () => {
       // Invalid Protocol
       'htp://example.com', // Typo in protocol
       'htps://example.com', // Typo in protocol
-
-      // Invalid TLDs
-      'http://example.abcdefg', // TLD too long
 
       // Spaces and Invalid Characters
       'http://exa mple.com', // Space in domain
@@ -651,7 +640,7 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">${testUrls.join(' ')}</span>
         </p>
       `,
@@ -690,7 +679,7 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">${testUrls.join(' ')}</span>
         </p>
       `,
@@ -710,9 +699,9 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="ltr" href="http://www.example.com">
+          <a href="http://www.example.com">
             <span data-lexical-text="true">http://www.example.com</span>
           </a>
           <span data-lexical-text="true">test</span>
@@ -729,9 +718,9 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <span class="PlaygroundEditorTheme__ltr" dir="ltr">
+          <span>
             <span data-lexical-text="true">http://www.example.com</span>
           </span>
           <span data-lexical-text="true">test</span>
@@ -742,18 +731,311 @@ test.describe('Auto Links', () => {
     );
 
     await click(page, 'span:has-text("http://www.example.com")');
-
-    pressInsertLinkButton(page);
+    await pressInsertLinkButton(page);
 
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <a dir="ltr" href="http://www.example.com">
+          <a href="http://www.example.com">
             <span data-lexical-text="true">http://www.example.com</span>
           </a>
           <span data-lexical-text="true">test</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Unlinked autolink is preserved when adding punctuation before or after it', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('http://example.com');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <a href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await focusEditor(page);
+    await click(page, 'a[href="http://example.com"]');
+    await click(page, 'div.link-editor div.link-trash');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    // Add non-url text after the link
+    await moveToLineEnd(page);
+    await page.keyboard.type('!');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+          <span data-lexical-text="true">!</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await page.keyboard.press('Backspace');
+
+    // Add non-url text before the link
+    await moveToLineBeginning(page);
+    await page.keyboard.type('!');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">!</span>
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+    await page.keyboard.press('Backspace');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Adding an invalid character will destruct an unlinked autolink', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('http://example.com');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <a href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await focusEditor(page);
+    await click(page, 'a[href="http://example.com"]');
+    await click(page, 'div.link-editor div.link-trash');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    // break autolink
+    await moveToLineEnd(page);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.type('[');
+    // plain text without wrapper
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">http://example.co[m</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Adding an emoji inside an unlinked autolink will destruct it', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('http://example.com');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <a href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await focusEditor(page);
+    await click(page, 'a[href="http://example.com"]');
+    await click(page, 'div.link-editor div.link-trash');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    // type emoji
+    await moveToLineEnd(page);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.type(':)');
+    // ':', ')' — is valid chars for link but inserting an emoji
+    // should break the link by splitting it into two text nodes
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">http://example.co</span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true">m</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Pressing Enter inside an AutoLinkNode does not insert extra paragraph', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('http://example.com');
+
+    // Wait for auto-link to be created
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <a href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    // Move cursor one character to the left (before the 'm')
+    await moveLeft(page, 1);
+
+    // Press Enter to split the link
+    await page.keyboard.press('Enter');
+
+    // Should produce exactly 2 paragraphs, not 3
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <a href="http://example.co">
+            <span data-lexical-text="true">http://example.co</span>
+          </a>
+        </p>
+        <p dir="auto">
+          <span data-lexical-text="true">m</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can convert Unicode url-like text with Arabic path into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.insertText('مرحبا https://qabilah.com/posts/عربي end');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">مرحبا</span>
+          <a href="https://qabilah.com/posts/عربي">
+            <span data-lexical-text="true">https://qabilah.com/posts/عربي</span>
+          </a>
+          <span data-lexical-text="true">end</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can convert Unicode url-like text with Korean IDN into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.insertText('go http://예시.한국/경로?키=값#부분 done');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">go</span>
+          <a href="http://예시.한국/경로?키=값#부분">
+            <span data-lexical-text="true">
+              http://예시.한국/경로?키=값#부분
+            </span>
+          </a>
+          <span data-lexical-text="true">done</span>
         </p>
       `,
       undefined,

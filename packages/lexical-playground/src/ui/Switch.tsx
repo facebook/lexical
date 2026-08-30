@@ -7,7 +7,7 @@
  */
 
 import * as React from 'react';
-import {useMemo} from 'react';
+import {type JSX, useMemo} from 'react';
 
 export default function Switch({
   checked,
@@ -20,6 +20,7 @@ export default function Switch({
   onClick: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   text: string;
 }>): JSX.Element {
+  // eslint-disable-next-line react-hooks/purity
   const buttonId = useMemo(() => 'id_' + Math.floor(Math.random() * 10000), []);
   return (
     <div className="switch" id={id}>

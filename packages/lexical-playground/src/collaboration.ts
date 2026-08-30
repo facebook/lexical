@@ -6,7 +6,8 @@
  *
  */
 
-import {Provider} from '@lexical/yjs';
+import type {Provider} from '@lexical/yjs';
+
 import {WebsocketProvider} from 'y-websocket';
 import {Doc} from 'yjs';
 
@@ -31,6 +32,10 @@ export function createWebsocketProvider(
     doc.load();
   }
 
+  return createWebsocketProviderWithDoc(id, doc);
+}
+
+export function createWebsocketProviderWithDoc(id: string, doc: Doc): Provider {
   // @ts-expect-error
   return new WebsocketProvider(
     WEBSOCKET_ENDPOINT,

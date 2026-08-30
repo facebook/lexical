@@ -6,41 +6,48 @@
  *
  */
 
-import type {ListNode} from './';
-import type {
-  BaseSelection,
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  EditorThemeClasses,
-  LexicalNode,
-  NodeKey,
-  ParagraphNode,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
-
-import {
-  addClassNamesToElement,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
+import invariant from '@lexical/internal/invariant';
 import {
   $applyNodeReplacement,
+  $copyNode,
   $createParagraphNode,
+  $getDocument,
+  $getSelection,
+  $getSiblingCaret,
+  $insertNodeToNearestRootAtCaret,
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  $isRootOrShadowRoot,
+  $rewindSiblingCaret,
+  $setDirectionFromDOM,
+  $setFormatFromDOM,
+  addClassNamesToElement,
+  type BaseSelection,
+  buildImportMap,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
+  type EditorThemeClasses,
   ElementNode,
-  LexicalEditor,
+  getStyleObjectFromCSS,
+  isHTMLElement,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  normalizeClassNames,
+  type ParagraphNode,
+  type RangeSelection,
+  removeClassNamesFromElement,
+  type SerializedElementNode,
+  setDOMStyleFromCSS,
+  type Spread,
 } from 'lexical';
-import invariant from 'shared/invariant';
-import normalizeClassNames from 'shared/normalizeClassNames';
 
-import {$createListNode, $isListNode} from './';
+import {$createListNode, $isListNode, type ListNode, type ListType} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
-import {isNestedListNode} from './utils';
+import {$getNewListStart, $isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
   {
@@ -50,6 +57,32 @@ export type SerializedListItemNode = Spread<
   SerializedElementNode
 >;
 
+function applyMarkerStyles(
+  dom: HTMLElement,
+  node: ListItemNode,
+  prevNode: ListItemNode | null,
+): void {
+  const nextTextStyle = node.__textStyle;
+  const prevTextStyle = prevNode ? prevNode.__textStyle : '';
+
+  if (prevNode !== null && prevTextStyle === nextTextStyle) {
+    return;
+  }
+
+  const styles: Record<string, string> = getStyleObjectFromCSS(nextTextStyle);
+  for (const k in styles) {
+    dom.style.setProperty(`--listitem-marker-${k}`, styles[k]);
+  }
+
+  if (prevTextStyle !== '') {
+    for (const k in getStyleObjectFromCSS(prevTextStyle)) {
+      if (!(k in styles)) {
+        dom.style.removeProperty(`--listitem-marker-${k}`);
+      }
+    }
+  }
+}
+
 /** @noInheritDoc */
 export class ListItemNode extends ElementNode {
   /** @internal */
@@ -57,29 +90,99 @@ export class ListItemNode extends ElementNode {
   /** @internal */
   __checked?: boolean;
 
-  static getType(): string {
-    return 'listitem';
+  /** @internal */
+  $config() {
+    return this.config('listitem', {
+      $transform: (node: ListItemNode): void => {
+        const parent = node.getParent();
+        if ($isListNode(parent)) {
+          if (parent.getListType() !== 'check' && node.getChecked() != null) {
+            node.setChecked(undefined);
+          }
+        } else if (parent) {
+          const newParent = node.createParentElementNode();
+          invariant(
+            $isListNode(newParent),
+            'ListItemNode.createParentElementNode() must return a ListNode',
+          );
+          // Insert an empty ListNode at the orphan's position, splitting
+          // any enclosing non-shadow-root blocks so the ListNode lifts to
+          // a valid container before we move the orphan in. The ListNode
+          // $transform merges adjacent same-type lists, so neighbouring
+          // orphans will coalesce once their own transforms run.
+          const children = [node];
+          for (const dir of ['previous', 'next'] as const) {
+            children.reverse();
+            for (const {origin} of $getSiblingCaret(node, dir)) {
+              if (!$isListItemNode(origin)) {
+                break;
+              }
+              children.push(origin);
+            }
+          }
+          node.insertBefore(newParent);
+          newParent.splice(0, 0, children);
+          if (!$isRootOrShadowRoot(parent)) {
+            $insertNodeToNearestRootAtCaret(
+              newParent,
+              $rewindSiblingCaret($getSiblingCaret(newParent, 'next')),
+              {$shouldSplit: () => false, removeEmptyDestination: true},
+            );
+            if (parent.isEmpty() && parent.isAttached()) {
+              parent.remove();
+            }
+          }
+        }
+      },
+      extends: ElementNode,
+      importDOM: buildImportMap({
+        li: () => ({
+          conversion: $convertListItemElement,
+          priority: 0,
+        }),
+      }),
+    });
   }
 
-  static clone(node: ListItemNode): ListItemNode {
-    return new ListItemNode(node.__value, node.__checked, node.__key);
-  }
-
-  constructor(value?: number, checked?: boolean, key?: NodeKey) {
+  constructor(
+    value: number = 1,
+    checked: undefined | boolean = undefined,
+    key?: NodeKey,
+  ) {
     super(key);
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
   }
 
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__value = prevNode.__value;
+    this.__checked = prevNode.__checked;
+  }
+
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('li');
-    const parent = this.getParent();
-    if ($isListNode(parent) && parent.getListType() === 'check') {
-      updateListItemChecked(element, this, null, parent);
-    }
-    element.value = this.__value;
-    $setListItemThemeClassNames(element, config.theme, this);
+    const element = $getDocument().createElement('li');
+    this.updateListItemDOM(null, element, config);
+
     return element;
+  }
+
+  updateListItemDOM(
+    prevNode: ListItemNode | null,
+    dom: HTMLLIElement,
+    config: EditorConfig,
+  ) {
+    updateListItemChecked(dom, this, prevNode);
+
+    dom.value = this.__value;
+    $setListItemThemeClassNames(dom, config.theme, this);
+    const prevStyle = prevNode ? prevNode.__style : '';
+    const nextStyle = this.__style;
+
+    if (prevStyle !== nextStyle) {
+      setDOMStyleFromCSS(dom.style, nextStyle, prevStyle);
+    }
+    applyMarkerStyles(dom, this, prevNode);
   }
 
   updateDOM(
@@ -87,53 +190,52 @@ export class ListItemNode extends ElementNode {
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean {
-    const parent = this.getParent();
-    if ($isListNode(parent) && parent.getListType() === 'check') {
-      updateListItemChecked(dom, this, prevNode, parent);
-    }
     // @ts-expect-error - this is always HTMLListItemElement
-    dom.value = this.__value;
-    $setListItemThemeClassNames(dom, config.theme, this);
-
+    const element: HTMLLIElement = dom;
+    this.updateListItemDOM(prevNode, element, config);
     return false;
   }
 
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant($isListItemNode(node), 'node is not a ListItemNode');
-      if (node.__checked == null) {
-        return;
-      }
-      const parent = node.getParent();
-      if ($isListNode(parent)) {
-        if (parent.getListType() !== 'check' && node.getChecked() != null) {
-          node.setChecked(undefined);
-        }
-      }
-    };
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      li: () => ({
-        conversion: $convertListItemElement,
-        priority: 0,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
-    const node = $createListItemNode();
-    node.setChecked(serializedNode.checked);
-    node.setValue(serializedNode.value);
-    node.setFormat(serializedNode.format);
-    node.setDirection(serializedNode.direction);
-    return node;
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedListItemNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setValue(serializedNode.value)
+      .setChecked(serializedNode.checked);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config);
-    element.style.textAlign = this.getFormatType();
+
+    const formatType = this.getFormatType();
+    if (formatType) {
+      element.style.textAlign = formatType;
+    }
+
+    const direction = this.getDirection();
+    if (direction) {
+      element.dir = direction;
+    }
+
+    if ($isNestedListNode(this)) {
+      return {
+        after(containerElement) {
+          if (isHTMLElement(containerElement)) {
+            const prevSibling = containerElement.previousElementSibling;
+            if (isHTMLElement(prevSibling) && prevSibling.nodeName === 'LI') {
+              while (containerElement.firstChild) {
+                prevSibling.append(containerElement.firstChild);
+              }
+              containerElement.remove();
+            }
+          }
+          return containerElement;
+        },
+        element,
+      };
+    }
+
     return {
       element,
     };
@@ -143,9 +245,7 @@ export class ListItemNode extends ElementNode {
     return {
       ...super.exportJSON(),
       checked: this.getChecked(),
-      type: 'listitem',
       value: this.getValue(),
-      version: 1,
     };
   }
 
@@ -183,7 +283,7 @@ export class ListItemNode extends ElementNode {
       list.insertAfter(replaceWithNode);
     } else {
       // Split the list
-      const newList = $createListNode(list.getListType());
+      const newList = $copyNode(list);
       let nextSibling = this.getNextSibling();
       while (nextSibling) {
         const nodeToAppend = nextSibling;
@@ -193,14 +293,38 @@ export class ListItemNode extends ElementNode {
       list.insertAfter(replaceWithNode);
       replaceWithNode.insertAfter(newList);
     }
+    const toReplaceKey = this.__key;
+    let prevSizeBeforeChildrenTransfer = 0;
     if (includeChildren) {
       invariant(
         $isElementNode(replaceWithNode),
         'includeChildren should only be true for ElementNodes',
       );
-      this.getChildren().forEach((child: LexicalNode) => {
-        replaceWithNode.append(child);
-      });
+      prevSizeBeforeChildrenTransfer = replaceWithNode.getChildrenSize();
+      replaceWithNode.splice(
+        prevSizeBeforeChildrenTransfer,
+        0,
+        this.getChildren(),
+      );
+    }
+    // The base LexicalNode.replace remaps element-anchored selection points
+    // from the replaced node to the replacement, but this override skips
+    // super and the trailing this.remove() would otherwise drop selection
+    // onto a sibling list item via moveSelectionPointToSibling. Mirror the
+    // base behavior here for the element-anchored case.
+    if (includeChildren && $isElementNode(replaceWithNode)) {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        for (const point of selection.getStartEndPoints()) {
+          if (point.key === toReplaceKey && point.type === 'element') {
+            point.set(
+              replaceWithNode.getKey(),
+              prevSizeBeforeChildrenTransfer + point.offset,
+              'element',
+            );
+          }
+        }
+      }
     }
     this.remove();
     if (list.getChildrenSize() === 0) {
@@ -229,9 +353,20 @@ export class ListItemNode extends ElementNode {
     listNode.insertAfter(node, restoreSelection);
 
     if (siblings.length !== 0) {
-      const newListNode = $createListNode(listNode.getListType());
+      const newListNode = $copyNode(listNode);
+      // $copyNode carries the original list's start, which would restart the
+      // numbering at the split. The items moving into the new list keep the
+      // numbers they were already rendered with, so the new list has to start
+      // from the first of them (see issue #7032).
+      const firstSibling = siblings[0];
+      if (
+        newListNode.getListType() === 'number' &&
+        $isListItemNode(firstSibling)
+      ) {
+        newListNode.setStart($getNewListStart(listNode, firstSibling));
+      }
 
-      siblings.forEach((sibling) => newListNode.append(sibling));
+      siblings.forEach(sibling => newListNode.append(sibling));
 
       node.insertAfter(newListNode, restoreSelection);
     }
@@ -247,11 +382,22 @@ export class ListItemNode extends ElementNode {
     if (
       prevSibling &&
       nextSibling &&
-      isNestedListNode(prevSibling) &&
-      isNestedListNode(nextSibling)
+      $isNestedListNode(prevSibling) &&
+      $isNestedListNode(nextSibling) &&
+      // Only join the surrounding sublists when they are the same kind of
+      // list, otherwise the second one loses its listType.
+      prevSibling.getFirstChild().getListType() ===
+        nextSibling.getFirstChild().getListType()
     ) {
       mergeLists(prevSibling.getFirstChild(), nextSibling.getFirstChild());
       nextSibling.remove();
+    }
+  }
+
+  resetOnCopyNodeFrom(original: this): void {
+    super.resetOnCopyNodeFrom(original);
+    if (original.getChecked()) {
+      this.setChecked(false);
     }
   }
 
@@ -259,49 +405,40 @@ export class ListItemNode extends ElementNode {
     _: RangeSelection,
     restoreSelection = true,
   ): ListItemNode | ParagraphNode {
-    const newElement = $createListItemNode(
-      this.__checked == null ? undefined : false,
-    );
+    const newElement = $copyNode(this);
+
     this.insertAfter(newElement, restoreSelection);
 
     return newElement;
   }
 
-  collapseAtStart(selection: RangeSelection): true {
-    const paragraph = $createParagraphNode();
-    const children = this.getChildren();
-    children.forEach((child) => paragraph.append(child));
+  collapseAtStart(selection: RangeSelection): boolean {
+    if ($isNestedListNode(this)) {
+      return false;
+    }
+
     const listNode = this.getParentOrThrow();
     const listNodeParent = listNode.getParentOrThrow();
-    const isIndented = $isListItemNode(listNodeParent);
 
-    if (listNode.getChildrenSize() === 1) {
-      if (isIndented) {
-        // if the list node is nested, we just want to remove it,
-        // effectively unindenting it.
-        listNode.remove();
-        listNodeParent.select();
-      } else {
-        listNode.insertBefore(paragraph);
-        listNode.remove();
-        // If we have selection on the list item, we'll need to move it
-        // to the paragraph
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-        const key = paragraph.getKey();
-
-        if (anchor.type === 'element' && anchor.getNode().is(this)) {
-          anchor.set(key, anchor.offset, 'element');
-        }
-
-        if (focus.type === 'element' && focus.getNode().is(this)) {
-          focus.set(key, focus.offset, 'element');
-        }
-      }
-    } else {
-      listNode.insertBefore(paragraph);
-      this.remove();
+    if ($isListItemNode(listNodeParent)) {
+      $handleOutdent(this);
+      return true;
     }
+
+    const paragraph = $createParagraphNode().append(...this.getChildren());
+
+    const nextSiblings = this.getNextSiblings();
+    if (nextSiblings.length > 0) {
+      const newList = $copyNode(listNode);
+      newList.append(...nextSiblings);
+      listNode.insertAfter(newList);
+    }
+    listNode.insertAfter(paragraph);
+    this.remove();
+    if (listNode.getChildrenSize() === 0) {
+      listNode.remove();
+    }
+    paragraph.selectStart();
 
     return true;
   }
@@ -312,30 +449,40 @@ export class ListItemNode extends ElementNode {
     return self.__value;
   }
 
-  setValue(value: number): void {
+  setValue(value: number): this {
     const self = this.getWritable();
     self.__value = value;
+    return self;
   }
 
   getChecked(): boolean | undefined {
     const self = this.getLatest();
 
-    return self.__checked;
+    let listType: ListType | undefined;
+
+    const parent = this.getParent();
+    if ($isListNode(parent)) {
+      listType = parent.getListType();
+    }
+
+    return listType === 'check' ? Boolean(self.__checked) : undefined;
   }
 
-  setChecked(checked?: boolean): void {
+  setChecked(checked?: boolean): this {
     const self = this.getWritable();
     self.__checked = checked;
+    return self;
   }
 
-  toggleChecked(): void {
-    this.setChecked(!this.__checked);
+  toggleChecked(): this {
+    const self = this.getWritable();
+    return self.setChecked(!self.__checked);
   }
 
   getIndent(): number {
     // If we don't have a parent, we are likely serializing
     const parent = this.getParent();
-    if (parent === null) {
+    if (parent === null || !this.isAttached()) {
       return this.getLatest().__indent;
     }
     // ListItemNode should always have a ListNode for a parent.
@@ -350,10 +497,9 @@ export class ListItemNode extends ElementNode {
   }
 
   setIndent(indent: number): this {
-    invariant(
-      typeof indent === 'number' && indent > -1,
-      'Invalid indent value.',
-    );
+    invariant(typeof indent === 'number', 'Invalid indent value.');
+    indent = Math.floor(indent);
+    invariant(indent >= 0, 'Indent value must be non-negative.');
     let currentIndent = this.getIndent();
     while (currentIndent !== indent) {
       if (currentIndent < indent) {
@@ -379,7 +525,7 @@ export class ListItemNode extends ElementNode {
   }
 
   canMergeWith(node: LexicalNode): boolean {
-    return $isParagraphNode(node) || $isListItemNode(node);
+    return $isListItemNode(node) || $isParagraphNode(node);
   }
 
   extractWithChild(child: LexicalNode, selection: BaseSelection): boolean {
@@ -401,8 +547,12 @@ export class ListItemNode extends ElementNode {
     return true;
   }
 
-  createParentElementNode(): ElementNode {
+  createParentElementNode(): ListNode {
     return $createListNode('bullet');
+  }
+
+  canMergeWhenEmpty(): true {
+    return true;
   }
 }
 
@@ -411,55 +561,52 @@ function $setListItemThemeClassNames(
   editorThemeClasses: EditorThemeClasses,
   node: ListItemNode,
 ): void {
-  const classesToAdd = [];
-  const classesToRemove = [];
   const listTheme = editorThemeClasses.list;
-  const listItemClassName = listTheme ? listTheme.listitem : undefined;
-  let nestedListItemClassName;
-
-  if (listTheme && listTheme.nested) {
-    nestedListItemClassName = listTheme.nested.listitem;
+  if (!listTheme) {
+    return;
   }
 
-  if (listItemClassName !== undefined) {
-    classesToAdd.push(...normalizeClassNames(listItemClassName));
+  const listItemClassName = listTheme.listitem;
+  const nestedListItemClassName = listTheme.nested && listTheme.nested.listitem;
+  const parentNode = node.getParent();
+  const isCheckList =
+    $isListNode(parentNode) && parentNode.getListType() === 'check';
+  const checked = node.getChecked();
+  const isNested = node.getChildren().some(child => $isListNode(child));
+
+  // Always remove the variable theme classes first so that the className
+  // string stays in a canonical order regardless of how the dom got here
+  // (fresh create vs. cross-parent reuse). classList.remove on a missing
+  // class is a no-op, so this is safe even on a freshly-created element.
+  const classesToRemove: string[] = [];
+  if (listTheme.listitemChecked !== undefined) {
+    classesToRemove.push(listTheme.listitemChecked);
   }
-
-  if (listTheme) {
-    const parentNode = node.getParent();
-    const isCheckList =
-      $isListNode(parentNode) && parentNode.getListType() === 'check';
-    const checked = node.getChecked();
-
-    if (!isCheckList || checked) {
-      classesToRemove.push(listTheme.listitemUnchecked);
-    }
-
-    if (!isCheckList || !checked) {
-      classesToRemove.push(listTheme.listitemChecked);
-    }
-
-    if (isCheckList) {
-      classesToAdd.push(
-        checked ? listTheme.listitemChecked : listTheme.listitemUnchecked,
-      );
-    }
+  if (listTheme.listitemUnchecked !== undefined) {
+    classesToRemove.push(listTheme.listitemUnchecked);
   }
-
   if (nestedListItemClassName !== undefined) {
-    const nestedListItemClasses = normalizeClassNames(nestedListItemClassName);
-
-    if (node.getChildren().some((child) => $isListNode(child))) {
-      classesToAdd.push(...nestedListItemClasses);
-    } else {
-      classesToRemove.push(...nestedListItemClasses);
-    }
+    classesToRemove.push(...normalizeClassNames(nestedListItemClassName));
   }
-
   if (classesToRemove.length > 0) {
     removeClassNamesFromElement(dom, ...classesToRemove);
   }
 
+  const classesToAdd: string[] = [];
+  if (listItemClassName !== undefined) {
+    classesToAdd.push(...normalizeClassNames(listItemClassName));
+  }
+  if (isCheckList) {
+    const checkClassName = checked
+      ? listTheme.listitemChecked
+      : listTheme.listitemUnchecked;
+    if (checkClassName !== undefined) {
+      classesToAdd.push(checkClassName);
+    }
+  }
+  if (nestedListItemClassName !== undefined && isNested) {
+    classesToAdd.push(...normalizeClassNames(nestedListItemClassName));
+  }
   if (classesToAdd.length > 0) {
     addClassNamesToElement(dom, ...classesToAdd);
   }
@@ -469,26 +616,24 @@ function updateListItemChecked(
   dom: HTMLElement,
   listItemNode: ListItemNode,
   prevListItemNode: ListItemNode | null,
-  listNode: ListNode,
 ): void {
-  // Only add attributes for leaf list items
-  if ($isListNode(listItemNode.getFirstChild())) {
+  const parent = listItemNode.getParent();
+  const isCheckbox =
+    $isListNode(parent) &&
+    parent.getListType() === 'check' &&
+    // Only add attributes for leaf list items
+    !$isListNode(listItemNode.getFirstChild());
+  if (!isCheckbox) {
     dom.removeAttribute('role');
     dom.removeAttribute('tabIndex');
     dom.removeAttribute('aria-checked');
   } else {
     dom.setAttribute('role', 'checkbox');
     dom.setAttribute('tabIndex', '-1');
-
-    if (
-      !prevListItemNode ||
-      listItemNode.__checked !== prevListItemNode.__checked
-    ) {
-      dom.setAttribute(
-        'aria-checked',
-        listItemNode.getChecked() ? 'true' : 'false',
-      );
-    }
+    dom.setAttribute(
+      'aria-checked',
+      listItemNode.getChecked() ? 'true' : 'false',
+    );
   }
 }
 
@@ -502,14 +647,34 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
     }
   }
 
+  const isJoplinCheckList = domNode.classList.contains('joplin-checkbox');
+  if (isJoplinCheckList) {
+    for (const child of domNode.children) {
+      if (
+        child.classList.contains('checkbox-wrapper') &&
+        child.children.length > 0 &&
+        child.children[0].tagName === 'INPUT'
+      ) {
+        return $convertCheckboxInput(child.children[0]);
+      }
+    }
+  }
+
   const ariaCheckedAttr = domNode.getAttribute('aria-checked');
   const checked =
     ariaCheckedAttr === 'true'
       ? true
       : ariaCheckedAttr === 'false'
-      ? false
-      : undefined;
-  return {node: $createListItemNode(checked)};
+        ? false
+        : undefined;
+
+  const node = $createListItemNode(checked);
+  $setFormatFromDOM(node, domNode);
+
+  return {
+    after: setFormatFromChildren.bind(null, node),
+    node: $setDirectionFromDOM(node, domNode),
+  };
 }
 
 function $convertCheckboxInput(domNode: Element): DOMConversionOutput {
@@ -518,7 +683,26 @@ function $convertCheckboxInput(domNode: Element): DOMConversionOutput {
     return {node: null};
   }
   const checked = domNode.hasAttribute('checked');
-  return {node: $createListItemNode(checked)};
+  const node = $createListItemNode(checked);
+  return {after: setFormatFromChildren.bind(null, node), node};
+}
+
+function setFormatFromChildren(
+  listItemNode: ListItemNode,
+  children: LexicalNode[],
+): LexicalNode[] {
+  const firstChild = children[0];
+  // google doc sets the alignment of the <p> tag inside the <li>
+  if (
+    children.length === 1 &&
+    $isParagraphNode(firstChild) &&
+    !listItemNode.getFormatType() &&
+    firstChild.getFormatType()
+  ) {
+    listItemNode.setFormat(firstChild.getFormatType());
+    return firstChild.getChildren();
+  }
+  return children;
 }
 
 /**

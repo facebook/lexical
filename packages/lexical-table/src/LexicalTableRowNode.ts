@@ -6,21 +6,25 @@
  *
  */
 
-import type {Spread} from 'lexical';
-
-import {addClassNamesToElement} from '@lexical/utils';
+import {$descendantsMatching} from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
+  $getDocument,
+  $setDirectionFromDOM,
+  addClassNamesToElement,
+  type BaseSelection,
+  type DOMConversionOutput,
+  type EditorConfig,
   ElementNode,
-  LexicalNode,
-  NodeKey,
-  SerializedElementNode,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
+import {$isTableCellNode} from './LexicalTableCellNode';
 
 export type SerializedTableRowNode = Spread<
   {
@@ -34,43 +38,48 @@ export class TableRowNode extends ElementNode {
   /** @internal */
   __height?: number;
 
-  static getType(): string {
-    return 'tablerow';
+  $config() {
+    return this.config('tablerow', {
+      extends: ElementNode,
+      importDOM: {
+        tr: () => ({
+          conversion: $convertTableRowElement,
+          priority: 0,
+        }),
+      },
+    });
   }
 
-  static clone(node: TableRowNode): TableRowNode {
-    return new TableRowNode(node.__height, node.__key);
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__height = prevNode.__height;
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      tr: (node: Node) => ({
-        conversion: $convertTableRowElement,
-        priority: 0,
-      }),
-    };
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedTableRowNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setHeight(serializedNode.height);
   }
 
-  static importJSON(serializedNode: SerializedTableRowNode): TableRowNode {
-    return $createTableRowNode(serializedNode.height);
-  }
-
-  constructor(height?: number, key?: NodeKey) {
+  // `height` carries an explicit `undefined` default so the constructor reports
+  // zero required arguments and `$config` can synthesize the static `clone`.
+  constructor(height: number | undefined = undefined, key?: NodeKey) {
     super(key);
     this.__height = height;
   }
 
   exportJSON(): SerializedTableRowNode {
+    const height = this.getHeight();
     return {
       ...super.exportJSON(),
-      ...(this.getHeight() && {height: this.getHeight()}),
-      type: 'tablerow',
-      version: 1,
+      ...(height === undefined ? undefined : {height}),
     };
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('tr');
+    const element = $getDocument().createElement('tr');
 
     if (this.__height) {
       element.style.height = `${this.__height}px`;
@@ -81,21 +90,29 @@ export class TableRowNode extends ElementNode {
     return element;
   }
 
+  extractWithChild(
+    child: LexicalNode,
+    selection: BaseSelection | null,
+    destination: 'clone' | 'html',
+  ): boolean {
+    return destination === 'html';
+  }
+
   isShadowRoot(): boolean {
     return true;
   }
 
-  setHeight(height: number): number | null | undefined {
+  setHeight(height?: number | undefined): this {
     const self = this.getWritable();
     self.__height = height;
-    return this.__height;
+    return self;
   }
 
   getHeight(): number | undefined {
     return this.getLatest().__height;
   }
 
-  updateDOM(prevNode: TableRowNode): boolean {
+  updateDOM(prevNode: this): boolean {
     return prevNode.__height !== this.__height;
   }
 
@@ -116,7 +133,10 @@ export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
     height = parseFloat(domNode_.style.height);
   }
 
-  return {node: $createTableRowNode(height)};
+  return {
+    after: children => $descendantsMatching(children, $isTableCellNode),
+    node: $setDirectionFromDOM($createTableRowNode(height), domNode_),
+  };
 }
 
 export function $createTableRowNode(height?: number): TableRowNode {

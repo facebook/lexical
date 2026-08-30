@@ -6,25 +6,23 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  ElementFormatType,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  Spread,
-} from 'lexical';
-
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
   DecoratorBlockNode,
-  SerializedDecoratorBlockNode,
+  type SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
+import {
+  $getDocument,
+  type DOMExportOutput,
+  type EditorConfig,
+  type ElementFormatType,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type Spread,
+} from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
 
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';
 
@@ -40,17 +38,6 @@ type TweetComponentProps = Readonly<{
   onLoad?: () => void;
   tweetID: string;
 }>;
-
-function $convertTweetElement(
-  domNode: HTMLDivElement,
-): DOMConversionOutput | null {
-  const id = domNode.getAttribute('data-lexical-tweet-id');
-  if (id) {
-    const node = $createTweetNode(id);
-    return {node};
-  }
-  return null;
-}
 
 let isTwitterScriptLoading = true;
 
@@ -91,16 +78,18 @@ function TweetComponent({
       setIsTweetLoading(true);
 
       if (isTwitterScriptLoading) {
-        const script = document.createElement('script');
+        const doc = containerRef.current?.ownerDocument ?? document;
+        const script = doc.createElement('script');
         script.src = WIDGET_SCRIPT_URL;
         script.async = true;
-        document.body?.appendChild(script);
+        doc.body?.appendChild(script);
         script.onload = createTweet;
         if (onError) {
           script.onerror = onError as OnErrorEventHandler;
         }
       } else {
-        createTweet();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        createTweet().catch(console.error);
       }
 
       if (previousTweetIDRef) {
@@ -133,8 +122,8 @@ export type SerializedTweetNode = Spread<
 export class TweetNode extends DecoratorBlockNode {
   __id: string;
 
-  static getType(): string {
-    return 'tweet';
+  $config() {
+    return this.config('tweet', {extends: DecoratorBlockNode});
   }
 
   static clone(node: TweetNode): TweetNode {
@@ -142,38 +131,20 @@ export class TweetNode extends DecoratorBlockNode {
   }
 
   static importJSON(serializedNode: SerializedTweetNode): TweetNode {
-    const node = $createTweetNode(serializedNode.id);
-    node.setFormat(serializedNode.format);
-    return node;
+    return $createTweetNode(serializedNode.id).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedTweetNode {
     return {
       ...super.exportJSON(),
       id: this.getId(),
-      type: 'tweet',
-      version: 1,
-    };
-  }
-
-  static importDOM(): DOMConversionMap<HTMLDivElement> | null {
-    return {
-      div: (domNode: HTMLDivElement) => {
-        if (!domNode.hasAttribute('data-lexical-tweet-id')) {
-          return null;
-        }
-        return {
-          conversion: $convertTweetElement,
-          priority: 2,
-        };
-      },
     };
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('div');
+    const element = $getDocument().createElement('div');
     element.setAttribute('data-lexical-tweet-id', this.__id);
-    const text = document.createTextNode(this.getTextContent());
+    const text = $getDocument().createTextNode(this.getTextContent());
     element.append(text);
     return {element};
   }
@@ -184,7 +155,7 @@ export class TweetNode extends DecoratorBlockNode {
   }
 
   getId(): string {
-    return this.__id;
+    return this.getLatest().__id;
   }
 
   getTextContent(

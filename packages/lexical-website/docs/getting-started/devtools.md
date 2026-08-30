@@ -29,9 +29,9 @@ Now, if you visit a website built with Lexical (such as [https://playground.lexi
 
 ## Extension Support
 
-Feel free to reach out to us for support, or just to chat, at <a href="mailto:EPAM-lexical-support@epam.com">EPAM-lexical-support@epam.com</a> or via our [community channels](/community).
+Feel free to reach out to us for support, or just to chat, at [EPAM-lexical-support@epam.com](mailto:EPAM-lexical-support@epam.com) or via our [community channels](/community).
 
 Legal information:
 
-- <a href="https://opensource.facebook.com/legal/privacy/" rel="noreferrer noopener" target="_blank">Meta Open Source - Privacy Policy</a>
-- <a href="https://opensource.facebook.com/legal/terms/" rel="noreferrer noopener" target="_blank">Meta Open Source - Terms of Use</a>
+- [Meta Open Source - Privacy Policy](https://opensource.facebook.com/legal/privacy/)
+- [Meta Open Source - Terms of Use](https://opensource.facebook.com/legal/terms/)

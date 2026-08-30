@@ -8,6 +8,7 @@
 
 import {$createTableRowNode} from '@lexical/table';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -17,7 +18,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalTableRowNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('TableRowNode.constructor', async () => {
       const {editor} = testEnv;
 

@@ -6,9 +6,15 @@
  *
  */
 
-import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
-
-import {mergeRegister} from '@lexical/utils';
+import {
+  batch,
+  effect,
+  getPeerDependencyFromEditor,
+  namedSignals,
+  type ReadonlySignal,
+  type Signal,
+  signal,
+} from '@lexical/extension';
 import {
   $isRangeSelection,
   $isRootNode,
@@ -18,7 +24,22 @@ import {
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  COMPOSITION_END_TAG,
+  COMPOSITION_START_TAG,
+  configExtension,
+  CUT_TAG,
+  defineExtension,
+  type EditorState,
+  HISTORIC_TAG,
+  HISTORY_MERGE_TAG,
+  HISTORY_PUSH_TAG,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
+  type NodeKey,
+  PASTE_TAG,
   REDO_COMMAND,
+  safeCast,
   UNDO_COMMAND,
 } from 'lexical';
 
@@ -38,10 +59,17 @@ export type HistoryStateEntry = {
   editor: LexicalEditor;
   editorState: EditorState;
 };
+/**
+ * The undo/redo history maintained by the history plugin: the `current` entry
+ * plus the `undoStack` and `redoStack` of previous and future
+ * {@link HistoryStateEntry}s. Create an empty one with
+ * {@link createEmptyHistoryState} and pass it to the history plugin to share
+ * history across editors.
+ */
 export type HistoryState = {
   current: null | HistoryStateEntry;
-  redoStack: Array<HistoryStateEntry>;
-  undoStack: Array<HistoryStateEntry>;
+  redoStack: HistoryStateEntry[];
+  undoStack: HistoryStateEntry[];
 };
 
 type IntentionallyMarkedAsDirtyElement = boolean;
@@ -50,7 +78,7 @@ function getDirtyNodes(
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-): Array<LexicalNode> {
+): LexicalNode[] {
   const nodeMap = editorState._nodeMap;
   const nodes = [];
 
@@ -220,7 +248,8 @@ function isTextNodeUnchanged(
 
 function createMergeActionGetter(
   editor: LexicalEditor,
-  delay: number,
+  delayOrStore: number | ReadonlySignal<number>,
+  dateNow: () => number,
 ): (
   prevEditorState: null | EditorState,
   nextEditorState: EditorState,
@@ -229,8 +258,11 @@ function createMergeActionGetter(
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   tags: Set<string>,
 ) => MergeAction {
-  let prevChangeTime = Date.now();
+  let prevChangeTime = dateNow();
   let prevChangeType = OTHER;
+  let compositionStartTime = prevChangeTime;
+  let compositionStartChangeType = OTHER;
+  let compositionStartState: EditorState | null = null;
 
   return (
     prevEditorState,
@@ -240,33 +272,60 @@ function createMergeActionGetter(
     dirtyElements,
     tags,
   ) => {
-    const changeTime = Date.now();
+    const changeTime = dateNow();
+
+    if (tags.has(COMPOSITION_START_TAG)) {
+      compositionStartTime = prevChangeTime;
+      compositionStartChangeType = prevChangeType;
+      compositionStartState = prevEditorState;
+    }
 
     // If applying changes from history stack there's no need
     // to run history logic again, as history entries already calculated
-    if (tags.has('historic')) {
+    if (tags.has(HISTORIC_TAG)) {
       prevChangeType = OTHER;
       prevChangeTime = changeTime;
       return DISCARD_HISTORY_CANDIDATE;
     }
 
-    const changeType = getChangeType(
-      prevEditorState,
-      nextEditorState,
-      dirtyLeaves,
-      dirtyElements,
-      editor.isComposing(),
-    );
+    const isCompositionEnd = tags.has(COMPOSITION_END_TAG);
+    if (isCompositionEnd && compositionStartState) {
+      prevChangeTime = compositionStartTime;
+      prevChangeType = compositionStartChangeType;
+      prevEditorState = compositionStartState;
+    }
+
+    // A paste or cut is never a continuation of the surrounding typing, so
+    // classify it as OTHER. This both prevents it from merging into the
+    // preceding keystrokes and, because it becomes `prevChangeType`, stops the
+    // following keystrokes from merging into it — giving the clipboard
+    // operation its own undo entry (see #8609). Centralizing this here means any
+    // update carrying these tags gets an undo boundary, regardless of which
+    // handler produced it.
+    const changeType =
+      tags.has(PASTE_TAG) || tags.has(CUT_TAG)
+        ? OTHER
+        : getChangeType(
+            prevEditorState,
+            nextEditorState,
+            dirtyLeaves,
+            dirtyElements,
+            editor.isComposing(),
+          );
 
     const mergeAction = (() => {
       const isSameEditor =
         currentHistoryEntry === null || currentHistoryEntry.editor === editor;
-      const shouldPushHistory = tags.has('history-push');
+      const shouldPushHistory = tags.has(HISTORY_PUSH_TAG);
       const shouldMergeHistory =
-        !shouldPushHistory && isSameEditor && tags.has('history-merge');
+        !shouldPushHistory && isSameEditor && tags.has(HISTORY_MERGE_TAG);
 
       if (shouldMergeHistory) {
         return HISTORY_MERGE;
+      }
+
+      if (changeType === COMPOSING_CHARACTER) {
+        return DISCARD_HISTORY_CANDIDATE;
       }
 
       if (prevEditorState === null) {
@@ -284,6 +343,8 @@ function createMergeActionGetter(
         return DISCARD_HISTORY_CANDIDATE;
       }
 
+      const delay =
+        typeof delayOrStore === 'number' ? delayOrStore : delayOrStore.peek();
       if (
         shouldPushHistory === false &&
         changeType !== OTHER &&
@@ -315,19 +376,78 @@ function createMergeActionGetter(
   };
 }
 
-function redo(editor: LexicalEditor, historyState: HistoryState): void {
+/**
+ * Build the entry that reverses `historyStateEntry` and belongs on the
+ * opposite stack.
+ *
+ * With a single editor this is always `current`, since `current` tracks the
+ * live state of that editor. With a shared {@link HistoryState} the stacks
+ * interleave entries from several editors, so `current` may belong to an
+ * editor that is *not* about to change — pushing it would record a no-op and
+ * lose the state we are about to overwrite. In that case read the live state
+ * off the entry's own editor instead.
+ */
+function getInverseEntry(
+  historyStateEntry: HistoryStateEntry,
+  current: null | HistoryStateEntry,
+): null | HistoryStateEntry {
+  if (current !== null && current.editor === historyStateEntry.editor) {
+    return current;
+  }
+  const {editor} = historyStateEntry;
+  const editorState = editor.getEditorState();
+  // An empty EditorState can not be restored (setEditorState throws), so
+  // there is nothing to reverse to.
+  return editorState.isEmpty() ? null : {editor, editorState};
+}
+
+/**
+ * Build the entry that an update from `editor` pushes onto the undo stack.
+ *
+ * `current` is the state to restore when this update is undone, but with a
+ * shared {@link HistoryState} it may belong to a different editor — one that
+ * is not changing here, so restoring it would be a no-op and the state that is
+ * about to be overwritten would never make it onto the stack. Record this
+ * editor's own pre-update state in that case.
+ */
+function getUndoEntry(
+  editor: LexicalEditor,
+  prevEditorState: EditorState,
+  current: null | HistoryStateEntry,
+): null | HistoryStateEntry {
+  if (current === null) {
+    return null;
+  }
+  if (current.editor === editor) {
+    return {...current};
+  }
+  // An empty EditorState can not be restored (setEditorState throws). Skipping
+  // it mirrors the way the first update of an editor is not undoable.
+  return prevEditorState.isEmpty()
+    ? null
+    : {editor, editorState: prevEditorState};
+}
+
+function redo(
+  editor: LexicalEditor,
+  historyState: HistoryState,
+  onChange?: (state: HistoryState) => void,
+): void {
   const redoStack = historyState.redoStack;
   const undoStack = historyState.undoStack;
 
   if (redoStack.length !== 0) {
     const current = historyState.current;
-
-    if (current !== null) {
-      undoStack.push(current);
-      editor.dispatchCommand(CAN_UNDO_COMMAND, true);
-    }
-
     const historyStateEntry = redoStack.pop();
+
+    if (historyStateEntry) {
+      const inverseEntry = getInverseEntry(historyStateEntry, current);
+
+      if (inverseEntry !== null) {
+        undoStack.push(inverseEntry);
+        editor.dispatchCommand(CAN_UNDO_COMMAND, true);
+      }
+    }
 
     if (redoStack.length === 0) {
       editor.dispatchCommand(CAN_REDO_COMMAND, false);
@@ -335,15 +455,23 @@ function redo(editor: LexicalEditor, historyState: HistoryState): void {
 
     historyState.current = historyStateEntry || null;
 
+    if (onChange) {
+      onChange(historyState);
+    }
+
     if (historyStateEntry) {
       historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
-        tag: 'historic',
+        tag: HISTORIC_TAG,
       });
     }
   }
 }
 
-function undo(editor: LexicalEditor, historyState: HistoryState): void {
+function undo(
+  editor: LexicalEditor,
+  historyState: HistoryState,
+  onChange?: (state: HistoryState) => void,
+): void {
   const redoStack = historyState.redoStack;
   const undoStack = historyState.undoStack;
   const undoStackLength = undoStack.length;
@@ -352,9 +480,13 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
     const current = historyState.current;
     const historyStateEntry = undoStack.pop();
 
-    if (current !== null) {
-      redoStack.push(current);
-      editor.dispatchCommand(CAN_REDO_COMMAND, true);
+    if (historyStateEntry) {
+      const inverseEntry = getInverseEntry(historyStateEntry, current);
+
+      if (inverseEntry !== null) {
+        redoStack.push(inverseEntry);
+        editor.dispatchCommand(CAN_REDO_COMMAND, true);
+      }
     }
 
     if (undoStack.length === 0) {
@@ -363,18 +495,28 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
 
     historyState.current = historyStateEntry || null;
 
+    if (onChange) {
+      onChange(historyState);
+    }
+
     if (historyStateEntry) {
       historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
-        tag: 'historic',
+        tag: HISTORIC_TAG,
       });
     }
   }
 }
 
-function clearHistory(historyState: HistoryState) {
+function clearHistory(
+  historyState: HistoryState,
+  onChange?: (state: HistoryState) => void,
+): void {
   historyState.undoStack = [];
   historyState.redoStack = [];
   historyState.current = null;
+  if (onChange) {
+    onChange(historyState);
+  }
 }
 
 /**
@@ -384,14 +526,39 @@ function clearHistory(historyState: HistoryState) {
  * @param historyState - The history state, containing the current state and the undo/redo stack.
  * @param delay - The time (in milliseconds) the editor should delay generating a new history stack,
  * instead of merging the current changes with the current stack.
+ * @param dateNow - The clock function used for delay-based merging.
+ * @param onHistoryStateChange - Optional callback invoked once on registration
+ * and again any time `historyState` is mutated (push, pop, clear, etc.). It is
+ * NOT invoked when a candidate update is discarded without changing the
+ * stacks. Useful for keeping derived values (e.g. signals) in sync with the
+ * current `HistoryState`.
+ * @param maxDepth - The maximum number of entries the undo stack may hold.
+ * When the cap is exceeded a new history event has been pushed the oldest
+ * entries are dropped from the front of the stack until the stack length is
+ * `maxDepth`. Pass `null` (the default) to keep the stack unbounded — the
+ * historical behavior. May be a plain number or a `ReadonlySignal<number | null>`
+ * for reactive reconfiguration.
  * @returns The listeners cleanup callback function.
  */
 export function registerHistory(
   editor: LexicalEditor,
   historyState: HistoryState,
-  delay: number,
+  delay: number | ReadonlySignal<number>,
+  dateNow: () => number = Date.now,
+  onHistoryStateChange?: (state: HistoryState) => void,
+  maxDepth: number | null | ReadonlySignal<number | null> = null,
 ): () => void {
-  const getMergeAction = createMergeActionGetter(editor, delay);
+  const getMergeAction = createMergeActionGetter(editor, delay, dateNow);
+  const readMaxDepth = (): number | null =>
+    typeof maxDepth === 'number' || maxDepth === null
+      ? maxDepth
+      : maxDepth.peek();
+
+  const notifyChange = () => {
+    if (onHistoryStateChange) {
+      onHistoryStateChange(historyState);
+    }
+  };
 
   const applyChange = ({
     editorState,
@@ -430,10 +597,18 @@ export function registerHistory(
         editor.dispatchCommand(CAN_REDO_COMMAND, false);
       }
 
-      if (current !== null) {
-        undoStack.push({
-          ...current,
-        });
+      const undoEntry = getUndoEntry(editor, prevEditorState, current);
+
+      if (undoEntry !== null) {
+        undoStack.push(undoEntry);
+        const cap = readMaxDepth();
+        if (cap !== null && undoStack.length > cap) {
+          // FIFO-evict the oldest entries so the stack stays at `cap`.
+          // Editing the array in place keeps the same `historyState.undoStack`
+          // reference that callers (e.g. SharedHistoryExtension) may hold on
+          // to.
+          undoStack.splice(0, undoStack.length - cap);
+        }
         editor.dispatchCommand(CAN_UNDO_COMMAND, true);
       }
     } else if (mergeAction === DISCARD_HISTORY_CANDIDATE) {
@@ -445,13 +620,18 @@ export function registerHistory(
       editor,
       editorState,
     };
+    notifyChange();
   };
 
-  const unregister = mergeRegister(
+  // Allow consumers (e.g. HistoryExtension) to read pre-populated stacks
+  // immediately, without waiting for the first edit.
+  notifyChange();
+
+  return mergeRegister(
     editor.registerCommand(
       UNDO_COMMAND,
       () => {
-        undo(editor, historyState);
+        undo(editor, historyState, onHistoryStateChange);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -459,7 +639,7 @@ export function registerHistory(
     editor.registerCommand(
       REDO_COMMAND,
       () => {
-        redo(editor, historyState);
+        redo(editor, historyState, onHistoryStateChange);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -467,7 +647,7 @@ export function registerHistory(
     editor.registerCommand(
       CLEAR_EDITOR_COMMAND,
       () => {
-        clearHistory(historyState);
+        clearHistory(historyState, onHistoryStateChange);
         return false;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -475,7 +655,7 @@ export function registerHistory(
     editor.registerCommand(
       CLEAR_HISTORY_COMMAND,
       () => {
-        clearHistory(historyState);
+        clearHistory(historyState, onHistoryStateChange);
         editor.dispatchCommand(CAN_REDO_COMMAND, false);
         editor.dispatchCommand(CAN_UNDO_COMMAND, false);
         return true;
@@ -484,8 +664,6 @@ export function registerHistory(
     ),
     editor.registerUpdateListener(applyChange),
   );
-
-  return unregister;
 }
 
 /**
@@ -499,3 +677,216 @@ export function createEmptyHistoryState(): HistoryState {
     undoStack: [],
   };
 }
+
+export interface HistoryConfig {
+  /**
+   * The time (in milliseconds) the editor should delay generating a new history stack,
+   * instead of merging the current changes with the current stack. The default is 300ms.
+   */
+  delay: number;
+  /**
+   * The initial history state, the default is {@link createEmptyHistoryState}.
+   */
+  createInitialHistoryState: (editor: LexicalEditor) => HistoryState;
+  /**
+   * Whether history is disabled or not
+   */
+  disabled: boolean;
+  /**
+   * The now() function, defaults to Date.now.
+   */
+  now: () => number;
+  /**
+   * The maximum number of entries the undo stack may hold. When the cap is
+   * exceeded the oldest entries are dropped (FIFO) so the stack stays at this
+   * length. Defaults to `null`, which keeps the stack unbounded — the
+   * historical behavior. Setting a finite cap is recommended for editors that
+   * may receive a very large number of distinct history events (long writing
+   * sessions, automated input, etc.) since each entry retains a full
+   * `EditorState` snapshot.
+   *
+   * For reference, ProseMirror's `history()` plugin defaults to `depth: 100`.
+   */
+  maxDepth: number | null;
+}
+
+/** Internal writable signals created during the init phase. */
+interface HistoryExtensionInit {
+  canRedo: Signal<boolean>;
+  canUndo: Signal<boolean>;
+}
+
+/**
+ * The output signals exposed by {@link HistoryExtension}.
+ *
+ * Config-derived signals (`delay`, `disabled`, `historyState`, `maxDepth`,
+ * `now`) are writable so that peer extensions such as
+ * {@link SharedHistoryExtension} can redirect them at runtime.
+ * The `canUndo` / `canRedo` signals are **readonly** for
+ * consumers — they are derived from the current
+ * {@link HistoryState} and kept in sync automatically.
+ */
+export interface HistoryExtensionOutput {
+  /**
+   * `true` when there is at least one entry in the redo stack, i.e. the
+   * editor can perform a redo.
+   */
+  canRedo: ReadonlySignal<boolean>;
+  /**
+   * `true` when there is at least one entry in the undo stack, i.e. the
+   * editor can perform an undo.
+   */
+  canUndo: ReadonlySignal<boolean>;
+  /** The merge-delay in milliseconds forwarded to {@link registerHistory}. */
+  delay: Signal<number>;
+  /** When `true` the history listener is not registered. */
+  disabled: Signal<boolean>;
+  /** The active {@link HistoryState} instance. */
+  historyState: Signal<HistoryState>;
+  /**
+   * Maximum number of entries the undo stack may hold. `null` disables the
+   * cap. Changes apply to the next history event — the current undo stack is
+   * not retroactively trimmed when the value is lowered.
+   */
+  maxDepth: Signal<number | null>;
+  /** The clock function forwarded to {@link registerHistory}. */
+  now: Signal<() => number>;
+}
+
+/**
+ * Registers necessary listeners to manage undo/redo history stack and related
+ * editor commands, via the \@lexical/history module.
+ */
+export const HistoryExtension = defineExtension({
+  build: (
+    editor,
+    {delay, createInitialHistoryState, disabled, maxDepth, now},
+    state,
+  ): HistoryExtensionOutput => {
+    // The init phase already created writable Signal<boolean> instances for
+    // canUndo/canRedo. Signal<T> extends ReadonlySignal<T>, so exposing them
+    // through the HistoryExtensionOutput type (which declares them as
+    // ReadonlySignal<boolean>) is sufficient to prevent consumers from
+    // mutating them — no computed() wrapper required.
+    return {
+      ...namedSignals({
+        delay,
+        disabled,
+        historyState: createInitialHistoryState(editor),
+        maxDepth,
+        now,
+      }),
+      ...state.getInitResult(),
+    };
+  },
+  config: safeCast<HistoryConfig>({
+    createInitialHistoryState: createEmptyHistoryState,
+    delay: 300,
+    disabled: typeof window === 'undefined',
+    maxDepth: null,
+    now: Date.now,
+  }),
+  init: (): HistoryExtensionInit => ({
+    canRedo: signal(false),
+    canUndo: signal(false),
+  }),
+  name: '@lexical/history/History',
+  register: (editor, config, state) => {
+    const {canUndo, canRedo} = state.getInitResult();
+    const stores = state.getOutput();
+    // Single update path: passing `null` resets both signals (used for the
+    // disabled state); passing a HistoryState derives them from its stacks
+    // (used by registerHistory on init and after every mutation). The batch
+    // ensures subscribers to both signals are only notified once per change.
+    const syncFromHistoryState = (historyState: HistoryState | null) =>
+      batch(() => {
+        canUndo.value =
+          historyState != null && historyState.undoStack.length > 0;
+        canRedo.value =
+          historyState != null && historyState.redoStack.length > 0;
+      });
+    return effect(() => {
+      if (stores.disabled.value) {
+        syncFromHistoryState(null);
+        return undefined;
+      }
+      return registerHistory(
+        editor,
+        stores.historyState.value,
+        stores.delay,
+        () => stores.now.peek()(),
+        syncFromHistoryState,
+        stores.maxDepth,
+      );
+    });
+  },
+});
+
+function getHistoryPeer(editor: LexicalEditor | null | undefined) {
+  return editor
+    ? getPeerDependencyFromEditor<typeof HistoryExtension>(
+        editor,
+        HistoryExtension.name,
+      )
+    : null;
+}
+
+export interface SharedHistoryConfig {
+  /**
+   * Whether shared history is disabled or not
+   */
+  disabled: boolean;
+  /**
+   * The parentEditor to use, by default it is derived from
+   * `config.parentEditor` which can be provided by
+   * NestedEditorExtension
+   */
+  parentEditor: LexicalEditor | null;
+}
+
+/**
+ * Registers necessary listeners to manage undo/redo history stack and related
+ * editor commands, via the \@lexical/history module, only if the parent editor
+ * has a history plugin implementation.
+ */
+export const SharedHistoryExtension = defineExtension({
+  build: (editor, {disabled, parentEditor}) =>
+    namedSignals({
+      disabled,
+      parentEditor: parentEditor || editor._parentEditor,
+    }),
+  config: safeCast<SharedHistoryConfig>({
+    disabled: false,
+    parentEditor: null,
+  }),
+  dependencies: [
+    configExtension(HistoryExtension, {
+      disabled: true,
+    }),
+  ],
+  name: '@lexical/history/SharedHistory',
+  register(editor, _config, state) {
+    return effect(() => {
+      const {disabled, parentEditor} = state.getOutput();
+      if (!disabled.value) {
+        const {output} = state.getDependency(HistoryExtension);
+        const parentPeer = getHistoryPeer(parentEditor.value);
+        if (!parentPeer) {
+          return;
+        }
+        const parentOutput = parentPeer.output;
+        batch(() => {
+          output.delay.value = parentOutput.delay.value;
+          output.historyState.value = parentOutput.historyState.value;
+          output.now.value = parentOutput.now.value;
+          // The cap must come from the parent too: the child pushes onto the
+          // parent's shared undoStack, so applying the child's own (default
+          // null) maxDepth would silently void the limit the app configured.
+          output.maxDepth.value = parentOutput.maxDepth.value;
+          // Note that toggling the parent history will force this to be changed
+          output.disabled.value = parentOutput.disabled.value;
+        });
+      }
+    });
+  },
+});

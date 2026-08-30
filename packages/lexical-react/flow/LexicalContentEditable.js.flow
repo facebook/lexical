@@ -8,22 +8,27 @@
  */
 
 import type { LexicalEditor } from 'lexical';
-// $FlowFixMe - Not able to type this with a flow extension
+// $FlowFixMe[cannot-resolve-module] - Not able to type this with a flow extension
 import type {TRefFor} from 'CoreTypes.flow';
 
 import * as React from 'react';
-import type { AbstractComponent } from "react";
 
 type InlineStyle = {
-  [key: string]: mixed;
-}
+  [key: string]: unknown,
+};
 
 // Due to Flow limitations, we prefer fixed types over the built-in inexact HTMLElement
-type HTMLDivElementDOMProps = $ReadOnly<{
+type HTMLDivElementDOMProps = Readonly<{
   'aria-label'?: void | string,
   'aria-labeledby'?: void | string,
+  'aria-activedescendant'?: void | string,
+  'aria-autocomplete'?: void | string,
+  'aria-describedby'?: void | string,
+  'aria-errormessage'?: void | string,
+  'aria-invalid'?: void | boolean,
+  'aria-owns'?: void | string,
   'title'?: void | string,
-  onClick?: void | (e: SyntheticEvent<HTMLDivElement>) => mixed,
+  onClick?: void | ((e: SyntheticEvent<HTMLDivElement>) => unknown),
   autoCapitalize?: void | boolean,
   autoComplete?: void | boolean,
   autoCorrect?: void | boolean,
@@ -39,37 +44,37 @@ type HTMLDivElementDOMProps = $ReadOnly<{
 }>;
 
 export type PlaceholderProps =
-  | $ReadOnly<{
+  | Readonly<{
       'aria-placeholder'?: void,
       placeholder?: null,
     }>
-  | $ReadOnly<{
+  | Readonly<{
       'aria-placeholder': string,
       placeholder:
-        | ((isEditable: boolean) => null | React$Node)
+        | ((isEditable: boolean) => null | React.Node)
         | null
-        | React$Node,
+        | React.Node,
     }>;
 
-export type Props = $ReadOnly<{
+export type ContentEditableProps = Readonly<{
   ...HTMLDivElementDOMProps,
-  editor__DEPRECATED?: LexicalEditor;
   ariaActiveDescendant?: string,
   ariaAutoComplete?: string,
   ariaControls?: string,
   ariaDescribedBy?: string,
+  ariaErrorMessage?: string,
   ariaExpanded?: boolean,
+  ariaInvalid?: boolean,
   ariaLabel?: string,
   ariaLabelledBy?: string,
   ariaMultiline?: boolean,
   ariaOwns?: string,
   ariaRequired?: string,
   autoCapitalize?: boolean,
-  ref?: TRefFor<HTMLDivElement>,
-  ...PlaceholderProps
-}>
+  ...PlaceholderProps,
+}>;
 
-declare export var ContentEditable: AbstractComponent<
-  Props,
-  HTMLDivElement,
->;
+declare export var ContentEditable: component(
+  ref?: React.RefSetter<HTMLDivElement>,
+  ...ContentEditableProps
+);

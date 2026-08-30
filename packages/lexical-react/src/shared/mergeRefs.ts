@@ -5,20 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// Source: https://github.com/gregberge/react-merge-refs/blob/main/src/index.tsx
+import type {Ref} from 'react';
 
-export function mergeRefs<T>(
-  ...refs: Array<
-    React.MutableRefObject<T> | React.LegacyRef<T> | undefined | null
-  >
-): React.RefCallback<T> {
-  return (value) => {
-    refs.forEach((ref) => {
+export function mergeRefs<T>(...refs: Ref<T>[]): (value: null | T) => void {
+  return value => {
+    for (const ref of refs) {
       if (typeof ref === 'function') {
         ref(value);
       } else if (ref != null) {
-        (ref as React.MutableRefObject<T | null>).current = value;
+        ref.current = value;
       }
-    });
+    }
   };
 }

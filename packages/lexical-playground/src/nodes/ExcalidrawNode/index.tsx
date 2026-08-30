@@ -6,21 +6,20 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
+import type {JSX} from 'react';
 
-import {DecoratorNode} from 'lexical';
+import {
+  $getDocument,
+  DecoratorNode,
+  type DOMExportOutput,
+  type EditorConfig,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type SerializedLexicalNode,
+  type Spread,
+} from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 
 type Dimension = number | 'inherit';
 
@@ -29,69 +28,45 @@ const ExcalidrawComponent = React.lazy(() => import('./ExcalidrawComponent'));
 export type SerializedExcalidrawNode = Spread<
   {
     data: string;
-    width: Dimension;
-    height: Dimension;
+    width?: Dimension;
+    height?: Dimension;
   },
   SerializedLexicalNode
 >;
-
-function $convertExcalidrawElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const excalidrawData = domNode.getAttribute('data-lexical-excalidraw-json');
-  const styleAttributes = window.getComputedStyle(domNode);
-  const heightStr = styleAttributes.getPropertyValue('height');
-  const widthStr = styleAttributes.getPropertyValue('width');
-  const height =
-    !heightStr || heightStr === 'inherit' ? 'inherit' : parseInt(heightStr, 10);
-  const width =
-    !widthStr || widthStr === 'inherit' ? 'inherit' : parseInt(widthStr, 10);
-
-  if (excalidrawData) {
-    const node = $createExcalidrawNode();
-    node.__data = excalidrawData;
-    node.__height = height;
-    node.__width = width;
-    return {
-      node,
-    };
-  }
-  return null;
-}
 
 export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __data: string;
   __width: Dimension;
   __height: Dimension;
 
-  static getType(): string {
-    return 'excalidraw';
+  $config() {
+    return this.config('excalidraw', {extends: DecoratorNode});
   }
 
-  static clone(node: ExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(
-      node.__data,
-      node.__width,
-      node.__height,
-      node.__key,
-    );
+  // Every constructor argument has a default, so `$config` synthesizes the
+  // static `clone` as `new ExcalidrawNode()` — the drawing and its dimensions
+  // have to be carried over here or every `getWritable()` resets them.
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__data = prevNode.__data;
+    this.__width = prevNode.__width;
+    this.__height = prevNode.__height;
   }
 
   static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
     return new ExcalidrawNode(
       serializedNode.data,
-      serializedNode.width,
-      serializedNode.height,
-    );
+      serializedNode.width ?? 'inherit',
+      serializedNode.height ?? 'inherit',
+    ).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedExcalidrawNode {
     return {
+      ...super.exportJSON(),
       data: this.__data,
-      height: this.__height,
-      type: 'excalidraw',
-      version: 1,
-      width: this.__width,
+      height: this.__height === 'inherit' ? undefined : this.__height,
+      width: this.__width === 'inherit' ? undefined : this.__width,
     };
   }
 
@@ -109,15 +84,9 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
   // View
   createDOM(config: EditorConfig): HTMLElement {
-    const span = document.createElement('span');
+    const span = $getDocument().createElement('span');
     const theme = config.theme;
     const className = theme.image;
-
-    span.style.width =
-      this.__width === 'inherit' ? 'inherit' : `${this.__width}px`;
-    span.style.height =
-      this.__height === 'inherit' ? 'inherit' : `${this.__height}px`;
-
     if (className !== undefined) {
       span.className = className;
     }
@@ -128,22 +97,8 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     return false;
   }
 
-  static importDOM(): DOMConversionMap<HTMLSpanElement> | null {
-    return {
-      span: (domNode: HTMLSpanElement) => {
-        if (!domNode.hasAttribute('data-lexical-excalidraw-json')) {
-          return null;
-        }
-        return {
-          conversion: $convertExcalidrawElement,
-          priority: 1,
-        };
-      },
-    };
-  }
-
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = document.createElement('span');
+    const element = $getDocument().createElement('span');
 
     element.style.display = 'inline-block';
 
@@ -164,36 +119,54 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     return {element};
   }
 
-  setData(data: string): void {
+  setData(data: string): this {
     const self = this.getWritable();
     self.__data = data;
+    return self;
   }
 
-  setWidth(width: Dimension): void {
+  getWidth(): Dimension {
+    return this.getLatest().__width;
+  }
+
+  setWidth(width: Dimension): this {
     const self = this.getWritable();
     self.__width = width;
+    return self;
   }
 
-  setHeight(height: Dimension): void {
+  getHeight(): Dimension {
+    return this.getLatest().__height;
+  }
+
+  setHeight(height: Dimension): this {
     const self = this.getWritable();
     self.__height = height;
+    return self;
   }
 
   decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
     return (
-      <Suspense fallback={null}>
-        <ExcalidrawComponent nodeKey={this.getKey()} data={this.__data} />
-      </Suspense>
+      <ExcalidrawComponent
+        nodeKey={this.getKey()}
+        data={this.__data}
+        width={this.__width}
+        height={this.__height}
+      />
     );
   }
 }
 
-export function $createExcalidrawNode(): ExcalidrawNode {
-  return new ExcalidrawNode();
+export function $createExcalidrawNode(
+  data: string = '[]',
+  width: Dimension = 'inherit',
+  height: Dimension = 'inherit',
+): ExcalidrawNode {
+  return new ExcalidrawNode(data, width, height);
 }
 
 export function $isExcalidrawNode(
-  node: LexicalNode | null,
+  node: LexicalNode | null | undefined,
 ): node is ExcalidrawNode {
   return node instanceof ExcalidrawNode;
 }

@@ -6,11 +6,19 @@
  *
  */
 
-import type {EditorState, LexicalEditor} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import useLayoutEffect from 'shared/useLayoutEffect';
+import {type EditorState, HISTORY_MERGE_TAG, type LexicalEditor} from 'lexical';
 
+import useLayoutEffect from './shared/useLayoutEffect';
+
+/**
+ * Calls `onChange` with the latest {@link EditorState} whenever the editor
+ * updates. By default, updates that only change the selection, and updates that
+ * are part of a history merge, are ignored; set `ignoreSelectionChange` or
+ * `ignoreHistoryMergeTagChange` to control that filtering.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function OnChangePlugin({
   ignoreHistoryMergeTagChange = true,
   ignoreSelectionChange = false,
@@ -34,7 +42,7 @@ export function OnChangePlugin({
             (ignoreSelectionChange &&
               dirtyElements.size === 0 &&
               dirtyLeaves.size === 0) ||
-            (ignoreHistoryMergeTagChange && tags.has('history-merge')) ||
+            (ignoreHistoryMergeTagChange && tags.has(HISTORY_MERGE_TAG)) ||
             prevEditorState.isEmpty()
           ) {
             return;

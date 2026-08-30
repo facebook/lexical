@@ -6,15 +6,17 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedTextNode,
-  Spread,
+import {
+  $applyNodeReplacement,
+  $getDocument,
+  addClassNamesToElement,
+  type EditorConfig,
+  type LexicalNode,
+  type NodeKey,
+  type SerializedTextNode,
+  type Spread,
+  TextNode,
 } from 'lexical';
-
-import {$applyNodeReplacement, TextNode} from 'lexical';
 
 export type SerializedEmojiNode = Spread<
   {
@@ -26,8 +28,8 @@ export type SerializedEmojiNode = Spread<
 export class EmojiNode extends TextNode {
   __className: string;
 
-  static getType(): string {
-    return 'emoji';
+  $config() {
+    return this.config('emoji', {extends: TextNode});
   }
 
   static clone(node: EmojiNode): EmojiNode {
@@ -40,44 +42,39 @@ export class EmojiNode extends TextNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('span');
+    const dom = $getDocument().createElement('span');
     const inner = super.createDOM(config);
     dom.className = this.__className;
-    inner.className = 'emoji-inner';
+    // Add to the class names TextNode.createDOM applied for the text formats
+    // rather than replacing them, otherwise a formatted emoji renders unstyled.
+    addClassNamesToElement(inner, 'emoji-inner');
     dom.appendChild(inner);
     return dom;
   }
 
-  updateDOM(
-    prevNode: TextNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const inner = dom.firstChild;
     if (inner === null) {
       return true;
     }
-    super.updateDOM(prevNode, inner as HTMLElement, config);
-    return false;
+    // TextNode.updateDOM returns true when the format change needs a different
+    // tag, in which case it has not touched the DOM at all and the element has
+    // to be recreated. Returning false regardless would promise the reconciler
+    // that the difference was already applied.
+    return super.updateDOM(prevNode, inner as HTMLElement, config);
   }
 
   static importJSON(serializedNode: SerializedEmojiNode): EmojiNode {
-    const node = $createEmojiNode(
+    return $createEmojiNode(
       serializedNode.className,
       serializedNode.text,
-    );
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
+    ).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedEmojiNode {
     return {
       ...super.exportJSON(),
       className: this.getClassName(),
-      type: 'emoji',
     };
   }
 

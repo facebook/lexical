@@ -11,16 +11,23 @@ import {
   $isAutoLinkNode,
   $toggleLink,
   AutoLinkNode,
-  SerializedAutoLinkNode,
+  type SerializedAutoLinkNode,
 } from '@lexical/link';
 import {
+  $cloneWithProperties,
+  $createParagraphNode,
+  $createRangeSelection,
   $getRoot,
+  $getState,
   $selectAll,
+  $setState,
+  createState,
   ParagraphNode,
-  SerializedParagraphNode,
+  type SerializedParagraphNode,
   TextNode,
 } from 'lexical/src';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -39,8 +46,8 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalAutoAutoLinkNode tests', () => {
-  initializeUnitTest((testEnv) => {
-    test('AutoAutoLinkNode.constructor', async () => {
+  initializeUnitTest(testEnv => {
+    test('AutoLinkNode.constructor', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
@@ -54,31 +61,29 @@ describe('LexicalAutoAutoLinkNode tests', () => {
       expect(() => new AutoLinkNode('')).toThrow();
     });
 
-    test('AutoAutoLinkNode.constructor with isUnlinked param set to true', async () => {
+    test('AutoLinkNode.constructor with isUnlinked param set to true', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
-        const actutoLinkNode = new AutoLinkNode('/', {
+        const autoLinkNode = new AutoLinkNode('/', {
           isUnlinked: true,
         });
 
-        expect(actutoLinkNode.__type).toBe('autolink');
-        expect(actutoLinkNode.__url).toBe('/');
-        expect(actutoLinkNode.__isUnlinked).toBe(true);
+        expect(autoLinkNode.__type).toBe('autolink');
+        expect(autoLinkNode.__url).toBe('/');
+        expect(autoLinkNode.__isUnlinked).toBe(true);
       });
 
       expect(() => new AutoLinkNode('')).toThrow();
     });
 
-    ///
-
-    test('LineBreakNode.clone()', async () => {
+    test('AutoLinkNode.clone()', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
         const autoLinkNode = new AutoLinkNode('/');
 
-        const clone = AutoLinkNode.clone(autoLinkNode);
+        const clone = $cloneWithProperties(autoLinkNode);
 
         expect(clone).not.toBe(autoLinkNode);
         expect(clone).toStrictEqual(autoLinkNode);
@@ -501,6 +506,90 @@ describe('LexicalAutoAutoLinkNode tests', () => {
         .children[0] as SerializedParagraphNode;
       const link = paragraph.children[0] as SerializedAutoLinkNode;
       expect(link.title).toBe('Lexical Website');
+    });
+
+    test('AutoLinkNode.insertNewAfter does not create new paragraph', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        const autoLink = $createAutoLinkNode('https://example.com');
+        const textNode = new TextNode('https://example.com');
+        autoLink.append(textNode);
+        paragraph.append(autoLink);
+        root.append(paragraph);
+
+        const selection = $createRangeSelection();
+        const newNode = autoLink.insertNewAfter(selection, false);
+        // Should create a sibling AutoLinkNode in the same paragraph
+        expect($isAutoLinkNode(newNode)).toBe(true);
+        // The original paragraph should now contain two AutoLinkNodes
+        expect(paragraph.getChildrenSize()).toBe(2);
+        // No new paragraph should be created
+        expect(root.getChildrenSize()).toBe(1);
+      });
+    });
+  });
+});
+
+const autoLinkTestState = createState('autoLinkTestState', {
+  parse: (v: unknown) => (typeof v === 'string' ? v : ''),
+});
+
+describe('AutoLinkNode.insertNewAfter carries the node over', () => {
+  initializeUnitTest(testEnv => {
+    function $seed() {
+      const root = $getRoot();
+      root.clear();
+      const paragraph = $createParagraphNode();
+      const autoLink = $createAutoLinkNode('https://example.com', {
+        isUnlinked: true,
+        rel: 'noopener',
+        target: '_blank',
+        title: 'Example',
+      });
+      autoLink.setStyle('color: red');
+      autoLink.setTextStyle('font-size: 20px');
+      autoLink.setTextFormat(1);
+      $setState(autoLink, autoLinkTestState, 'carried');
+      autoLink.append(new TextNode('https://example.com'));
+      paragraph.append(autoLink);
+      root.append(paragraph);
+      return autoLink;
+    }
+
+    test('keeps the element style, text style and text format', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const next = $seed().insertNewAfter($createRangeSelection(), false);
+        expect($isAutoLinkNode(next)).toBe(true);
+        expect(next!.getStyle()).toBe('color: red');
+        expect(next!.getTextStyle()).toBe('font-size: 20px');
+        expect(next!.getTextFormat()).toBe(1);
+      });
+    });
+
+    test('keeps the NodeState', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const next = $seed().insertNewAfter($createRangeSelection(), false);
+        expect($getState(next!, autoLinkTestState)).toBe('carried');
+      });
+    });
+
+    test('keeps the link attributes (control)', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const next = $seed().insertNewAfter($createRangeSelection(), false);
+        expect($isAutoLinkNode(next)).toBe(true);
+        const autoLink = next as AutoLinkNode;
+        expect(autoLink.getURL()).toBe('https://example.com');
+        expect(autoLink.getRel()).toBe('noopener');
+        expect(autoLink.getTarget()).toBe('_blank');
+        expect(autoLink.getTitle()).toBe('Example');
+        expect(autoLink.getIsUnlinked()).toBe(true);
+      });
     });
   });
 });

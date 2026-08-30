@@ -8,7 +8,7 @@
 
 import katex from 'katex';
 import * as React from 'react';
-import {useEffect, useRef} from 'react';
+import {type JSX, useEffect, useRef} from 'react';
 
 export default function KatexRenderer({
   equation,
@@ -41,14 +41,19 @@ export default function KatexRenderer({
     // inner text from Katex. There didn't seem to be any other way of making this work,
     // without having a physical space.
     <>
-      <img src="#" alt="" />
-      <span
-        role="button"
-        tabIndex={-1}
-        onDoubleClick={onDoubleClick}
-        ref={katexElementRef}
+      <img
+        src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        width="0"
+        height="0"
+        alt=""
       />
-      <img src="#" alt="" />
+      <span onDoubleClick={onDoubleClick} ref={katexElementRef} />
+      <img
+        src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        width="0"
+        height="0"
+        alt=""
+      />
     </>
   );
 }

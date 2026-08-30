@@ -5,7 +5,7 @@ sidebar_position: 1
 # Quick Start (Vanilla JS)
 
 This section covers how to use Lexical, independently of any framework or library. For those intending to use Lexical in their React applications,
-it's advisable to [check out the Getting Started with React page](https://lexical.dev/docs/getting-started/react).
+it's advisable to [check out the Getting Started with React page](../getting-started/react.md).
 
 ### Creating an editor and using it
 
@@ -107,7 +107,7 @@ editor.update(() => {
   root.append(paragraphNode);
 });
 ```
-**It's important to note that the core library (the 'lexical' package) does not listen for any commands or perform any updates to the editor state in response to user events out-of-the-box.** In order to see text and other content appear in the editor, you need to register [command listeners](https://lexical.dev/docs/concepts/commands#editorregistercommand) and update the editor in the callback. Lexical provides a couple of helper packages to make it easy to wire up a lot of the basic commands you might want for [plain text](https://lexical.dev/docs/packages/lexical-plain-text) or [rich text](https://lexical.dev/docs/packages/lexical-rich-text) experiences.
+**It's important to note that the core library (the 'lexical' package) does not listen for any commands or perform any updates to the editor state in response to user events out-of-the-box.** In order to see text and other content appear in the editor, you need to register [command listeners](../concepts/commands.md#editorregistercommand) and update the editor in the callback. Lexical provides a couple of helper packages to make it easy to wire up a lot of the basic commands you might want for [plain text](https://lexical.dev/docs/packages/lexical-plain-text) or [rich text](https://lexical.dev/docs/packages/lexical-rich-text) experiences.
 
 If you want to know when the editor updates so you can react to the changes, you can add an update
 listener to the editor, as shown below:

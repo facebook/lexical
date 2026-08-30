@@ -1,0 +1,45 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+/**
+ * LexicalCodePrism
+ */
+
+import type {LexicalEditor, LexicalExtension} from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension';
+
+type TokenContent = string | Token | (string | Token)[];
+export interface Token {
+  type: string;
+  content: TokenContent;
+}
+export interface Tokenizer {
+  defaultLanguage: string | null;
+  tokenize(code: string, language?: string): (string | Token)[];
+}
+declare export var PrismTokenizer: Tokenizer;
+
+declare export function registerCodeHighlighting(
+  editor: LexicalEditor,
+  tokenizer?: Tokenizer,
+): () => void;
+
+export type CodePrismConfig = {
+  disabled: boolean,
+  tokenizer: Tokenizer,
+};
+declare export var CodePrismExtension: LexicalExtension<CodePrismConfig, "@lexical/code-prism", NamedSignalsOutput<CodePrismConfig>, void>;
+
+declare export function normalizeCodeLanguage(lang: string): string;
+
+declare export var getCodeLanguages: () => string[];
+declare export function getLanguageFriendlyName(lang: string): string;
+
+declare export var CODE_LANGUAGE_FRIENDLY_NAME_MAP: {[string]: string};
+declare export var CODE_LANGUAGE_MAP: {[string]: string};

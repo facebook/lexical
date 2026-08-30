@@ -6,9 +6,12 @@
  *
  */
 
-import type {EditorState, LexicalEditor, SerializedEditorState} from 'lexical';
-
-import {CLEAR_HISTORY_COMMAND} from 'lexical';
+import {
+  CLEAR_HISTORY_COMMAND,
+  type EditorState,
+  type LexicalEditor,
+  type SerializedEditorState,
+} from 'lexical';
 
 import {version} from '../package.json';
 
@@ -67,13 +70,14 @@ export function editorStateFromSerializedDocument(
  * @param editor - The lexical editor.
  */
 export function importFile(editor: LexicalEditor) {
-  readTextFileFromSystem((text) => {
+  readTextFileFromSystem(text => {
     editor.setEditorState(editorStateFromSerializedDocument(editor, text));
-    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+    editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
   });
 }
 
 function readTextFileFromSystem(callback: (text: string) => void) {
+  // eslint-disable-next-line no-restricted-syntax
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.lexical';
@@ -85,7 +89,7 @@ function readTextFileFromSystem(callback: (text: string) => void) {
       const reader = new FileReader();
       reader.readAsText(file, 'UTF-8');
 
-      reader.onload = (readerEvent) => {
+      reader.onload = readerEvent => {
         if (readerEvent.target) {
           const content = readerEvent.target.result;
           callback(content as string);
@@ -123,7 +127,9 @@ export function exportFile(
 
 // Adapted from https://stackoverflow.com/a/19328891/2013580
 function exportBlob(data: SerializedDocument, fileName: string) {
+  // eslint-disable-next-line no-restricted-syntax
   const a = document.createElement('a');
+  // eslint-disable-next-line no-restricted-syntax
   const body = document.body;
 
   if (body === null) {
@@ -136,10 +142,12 @@ function exportBlob(data: SerializedDocument, fileName: string) {
   const blob = new Blob([json], {
     type: 'octet/stream',
   });
+  // eslint-disable-next-line no-restricted-syntax
   const url = window.URL.createObjectURL(blob);
   a.href = url;
   a.download = fileName;
   a.click();
+  // eslint-disable-next-line no-restricted-syntax
   window.URL.revokeObjectURL(url);
   a.remove();
 }

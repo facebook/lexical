@@ -7,14 +7,12 @@
  * @flow strict
  */
 
-export type LexicalErrorBoundaryProps = $ReadOnly<{
-  children: React$Node,
+export type LexicalErrorBoundaryProps = Readonly<{
+  children: React.Node,
+  fallback?: React.Node,
   onError: (error: Error) => void,
 }>;
 
 declare export function LexicalErrorBoundary(
   props: LexicalErrorBoundaryProps,
-): React$Node;
-
-/** @deprecated use the named export {@link LexicalErrorBoundary} */
-export default typeof LexicalErrorBoundary;
+): React.Node;

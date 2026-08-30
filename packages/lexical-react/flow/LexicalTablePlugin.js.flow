@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-type Props = $ReadOnly<{
+type Props = Readonly<{
   hasCellMerge?: boolean,
   hasCellBackgroundColor?: boolean,
   hasTabHandler?: boolean,

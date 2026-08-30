@@ -1,0 +1,82 @@
+{
+  "name": "@lexical/code-shiki",
+  "description": "This package contains the code highlighter for Lexical using shikijs engine",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "code"
+  ],
+  "license": "MIT",
+  "version": "0.49.0",
+  "main": "./dist/LexicalCodeShiki.js",
+  "types": "./dist/typescript-too-old.d.ts",
+  "dependencies": {
+    "@lexical/code-core": "workspace:*",
+    "@lexical/extension": "workspace:*",
+    "@shikijs/core": "^4.2.0",
+    "@shikijs/engine-javascript": "^4.2.0",
+    "@shikijs/langs": "^4.2.0",
+    "@shikijs/themes": "^4.2.0",
+    "lexical": "workspace:*",
+    "shiki": "^4.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-code-shiki"
+  },
+  "devDependencies": {
+    "@shikijs/types": "^4.2.0"
+  },
+  "module": "./dist/LexicalCodeShiki.mjs",
+  "sideEffects": true,
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalCodeShiki.dev.mjs",
+        "production": "./dist/LexicalCodeShiki.prod.mjs",
+        "node": "./dist/LexicalCodeShiki.node.mjs",
+        "default": "./dist/LexicalCodeShiki.mjs"
+      },
+      "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalCodeShiki.dev.js",
+        "production": "./dist/LexicalCodeShiki.prod.js",
+        "default": "./dist/LexicalCodeShiki.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "typescript": ">=5.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
+}

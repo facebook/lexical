@@ -35,9 +35,9 @@ export type EntityMatch = {
   end: number,
   start: number,
 };
-declare export function registerLexicalTextEntity<N: TextNode>(
+declare export function registerLexicalTextEntity<N extends TextNode>(
   editor: LexicalEditor,
   getMatch: (text: string) => null | EntityMatch,
   targetNode: Class<N>,
   createNode: (textNode: TextNode) => N,
-): Array<() => void>;
+): (() => void)[];

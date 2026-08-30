@@ -9,9 +9,9 @@
 import './KatexEquationAlterer.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import * as React from 'react';
-import {useCallback, useState} from 'react';
-import {ErrorBoundary} from 'react-error-boundary';
+import {type JSX, useCallback, useState} from 'react';
 
 import Button from '../ui/Button';
 import KatexRenderer from './KatexRenderer';
@@ -41,40 +41,51 @@ export default function KatexEquationAlterer({
     <>
       <div className="KatexEquationAlterer_defaultRow">
         Inline
-        <input type="checkbox" checked={inline} onChange={onCheckboxChange} />
+        <input
+          type="checkbox"
+          checked={inline}
+          onChange={onCheckboxChange}
+          data-test-id="equation-inline-checkbox"
+        />
       </div>
       <div className="KatexEquationAlterer_defaultRow">Equation </div>
       <div className="KatexEquationAlterer_centerRow">
         {inline ? (
           <input
-            onChange={(event) => {
+            onChange={event => {
               setEquation(event.target.value);
             }}
             value={equation}
+            autoFocus={true}
             className="KatexEquationAlterer_textArea"
+            data-test-id="equation-input"
           />
         ) : (
           <textarea
-            onChange={(event) => {
+            onChange={event => {
               setEquation(event.target.value);
             }}
             value={equation}
+            autoFocus={true}
             className="KatexEquationAlterer_textArea"
+            data-test-id="equation-input"
           />
         )}
       </div>
       <div className="KatexEquationAlterer_defaultRow">Visualization </div>
       <div className="KatexEquationAlterer_centerRow">
-        <ErrorBoundary onError={(e) => editor._onError(e)} fallback={null}>
+        <LexicalErrorBoundary onError={e => editor._onError(e)} fallback={null}>
           <KatexRenderer
             equation={equation}
             inline={false}
             onDoubleClick={() => null}
           />
-        </ErrorBoundary>
+        </LexicalErrorBoundary>
       </div>
       <div className="KatexEquationAlterer_dialogActions">
-        <Button onClick={onClick}>Confirm</Button>
+        <Button onClick={onClick} data-test-id="equation-submit-btn">
+          Confirm
+        </Button>
       </div>
     </>
   );

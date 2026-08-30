@@ -6,16 +6,16 @@
  *
  */
 
-import type {ListNode} from '@lexical/list';
 import type {
   ElementTransformer,
+  MultilineElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from '@lexical/markdown';
+} from './MarkdownTransformers';
 
-import {$isCodeNode} from '@lexical/code';
-import {$isListItemNode, $isListNode} from '@lexical/list';
+import {$isCodeNode} from '@lexical/code-core';
+import {$isListItemNode, $isListNode, type ListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
 import {
   $isParagraphNode,
@@ -63,7 +63,7 @@ type MarkdownCriteria = Readonly<{
   requiresParagraphStart: boolean | null | undefined;
 }>;
 
-type MarkdownCriteriaArray = Array<MarkdownCriteria>;
+type MarkdownCriteriaArray = MarkdownCriteria[];
 
 const autoFormatBase: MarkdownCriteria = {
   markdownFormatKind: null,
@@ -402,13 +402,17 @@ function codeBlockExport(node: LexicalNode) {
 }
 
 export function indexBy<T>(
-  list: Array<T>,
-  callback: (arg0: T) => string,
-): Readonly<Record<string, Array<T>>> {
-  const index: Record<string, Array<T>> = {};
+  list: T[],
+  callback: (arg0: T) => string | undefined,
+): Readonly<Record<string, T[]>> {
+  const index: Record<string, T[]> = {};
 
   for (const item of list) {
     const key = callback(item);
+
+    if (!key) {
+      continue;
+    }
 
     if (index[key]) {
       index[key].push(item);
@@ -420,21 +424,26 @@ export function indexBy<T>(
   return index;
 }
 
-export function transformersByType(transformers: Array<Transformer>): Readonly<{
-  element: Array<ElementTransformer>;
-  textFormat: Array<TextFormatTransformer>;
-  textMatch: Array<TextMatchTransformer>;
+export function transformersByType(transformers: Transformer[]): Readonly<{
+  element: ElementTransformer[];
+  multilineElement: MultilineElementTransformer[];
+  textFormat: TextFormatTransformer[];
+  textMatch: TextMatchTransformer[];
 }> {
-  const byType = indexBy(transformers, (t) => t.type);
+  const byType = indexBy(transformers, t => t.type);
 
   return {
-    element: (byType.element || []) as Array<ElementTransformer>,
-    textFormat: (byType['text-format'] || []) as Array<TextFormatTransformer>,
-    textMatch: (byType['text-match'] || []) as Array<TextMatchTransformer>,
+    element: (byType.element || []) as ElementTransformer[],
+    multilineElement: (byType['multiline-element'] ||
+      []) as MultilineElementTransformer[],
+    textFormat: (byType['text-format'] || []) as TextFormatTransformer[],
+    textMatch: (byType['text-match'] || []) as TextMatchTransformer[],
   };
 }
 
 export const PUNCTUATION_OR_SPACE = /[!-/:-@[-`{-~\s]/;
+export const WHITESPACE = /\s/;
+export const PUNCTUATION = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/;
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 
@@ -450,4 +459,12 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
       $isTextNode(firstChild) &&
       MARKDOWN_EMPTY_LINE_REG_EXP.test(firstChild.getTextContent()))
   );
+}
+
+export function unescapeText(value: string): string {
+  return value
+    .replace(/\\([!-/:-@[-`{-~])/g, '$1')
+    .replace(/&#(\d+);/g, (_, codePoint) =>
+      String.fromCodePoint(Number(codePoint)),
+    );
 }

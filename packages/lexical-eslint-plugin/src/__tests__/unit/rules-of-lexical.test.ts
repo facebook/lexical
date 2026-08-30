@@ -6,13 +6,15 @@
  *
  */
 
+import type {RulesOfLexicalOptions} from '../../rules/rules-of-lexical.js';
+
+import prettier from '@prettier/sync';
 import {RuleTester} from 'eslint';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as prettier from 'prettier';
+import {describe, expect, it} from 'vitest';
 
 import plugin from '../../LexicalEslintPlugin.js';
-import {type RulesOfLexicalOptions} from '../../rules/rules-of-lexical.js';
 
 // The given string which may be prefixed or underscored later
 const NAME = (name: string) => name;
@@ -93,9 +95,11 @@ function readDocumentedRules() {
 }
 
 const ruleTester = new RuleTester({
-  parserOptions: {
-    ecmaFeatures: {jsx: true},
+  languageOptions: {
     ecmaVersion: 2018,
+    parserOptions: {
+      ecmaFeatures: {jsx: true},
+    },
     sourceType: 'module',
   },
 });
@@ -107,7 +111,7 @@ describe('LexicalEslintPlugin', () => {
     );
   });
 });
-(['rules-of-lexical'] as const).forEach((ruleName) => {
+(['rules-of-lexical'] as const).forEach(ruleName => {
   const namedRules = [
     fmt`const ${NAME} = () => $getRoot();`,
     fmt`const ${NAME} = () => { return $getRoot(); }`,

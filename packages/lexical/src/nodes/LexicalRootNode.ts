@@ -7,15 +7,18 @@
  */
 
 import type {LexicalNode, SerializedLexicalNode} from '../LexicalNode';
-import type {SerializedElementNode} from './LexicalElementNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {NO_DIRTY_NODES} from '../LexicalConstants';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';
 import {$getRoot} from '../LexicalUtils';
 import {$isDecoratorNode} from './LexicalDecoratorNode';
-import {$isElementNode, ElementNode} from './LexicalElementNode';
+import {
+  $isElementNode,
+  ElementNode,
+  type SerializedElementNode,
+} from './LexicalElementNode';
 
 export type SerializedRootNode<
   T extends SerializedLexicalNode = SerializedLexicalNode,
@@ -26,12 +29,8 @@ export class RootNode extends ElementNode {
   /** @internal */
   __cachedText: null | string;
 
-  static getType(): string {
-    return 'root';
-  }
-
-  static clone(): RootNode {
-    return new RootNode();
+  $config() {
+    return this.config('root', {extends: ElementNode});
   }
 
   constructor() {
@@ -48,15 +47,11 @@ export class RootNode extends ElementNode {
 
   getTextContent(): string {
     const cachedText = this.__cachedText;
-    if (
-      isCurrentlyReadOnlyMode() ||
-      getActiveEditor()._dirtyType === NO_DIRTY_NODES
-    ) {
-      if (cachedText !== null) {
-        return cachedText;
-      }
-    }
-    return super.getTextContent();
+    return cachedText !== null &&
+      (isCurrentlyReadOnlyMode() ||
+        getActiveEditor()._dirtyType === NO_DIRTY_NODES)
+      ? cachedText
+      : super.getTextContent();
   }
 
   remove(): never {
@@ -77,43 +72,28 @@ export class RootNode extends ElementNode {
 
   // View
 
-  updateDOM(prevNode: RootNode, dom: HTMLElement): false {
+  updateDOM(prevNode: this, dom: HTMLElement): false {
     return false;
   }
 
   // Mutate
-
-  append(...nodesToAppend: LexicalNode[]): this {
-    for (let i = 0; i < nodesToAppend.length; i++) {
-      const node = nodesToAppend[i];
-      if (!$isElementNode(node) && !$isDecoratorNode(node)) {
-        invariant(
-          false,
-          'rootNode.append: Only element or decorator nodes can be appended to the root node',
-        );
-      }
+  splice(
+    start: number,
+    deleteCount: number,
+    nodesToInsert: LexicalNode[],
+  ): this {
+    for (const node of nodesToInsert) {
+      invariant(
+        $isElementNode(node) || $isDecoratorNode(node),
+        'rootNode.splice: Only element or decorator nodes can be inserted to the root node',
+      );
     }
-    return super.append(...nodesToAppend);
+    return super.splice(start, deleteCount, nodesToInsert);
   }
 
   static importJSON(serializedNode: SerializedRootNode): RootNode {
     // We don't create a root, and instead use the existing root.
-    const node = $getRoot();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedRootNode {
-    return {
-      children: [],
-      direction: this.getDirection(),
-      format: this.getFormatType(),
-      indent: this.getIndent(),
-      type: 'root',
-      version: 1,
-    };
+    return $getRoot().updateFromJSON(serializedNode);
   }
 
   collapseAtStart(): true {
@@ -125,6 +105,7 @@ export function $createRootNode(): RootNode {
   return new RootNode();
 }
 
+/** Returns true if the given node is a RootNode. */
 export function $isRootNode(
   node: RootNode | LexicalNode | null | undefined,
 ): node is RootNode {

@@ -7,162 +7,175 @@
  */
 
 import {
+  $getDOMSlot,
+  $getDOMTextNode,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   type EditorState,
-  ElementNode,
+  type ElementNode,
+  getDOMTextNode,
   type LexicalEditor,
-  TextNode,
+  mergeRegister,
+  type Point,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
-import mergeRegister from './mergeRegister';
 import positionNodeOnRange from './positionNodeOnRange';
 import px from './px';
 
+function $getOrderedSelectionPoints(selection: RangeSelection): [Point, Point] {
+  const points = selection.getStartEndPoints();
+  return selection.isBackward() ? [points[1], points[0]] : points;
+}
+
+function $rangeTargetFromPoint(
+  editor: LexicalEditor,
+  point: Point,
+  node: ElementNode | TextNode,
+  dom: HTMLElement,
+): [HTMLElement | Text, number] {
+  if (point.type === 'text' || !$isElementNode(node)) {
+    const textDOM =
+      ($isTextNode(node)
+        ? $getDOMTextNode(node, dom, editor)
+        : getDOMTextNode(dom)) || dom;
+    return [textDOM, point.offset];
+  } else {
+    const slot = $getDOMSlot(node, dom, editor);
+    return [slot.element, slot.getFirstChildOffset() + point.offset];
+  }
+}
+
+function $rangeFromPoints(
+  editor: LexicalEditor,
+  start: Point,
+  startNode: ElementNode | TextNode,
+  startDOM: HTMLElement,
+  end: Point,
+  endNode: ElementNode | TextNode,
+  endDOM: HTMLElement,
+): Range {
+  const editorDocument = editor._window ? editor._window.document : document;
+  const range = editorDocument.createRange();
+  range.setStart(...$rangeTargetFromPoint(editor, start, startNode, startDOM));
+  range.setEnd(...$rangeTargetFromPoint(editor, end, endNode, endDOM));
+  return range;
+}
+
+function defaultOnReposition(domNodes: readonly HTMLElement[]): void {
+  for (const domNode of domNodes) {
+    const domNodeStyle = domNode.style;
+
+    if (domNodeStyle.background !== 'Highlight') {
+      domNodeStyle.background = 'Highlight';
+    }
+    if (domNodeStyle.color !== 'HighlightText') {
+      domNodeStyle.color = 'HighlightText';
+    }
+    if (domNodeStyle.marginTop !== px(-1.5)) {
+      domNodeStyle.marginTop = px(-1.5);
+    }
+    if (domNodeStyle.paddingTop !== px(4)) {
+      domNodeStyle.paddingTop = px(4);
+    }
+    if (domNodeStyle.paddingBottom !== px(0)) {
+      domNodeStyle.paddingBottom = px(0);
+    }
+  }
+}
+
+/**
+ * Place one or multiple newly created Nodes at the current selection. Multiple
+ * nodes will only be created when the selection spans multiple lines (aka
+ * client rects).
+ *
+ * This function can come useful when you want to show the selection but the
+ * editor has been focused away.
+ */
 export default function markSelection(
   editor: LexicalEditor,
-  onReposition?: (node: Array<HTMLElement>) => void,
+  onReposition: (node: readonly HTMLElement[]) => void = defaultOnReposition,
 ): () => void {
   let previousAnchorNode: null | TextNode | ElementNode = null;
+  let previousAnchorNodeDOM: null | HTMLElement = null;
   let previousAnchorOffset: null | number = null;
   let previousFocusNode: null | TextNode | ElementNode = null;
+  let previousFocusNodeDOM: null | HTMLElement = null;
   let previousFocusOffset: null | number = null;
   let removeRangeListener: () => void = () => {};
   function compute(editorState: EditorState) {
-    editorState.read(() => {
-      const selection = $getSelection();
-      if (!$isRangeSelection(selection)) {
-        // TODO
-        previousAnchorNode = null;
-        previousAnchorOffset = null;
-        previousFocusNode = null;
-        previousFocusOffset = null;
-        removeRangeListener();
-        removeRangeListener = () => {};
-        return;
-      }
-      const {anchor, focus} = selection;
-      const currentAnchorNode = anchor.getNode();
-      const currentAnchorNodeKey = currentAnchorNode.getKey();
-      const currentAnchorOffset = anchor.offset;
-      const currentFocusNode = focus.getNode();
-      const currentFocusNodeKey = currentFocusNode.getKey();
-      const currentFocusOffset = focus.offset;
-      const currentAnchorNodeDOM = editor.getElementByKey(currentAnchorNodeKey);
-      const currentFocusNodeDOM = editor.getElementByKey(currentFocusNodeKey);
-      const differentAnchorDOM =
-        previousAnchorNode === null ||
-        currentAnchorNodeDOM === null ||
-        currentAnchorOffset !== previousAnchorOffset ||
-        currentAnchorNodeKey !== previousAnchorNode.getKey() ||
-        (currentAnchorNode !== previousAnchorNode &&
-          (!(previousAnchorNode instanceof TextNode) ||
-            currentAnchorNode.updateDOM(
-              previousAnchorNode,
-              currentAnchorNodeDOM,
-              editor._config,
-            )));
-      const differentFocusDOM =
-        previousFocusNode === null ||
-        currentFocusNodeDOM === null ||
-        currentFocusOffset !== previousFocusOffset ||
-        currentFocusNodeKey !== previousFocusNode.getKey() ||
-        (currentFocusNode !== previousFocusNode &&
-          (!(previousFocusNode instanceof TextNode) ||
-            currentFocusNode.updateDOM(
-              previousFocusNode,
-              currentFocusNodeDOM,
-              editor._config,
-            )));
-      if (differentAnchorDOM || differentFocusDOM) {
-        const anchorHTMLElement = editor.getElementByKey(
-          anchor.getNode().getKey(),
-        );
-        const focusHTMLElement = editor.getElementByKey(
-          focus.getNode().getKey(),
-        );
-        // TODO handle selection beyond the common TextNode
+    editorState.read(
+      () => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          // TODO
+          previousAnchorNode = null;
+          previousAnchorOffset = null;
+          previousFocusNode = null;
+          previousFocusOffset = null;
+          removeRangeListener();
+          removeRangeListener = () => {};
+          return;
+        }
+        const [start, end] = $getOrderedSelectionPoints(selection);
+        const currentStartNode = start.getNode() as TextNode | ElementNode;
+        const currentStartNodeKey = currentStartNode.getKey();
+        const currentStartOffset = start.offset;
+        const currentEndNode = end.getNode() as TextNode | ElementNode;
+        const currentEndNodeKey = currentEndNode.getKey();
+        const currentEndOffset = end.offset;
+        const currentStartNodeDOM = editor.getElementByKey(currentStartNodeKey);
+        const currentEndNodeDOM = editor.getElementByKey(currentEndNodeKey);
+        const differentStartDOM =
+          previousAnchorNode === null ||
+          currentStartNodeDOM !== previousAnchorNodeDOM ||
+          currentStartOffset !== previousAnchorOffset ||
+          currentStartNodeKey !== previousAnchorNode.getKey();
+        const differentEndDOM =
+          previousFocusNode === null ||
+          currentEndNodeDOM !== previousFocusNodeDOM ||
+          currentEndOffset !== previousFocusOffset ||
+          currentEndNodeKey !== previousFocusNode.getKey();
         if (
-          anchorHTMLElement !== null &&
-          focusHTMLElement !== null &&
-          anchorHTMLElement.tagName === 'SPAN' &&
-          focusHTMLElement.tagName === 'SPAN'
+          (differentStartDOM || differentEndDOM) &&
+          currentStartNodeDOM !== null &&
+          currentEndNodeDOM !== null
         ) {
-          const range = document.createRange();
-          let firstHTMLElement;
-          let firstOffset;
-          let lastHTMLElement;
-          let lastOffset;
-          if (focus.isBefore(anchor)) {
-            firstHTMLElement = focusHTMLElement;
-            firstOffset = focus.offset;
-            lastHTMLElement = anchorHTMLElement;
-            lastOffset = anchor.offset;
-          } else {
-            firstHTMLElement = anchorHTMLElement;
-            firstOffset = anchor.offset;
-            lastHTMLElement = focusHTMLElement;
-            lastOffset = focus.offset;
-          }
-          const firstTextNode = firstHTMLElement.firstChild;
-          invariant(
-            firstTextNode !== null,
-            'Expected text node to be first child of span',
+          const range = $rangeFromPoints(
+            editor,
+            start,
+            currentStartNode,
+            currentStartNodeDOM,
+            end,
+            currentEndNode,
+            currentEndNodeDOM,
           );
-          const lastTextNode = lastHTMLElement.firstChild;
-          invariant(
-            lastTextNode !== null,
-            'Expected text node to be first child of span',
-          );
-          range.setStart(firstTextNode, firstOffset);
-          range.setEnd(lastTextNode, lastOffset);
           removeRangeListener();
           removeRangeListener = positionNodeOnRange(
             editor,
             range,
-            (domNodes) => {
-              for (const domNode of domNodes) {
-                const domNodeStyle = domNode.style;
-                if (domNodeStyle.background !== 'Highlight') {
-                  domNodeStyle.background = 'Highlight';
-                }
-                if (domNodeStyle.color !== 'HighlightText') {
-                  domNodeStyle.color = 'HighlightText';
-                }
-                if (domNodeStyle.zIndex !== '-1') {
-                  domNodeStyle.zIndex = '-1';
-                }
-                if (domNodeStyle.pointerEvents !== 'none') {
-                  domNodeStyle.pointerEvents = 'none';
-                }
-                if (domNodeStyle.marginTop !== px(-1.5)) {
-                  domNodeStyle.marginTop = px(-1.5);
-                }
-                if (domNodeStyle.paddingTop !== px(4)) {
-                  domNodeStyle.paddingTop = px(4);
-                }
-                if (domNodeStyle.paddingBottom !== px(0)) {
-                  domNodeStyle.paddingBottom = px(0);
-                }
-              }
-              if (onReposition !== undefined) {
-                onReposition(domNodes);
-              }
-            },
+            onReposition,
           );
         }
-      }
-      previousAnchorNode = currentAnchorNode;
-      previousAnchorOffset = currentAnchorOffset;
-      previousFocusNode = currentFocusNode;
-      previousFocusOffset = currentFocusOffset;
-    });
+        previousAnchorNode = currentStartNode;
+        previousAnchorNodeDOM = currentStartNodeDOM;
+        previousAnchorOffset = currentStartOffset;
+        previousFocusNode = currentEndNode;
+        previousFocusNodeDOM = currentEndNodeDOM;
+        previousFocusOffset = currentEndOffset;
+        // Pass {editor} so the active editor is set: $rangeTargetFromPoint reads
+        // the slot (getFirstChildOffset), which consults the active editor to
+        // skip the block cursor.
+      },
+      {editor},
+    );
   }
   compute(editor.getEditorState());
   return mergeRegister(
     editor.registerUpdateListener(({editorState}) => compute(editorState)),
-    removeRangeListener,
     () => {
       removeRangeListener();
     },

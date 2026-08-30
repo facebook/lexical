@@ -6,9 +6,10 @@
  *
  */
 
-import {$createQuoteNode, QuoteNode} from '@lexical/rich-text';
+import {$createQuoteNode, type QuoteNode} from '@lexical/rich-text';
 import {$createRangeSelection, $getRoot, ParagraphNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -18,7 +19,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalQuoteNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('QuoteNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
@@ -54,7 +55,11 @@ describe('LexicalQuoteNode tests', () => {
           '<blockquote class="my-quote-class"></blockquote>',
         );
         const newQuoteNode = $createQuoteNode();
-        const result = newQuoteNode.updateDOM(quoteNode, domElement);
+        const result = newQuoteNode.updateDOM(
+          quoteNode,
+          domElement,
+          editorConfig,
+        );
         expect(result).toBe(false);
         expect(domElement.outerHTML).toBe(
           '<blockquote class="my-quote-class"></blockquote>',
@@ -71,7 +76,7 @@ describe('LexicalQuoteNode tests', () => {
         root.append(quoteNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><blockquote><br></blockquote></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><blockquote dir="auto"><br data-lexical-managed-linebreak="true"></blockquote></div>',
       );
       await editor.update(() => {
         const result = quoteNode.insertNewAfter($createRangeSelection());
@@ -79,7 +84,7 @@ describe('LexicalQuoteNode tests', () => {
         expect(result.getDirection()).toEqual(quoteNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><blockquote><br></blockquote><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><blockquote dir="auto"><br data-lexical-managed-linebreak="true"></blockquote><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
     });
 

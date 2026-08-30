@@ -6,13 +6,19 @@
  *
  */
 
+import {expect} from '@playwright/test';
+
 import {
   assertHTML,
   dragDraggableMenuTo,
+  dragMouse,
   focusEditor,
   initialize,
+  insertYouTubeEmbed,
   mouseMoveToSelector,
+  selectorBoundingBox,
   test,
+  YOUTUBE_SAMPLE_URL,
 } from '../utils/index.mjs';
 
 test.describe('DraggableBlock', () => {
@@ -48,19 +54,19 @@ test.describe('DraggableBlock', () => {
       page,
       `
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto">
           <span data-lexical-text="true">Paragraph 2</span>
         </p>
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto"
           style="">
           <span data-lexical-text="true">Paragraph 1</span>
         </p>
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto">
           <span data-lexical-text="true">Paragraph 3</span>
         </p>
       `,
@@ -95,14 +101,14 @@ test.describe('DraggableBlock', () => {
       page,
       `
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto"
           style="">
           <span data-lexical-text="true">Paragraph 1</span>
         </p>
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto">
           <span data-lexical-text="true">Paragraph 2</span>
         </p>
       `,
@@ -137,13 +143,13 @@ test.describe('DraggableBlock', () => {
       page,
       `
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto">
           <span data-lexical-text="true">Paragraph 1</span>
         </p>
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto"
           style="">
           <span data-lexical-text="true">Paragraph 2</span>
         </p>
@@ -174,17 +180,58 @@ test.describe('DraggableBlock', () => {
       page,
       `
       <p
-        class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-        dir="ltr">
+        class="PlaygroundEditorTheme__paragraph"
+        dir="auto">
         <span data-lexical-text="true">Paragraph 2</span>
       </p>
       <p
-        class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-        dir="ltr"
+        class="PlaygroundEditorTheme__paragraph"
+        dir="auto"
         style="">
         <span data-lexical-text="true">Paragraph 1</span>
       </p>
     `,
     );
+  });
+
+  test('Restores focus after dragging a selected decorator block', async ({
+    page,
+    isPlainText,
+    browserName,
+    isCollab,
+  }) => {
+    test.skip(isCollab);
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('Before');
+    await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
+    await page.keyboard.type('After');
+
+    const decorator = page.locator('.PlaygroundEditorTheme__embedBlock');
+    const decoratorElement = page.locator('div[data-lexical-decorator="true"]');
+    const decoratorBox = await decoratorElement.boundingBox();
+    if (decoratorBox === null) {
+      throw new Error('Decorator block is not visible');
+    }
+    const pointerX = decoratorBox.x + 10;
+    const pointerY = decoratorBox.y + decoratorBox.height / 2;
+    await decorator.evaluate(element => element.click());
+    await expect(decorator).toHaveClass(
+      /PlaygroundEditorTheme__embedBlockFocus/,
+    );
+    await decoratorElement.dispatchEvent('mousemove', {
+      clientX: pointerX,
+      clientY: pointerY,
+    });
+    await page.locator('.draggable-block-menu').waitFor();
+    await dragMouse(
+      page,
+      await selectorBoundingBox(page, '.draggable-block-menu'),
+      await selectorBoundingBox(page, 'p:has-text("After")'),
+      {positionEnd: 'end', positionStart: 'middle', slow: true},
+    );
+
+    await expect(page.locator('.ContentEditable__root')).toBeFocused();
   });
 });

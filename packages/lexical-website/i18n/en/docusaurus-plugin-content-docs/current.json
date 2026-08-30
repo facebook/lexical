@@ -3,32 +3,40 @@
     "message": "Next",
     "description": "The label for version current"
   },
-  "sidebar.tutorialSidebar.category.Tutorial - Basics": {
-    "message": "Tutorial - Basics",
-    "description": "The label for category Tutorial - Basics in sidebar tutorialSidebar"
+  "sidebar.api.category.Modules": {
+    "message": "Modules",
+    "description": "The label for category 'Modules' in sidebar 'api'"
   },
-  "sidebar.tutorialSidebar.category.Tutorial - Extras": {
-    "message": "Tutorial - Extras",
-    "description": "The label for category Tutorial - Extras in sidebar tutorialSidebar"
+  "sidebar.api.category.@lexical/headless": {
+    "message": "@lexical/headless",
+    "description": "The label for category '@lexical/headless' in sidebar 'api'"
   },
-  "sidebar.tutorialSidebar.category.Getting Started": {
+  "sidebar.api.category.@lexical/react": {
+    "message": "@lexical/react",
+    "description": "The label for category '@lexical/react' in sidebar 'api'"
+  },
+  "sidebar.docs.category.Getting Started": {
     "message": "Getting Started",
-    "description": "The label for category Getting Started in sidebar tutorialSidebar"
+    "description": "The label for category 'Getting Started' in sidebar 'docs'"
   },
-  "sidebar.tutorialSidebar.category.Demos": {
-    "message": "Demos",
-    "description": "The label for category Demo in sidebar tutorialSidebar"
-  },
-  "sidebar.tutorialSidebar.category.Concepts": {
+  "sidebar.docs.category.Concepts": {
     "message": "Concepts",
-    "description": "The label for category Concepts in sidebar tutorialSidebar"
+    "description": "The label for category 'Concepts' in sidebar 'docs'"
   },
-  "sidebar.tutorialSidebar.category.API": {
-    "message": "API",
-    "description": "The label for category API in sidebar tutorialSidebar"
+  "sidebar.docs.category.Extensions": {
+    "message": "Extensions",
+    "description": "The label for category 'Extensions' in sidebar 'docs'"
   },
-  "sidebar.tutorialSidebar.category.React": {
+  "sidebar.docs.category.Packages": {
+    "message": "Packages",
+    "description": "The label for category 'Packages' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.React": {
     "message": "React",
-    "description": "The label for category React in sidebar tutorialSidebar"
+    "description": "The label for category 'React' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.Collaboration": {
+    "message": "Collaboration",
+    "description": "The label for category 'Collaboration' in sidebar 'docs'"
   }
 }

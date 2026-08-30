@@ -6,25 +6,29 @@
  *
  */
 
+import type {JSX} from 'react';
+
 import {
+  $getDocument,
+  $getState,
+  $setState,
+  createState,
   DecoratorNode,
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  LexicalNode,
-  NodeKey,
-  SerializedLexicalNode,
-  Spread,
+  type DOMExportOutput,
+  type LexicalNode,
+  type SerializedLexicalNode,
+  type Spread,
+  type StateConfigValue,
+  type StateValueOrUpdater,
 } from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 
-export type Options = ReadonlyArray<Option>;
+export type Options = readonly Option[];
 
 export type Option = Readonly<{
   text: string;
   uid: string;
-  votes: Array<number>;
+  votes: string[];
 }>;
 
 const PollComponent = React.lazy(() => import('./PollComponent'));
@@ -33,7 +37,7 @@ function createUID(): string {
   return Math.random()
     .toString(36)
     .replace(/[^a-z]+/g, '')
-    .substr(0, 5);
+    .substring(0, 5);
 }
 
 export function createPollOption(text = ''): Option {
@@ -44,11 +48,7 @@ export function createPollOption(text = ''): Option {
   };
 }
 
-function cloneOption(
-  option: Option,
-  text: string,
-  votes?: Array<number>,
-): Option {
+function cloneOption(option: Option, text: string, votes?: string[]): Option {
   return {
     text,
     uid: option.uid,
@@ -64,119 +64,116 @@ export type SerializedPollNode = Spread<
   SerializedLexicalNode
 >;
 
-function $convertPollElement(domNode: HTMLElement): DOMConversionOutput | null {
-  const question = domNode.getAttribute('data-lexical-poll-question');
-  const options = domNode.getAttribute('data-lexical-poll-options');
-  if (question !== null && options !== null) {
-    const node = $createPollNode(question, JSON.parse(options));
-    return {node};
+function parseOptions(json: unknown): Options {
+  const options = [];
+  if (Array.isArray(json)) {
+    for (const row of json) {
+      if (
+        row &&
+        typeof row.text === 'string' &&
+        typeof row.uid === 'string' &&
+        Array.isArray(row.votes) &&
+        row.votes.every((v: unknown) => typeof v === 'string')
+      ) {
+        options.push(row);
+      }
+    }
   }
-  return null;
+  return options;
 }
 
+const questionState = createState('question', {
+  parse: v => (typeof v === 'string' ? v : ''),
+});
+const optionsState = createState('options', {
+  isEqual: (a, b) =>
+    a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
+  parse: parseOptions,
+});
+
 export class PollNode extends DecoratorNode<JSX.Element> {
-  __question: string;
-  __options: Options;
-
-  static getType(): string {
-    return 'poll';
+  $config() {
+    return this.config('poll', {
+      extends: DecoratorNode,
+      stateConfigs: [
+        {flat: true, stateConfig: questionState},
+        {flat: true, stateConfig: optionsState},
+      ],
+    });
   }
 
-  static clone(node: PollNode): PollNode {
-    return new PollNode(node.__question, node.__options, node.__key);
+  getQuestion(): StateConfigValue<typeof questionState> {
+    return $getState(this, questionState);
+  }
+  setQuestion(valueOrUpdater: StateValueOrUpdater<typeof questionState>): this {
+    return $setState(this, questionState, valueOrUpdater);
+  }
+  getOptions(): StateConfigValue<typeof optionsState> {
+    return $getState(this, optionsState);
+  }
+  setOptions(valueOrUpdater: StateValueOrUpdater<typeof optionsState>): this {
+    return $setState(this, optionsState, valueOrUpdater);
   }
 
-  static importJSON(serializedNode: SerializedPollNode): PollNode {
-    const node = $createPollNode(
-      serializedNode.question,
-      serializedNode.options,
-    );
-    serializedNode.options.forEach(node.addOption);
-    return node;
+  addOption(option: Option): this {
+    return this.setOptions(options => [...options, option]);
   }
 
-  constructor(question: string, options: Options, key?: NodeKey) {
-    super(key);
-    this.__question = question;
-    this.__options = options;
+  deleteOption(option: Option): this {
+    return this.setOptions(prevOptions => {
+      const index = prevOptions.indexOf(option);
+      if (index === -1) {
+        return prevOptions;
+      }
+      const options = Array.from(prevOptions);
+      options.splice(index, 1);
+      return options;
+    });
   }
 
-  exportJSON(): SerializedPollNode {
-    return {
-      options: this.__options,
-      question: this.__question,
-      type: 'poll',
-      version: 1,
-    };
+  setOptionText(option: Option, text: string): this {
+    return this.setOptions(prevOptions => {
+      const clonedOption = cloneOption(option, text);
+      const options = Array.from(prevOptions);
+      const index = options.indexOf(option);
+      options[index] = clonedOption;
+      return options;
+    });
   }
 
-  addOption(option: Option): void {
-    const self = this.getWritable();
-    const options = Array.from(self.__options);
-    options.push(option);
-    self.__options = options;
-  }
-
-  deleteOption(option: Option): void {
-    const self = this.getWritable();
-    const options = Array.from(self.__options);
-    const index = options.indexOf(option);
-    options.splice(index, 1);
-    self.__options = options;
-  }
-
-  setOptionText(option: Option, text: string): void {
-    const self = this.getWritable();
-    const clonedOption = cloneOption(option, text);
-    const options = Array.from(self.__options);
-    const index = options.indexOf(option);
-    options[index] = clonedOption;
-    self.__options = options;
-  }
-
-  toggleVote(option: Option, clientID: number): void {
-    const self = this.getWritable();
-    const votes = option.votes;
-    const votesClone = Array.from(votes);
-    const voteIndex = votes.indexOf(clientID);
-    if (voteIndex === -1) {
-      votesClone.push(clientID);
-    } else {
-      votesClone.splice(voteIndex, 1);
-    }
-    const clonedOption = cloneOption(option, option.text, votesClone);
-    const options = Array.from(self.__options);
-    const index = options.indexOf(option);
-    options[index] = clonedOption;
-    self.__options = options;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-poll-question')) {
-          return null;
-        }
-        return {
-          conversion: $convertPollElement,
-          priority: 2,
-        };
-      },
-    };
+  toggleVote(option: Option, username: string): this {
+    return this.setOptions(prevOptions => {
+      const index = prevOptions.indexOf(option);
+      if (index === -1) {
+        return prevOptions;
+      }
+      const votes = option.votes;
+      const votesClone = Array.from(votes);
+      const voteIndex = votes.indexOf(username);
+      if (voteIndex === -1) {
+        votesClone.push(username);
+      } else {
+        votesClone.splice(voteIndex, 1);
+      }
+      const clonedOption = cloneOption(option, option.text, votesClone);
+      const options = Array.from(prevOptions);
+      options[index] = clonedOption;
+      return options;
+    });
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('span');
-    element.setAttribute('data-lexical-poll-question', this.__question);
+    const element = $getDocument().createElement('span');
+    element.setAttribute('data-lexical-poll-question', this.getQuestion());
     element.setAttribute(
       'data-lexical-poll-options',
-      JSON.stringify(this.__options),
+      JSON.stringify(this.getOptions()),
     );
     return {element};
   }
 
   createDOM(): HTMLElement {
-    const elem = document.createElement('span');
+    const elem = $getDocument().createElement('span');
     elem.style.display = 'inline-block';
     return elem;
   }
@@ -187,19 +184,17 @@ export class PollNode extends DecoratorNode<JSX.Element> {
 
   decorate(): JSX.Element {
     return (
-      <Suspense fallback={null}>
-        <PollComponent
-          question={this.__question}
-          options={this.__options}
-          nodeKey={this.__key}
-        />
-      </Suspense>
+      <PollComponent
+        question={this.getQuestion()}
+        options={this.getOptions()}
+        nodeKey={this.__key}
+      />
     );
   }
 }
 
 export function $createPollNode(question: string, options: Options): PollNode {
-  return new PollNode(question, options);
+  return new PollNode().setQuestion(question).setOptions(options);
 }
 
 export function $isPollNode(

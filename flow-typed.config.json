@@ -1,0 +1,4 @@
+{
+  "env": ["bom", "cssom", "dom", "html", "jsx"],
+  "ignore": ["fs-extra", "hoist-non-react-statics", "lodash-es", "react-dom"]
+}

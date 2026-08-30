@@ -14,7 +14,7 @@ import {
   html,
   initialize,
   test,
-  waitForSelector,
+  waitForTypeaheadMenuOption,
 } from '../utils/index.mjs';
 
 test.describe('Regression test #379', () => {
@@ -24,17 +24,15 @@ test.describe('Regression test #379', () => {
   }) => {
     await focusEditor(page);
     await page.keyboard.type('@Luke');
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
     await page.keyboard.press('Enter');
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="mention"
+            spellcheck="false"
             style="background-color: rgba(24, 119, 232, 0.2);"
             data-lexical-text="true">
             Luke Skywalker
@@ -54,9 +52,10 @@ test.describe('Regression test #379', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="mention"
+            spellcheck="false"
             style="background-color: rgba(24, 119, 232, 0.2);"
             data-lexical-text="true">
             Luke Skywalker

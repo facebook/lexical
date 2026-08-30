@@ -7,11 +7,6 @@
  */
 
 import {
-  moveRight,
-  moveToEditorBeginning,
-  STANDARD_KEYPRESS_DELAY_MS,
-} from '../../keyboardShortcuts/index.mjs';
-import {
   assertHTML,
   click,
   focusEditor,
@@ -20,10 +15,10 @@ import {
   test,
 } from '../../utils/index.mjs';
 
-test(`Headings - stays as a heading when you press enter in the middle of a heading`, async ({
+test('Headings - changes to a paragraph when you press enter at the end of a heading', async ({
   page,
-  isCollab,
   isPlainText,
+  isCollab,
 }) => {
   test.skip(isPlainText);
   await initialize({isCollab, page});
@@ -37,33 +32,23 @@ test(`Headings - stays as a heading when you press enter in the middle of a head
   await assertHTML(
     page,
     html`
-      <h1
-        class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-        dir="ltr">
+      <h1 class="PlaygroundEditorTheme__h1" dir="auto">
         <span data-lexical-text="true">Welcome to the playground</span>
       </h1>
     `,
   );
-
-  await moveToEditorBeginning(page);
-
-  await moveRight(page, 5, STANDARD_KEYPRESS_DELAY_MS);
 
   await page.keyboard.press('Enter');
 
   await assertHTML(
     page,
     html`
-      <h1
-        class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-        dir="ltr">
-        <span data-lexical-text="true">Welco</span>
+      <h1 class="PlaygroundEditorTheme__h1" dir="auto">
+        <span data-lexical-text="true">Welcome to the playground</span>
       </h1>
-      <h1
-        class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-        dir="ltr">
-        <span data-lexical-text="true">me to the playground</span>
-      </h1>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
     `,
   );
 });

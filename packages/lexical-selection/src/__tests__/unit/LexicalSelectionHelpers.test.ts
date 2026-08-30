@@ -25,12 +25,12 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $setSelection,
-  ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  ParagraphNode,
-  RangeSelection,
-  TextModeType,
+  type ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type ParagraphNode,
+  type RangeSelection,
+  type TextModeType,
   TextNode,
 } from 'lexical';
 import {
@@ -42,6 +42,7 @@ import {
   invariant,
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
+import {afterEach, describe, expect, it, test, vi} from 'vitest';
 
 import {$setAnchorPoint, $setFocusPoint} from '../utils';
 
@@ -139,7 +140,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('');
       });
 
@@ -188,7 +189,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // insertParagraph
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         selection.insertParagraph();
 
         expect(selection.anchor).toEqual(
@@ -319,7 +320,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -395,7 +396,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -456,7 +457,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -522,7 +523,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -598,7 +599,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -674,7 +675,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -734,7 +735,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('');
       });
 
@@ -887,7 +888,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('');
       });
 
@@ -1040,7 +1041,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('');
       });
 
@@ -1188,7 +1189,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -1259,7 +1260,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -1343,7 +1344,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('a');
       });
 
@@ -1351,11 +1352,12 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, state) => {
         selection.insertText('Test');
 
-        expect($getNodeByKey('a')!.getTextContent()).toBe('Test');
+        const firstChild = state.getFirstChild()!;
+        expect(firstChild.getTextContent()).toBe('Test');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: 'a',
+            key: firstChild.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -1363,7 +1365,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: 'a',
+            key: firstChild.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -1392,7 +1394,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // insertParagraph
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         selection.insertParagraph();
 
         expect(selection.anchor).toEqual(
@@ -1512,12 +1514,12 @@ describe('LexicalSelectionHelpers tests', () => {
       };
 
       // getNodes
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getNodes()).toEqual([$getNodeByKey('a')]);
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('a');
       });
 
@@ -1683,7 +1685,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('abc');
       });
 
@@ -1827,7 +1829,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">foo</span></p>',
         );
       });
 
@@ -1868,7 +1870,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foobar</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">foobar</span></p>',
         );
       });
 
@@ -1913,7 +1915,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">h</span><a href="https://" dir="ltr"><span data-lexical-text="true">ello worl</span></a><span data-lexical-text="true">d</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">h</span><a href="https://"><span data-lexical-text="true">ello worl</span></a><span data-lexical-text="true">d</span></p>',
         );
       });
 
@@ -1956,7 +1958,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<h1 dir="ltr"><span data-lexical-text="true">foo</span></h1>',
+          '<h1 dir="auto"><span data-lexical-text="true">foo</span></h1>',
         );
       });
     });
@@ -1999,7 +2001,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">Existing text...foo</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">Existing text...foo</span></p>',
         );
       });
 
@@ -2044,7 +2046,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">Existing text...foobar</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">Existing text...foobar</span></p>',
         );
       });
 
@@ -2091,7 +2093,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">Existing text...foo</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">Existing text...foo</span></p>',
         );
       });
 
@@ -2162,7 +2164,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">AB</span><em data-lexical-text="true">C</em><span data-lexical-text="true">DE</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">AB</span><em data-lexical-text="true">C</em><span data-lexical-text="true">DE</span></p>',
         );
       });
     });
@@ -2205,7 +2207,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">foo</span></p>',
         );
       });
     });
@@ -2252,7 +2254,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foo</span><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a></p>',
+          '<p dir="auto"><span data-lexical-text="true">foo</span><a href="https://"><span data-lexical-text="true">link</span></a></p>',
         );
       });
     });
@@ -2299,12 +2301,12 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><a href="https://"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
         );
       });
     });
 
-    test.skip('can insert a linebreak node before an inline element node', async () => {
+    test('can insert a linebreak node before an inline element node', async () => {
       const editor = createTestEditor();
       const element = document.createElement('div');
       editor.setRootElement(element);
@@ -2324,7 +2326,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       // TODO #5109 ElementNode should have a way to control when other nodes can be inserted inside
       expect(element.innerHTML).toBe(
-        '<p><a href="https://lexical.dev/" dir="ltr"><br><span data-lexical-text="true">Lexical</span></a></p>',
+        '<p dir="auto"><br><a href="https://lexical.dev/"><span data-lexical-text="true">Lexical</span></a></p>',
       );
     });
   });
@@ -2371,7 +2373,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">foo</span></p>',
         );
       });
     });
@@ -2421,7 +2423,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foo</span><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a></p>',
+          '<p dir="auto"><span data-lexical-text="true">foo</span><a href="https://"><span data-lexical-text="true">link</span></a></p>',
         );
       });
     });
@@ -2471,7 +2473,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><a href="https://"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
         );
       });
     });
@@ -2491,7 +2493,7 @@ describe('LexicalSelectionHelpers tests', () => {
         $insertNodes([linkNode]);
       });
       expect(element.innerHTML).toBe(
-        '<p><a href="https://lexical.dev" dir="ltr"><span data-lexical-text="true">Lexical</span></a></p>',
+        '<p dir="auto"><a href="https://lexical.dev"><span data-lexical-text="true">Lexical</span></a></p>',
       );
     });
 
@@ -2511,7 +2513,7 @@ describe('LexicalSelectionHelpers tests', () => {
         $insertNodes([linkNode, textNode2]);
       });
       expect(element.innerHTML).toBe(
-        '<p><a href="https://lexical.dev" dir="ltr"><span data-lexical-text="true">Lexical</span></a><span data-lexical-text="true">...</span></p>',
+        '<p dir="auto"><a href="https://lexical.dev"><span data-lexical-text="true">Lexical</span></a><span data-lexical-text="true">...</span></p>',
       );
     });
 
@@ -2530,8 +2532,8 @@ describe('LexicalSelectionHelpers tests', () => {
         $insertNodes([element1, element2]);
       });
       expect([
-        '<div><br></div><div><br></div>',
-        '<div><br></div><p><br></p>',
+        '<div dir="auto"><br data-lexical-managed-linebreak="true"></div><div dir="auto"><br data-lexical-managed-linebreak="true"></div>',
+        '<div dir="auto"><br data-lexical-managed-linebreak="true"></div><p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
       ]).toContain(element.innerHTML);
     });
   });
@@ -2576,7 +2578,7 @@ describe('extract', () => {
 
 describe('insertNodes', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('can insert element next to top level decorator node', async () => {
@@ -2584,7 +2586,7 @@ describe('insertNodes', () => {
     const element = document.createElement('div');
     editor.setRootElement(element);
 
-    jest.spyOn(TestDecoratorNode.prototype, 'isInline').mockReturnValue(false);
+    vi.spyOn(TestDecoratorNode.prototype, 'isInline').mockReturnValue(false);
 
     await editor.update(() => {
       $getRoot().append(
@@ -2604,9 +2606,9 @@ describe('insertNodes', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr"><span data-lexical-text="true">Text before</span></p>' +
+      '<p dir="auto"><span data-lexical-text="true">Text before</span></p>' +
         '<span data-lexical-decorator="true" contenteditable="false"></span>' +
-        '<p dir="ltr"><span data-lexical-text="true">Text after</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">Text after</span></p>',
     );
   });
 
@@ -2676,9 +2678,11 @@ describe('insertNodes', () => {
       );
       selection.insertNodes([newHeading, $createLineBreakNode()]);
     });
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       expect(element.innerHTML).toBe(
-        '<h1 dir="ltr"><span data-lexical-text="true">heading</span></h1><p><br></p>',
+        // the lone trailing LineBreakNode collapses to an empty paragraph,
+        // rendered with only the managed linebreak
+        '<h1 dir="auto"><span data-lexical-text="true">heading</span></h1><p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
       );
       const selectedNode = ($getSelection() as RangeSelection).anchor.getNode();
       expect($isParagraphNode(selectedNode)).toBeTruthy();
@@ -2736,8 +2740,8 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr"><span data-lexical-text="true">a</span>' +
-        '<a href="https://" dir="ltr">' +
+      '<p dir="auto"><span data-lexical-text="true">a</span>' +
+        '<a href="https://">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">link</span>' +
         '</a>' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">b</span></p>',
@@ -2789,8 +2793,8 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr"><span data-lexical-text="true">a</span></p>' +
-        '<p dir="ltr"><span style="text-emphasis: filled;" data-lexical-text="true">b</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">a</span></p>' +
+        '<p dir="auto"><span style="text-emphasis: filled;" data-lexical-text="true">b</span></p>',
     );
   });
 
@@ -2838,9 +2842,9 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr">' +
+      '<p dir="auto">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">a</span>' +
-        '<a href="https://" dir="ltr">' +
+        '<a href="https://">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">link</span>' +
         '</a>' +
         '</p>',
@@ -2891,9 +2895,9 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr">' +
+      '<p dir="auto">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">a</span>' +
-        '<a href="https://" dir="ltr">' +
+        '<a href="https://">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">link</span>' +
         '</a>' +
         '</p>',
@@ -2934,8 +2938,8 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p>' +
-        '<a href="https://" dir="ltr">' +
+      '<p dir="auto">' +
+        '<a href="https://">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">link</span>' +
         '</a>' +
         '</p>',
@@ -2976,7 +2980,7 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr"><span data-lexical-text="true">text</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">text</span></p>',
     );
   });
 
@@ -3078,9 +3082,113 @@ describe('$patchStyleText', () => {
     });
   });
 
+  test('$getSelectionStyleValueForProperty returns consistent value regardless of selection direction', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const unstyled = $createTextNode('plain');
+      const styled = $createTextNode('colored');
+      styled.setStyle('color: red');
+
+      paragraph.append(unstyled);
+      paragraph.append(styled);
+
+      // Forward selection: unstyled -> styled
+      $setAnchorPoint({
+        key: unstyled.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+      $setFocusPoint({
+        key: styled.getKey(),
+        offset: 'colored'.length,
+        type: 'text',
+      });
+
+      const forwardValue = $getSelectionStyleValueForProperty(
+        $getSelection() as RangeSelection,
+        'color',
+        '',
+      );
+
+      // Backward selection: styled -> unstyled
+      $setAnchorPoint({
+        key: styled.getKey(),
+        offset: 'colored'.length,
+        type: 'text',
+      });
+      $setFocusPoint({
+        key: unstyled.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+
+      const backwardValue = $getSelectionStyleValueForProperty(
+        $getSelection() as RangeSelection,
+        'color',
+        '',
+      );
+
+      expect(forwardValue).toEqual('');
+      expect(backwardValue).toEqual('');
+      expect(forwardValue).toEqual(backwardValue);
+    });
+  });
+
+  test('$getSelectionStyleValueForProperty ignores nodes with zero characters selected at boundaries', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const styledA = $createTextNode('aaa');
+      styledA.setStyle('color: red');
+      const styledB = $createTextNode('bbb');
+      styledB.setStyle('color: red');
+      const different = $createTextNode('ccc');
+      different.setStyle('color: blue');
+
+      paragraph.append(styledA);
+      paragraph.append(styledB);
+      paragraph.append(different);
+
+      // Select from end of styledA to start of different
+      // styledA has 0 chars selected (offset at end), different has 0 chars (offset 0)
+      // only styledB is fully selected
+      $setAnchorPoint({
+        key: styledA.getKey(),
+        offset: 'aaa'.length,
+        type: 'text',
+      });
+      $setFocusPoint({
+        key: different.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+
+      const value = $getSelectionStyleValueForProperty(
+        $getSelection() as RangeSelection,
+        'color',
+        '',
+      );
+
+      expect(value).toEqual('red');
+    });
+  });
+
   test.each<TextModeType>(['token', 'segmented'])(
     'can update style of text node that is in %s mode',
-    async (mode) => {
+    async mode => {
       const editor = createTestEditor();
 
       const element = document.createElement('div');
@@ -3115,7 +3223,7 @@ describe('$patchStyleText', () => {
       });
 
       expect(element.innerHTML).toBe(
-        '<p dir="ltr">' +
+        '<p dir="auto">' +
           '<strong data-lexical-text="true">fir</strong>' +
           '<strong style="font-size: 15px;" data-lexical-text="true">st</strong>' +
           '<span style="font-size: 15px;" data-lexical-text="true">second</span>' +
@@ -3155,11 +3263,11 @@ describe('$patchStyleText', () => {
         type: 'text',
       });
 
-      const selection = $getSelection();
+      const selection = $getSelection()!;
 
-      $patchStyleText(selection!, {'font-size': '11px'});
+      $patchStyleText(selection, {'font-size': '11px'});
 
-      const [newAnchor, newFocus] = selection!.getStartEndPoints()!;
+      const [newAnchor, newFocus] = selection.getStartEndPoints()!;
 
       const newAnchorNode: LexicalNode = newAnchor.getNode();
       expect(newAnchorNode.getTextContent()).toBe('sec');
@@ -3169,5 +3277,41 @@ describe('$patchStyleText', () => {
       expect(newFocusNode.getTextContent()).toBe('st ');
       expect(newFocus.offset).toBe(0);
     });
+  });
+
+  test('applies a function-valued patch exactly once to an empty element', async () => {
+    const editor = createTestEditor();
+
+    const element = document.createElement('div');
+
+    editor.setRootElement(element);
+
+    let paragraphStyle = '';
+    let selectionStyle = '';
+
+    await editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraph.selectStart();
+
+      const selection = $getSelection()!;
+
+      // Mirrors the playground font-size +/- buttons, which patch with a
+      // function of the previous value rather than a constant.
+      $patchStyleText(selection, {
+        'font-size': currentValue => {
+          const size = parseInt(currentValue || '', 10);
+          return `${(Number.isNaN(size) ? 16 : size) + 2}px`;
+        },
+      });
+
+      selectionStyle = ($getSelection() as RangeSelection).style;
+      paragraphStyle = paragraph.getTextStyle();
+    });
+
+    expect(selectionStyle).toBe('font-size: 18px;');
+    expect(paragraphStyle).toBe('font-size: 18px;');
   });
 });

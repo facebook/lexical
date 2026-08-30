@@ -6,16 +6,21 @@
  *
  */
 
-import type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from './MarkdownTransformers';
-import type {ElementNode} from 'lexical';
+import {
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  ArtificialNode__DO_NOT_USE,
+  type BaseSelection,
+  type ElementNode,
+  type LexicalNode,
+} from 'lexical';
 
-import {createMarkdownExport} from './MarkdownExport';
-import {createMarkdownImport} from './MarkdownImport';
+import {
+  createMarkdownExport,
+  createSelectionMarkdownExport,
+} from './MarkdownExport';
+import {$importMarkdownNodes} from './MarkdownImport';
 import {registerMarkdownShortcuts} from './MarkdownShortcuts';
 import {
   BOLD_ITALIC_STAR,
@@ -24,71 +29,91 @@ import {
   BOLD_UNDERSCORE,
   CHECK_LIST,
   CODE,
+  ELEMENT_TRANSFORMERS,
+  type ElementTransformer,
   HEADING,
   HIGHLIGHT,
   INLINE_CODE,
+  isTableRowDivider,
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
+  MULTILINE_ELEMENT_TRANSFORMERS,
+  type MultilineElementTransformer,
+  normalizeMarkdown,
   ORDERED_LIST,
   QUOTE,
   STRIKETHROUGH,
+  TEXT_FORMAT_TRANSFORMERS,
+  TEXT_MATCH_TRANSFORMERS,
+  type TextFormatTransformer,
+  type TextMatchTransformer,
+  type Transformer,
+  TRANSFORMERS,
   UNORDERED_LIST,
 } from './MarkdownTransformers';
 
-const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
-  HEADING,
-  QUOTE,
-  CODE,
-  UNORDERED_LIST,
-  ORDERED_LIST,
-];
-
-// Order of text format transformers matters:
-//
-// - code should go first as it prevents any transformations inside
-// - then longer tags match (e.g. ** or __ should go before * or _)
-const TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer> = [
-  INLINE_CODE,
-  BOLD_ITALIC_STAR,
-  BOLD_ITALIC_UNDERSCORE,
-  BOLD_STAR,
-  BOLD_UNDERSCORE,
-  HIGHLIGHT,
-  ITALIC_STAR,
-  ITALIC_UNDERSCORE,
-  STRIKETHROUGH,
-];
-
-const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [LINK];
-
-const TRANSFORMERS: Array<Transformer> = [
-  ...ELEMENT_TRANSFORMERS,
-  ...TEXT_FORMAT_TRANSFORMERS,
-  ...TEXT_MATCH_TRANSFORMERS,
-];
-
 /**
  * Renders markdown from a string. The selection is moved to the start after the operation.
+ *
+ *  @param {boolean} [shouldPreserveNewLines] By setting this to true, new lines will be preserved between conversions
+ *  @param {boolean} [shouldMergeAdjacentLines] By setting this to true, adjacent non empty lines will be merged according to commonmark spec: https://spec.commonmark.org/0.24/#example-177. Not applicable if shouldPreserveNewLines = true.
  */
 function $convertFromMarkdownString(
   markdown: string,
-  transformers: Array<Transformer> = TRANSFORMERS,
+  transformers: Transformer[] = TRANSFORMERS,
   node?: ElementNode,
   shouldPreserveNewLines = false,
+  shouldMergeAdjacentLines = false,
 ): void {
-  const importMarkdown = createMarkdownImport(
+  const sanitizedMarkdown = shouldPreserveNewLines
+    ? markdown
+    : normalizeMarkdown(markdown, shouldMergeAdjacentLines);
+  const root = node || $getRoot();
+  root.clear();
+  $importMarkdownNodes(
+    sanitizedMarkdown,
+    root,
     transformers,
     shouldPreserveNewLines,
   );
-  return importMarkdown(markdown, node);
+  if ($getSelection() !== null) {
+    root.selectStart();
+  }
+}
+
+/**
+ * Parses a markdown string and returns the resulting nodes as an array,
+ * without modifying the document tree or selection. The returned nodes can be
+ * inserted at an arbitrary position via `selection.insertNodes()`.
+ *
+ *  @param {boolean} [shouldPreserveNewLines] By setting this to true, new lines will be preserved between conversions
+ *  @param {boolean} [shouldMergeAdjacentLines] By setting this to true, adjacent non empty lines will be merged according to commonmark spec: https://spec.commonmark.org/0.24/#example-177. Not applicable if shouldPreserveNewLines = true.
+ */
+function $generateNodesFromMarkdownString(
+  markdown: string,
+  transformers: Transformer[] = TRANSFORMERS,
+  shouldPreserveNewLines = false,
+  shouldMergeAdjacentLines = false,
+): LexicalNode[] {
+  const sanitizedMarkdown = shouldPreserveNewLines
+    ? markdown
+    : normalizeMarkdown(markdown, shouldMergeAdjacentLines);
+  const container = new ArtificialNode__DO_NOT_USE();
+  $importMarkdownNodes(
+    sanitizedMarkdown,
+    container,
+    transformers,
+    shouldPreserveNewLines,
+  );
+  return container.getChildren();
 }
 
 /**
  * Renders string from markdown. The selection is moved to the start after the operation.
  */
 function $convertToMarkdownString(
-  transformers: Array<Transformer> = TRANSFORMERS,
+  transformers: Transformer[] = TRANSFORMERS,
   node?: ElementNode,
   shouldPreserveNewLines: boolean = false,
 ): string {
@@ -99,9 +124,29 @@ function $convertToMarkdownString(
   return exportMarkdown(node);
 }
 
+/**
+ * Converts the selected content to a markdown string.
+ */
+function $convertSelectionToMarkdownString(
+  transformers: Transformer[] = TRANSFORMERS,
+  selection: BaseSelection | null,
+  shouldPreserveNewLines: boolean = false,
+): string {
+  if (!selection || ($isRangeSelection(selection) && selection.isCollapsed())) {
+    return '';
+  }
+  const exportMarkdown = createSelectionMarkdownExport(
+    transformers,
+    shouldPreserveNewLines,
+  );
+  return exportMarkdown(selection);
+}
+
 export {
   $convertFromMarkdownString,
+  $convertSelectionToMarkdownString,
   $convertToMarkdownString,
+  $generateNodesFromMarkdownString,
   BOLD_ITALIC_STAR,
   BOLD_ITALIC_UNDERSCORE,
   BOLD_STAR,
@@ -109,22 +154,25 @@ export {
   CHECK_LIST,
   CODE,
   ELEMENT_TRANSFORMERS,
-  ElementTransformer,
+  type ElementTransformer,
   HEADING,
   HIGHLIGHT,
   INLINE_CODE,
+  isTableRowDivider,
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
+  MULTILINE_ELEMENT_TRANSFORMERS,
+  type MultilineElementTransformer,
   ORDERED_LIST,
   QUOTE,
   registerMarkdownShortcuts,
   STRIKETHROUGH,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
+  type TextFormatTransformer,
+  type TextMatchTransformer,
+  type Transformer,
   TRANSFORMERS,
   UNORDERED_LIST,
 };

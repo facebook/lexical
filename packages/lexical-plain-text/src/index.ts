@@ -6,25 +6,35 @@
  *
  */
 
-import type {CommandPayloadType, LexicalEditor} from 'lexical';
-
 import {
   $getHtmlContent,
+  $handlePlainTextDrop,
   $insertDataTransferForPlainText,
+  $writeDragSourceToDataTransfer,
 } from '@lexical/clipboard';
+import {DragonExtension} from '@lexical/dragon';
+import {
+  NormalizeInlineElementsExtension,
+  NormalizeTripleClickSelectionExtension,
+} from '@lexical/extension';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
-import {mergeRegister, objectKlassEquals} from '@lexical/utils';
+import {objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
+  $getSlotFrame,
   $isRangeSelection,
   $selectAll,
+  CAN_USE_BEFORE_INPUT,
   COMMAND_PRIORITY_EDITOR,
+  type CommandPayloadType,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
+  CUT_TAG,
+  defineExtension,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
@@ -32,21 +42,21 @@ import {
   DROP_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
+  type LexicalEditor,
+  mergeRegister,
   PASTE_COMMAND,
+  PASTE_TAG,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
 } from 'lexical';
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_APPLE_WEBKIT,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
 
 function onCopyForPlainText(
   event: CommandPayloadType<typeof COPY_COMMAND>,
@@ -56,10 +66,14 @@ function onCopyForPlainText(
     if (event !== null) {
       const clipboardData = objectKlassEquals(event, KeyboardEvent)
         ? null
-        : (event as ClipboardEvent).clipboardData;
+        : event.clipboardData;
       const selection = $getSelection();
 
-      if (selection !== null && clipboardData != null) {
+      if (
+        selection !== null &&
+        !selection.isCollapsed() &&
+        clipboardData != null
+      ) {
         event.preventDefault();
         const htmlString = $getHtmlContent(editor);
 
@@ -81,13 +95,18 @@ function onPasteForPlainText(
   editor.update(
     () => {
       const selection = $getSelection();
-      const {clipboardData} = event as ClipboardEvent;
+      const clipboardData = objectKlassEquals(event, ClipboardEvent)
+        ? event.clipboardData
+        : null;
       if (clipboardData != null && $isRangeSelection(selection)) {
         $insertDataTransferForPlainText(clipboardData, selection);
       }
     },
     {
-      tag: 'paste',
+      // PASTE_TAG gives the paste its own undo entry: @lexical/history treats
+      // the tag as a history boundary so undoing a paste does not also undo any
+      // typing that preceded it (see #8609).
+      tag: PASTE_TAG,
     },
   );
 }
@@ -97,20 +116,28 @@ function onCutForPlainText(
   editor: LexicalEditor,
 ): void {
   onCopyForPlainText(event, editor);
-  editor.update(() => {
-    const selection = $getSelection();
+  editor.update(
+    () => {
+      const selection = $getSelection();
 
-    if ($isRangeSelection(selection)) {
-      selection.removeText();
-    }
-  });
+      if ($isRangeSelection(selection)) {
+        selection.removeText();
+      }
+    },
+    {
+      // CUT_TAG gives the cut its own undo entry: @lexical/history treats the
+      // tag as a history boundary so undoing a cut does not also undo any typing
+      // that preceded it (see #8609).
+      tag: CUT_TAG,
+    },
+  );
 }
 
 export function registerPlainText(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       DELETE_CHARACTER_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -122,9 +149,9 @@ export function registerPlainText(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       DELETE_WORD_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -136,9 +163,9 @@ export function registerPlainText(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       DELETE_LINE_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -150,9 +177,9 @@ export function registerPlainText(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<InputEvent | string>(
+    editor.registerCommand(
       CONTROLLED_TEXT_INSERTION_COMMAND,
-      (eventOrText) => {
+      eventOrText => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -193,9 +220,9 @@ export function registerPlainText(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       INSERT_LINE_BREAK_COMMAND,
-      (selectStart) => {
+      selectStart => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -221,9 +248,9 @@ export function registerPlainText(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ARROW_LEFT_COMMAND,
-      (payload) => {
+      payload => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -243,9 +270,9 @@ export function registerPlainText(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ARROW_RIGHT_COMMAND,
-      (payload) => {
+      payload => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -265,12 +292,22 @@ export function registerPlainText(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
+          return false;
+        }
+
+        // On iOS, blocking the keydown event's default prevents the system
+        // keyboard from updating its autocomplete/autocorrect suggestion bar
+        // after Backspace. Returning false here skips event.preventDefault()
+        // on keydown; the beforeinput deleteContentBackward handler still runs
+        // and performs the deletion, so editing behavior is unchanged.
+        // See https://github.com/facebook/lexical/issues/5841
+        if (IS_IOS && CAN_USE_BEFORE_INPUT) {
           return false;
         }
 
@@ -279,9 +316,9 @@ export function registerPlainText(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_DELETE_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -293,9 +330,9 @@ export function registerPlainText(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent | null>(
+    editor.registerCommand(
       KEY_ENTER_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -327,15 +364,26 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       SELECT_ALL_COMMAND,
       () => {
-        $selectAll();
-
+        // Scope SELECT_ALL only when the caret is inside a named-slot frame:
+        // slots are shadow-root isolated, so a whole-document select-all
+        // would escape the slot and let a single keystroke replace the host.
+        // Every other context (including TableCell shadow roots) keeps the
+        // legacy whole-document behavior; block/document scoping elsewhere
+        // is provided by the opt-in SelectBlockExtension.
+        const selection = $getSelection();
+        $selectAll(
+          $isRangeSelection(selection) &&
+            $getSlotFrame(selection.anchor.getNode()) !== null
+            ? selection
+            : null,
+        );
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       COPY_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -349,7 +397,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       CUT_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -363,7 +411,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       PASTE_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -375,32 +423,23 @@ export function registerPlainText(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<DragEvent>(
+    editor.registerCommand(
       DROP_COMMAND,
-      (event) => {
-        const selection = $getSelection();
-
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-
-        // TODO: Make drag and drop work at some point.
-        event.preventDefault();
-        return true;
-      },
+      event => $handlePlainTextDrop(event, editor),
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<DragEvent>(
+    editor.registerCommand(
       DRAGSTART_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
-
         if (!$isRangeSelection(selection)) {
           return false;
         }
-
-        // TODO: Make drag and drop work at some point.
-        event.preventDefault();
+        // Mark the drag source so a drop in a different editor can remove
+        // the source range to produce cut-and-paste semantics.
+        if (!selection.isCollapsed() && event.dataTransfer !== null) {
+          $writeDragSourceToDataTransfer(event.dataTransfer, editor);
+        }
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -408,3 +447,17 @@ export function registerPlainText(editor: LexicalEditor): () => void {
   );
   return removeListener;
 }
+
+/**
+ * An extension to register \@lexical/plain-text behavior
+ */
+export const PlainTextExtension = defineExtension({
+  conflictsWith: ['@lexical/rich-text'],
+  dependencies: [
+    DragonExtension,
+    NormalizeInlineElementsExtension,
+    NormalizeTripleClickSelectionExtension,
+  ],
+  name: '@lexical/plain-text',
+  register: registerPlainText,
+});

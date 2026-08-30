@@ -21,10 +21,8 @@ function useTagState(tag: string) {
   const [tags, setTags] = useTags();
   const isSelected = tags.includes(tag);
   const toggle = useCallback(() => {
-    setTags((list) => {
-      return list.includes(tag)
-        ? list.filter((t) => t !== tag)
-        : [...list, tag];
+    setTags(list => {
+      return list.includes(tag) ? list.filter(t => t !== tag) : [...list, tag];
     });
   }, [tag, setTags]);
 
@@ -34,6 +32,7 @@ function useTagState(tag: string) {
 interface Props extends ComponentProps<'input'> {
   tag: string;
   label: string;
+  count: number;
   description: string;
   icon: ReactElement<ComponentProps<'svg'>>;
 }
@@ -41,6 +40,7 @@ interface Props extends ComponentProps<'input'> {
 export default function TagSelect({
   icon,
   label,
+  count,
   description,
   tag,
   ...rest
@@ -55,7 +55,7 @@ export default function TagSelect({
         checked={isSelected}
         onChange={toggle}
         className={styles.screenReaderOnly}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (e.key === 'Enter') {
             toggle();
           }
@@ -64,6 +64,7 @@ export default function TagSelect({
       />
       <label htmlFor={id} className={styles.checkboxLabel} title={description}>
         {label}
+        <span className={styles.tagCount}>{count}</span>
         {icon}
       </label>
     </>

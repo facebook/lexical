@@ -6,16 +6,17 @@
  *
  */
 
-import {generateContent, LexicalCommandLog} from '@lexical/devtools-core';
-import {IPegasusRPCService, PegasusRPCMessage} from '@webext-pegasus/rpc';
-import {LexicalEditor} from 'lexical';
-import {StoreApi} from 'zustand';
+import type {ExtensionState} from '../../store';
+import type {SerializedRawEditorState} from '../../types';
+import type {IPegasusRPCService, PegasusRPCMessage} from '@webext-pegasus/rpc';
+import type {LexicalEditor} from 'lexical';
+import type {StoreApi} from 'zustand';
+
+import {generateContent, type LexicalCommandLog} from '@lexical/devtools-core';
 
 import {ElementPicker} from '../../element-picker';
 import {readEditorState} from '../../lexicalForExtension';
 import {deserializeEditorState} from '../../serializeEditorState';
-import {ExtensionState} from '../../store';
-import {SerializedRawEditorState} from '../../types';
 import {isLexicalNode} from '../../utils/isLexicalNode';
 import scanAndListenForEditors from './scanAndListenForEditors';
 import {
@@ -29,9 +30,7 @@ export type IInjectedPegasusService = InstanceType<
   typeof InjectedPegasusService
 >;
 
-export class InjectedPegasusService
-  implements IPegasusRPCService<InjectedPegasusService>
-{
+export class InjectedPegasusService implements IPegasusRPCService<InjectedPegasusService> {
   private pickerActive: ElementPicker | null = null;
 
   constructor(
@@ -98,7 +97,7 @@ export class InjectedPegasusService
 
     this.pickerActive = new ElementPicker({style: ELEMENT_PICKER_STYLE});
     this.pickerActive.start({
-      elementFilter: (el) => {
+      elementFilter: el => {
         let parent: HTMLElement | null = el;
         while (parent !== null && parent.tagName !== 'BODY') {
           if ('__lexicalEditor' in parent) {
@@ -110,7 +109,7 @@ export class InjectedPegasusService
         return false;
       },
 
-      onClick: (el) => {
+      onClick: el => {
         this.deactivatePicker();
         if (isLexicalNode(el)) {
           this.extensionStore

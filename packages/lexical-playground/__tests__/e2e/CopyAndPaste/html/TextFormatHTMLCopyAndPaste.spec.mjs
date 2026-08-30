@@ -27,45 +27,74 @@ test.describe('HTML CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            style="font-size: 11pt"
+            data-lexical-text="true">
+            Bold
+          </strong>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+          <em
+            class="PlaygroundEditorTheme__textItalic"
+            style="font-size: 11pt"
+            data-lexical-text="true">
+            Italic
+          </em>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+          <span
+            class="PlaygroundEditorTheme__textUnderline"
+            style="font-size: 11pt"
+            data-lexical-text="true">
+            underline
+          </span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic
+           PlaygroundEditorTheme__textUnderline"
+            style="font-size: 11pt"
+            data-lexical-text="true">
+            Bold Italic Underline
+          </strong>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+    );
+  });
+
+  test('Copy + paste html with highlight formatting', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    const clipboardData = {
+      'text/html': `<meta charset='utf-8'><p><b>Bold</b><mark>Highlight</mark><b><mark>Bold&amp;Highlight</mark></b></p>`,
+    };
+    await pasteFromClipboard(page, clipboardData);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
             data-lexical-text="true">
             Bold
           </strong>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <em
-            class="PlaygroundEditorTheme__textItalic"
-            data-lexical-text="true">
-            Italic
-          </em>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span
-            class="PlaygroundEditorTheme__textUnderline"
-            data-lexical-text="true">
-            underline
-          </span>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <strong
-            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic
-           PlaygroundEditorTheme__textUnderline"
-            data-lexical-text="true">
-            Bold Italic Underline
-          </strong>
-        </p>
-        <p class="PlaygroundEditorTheme__paragraph">
-          <br />
+          <mark data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textHighlight">Highlight</span>
+          </mark>
+          <mark data-lexical-text="true">
+            <strong
+              class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textHighlight">
+              Bold&amp;Highlight
+            </strong>
+          </mark>
         </p>
       `,
     );

@@ -9,12 +9,12 @@ The API of @lexical/list primarily consists of Lexical Nodes that encapsulate li
 
 ## Functions
 
-### insertList
+### $insertList
 
 As the name suggests, this inserts a list of the provided type according to an algorithm that tries to determine the best way to do that based on
-the current Selection. For instance, if some text is selected, insertList may try to move it into the first item in the list. See the API documentation for more detail.
+the current Selection. For instance, if some text is selected, $insertList may try to move it into the first item in the list. See the API documentation for more detail.
 
-### removeList
+### $removeList
 
 Attempts to remove lists inside the current selection based on a set of opinionated heuristics that implement conventional editor behaviors. For instance, it converts empty ListItemNodes into empty ParagraphNodes.
 
@@ -43,7 +43,7 @@ It's important to note that these commands don't have any functionality on their
 // MyListPlugin.ts
 
 editor.registerCommand(INSERT_UNORDERED_LIST_COMMAND, () => {
-    insertList(editor, 'bullet');
+    $insertList(editor, 'bullet');
     return true;
 }, COMMAND_PRIORITY_LOW);
 

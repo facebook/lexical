@@ -6,20 +6,21 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
+import type {JSX} from 'react';
 
 import katex from 'katex';
-import {$applyNodeReplacement, DecoratorNode, DOMExportOutput} from 'lexical';
+import {
+  $applyNodeReplacement,
+  $getDocument,
+  DecoratorNode,
+  type DOMExportOutput,
+  type EditorConfig,
+  type LexicalNode,
+  type NodeKey,
+  type SerializedLexicalNode,
+  type Spread,
+} from 'lexical';
 import * as React from 'react';
-import {Suspense} from 'react';
 
 const EquationComponent = React.lazy(() => import('./EquationComponent'));
 
@@ -31,67 +32,83 @@ export type SerializedEquationNode = Spread<
   SerializedLexicalNode
 >;
 
-function $convertEquationElement(
-  domNode: HTMLElement,
-): null | DOMConversionOutput {
-  let equation = domNode.getAttribute('data-lexical-equation');
-  const inline = domNode.getAttribute('data-lexical-inline') === 'true';
-  // Decode the equation from base64
-  equation = atob(equation || '');
-  if (equation) {
-    const node = $createEquationNode(equation, inline);
-    return {node};
+/**
+ * btoa/atob only handle Latin-1, so go through the UTF-8 bytes -- the same way
+ * docSerialization does. An equation is free-form LaTeX and routinely holds
+ * code points above U+00FF (`\text{α}`, CJK, an emoji), which btoa throws on.
+ * Pure ASCII encodes byte for byte, so previously exported HTML still decodes.
+ */
+export function encodeEquation(equation: string): string {
+  const bytes = new TextEncoder().encode(equation);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
   }
+  return btoa(binary);
+}
 
-  return null;
+/** Inverse of {@link encodeEquation}. */
+export function decodeEquation(encoded: string): string {
+  const binary = atob(encoded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new TextDecoder().decode(bytes);
 }
 
 export class EquationNode extends DecoratorNode<JSX.Element> {
   __equation: string;
   __inline: boolean;
 
-  static getType(): string {
-    return 'equation';
+  $config() {
+    return this.config('equation', {extends: DecoratorNode});
   }
 
-  static clone(node: EquationNode): EquationNode {
-    return new EquationNode(node.__equation, node.__inline, node.__key);
-  }
-
-  constructor(equation: string, inline?: boolean, key?: NodeKey) {
+  constructor(equation: string = '', inline?: boolean, key?: NodeKey) {
     super(key);
     this.__equation = equation;
     this.__inline = inline ?? false;
   }
 
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__equation = prevNode.__equation;
+    this.__inline = prevNode.__inline;
+  }
+
   static importJSON(serializedNode: SerializedEquationNode): EquationNode {
-    const node = $createEquationNode(
+    return $createEquationNode(
       serializedNode.equation,
       serializedNode.inline,
-    );
-    return node;
+    ).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedEquationNode {
     return {
+      ...super.exportJSON(),
       equation: this.getEquation(),
-      inline: this.__inline,
-      type: 'equation',
-      version: 1,
+      inline: this.isInline(),
     };
   }
 
   createDOM(_config: EditorConfig): HTMLElement {
-    const element = document.createElement(this.__inline ? 'span' : 'div');
+    const element = $getDocument().createElement(
+      this.__inline ? 'span' : 'div',
+    );
     // EquationNodes should implement `user-action:none` in their CSS to avoid issues with deletion on Android.
     element.className = 'editor-equation';
+    element.setAttribute('role', 'math');
+    element.setAttribute('aria-label', `Equation: ${this.getEquation()}`);
     return element;
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement(this.__inline ? 'span' : 'div');
+    const element = $getDocument().createElement(
+      this.__inline ? 'span' : 'div',
+    );
     // Encode the equation as base64 to avoid issues with special characters
-    const equation = btoa(this.__equation);
+    const equation = encodeEquation(this.__equation);
     element.setAttribute('data-lexical-equation', equation);
     element.setAttribute('data-lexical-inline', `${this.__inline}`);
     katex.render(this.__equation, element, {
@@ -102,59 +119,47 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
       throwOnError: false,
       trust: false,
     });
+    element.setAttribute('role', 'math');
+    element.setAttribute('aria-label', `Equation: ${this.__equation}`);
     return {element};
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-equation')) {
-          return null;
-        }
-        return {
-          conversion: $convertEquationElement,
-          priority: 2,
-        };
-      },
-      span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-equation')) {
-          return null;
-        }
-        return {
-          conversion: $convertEquationElement,
-          priority: 1,
-        };
-      },
-    };
-  }
-
-  updateDOM(prevNode: EquationNode): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     // If the inline property changes, replace the element
-    return this.__inline !== prevNode.__inline;
+    if (this.__inline !== prevNode.__inline) {
+      return true;
+    }
+    if (this.__equation !== prevNode.__equation) {
+      dom.setAttribute('aria-label', `Equation: ${this.getEquation()}`);
+    }
+    return false;
   }
 
   getTextContent(): string {
-    return this.__equation;
+    return this.getEquation();
+  }
+
+  isInline(): boolean {
+    return this.getLatest().__inline;
   }
 
   getEquation(): string {
-    return this.__equation;
+    return this.getLatest().__equation;
   }
 
-  setEquation(equation: string): void {
+  setEquation(equation: string): this {
     const writable = this.getWritable();
     writable.__equation = equation;
+    return writable;
   }
 
   decorate(): JSX.Element {
     return (
-      <Suspense fallback={null}>
-        <EquationComponent
-          equation={this.__equation}
-          inline={this.__inline}
-          nodeKey={this.__key}
-        />
-      </Suspense>
+      <EquationComponent
+        equation={this.__equation}
+        inline={this.__inline}
+        nodeKey={this.__key}
+      />
     );
   }
 }

@@ -5,40 +5,53 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {
-  CommandListenerPriority,
-  LexicalNode,
-  MutationListener,
-} from 'lexical';
 
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalNodeMenuPlugin,
   MenuOption,
-  MenuRenderFn,
+  type MenuRenderFn,
 } from '@lexical/react/LexicalNodeMenuPlugin';
-import {mergeRegister} from '@lexical/utils';
+import {objectKlassEquals} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
+  $onUpdate,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
+  type CommandListenerPriority,
   createCommand,
-  LexicalCommand,
-  LexicalEditor,
-  NodeKey,
-  TextNode,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
+  type MutationListener,
+  type NodeKey,
+  PASTE_COMMAND,
+  PASTE_TAG,
+  type TextNode,
 } from 'lexical';
-import {useCallback, useEffect, useMemo, useState} from 'react';
-import * as React from 'react';
+import {type JSX, useCallback, useEffect, useMemo, useState} from 'react';
 
+/**
+ * The result of matching a URL for an embed: the matched `url`, an `id`
+ * identifying the embedded resource, and optional provider-specific `data`.
+ */
 export type EmbedMatchResult<TEmbedMatchResult = unknown> = {
   url: string;
   id: string;
   data?: TEmbedMatchResult;
 };
 
+/**
+ * Describes a kind of embed (for example YouTube, a tweet, or Google Maps) that
+ * {@link LexicalAutoEmbedPlugin} can detect and insert. Each config has a `type`
+ * identifier, a `parseUrl` function that decides whether a URL matches and
+ * extracts its data, and an `insertNode` function that inserts the corresponding
+ * Lexical node.
+ */
 export interface EmbedConfig<
   TEmbedMatchResultData = unknown,
   TEmbedMatchResult = EmbedMatchResult<TEmbedMatchResultData>,
@@ -53,12 +66,26 @@ export interface EmbedConfig<
   insertNode: (editor: LexicalEditor, result: TEmbedMatchResult) => void;
 }
 
+/**
+ * A general-purpose regular expression for detecting URLs, provided as a
+ * convenience for implementing an {@link EmbedConfig}'s `parseUrl`.
+ */
 export const URL_MATCHER =
   /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
 
+/**
+ * Command dispatched to start inserting an embed. Its payload is the `type` of
+ * the {@link EmbedConfig} to use; {@link LexicalAutoEmbedPlugin} listens for it
+ * and runs that config's URL detection flow.
+ */
 export const INSERT_EMBED_COMMAND: LexicalCommand<EmbedConfig['type']> =
   createCommand('INSERT_EMBED_COMMAND');
 
+/**
+ * A {@link MenuOption} for the auto-embed menu, pairing a display `title` with
+ * an `onSelect` callback invoked when the user chooses to embed the detected
+ * URL.
+ */
 export class AutoEmbedOption extends MenuOption {
   title: string;
   onSelect: (targetNode: LexicalNode | null) => void;
@@ -75,17 +102,74 @@ export class AutoEmbedOption extends MenuOption {
 }
 
 type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
-  embedConfigs: Array<TEmbedConfig>;
-  onOpenEmbedModalForConfig: (embedConfig: TEmbedConfig) => void;
+  /**
+   * An array of configurations used to insert Embed elements
+   */
+  embedConfigs: TEmbedConfig[];
+  /**
+   * Callback for handling the {@link INSERT_EMBED_COMMAND} command.
+   * If no function is passed, the command is not registered
+   * @param embedConfig - the config corresponding to the {@link EmbedConfig.type} of the inserted Embed
+   * @returns
+   */
+  onOpenEmbedModalForConfig?: (embedConfig: TEmbedConfig) => void;
+  /**
+   * A function that links a specific configuration to a set of options.
+   * Each option can be handling by click or press the Enter or Tab key
+   * when the cursor hovers over it.
+   * Pass the necessary callbacks to {@link AutoEmbedOption.onSelect}
+   * @param activeEmbedConfig - the current active config is determined by a match
+   * from the {@link EmbedConfig.parseUrl} of the inserted AutoLinkNode
+   * @param embedFn - callback for handling option selection.
+   * Calling the callback will invoke the {@link EmbedConfig.insertNode} method
+   * and remove the inserted AutoLinkNode
+   * @param dismissFn - сallback to deselect. Calling the callback will hide the options menu
+   * @returns array of options from {@link AutoEmbedOption} instances
+   */
   getMenuOptions: (
     activeEmbedConfig: TEmbedConfig,
     embedFn: () => void,
     dismissFn: () => void,
-  ) => Array<AutoEmbedOption>;
-  menuRenderFn: MenuRenderFn<AutoEmbedOption>;
+  ) => AutoEmbedOption[];
+  /**
+   * A function for rendering button menu.
+   * By default, it displays a plain list with the option titles
+   */
+  menuRenderFn?: MenuRenderFn<AutoEmbedOption>;
+  /**
+   * Priority for key handling in the menu. The default is `COMMAND_PRIORITY_LOW`
+   */
   menuCommandPriority?: CommandListenerPriority;
 };
 
+/**
+ * Watches for pasted AutoLink nodes that match any of the provided embed configurations (e.g., YouTube, Twitter URLs).
+ * When a match is found, it shows a menu offering to replace the link with an embedded node.
+ *
+ * You can pass a generic type to the plugin to extend {@link EmbedConfig}
+ * with additional data in {@link EmbedMatchResult} that will be passed to the callbacks
+ *
+ * @example
+ * Usage
+ * ```tsx
+ * interface CustomEmbedConfig extends EmbedConfig<{
+ *   domain: string;
+ *   oid?: string;
+ * }> {
+ *   // Icon for display.
+ *   icon?: JSX.Element;
+ *   // Embed a Figma Project.
+ *   description?: string;
+ * };
+ *
+ * return (
+ *  <LexicalAutoEmbedPlugin<CustomEmbedConfig>
+ *    embedConfigs={EmbedConfigs}
+ *    getMenuOptions={getMenuOptions}
+ *  />
+ * );
+ * ```
+ */
 export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   embedConfigs,
   onOpenEmbedModalForConfig,
@@ -106,7 +190,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
 
   const checkIfLinkNodeIsEmbeddable = useCallback(
     async (key: NodeKey) => {
-      const url = editor.getEditorState().read(function () {
+      const url = editor.read('latest', function () {
         const linkNode = $getNodeByKey(key);
         if ($isLinkNode(linkNode)) {
           return linkNode.getURL();
@@ -127,15 +211,13 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   );
 
   useEffect(() => {
-    const listener: MutationListener = (
-      nodeMutations,
-      {updateTags, dirtyLeaves},
-    ) => {
+    let isSingleTokenPaste = false;
+    const listener: MutationListener = (nodeMutations, {updateTags}) => {
       for (const [key, mutation] of nodeMutations) {
         if (
           mutation === 'created' &&
-          updateTags.has('paste') &&
-          dirtyLeaves.size <= 3
+          updateTags.has(PASTE_TAG) &&
+          isSingleTokenPaste
         ) {
           checkIfLinkNodeIsEmbeddable(key);
         } else if (key === nodeKey) {
@@ -144,15 +226,33 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       }
     };
     return mergeRegister(
-      ...[LinkNode, AutoLinkNode].map((Klass) =>
-        editor.registerMutationListener(Klass, (...args) => listener(...args), {
+      editor.registerCommand(
+        PASTE_COMMAND,
+        event => {
+          isSingleTokenPaste =
+            objectKlassEquals(event, ClipboardEvent) &&
+            event.clipboardData !== null &&
+            /^\S+$/.test(event.clipboardData.getData('text/plain'));
+          if (isSingleTokenPaste) {
+            $onUpdate(() => {
+              isSingleTokenPaste = false;
+            });
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_BEFORE_EDITOR,
+      ),
+      ...[LinkNode, AutoLinkNode].map(Klass =>
+        editor.registerMutationListener(Klass, listener, {
           skipInitialization: true,
         }),
       ),
     );
-  }, [checkIfLinkNodeIsEmbeddable, editor, embedConfigs, nodeKey, reset]);
+  }, [checkIfLinkNodeIsEmbeddable, editor, nodeKey, reset]);
 
   useEffect(() => {
+    if (!onOpenEmbedModalForConfig) return;
+
     return editor.registerCommand(
       INSERT_EMBED_COMMAND,
       (embedConfigType: TEmbedConfig['type']) => {
@@ -172,7 +272,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   const embedLinkViaActiveEmbedConfig = useCallback(
     async function () {
       if (activeEmbedConfig != null && nodeKey != null) {
-        const linkNode = editor.getEditorState().read(() => {
+        const linkNode = editor.read('latest', () => {
           const node = $getNodeByKey(nodeKey);
           if ($isLinkNode(node)) {
             return node;

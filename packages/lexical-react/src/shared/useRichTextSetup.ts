@@ -6,12 +6,11 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
 import {registerDragonSupport} from '@lexical/dragon';
 import {registerRichText} from '@lexical/rich-text';
-import {mergeRegister} from '@lexical/utils';
-import useLayoutEffect from 'shared/useLayoutEffect';
+import {type LexicalEditor, mergeRegister} from 'lexical';
+
+import useLayoutEffect from './useLayoutEffect';
 
 export function useRichTextSetup(editor: LexicalEditor): void {
   useLayoutEffect(() => {
@@ -19,8 +18,5 @@ export function useRichTextSetup(editor: LexicalEditor): void {
       registerRichText(editor),
       registerDragonSupport(editor),
     );
-
-    // We only do this for init
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 }

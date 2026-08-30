@@ -6,109 +6,219 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code';
-import type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from '@lexical/markdown';
-import type {TextNode} from 'lexical';
-
-import {$createCodeNode} from '@lexical/code';
-import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
+import {$isListItemNode, $isListNode, type ListItemNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
-import {$findMatchingParent} from '@lexical/utils';
 import {
-  $createLineBreakNode,
   $createParagraphNode,
+  $createTabNode,
   $createTextNode,
-  $getRoot,
-  $getSelection,
+  $findMatchingParent,
+  $isElementNode,
   $isParagraphNode,
-  ElementNode,
+  type ElementNode,
+  type TextNode,
 } from 'lexical';
-import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
+import {importTextTransformers} from './importTextTransformers';
 import {
-  isEmptyParagraph,
-  PUNCTUATION_OR_SPACE,
-  transformersByType,
-} from './utils';
+  $createMarkdownLineBreakNode,
+  type ElementTransformer,
+  type MultilineElementTransformer,
+  type TextFormatTransformer,
+  type TextMatchTransformer,
+  type Transformer,
+} from './MarkdownTransformers';
+import {isEmptyParagraph, transformersByType} from './utils';
 
-const CODE_BLOCK_REG_EXP = /^[ \t]*```(\w{1,10})?\s?$/;
-type TextFormatTransformersIndex = Readonly<{
+export type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
   openTagsRegExp: RegExp;
   transformersByTag: Readonly<Record<string, TextFormatTransformer>>;
 }>;
 
 /**
- * Renders markdown from a string. The selection is moved to the start after the operation.
+ * Parses a markdown string and appends the resulting nodes to `container`.
+ * Does not clear the container or touch the selection — callers handle that.
  */
-export function createMarkdownImport(
-  transformers: Array<Transformer>,
+export function $importMarkdownNodes(
+  markdownString: string,
+  container: ElementNode,
+  transformers: Transformer[],
   shouldPreserveNewLines = false,
-): (markdownString: string, node?: ElementNode) => void {
+): void {
   const byType = transformersByType(transformers);
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
     byType.textFormat,
   );
+  const lines = markdownString.split('\n');
+  const linesLength = lines.length;
 
-  return (markdownString, node) => {
-    const lines = markdownString.split('\n');
-    const linesLength = lines.length;
-    const root = node || $getRoot();
-    root.clear();
+  for (let i = 0; i < linesLength; i++) {
+    const lineText = lines[i];
 
-    for (let i = 0; i < linesLength; i++) {
-      const lineText = lines[i];
-      // Codeblocks are processed first as anything inside such block
-      // is ignored for further processing
-      // TODO:
-      // Abstract it to be dynamic as other transformers (add multiline match option)
-      const [codeBlockNode, shiftedIndex] = $importCodeBlock(lines, i, root);
+    const [imported, shiftedIndex] = $importMultiline(
+      lines,
+      i,
+      byType.multilineElement,
+      container,
+    );
 
-      if (codeBlockNode != null) {
-        i = shiftedIndex;
+    if (imported) {
+      i = shiftedIndex;
+      continue;
+    }
+
+    $importBlocks(
+      lineText,
+      container,
+      byType.element,
+      textFormatTransformersIndex,
+      byType.textMatch,
+      shouldPreserveNewLines,
+    );
+  }
+
+  const children = container.getChildren();
+  for (const child of children) {
+    if (
+      !shouldPreserveNewLines &&
+      isEmptyParagraph(child) &&
+      container.getChildrenSize() > 1
+    ) {
+      child.remove();
+      continue;
+    }
+    if ($isElementNode(child)) {
+      for (const textNode of child.getAllTextNodes()) {
+        $normalizeMarkdownTextNode(textNode);
+      }
+    }
+  }
+}
+
+/**
+ *
+ * @returns first element of the returned tuple is a boolean indicating if a multiline element was imported. The second element is the index of the last line that was processed.
+ */
+function $importMultiline(
+  lines: string[],
+  startLineIndex: number,
+  multilineElementTransformers: MultilineElementTransformer[],
+  rootNode: ElementNode,
+): [boolean, number] {
+  for (const transformer of multilineElementTransformers) {
+    const {handleImportAfterStartMatch, regExpEnd, regExpStart, replace} =
+      transformer;
+
+    const startMatch = lines[startLineIndex].match(regExpStart);
+    if (!startMatch) {
+      continue; // Try next transformer
+    }
+
+    if (handleImportAfterStartMatch) {
+      const result = handleImportAfterStartMatch({
+        lines,
+        rootNode,
+        startLineIndex,
+        startMatch,
+        transformer,
+      });
+      if (result === null) {
         continue;
+      } else if (result) {
+        return result;
       }
-
-      $importBlocks(
-        lineText,
-        root,
-        byType.element,
-        textFormatTransformersIndex,
-        byType.textMatch,
-      );
     }
 
-    // By default, removing empty paragraphs as md does not really
-    // allow empty lines and uses them as delimiter.
-    // If you need empty lines set shouldPreserveNewLines = true.
-    const children = root.getChildren();
-    for (const child of children) {
+    const regexpEndRegex: RegExp | undefined =
+      typeof regExpEnd === 'object' && 'regExp' in regExpEnd
+        ? regExpEnd.regExp
+        : regExpEnd;
+
+    const isEndOptional =
+      regExpEnd && typeof regExpEnd === 'object' && 'optional' in regExpEnd
+        ? regExpEnd.optional
+        : !regExpEnd;
+
+    let endLineIndex = startLineIndex;
+    const linesLength = lines.length;
+
+    // check every single line for the closing match. It could also be on the same line as the opening match.
+    while (endLineIndex < linesLength) {
+      const endMatch = regexpEndRegex
+        ? lines[endLineIndex].match(regexpEndRegex)
+        : null;
+      if (!endMatch) {
+        if (
+          !isEndOptional ||
+          (isEndOptional && endLineIndex < linesLength - 1) // Optional end, but didn't reach the end of the document yet => continue searching for potential closing match
+        ) {
+          endLineIndex++;
+          continue; // Search next line for closing match
+        }
+      }
+
+      // Now, check if the closing match matched is the same as the opening match.
+      // If it is, we need to continue searching for the actual closing match.
       if (
-        !shouldPreserveNewLines &&
-        isEmptyParagraph(child) &&
-        root.getChildrenSize() > 1
+        endMatch &&
+        startLineIndex === endLineIndex &&
+        endMatch.index === startMatch.index
       ) {
-        child.remove();
+        endLineIndex++;
+        continue; // Search next line for closing match
       }
-    }
 
-    if ($getSelection() !== null) {
-      root.selectStart();
+      // At this point, we have found the closing match. Next: calculate the lines in between open and closing match
+      // This should not include the matches themselves, and be split up by lines
+      const linesInBetween = [];
+
+      if (endMatch && startLineIndex === endLineIndex) {
+        linesInBetween.push(
+          lines[startLineIndex].slice(
+            startMatch[0].length,
+            -endMatch[0].length,
+          ),
+        );
+      } else {
+        for (let i = startLineIndex; i <= endLineIndex; i++) {
+          if (i === startLineIndex) {
+            const text = lines[i].slice(startMatch[0].length);
+            linesInBetween.push(text); // Also include empty text
+          } else if (i === endLineIndex && endMatch) {
+            const text = lines[i].slice(0, -endMatch[0].length);
+            linesInBetween.push(text); // Also include empty text
+          } else {
+            linesInBetween.push(lines[i]);
+          }
+        }
+      }
+
+      if (
+        replace(rootNode, null, startMatch, endMatch, linesInBetween, true) !==
+        false
+      ) {
+        // Return here. This $importMultiline function is run line by line and should only process a single multiline element at a time.
+        return [true, endLineIndex];
+      }
+
+      // The replace function returned false, despite finding the matching open and close tags => this transformer does not want to handle it.
+      // Thus, we continue letting the remaining transformers handle the passed lines of text from the beginning
+      break;
     }
-  };
+  }
+
+  // No multiline transformer handled this line successfully
+  return [false, startLineIndex];
 }
 
 function $importBlocks(
   lineText: string,
   rootNode: ElementNode,
-  elementTransformers: Array<ElementTransformer>,
+  elementTransformers: ElementTransformer[],
   textFormatTransformersIndex: TextFormatTransformersIndex,
-  textMatchTransformers: Array<TextMatchTransformer>,
+  textMatchTransformers: TextMatchTransformer[],
+  shouldPreserveNewLines: boolean,
 ) {
   const textNode = $createTextNode(lineText);
   const elementNode = $createParagraphNode();
@@ -120,12 +230,13 @@ function $importBlocks(
 
     if (match) {
       textNode.setTextContent(lineText.slice(match[0].length));
-      replace(elementNode, [textNode], match, true);
-      break;
+      if (replace(elementNode, [textNode], match, true) !== false) {
+        break;
+      }
     }
   }
 
-  importTextFormatTransformers(
+  importTextTransformers(
     textNode,
     textFormatTransformersIndex,
     textMatchTransformers,
@@ -134,12 +245,13 @@ function $importBlocks(
   // If no transformer found and we left with original paragraph node
   // can check if its content can be appended to the previous node
   // if it's a paragraph, quote or list
-  if (elementNode.isAttached() && lineText.length > 0) {
+  if (elementNode.getParent() !== null && lineText.length > 0) {
     const previousNode = elementNode.getPreviousSibling();
     if (
-      $isParagraphNode(previousNode) ||
-      $isQuoteNode(previousNode) ||
-      $isListNode(previousNode)
+      !shouldPreserveNewLines && // Only append if we're not preserving newlines
+      ($isParagraphNode(previousNode) ||
+        $isQuoteNode(previousNode) ||
+        $isListNode(previousNode))
     ) {
       let targetNode: typeof previousNode | ListItemNode | null = previousNode;
 
@@ -154,7 +266,7 @@ function $importBlocks(
 
       if (targetNode != null && targetNode.getTextContentSize() > 0) {
         targetNode.splice(targetNode.getChildrenSize(), 0, [
-          $createLineBreakNode(),
+          $createMarkdownLineBreakNode(targetNode),
           ...elementNode.getChildren(),
         ]);
         elementNode.remove();
@@ -163,203 +275,34 @@ function $importBlocks(
   }
 }
 
-function $importCodeBlock(
-  lines: Array<string>,
-  startLineIndex: number,
-  rootNode: ElementNode,
-): [CodeNode | null, number] {
-  const openMatch = lines[startLineIndex].match(CODE_BLOCK_REG_EXP);
+// Look in node for '\t' and create a TabNode for each occurrence.
+function $normalizeMarkdownTextNode(textNode: TextNode): void {
+  const tabOffsets: Set<number> = new Set();
+  const text = textNode.getTextContent();
+  let index = text.indexOf('\t');
 
-  if (openMatch) {
-    let endLineIndex = startLineIndex;
-    const linesLength = lines.length;
+  // Find all tab occurrences
+  while (index !== -1) {
+    tabOffsets.add(index);
+    tabOffsets.add(index + 1);
+    index = text.indexOf('\t', index + 1);
+  }
 
-    while (++endLineIndex < linesLength) {
-      const closeMatch = lines[endLineIndex].match(CODE_BLOCK_REG_EXP);
-
-      if (closeMatch) {
-        const codeBlockNode = $createCodeNode(openMatch[1]);
-        const textNode = $createTextNode(
-          lines.slice(startLineIndex + 1, endLineIndex).join('\n'),
-        );
-        codeBlockNode.append(textNode);
-        rootNode.append(codeBlockNode);
-        return [codeBlockNode, endLineIndex];
-      }
+  // Split node to isolate each tab then replace '\t' into TabNode
+  const splitNodes = textNode.splitText(...tabOffsets);
+  splitNodes.forEach(node => {
+    if (node.getTextContent() === '\t') {
+      node.replace($createTabNode());
     }
-  }
-
-  return [null, startLineIndex];
-}
-
-// Processing text content and replaces text format tags.
-// It takes outermost tag match and its content, creates text node with
-// format based on tag and then recursively executed over node's content
-//
-// E.g. for "*Hello **world**!*" string it will create text node with
-// "Hello **world**!" content and italic format and run recursively over
-// its content to transform "**world**" part
-function importTextFormatTransformers(
-  textNode: TextNode,
-  textFormatTransformersIndex: TextFormatTransformersIndex,
-  textMatchTransformers: Array<TextMatchTransformer>,
-) {
-  const textContent = textNode.getTextContent();
-  const match = findOutermostMatch(textContent, textFormatTransformersIndex);
-
-  if (!match) {
-    // Once text format processing is done run text match transformers, as it
-    // only can span within single text node (unline formats that can cover multiple nodes)
-    importTextMatchTransformers(textNode, textMatchTransformers);
-    return;
-  }
-
-  let currentNode, remainderNode, leadingNode;
-
-  // If matching full content there's no need to run splitText and can reuse existing textNode
-  // to update its content and apply format. E.g. for **_Hello_** string after applying bold
-  // format (**) it will reuse the same text node to apply italic (_)
-  if (match[0] === textContent) {
-    currentNode = textNode;
-  } else {
-    const startIndex = match.index || 0;
-    const endIndex = startIndex + match[0].length;
-
-    if (startIndex === 0) {
-      [currentNode, remainderNode] = textNode.splitText(endIndex);
-    } else {
-      [leadingNode, currentNode, remainderNode] = textNode.splitText(
-        startIndex,
-        endIndex,
-      );
-    }
-  }
-
-  currentNode.setTextContent(match[2]);
-  const transformer = textFormatTransformersIndex.transformersByTag[match[1]];
-
-  if (transformer) {
-    for (const format of transformer.format) {
-      if (!currentNode.hasFormat(format)) {
-        currentNode.toggleFormat(format);
-      }
-    }
-  }
-
-  // Recursively run over inner text if it's not inline code
-  if (!currentNode.hasFormat('code')) {
-    importTextFormatTransformers(
-      currentNode,
-      textFormatTransformersIndex,
-      textMatchTransformers,
-    );
-  }
-
-  // Run over leading/remaining text if any
-  if (leadingNode) {
-    importTextFormatTransformers(
-      leadingNode,
-      textFormatTransformersIndex,
-      textMatchTransformers,
-    );
-  }
-
-  if (remainderNode) {
-    importTextFormatTransformers(
-      remainderNode,
-      textFormatTransformersIndex,
-      textMatchTransformers,
-    );
-  }
-}
-
-function importTextMatchTransformers(
-  textNode_: TextNode,
-  textMatchTransformers: Array<TextMatchTransformer>,
-) {
-  let textNode = textNode_;
-
-  mainLoop: while (textNode) {
-    for (const transformer of textMatchTransformers) {
-      const match = textNode.getTextContent().match(transformer.importRegExp);
-
-      if (!match) {
-        continue;
-      }
-
-      const startIndex = match.index || 0;
-      const endIndex = startIndex + match[0].length;
-      let replaceNode, newTextNode;
-
-      if (startIndex === 0) {
-        [replaceNode, textNode] = textNode.splitText(endIndex);
-      } else {
-        [, replaceNode, newTextNode] = textNode.splitText(startIndex, endIndex);
-      }
-
-      if (newTextNode) {
-        importTextMatchTransformers(newTextNode, textMatchTransformers);
-      }
-      transformer.replace(replaceNode, match);
-      continue mainLoop;
-    }
-
-    break;
-  }
-}
-
-// Finds first "<tag>content<tag>" match that is not nested into another tag
-function findOutermostMatch(
-  textContent: string,
-  textTransformersIndex: TextFormatTransformersIndex,
-): RegExpMatchArray | null {
-  const openTagsMatch = textContent.match(textTransformersIndex.openTagsRegExp);
-
-  if (openTagsMatch == null) {
-    return null;
-  }
-
-  for (const match of openTagsMatch) {
-    // Open tags reg exp might capture leading space so removing it
-    // before using match to find transformer
-    const tag = match.replace(/^\s/, '');
-    const fullMatchRegExp = textTransformersIndex.fullMatchRegExpByTag[tag];
-    if (fullMatchRegExp == null) {
-      continue;
-    }
-
-    const fullMatch = textContent.match(fullMatchRegExp);
-    const transformer = textTransformersIndex.transformersByTag[tag];
-    if (fullMatch != null && transformer != null) {
-      if (transformer.intraword !== false) {
-        return fullMatch;
-      }
-
-      // For non-intraword transformers checking if it's within a word
-      // or surrounded with space/punctuation/newline
-      const {index = 0} = fullMatch;
-      const beforeChar = textContent[index - 1];
-      const afterChar = textContent[index + fullMatch[0].length];
-
-      if (
-        (!beforeChar || PUNCTUATION_OR_SPACE.test(beforeChar)) &&
-        (!afterChar || PUNCTUATION_OR_SPACE.test(afterChar))
-      ) {
-        return fullMatch;
-      }
-    }
-  }
-
-  return null;
+  });
 }
 
 function createTextFormatTransformersIndex(
-  textTransformers: Array<TextFormatTransformer>,
+  textTransformers: TextFormatTransformer[],
 ): TextFormatTransformersIndex {
   const transformersByTag: Record<string, TextFormatTransformer> = {};
   const fullMatchRegExpByTag: Record<string, RegExp> = {};
-  const openTagsRegExp = [];
-  const escapeRegExp = `(?<![\\\\])`;
+  const openTagsRegExp: string[] = [];
 
   for (const transformer of textTransformers) {
     const {tag} = transformer;
@@ -367,13 +310,25 @@ function createTextFormatTransformersIndex(
     const tagRegExp = tag.replace(/(\*|\^|\+)/g, '\\$1');
     openTagsRegExp.push(tagRegExp);
 
-    if (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT) {
-      fullMatchRegExpByTag[tag] = new RegExp(
-        `(${tagRegExp})(?![${tagRegExp}\\s])(.*?[^${tagRegExp}\\s])${tagRegExp}(?!${tagRegExp})`,
-      );
+    // Single-char tag (e.g. "*")
+    if (tag.length === 1) {
+      if (tag === '`') {
+        // Capture the preceding character in group 1 (empty string at start-of-string
+        // via the ^ branch) rather than using a negative lookbehind, which is not
+        // supported in Safari < 16.4. Consumers must add match[1].length to
+        // match.index to find the real start of the span (see importTextFormatTransformer.ts).
+        fullMatchRegExpByTag[tag] = new RegExp(
+          `(^|[^\\\\\`])(\`)((?:\\\\\`|[^\`])+?)(\`)(?!\`)`,
+        );
+      } else {
+        fullMatchRegExpByTag[tag] = new RegExp(
+          `(^|[^\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)(${tagRegExp})(?![\\\\${tagRegExp}])`,
+        );
+      }
     } else {
+      // Multi-char tags (e.g. "**")
       fullMatchRegExpByTag[tag] = new RegExp(
-        `(?<![\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?![\\\\${tagRegExp}])`,
+        `(^|[^\\\\])(${tagRegExp})((\\\\${tagRegExp})?.*?[^\\s](\\\\${tagRegExp})?)(${tagRegExp})(?!\\\\)`,
       );
     }
   }
@@ -381,14 +336,11 @@ function createTextFormatTransformersIndex(
   return {
     // Reg exp to find open tag + content + close tag
     fullMatchRegExpByTag,
-    // Reg exp to find opening tags
-    openTagsRegExp: new RegExp(
-      (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT ? '' : `${escapeRegExp}`) +
-        '(' +
-        openTagsRegExp.join('|') +
-        ')',
-      'g',
-    ),
+
+    // Regexp to locate *any* potential opening tag (longest first).
+    // The former (?<!\\) escape guard has been removed — the delimiter
+    // scanner's isEscaped() check handles escape filtering at match time.
+    openTagsRegExp: new RegExp(`(${openTagsRegExp.join('|')})`, 'g'),
     transformersByTag,
   };
 }

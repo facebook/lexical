@@ -13,30 +13,50 @@
 
 [lints]
 untyped-type-import=error
+deprecated-type=error
 
 [options]
 server.max_workers=4
 exact_by_default=true
+component_syntax=true
 
 ;; [generated-start update-flowconfig]
 module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical/flow/Lexical.js.flow'
+module.name_mapper='^@lexical/a11y$' -> '<PROJECT_ROOT>/packages/lexical-a11y/flow/LexicalA11y.js.flow'
 module.name_mapper='^@lexical/clipboard$' -> '<PROJECT_ROOT>/packages/lexical-clipboard/flow/LexicalClipboard.js.flow'
 module.name_mapper='^@lexical/code$' -> '<PROJECT_ROOT>/packages/lexical-code/flow/LexicalCode.js.flow'
+module.name_mapper='^@lexical/code-core$' -> '<PROJECT_ROOT>/packages/lexical-code-core/flow/LexicalCodeCore.js.flow'
+module.name_mapper='^@lexical/code-prism$' -> '<PROJECT_ROOT>/packages/lexical-code-prism/flow/LexicalCodePrism.js.flow'
+module.name_mapper='^@lexical/code-shiki$' -> '<PROJECT_ROOT>/packages/lexical-code-shiki/flow/LexicalCodeShiki.js.flow'
+module.name_mapper='^@lexical/compiler$' -> '<PROJECT_ROOT>/packages/lexical-compiler/flow/LexicalCompiler.js.flow'
+module.name_mapper='^@lexical/compiler/PureAnnotations$' -> '<PROJECT_ROOT>/packages/lexical-compiler/flow/LexicalCompilerPureAnnotations.js.flow'
 module.name_mapper='^@lexical/devtools-core$' -> '<PROJECT_ROOT>/packages/lexical-devtools-core/flow/LexicalDevtoolsCore.js.flow'
 module.name_mapper='^@lexical/dragon$' -> '<PROJECT_ROOT>/packages/lexical-dragon/flow/LexicalDragon.js.flow'
 module.name_mapper='^@lexical/eslint-plugin$' -> '<PROJECT_ROOT>/packages/lexical-eslint-plugin/flow/LexicalEslintPlugin.js.flow'
+module.name_mapper='^@lexical/extension$' -> '<PROJECT_ROOT>/packages/lexical-extension/flow/LexicalExtension.js.flow'
 module.name_mapper='^@lexical/file$' -> '<PROJECT_ROOT>/packages/lexical-file/flow/LexicalFile.js.flow'
 module.name_mapper='^@lexical/hashtag$' -> '<PROJECT_ROOT>/packages/lexical-hashtag/flow/LexicalHashtag.js.flow'
 module.name_mapper='^@lexical/headless$' -> '<PROJECT_ROOT>/packages/lexical-headless/flow/LexicalHeadless.js.flow'
+module.name_mapper='^@lexical/headless/dom$' -> '<PROJECT_ROOT>/packages/lexical-headless/flow/LexicalHeadlessDom.js.flow'
 module.name_mapper='^@lexical/history$' -> '<PROJECT_ROOT>/packages/lexical-history/flow/LexicalHistory.js.flow'
 module.name_mapper='^@lexical/html$' -> '<PROJECT_ROOT>/packages/lexical-html/flow/LexicalHtml.js.flow'
+module.name_mapper='^@lexical/internal/devInvariant$' -> '<PROJECT_ROOT>/packages/lexical-internal/flow/LexicalInternalDevInvariant.js.flow'
+module.name_mapper='^@lexical/internal/formatDevErrorMessage$' -> '<PROJECT_ROOT>/packages/lexical-internal/flow/LexicalInternalFormatDevErrorMessage.js.flow'
+module.name_mapper='^@lexical/internal/formatDevWarningMessage$' -> '<PROJECT_ROOT>/packages/lexical-internal/flow/LexicalInternalFormatDevWarningMessage.js.flow'
+module.name_mapper='^@lexical/internal/formatProdErrorMessage$' -> '<PROJECT_ROOT>/packages/lexical-internal/flow/LexicalInternalFormatProdErrorMessage.js.flow'
+module.name_mapper='^@lexical/internal/formatProdWarningMessage$' -> '<PROJECT_ROOT>/packages/lexical-internal/flow/LexicalInternalFormatProdWarningMessage.js.flow'
+module.name_mapper='^@lexical/internal/invariant$' -> '<PROJECT_ROOT>/packages/lexical-internal/flow/LexicalInternalInvariant.js.flow'
+module.name_mapper='^@lexical/internal/version$' -> '<PROJECT_ROOT>/packages/lexical-internal/flow/LexicalInternalVersion.js.flow'
+module.name_mapper='^@lexical/internal/warnOnlyOnce$' -> '<PROJECT_ROOT>/packages/lexical-internal/flow/LexicalInternalWarnOnlyOnce.js.flow'
 module.name_mapper='^@lexical/link$' -> '<PROJECT_ROOT>/packages/lexical-link/flow/LexicalLink.js.flow'
 module.name_mapper='^@lexical/list$' -> '<PROJECT_ROOT>/packages/lexical-list/flow/LexicalList.js.flow'
 module.name_mapper='^@lexical/mark$' -> '<PROJECT_ROOT>/packages/lexical-mark/flow/LexicalMark.js.flow'
 module.name_mapper='^@lexical/markdown$' -> '<PROJECT_ROOT>/packages/lexical-markdown/flow/LexicalMarkdown.js.flow'
+module.name_mapper='^@lexical/mdast$' -> '<PROJECT_ROOT>/packages/lexical-mdast/flow/LexicalMdast.js.flow'
 module.name_mapper='^@lexical/offset$' -> '<PROJECT_ROOT>/packages/lexical-offset/flow/LexicalOffset.js.flow'
 module.name_mapper='^@lexical/overflow$' -> '<PROJECT_ROOT>/packages/lexical-overflow/flow/LexicalOverflow.js.flow'
 module.name_mapper='^@lexical/plain-text$' -> '<PROJECT_ROOT>/packages/lexical-plain-text/flow/LexicalPlainText.js.flow'
+module.name_mapper='^@lexical/react/ExtensionComponent$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalExtensionComponent.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoEmbedPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoEmbedPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoFocusPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoFocusPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoLinkPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoLinkPlugin.js.flow'
@@ -50,11 +70,12 @@ module.name_mapper='^@lexical/react/LexicalCollaborationPlugin$' -> '<PROJECT_RO
 module.name_mapper='^@lexical/react/LexicalComposer$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalComposer.js.flow'
 module.name_mapper='^@lexical/react/LexicalComposerContext$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalComposerContext.js.flow'
 module.name_mapper='^@lexical/react/LexicalContentEditable$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalContentEditable.js.flow'
-module.name_mapper='^@lexical/react/LexicalContextMenuPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalContextMenuPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalDecoratorBlockNode$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalDecoratorBlockNode.js.flow'
 module.name_mapper='^@lexical/react/LexicalDraggableBlockPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalDraggableBlockPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalEditorRefPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalEditorRefPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalErrorBoundary$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalErrorBoundary.js.flow'
+module.name_mapper='^@lexical/react/LexicalExtensionComposer$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalExtensionComposer.js.flow'
+module.name_mapper='^@lexical/react/LexicalExtensionEditorComposer$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalExtensionEditorComposer.js.flow'
 module.name_mapper='^@lexical/react/LexicalHashtagPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHashtagPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalHistoryPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHistoryPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalHorizontalRuleNode$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHorizontalRuleNode.js.flow'
@@ -63,25 +84,38 @@ module.name_mapper='^@lexical/react/LexicalLinkPlugin$' -> '<PROJECT_ROOT>/packa
 module.name_mapper='^@lexical/react/LexicalListPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalListPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalMarkdownShortcutPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalMarkdownShortcutPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalNestedComposer$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalNestedComposer.js.flow'
+module.name_mapper='^@lexical/react/LexicalNodeContextMenuPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalNodeContextMenuPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalNodeEventPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalNodeEventPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalNodeMenuPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalNodeMenuPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalOnChangePlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalOnChangePlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalPlainTextPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalPlainTextPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalRichTextPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalRichTextPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalSelectionAlwaysOnDisplay$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalSelectionAlwaysOnDisplay.js.flow'
 module.name_mapper='^@lexical/react/LexicalTabIndentationPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTabIndentationPlugin.js.flow'
-module.name_mapper='^@lexical/react/LexicalTableOfContents$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTableOfContents.js.flow'
 module.name_mapper='^@lexical/react/LexicalTableOfContentsPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTableOfContentsPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalTablePlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTablePlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalTreeView$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTreeView.js.flow'
 module.name_mapper='^@lexical/react/LexicalTypeaheadMenuPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTypeaheadMenuPlugin.js.flow'
+module.name_mapper='^@lexical/react/ReactExtension$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalReactExtension.js.flow'
+module.name_mapper='^@lexical/react/ReactPluginHostExtension$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalReactPluginHostExtension.js.flow'
+module.name_mapper='^@lexical/react/ReactProviderExtension$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalReactProviderExtension.js.flow'
+module.name_mapper='^@lexical/react/TreeViewExtension$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTreeViewExtension.js.flow'
+module.name_mapper='^@lexical/react/useExtensionComponent$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalExtensionComponent.js.flow'
+module.name_mapper='^@lexical/react/useExtensionSignalValue$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalExtensionSignalValue.js.flow'
+module.name_mapper='^@lexical/react/useLexicalAriaLiveRegion$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalAriaLiveRegion.js.flow'
 module.name_mapper='^@lexical/react/useLexicalEditable$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalEditable.js.flow'
+module.name_mapper='^@lexical/react/useLexicalFocusManagerRef$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalFocusManagerRef.js.flow'
+module.name_mapper='^@lexical/react/useLexicalFocusTrapRef$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalFocusTrapRef.js.flow'
 module.name_mapper='^@lexical/react/useLexicalIsTextContentEmpty$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalIsTextContentEmpty.js.flow'
 module.name_mapper='^@lexical/react/useLexicalNodeSelection$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalNodeSelection.js.flow'
+module.name_mapper='^@lexical/react/useLexicalRovingTabIndexRef$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalRovingTabIndexRef.js.flow'
+module.name_mapper='^@lexical/react/useLexicalSlotRef$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalSlotRef.js.flow'
 module.name_mapper='^@lexical/react/useLexicalSubscription$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalSubscription.js.flow'
 module.name_mapper='^@lexical/react/useLexicalTextEntity$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalTextEntity.js.flow'
 module.name_mapper='^@lexical/rich-text$' -> '<PROJECT_ROOT>/packages/lexical-rich-text/flow/LexicalRichText.js.flow'
 module.name_mapper='^@lexical/selection$' -> '<PROJECT_ROOT>/packages/lexical-selection/flow/LexicalSelection.js.flow'
 module.name_mapper='^@lexical/table$' -> '<PROJECT_ROOT>/packages/lexical-table/flow/LexicalTable.js.flow'
+module.name_mapper='^@lexical/tailwind$' -> '<PROJECT_ROOT>/packages/lexical-tailwind/flow/LexicalTailwind.js.flow'
 module.name_mapper='^@lexical/text$' -> '<PROJECT_ROOT>/packages/lexical-text/flow/LexicalText.js.flow'
 module.name_mapper='^@lexical/utils$' -> '<PROJECT_ROOT>/packages/lexical-utils/flow/LexicalUtils.js.flow'
 module.name_mapper='^@lexical/yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/flow/LexicalYjs.js.flow'
@@ -89,20 +123,16 @@ module.name_mapper='^@lexical/yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/flow
 
 munge_underscores=false
 
-suppress_type=$FlowIssue
-suppress_type=$FlowFixMe
-suppress_type=$FixMe
-suppress_type=$FlowExpectedError
+[declarations]
+.*/flow-typed/.*
 
 [libs]
 ./libdefs/yjs.js
-./scripts/flow/environment.js
-./flow-typed/yjs.js
-./flow-typed/prism.js
+./flow-typed
 
 [strict]
 nonstrict-import
 unclear-type
 
 [version]
-^0.226.0
+^0.321.0

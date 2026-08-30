@@ -28,7 +28,7 @@ const emojiReplacementMap = emojis.reduce<Map<string, string>>((acc, row) => {
     acc.set(row.text, row.unified);
   }
   if (row.texts != null) {
-    row.texts.forEach((text) => acc.set(text, row.unified));
+    row.texts.forEach(text => acc.set(text, row.unified));
   }
 
   return acc;

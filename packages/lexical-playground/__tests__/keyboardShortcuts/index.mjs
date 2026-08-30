@@ -8,8 +8,6 @@
 
 import {
   E2E_BROWSER,
-  evaluate,
-  IS_LINUX,
   IS_MAC,
   keyDownCtrlOrAlt,
   keyDownCtrlOrMeta,
@@ -103,6 +101,24 @@ export async function deleteNextWord(page) {
   await keyUpCtrlOrAlt(page);
 }
 
+export async function deleteLineBackward(page) {
+  if (!IS_MAC) {
+    throw new Error('deleteLineBackward is only supported on Mac');
+  }
+  await page.keyboard.down('Meta');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.up('Meta');
+}
+
+export async function deleteLineForward(page) {
+  if (!IS_MAC) {
+    throw new Error('deleteLineForward is only supported on Mac');
+  }
+  await page.keyboard.down('Meta');
+  await page.keyboard.press('Delete');
+  await page.keyboard.up('Meta');
+}
+
 export async function deleteBackward(page) {
   if (IS_MAC) {
     await page.keyboard.down('Control');
@@ -144,23 +160,9 @@ export async function moveToParagraphEnd(page) {
 }
 
 export async function selectAll(page) {
-  // TODO Normalize #4665
-  if (E2E_BROWSER === 'firefox' && IS_LINUX) {
-    await evaluate(page, () => {
-      const rootElement = document.querySelector('div[contenteditable="true"]');
-      const selection = window.getSelection();
-      selection.setBaseAndExtent(
-        rootElement,
-        0,
-        rootElement,
-        rootElement.childNodes.length,
-      );
-    });
-  } else {
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('a');
-    await keyUpCtrlOrMeta(page);
-  }
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('a');
+  await keyUpCtrlOrMeta(page);
 }
 
 export async function undo(page) {
@@ -253,6 +255,46 @@ export async function toggleItalic(page) {
   await keyUpCtrlOrMeta(page);
 }
 
+export async function toggleInsertCodeBlock(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('c');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
+}
+
+export async function toggleLowercase(page) {
+  await page.keyboard.down('Control');
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('1');
+  await page.keyboard.up('Control');
+  await page.keyboard.up('Shift');
+}
+
+export async function toggleUppercase(page) {
+  await page.keyboard.down('Control');
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('2');
+  await page.keyboard.up('Control');
+  await page.keyboard.up('Shift');
+}
+
+export async function toggleCapitalize(page) {
+  await page.keyboard.down('Control');
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('3');
+  await page.keyboard.up('Control');
+  await page.keyboard.up('Shift');
+}
+
+export async function toggleStrikethrough(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('x');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
+}
+
 export async function pressShiftEnter(page) {
   await page.keyboard.down('Shift');
   await page.keyboard.press('Enter');
@@ -265,9 +307,7 @@ export async function moveToStart(page) {
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.up('Meta');
   } else {
-    await page.keyboard.down('Control');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.up('Control');
+    await page.keyboard.press('Home');
   }
 }
 
@@ -277,9 +317,7 @@ export async function moveToEnd(page) {
     await page.keyboard.press('ArrowRight');
     await page.keyboard.up('Meta');
   } else {
-    await page.keyboard.down('Control');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.up('Control');
+    await page.keyboard.press('End');
   }
 }
 
@@ -287,4 +325,144 @@ export async function paste(page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('KeyV');
   await keyUpCtrlOrMeta(page);
+}
+
+export async function toggleSubscript(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press(',');
+  await keyUpCtrlOrMeta(page);
+}
+
+export async function toggleSuperscript(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('.');
+  await keyUpCtrlOrMeta(page);
+}
+
+export async function clearFormatting(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('\\');
+  await keyUpCtrlOrMeta(page);
+}
+
+export async function leftAlign(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('l');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
+}
+
+export async function centerAlign(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('e');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
+}
+
+export async function rightAlign(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('r');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
+}
+
+export async function justifyAlign(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('j');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
+}
+
+export async function outdent(page, times = 1) {
+  for (let i = 0; i < times; i++) {
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('[');
+    await keyUpCtrlOrMeta(page);
+  }
+}
+
+export async function indent(page, times = 1) {
+  for (let i = 0; i < times; i++) {
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press(']');
+    await keyUpCtrlOrMeta(page);
+  }
+}
+
+export async function applyNormalFormat(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Alt');
+  await page.keyboard.press('0');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Alt');
+}
+
+export async function applyHeading(page, level) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Alt');
+  await page.keyboard.press(level.toString());
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Alt');
+}
+
+export async function toggleNumberedList(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('7');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
+}
+
+export async function toggleBulletList(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('8');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
+}
+
+export async function toggleChecklist(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('9');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
+}
+
+export async function applyQuoteBlock(page) {
+  await page.keyboard.down('Control');
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('q');
+  await page.keyboard.up('Control');
+  await page.keyboard.up('Shift');
+}
+
+export async function applyCodeBlock(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Alt');
+  await page.keyboard.press('c');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Alt');
+}
+
+export async function increaseFontSize(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  // shift + '.' becomes '>' on US keyboard layout. See https://keycode.info/
+  await page.keyboard.press('>');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
+}
+
+export async function decreaseFontSize(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.down('Shift');
+  // shift + ',' becomes '<' on US keyboard layout. See https://keycode.info/
+  await page.keyboard.press('<');
+  await keyUpCtrlOrMeta(page);
+  await page.keyboard.up('Shift');
 }

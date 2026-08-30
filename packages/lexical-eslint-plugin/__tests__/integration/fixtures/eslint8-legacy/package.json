@@ -1,0 +1,8 @@
+{
+  "name": "eslint8-legacy-fixture",
+  "private": true,
+  "type": "commonjs",
+  "devDependencies": {
+    "@lexical/eslint-plugin": "file:../../../.."
+  }
+}

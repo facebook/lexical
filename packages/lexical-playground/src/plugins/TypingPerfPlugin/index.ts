@@ -6,7 +6,8 @@
  *
  */
 
-import {useEffect} from 'react';
+import {registerEventListeners} from 'lexical';
+import {type JSX, useEffect} from 'react';
 
 import useReport from '../../hooks/useReport';
 
@@ -35,7 +36,7 @@ export default function TypingPerfPlugin(): JSX.Element | null {
     let start = 0;
     let timerId: ReturnType<typeof setTimeout> | null;
     let keyPressTimerId: ReturnType<typeof setTimeout> | null;
-    let log: Array<DOMHighResTimeStamp> = [];
+    let log: DOMHighResTimeStamp[] = [];
     let invalidatingEvent = false;
 
     const measureEventEnd = function logKeyPress() {
@@ -98,19 +99,17 @@ export default function TypingPerfPlugin(): JSX.Element | null {
       invalidatingEvent = true;
     };
 
-    window.addEventListener('keydown', keyDownHandler, true);
-    window.addEventListener('selectionchange', measureEventEnd, true);
-    window.addEventListener('beforeinput', beforeInputHandler, true);
-    window.addEventListener('paste', pasteHandler, true);
-    window.addEventListener('cut', cutHandler, true);
-
-    return () => {
-      window.removeEventListener('keydown', keyDownHandler, true);
-      window.removeEventListener('selectionchange', measureEventEnd, true);
-      window.removeEventListener('beforeinput', beforeInputHandler, true);
-      window.removeEventListener('paste', pasteHandler, true);
-      window.removeEventListener('cut', cutHandler, true);
-    };
+    return registerEventListeners(
+      window,
+      {
+        beforeinput: beforeInputHandler,
+        cut: cutHandler,
+        keydown: keyDownHandler,
+        paste: pasteHandler,
+        selectionchange: measureEventEnd,
+      },
+      true,
+    );
   }, [report]);
 
   return null;

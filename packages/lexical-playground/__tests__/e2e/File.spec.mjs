@@ -14,7 +14,7 @@ import {
   html,
   initialize,
   insertUploadImage,
-  sleep,
+  IS_COLLAB_V2,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -24,7 +24,8 @@ test.describe('File', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test(`Can import/export`, async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+    // TODO(collab-v2): nested editors are not supported yet
+    test.skip(isPlainText || IS_COLLAB_V2);
     await focusEditor(page);
     await toggleBold(page);
     await page.keyboard.type('Hello');
@@ -43,9 +44,7 @@ test.describe('File', () => {
     await waitForSelector(page, '.editor-image img');
 
     const expectedHtml = html`
-      <p
-        class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-        dir="ltr">
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
         <strong
           class="PlaygroundEditorTheme__textBold"
           data-lexical-text="true">
@@ -53,17 +52,11 @@ test.describe('File', () => {
         </strong>
         <span data-lexical-text="true">World</span>
       </p>
-      <ol class="PlaygroundEditorTheme__ol1">
-        <li
-          class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-          dir="ltr"
-          value="1">
+      <ol class="PlaygroundEditorTheme__ol1" dir="auto">
+        <li class="PlaygroundEditorTheme__listItem" value="1">
           <span data-lexical-text="true">one</span>
         </li>
-        <li
-          class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-          dir="ltr"
-          value="2">
+        <li class="PlaygroundEditorTheme__listItem" value="2">
           <span data-lexical-text="true">two</span>
         </li>
         <li class="PlaygroundEditorTheme__listItem" value="3">
@@ -79,7 +72,7 @@ test.describe('File', () => {
                 style="height: inherit; max-width: 500px; width: inherit;" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </li>
       </ol>
     `;
@@ -98,16 +91,20 @@ test.describe('File', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
-    page.on('filechooser', (fileChooser) => {
+    page.on('filechooser', fileChooser => {
       fileChooser.setFiles([filePath]);
     });
     await click(page, '.action-button.import');
-    await sleep(200);
 
+    // The import reads and parses the file asynchronously; assertHTML retries
+    // until the imported document replaces the empty editor, so no fixed wait
+    // is needed.
     await assertHTML(page, expectedHtml);
   });
 });

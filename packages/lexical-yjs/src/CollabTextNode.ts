@@ -8,7 +8,6 @@
 
 import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
-import type {NodeKey, NodeMap, TextNode} from 'lexical';
 import type {Map as YMap} from 'yjs';
 
 import {
@@ -16,11 +15,13 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  type NodeKey,
+  type NodeMap,
+  type TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
-import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 
-import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
+import simpleDiffWithCursor from './simpleDiffWithCursor';
+import {$syncPropertiesFromYjs, syncPropertiesFromLexical} from './Utils';
 
 function $diffTextContentAndApplyDelta(
   collabNode: CollabTextNode,
@@ -145,24 +146,25 @@ export class CollabTextNode {
     keysChanged: null | Set<string>,
   ): void {
     const lexicalNode = this.getNode();
-    invariant(
-      lexicalNode !== null,
-      'syncPropertiesAndTextFromYjs: could not find decorator node',
-    );
+    if (lexicalNode === null) {
+      // Concurrently removed from Lexical; nothing to sync.
+      return;
+    }
 
-    syncPropertiesFromYjs(binding, this._map, lexicalNode, keysChanged);
+    $syncPropertiesFromYjs(binding, this._map, lexicalNode, keysChanged);
 
     const collabText = this._text;
 
     if (lexicalNode.__text !== collabText) {
-      const writable = lexicalNode.getWritable();
-      writable.__text = collabText;
+      lexicalNode.setTextContent(collabText);
     }
   }
 
   destroy(binding: Binding): void {
     const collabNodeMap = binding.collabNodeMap;
-    collabNodeMap.delete(this._key);
+    if (collabNodeMap.get(this._key) === this) {
+      collabNodeMap.delete(this._key);
+    }
   }
 }
 

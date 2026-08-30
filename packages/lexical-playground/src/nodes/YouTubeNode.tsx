@@ -6,23 +6,23 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  ElementFormatType,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  Spread,
-} from 'lexical';
+import type {JSX} from 'react';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
   DecoratorBlockNode,
-  SerializedDecoratorBlockNode,
+  type SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
+import {
+  $getDocument,
+  type DOMExportOutput,
+  type EditorConfig,
+  type ElementFormatType,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type Spread,
+} from 'lexical';
 import * as React from 'react';
 
 type YouTubeComponentProps = Readonly<{
@@ -66,22 +66,11 @@ export type SerializedYouTubeNode = Spread<
   SerializedDecoratorBlockNode
 >;
 
-function $convertYoutubeElement(
-  domNode: HTMLElement,
-): null | DOMConversionOutput {
-  const videoID = domNode.getAttribute('data-lexical-youtube');
-  if (videoID) {
-    const node = $createYouTubeNode(videoID);
-    return {node};
-  }
-  return null;
-}
-
 export class YouTubeNode extends DecoratorBlockNode {
   __id: string;
 
-  static getType(): string {
-    return 'youtube';
+  $config() {
+    return this.config('youtube', {extends: DecoratorBlockNode});
   }
 
   static clone(node: YouTubeNode): YouTubeNode {
@@ -89,16 +78,14 @@ export class YouTubeNode extends DecoratorBlockNode {
   }
 
   static importJSON(serializedNode: SerializedYouTubeNode): YouTubeNode {
-    const node = $createYouTubeNode(serializedNode.videoID);
-    node.setFormat(serializedNode.format);
-    return node;
+    return $createYouTubeNode(serializedNode.videoID).updateFromJSON(
+      serializedNode,
+    );
   }
 
   exportJSON(): SerializedYouTubeNode {
     return {
       ...super.exportJSON(),
-      type: 'youtube',
-      version: 1,
       videoID: this.__id,
     };
   }
@@ -109,7 +96,7 @@ export class YouTubeNode extends DecoratorBlockNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('iframe');
+    const element = $getDocument().createElement('iframe');
     element.setAttribute('data-lexical-youtube', this.__id);
     element.setAttribute('width', '560');
     element.setAttribute('height', '315');
@@ -127,26 +114,12 @@ export class YouTubeNode extends DecoratorBlockNode {
     return {element};
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      iframe: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-youtube')) {
-          return null;
-        }
-        return {
-          conversion: $convertYoutubeElement,
-          priority: 1,
-        };
-      },
-    };
-  }
-
   updateDOM(): false {
     return false;
   }
 
   getId(): string {
-    return this.__id;
+    return this.getLatest().__id;
   }
 
   getTextContent(

@@ -10,11 +10,16 @@ import {
   $createParagraphNode,
   $getRoot,
   $isParagraphNode,
+  type DOMConversionOutput,
   ParagraphNode,
-  RangeSelection,
 } from 'lexical';
+import {describe, expect, test} from 'vitest';
 
-import {initializeUnitTest} from '../../../__tests__/utils';
+import {
+  $runDOMConversion,
+  initializeUnitTest,
+  invariant,
+} from '../../../__tests__/utils';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -24,7 +29,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalParagraphNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('ParagraphNode.constructor', async () => {
       const {editor} = testEnv;
 
@@ -46,7 +51,7 @@ describe('LexicalParagraphNode tests', () => {
         // If you broke this test, you changed the public interface of a
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
-        // to accomodate these changes.
+        // to accommodate these changes.
         expect(node.exportJSON()).toStrictEqual({
           children: [],
           direction: null,
@@ -110,19 +115,16 @@ describe('LexicalParagraphNode tests', () => {
       });
 
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
 
       await editor.update(() => {
         const selection = paragraphNode.select();
-        const result = paragraphNode.insertNewAfter(
-          selection as RangeSelection,
-          false,
-        );
+        const result = paragraphNode.insertNewAfter(selection, false);
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(paragraphNode.getDirection());
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
         );
       });
     });
@@ -147,6 +149,64 @@ describe('LexicalParagraphNode tests', () => {
         const paragraphNode = new ParagraphNode();
 
         expect($isParagraphNode(paragraphNode)).toBe(true);
+      });
+    });
+
+    test('ParagraphNode.importDOM handles both CSS text-align and legacy align attribute', async () => {
+      const {editor} = testEnv;
+
+      // Drive the real DOM-import machinery (the editor's registered conversion
+      // cache) instead of reaching into ParagraphNode.importDOM() directly.
+      const $convertParagraph = (
+        element: HTMLElement,
+      ): DOMConversionOutput | null => $runDOMConversion(editor, element);
+
+      const expectParagraphNode = (result: DOMConversionOutput | null) => {
+        const node = result ? result.node : null;
+
+        if (Array.isArray(node)) {
+          throw new Error('Expected a single node, but got an array');
+        }
+
+        invariant(
+          $isParagraphNode(node),
+          'Expected node to be a ParagraphNode',
+        );
+        return node;
+      };
+
+      await editor.update(() => {
+        // Case 1: Legacy <p align="right">
+        const pAlign = document.createElement('p');
+        pAlign.setAttribute('align', 'right');
+
+        const nodeAlign = expectParagraphNode($convertParagraph(pAlign));
+        expect(nodeAlign.getFormatType()).toBe('right');
+
+        // Case 2: Modern <p style="text-align: center">
+        const pStyle = document.createElement('p');
+        pStyle.style.textAlign = 'center';
+
+        const nodeStyle = expectParagraphNode($convertParagraph(pStyle));
+        expect(nodeStyle.getFormatType()).toBe('center');
+
+        // Case 3: CSS takes priority over Attribute
+        // <p align="right" style="text-align: left"> -> Should be LEFT
+        const pConflict = document.createElement('p');
+        pConflict.setAttribute('align', 'right');
+        pConflict.style.textAlign = 'left';
+
+        const nodeConflict = expectParagraphNode($convertParagraph(pConflict));
+        expect(nodeConflict.getFormatType()).toBe('left');
+
+        // Case 4: Invalid align attribute is ignored
+        // <p align="super-weird-stuff"> -> Should remain default (empty/left)
+        const pInvalid = document.createElement('p');
+        pInvalid.setAttribute('align', 'super-weird-stuff');
+
+        const nodeInvalid = expectParagraphNode($convertParagraph(pInvalid));
+        // Should NOT be 'super-weird-stuff' or undefined
+        expect(nodeInvalid.getFormatType()).toBe('');
       });
     });
   });

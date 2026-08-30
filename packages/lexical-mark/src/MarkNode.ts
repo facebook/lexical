@@ -6,70 +6,64 @@
  *
  */
 
-import type {
-  BaseSelection,
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
-
 import {
+  $applyNodeReplacement,
+  $getDocument,
+  $isRangeSelection,
   addClassNamesToElement,
+  type BaseSelection,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type RangeSelection,
   removeClassNamesFromElement,
-} from '@lexical/utils';
-import {$applyNodeReplacement, $isRangeSelection, ElementNode} from 'lexical';
+  type SerializedElementNode,
+  type Spread,
+} from 'lexical';
 
 export type SerializedMarkNode = Spread<
   {
-    ids: Array<string>;
+    ids: string[];
   },
   SerializedElementNode
 >;
 
+const NO_IDS: readonly string[] = [];
+
 /** @noInheritDoc */
 export class MarkNode extends ElementNode {
   /** @internal */
-  __ids: Array<string>;
+  __ids: readonly string[];
 
-  static getType(): string {
-    return 'mark';
+  $config() {
+    return this.config('mark', {extends: ElementNode});
   }
 
-  static clone(node: MarkNode): MarkNode {
-    return new MarkNode(Array.from(node.__ids), node.__key);
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__ids = prevNode.__ids;
   }
 
-  static importDOM(): null {
-    return null;
-  }
-
-  static importJSON(serializedNode: SerializedMarkNode): MarkNode {
-    const node = $createMarkNode(serializedNode.ids);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
+  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedMarkNode>): this {
+    return super.updateFromJSON(serializedNode).setIDs(serializedNode.ids);
   }
 
   exportJSON(): SerializedMarkNode {
     return {
       ...super.exportJSON(),
       ids: this.getIDs(),
-      type: 'mark',
-      version: 1,
     };
   }
 
-  constructor(ids: Array<string>, key?: NodeKey) {
+  constructor(ids: readonly string[] = NO_IDS, key?: NodeKey) {
     super(key);
-    this.__ids = ids || [];
+    this.__ids = ids;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('mark');
+    const element = $getDocument().createElement('mark');
     addClassNamesToElement(element, config.theme.mark);
     if (this.__ids.length > 1) {
       addClassNamesToElement(element, config.theme.markOverlap);
@@ -78,7 +72,7 @@ export class MarkNode extends ElementNode {
   }
 
   updateDOM(
-    prevNode: MarkNode,
+    prevNode: this,
     element: HTMLElement,
     config: EditorConfig,
   ): boolean {
@@ -88,12 +82,15 @@ export class MarkNode extends ElementNode {
     const nextIDsCount = nextIDs.length;
     const overlapTheme = config.theme.markOverlap;
 
-    if (prevIDsCount !== nextIDsCount) {
-      if (prevIDsCount === 1) {
-        if (nextIDsCount === 2) {
-          addClassNamesToElement(element, overlapTheme);
-        }
-      } else if (nextIDsCount === 1) {
+    // Mirror createDOM's rule (`ids.length > 1` carries the overlap class)
+    // rather than enumerating transitions: only 1 -> 2 and N -> 1 used to be
+    // handled, so e.g. 1 -> 3 never gained the class and 2 -> 0 never lost it.
+    const hadOverlap = prevIDsCount > 1;
+    const hasOverlap = nextIDsCount > 1;
+    if (hadOverlap !== hasOverlap) {
+      if (hasOverlap) {
+        addClassNamesToElement(element, overlapTheme);
+      } else {
         removeClassNamesFromElement(element, overlapTheme);
       }
     }
@@ -101,47 +98,33 @@ export class MarkNode extends ElementNode {
   }
 
   hasID(id: string): boolean {
-    const ids = this.getIDs();
-    for (let i = 0; i < ids.length; i++) {
-      if (id === ids[i]) {
-        return true;
-      }
-    }
-    return false;
+    return this.getIDs().includes(id);
   }
 
-  getIDs(): Array<string> {
-    const self = this.getLatest();
-    return $isMarkNode(self) ? self.__ids : [];
+  getIDs(): string[] {
+    return Array.from(this.getLatest().__ids);
   }
 
-  addID(id: string): void {
+  setIDs(ids: readonly string[]): this {
     const self = this.getWritable();
-    if ($isMarkNode(self)) {
-      const ids = self.__ids;
-      self.__ids = ids;
-      for (let i = 0; i < ids.length; i++) {
-        // If we already have it, don't add again
-        if (id === ids[i]) {
-          return;
-        }
-      }
-      ids.push(id);
-    }
+    self.__ids = ids;
+    return self;
   }
 
-  deleteID(id: string): void {
+  addID(id: string): this {
     const self = this.getWritable();
-    if ($isMarkNode(self)) {
-      const ids = self.__ids;
-      self.__ids = ids;
-      for (let i = 0; i < ids.length; i++) {
-        if (id === ids[i]) {
-          ids.splice(i, 1);
-          return;
-        }
-      }
+    return self.__ids.includes(id) ? self : self.setIDs([...self.__ids, id]);
+  }
+
+  deleteID(id: string): this {
+    const self = this.getWritable();
+    const idx = self.__ids.indexOf(id);
+    if (idx === -1) {
+      return self;
     }
+    const ids = Array.from(self.__ids);
+    ids.splice(idx, 1);
+    return self.setIDs(ids);
   }
 
   insertNewAfter(
@@ -153,11 +136,11 @@ export class MarkNode extends ElementNode {
     return markNode;
   }
 
-  canInsertTextBefore(): false {
+  canInsertTextBefore(): boolean {
     return false;
   }
 
-  canInsertTextAfter(): false {
+  canInsertTextAfter(): boolean {
     return false;
   }
 
@@ -197,7 +180,7 @@ export class MarkNode extends ElementNode {
   }
 }
 
-export function $createMarkNode(ids: Array<string>): MarkNode {
+export function $createMarkNode(ids: readonly string[] = NO_IDS): MarkNode {
   return $applyNodeReplacement(new MarkNode(ids));
 }
 

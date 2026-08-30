@@ -1,0 +1,128 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+.navbar {
+  position: sticky;
+  background-color: transparent;
+  font-size: 14px;
+  padding: 2.5rem 4rem;
+  display: flex;
+  align-items: center;
+}
+.navbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(30px);
+  background-color: rgba(255, 255, 255, 0.6);
+  z-index: -1;
+}
+html[data-theme='dark'] .navbar::before {
+  background-color: rgba(27, 27, 29, 0.6);
+}
+
+.navbar__brand {
+  margin-right: 3.5rem;
+}
+
+.navbar__link {
+  font-weight: 400;
+}
+
+/* Only add the navbar border on the docs/api pages, since the home page has a different design */
+html.plugin-docs .navbar {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+html[data-theme='dark'].plugin-docs .navbar {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Search bar: use mask-image so the magnifying glass inherits currentColor */
+.navbar__search-input {
+  max-width: 10em;
+  background-image: none;
+  font-size: small;
+}
+.navbar__search::before {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  background-color: currentColor;
+  mask-image: url('/img/search.svg');
+  -webkit-mask-image: url('/img/search.svg');
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Override default margin between search bar and theme switcher */
+.navbar__items--right .navbar__search {
+  margin-left: 0;
+}
+
+/* Mobile */
+@media (max-width: 996px) {
+  .navbar {
+    padding: 0 0 0 1rem;
+    align-items: center;
+  }
+  .navbar__brand {
+    margin-left: 1rem;
+  }
+}
+
+kbd {
+  @apply hidden;
+}
+
+/* Icon link base (GitHub, Discord) */
+.icon-link {
+  padding: 0rem;
+  margin: 0 1rem 0 0.25rem;
+  display: flex;
+  color: var(--ifm-navbar-link-color);
+  transition: opacity 0.2s ease-out;
+}
+.icon-link:hover {
+  opacity: 0.7;
+  color: var(--ifm-navbar-link-color);
+}
+.icon-link-mask::before {
+  content: '';
+  height: 20px;
+  display: flex;
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: 100% 100%;
+}
+.icon-link-github::before {
+  mask-image: url('/img/github-mark-light.svg');
+  -webkit-mask-image: url('/img/github-mark-light.svg');
+  width: 20px;
+}
+.icon-link-discord::before {
+  mask-image: url('/img/discord-logo-color.svg');
+  -webkit-mask-image: url('/img/discord-logo-color.svg');
+  width: 22px;
+}
+@media (max-width: 996px) {
+  .icon-link {
+    display: none;
+  }
+}

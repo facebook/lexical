@@ -11,9 +11,10 @@ import {HashtagNode} from '@lexical/hashtag';
 import {createHeadlessEditor} from '@lexical/headless';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
+import {MarkNode} from '@lexical/mark';
 import {OverflowNode} from '@lexical/overflow';
 import {
-  InitialConfigType,
+  type InitialConfigType,
   LexicalComposer,
 } from '@lexical/react/LexicalComposer';
 import {
@@ -22,36 +23,38 @@ import {
 } from '@lexical/react/LexicalComposerContext';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {expect} from '@playwright/test';
+import prettier from '@prettier/sync';
 import {
+  $create,
   $isRangeSelection,
   createEditor,
+  type CreateEditorArgs,
   DecoratorNode,
-  EditorState,
-  EditorThemeClasses,
+  type DOMConversion,
+  type DOMConversionOutput,
+  type EditorState,
+  type EditorThemeClasses,
   ElementNode,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
-  RangeSelection,
-  SerializedElementNode,
-  SerializedLexicalNode,
-  SerializedTextNode,
+  type HTMLConfig,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalNodeReplacement,
+  type LexicalUpdateJSON,
+  type RangeSelection,
+  resetRandomKey,
+  type SerializedElementNode,
+  type SerializedLexicalNode,
+  type SerializedTextNode,
+  type Spread,
   TextNode,
 } from 'lexical';
-import path from 'path';
-import * as prettier from 'prettier';
 import * as React from 'react';
-import {createRef} from 'react';
+import {act, createRef, type JSX} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, assert, beforeEach, expect} from 'vitest';
 
-import {CreateEditorArgs, LexicalNodeReplacement} from '../../LexicalEditor';
-import {resetRandomKey} from '../../LexicalUtils';
-
-const prettierConfig = prettier.resolveConfig.sync(
-  path.resolve(__dirname, '../../../../.prettierrc'),
-);
+const prettierConfig = prettier.resolveConfig(__filename);
 
 type TestEnv = {
   readonly container: HTMLDivElement;
@@ -106,7 +109,7 @@ export function initializeUnitTest(
     const ref = createRef<HTMLDivElement>();
 
     const useLexicalEditor = (
-      rootElementRef: React.RefObject<HTMLDivElement>,
+      rootElementRef: React.RefObject<null | HTMLDivElement>,
     ) => {
       const lexicalEditor = React.useMemo(() => {
         const lexical = createTestEditor(editorConfig);
@@ -134,7 +137,7 @@ export function initializeUnitTest(
       );
     };
 
-    ReactTestUtils.act(() => {
+    act(() => {
       createRoot(testEnv.container).render(<Editor />);
     });
   });
@@ -159,30 +162,8 @@ export function initializeClipboard() {
 export type SerializedTestElementNode = SerializedElementNode;
 
 export class TestElementNode extends ElementNode {
-  static getType(): string {
-    return 'test_block';
-  }
-
-  static clone(node: TestElementNode) {
-    return new TestElementNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestElementNode,
-  ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_block',
-      version: 1,
-    };
+  $config() {
+    return this.config('test_block', {extends: ElementNode});
   }
 
   createDOM() {
@@ -198,57 +179,17 @@ export function $createTestElementNode(): TestElementNode {
   return new TestElementNode();
 }
 
-type SerializedTestTextNode = SerializedTextNode;
-
 export class TestTextNode extends TextNode {
-  static getType() {
-    return 'test_text';
-  }
-
-  static clone(node: TestTextNode): TestTextNode {
-    return new TestTextNode(node.__text, node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
-    return new TestTextNode(serializedNode.text);
-  }
-
-  exportJSON(): SerializedTestTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_text',
-      version: 1,
-    };
+  $config() {
+    return this.config('test_text', {extends: TextNode});
   }
 }
 
 export type SerializedTestInlineElementNode = SerializedElementNode;
 
 export class TestInlineElementNode extends ElementNode {
-  static getType(): string {
-    return 'test_inline_block';
-  }
-
-  static clone(node: TestInlineElementNode) {
-    return new TestInlineElementNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestInlineElementNode,
-  ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestInlineElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_inline_block',
-      version: 1,
-    };
+  $config() {
+    return this.config('test_inline_block', {extends: ElementNode});
   }
 
   createDOM() {
@@ -262,6 +203,10 @@ export class TestInlineElementNode extends ElementNode {
   isInline() {
     return true;
   }
+
+  canBeEmpty() {
+    return false;
+  }
 }
 
 export function $createTestInlineElementNode(): TestInlineElementNode {
@@ -271,30 +216,8 @@ export function $createTestInlineElementNode(): TestInlineElementNode {
 export type SerializedTestShadowRootNode = SerializedElementNode;
 
 export class TestShadowRootNode extends ElementNode {
-  static getType(): string {
-    return 'test_shadow_root';
-  }
-
-  static clone(node: TestShadowRootNode) {
-    return new TestElementNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestShadowRootNode,
-  ): TestShadowRootNode {
-    const node = $createTestShadowRootNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestShadowRootNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_block',
-      version: 1,
-    };
+  $config() {
+    return this.config('test_shadow_root', {extends: ElementNode});
   }
 
   createDOM() {
@@ -314,68 +237,74 @@ export function $createTestShadowRootNode(): TestShadowRootNode {
   return new TestShadowRootNode();
 }
 
-export type SerializedTestSegmentedNode = SerializedTextNode;
+export function $isTestShadowRootNode(
+  node: LexicalNode | null | undefined,
+): node is TestShadowRootNode {
+  return node instanceof TestShadowRootNode;
+}
 
-export class TestSegmentedNode extends TextNode {
-  static getType(): string {
-    return 'test_segmented';
+export type SerializedTestUpdateDOMTrueHostNode = SerializedElementNode;
+
+// Slot host that always reports updateDOM=true, so every host edit triggers
+// $createNode(key, null) + $destroyNode(key, null) — the host wrapper DOM is
+// recreated. Used to exercise the reuse path for slot subtree DOM across a
+// host wrapper recreate.
+export class TestUpdateDOMTrueHostNode extends ElementNode {
+  __toggle: number = 0;
+
+  $config() {
+    return this.config('test_update_dom_true_host', {extends: ElementNode});
   }
 
-  static clone(node: TestSegmentedNode): TestSegmentedNode {
-    return new TestSegmentedNode(node.__text, node.__key);
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__toggle = prevNode.__toggle;
   }
 
-  static importJSON(
-    serializedNode: SerializedTestSegmentedNode,
-  ): TestSegmentedNode {
-    const node = $createTestSegmentedNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
+  createDOM(): HTMLElement {
+    const div = document.createElement('div');
+    div.setAttribute('data-toggle', String(this.__toggle));
+    return div;
   }
 
-  exportJSON(): SerializedTestSegmentedNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_segmented',
-      version: 1,
-    };
+  updateDOM(): boolean {
+    return true;
+  }
+
+  setToggle(toggle: number): this {
+    const self = this.getWritable();
+    self.__toggle = toggle;
+    return self;
   }
 }
 
-export function $createTestSegmentedNode(text: string): TestSegmentedNode {
+export function $createTestUpdateDOMTrueHostNode(): TestUpdateDOMTrueHostNode {
+  return $create(TestUpdateDOMTrueHostNode);
+}
+
+export function $isTestUpdateDOMTrueHostNode(
+  node: LexicalNode | null | undefined,
+): node is TestUpdateDOMTrueHostNode {
+  return node instanceof TestUpdateDOMTrueHostNode;
+}
+
+export type SerializedTestSegmentedNode = SerializedTextNode;
+
+export class TestSegmentedNode extends TextNode {
+  $config() {
+    return this.config('test_segmented', {extends: TextNode});
+  }
+}
+
+export function $createTestSegmentedNode(text: string = ''): TestSegmentedNode {
   return new TestSegmentedNode(text).setMode('segmented');
 }
 
 export type SerializedTestExcludeFromCopyElementNode = SerializedElementNode;
 
 export class TestExcludeFromCopyElementNode extends ElementNode {
-  static getType(): string {
-    return 'test_exclude_from_copy_block';
-  }
-
-  static clone(node: TestExcludeFromCopyElementNode) {
-    return new TestExcludeFromCopyElementNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestExcludeFromCopyElementNode,
-  ): TestExcludeFromCopyElementNode {
-    const node = $createTestExcludeFromCopyElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedTestExcludeFromCopyElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_exclude_from_copy_block',
-      version: 1,
-    };
+  $config() {
+    return this.config('test_exclude_from_copy_block', {extends: ElementNode});
   }
 
   createDOM() {
@@ -395,29 +324,16 @@ export function $createTestExcludeFromCopyElementNode(): TestExcludeFromCopyElem
   return new TestExcludeFromCopyElementNode();
 }
 
-export type SerializedTestDecoratorNode = SerializedLexicalNode;
+export type SerializedTestDecoratorNode = Spread<
+  SerializedLexicalNode,
+  {block?: boolean}
+>;
 
 export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
-  static getType(): string {
-    return 'test_decorator';
-  }
+  __block: boolean = false;
 
-  static clone(node: TestDecoratorNode) {
-    return new TestDecoratorNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestDecoratorNode,
-  ): TestDecoratorNode {
-    return $createTestDecoratorNode();
-  }
-
-  exportJSON(): SerializedTestDecoratorNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_decorator',
-      version: 1,
-    };
+  $config() {
+    return this.config('test_decorator', {extends: DecoratorNode});
   }
 
   static importDOM() {
@@ -428,6 +344,37 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
         };
       },
     };
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedTestDecoratorNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setIsInline(!serializedNode.block);
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__block = prevNode.__block;
+  }
+
+  isInline(): boolean {
+    return !this.getLatest().__block;
+  }
+
+  setIsInline(inline: boolean): this {
+    const self = this.getWritable();
+    self.__block = !inline;
+    return self;
+  }
+
+  exportJSON(): SerializedTestDecoratorNode {
+    const json: SerializedTestDecoratorNode = super.exportJSON();
+    if (this.__block) {
+      json.block = this.__block;
+    }
+    return json;
   }
 
   exportDOM() {
@@ -441,11 +388,11 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM() {
-    return document.createElement('span');
+    return document.createElement(this.__block ? 'div' : 'span');
   }
 
-  updateDOM() {
-    return false;
+  updateDOM(prevNode: this) {
+    return this.__block !== prevNode.__block;
   }
 
   decorate() {
@@ -482,6 +429,7 @@ const DEFAULT_NODES: NonNullable<InitialConfigType['nodes']> = [
   TestInlineElementNode,
   TestShadowRootNode,
   TestTextNode,
+  MarkNode,
 ];
 
 export function TestComposer({
@@ -498,7 +446,7 @@ export function TestComposer({
   return (
     <LexicalComposer
       initialConfig={{
-        onError: (e) => {
+        onError: e => {
           throw e;
         },
         ...config,
@@ -516,16 +464,18 @@ export function createTestEditor(
     editorState?: EditorState;
     theme?: EditorThemeClasses;
     parentEditor?: LexicalEditor;
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[];
     onError?: (error: Error) => void;
+    onWarn?: (error: Error) => void;
     disableEvents?: boolean;
     readOnly?: boolean;
+    html?: HTMLConfig;
   } = {},
 ): LexicalEditor {
   const customNodes = config.nodes || [];
   const editor = createEditor({
     namespace: config.namespace,
-    onError: (e) => {
+    onError: e => {
       throw e;
     },
     ...config,
@@ -539,7 +489,7 @@ export function createTestHeadlessEditor(
 ): LexicalEditor {
   return createHeadlessEditor({
     editorState,
-    onError: (error) => {
+    onError: error => {
       throw error;
     },
   });
@@ -552,6 +502,24 @@ export function $assertRangeSelection(selection: unknown): RangeSelection {
   return selection;
 }
 
+/**
+ * Assert that a node matches the given type guard, returning it narrowed to
+ * the guard's type. Useful for safely narrowing the result of traversal
+ * methods such as getFirstChild() or getChildAtIndex() without an unchecked
+ * type cast.
+ */
+export function $assertNodeType<T extends LexicalNode>(
+  node: LexicalNode | null | undefined,
+  $guard: (value: LexicalNode | null) => value is T,
+): T {
+  const resolved = node ?? null;
+  assert(
+    $guard(resolved),
+    `Expected node to match type guard ${$guard.name}, got ${node ? node.constructor.name : null}`,
+  );
+  return resolved;
+}
+
 export function invariant(cond?: boolean, message?: string): asserts cond {
   if (cond) {
     return;
@@ -559,180 +527,12 @@ export function invariant(cond?: boolean, message?: string): asserts cond {
   throw new Error(`Invariant: ${message}`);
 }
 
-export class DataTransferMock implements DataTransfer {
-  _data: Map<string, string> = new Map();
-  get dropEffect(): DataTransfer['dropEffect'] {
-    throw new Error('Getter not implemented.');
-  }
-  get effectAllowed(): DataTransfer['effectAllowed'] {
-    throw new Error('Getter not implemented.');
-  }
-  get files(): FileList {
-    throw new Error('Getter not implemented.');
-  }
-  get items(): DataTransferItemList {
-    throw new Error('Getter not implemented.');
-  }
-  get types(): ReadonlyArray<string> {
-    return Array.from(this._data.keys());
-  }
-  clearData(dataType?: string): void {
-    //
-  }
-  getData(dataType: string): string {
-    return this._data.get(dataType) || '';
-  }
-  setData(dataType: string, data: string): void {
-    this._data.set(dataType, data);
-  }
-  setDragImage(image: Element, x: number, y: number): void {
-    //
-  }
-}
-
-export class EventMock implements Event {
-  get bubbles(): boolean {
-    throw new Error('Getter not implemented.');
-  }
-  get cancelBubble(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get cancelable(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get composed(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get currentTarget(): EventTarget | null {
-    throw new Error('Gettter not implemented.');
-  }
-  get defaultPrevented(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get eventPhase(): number {
-    throw new Error('Gettter not implemented.');
-  }
-  get isTrusted(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get returnValue(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get srcElement(): EventTarget | null {
-    throw new Error('Gettter not implemented.');
-  }
-  get target(): EventTarget | null {
-    throw new Error('Gettter not implemented.');
-  }
-  get timeStamp(): number {
-    throw new Error('Gettter not implemented.');
-  }
-  get type(): string {
-    throw new Error('Gettter not implemented.');
-  }
-  composedPath(): EventTarget[] {
-    throw new Error('Method not implemented.');
-  }
-  initEvent(
-    type: string,
-    bubbles?: boolean | undefined,
-    cancelable?: boolean | undefined,
-  ): void {
-    throw new Error('Method not implemented.');
-  }
-  stopImmediatePropagation(): void {
-    return;
-  }
-  stopPropagation(): void {
-    return;
-  }
-  NONE = 0 as const;
-  CAPTURING_PHASE = 1 as const;
-  AT_TARGET = 2 as const;
-  BUBBLING_PHASE = 3 as const;
-  preventDefault() {
-    return;
-  }
-}
-
-export class KeyboardEventMock extends EventMock implements KeyboardEvent {
-  altKey = false;
-  get charCode(): number {
-    throw new Error('Getter not implemented.');
-  }
-  get code(): string {
-    throw new Error('Getter not implemented.');
-  }
-  ctrlKey = false;
-  get isComposing(): boolean {
-    throw new Error('Getter not implemented.');
-  }
-  get key(): string {
-    throw new Error('Getter not implemented.');
-  }
-  get keyCode(): number {
-    throw new Error('Getter not implemented.');
-  }
-  get location(): number {
-    throw new Error('Getter not implemented.');
-  }
-  metaKey = false;
-  get repeat(): boolean {
-    throw new Error('Getter not implemented.');
-  }
-  shiftKey = false;
-  constructor(type: void | string) {
-    super();
-  }
-  getModifierState(keyArg: string): boolean {
-    throw new Error('Method not implemented.');
-  }
-  initKeyboardEvent(
-    typeArg: string,
-    bubblesArg?: boolean | undefined,
-    cancelableArg?: boolean | undefined,
-    viewArg?: Window | null | undefined,
-    keyArg?: string | undefined,
-    locationArg?: number | undefined,
-    ctrlKey?: boolean | undefined,
-    altKey?: boolean | undefined,
-    shiftKey?: boolean | undefined,
-    metaKey?: boolean | undefined,
-  ): void {
-    throw new Error('Method not implemented.');
-  }
-  DOM_KEY_LOCATION_STANDARD = 0 as const;
-  DOM_KEY_LOCATION_LEFT = 1 as const;
-  DOM_KEY_LOCATION_RIGHT = 2 as const;
-  DOM_KEY_LOCATION_NUMPAD = 3 as const;
-  get detail(): number {
-    throw new Error('Getter not implemented.');
-  }
-  get view(): Window | null {
-    throw new Error('Getter not implemented.');
-  }
-  get which(): number {
-    throw new Error('Getter not implemented.');
-  }
-  initUIEvent(
-    typeArg: string,
-    bubblesArg?: boolean | undefined,
-    cancelableArg?: boolean | undefined,
-    viewArg?: Window | null | undefined,
-    detailArg?: number | undefined,
-  ): void {
-    throw new Error('Method not implemented.');
-  }
-}
-
 export function tabKeyboardEvent() {
-  return new KeyboardEventMock('keydown');
+  return new KeyboardEvent('keydown', {key: 'Tab'});
 }
 
 export function shiftTabKeyboardEvent() {
-  const keyboardEvent = new KeyboardEventMock('keydown');
-  keyboardEvent.shiftKey = true;
-  return keyboardEvent;
+  return new KeyboardEvent('keydown', {key: 'Tab', shiftKey: true});
 }
 
 export function generatePermutations<T>(
@@ -781,8 +581,37 @@ export function html(
   return output;
 }
 
-export function expectHtmlToBeEqual(expected: string, actual: string): void {
-  expect(prettifyHtml(expected)).toBe(prettifyHtml(actual));
+export function polyfillContentEditable() {
+  const div = document.createElement('div');
+  div.contentEditable = 'true';
+  if (/contenteditable/.test(div.outerHTML)) {
+    return;
+  }
+  Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
+    get() {
+      return this.getAttribute('contenteditable');
+    },
+
+    set(value) {
+      this.setAttribute('contenteditable', value);
+    },
+  });
+}
+
+/**
+ * The zero-size, out-of-flow `<img>` the reconciler parks outside a leading or
+ * trailing block DecoratorNode so browsers keep painting the selection
+ * highlight for a range that ends on that boundary (#8922). Interpolate it into
+ * an expected-HTML template wherever a block decorator sits on an element's
+ * first / last edge.
+ */
+export const DECORATOR_BOUNDARY_ANCHOR_HTML =
+  '<img alt="" style="position: absolute !important; width: 0px !important; ' +
+  'height: 0px !important; border: 0px !important; margin: 0px !important; ' +
+  'padding: 0px !important;" data-lexical-decorator-boundary="true" />';
+
+export function expectHtmlToBeEqual(actual: string, expected: string): void {
+  expect(prettifyHtml(actual)).toBe(prettifyHtml(expected));
 }
 
 export function prettifyHtml(s: string): string {
@@ -790,4 +619,37 @@ export function prettifyHtml(s: string): string {
     ...prettierConfig,
     parser: 'html',
   });
+}
+
+/**
+ * Locate and run the DOM importer for `element` through the editor's registered
+ * conversion cache — the same machinery `@lexical/html`'s paste path consults
+ * via `getConversionFunction` — and return its {@link DOMConversionOutput}.
+ *
+ * Prefer this over calling a node's static `importDOM()` directly: it exercises
+ * the real registration (priority resolution, dedup, and any `HTMLConfig`
+ * import overrides) instead of one class's raw map, and it runs the conversion
+ * on `element` in place so logic that inspects the element's DOM ancestors
+ * (e.g. a table cell reading its row/table position) sees the real context.
+ */
+export function $runDOMConversion(
+  editor: LexicalEditor,
+  element: HTMLElement,
+): DOMConversionOutput | null {
+  let match: DOMConversion | null = null;
+  const conversions = editor._htmlConversions.get(
+    element.tagName.toLowerCase(),
+  );
+  if (conversions !== undefined) {
+    for (const conversion of conversions) {
+      const candidate = conversion(element);
+      if (
+        candidate !== null &&
+        (match === null || (match.priority || 0) <= (candidate.priority || 0))
+      ) {
+        match = candidate;
+      }
+    }
+  }
+  return match !== null ? match.conversion(element) : null;
 }

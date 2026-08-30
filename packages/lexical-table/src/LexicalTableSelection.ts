@@ -6,24 +6,53 @@
  *
  */
 
-import {$findMatchingParent} from '@lexical/utils';
+import invariant from '@lexical/internal/invariant';
 import {
+  $createParagraphNode,
   $createPoint,
+  $createTextNode,
+  $findMatchingParent,
   $getNodeByKey,
+  $getSelection,
   $isElementNode,
+  $isParagraphNode,
   $normalizeSelection__EXPERIMENTAL,
-  BaseSelection,
+  type BaseSelection,
+  type ElementNode,
   isCurrentlyReadOnlyMode,
-  LexicalNode,
-  NodeKey,
-  PointType,
+  type LexicalNode,
+  type NodeKey,
+  type PointType,
+  TEXT_TYPE_TO_FORMAT,
+  type TextFormatType,
+  type TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
-import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
-import {$isTableNode} from './LexicalTableNode';
-import {$isTableRowNode} from './LexicalTableRowNode';
-import {$computeTableMap, $getTableCellNodeRect} from './LexicalTableUtils';
+import {
+  $createTableCellNode,
+  $isTableCellNode,
+  TableCellHeaderStates,
+  type TableCellNode,
+} from './LexicalTableCellNode';
+import {
+  $createTableNode,
+  $isTableNode,
+  type TableNode,
+} from './LexicalTableNode';
+import {
+  $createTableRowNode,
+  $isTableRowNode,
+  type TableRowNode,
+} from './LexicalTableRowNode';
+import {$findTableNode} from './LexicalTableSelectionHelpers';
+import {
+  $computeTableCellRectBoundary,
+  $computeTableMap,
+  $getTableCellNodeRect,
+  $insertTableIntoGrid,
+} from './LexicalTableUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export type TableSelectionShape = {
   fromX: number;
@@ -37,13 +66,69 @@ export type TableMapValueType = {
   startRow: number;
   startColumn: number;
 };
-export type TableMapType = Array<Array<TableMapValueType>>;
+export type TableMapType = TableMapValueType[][];
+
+function $getCellNodes(tableSelection: TableSelection): {
+  anchorCell: TableCellNode;
+  anchorNode: TextNode | ElementNode;
+  anchorRow: TableRowNode;
+  anchorTable: TableNode;
+  focusCell: TableCellNode;
+  focusNode: TextNode | ElementNode;
+  focusRow: TableRowNode;
+  focusTable: TableNode;
+} {
+  const [
+    [anchorNode, anchorCell, anchorRow, anchorTable],
+    [focusNode, focusCell, focusRow, focusTable],
+  ] = (['anchor', 'focus'] as const).map(
+    (k): [ElementNode | TextNode, TableCellNode, TableRowNode, TableNode] => {
+      const node = tableSelection[k].getNode();
+      const cellNode = $findMatchingParent(node, $isTableCellNode);
+      invariant(
+        $isTableCellNode(cellNode),
+        'Expected TableSelection %s to be (or a child of) TableCellNode, got key %s of type %s',
+        k,
+        node.getKey(),
+        node.getType(),
+      );
+      const rowNode = cellNode.getParent();
+      invariant(
+        $isTableRowNode(rowNode),
+        'Expected TableSelection %s cell parent to be a TableRowNode',
+        k,
+      );
+      const tableNode = rowNode.getParent();
+      invariant(
+        $isTableNode(tableNode),
+        'Expected TableSelection %s row parent to be a TableNode',
+        k,
+      );
+      return [node, cellNode, rowNode, tableNode];
+    },
+  );
+  // TODO: nested tables may violate this
+  invariant(
+    anchorTable.is(focusTable),
+    'Expected TableSelection anchor and focus to be in the same table',
+  );
+  return {
+    anchorCell,
+    anchorNode,
+    anchorRow,
+    anchorTable,
+    focusCell,
+    focusNode,
+    focusRow,
+    focusTable,
+  };
+}
 
 export class TableSelection implements BaseSelection {
   tableKey: NodeKey;
   anchor: PointType;
   focus: PointType;
-  _cachedNodes: Array<LexicalNode> | null;
+  _cachedNodes: LexicalNode[] | null;
   dirty: boolean;
 
   constructor(tableKey: NodeKey, anchor: PointType, focus: PointType) {
@@ -58,6 +143,32 @@ export class TableSelection implements BaseSelection {
 
   getStartEndPoints(): [PointType, PointType] {
     return [this.anchor, this.focus];
+  }
+
+  /**
+   * {@link $createTableSelection} unfortunately makes it very easy to create
+   * nonsense selections, so we have a method to see if the selection probably
+   * makes sense.
+   *
+   * @returns true if the TableSelection is (probably) valid
+   */
+  isValid(): boolean {
+    if (
+      this.tableKey === 'root' ||
+      this.anchor.key === 'root' ||
+      this.anchor.type !== 'element' ||
+      this.focus.key === 'root' ||
+      this.focus.type !== 'element'
+    ) {
+      return false;
+    }
+
+    // Check if the referenced nodes still exist in the editor
+    const tableNode = $getNodeByKey(this.tableKey);
+    const anchorNode = $getNodeByKey(this.anchor.key);
+    const focusNode = $getNodeByKey(this.focus.key);
+
+    return tableNode !== null && anchorNode !== null && focusNode !== null;
   }
 
   /**
@@ -78,10 +189,8 @@ export class TableSelection implements BaseSelection {
   }
 
   is(selection: null | BaseSelection): boolean {
-    if (!$isTableSelection(selection)) {
-      return false;
-    }
     return (
+      $isTableSelection(selection) &&
       this.tableKey === selection.tableKey &&
       this.anchor.is(selection.anchor) &&
       this.focus.is(selection.focus)
@@ -89,7 +198,12 @@ export class TableSelection implements BaseSelection {
   }
 
   set(tableKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void {
-    this.dirty = true;
+    // note: closure compiler's acorn does not support ||=
+    this.dirty =
+      this.dirty ||
+      tableKey !== this.tableKey ||
+      anchorCellKey !== this.anchor.key ||
+      focusCellKey !== this.focus.key;
     this.tableKey = tableKey;
     this.anchor.key = anchorCellKey;
     this.focus.key = focusCellKey;
@@ -97,26 +211,73 @@ export class TableSelection implements BaseSelection {
   }
 
   clone(): TableSelection {
-    return new TableSelection(this.tableKey, this.anchor, this.focus);
+    return new TableSelection(
+      this.tableKey,
+      $createPoint(this.anchor.key, this.anchor.offset, this.anchor.type),
+      $createPoint(this.focus.key, this.focus.offset, this.focus.type),
+    );
   }
 
   isCollapsed(): boolean {
     return false;
   }
 
-  extract(): Array<LexicalNode> {
+  extract(): LexicalNode[] {
     return this.getNodes();
   }
 
   insertRawText(text: string): void {
-    // Do nothing?
+    if (text === '') {
+      return;
+    }
+    const trimmed = text.endsWith('\n') ? text.slice(0, -1) : text;
+    const tsvGrid = trimmed.split('\n').map(line => line.split('\t'));
+    const tableNode = $createTableNode();
+    for (const row of tsvGrid) {
+      const rowNode = $createTableRowNode();
+      for (const cellText of row) {
+        const cellNode = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
+        const paragraph = $createParagraphNode();
+        if (cellText) {
+          paragraph.append($createTextNode(cellText));
+        }
+        cellNode.append(paragraph);
+        rowNode.append(cellNode);
+      }
+      tableNode.append(rowNode);
+    }
+    const {anchorCell} = $getCellNodes(this);
+    const rangeSelection = anchorCell.select(0, anchorCell.getChildrenSize());
+    $insertTableIntoGrid(tableNode, rangeSelection);
   }
 
   insertText(): void {
     // Do nothing?
   }
 
-  insertNodes(nodes: Array<LexicalNode>) {
+  /**
+   * Returns whether the provided TextFormatType is present on the Selection.
+   * This will be true if any paragraph in table cells has the specified format.
+   *
+   * @param type the TextFormatType to check for.
+   * @returns true if the provided format is currently toggled on the Selection, false otherwise.
+   */
+  hasFormat(type: TextFormatType): boolean {
+    let format = 0;
+
+    const cellNodes = this.getNodes().filter($isTableCellNode);
+    cellNodes.forEach((cellNode: TableCellNode) => {
+      const paragraph = cellNode.getFirstChild();
+      if ($isParagraphNode(paragraph)) {
+        format |= paragraph.getTextFormat();
+      }
+    });
+
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (format & formatFlag) !== 0;
+  }
+
+  insertNodes(nodes: LexicalNode[]) {
     const focusNode = this.focus.getNode();
     invariant(
       $isElementNode(focusNode),
@@ -128,25 +289,15 @@ export class TableSelection implements BaseSelection {
     selection.insertNodes(nodes);
   }
 
-  // TODO Deprecate this method. It's confusing when used with colspan|rowspan
+  /** @deprecated Use {@link $computeTableMap} and {@link $computeTableCellRectBoundary} directly. */
   getShape(): TableSelectionShape {
-    const anchorCellNode = $getNodeByKey(this.anchor.key);
-    invariant(
-      $isTableCellNode(anchorCellNode),
-      'Expected TableSelection anchor to be (or a child of) TableCellNode',
-    );
-    const anchorCellNodeRect = $getTableCellNodeRect(anchorCellNode);
+    const {anchorCell, focusCell} = $getCellNodes(this);
+    const anchorCellNodeRect = $getTableCellNodeRect(anchorCell);
     invariant(
       anchorCellNodeRect !== null,
       'getCellRect: expected to find AnchorNode',
     );
-
-    const focusCellNode = $getNodeByKey(this.focus.key);
-    invariant(
-      $isTableCellNode(focusCellNode),
-      'Expected TableSelection focus to be (or a child of) TableCellNode',
-    );
-    const focusCellNodeRect = $getTableCellNodeRect(focusCellNode);
+    const focusCellNodeRect = $getTableCellNodeRect(focusCell);
     invariant(
       focusCellNodeRect !== null,
       'getCellRect: expected to find focusCellNode',
@@ -157,8 +308,8 @@ export class TableSelection implements BaseSelection {
       focusCellNodeRect.columnIndex,
     );
     const stopX = Math.max(
-      anchorCellNodeRect.columnIndex,
-      focusCellNodeRect.columnIndex,
+      anchorCellNodeRect.columnIndex + anchorCellNodeRect.colSpan - 1,
+      focusCellNodeRect.columnIndex + focusCellNodeRect.colSpan - 1,
     );
 
     const startY = Math.min(
@@ -166,8 +317,8 @@ export class TableSelection implements BaseSelection {
       focusCellNodeRect.rowIndex,
     );
     const stopY = Math.max(
-      anchorCellNodeRect.rowIndex,
-      focusCellNodeRect.rowIndex,
+      anchorCellNodeRect.rowIndex + anchorCellNodeRect.rowSpan - 1,
+      focusCellNodeRect.rowIndex + focusCellNodeRect.rowSpan - 1,
     );
 
     return {
@@ -178,35 +329,16 @@ export class TableSelection implements BaseSelection {
     };
   }
 
-  getNodes(): Array<LexicalNode> {
+  getNodes(): LexicalNode[] {
+    if (!this.isValid()) {
+      return [];
+    }
     const cachedNodes = this._cachedNodes;
     if (cachedNodes !== null) {
       return cachedNodes;
     }
 
-    const anchorNode = this.anchor.getNode();
-    const focusNode = this.focus.getNode();
-    const anchorCell = $findMatchingParent(anchorNode, $isTableCellNode);
-    // todo replace with triplet
-    const focusCell = $findMatchingParent(focusNode, $isTableCellNode);
-    invariant(
-      $isTableCellNode(anchorCell),
-      'Expected TableSelection anchor to be (or a child of) TableCellNode',
-    );
-    invariant(
-      $isTableCellNode(focusCell),
-      'Expected TableSelection focus to be (or a child of) TableCellNode',
-    );
-    const anchorRow = anchorCell.getParent();
-    invariant(
-      $isTableRowNode(anchorRow),
-      'Expected anchorCell to have a parent TableRowNode',
-    );
-    const tableNode = anchorRow.getParent();
-    invariant(
-      $isTableNode(tableNode),
-      'Expected tableNode to have a parent TableNode',
-    );
+    const {anchorTable: tableNode, anchorCell, focusCell} = $getCellNodes(this);
 
     const focusCellGrid = focusCell.getParents()[1];
     if (focusCellGrid !== tableNode) {
@@ -236,78 +368,15 @@ export class TableSelection implements BaseSelection {
       anchorCell,
       focusCell,
     );
+    const {minColumn, maxColumn, minRow, maxRow} =
+      $computeTableCellRectBoundary(map, cellAMap, cellBMap);
 
-    let minColumn = Math.min(cellAMap.startColumn, cellBMap.startColumn);
-    let minRow = Math.min(cellAMap.startRow, cellBMap.startRow);
-    let maxColumn = Math.max(
-      cellAMap.startColumn + cellAMap.cell.__colSpan - 1,
-      cellBMap.startColumn + cellBMap.cell.__colSpan - 1,
-    );
-    let maxRow = Math.max(
-      cellAMap.startRow + cellAMap.cell.__rowSpan - 1,
-      cellBMap.startRow + cellBMap.cell.__rowSpan - 1,
-    );
-    let exploredMinColumn = minColumn;
-    let exploredMinRow = minRow;
-    let exploredMaxColumn = minColumn;
-    let exploredMaxRow = minRow;
-    function expandBoundary(mapValue: TableMapValueType): void {
-      const {
-        cell,
-        startColumn: cellStartColumn,
-        startRow: cellStartRow,
-      } = mapValue;
-      minColumn = Math.min(minColumn, cellStartColumn);
-      minRow = Math.min(minRow, cellStartRow);
-      maxColumn = Math.max(maxColumn, cellStartColumn + cell.__colSpan - 1);
-      maxRow = Math.max(maxRow, cellStartRow + cell.__rowSpan - 1);
-    }
-    while (
-      minColumn < exploredMinColumn ||
-      minRow < exploredMinRow ||
-      maxColumn > exploredMaxColumn ||
-      maxRow > exploredMaxRow
-    ) {
-      if (minColumn < exploredMinColumn) {
-        // Expand on the left
-        const rowDiff = exploredMaxRow - exploredMinRow;
-        const previousColumn = exploredMinColumn - 1;
-        for (let i = 0; i <= rowDiff; i++) {
-          expandBoundary(map[exploredMinRow + i][previousColumn]);
-        }
-        exploredMinColumn = previousColumn;
-      }
-      if (minRow < exploredMinRow) {
-        // Expand on top
-        const columnDiff = exploredMaxColumn - exploredMinColumn;
-        const previousRow = exploredMinRow - 1;
-        for (let i = 0; i <= columnDiff; i++) {
-          expandBoundary(map[previousRow][exploredMinColumn + i]);
-        }
-        exploredMinRow = previousRow;
-      }
-      if (maxColumn > exploredMaxColumn) {
-        // Expand on the right
-        const rowDiff = exploredMaxRow - exploredMinRow;
-        const nextColumn = exploredMaxColumn + 1;
-        for (let i = 0; i <= rowDiff; i++) {
-          expandBoundary(map[exploredMinRow + i][nextColumn]);
-        }
-        exploredMaxColumn = nextColumn;
-      }
-      if (maxRow > exploredMaxRow) {
-        // Expand on the bottom
-        const columnDiff = exploredMaxColumn - exploredMinColumn;
-        const nextRow = exploredMaxRow + 1;
-        for (let i = 0; i <= columnDiff; i++) {
-          expandBoundary(map[nextRow][exploredMinColumn + i]);
-        }
-        exploredMaxRow = nextRow;
-      }
-    }
-
-    const nodes: Array<LexicalNode> = [tableNode];
-    let lastRow = null;
+    // We use a Map here because merged cells in the grid would otherwise
+    // show up multiple times in the nodes array
+    const nodeMap: Map<NodeKey, LexicalNode> = new Map([
+      [tableNode.getKey(), tableNode],
+    ]);
+    let lastRow: null | TableRowNode = null;
     for (let i = minRow; i <= maxRow; i++) {
       for (let j = minColumn; j <= maxColumn; j++) {
         const {cell} = map[i][j];
@@ -317,12 +386,17 @@ export class TableSelection implements BaseSelection {
           'Expected TableCellNode parent to be a TableRowNode',
         );
         if (currentRow !== lastRow) {
-          nodes.push(currentRow);
+          nodeMap.set(currentRow.getKey(), currentRow);
+          lastRow = currentRow;
         }
-        nodes.push(cell, ...$getChildrenRecursively(cell));
-        lastRow = currentRow;
+        if (!nodeMap.has(cell.getKey())) {
+          $visitRecursively(cell, childNode => {
+            nodeMap.set(childNode.getKey(), childNode);
+          });
+        }
       }
     }
+    const nodes = Array.from(nodeMap.values());
 
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
@@ -331,40 +405,103 @@ export class TableSelection implements BaseSelection {
   }
 
   getTextContent(): string {
-    const nodes = this.getNodes();
+    const nodes = this.getNodes().filter(node => $isTableCellNode(node));
     let textContent = '';
     for (let i = 0; i < nodes.length; i++) {
-      textContent += nodes[i].getTextContent();
+      const node = nodes[i];
+      const row = node.__parent;
+      const nextRow = (nodes[i + 1] || {}).__parent;
+      textContent += node.getTextContent() + (nextRow !== row ? '\n' : '\t');
     }
     return textContent;
   }
 }
 
+/** Type guard for {@link TableSelection}. */
 export function $isTableSelection(x: unknown): x is TableSelection {
   return x instanceof TableSelection;
 }
 
+/** @deprecated Use {@link $createTableSelectionFrom} instead. */
 export function $createTableSelection(): TableSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new TableSelection('root', anchor, focus);
 }
 
-export function $getChildrenRecursively(node: LexicalNode): Array<LexicalNode> {
-  const nodes = [];
-  const stack = [node];
-  while (stack.length > 0) {
-    const currentNode = stack.pop();
+/**
+ * Creates a {@link TableSelection} spanning from `anchorCell` to `focusCell`
+ * within `tableNode`. In `__DEV__` mode, validates that both cells belong to
+ * the given table and that the table is attached to the editor state.
+ *
+ * If the current selection is already a TableSelection, it clones and
+ * re-targets it (preserving identity for dirty-checking); otherwise it
+ * constructs a fresh one.
+ */
+export function $createTableSelectionFrom(
+  tableNode: TableNode,
+  anchorCell: TableCellNode,
+  focusCell: TableCellNode,
+): TableSelection {
+  const tableNodeKey = tableNode.getKey();
+  const anchorCellKey = anchorCell.getKey();
+  const focusCellKey = focusCell.getKey();
+  if (__DEV__) {
     invariant(
-      currentNode !== undefined,
-      "Stack.length > 0; can't be undefined",
+      tableNode.isAttached(),
+      '$createTableSelectionFrom: tableNode %s is not attached',
+      tableNodeKey,
     );
-    if ($isElementNode(currentNode)) {
-      stack.unshift(...currentNode.getChildren());
-    }
-    if (currentNode !== node) {
-      nodes.push(currentNode);
+    invariant(
+      tableNode.is($findTableNode(anchorCell)),
+      '$createTableSelectionFrom: anchorCell %s is not in table %s',
+      anchorCellKey,
+      tableNodeKey,
+    );
+    invariant(
+      tableNode.is($findTableNode(focusCell)),
+      '$createTableSelectionFrom: focusCell %s is not in table %s',
+      focusCellKey,
+      tableNodeKey,
+    );
+    // TODO: Check for rectangular grid
+  }
+  const prevSelection = $getSelection();
+  const nextSelection = $isTableSelection(prevSelection)
+    ? prevSelection.clone()
+    : new TableSelection(
+        'root',
+        $createPoint('root', 0, 'element'),
+        $createPoint('root', 0, 'element'),
+      );
+  nextSelection.set(
+    tableNode.getKey(),
+    anchorCell.getKey(),
+    focusCell.getKey(),
+  );
+  return nextSelection;
+}
+
+/**
+ * Depth first visitor
+ * @param node The starting node
+ * @param $visit The function to call for each node. If the function returns false, then children of this node will not be explored
+ */
+export function $visitRecursively(
+  node: LexicalNode,
+  $visit: (childNode: LexicalNode) => boolean | undefined | void,
+): void {
+  const stack = [[node]];
+  for (
+    let currentArray = stack.at(-1);
+    currentArray !== undefined && stack.length > 0;
+    currentArray = stack.at(-1)
+  ) {
+    const currentNode = currentArray.pop();
+    if (currentNode === undefined) {
+      stack.pop();
+    } else if ($visit(currentNode) !== false && $isElementNode(currentNode)) {
+      stack.push(currentNode.getChildren());
     }
   }
-  return nodes;
 }

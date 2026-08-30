@@ -96,6 +96,12 @@ html[data-theme='dark'] input:checked + .checkboxLabel {
   background-color: hsl(167deg 56% 73% / 10%);
 }
 
+.tagCount {
+  font-size: 0.7rem;
+  opacity: 0.6;
+  margin-left: 4px;
+}
+
 .screenReaderOnly {
   border: 0;
   clip: rect(0 0 0 0);

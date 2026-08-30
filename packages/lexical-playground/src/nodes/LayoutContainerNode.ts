@@ -6,19 +6,18 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedElementNode,
-  Spread,
+import {
+  $getDocument,
+  addClassNamesToElement,
+  type DOMExportOutput,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
-
-import {addClassNamesToElement} from '@lexical/utils';
-import {ElementNode} from 'lexical';
 
 export type SerializedLayoutContainerNode = Spread<
   {
@@ -26,20 +25,6 @@ export type SerializedLayoutContainerNode = Spread<
   },
   SerializedElementNode
 >;
-
-function $convertLayoutContainerElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const styleAttributes = window.getComputedStyle(domNode);
-  const templateColumns = styleAttributes.getPropertyValue(
-    'grid-template-columns',
-  );
-  if (templateColumns) {
-    const node = $createLayoutContainerNode(templateColumns);
-    return {node};
-  }
-  return null;
-}
 
 export class LayoutContainerNode extends ElementNode {
   __templateColumns: string;
@@ -49,8 +34,8 @@ export class LayoutContainerNode extends ElementNode {
     this.__templateColumns = templateColumns;
   }
 
-  static getType(): string {
-    return 'layout-container';
+  $config() {
+    return this.config('layout-container', {extends: ElementNode});
   }
 
   static clone(node: LayoutContainerNode): LayoutContainerNode {
@@ -58,7 +43,7 @@ export class LayoutContainerNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('div');
+    const dom = $getDocument().createElement('div');
     dom.style.gridTemplateColumns = this.__templateColumns;
     if (typeof config.theme.layoutContainer === 'string') {
       addClassNamesToElement(dom, config.theme.layoutContainer);
@@ -67,35 +52,29 @@ export class LayoutContainerNode extends ElementNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('div');
+    const element = $getDocument().createElement('div');
     element.style.gridTemplateColumns = this.__templateColumns;
     element.setAttribute('data-lexical-layout-container', 'true');
     return {element};
   }
 
-  updateDOM(prevNode: LayoutContainerNode, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     if (prevNode.__templateColumns !== this.__templateColumns) {
       dom.style.gridTemplateColumns = this.__templateColumns;
     }
     return false;
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-layout-container')) {
-          return null;
-        }
-        return {
-          conversion: $convertLayoutContainerElement,
-          priority: 2,
-        };
-      },
-    };
+  static importJSON(json: SerializedLayoutContainerNode): LayoutContainerNode {
+    return $createLayoutContainerNode().updateFromJSON(json);
   }
 
-  static importJSON(json: SerializedLayoutContainerNode): LayoutContainerNode {
-    return $createLayoutContainerNode(json.templateColumns);
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedLayoutContainerNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setTemplateColumns(serializedNode.templateColumns);
   }
 
   isShadowRoot(): boolean {
@@ -110,8 +89,6 @@ export class LayoutContainerNode extends ElementNode {
     return {
       ...super.exportJSON(),
       templateColumns: this.__templateColumns,
-      type: 'layout-container',
-      version: 1,
     };
   }
 
@@ -119,13 +96,15 @@ export class LayoutContainerNode extends ElementNode {
     return this.getLatest().__templateColumns;
   }
 
-  setTemplateColumns(templateColumns: string) {
-    this.getWritable().__templateColumns = templateColumns;
+  setTemplateColumns(templateColumns: string): this {
+    const self = this.getWritable();
+    self.__templateColumns = templateColumns;
+    return self;
   }
 }
 
 export function $createLayoutContainerNode(
-  templateColumns: string,
+  templateColumns: string = '',
 ): LayoutContainerNode {
   return new LayoutContainerNode(templateColumns);
 }

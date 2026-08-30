@@ -6,16 +6,10 @@
  *
  */
 
-import type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from '@lexical/markdown';
-import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
-
-import {$isCodeNode} from '@lexical/code';
+import {$isCodeNode} from '@lexical/code-core';
+import invariant from '@lexical/internal/invariant';
 import {
+  $addUpdateTag,
   $createRangeSelection,
   $getSelection,
   $isLineBreakNode,
@@ -23,17 +17,37 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  COLLABORATION_TAG,
+  COMMAND_PRIORITY_LOW,
+  COMPOSITION_END_TAG,
+  type ElementNode,
+  HISTORIC_TAG,
+  HISTORY_PUSH_TAG,
+  KEY_ENTER_COMMAND,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
+  TEXT_TYPE_TO_FORMAT,
+  type TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
-import {TRANSFORMERS} from '.';
+import {canContainTransformableMarkdown} from './importTextTransformers';
+import {
+  type ElementTransformer,
+  type MultilineElementTransformer,
+  type TextFormatTransformer,
+  type TextMatchTransformer,
+  type Transformer,
+  TRANSFORMERS,
+} from './MarkdownTransformers';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 function runElementTransformers(
   parentNode: ElementNode,
   anchorNode: TextNode,
   anchorOffset: number,
-  elementTransformers: ReadonlyArray<ElementTransformer>,
+  elementTransformers: readonly ElementTransformer[],
+  triggerOnEnter?: boolean,
 ): boolean {
   const grandParentNode = parentNode.getParent();
 
@@ -52,22 +66,96 @@ function runElementTransformers(
   // TODO:
   // Can have a quick check if caret is close enough to the beginning of the string (e.g. offset less than 10-20)
   // since otherwise it won't be a markdown shortcut, but tables are exception
-  if (textContent[anchorOffset - 1] !== ' ') {
-    return false;
+  if (!triggerOnEnter) {
+    if (textContent[anchorOffset - 1] !== ' ') {
+      return false;
+    }
   }
 
   for (const {regExp, replace} of elementTransformers) {
     const match = textContent.match(regExp);
 
-    if (match && match[0].length === anchorOffset) {
+    const expectedMatchLength =
+      triggerOnEnter || (match && match[0].endsWith(' '))
+        ? anchorOffset
+        : anchorOffset - 1;
+
+    if (match && match[0].length === expectedMatchLength) {
       const nextSiblings = anchorNode.getNextSiblings();
       const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
-      leadingNode.remove();
       const siblings = remainderNode
         ? [remainderNode, ...nextSiblings]
         : nextSiblings;
-      replace(parentNode, siblings, match, false);
-      return true;
+      if (replace(parentNode, siblings, match, false) !== false) {
+        leadingNode.remove();
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function runMultilineElementTransformers(
+  parentNode: ElementNode,
+  anchorNode: TextNode,
+  anchorOffset: number,
+  elementTransformers: readonly MultilineElementTransformer[],
+  triggerOnEnter?: boolean,
+): boolean {
+  const grandParentNode = parentNode.getParent();
+
+  if (
+    !$isRootOrShadowRoot(grandParentNode) ||
+    parentNode.getFirstChild() !== anchorNode
+  ) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+
+  if (!triggerOnEnter) {
+    // Checking for anchorOffset position to prevent any checks for cases when caret is too far
+    // from a line start to be a part of block-level markdown trigger.
+    //
+    // TODO:
+    // Can have a quick check if caret is close enough to the beginning of the string (e.g. offset less than 10-20)
+    // since otherwise it won't be a markdown shortcut, but tables are exception
+    if (textContent[anchorOffset - 1] !== ' ') {
+      return false;
+    }
+  }
+
+  for (const {regExpStart, replace, regExpEnd} of elementTransformers) {
+    if (
+      (regExpEnd && !('optional' in regExpEnd)) ||
+      (regExpEnd && 'optional' in regExpEnd && !regExpEnd.optional)
+    ) {
+      continue;
+    }
+
+    const match = textContent.match(regExpStart);
+
+    if (match) {
+      const matchLength =
+        triggerOnEnter || match[0].endsWith(' ')
+          ? anchorOffset
+          : anchorOffset - 1;
+
+      if (match[0].length !== matchLength) {
+        continue;
+      }
+
+      const nextSiblings = anchorNode.getNextSiblings();
+      const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
+      const siblings = remainderNode
+        ? [remainderNode, ...nextSiblings]
+        : nextSiblings;
+
+      if (replace(parentNode, siblings, match, null, null, false) !== false) {
+        leadingNode.remove();
+        return true;
+      }
     }
   }
 
@@ -77,7 +165,7 @@ function runElementTransformers(
 function runTextMatchTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
-  transformersByTrigger: Readonly<Record<string, Array<TextMatchTransformer>>>,
+  transformersByTrigger: Readonly<Record<string, TextMatchTransformer[]>>,
 ): boolean {
   let textContent = anchorNode.getTextContent();
   const lastChar = textContent[anchorOffset - 1];
@@ -94,6 +182,9 @@ function runTextMatchTransformers(
   }
 
   for (const transformer of transformers) {
+    if (!transformer.replace || !transformer.regExp) {
+      continue;
+    }
     const match = textContent.match(transformer.regExp);
 
     if (match === null) {
@@ -122,7 +213,7 @@ function $runTextFormatTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
   textFormatTransformers: Readonly<
-    Record<string, ReadonlyArray<TextFormatTransformer>>
+    Record<string, readonly TextFormatTransformer[]>
   >,
 ): boolean {
   const textContent = anchorNode.getTextContent();
@@ -175,17 +266,17 @@ function $runTextFormatTransformers(
 
     // Go through text node siblings and search for opening tag
     // if haven't found it within the same text node as closing tag
-    let sibling: TextNode | null = openNode;
+    let sibling: LexicalNode | null = openNode;
 
-    while (
-      openTagStartIndex < 0 &&
-      (sibling = sibling.getPreviousSibling<TextNode>())
-    ) {
+    while (openTagStartIndex < 0 && (sibling = sibling.getPreviousSibling())) {
       if ($isLineBreakNode(sibling)) {
         break;
       }
 
       if ($isTextNode(sibling)) {
+        if (sibling.hasFormat('code')) {
+          continue;
+        }
         const siblingTextContent = sibling.getTextContent();
         openNode = sibling;
         openTagStartIndex = getOpenTagStartIndex(
@@ -230,6 +321,14 @@ function $runTextFormatTransformers(
       continue;
     }
 
+    // Per CommonMark, code spans take precedence over other inline formatting
+    if (
+      !matcher.format.includes('code') &&
+      $isInsideUnclosedCodeSpan(openNode, openTagStartIndex)
+    ) {
+      continue;
+    }
+
     // Clean text from opening and closing tags (starting from closing tag
     // to prevent any offset shifts if we start from opening one)
     const prevCloseNodeText = closeNode.getTextContent();
@@ -254,9 +353,7 @@ function $runTextFormatTransformers(
 
     // Apply formatting to selected text
     for (const format of matcher.format) {
-      if (!nextSelection.hasFormat(format)) {
-        nextSelection.formatText(format);
-      }
+      nextSelection.formatText(format, TEXT_TYPE_TO_FORMAT[format]);
     }
 
     // Collapse selection up to the focus point
@@ -281,6 +378,23 @@ function $runTextFormatTransformers(
   }
 
   return false;
+}
+
+// Per CommonMark spec, code spans take precedence over other inline
+// formatting. Returns true if there is an unclosed backtick (code span
+// opener) in the text preceding the given offset, which means the offset
+// is inside a code span that hasn't been closed yet.
+function $isInsideUnclosedCodeSpan(node: TextNode, offset: number): boolean {
+  let backtickCount = 0;
+
+  const text = node.getTextContent();
+  for (let i = 0; i < offset; i++) {
+    if (text[i] === '`') {
+      backtickCount++;
+    }
+  }
+
+  return backtickCount % 2 !== 0;
 }
 
 function getOpenTagStartIndex(
@@ -322,21 +436,42 @@ function isEqualSubString(
 
 export function registerMarkdownShortcuts(
   editor: LexicalEditor,
-  transformers: Array<Transformer> = TRANSFORMERS,
+  transformers: Transformer[] = TRANSFORMERS,
 ): () => void {
   const byType = transformersByType(transformers);
-  const textFormatTransformersIndex = indexBy(
+  const elementTransformersForEnter = byType.element.filter(
+    t => t.triggerOnEnter,
+  );
+  const textFormatTransformersByTrigger = indexBy(
     byType.textFormat,
     ({tag}) => tag[tag.length - 1],
   );
-  const textMatchTransformersIndex = indexBy(
+  const textMatchTransformersByTrigger = indexBy(
     byType.textMatch,
     ({trigger}) => trigger,
   );
+  // Composition end fires per IME commit (every CJK syllable, German dead-key
+  // resolve, etc.). Most of those have nothing to do with markdown, so only
+  // enter the transformer pass when the just-committed character can plausibly
+  // close a trigger. Space covers element/multilineElement triggers (`# `,
+  // `- `, ...) and text-match triggers carry their own single-character triggers.
+  const compositionEndTriggerChars = new Set<string>([' ']);
+  for (const t of byType.textFormat) {
+    compositionEndTriggerChars.add(t.tag.slice(-1));
+  }
+  for (const t of byType.textMatch) {
+    if (t.trigger !== undefined) {
+      compositionEndTriggerChars.add(t.trigger);
+    }
+  }
 
   for (const transformer of transformers) {
     const type = transformer.type;
-    if (type === 'element' || type === 'text-match') {
+    if (
+      type === 'element' ||
+      type === 'text-match' ||
+      type === 'multiline-element'
+    ) {
       const dependencies = transformer.dependencies;
       for (const node of dependencies) {
         if (!editor.hasNode(node)) {
@@ -354,7 +489,7 @@ export function registerMarkdownShortcuts(
     parentNode: ElementNode,
     anchorNode: TextNode,
     anchorOffset: number,
-  ) => {
+  ): boolean => {
     if (
       runElementTransformers(
         parentNode,
@@ -363,76 +498,178 @@ export function registerMarkdownShortcuts(
         byType.element,
       )
     ) {
-      return;
+      return true;
+    }
+
+    if (
+      runMultilineElementTransformers(
+        parentNode,
+        anchorNode,
+        anchorOffset,
+        byType.multilineElement,
+      )
+    ) {
+      return true;
     }
 
     if (
       runTextMatchTransformers(
         anchorNode,
         anchorOffset,
-        textMatchTransformersIndex,
+        textMatchTransformersByTrigger,
       )
     ) {
-      return;
+      return true;
     }
 
-    $runTextFormatTransformers(
-      anchorNode,
-      anchorOffset,
-      textFormatTransformersIndex,
-    );
+    if (
+      $runTextFormatTransformers(
+        anchorNode,
+        anchorOffset,
+        textFormatTransformersByTrigger,
+      )
+    ) {
+      return true;
+    }
+
+    return false;
   };
 
-  return editor.registerUpdateListener(
-    ({tags, dirtyLeaves, editorState, prevEditorState}) => {
-      // Ignore updates from collaboration and undo/redo (as changes already calculated)
-      if (tags.has('collaboration') || tags.has('historic')) {
-        return;
-      }
-
-      // If editor is still composing (i.e. backticks) we must wait before the user confirms the key
-      if (editor.isComposing()) {
-        return;
-      }
-
-      const selection = editorState.read($getSelection);
-      const prevSelection = prevEditorState.read($getSelection);
-
-      if (
-        !$isRangeSelection(prevSelection) ||
-        !$isRangeSelection(selection) ||
-        !selection.isCollapsed()
-      ) {
-        return;
-      }
-
-      const anchorKey = selection.anchor.key;
-      const anchorOffset = selection.anchor.offset;
-
-      const anchorNode = editorState._nodeMap.get(anchorKey);
-
-      if (
-        !$isTextNode(anchorNode) ||
-        !dirtyLeaves.has(anchorKey) ||
-        (anchorOffset !== 1 && anchorOffset > prevSelection.anchor.offset + 1)
-      ) {
-        return;
-      }
-
-      editor.update(() => {
-        // Markdown is not available inside code
-        if (anchorNode.hasFormat('code')) {
+  return mergeRegister(
+    editor.registerUpdateListener(
+      ({tags, dirtyLeaves, editorState, prevEditorState}) => {
+        // Ignore updates from collaboration and undo/redo (as changes already calculated)
+        if (tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG)) {
           return;
+        }
+
+        // If editor is still composing (i.e. backticks) we must wait before the user confirms the key
+        if (editor.isComposing()) {
+          return;
+        }
+
+        // composition end commits the composed text without moving the
+        // selection (compositionupdate already did) and may jump the anchor by
+        // more than one when multi-character commits land at once. Skip the
+        // typed-character heuristics so a trailing trigger character can still
+        // fire its transform.
+        const isCompositionEnd = tags.has(COMPOSITION_END_TAG);
+
+        const selection = editorState.read($getSelection);
+        const prevSelection = prevEditorState.read($getSelection);
+
+        // We expect selection to be a collapsed range and not match previous one (as we want
+        // to trigger transforms only as user types)
+        if (
+          !$isRangeSelection(prevSelection) ||
+          !$isRangeSelection(selection) ||
+          !selection.isCollapsed() ||
+          (selection.is(prevSelection) && !isCompositionEnd)
+        ) {
+          return;
+        }
+
+        const anchorKey = selection.anchor.key;
+        const anchorOffset = selection.anchor.offset;
+
+        const anchorNode = editorState._nodeMap.get(anchorKey);
+
+        if (
+          !$isTextNode(anchorNode) ||
+          !dirtyLeaves.has(anchorKey) ||
+          (!isCompositionEnd &&
+            anchorOffset !== 1 &&
+            anchorOffset > prevSelection.anchor.offset + 1)
+        ) {
+          return;
+        }
+
+        if (isCompositionEnd) {
+          const closeChar = editorState.read(() => anchorNode.getTextContent())[
+            anchorOffset - 1
+          ];
+          if (!compositionEndTriggerChars.has(closeChar)) {
+            return;
+          }
+        }
+
+        editor.update(() => {
+          if (!canContainTransformableMarkdown(anchorNode)) {
+            return;
+          }
+
+          const parentNode = anchorNode.getParent();
+
+          if (parentNode === null || $isCodeNode(parentNode)) {
+            return;
+          }
+
+          if ($transform(parentNode, anchorNode, selection.anchor.offset)) {
+            $addUpdateTag(HISTORY_PUSH_TAG);
+          }
+        });
+      },
+    ),
+    editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      event => {
+        if (event !== null && event.shiftKey) {
+          return false;
+        }
+
+        const selection = $getSelection();
+
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+
+        const anchorOffset = selection.anchor.offset;
+        const anchorNode = selection.anchor.getNode();
+
+        if (
+          !$isTextNode(anchorNode) ||
+          !canContainTransformableMarkdown(anchorNode)
+        ) {
+          return false;
         }
 
         const parentNode = anchorNode.getParent();
 
         if (parentNode === null || $isCodeNode(parentNode)) {
-          return;
+          return false;
         }
 
-        $transform(parentNode, anchorNode, selection.anchor.offset);
-      });
-    },
+        const textContent = anchorNode.getTextContent();
+
+        if (anchorOffset !== textContent.length) {
+          return false;
+        }
+
+        if (
+          runMultilineElementTransformers(
+            parentNode,
+            anchorNode,
+            anchorOffset,
+            byType.multilineElement,
+            true,
+          ) ||
+          runElementTransformers(
+            parentNode,
+            anchorNode,
+            anchorOffset,
+            elementTransformersForEnter,
+            true,
+          )
+        ) {
+          if (event !== null) {
+            event.preventDefault();
+          }
+          return true;
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
   );
 }

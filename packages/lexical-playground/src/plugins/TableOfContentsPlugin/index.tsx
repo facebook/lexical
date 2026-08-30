@@ -5,16 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {TableOfContentsEntry} from '@lexical/react/LexicalTableOfContentsPlugin';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {NodeKey} from 'lexical';
 
 import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
-import {useEffect, useRef, useState} from 'react';
+import {
+  type TableOfContentsEntry,
+  TableOfContentsPlugin as LexicalTableOfContentsPlugin,
+} from '@lexical/react/LexicalTableOfContentsPlugin';
+import {type NodeKey, registerEventListener} from 'lexical';
 import * as React from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 
 const MARGIN_ABOVE_EDITOR = 624;
 const HEADING_WIDTH = 9;
@@ -46,17 +48,17 @@ function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {
 function TableOfContentsList({
   tableOfContents,
 }: {
-  tableOfContents: Array<TableOfContentsEntry>;
+  tableOfContents: TableOfContentsEntry[];
 }): JSX.Element {
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);
   const [editor] = useLexicalComposerContext();
 
   function scrollToNode(key: NodeKey, currIndex: number) {
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const domElement = editor.getElementByKey(key);
       if (domElement !== null) {
-        domElement.scrollIntoView();
+        domElement.scrollIntoView({behavior: 'smooth', block: 'center'});
         setSelectedKey(key);
         selectedIndex.current = currIndex;
       }
@@ -132,8 +134,7 @@ function TableOfContentsList({
       debounceFunction(scrollCallback, 10);
     }
 
-    document.addEventListener('scroll', onScroll);
-    return () => document.removeEventListener('scroll', onScroll);
+    return registerEventListener(document, 'scroll', onScroll);
   }, [tableOfContents, editor]);
 
   return (
@@ -170,8 +171,7 @@ function TableOfContentsList({
                   <li
                     className={`normal-heading ${
                       selectedKey === key ? 'selected-heading' : ''
-                    }
-                    `}>
+                    } `}>
                     {('' + text).length > 27
                       ? text.substring(0, 27) + '...'
                       : text}
@@ -189,7 +189,7 @@ function TableOfContentsList({
 export default function TableOfContentsPlugin() {
   return (
     <LexicalTableOfContentsPlugin>
-      {(tableOfContents) => {
+      {tableOfContents => {
         return <TableOfContentsList tableOfContents={tableOfContents} />;
       }}
     </LexicalTableOfContentsPlugin>

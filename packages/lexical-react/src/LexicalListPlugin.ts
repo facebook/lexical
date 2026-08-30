@@ -6,13 +6,48 @@
  *
  */
 
-import {ListItemNode, ListNode} from '@lexical/list';
+import {
+  ListItemNode,
+  ListNode,
+  registerList,
+  registerListStrictIndentTransform,
+} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {mergeRegister} from 'lexical';
 import {useEffect} from 'react';
 
 import {useList} from './shared/useList';
 
-export function ListPlugin(): null {
+/**
+ * Props for the {@link ListPlugin} component.
+ */
+export interface ListPluginProps {
+  /**
+   * When `true`, enforces strict indentation rules for list items, ensuring consistent structure.
+   * When `false` (default), indentation is more flexible.
+   */
+  hasStrictIndent?: boolean;
+  /**
+   * When `true`, splitting a numbered list will preserve the numbering continuity.
+   * When `false` (default), the new split list resets to 1.
+   */
+  shouldPreserveNumbering?: boolean;
+}
+
+/**
+ * Enables ordered, unordered, and check list support, registering the commands
+ * and transforms that create and maintain {@link ListNode} and
+ * {@link ListItemNode} structures. The editor must have both nodes registered.
+ *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link ListExtension} instead.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
+export function ListPlugin({
+  hasStrictIndent = false,
+  shouldPreserveNumbering = false,
+}: ListPluginProps): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -22,6 +57,15 @@ export function ListPlugin(): null {
       );
     }
   }, [editor]);
+
+  useEffect(() => {
+    return mergeRegister(
+      registerList(editor, {
+        restoreNumbering: shouldPreserveNumbering,
+      }),
+      hasStrictIndent ? registerListStrictIndentTransform(editor) : () => {},
+    );
+  }, [editor, hasStrictIndent, shouldPreserveNumbering]);
 
   useList(editor);
 

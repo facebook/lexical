@@ -18,6 +18,7 @@ import {
   pasteFromClipboard,
   test,
   waitForSelector,
+  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 test.describe('CodeActionMenu', () => {
@@ -46,132 +47,134 @@ test.describe('CodeActionMenu', () => {
       page,
       `
         <code
-          class=\"PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr\"
-          dir=\"ltr\"
-          spellcheck=\"false\"
-          data-gutter=\"123\"
-          data-highlight-language=\"javascript\">
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          class="PlaygroundEditorTheme__code"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="123"
+          data-highlight-language="javascript">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">a</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">a</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'Hello'
           </span>
-          <br />
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          <br data-lexical-managed-linebreak="true" />
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">b</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">b</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'World'
           </span>
-          <br />
-          <span data-lexical-text=\"true\"></span>
+          <br data-lexical-managed-linebreak="true" />
+          <span data-lexical-text="true"></span>
         </code>
       `,
     );
 
     await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
 
-    if (browserName === 'chromium') {
-      await context.grantPermissions(['clipboard-write']);
-      await click(page, 'button[aria-label=copy]');
-      await paste(page);
-      await context.clearPermissions();
-    } else {
-      await waitForSelector(page, 'button[aria-label=copy]');
+    await withExclusiveClipboardAccess(async () => {
+      if (browserName === 'chromium') {
+        await context.grantPermissions(['clipboard-write']);
+        await click(page, 'button[aria-label=copy]');
+        await paste(page);
+        await context.clearPermissions();
+      } else {
+        await waitForSelector(page, 'button[aria-label=copy]');
 
-      const copiedText = await evaluate(page, () => {
-        let text = null;
+        const copiedText = await evaluate(page, () => {
+          let text = null;
 
-        navigator.clipboard._writeText = navigator.clipboard.writeText;
-        navigator.clipboard.writeText = function (data) {
-          text = data;
-          this._writeText(data);
-        };
-        document.querySelector('button[aria-label=copy]').click();
+          navigator.clipboard._writeText = navigator.clipboard.writeText;
+          navigator.clipboard.writeText = function (data) {
+            text = data;
+            this._writeText(data);
+          };
+          document.querySelector('button[aria-label=copy]').click();
 
-        return text;
-      });
+          return text;
+        });
 
-      await pasteFromClipboard(page, {
-        'text/plain': copiedText,
-      });
-    }
+        await pasteFromClipboard(page, {
+          'text/plain': copiedText,
+        });
+      }
+    });
 
     await assertHTML(
       page,
       `
           <code
-          class=\"PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr\"
-          dir=\"ltr\"
-          spellcheck=\"false\"
-          data-gutter=\"12345\"
-          data-highlight-language=\"javascript\">
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          class="PlaygroundEditorTheme__code"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="12345"
+          data-highlight-language="javascript">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">a</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">a</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'Hello'
           </span>
-          <br />
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          <br data-lexical-managed-linebreak="true" />
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">b</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">b</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'World'
           </span>
-          <br />
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          <br data-lexical-managed-linebreak="true" />
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">a</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">a</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'Hello'
           </span>
-          <br />
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          <br data-lexical-managed-linebreak="true" />
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">b</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">b</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'World'
           </span>
-          <br />
-          <span data-lexical-text=\"true\"></span>
+          <br data-lexical-managed-linebreak="true" />
+          <span data-lexical-text="true"></span>
         </code>
       `,
     );
@@ -193,24 +196,11 @@ test.describe('CodeActionMenu', () => {
       page,
       `
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          class="PlaygroundEditorTheme__code"
+          dir="auto"
           spellcheck="false"
-          data-gutter="1"
-          data-language="javascript"
-          data-highlight-language="javascript">
-          <span data-lexical-text="true"></span>
-          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
-            const
-          </span>
-          <span data-lexical-text="true">luci</span>
-          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
-            =
-          </span>
-          <span data-lexical-text="true"></span>
-          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
-            'Hello World'
-          </span>
+          data-gutter="1">
+          <span data-lexical-text="true">const luci = 'Hello World'</span>
         </code>
       `,
     );
@@ -218,36 +208,25 @@ test.describe('CodeActionMenu', () => {
     await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
     await click(page, 'button[aria-label=prettier]');
 
-    await page.waitForTimeout(3000);
+    // Prettier loads and formats asynchronously; wait for the reformatted
+    // result instead of a fixed timeout. Formatting turns the single input
+    // line into multiple lines, so a <br> inside the code block is a reliable
+    // "prettier finished" signal (attached, not visible: <br> has no box).
+    await waitForSelector(page, 'code.PlaygroundEditorTheme__code br', {
+      state: 'attached',
+    });
 
     await assertHTML(
       page,
       `
         <code
-        class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-        dir="ltr"
+        class="PlaygroundEditorTheme__code"
+        dir="auto"
         spellcheck="false"
-        data-gutter="12"
-        data-language="javascript"
-        data-highlight-language="javascript">
-          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
-            const
-          </span>
-          <span data-lexical-text="true">luci</span>
-          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
-            =
-          </span>
-          <span data-lexical-text="true"></span>
-          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
-            "Hello World"
-          </span>
-          <span
-            class="PlaygroundEditorTheme__tokenPunctuation"
-            data-lexical-text="true">
-            ;
-          </span>
+        data-gutter="12">
+          <span data-lexical-text="true">const luci = "Hello World";</span>
           <br />
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </code>
       `,
     );
@@ -269,20 +248,11 @@ test.describe('CodeActionMenu', () => {
       page,
       `
         <code
-          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          dir="ltr"
+          class="PlaygroundEditorTheme__code"
+          dir="auto"
           spellcheck="false"
-          data-gutter="1"
-          data-language="javascript"
-          data-highlight-language="javascript">
-          <span data-lexical-text="true">cons luci</span>
-          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
-            =
-          </span>
-          <span data-lexical-text="true"></span>
-          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
-            'Hello World'
-          </span>
+          data-gutter="1">
+          <span data-lexical-text="true">cons luci = 'Hello World'</span>
         </code>
       `,
     );
@@ -290,7 +260,9 @@ test.describe('CodeActionMenu', () => {
     await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
     await click(page, 'button[aria-label=prettier]');
 
-    await page.waitForTimeout(3000);
+    // Prettier reports invalid syntax asynchronously; wait for the error badge
+    // to appear instead of a fixed timeout (the assertions below do not retry).
+    await waitForSelector(page, 'i.format.prettier-error');
 
     expect(await page.$('i.format.prettier-error')).toBeTruthy();
 

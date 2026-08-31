@@ -81,6 +81,7 @@ import {
   type PointCaret,
   type RangeSelection,
   registerEventListener,
+  registerEventListeners,
   removeClassNamesFromElement,
   SELECTION_CHANGE_COMMAND,
   type SiblingCaret,
@@ -126,6 +127,12 @@ function $getTableNodeByKeyOrThrow(key: NodeKey): TableNode {
 const isPointerDownOnEvent = (event: PointerEvent) => {
   return (event.buttons & 1) === 1;
 };
+
+// How far (in CSS pixels) a pointer may travel from where it went down and
+// still count as a tap rather than a drag. Touch contacts jitter by a few
+// pixels while the finger is lifted, so a tap that lands near a cell border
+// is otherwise reported as a move into the neighbouring cell (#8538).
+const TAP_SLOP = 10;
 
 // Distance (px) from a scroll container edge at which drag auto-scroll kicks
 // in, and the maximum scroll delta applied per animation frame.
@@ -292,14 +299,33 @@ function $handleTableClick(
   if (!editorWindow) {
     return;
   }
-  const createPointerHandlers = (startingCell: TableDOMCell | null) => {
+  const createPointerHandlers = (startingCell: TableDOMCell) => {
     if (tableObserver.isSelecting) {
       return;
     }
     tableObserver.isSelecting = true;
+    tableObserver.isPointerDrag = false;
+    tableObserver.pointerStartCell = startingCell;
 
-    // Set anchor immediately if starting cell provided (handles direct drag without click)
-    if (startingCell !== null && tableObserver.anchorCell === null) {
+    const isTouch = event.pointerType === 'touch';
+    // The pointer that owns this gesture. Moves and lifts belonging to any
+    // other pointer — a second finger, a stylus resting on the screen — are a
+    // different gesture and must not drive this one.
+    const gesturePointerId = event.pointerId;
+    const startClientX = event.clientX;
+    const startClientY = event.clientY;
+
+    // Whether this gesture has established its own anchor cell. Non-touch
+    // gestures anchor at pointerdown, so they start out anchored. A touch tap
+    // must not enter table selection mode, so on touch the anchor is deferred
+    // until the gesture becomes a drag that crosses into another cell:
+    // anchoring eagerly leaves state behind that turns the next tap into a
+    // table selection (#8538).
+    let hasAnchorForGesture = !isTouch;
+
+    // Set the anchor immediately so a drag that never gets a click still has
+    // one (handles direct drag without click).
+    if (!isTouch && tableObserver.anchorCell === null) {
       editor.update(() => {
         tableObserver.$setAnchorCellForSelection(startingCell);
       });
@@ -308,15 +334,38 @@ function $handleTableClick(
     let lastClientX = event.clientX;
     let lastClientY = event.clientY;
     let autoScrollRafId: number | null = null;
+    // Removes every listener below. Assigned once they are defined; nothing
+    // can call stopSelecting before then, since only those listeners do.
+    let removeGestureListeners: (() => void) | null = null;
+
+    // Events from other pointers belong to other gestures. Environments that
+    // synthesise PointerEvents without a pointerId leave both sides undefined,
+    // which matches, so nothing is filtered out there.
+    const isGesturePointer = (pointerEvent: PointerEvent): boolean =>
+      pointerEvent.pointerId === gesturePointerId;
+
+    // Whether the pointer has travelled beyond the tap slop box. Written so
+    // that non-finite coordinates (again, synthesised events) fall through as
+    // "moved": slop can't be measured there, and the cell-crossing check in
+    // applyFocusCell still applies.
+    const isBeyondTapSlop = (clientX: number, clientY: number): boolean =>
+      !(
+        Math.abs(clientX - startClientX) <= TAP_SLOP &&
+        Math.abs(clientY - startClientY) <= TAP_SLOP
+      );
 
     const stopSelecting = () => {
       tableObserver.isSelecting = false;
+      tableObserver.isPointerDrag = false;
+      tableObserver.pointerStartCell = null;
       if (autoScrollRafId !== null) {
         editorWindow.cancelAnimationFrame(autoScrollRafId);
         autoScrollRafId = null;
       }
-      editorWindow.removeEventListener('pointerup', onPointerUp);
-      editorWindow.removeEventListener('pointermove', onPointerMove);
+      if (removeGestureListeners !== null) {
+        removeGestureListeners();
+        removeGestureListeners = null;
+      }
     };
 
     // Resolve the table cell under the given viewport coordinates via the
@@ -341,12 +390,27 @@ function $handleTableClick(
     };
 
     const applyFocusCell = (focusCell: TableDOMCell, override: boolean) => {
-      // Fallback: set anchor if still missing (handles race conditions)
-      if (tableObserver.anchorCell === null) {
+      // A deferred (touch) gesture only starts a table selection once it is a
+      // drag that has left the cell it started in. Taps jitter, so neither a
+      // move within the slop box nor a hit-test landing back in the starting
+      // cell is enough to commit to one (#8538).
+      if (
+        !hasAnchorForGesture &&
+        (!tableObserver.isPointerDrag || focusCell.elem === startingCell.elem)
+      ) {
+        return;
+      }
+      // Fallback: set anchor if still missing (handles race conditions), or
+      // adopt the cell the gesture started on now that a deferred gesture has
+      // become a drag, so the selection covers where the drag began rather
+      // than whatever anchor an earlier gesture left behind.
+      if (tableObserver.anchorCell === null || !hasAnchorForGesture) {
+        const anchorCell = hasAnchorForGesture ? focusCell : startingCell;
         editor.update(() => {
-          tableObserver.$setAnchorCellForSelection(focusCell);
+          tableObserver.$setAnchorCellForSelection(anchorCell);
         });
       }
+      hasAnchorForGesture = true;
       if (
         tableObserver.focusCell === null ||
         focusCell.elem !== tableObserver.focusCell.elem
@@ -491,9 +555,12 @@ function $handleTableClick(
 
     const maybeStartAutoScroll = () => {
       // Touch taps don't initiate table selection, so they shouldn't scroll.
+      // A touch drag that has become one still needs to reach the columns
+      // past the edge of a scrollable table, so gate on the tap, not on the
+      // pointer type.
       if (
         autoScrollRafId !== null ||
-        tableObserver.pointerType === 'touch' ||
+        (isTouch && !tableObserver.isPointerDrag) ||
         !isNearScrollEdge()
       ) {
         return;
@@ -501,11 +568,29 @@ function $handleTableClick(
       autoScrollRafId = editorWindow.requestAnimationFrame(tickAutoScroll);
     };
 
-    const onPointerUp = () => {
-      stopSelecting();
+    const onPointerUp = (upEvent: PointerEvent) => {
+      if (isGesturePointer(upEvent)) {
+        stopSelecting();
+      }
+    };
+
+    // A gesture also ends when the browser takes it away: a touch that turns
+    // into a scroll fires pointercancel and never a pointerup, and pointer
+    // capture (implicit for touch) can be lost to another element. Without
+    // these the observer stays in selecting mode indefinitely — the stale
+    // pointermove listener keeps driving selections from this gesture's
+    // starting cell, and createPointerHandlers refuses to start any later
+    // gesture, so every subsequent tap selects cells (#8538).
+    const onPointerGestureEnd = (endEvent: PointerEvent) => {
+      if (isGesturePointer(endEvent)) {
+        stopSelecting();
+      }
     };
 
     const onPointerMove = (moveEvent: PointerEvent) => {
+      if (!isGesturePointer(moveEvent)) {
+        return;
+      }
       if (!isPointerDownOnEvent(moveEvent) && tableObserver.isSelecting) {
         stopSelecting();
         return;
@@ -516,6 +601,12 @@ function $handleTableClick(
       }
       lastClientX = moveEvent.clientX;
       lastClientY = moveEvent.clientY;
+      if (
+        !tableObserver.isPointerDrag &&
+        isBeyondTapSlop(lastClientX, lastClientY)
+      ) {
+        tableObserver.isPointerDrag = true;
+      }
       let focusCell: null | TableDOMCell = null;
       // In firefox the moveEvent.target may be captured so we must always
       // consult the coordinates #7245
@@ -535,14 +626,14 @@ function $handleTableClick(
       // scrollable table (#7153).
       maybeStartAutoScroll();
     };
-    editorWindow.addEventListener(
-      'pointerup',
-      onPointerUp,
-      tableObserver.listenerOptions,
-    );
-    editorWindow.addEventListener(
-      'pointermove',
-      onPointerMove,
+    removeGestureListeners = registerEventListeners(
+      editorWindow,
+      {
+        lostpointercapture: onPointerGestureEnd,
+        pointercancel: onPointerGestureEnd,
+        pointermove: onPointerMove,
+        pointerup: onPointerUp,
+      },
       tableObserver.listenerOptions,
     );
   };
@@ -1294,18 +1385,35 @@ function $fixRangeSelectionForSelectedTable(
 
     // Handle case when the pointer type is touch and the current and
     // previous selection are collapsed, and the previous anchor and current
-    // focus cell nodes are different, then we convert it into table selection
-    // However, only do this if the table observer is actively selecting (user dragging)
-    // to prevent unwanted selections when simply tapping between cells on mobile
+    // focus cell nodes are different, then we convert it into table selection.
+    // This must only happen for a gesture that is actually dragging across
+    // cells: a tap places a caret in a new cell while the pointer is still
+    // down, so keying off isSelecting alone converts consecutive taps into a
+    // table selection (#8538).
     if (
       tableObserver.pointerType === 'touch' &&
       tableObserver.isSelecting &&
+      tableObserver.isPointerDrag &&
       selection.isCollapsed() &&
       $isRangeSelection(prevSelection) &&
       prevSelection.isCollapsed()
     ) {
       const prevAnchorCellNode = $findCellNode(prevSelection.anchor.getNode());
-      if (prevAnchorCellNode && !prevAnchorCellNode.is(focusCellNode)) {
+      // Being a drag is not enough: it has to have left the cell it started
+      // on. A drag that stays inside one cell is selecting text there, and
+      // the caret the browser moves as it goes would otherwise be paired with
+      // whatever cell the previous gesture left in the range selection,
+      // producing exactly the multi-cell selection tapping is meant to avoid.
+      const {pointerStartCell} = tableObserver;
+      const hasLeftStartCell =
+        pointerStartCell !== null &&
+        $getObserverCellFromCellNodeOrThrow(tableObserver, focusCellNode)
+          .elem !== pointerStartCell.elem;
+      if (
+        hasLeftStartCell &&
+        prevAnchorCellNode &&
+        !prevAnchorCellNode.is(focusCellNode)
+      ) {
         tableObserver.$setAnchorCellForSelection(
           $getObserverCellFromCellNodeOrThrow(
             tableObserver,

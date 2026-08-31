@@ -1780,13 +1780,26 @@ export class LexicalNode {
     const selection = $getSelection();
     let elementAnchorSelectionOnNode = false;
     let elementFocusSelectionOnNode = false;
-    if (oldParent !== null) {
-      // TODO: this is O(n), can we improve?
-      const oldIndex = nodeToInsert.getIndexWithinParent();
-      if ($isRangeSelection(selection)) {
-        const oldParentKey = oldParent.__key;
-        const anchor = selection.anchor;
-        const focus = selection.focus;
+    // nodeToInsert's index in oldParent, or -1 when it was never computed
+    // because nothing below can observe it.
+    let oldIndex = -1;
+    if (
+      oldParent !== null &&
+      restoreSelection &&
+      $isRangeSelection(selection)
+    ) {
+      const oldParentKey = oldParent.__key;
+      const anchor = selection.anchor;
+      const focus = selection.focus;
+      // getIndexWithinParent walks oldParent's children from the first one,
+      // so calling it unconditionally makes a bulk insert quadratic (#5194).
+      // The index is only ever read through the selection: the comparisons
+      // below arm a flag only for a point whose key is oldParentKey, and
+      // $updateElementSelectionOnCreateDeleteNode returns early unless anchor
+      // or focus resolves to the parent it is passed. restoreSelection gates
+      // the block because the flags are read only under it, further down.
+      if (anchor.key === oldParentKey || focus.key === oldParentKey) {
+        oldIndex = nodeToInsert.getIndexWithinParent();
         elementAnchorSelectionOnNode =
           anchor.type === 'element' &&
           anchor.key === oldParentKey &&
@@ -1796,23 +1809,21 @@ export class LexicalNode {
           focus.key === oldParentKey &&
           focus.offset === oldIndex + 1;
       }
-      $removeFromParent(writableNodeToInsert);
-      // Adjust element-anchored offsets in oldParent to track its reduced
-      // child count. The boolean flags captured above
-      // (elementAnchorSelectionOnNode / elementFocusSelectionOnNode) recorded
-      // whether anchor/focus sat at oldIndex+1 before this removal; the
-      // post-insertion block below uses them to re-anchor onto the moved
-      // node in its new parent. See #6031.
-      if (restoreSelection && $isRangeSelection(selection)) {
-        $updateElementSelectionOnCreateDeleteNode(
-          selection,
-          oldParent,
-          oldIndex,
-          -1,
-        );
-      }
-    } else {
-      $removeFromParent(writableNodeToInsert);
+    }
+    $removeFromParent(writableNodeToInsert);
+    // Adjust element-anchored offsets in oldParent to track its reduced
+    // child count. The boolean flags captured above
+    // (elementAnchorSelectionOnNode / elementFocusSelectionOnNode) recorded
+    // whether anchor/focus sat at oldIndex+1 before this removal; the
+    // post-insertion block below uses them to re-anchor onto the moved
+    // node in its new parent. See #6031.
+    if (oldIndex !== -1 && oldParent !== null && $isRangeSelection(selection)) {
+      $updateElementSelectionOnCreateDeleteNode(
+        selection,
+        oldParent,
+        oldIndex,
+        -1,
+      );
     }
     const nextSibling = this.getNextSibling();
     const writableParent = this.getParentOrThrow().getWritable();
@@ -1830,18 +1841,30 @@ export class LexicalNode {
     writableNodeToInsert.__prev = writableSelf.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     if (restoreSelection && $isRangeSelection(selection)) {
-      const index = this.getIndexWithinParent();
-      $updateElementSelectionOnCreateDeleteNode(
-        selection,
-        writableParent,
-        index + 1,
-      );
       const writableParentKey = writableParent.__key;
-      if (elementAnchorSelectionOnNode) {
-        selection.anchor.set(writableParentKey, index + 2, 'element');
-      }
-      if (elementFocusSelectionOnNode) {
-        selection.focus.set(writableParentKey, index + 2, 'element');
+      // Same reasoning as the oldParent block above, plus one more consumer:
+      // when the node was moved out of a different parent, the flags re-anchor
+      // the selection onto it here (#6031) and need the index even though no
+      // selection point is on writableParent yet. Check the flags as well as
+      // the points before paying for the sibling walk.
+      if (
+        elementAnchorSelectionOnNode ||
+        elementFocusSelectionOnNode ||
+        selection.anchor.key === writableParentKey ||
+        selection.focus.key === writableParentKey
+      ) {
+        const index = this.getIndexWithinParent();
+        $updateElementSelectionOnCreateDeleteNode(
+          selection,
+          writableParent,
+          index + 1,
+        );
+        if (elementAnchorSelectionOnNode) {
+          selection.anchor.set(writableParentKey, index + 2, 'element');
+        }
+        if (elementFocusSelectionOnNode) {
+          selection.focus.set(writableParentKey, index + 2, 'element');
+        }
       }
     }
     return nodeToInsert;

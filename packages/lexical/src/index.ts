@@ -277,7 +277,7 @@ export {
   $isRangeSelection,
   $setTextFormat,
   $updateDOMSelection,
-  INTERNAL_$collapseEmptiedRootToParagraph,
+  INTERNAL_$expandSelectionToWholeDocument,
   type RawTextVisitor,
   tokenizeRawText,
 } from './LexicalSelection';

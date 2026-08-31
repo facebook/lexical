@@ -22,7 +22,6 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
@@ -39,9 +38,10 @@ import {$createTestShadowRootNode, TestShadowRootNode} from '../utils';
 
 const $selectAll = selectAllUnprefixed;
 
-// A block that opts out of dissolving: `collapseAtStart` returning false is the
-// ElementNode default, so this stands in for every third-party block node that
-// never implemented it.
+// Stands in for a third-party block node. Its `collapseAtStart` returns false
+// -- the ElementNode default -- which used to mean "keep this block"; widening
+// the range means the block is simply part of what was selected, so a
+// select-all delete removes it like anything else.
 class StubbornNode extends ElementNode {
   $config() {
     return this.config('issue5835_stubborn', {extends: ElementNode});
@@ -74,29 +74,10 @@ class HostNode extends ElementNode {
   }
 }
 
-// A block that removes itself instead of replacing itself with a paragraph.
-// `collapseAtStart` is free to do that, and it can leave the root childless --
-// which is not a usable editor state.
-class VanishingNode extends ElementNode {
-  $config() {
-    return this.config('issue5835_vanishing', {extends: ElementNode});
-  }
-  createDOM(): HTMLElement {
-    return document.createElement('aside');
-  }
-  updateDOM(): false {
-    return false;
-  }
-  collapseAtStart(): true {
-    this.remove();
-    return true;
-  }
-}
-
 const ext = defineExtension({
   dependencies: [RichTextExtension, ListExtension, CodeExtension],
   name: '[5835]',
-  nodes: [StubbornNode, VanishingNode, HostNode, TestShadowRootNode],
+  nodes: [StubbornNode, HostNode, TestShadowRootNode],
 });
 
 /**
@@ -161,6 +142,10 @@ const DIRECTIONS = [true, false];
 // a backwards `deleteCharacter` did that, and only for a heading or quote --
 // forward delete, lists, and the word/line gestures left the last block behind
 // as an empty heading/quote/list that kept its type.
+//
+// The fix widens a whole-document range to the root's own element points before
+// deleting, so the range contains the blocks rather than just their text and
+// the delete removes them outright.
 describe('select-all + delete collapses to an empty paragraph (#5835)', () => {
   describe.for(GESTURES)('%s', gesture => {
     describe.for(DIRECTIONS)('isBackward: %s', isBackward => {
@@ -252,12 +237,10 @@ describe('select-all + delete collapses to an empty paragraph (#5835)', () => {
         });
       });
 
-      // The nested list above still has a plain sibling item, so one
-      // `collapseAtStart` pass reaches a paragraph. A nest with nothing but
-      // nested items needs one pass per level: `ListItemNode.collapseAtStart`
-      // outdents a nested item rather than unwrapping the whole nest, so a
-      // single pass would leave `list > listitem` behind -- still a bullet for
-      // the next character typed, which is the #5835 symptom.
+      // Depth is what used to matter: emptying a nest from the inside sheds one
+      // level at a time, so a nest with nothing but nested items could be left
+      // as `list > listitem` -- still a bullet for the next character typed.
+      // Removing the range takes every level at once, whatever the depth.
       test('a nest with no plain sibling item', () => {
         using editor = createEditor();
         editor.update(
@@ -366,10 +349,11 @@ describe('select-all + delete collapses to an empty paragraph (#5835)', () => {
     });
   });
 
-  // The collapse is delegated to each block type's own `collapseAtStart`, which
-  // is where a node says how -- and whether -- it dissolves.
-  describe('respects the collapseAtStart extension point', () => {
-    test('a code block opts in, so it collapses', () => {
+  // Widening the range means every block is simply part of what was selected,
+  // so no block type needs special handling and none is consulted about whether
+  // it should dissolve.
+  describe('removes whatever block types the document holds', () => {
+    test.for([true, false])('a code block (isBackward: %s)', isBackward => {
       using editor = createEditor();
       editor.update(
         () => {
@@ -380,33 +364,13 @@ describe('select-all + delete collapses to an empty paragraph (#5835)', () => {
         {discrete: true},
       );
 
-      selectAllAndDelete(editor, 'deleteCharacter', false);
+      selectAllAndDelete(editor, 'deleteCharacter', isBackward);
 
       expect(readRootTypes(editor)).toEqual(['paragraph']);
     });
 
-    test('a block returning false from collapseAtStart keeps its type', () => {
-      using editor = createEditor();
-      editor.update(
-        () => {
-          $getRoot()
-            .clear()
-            .append(new StubbornNode().append($createTextNode('note')));
-        },
-        {discrete: true},
-      );
-
-      selectAllAndDelete(editor, 'deleteCharacter', false);
-
-      expect(readRootTypes(editor)).toEqual(['issue5835_stubborn']);
-    });
-
-    // The opt-out has to come from `collapseAtStart` returning false, not from
-    // the loop's progress guard: walking on into the RootNode -- whose
-    // `collapseAtStart` returns true unconditionally -- would report every
-    // branch as handled.
     test.for([true, false])(
-      'the opt-out holds in both directions (isBackward: %s)',
+      'a third-party block node (isBackward: %s)',
       isBackward => {
         using editor = createEditor();
         editor.update(
@@ -420,21 +384,28 @@ describe('select-all + delete collapses to an empty paragraph (#5835)', () => {
 
         selectAllAndDelete(editor, 'deleteCharacter', isBackward);
 
-        expect(readRootTypes(editor)).toEqual(['issue5835_stubborn']);
+        expect(readRootTypes(editor)).toEqual(['paragraph']);
       },
     );
 
-    // A `collapseAtStart` that removes its block rather than replacing it would
-    // otherwise leave the root with no children at all.
+    // A block wrapping other blocks. Emptying this one from the inside could
+    // only ever shed the list and leave the quote holding a stray paragraph;
+    // removing the range takes the whole thing.
     test.for([true, false])(
-      'a block that removes itself still leaves a paragraph (isBackward: %s)',
+      'a quote wrapping a list (isBackward: %s)',
       isBackward => {
         using editor = createEditor();
         editor.update(
           () => {
             $getRoot()
               .clear()
-              .append(new VanishingNode().append($createTextNode('poof')));
+              .append(
+                $createQuoteNode().append(
+                  $createListNode('bullet').append(
+                    $createListItemNode().append($createTextNode('one')),
+                  ),
+                ),
+              );
           },
           {discrete: true},
         );
@@ -442,73 +413,83 @@ describe('select-all + delete collapses to an empty paragraph (#5835)', () => {
         selectAllAndDelete(editor, 'deleteCharacter', isBackward);
 
         expect(readRootTypes(editor)).toEqual(['paragraph']);
+        editor.read(() => {
+          expect($getRoot().getTextContent()).toBe('');
+        });
+      },
+    );
+
+    test.for([true, false])(
+      'a slot host, slots and all (isBackward: %s)',
+      isBackward => {
+        using editor = createEditor();
+        editor.update(
+          () => {
+            const host = new HostNode();
+            host.append(
+              $createHeadingNode('h1').append($createTextNode('body')),
+            );
+            $getRoot().clear().append(host);
+            $setSlot(
+              host,
+              'title',
+              $createTestShadowRootNode().append(
+                $createParagraphNode().append($createTextNode('title')),
+              ),
+            );
+          },
+          {discrete: true},
+        );
+
+        selectAllAndDelete(editor, 'deleteCharacter', isBackward);
+
+        expect(readRootTypes(editor)).toEqual(['paragraph']);
+        editor.read(() => {
+          expect($getRoot().getTextContent()).toBe('');
+        });
       },
     );
   });
 
-  // Known limitation, pinned so it cannot drift silently. A non-shadow quote
-  // holding block children ends up holding an empty paragraph rather than
-  // dissolving: unwrapping it means calling `QuoteNode.collapseAtStart` on
-  // block children, which nests a paragraph inside a paragraph -- a
-  // pre-existing bug reachable by plain Backspace, independent of this
-  // collapse. Still an improvement on leaving the bullet list behind.
-  test.for([true, false])(
-    'a quote wrapping a list keeps the quote (isBackward: %s)',
-    isBackward => {
-      using editor = createEditor();
-      editor.update(
-        () => {
-          $getRoot()
-            .clear()
-            .append(
-              $createQuoteNode().append(
-                $createListNode('bullet').append(
-                  $createListItemNode().append($createTextNode('one')),
-                ),
-              ),
-            );
-        },
-        {discrete: true},
-      );
-
-      selectAllAndDelete(editor, 'deleteCharacter', isBackward);
-
-      expect(readRootTypes(editor)).toEqual(['quote']);
-      editor.read(() => {
-        const quote = $getRoot().getFirstChildOrThrow();
-        assert($isElementNode(quote), 'Expected an ElementNode');
-        expect(quote.getChildren().map(n => n.getType())).toEqual([
-          'paragraph',
-        ]);
-        expect($getRoot().getTextContent()).toBe('');
-      });
-    },
-  );
-
-  test('a slot host still holding slot content is not dissolved', () => {
+  // A slot is shadow-root isolated, so the rich-text SELECT_ALL handler scopes
+  // select-all to the slot value rather than the document. That range does not
+  // cover the root, so it must not widen and take the host with it.
+  test('a select-all scoped to a slot only clears the slot', () => {
     using editor = createEditor();
     editor.update(
       () => {
         const host = new HostNode();
         host.append($createHeadingNode('h1').append($createTextNode('body')));
         $getRoot().clear().append(host);
+        const slotParagraph = $createParagraphNode().append(
+          $createTextNode('title'),
+        );
         $setSlot(
           host,
           'title',
-          $createTestShadowRootNode().append(
-            $createParagraphNode().append($createTextNode('title')),
-          ),
+          $createTestShadowRootNode().append(slotParagraph),
         );
+        const text = slotParagraph.getFirstChildOrThrow();
+        assert($isTextNode(text), 'Expected a TextNode');
+        text.select(1, 1);
       },
       {discrete: true},
     );
 
-    selectAllAndDelete(editor, 'deleteCharacter', false);
+    editor.update(
+      () => {
+        const current = $getSelection();
+        assert($isRangeSelection(current), 'Expected RangeSelection');
+        // What the SELECT_ALL handler does when the caret is inside a slot.
+        $selectAll(current).deleteCharacter(true);
+      },
+      {discrete: true},
+    );
 
-    // The host survives with its slot content: the document was never empty.
+    // The host and its own children are untouched; only the slot was cleared.
     expect(readRootTypes(editor)).toEqual(['issue5835_host']);
     editor.read(() => {
-      expect($getRoot().getTextContent()).toContain('title');
+      expect($getRoot().getTextContent()).toContain('body');
     });
   });
 

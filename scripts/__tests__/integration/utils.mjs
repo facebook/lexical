@@ -223,7 +223,14 @@ async function buildExample({packageJson, exampleDir}) {
     ]),
   );
   const workspaceYamlPath = path.resolve(exampleDir, 'pnpm-workspace.yaml');
-  const originalWorkspaceYaml = fs.readFileSync(workspaceYamlPath, 'utf8');
+  // A project that has not (yet) checked one in still has to install with its
+  // overrides applied, so the harness writes a throwaway file and removes it
+  // again below. Every example should ship one — see the audit in
+  // scripts/__tests__/unit/build.test.ts — but a new one landing without it
+  // must not take the whole suite down.
+  const originalWorkspaceYaml = fs.existsSync(workspaceYamlPath)
+    ? fs.readFileSync(workspaceYamlPath, 'utf8')
+    : null;
   [
     'node_modules',
     'dist',
@@ -236,8 +243,10 @@ async function buildExample({packageJson, exampleDir}) {
   try {
     fs.writeFileSync(
       workspaceYamlPath,
-      mergeWorkspaceOverrides(originalWorkspaceYaml, lexicalOverrides),
+      mergeWorkspaceOverrides(originalWorkspaceYaml ?? '', lexicalOverrides),
     );
+    // Written above if it was missing, so the install never falls back to
+    // --ignore-workspace, which would suppress the overrides just written.
     const install = installCommand(exampleDir);
     await withCwd(exampleDir, async () => {
       await expectSuccessfulExec(install);
@@ -250,7 +259,11 @@ async function buildExample({packageJson, exampleDir}) {
     // Restore the unmodified pnpm-workspace.yaml so the test doesn't leave a
     // dirty working tree behind (the file-path overrides reference an
     // absolute path on the runner that wouldn't make sense elsewhere).
-    fs.writeFileSync(workspaceYamlPath, originalWorkspaceYaml);
+    if (originalWorkspaceYaml === null) {
+      fs.removeSync(workspaceYamlPath);
+    } else {
+      fs.writeFileSync(workspaceYamlPath, originalWorkspaceYaml);
+    }
   }
   return depsMap;
 }

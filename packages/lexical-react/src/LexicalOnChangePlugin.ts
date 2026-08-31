@@ -7,18 +7,22 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {type EditorState, HISTORY_MERGE_TAG, type LexicalEditor} from 'lexical';
+import {
+  $getRoot,
+  $isTextNode,
+  type EditorState,
+  HISTORY_MERGE_TAG,
+  type LexicalEditor,
+  type LexicalNode,
+} from 'lexical';
 
 import useLayoutEffect from './shared/useLayoutEffect';
 
-/**
- * Calls `onChange` with the latest {@link EditorState} whenever the editor
- * updates. By default, updates that only change the selection, and updates that
- * are part of a history merge, are ignored; set `ignoreSelectionChange` or
- * `ignoreHistoryMergeTagChange` to control that filtering.
- *
- * @returns `null`, this plugin renders no DOM of its own.
- */
+type LexicalInternalNode = LexicalNode & {
+  __format?: number;
+  __parent?: string;
+};
+
 export function OnChangePlugin({
   ignoreHistoryMergeTagChange = true,
   ignoreSelectionChange = false,
@@ -45,6 +49,108 @@ export function OnChangePlugin({
             (ignoreHistoryMergeTagChange && tags.has(HISTORY_MERGE_TAG)) ||
             prevEditorState.isEmpty()
           ) {
+            return;
+          }
+
+          let isContentUnchanged = false;
+
+          prevEditorState.read(() => {
+            const prevText = $getRoot().getTextContent();
+
+            editorState.read(() => {
+              const currentText = $getRoot().getTextContent();
+
+              if (prevText === currentText) {
+                let hasFormatChange = false;
+
+                for (const key of dirtyLeaves.keys()) {
+                  const prevNode = prevEditorState._nodeMap.get(key) as
+                    | LexicalInternalNode
+                    | undefined;
+                  const currentNode = editorState._nodeMap.get(key) as
+                    | LexicalInternalNode
+                    | undefined;
+
+                  if (prevNode && currentNode) {
+                    const prevFormat =
+                      prevNode.__format ??
+                      ($isTextNode(prevNode) ? prevNode.getFormat() : null);
+                    const currentFormat =
+                      currentNode.__format ??
+                      ($isTextNode(currentNode)
+                        ? currentNode.getFormat()
+                        : null);
+
+                    if (
+                      prevFormat !== null &&
+                      currentFormat !== null &&
+                      prevFormat !== currentFormat
+                    ) {
+                      hasFormatChange = true;
+                      break;
+                    }
+                  }
+                }
+
+                if (!hasFormatChange) {
+                  const parentKeys = new Set<string>();
+                  const dirtyKeys = new Set<string>([
+                    ...Array.from(dirtyElements.keys()),
+                    ...Array.from(dirtyLeaves.keys()),
+                  ]);
+
+                  for (const key of dirtyKeys) {
+                    const prevNode = prevEditorState._nodeMap.get(key) as
+                      | LexicalInternalNode
+                      | undefined;
+                    if (
+                      prevNode &&
+                      '_parent' in prevNode &&
+                      prevNode.__parent
+                    ) {
+                      parentKeys.add(prevNode.__parent);
+                    }
+
+                    const currentNode = editorState._nodeMap.get(key) as
+                      | LexicalInternalNode
+                      | undefined;
+                    if (
+                      currentNode &&
+                      '_parent' in currentNode &&
+                      currentNode.__parent
+                    ) {
+                      parentKeys.add(currentNode.__parent);
+                    }
+                  }
+
+                  let prevParentsJSON = '';
+                  let currentParentsJSON = '';
+
+                  for (const parentKey of parentKeys) {
+                    const prevParent = prevEditorState._nodeMap.get(parentKey);
+                    const currentParent = editorState._nodeMap.get(parentKey);
+
+                    if (prevParent) {
+                      prevParentsJSON += JSON.stringify(
+                        prevParent.exportJSON(),
+                      );
+                    }
+                    if (currentParent) {
+                      currentParentsJSON += JSON.stringify(
+                        currentParent.exportJSON(),
+                      );
+                    }
+                  }
+
+                  if (prevParentsJSON === currentParentsJSON) {
+                    isContentUnchanged = true;
+                  }
+                }
+              }
+            });
+          });
+
+          if (isContentUnchanged) {
             return;
           }
 

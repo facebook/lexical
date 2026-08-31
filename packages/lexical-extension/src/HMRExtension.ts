@@ -30,7 +30,7 @@ import {
 import {getPeerDependencyFromEditor} from './getPeerDependencyFromEditor';
 import {LexicalBuilder} from './LexicalBuilder';
 import {RootElementExtension} from './RootElementExtension';
-import {effect} from './signals';
+import {effect, type ReadonlySignal, type Signal, signal} from './signals';
 import {WatchEditableExtension} from './WatchEditableExtension';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -47,6 +47,26 @@ const __DEV__ = process.env.NODE_ENV !== 'production';
  */
 export interface HotContext {
   readonly data: Record<string, unknown>;
+}
+
+/** The state {@link HMRExtension} creates before the editor exists. */
+interface HMRInit {
+  restoreCount: Signal<number>;
+}
+
+/** The output of {@link HMRExtension}. */
+export interface HMROutput {
+  /**
+   * Increments every time this editor's state has been restored from the
+   * module instance that was replaced.
+   *
+   * Anything that derives editor state from somewhere else has to run again
+   * afterwards, and can depend on this signal to be told when: a nested editor
+   * wired up by `SharedHistoryExtension` re-points its `HistoryState` at its
+   * parent's, which a restore would otherwise have replaced with one of its
+   * own.
+   */
+  restoreCount: ReadonlySignal<number>;
 }
 
 /** Configuration for {@link HMRExtension}. */
@@ -475,7 +495,16 @@ function restoreHistoryState(
  * documents need distinct namespaces (or ids) even when they are never on
  * screen at the same time.
  */
-export const HMRExtension = defineExtension({
+// The type arguments are explicit because `afterRegistration` is declared
+// before `build`, and inferring the output from a later property while an
+// earlier one already needs it collapses the output to `{}` — which a peer
+// reading `restoreCount` would then not find.
+export const HMRExtension = defineExtension<
+  HMRConfig,
+  typeof HMR_EXTENSION_NAME,
+  HMROutput,
+  HMRInit
+>({
   afterRegistration(editor, {hot, id: configId}, state) {
     if (!hot) {
       return () => {};
@@ -503,6 +532,7 @@ export const HMRExtension = defineExtension({
       HISTORY_EXTENSION_NAME,
     );
 
+    let restored = false;
     const saved = getSavedHMRState(hot, hmrKey);
     if (isValidHMRSavedState(saved)) {
       try {
@@ -538,6 +568,7 @@ export const HMRExtension = defineExtension({
               );
             }
           } else if (!restoredState.isEmpty()) {
+            restored = true;
             // This is the one state whose JSON the new node classes have never
             // seen, so let setEditorState normalize it the way it normalizes
             // anything freshly parsed. The history entries deliberately keep
@@ -546,7 +577,9 @@ export const HMRExtension = defineExtension({
             // whole document and re-run every transform over it.
             restoredState._parsed = true;
             editor.setEditorState(restoredState, {tag: HISTORY_MERGE_TAG});
-            if (serialized.history !== null) {
+            // `!= null`, matching the validator: a payload from another
+            // build may have no `history` at all rather than a null one.
+            if (serialized.history != null) {
               if (historyPeer) {
                 historyPeer.output.historyState.value = restoreHistoryState(
                   serialized.history,
@@ -571,9 +604,19 @@ export const HMRExtension = defineExtension({
       }
     }
 
+    if (restored) {
+      // Announced after everything this extension restores is in place, so
+      // that an extension re-deriving state from it (SharedHistoryExtension,
+      // say) sees the finished editor rather than a half-restored one.
+      state.getInitResult().restoreCount.value++;
+    }
+
     const editorStateSignal = state.getDependency(EditorStateExtension).output;
     const editableSignal = state.getDependency(WatchEditableExtension).output;
     const rootElementSignal = state.getDependency(RootElementExtension).output;
+    // What the last write described, so that a root element coming or going
+    // can be told apart from a change worth saving.
+    let written: {editable: boolean; editorState: EditorState} | null = null;
     return effect(() => {
       const editorState = editorStateSignal.value;
       const editable = editableSignal.value;
@@ -582,6 +625,23 @@ export const HMRExtension = defineExtension({
       if (__DEV__ && mounted && isValidHMRSavedState(prev)) {
         warnOnSharedKey(hmrKey, prev, editor);
       }
+      if (
+        written !== null &&
+        written.editorState === editorState &&
+        written.editable === editable
+      ) {
+        // Only the root element changed — this editor mounting, unmounting, or
+        // being disposed. There is nothing new to save, and writing here would
+        // overwrite the snapshot of the editor that replaced this one: the
+        // composer builds the replacement during render and disposes this one
+        // afterwards, and disposing clears the root element.
+        if (isValidHMRSavedState(prev) && prev.owner === editor) {
+          // Still ours, so keep the diagnostic current.
+          prev.mounted = mounted;
+        }
+        return;
+      }
+      written = {editable, editorState};
       // On first mount the state is empty before $initialEditorState runs;
       // keep the previously saved state instead of overwriting with empty.
       const validPrev =
@@ -608,11 +668,13 @@ export const HMRExtension = defineExtension({
       hot.data[hmrKey] = nextState;
     });
   },
+  build: (_editor, _config, state): HMROutput => state.getInitResult(),
   config: safeCast<HMRConfig>({hot: null}),
   dependencies: [
     EditorStateExtension,
     RootElementExtension,
     WatchEditableExtension,
   ],
+  init: (): HMRInit => ({restoreCount: signal(0)}),
   name: HMR_EXTENSION_NAME,
 });

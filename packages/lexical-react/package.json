@@ -1095,6 +1095,42 @@
         "default": "./dist/LexicalMarkdownShortcutPlugin.js"
       }
     },
+    "./LexicalMenuOption": {
+      "source": "./src/LexicalMenuOption.ts",
+      "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalMenuOption.d.ts",
+        "development": "./dist/LexicalMenuOption.dev.mjs",
+        "production": "./dist/LexicalMenuOption.prod.mjs",
+        "node": "./dist/LexicalMenuOption.node.mjs",
+        "default": "./dist/LexicalMenuOption.mjs"
+      },
+      "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalMenuOption.d.ts",
+        "development": "./dist/LexicalMenuOption.dev.js",
+        "production": "./dist/LexicalMenuOption.prod.js",
+        "default": "./dist/LexicalMenuOption.js"
+      }
+    },
+    "./LexicalMenuOption.js": {
+      "source": "./src/LexicalMenuOption.ts",
+      "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalMenuOption.d.ts",
+        "development": "./dist/LexicalMenuOption.dev.mjs",
+        "production": "./dist/LexicalMenuOption.prod.mjs",
+        "node": "./dist/LexicalMenuOption.node.mjs",
+        "default": "./dist/LexicalMenuOption.mjs"
+      },
+      "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalMenuOption.d.ts",
+        "development": "./dist/LexicalMenuOption.dev.js",
+        "production": "./dist/LexicalMenuOption.prod.js",
+        "default": "./dist/LexicalMenuOption.js"
+      }
+    },
     "./LexicalNestedComposer": {
       "source": "./src/LexicalNestedComposer.tsx",
       "import": {

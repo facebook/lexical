@@ -17,6 +17,7 @@ import {
   createEmptyHistoryState,
   HistoryExtension,
   type HistoryStateEntry,
+  SharedHistoryExtension,
 } from '@lexical/history';
 import {
   $createNodeSelection,
@@ -1292,6 +1293,110 @@ describe('HMRExtension', () => {
         );
       });
     }
+  });
+
+  test('keeps a nested editor sharing its parent history through a cycle', () => {
+    const hot = createMockHotContext();
+    const build = () => {
+      const parent = buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $setupContent('parent'),
+          dependencies: [
+            HistoryExtension,
+            configExtension(HMRExtension, {hot, id: 'parent'}),
+          ],
+          name: 'shared-parent',
+          namespace: 'shared-history-ns',
+        }),
+      );
+      const nested = buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $setupContent('nested'),
+          dependencies: [
+            SharedHistoryExtension,
+            configExtension(HMRExtension, {hot, id: 'nested'}),
+          ],
+          name: 'shared-nested',
+          namespace: 'shared-history-ns',
+          parentEditor: parent,
+        }),
+      );
+      return {nested, parent};
+    };
+
+    {
+      const {nested, parent} = build();
+      expect(historyStateOf(nested)).toBe(historyStateOf(parent));
+      parent.update(() => $setupContent('parent typed'), {discrete: true});
+      // An edit the nested editor records itself, so that its own snapshot
+      // carries history for the restore to rebuild
+      nested.update(() => $setupContent('nested typed'), {
+        discrete: true,
+        tag: HISTORY_PUSH_TAG,
+      });
+      expect(
+        entriesOf(historyStateOf(nested)).some(
+          entry => entry.editor === nested,
+        ),
+      ).toBe(true);
+      nested.dispose();
+      parent.dispose();
+    }
+
+    {
+      const {nested, parent} = build();
+      // Restoring hands each editor a rebuilt HistoryState; the nested editor
+      // has to end up back on its parent's, not on one of its own
+      expect(historyStateOf(nested)).toBe(historyStateOf(parent));
+      nested.dispose();
+      parent.dispose();
+    }
+  });
+
+  test('restores a payload whose history is absent rather than null', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(() => $setupContent('typed'), {discrete: true});
+    }
+
+    // What a build that did not record history at all would leave behind
+    corruptPayload(hot, payload => {
+      delete (payload as {history?: unknown}).history;
+    });
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      using editor = createEditor(hot);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('typed');
+      });
+      // Restored, so nothing to warn about — the misleading pairing was a
+      // restored document plus "Starting fresh"
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('does not overwrite the replacement snapshot when the old editor is disposed', () => {
+    const hot = createMockHotContext();
+    const key = `lexicalHMR:${TEST_NAMESPACE}`;
+
+    const previous = createEditor(hot);
+    $mount(previous);
+    previous.update(() => $setupContent('typed'), {discrete: true});
+
+    // The overlap a reload produces: the replacement is built while the
+    // editor it replaces is still mounted, and disposed afterwards
+    using next = createEditor(hot);
+    expect(savedSnapshot(hot, key)).toHaveProperty('owner', next);
+    previous.dispose();
+    // Disposing clears the root element, which must not put the torn-down
+    // editor's snapshot back over the replacement's
+    expect(savedSnapshot(hot, key)).toHaveProperty('owner', next);
+    expect(savedSnapshot(hot, key).editorState).toBe(next.getEditorState());
   });
 
   test('leaves behind history entries recorded by another editor', () => {

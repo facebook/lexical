@@ -49,7 +49,7 @@ import {
   useState,
 } from 'react';
 
-import {createWebsocketProvider} from '../collaboration';
+import {createWebsocketProvider, skipCollaborationInit} from '../collaboration';
 import {useSettings} from '../context/SettingsContext';
 import brokenImage from '../images/image-broken.svg';
 import TreeViewPlugin from '../plugins/TreeViewPlugin';
@@ -495,7 +495,7 @@ export default function ImageComponent({
                 <CollaborationPlugin
                   id={caption.getKey()}
                   providerFactory={createWebsocketProvider}
-                  shouldBootstrap={true}
+                  shouldBootstrap={!skipCollaborationInit}
                   selectionHighlight={true}
                 />
               ) : null}

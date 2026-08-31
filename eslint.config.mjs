@@ -75,6 +75,12 @@ export default [
       '**/node_modules/',
       '.ts-temp/',
       '**/.docusaurus/',
+      // Build output that only the package's own .gitignore names, which
+      // ESLint does not read: next build writes .next/, wxt writes .output/.
+      // Linting a bundle is meaningless and the rules that walk its AST can
+      // fail outright on generated code.
+      '**/.next/',
+      '**/.output/',
       'playwright-report/',
       'test-results/',
       'examples/*svelte*/',

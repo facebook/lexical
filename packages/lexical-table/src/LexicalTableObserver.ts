@@ -230,6 +230,19 @@ export class TableObserver {
   tableSelection: TableSelection | null;
   hasHijackedSelectionStyles: boolean;
   isSelecting: boolean;
+  /**
+   * Whether the pointer gesture currently in progress has travelled beyond
+   * the tap slop box, i.e. it is a drag rather than a tap. Only a drag may
+   * start a table selection from touch input. Set by the pointermove handler
+   * and reset whenever the gesture ends.
+   */
+  isPointerDrag: boolean;
+  /**
+   * The cell the pointer gesture currently in progress started on, null when
+   * no gesture is in progress. A drag that never leaves this cell is
+   * selecting text within it, not selecting cells.
+   */
+  pointerStartCell: TableDOMCell | null;
   pointerType: string | null;
   abortController: AbortController;
   listenerOptions: {signal: AbortSignal};
@@ -255,6 +268,8 @@ export class TableObserver {
     this.focusCell = null;
     this.hasHijackedSelectionStyles = false;
     this.isSelecting = false;
+    this.isPointerDrag = false;
+    this.pointerStartCell = null;
     this.pointerType = null;
     this.abortController = new AbortController();
     this.listenerOptions = {signal: this.abortController.signal};

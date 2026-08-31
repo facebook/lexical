@@ -22,6 +22,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
@@ -73,10 +74,29 @@ class HostNode extends ElementNode {
   }
 }
 
+// A block that removes itself instead of replacing itself with a paragraph.
+// `collapseAtStart` is free to do that, and it can leave the root childless --
+// which is not a usable editor state.
+class VanishingNode extends ElementNode {
+  $config() {
+    return this.config('issue5835_vanishing', {extends: ElementNode});
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('aside');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  collapseAtStart(): true {
+    this.remove();
+    return true;
+  }
+}
+
 const ext = defineExtension({
   dependencies: [RichTextExtension, ListExtension, CodeExtension],
   name: '[5835]',
-  nodes: [StubbornNode, HostNode, TestShadowRootNode],
+  nodes: [StubbornNode, VanishingNode, HostNode, TestShadowRootNode],
 });
 
 /**
@@ -380,7 +400,90 @@ describe('select-all + delete collapses to an empty paragraph (#5835)', () => {
 
       expect(readRootTypes(editor)).toEqual(['issue5835_stubborn']);
     });
+
+    // The opt-out has to come from `collapseAtStart` returning false, not from
+    // the loop's progress guard: walking on into the RootNode -- whose
+    // `collapseAtStart` returns true unconditionally -- would report every
+    // branch as handled.
+    test.for([true, false])(
+      'the opt-out holds in both directions (isBackward: %s)',
+      isBackward => {
+        using editor = createEditor();
+        editor.update(
+          () => {
+            $getRoot()
+              .clear()
+              .append(new StubbornNode().append($createTextNode('note')));
+          },
+          {discrete: true},
+        );
+
+        selectAllAndDelete(editor, 'deleteCharacter', isBackward);
+
+        expect(readRootTypes(editor)).toEqual(['issue5835_stubborn']);
+      },
+    );
+
+    // A `collapseAtStart` that removes its block rather than replacing it would
+    // otherwise leave the root with no children at all.
+    test.for([true, false])(
+      'a block that removes itself still leaves a paragraph (isBackward: %s)',
+      isBackward => {
+        using editor = createEditor();
+        editor.update(
+          () => {
+            $getRoot()
+              .clear()
+              .append(new VanishingNode().append($createTextNode('poof')));
+          },
+          {discrete: true},
+        );
+
+        selectAllAndDelete(editor, 'deleteCharacter', isBackward);
+
+        expect(readRootTypes(editor)).toEqual(['paragraph']);
+      },
+    );
   });
+
+  // Known limitation, pinned so it cannot drift silently. A non-shadow quote
+  // holding block children ends up holding an empty paragraph rather than
+  // dissolving: unwrapping it means calling `QuoteNode.collapseAtStart` on
+  // block children, which nests a paragraph inside a paragraph -- a
+  // pre-existing bug reachable by plain Backspace, independent of this
+  // collapse. Still an improvement on leaving the bullet list behind.
+  test.for([true, false])(
+    'a quote wrapping a list keeps the quote (isBackward: %s)',
+    isBackward => {
+      using editor = createEditor();
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createQuoteNode().append(
+                $createListNode('bullet').append(
+                  $createListItemNode().append($createTextNode('one')),
+                ),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+
+      selectAllAndDelete(editor, 'deleteCharacter', isBackward);
+
+      expect(readRootTypes(editor)).toEqual(['quote']);
+      editor.read(() => {
+        const quote = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(quote), 'Expected an ElementNode');
+        expect(quote.getChildren().map(n => n.getType())).toEqual([
+          'paragraph',
+        ]);
+        expect($getRoot().getTextContent()).toBe('');
+      });
+    },
+  );
 
   test('a slot host still holding slot content is not dissolved', () => {
     using editor = createEditor();

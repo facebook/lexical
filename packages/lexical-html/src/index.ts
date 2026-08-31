@@ -285,9 +285,14 @@ export function $generateHtmlFromNodes(
  * so `<p>a<br></p>` rendered as a single line and re-imported without the
  * LineBreakNode at all.
  *
- * Emit the same terminator here. The importers then drop the terminator and
- * keep the authored break, which makes the export/import round trip lossless
- * without relaxing the rendering-faithful import rules.
+ * Emit the same terminator here, marked with the same
+ * `data-lexical-managed-linebreak` attribute the reconciler uses, so exported
+ * HTML and a scrape of the live DOM describe a trailing break identically and
+ * a consumer can tell the terminator apart from authored content. The
+ * importers drop it and keep the authored break, which makes the export/import
+ * round trip lossless without relaxing the rendering-faithful import rules —
+ * they match on position, so the marker is metadata rather than load-bearing
+ * and a sanitizer that strips it changes nothing.
  */
 function $appendTerminatingLineBreak(
   element: HTMLElement | DocumentFragment,
@@ -301,7 +306,10 @@ function $appendTerminatingLineBreak(
     lastChild !== null &&
     lastChild.nodeName === 'BR'
   ) {
-    element.append($getDocument().createElement('br'));
+    const br = $getDocument().createElement('br');
+    // Same marker as ElementDOMSlot.insertManagedLineBreak writes in the live DOM.
+    br.setAttribute('data-lexical-managed-linebreak', 'true');
+    element.append(br);
   }
 }
 

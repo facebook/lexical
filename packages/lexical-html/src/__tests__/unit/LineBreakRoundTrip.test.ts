@@ -86,14 +86,31 @@ describe('trailing LineBreakNode survives an HTML round trip', () => {
       {discrete: true},
     );
     expect(exportHtml(editor)).toBe(
-      '<p><span style="white-space: pre-wrap;">a</span><br><br></p>',
+      '<p><span style="white-space: pre-wrap;">a</span><br>' +
+        '<br data-lexical-managed-linebreak="true"></p>',
     );
   });
 
   test('a lone line break exports with a terminating <br>', () => {
     using editor = buildEditor();
     editor.update(() => $seed($createLineBreakNode), {discrete: true});
-    expect(exportHtml(editor)).toBe('<p><br><br></p>');
+    expect(exportHtml(editor)).toBe(
+      '<p><br><br data-lexical-managed-linebreak="true"></p>',
+    );
+  });
+
+  test('the exported terminator carries the reconciler marker', () => {
+    // Same attribute ElementDOMSlot.insertManagedLineBreak writes in the live
+    // DOM, so an export and a scrape of the live DOM agree.
+    using editor = buildEditor();
+    editor.update(
+      () => $seed(() => $createTextNode('a'), $createLineBreakNode),
+      {discrete: true},
+    );
+    const brs = parse(exportHtml(editor)).querySelectorAll('br');
+    expect(brs).toHaveLength(2);
+    expect(brs[0].hasAttribute('data-lexical-managed-linebreak')).toBe(false);
+    expect(brs[1].getAttribute('data-lexical-managed-linebreak')).toBe('true');
   });
 
   test('an interior line break exports unchanged', () => {
@@ -184,6 +201,31 @@ describe('trailing LineBreakNode survives an HTML round trip', () => {
           expect(childTypes($import(editor, html))).toEqual([
             'text',
             'linebreak',
+            'linebreak',
+          ]);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('restores a trailing line break with the marker stripped', () => {
+      // The marker is metadata; the importers match on position, so a
+      // sanitizer that drops unknown data-* attributes changes nothing.
+      using editor = buildEditor();
+      editor.update(
+        () => $seed(() => $createTextNode('a'), $createLineBreakNode),
+        {discrete: true},
+      );
+      const html = exportHtml(editor).replaceAll(
+        ' data-lexical-managed-linebreak="true"',
+        '',
+      );
+      expect(html).not.toContain('data-lexical-managed-linebreak');
+
+      editor.update(
+        () => {
+          expect(childTypes($import(editor, html))).toEqual([
+            'text',
             'linebreak',
           ]);
         },

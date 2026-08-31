@@ -27,6 +27,7 @@ import {
   $getSiblingCaret,
   $getTextNodeOffset,
   $insertNodeToNearestRootAtCaret,
+  $isBlockFullySelected,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -1979,6 +1980,12 @@ export class RangeSelection implements BaseSelection {
         }
       }
     }
+    if (!wasCollapsed) {
+      // Widen a whole-document range to the blocks themselves, so this removes
+      // them outright rather than emptying them and leaving the last one behind
+      // as an empty heading/quote/list (#5835).
+      INTERNAL_$expandSelectionToWholeDocument(this);
+    }
     this.removeText();
     if (
       isBackward &&
@@ -2006,6 +2013,7 @@ export class RangeSelection implements BaseSelection {
    * @param isBackward whether or not the selection is backwards.
    */
   deleteLine(isBackward: boolean): void {
+    const wasCollapsed = this.isCollapsed();
     // A decorator-host slot's DOM is relocated out of document order (the
     // host's React decorate() mounts the slot container wherever it wants),
     // so a deletion that starts inside one cannot be expressed by the
@@ -2048,6 +2056,15 @@ export class RangeSelection implements BaseSelection {
         this.focus.set(this.anchor.key, this.anchor.offset, this.anchor.type);
         this.deleteCharacter(isBackward);
       } else {
+        if (!wasCollapsed) {
+          // Cmd+A then Cmd+Backspace in a document that is a single block wipes
+          // it, so remove the block rather than emptying it (#5835). Extending
+          // a collapsed caret to the line boundary is an ordinary delete, not a
+          // wipe, so it leaves the block alone -- as Backspace does. A range
+          // spanning blocks takes the branch above, which deletes nothing at
+          // all: pre-existing behavior, left alone.
+          INTERNAL_$expandSelectionToWholeDocument(this);
+        }
         this.removeText();
       }
     }
@@ -2060,6 +2077,7 @@ export class RangeSelection implements BaseSelection {
    * @param isBackward whether or not the selection is backwards.
    */
   deleteWord(isBackward: boolean): void {
+    const wasCollapsed = this.isCollapsed();
     if (this.isCollapsed()) {
       const anchor = this.anchor;
       const anchorNode: TextNode | ElementNode | null = anchor.getNode();
@@ -2074,6 +2092,13 @@ export class RangeSelection implements BaseSelection {
       // with navigating through the parent element
       this.deleteCharacter(isBackward);
     } else {
+      if (!wasCollapsed) {
+        // Select-all then Alt/Ctrl+Backspace wipes the document just as
+        // Backspace does, so remove the blocks (#5835). Extending a collapsed
+        // caret over a word is an ordinary delete, not a wipe, so it leaves the
+        // block alone -- as Backspace does.
+        INTERNAL_$expandSelectionToWholeDocument(this);
+      }
       this.removeText();
     }
   }
@@ -2376,6 +2401,38 @@ function $collapseAtStart(
     }
   }
   return false;
+}
+
+/**
+ * When `selection` covers the whole document, widen it to the root's own
+ * element points, so the range describes the top-level blocks themselves
+ * rather than only the text inside them.
+ *
+ * A delete over that range then removes the blocks outright and leaves the
+ * editor on a fresh empty paragraph, instead of gutting them and leaving an
+ * empty heading, quote or list behind that keeps its type and styles the next
+ * character typed (#5835). It also keeps a cut honest: what lands on the
+ * clipboard is what leaves the document, so Cmd+X then Cmd+V restores the
+ * blocks rather than their bare text.
+ *
+ * Widening rather than deleting-then-repairing is what makes this safe for
+ * every block type. The range simply contains the blocks, so nothing has to
+ * decide whether a heading, a nested list, a code block or a third-party node
+ * should dissolve, and no node is destroyed that the user did not select.
+ *
+ * A no-op for anything else: a range that stops short of either end is an
+ * ordinary edit inside the blocks it touches, and a select-all scoped to a
+ * named slot never covers the root.
+ */
+export function INTERNAL_$expandSelectionToWholeDocument(
+  selection: RangeSelection,
+): void {
+  const root = $getRoot();
+  if (root.isEmpty() || !$isBlockFullySelected(root, selection)) {
+    return;
+  }
+  selection.anchor.set(root.getKey(), 0, 'element');
+  selection.focus.set(root.getKey(), root.getChildrenSize(), 'element');
 }
 
 function $swapPoints(selection: RangeSelection): void {

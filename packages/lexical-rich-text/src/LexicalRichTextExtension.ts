@@ -17,6 +17,7 @@ import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {
   configExtension,
   defineExtension,
+  mergeRegister,
   safeCast,
   shallowMergeConfig,
   type TextFormatType,
@@ -29,6 +30,7 @@ import {
   HeadingNode,
   QuoteNode,
   registerRichText,
+  registerShadowRootQuoteEscape,
   type ShouldHandlePasteAsFiles,
   type TriggerConfig,
 } from './index';
@@ -61,6 +63,17 @@ import {RichTextImportRules} from './RichTextImportExtension';
  */
 export interface RichTextConfig {
   escapeFormatTriggers: EscapeFormatTriggerConfig;
+  /**
+   * When `true`, the arrow keys add a paragraph before or after a shadow root
+   * QuoteNode (`$createQuoteNode({shadowRoot: true})`) that is the first or
+   * last block in its parent, so the quote can be escaped. Such a quote holds
+   * block-level children, so the caret is always in a nested block and neither
+   * Enter nor the generic block cursor navigation can move past it.
+   *
+   * Defaults to `false`; a quote that holds inline content needs no escape and
+   * is unaffected either way.
+   */
+  shadowRootQuoteEscapeWithArrows: boolean;
   shouldHandlePasteAsFiles: ShouldHandlePasteAsFiles;
 }
 
@@ -70,6 +83,7 @@ const DEFAULT_RICH_TEXT_CONFIG: RichTextConfig = {
     lowercase: {enter: true, space: true, tab: true},
     uppercase: {enter: true, space: true, tab: true},
   },
+  shadowRootQuoteEscapeWithArrows: false,
   shouldHandlePasteAsFiles: defaultShouldHandlePasteAsFiles,
 };
 
@@ -130,12 +144,20 @@ export const RichTextExtension = defineExtension({
   nodes: () => [HeadingNode, QuoteNode],
   register: (editor, _config, state) =>
     effect(() => {
-      const {escapeFormatTriggers, shouldHandlePasteAsFiles} =
-        state.getOutput();
-      return registerRichText(
-        editor,
+      const {
         escapeFormatTriggers,
+        shadowRootQuoteEscapeWithArrows,
         shouldHandlePasteAsFiles,
+      } = state.getOutput();
+      return mergeRegister(
+        registerRichText(
+          editor,
+          escapeFormatTriggers,
+          shouldHandlePasteAsFiles,
+        ),
+        ...(shadowRootQuoteEscapeWithArrows.value
+          ? [registerShadowRootQuoteEscape(editor)]
+          : []),
       );
     }),
 });

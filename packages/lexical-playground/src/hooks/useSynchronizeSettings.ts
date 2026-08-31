@@ -24,6 +24,7 @@ import {
 } from '@lexical/link';
 import {CheckListExtension, ListExtension} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {RichTextExtension} from '@lexical/rich-text';
 import {TableExtension} from '@lexical/table';
 import {useEffect} from 'react';
 
@@ -130,6 +131,13 @@ export function synchronizeSettingsToSignals(
     );
     if (markdownShortcuts) {
       markdownShortcuts.shadowRootQuotes.value = settings.shadowRootQuotes;
+    }
+    const richText = peerOutput(editor, RichTextExtension);
+    if (richText) {
+      // A shadow root quote needs the arrow-key escape to be reachable past;
+      // see RichTextConfig.shadowRootQuoteEscapeWithArrows.
+      richText.shadowRootQuoteEscapeWithArrows.value =
+        settings.shadowRootQuotes;
     }
   });
 }

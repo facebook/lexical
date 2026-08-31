@@ -86,6 +86,7 @@ export type RichTextConfig = {
 };
 
 declare export function registerRichText(editor: LexicalEditor, escapeFormatTriggers?: EscapeFormatTriggerConfig, shouldHandlePasteAsFiles?: ShouldHandlePasteAsFiles): () => void;
+declare export function registerShadowRootQuoteEscape(editor: LexicalEditor): () => void;
 
 declare export function defaultShouldHandlePasteAsFiles(files: Array<File>, hasTextContent: boolean): boolean;
 

@@ -24,6 +24,8 @@ import {
 import {
   $getNearestBlockElementAncestorOrThrow,
   $handleIndentAndOutdent,
+  $onEscapeDown,
+  $onEscapeUp,
   eventFiles,
   objectKlassEquals,
 } from '@lexical/utils';
@@ -79,6 +81,7 @@ import {
   type CaretDirection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_LOW,
   type CommandPayloadType,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
@@ -738,6 +741,52 @@ const DEFAULT_ESCAPE_FORMAT_TRIGGERS: EscapeFormatTriggerConfig = {
   lowercase: {enter: true, space: true, tab: true},
   uppercase: {enter: true, space: true, tab: true},
 };
+
+/**
+ * A shadow root QuoteNode holds block-level children, so the caret always sits
+ * in a nested block and the quote is never the selection's own block: neither
+ * Enter (which splits the nested block) nor the generic shadow root block
+ * cursor navigation can move past it when it is the last block in its parent.
+ * It therefore needs the same arrow-key escape as CodeNode
+ * (see `CodeIndentExtension`'s `escapeWithArrows`).
+ */
+function $isShadowRootQuoteNode(node?: LexicalNode | null): node is QuoteNode {
+  return $isQuoteNode(node) && node.isShadowRoot();
+}
+
+/**
+ * Adds a paragraph before or after a shadow root quote when the caret is at
+ * its edge and it is the first or last block in its parent, so the quote can
+ * be escaped with the arrow keys.
+ */
+export function registerShadowRootQuoteEscape(
+  editor: LexicalEditor,
+): () => void {
+  return mergeRegister(
+    editor.registerCommand(
+      KEY_ARROW_DOWN_COMMAND,
+      event =>
+        event.altKey ? false : $onEscapeDown($isShadowRootQuoteNode, event),
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      KEY_ARROW_RIGHT_COMMAND,
+      event => $onEscapeDown($isShadowRootQuoteNode, event),
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      KEY_ARROW_UP_COMMAND,
+      event =>
+        event.altKey ? false : $onEscapeUp($isShadowRootQuoteNode, event),
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      KEY_ARROW_LEFT_COMMAND,
+      event => $onEscapeUp($isShadowRootQuoteNode, event),
+      COMMAND_PRIORITY_LOW,
+    ),
+  );
+}
 
 function $tryEnterFromBlockCursor(
   selection: RangeSelection,

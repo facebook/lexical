@@ -1572,8 +1572,10 @@ test.describe('Selection', () => {
     // Move the mouse to the last cell
     await lastCell.hover();
     await page.mouse.down();
-    // Move the mouse to the end of the document
-    await page.mouse.move(500, 500);
+    // Move the mouse to the end of the document. `steps` matters: Firefox 152
+    // does not begin a drag-selection from a single mousemove that teleports
+    // out of the cell, and a real mouse never produces one either.
+    await page.mouse.move(500, 500, {steps: 10});
 
     const expectedSelection = createHumanReadableSelection(
       'the full table from beginning to the end of the text in the last cell',

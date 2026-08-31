@@ -20,9 +20,11 @@ import {$getSlotFrame, $getSlotNames} from '../LexicalSlot';
 import {
   $copyNode,
   $getNodeByKeyOrThrow,
+  $getRoot,
   $isRootOrShadowRoot,
   $isShadowRootNode,
   $removeFromParent,
+  $restoreEmptyContainerParagraph,
   $setSelection,
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
@@ -248,6 +250,19 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   let sliceState = sliceMode;
   const range = $getCaretRangeInDirection(initialRange, nextDirection);
 
+  // The nearest root or shadow root the removal happens inside, captured
+  // before anything is detached; see the repair below.
+  let rangeContainer: null | LexicalNode = range.anchor.origin;
+  while (rangeContainer !== null && !$isRootOrShadowRoot(rangeContainer)) {
+    rangeContainer = rangeContainer.getParent();
+  }
+  // A child of the container, sampled while it still has one: it is what
+  // tells $restoreEmptyContainerParagraph whether this container holds blocks
+  // (a table cell) or structure (a table's rows).
+  const rangeContainerChild = $isElementNode(rangeContainer)
+    ? rangeContainer.getFirstChild()
+    : null;
+
   const anchorCandidates = $getAnchorCandidates(range.anchor, rootMode);
   const focusCandidates = $getAnchorCandidates(
     range.focus.getFlipped(),
@@ -406,6 +421,23 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
         element.remove(true);
       }
     }
+  }
+
+  // A range that covers every child of its container (a select-all over a
+  // document that is a single shadow root, or over everything inside one)
+  // removes them all and leaves nothing to put a caret in. Restore the empty
+  // paragraph the container would otherwise be missing, so that deleting all
+  // of a container's content behaves like deleting a document made of
+  // ordinary paragraphs. The range is always attached (the candidate walk
+  // above throws otherwise), so an empty container here is always this call's
+  // doing. `rangeContainer` is itself removed when the range covered it — the
+  // empty-ancestor walks above climb out of it — in which case the root is
+  // what needs the paragraph.
+  if (
+    $restoreEmptyContainerParagraph(rangeContainer, rangeContainerChild) ===
+    null
+  ) {
+    $restoreEmptyContainerParagraph($getRoot(), null);
   }
 
   // note this caret can be in either direction

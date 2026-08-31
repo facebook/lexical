@@ -268,7 +268,7 @@ describe('Regression #4815', () => {
     });
   });
 
-  test('preserves a pasted block after a single line break', () => {
+  test('keeps the existing merge behavior after a single line break', () => {
     const editor = createTestEditor();
     let paragraph: ElementNode;
 
@@ -286,17 +286,19 @@ describe('Regression #4815', () => {
     );
 
     editor.read(() => {
-      // One line break is enough: the point is at the start of its line, so
-      // there is nothing to its left for the heading to be flattened into.
+      // A single line break does not make an empty line, so the first pasted
+      // block still merges into the current one and the dangling break is
+      // dropped. The point is just as much at the start of a line here, but
+      // acting on that would also change what a lone pasted paragraph does
+      // (see the test below), which is out of scope for this fix.
       expect($describeRoot()).toEqual([
-        'paragraph("Line of text")',
-        'test-heading("Heading 3")',
+        'paragraph("Line of text\\nHeading 3")',
         'paragraph("Some paragraphParagraph 1")',
       ]);
     });
   });
 
-  test('gives a lone pasted paragraph its own block at the start of a line', () => {
+  test('gives a lone pasted paragraph its own block after an empty line', () => {
     const editor = createTestEditor();
     let paragraph: ElementNode;
 
@@ -305,10 +307,11 @@ describe('Regression #4815', () => {
         paragraph = $createParagraphNode().append(
           $createTextNode('Line of text'),
           $createLineBreakNode(),
+          $createLineBreakNode(),
           $createTextNode('Paragraph 1'),
         );
         $getRoot().append(paragraph);
-        paragraph.select(2, 2);
+        paragraph.select(3, 3);
         const selection = $getSelection();
         assert($isRangeSelection(selection), 'Expected RangeSelection');
         selection.insertNodes([
@@ -319,10 +322,11 @@ describe('Regression #4815', () => {
     );
 
     editor.read(() => {
-      // A line-broken line becomes its own block like any other, which is
-      // what pasting at the start of a paragraph already does.
+      // The cost of treating the empty line as a block boundary: a paste that
+      // would have continued the line becomes its own block, the same as
+      // pasting at the start of a paragraph.
       expect($describeRoot()).toEqual([
-        'paragraph("Line of text")',
+        'paragraph("Line of text\\n")',
         'paragraph("Some paragraphParagraph 1")',
       ]);
     });
@@ -348,7 +352,7 @@ describe('Regression #4815', () => {
 
     editor.read(() => {
       // Unchanged: a point at the start of a block already kept the heading,
-      // and the line-break rule above is the same behavior one line in.
+      // and the empty-line rule above is the same behavior one line in.
       expect($describeRoot()).toEqual([
         'paragraph("Above")',
         'test-heading("Heading 3")',

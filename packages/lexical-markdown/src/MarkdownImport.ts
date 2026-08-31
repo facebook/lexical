@@ -27,6 +27,7 @@ import {
   type TextFormatTransformer,
   type TextMatchTransformer,
   type Transformer,
+  withListIndentColumns,
 } from './MarkdownTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
 
@@ -53,30 +54,34 @@ export function $importMarkdownNodes(
   const lines = markdownString.split('\n');
   const linesLength = lines.length;
 
-  for (let i = 0; i < linesLength; i++) {
-    const lineText = lines[i];
+  // A list line is measured against the column its parent item's content
+  // starts at, which only the line that opened that level knows.
+  withListIndentColumns(() => {
+    for (let i = 0; i < linesLength; i++) {
+      const lineText = lines[i];
 
-    const [imported, shiftedIndex] = $importMultiline(
-      lines,
-      i,
-      byType.multilineElement,
-      container,
-    );
+      const [imported, shiftedIndex] = $importMultiline(
+        lines,
+        i,
+        byType.multilineElement,
+        container,
+      );
 
-    if (imported) {
-      i = shiftedIndex;
-      continue;
+      if (imported) {
+        i = shiftedIndex;
+        continue;
+      }
+
+      $importBlocks(
+        lineText,
+        container,
+        byType.element,
+        textFormatTransformersIndex,
+        byType.textMatch,
+        shouldPreserveNewLines,
+      );
     }
-
-    $importBlocks(
-      lineText,
-      container,
-      byType.element,
-      textFormatTransformersIndex,
-      byType.textMatch,
-      shouldPreserveNewLines,
-    );
-  }
+  });
 
   const children = container.getChildren();
   for (const child of children) {

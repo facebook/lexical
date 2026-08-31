@@ -421,6 +421,41 @@ describe('Markdown', () => {
       md: '100. a\n    - b',
     },
     {
+      // Every level is measured against its own parent's content column, not
+      // just the first: two-space nesting keeps all four levels apart.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span><ul><li value="1"><span style="white-space: pre-wrap;">c</span><ul><li value="1"><span style="white-space: pre-wrap;">d</span></li></ul></li></ul></li></ul></li></ul>',
+      md: '- a\n  - b\n    - c\n      - d',
+      mdAfterExport: '- a\n    - b\n        - c\n            - d',
+    },
+    {
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">a</span><ol><li value="1"><span style="white-space: pre-wrap;">b</span><ol><li value="1"><span style="white-space: pre-wrap;">c</span></li></ol></li></ol></li></ol>',
+      md: '1. a\n   1. b\n      1. c',
+      mdAfterExport: '1. a\n    1. b\n        1. c',
+    },
+    {
+      // ...while items written at the same column stay siblings, however deep
+      // that column is.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li><li value="2"><span style="white-space: pre-wrap;">c</span></li></ul></li></ul>',
+      md: '- a\n    - b\n    - c',
+    },
+    {
+      // A wider marker opens its content further along, so the indent that
+      // nests under `9. ` is one short of the one that nests under `10. `.
+      html: '<ol start="9"><li value="9"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ol>',
+      md: '9. a\n   - b',
+      mdAfterExport: '9. a\n    - b',
+    },
+    {
+      html: '<ol start="10"><li value="10"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ol>',
+      md: '10. a\n    - b',
+    },
+    {
+      // A line that follows a paragraph closes the levels above it.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span></li></ul><p><span style="white-space: pre-wrap;">text</span></p><ol><li value="1"><span style="white-space: pre-wrap;">c</span><ul><li value="1"><span style="white-space: pre-wrap;">d</span></li></ul></li></ol>',
+      md: '- a\n\ntext\n\n1. c\n   - d',
+      mdAfterExport: '- a\n\ntext\n\n1. c\n    - d',
+    },
+    {
       html: '<ul><li value="1"><span style="white-space: pre-wrap;">bullet1</span><ol><li value="1"><span style="white-space: pre-wrap;">ordered1</span></li><li value="2"><span style="white-space: pre-wrap;">ordered2</span></li></ol></li><li value="2"><span style="white-space: pre-wrap;">bullet2</span></li></ul>',
       md: '- bullet1\n    1. ordered1\n    2. ordered2\n- bullet2',
     },
@@ -2967,6 +3002,77 @@ describe('$convertSelectionToMarkdownString', () => {
   });
 });
 
+describe('Sublist indent boundaries', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it("does not nest an indent short of a wide marker's content column", () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+
+    // `10. ` opens its content at column four, so three spaces is one short of
+    // a sublist and the line starts a list of its own.
+    editor.update(
+      () => $convertFromMarkdownString('10. a\n   - b', TRANSFORMERS),
+      {discrete: true},
+    );
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ol start="10"><li value="10"><span style="white-space: pre-wrap;">a</span></li></ol><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul>',
+    );
+  });
+
+  it('keeps a retyped sublist in front of the one it was placed before', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    // Typing above a list whose first child is a nested list of another type
+    // puts the new item in front of that nested list, so the list built for
+    // its own type belongs in front of it too.
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        root.append(
+          paragraph,
+          $createListNode('number').append(
+            $createListItemNode().append(
+              $createListNode('bullet').append(
+                $createListItemNode().append($createTextNode('x')),
+              ),
+            ),
+            $createListItemNode().append($createTextNode('y')),
+          ),
+        );
+        paragraph.selectEnd();
+      },
+      {discrete: true},
+    );
+    for (const char of '    1. z') {
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText(char);
+          }
+        },
+        {discrete: true},
+      );
+    }
+    editor.update(() => {}, {discrete: true});
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ol><li value="1"><ol><li value="1"><span style="white-space: pre-wrap;">z</span></li></ol><ul><li value="1"><span style="white-space: pre-wrap;">x</span></li></ul></li><li value="1"><span style="white-space: pre-wrap;">y</span></li></ol>',
+    );
+  });
+});
+
 describe('Sublist markers', () => {
   const baseNodes = [
     HeadingNode,
@@ -3094,14 +3200,19 @@ describe('Typed sublist shortcuts', () => {
     expect(caretText(editor)).toBe('b@1');
   });
 
-  it('nests a typed sublist indented to the content column', () => {
+  // A typed line stands on its own: nothing records the column the list above
+  // it was written at, so its indent is read as a fixed LIST_INDENT_SIZE per
+  // level -- the step $listExport writes and the toolbar indents by. An
+  // imported document is read by content column instead, which is what the
+  // "CommonMark sublist indents" cases below cover.
+  it('reads a typed indent in fixed steps, not by content column', () => {
     const editor = createHeadlessEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     typeLines(editor, ['1. a', '   - b']);
 
     expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
-      '<ol><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ol>',
+      '<ol><li value="1"><span style="white-space: pre-wrap;">a</span></li></ol><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul>',
     );
     expect(caretText(editor)).toBe('b@1');
   });

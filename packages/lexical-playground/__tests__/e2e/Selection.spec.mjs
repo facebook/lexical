@@ -102,16 +102,31 @@ test.describe('Selection', () => {
         parentSelector,
       );
 
+    // Which of the two editors currently owns the selection. Focusing an
+    // editor only moves the *DOM* selection; ownership moves when Lexical
+    // handles the `selectionchange` the browser dispatches for it, and that
+    // dispatch is asynchronous. Reading once right after `.focus()` therefore
+    // races the handover -- the DOM selection is already inside the newly
+    // focused editor while both editors still hold their previous Lexical
+    // state. Poll until the pair settles instead, and read both editors in
+    // one assertion so the editor that is losing the selection is checked
+    // against the same handover the winning editor waits for.
+    const expectSelectionOwner = async owner =>
+      await expect
+        .poll(async () => ({
+          caption: await hasSelection('.image-caption-container'),
+          shell: await hasSelection('.editor-shell'),
+        }))
+        .toEqual({caption: owner === 'caption', shell: owner === 'shell'});
+
     await focusEditor(page);
     await insertSampleImage(page);
     await insertImageCaption(page, 'Hello world');
-    expect(await hasSelection('.image-caption-container')).toBe(true);
-    expect(await hasSelection('.editor-shell')).toBe(false);
+    await expectSelectionOwner('caption');
 
     // Click outside of the editor and check that selection remains the same
     await click(page, 'header .logo');
-    expect(await hasSelection('.image-caption-container')).toBe(true);
-    expect(await hasSelection('.editor-shell')).toBe(false);
+    await expectSelectionOwner('caption');
 
     // Back to root editor
     if (browserName === 'firefox') {
@@ -123,18 +138,15 @@ test.describe('Selection', () => {
     } else {
       await focusEditor(page);
     }
-    expect(await hasSelection('.image-caption-container')).toBe(false);
-    expect(await hasSelection('.editor-shell')).toBe(true);
+    await expectSelectionOwner('shell');
 
     // Click outside of the editor and check that selection remains the same
     await click(page, 'header .logo');
-    expect(await hasSelection('.image-caption-container')).toBe(false);
-    expect(await hasSelection('.editor-shell')).toBe(true);
+    await expectSelectionOwner('shell');
 
     // Back to nested editor editor
     await focusEditor(page, '.image-caption-container');
-    expect(await hasSelection('.image-caption-container')).toBe(true);
-    expect(await hasSelection('.editor-shell')).toBe(false);
+    await expectSelectionOwner('caption');
   });
 
   test('can wrap post-linebreak nodes into new element', async ({

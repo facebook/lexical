@@ -651,10 +651,12 @@ export function getAnchorAndFocusCollabNodesForUserState(
 
     if (anchorAbsPos !== null && focusAbsPos !== null) {
       [anchorCollabNode, anchorOffset] = getCollabNodeAndOffset(
+        binding,
         anchorAbsPos.type,
         anchorAbsPos.index,
       );
       [focusCollabNode, focusOffset] = getCollabNodeAndOffset(
+        binding,
         focusAbsPos.type,
         focusAbsPos.index,
       );
@@ -697,10 +699,12 @@ export function $getAnchorAndFocusForUserState(
 
   if (isBindingV1(binding)) {
     const [anchorCollabNode, anchorOffset] = getCollabNodeAndOffset(
+      binding,
       anchorAbsPos.type,
       anchorAbsPos.index,
     );
     const [focusCollabNode, focusOffset] = getCollabNodeAndOffset(
+      binding,
       focusAbsPos.type,
       focusAbsPos.index,
     );
@@ -795,14 +799,47 @@ function $setPoint(point: Point, key: NodeKey, offset: number): void {
   }
 }
 
+/**
+ * Whether `sharedType` is inside the subtree this binding is bound to.
+ *
+ * Several editors can share one Yjs `Doc` (see the `rootName` and `getXmlText`
+ * binding options), which also puts them on one awareness channel, so a peer's
+ * position can describe a place in another editor's subtree. V1 resolves a
+ * position through the collab node cached on the shared type
+ * (`sharedType._collabNode`), which belongs to whichever binding materialized
+ * it and carries `NodeKey`s that only mean something in that binding's editor.
+ *
+ * The test walks the yjs type tree rather than the collab nodes: a cached
+ * collab node outlives the binding that created it (`destroy` does not clear
+ * `_collabNode`, and a later binding reuses the node without re-parenting it),
+ * so its `_parent` chain can still end at a previous binding's root even for a
+ * position that is squarely inside this one.
+ */
+function isSharedTypeInBinding(
+  binding: Binding,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sharedType: any,
+): boolean {
+  const rootSharedType = binding.root.getSharedType();
+  let type: null | {parent: unknown} = sharedType;
+  while (type != null) {
+    if (type === rootSharedType) {
+      return true;
+    }
+    type = type.parent as null | {parent: unknown};
+  }
+  return false;
+}
+
 function getCollabNodeAndOffset(
+  binding: Binding,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sharedType: any,
   offset: number,
 ): [null | AnyCollabNode, number] {
   const collabNode = sharedType._collabNode;
 
-  if (collabNode === undefined) {
+  if (collabNode === undefined || !isSharedTypeInBinding(binding, sharedType)) {
     return [null, 0];
   }
 

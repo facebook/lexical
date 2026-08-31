@@ -8,7 +8,7 @@
 
 import type {InitialEditorStateType} from './LexicalComposer';
 import type {LexicalEditor} from 'lexical';
-import type {Doc} from 'yjs';
+import type {Doc, XmlElement, XmlText} from 'yjs';
 
 import {
   type CollaborationContextType,
@@ -67,6 +67,19 @@ type CollaborationPluginProps = {
   selectionHighlight?: boolean;
   /** Customize the Yjs shared-type key used for the root `XmlText`. Defaults to `'root'`. */
   rootName?: string;
+  /**
+   * Resolve the root `XmlText` from the `Doc` yourself, for roots that are not
+   * a top-level shared type (e.g. an `XmlText` held in a `Y.Map` or `Y.Array`,
+   * as when one `Doc` stores many independently editable documents). Takes
+   * precedence over `rootName`.
+   *
+   * Read when the binding is created: this prop and `rootName` cannot repoint
+   * a mounted editor at another document. Remount the editor (a React `key` on
+   * the component that owns it) to edit a different one — a remount of this
+   * plugin alone would leave the previous document's content in the editor and
+   * write it into the new root.
+   */
+  getXmlText?: (doc: Doc) => XmlText;
 };
 
 /**
@@ -91,6 +104,7 @@ export function CollaborationPlugin({
   syncCursorPositionsFn,
   selectionHighlight,
   rootName,
+  getXmlText,
 }: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
   // The inputs that produced the current Provider. A ref rather than the effect
@@ -176,16 +190,33 @@ export function CollaborationPlugin({
       docMap: yjsDocMap,
       editor,
       excludedProperties,
+      getXmlText,
       id,
       rootName,
     });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setBinding(newBinding);
+    // `excludedProperties`, `rootName` and `getXmlText` configure the binding
+    // and are read on the pass that creates it (which is not necessarily the
+    // first one -- the effect returns early until the provider exists, so a
+    // root that only resolves after mount is still picked up). They are
+    // deliberately not dependencies: a binding cannot be reconfigured or
+    // repointed once it exists, and re-running this effect would only tear the
+    // editor's binding down.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, provider, id, yjsDocMap, doc]);
 
+  // Destroying the binding belongs to unmount, not to this effect's cleanup:
+  // the binding is created once, so a cleanup on the creation effect would
+  // destroy it on any input change without building a replacement.
+  useEffect(() => {
+    if (binding === undefined) {
+      return;
+    }
     return () => {
-      newBinding.root.destroy(newBinding);
+      binding.root.destroy(binding);
     };
-  }, [editor, provider, id, yjsDocMap, doc, excludedProperties, rootName]);
+  }, [binding]);
 
   if (!provider || !binding) {
     return <></>;
@@ -288,6 +319,20 @@ type CollaborationPluginV2Props = {
   selectionHighlight?: boolean;
   /** Customize the Yjs shared-type key used for the root `XmlElement`. Defaults to `'root-v2'`. */
   rootName?: string;
+  /**
+   * Resolve the root `XmlElement` from the `Doc` yourself, for roots that are
+   * not a top-level shared type (e.g. an `XmlElement` held in a `Y.Map` or
+   * `Y.Array`, as when one `Doc` stores many independently editable
+   * documents). The element must be created as `new XmlElement()` without a
+   * `nodeName`. Takes precedence over `rootName`.
+   *
+   * Read when the binding is created: this prop and `rootName` cannot repoint
+   * a mounted editor at another document. Remount the editor (a React `key` on
+   * the component that owns it) to edit a different one — a remount of this
+   * plugin alone would leave the previous document's content in the editor and
+   * write it into the new root.
+   */
+  getXmlElement?: (doc: Doc) => XmlElement;
 };
 
 /**
@@ -311,6 +356,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   awarenessData,
   selectionHighlight,
   rootName,
+  getXmlElement,
 }: CollaborationPluginV2Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
   const {yjsDocMap, name, color} = collabContext;
@@ -330,6 +376,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
       __shouldBootstrapUnsafe,
       awarenessData,
       excludedProperties,
+      getXmlElement,
       rootName,
       selectionHighlight,
     },

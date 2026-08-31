@@ -1401,6 +1401,16 @@ export class RangeSelection implements BaseSelection {
       INTERNAL_$isBlock,
     );
 
+    // Mark where the inserted content ends before the split-off content is
+    // moved in after it. selectEnd() has to happen first because nodeToSelect
+    // can be the node that receives those children: pasted content ending in
+    // an empty block (as the playground's own copy does) makes that empty
+    // block nodeToSelect, and selecting its end afterwards would put the caret
+    // past the text that moved in -- at the end of the document rather than at
+    // the join. A text nodeToSelect is unaffected either way, since the
+    // children land beside it rather than inside it.
+    nodeToSelect.selectEnd();
+
     if (insertedParagraph) {
       if (
         $isElementNode(lastInsertedBlock) &&
@@ -1423,8 +1433,6 @@ export class RangeSelection implements BaseSelection {
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
       firstBlock.remove();
     }
-
-    nodeToSelect.selectEnd();
 
     // To understand this take a look at the test "can wrap post-linebreak nodes into new element"
     const lastChild = $isElementNode(firstBlock)

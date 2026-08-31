@@ -8,6 +8,7 @@
 import {expect} from '@playwright/test';
 
 import {
+  moveToLineBeginning,
   moveToPrevWord,
   pressShiftEnter,
 } from '../../../keyboardShortcuts/index.mjs';
@@ -92,6 +93,64 @@ test.describe('HTML CopyAndPaste', () => {
       focusOffset: 14,
       focusPath: [2, 0, 0],
     });
+  });
+
+  test('Copy + paste blocks ending in an empty block keeps the caret at the join', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('asdf');
+    await moveToLineBeginning(page);
+    // Copying several blocks out of an editor carries a trailing empty
+    // paragraph, which is the block the split-off text is appended into.
+    await pasteFromClipboard(page, {
+      'text/html': '<p>AA</p><p>BB</p><p></p>',
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">AA</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">BB</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">asdf</span>
+        </p>
+      `,
+    );
+    // The caret belongs where the pasted content ends, not at the end of the
+    // document past the text that was moved in. The empty pasted block became
+    // the block holding that text, so the caret is an element point at its
+    // start.
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2],
+      focusOffset: 0,
+      focusPath: [2],
+    });
+
+    // Typing lands at the join rather than after the "f".
+    await page.keyboard.type('X');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">AA</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">BB</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Xasdf</span>
+        </p>
+      `,
+    );
   });
 
   test('Copy + paste a code block with BR', async ({page, isPlainText}) => {

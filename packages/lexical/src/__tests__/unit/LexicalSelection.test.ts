@@ -2836,3 +2836,70 @@ describe('$setTextFormat (#5518)', () => {
     );
   });
 });
+
+describe('insertNodes() selection', () => {
+  /**
+   * Pastes blocks at the start of "asdf" and returns the collapsed selection
+   * as `"textContent"@offset`, where the text content is that of the node the
+   * anchor points at.
+   */
+  function $pasteAtStartAndDescribeSelection(blocks: LexicalNode[]): string {
+    const text = $createTextNode('asdf');
+    $getRoot().clear().append($createParagraphNode().append(text));
+    text.select(0, 0);
+    const selection = $getSelection();
+    assert($isRangeSelection(selection), 'Expected RangeSelection');
+    selection.insertNodes(blocks);
+    const after = $getSelection();
+    assert($isRangeSelection(after), 'Expected RangeSelection');
+    expect(after.isCollapsed()).toBe(true);
+    return `${JSON.stringify(after.anchor.getNode().getTextContent())}@${
+      after.anchor.offset
+    }`;
+  }
+
+  test('leaves the caret where pasted content ending in an empty block joins', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        // Copying several blocks out of an editor carries a trailing empty
+        // paragraph, which is the node the split-off content is appended into.
+        // Marking the caret after that append put it at the end of the
+        // document instead of at the join.
+        const selectionDescription = $pasteAtStartAndDescribeSelection([
+          $createParagraphNode().append($createTextNode('AA')),
+          $createParagraphNode().append($createTextNode('BB')),
+          $createParagraphNode(),
+        ]);
+        expect(
+          $getRoot()
+            .getChildren()
+            .map(node => node.getTextContent()),
+        ).toEqual(['AA', 'BB', 'asdf']);
+        expect(selectionDescription).toBe('"asdf"@0');
+      },
+      {discrete: true},
+    );
+  });
+
+  test('leaves the caret where pasted content ending in a text block joins', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        // Unchanged: the split-off content lands beside the text node the
+        // caret is marked on rather than inside it.
+        const selectionDescription = $pasteAtStartAndDescribeSelection([
+          $createParagraphNode().append($createTextNode('AA')),
+          $createParagraphNode().append($createTextNode('BB')),
+        ]);
+        expect(
+          $getRoot()
+            .getChildren()
+            .map(node => node.getTextContent()),
+        ).toEqual(['AA', 'BBasdf']);
+        expect(selectionDescription).toBe('"BB"@2');
+      },
+      {discrete: true},
+    );
+  });
+});

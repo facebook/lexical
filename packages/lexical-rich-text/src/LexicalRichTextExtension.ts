@@ -14,9 +14,17 @@ import {
   NormalizeTripleClickSelectionExtension,
 } from '@lexical/extension';
 import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
+import {$onEscapeDown, $onEscapeUp} from '@lexical/utils';
 import {
+  COMMAND_PRIORITY_LOW,
   configExtension,
   defineExtension,
+  KEY_ARROW_DOWN_COMMAND,
+  KEY_ARROW_LEFT_COMMAND,
+  KEY_ARROW_RIGHT_COMMAND,
+  KEY_ARROW_UP_COMMAND,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
   safeCast,
   shallowMergeConfig,
@@ -25,12 +33,12 @@ import {
 
 import {HeadingAnnounceExtension} from './HeadingAnnounceExtension';
 import {
+  $isQuoteNode,
   defaultShouldHandlePasteAsFiles,
   type EscapeFormatTriggerConfig,
   HeadingNode,
   QuoteNode,
   registerRichText,
-  registerShadowRootQuoteEscape,
   type ShouldHandlePasteAsFiles,
   type TriggerConfig,
 } from './index';
@@ -68,10 +76,11 @@ export interface RichTextConfig {
    * QuoteNode (`$createQuoteNode({shadowRoot: true})`) that is the first or
    * last block in its parent, so the quote can be escaped. Such a quote holds
    * block-level children, so the caret is always in a nested block and neither
-   * Enter nor the generic block cursor navigation can move past it.
+   * Enter nor the generic block cursor navigation can move past it — without
+   * this the quote is a trap once it is the last block.
    *
-   * Defaults to `false`; a quote that holds inline content needs no escape and
-   * is unaffected either way.
+   * Defaults to `true`. A quote that holds inline content is never matched, so
+   * this is inert unless something opts in to shadow root quotes.
    */
   shadowRootQuoteEscapeWithArrows: boolean;
   shouldHandlePasteAsFiles: ShouldHandlePasteAsFiles;
@@ -83,9 +92,55 @@ const DEFAULT_RICH_TEXT_CONFIG: RichTextConfig = {
     lowercase: {enter: true, space: true, tab: true},
     uppercase: {enter: true, space: true, tab: true},
   },
-  shadowRootQuoteEscapeWithArrows: false,
+  shadowRootQuoteEscapeWithArrows: true,
   shouldHandlePasteAsFiles: defaultShouldHandlePasteAsFiles,
 };
+
+/**
+ * A shadow root QuoteNode holds block-level children, so the caret always sits
+ * in a nested block and the quote is never the selection's own block: neither
+ * Enter (which splits the nested block) nor the generic shadow root block
+ * cursor navigation can move past it when it is the last block in its parent.
+ * It therefore needs the same arrow-key escape as CodeNode
+ * (see `CodeIndentExtension`'s `escapeWithArrows`).
+ */
+function $isShadowRootQuoteNode(node?: LexicalNode | null): node is QuoteNode {
+  return $isQuoteNode(node) && node.isShadowRoot();
+}
+
+/**
+ * Adds a paragraph before or after a shadow root quote when the caret is at
+ * its edge and it is the first or last block in its parent, so the quote can
+ * be escaped with the arrow keys. Enabled through
+ * {@link RichTextConfig.shadowRootQuoteEscapeWithArrows} rather than exported,
+ * so it is reachable only by configuring {@link RichTextExtension}.
+ */
+function registerShadowRootQuoteEscape(editor: LexicalEditor): () => void {
+  return mergeRegister(
+    editor.registerCommand(
+      KEY_ARROW_DOWN_COMMAND,
+      event =>
+        event.altKey ? false : $onEscapeDown($isShadowRootQuoteNode, event),
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      KEY_ARROW_RIGHT_COMMAND,
+      event => $onEscapeDown($isShadowRootQuoteNode, event),
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      KEY_ARROW_UP_COMMAND,
+      event =>
+        event.altKey ? false : $onEscapeUp($isShadowRootQuoteNode, event),
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      KEY_ARROW_LEFT_COMMAND,
+      event => $onEscapeUp($isShadowRootQuoteNode, event),
+      COMMAND_PRIORITY_LOW,
+    ),
+  );
+}
 
 function mergeTriggerConfig(
   config: TriggerConfig | null | undefined,

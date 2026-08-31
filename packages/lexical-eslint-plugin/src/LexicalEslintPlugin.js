@@ -19,6 +19,8 @@ const {rulesOfLexical} = require('./rules/rules-of-lexical.js');
 const legacyAll = {
   plugins: ['@lexical'],
   rules: {
+    // Kept as the historical preset for compatibility. Other exported rules
+    // are opt-in; see the README for their configuration.
     '@lexical/rules-of-lexical': /** @type {'warn'|'error'|'off'}*/ ('warn'),
   },
 };
@@ -49,6 +51,8 @@ const flatAll = {
     '@lexical': plugin,
   },
   rules: {
+    // Kept as the historical preset for compatibility. Other exported rules
+    // are opt-in; see the README for their configuration.
     '@lexical/rules-of-lexical': 'warn' /** @type {'warn'|'error'|'off'}*/,
   },
 };

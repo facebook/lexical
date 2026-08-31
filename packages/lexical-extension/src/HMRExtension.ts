@@ -68,9 +68,8 @@ export interface HMRConfig {
    * are isolated automatically, editors with no configured namespace all share
    * one key, and a nested editor shares its parent's namespace and so needs an
    * `id` of its own. Must be a non-empty string when provided;
-   * passing `''` triggers a dev warning and is treated as no `id`. Neither
-   * `namespace` nor `id` should contain a colon (`:`), as that character is
-   * used as a key separator internally.
+   * passing `''` triggers a dev warning and is treated as no `id`. Both are
+   * escaped into the key, so either may contain any character.
    */
   id?: string;
 }
@@ -80,8 +79,11 @@ const HISTORY_EXTENSION_NAME = '@lexical/history/History';
 const HMR_EXTENSION_NAME = '@lexical/extension/HMR';
 
 function getHMRKey(id: string | undefined, namespace: string): string {
-  const base = `${HMR_KEY}:${namespace}`;
-  return id !== undefined ? `${base}:${id}` : base;
+  // Escaped, so that a namespace holding the separator cannot be mistaken for
+  // a namespace and an id: `{namespace: 'app:sidebar'}` and `{namespace:
+  // 'app', id: 'sidebar'}` are two different editors and need two keys.
+  const base = `${HMR_KEY}:${encodeURIComponent(namespace)}`;
+  return id !== undefined ? `${base}:${encodeURIComponent(id)}` : base;
 }
 
 /** The key `editor` saves under, given the `id` its HMRExtension was configured with. */
@@ -152,7 +154,11 @@ function hasConfiguredNamespace(editor: LexicalEditor): boolean {
     return false;
   }
   for (const rep of builder.extensionNameMap.values()) {
-    if (rep.extension.namespace !== undefined) {
+    const {namespace} = rep.extension;
+    // Only the namespace the editor ended up with counts. `createEditor`
+    // generates one for any falsy value, so `namespace: ''` is not a choice of
+    // namespace, and the builder resolves several declarations down to one.
+    if (namespace && namespace === editor._config.namespace) {
       return true;
     }
   }

@@ -1107,6 +1107,74 @@ describe('HMRExtension', () => {
     }
   });
 
+  test('preserves state for an editor whose namespace is an empty string', () => {
+    const hot = createMockHotContext();
+    // createEditor generates a namespace for any falsy value, so '' is not a
+    // choice of namespace — it is the same random string per reload that no
+    // namespace at all would be
+    const createEmptyNamespaced = () =>
+      buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $setupContent('initial'),
+          dependencies: [configExtension(HMRExtension, {hot})],
+          name: 'empty-namespace-editor',
+          namespace: '',
+        }),
+      );
+
+    {
+      using editor = createEmptyNamespaced();
+      expect(editor._config.namespace).not.toBe('');
+      editor.update(() => $setupContent('typed'), {discrete: true});
+    }
+
+    {
+      using editor = createEmptyNamespaced();
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('typed');
+      });
+    }
+
+    expect(Object.keys(hot.data)).toEqual(['lexicalHMR:']);
+  });
+
+  test('keys a namespace containing the separator apart from a namespace and id', () => {
+    const hot = createMockHotContext();
+    const createColonEditor = (
+      namespace: string,
+      id: string | undefined,
+      text: string,
+    ) =>
+      buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $setupContent(text),
+          dependencies: [configExtension(HMRExtension, {hot, id})],
+          name: `colon-${namespace}-${id}`,
+          namespace,
+        }),
+      );
+
+    {
+      using joined = createColonEditor('app:sidebar', undefined, 'joined');
+      using split = createColonEditor('app', 'sidebar', 'split');
+      joined.update(() => $setupContent('joined content'), {discrete: true});
+      split.update(() => $setupContent('split content'), {discrete: true});
+      // Two editors, two keys — not one key that each overwrites in turn
+      expect(Object.keys(hot.data)).toHaveLength(2);
+    }
+
+    {
+      using joined = createColonEditor('app:sidebar', undefined, 'joined');
+      using split = createColonEditor('app', 'sidebar', 'split');
+      joined.read(() => {
+        expect($getRoot().getTextContent()).toBe('joined content');
+      });
+      split.read(() => {
+        expect($getRoot().getTextContent()).toBe('split content');
+      });
+    }
+  });
+
   test('preserves state for a nested editor under a plain unnamespaced parent', () => {
     const hot = createMockHotContext();
     const createNested = () => {

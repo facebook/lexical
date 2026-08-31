@@ -7,6 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND} from '@lexical/react/LexicalTypeaheadMenuPluginUtils';
 import {getScrollParent} from '@lexical/utils';
 import {
   $getSelection,
@@ -14,7 +15,6 @@ import {
   CAN_USE_DOM,
   COMMAND_PRIORITY_LOW,
   type CommandListenerPriority,
-  createCommand,
   getDOMShadowRoots,
   getRootOwnerDocument,
   isDOMShadowRoot,
@@ -23,7 +23,6 @@ import {
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
-  type LexicalCommand,
   type LexicalEditor,
   mergeRegister,
   registerEventListener,
@@ -281,10 +280,12 @@ export function useDynamicPositioning(
   }, [targetElement, editor, onVisibilityChange, onReposition, resolution]);
 }
 
-export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
-  index: number;
-  option: MenuOption;
-}> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
+// Imported through the package path rather than defined here: this module is
+// not an entry point, so it is inlined into every entry that reaches it, and a
+// command created here would be a different object in each of them — including
+// a different one from the command this package exports, which is the one a
+// consumer dispatches. Re-exported for anything that imports it from here.
+export {SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND};
 
 function MenuItem({
   index,

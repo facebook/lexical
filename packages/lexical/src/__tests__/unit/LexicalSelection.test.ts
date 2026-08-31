@@ -2853,9 +2853,9 @@ describe('insertNodes() selection', () => {
     const after = $getSelection();
     assert($isRangeSelection(after), 'Expected RangeSelection');
     expect(after.isCollapsed()).toBe(true);
-    return `${JSON.stringify(after.anchor.getNode().getTextContent())}@${
-      after.anchor.offset
-    }`;
+    return `${after.anchor.type}:${JSON.stringify(
+      after.anchor.getNode().getTextContent(),
+    )}@${after.anchor.offset}`;
   }
 
   test('leaves the caret where pasted content ending in an empty block joins', () => {
@@ -2865,7 +2865,10 @@ describe('insertNodes() selection', () => {
         // Copying several blocks out of an editor carries a trailing empty
         // paragraph, which is the node the split-off content is appended into.
         // Marking the caret after that append put it at the end of the
-        // document instead of at the join.
+        // document instead of at the join. The point type is asserted because
+        // marking it on the still-empty block leaves an element point, which
+        // describes the same position as the text point every other insertion
+        // produces.
         const selectionDescription = $pasteAtStartAndDescribeSelection([
           $createParagraphNode().append($createTextNode('AA')),
           $createParagraphNode().append($createTextNode('BB')),
@@ -2876,7 +2879,7 @@ describe('insertNodes() selection', () => {
             .getChildren()
             .map(node => node.getTextContent()),
         ).toEqual(['AA', 'BB', 'asdf']);
-        expect(selectionDescription).toBe('"asdf"@0');
+        expect(selectionDescription).toBe('text:"asdf"@0');
       },
       {discrete: true},
     );
@@ -2897,7 +2900,7 @@ describe('insertNodes() selection', () => {
             .getChildren()
             .map(node => node.getTextContent()),
         ).toEqual(['AA', 'BBasdf']);
-        expect(selectionDescription).toBe('"BB"@2');
+        expect(selectionDescription).toBe('text:"BB"@2');
       },
       {discrete: true},
     );

@@ -1409,7 +1409,7 @@ export class RangeSelection implements BaseSelection {
     // past the text that moved in -- at the end of the document rather than at
     // the join. A text nodeToSelect is unaffected either way, since the
     // children land beside it rather than inside it.
-    nodeToSelect.selectEnd();
+    const insertSelection = nodeToSelect.selectEnd();
 
     if (insertedParagraph) {
       if (
@@ -1441,6 +1441,17 @@ export class RangeSelection implements BaseSelection {
     if ($isLineBreakNode(lastChild) && lastInsertedBlock !== firstBlock) {
       lastChild.remove();
     }
+
+    // Resolve the marked caret onto the text beside it. It is an element point
+    // whenever nodeToSelect was an element with nothing after the caret -- an
+    // empty block that has since received the split-off content, or a
+    // block-level decorator -- and the caret should not read differently from
+    // every other insertion here just because of the shape of what was pasted.
+    const normalizedCaret = $normalizeCaret(
+      $caretFromPoint(insertSelection.anchor, 'next'),
+    );
+    $setPointFromCaret(insertSelection.anchor, normalizedCaret);
+    $setPointFromCaret(insertSelection.focus, normalizedCaret);
   }
 
   /**

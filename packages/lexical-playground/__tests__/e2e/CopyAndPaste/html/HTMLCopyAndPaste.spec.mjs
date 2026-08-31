@@ -125,14 +125,12 @@ test.describe('HTML CopyAndPaste', () => {
       `,
     );
     // The caret belongs where the pasted content ends, not at the end of the
-    // document past the text that was moved in. The empty pasted block became
-    // the block holding that text, so the caret is an element point at its
-    // start.
+    // document past the text that was moved in.
     await assertSelection(page, {
       anchorOffset: 0,
-      anchorPath: [2],
+      anchorPath: [2, 0, 0],
       focusOffset: 0,
-      focusPath: [2],
+      focusPath: [2, 0, 0],
     });
 
     // Typing lands at the join rather than after the "f".

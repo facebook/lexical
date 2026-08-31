@@ -22,6 +22,7 @@ export type {RulesOfLexicalOptions} from './rules/rules-of-lexical.js';
 export interface LegacyConfig {
   plugins: string[];
   rules: {
+    '@lexical/no-nested-editor-updates': 'warn' | 'error' | 'off';
     '@lexical/rules-of-lexical': 'warn' | 'error' | 'off';
   };
 }
@@ -32,6 +33,7 @@ export interface FlatConfig {
     '@lexical': Plugin;
   };
   rules: {
+    '@lexical/no-nested-editor-updates': 'warn' | 'error' | 'off';
     '@lexical/rules-of-lexical': 'warn' | 'error' | 'off';
   };
 }

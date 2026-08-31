@@ -565,11 +565,9 @@ describe('LexicalEditor tests', () => {
         log.push('A1');
         // To enforce the update
         $getRoot().markDirty();
-        // eslint-disable-next-line @lexical/no-nested-editor-updates -- This test verifies nested update callback ordering.
         editor.update(
           () => {
             log.push('B1');
-            // eslint-disable-next-line @lexical/no-nested-editor-updates -- This test verifies nested update callback ordering.
             editor.update(
               () => {
                 log.push('C1');
@@ -646,7 +644,6 @@ describe('LexicalEditor tests', () => {
     log = [];
     editor.registerNodeTransform(TextNode, () => {
       log.push('TextTransform A3');
-      // eslint-disable-next-line @lexical/no-nested-editor-updates -- This test verifies updates scheduled by a transform.
       editor.update(
         () => {
           log.push('TextTransform B3');
@@ -2874,7 +2871,6 @@ describe('LexicalEditor tests', () => {
     expect(editor._updateTags).toEqual(new Set(['a', 'b']));
     editor.update(
       () => {
-        // eslint-disable-next-line @lexical/no-nested-editor-updates -- This test verifies tag merging across nested updates.
         editor.update(emptyFunction, {tag: ['e', 'f']});
       },
       {
@@ -3709,7 +3705,6 @@ describe('LexicalEditor tests', () => {
       $getRoot().append(
         $createParagraphNode().append($createTextNode('Async update')),
       );
-      // eslint-disable-next-line @lexical/no-nested-editor-updates -- The discrete nested update is the behavior under test.
       editor.update(
         () => {
           $getRoot().append(

@@ -653,9 +653,6 @@ export const FindReplaceExtension = defineExtension({
                 output.caseSensitive.peek(),
               )
             : null;
-          // The discrete nested update intentionally flushes the pending
-          // command update before this synchronous command returns.
-          // eslint-disable-next-line @lexical/no-nested-editor-updates
           editor.update(
             () => {
               const offsetMap = $buildOffsetMap();
@@ -685,9 +682,6 @@ export const FindReplaceExtension = defineExtension({
                 output.caseSensitive.peek(),
               )
             : null;
-          // The discrete nested update intentionally flushes the pending
-          // command update before this synchronous command returns.
-          // eslint-disable-next-line @lexical/no-nested-editor-updates
           editor.update(
             () => {
               const offsetMap = $buildOffsetMap();

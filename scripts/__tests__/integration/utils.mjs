@@ -121,6 +121,23 @@ async function expectSuccessfulExec(cmd, retriesLeft = MATURITY_RETRIES) {
 }
 
 /**
+ * The install command for a standalone project outside the monorepo workspace.
+ *
+ * Each example and fixture carries its own pnpm-workspace.yaml, which makes its
+ * directory the workspace root so pnpm never climbs into the monorepo above it
+ * — and which is also the only place pnpm 11 reads a project's `overrides` and
+ * build-script settings from. `--ignore-workspace` would suppress that file
+ * along with the monorepo's, so it is used only where no such file exists.
+ *
+ * @param {string} projectDir
+ */
+function installCommand(projectDir) {
+  return fs.existsSync(path.resolve(projectDir, 'pnpm-workspace.yaml'))
+    ? 'pnpm install'
+    : 'pnpm install --ignore-workspace';
+}
+
+/**
  * @typedef {Object} ExampleContext
  * @property {string} packageJsonPath
  * @property {string} exampleDir
@@ -190,7 +207,7 @@ async function buildExample({packageJson, packageJsonPath, exampleDir}) {
   try {
     fs.writeJsonSync(packageJsonPath, augmentedPackageJson, {spaces: 2});
     await withCwd(exampleDir, async () => {
-      await expectSuccessfulExec('pnpm install --ignore-workspace');
+      await expectSuccessfulExec(installCommand(exampleDir));
       await expectSuccessfulExec('pnpm run build');
       if (hasPlaywright) {
         await expectSuccessfulExec('pnpm exec playwright install');
@@ -311,9 +328,10 @@ function describeDevExample(packageJsonPath) {
 
 /**
  * Describe a fixture that consumes monorepo packages via pnpm's link:
- * protocol. The fixture is intentionally outside the pnpm workspace, so
- * `pnpm install --ignore-workspace` resolves link: deps as real symlinks
- * into packages/ — the workflow real consumers use with `pnpm link`.
+ * protocol. The fixture is intentionally outside the pnpm workspace — its own
+ * pnpm-workspace.yaml keeps it that way — so the install resolves link: deps as
+ * real symlinks into packages/ — the workflow real consumers use with
+ * `pnpm link`.
  *
  * @param {string} packageJsonPath
  */
@@ -328,7 +346,7 @@ function describeLinkedFixture(packageJsonPath) {
         fs.removeSync(path.resolve(exampleDir, cleanPath));
       }
       await withCwd(exampleDir, async () => {
-        await expectSuccessfulExec('pnpm install --ignore-workspace');
+        await expectSuccessfulExec(installCommand(exampleDir));
         await expectSuccessfulExec('pnpm run build');
       });
     }, INSTALL_TIMEOUT);

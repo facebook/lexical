@@ -15,11 +15,13 @@ import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   CHECK_LIST,
+  createQuoteTransformer,
   ELEMENT_TRANSFORMERS,
   type ElementTransformer,
   isTableRowDivider,
   MULTILINE_ELEMENT_TRANSFORMERS,
   type MultilineElementTransformer,
+  QUOTE,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
   type TextMatchTransformer,
@@ -371,3 +373,25 @@ export const PLAYGROUND_TRANSFORMERS: Transformer[] = [
   ...TEXT_FORMAT_TRANSFORMERS,
   ...TEXT_MATCH_TRANSFORMERS,
 ];
+
+/**
+ * {@link PLAYGROUND_TRANSFORMERS} with the quote transformer swapped for one
+ * that builds shadow root QuoteNodes, so a quote holds block-level children
+ * and `> # Heading` nests the heading inside the quote. Selected by the
+ * "Shadow root quotes in Markdown" setting.
+ */
+export const PLAYGROUND_SHADOW_ROOT_QUOTE_TRANSFORMERS: Transformer[] =
+  PLAYGROUND_TRANSFORMERS.map(transformer =>
+    transformer === QUOTE
+      ? createQuoteTransformer({shadowRoot: true})
+      : transformer,
+  );
+
+/** The transformer set the "Shadow root quotes in Markdown" setting selects. */
+export function playgroundTransformers(
+  shadowRootQuotes: boolean,
+): Transformer[] {
+  return shadowRootQuotes
+    ? PLAYGROUND_SHADOW_ROOT_QUOTE_TRANSFORMERS
+    : PLAYGROUND_TRANSFORMERS;
+}

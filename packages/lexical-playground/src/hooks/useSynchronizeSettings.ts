@@ -31,6 +31,7 @@ import {INITIAL_SETTINGS, type Settings} from '../appSettings';
 import {useSettings} from '../context/SettingsContext';
 import {AutocompleteExtension} from '../plugins/AutocompleteExtension';
 import {CodeHighlightExtension} from '../plugins/CodeHighlightExtension';
+import {PlaygroundMarkdownShortcutsExtension} from '../plugins/MarkdownShortcutsExtension';
 import {MaxLengthExtension} from '../plugins/MaxLengthPlugin';
 import {SpecialTextExtension} from '../plugins/SpecialTextExtension';
 import {VisibleNonPrintingExtension} from '../plugins/VisibleNonPrintingExtension';
@@ -123,6 +124,13 @@ export function synchronizeSettingsToSignals(
     output(editor, SelectionAlwaysOnDisplayExtension).disabled.value =
       !settings.selectionAlwaysOnDisplay;
     output(editor, SelectBlockExtension).disabled.value = !settings.selectBlock;
+    const markdownShortcuts = peerOutput(
+      editor,
+      PlaygroundMarkdownShortcutsExtension,
+    );
+    if (markdownShortcuts) {
+      markdownShortcuts.shadowRootQuotes.value = settings.shadowRootQuotes;
+    }
   });
 }
 

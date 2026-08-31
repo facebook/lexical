@@ -22,6 +22,10 @@ export type Transformer =
   | TextFormatTransformer
   | TextMatchTransformer;
 
+export type QuoteTransformerOptions = {
+  shadowRoot?: boolean,
+};
+
 export type ElementTransformer = {
   dependencies: Class<LexicalNode>[],
   export: (
@@ -129,6 +133,9 @@ declare export var ITALIC_UNDERSCORE: TextFormatTransformer;
 
 declare export var HEADING: ElementTransformer;
 declare export var QUOTE: ElementTransformer;
+declare export function createQuoteTransformer(
+  options?: QuoteTransformerOptions,
+): ElementTransformer;
 declare export var CODE: MultilineElementTransformer;
 declare export var UNORDERED_LIST: ElementTransformer;
 declare export var CHECK_LIST: ElementTransformer;

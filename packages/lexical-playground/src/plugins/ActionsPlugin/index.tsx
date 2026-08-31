@@ -56,7 +56,7 @@ import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
 import {docFromHash, docToHash} from '../../utils/docSerialization';
 import {formatCodeWithPrettier} from '../CodeActionMenuPlugin/formatCodeWithPrettier';
-import {PLAYGROUND_TRANSFORMERS} from '../MarkdownTransformers';
+import {playgroundTransformers} from '../MarkdownTransformers';
 import {PagesExtension} from '../PagesExtension';
 import ShortcutsHelpDialog from '../ShortcutsExtension/ShortcutsHelpDialog';
 import {
@@ -77,9 +77,11 @@ async function shareDoc(doc: SerializedDocument): Promise<void> {
 type EditorMode = 'wysiwyg' | 'markdown' | 'html';
 
 export default function ActionsPlugin({
+  shadowRootQuotes,
   shouldPreserveNewLinesInMarkdown,
   useCollabV2,
 }: {
+  shadowRootQuotes: boolean;
   shouldPreserveNewLinesInMarkdown: boolean;
   useCollabV2: boolean;
 }): JSX.Element {
@@ -144,7 +146,7 @@ export default function ActionsPlugin({
               unregisterTransformRef.current();
               $convertFromMarkdownString(
                 firstChild.getTextContent(),
-                PLAYGROUND_TRANSFORMERS,
+                playgroundTransformers(shadowRootQuotes),
                 undefined, // node
                 shouldPreserveNewLinesInMarkdown,
               );
@@ -154,7 +156,7 @@ export default function ActionsPlugin({
       } else if (nextMode === 'markdown') {
         editor.update(() => {
           const markdown = $convertToMarkdownString(
-            PLAYGROUND_TRANSFORMERS,
+            playgroundTransformers(shadowRootQuotes),
             undefined, //node
             shouldPreserveNewLinesInMarkdown,
           );

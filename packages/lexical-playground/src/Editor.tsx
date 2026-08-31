@@ -53,6 +53,7 @@ export default function Editor(): JSX.Element {
       showTreeView,
       showTableOfContents,
       shouldUseLexicalContextMenu,
+      shadowRootQuotes,
       shouldPreserveNewLinesInMarkdown,
     },
   } = useSettings();
@@ -194,6 +195,7 @@ export default function Editor(): JSX.Element {
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
         <ActionsPlugin
+          shadowRootQuotes={shadowRootQuotes}
           shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}
           useCollabV2={useCollabV2}
         />

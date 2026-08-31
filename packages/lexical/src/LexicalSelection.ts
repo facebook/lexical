@@ -3692,19 +3692,47 @@ export function $getPreviousSelection(): null | BaseSelection {
   return editor._editorState._selection;
 }
 
+/**
+ * Whether `selection` has a point directly on `parentNode`, which is exactly
+ * the condition under which
+ * {@link $updateElementSelectionOnCreateDeleteNode} does anything at all.
+ * @internal
+ *
+ * Every caller of that function has to compute a child offset first, and
+ * `getIndexWithinParent` walks the parent's children from the first one, so
+ * doing it unconditionally makes a bulk insert or removal quadratic (#5194).
+ * Guarding the walk with this predicate skips it whenever the update would
+ * be a no-op. It is the same test the early return uses, so the two cannot
+ * drift apart.
+ *
+ * Note that a point *inside* `parentNode` (a text point on one of its
+ * descendants, say) does not count: the function only shifts offsets that
+ * are element-anchored on `parentNode` itself.
+ *
+ * This function is for internal use of the library.
+ * Please do not use it as it may change in the future.
+ */
+export function $selectionTouchesElement(
+  selection: RangeSelection,
+  parentNode: LexicalNode,
+): boolean {
+  const parentKey = parentNode.__key;
+  return (
+    selection.anchor.key === parentKey || selection.focus.key === parentKey
+  );
+}
+
 export function $updateElementSelectionOnCreateDeleteNode(
   selection: RangeSelection,
   parentNode: LexicalNode,
   nodeOffset: number,
   times = 1,
 ): void {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const anchorNode = anchor.getNode();
-  const focusNode = focus.getNode();
-  if (!parentNode.is(anchorNode) && !parentNode.is(focusNode)) {
+  if (!$selectionTouchesElement(selection, parentNode)) {
     return;
   }
+  const anchor = selection.anchor;
+  const focus = selection.focus;
   const parentKey = parentNode.__key;
   // Single node. We shift selection but never redimension it
   if (selection.isCollapsed()) {

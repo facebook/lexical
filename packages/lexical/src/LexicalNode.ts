@@ -42,6 +42,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $moveSelectionPointToEnd,
+  $selectionTouchesElement,
   $updateElementSelectionOnCreateDeleteNode,
   type BaseSelection,
   moveSelectionPointToSibling,
@@ -531,8 +532,14 @@ export function $removeNode(
     nodeToRemove.selectPrevious();
   }
 
-  if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
-    // Doing this is O(n) so lets avoid it unless we need to do it
+  if (
+    $isRangeSelection(selection) &&
+    restoreSelection &&
+    !selectionMoved &&
+    // getIndexWithinParent is O(n) in the parent's child count, so skip it
+    // unless the update below can observe the index (#5194).
+    $selectionTouchesElement(selection, parent)
+  ) {
     const index = nodeToRemove.getIndexWithinParent();
     $removeFromParent(nodeToRemove);
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
@@ -1663,12 +1670,22 @@ export class LexicalNode {
     // cloned selection's element offsets in that old parent can be adjusted
     // afterwards. See #6031.
     const replaceWithOldParent = writableReplaceWith.getParent();
-    const replaceWithOldIndex =
-      replaceWithOldParent !== null
-        ? writableReplaceWith.getIndexWithinParent()
-        : -1;
+    // getIndexWithinParent is O(n) in that parent's child count and the index
+    // is only read by the update below, which is a no-op unless a selection
+    // point sits on replaceWithOldParent itself (#5194).
+    const restoreInReplaceWithOldParent =
+      replaceWithOldParent !== null &&
+      $isRangeSelection(selection) &&
+      $selectionTouchesElement(selection, replaceWithOldParent);
+    const replaceWithOldIndex = restoreInReplaceWithOldParent
+      ? writableReplaceWith.getIndexWithinParent()
+      : -1;
     $removeFromParent(writableReplaceWith);
-    if (replaceWithOldParent !== null && $isRangeSelection(selection)) {
+    if (
+      restoreInReplaceWithOldParent &&
+      replaceWithOldParent !== null &&
+      $isRangeSelection(selection)
+    ) {
       $updateElementSelectionOnCreateDeleteNode(
         selection,
         replaceWithOldParent,
@@ -1783,32 +1800,31 @@ export class LexicalNode {
     // nodeToInsert's index in oldParent, or -1 when it was never computed
     // because nothing below can observe it.
     let oldIndex = -1;
+    // getIndexWithinParent walks oldParent's children from the first one, so
+    // calling it unconditionally makes a bulk insert quadratic (#5194). The
+    // index is only ever read through the selection: the comparisons below
+    // arm a flag only for a point whose key is oldParentKey, and
+    // $updateElementSelectionOnCreateDeleteNode is a no-op under the same
+    // condition $selectionTouchesElement tests. restoreSelection gates the
+    // block because the flags are read only under it, further down.
     if (
       oldParent !== null &&
       restoreSelection &&
-      $isRangeSelection(selection)
+      $isRangeSelection(selection) &&
+      $selectionTouchesElement(selection, oldParent)
     ) {
       const oldParentKey = oldParent.__key;
       const anchor = selection.anchor;
       const focus = selection.focus;
-      // getIndexWithinParent walks oldParent's children from the first one,
-      // so calling it unconditionally makes a bulk insert quadratic (#5194).
-      // The index is only ever read through the selection: the comparisons
-      // below arm a flag only for a point whose key is oldParentKey, and
-      // $updateElementSelectionOnCreateDeleteNode returns early unless anchor
-      // or focus resolves to the parent it is passed. restoreSelection gates
-      // the block because the flags are read only under it, further down.
-      if (anchor.key === oldParentKey || focus.key === oldParentKey) {
-        oldIndex = nodeToInsert.getIndexWithinParent();
-        elementAnchorSelectionOnNode =
-          anchor.type === 'element' &&
-          anchor.key === oldParentKey &&
-          anchor.offset === oldIndex + 1;
-        elementFocusSelectionOnNode =
-          focus.type === 'element' &&
-          focus.key === oldParentKey &&
-          focus.offset === oldIndex + 1;
-      }
+      oldIndex = nodeToInsert.getIndexWithinParent();
+      elementAnchorSelectionOnNode =
+        anchor.type === 'element' &&
+        anchor.key === oldParentKey &&
+        anchor.offset === oldIndex + 1;
+      elementFocusSelectionOnNode =
+        focus.type === 'element' &&
+        focus.key === oldParentKey &&
+        focus.offset === oldIndex + 1;
     }
     $removeFromParent(writableNodeToInsert);
     // Adjust element-anchored offsets in oldParent to track its reduced
@@ -1850,8 +1866,7 @@ export class LexicalNode {
       if (
         elementAnchorSelectionOnNode ||
         elementFocusSelectionOnNode ||
-        selection.anchor.key === writableParentKey ||
-        selection.focus.key === writableParentKey
+        $selectionTouchesElement(selection, writableParent)
       ) {
         const index = this.getIndexWithinParent();
         $updateElementSelectionOnCreateDeleteNode(
@@ -1894,14 +1909,22 @@ export class LexicalNode {
     // selection's element offsets in that old parent can be adjusted
     // afterwards. See #6031.
     const insertOldParent = writableNodeToInsert.getParent();
-    const insertOldIndex =
-      insertOldParent !== null
-        ? writableNodeToInsert.getIndexWithinParent()
-        : -1;
-    $removeFromParent(writableNodeToInsert);
-    if (
+    // getIndexWithinParent walks insertOldParent's children from the first
+    // one, so calling it unconditionally makes a bulk insert quadratic
+    // (#5194). The index is only read by the update below, which is a no-op
+    // unless a selection point sits on insertOldParent itself.
+    const restoreInOldParent =
       insertOldParent !== null &&
       restoreSelection &&
+      $isRangeSelection(selection) &&
+      $selectionTouchesElement(selection, insertOldParent);
+    const insertOldIndex = restoreInOldParent
+      ? writableNodeToInsert.getIndexWithinParent()
+      : -1;
+    $removeFromParent(writableNodeToInsert);
+    if (
+      restoreInOldParent &&
+      insertOldParent !== null &&
       $isRangeSelection(selection)
     ) {
       $updateElementSelectionOnCreateDeleteNode(
@@ -1914,8 +1937,15 @@ export class LexicalNode {
     const prevSibling = this.getPreviousSibling();
     const writableParent = this.getParentOrThrow().getWritable();
     const prevKey = writableSelf.__prev;
-    // TODO: this is O(n), can we improve?
-    const index = this.getIndexWithinParent();
+    // Same reasoning as the insertOldParent block above. Unlike insertAfter
+    // there is no #6031 re-anchor here, so the points are the only consumer.
+    // This node's index before the splice is where nodeToInsert lands, so it
+    // has to be read now rather than after the pointers are rewired.
+    const restoreInNewParent =
+      restoreSelection &&
+      $isRangeSelection(selection) &&
+      $selectionTouchesElement(selection, writableParent);
+    const index = restoreInNewParent ? this.getIndexWithinParent() : -1;
     if (prevSibling === null) {
       writableParent.__first = insertKey;
     } else {
@@ -1927,9 +1957,12 @@ export class LexicalNode {
     writableNodeToInsert.__prev = prevKey;
     writableNodeToInsert.__next = writableSelf.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
-    if (restoreSelection && $isRangeSelection(selection)) {
-      const parent = this.getParentOrThrow();
-      $updateElementSelectionOnCreateDeleteNode(selection, parent, index);
+    if (restoreInNewParent && $isRangeSelection(selection)) {
+      $updateElementSelectionOnCreateDeleteNode(
+        selection,
+        writableParent,
+        index,
+      );
     }
     return nodeToInsert;
   }

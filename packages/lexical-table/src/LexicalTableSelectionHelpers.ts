@@ -81,6 +81,7 @@ import {
   type PointCaret,
   type RangeSelection,
   registerEventListener,
+  registerEventListeners,
   removeClassNamesFromElement,
   SELECTION_CHANGE_COMMAND,
   type SiblingCaret,
@@ -333,6 +334,9 @@ function $handleTableClick(
     let lastClientX = event.clientX;
     let lastClientY = event.clientY;
     let autoScrollRafId: number | null = null;
+    // Removes every listener below. Assigned once they are defined; nothing
+    // can call stopSelecting before then, since only those listeners do.
+    let removeGestureListeners: (() => void) | null = null;
 
     // Events from other pointers belong to other gestures. Environments that
     // synthesise PointerEvents without a pointerId leave both sides undefined,
@@ -358,13 +362,10 @@ function $handleTableClick(
         editorWindow.cancelAnimationFrame(autoScrollRafId);
         autoScrollRafId = null;
       }
-      editorWindow.removeEventListener('pointerup', onPointerUp);
-      editorWindow.removeEventListener('pointermove', onPointerMove);
-      editorWindow.removeEventListener('pointercancel', onPointerGestureEnd);
-      editorWindow.removeEventListener(
-        'lostpointercapture',
-        onPointerGestureEnd,
-      );
+      if (removeGestureListeners !== null) {
+        removeGestureListeners();
+        removeGestureListeners = null;
+      }
     };
 
     // Resolve the table cell under the given viewport coordinates via the
@@ -625,24 +626,14 @@ function $handleTableClick(
       // scrollable table (#7153).
       maybeStartAutoScroll();
     };
-    editorWindow.addEventListener(
-      'pointerup',
-      onPointerUp,
-      tableObserver.listenerOptions,
-    );
-    editorWindow.addEventListener(
-      'pointermove',
-      onPointerMove,
-      tableObserver.listenerOptions,
-    );
-    editorWindow.addEventListener(
-      'pointercancel',
-      onPointerGestureEnd,
-      tableObserver.listenerOptions,
-    );
-    editorWindow.addEventListener(
-      'lostpointercapture',
-      onPointerGestureEnd,
+    removeGestureListeners = registerEventListeners(
+      editorWindow,
+      {
+        lostpointercapture: onPointerGestureEnd,
+        pointercancel: onPointerGestureEnd,
+        pointermove: onPointerMove,
+        pointerup: onPointerUp,
+      },
       tableObserver.listenerOptions,
     );
   };

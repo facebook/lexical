@@ -479,6 +479,7 @@ describe('LexicalEditor tests', () => {
         });
         editor.read(() => {
           // Nesting update in read works, although it is discouraged in the documentation.
+          // eslint-disable-next-line @lexical/no-nested-editor-updates -- This test documents the supported nested read/update behavior.
           editor.update(() => {
             expect($getRoot().getTextContent()).toBe('This works!');
           });
@@ -565,9 +566,11 @@ describe('LexicalEditor tests', () => {
         log.push('A1');
         // To enforce the update
         $getRoot().markDirty();
+        // eslint-disable-next-line @lexical/no-nested-editor-updates -- This test verifies nested update callback ordering.
         editor.update(
           () => {
             log.push('B1');
+            // eslint-disable-next-line @lexical/no-nested-editor-updates -- This test verifies nested update callback ordering.
             editor.update(
               () => {
                 log.push('C1');
@@ -644,6 +647,7 @@ describe('LexicalEditor tests', () => {
     log = [];
     editor.registerNodeTransform(TextNode, () => {
       log.push('TextTransform A3');
+      // eslint-disable-next-line @lexical/no-nested-editor-updates -- This test verifies updates scheduled by a transform.
       editor.update(
         () => {
           log.push('TextTransform B3');
@@ -697,6 +701,7 @@ describe('LexicalEditor tests', () => {
     const prevEditorState = editor.getEditorState();
     editor.update(() => {
       $setSelection($createRangeSelection());
+      // eslint-disable-next-line @lexical/no-nested-editor-updates -- This regression test verifies nested update commit behavior.
       editor.update(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Sync update')),
@@ -1394,6 +1399,7 @@ describe('LexicalEditor tests', () => {
     const unregisterCommand = editor.registerCommand(
       BURST_COMMAND,
       () => {
+        // eslint-disable-next-line @lexical/no-nested-editor-updates -- This test models command-driven update cascades.
         editor.update(() => {
           $getRoot().markDirty();
         });
@@ -2872,6 +2878,7 @@ describe('LexicalEditor tests', () => {
     expect(editor._updateTags).toEqual(new Set(['a', 'b']));
     editor.update(
       () => {
+        // eslint-disable-next-line @lexical/no-nested-editor-updates -- This test verifies tag merging across nested updates.
         editor.update(emptyFunction, {tag: ['e', 'f']});
       },
       {
@@ -3706,6 +3713,7 @@ describe('LexicalEditor tests', () => {
       $getRoot().append(
         $createParagraphNode().append($createTextNode('Async update')),
       );
+      // eslint-disable-next-line @lexical/no-nested-editor-updates -- The discrete nested update is the behavior under test.
       editor.update(
         () => {
           $getRoot().append(
@@ -3733,6 +3741,7 @@ describe('LexicalEditor tests', () => {
       expect(editor.getRootElement()?.innerHTML).toBe(
         '<p dir="auto"><span data-lexical-text="true">foo</span></p>',
       );
+      // eslint-disable-next-line @lexical/no-nested-editor-updates -- This test documents update-after-read behavior.
       editor.update(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('bar')),

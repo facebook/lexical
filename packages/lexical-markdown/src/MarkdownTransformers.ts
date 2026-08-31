@@ -481,62 +481,49 @@ function getColumn(whitespaces: string): number {
 }
 
 /**
- * How far past its marker an item of `list` opens its content, capped at one
- * `LIST_INDENT_SIZE` so that the indent `$listExport` writes always nests: a
- * sublist of `100. ` is exported with four spaces, short of that marker's real
- * content column. A check list item is marked by its bullet — the `[ ]` is
- * content — so `- [ ] a` opens at the same offset `- a` does.
- */
-function $getContentOffset(list: ListNode, lastItem: ListItemNode): number {
-  const width =
-    list.getListType() === 'number'
-      ? String(lastItem.getValue()).length + 2
-      : 2;
-  return Math.min(width, LIST_INDENT_SIZE);
-}
-
-/**
- * The content columns of the list levels open above a line that follows
- * `list`, outermost first.
+ * The content columns of the list levels the lines placed so far have left
+ * open, outermost first, or null outside a markdown import.
  *
  * A sublist is measured against the column where its parent item's content
  * begins rather than against a fixed number of spaces: that is what lets
  * `1. a` take a three-space sublist while `- a` takes a two-space one, and
  * what keeps two items written at the same column siblings even when that
  * column is deep enough to have opened a level.
+ *
+ * Only the line that opened a level knows the column it was written at, and
+ * nothing in the tree records it afterwards, so the columns are carried from
+ * line to line for the length of one import. A shortcut typed into an editor
+ * is a line on its own with no such run behind it and keeps reading its indent
+ * as a fixed `LIST_INDENT_SIZE` per level, which is the step `$listExport`
+ * writes and the one the toolbar and Tab indent by.
  */
-function $getListContentColumns(list: ListNode | null): number[] {
-  const columns: number[] = [];
-  for (let current = list; current !== null; ) {
-    const lastItem = current.getLastChild();
-    if (!$isListItemNode(lastItem)) {
-      break;
-    }
-    // A level's marker sits one LIST_INDENT_SIZE in from the level outside
-    // it, which is where $listExport writes it and where getIndent reads it.
-    columns.push(
-      columns.length * LIST_INDENT_SIZE + $getContentOffset(current, lastItem),
-    );
-    const nested = lastItem.getLastChild();
-    current = $isListNode(nested) ? nested : null;
+let importListColumns: number[] | null = null;
+
+/**
+ * Run `fn` with the columns of a single markdown import tracked across the
+ * lines it places. Restores whatever was being tracked around it, so an import
+ * that runs inside another one does not disturb it.
+ *
+ * @internal
+ */
+export function withListIndentColumns<T>(fn: () => T): T {
+  const previous = importListColumns;
+  importListColumns = [];
+  try {
+    return fn();
+  } finally {
+    importListColumns = previous;
   }
-  return columns;
 }
 
 /**
  * The indent `whitespaces` names given the levels open above it: the innermost
  * level whose content column it reaches, or 0 when it reaches none of them.
- *
- * With no list above the line there is no content column to measure against,
- * so the indent falls back to a fixed `LIST_INDENT_SIZE` per level.
  */
-function getListIndent(
+function getColumnIndent(
   columns: readonly number[],
   whitespaces: string,
 ): number {
-  if (columns.length === 0) {
-    return getIndent(whitespaces);
-  }
   const column = getColumn(whitespaces);
   for (let i = columns.length - 1; i >= 0; i--) {
     if (column >= columns[i]) {
@@ -544,6 +531,45 @@ function getListIndent(
     }
   }
   return 0;
+}
+
+/**
+ * How far past its marker this line opens its content, capped at one
+ * `LIST_INDENT_SIZE` so that the indent `$listExport` writes always nests: a
+ * sublist of `100. ` is exported with four spaces, short of that marker's real
+ * content column. A check list item is marked by its bullet — the `[ ]` is
+ * content — so `- [ ] a` opens at the same offset `- a` does.
+ */
+function getContentOffset(match: string[], listType: ListType): number {
+  const marker = match[0].slice(match[1].length);
+  const bullet = marker.match(/^[-*+]\s/);
+  const width =
+    listType === 'number'
+      ? match[2].length + 2
+      : bullet
+        ? bullet[0].length
+        : marker.length;
+  return Math.min(width, LIST_INDENT_SIZE);
+}
+
+/**
+ * Record the content column that this line leaves open for the lines below it,
+ * closing the levels it stepped back out of.
+ */
+function setOpenColumn(
+  columns: number[],
+  indent: number,
+  match: string[],
+  listType: ListType,
+): void {
+  // An indent read from `getIndent` rather than from the columns can name a
+  // level no line of this import opened, so any gap below it is filled with
+  // the fixed step that reading assumed.
+  for (let i = columns.length; i < indent; i++) {
+    columns[i] = (i + 1) * LIST_INDENT_SIZE;
+  }
+  columns.length = indent;
+  columns[indent] = getColumn(match[1]) + getContentOffset(match, listType);
 }
 
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
@@ -566,10 +592,15 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       firstMatchChar === listMarkerState.parse(firstMatchChar)
         ? firstMatchChar
         : undefined;
-    const indent = getListIndent(
-      $getListContentColumns($isListNode(previousNode) ? previousNode : null),
-      match[1],
-    );
+    // A line that does not follow a list closes every level above it.
+    if (importListColumns !== null && !$isListNode(previousNode)) {
+      importListColumns.length = 0;
+    }
+    const columns = importListColumns;
+    const indent =
+      columns === null || columns.length === 0
+        ? getIndent(match[1])
+        : getColumnIndent(columns, match[1]);
     if ($isListNode(nextNode) && nextNode.getListType() === listType) {
       const firstChild = nextNode.getFirstChild();
       if (firstChild !== null) {
@@ -621,6 +652,9 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     if (listMarker && $isListNode(listNode)) {
       $setState(listNode, listMarkerState, listMarker);
     }
+    if (columns !== null) {
+      setOpenColumn(columns, indent, match, listType);
+    }
   };
 };
 
@@ -648,13 +682,21 @@ function $retypeNestedList(
     listType,
     listType === 'number' ? Number(match[2]) : undefined,
   );
+  // `setIndent` either appends the item to the nested list or puts it in
+  // front of it, so the list of its own type belongs on whichever side of the
+  // one it was placed in it already sits on.
+  const isFirst = listItem.getPreviousSibling() === null;
   // `append` moves the item without disturbing the selection, which
   // `remove` would relocate to a sibling and leave there — the caret has to
   // stay in the item the shortcut just created.
   retypedList.append(listItem);
   const retypedWrapper = $createListItemNode();
   retypedWrapper.append(retypedList);
-  wrapper.insertAfter(retypedWrapper);
+  if (isFirst) {
+    wrapper.insertBefore(retypedWrapper);
+  } else {
+    wrapper.insertAfter(retypedWrapper);
+  }
   if (nestedList.getChildrenSize() === 0) {
     wrapper.remove();
   }

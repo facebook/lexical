@@ -6,7 +6,7 @@
  *
  */
 
-import {MenuOption} from '@lexical/react/LexicalNodeMenuPlugin';
+import {MenuOption} from '@lexical/react/LexicalMenuOption';
 import {
   createCommand,
   type LexicalCommand,

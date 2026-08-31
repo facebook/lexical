@@ -146,7 +146,11 @@ export type HMRConfig = {
   id?: string,
 };
 
-declare export var HMRExtension: LexicalExtension<HMRConfig, "@lexical/extension/HMR", void, void>;
+export type HMROutput = {
+  restoreCount: ReadonlySignal<number>,
+};
+
+declare export var HMRExtension: LexicalExtension<HMRConfig, "@lexical/extension/HMR", HMROutput, {restoreCount: Signal<number>}>;
 
 export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 declare export class HorizontalRuleNode extends DecoratorNode<React.Node> {

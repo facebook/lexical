@@ -107,6 +107,10 @@ Vite (and similar tools) apply React Fast Refresh — state-preserving HMR for R
 
 Several `@lexical/react` plugin modules split their non-component exports into companion `*Utils` files. Consumers that import non-component values directly from the `*Utils` module get more granular HMR boundaries, since changes to the component file don't invalidate those imports. The original module re-exports these for backwards compatibility.
 
+A companion module only earns that boundary if it imports no component module itself, so shared values it needs have to live somewhere component-free too: `MenuOption` — the class a menu plugin's options extend — is exported from `@lexical/react/LexicalMenuOption` for that reason, and re-exported from the plugin modules that used to define it.
+
+Values shared between entry points also have to be defined in one, not in an internal module: an internal module is inlined into every entry point that imports it, so a command or class defined there is a different object in each of them, and commands and `instanceof` are matched by identity.
+
 If you're building custom plugins, follow the same pattern: keep React components in one file and export hooks, constants, or classes from a separate file.
 
 ### Fallback: `// @refresh reset`

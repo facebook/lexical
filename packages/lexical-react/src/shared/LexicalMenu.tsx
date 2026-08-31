@@ -7,6 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {MenuOption} from '@lexical/react/LexicalMenuOption';
 import {SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND} from '@lexical/react/LexicalTypeaheadMenuPluginUtils';
 import {getScrollParent} from '@lexical/utils';
 import {
@@ -66,28 +67,10 @@ export type MenuResolution = {
   getRect: () => DOMRect;
 };
 
-/**
- * The base class for an item shown in a {@link LexicalTypeaheadMenuPlugin} or
- * {@link LexicalNodeMenuPlugin} menu. Each option has a unique `key` and a `ref`
- * to its rendered element (used for scrolling and keyboard navigation).
- * Subclass it to attach your own data such as a label or callback.
- */
-export class MenuOption {
-  key: string;
-  ref?: RefObject<HTMLElement | null>;
-  icon?: JSX.Element;
-  title?: JSX.Element | string;
-
-  constructor(key: string) {
-    this.key = key;
-    this.ref = {current: null};
-    this.setRefElement = this.setRefElement.bind(this);
-  }
-
-  setRefElement(element: HTMLElement | null) {
-    this.ref = {current: element};
-  }
-}
+// Defined in its own entry point rather than here, for the same reason as the
+// command above: this module is inlined into every entry that reaches it, so a
+// class defined here would be a different class in each of them.
+export {MenuOption};
 
 /**
  * A render function for a menu's contents. It receives the anchor element ref,

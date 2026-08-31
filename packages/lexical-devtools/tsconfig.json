@@ -145,6 +145,9 @@
       "@lexical/react/LexicalMarkdownShortcutPlugin": [
         "../lexical-react/src/LexicalMarkdownShortcutPlugin.tsx"
       ],
+      "@lexical/react/LexicalMenuOption": [
+        "../lexical-react/src/LexicalMenuOption.ts"
+      ],
       "@lexical/react/LexicalNestedComposer": [
         "../lexical-react/src/LexicalNestedComposer.tsx"
       ],

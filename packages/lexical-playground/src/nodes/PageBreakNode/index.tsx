@@ -11,6 +11,7 @@ import './index.css';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {
+  $getDocument,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   DecoratorNode,
@@ -67,7 +68,7 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(): HTMLElement {
-    const el = document.createElement('hr');
+    const el = $getDocument().createElement('hr');
     el.style.pageBreakAfter = 'always';
     el.setAttribute('data-lexical-page-break', 'true');
     return el;

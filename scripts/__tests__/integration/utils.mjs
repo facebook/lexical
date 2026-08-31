@@ -21,6 +21,14 @@ const monorepoVersion = readMonorepoPackageJson().version;
 
 const LONG_TIMEOUT = 240 * 1000;
 
+// See expectSuccessfulExec -- an install may have to wait out a dependency
+// that is moments short of the monorepo's minimumReleaseAge, so the hooks
+// that install get that budget on top of the usual timeout.
+const MATURITY_RETRY_DELAY_MS = 60 * 1000;
+const MATURITY_RETRIES = 3;
+const INSTALL_TIMEOUT =
+  LONG_TIMEOUT + MATURITY_RETRIES * MATURITY_RETRY_DELAY_MS;
+
 /**
  * @function
  * @template T
@@ -39,22 +47,132 @@ async function withCwd(dir, cb) {
 }
 
 /**
+ * @param {number} ms
+ * @returns {Promise<void>}
+ */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * The examples resolve their third-party dependencies straight from the
+ * registry with no lockfile, so the monorepo's minimumReleaseAge applies to
+ * them (it reaches these installs as the npm_config_minimum_release_age that
+ * pnpm exports to child processes) exactly as it does anywhere else.
+ *
+ * It has one sharp edge. npm does not require a dependency to exist when the
+ * package depending on it is published, so a family that publishes
+ * exact-pinned siblings in a loop lands its parent on the registry seconds
+ * ahead of the children -- 8 of the 10 dependencies @zag-js/combobox pins to
+ * its own version are published after it. Once that gap ages past the
+ * cooldown there is a window, 26s to 88s wide across recent @zag-js releases
+ * and recurring after every one of them, where the parent is mature, an
+ * exactly-pinned child is not, and pnpm errors out rather than backtracking
+ * to a parent whose whole closure is mature.
+ *
+ * The window closes on its own, so wait it out instead of failing a PR that
+ * has nothing to do with it. This does not soften the cooldown: no version is
+ * excluded and nothing immature is installed, a retry only succeeds once pnpm
+ * accepts the version on its own terms.
+ *
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isImmatureDependencyError(err) {
+  const {stdout, stderr} =
+    /** @type {{stdout?: string; stderr?: string}} */ (err) || {};
+  return `${stdout || ''}${stderr || ''}`.includes(
+    'ERR_PNPM_NO_MATURE_MATCHING_VERSION',
+  );
+}
+
+/**
  * @param {string} cmd
+ * @param {number} [retriesLeft=MATURITY_RETRIES]
  * @returns {Promise<{stdout: string; stderr: string}>}
  */
-function expectSuccessfulExec(cmd) {
+async function expectSuccessfulExec(cmd, retriesLeft = MATURITY_RETRIES) {
   // Filter out VITEST_WORKER_ID to prevent Playwright from detecting Vitest environment
   const env = Object.fromEntries(
     Object.entries(process.env).filter(([k]) => k !== 'VITEST_WORKER_ID'),
   );
-  return exec(cmd, {env}).catch(err => {
+  try {
+    return await exec(cmd, {env});
+  } catch (caught) {
+    // `.catch(err => ...)` used to hand this back as `any`; a catch binding is
+    // `unknown` under strict, so restore the shape the reporting below reads.
+    const err = /** @type {Record<string, unknown>} */ (caught);
+    if (retriesLeft > 0 && isImmatureDependencyError(err)) {
+      console.warn(
+        `${cmd}: a dependency is short of the minimumReleaseAge cooldown, ` +
+          `waiting ${MATURITY_RETRY_DELAY_MS / 1000}s to retry ` +
+          `(${retriesLeft} ${retriesLeft === 1 ? 'retry' : 'retries'} left)`,
+      );
+      await sleep(MATURITY_RETRY_DELAY_MS);
+      return expectSuccessfulExec(cmd, retriesLeft - 1);
+    }
     expect(
       Object.fromEntries(
         ['code', 'stdout', 'stderr'].map(prop => [prop, err[prop]]),
       ),
     ).toBe(null);
     throw err;
-  });
+  }
+}
+
+/**
+ * The install command for a standalone project outside the monorepo workspace.
+ *
+ * Each example and fixture carries its own pnpm-workspace.yaml, which makes its
+ * directory the workspace root so pnpm never climbs into the monorepo above it
+ * — and which is also the only place pnpm 11 reads a project's `overrides` and
+ * build-script settings from. `--ignore-workspace` would suppress that file
+ * along with the monorepo's, so it is used only where no such file exists.
+ *
+ * Call this before `withCwd`: it chdirs, and a relative projectDir would then
+ * resolve against the project itself and never find the file.
+ *
+ * @param {string} projectDir
+ */
+function installCommand(projectDir) {
+  return fs.existsSync(path.resolve(projectDir, 'pnpm-workspace.yaml'))
+    ? 'pnpm install'
+    : 'pnpm install --ignore-workspace';
+}
+
+/**
+ * Merge `overrides` entries into a project's pnpm-workspace.yaml text.
+ *
+ * pnpm 11 reads `overrides` only from pnpm-workspace.yaml — not from
+ * `package.json#pnpm`, and not from npm's `overrides` field — so the harness
+ * has to write them there. The entries are injected into the project's
+ * existing `overrides:` block when it has one (agent-example's stubs, the
+ * astro fixture's), and appended as a new block otherwise. Keys never collide:
+ * these are `@lexical/*` package names and the projects override third-party
+ * ones, and a duplicate mapping key would be a YAML parse error rather than a
+ * silent merge, so a collision fails loudly.
+ *
+ * @param {string} yamlText the project's pnpm-workspace.yaml, verbatim
+ * @param {Record<string, string>} overrides
+ * @returns {string}
+ */
+export function mergeWorkspaceOverrides(yamlText, overrides) {
+  const entries = Object.entries(overrides).map(
+    ([name, spec]) => `  '${name}': '${spec}'`,
+  );
+  if (entries.length === 0) {
+    return yamlText;
+  }
+  const lines = yamlText.split('\n');
+  const at = lines.indexOf('overrides:');
+  if (at !== lines.lastIndexOf('overrides:')) {
+    throw new Error('pnpm-workspace.yaml has more than one overrides block');
+  }
+  if (at === -1) {
+    return `${yamlText.replace(/\n*$/, '\n')}\noverrides:\n${entries.join('\n')}\n`;
+  }
+  lines.splice(at + 1, 0, ...entries);
+  return lines.join('\n');
 }
 
 /**
@@ -68,7 +186,7 @@ function expectSuccessfulExec(cmd) {
  * @param {ExampleContext} ctx
  * @returns {Promise<Map<string, PackageMetadata>>} The installed monorepo dependency map
  */
-async function buildExample({packageJson, packageJsonPath, exampleDir}) {
+async function buildExample({packageJson, exampleDir}) {
   let hasPlaywright = false;
   /** @type {Map<string, string>} */
   const allDeps = new Map();
@@ -91,10 +209,10 @@ async function buildExample({packageJson, packageJsonPath, exampleDir}) {
   if (depsMap.size === 0) {
     throw new Error(`No lexical dependencies detected: ${exampleDir}`);
   }
-  // Build pnpm.overrides entries pointing each monorepo dep at its
-  // freshly built tarball. We layer them on top of any pnpm.overrides
-  // the example already declares (e.g. agent-example's stubs for
-  // onnxruntime-node / sharp) so the existing overrides keep firing.
+  // Point each monorepo dep at its freshly built tarball. These are layered
+  // into the project's own pnpm-workspace.yaml, on top of the overrides it
+  // already declares (e.g. agent-example's stubs for onnxruntime-node /
+  // sharp), so the existing overrides keep firing.
   const lexicalOverrides = Object.fromEntries(
     Array.from(depsMap.entries(), ([dep, pkg]) => [
       dep,
@@ -104,17 +222,15 @@ async function buildExample({packageJson, packageJsonPath, exampleDir}) {
       )}`,
     ]),
   );
-  const augmentedPackageJson = {
-    ...packageJson,
-    pnpm: {
-      ...(packageJson.pnpm || {}),
-      overrides: {
-        ...((packageJson.pnpm && packageJson.pnpm.overrides) || {}),
-        ...lexicalOverrides,
-      },
-    },
-  };
-  const originalPackageJsonBytes = fs.readFileSync(packageJsonPath);
+  const workspaceYamlPath = path.resolve(exampleDir, 'pnpm-workspace.yaml');
+  // A project that has not (yet) checked one in still has to install with its
+  // overrides applied, so the harness writes a throwaway file and removes it
+  // again below. Every example should ship one — see the audit in
+  // scripts/__tests__/unit/build.test.ts — but a new one landing without it
+  // must not take the whole suite down.
+  const originalWorkspaceYaml = fs.existsSync(workspaceYamlPath)
+    ? fs.readFileSync(workspaceYamlPath, 'utf8')
+    : null;
   [
     'node_modules',
     'dist',
@@ -125,19 +241,29 @@ async function buildExample({packageJson, packageJsonPath, exampleDir}) {
   ].forEach(cleanPath => fs.removeSync(path.resolve(exampleDir, cleanPath)));
 
   try {
-    fs.writeJsonSync(packageJsonPath, augmentedPackageJson, {spaces: 2});
+    fs.writeFileSync(
+      workspaceYamlPath,
+      mergeWorkspaceOverrides(originalWorkspaceYaml ?? '', lexicalOverrides),
+    );
+    // Written above if it was missing, so the install never falls back to
+    // --ignore-workspace, which would suppress the overrides just written.
+    const install = installCommand(exampleDir);
     await withCwd(exampleDir, async () => {
-      await expectSuccessfulExec('pnpm install --ignore-workspace');
+      await expectSuccessfulExec(install);
       await expectSuccessfulExec('pnpm run build');
       if (hasPlaywright) {
         await expectSuccessfulExec('pnpm exec playwright install');
       }
     });
   } finally {
-    // Restore the unmodified package.json so the test doesn't leave a
+    // Restore the unmodified pnpm-workspace.yaml so the test doesn't leave a
     // dirty working tree behind (the file-path overrides reference an
     // absolute path on the runner that wouldn't make sense elsewhere).
-    fs.writeFileSync(packageJsonPath, originalPackageJsonBytes);
+    if (originalWorkspaceYaml === null) {
+      fs.removeSync(workspaceYamlPath);
+    } else {
+      fs.writeFileSync(workspaceYamlPath, originalWorkspaceYaml);
+    }
   }
   return depsMap;
 }
@@ -158,7 +284,7 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
     const deps = [];
     beforeAll(async () => {
       deps.push(...(await buildExample(ctx)).values());
-    }, LONG_TIMEOUT);
+    }, INSTALL_TIMEOUT);
     test('install & build succeeded', () => {
       expect(true).toBe(true);
     });
@@ -228,7 +354,7 @@ function describeDevExample(packageJsonPath) {
         await expectSuccessfulExec('pnpm install');
         await expectSuccessfulExec('pnpm run build');
       });
-    }, LONG_TIMEOUT);
+    }, INSTALL_TIMEOUT);
     test('build succeeded', () => {
       expect(true).toBe(true);
     });
@@ -248,9 +374,10 @@ function describeDevExample(packageJsonPath) {
 
 /**
  * Describe a fixture that consumes monorepo packages via pnpm's link:
- * protocol. The fixture is intentionally outside the pnpm workspace, so
- * `pnpm install --ignore-workspace` resolves link: deps as real symlinks
- * into packages/ — the workflow real consumers use with `pnpm link`.
+ * protocol. The fixture is intentionally outside the pnpm workspace — its own
+ * pnpm-workspace.yaml keeps it that way — so the install resolves link: deps as
+ * real symlinks into packages/ — the workflow real consumers use with
+ * `pnpm link`.
  *
  * @param {string} packageJsonPath
  */
@@ -264,11 +391,12 @@ function describeLinkedFixture(packageJsonPath) {
       for (const cleanPath of ['node_modules', 'pnpm-lock.yaml', 'dist']) {
         fs.removeSync(path.resolve(exampleDir, cleanPath));
       }
+      const install = installCommand(exampleDir);
       await withCwd(exampleDir, async () => {
-        await expectSuccessfulExec('pnpm install --ignore-workspace');
+        await expectSuccessfulExec(install);
         await expectSuccessfulExec('pnpm run build');
       });
-    }, LONG_TIMEOUT);
+    }, INSTALL_TIMEOUT);
     test('build succeeded', () => {
       expect(true).toBe(true);
     });

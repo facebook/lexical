@@ -26,7 +26,11 @@ import {
 } from 'lexical';
 import {type JSX, useCallback} from 'react';
 
-import {$createEquationNode, EquationNode} from '../../nodes/EquationNode';
+import {
+  $createEquationNode,
+  decodeEquation,
+  EquationNode,
+} from '../../nodes/EquationNode';
 import KatexEquationAlterer from '../../ui/KatexEquationAlterer';
 
 type CommandPayload = {
@@ -35,14 +39,14 @@ type CommandPayload = {
 };
 
 export const INSERT_EQUATION_COMMAND: LexicalCommand<CommandPayload> =
-  /* @__PURE__ */ createCommand('INSERT_EQUATION_COMMAND');
+  createCommand('INSERT_EQUATION_COMMAND');
 
 function $convertEquationElement(el: HTMLElement) {
   const encoded = el.getAttribute('data-lexical-equation');
   if (!encoded) {
     return null;
   }
-  const equation = atob(encoded);
+  const equation = decodeEquation(encoded);
   if (!equation) {
     return null;
   }
@@ -50,7 +54,7 @@ function $convertEquationElement(el: HTMLElement) {
   return $createEquationNode(equation, inline);
 }
 
-const EquationImportRule = /* @__PURE__ */ defineImportRule({
+const EquationImportRule = defineImportRule({
   $import: (_ctx, el, $next) => {
     const node = $convertEquationElement(el);
     return node ? [node] : $next();
@@ -59,9 +63,9 @@ const EquationImportRule = /* @__PURE__ */ defineImportRule({
   name: '@lexical/playground/equation',
 });
 
-export const EquationsExtension = /* @__PURE__ */ defineExtension({
+export const EquationsExtension = defineExtension({
   dependencies: [
-    /* @__PURE__ */ configExtension(DOMImportExtension, {
+    configExtension(DOMImportExtension, {
       rules: [EquationImportRule],
     }),
   ],

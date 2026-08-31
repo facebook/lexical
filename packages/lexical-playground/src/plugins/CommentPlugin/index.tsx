@@ -80,8 +80,9 @@ import CommentEditorTheme from '../../themes/CommentEditorTheme';
 import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
 
-export const INSERT_INLINE_COMMAND: LexicalCommand<void> =
-  /* @__PURE__ */ createCommand('INSERT_INLINE_COMMAND');
+export const INSERT_INLINE_COMMAND: LexicalCommand<void> = createCommand(
+  'INSERT_INLINE_COMMAND',
+);
 
 function AddCommentBox({
   anchorKey,
@@ -224,11 +225,11 @@ function CommentInputBox({
   const boxRef = useRef<HTMLDivElement>(null);
   const selectionState = useMemo(
     () => ({
-      container: document.createElement('div'),
-      elements: [],
+      elements: [] as HTMLSpanElement[],
     }),
     [],
   );
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const selectionRef = useRef<RangeSelection | null>(null);
   const author = useCollabAuthorName();
 
@@ -257,13 +258,18 @@ function CommentInputBox({
             correctedLeft = 10;
           }
           boxElem.style.left = `${correctedLeft}px`;
+          const doc = boxElem.ownerDocument;
           boxElem.style.top = `${
             bottom +
             20 +
-            (window.pageYOffset || document.documentElement.scrollTop)
+            ((doc.defaultView?.pageYOffset ?? 0) ||
+              doc.documentElement.scrollTop)
           }px`;
           const selectionRectsLength = selectionRects.length;
-          const {container} = selectionState;
+          const container = containerRef.current;
+          if (container === null) {
+            return;
+          }
           const elements: HTMLSpanElement[] = selectionState.elements;
           const elementsLength = elements.length;
 
@@ -271,7 +277,7 @@ function CommentInputBox({
             const selectionRect = selectionRects[i];
             let elem: HTMLSpanElement = elements[i];
             if (elem === undefined) {
-              elem = document.createElement('span');
+              elem = container.ownerDocument.createElement('span');
               elements[i] = elem;
               container.appendChild(elem);
             }
@@ -279,7 +285,8 @@ function CommentInputBox({
             elem.style.position = 'absolute';
             elem.style.top = `${
               selectionRect.top +
-              (window.pageYOffset || document.documentElement.scrollTop)
+              ((doc.defaultView?.pageYOffset ?? 0) ||
+                doc.documentElement.scrollTop)
             }px`;
             elem.style.left = `${selectionRect.left}px`;
             elem.style.height = `${selectionRect.height}px`;
@@ -299,20 +306,22 @@ function CommentInputBox({
   }, [editor, selectionState]);
 
   useLayoutEffect(() => {
-    updateLocation();
-    const container = selectionState.container;
-    const body = document.body;
-    if (body !== null) {
-      body.appendChild(container);
-      return () => {
-        body.removeChild(container);
-      };
+    const body = editor.getRootElement()?.ownerDocument?.body ?? document.body;
+    if (containerRef.current === null) {
+      containerRef.current = body.ownerDocument.createElement('div');
     }
-  }, [selectionState.container, updateLocation]);
+    const container = containerRef.current;
+    updateLocation();
+    body.appendChild(container);
+    return () => {
+      body.removeChild(container);
+    };
+  }, [editor, updateLocation]);
 
   useEffect(() => {
-    return registerEventListener(window, 'resize', updateLocation);
-  }, [updateLocation]);
+    const win = editor.getRootElement()?.ownerDocument?.defaultView ?? window;
+    return registerEventListener(win, 'resize', updateLocation);
+  }, [editor, updateLocation]);
 
   const onEscape = (event: KeyboardEvent): boolean => {
     event.preventDefault();
@@ -951,6 +960,9 @@ export default function CommentPlugin({
     editor.dispatchCommand(INSERT_INLINE_COMMAND);
   };
 
+  const portalTarget =
+    editor.getRootElement()?.ownerDocument?.body ?? document.body;
+
   return (
     <>
       {showCommentInput &&
@@ -960,7 +972,7 @@ export default function CommentPlugin({
             cancelAddComment={cancelAddComment}
             submitAddComment={submitAddComment}
           />,
-          document.body,
+          portalTarget,
         )}
       {activeAnchorKey !== null &&
         activeAnchorKey !== undefined &&
@@ -971,7 +983,7 @@ export default function CommentPlugin({
             editor={editor}
             onAddComment={onAddComment}
           />,
-          document.body,
+          portalTarget,
         )}
       {createPortal(
         <Button
@@ -982,7 +994,7 @@ export default function CommentPlugin({
           title={showComments ? 'Hide Comments' : 'Show Comments'}>
           <i className="comments" />
         </Button>,
-        document.body,
+        portalTarget,
       )}
       {showComments &&
         createPortal(
@@ -993,7 +1005,7 @@ export default function CommentPlugin({
             activeIDs={activeIDs}
             markNodeMap={markNodeMap}
           />,
-          document.body,
+          portalTarget,
         )}
     </>
   );

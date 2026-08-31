@@ -83,13 +83,18 @@ export function registerLink(
           }
           return false;
         } else {
-          const {url, target, rel, title} = payload;
-          $toggleLink(url, {
-            ...attributes,
-            rel,
-            target,
-            title,
-          });
+          // Only the attributes the payload actually carries may override the
+          // configured defaults. Destructuring `rel`/`target`/`title` and
+          // spreading them unconditionally would write `undefined` over every
+          // configured value, since an explicit `undefined` still shadows a
+          // spread key.
+          const {url, ...payloadAttributes} = payload;
+          // Same gate as the string payload above: validateUrl is documented
+          // as rejecting URLs for this command, not for one of its two shapes.
+          if (validateUrl !== undefined && !validateUrl(url)) {
+            return false;
+          }
+          $toggleLink(url, {...attributes, ...payloadAttributes});
           return true;
         }
       },
@@ -149,7 +154,7 @@ export function registerLink(
  * listener to wrap selected nodes in a link when a
  * URL is pasted and `validateUrl` is defined.
  */
-export const LinkExtension = /* @__PURE__ */ defineExtension({
+export const LinkExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
@@ -159,7 +164,7 @@ export const LinkExtension = /* @__PURE__ */ defineExtension({
     // unless the editor routes HTML through the pipeline (e.g. via
     // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
     CoreImportExtension,
-    /* @__PURE__ */ configExtension(DOMImportExtension, {
+    configExtension(DOMImportExtension, {
       rules: LinkImportRules,
     }),
   ],
@@ -189,7 +194,7 @@ export const LinkExtension = /* @__PURE__ */ defineExtension({
  * {@link LinkImportRules} (and `CoreImportExtension`) itself — depend on
  * it directly instead.
  */
-export const LinkImportExtension = /* @__PURE__ */ defineExtension({
+export const LinkImportExtension = defineExtension({
   dependencies: [LinkExtension],
   name: '@lexical/link/Import',
 });

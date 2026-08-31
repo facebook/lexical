@@ -95,10 +95,12 @@ export class TabNode extends TextNode {
   }
 }
 
+/** Creates a TabNode representing a horizontal tab character. */
 export function $createTabNode(): TabNode {
   return $applyNodeReplacement(new TabNode());
 }
 
+/** Returns true if the given node is a TabNode. */
 export function $isTabNode(
   node: LexicalNode | null | undefined,
 ): node is TabNode {

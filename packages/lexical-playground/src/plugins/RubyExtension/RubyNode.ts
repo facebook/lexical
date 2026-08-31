@@ -10,6 +10,7 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {
   $create,
   $createTextNode,
+  $getDocument,
   $getSelection,
   $getState,
   $getStateChange,
@@ -20,6 +21,7 @@ import {
   type DOMExportOutput,
   type DOMSlot,
   type EditorConfig,
+  isHTMLElement,
   type LexicalNode,
   type NodeStateVersion,
   type StateConfigValue,
@@ -27,7 +29,7 @@ import {
   TextNode,
 } from 'lexical';
 
-const annotationState = /* @__PURE__ */ createState('annotation', {
+const annotationState = createState('annotation', {
   parse: v => (typeof v === 'string' ? v : ''),
 });
 
@@ -47,7 +49,7 @@ export class RubyNode extends TextNode {
       inner,
       config.theme.ruby || 'PlaygroundEditorTheme__ruby',
     );
-    const wrapper = document.createElement('span');
+    const wrapper = $getDocument().createElement('span');
     wrapper.setAttribute('role', 'group');
     wrapper.setAttribute(
       'aria-label',
@@ -58,21 +60,25 @@ export class RubyNode extends TextNode {
   }
 
   getDOMSlot(dom: HTMLElement): DOMSlot<HTMLElement> {
-    const inner = dom.firstElementChild as HTMLElement | null;
-    if (inner) {
+    const inner = dom.firstElementChild;
+    if (isHTMLElement(inner)) {
       return super.getDOMSlot(dom).withElement(inner);
     }
     return super.getDOMSlot(dom);
   }
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    const updated = super.updateDOM(prevNode, dom, config);
+    // `dom` is the wrapper, but createDOM applies the text format classes and
+    // the node style to the inner element, so super has to be handed the same
+    // element or the two disagree about where those live.
+    const inner = dom.firstElementChild;
+    if (!isHTMLElement(inner)) {
+      return true;
+    }
+    const updated = super.updateDOM(prevNode, inner, config);
     const annotationChange = $getStateChange(this, prevNode, annotationState);
     if (annotationChange || prevNode.__text !== this.__text) {
-      const inner = dom.firstElementChild as HTMLElement;
-      if (inner) {
-        inner.dataset.rubyAnnotation = this.getAnnotation();
-      }
+      inner.dataset.rubyAnnotation = this.getAnnotation();
       dom.setAttribute(
         'aria-label',
         `${this.__text} (${this.getAnnotation()})`,
@@ -82,15 +88,15 @@ export class RubyNode extends TextNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const ruby = document.createElement('ruby');
+    const ruby = $getDocument().createElement('ruby');
     ruby.textContent = this.getTextContent();
-    const rpOpen = document.createElement('rp');
+    const rpOpen = $getDocument().createElement('rp');
     rpOpen.textContent = '(';
     ruby.appendChild(rpOpen);
-    const rt = document.createElement('rt');
+    const rt = $getDocument().createElement('rt');
     rt.textContent = this.getAnnotation();
     ruby.appendChild(rt);
-    const rpClose = document.createElement('rp');
+    const rpClose = $getDocument().createElement('rp');
     rpClose.textContent = ')';
     ruby.appendChild(rpClose);
     return {element: ruby};

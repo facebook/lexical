@@ -47,11 +47,5 @@
   "overrides": {
     "onnxruntime-node": "$onnxruntime-node",
     "sharp": "$sharp"
-  },
-  "pnpm": {
-    "overrides": {
-      "onnxruntime-node": "link:./stubs/empty",
-      "sharp": "link:./stubs/empty"
-    }
   }
 }

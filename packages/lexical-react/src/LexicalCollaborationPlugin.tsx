@@ -39,6 +39,19 @@ type ProviderFactory = (id: string, yjsDocMap: Map<string, Doc>) => Provider;
 type CollaborationPluginProps = {
   id: string;
   providerFactory: ProviderFactory;
+  /**
+   * Seed the document with an empty paragraph (or `initialEditorState`) once
+   * the provider reports `sync` and the document is still empty.
+   *
+   * At most one client may pass `true` for a given document. The seed is an
+   * ordinary Yjs insert rather than a compare-and-set, so two clients that both
+   * observe an empty document each insert a paragraph and Yjs keeps both,
+   * leaving every client with a spurious leading empty block. This is easy to
+   * hit with a nested editor (an image caption, a sticky note), where every
+   * client mounts the editor -- and so connects to its document -- at the same
+   * moment the node itself syncs. Prefer bootstrapping the document
+   * server-side; see the collaboration docs.
+   */
   shouldBootstrap: boolean;
   username?: string;
   cursorColor?: string;

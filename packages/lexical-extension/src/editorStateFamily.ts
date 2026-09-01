@@ -491,6 +491,13 @@ export function deserializeEditorStateFamily(
       }
       nodeMap.set(node.__key, node);
     }
+    if (!nodeMap.has('root')) {
+      // A state has to describe a document, which starts at a root — one
+      // without it would be handed to an editor `$getRoot()` cannot read
+      // from. Like a version that would not rebuild, it costs this state
+      // rather than the family.
+      return null;
+    }
     const state = template.clone(
       $restoreSelection(serializedState.selection, keys),
     );

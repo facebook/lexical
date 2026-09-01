@@ -598,7 +598,6 @@ export const HMRExtension = defineExtension<
               );
             }
           } else if (!restoredState.isEmpty()) {
-            restored = true;
             // This is the one state whose JSON the new node classes have never
             // seen, so let setEditorState normalize it the way it normalizes
             // anything freshly parsed. The history entries deliberately keep
@@ -622,6 +621,11 @@ export const HMRExtension = defineExtension<
                 );
               }
             }
+            // Last, so that a restore that threw on its way here is not
+            // announced as one that happened: the catch below reports it as a
+            // fresh start, and anything re-deriving state from the counter
+            // would otherwise act on an editor that was never restored.
+            restored = true;
           }
         }
       } catch (e) {

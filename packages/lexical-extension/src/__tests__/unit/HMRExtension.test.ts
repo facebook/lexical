@@ -187,6 +187,11 @@ function entriesOf(historyState: {
   ];
 }
 
+function restoreCountOf(editor: LexicalEditor) {
+  return getExtensionDependencyFromEditor(editor, HMRExtension).output
+    .restoreCount.value;
+}
+
 function historyStateOf(editor: LexicalEditor) {
   return getExtensionDependencyFromEditor(editor, HistoryExtension).output
     .historyState.value;
@@ -1392,6 +1397,49 @@ describe('HMRExtension', () => {
       expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();
+    }
+  });
+
+  test('rejects a payload whose states describe no document', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(() => $setupContent('typed'), {discrete: true});
+    }
+
+    corruptPayload(hot, payload => {
+      payload.family.states[0].nodes = [];
+    });
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      using editor = createEditor(hot);
+      // A state with no root rebuilds into an editor `$getRoot()` cannot read
+      // from, so it has to be turned away rather than handed over
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('initial');
+      });
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('Could not restore previous editor state'),
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('announces a restore only when one happened', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      expect(restoreCountOf(editor)).toBe(0);
+      editor.update(() => $setupContent('typed'), {discrete: true});
+    }
+
+    {
+      using editor = createEditor(hot);
+      expect(restoreCountOf(editor)).toBe(1);
     }
   });
 

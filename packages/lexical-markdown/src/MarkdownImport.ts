@@ -272,7 +272,21 @@ function $importBlocks(
         while ($isQuoteNode(block) && block.isShadowRoot()) {
           block = block.getLastChild();
         }
-        targetNode = $isElementNode(block) ? block : null;
+        if ($isListNode(block)) {
+          // Continue the list's last item, as the top-level list branch
+          // above does — splicing into the ListNode itself would wrap the
+          // inline nodes into new list items.
+          const lastDescendant = block.getLastDescendant();
+          block =
+            lastDescendant === null
+              ? null
+              : $findMatchingParent(lastDescendant, $isListItemNode);
+        }
+        // Lazy continuation only continues paragraph content (a heading or
+        // code block ends at its line), mirroring the paragraph-only merge
+        // in the quote transformer itself.
+        targetNode =
+          $isParagraphNode(block) || $isListItemNode(block) ? block : null;
       }
 
       if (targetNode != null && targetNode.getTextContentSize() > 0) {

@@ -380,10 +380,13 @@ export const PLAYGROUND_TRANSFORMERS: Transformer[] = [
  * and `> # Heading` nests the heading inside the quote. Selected by the
  * "Shadow root quotes in Markdown" setting.
  */
-export const PLAYGROUND_SHADOW_ROOT_QUOTE_TRANSFORMERS: Transformer[] =
+const PLAYGROUND_SHADOW_ROOT_QUOTE_TRANSFORMERS: Transformer[] =
   PLAYGROUND_TRANSFORMERS.map(transformer =>
     transformer === QUOTE
-      ? createQuoteTransformer({shadowRoot: true})
+      ? createQuoteTransformer({
+          shadowRoot: true,
+          transformers: () => PLAYGROUND_SHADOW_ROOT_QUOTE_TRANSFORMERS,
+        })
       : transformer,
   );
 

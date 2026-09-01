@@ -24,6 +24,7 @@ export type Transformer =
 
 export type QuoteTransformerOptions = {
   shadowRoot?: boolean,
+  transformers?: Array<Transformer> | (() => Array<Transformer>),
 };
 
 export type ElementTransformer = {

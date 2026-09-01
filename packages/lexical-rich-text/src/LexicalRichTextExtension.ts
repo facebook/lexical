@@ -19,6 +19,7 @@ import {
   COMMAND_PRIORITY_LOW,
   configExtension,
   defineExtension,
+  isModifierMatch,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -109,15 +110,6 @@ function $isShadowRootQuoteNode(node?: LexicalNode | null): node is QuoteNode {
 }
 
 /**
- * A plain arrow press, with no modifier. Shift extends the selection, and the
- * other modifiers are word/line/document motions; none of them should insert a
- * paragraph, so the escape declines and lets the default run.
- */
-function isPlainArrow(event: KeyboardEvent): boolean {
-  return !(event.shiftKey || event.altKey || event.metaKey || event.ctrlKey);
-}
-
-/**
  * Adds a paragraph before or after a shadow root quote when the caret is at
  * its edge and it is the first or last block in its parent, so the quote can
  * be escaped with the arrow keys. Enabled through
@@ -125,15 +117,11 @@ function isPlainArrow(event: KeyboardEvent): boolean {
  * so it is reachable only by configuring {@link RichTextExtension}.
  */
 function registerShadowRootQuoteEscape(editor: LexicalEditor): () => void {
-  const escape =
-    (
-      $onEscape: (
-        $isContainerNode: typeof $isShadowRootQuoteNode,
-        event?: KeyboardEvent | null,
-      ) => boolean,
-    ) =>
-    (event: KeyboardEvent) =>
-      isPlainArrow(event) && $onEscape($isShadowRootQuoteNode, event);
+  const escape = ($onEscape: typeof $onEscapeDown) => (event: KeyboardEvent) =>
+    // A plain arrow press only: Shift extends the selection and the other
+    // modifiers are word/line/document motions; none of them should insert
+    // a paragraph, so the escape declines and lets the default run.
+    isModifierMatch(event, {}) && $onEscape($isShadowRootQuoteNode, event);
   return mergeRegister(
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
@@ -213,24 +201,23 @@ export const RichTextExtension = defineExtension({
   mergeConfig: mergeRichTextConfig,
   name: '@lexical/rich-text',
   nodes: () => [HeadingNode, QuoteNode],
-  register: (editor, _config, state) =>
-    effect(() => {
-      const {
-        escapeFormatTriggers,
-        shadowRootQuoteEscapeWithArrows,
-        shouldHandlePasteAsFiles,
-      } = state.getOutput();
-      return mergeRegister(
-        registerRichText(
-          editor,
-          escapeFormatTriggers,
-          shouldHandlePasteAsFiles,
-        ),
-        ...(shadowRootQuoteEscapeWithArrows.value
-          ? [registerShadowRootQuoteEscape(editor)]
-          : []),
-      );
-    }),
+  register: (editor, _config, state) => {
+    const {
+      escapeFormatTriggers,
+      shadowRootQuoteEscapeWithArrows,
+      shouldHandlePasteAsFiles,
+    } = state.getOutput();
+    // registerRichText takes its settings as signals and stays registered;
+    // only the arrow escape is added or removed when its signal flips.
+    return mergeRegister(
+      registerRichText(editor, escapeFormatTriggers, shouldHandlePasteAsFiles),
+      effect(() =>
+        shadowRootQuoteEscapeWithArrows.value
+          ? registerShadowRootQuoteEscape(editor)
+          : undefined,
+      ),
+    );
+  },
 });
 
 /**

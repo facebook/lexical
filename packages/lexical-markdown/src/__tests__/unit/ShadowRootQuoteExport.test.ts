@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {$createCodeNode, CodeExtension} from '@lexical/code-core';
 import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
@@ -22,6 +23,7 @@ import {
   $convertToMarkdownString,
   createQuoteTransformer,
   QUOTE,
+  type Transformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
 import {
@@ -39,6 +41,7 @@ import {
   $createTextNode,
   $getEditor,
   $getRoot,
+  $isParagraphNode,
   configExtension,
   defineExtension,
   type ElementNode,
@@ -161,14 +164,18 @@ describe('shadow root quote export', () => {
 });
 
 describe('shadow root quote export regressions', () => {
-  const BLOCK_QUOTE_TRANSFORMERS = TRANSFORMERS.map(transformer =>
-    transformer === QUOTE
-      ? createQuoteTransformer({shadowRoot: true})
-      : transformer,
+  const BLOCK_QUOTE_TRANSFORMERS: Transformer[] = TRANSFORMERS.map(
+    transformer =>
+      transformer === QUOTE
+        ? createQuoteTransformer({
+            shadowRoot: true,
+            transformers: () => BLOCK_QUOTE_TRANSFORMERS,
+          })
+        : transformer,
   );
 
   const RichTextListExtension = defineExtension({
-    dependencies: [RichTextExtension, ListExtension],
+    dependencies: [RichTextExtension, ListExtension, CodeExtension],
     name: 'shadow-root-quote-export-test',
   });
 
@@ -336,5 +343,95 @@ describe('shadow root quote export regressions', () => {
     expect(
       editor.read(() => $convertToMarkdownString(BLOCK_QUOTE_TRANSFORMERS)),
     ).toBe(input);
+  });
+
+  test('a quoted list stays literal when the set has no list transformers', () => {
+    using editor = buildRichEditor();
+    const NO_LIST_TRANSFORMERS: Transformer[] = TRANSFORMERS.filter(
+      transformer =>
+        transformer.type !== 'element' ||
+        !transformer.dependencies.some(klass => klass.getType() === 'list'),
+    ).map(transformer =>
+      transformer === QUOTE
+        ? createQuoteTransformer({
+            shadowRoot: true,
+            transformers: () => NO_LIST_TRANSFORMERS,
+          })
+        : transformer,
+    );
+    editor.update(
+      () => $convertFromMarkdownString('> - one', NO_LIST_TRANSFORMERS),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const quote = $getRoot().getFirstChildOrThrow();
+      assert($isQuoteNode(quote), 'Root child must be a QuoteNode');
+      assert(
+        !$isListNode(quote.getFirstChildOrThrow()),
+        'The excluded list transformers must not run inside the quote',
+      );
+      expect(quote.getTextContent()).toBe('- one');
+    });
+  });
+
+  test('a code block inside a quote keeps its fences on export', () => {
+    using editor = buildRichEditor();
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createQuoteNode({shadowRoot: true}).append(
+              $createCodeNode('js').append($createTextNode('const x = 1;')),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    expect(
+      editor.read(() => $convertToMarkdownString(BLOCK_QUOTE_TRANSFORMERS)),
+    ).toBe('> ```js\n> const x = 1;\n> ```');
+  });
+
+  test('lazy continuation continues a quoted list item', () => {
+    using editor = buildRichEditor();
+    editor.update(
+      () =>
+        $convertFromMarkdownString(
+          '> - one\ncontinued',
+          BLOCK_QUOTE_TRANSFORMERS,
+        ),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const quote = $getRoot().getFirstChildOrThrow();
+      assert($isQuoteNode(quote), 'Root child must be a QuoteNode');
+      const list = quote.getFirstChildOrThrow();
+      assert($isListNode(list), 'Quote child must be a ListNode');
+      expect(list.getChildrenSize()).toBe(1);
+      expect(list.getTextContent()).toBe('one\ncontinued');
+    });
+  });
+
+  test('lazy continuation does not merge into a quoted heading', () => {
+    using editor = buildRichEditor();
+    editor.update(
+      () =>
+        $convertFromMarkdownString(
+          '> # Title\ncontinued',
+          BLOCK_QUOTE_TRANSFORMERS,
+        ),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const [quote, paragraph] = $getRoot().getChildren();
+      assert($isQuoteNode(quote), 'First child must be a QuoteNode');
+      expect(quote.getTextContent()).toBe('Title');
+      assert(
+        $isParagraphNode(paragraph),
+        'The unquoted line must stay its own paragraph',
+      );
+      expect(paragraph.getTextContent()).toBe('continued');
+    });
   });
 });

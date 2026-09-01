@@ -16,6 +16,7 @@ import {
   createQuoteTransformer,
   QUOTE,
   registerMarkdownShortcuts,
+  type Transformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
 import {
@@ -191,10 +192,14 @@ describe('LINK', () => {
 });
 
 describe('QUOTE with block children', () => {
-  const BLOCK_QUOTE_TRANSFORMERS = TRANSFORMERS.map(transformer =>
-    transformer === QUOTE
-      ? createQuoteTransformer({shadowRoot: true})
-      : transformer,
+  const BLOCK_QUOTE_TRANSFORMERS: Transformer[] = TRANSFORMERS.map(
+    transformer =>
+      transformer === QUOTE
+        ? createQuoteTransformer({
+            shadowRoot: true,
+            transformers: () => BLOCK_QUOTE_TRANSFORMERS,
+          })
+        : transformer,
   );
 
   const BlockQuoteShortcutTestExtension = defineExtension({
@@ -220,6 +225,28 @@ describe('QUOTE with block children', () => {
     expect(heading.getTextContent()).toBe(text);
     return quote;
   }
+
+  test('typing "> " before literal "# " text still quotes it', () => {
+    // The shadowRoot transformer matches the same `> ` prefix as the default
+    // QUOTE, so a longer look-ahead must not decline the shortcut when the
+    // rest of the line happens to start with markdown syntax.
+    using editor = buildEditorFromExtensions([BlockQuoteShortcutTestExtension]);
+    editor.update(
+      () => {
+        $getRoot().selectEnd().insertRawText('# Title');
+      },
+      {discrete: true},
+    );
+    editor.update(() => $getRoot().getAllTextNodes()[0].select(0, 0), {
+      discrete: true,
+    });
+    typeMarkdown(editor, '> ');
+    editor.read(() => {
+      const quote = $getRoot().getFirstChildOrThrow();
+      assert($isQuoteNode(quote), 'Root child must be a QuoteNode');
+      expect(quote.getTextContent()).toBe('# Title');
+    });
+  });
 
   test('typing "> # SOME HEADER" nests the heading inside the quote', () => {
     using editor = buildEditorFromExtensions([BlockQuoteShortcutTestExtension]);

@@ -24,6 +24,7 @@ import {
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  type Transformer,
 } from '@lexical/markdown';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -94,6 +95,9 @@ export default function ActionsPlugin({
   const showFlashMessage = useFlashMessage();
   const {isCollabActive} = useCollaborationContext();
   const unregisterTransformRef = useRef(() => {});
+  // The transformer set used to enter markdown source mode; converting back
+  // reuses it even if the shadowRootQuotes setting changed in between.
+  const markdownTransformersRef = useRef<Transformer[] | null>(null);
   const [mode, dispatchMode, isPending] = useActionState(
     async (prevMode: EditorMode, nextMode: EditorMode): Promise<EditorMode> => {
       const pagesDisabled = getPeerDependencyFromEditor<typeof PagesExtension>(
@@ -146,17 +150,24 @@ export default function ActionsPlugin({
               unregisterTransformRef.current();
               $convertFromMarkdownString(
                 firstChild.getTextContent(),
-                playgroundTransformers(shadowRootQuotes),
+                // Convert back with the set that produced the markdown, so
+                // toggling the shadowRootQuotes setting while in markdown
+                // view cannot restructure content that was never edited.
+                markdownTransformersRef.current ??
+                  playgroundTransformers(shadowRootQuotes),
                 undefined, // node
                 shouldPreserveNewLinesInMarkdown,
               );
+              markdownTransformersRef.current = null;
             }
           }
         });
       } else if (nextMode === 'markdown') {
+        const markdownTransformers = playgroundTransformers(shadowRootQuotes);
+        markdownTransformersRef.current = markdownTransformers;
         editor.update(() => {
           const markdown = $convertToMarkdownString(
-            playgroundTransformers(shadowRootQuotes),
+            markdownTransformers,
             undefined, //node
             shouldPreserveNewLinesInMarkdown,
           );

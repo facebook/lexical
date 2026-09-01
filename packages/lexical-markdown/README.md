@@ -102,7 +102,13 @@ import {createQuoteTransformer, QUOTE, TRANSFORMERS} from '@lexical/markdown';
 
 const transformers = TRANSFORMERS.map(transformer =>
   transformer === QUOTE
-    ? createQuoteTransformer({shadowRoot: true})
+    ? createQuoteTransformer({
+        shadowRoot: true,
+        // The blocks after `> ` are imported and exported through this same
+        // set, so quoted headings, lists and custom transformers behave
+        // exactly as they do at the top level.
+        transformers: () => transformers,
+      })
     : transformer,
 );
 ```

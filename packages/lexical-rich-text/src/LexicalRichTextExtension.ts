@@ -109,13 +109,6 @@ function $isShadowRootQuoteNode(node?: LexicalNode | null): node is QuoteNode {
 }
 
 /**
- * Adds a paragraph before or after a shadow root quote when the caret is at
- * its edge and it is the first or last block in its parent, so the quote can
- * be escaped with the arrow keys. Enabled through
- * {@link RichTextConfig.shadowRootQuoteEscapeWithArrows} rather than exported,
- * so it is reachable only by configuring {@link RichTextExtension}.
- */
-/**
  * A plain arrow press, with no modifier. Shift extends the selection, and the
  * other modifiers are word/line/document motions; none of them should insert a
  * paragraph, so the escape declines and lets the default run.
@@ -124,6 +117,13 @@ function isPlainArrow(event: KeyboardEvent): boolean {
   return !(event.shiftKey || event.altKey || event.metaKey || event.ctrlKey);
 }
 
+/**
+ * Adds a paragraph before or after a shadow root quote when the caret is at
+ * its edge and it is the first or last block in its parent, so the quote can
+ * be escaped with the arrow keys. Enabled through
+ * {@link RichTextConfig.shadowRootQuoteEscapeWithArrows} rather than exported,
+ * so it is reachable only by configuring {@link RichTextExtension}.
+ */
 function registerShadowRootQuoteEscape(editor: LexicalEditor): () => void {
   const escape =
     (

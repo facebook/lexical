@@ -653,6 +653,24 @@ function $quoteAtDepth(quote: QuoteNode, depth: number): QuoteNode {
 }
 
 /**
+ * Whether `node` or anything below it is part of `selection`. `isSelected` on
+ * a block is not enough on its own: the selected text of a nested quote or of
+ * a list item is several levels down.
+ */
+function $hasSelectedDescendant(
+  node: LexicalNode,
+  selection: BaseSelection,
+): boolean {
+  return (
+    node.isSelected(selection) ||
+    ($isElementNode(node) &&
+      node
+        .getChildren()
+        .some(child => $hasSelectedDescendant(child, selection)))
+  );
+}
+
+/**
  * Exports the content of a quote without its `> ` prefixes.
  *
  * A shadow root QuoteNode (see `quoteShadowRootState`) holds block-level
@@ -675,12 +693,10 @@ function $exportQuoteContent(
     // $listExport skips unselected list items. Without this the selection
     // export emits a line per block whatever was selected, so exporting only
     // the paragraph of a quote that starts with a heading yields a stray
-    // `> # ` ahead of it.
-    if (
-      selection &&
-      $isElementNode(child) &&
-      !child.getChildren().some(grandChild => grandChild.isSelected(selection))
-    ) {
+    // `> # ` ahead of it. The check has to run the whole subtree: the
+    // selected text of a nested quote or a list lives below the block's own
+    // children, and stopping at those would drop the block entirely.
+    if (selection && !$hasSelectedDescendant(child, selection)) {
       continue;
     }
     if ($isHeadingNode(child)) {
@@ -713,6 +729,53 @@ function $exportQuote(
     output.push('> ' + line);
   }
   return output.join('\n');
+}
+
+/**
+ * The list transformers a `> ` prefix can be followed by, in the order the
+ * element transformers try them (a check list item also matches the unordered
+ * regex, so it has to come first).
+ */
+const QUOTED_LIST_TYPES: [RegExp, ListType][] = [
+  [CHECK_LIST_REGEX, 'check'],
+  [ORDERED_LIST_REGEX, 'number'],
+  [UNORDERED_LIST_REGEX, 'bullet'],
+];
+
+/**
+ * Imports a `> - one` line as a real list inside the quote.
+ *
+ * `$importBlocks` runs one element transformer per line and stops, so once the
+ * quote transformer claims the line nothing else looks at what follows the
+ * `> `. Without this a quoted list round-trips to a paragraph holding the
+ * literal text `- one`, losing the list that the export side emits markers
+ * for. `listReplace` does the work: it is given a paragraph already attached
+ * to the quote, so it merges with an adjacent list or replaces the paragraph
+ * exactly as it does at the top level.
+ */
+function $importQuotedList(
+  target: QuoteNode,
+  children: LexicalNode[],
+): boolean {
+  const text = children.map(child => child.getTextContent()).join('');
+  for (const [regExp, listType] of QUOTED_LIST_TYPES) {
+    const listMatch = text.match(regExp);
+    if (listMatch === null) {
+      continue;
+    }
+    const [firstChild] = children;
+    if (!$isTextNode(firstChild)) {
+      return false;
+    }
+    firstChild.setTextContent(
+      firstChild.getTextContent().slice(listMatch[0].length),
+    );
+    const paragraph = $createParagraphNode();
+    target.append(paragraph);
+    listReplace(listType)(paragraph, children, listMatch, true);
+    return true;
+  }
+  return false;
 }
 
 function $createQuoteBlock(headingMarker: string | undefined): ElementNode {
@@ -788,6 +851,10 @@ export function createQuoteTransformer(
         const previousNode = parentNode.getPreviousSibling();
         if ($isQuoteNode(previousNode) && previousNode.isShadowRoot()) {
           const target = $quoteAtDepth(previousNode, depth);
+          if (!headingMarker && $importQuotedList(target, children)) {
+            parentNode.remove();
+            return;
+          }
           const lastChild = target.getLastChild();
           if (!headingMarker && $isParagraphNode(lastChild)) {
             // Consecutive plain quote lines are one paragraph separated by
@@ -805,9 +872,14 @@ export function createQuoteTransformer(
       }
 
       const quoteNode = $createQuoteNode({shadowRoot: true});
+      const target = $quoteAtDepth(quoteNode, depth);
+      if (isImport && !headingMarker && $importQuotedList(target, children)) {
+        parentNode.replace(quoteNode);
+        return;
+      }
       const block = $createQuoteBlock(headingMarker);
       block.append(...children);
-      $quoteAtDepth(quoteNode, depth).append(block);
+      target.append(block);
       parentNode.replace(quoteNode);
       if (!isImport) {
         block.select(0, 0);

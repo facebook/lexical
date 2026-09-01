@@ -13,6 +13,7 @@ import {DOMImportExtension} from '@lexical/html';
 import {
   $createListItemNode,
   $createListNode,
+  $isListNode,
   ListExtension,
 } from '@lexical/list';
 import {
@@ -252,5 +253,88 @@ describe('shadow root quote export regressions', () => {
       {discrete: true},
     );
     expect(markdown).toBe('> B');
+  });
+
+  test('selection inside a nested quote is exported', () => {
+    using editor = buildRichEditor();
+    let markdown = '';
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode().append($createTextNode('aaa'));
+        $getRoot()
+          .clear()
+          .append(
+            $createQuoteNode({shadowRoot: true}).append(
+              $createQuoteNode({shadowRoot: true}).append(paragraph),
+            ),
+          );
+        const selection = $createRangeSelection();
+        const text = paragraph.getFirstChildOrThrow();
+        selection.anchor.set(text.getKey(), 0, 'text');
+        selection.focus.set(text.getKey(), 3, 'text');
+        markdown = $convertSelectionToMarkdownString(undefined, selection);
+      },
+      {discrete: true},
+    );
+    expect(markdown).toBe('> > aaa');
+  });
+
+  test('selection inside a quoted list item is exported', () => {
+    using editor = buildRichEditor();
+    let markdown = '';
+    editor.update(
+      () => {
+        const item = $createListItemNode().append($createTextNode('one'));
+        $getRoot()
+          .clear()
+          .append(
+            $createQuoteNode({shadowRoot: true}).append(
+              $createListNode('bullet').append(item),
+            ),
+          );
+        const selection = $createRangeSelection();
+        const text = item.getFirstChildOrThrow();
+        selection.anchor.set(text.getKey(), 0, 'text');
+        selection.focus.set(text.getKey(), 3, 'text');
+        markdown = $convertSelectionToMarkdownString(undefined, selection);
+      },
+      {discrete: true},
+    );
+    expect(markdown).toBe('> - one');
+  });
+
+  test('a lazy continuation line joins the innermost nested block', () => {
+    using editor = buildRichEditor();
+    editor.update(
+      () =>
+        $convertFromMarkdownString(
+          '> > inner\ncontinued',
+          BLOCK_QUOTE_TRANSFORMERS,
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read(() => $convertToMarkdownString(BLOCK_QUOTE_TRANSFORMERS)),
+    ).toBe('> > inner\n> > continued');
+  });
+
+  test('a quoted list round trips instead of becoming literal text', () => {
+    using editor = buildRichEditor();
+    const input = '> - one\n> - two';
+    editor.update(
+      () => $convertFromMarkdownString(input, BLOCK_QUOTE_TRANSFORMERS),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const quote = $getRoot().getFirstChildOrThrow();
+      assert($isQuoteNode(quote), 'Root child must be a QuoteNode');
+      assert(
+        $isListNode(quote.getFirstChildOrThrow()),
+        'Quote child must be a ListNode',
+      );
+    });
+    expect(
+      editor.read(() => $convertToMarkdownString(BLOCK_QUOTE_TRANSFORMERS)),
+    ).toBe(input);
   });
 });

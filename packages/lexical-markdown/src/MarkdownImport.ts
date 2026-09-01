@@ -16,6 +16,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   type ElementNode,
+  type LexicalNode,
   type TextNode,
 } from 'lexical';
 
@@ -264,9 +265,14 @@ function $importBlocks(
         }
       } else if ($isQuoteNode(previousNode) && previousNode.isShadowRoot()) {
         // A shadow root quote holds block-level children, so the continuation
-        // line belongs to its last block rather than to the quote itself.
-        const lastChild = previousNode.getLastChild();
-        targetNode = $isElementNode(lastChild) ? lastChild : null;
+        // line belongs to its last block rather than to the quote itself —
+        // and that block may itself be a nested shadow root quote, so walk
+        // down to the innermost one.
+        let block: LexicalNode | null = previousNode;
+        while ($isQuoteNode(block) && block.isShadowRoot()) {
+          block = block.getLastChild();
+        }
+        targetNode = $isElementNode(block) ? block : null;
       }
 
       if (targetNode != null && targetNode.getTextContentSize() > 0) {

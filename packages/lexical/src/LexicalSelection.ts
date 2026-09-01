@@ -27,6 +27,7 @@ import {
   $getSiblingCaret,
   $getTextNodeOffset,
   $insertNodeToNearestRootAtCaret,
+  $isBlockFullySelected,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -576,6 +577,55 @@ function $ensureRootHasParagraph(): void {
     root.append(paragraph);
     paragraph.select();
   }
+}
+
+/**
+ * The node immediately before the given point within its block, looking
+ * through the boundaries of inline elements: a point at the start of a link's
+ * text is still "after" whatever precedes the link. Returns null when text or
+ * nothing at all precedes the point in its block.
+ */
+function $getNodeBeforePoint(point: PointType): LexicalNode | null {
+  const node = point.getNode();
+  if (point.offset > 0) {
+    // An element point has the child before it; a text point has characters
+    // before it, so no node is adjacent.
+    return point.type === 'element' && $isElementNode(node)
+      ? node.getChildAtIndex(point.offset - 1)
+      : null;
+  }
+  for (
+    let child: LexicalNode | null = node;
+    child !== null && !INTERNAL_$isBlock(child) && !$isRootOrShadowRoot(child);
+    child = child.getParent()
+  ) {
+    const previousSibling = child.getPreviousSibling();
+    if (previousSibling !== null) {
+      return previousSibling;
+    }
+  }
+  return null;
+}
+
+/**
+ * Two consecutive soft line breaks render an empty line. A point directly
+ * after them starts a new visual paragraph, with nothing to its left to
+ * continue, so blocks inserted there behave as they do at the start of a
+ * block: they keep their own block identity instead of being flattened into
+ * the text above the empty line (#4815).
+ *
+ * A single line break is deliberately not enough. It would be the more
+ * consistent rule -- the point is just as much at the start of a line -- but
+ * it also decides that a lone pasted paragraph stops continuing the line and
+ * becomes its own block, which is a wider change to paste than this fix
+ * should make.
+ */
+function $isPointAfterEmptyLine(point: PointType): boolean {
+  const nodeBefore = $getNodeBeforePoint(point);
+  return (
+    $isLineBreakNode(nodeBefore) &&
+    $isLineBreakNode(nodeBefore.getPreviousSibling())
+  );
 }
 
 /** Returns true if the given value is a RangeSelection. */
@@ -1305,7 +1355,15 @@ export class RangeSelection implements BaseSelection {
     const blocksParent = $wrapInlineNodes(nodes);
     const nodeToSelect = blocksParent.getLastDescendant()!;
     const blocks = blocksParent.getChildren();
+    // An empty line before the insertion point reads as a block boundary, so
+    // the first inserted block keeps its own block identity instead of being
+    // flattened into the text above that empty line (#4815) -- matching what
+    // already happens at the start of a block, where firstBlock is empty after
+    // the split. The selection is collapsed by now (removeText above), so
+    // firstPoint is the insertion point and nothing has split the block yet.
+    const isAfterEmptyLine = $isPointAfterEmptyLine(firstPoint);
     const isMergeable = (node: LexicalNode): node is ElementNode =>
+      !isAfterEmptyLine &&
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
@@ -1344,6 +1402,16 @@ export class RangeSelection implements BaseSelection {
       INTERNAL_$isBlock,
     );
 
+    // Mark where the inserted content ends before the split-off content is
+    // moved in after it. selectEnd() has to happen first because nodeToSelect
+    // can be the node that receives those children: pasted content ending in
+    // an empty block (as the playground's own copy does) makes that empty
+    // block nodeToSelect, and selecting its end afterwards would put the caret
+    // past the text that moved in -- at the end of the document rather than at
+    // the join. A text nodeToSelect is unaffected either way, since the
+    // children land beside it rather than inside it.
+    const insertSelection = nodeToSelect.selectEnd();
+
     if (insertedParagraph) {
       if (
         $isElementNode(lastInsertedBlock) &&
@@ -1367,8 +1435,6 @@ export class RangeSelection implements BaseSelection {
       firstBlock.remove();
     }
 
-    nodeToSelect.selectEnd();
-
     // To understand this take a look at the test "can wrap post-linebreak nodes into new element"
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()
@@ -1376,6 +1442,17 @@ export class RangeSelection implements BaseSelection {
     if ($isLineBreakNode(lastChild) && lastInsertedBlock !== firstBlock) {
       lastChild.remove();
     }
+
+    // Resolve the marked caret onto the text beside it. It is an element point
+    // whenever nodeToSelect was an element with nothing after the caret -- an
+    // empty block that has since received the split-off content, or a
+    // block-level decorator -- and the caret should not read differently from
+    // every other insertion here just because of the shape of what was pasted.
+    const normalizedCaret = $normalizeCaret(
+      $caretFromPoint(insertSelection.anchor, 'next'),
+    );
+    $setPointFromCaret(insertSelection.anchor, normalizedCaret);
+    $setPointFromCaret(insertSelection.focus, normalizedCaret);
   }
 
   /**
@@ -1979,6 +2056,12 @@ export class RangeSelection implements BaseSelection {
         }
       }
     }
+    if (!wasCollapsed) {
+      // Widen a whole-document range to the blocks themselves, so this removes
+      // them outright rather than emptying them and leaving the last one behind
+      // as an empty heading/quote/list (#5835).
+      INTERNAL_$expandSelectionToWholeDocument(this);
+    }
     this.removeText();
     if (
       isBackward &&
@@ -2006,6 +2089,7 @@ export class RangeSelection implements BaseSelection {
    * @param isBackward whether or not the selection is backwards.
    */
   deleteLine(isBackward: boolean): void {
+    const wasCollapsed = this.isCollapsed();
     // A decorator-host slot's DOM is relocated out of document order (the
     // host's React decorate() mounts the slot container wherever it wants),
     // so a deletion that starts inside one cannot be expressed by the
@@ -2048,6 +2132,15 @@ export class RangeSelection implements BaseSelection {
         this.focus.set(this.anchor.key, this.anchor.offset, this.anchor.type);
         this.deleteCharacter(isBackward);
       } else {
+        if (!wasCollapsed) {
+          // Cmd+A then Cmd+Backspace in a document that is a single block wipes
+          // it, so remove the block rather than emptying it (#5835). Extending
+          // a collapsed caret to the line boundary is an ordinary delete, not a
+          // wipe, so it leaves the block alone -- as Backspace does. A range
+          // spanning blocks takes the branch above, which deletes nothing at
+          // all: pre-existing behavior, left alone.
+          INTERNAL_$expandSelectionToWholeDocument(this);
+        }
         this.removeText();
       }
     }
@@ -2060,6 +2153,7 @@ export class RangeSelection implements BaseSelection {
    * @param isBackward whether or not the selection is backwards.
    */
   deleteWord(isBackward: boolean): void {
+    const wasCollapsed = this.isCollapsed();
     if (this.isCollapsed()) {
       const anchor = this.anchor;
       const anchorNode: TextNode | ElementNode | null = anchor.getNode();
@@ -2074,6 +2168,13 @@ export class RangeSelection implements BaseSelection {
       // with navigating through the parent element
       this.deleteCharacter(isBackward);
     } else {
+      if (!wasCollapsed) {
+        // Select-all then Alt/Ctrl+Backspace wipes the document just as
+        // Backspace does, so remove the blocks (#5835). Extending a collapsed
+        // caret over a word is an ordinary delete, not a wipe, so it leaves the
+        // block alone -- as Backspace does.
+        INTERNAL_$expandSelectionToWholeDocument(this);
+      }
       this.removeText();
     }
   }
@@ -2376,6 +2477,38 @@ function $collapseAtStart(
     }
   }
   return false;
+}
+
+/**
+ * When `selection` covers the whole document, widen it to the root's own
+ * element points, so the range describes the top-level blocks themselves
+ * rather than only the text inside them.
+ *
+ * A delete over that range then removes the blocks outright and leaves the
+ * editor on a fresh empty paragraph, instead of gutting them and leaving an
+ * empty heading, quote or list behind that keeps its type and styles the next
+ * character typed (#5835). It also keeps a cut honest: what lands on the
+ * clipboard is what leaves the document, so Cmd+X then Cmd+V restores the
+ * blocks rather than their bare text.
+ *
+ * Widening rather than deleting-then-repairing is what makes this safe for
+ * every block type. The range simply contains the blocks, so nothing has to
+ * decide whether a heading, a nested list, a code block or a third-party node
+ * should dissolve, and no node is destroyed that the user did not select.
+ *
+ * A no-op for anything else: a range that stops short of either end is an
+ * ordinary edit inside the blocks it touches, and a select-all scoped to a
+ * named slot never covers the root.
+ */
+export function INTERNAL_$expandSelectionToWholeDocument(
+  selection: RangeSelection,
+): void {
+  const root = $getRoot();
+  if (root.isEmpty() || !$isBlockFullySelected(root, selection)) {
+    return;
+  }
+  selection.anchor.set(root.getKey(), 0, 'element');
+  selection.focus.set(root.getKey(), root.getChildrenSize(), 'element');
 }
 
 function $swapPoints(selection: RangeSelection): void {

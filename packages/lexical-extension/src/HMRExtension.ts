@@ -151,18 +151,16 @@ function getEditorHMRKey(
 }
 
 /**
- * The HMR key this editor shares with the editor it is nested inside, if it
- * does. A nested editor inherits its parent's namespace, so namespaces do not
- * isolate the two the way they isolate independent editors, and nothing about
- * a nested editor is stable enough across reloads to key it on automatically.
+ * Whether `hmrKey` is also the HMR key of the editor this one is nested
+ * inside. A nested editor inherits its parent's namespace, so namespaces do
+ * not isolate the two the way they isolate independent editors, and nothing
+ * about a nested editor is stable enough across reloads to key it on
+ * automatically.
  */
-function getSharedParentKey(
-  editor: LexicalEditor,
-  hmrKey: string,
-): string | null {
+function sharesParentHMRKey(editor: LexicalEditor, hmrKey: string): boolean {
   const parentEditor = editor._parentEditor;
   if (parentEditor === null) {
-    return null;
+    return false;
   }
   const peer = getPeerDependencyFromEditor<typeof HMRExtension>(
     parentEditor,
@@ -171,11 +169,9 @@ function getSharedParentKey(
   // A parent that does not preserve its own state across reloads is not
   // competing for the key.
   if (peer === undefined) {
-    return null;
+    return false;
   }
-  return getEditorHMRKey(parentEditor, peer.config.id) === hmrKey
-    ? hmrKey
-    : null;
+  return getEditorHMRKey(parentEditor, peer.config.id) === hmrKey;
 }
 
 /**
@@ -549,7 +545,7 @@ export const HMRExtension = defineExtension<
             'Use a stable non-empty string literal (e.g. `"main"`, `"sidebar"`).',
         );
       }
-      if (getSharedParentKey(editor, hmrKey) !== null) {
+      if (sharesParentHMRKey(editor, hmrKey)) {
         console.warn(
           `HMR: This editor is nested inside another and inherits its namespace, so both use the HMR key "${hmrKey}" and will overwrite each other. ` +
             'Give the nested editor a distinct `HMRConfig.id` (or its own `namespace`).',

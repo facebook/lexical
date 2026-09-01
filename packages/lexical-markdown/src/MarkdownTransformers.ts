@@ -49,7 +49,7 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {unescapeText} from './utils';
+import {isEmptyParagraph, unescapeText} from './utils';
 
 export type Transformer =
   | ElementTransformer
@@ -592,9 +592,20 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       firstMatchChar === listMarkerState.parse(firstMatchChar)
         ? firstMatchChar
         : undefined;
-    // A line that does not follow a list closes every level above it.
-    if (importListColumns !== null && !$isListNode(previousNode)) {
-      importListColumns.length = 0;
+    // A block of another kind closes every level above this line. Blank lines
+    // do not: they only make the list loose, and a blank line must not decide
+    // which of two indent rules the line after it is read by, or the same
+    // sublist would be read one way written tightly and another written with a
+    // blank line before it. So the levels stay open only while the nearest
+    // block that is not a blank line is still the list itself.
+    if (importListColumns !== null) {
+      let precedingBlock = previousNode;
+      while (precedingBlock !== null && isEmptyParagraph(precedingBlock)) {
+        precedingBlock = precedingBlock.getPreviousSibling();
+      }
+      if (!$isListNode(precedingBlock)) {
+        importListColumns.length = 0;
+      }
     }
     const columns = importListColumns;
     const indent =

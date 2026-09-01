@@ -456,6 +456,25 @@ describe('Markdown', () => {
       mdAfterExport: '- a\n\ntext\n\n1. c\n    - d',
     },
     {
+      // A blank line only makes the list loose. It does not close the levels
+      // above it, so the same sublist is read the same way written tightly or
+      // with a blank line before it.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ul>',
+      md: '- a\n\n  - b',
+      mdAfterExport: '- a\n    - b',
+    },
+    {
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">First</span></li></ol><ul><li value="1"><ul><li value="1"><span style="white-space: pre-wrap;">detail</span></li></ul></li></ul>',
+      md: '1. First\n\n   - detail',
+      mdAfterExport: '1. First\n\n    - detail',
+    },
+    {
+      // A block of another kind does close them, blank lines or not.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span></li></ul><p><span style="white-space: pre-wrap;">text</span></p><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul>',
+      md: '- a\n\ntext\n\n  - b',
+      mdAfterExport: '- a\n\ntext\n\n- b',
+    },
+    {
       html: '<ul><li value="1"><span style="white-space: pre-wrap;">bullet1</span><ol><li value="1"><span style="white-space: pre-wrap;">ordered1</span></li><li value="2"><span style="white-space: pre-wrap;">ordered2</span></li></ol></li><li value="2"><span style="white-space: pre-wrap;">bullet2</span></li></ul>',
       md: '- bullet1\n    1. ordered1\n    2. ordered2\n- bullet2',
     },
@@ -3070,6 +3089,39 @@ describe('Sublist indent boundaries', () => {
     expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
       '<ol><li value="1"><ol><li value="1"><span style="white-space: pre-wrap;">z</span></li></ol><ul><li value="1"><span style="white-space: pre-wrap;">x</span></li></ul></li><li value="1"><span style="white-space: pre-wrap;">y</span></li></ol>',
     );
+  });
+});
+
+describe('Loose list indents round trip', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  function convert(md: string): string {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
+  }
+
+  // Export writes one fixed step per level and drops the blank line, so a
+  // blank line that changed how the indent was read would send the second
+  // pass somewhere the first did not go.
+  it.each([
+    '- a\n\n  - b',
+    '- a\n\n        - b',
+    '1. First\n\n   - detail',
+    '- a\n\ntext\n\n  - b',
+  ])('re-imports its own export of "%s" unchanged', md => {
+    const once = convert(md);
+
+    expect(convert(once)).toBe(once);
   });
 });
 

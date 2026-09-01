@@ -68,6 +68,7 @@ import {isDevPlayground} from './appSettings';
 import {
   createWebsocketProvider,
   createWebsocketProviderWithDoc,
+  skipCollaborationInit,
 } from './collaboration';
 import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
@@ -123,10 +124,6 @@ console.warn(
 );
 
 const COLLAB_DOC_ID = 'main';
-
-const skipCollaborationInit =
-  // @ts-expect-error
-  window.parent != null && window.parent.frames.right === window;
 
 function $prepopulatedRichText() {
   const root = $getRoot();

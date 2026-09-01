@@ -446,21 +446,33 @@ function getColumn(whitespaces: string): number {
  * writes and the one the toolbar and Tab indent by.
  */
 let importListColumns: number[] | null = null;
+let importJoinsLooseLists = false;
 
 /**
  * Run `fn` with the columns of a single markdown import tracked across the
  * lines it places. Restores whatever was being tracked around it, so an import
  * that runs inside another one does not disturb it.
  *
+ * `joinLooseLists` reads a blank line between list lines as making the list
+ * loose rather than ending it. An import that preserves new lines keeps blank
+ * paragraphs as content, so there a blank line closes the list like any other
+ * block.
+ *
  * @internal
  */
-export function withListIndentColumns<T>(fn: () => T): T {
-  const previous = importListColumns;
+export function withListIndentColumns<T>(
+  joinLooseLists: boolean,
+  fn: () => T,
+): T {
+  const previousColumns = importListColumns;
+  const previousJoins = importJoinsLooseLists;
   importListColumns = [];
+  importJoinsLooseLists = joinLooseLists;
   try {
     return fn();
   } finally {
-    importListColumns = previous;
+    importListColumns = previousColumns;
+    importJoinsLooseLists = previousJoins;
   }
 }
 
@@ -482,22 +494,23 @@ function getColumnIndent(
 }
 
 /**
- * How far past its marker this line opens its content, capped at one
- * `LIST_INDENT_SIZE` so that the indent `$listExport` writes always nests: a
- * sublist of `100. ` is exported with four spaces, short of that marker's real
- * content column. A check list item is marked by its bullet — the `[ ]` is
- * content — so `- [ ] a` opens at the same offset `- a` does.
+ * The column this line opens its content at: where the matched marker ends,
+ * with tabs expanded, so `-\ta` opens at the tab stop and not two columns in.
+ * A check list item is marked by its bullet — the `[ ]` is content — so
+ * `- [ ] a` opens where `- a` does. Capped one `LIST_INDENT_SIZE` past the
+ * marker so that the indent `$listExport` writes always nests: a sublist of
+ * `100. ` is exported with four spaces, short of that marker's real content
+ * column.
  */
-function getContentOffset(match: string[], listType: ListType): number {
-  const marker = match[0].slice(match[1].length);
-  const bullet = marker.match(/^[-*+]\s/);
-  const width =
-    listType === 'number'
-      ? match[2].length + 2
-      : bullet
-        ? bullet[0].length
-        : marker.length;
-  return Math.min(width, LIST_INDENT_SIZE);
+function getContentColumn(match: string[], listType: ListType): number {
+  let prefix = match[0];
+  if (listType === 'check') {
+    const bullet = prefix.slice(match[1].length).match(/^[-*+]\s/);
+    if (bullet) {
+      prefix = match[1] + bullet[0];
+    }
+  }
+  return Math.min(getColumn(prefix), getColumn(match[1]) + LIST_INDENT_SIZE);
 }
 
 /**
@@ -517,7 +530,7 @@ function setOpenColumn(
     columns[i] = (i + 1) * LIST_INDENT_SIZE;
   }
   columns.length = indent;
-  columns[indent] = getColumn(match[1]) + getContentOffset(match, listType);
+  columns[indent] = getContentColumn(match, listType);
 }
 
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
@@ -529,7 +542,8 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     const previousNode = parentNode.getPreviousSibling();
     const nextNode = parentNode.getNextSibling();
     const listItem = $createListItemNode(
-      listType === 'check' ? match[3] === 'x' : undefined,
+      // CHECK_LIST_REGEX matches case-insensitively, so `[X]` is checked too.
+      listType === 'check' ? /^x$/i.test(match[3] || '') : undefined,
     );
     const firstMatchChar = match[0].trim()[0];
     const listMarker =
@@ -539,20 +553,25 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
         : undefined;
     // A block of another kind closes every level above this line. Blank lines
     // do not: they only make the list loose, and a blank line must not decide
-    // which of two indent rules the line after it is read by, or the same
-    // sublist would be read one way written tightly and another written with a
-    // blank line before it. So the levels stay open only while the nearest
-    // block that is not a blank line is still the list itself.
-    if (importListColumns !== null) {
-      let precedingBlock = previousNode;
-      while (precedingBlock !== null && isEmptyParagraph(precedingBlock)) {
-        precedingBlock = precedingBlock.getPreviousSibling();
+    // how the line after it is read, or the same sublist would be read one way
+    // written tightly and another written with a blank line before it. So the
+    // line is measured against, and placed into, the list it follows across
+    // any blank lines, and the levels close only when the nearest block that
+    // is not one is no longer the list itself. Outside such an import — a
+    // typed shortcut, or an import that keeps its blank lines as content — a
+    // blank line above the line is a block like any other.
+    const columns = importListColumns;
+    let precedingBlock = previousNode;
+    if (columns !== null) {
+      if (importJoinsLooseLists) {
+        while (precedingBlock !== null && isEmptyParagraph(precedingBlock)) {
+          precedingBlock = precedingBlock.getPreviousSibling();
+        }
       }
       if (!$isListNode(precedingBlock)) {
-        importListColumns.length = 0;
+        columns.length = 0;
       }
     }
-    const columns = importListColumns;
     const indent =
       columns === null || columns.length === 0
         ? getIndent(match[1])
@@ -566,25 +585,24 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
         nextNode.append(listItem);
       }
       // The new list item lands at index 0, so the typed number becomes the
-      // list's starting value. #8677.
-      if (listType === 'number') {
+      // list's starting value. #8677. An indented item only passes through —
+      // `setIndent` below moves it into a sublist — so its number belongs to
+      // that sublist, not to the list it leaves.
+      if (listType === 'number' && indent === 0) {
         nextNode.setStart(Number(match[2]));
       }
       parentNode.remove();
     } else if (
-      $isListNode(previousNode) &&
-      previousNode.getListType() === listType
+      $isListNode(precedingBlock) &&
+      (precedingBlock.getListType() === listType || indent > 0)
     ) {
-      // The new item is appended at the end and inherits the existing
-      // sequence, so the typed number is intentionally ignored here.
-      previousNode.append(listItem);
-      parentNode.remove();
-    } else if (indent > 0 && $isListNode(previousNode)) {
-      // An indented item of another type still belongs inside the list above
-      // it. It is appended at the top level here and `setIndent` below moves
-      // it to its level; a list of the right type is spliced in after that,
-      // once the level it lands in is known.
-      previousNode.append(listItem);
+      // An item of the same type continues the list, and inherits the
+      // existing sequence — the typed number is intentionally ignored. An
+      // indented item of another type belongs inside it too: it is appended
+      // at the top level here, `setIndent` below moves it to its level, and a
+      // list of the right type is spliced in once the level it lands in is
+      // known.
+      precedingBlock.append(listItem);
       parentNode.remove();
     } else {
       const list = $createListNode(

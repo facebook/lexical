@@ -13,6 +13,7 @@ import {$createLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
+  $isListNode,
   ListItemNode,
   ListNode,
 } from '@lexical/list';
@@ -464,9 +465,11 @@ describe('Markdown', () => {
       mdAfterExport: '- a\n    - b',
     },
     {
-      html: '<ol><li value="1"><span style="white-space: pre-wrap;">First</span></li></ol><ul><li value="1"><ul><li value="1"><span style="white-space: pre-wrap;">detail</span></li></ul></li></ul>',
+      // ...and the loose sublist lands inside the item above it, exactly as
+      // the tight spelling does.
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">First</span><ul><li value="1"><span style="white-space: pre-wrap;">detail</span></li></ul></li></ol>',
       md: '1. First\n\n   - detail',
-      mdAfterExport: '1. First\n\n    - detail',
+      mdAfterExport: '1. First\n    - detail',
     },
     {
       // A block of another kind does close them, blank lines or not.
@@ -3018,6 +3021,135 @@ describe('$convertSelectionToMarkdownString', () => {
       $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
     );
     expect(result).toBe('    - Nested A');
+  });
+});
+
+describe('List marker details', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it('reads an uppercase [X] as checked, as the /i on its regex intends', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+
+    editor.update(
+      () =>
+        $convertFromMarkdownString('- [X] up\n- [ ] no', [
+          CHECK_LIST,
+          ...TRANSFORMERS,
+        ]),
+      {discrete: true},
+    );
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul __lexicallisttype="check"><li role="checkbox" tabindex="-1" aria-checked="true" value="1"><span style="white-space: pre-wrap;">up</span></li><li role="checkbox" tabindex="-1" aria-checked="false" value="2"><span style="white-space: pre-wrap;">no</span></li></ul>',
+    );
+  });
+
+  it('expands a tab after the marker when measuring the content column', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+
+    // The tab opens the content of `a` at column four, so a two-space `- b`
+    // does not reach it and stays a sibling.
+    editor.update(
+      () => $convertFromMarkdownString('-\ta\n  - b', TRANSFORMERS),
+      {discrete: true},
+    );
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span></li><li value="2"><span style="white-space: pre-wrap;">b</span></li></ul>',
+    );
+  });
+
+  it('keeps a typed start number out of a list the item only passes through', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    // Typing an indented ordered marker above an existing ordered list sends
+    // the item into a sublist, so the outer list's start stays what it was.
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        root.append(
+          paragraph,
+          $createListNode('number', 5).append(
+            $createListItemNode().append($createTextNode('y')),
+          ),
+        );
+        paragraph.selectEnd();
+      },
+      {discrete: true},
+    );
+    for (const char of '    1. z') {
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText(char);
+          }
+        },
+        {discrete: true},
+      );
+    }
+    editor.update(() => {}, {discrete: true});
+
+    editor.read('latest', () => {
+      const list = $getRoot().getFirstChild();
+      invariant($isListNode(list), 'expected a list');
+      expect(list.getStart()).toBe(5);
+      expect(list.getLastChild()!.getTextContent()).toBe('y');
+    });
+  });
+});
+
+describe('Loose sublists', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it('nests a loose type-changing sublist into the item above it', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+
+    editor.update(
+      () => $convertFromMarkdownString('- a\n\n  1. b', TRANSFORMERS),
+      {discrete: true},
+    );
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ol><li value="1"><span style="white-space: pre-wrap;">b</span></li></ol></li></ul>',
+    );
+  });
+
+  it('returns one joined list from $generateNodesFromMarkdownString', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+
+    // No ListNode transform runs over the returned nodes, so the loose list
+    // has to come back joined rather than as two lists a later transform
+    // would merge. Asserted outside the update: an assertion thrown inside
+    // one does not reliably fail the test.
+    let shape = '';
+    editor.update(
+      () => {
+        shape = $generateNodesFromMarkdownString('- a\n\n  - b', TRANSFORMERS)
+          .map(node => ($isListNode(node) ? 'list' : node.getType()))
+          .join(',');
+      },
+      {discrete: true},
+    );
+
+    expect(shape).toBe('list');
   });
 });
 

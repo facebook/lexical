@@ -9,6 +9,7 @@
 import {
   $applyNodeReplacement,
   $getDocument,
+  addClassNamesToElement,
   type EditorConfig,
   type LexicalNode,
   type NodeKey,
@@ -59,7 +60,9 @@ export class EmojiNode extends TextNode {
     const dom = $getDocument().createElement('span');
     const inner = super.createDOM(config);
     dom.className = this.__className;
-    inner.className = 'emoji-inner';
+    // Add to the class names TextNode.createDOM applied for the text formats
+    // rather than replacing them, otherwise a formatted emoji renders unstyled.
+    addClassNamesToElement(inner, 'emoji-inner');
     dom.appendChild(inner);
     return dom;
   }
@@ -69,8 +72,11 @@ export class EmojiNode extends TextNode {
     if (inner === null) {
       return true;
     }
-    super.updateDOM(prevNode, inner as HTMLElement, config);
-    return false;
+    // TextNode.updateDOM returns true when the format change needs a different
+    // tag, in which case it has not touched the DOM at all and the element has
+    // to be recreated. Returning false regardless would promise the reconciler
+    // that the difference was already applied.
+    return super.updateDOM(prevNode, inner as HTMLElement, config);
   }
 
   getClassName(): string {

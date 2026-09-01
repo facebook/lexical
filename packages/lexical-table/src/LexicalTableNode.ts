@@ -604,6 +604,40 @@ export class TableNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const superExport = super.exportDOM(editor);
     const {element} = superExport;
+    const exportedElement =
+      !isHTMLTableElement(element) && isHTMLElement(element)
+        ? element.querySelector('table')
+        : element;
+    // ElementNode.exportDOM writes the direction and the indent onto whatever
+    // createDOM returned, which is the scroll wrapper (or the sticky scrollbar
+    // wrapper around it) when scrollable tables are active. Those wrappers are
+    // not part of the export, so move what they were given onto the <table>
+    // itself. createDOM puts nothing of its own on a wrapper, so anything found
+    // here came from the super call, and moving rather than re-deriving keeps
+    // this in step with whatever ElementNode.exportDOM writes next.
+    //
+    // Of the two, only the direction makes the round trip back in —
+    // $convertTableElement reads it with $setDirectionFromDOM, and nothing
+    // restores an indent for a table. The indent still belongs in the export:
+    // it is what ElementNode.exportDOM emits for every other element, and it is
+    // what renders the indent outside of Lexical.
+    if (
+      isHTMLElement(element) &&
+      isHTMLTableElement(exportedElement) &&
+      exportedElement !== element
+    ) {
+      if (element.dir) {
+        exportedElement.dir = element.dir;
+      }
+      const {paddingInlineStart} = element.style;
+      if (paddingInlineStart) {
+        exportedElement.style.paddingInlineStart = paddingInlineStart;
+      }
+      const indent = element.getAttribute('data-lexical-indent');
+      if (indent !== null) {
+        exportedElement.setAttribute('data-lexical-indent', indent);
+      }
+    }
     return {
       after: tableElement => {
         if (superExport.after) {
@@ -676,10 +710,7 @@ export class TableNode extends ElementNode {
         }
         return tableElement;
       },
-      element:
-        !isHTMLTableElement(element) && isHTMLElement(element)
-          ? element.querySelector('table')
-          : element,
+      element: exportedElement,
     };
   }
 

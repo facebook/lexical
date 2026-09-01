@@ -10,10 +10,23 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {DOMImportExtension} from '@lexical/html';
-import {$convertToMarkdownString} from '@lexical/markdown';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListExtension,
+} from '@lexical/list';
+import {
+  $convertFromMarkdownString,
+  $convertSelectionToMarkdownString,
+  $convertToMarkdownString,
+  createQuoteTransformer,
+  QUOTE,
+  TRANSFORMERS,
+} from '@lexical/markdown';
 import {
   $createHeadingNode,
   $createQuoteNode,
+  $isQuoteNode,
   RichTextExtension,
   ShadowRootQuoteRule,
 } from '@lexical/rich-text';
@@ -21,6 +34,7 @@ import {JSDOM} from 'jsdom';
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getEditor,
   $getRoot,
@@ -29,7 +43,7 @@ import {
   type ElementNode,
   type LexicalEditor,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 function buildEditor() {
   return buildEditorFromExtensions([RichTextExtension]);
@@ -142,5 +156,101 @@ describe('shadow root quote export', () => {
     expect(editor.read(() => $convertToMarkdownString())).toBe(
       '> first\n> second',
     );
+  });
+});
+
+describe('shadow root quote export regressions', () => {
+  const BLOCK_QUOTE_TRANSFORMERS = TRANSFORMERS.map(transformer =>
+    transformer === QUOTE
+      ? createQuoteTransformer({shadowRoot: true})
+      : transformer,
+  );
+
+  const RichTextListExtension = defineExtension({
+    dependencies: [RichTextExtension, ListExtension],
+    name: 'shadow-root-quote-export-test',
+  });
+
+  function buildRichEditor() {
+    return buildEditorFromExtensions([RichTextListExtension]);
+  }
+
+  test('a nested quote round trips instead of flattening to literal text', () => {
+    using editor = buildRichEditor();
+    const input = '> > inner';
+    editor.update(
+      () => $convertFromMarkdownString(input, BLOCK_QUOTE_TRANSFORMERS),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const outer = $getRoot().getFirstChildOrThrow();
+      assert($isQuoteNode(outer), 'Root child must be a QuoteNode');
+      const inner = outer.getFirstChildOrThrow();
+      assert($isQuoteNode(inner), 'Quote child must be a nested QuoteNode');
+      expect(inner.isShadowRoot()).toBe(true);
+      expect(inner.getTextContent()).toBe('inner');
+    });
+    expect(
+      editor.read(() => $convertToMarkdownString(BLOCK_QUOTE_TRANSFORMERS)),
+    ).toBe(input);
+  });
+
+  test('consecutive lines at the same nesting depth join one quote', () => {
+    using editor = buildRichEditor();
+    const input = '> > one\n> > two';
+    editor.update(
+      () => $convertFromMarkdownString(input, BLOCK_QUOTE_TRANSFORMERS),
+      {discrete: true},
+    );
+    expect(
+      editor.read(() => $convertToMarkdownString(BLOCK_QUOTE_TRANSFORMERS)),
+    ).toBe(input);
+  });
+
+  test('a list inside a shadow root quote keeps its markers', () => {
+    using editor = buildRichEditor();
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createQuoteNode({shadowRoot: true}).append(
+              $createListNode('bullet').append(
+                $createListItemNode().append($createTextNode('one')),
+                $createListItemNode().append($createTextNode('two')),
+              ),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe(
+      '> - one\n> - two',
+    );
+  });
+
+  test('selection export skips blocks that are outside the selection', () => {
+    using editor = buildRichEditor();
+    let markdown = '';
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode().append($createTextNode('B'));
+        $getRoot()
+          .clear()
+          .append(
+            $createQuoteNode({shadowRoot: true}).append(
+              $createHeadingNode('h1').append($createTextNode('A')),
+              paragraph,
+            ),
+          );
+        const selection = $createRangeSelection();
+        const text = paragraph.getFirstChildOrThrow();
+        selection.anchor.set(text.getKey(), 0, 'text');
+        selection.focus.set(text.getKey(), 1, 'text');
+        markdown = $convertSelectionToMarkdownString(undefined, selection);
+      },
+      {discrete: true},
+    );
+    expect(markdown).toBe('> B');
   });
 });

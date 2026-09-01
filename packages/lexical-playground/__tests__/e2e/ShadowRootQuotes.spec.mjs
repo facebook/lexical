@@ -144,6 +144,29 @@ test.describe('Shadow root quotes in Markdown', () => {
       );
     });
 
+    test('a modified arrow press does not add a paragraph', async ({
+      page,
+      isPlainText,
+    }) => {
+      test.skip(isPlainText);
+      await focusEditor(page);
+      await page.keyboard.type('> ');
+      await page.keyboard.type('# Heading');
+      // Shift+Arrow extends the selection; it must not escape the quote.
+      await page.keyboard.press('Shift+ArrowRight');
+      await page.keyboard.press('Shift+ArrowDown');
+      await assertHTML(
+        page,
+        html`
+          <blockquote class="PlaygroundEditorTheme__quote" dir="auto">
+            <h1 class="PlaygroundEditorTheme__h1" dir="auto">
+              <span data-lexical-text="true">Heading</span>
+            </h1>
+          </blockquote>
+        `,
+      );
+    });
+
     test('text typed after the nested heading stays inside the quote', async ({
       page,
       isPlainText,

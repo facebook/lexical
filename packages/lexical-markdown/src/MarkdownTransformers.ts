@@ -619,11 +619,38 @@ export const HEADING: ElementTransformer = {
   type: 'element',
 };
 
-// Matches a quote line, capturing the ATX heading marker of a `> # Heading`
-// line so that the heading can be nested inside the quote rather than
-// replacing it. Only used by a quote transformer built with `shadowRoot`,
-// since an inline-content quote cannot hold a HeadingNode.
-const QUOTE_BLOCK_REGEX = /^>\s(?:(#{1,6})\s)?/;
+// Matches a quote line, capturing the full run of `> ` markers (so `> > x`
+// nests two levels deep) and the ATX heading marker of a `> # Heading` line
+// (so the heading nests inside the quote rather than replacing it). Only used
+// by a quote transformer built with `shadowRoot`, since an inline-content
+// quote can hold neither a QuoteNode nor a HeadingNode.
+const QUOTE_BLOCK_REGEX = /^((?:>\s)+)(?:(#{1,6})\s)?/;
+
+/** How many `>` markers the matched quote prefix carries. */
+function quoteDepth(match: string[]): number {
+  const markers = match[1].match(/>/g);
+  return markers ? markers.length : 1;
+}
+
+/**
+ * Descends `depth - 1` levels of nested shadow root quotes below `quote`,
+ * creating the intermediate quotes when they are not already there, so that
+ * `> > text` continues the quote a `> > other` line started.
+ */
+function $quoteAtDepth(quote: QuoteNode, depth: number): QuoteNode {
+  let current = quote;
+  for (let level = 1; level < depth; level++) {
+    const lastChild = current.getLastChild();
+    if ($isQuoteNode(lastChild) && lastChild.isShadowRoot()) {
+      current = lastChild;
+    } else {
+      const inner = $createQuoteNode({shadowRoot: true});
+      current.append(inner);
+      current = inner;
+    }
+  }
+  return current;
+}
 
 /**
  * Exports the content of a quote without its `> ` prefixes.
@@ -636,6 +663,7 @@ const QUOTE_BLOCK_REGEX = /^>\s(?:(#{1,6})\s)?/;
 function $exportQuoteContent(
   node: QuoteNode,
   exportChildren: (child: ElementNode) => string,
+  selection?: BaseSelection | null,
 ): string {
   if (!node.isShadowRoot()) {
     return exportChildren(node);
@@ -643,11 +671,27 @@ function $exportQuoteContent(
 
   const output = [];
   for (const child of node.getChildren()) {
+    // Skip blocks that are entirely outside the selection, the way
+    // $listExport skips unselected list items. Without this the selection
+    // export emits a line per block whatever was selected, so exporting only
+    // the paragraph of a quote that starts with a heading yields a stray
+    // `> # ` ahead of it.
+    if (
+      selection &&
+      $isElementNode(child) &&
+      !child.getChildren().some(grandChild => grandChild.isSelected(selection))
+    ) {
+      continue;
+    }
     if ($isHeadingNode(child)) {
       const level = Number(child.getTag().slice(1));
       output.push('#'.repeat(level) + ' ' + exportChildren(child));
     } else if ($isQuoteNode(child)) {
-      output.push($exportQuote(child, exportChildren));
+      output.push($exportQuote(child, exportChildren, selection));
+    } else if ($isListNode(child)) {
+      // Reuse the list transformer's export so bullets and numbering survive
+      // rather than being flattened into the paragraph text.
+      output.push($listExport(child, exportChildren, 0, selection));
     } else if ($isElementNode(child)) {
       output.push(exportChildren(child));
     } else {
@@ -660,17 +704,20 @@ function $exportQuoteContent(
 function $exportQuote(
   node: QuoteNode,
   exportChildren: (child: ElementNode) => string,
+  selection?: BaseSelection | null,
 ): string {
   const output = [];
-  for (const line of $exportQuoteContent(node, exportChildren).split('\n')) {
+  for (const line of $exportQuoteContent(node, exportChildren, selection).split(
+    '\n',
+  )) {
     output.push('> ' + line);
   }
   return output.join('\n');
 }
 
-function $createQuoteBlock(match: string[]): ElementNode {
-  return match[1]
-    ? $createHeadingNode(('h' + match[1].length) as HeadingTagType)
+function $createQuoteBlock(headingMarker: string | undefined): ElementNode {
+  return headingMarker
+    ? $createHeadingNode(('h' + headingMarker.length) as HeadingTagType)
     : $createParagraphNode();
 }
 
@@ -704,11 +751,11 @@ export function createQuoteTransformer(
   const shadowRoot = options !== undefined && options.shadowRoot === true;
   return {
     dependencies: shadowRoot ? [QuoteNode, HeadingNode] : [QuoteNode],
-    export: (node, exportChildren) => {
+    export: (node, exportChildren, selection) => {
       if (!$isQuoteNode(node)) {
         return null;
       }
-      return $exportQuote(node, exportChildren);
+      return $exportQuote(node, exportChildren, selection);
     },
     regExp: shadowRoot ? QUOTE_BLOCK_REGEX : QUOTE_REGEX,
     replace: (parentNode, children, match, isImport) => {
@@ -734,11 +781,15 @@ export function createQuoteTransformer(
         return;
       }
 
+      const depth = quoteDepth(match);
+      const headingMarker = match[2];
+
       if (isImport) {
         const previousNode = parentNode.getPreviousSibling();
         if ($isQuoteNode(previousNode) && previousNode.isShadowRoot()) {
-          const lastChild = previousNode.getLastChild();
-          if (!match[1] && $isParagraphNode(lastChild)) {
+          const target = $quoteAtDepth(previousNode, depth);
+          const lastChild = target.getLastChild();
+          if (!headingMarker && $isParagraphNode(lastChild)) {
             // Consecutive plain quote lines are one paragraph separated by
             // soft line breaks, as they are for an inline-content quote.
             lastChild.splice(lastChild.getChildrenSize(), 0, [
@@ -746,16 +797,18 @@ export function createQuoteTransformer(
               ...children,
             ]);
           } else {
-            previousNode.append($createQuoteBlock(match).append(...children));
+            target.append($createQuoteBlock(headingMarker).append(...children));
           }
           parentNode.remove();
           return;
         }
       }
 
-      const block = $createQuoteBlock(match);
+      const quoteNode = $createQuoteNode({shadowRoot: true});
+      const block = $createQuoteBlock(headingMarker);
       block.append(...children);
-      parentNode.replace($createQuoteNode({shadowRoot: true}).append(block));
+      $quoteAtDepth(quoteNode, depth).append(block);
+      parentNode.replace(quoteNode);
       if (!isImport) {
         block.select(0, 0);
       }

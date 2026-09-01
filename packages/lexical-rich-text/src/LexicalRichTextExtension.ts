@@ -115,28 +115,44 @@ function $isShadowRootQuoteNode(node?: LexicalNode | null): node is QuoteNode {
  * {@link RichTextConfig.shadowRootQuoteEscapeWithArrows} rather than exported,
  * so it is reachable only by configuring {@link RichTextExtension}.
  */
+/**
+ * A plain arrow press, with no modifier. Shift extends the selection, and the
+ * other modifiers are word/line/document motions; none of them should insert a
+ * paragraph, so the escape declines and lets the default run.
+ */
+function isPlainArrow(event: KeyboardEvent): boolean {
+  return !(event.shiftKey || event.altKey || event.metaKey || event.ctrlKey);
+}
+
 function registerShadowRootQuoteEscape(editor: LexicalEditor): () => void {
+  const escape =
+    (
+      $onEscape: (
+        $isContainerNode: typeof $isShadowRootQuoteNode,
+        event?: KeyboardEvent | null,
+      ) => boolean,
+    ) =>
+    (event: KeyboardEvent) =>
+      isPlainArrow(event) && $onEscape($isShadowRootQuoteNode, event);
   return mergeRegister(
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
-      event =>
-        event.altKey ? false : $onEscapeDown($isShadowRootQuoteNode, event),
+      escape($onEscapeDown),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_RIGHT_COMMAND,
-      event => $onEscapeDown($isShadowRootQuoteNode, event),
+      escape($onEscapeDown),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
-      event =>
-        event.altKey ? false : $onEscapeUp($isShadowRootQuoteNode, event),
+      escape($onEscapeUp),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_LEFT_COMMAND,
-      event => $onEscapeUp($isShadowRootQuoteNode, event),
+      escape($onEscapeUp),
       COMMAND_PRIORITY_LOW,
     ),
   );

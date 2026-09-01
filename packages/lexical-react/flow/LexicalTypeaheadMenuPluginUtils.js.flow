@@ -7,6 +7,28 @@
  * @flow strict
  */
 
-/**
- * LexicalTypeaheadMenuPluginUtils
- */
+import type {LexicalCommand} from 'lexical';
+
+import type {MenuOption} from '@lexical/react/LexicalMenuOption';
+import type {TriggerFn} from '@lexical/react/LexicalTypeaheadMenuPlugin';
+
+declare export var PUNCTUATION: string;
+declare export var SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
+  index: number,
+  option: MenuOption,
+}>;
+
+declare export function getScrollParent(
+  element: HTMLElement,
+  includeHidden?: boolean,
+): HTMLElement | HTMLBodyElement;
+
+declare export hook useBasicTypeaheadTriggerMatch(
+  trigger: string,
+  options: {
+    minLength?: number,
+    maxLength?: number,
+    punctuation?: string,
+    allowWhitespace?: boolean,
+  },
+): TriggerFn;

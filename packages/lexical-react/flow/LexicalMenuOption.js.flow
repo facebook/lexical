@@ -7,6 +7,14 @@
  * @flow strict
  */
 
-/**
- * LexicalMenuOption
- */
+import type {RefObject} from 'react';
+import * as React from 'react';
+
+declare export class MenuOption {
+  key: string;
+  ref?: RefObject<HTMLElement | null>;
+  icon?: React.MixedElement;
+  title?: React.MixedElement | string;
+  constructor(key: string): void;
+  setRefElement(element: HTMLElement | null): void;
+}

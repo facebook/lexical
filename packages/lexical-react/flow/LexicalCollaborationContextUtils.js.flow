@@ -7,6 +7,19 @@
  * @flow strict
  */
 
-/**
- * LexicalCollaborationContextUtils
- */
+import type {Doc} from 'yjs';
+import type {Context} from 'react';
+
+export type CollaborationContextType = {
+  color: string,
+  isCollabActive: boolean,
+  name: string,
+  yjsDocMap: Map<string, Doc>,
+};
+
+declare export var CollaborationContext: Context<CollaborationContextType | null>;
+declare export function newContext(): CollaborationContextType;
+declare export hook useCollaborationContext(
+  username?: string,
+  color?: string,
+): CollaborationContextType;

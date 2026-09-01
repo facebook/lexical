@@ -6,17 +6,13 @@
  *
  */
 
-import type {
-  HistoryExtension,
-  HistoryState,
-  HistoryStateEntry,
-} from '@lexical/history';
-
 import {
   defineExtension,
   type EditorState,
+  type ExtensionConfigBase,
   HISTORY_MERGE_TAG,
   type LexicalEditor,
+  type LexicalExtension,
   safeCast,
 } from 'lexical';
 
@@ -93,6 +89,40 @@ export interface HMRConfig {
    */
   id?: string;
 }
+
+/**
+ * The parts of `@lexical/history` this extension touches, declared here rather
+ * than imported from it.
+ *
+ * `@lexical/history` depends on `@lexical/extension`, not the other way
+ * around, and importing even a type across that boundary leaves
+ * `@lexical/extension` with an undeclared dependency: anyone type-checking it
+ * through its `source` export condition without `@lexical/history` installed
+ * gets an unresolved import. History is an optional peer here — an editor
+ * without it is restored just the same — so the shapes are described locally.
+ * The unit tests assert that they still match the real ones.
+ *
+ * @internal
+ */
+export interface HMRHistoryStateEntry {
+  editor: LexicalEditor;
+  editorState: EditorState;
+}
+
+/** @internal See {@link HMRHistoryStateEntry}. */
+export interface HMRHistoryState {
+  current: null | HMRHistoryStateEntry;
+  redoStack: HMRHistoryStateEntry[];
+  undoStack: HMRHistoryStateEntry[];
+}
+
+/** As much of the `@lexical/history` extension as this one reads. */
+type HistoryPeerExtension = LexicalExtension<
+  ExtensionConfigBase,
+  typeof HISTORY_EXTENSION_NAME,
+  {historyState: {peek(): HMRHistoryState; value: HMRHistoryState}},
+  unknown
+>;
 
 const HMR_KEY = 'lexicalHMR';
 const HISTORY_EXTENSION_NAME = '@lexical/history/History';
@@ -343,20 +373,20 @@ function isSerializedHMRState(raw: unknown): raw is SerializedHMRState {
 function serializeHMRState(
   editor: LexicalEditor,
   editorState: EditorState,
-  historyState: HistoryState | null,
+  historyState: HMRHistoryState | null,
 ): SerializedHMRState {
   const states: EditorState[] = [editorState];
   let foreign = 0;
-  const own = (entry: HistoryStateEntry): boolean => {
+  const own = (entry: HMRHistoryStateEntry): boolean => {
     const isOwn = entry.editor === editor;
     if (!isOwn) {
       foreign++;
     }
     return isOwn;
   };
-  const add = (entry: HistoryStateEntry): number =>
+  const add = (entry: HMRHistoryStateEntry): number =>
     states.push(entry.editorState) - 1;
-  const addStack = (stack: readonly HistoryStateEntry[]): number[] =>
+  const addStack = (stack: readonly HMRHistoryStateEntry[]): number[] =>
     stack.filter(own).map(add);
   const history = historyState
     ? {
@@ -387,9 +417,9 @@ function restoreHistoryState(
   history: NonNullable<SerializedHMRState['history']>,
   states: readonly (EditorState | null)[],
   editor: LexicalEditor,
-): HistoryState {
+): HMRHistoryState {
   let dropped = 0;
-  const restoreEntry = (index: number): HistoryStateEntry | null => {
+  const restoreEntry = (index: number): HMRHistoryStateEntry | null => {
     const editorState = states[index];
     if (editorState == null || editorState.isEmpty()) {
       dropped++;
@@ -397,10 +427,10 @@ function restoreHistoryState(
     }
     return {editor, editorState};
   };
-  const restoreStack = (indices: readonly number[]): HistoryStateEntry[] =>
+  const restoreStack = (indices: readonly number[]): HMRHistoryStateEntry[] =>
     indices
       .map(restoreEntry)
-      .filter((entry): entry is HistoryStateEntry => entry !== null);
+      .filter((entry): entry is HMRHistoryStateEntry => entry !== null);
   const current =
     history.current === null ? null : restoreEntry(history.current);
   const undoStack = restoreStack(history.undoStack);
@@ -527,7 +557,7 @@ export const HMRExtension = defineExtension<
       }
     }
 
-    const historyPeer = getPeerDependencyFromEditor<typeof HistoryExtension>(
+    const historyPeer = getPeerDependencyFromEditor<HistoryPeerExtension>(
       editor,
       HISTORY_EXTENSION_NAME,
     );

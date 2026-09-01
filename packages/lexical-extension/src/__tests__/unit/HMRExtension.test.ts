@@ -6,6 +6,8 @@
  *
  */
 
+import type {HMRHistoryState} from '../../HMRExtension';
+
 import {
   buildEditorFromExtensions,
   configExtension,
@@ -16,6 +18,7 @@ import {
 import {
   createEmptyHistoryState,
   HistoryExtension,
+  type HistoryState,
   type HistoryStateEntry,
   SharedHistoryExtension,
 } from '@lexical/history';
@@ -1350,6 +1353,72 @@ describe('HMRExtension', () => {
       expect(historyStateOf(nested)).toBe(historyStateOf(parent));
       nested.dispose();
       parent.dispose();
+    }
+  });
+
+  test('describes the history shapes @lexical/history really has', () => {
+    // HMRExtension declares them itself rather than importing them, so that
+    // @lexical/extension does not depend on @lexical/history — which depends
+    // on it. Assigning each to the other fails to compile if they drift.
+    const fromHistory: HistoryState = createEmptyHistoryState();
+    const asDeclaredByHMR: HMRHistoryState = fromHistory;
+    const backAgain: HistoryState = asDeclaredByHMR;
+    expect(backAgain).toBe(fromHistory);
+  });
+
+  test('restores a payload whose states carry no selection', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(() => $setupContent('typed'), {discrete: true});
+    }
+
+    // What a build that did not record selections would leave behind
+    corruptPayload(hot, payload => {
+      for (const state of payload.family.states) {
+        delete (state as {selection?: unknown}).selection;
+      }
+    });
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      using editor = createEditor(hot);
+      editor.read(() => {
+        // A caret this build cannot read is worth losing; the document is not
+        expect($getRoot().getTextContent()).toBe('typed');
+        expect($getSelection()).toBe(null);
+      });
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('rejects a payload whose node versions are shaped differently', () => {
+    const hot = createMockHotContext();
+
+    {
+      using editor = createEditor(hot);
+      editor.update(() => $setupContent('typed'), {discrete: true});
+    }
+
+    corruptPayload(hot, payload => {
+      (payload.family.nodes[0] as {slots?: unknown}).slots = 'not-a-slot-list';
+    });
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      using editor = createEditor(hot);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('initial');
+      });
+      // Found out up front, rather than partway through rebuilding
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('saved state could not be read'),
+      );
+    } finally {
+      warn.mockRestore();
     }
   });
 

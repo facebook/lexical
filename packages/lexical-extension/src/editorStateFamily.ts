@@ -228,27 +228,104 @@ export function serializeEditorStateFamily(
   return {nodes, states: serializedStates};
 }
 
+function isObject(raw: unknown): raw is Record<string, unknown> {
+  return raw != null && typeof raw === 'object';
+}
+
+/** A NodeKey link, which is a key or nothing. */
+function isLink(raw: unknown): boolean {
+  return raw === null || raw === undefined || typeof raw === 'string';
+}
+
+function isSerializedNodeVersion(raw: unknown): boolean {
+  if (!isObject(raw)) {
+    return false;
+  }
+  const {first, json, key, last, next, parent, prev, size, slotHost, slots} =
+    raw;
+  return (
+    isObject(json) &&
+    typeof json.type === 'string' &&
+    typeof key === 'string' &&
+    isLink(parent) &&
+    isLink(prev) &&
+    isLink(next) &&
+    isLink(first) &&
+    isLink(last) &&
+    (size === undefined || typeof size === 'number') &&
+    isLink(slotHost) &&
+    (slots === undefined ||
+      (Array.isArray(slots) &&
+        slots.every(
+          slot =>
+            Array.isArray(slot) &&
+            slot.length === 2 &&
+            typeof slot[0] === 'string' &&
+            typeof slot[1] === 'string',
+        )))
+  );
+}
+
+function isSerializedFamilyPoint(raw: unknown): boolean {
+  return (
+    isObject(raw) &&
+    typeof raw.key === 'string' &&
+    typeof raw.offset === 'number' &&
+    (raw.type === 'text' || raw.type === 'element')
+  );
+}
+
+function isSerializedFamilySelection(raw: unknown): boolean {
+  if (raw === null || raw === undefined) {
+    return true;
+  }
+  if (!isObject(raw)) {
+    return false;
+  }
+  if (raw.type === 'node') {
+    return (
+      Array.isArray(raw.keys) && raw.keys.every(key => typeof key === 'string')
+    );
+  }
+  return (
+    raw.type === 'range' &&
+    isSerializedFamilyPoint(raw.anchor) &&
+    isSerializedFamilyPoint(raw.focus) &&
+    typeof raw.format === 'number' &&
+    typeof raw.style === 'string'
+  );
+}
+
+/**
+ * Whether `raw` is a payload this build can rebuild.
+ *
+ * Checked field by field rather than at the surface: the payload comes from
+ * whichever build of this module wrote it, and one that describes a node
+ * version or a selection differently would otherwise be found out partway
+ * through rebuilding, where a throw costs the caller the whole document
+ * instead of being reported as a payload it cannot read.
+ *
+ * @internal
+ */
 export function isSerializedEditorStateFamily(
   raw: unknown,
 ): raw is SerializedEditorStateFamily {
-  if (raw == null || typeof raw !== 'object') {
+  if (!isObject(raw)) {
     return false;
   }
-  const {nodes, states} = raw as Record<string, unknown>;
+  const {nodes, states} = raw;
   return (
     Array.isArray(nodes) &&
     Array.isArray(states) &&
-    nodes.every(
-      node => node != null && typeof node === 'object' && 'json' in node,
-    ) &&
+    nodes.every(isSerializedNodeVersion) &&
     states.every(
       state =>
-        state != null &&
-        typeof state === 'object' &&
-        Array.isArray((state as SerializedFamilyState).nodes) &&
-        (state as SerializedFamilyState).nodes.every(
+        isObject(state) &&
+        Array.isArray(state.nodes) &&
+        state.nodes.every(
           id => typeof id === 'number' && id >= 0 && id < nodes.length,
-        ),
+        ) &&
+        isSerializedFamilySelection(state.selection),
     )
   );
 }
@@ -277,10 +354,13 @@ function $buildNodeVersion(
 }
 
 function $restoreSelection(
-  serialized: SerializedFamilySelection | null,
+  serialized: SerializedFamilySelection | null | undefined,
   keys: ReadonlyMap<NodeKey, NodeKey>,
 ): null | BaseSelection {
-  if (serialized === null) {
+  // `== null`: a payload from another build may have no selection at all
+  // rather than a null one, and reading `.type` off that would cost the
+  // caller the whole document over a caret.
+  if (serialized == null) {
     return null;
   }
   if (serialized.type === 'node') {
@@ -341,6 +421,7 @@ export function deserializeEditorStateFamily(
   const versions: (LexicalNode | null)[] = [];
   const keys = new Map<NodeKey, NodeKey>();
   let slotsUsed = false;
+  let linked = false;
   const template = editor.parseEditorState(SCRATCH_STATE_JSON, () => {
     for (const version of family.nodes) {
       let node: LexicalNode | null = null;
@@ -389,7 +470,17 @@ export function deserializeEditorStateFamily(
         slotted.__slotHost = mapKey(version.slotHost);
       }
     }
+    linked = true;
   });
+
+  if (!linked) {
+    // parseEditorState routes a throw to `editor._onError`, which an
+    // application is free to log rather than rethrow. The nodes would then be
+    // built but never linked, and every state would come back describing a
+    // root with no children — a blank document, where the caller expects a
+    // family it could not rebuild.
+    return family.states.map(() => null);
+  }
 
   return family.states.map(serializedState => {
     const nodeMap = new Map<NodeKey, LexicalNode>();

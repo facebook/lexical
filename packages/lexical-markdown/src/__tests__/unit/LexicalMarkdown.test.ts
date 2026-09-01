@@ -13,6 +13,7 @@ import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
+  $isListNode,
   ListItemNode,
   ListNode,
 } from '@lexical/list';
@@ -73,6 +74,25 @@ import {
   normalizeMarkdown,
   parseMarkdownHardLineBreak,
 } from '../../MarkdownTransformers';
+
+/**
+ * An error thrown inside `editor.update` or `editor.read` is routed to the
+ * editor's `onError` handler rather than rethrown, and `createHeadlessEditor`
+ * defaults that handler to `console.error` — so a failed assertion inside one
+ * would log and pass. Every editor in this file throws instead, the way
+ * `buildEditorFromExtensions` does by default.
+ */
+function createTestEditor(
+  config: Parameters<typeof createHeadlessEditor>[0] = {},
+): ReturnType<typeof createHeadlessEditor> {
+  return createHeadlessEditor({
+    nodes: [HeadingNode, ListNode, ListItemNode, QuoteNode, CodeNode, LinkNode],
+    ...config,
+    onError(error) {
+      throw error;
+    },
+  });
+}
 
 const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
   ...LINK,
@@ -465,9 +485,11 @@ describe('Markdown', () => {
       mdAfterExport: '- a\n    - b',
     },
     {
-      html: '<ol><li value="1"><span style="white-space: pre-wrap;">First</span></li></ol><ul><li value="1"><ul><li value="1"><span style="white-space: pre-wrap;">detail</span></li></ul></li></ul>',
+      // ...and the loose sublist lands inside the item above it, exactly as
+      // the tight spelling does.
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">First</span><ul><li value="1"><span style="white-space: pre-wrap;">detail</span></li></ul></li></ol>',
       md: '1. First\n\n   - detail',
-      mdAfterExport: '1. First\n\n    - detail',
+      mdAfterExport: '1. First\n    - detail',
     },
     {
       // A block of another kind does close them, blank lines or not.
@@ -1029,7 +1051,7 @@ describe('Markdown', () => {
     }
 
     it(`can import "${md.replace(/\n/g, '\\n')}"`, () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1077,7 +1099,7 @@ describe('Markdown', () => {
     }
 
     it(`can export "${md.replace(/\n/g, '\\n')}"`, () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1125,7 +1147,7 @@ describe('Markdown', () => {
     }
 
     it(`should not select when importing "${md.replace(/\n/g, '\\n')}"`, () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1159,7 +1181,7 @@ describe('Markdown', () => {
   }
 
   it('should not remove leading node and transform if replace returns false', () => {
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -1206,7 +1228,7 @@ describe('Markdown', () => {
   });
 
   it('should remove leading node and execute transform if replace does not return false', () => {
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -1255,7 +1277,7 @@ describe('Markdown', () => {
   it.each(['1. ', '- ', '* ', '+ '])(
     'should preserve a heading when typing the "%s" list shortcut',
     shortcut => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1406,7 +1428,7 @@ describe('Markdown', () => {
       '```\n' +
       '````';
 
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -1441,7 +1463,7 @@ describe('Markdown', () => {
       '````\n' +
       '`````';
 
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -1465,7 +1487,7 @@ describe('Markdown', () => {
   });
 
   it('computes fence dynamically when code block content contains backticks', () => {
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [CodeNode],
     });
 
@@ -1501,7 +1523,7 @@ describe('Markdown', () => {
     const INLINE_CODE = TEXT_TYPE_TO_FORMAT.code;
 
     function overlapEditor() {
-      return createHeadlessEditor({
+      return createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1632,7 +1654,7 @@ describe('Markdown', () => {
 
   describe('list marker', () => {
     it('should remember marker used on import', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [ListNode, ListItemNode],
       });
       editor.update(
@@ -1654,7 +1676,7 @@ describe('Markdown', () => {
       });
     });
     it('should not use [ as a marker for an implicit check list', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [ListNode, ListItemNode],
       });
       registerMarkdownShortcuts(editor, [CHECK_LIST]);
@@ -1678,7 +1700,7 @@ describe('Markdown', () => {
       });
     });
     it('should remember the marker for checkbox with an explicit marker', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [ListNode, ListItemNode],
       });
       registerMarkdownShortcuts(editor, [CHECK_LIST]);
@@ -1703,7 +1725,7 @@ describe('Markdown', () => {
     });
 
     it('should remember marker used on export', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [ListNode, ListItemNode],
       });
       editor.update(
@@ -1732,7 +1754,7 @@ describe('Markdown', () => {
 
   describe('Enter key triggers', () => {
     it('should create an empty code block when ``` is typed and Enter is pressed', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1772,7 +1794,7 @@ describe('Markdown', () => {
     });
 
     it('should create a code block with language when ```javascript is typed and Enter is pressed', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1825,7 +1847,7 @@ describe('Markdown', () => {
         type: 'multiline-element',
       };
 
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1881,7 +1903,7 @@ describe('Markdown', () => {
         type: 'element',
       };
 
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1921,7 +1943,7 @@ describe('Markdown', () => {
     });
 
     it('should transform heading on Enter when a line was inserted at once (no trailing space listener trigger)', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1963,7 +1985,7 @@ describe('Markdown', () => {
 
   describe('composition-end trigger characters (#7026)', () => {
     function buildEditor() {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -2388,7 +2410,7 @@ describe('markdown hard line break import', () => {
   it('preserves hard line break when shouldPreserveNewLines is true', () => {
     const md = `foo  
 bar`;
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -2426,7 +2448,7 @@ bar`;
   it('preserves backslash hard line break when shouldPreserveNewLines is true', () => {
     const md = `foo\\
 bar`;
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -2463,19 +2485,6 @@ bar`;
 });
 
 describe('markdown whitespace import (default mode)', () => {
-  function createTestEditor() {
-    return createHeadlessEditor({
-      nodes: [
-        HeadingNode,
-        ListNode,
-        ListItemNode,
-        QuoteNode,
-        CodeNode,
-        LinkNode,
-      ],
-    });
-  }
-
   function expectRoundTrip(md: string, shouldMergeAdjacentLines = false): void {
     const editor = createTestEditor();
 
@@ -2740,19 +2749,6 @@ describe('markdown whitespace import (default mode)', () => {
 // in Safari < 16.4 at RegExp construction time, crashing the entire editor.
 // The fix captures the preceding character in group 1 instead.
 describe('markdown Safari compatibility (issue #8012)', () => {
-  function createTestEditor() {
-    return createHeadlessEditor({
-      nodes: [
-        HeadingNode,
-        ListNode,
-        ListItemNode,
-        QuoteNode,
-        CodeNode,
-        LinkNode,
-      ],
-    });
-  }
-
   function roundtrip(md: string): string {
     const editor = createTestEditor();
     editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
@@ -2805,19 +2801,6 @@ describe('markdown Safari compatibility (issue #8012)', () => {
 });
 
 describe('inline code with backticks (CommonMark code spans)', () => {
-  function createTestEditor() {
-    return createHeadlessEditor({
-      nodes: [
-        HeadingNode,
-        ListNode,
-        ListItemNode,
-        QuoteNode,
-        CodeNode,
-        LinkNode,
-      ],
-    });
-  }
-
   function roundtrip(md: string): string {
     const editor = createTestEditor();
     editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
@@ -2867,19 +2850,6 @@ describe('inline code with backticks (CommonMark code spans)', () => {
 });
 
 describe('$convertSelectionToMarkdownString', () => {
-  function createTestEditor() {
-    return createHeadlessEditor({
-      nodes: [
-        HeadingNode,
-        ListNode,
-        ListItemNode,
-        QuoteNode,
-        CodeNode,
-        LinkNode,
-      ],
-    });
-  }
-
   it('converts full selection to markdown', () => {
     const editor = createTestEditor();
     editor.update(
@@ -3183,6 +3153,135 @@ describe('$convertSelectionToMarkdownString', () => {
   });
 });
 
+describe('List marker details', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it('reads an uppercase [X] as checked, as the /i on its regex intends', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+
+    editor.update(
+      () =>
+        $convertFromMarkdownString('- [X] up\n- [ ] no', [
+          CHECK_LIST,
+          ...TRANSFORMERS,
+        ]),
+      {discrete: true},
+    );
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul __lexicallisttype="check"><li role="checkbox" tabindex="-1" aria-checked="true" value="1"><span style="white-space: pre-wrap;">up</span></li><li role="checkbox" tabindex="-1" aria-checked="false" value="2"><span style="white-space: pre-wrap;">no</span></li></ul>',
+    );
+  });
+
+  it('expands a tab after the marker when measuring the content column', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+
+    // The tab opens the content of `a` at column four, so a two-space `- b`
+    // does not reach it and stays a sibling.
+    editor.update(
+      () => $convertFromMarkdownString('-\ta\n  - b', TRANSFORMERS),
+      {discrete: true},
+    );
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span></li><li value="2"><span style="white-space: pre-wrap;">b</span></li></ul>',
+    );
+  });
+
+  it('keeps a typed start number out of a list the item only passes through', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    // Typing an indented ordered marker above an existing ordered list sends
+    // the item into a sublist, so the outer list's start stays what it was.
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        root.append(
+          paragraph,
+          $createListNode('number', 5).append(
+            $createListItemNode().append($createTextNode('y')),
+          ),
+        );
+        paragraph.selectEnd();
+      },
+      {discrete: true},
+    );
+    for (const char of '    1. z') {
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText(char);
+          }
+        },
+        {discrete: true},
+      );
+    }
+    editor.update(() => {}, {discrete: true});
+
+    editor.read('latest', () => {
+      const list = $getRoot().getFirstChild();
+      invariant($isListNode(list), 'expected a list');
+      expect(list.getStart()).toBe(5);
+      expect(list.getLastChild()!.getTextContent()).toBe('y');
+    });
+  });
+});
+
+describe('Loose sublists', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it('nests a loose type-changing sublist into the item above it', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+
+    editor.update(
+      () => $convertFromMarkdownString('- a\n\n  1. b', TRANSFORMERS),
+      {discrete: true},
+    );
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ol><li value="1"><span style="white-space: pre-wrap;">b</span></li></ol></li></ul>',
+    );
+  });
+
+  it('returns one joined list from $generateNodesFromMarkdownString', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+
+    // No ListNode transform runs over the returned nodes, so the loose list
+    // has to come back joined rather than as two lists a later transform
+    // would merge. Asserted outside the update so the assertion cannot depend
+    // on the editor's error handler.
+    let shape = '';
+    editor.update(
+      () => {
+        shape = $generateNodesFromMarkdownString('- a\n\n  - b', TRANSFORMERS)
+          .map(node => ($isListNode(node) ? 'list' : node.getType()))
+          .join(',');
+      },
+      {discrete: true},
+    );
+
+    expect(shape).toBe('list');
+  });
+});
+
 describe('Sublist indent boundaries', () => {
   const baseNodes = [
     HeadingNode,
@@ -3194,7 +3293,7 @@ describe('Sublist indent boundaries', () => {
   ];
 
   it("does not nest an indent short of a wide marker's content column", () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
 
     // `10. ` opens its content at column four, so three spaces is one short of
     // a sublist and the line starts a list of its own.
@@ -3209,7 +3308,7 @@ describe('Sublist indent boundaries', () => {
   });
 
   it('keeps a retyped sublist in front of the one it was placed before', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     // Typing above a list whose first child is a nested list of another type
@@ -3265,7 +3364,7 @@ describe('Loose list indents round trip', () => {
   ];
 
   function convert(md: string): string {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
       discrete: true,
     });
@@ -3298,7 +3397,7 @@ describe('Sublist markers', () => {
   ];
 
   it('records a marker on the list the item lands in, not the one above it', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     const md = '- a\n    * b\n    * c';
 
     editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
@@ -3377,7 +3476,7 @@ describe('Typed sublist shortcuts', () => {
     ],
     ['\t- ', '<ul><li value="1"><ul><li value="1"></li></ul></li></ul>'],
   ])('indents a typed "%s" with no list above it', (text, html) => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     typeLines(editor, [text]);
@@ -3391,7 +3490,7 @@ describe('Typed sublist shortcuts', () => {
   });
 
   it('nests a typed sublist of another type and keeps the caret in it', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     typeLines(editor, ['- a', '    1. b']);
@@ -3403,7 +3502,7 @@ describe('Typed sublist shortcuts', () => {
   });
 
   it('nests a typed sublist of the same type and keeps the caret in it', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     typeLines(editor, ['- a', '    - b']);
@@ -3420,7 +3519,7 @@ describe('Typed sublist shortcuts', () => {
   // imported document is read by content column instead, which is what the
   // "CommonMark sublist indents" cases below cover.
   it('reads a typed indent in fixed steps, not by content column', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     typeLines(editor, ['1. a', '   - b']);
@@ -3432,7 +3531,7 @@ describe('Typed sublist shortcuts', () => {
   });
 
   it('nests a typed sublist under a list a shortcut did not create', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     editor.update(
@@ -3467,7 +3566,7 @@ describe('Ordered list start adjustment (#8677)', () => {
   ];
 
   it('updates list start when typed marker precedes an existing ordered list', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     editor.update(
@@ -3501,7 +3600,7 @@ describe('Ordered list start adjustment (#8677)', () => {
   });
 
   it('respects an arbitrary typed start number', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     editor.update(
@@ -3534,7 +3633,7 @@ describe('Ordered list start adjustment (#8677)', () => {
   });
 
   it('does not change start when typed marker follows an existing ordered list', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     editor.update(
@@ -3570,7 +3669,7 @@ describe('Ordered list start adjustment (#8677)', () => {
   });
 
   it('creates a fresh ordered list when the next sibling is a different list type', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     editor.update(
@@ -3607,19 +3706,6 @@ describe('Ordered list start adjustment (#8677)', () => {
 });
 
 describe('$generateNodesFromMarkdownString', () => {
-  function createTestEditor() {
-    return createHeadlessEditor({
-      nodes: [
-        HeadingNode,
-        ListNode,
-        ListItemNode,
-        QuoteNode,
-        CodeNode,
-        LinkNode,
-      ],
-    });
-  }
-
   it('returns nodes without modifying the root', () => {
     const editor = createTestEditor();
 

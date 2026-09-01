@@ -55,8 +55,10 @@ export function $importMarkdownNodes(
   const linesLength = lines.length;
 
   // A list line is measured against the column its parent item's content
-  // starts at, which only the line that opened that level knows.
-  withListIndentColumns(() => {
+  // starts at, which only the line that opened that level knows. Blank lines
+  // between list lines make the list loose rather than ending it — except
+  // when they are being preserved, where they are content like any block.
+  withListIndentColumns(!shouldPreserveNewLines, () => {
     for (let i = 0; i < linesLength; i++) {
       const lineText = lines[i];
 

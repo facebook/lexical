@@ -350,17 +350,14 @@ describe('HMRExtension', () => {
     });
 
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    try {
-      using editor = createEditor(hot);
-      editor.read(() => {
-        expect($getRoot().getTextContent()).toBe('initial');
-      });
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('Could not restore previous editor state'),
-      );
-    } finally {
-      warn.mockRestore();
-    }
+    onTestFinished(() => warn.mockRestore());
+    using editor = createEditor(hot);
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('initial');
+    });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('Could not restore previous editor state'),
+    );
   });
 
   test('starts fresh when saved state has invalid shape', () => {
@@ -493,44 +490,38 @@ describe('HMRExtension', () => {
     });
 
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    try {
-      using editor = createEditor(hot);
-      editor.read(() => {
-        expect($getRoot().getTextContent()).toBe('third');
-      });
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('Dropped 1 undo/redo entry'),
-      );
-      // The surviving entry is still there — one bad entry does not cost the
-      // whole history
-      editor.dispatchCommand(UNDO_COMMAND, undefined);
-      editor.read(() => {
-        expect($getRoot().getTextContent()).toBe('second');
-      });
-    } finally {
-      warn.mockRestore();
-    }
+    onTestFinished(() => warn.mockRestore());
+    using editor = createEditor(hot);
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('third');
+    });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('Dropped 1 undo/redo entry'),
+    );
+    // The surviving entry is still there — one bad entry does not cost the
+    // whole history
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('second');
+    });
   });
 
   test('warns when two mounted editors share an HMR key', () => {
     const hot = createMockHotContext();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
 
-    try {
-      using editor1 = createEditorWithNamespace(hot, 'shared-key-ns');
-      using editor2 = createEditorWithNamespace(hot, 'shared-key-ns');
-      mount(editor1);
-      mount(editor2);
-      editor1.update(() => $setupContent('one'), {discrete: true});
-      editor2.update(() => $setupContent('two'), {discrete: true});
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'Two mounted editors are sharing the HMR key "lexicalHMR:shared-key-ns"',
-        ),
-      );
-    } finally {
-      warn.mockRestore();
-    }
+    using editor1 = createEditorWithNamespace(hot, 'shared-key-ns');
+    using editor2 = createEditorWithNamespace(hot, 'shared-key-ns');
+    mount(editor1);
+    mount(editor2);
+    editor1.update(() => $setupContent('one'), {discrete: true});
+    editor2.update(() => $setupContent('two'), {discrete: true});
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Two mounted editors are sharing the HMR key "lexicalHMR:shared-key-ns"',
+      ),
+    );
   });
 
   test('does not warn when a replacement editor overlaps the one it replaces', () => {
@@ -1258,6 +1249,8 @@ describe('HMRExtension', () => {
 
   test('keeps a nested editor sharing its parent history through a cycle', () => {
     const hot = createMockHotContext();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const build = () => {
       const parent = buildEditorFromExtensions(
         defineExtension({
@@ -1303,9 +1296,14 @@ describe('HMRExtension', () => {
       nested.dispose();
       parent.dispose();
     }
+    expect(warn).not.toHaveBeenCalled();
 
     {
+      expect(warn).not.toHaveBeenCalled();
       const {nested, parent} = build();
+      expect(warn).toHaveBeenCalledExactlyOnceWith(
+        'HMR: Left behind 1 undo/redo entry recorded by another editor sharing this history. They can only be applied to the editor that recorded them, which this reload replaced.',
+      );
       // Restoring hands each editor a rebuilt HistoryState; the nested editor
       // has to end up back on its parent's, not on one of its own
       expect(historyStateOf(nested)).toBe(historyStateOf(parent));
@@ -1670,6 +1668,8 @@ describe('HMRExtension', () => {
   });
 
   test('does not overwrite valid saved state with empty editor state on first-mount effect run (validPrev path)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const hot = createMockHotContext();
 
     // Build an empty editorState that passes isValidHMRSavedState but isEmpty() === true.
@@ -1688,5 +1688,8 @@ describe('HMRExtension', () => {
 
     const saved = hot.data[TEST_HMR_KEY] as {historyState: unknown};
     expect(saved.historyState).toEqual({redoStack: [], undoStack: []});
+    expect(warn).toHaveBeenCalledExactlyOnceWith(
+      'HMR: The saved state could not be read — it was written by a different build of HMRExtension. Starting fresh.',
+    );
   });
 });

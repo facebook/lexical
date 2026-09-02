@@ -13,6 +13,7 @@ import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
+  $isListNode,
   ListItemNode,
   ListNode,
 } from '@lexical/list';
@@ -61,7 +62,10 @@ import {
   $setSelectionFromCaretRange,
   $setState,
   COMPOSITION_END_TAG,
+  type CreateEditorArgs,
   KEY_ENTER_COMMAND,
+  type LexicalEditor,
+  type LexicalNode,
   TEXT_TYPE_TO_FORMAT,
   type TextNode,
 } from 'lexical';
@@ -73,6 +77,25 @@ import {
   normalizeMarkdown,
   parseMarkdownHardLineBreak,
 } from '../../MarkdownTransformers';
+
+/**
+ * An error thrown inside `editor.update` or `editor.read` is routed to the
+ * editor's `onError` handler rather than rethrown, and `createHeadlessEditor`
+ * defaults that handler to `console.error` — so a failed assertion inside one
+ * would log and pass. Every editor in this file throws instead, the way
+ * `buildEditorFromExtensions` does by default.
+ */
+function createTestEditor(
+  config: CreateEditorArgs | undefined = {},
+): LexicalEditor {
+  return createHeadlessEditor({
+    nodes: [HeadingNode, ListNode, ListItemNode, QuoteNode, CodeNode, LinkNode],
+    ...config,
+    onError(error) {
+      throw error;
+    },
+  });
+}
 
 const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
   ...LINK,
@@ -383,6 +406,115 @@ describe('Markdown', () => {
     {
       html: '<ol start="25"><li value="25"><span style="white-space: pre-wrap;">Hello</span></li><li value="26"><span style="white-space: pre-wrap;">world</span></li></ol>',
       md: '25. Hello\n26. world',
+    },
+    {
+      // ...including a check list among the sublist types.
+      customTransformers: [CHECK_LIST],
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">item one</span></li><li value="2"><span style="white-space: pre-wrap;">item two</span><ul><li value="1"><span style="white-space: pre-wrap;">sublist</span></li></ul><ol><li value="1"><span style="white-space: pre-wrap;">sublist</span></li></ol><ul __lexicallisttype="check"><li role="checkbox" tabindex="-1" aria-checked="false" value="1"><span style="white-space: pre-wrap;">checklist</span></li></ul></li></ol>',
+      md: '1. item one\n2. item two\n    - sublist\n    1. sublist\n    - [ ] checklist',
+    },
+    {
+      // The sublist keeps its own bullet character. Import only: the marker
+      // does not survive a trip through HTML, so export writes "-".
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li><li value="2"><span style="white-space: pre-wrap;">c</span></li></ul></li></ul>',
+      md: '- a\n    * b\n    * c',
+      skipExport: true,
+    },
+    {
+      // A sublist is measured against the column its parent item's content
+      // starts at, so two spaces are enough under `- ` and three under
+      // `1. `. Export always writes four.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ul>',
+      md: '- a\n  - b',
+      mdAfterExport: '- a\n    - b',
+    },
+    {
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ol>',
+      md: '1. a\n   - b',
+      mdAfterExport: '1. a\n    - b',
+    },
+    {
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">item one</span></li><li value="2"><span style="white-space: pre-wrap;">item two</span><ul><li value="1"><span style="white-space: pre-wrap;">sublist</span></li></ul><ol><li value="1"><span style="white-space: pre-wrap;">sublist</span></li></ol></li></ol>',
+      md: '1. item one\n2. item two\n   - sublist\n   1. sublist',
+      mdAfterExport: '1. item one\n2. item two\n    - sublist\n    1. sublist',
+    },
+    {
+      // A marker wider than the indent that is exported for it still takes
+      // that indent as a sublist.
+      html: '<ol start="100"><li value="100"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ol>',
+      md: '100. a\n    - b',
+    },
+    {
+      // Every level is measured against its own parent's content column, not
+      // just the first: two-space nesting keeps all four levels apart.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span><ul><li value="1"><span style="white-space: pre-wrap;">c</span><ul><li value="1"><span style="white-space: pre-wrap;">d</span></li></ul></li></ul></li></ul></li></ul>',
+      md: '- a\n  - b\n    - c\n      - d',
+      mdAfterExport: '- a\n    - b\n        - c\n            - d',
+    },
+    {
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">a</span><ol><li value="1"><span style="white-space: pre-wrap;">b</span><ol><li value="1"><span style="white-space: pre-wrap;">c</span></li></ol></li></ol></li></ol>',
+      md: '1. a\n   1. b\n      1. c',
+      mdAfterExport: '1. a\n    1. b\n        1. c',
+    },
+    {
+      // ...while items written at the same column stay siblings, however deep
+      // that column is.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li><li value="2"><span style="white-space: pre-wrap;">c</span></li></ul></li></ul>',
+      md: '- a\n    - b\n    - c',
+    },
+    {
+      // A wider marker opens its content further along, so the indent that
+      // nests under `9. ` is one short of the one that nests under `10. `.
+      html: '<ol start="9"><li value="9"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ol>',
+      md: '9. a\n   - b',
+      mdAfterExport: '9. a\n    - b',
+    },
+    {
+      html: '<ol start="10"><li value="10"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ol>',
+      md: '10. a\n    - b',
+    },
+    {
+      // A line that follows a paragraph closes the levels above it.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span></li></ul><p><span style="white-space: pre-wrap;">text</span></p><ol><li value="1"><span style="white-space: pre-wrap;">c</span><ul><li value="1"><span style="white-space: pre-wrap;">d</span></li></ul></li></ol>',
+      md: '- a\n\ntext\n\n1. c\n   - d',
+      mdAfterExport: '- a\n\ntext\n\n1. c\n    - d',
+    },
+    {
+      // A blank line only makes the list loose. It does not close the levels
+      // above it, so the same sublist is read the same way written tightly or
+      // with a blank line before it.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ul>',
+      md: '- a\n\n  - b',
+      mdAfterExport: '- a\n    - b',
+    },
+    {
+      // ...and the loose sublist lands inside the item above it, exactly as
+      // the tight spelling does.
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">First</span><ul><li value="1"><span style="white-space: pre-wrap;">detail</span></li></ul></li></ol>',
+      md: '1. First\n\n   - detail',
+      mdAfterExport: '1. First\n    - detail',
+    },
+    {
+      // A block of another kind does close them, blank lines or not.
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span></li></ul><p><span style="white-space: pre-wrap;">text</span></p><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul>',
+      md: '- a\n\ntext\n\n  - b',
+      mdAfterExport: '- a\n\ntext\n\n- b',
+    },
+    {
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">bullet1</span><ol><li value="1"><span style="white-space: pre-wrap;">ordered1</span></li><li value="2"><span style="white-space: pre-wrap;">ordered2</span></li></ol></li><li value="2"><span style="white-space: pre-wrap;">bullet2</span></li></ul>',
+      md: '- bullet1\n    1. ordered1\n    2. ordered2\n- bullet2',
+    },
+    {
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">ordered1</span><ul><li value="1"><span style="white-space: pre-wrap;">bullet1</span></li><li value="2"><span style="white-space: pre-wrap;">bullet2</span></li></ul></li><li value="2"><span style="white-space: pre-wrap;">ordered2</span></li></ol>',
+      md: '1. ordered1\n    - bullet1\n    - bullet2\n2. ordered2',
+    },
+    {
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ol><li value="1"><span style="white-space: pre-wrap;">b</span><ul><li value="1"><span style="white-space: pre-wrap;">c</span></li><li value="2"><span style="white-space: pre-wrap;">d</span></li></ul></li><li value="2"><span style="white-space: pre-wrap;">e</span></li></ol></li><li value="2"><span style="white-space: pre-wrap;">f</span></li></ul>',
+      md: '- a\n    1. b\n        - c\n        - d\n    2. e\n- f',
+    },
+    {
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">item one</span></li><li value="2"><span style="white-space: pre-wrap;">item two</span><ul><li value="1"><span style="white-space: pre-wrap;">sublist bullet</span></li></ul><ol><li value="1"><span style="white-space: pre-wrap;">sublist ordered</span></li></ol></li></ol>',
+      md: '1. item one\n2. item two\n    - sublist bullet\n    1. sublist ordered',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">Hello</em></i><span style="white-space: pre-wrap;"> world</span></p>',
@@ -922,7 +1054,7 @@ describe('Markdown', () => {
     }
 
     it(`can import "${md.replace(/\n/g, '\\n')}"`, () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -970,7 +1102,7 @@ describe('Markdown', () => {
     }
 
     it(`can export "${md.replace(/\n/g, '\\n')}"`, () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1018,7 +1150,7 @@ describe('Markdown', () => {
     }
 
     it(`should not select when importing "${md.replace(/\n/g, '\\n')}"`, () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1052,7 +1184,7 @@ describe('Markdown', () => {
   }
 
   it('should not remove leading node and transform if replace returns false', () => {
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -1099,7 +1231,7 @@ describe('Markdown', () => {
   });
 
   it('should remove leading node and execute transform if replace does not return false', () => {
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -1148,7 +1280,7 @@ describe('Markdown', () => {
   it.each(['1. ', '- ', '* ', '+ '])(
     'should preserve a heading when typing the "%s" list shortcut',
     shortcut => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1197,7 +1329,7 @@ describe('Markdown', () => {
   it.each(['# ', '## ', '###### ', '1. ', '- ', '* ', '+ '])(
     'should preserve a quote when typing the "%s" shortcut (#7407)',
     shortcut => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1244,7 +1376,7 @@ describe('Markdown', () => {
   );
 
   it('should preserve a quote when the code fence shortcut is typed in it (#7407)', () => {
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -1299,7 +1431,7 @@ describe('Markdown', () => {
       '```\n' +
       '````';
 
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -1334,7 +1466,7 @@ describe('Markdown', () => {
       '````\n' +
       '`````';
 
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -1358,7 +1490,7 @@ describe('Markdown', () => {
   });
 
   it('computes fence dynamically when code block content contains backticks', () => {
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [CodeNode],
     });
 
@@ -1394,7 +1526,7 @@ describe('Markdown', () => {
     const INLINE_CODE = TEXT_TYPE_TO_FORMAT.code;
 
     function overlapEditor() {
-      return createHeadlessEditor({
+      return createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1525,7 +1657,7 @@ describe('Markdown', () => {
 
   describe('list marker', () => {
     it('should remember marker used on import', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [ListNode, ListItemNode],
       });
       editor.update(
@@ -1547,7 +1679,7 @@ describe('Markdown', () => {
       });
     });
     it('should not use [ as a marker for an implicit check list', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [ListNode, ListItemNode],
       });
       registerMarkdownShortcuts(editor, [CHECK_LIST]);
@@ -1571,7 +1703,7 @@ describe('Markdown', () => {
       });
     });
     it('should remember the marker for checkbox with an explicit marker', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [ListNode, ListItemNode],
       });
       registerMarkdownShortcuts(editor, [CHECK_LIST]);
@@ -1596,7 +1728,7 @@ describe('Markdown', () => {
     });
 
     it('should remember marker used on export', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [ListNode, ListItemNode],
       });
       editor.update(
@@ -1625,7 +1757,7 @@ describe('Markdown', () => {
 
   describe('Enter key triggers', () => {
     it('should create an empty code block when ``` is typed and Enter is pressed', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1665,7 +1797,7 @@ describe('Markdown', () => {
     });
 
     it('should create a code block with language when ```javascript is typed and Enter is pressed', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1718,7 +1850,7 @@ describe('Markdown', () => {
         type: 'multiline-element',
       };
 
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1774,7 +1906,7 @@ describe('Markdown', () => {
         type: 'element',
       };
 
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1814,7 +1946,7 @@ describe('Markdown', () => {
     });
 
     it('should transform heading on Enter when a line was inserted at once (no trailing space listener trigger)', () => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1856,7 +1988,7 @@ describe('Markdown', () => {
 
   describe('composition-end trigger characters (#7026)', () => {
     function buildEditor() {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -2281,7 +2413,7 @@ describe('markdown hard line break import', () => {
   it('preserves hard line break when shouldPreserveNewLines is true', () => {
     const md = `foo  
 bar`;
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -2319,7 +2451,7 @@ bar`;
   it('preserves backslash hard line break when shouldPreserveNewLines is true', () => {
     const md = `foo\\
 bar`;
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -2356,19 +2488,6 @@ bar`;
 });
 
 describe('markdown whitespace import (default mode)', () => {
-  function createTestEditor() {
-    return createHeadlessEditor({
-      nodes: [
-        HeadingNode,
-        ListNode,
-        ListItemNode,
-        QuoteNode,
-        CodeNode,
-        LinkNode,
-      ],
-    });
-  }
-
   function expectRoundTrip(md: string, shouldMergeAdjacentLines = false): void {
     const editor = createTestEditor();
 
@@ -2633,19 +2752,6 @@ describe('markdown whitespace import (default mode)', () => {
 // in Safari < 16.4 at RegExp construction time, crashing the entire editor.
 // The fix captures the preceding character in group 1 instead.
 describe('markdown Safari compatibility (issue #8012)', () => {
-  function createTestEditor() {
-    return createHeadlessEditor({
-      nodes: [
-        HeadingNode,
-        ListNode,
-        ListItemNode,
-        QuoteNode,
-        CodeNode,
-        LinkNode,
-      ],
-    });
-  }
-
   function roundtrip(md: string): string {
     const editor = createTestEditor();
     editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
@@ -2698,19 +2804,6 @@ describe('markdown Safari compatibility (issue #8012)', () => {
 });
 
 describe('inline code with backticks (CommonMark code spans)', () => {
-  function createTestEditor() {
-    return createHeadlessEditor({
-      nodes: [
-        HeadingNode,
-        ListNode,
-        ListItemNode,
-        QuoteNode,
-        CodeNode,
-        LinkNode,
-      ],
-    });
-  }
-
   function roundtrip(md: string): string {
     const editor = createTestEditor();
     editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
@@ -2760,19 +2853,6 @@ describe('inline code with backticks (CommonMark code spans)', () => {
 });
 
 describe('$convertSelectionToMarkdownString', () => {
-  function createTestEditor() {
-    return createHeadlessEditor({
-      nodes: [
-        HeadingNode,
-        ListNode,
-        ListItemNode,
-        QuoteNode,
-        CodeNode,
-        LinkNode,
-      ],
-    });
-  }
-
   it('converts full selection to markdown', () => {
     const editor = createTestEditor();
     editor.update(
@@ -3076,6 +3156,405 @@ describe('$convertSelectionToMarkdownString', () => {
   });
 });
 
+describe('List marker details', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it('reads an uppercase [X] as checked, as the /i on its regex intends', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+
+    editor.update(
+      () =>
+        $convertFromMarkdownString('- [X] up\n- [ ] no', [
+          CHECK_LIST,
+          ...TRANSFORMERS,
+        ]),
+      {discrete: true},
+    );
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul __lexicallisttype="check"><li role="checkbox" tabindex="-1" aria-checked="true" value="1"><span style="white-space: pre-wrap;">up</span></li><li role="checkbox" tabindex="-1" aria-checked="false" value="2"><span style="white-space: pre-wrap;">no</span></li></ul>',
+    );
+  });
+
+  it('expands a tab after the marker when measuring the content column', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+
+    // The tab opens the content of `a` at column four, so a two-space `- b`
+    // does not reach it and stays a sibling.
+    editor.update(
+      () => $convertFromMarkdownString('-\ta\n  - b', TRANSFORMERS),
+      {discrete: true},
+    );
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span></li><li value="2"><span style="white-space: pre-wrap;">b</span></li></ul>',
+    );
+  });
+
+  it('keeps a typed start number out of a list the item only passes through', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    // Typing an indented ordered marker above an existing ordered list sends
+    // the item into a sublist, so the outer list's start stays what it was.
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        root.append(
+          paragraph,
+          $createListNode('number', 5).append(
+            $createListItemNode().append($createTextNode('y')),
+          ),
+        );
+        paragraph.selectEnd();
+      },
+      {discrete: true},
+    );
+    for (const char of '    1. z') {
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText(char);
+          }
+        },
+        {discrete: true},
+      );
+    }
+    editor.update(() => {}, {discrete: true});
+
+    editor.read('latest', () => {
+      const list = $getRoot().getFirstChild();
+      invariant($isListNode(list), 'expected a list');
+      expect(list.getStart()).toBe(5);
+      expect(list.getLastChild()!.getTextContent()).toBe('y');
+    });
+  });
+});
+
+describe('Loose sublists', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it('nests a loose type-changing sublist into the item above it', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+
+    editor.update(
+      () => $convertFromMarkdownString('- a\n\n  1. b', TRANSFORMERS),
+      {discrete: true},
+    );
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ol><li value="1"><span style="white-space: pre-wrap;">b</span></li></ol></li></ul>',
+    );
+  });
+
+  it('returns one joined list from $generateNodesFromMarkdownString', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+
+    // No ListNode transform runs over the returned nodes, so the loose list
+    // has to come back joined rather than as two lists a later transform
+    // would merge. Asserted outside the update so the assertion cannot depend
+    // on the editor's error handler.
+    let shape = '';
+    editor.update(
+      () => {
+        shape = $generateNodesFromMarkdownString('- a\n\n  - b', TRANSFORMERS)
+          .map(node => ($isListNode(node) ? 'list' : node.getType()))
+          .join(',');
+      },
+      {discrete: true},
+    );
+
+    expect(shape).toBe('list');
+  });
+});
+
+describe('Sublist indent boundaries', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it("does not nest an indent short of a wide marker's content column", () => {
+    const editor = createTestEditor({nodes: baseNodes});
+
+    // `10. ` opens its content at column four, so three spaces is one short of
+    // a sublist and the line starts a list of its own.
+    editor.update(
+      () => $convertFromMarkdownString('10. a\n   - b', TRANSFORMERS),
+      {discrete: true},
+    );
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ol start="10"><li value="10"><span style="white-space: pre-wrap;">a</span></li></ol><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul>',
+    );
+  });
+
+  it('keeps a retyped sublist in front of the one it was placed before', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    // Typing above a list whose first child is a nested list of another type
+    // puts the new item in front of that nested list, so the list built for
+    // its own type belongs in front of it too.
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        root.append(
+          paragraph,
+          $createListNode('number').append(
+            $createListItemNode().append(
+              $createListNode('bullet').append(
+                $createListItemNode().append($createTextNode('x')),
+              ),
+            ),
+            $createListItemNode().append($createTextNode('y')),
+          ),
+        );
+        paragraph.selectEnd();
+      },
+      {discrete: true},
+    );
+    for (const char of '    1. z') {
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText(char);
+          }
+        },
+        {discrete: true},
+      );
+    }
+    editor.update(() => {}, {discrete: true});
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ol><li value="1"><ol><li value="1"><span style="white-space: pre-wrap;">z</span></li></ol><ul><li value="1"><span style="white-space: pre-wrap;">x</span></li></ul></li><li value="1"><span style="white-space: pre-wrap;">y</span></li></ol>',
+    );
+  });
+});
+
+describe('Loose list indents round trip', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  function convert(md: string): string {
+    const editor = createTestEditor({nodes: baseNodes});
+    editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
+  }
+
+  // Export writes one fixed step per level and drops the blank line, so a
+  // blank line that changed how the indent was read would send the second
+  // pass somewhere the first did not go.
+  it.each([
+    '- a\n\n  - b',
+    '- a\n\n        - b',
+    '1. First\n\n   - detail',
+    '- a\n\ntext\n\n  - b',
+  ])('re-imports its own export of "%s" unchanged', md => {
+    const once = convert(md);
+
+    expect(convert(once)).toBe(once);
+  });
+});
+
+describe('Sublist markers', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it('records a marker on the list the item lands in, not the one above it', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+    const md = '- a\n    * b\n    * c';
+
+    editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+
+    expect(
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(md);
+  });
+});
+
+describe('Typed sublist shortcuts', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  function typeLines(editor: LexicalEditor, lines: string[]): void {
+    for (const line of lines) {
+      editor.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          $getRoot().append(paragraph);
+          paragraph.selectEnd();
+        },
+        {discrete: true},
+      );
+      // One character at a time: the shortcut fires on the space that closes
+      // the marker, so anything after it is typed into whatever the shortcut
+      // left the caret in.
+      for (const char of line) {
+        editor.update(
+          () => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              selection.insertText(char);
+            }
+          },
+          {discrete: true},
+        );
+      }
+    }
+  }
+
+  function caretText(editor: LexicalEditor): string {
+    return editor.read('latest', () => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection), 'expected a range selection');
+      return `${selection.anchor.getNode().getTextContent()}@${
+        selection.anchor.offset
+      }`;
+    });
+  }
+
+  // The indent of a line with no list above it has no content column to be
+  // measured against, so it falls back to a fixed LIST_INDENT_SIZE per level.
+  // packages/lexical-playground/__tests__/e2e/Markdown.spec.mjs asserts the
+  // same shapes.
+  it.each([
+    ['1. ', '<ol><li value="1"></li></ol>'],
+    ['    1. ', '<ol><li value="1"><ol><li value="1"></li></ol></li></ol>'],
+    ['- ', '<ul><li value="1"></li></ul>'],
+    ['    - ', '<ul><li value="1"><ul><li value="1"></li></ul></li></ul>'],
+    ['      * ', '<ul><li value="1"><ul><li value="1"></li></ul></li></ul>'],
+    [
+      '        * ',
+      '<ul><li value="1"><ul><li value="1"><ul><li value="1"></li></ul></li></ul></li></ul>',
+    ],
+    ['\t- ', '<ul><li value="1"><ul><li value="1"></li></ul></li></ul>'],
+  ])('indents a typed "%s" with no list above it', (text, html) => {
+    const editor = createTestEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    typeLines(editor, [text]);
+    // The shortcut runs from an update listener, so it lands on the next
+    // update rather than the one that typed the closing space.
+    editor.update(() => {}, {discrete: true});
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      html,
+    );
+  });
+
+  it('nests a typed sublist of another type and keeps the caret in it', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    typeLines(editor, ['- a', '    1. b']);
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ol><li value="1"><span style="white-space: pre-wrap;">b</span></li></ol></li></ul>',
+    );
+    expect(caretText(editor)).toBe('b@1');
+  });
+
+  it('nests a typed sublist of the same type and keeps the caret in it', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    typeLines(editor, ['- a', '    - b']);
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul></li></ul>',
+    );
+    expect(caretText(editor)).toBe('b@1');
+  });
+
+  // A typed line stands on its own: nothing records the column the list above
+  // it was written at, so its indent is read as a fixed LIST_INDENT_SIZE per
+  // level -- the step $listExport writes and the toolbar indents by. An
+  // imported document is read by content column instead, which is what the
+  // "CommonMark sublist indents" cases below cover.
+  it('reads a typed indent in fixed steps, not by content column', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    typeLines(editor, ['1. a', '   - b']);
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ol><li value="1"><span style="white-space: pre-wrap;">a</span></li></ol><ul><li value="1"><span style="white-space: pre-wrap;">b</span></li></ul>',
+    );
+    expect(caretText(editor)).toBe('b@1');
+  });
+
+  it('nests a typed sublist under a list a shortcut did not create', () => {
+    const editor = createTestEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        root.append(
+          $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode('a')),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    typeLines(editor, ['    1. b']);
+
+    expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+      '<ul><li value="1"><span style="white-space: pre-wrap;">a</span><ol><li value="1"><span style="white-space: pre-wrap;">b</span></li></ol></li></ul>',
+    );
+    expect(caretText(editor)).toBe('b@1');
+  });
+});
+
 describe('Ordered list start adjustment (#8677)', () => {
   const baseNodes = [
     HeadingNode,
@@ -3087,7 +3566,7 @@ describe('Ordered list start adjustment (#8677)', () => {
   ];
 
   it('updates list start when typed marker precedes an existing ordered list', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     editor.update(
@@ -3121,7 +3600,7 @@ describe('Ordered list start adjustment (#8677)', () => {
   });
 
   it('respects an arbitrary typed start number', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     editor.update(
@@ -3154,7 +3633,7 @@ describe('Ordered list start adjustment (#8677)', () => {
   });
 
   it('does not change start when typed marker follows an existing ordered list', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     editor.update(
@@ -3190,7 +3669,7 @@ describe('Ordered list start adjustment (#8677)', () => {
   });
 
   it('creates a fresh ordered list when the next sibling is a different list type', () => {
-    const editor = createHeadlessEditor({nodes: baseNodes});
+    const editor = createTestEditor({nodes: baseNodes});
     registerMarkdownShortcuts(editor, TRANSFORMERS);
 
     editor.update(
@@ -3227,19 +3706,6 @@ describe('Ordered list start adjustment (#8677)', () => {
 });
 
 describe('$generateNodesFromMarkdownString', () => {
-  function createTestEditor() {
-    return createHeadlessEditor({
-      nodes: [
-        HeadingNode,
-        ListNode,
-        ListItemNode,
-        QuoteNode,
-        CodeNode,
-        LinkNode,
-      ],
-    });
-  }
-
   it('returns nodes without modifying the root', () => {
     const editor = createTestEditor();
 
@@ -3252,7 +3718,7 @@ describe('$generateNodesFromMarkdownString', () => {
       {discrete: true},
     );
 
-    let nodes: ReturnType<typeof $generateNodesFromMarkdownString> = [];
+    let nodes: LexicalNode[] = [];
     editor.update(
       () => {
         nodes = $generateNodesFromMarkdownString(
@@ -3338,7 +3804,7 @@ describe('$generateNodesFromMarkdownString', () => {
   it('handles adjacent line merging (commonmark)', () => {
     const editor = createTestEditor();
 
-    let nodes: ReturnType<typeof $generateNodesFromMarkdownString> = [];
+    let nodes: LexicalNode[] = [];
     editor.update(
       () => {
         nodes = $generateNodesFromMarkdownString(
@@ -3358,7 +3824,7 @@ describe('$generateNodesFromMarkdownString', () => {
 
 describe('$convertSelectionToMarkdownString whitespace slices', () => {
   it('does not emit a dangling closing tag when the selection slices a format down to whitespace', () => {
-    const editor = createHeadlessEditor({nodes: [LinkNode]});
+    const editor = createTestEditor({nodes: [LinkNode]});
     editor.update(
       () => {
         const root = $getRoot();
@@ -3387,7 +3853,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
 type ImportedLink = {title: null | string; url: string};
 
 function importLinks(md: string): ImportedLink[] {
-  const editor = createHeadlessEditor({nodes: [LinkNode]});
+  const editor = createTestEditor({nodes: [LinkNode]});
   editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
     discrete: true,
   });
@@ -3499,7 +3965,7 @@ describe('link destination whitespace does not backtrack', () => {
 
   for (const [name, md] of CASES) {
     it(`reads ${name}`, {timeout: 5000}, () => {
-      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      const editor = createTestEditor({nodes: [LinkNode]});
       editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
         discrete: true,
       });
@@ -3570,7 +4036,7 @@ describe('link destination round trip', () => {
 
   for (const [url, md] of CASES) {
     it(`preserves "${url}"`, () => {
-      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      const editor = createTestEditor({nodes: [LinkNode]});
       editor.update(
         () => {
           $getRoot()
@@ -3589,7 +4055,7 @@ describe('link destination round trip', () => {
       );
       expect(exported).toBe(md);
 
-      const reimported = createHeadlessEditor({nodes: [LinkNode]});
+      const reimported = createTestEditor({nodes: [LinkNode]});
       reimported.update(
         () => $convertFromMarkdownString(exported, TRANSFORMERS),
         {discrete: true},
@@ -3622,7 +4088,7 @@ describe('link title round trip', () => {
 
   for (const [title, md] of CASES) {
     it(`preserves "${title}"`, () => {
-      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      const editor = createTestEditor({nodes: [LinkNode]});
       editor.update(
         () => {
           $getRoot()
@@ -3641,7 +4107,7 @@ describe('link title round trip', () => {
       );
       expect(exported).toBe(md);
 
-      const reimported = createHeadlessEditor({nodes: [LinkNode]});
+      const reimported = createTestEditor({nodes: [LinkNode]});
       reimported.update(
         () => $convertFromMarkdownString(exported, TRANSFORMERS),
         {discrete: true},

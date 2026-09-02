@@ -113,67 +113,91 @@ describe('useLexicalNodeSelection', () => {
     container.remove();
   });
 
-  it('keeps a range selection that does not cover the node', async () => {
-    // A caret in the paragraph, which does not reach the horizontal rule.
-    editor.update(() => void $getRoot().getFirstChild()!.selectEnd(), {
-      discrete: true,
+  it('keeps a range selection that does not cover the node', () => {
+    act(() => {
+      // A caret in the paragraph, which does not reach the horizontal rule.
+      editor.update(() => void $getRoot().getFirstChild()!.selectEnd(), {
+        discrete: true,
+      });
+      expect(editor.read(() => $getNodeByKey(ruleKey)!.isSelected())).toBe(
+        false,
+      );
     });
-    expect(editor.read(() => $getNodeByKey(ruleKey)!.isSelected())).toBe(false);
 
     // Deselecting a node the selection does not reach has nothing to do, so it
     // must not discard the user's caret to say so.
-    await act(async () => {
+    act(() => {
       setSelected(false);
     });
 
-    expect(editor.read(() => $isRangeSelection($getSelection()))).toBe(true);
+    act(() => {
+      expect(editor.read(() => $isRangeSelection($getSelection()))).toBe(true);
+    });
   });
 
-  it('deselects a node the range selection does cover', async () => {
-    editor.update(() => void $selectAll(), {discrete: true});
-    // LexicalNode.isSelected() is true for a RangeSelection that covers the
-    // node, so the `clearSelection(); setSelected(!isSelected)` toggle used by
-    // HorizontalRuleNode, BlockWithAlignableContents and the playground
-    // decorators arrives here with `false`. Ignoring it makes those a dead
-    // click: isSelected stays true, so the node can never be selected.
-    expect(editor.read(() => $getNodeByKey(ruleKey)!.isSelected())).toBe(true);
+  it('deselects a node the range selection does cover', () => {
+    act(() => {
+      editor.update(() => void $selectAll(), {discrete: true});
+      // LexicalNode.isSelected() is true for a RangeSelection that covers the
+      // node, so the `clearSelection(); setSelected(!isSelected)` toggle used by
+      // HorizontalRuleNode, BlockWithAlignableContents and the playground
+      // decorators arrives here with `false`. Ignoring it makes those a dead
+      // click: isSelected stays true, so the node can never be selected.
+      expect(editor.read(() => $getNodeByKey(ruleKey)!.isSelected())).toBe(
+        true,
+      );
+    });
 
-    await act(async () => {
+    act(() => {
       setSelected(false);
     });
 
-    expect(editor.read(() => $getNodeByKey(ruleKey)!.isSelected())).toBe(false);
+    act(() => {
+      expect(editor.read(() => $getNodeByKey(ruleKey)!.isSelected())).toBe(
+        false,
+      );
+    });
   });
 
-  it('still creates a node selection when asked to select', async () => {
-    editor.update(() => void $selectAll(), {discrete: true});
+  it('still creates a node selection when asked to select', () => {
+    act(() => {
+      editor.update(() => void $selectAll(), {discrete: true});
+    });
 
-    await act(async () => {
+    act(() => {
       setSelected(true);
     });
 
-    expect(
-      editor.read(() => {
-        const selection = $getSelection();
-        return $isNodeSelection(selection) && selection.has(ruleKey);
-      }),
-    ).toBe(true);
+    act(() => {
+      expect(
+        editor.read(() => {
+          const selection = $getSelection();
+          return $isNodeSelection(selection) && selection.has(ruleKey);
+        }),
+      ).toBe(true);
+    });
   });
 
-  it('still removes the node from an existing node selection', async () => {
-    await act(async () => {
+  it('still removes the node from an existing node selection', () => {
+    act(() => {
       setSelected(true);
     });
-    expect(
-      editor.read(() => {
-        const selection = $getSelection();
-        return $isNodeSelection(selection) && selection.has(ruleKey);
-      }),
-    ).toBe(true);
+    act(() => {
+      expect(
+        editor.read(() => {
+          const selection = $getSelection();
+          return $isNodeSelection(selection) && selection.has(ruleKey);
+        }),
+      ).toBe(true);
+    });
 
-    await act(async () => {
+    act(() => {
       setSelected(false);
     });
-    expect(editor.read(() => $getNodeByKey(ruleKey)!.isSelected())).toBe(false);
+    act(() => {
+      expect(editor.read(() => $getNodeByKey(ruleKey)!.isSelected())).toBe(
+        false,
+      );
+    });
   });
 });

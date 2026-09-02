@@ -25,6 +25,7 @@ function buildEditor() {
     defineExtension({
       dependencies: [TableExtension],
       name: 'unmerge-styles-host',
+      theme: {tableScrollableWrapper: ''},
     }),
   );
 }

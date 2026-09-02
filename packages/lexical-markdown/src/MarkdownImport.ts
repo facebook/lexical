@@ -262,7 +262,7 @@ function $importBlocks(
         $isQuoteNode(previousNode) ||
         $isListNode(previousNode))
     ) {
-      let targetNode: typeof previousNode | ListItemNode | null = previousNode;
+      let targetNode: ElementNode | ListItemNode | null = previousNode;
 
       if ($isListNode(previousNode)) {
         const lastDescendant = previousNode.getLastDescendant();
@@ -271,6 +271,30 @@ function $importBlocks(
         } else {
           targetNode = $findMatchingParent(lastDescendant, $isListItemNode);
         }
+      } else if ($isQuoteNode(previousNode) && previousNode.isShadowRoot()) {
+        // A shadow root quote holds block-level children, so the continuation
+        // line belongs to its last block rather than to the quote itself —
+        // and that block may itself be a nested shadow root quote, so walk
+        // down to the innermost one.
+        let block: LexicalNode | null = previousNode;
+        while ($isQuoteNode(block) && block.isShadowRoot()) {
+          block = block.getLastChild();
+        }
+        if ($isListNode(block)) {
+          // Continue the list's last item, as the top-level list branch
+          // above does — splicing into the ListNode itself would wrap the
+          // inline nodes into new list items.
+          const lastDescendant = block.getLastDescendant();
+          block =
+            lastDescendant === null
+              ? null
+              : $findMatchingParent(lastDescendant, $isListItemNode);
+        }
+        // Lazy continuation only continues paragraph content (a heading or
+        // code block ends at its line), mirroring the paragraph-only merge
+        // in the quote transformer itself.
+        targetNode =
+          $isParagraphNode(block) || $isListItemNode(block) ? block : null;
       }
 
       if (targetNode != null && targetNode.getTextContentSize() > 0) {

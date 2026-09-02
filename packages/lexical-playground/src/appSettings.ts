@@ -30,6 +30,7 @@ export const DEFAULT_SETTINGS = {
   measureTypingPerf: false,
   selectBlock: true,
   selectionAlwaysOnDisplay: false,
+  shadowRootQuotes: false,
   shouldAllowHighlightingWithBrackets: false,
   shouldDisableFocusOnClickChecklist: false,
   shouldPreserveNewLinesInMarkdown: false,

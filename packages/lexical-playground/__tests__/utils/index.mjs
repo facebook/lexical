@@ -101,6 +101,7 @@ export async function initialize({
   shouldAllowHighlightingWithBrackets,
   selectionAlwaysOnDisplay,
   isShadowDOM,
+  shadowRootQuotes,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -136,6 +137,8 @@ export async function initialize({
     !!shouldAllowHighlightingWithBrackets;
 
   appSettings.selectionAlwaysOnDisplay = !!selectionAlwaysOnDisplay;
+
+  appSettings.shadowRootQuotes = !!shadowRootQuotes;
   // The playground app defaults `selectBlock` to true (see appSettings.ts),
   // but the e2e harness pins it to false unless a spec opts in (e.g.
   // SelectBlock.spec.mjs), so the rest of the suite keeps the legacy

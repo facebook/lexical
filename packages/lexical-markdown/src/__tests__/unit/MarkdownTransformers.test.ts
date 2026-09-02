@@ -10,8 +10,20 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {$createLinkNode, $isLinkNode, LinkExtension} from '@lexical/link';
 import {ListExtension} from '@lexical/list';
-import {registerMarkdownShortcuts} from '@lexical/markdown';
-import {RichTextExtension} from '@lexical/rich-text';
+import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+  createQuoteTransformer,
+  QUOTE,
+  registerMarkdownShortcuts,
+  type Transformer,
+  TRANSFORMERS,
+} from '@lexical/markdown';
+import {
+  $isHeadingNode,
+  $isQuoteNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -176,6 +188,170 @@ describe('LINK', () => {
       expect(linkNode.getTextContent()).toBe('hell[world](www)o');
       expect(linkNode.getURL()).toBe('link');
     });
+  });
+});
+
+describe('QUOTE with block children', () => {
+  const BLOCK_QUOTE_TRANSFORMERS: Transformer[] = TRANSFORMERS.map(
+    transformer =>
+      transformer === QUOTE
+        ? createQuoteTransformer({
+            shadowRoot: true,
+            transformers: () => BLOCK_QUOTE_TRANSFORMERS,
+          })
+        : transformer,
+  );
+
+  const BlockQuoteShortcutTestExtension = defineExtension({
+    dependencies: [
+      HistoryExtension,
+      LinkExtension,
+      RichTextExtension,
+      ListExtension,
+      CodeExtension,
+    ],
+    name: 'BlockQuoteShortcutTest',
+    register: editor_ =>
+      registerMarkdownShortcuts(editor_, BLOCK_QUOTE_TRANSFORMERS),
+  });
+
+  function $expectQuotedHeading(tag: string, text: string) {
+    const quote = $getRoot().getFirstChildOrThrow();
+    assert($isQuoteNode(quote), 'Root child must be a QuoteNode');
+    expect(quote.isShadowRoot()).toBe(true);
+    const heading = quote.getFirstChildOrThrow();
+    assert($isHeadingNode(heading), 'Quote child must be a HeadingNode');
+    expect(heading.getTag()).toBe(tag);
+    expect(heading.getTextContent()).toBe(text);
+    return quote;
+  }
+
+  test('typing "> " before literal "# " text still quotes it', () => {
+    // The shadowRoot transformer matches the same `> ` prefix as the default
+    // QUOTE, so a longer look-ahead must not decline the shortcut when the
+    // rest of the line happens to start with markdown syntax.
+    using editor = buildEditorFromExtensions([BlockQuoteShortcutTestExtension]);
+    editor.update(
+      () => {
+        $getRoot().selectEnd().insertRawText('# Title');
+      },
+      {discrete: true},
+    );
+    editor.update(() => $getRoot().getAllTextNodes()[0].select(0, 0), {
+      discrete: true,
+    });
+    typeMarkdown(editor, '> ');
+    editor.read(() => {
+      const quote = $getRoot().getFirstChildOrThrow();
+      assert($isQuoteNode(quote), 'Root child must be a QuoteNode');
+      expect(quote.getTextContent()).toBe('# Title');
+    });
+  });
+
+  test('typing "> # SOME HEADER" nests the heading inside the quote', () => {
+    using editor = buildEditorFromExtensions([BlockQuoteShortcutTestExtension]);
+    typeMarkdown(editor, '> # SOME HEADER');
+    editor.read(() => {
+      const quote = $expectQuotedHeading('h1', 'SOME HEADER');
+      expect(quote.getChildrenSize()).toBe(1);
+    });
+  });
+
+  test('typing "> " then "## " then text nests without the heading marker', () => {
+    using editor = buildEditorFromExtensions([BlockQuoteShortcutTestExtension]);
+    typeMarkdown(editor, '> ');
+    typeMarkdown(editor, '## Title');
+    editor.read(() => {
+      $expectQuotedHeading('h2', 'Title');
+    });
+  });
+
+  test('typing "> # SOME HEADER" declines the heading by default', () => {
+    // Without the option the quote holds inline content, so the shortcut
+    // declines rather than dropping the quote (#9055).
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '> # SOME HEADER');
+    editor.read(() => {
+      const quote = $getRoot().getFirstChildOrThrow();
+      assert($isQuoteNode(quote), 'Root child must be a QuoteNode');
+      expect(quote.isShadowRoot()).toBe(false);
+      expect(quote.getTextContent()).toBe('# SOME HEADER');
+    });
+  });
+
+  test('import "> # SOME HEADER" nests the heading inside the quote', () => {
+    using editor = buildEditorFromExtensions([BlockQuoteShortcutTestExtension]);
+    editor.update(
+      () =>
+        $convertFromMarkdownString('> # SOME HEADER', BLOCK_QUOTE_TRANSFORMERS),
+      {discrete: true},
+    );
+    editor.read(() => {
+      $expectQuotedHeading('h1', 'SOME HEADER');
+    });
+  });
+
+  test('a quote heading and its following text stay separate blocks', () => {
+    using editor = buildEditorFromExtensions([BlockQuoteShortcutTestExtension]);
+    editor.update(
+      () =>
+        $convertFromMarkdownString(
+          '> # HEADING\n> some text',
+          BLOCK_QUOTE_TRANSFORMERS,
+        ),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const quote = $expectQuotedHeading('h1', 'HEADING');
+      expect(quote.getChildrenSize()).toBe(2);
+      const paragraph = quote.getLastChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Second child must be a paragraph');
+      expect(paragraph.getTextContent()).toBe('some text');
+    });
+  });
+
+  test.each([
+    ['> # SOME HEADER'],
+    ['> ### SOME HEADER'],
+    ['> # HEADING\n> some text'],
+    ['> some text\n> more text'],
+    ['> # HEADING\n> # OTHER HEADING'],
+  ])('round trips %j', input => {
+    using editor = buildEditorFromExtensions([BlockQuoteShortcutTestExtension]);
+    editor.update(
+      () => $convertFromMarkdownString(input, BLOCK_QUOTE_TRANSFORMERS),
+      {discrete: true},
+    );
+    expect(
+      editor.read(() => $convertToMarkdownString(BLOCK_QUOTE_TRANSFORMERS)),
+    ).toBe(input);
+  });
+
+  test('pressing enter in a nested heading adds a paragraph to the quote', () => {
+    using editor = buildEditorFromExtensions([BlockQuoteShortcutTestExtension]);
+    typeMarkdown(editor, '> # HEADING');
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'Expected a range selection');
+        selection.insertParagraph();
+      },
+      {discrete: true},
+    );
+    editor.update(() => $getSelection()?.insertText('some text'), {
+      discrete: true,
+    });
+    editor.read(() => {
+      const quote = $expectQuotedHeading('h1', 'HEADING');
+      expect(quote.getChildrenSize()).toBe(2);
+      assert(
+        $isParagraphNode(quote.getLastChildOrThrow()),
+        'Second child must be a paragraph',
+      );
+    });
+    expect(
+      editor.read(() => $convertToMarkdownString(BLOCK_QUOTE_TRANSFORMERS)),
+    ).toBe('> # HEADING\n> some text');
   });
 });
 

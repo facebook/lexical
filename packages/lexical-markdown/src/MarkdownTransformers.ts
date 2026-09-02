@@ -33,10 +33,13 @@ import {
 } from '@lexical/rich-text';
 import {
   $createLineBreakNode,
+  $createParagraphNode,
   $createTextNode,
   $findMatchingParent,
   $getState,
+  $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isTextNode,
   $setState,
   type BaseSelection,
@@ -45,11 +48,12 @@ import {
   type Klass,
   type LexicalNode,
   type LineBreakNode,
+  type NodeKey,
   type TextFormatType,
   type TextNode,
 } from 'lexical';
 
-import {isEmptyParagraph, unescapeText} from './utils';
+import {isEmptyParagraph, transformersByType, unescapeText} from './utils';
 
 export type Transformer =
   | ElementTransformer
@@ -810,44 +814,333 @@ export const HEADING: ElementTransformer = {
   type: 'element',
 };
 
-export const QUOTE: ElementTransformer = {
-  dependencies: [QuoteNode],
-  export: (node, exportChildren) => {
-    if (!$isQuoteNode(node)) {
-      return null;
+/**
+ * Descends `depth - 1` levels of nested shadow root quotes below `quote`,
+ * creating the intermediate quotes when they are not already there, so that
+ * `> > text` continues the quote a `> > other` line started.
+ */
+function $quoteAtDepth(quote: QuoteNode, depth: number): QuoteNode {
+  let current = quote;
+  for (let level = 1; level < depth; level++) {
+    const lastChild = current.getLastChild();
+    if ($isQuoteNode(lastChild) && lastChild.isShadowRoot()) {
+      current = lastChild;
+    } else {
+      const inner = $createQuoteNode({shadowRoot: true});
+      current.append(inner);
+      current = inner;
     }
+  }
+  return current;
+}
 
-    const lines = exportChildren(node).split('\n');
-    const output = [];
-    for (const line of lines) {
-      output.push('> ' + line);
+/**
+ * The keys of every node in `selection` and of all of their ancestors, so a
+ * block can be tested for "is or contains anything selected" in O(1) during
+ * the export walk. Built once per quote export; a recursive subtree walk
+ * calling `isSelected` per node is O(subtree x selection) and
+ * `RangeSelection.getNodes()` is not cached in read-only mode.
+ */
+function $selectedAncestorKeys(selection: BaseSelection): ReadonlySet<NodeKey> {
+  const keys = new Set<NodeKey>();
+  for (const selected of selection.getNodes()) {
+    for (
+      let node: LexicalNode | null = selected;
+      node !== null && !keys.has(node.getKey());
+      node = node.getParent()
+    ) {
+      keys.add(node.getKey());
     }
-    return output.join('\n');
-  },
-  regExp: QUOTE_REGEX,
-  replace: (parentNode, children, _match, isImport) => {
-    if (isImport) {
-      const previousNode = parentNode.getPreviousSibling();
-      if ($isQuoteNode(previousNode)) {
-        previousNode.splice(previousNode.getChildrenSize(), 0, [
-          $createMarkdownLineBreakNode(previousNode),
-          ...children,
-        ]);
-        parentNode.remove();
-        return;
+  }
+  return keys;
+}
+
+/**
+ * Exports one block child of a shadow root quote with its own markdown
+ * syntax. With a transformer set available the block goes through the same
+ * element-transformer dispatch as a top-level block, so custom transformers
+ * and code fences apply inside quotes exactly as outside. Without one (the
+ * default {@link QUOTE} has no set) the built-in heading, quote and list
+ * renderings keep the common cases lossless.
+ */
+function $exportQuotedBlock(
+  child: LexicalNode,
+  exportChildren: (node: ElementNode) => string,
+  transformers: Transformer[] | undefined,
+  selection?: BaseSelection | null,
+): string {
+  if (transformers !== undefined) {
+    const byType = transformersByType(transformers);
+    for (const transformer of [...byType.multilineElement, ...byType.element]) {
+      if (!transformer.export) {
+        continue;
+      }
+      const result = transformer.export(child, exportChildren, selection);
+      if (result != null) {
+        return result;
       }
     }
-
-    const node = $createQuoteNode();
-    node.append(...children);
-    parentNode.replace(node);
-    if (!isImport) {
-      node.select(0, 0);
+  } else {
+    const headingResult = HEADING.export(child, exportChildren, selection);
+    if (headingResult != null) {
+      return headingResult;
     }
-  },
-  triggerOnEnter: true,
-  type: 'element',
-};
+    if ($isQuoteNode(child)) {
+      return $exportQuote(child, exportChildren, undefined, selection);
+    }
+    if ($isListNode(child)) {
+      return $listExport(child, exportChildren, 0, selection);
+    }
+  }
+  return $isElementNode(child) ? exportChildren(child) : child.getTextContent();
+}
+
+/**
+ * Exports the content of a quote without its `> ` prefixes.
+ *
+ * A shadow root QuoteNode (see `quoteShadowRootState`) holds block-level
+ * children, so every child block is exported on its own line and keeps its
+ * own markdown syntax; a legacy inline-content quote exports its children
+ * directly, as it always has.
+ */
+function $exportQuoteContent(
+  node: QuoteNode,
+  exportChildren: (child: ElementNode) => string,
+  transformers: Transformer[] | undefined,
+  selection?: BaseSelection | null,
+): string {
+  if (!node.isShadowRoot()) {
+    return exportChildren(node);
+  }
+
+  // Skip blocks with nothing selected, the way $listExport skips unselected
+  // list items. Without this the selection export emits a line per block
+  // whatever was selected, so exporting only the paragraph of a quote that
+  // starts with a heading yields a stray `> # ` ahead of it.
+  const selectedKeys = selection ? $selectedAncestorKeys(selection) : null;
+  const output = [];
+  for (const child of node.getChildren()) {
+    if (selectedKeys !== null && !selectedKeys.has(child.getKey())) {
+      continue;
+    }
+    output.push(
+      $exportQuotedBlock(child, exportChildren, transformers, selection),
+    );
+  }
+  return output.join('\n');
+}
+
+function $exportQuote(
+  node: QuoteNode,
+  exportChildren: (child: ElementNode) => string,
+  transformers: Transformer[] | undefined,
+  selection?: BaseSelection | null,
+): string {
+  const output = [];
+  for (const line of $exportQuoteContent(
+    node,
+    exportChildren,
+    transformers,
+    selection,
+  ).split('\n')) {
+    output.push('> ' + line);
+  }
+  return output.join('\n');
+}
+
+// Extra `> ` markers at the start of a quote line's remainder (the first one
+// was consumed by QUOTE_REGEX); each adds one level of nesting on import.
+const QUOTE_DEPTH_REGEX = /^(?:>\s)+/;
+
+/**
+ * Imports one quote line's content as a block child of `target`.
+ *
+ * `$importBlocks` runs one element transformer per line and stops, so once
+ * the quote transformer claims a line nothing else looks at what follows the
+ * `> `. This re-runs the element transformers on the remainder the way
+ * `$importBlocks` runs them on a top-level line: a paragraph is attached to
+ * the quote and each transformer may replace it, so `> # x`, `> - one`, and
+ * custom transformers behave inside a quote exactly as outside — and only
+ * the transformers actually in the caller's set apply. Without a set the
+ * built-in {@link HEADING} keeps `> # x` working.
+ */
+function $importQuotedBlock(
+  target: QuoteNode,
+  children: LexicalNode[],
+  transformers: Transformer[] | undefined,
+): void {
+  const paragraph = $createParagraphNode();
+  paragraph.append(...children);
+  target.append(paragraph);
+
+  const [firstChild] = children;
+  if ($isTextNode(firstChild)) {
+    const lineText = firstChild.getTextContent();
+    const elementTransformers =
+      transformers !== undefined
+        ? transformersByType(transformers).element
+        : [HEADING];
+    for (const {regExp, replace} of elementTransformers) {
+      const match = lineText.match(regExp);
+      if (match) {
+        firstChild.setTextContent(lineText.slice(match[0].length));
+        if (replace(paragraph, children, match, true) !== false) {
+          return;
+        }
+        firstChild.setTextContent(lineText);
+      }
+    }
+  }
+
+  // No block syntax: consecutive plain quote lines are one paragraph
+  // separated by soft line breaks, as they are for an inline-content quote.
+  const previousBlock = paragraph.getPreviousSibling();
+  if ($isParagraphNode(previousBlock)) {
+    previousBlock.splice(previousBlock.getChildrenSize(), 0, [
+      $createMarkdownLineBreakNode(previousBlock),
+      ...paragraph.getChildren(),
+    ]);
+    paragraph.remove();
+  }
+}
+
+export interface QuoteTransformerOptions {
+  /**
+   * When `true` the transformer creates shadow root QuoteNodes
+   * (`$createQuoteNode({shadowRoot: true})`), which hold block-level children.
+   * `> # Heading` then nests the heading inside the quote instead of replacing
+   * the quote with a heading, and typing a markdown shortcut inside the quote
+   * transforms the block it is typed in rather than the quote itself.
+   *
+   * Defaults to `false`, the legacy behavior where a quote holds inline
+   * content only.
+   */
+  shadowRoot?: boolean;
+  /**
+   * The transformer set used to import and export the block children of a
+   * shadow root quote, so quoted blocks go through the same transformers as
+   * top-level blocks. Usually the same set the quote transformer itself is
+   * part of; pass a function for that self reference:
+   *
+   * ```ts
+   * const MY_TRANSFORMERS: Transformer[] = TRANSFORMERS.map(t =>
+   *   t === QUOTE
+   *     ? createQuoteTransformer({
+   *         shadowRoot: true,
+   *         transformers: () => MY_TRANSFORMERS,
+   *       })
+   *     : t,
+   * );
+   * ```
+   *
+   * Without it only the built-in heading syntax is recognized after `> `,
+   * and export falls back to the built-in heading, quote and list
+   * renderings.
+   */
+  transformers?: Transformer[] | (() => Transformer[]);
+}
+
+/**
+ * Builds the `>` blockquote transformer. Call it with
+ * `{shadowRoot: true}` to opt in to quotes that hold block-level children;
+ * {@link QUOTE} is the default, inline-content transformer.
+ *
+ * The export side needs no option: a shadow root quote is always exported as
+ * its block children, whoever created it.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+export function createQuoteTransformer(
+  options?: QuoteTransformerOptions,
+): ElementTransformer {
+  const shadowRoot = options !== undefined && options.shadowRoot === true;
+  const getTransformers = (): Transformer[] | undefined => {
+    const transformers =
+      options !== undefined ? options.transformers : undefined;
+    return typeof transformers === 'function' ? transformers() : transformers;
+  };
+  return {
+    dependencies: shadowRoot ? [QuoteNode, HeadingNode] : [QuoteNode],
+    export: (node, exportChildren, selection) => {
+      if (!$isQuoteNode(node)) {
+        return null;
+      }
+      return $exportQuote(node, exportChildren, getTransformers(), selection);
+    },
+    regExp: QUOTE_REGEX,
+    replace: (parentNode, children, _match, isImport) => {
+      if (!shadowRoot) {
+        if (isImport) {
+          const previousNode = parentNode.getPreviousSibling();
+          if ($isQuoteNode(previousNode)) {
+            previousNode.splice(previousNode.getChildrenSize(), 0, [
+              $createMarkdownLineBreakNode(previousNode),
+              ...children,
+            ]);
+            parentNode.remove();
+            return;
+          }
+        }
+
+        const node = $createQuoteNode();
+        node.append(...children);
+        parentNode.replace(node);
+        if (!isImport) {
+          node.select(0, 0);
+        }
+        return;
+      }
+
+      if (!isImport) {
+        // Typed `> `: the rest of the line is existing text and stays
+        // literal, exactly as with the inline-content transformer; block
+        // syntax typed afterwards is handled by the other shortcuts, which
+        // fire inside a shadow root quote.
+        const paragraph = $createParagraphNode();
+        paragraph.append(...children);
+        parentNode.replace(
+          $createQuoteNode({shadowRoot: true}).append(paragraph),
+        );
+        paragraph.select(0, 0);
+        return;
+      }
+
+      // Additional `> ` markers nest; QUOTE_REGEX consumed only the first.
+      let depth = 1;
+      const [firstChild] = children;
+      if ($isTextNode(firstChild)) {
+        const nested = firstChild.getTextContent().match(QUOTE_DEPTH_REGEX);
+        if (nested) {
+          depth += (nested[0].match(/>/g) as string[]).length;
+          firstChild.setTextContent(
+            firstChild.getTextContent().slice(nested[0].length),
+          );
+        }
+      }
+
+      const previousNode = parentNode.getPreviousSibling();
+      const mergeInto =
+        $isQuoteNode(previousNode) && previousNode.isShadowRoot()
+          ? previousNode
+          : null;
+      const quoteNode = mergeInto || $createQuoteNode({shadowRoot: true});
+      $importQuotedBlock(
+        $quoteAtDepth(quoteNode, depth),
+        children,
+        getTransformers(),
+      );
+      if (mergeInto) {
+        parentNode.remove();
+      } else {
+        parentNode.replace(quoteNode);
+      }
+    },
+    triggerOnEnter: true,
+    type: 'element',
+  };
+}
+
+export const QUOTE: ElementTransformer = createQuoteTransformer();
 
 export const CODE: MultilineElementTransformer = {
   dependencies: [CodeNode],

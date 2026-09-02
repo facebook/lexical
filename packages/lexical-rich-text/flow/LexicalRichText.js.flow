@@ -82,6 +82,7 @@ export type ShouldHandlePasteAsFiles = (files: Array<File>, hasTextContent: bool
 
 export type RichTextConfig = {
   escapeFormatTriggers: EscapeFormatTriggerConfig,
+  shadowRootQuoteEscapeWithArrows: boolean,
   shouldHandlePasteAsFiles: ShouldHandlePasteAsFiles,
 };
 

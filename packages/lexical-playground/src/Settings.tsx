@@ -32,6 +32,7 @@ export default function Settings(): JSX.Element {
       showNestedEditorTreeView,
       showTableOfContents,
       shouldUseLexicalContextMenu,
+      shadowRootQuotes,
       shouldPreserveNewLinesInMarkdown,
       shouldAllowHighlightingWithBrackets,
       selectionAlwaysOnDisplay,
@@ -180,6 +181,13 @@ export default function Settings(): JSX.Element {
             }}
             checked={shouldPreserveNewLinesInMarkdown}
             text="Preserve newlines in Markdown"
+          />
+          <Switch
+            onClick={() => {
+              setOption('shadowRootQuotes', !shadowRootQuotes);
+            }}
+            checked={shadowRootQuotes}
+            text="Shadow root quotes in Markdown"
           />
           <Switch
             onClick={() => {

@@ -46,7 +46,9 @@ let compactExport = false;
  *
  * @example
  * ```ts
- * const selectionJSON = $withCompactExport(true, () => $generateJSONFromSelection());
+ * const selectionJSON = $withCompactExport(true, () =>
+ *   $generateJSONFromSelectedNodes(editor, $getSelection()),
+ * );
  * ```
  *
  * @experimental

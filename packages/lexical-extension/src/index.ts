@@ -53,12 +53,6 @@ export {
   InitialStateExtension,
 } from './InitialStateExtension';
 export {
-  type ExportJSONOptions,
-  type JSONConfig,
-  JSONExtension,
-  type JSONExtensionOutput,
-} from './JSONExtension';
-export {
   formatKeyboardShortcut,
   type FormatKeyboardShortcutOptions,
   type KeyboardShortcutsConfig,

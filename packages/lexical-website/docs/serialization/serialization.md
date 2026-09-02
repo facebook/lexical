@@ -738,45 +738,24 @@ legacy form until every reader is upgraded.
 
 :::
 
-It is configured with `JSONExtension` from `@lexical/extension`:
+An export with no `compact` argument of its own — the `@lexical/clipboard`
+selection export inside a copy handler, a serialization walk you wrote, and the
+nested editors either of those serializes — takes its form from an enclosing
+`$withCompactExport`:
 
 ```ts
-import {
-  buildEditorFromExtensions,
-  configExtension,
-  getExtensionDependencyFromEditor,
-  JSONExtension,
-} from '@lexical/extension';
+import {$generateJSONFromSelectedNodes} from '@lexical/clipboard';
+import {$getSelection, $withCompactExport} from 'lexical';
 
-const editor = buildEditorFromExtensions({
-  name: 'example',
-  dependencies: [configExtension(JSONExtension, {compact: true})],
-});
-
-const {$exportJSON, $withSerialization} = getExtensionDependencyFromEditor(
-  editor,
-  JSONExtension,
-).output;
-
-const json = editor.read(() => $exportJSON());
+const selectionJSON = $withCompactExport(true, () =>
+  $generateJSONFromSelectedNodes(editor, $getSelection()),
+);
 ```
 
-The extension's output provides:
-
-- `$exportJSON(editorState?, options?)` — serialize an editor state (the
-  editor's current one by default) in the configured form. `options.compact`
-  overrides the configured `compact` for that one call, e.g. to explicitly
-  produce the legacy format for a consumer that still requires it.
-- `$withSerialization(fn)` — run `fn` with the configured serialization
-  context installed, so JSON exports the extension does not own — a nested
-  editor's `editorState.toJSON()`, or the `@lexical/clipboard` selection export
-  inside a copy handler — also honor the configuration.
-
-`$exportJSON` is typed as `CompactSerializedEditorState` whichever form it
-produces, because the form is the extension's configuration and the call site
-cannot see it; the legacy form satisfies that shape as well. Call
-`editorState.toJSON(compact)` directly when you want the type for the form you
-asked for.
+The callback must be synchronous. The form is restored as soon as it returns,
+so an `async` callback would give the form up at its first `await` and export
+in whatever form is ambient when it resumes; passing one is a type error at the
+call site, and a runtime error in every build.
 
 ### Generated serialization code
 

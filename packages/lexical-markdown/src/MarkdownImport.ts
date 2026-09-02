@@ -15,7 +15,9 @@ import {
   $findMatchingParent,
   $isElementNode,
   $isParagraphNode,
+  $isTabNode,
   type ElementNode,
+  type LexicalNode,
   type TextNode,
 } from 'lexical';
 
@@ -282,26 +284,50 @@ function $importBlocks(
   }
 }
 
-// Look in node for '\t' and create a TabNode for each occurrence.
+// Look in node for '\t' and create a TabNode for each occurrence. The
+// replacement nodes are built directly rather than through
+// `splitText(...offsets)`: spreading one argument per tab boundary overflows
+// the call stack on a long run of tabs, and the text can hold arbitrarily
+// many.
 function $normalizeMarkdownTextNode(textNode: TextNode): void {
-  const tabOffsets: Set<number> = new Set();
-  const text = textNode.getTextContent();
-  let index = text.indexOf('\t');
-
-  // Find all tab occurrences
-  while (index !== -1) {
-    tabOffsets.add(index);
-    tabOffsets.add(index + 1);
-    index = text.indexOf('\t', index + 1);
+  // A TabNode is a TextNode whose content is a tab, so without this guard the
+  // rebuild below would destroy it and create an equivalent one in its place.
+  if ($isTabNode(textNode)) {
+    return;
   }
-
-  // Split node to isolate each tab then replace '\t' into TabNode
-  const splitNodes = textNode.splitText(...tabOffsets);
-  splitNodes.forEach(node => {
-    if (node.getTextContent() === '\t') {
-      node.replace($createTabNode());
+  const text = textNode.getTextContent();
+  if (!text.includes('\t')) {
+    return;
+  }
+  const format = textNode.getFormat();
+  const style = textNode.getStyle();
+  let target: LexicalNode = textNode;
+  const append = (node: LexicalNode) => {
+    target.insertAfter(node);
+    target = node;
+  };
+  let start = 0;
+  for (
+    let index = text.indexOf('\t');
+    index !== -1;
+    index = text.indexOf('\t', index + 1)
+  ) {
+    if (index > start) {
+      append(
+        $createTextNode(text.slice(start, index))
+          .setFormat(format)
+          .setStyle(style),
+      );
     }
-  });
+    append($createTabNode());
+    start = index + 1;
+  }
+  if (start < text.length) {
+    append(
+      $createTextNode(text.slice(start)).setFormat(format).setStyle(style),
+    );
+  }
+  textNode.remove();
 }
 
 function createTextFormatTransformersIndex(

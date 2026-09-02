@@ -56,6 +56,7 @@ function buildEditorWithSlottedTable() {
       dependencies: [TableExtension],
       name: '[slot-table-selection-export]',
       nodes: [PlainShadowRootNode],
+      theme: {tableScrollableWrapper: ''},
     }),
   );
   editor.update(

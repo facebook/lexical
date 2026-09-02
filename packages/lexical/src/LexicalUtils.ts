@@ -3281,32 +3281,37 @@ export interface OwnStaticNodeConfig {
     | StaticNodeConfigValue<LexicalNode, string | symbol>;
 }
 /**
- * Everything derived once per node class: the `$config()` result and the three
- * tables compiled from it. One record in one map, so a serialization path that
- * needs a compiled table does not chase a second and third WeakMap keyed by the
- * same class, and there is a single place to populate.
+ * Everything derived once per node class: the `$config()` result and what is
+ * compiled from it. One record in one map, so a serialization path that needs
+ * a compiled table does not chase a second and third WeakMap keyed by the same
+ * class, and there is a single place to populate.
  *
- * The derived fields are filled in *after* the record is cached, because
- * compiling walks the class chain and re-enters this cache for `klass` itself.
- * They are `undefined` only inside that window — a record whose compilation
- * threw is dropped rather than left behind — so each is read through a helper
- * that fills it, for the sole caller that can observe the window: a `$config()`
- * body that serializes a node of the class being built.
+ * `compiled` is filled in *after* the record is cached, because compiling walks
+ * the class chain and re-enters this cache for `klass` itself. It is
+ * `undefined` only inside that window — a record whose compilation threw is
+ * dropped rather than left behind — and nothing that runs during compilation
+ * reads it, so {@link getCompiled} treats finding it missing as the error it
+ * is: a `$config()` body serializing a node of the class being built.
  */
 interface NodeClassRecord {
   readonly config: OwnStaticNodeConfig;
   composed: undefined | ComposedSchema;
-  setters: undefined | readonly CompiledSetter[];
-  getters: undefined | readonly CompiledGetter[];
-  /**
-   * The generated JSON functions this class may use, or `null` for a class
-   * that may not (see {@link generatedFor}). Resolved on first serialization
-   * rather than at registration, because it is the compiled tables above that
-   * decide, and those are themselves built lazily.
-   */
-  generated: undefined | null | GeneratedJSON;
+  compiled: undefined | CompiledNodeClass;
   /** DEV only: whether validateOwnFields has run for this class. */
   ownFieldsValidated: boolean;
+}
+
+/** What a class's serialization runs on, compiled once at registration. */
+interface CompiledNodeClass {
+  /** The export-direction table (see {@link compileGetters}). */
+  readonly getters: readonly CompiledGetter[];
+  /** The import-direction table (see {@link compileSetters}). */
+  readonly setters: readonly CompiledSetter[];
+  /**
+   * The generated JSON functions this class may use, or `null` for a class
+   * that may not (see {@link resolveGenerated}).
+   */
+  readonly generated: null | GeneratedJSON;
 }
 // A WeakMap so dynamically created node classes (tests, HMR reloads) stay
 // collectable — more so now that one record pins a class's composed schema,
@@ -3323,34 +3328,17 @@ function getNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
 }
 
 /**
- * The compiled export-direction table for a node class (see
- * {@link compileGetters}). {@link buildNodeClassRecord} fills this while the
- * class is being registered, so the fill below is reached only by a class that
- * serializes one of its own nodes from inside its `$config()` — the one window
- * where the record is cached but not yet compiled.
+ * A class's compiled tables. {@link buildNodeClassRecord} fills them before it
+ * returns, so the one way to find them missing is to serialize a node of the
+ * class from inside its own `$config()`.
  */
-function getCompiledGetters(
-  record: NodeClassRecord,
-): readonly CompiledGetter[] {
-  const {getters} = record;
-  if (getters !== undefined) {
-    return getters;
-  }
-  const compiled = compileGetters(record.config.klass);
-  record.getters = compiled;
-  return compiled;
-}
-
-/** The compiled import-direction table; the mirror of {@link getCompiledGetters}. */
-function getCompiledSetters(
-  record: NodeClassRecord,
-): readonly CompiledSetter[] {
-  const {setters} = record;
-  if (setters !== undefined) {
-    return setters;
-  }
-  const compiled = compileSetters(record.config.klass);
-  record.setters = compiled;
+function getCompiled(record: NodeClassRecord): CompiledNodeClass {
+  const {compiled} = record;
+  invariant(
+    compiled !== undefined,
+    '%s is still being registered: a $config() must not serialize a node of its own class',
+    record.config.klass.name,
+  );
   return compiled;
 }
 
@@ -3922,13 +3910,7 @@ function validateOwnFields(record: NodeClassRecord, node: LexicalNode): void {
   }
   const {klass} = record.config;
   const fields = ownFieldRecord(node);
-  const {getters, setters} = record;
-  if (getters === undefined || setters === undefined) {
-    // One table is still being compiled (the $config() re-entrancy window), so
-    // half the names are not available yet. Skip without recording the class as
-    // validated, or the unseen direction would never be checked again.
-    return;
-  }
+  const {getters, setters} = getCompiled(record);
   for (const entries of [getters, setters]) {
     for (const entry of entries) {
       if (entry.kind === 'ownField') {
@@ -3979,7 +3961,7 @@ export function $writeJSONGetters(
 ): void {
   const klass = node.constructor as Klass<LexicalNode>;
   const record = getNodeClassRecord(klass);
-  const getters = getCompiledGetters(record);
+  const {getters} = getCompiled(record);
   if (__DEV__) {
     validateOwnFields(record, node);
   }
@@ -4142,84 +4124,84 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
  * Compared by identity against the most basal class in the chain that names the
  * same functions, for the same reason `declaredBy` is.
  *
- * @internal
+ * A `$config` of its own that passes an ancestor's generated code is the same
+ * mistake made on purpose — that code reads the ancestor's fields and calls
+ * the ancestor's accessors, whatever this class overrides — and is refused the
+ * same way, but in DEV it says so: silently running the walk instead would
+ * leave the class believing it ships the code it named.
  */
-function generatedFor(record: NodeClassRecord): null | GeneratedJSON {
-  const {generated} = record;
-  if (generated !== undefined) {
-    return generated;
+function resolveGenerated(
+  klass: Klass<LexicalNode>,
+  ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>,
+): null | GeneratedJSON {
+  const declared = ownNodeConfig ? ownNodeConfig.generated : undefined;
+  if (declared === undefined) {
+    return null;
   }
-  const {klass} = record.config;
-  const declared = record.config.ownNodeConfig
-    ? record.config.ownNodeConfig.generated
-    : undefined;
-  let resolved: null | GeneratedJSON = null;
-  if (declared !== undefined) {
-    let declaringKlass = klass;
-    for (const {
-      klass: currentKlass,
-      ownNodeConfig,
-    } of iterStaticNodeConfigChain(klass)) {
-      if (ownNodeConfig && ownNodeConfig.generated === declared) {
-        declaringKlass = currentKlass;
-      }
+  let declaringKlass = klass;
+  for (const {
+    klass: currentKlass,
+    ownNodeConfig: currentConfig,
+  } of iterStaticNodeConfigChain(klass)) {
+    if (currentConfig && currentConfig.generated === declared) {
+      declaringKlass = currentKlass;
     }
-    resolved = declaringKlass === klass ? declared : null;
   }
-  record.generated = resolved;
-  return resolved;
+  if (declaringKlass === klass) {
+    return declared;
+  }
+  if (__DEV__) {
+    invariant(
+      !hasOwnKey(klass.prototype as unknown as object, PROTOTYPE_CONFIG_METHOD),
+      '%s: $config passes the generated JSON code that %s declared, which reads the fields and accessors of that class; generate code for %s or omit it',
+      klass.name,
+      declaringKlass.name,
+      klass.name,
+    );
+  }
+  return null;
 }
 
 /**
- * The generated exporter for `node` in the form asked for, or `undefined` when
- * its class has none for that form.
+ * What the generated exporter writes for `node` in the form asked for, or
+ * `undefined` when its class has no generated code for that form and the
+ * schema-driven walk has to run instead.
+ *
+ * A generated exporter is only ever right for the exact accessors its class
+ * resolves, which is what {@link resolveGenerated} settled at registration.
+ * Both forms are generated — which properties the compact one drops depends on
+ * a node's values, but the rule does not, so each form is its own
+ * straight-line function. NodeState is not part of either: what a node carries
+ * is not known when the code is generated, so {@link LexicalNode.exportJSON}
+ * appends it to this result and to the walk's alike.
  *
  * @internal
  */
-export function $generatedExportJSONFor(
+export function $generatedExportJSON(
   node: LexicalNode,
   compact: boolean,
-): undefined | GeneratedJSON['exportJSON'] {
+): undefined | {[key: string]: unknown} {
   const record = getNodeClassRecord(node.constructor as Klass<LexicalNode>);
-  const generated = generatedFor(record);
+  const {generated} = getCompiled(record);
   if (generated === null) {
     return undefined;
-  }
-  if (__DEV__) {
-    // The check the walk would have run, for the classes that reach generated
-    // code through this lookup rather than through the installed prototype
-    // method — one that overrides `exportJSON` and calls `super`, as
-    // ParagraphNode does. Without it those classes are the only ones whose
-    // misspelled `withField` name is never caught.
-    validateOwnFields(record, node);
   }
   // Each form is generated separately, so this picks a function rather than
   // passing the flag on. A class whose compact form could not be generated —
   // one with a property that compares by content — keeps the walk for it.
-  return compact ? generated.exportCompactJSON : generated.exportJSON;
-}
-
-/**
- * Finish a node's JSON by appending its NodeState.
- *
- * Neither a generated exporter nor the schema walk writes it: what a node
- * carries is not known when the code is generated, and the walk's table is
- * compiled from the schema alone. Every export path — the base `exportJSON`,
- * {@link $generatedExportJSON} behind an override's `super` call, and the
- * method {@link installGeneratedExportJSON} puts on a prototype — ends here,
- * so they cannot disagree about how state is written.
- *
- * @internal
- */
-export function appendNodeStateJSON(
-  node: LexicalNode,
-  json: {[key: string]: unknown},
-): SerializedLexicalNode {
-  const state = node.__state ? node.__state.toJSON() : undefined;
-  if (state !== undefined) {
-    Object.assign(json, state);
+  const exporter = compact ? generated.exportCompactJSON : generated.exportJSON;
+  if (exporter === undefined) {
+    return undefined;
   }
-  return json as unknown as SerializedLexicalNode;
+  if (__DEV__) {
+    // The check the walk would have run. Generated code reads the field names
+    // the schema declared, so a misspelled one is the same silent, total loss
+    // of a property here as it is there.
+    validateOwnFields(record, node);
+  }
+  return exporter(node);
 }
 
 /**
@@ -4286,14 +4268,13 @@ export function $applyJSONSetters<T extends LexicalNode>(
   if (__DEV__) {
     validateOwnFields(record, node);
   }
-  const generated = generatedFor(record);
+  const {generated, setters} = getCompiled(record);
   if (generated !== null && generated.updateFromJSON !== undefined) {
     // The generated parser applies the same properties in the same order and
     // follows a setter's return the same way, so what it hands back is what
     // this walk would have: the node passed in, unless a setter replaced it.
     return generated.updateFromJSON(node, serializedNode) as T;
   }
-  const setters = getCompiledSetters(record);
   let self = node;
   for (let i = 0; i < setters.length; i++) {
     const entry = setters[i];
@@ -4341,18 +4322,14 @@ export function $applyJSONSetters<T extends LexicalNode>(
       // be chained, but a `void` setter is perfectly valid — it has already
       // mutated the node through getWritable() — so a nullish return means
       // "unchanged" rather than stranding the rest of the schema on
-      // `undefined`. The identity comparison short-circuits every call after
-      // the first: getWritable() returns the same object for the rest of the
-      // update.
+      // `undefined`.
       //
       // Anything else is followed as given. A setter is declared to return
       // `this`; one that returns some other value is a contract violation, and
       // following it — which will throw on the next setter's `getWritable()` —
       // is a better answer than quietly ignoring it and writing the remaining
       // properties to a node the setter said it had replaced.
-      if ((next || self) !== self) {
-        self = next as T;
-      }
+      self = (next || self) as T;
     }
   }
   return self;
@@ -4422,20 +4399,19 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
     }
   }
   const record: NodeClassRecord = {
+    compiled: undefined,
     composed: undefined,
     config: {klass, ownNodeConfig, ownNodeType},
-    generated: undefined,
-    getters: undefined,
     ownFieldsValidated: false,
-    setters: undefined,
   };
   // Cached before compiling, because compileSetters walks this class chain
   // (which includes klass) and re-enters this cache, which must hit rather
   // than recurse.
   NODE_CLASS_CACHE.set(klass, record);
   // Compiled eagerly rather than on first export/import so that a schema
-  // naming an accessor the class does not have fails while the class is being
-  // registered — where the error names the class that is misconfigured — and
+  // naming an accessor the class does not have — or a `$config` naming
+  // generated code that is not its own — fails while the class is being
+  // registered, where the error names the class that is misconfigured, and
   // not later, out of an autosave or a copy handler.
   //
   // Everything that can throw is inside the try, injection included: that is
@@ -4451,8 +4427,13 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
   // chain, never `klass.getType` or `klass.clone`), so ordering it here leaves
   // the class untouched on every failure path rather than half-registered.
   try {
-    record.setters = compileSetters(klass);
-    record.getters = compileGetters(klass);
+    const setters = compileSetters(klass);
+    const getters = compileGetters(klass);
+    record.compiled = {
+      generated: resolveGenerated(klass, ownNodeConfig),
+      getters,
+      setters,
+    };
     injectSynthesizedStatics(klass, isAbstract, ownNodeType, ownNodeConfig);
   } catch (error) {
     NODE_CLASS_CACHE.delete(klass);
@@ -4555,26 +4536,14 @@ function injectSynthesizedStatics(
         klass.importDOM = () => importDOM;
       }
     }
-    installGeneratedExportJSON(klass);
   }
 }
 
 /**
  * The `importJSON` a class gets when it declares none: build the node, then
- * apply the serialized properties to it.
- *
- * The generated parser, when the class has one, is closed over rather than
- * looked up — the same trade as {@link installGeneratedExportJSON}, and worth
- * rather less here, since constructing the node is most of what importing one
- * costs either way.
- *
- * The fast path is narrower than the export side's. It wants a node that is
- * exactly this class ({@link $applyNodeReplacement} may return a subclass, whose
- * own parser is not this one) and no NodeState on either side — none in the
- * JSON, and none the constructor put on the node (what a node carries is not
- * known when the code is generated, so the generated parser neither writes it
- * nor resets it the way {@link $updateStateFromJSON} would). Anything else is
- * the general path, unchanged.
+ * apply the serialized properties to it. A generated parser, when the class
+ * has one, is reached through {@link $applyJSONSetters} the way every other
+ * path reaches it.
  */
 function synthesizeImportJSON(
   klass: Klass<LexicalNode>,
@@ -4582,92 +4551,7 @@ function synthesizeImportJSON(
   serializedNode: SerializedPartial<SerializedLexicalNode> &
     Record<string, unknown>,
 ) => LexicalNode {
-  const record = getNodeClassRecord(klass);
-  const generated = generatedFor(record);
-  const generatedUpdateFromJSON =
-    generated === null ? undefined : generated.updateFromJSON;
-  if (generatedUpdateFromJSON === undefined) {
-    return serializedNode => $applyImportJSON($create(klass), serializedNode);
-  }
-  return serializedNode => {
-    const node = $create(klass);
-    if (
-      node.constructor === klass &&
-      !node.__state &&
-      serializedNode[NODE_STATE_KEY] === undefined
-    ) {
-      if (__DEV__) {
-        // The one check $applyJSONSetters would have run for this class, which
-        // is once per class rather than per node.
-        validateOwnFields(record, node);
-      }
-      // The parser's return is the walk's: the node passed in, unless a setter
-      // replaced it.
-      return generatedUpdateFromJSON(node, serializedNode);
-    }
-    return $applyImportJSON(node, serializedNode);
-  };
-}
-
-/**
- * Put a class's generated `exportJSON` on its prototype, so exporting one of
- * its nodes is a call rather than a lookup.
- *
- * The base `exportJSON` has to find the right code for whatever node it is
- * handed, which costs a node-class-record lookup per node — and the generated
- * literal it then calls is small enough that the lookup dominates it. Which
- * code is right is settled once, here, at registration.
- *
- * Skipped for a class that writes its own `exportJSON`: that method is the
- * class's answer, and it composes with the generated literal by calling
- * `super.exportJSON(compact)`, which reaches the base and its lookup. That is
- * how ParagraphNode's #7971 back-fill works, so this must not displace it.
- *
- * The `constructor` guard is the same one {@link generatedFor} applies and the
- * same shape as the synthesized `getType` above: a subclass that declares no
- * `$config` of its own inherits this method along with the type and the
- * generated code, while being free to override an accessor that code compiled
- * away, so anything but the exact class defers to the base.
- */
-function installGeneratedExportJSON(klass: Klass<LexicalNode>): void {
-  const record = getNodeClassRecord(klass);
-  const generated = generatedFor(record);
-  if (
-    generated === null ||
-    hasOwnKey(klass.prototype as unknown as object, 'exportJSON')
-  ) {
-    return;
-  }
-  const generatedExportJSON = generated.exportJSON;
-  const generatedExportCompactJSON = generated.exportCompactJSON;
-  const prototype = klass.prototype as unknown as {
-    exportJSON: (this: LexicalNode, compact?: boolean) => SerializedLexicalNode;
-  };
-  const base = prototype.exportJSON;
-  prototype.exportJSON = function exportJSON(
-    this: LexicalNode,
-    compact = false,
-  ): SerializedLexicalNode {
-    // Two functions rather than one taking the flag: which properties each form
-    // writes is fixed, so branching per property per node would be deciding at
-    // runtime what the codegen already decided.
-    const generatedForm = compact
-      ? generatedExportCompactJSON
-      : generatedExportJSON;
-    if (this.constructor !== klass || generatedForm === undefined) {
-      // Not the class this was generated for, or a form it has no generated
-      // code for; either way the base implementation is the general answer.
-      return base.call(this, compact);
-    }
-    if (__DEV__) {
-      // The check the walk would have run. Generated code reads the field
-      // names the schema declared, so a misspelled one is the same silent,
-      // total loss of a property here as it is there — and this is now the
-      // only export path these classes take.
-      validateOwnFields(record, this);
-    }
-    return appendNodeStateJSON(this, generatedForm(this));
-  };
+  return serializedNode => $applyImportJSON($create(klass), serializedNode);
 }
 
 /**

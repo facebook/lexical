@@ -131,21 +131,15 @@ function updateHeadingNode(
       ? v
       : '',
   );
-  if ((n || self) !== self) {
-    self = n as HeadingNode;
-  }
+  self = (n || self) as HeadingNode;
   v = json.indent;
   self.__indent = numC(v, 0, 0, Infinity, true);
   v = json.textFormat;
   n = self.setTextFormat(num(v, 0));
-  if ((n || self) !== self) {
-    self = n as HeadingNode;
-  }
+  self = (n || self) as HeadingNode;
   v = json.textStyle;
   n = self.setTextStyle(typeof v === 'string' ? v : '');
-  if ((n || self) !== self) {
-    self = n as HeadingNode;
-  }
+  self = (n || self) as HeadingNode;
   v = json.tag;
   self.__tag =
     v === 'h1' ||

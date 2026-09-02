@@ -20,14 +20,12 @@ import {
   $createTextNode,
   $getRoot,
   $getState,
-  $isElementNode,
   $isParagraphNode,
   $isTextNode,
   $setState,
   createEditor,
   createState,
   IS_BOLD,
-  type LexicalNode,
   LineBreakNode,
   NODE_STATE_KEY,
   ParagraphNode,
@@ -42,57 +40,37 @@ import {
   GENERATED_TEXT,
   type GeneratedJSON,
 } from '../../LexicalGeneratedJSON';
-import {LexicalNode as LexicalNodeClass} from '../../LexicalNode';
-import {
-  $applyImportJSON,
-  $writeJSONGetters,
-  getStaticNodeConfig,
-} from '../../LexicalUtils';
-import {initializeUnitTest, invariant} from '../utils';
+import {$generatedExportJSON, getStaticNodeConfig} from '../../LexicalUtils';
+import {$expectSameJSON, initializeUnitTest, invariant} from '../utils';
 
 const REPO = join(import.meta.dirname, '..', '..', '..', '..', '..');
 
-/**
- * The JSON the schema-driven walk produces, which the generated exporter has to
- * reproduce exactly — same values, same key order.
- *
- * This is `LexicalNode.exportJSON`'s body with the generated-exporter dispatch
- * removed, which is the only way to reach the walk for a class that has one.
- */
-function $walkExportJSON(
-  node: LexicalNode,
-  compact: boolean,
-): {[key: string]: unknown} {
-  const json: {[key: string]: unknown} = $isElementNode(node)
-    ? {children: []}
-    : {};
-  $writeJSONGetters(node, json, compact);
-  json.type = node.getType();
-  if (!compact) {
-    json.version = 1;
+// The control classes: same schema (inherited through the config chain), same
+// fields, but no `generated` in their own $config, so they export through the
+// schema-driven walk — which is exactly what the generated code has to agree
+// with. Only the type string differs, by construction.
+class WalkTextNode extends TextNode {
+  $config() {
+    return this.config('walk-text', {extends: TextNode});
   }
-  return json;
 }
 
-/**
- * What the generated code alone produces for `node`, with any `exportJSON`
- * override bypassed.
- *
- * ParagraphNode's override composes with the generated literal by calling
- * `super.exportJSON(compact)`, so calling the override would compare its
- * back-filled output against a walk that never runs it. Going straight to the
- * base implementation reaches the generated code the same way `super` does.
- */
-function $generatedOnly(
-  node: LexicalNode,
-  compact: boolean,
-): {[key: string]: unknown} {
-  return LexicalNodeClass.prototype.exportJSON.call(
-    node,
-    compact,
-  ) as unknown as {
-    [key: string]: unknown;
-  };
+class WalkParagraphNode extends ParagraphNode {
+  $config() {
+    return this.config('walk-paragraph', {extends: ParagraphNode});
+  }
+}
+
+class WalkLineBreakNode extends LineBreakNode {
+  $config() {
+    return this.config('walk-linebreak', {extends: LineBreakNode});
+  }
+}
+
+class WalkTabNode extends TabNode {
+  $config() {
+    return this.config('walk-tab', {extends: TabNode});
+  }
 }
 
 describe('generated exportJSON', () => {
@@ -130,109 +108,117 @@ describe('generated exportJSON', () => {
     // graph to read the schemas.
   }, 120_000);
 
-  initializeUnitTest(testEnv => {
-    test('every generated exporter agrees with the schema-driven walk', () => {
-      testEnv.editor.update(
-        () => {
-          const nodes = [
-            $createTextNode('hello').setFormat('bold').setStyle('color: red'),
-            $createTextNode(''),
-            $createTextNode('tok').setMode('token').setDetail('directionless'),
-            $createLineBreakNode(),
-            $createTabNode(),
+  initializeUnitTest(
+    testEnv => {
+      test('every generated exporter agrees with the schema-driven walk', () => {
+        testEnv.editor.update(
+          () => {
+            const $styled = <T extends TextNode>(node: T) =>
+              node.setFormat('bold').setStyle('color: red');
+            $expectSameJSON(
+              $styled(new TextNode('hello')),
+              $styled(new WalkTextNode('hello')),
+            );
+            $expectSameJSON(new TextNode(''), new WalkTextNode(''));
+            const $token = <T extends TextNode>(node: T) =>
+              node.setMode('token').setDetail('directionless');
+            $expectSameJSON(
+              $token(new TextNode('tok')),
+              $token(new WalkTextNode('tok')),
+            );
+            $expectSameJSON($createLineBreakNode(), new WalkLineBreakNode());
+            $expectSameJSON($createTabNode(), new WalkTabNode());
             // ParagraphNode belongs here most of all: it is the only element
-            // among them, so the only one whose generated code has to lead with
-            // `children`, and the only one whose properties are a mix of fields
-            // and methods. Its own exportJSON is bypassed below rather than
-            // skipped — that override back-fills #7971 on top of the generated
-            // literal, so calling it would compare the override's output
-            // against a walk that does not run it.
-            $createParagraphNode().setDirection('rtl').setIndent(3),
-            $createParagraphNode(),
+            // among them, so the only one whose generated code has to lead
+            // with `children`, and the only one whose properties are a mix of
+            // fields and methods. Its exportJSON override back-fills #7971 on
+            // top of the generated literal; the control inherits the override
+            // and back-fills on top of the walk, so the two compare like for
+            // like.
+            const $laidOut = <T extends ParagraphNode>(node: T) =>
+              node.setDirection('rtl').setIndent(3);
+            $expectSameJSON(
+              $laidOut($createParagraphNode()),
+              $laidOut(new WalkParagraphNode()),
+            );
+            $expectSameJSON($createParagraphNode(), new WalkParagraphNode());
             // Both arms of the `when` gate, which the paragraphs above leave
             // at their defaults and so never enter: the generated code hoists
             // one shared `shouldSerializeTextStyles` where the walk tests the
             // default and calls the predicate per property, so agreeing when
             // the property is trivially omitted proves nothing about either.
-            $createParagraphNode()
-              .setTextFormat(IS_BOLD)
-              .setTextStyle('color: red'),
+            const $textStyled = <T extends ParagraphNode>(node: T) =>
+              node.setTextFormat(IS_BOLD).setTextStyle('color: red');
+            $expectSameJSON(
+              $textStyled($createParagraphNode()),
+              $textStyled(new WalkParagraphNode()),
+            );
             // Predicate false with a non-default value — the case the two
             // decide differently if the hoist ever stops mirroring the walk.
-            $createParagraphNode()
-              .setTextFormat(IS_BOLD)
-              .setTextStyle('color: red')
-              .append($createTextNode('x')),
-          ];
-          for (const node of nodes) {
-            // Both forms: each is generated separately, so each has to agree
-            // with the walk separately.
-            for (const compact of [false, true]) {
-              const generated = $generatedOnly(node, compact);
-              const walked = $walkExportJSON(node, compact);
-              expect({compact, json: generated}).toEqual({
-                compact,
-                json: walked,
-              });
-              // Key order too: a document round-tripped through JSON.stringify
-              // should be byte-identical either way.
-              expect(Object.keys(generated)).toEqual(Object.keys(walked));
-            }
-          }
-        },
-        {discrete: true},
-      );
-    });
+            $expectSameJSON(
+              $textStyled($createParagraphNode()).append($createTextNode('x')),
+              $textStyled(new WalkParagraphNode()).append($createTextNode('x')),
+            );
+          },
+          {discrete: true},
+        );
+      });
 
-    test('an exportJSON override composes with its generated exporter', () => {
-      // ParagraphNode writes textFormat/textStyle computed from its first text
-      // child (#7971) — output no schema describes. It keeps doing that in an
-      // ordinary exportJSON override: the override calls super, super is where
-      // the generated literal comes from, and the override then adjusts it.
-      testEnv.editor.update(
-        () => {
-          const paragraph = $createParagraphNode();
-          paragraph.append($createTextNode('x').setFormat('bold'));
-          const json = paragraph.exportJSON();
-          // The first text child's format, not the paragraph's own.
-          expect(json.textFormat).toBe(1);
-          expect(json.textStyle).toBe('');
-          // And the generated literal underneath it is intact. The literal
-          // writes every schema key unconditionally — textFormat/textStyle as
-          // undefined when the getters have nothing to say — so the override's
-          // back-fill assigns into keys that already exist, and they sit at
-          // their schema position rather than trailing after `version`.
-          expect(json.type).toBe('paragraph');
-          expect(Object.keys(json)).toEqual([
-            'children',
-            'direction',
-            'format',
-            'indent',
-            'textFormat',
-            'textStyle',
-            'type',
-            'version',
-          ]);
-        },
-        {discrete: true},
-      );
-    });
+      test('an exportJSON override composes with its generated exporter', () => {
+        // ParagraphNode writes textFormat/textStyle computed from its first text
+        // child (#7971) — output no schema describes. It keeps doing that in an
+        // ordinary exportJSON override: the override calls super, super is where
+        // the generated literal comes from, and the override then adjusts it.
+        testEnv.editor.update(
+          () => {
+            const paragraph = $createParagraphNode();
+            paragraph.append($createTextNode('x').setFormat('bold'));
+            const json = paragraph.exportJSON();
+            // The first text child's format, not the paragraph's own.
+            expect(json.textFormat).toBe(1);
+            expect(json.textStyle).toBe('');
+            // And the generated literal underneath it is intact. The literal
+            // writes every schema key unconditionally — textFormat/textStyle as
+            // undefined when the getters have nothing to say — so the override's
+            // back-fill assigns into keys that already exist, and they sit at
+            // their schema position rather than trailing after `version`.
+            expect(json.type).toBe('paragraph');
+            expect(Object.keys(json)).toEqual([
+              'children',
+              'direction',
+              'format',
+              'indent',
+              'textFormat',
+              'textStyle',
+              'type',
+              'version',
+            ]);
+          },
+          {discrete: true},
+        );
+      });
 
-    test('NodeState still reaches the JSON through a generated exporter', () => {
-      testEnv.editor.update(
-        () => {
-          const node = $createTextNode('hi');
-          // Whatever a node carries is not known when the code is generated, so
-          // the dispatch appends it rather than the generated literal.
-          expect(node.exportJSON()).not.toHaveProperty('$');
-        },
-        {discrete: true},
-      );
-    });
-  });
+      test('NodeState still reaches the JSON through a generated exporter', () => {
+        testEnv.editor.update(
+          () => {
+            const node = $createTextNode('hi');
+            // Whatever a node carries is not known when the code is generated,
+            // so the dispatch appends it rather than the generated literal.
+            expect(node.exportJSON()).not.toHaveProperty('$');
+          },
+          {discrete: true},
+        );
+      });
+    },
+    {
+      namespace: 'test',
+      nodes: [WalkTextNode, WalkParagraphNode, WalkLineBreakNode, WalkTabNode],
+      theme: {},
+    },
+  );
 });
 
-describe('the generated code reaches the class it was generated for', () => {
+describe('the generated code reaches only the class it was generated for', () => {
   // Handed over through `$config` rather than looked up by node type, so there
   // is no second derivation that could stop matching the first — the check is
   // that each class named its own.
@@ -244,6 +230,58 @@ describe('the generated code reaches the class it was generated for', () => {
   ])('%s', (_type, klass, generated) => {
     const {ownNodeConfig} = getStaticNodeConfig(klass);
     expect(ownNodeConfig && ownNodeConfig.generated).toBe(generated);
+  });
+
+  test('a subclass that inherits the declaration takes the walk', () => {
+    // No `$config` of its own, so it inherits TextNode's — the node type and
+    // the generated code with it — while overriding an accessor that code
+    // compiled away. The generated code is refused for it, so the override is
+    // honored.
+    class InheritsEverything extends TextNode {
+      getStyle(): string {
+        return `${super.getStyle()};extra`;
+      }
+    }
+    const editor = createEditor({
+      namespace: '',
+      nodes: [InheritsEverything],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        $getRoot().clear();
+        const node = $create(InheritsEverything).setStyle('color: red');
+        expect($generatedExportJSON(node, false)).toBeUndefined();
+        expect(node.exportJSON().style).toBe('color: red;extra');
+      },
+      {discrete: true},
+    );
+  });
+
+  test("a $config that passes an ancestor's generated code is refused", () => {
+    // The same mistake made on purpose: TextNode's code reads TextNode's
+    // fields and calls TextNode's accessors, whatever this class overrides, so
+    // it is refused like the inherited case — but loudly, at registration,
+    // because the class asked for it by name.
+    class PassesParentGenerated extends TextNode {
+      $config() {
+        return this.config('passes-parent-generated', {
+          extends: TextNode,
+          generated: GENERATED_TEXT,
+        });
+      }
+    }
+    expect(() =>
+      createEditor({
+        namespace: '',
+        nodes: [PassesParentGenerated],
+        onError: err => {
+          throw err;
+        },
+      }),
+    ).toThrow(/passes the generated JSON code that TextNode declared/);
   });
 });
 
@@ -280,72 +318,11 @@ describe('the compact form is generated too', () => {
   });
 });
 
-describe('a generated exporter is installed on its class', () => {
-  // Resolved once at registration rather than looked up per node: the literal
-  // is small enough that finding it cost more than running it.
-  test('the class that declared it gets it on its prototype', () => {
-    expect(
-      Object.prototype.hasOwnProperty.call(TextNode.prototype, 'exportJSON'),
-    ).toBe(true);
-  });
-
-  test('a class that writes its own exportJSON keeps it', () => {
-    // ParagraphNode's override is where the #7971 back-fill lives, and it
-    // reaches its generated literal through super — so nothing may displace it.
-    expect(
-      Object.prototype.hasOwnProperty.call(
-        ParagraphNode.prototype,
-        'exportJSON',
-      ),
-    ).toBe(true);
-    const paragraph = ParagraphNode.prototype.exportJSON;
-    expect(paragraph).not.toBe(TextNode.prototype.exportJSON);
-  });
-
-  test('a subclass that inherits the declaration defers to the base', () => {
-    // No `$config` of its own, so it inherits TextNode's — the node type and
-    // the generated code with it — while overriding an accessor that code
-    // compiled away. It inherits the installed method too, whose guard is the
-    // only thing standing between it and TextNode's literal.
-    class InheritsEverything extends TextNode {
-      getStyle(): string {
-        return `${super.getStyle()};extra`;
-      }
-    }
-    const editor = createEditor({
-      namespace: '',
-      nodes: [InheritsEverything],
-      onError: err => {
-        throw err;
-      },
-    });
-    editor.update(
-      () => {
-        $getRoot().clear();
-        const node = $create(InheritsEverything).setStyle('color: red');
-        // Nothing was installed on the subclass, and the inherited method
-        // recognizes it is not the class it was generated for.
-        expect(
-          Object.prototype.hasOwnProperty.call(
-            InheritsEverything.prototype,
-            'exportJSON',
-          ),
-        ).toBe(false);
-        expect(node.exportJSON().style).toBe('color: red;extra');
-        // Which is what the schema-driven walk says too.
-        const walked: {[key: string]: unknown} = {};
-        $writeJSONGetters(node, walked, false);
-        expect(walked.style).toBe('color: red;extra');
-      },
-      {discrete: true},
-    );
-  });
-});
-
-describe('the synthesized importJSON closes over its generated parser', () => {
-  // Narrower than the export side's fast path: it wants a node that is exactly
-  // this class and JSON with no NodeState, because the generated parser writes
-  // neither a subclass's properties nor state.
+describe('the synthesized importJSON', () => {
+  // Builds the node, then applies the serialized properties through the same
+  // walk everything else uses — which is where a generated parser is reached,
+  // and where what it leaves alone (NodeState, a replacement class) is handled
+  // around it.
   const probeState = createState('probeFlag', {
     parse: v => (typeof v === 'string' ? v : ''),
   });
@@ -365,7 +342,7 @@ describe('the synthesized importJSON closes over its generated parser', () => {
     }
   }
 
-  test('JSON carrying NodeState takes the general path', () => {
+  test('NodeState in the JSON is applied', () => {
     const editor = createEditor({
       namespace: '',
       nodes: [StatefulText],
@@ -393,9 +370,9 @@ describe('the synthesized importJSON closes over its generated parser', () => {
     });
   });
 
-  test('a replacement of another class takes the general path', () => {
-    // $applyNodeReplacement hands back a ReplacedText where the closure asked
-    // for a TextNode, so TextNode's parser is not the one to run.
+  test('a replacement of the class is imported as itself', () => {
+    // $applyNodeReplacement hands back a ReplacedText where TextNode was asked
+    // for, and the walk resolves what to run from the node it is given.
     const editor = createEditor({
       namespace: '',
       nodes: [
@@ -428,9 +405,8 @@ describe('the synthesized importJSON closes over its generated parser', () => {
     });
   });
 
-  // The two properties of the general path that the fast path has to keep. A
-  // hand-built GeneratedJSON stands in for the generator's output: each class
-  // declares it in its own $config, which is all generatedFor asks.
+  // A hand-built GeneratedJSON stands in for the generator's output: each class
+  // declares it in its own $config, which is all the resolution asks.
   const replacingGenerated: GeneratedJSON = {
     exportJSON: node => ({text: (node as TextNode).__text}),
     updateFromJSON: (node, json) => {
@@ -468,8 +444,8 @@ describe('the synthesized importJSON closes over its generated parser', () => {
           type: 'replacing-text',
           version: 1,
         } as SerializedTextNode);
-        // $applyJSONSetters returns what the parser returned; the closure the
-        // synthesized importJSON keeps has to agree.
+        // $applyJSONSetters returns what the parser returned, and importJSON
+        // hands that on.
         expect(node).not.toBeInstanceOf(ReplacingText);
         invariant($isTextNode(node), 'expected the replacement TextNode');
         expect(node.getStyle()).toBe('swapped');
@@ -491,9 +467,8 @@ describe('the synthesized importJSON closes over its generated parser', () => {
   class ConstructedStateText extends TextNode {
     constructor(text = '', key?: string) {
       super(text, key);
-      // A node that carries state before any property is applied: the general
-      // path resets known state from the JSON (which has none), so the fast
-      // path must not skip that reset.
+      // A node that carries state before any property is applied, which the
+      // generated parser knows nothing about.
       $setState(this, ctorState, 'from-constructor');
     }
     $config() {
@@ -504,7 +479,7 @@ describe('the synthesized importJSON closes over its generated parser', () => {
     }
   }
 
-  test('a node constructed with NodeState takes the general path', () => {
+  test('state a constructor set is reset from JSON that carries none', () => {
     const editor = createEditor({
       namespace: '',
       nodes: [ConstructedStateText],
@@ -516,16 +491,16 @@ describe('the synthesized importJSON closes over its generated parser', () => {
       () => {
         const fresh = $create(ConstructedStateText);
         expect($getState(fresh, ctorState)).toBe('from-constructor');
-        const json = {
+        const imported = ConstructedStateText.importJSON({
           text: '',
           type: 'constructed-state-text',
           version: 1,
-        } as SerializedTextNode;
-        const imported = ConstructedStateText.importJSON(json);
-        const walked = $applyImportJSON($create(ConstructedStateText), json);
-        expect($getState(imported, ctorState)).toBe(
-          $getState(walked, ctorState),
-        );
+        } as SerializedTextNode);
+        // What $updateStateFromJSON does for a node that carries state when
+        // the JSON carries none: known state goes back to its default. The
+        // generated parser neither writes state nor resets it, so this has to
+        // happen around it.
+        expect($getState(imported, ctorState)).toBe('');
       },
       {discrete: true},
     );

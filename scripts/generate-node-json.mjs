@@ -21,11 +21,10 @@
  *
  * Each package gets its own generated module beside its nodes, and each class
  * passes its own generated code to `$config`, so the association is carried by
- * the class rather than looked up at runtime. A class whose compact form needs
- * a schema's own equality — MarkNode's `ids`, whose default is an array — gets
- * a *factory* instead of a const: its `$config` calls the factory with the
- * schema, and the emitted comparisons close over that schema's `defaultValue`
- * and `isEqual` rather than a literal no reference value could ever be `===`.
+ * the class rather than looked up at runtime. A class whose compact form would
+ * need a schema's own equality — MarkNode's `ids`, whose default is an array
+ * that no emitted literal could ever be `===` — keeps the walk for that form
+ * and gets generated code for the other.
  *
  * The import direction is the untrusted-JSON boundary and has to reproduce
  * each property's validation exactly, so every emitted parser is checked here
@@ -69,37 +68,35 @@ const REPO = join(import.meta.dirname, '..');
  * silently.
  *
  * `home` marks the module that declares the `GeneratedJSON` interface (the
- * others import the type from `lexical`). An entry with `factory` emits a
- * function the class's `$config` calls with its schema, rather than a const —
- * see the module docblock.
+ * others import the type from `lexical`).
  *
  * @type {readonly {
  *   file: string,
  *   home?: boolean,
- *   entries: readonly {name: string, factory?: boolean}[],
+ *   entries: readonly string[],
  * }[]}
  */
 const MANIFEST = [
   {
     entries: [
-      {name: 'GENERATED_TEXT'},
-      {name: 'GENERATED_PARAGRAPH'},
-      {name: 'GENERATED_LINEBREAK'},
-      {name: 'GENERATED_TAB'},
+      'GENERATED_TEXT',
+      'GENERATED_PARAGRAPH',
+      'GENERATED_LINEBREAK',
+      'GENERATED_TAB',
     ],
     file: 'packages/lexical/src/LexicalGeneratedJSON.ts',
     home: true,
   },
   {
-    entries: [{name: 'GENERATED_HEADING'}, {name: 'GENERATED_QUOTE'}],
+    entries: ['GENERATED_HEADING', 'GENERATED_QUOTE'],
     file: 'packages/lexical-rich-text/src/LexicalRichTextGeneratedJSON.ts',
   },
   {
-    entries: [{name: 'GENERATED_LINK'}, {name: 'GENERATED_AUTOLINK'}],
+    entries: ['GENERATED_LINK', 'GENERATED_AUTOLINK'],
     file: 'packages/lexical-link/src/LexicalLinkGeneratedJSON.ts',
   },
   {
-    entries: [{factory: true, name: 'createGeneratedMarkNode'}],
+    entries: ['GENERATED_MARK'],
     file: 'packages/lexical-mark/src/LexicalMarkGeneratedJSON.ts',
   },
 ];
@@ -178,11 +175,9 @@ function stubSource(pkg) {
   } else {
     lines.push(`\nimport type {GeneratedJSON} from 'lexical';\n`);
   }
-  for (const entry of pkg.entries) {
+  for (const name of pkg.entries) {
     lines.push(
-      entry.factory
-        ? `\n/**\n * @internal\n * @__NO_SIDE_EFFECTS__\n */\nexport function ${entry.name}(..._config: unknown[]): undefined | GeneratedJSON {\n  return undefined;\n}\n`
-        : `\n/** @internal */\nexport const ${entry.name}: undefined | GeneratedJSON = undefined;\n`,
+      `\n/** @internal */\nexport const ${name}: undefined | GeneratedJSON = undefined;\n`,
     );
   }
   return lines.join('');
@@ -230,9 +225,7 @@ const {MarkNode} = await import('@lexical/mark');
  * The classes each generated module serializes, in the order their code is
  * emitted, with the module each type import comes from. The list is what to
  * extend to specialize another class; everything else is derived from its
- * schema. `factory` names the config keys whose compact comparison closes over
- * the schema — required exactly when a compact-relevant property's default is
- * reference-typed.
+ * schema.
  *
  * @type {readonly {
  *   file: string,
@@ -274,11 +267,9 @@ const PACKAGES = [
   },
 ];
 
-/** `MarkNode` → `GENERATED_MARK` / `createGeneratedMarkNode`. */
+/** `MarkNode` → `GENERATED_MARK`. */
 const constName = (/** @type {NodeClass} */ klass) =>
   `GENERATED_${klass.name.replace(/Node$/, '').toUpperCase()}`;
-const factoryName = (/** @type {NodeClass} */ klass) =>
-  `createGenerated${klass.name}`;
 
 /**
  * Lookup tables the generated module being built needs, by the const name
@@ -403,12 +394,11 @@ function schemaReads(klass) {
  * That comparison is emitted as a `!==` against a literal, so a gated property
  * whose default has no faithful literal has no generated form: `key !== []`
  * allocates a fresh array and is always true, which would write the property
- * where the walk's own equality omits it. Unlike the compact form's
- * reference-typed comparison, this one cannot be closed over the schema
- * instead — the legacy exporter is emitted at module scope, outside the
- * factory that would carry it — so this refuses rather than emitting a
- * comparison that means something else. No such property exists; the check is
- * here so that declaring one fails the build instead of the round trip.
+ * where the walk's own equality omits it. The compact form can leave such a
+ * property to the walk; the legacy form writes every property, so this
+ * refuses rather than emitting a comparison that means something else. No
+ * such property exists; the check is here so that declaring one fails the
+ * build instead of the round trip.
  *
  * @param {{expression: string, key: string, schema: AnySchema, when?: string}[]} reads
  * @returns {{lines: string[], value: (read: {expression: string, key: string, schema: AnySchema, when?: string}) => string}}
@@ -462,9 +452,9 @@ function hoistGatedReads(reads) {
  * walk's `value === defaultValue` means.
  *
  * True for the primitives JSON round-trips. False for an object or array — a
- * literal allocates a fresh one, never `===` the default the walk holds; those
- * compare through the schema's own equality, closed over by a factory — and
- * for a non-finite number, which `JSON.stringify` renders as `null`. `-0` is
+ * literal allocates a fresh one, never `===` the default the walk holds, which
+ * compares those through the schema's own equality instead — and for a
+ * non-finite number, which `JSON.stringify` renders as `null`. `-0` is
  * rendered as `0`, which is fine: `-0 !== 0` is false either way.
  *
  * @param {unknown} value
@@ -493,21 +483,18 @@ function hasFaithfulLiteral(value) {
  * the legacy form does, and the `compact` argument picks between two
  * straight-line functions rather than branching inside one.
  *
- * A property whose default is reference-typed has no literal a value could be
- * `===`, so its comparison goes through the schema's own default and equality
- * instead — mirroring the walk's inline compare — and the names it uses are
- * reported in `factoryKeys` for the caller to close over. A default with no
- * faithful literal and no declared equality (a non-finite number) still bails
- * the class to the walk.
+ * A property whose default has no faithful literal — a reference-typed one,
+ * which the walk compares through the schema's own equality, or a non-finite
+ * number — has no `!==` this could emit, so its class keeps the walk for this
+ * form: the generated module simply has no `exportCompactJSON` for it, and
+ * the dispatch falls back per form.
  *
  * @param {NodeClass} klass
- * @returns {null | {code: string, factoryKeys: string[]}}
+ * @returns {null | string}
  */
 function generateCompactExport(klass) {
   const type = klass.getType();
   const writes = [];
-  /** @type {string[]} */
-  const factoryKeys = [];
   const reads = schemaReads(klass);
   // The same hoist the legacy form uses, so the two call a shared predicate
   // exactly once each and stay byte-identical about what they omit.
@@ -521,69 +508,49 @@ function generateCompactExport(klass) {
       continue;
     }
     const {defaultValue} = schema;
-    if (hasFaithfulLiteral(defaultValue)) {
-      // A default of `undefined` needs no second comparison: the walk skips an
-      // undefined value before it ever looks at the default, and so does this.
-      const isDefault =
-        defaultValue === undefined
-          ? ''
-          : ` && ${key} !== ${literal(defaultValue)}`;
-      writes.push(
-        when === undefined
-          ? `  const ${key} = ${expression};\n  if (${key} !== undefined${isDefault}) {\n    json.${key} = ${key};\n  }`
-          : // `${key}` and the predicate are already hoisted above, so this is
-            // the same test the legacy form makes plus the compact form's own
-            // `!== undefined`, written as a statement. The legacy form has no
-            // need of that one: it writes `undefined` into the literal, which
-            // stringify omits, where an omitted key is what compaction means.
-            `  if (${key} !== undefined${isDefault} && ${when}) {\n    json.${key} = ${key};\n  }`,
-      );
-      continue;
-    }
-    if (when !== undefined) {
-      // Unreachable: hoistGatedReads refuses a gated property whose default
-      // has no faithful literal, so a gated read never arrives here — where it
-      // would declare a `const` the hoist already declared.
-      throw new Error(`generate-node-json: "${key}" is gated and unhoistable`);
-    }
-    if (schema.isEqual === undefined) {
+    if (!hasFaithfulLiteral(defaultValue)) {
       process.stdout.write(
-        `${klass.name}: no generated compact export, "${key}" has a default with no faithful literal (${String(
+        `${klass.name}: no generated compact export, "${key}" has a default with no faithful literal (${JSON.stringify(
           defaultValue,
-        )}) and no declared equality\n`,
+        )})\n`,
       );
       return null;
     }
-    // The walk's inline compare, verbatim, over the schema's own default and
-    // equality — closed over by the surrounding factory.
-    factoryKeys.push(key);
+    // A default of `undefined` needs no second comparison: the walk skips an
+    // undefined value before it ever looks at the default, and so does this.
+    const isDefault =
+      defaultValue === undefined
+        ? ''
+        : ` && ${key} !== ${literal(defaultValue)}`;
     writes.push(
-      `  const ${key} = ${expression};\n  if (\n    ${key} !== undefined &&\n    ${key} !== ${key}_defaultValue &&\n    !(${key}_isEqual !== undefined && ${key}_isEqual(${key}, ${key}_defaultValue))\n  ) {\n    json.${key} = ${key};\n  }`,
+      when === undefined
+        ? `  const ${key} = ${expression};\n  if (${key} !== undefined${isDefault}) {\n    json.${key} = ${key};\n  }`
+        : // `${key}` and the predicate are already hoisted above, so this is
+          // the same test the legacy form makes plus the compact form's own
+          // `!== undefined`, written as a statement. The legacy form has no
+          // need of that one: it writes `undefined` into the literal, which
+          // stringify omits, where an omitted key is what compaction means.
+          `  if (${key} !== undefined${isDefault} && ${when}) {\n    json.${key} = ${key};\n  }`,
     );
   }
   const isElement = isElementish(klass);
   const header = `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */`;
-  const indent = factoryKeys.length > 0 ? '  ' : '';
   if (writes.length === 0) {
     // Nothing to compare, so the literal is the whole function — as in
     // generateExport, and for the same reason: an object that lands on its
     // final shape in one allocation beats one built by assignment.
-    return {
-      code: `${header}
+    return `${header}
 function exportCompact${klass.name}(): {[key: string]: unknown} {
   return {${isElement ? 'children: [], ' : ''}type: '${type}'};
-}`,
-      factoryKeys,
-    };
+}`;
   }
-  const body = `${header}
-${indent}function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
-${hoist.lines.length === 0 ? '' : `${hoist.lines.map(l => l.replace(/^/gm, indent)).join('\n')}\n`}${indent}  const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
-${writes.map(w => w.replace(/^/gm, indent)).join('\n')}
-${indent}  json.type = '${type}';
-${indent}  return json;
-${indent}}`;
-  return {code: body, factoryKeys};
+  return `${header}
+function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
+${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
+${writes.join('\n')}
+  json.type = '${type}';
+  return json;
+}`;
 }
 
 /**
@@ -687,9 +654,7 @@ function writeExpression(klass, schema, key) {
   if (!isSchemaField(setter)) {
     // Applied through a method: call it and follow what it returns, which is
     // the rule $applyJSONSetters uses. A `void` setter has already mutated
-    // through getWritable(), so a nullish return means unchanged; the identity
-    // comparison short-circuits every call after the first, since getWritable()
-    // returns the same object for the rest of the update.
+    // through getWritable(), so a nullish return means unchanged.
     try {
       verifyCompiledParse({
         expression,
@@ -705,7 +670,7 @@ function writeExpression(klass, schema, key) {
     return {
       key,
       needsSelf: true,
-      statements: `  v = json.${key};\n  n = self.${setter}(${expression});\n  if ((n || self) !== self) {\n    self = n as ${klass.name};\n  }`,
+      statements: `  v = json.${key};\n  n = self.${setter}(${expression});\n  self = (n || self) as ${klass.name};`,
     };
   }
   const {encode} = setter;
@@ -887,75 +852,24 @@ function generatePackage(pkg) {
 
   const pieces = [];
   for (const {compact, exportJSON, klass, updateFromJSON} of generated) {
-    const factoryKeys = compact === null ? [] : compact.factoryKeys;
     pieces.push(exportJSON);
-    if (compact !== null && factoryKeys.length === 0) {
-      pieces.push(compact.code);
+    if (compact !== null) {
+      pieces.push(compact);
     }
     if (updateFromJSON !== null) {
       pieces.push(updateFromJSON);
     }
-    if (factoryKeys.length === 0) {
-      pieces.push(
-        `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const ${constName(klass)}: GeneratedJSON = {\n  exportJSON: export${klass.name},${
-          compact === null
-            ? ''
-            : `\n  exportCompactJSON: exportCompact${klass.name},`
-        }${
-          updateFromJSON === null
-            ? ''
-            : `\n  updateFromJSON: update${klass.name},`
-        }\n};`,
-      );
-    } else {
-      // The factory form: the compact comparisons for these keys go through
-      // the schema's own default and equality, so the class's `$config` calls
-      // this with the very schemas it declared and the emitted code closes
-      // over them. Everything else about the class is the const form.
-      const params = factoryKeys
-        .map(
-          key =>
-            `  ${key}: {\n    readonly defaultValue: unknown;\n    isEqual?(a: unknown, b: unknown): boolean;\n  };`,
-        )
-        .join('\n');
-      const destructure = factoryKeys
-        .map(
-          key =>
-            `  const ${key}_defaultValue = config.${key}.defaultValue;\n  const ${key}_isEqual = config.${key}.isEqual;`,
-        )
-        .join('\n');
-      pieces.push(
-        `/**
- * ${klass.name}'s generated implementations, for its \`$config\` — a factory,
- * because the compact comparison for ${factoryKeys
-   .map(k => `\`${k}\``)
-   .join(', ')} goes through the
- * schema's own default and equality (its default is reference-typed, so no
- * literal a value could be \`===\` exists). The class passes the schemas it
- * declared and the comparisons close over them.
- *
- * @internal
- * @__NO_SIDE_EFFECTS__
- */
-export function ${factoryName(klass)}(config: {
-${params}
-}): GeneratedJSON {
-${destructure}
-${compact === null ? '' : compact.code}
-  return {
-    exportJSON: export${klass.name},${
-      compact === null
-        ? ''
-        : `\n    exportCompactJSON: exportCompact${klass.name},`
-    }${
-      updateFromJSON === null
-        ? ''
-        : `\n    updateFromJSON: update${klass.name},`
-    }
-  };
-}`,
-      );
-    }
+    pieces.push(
+      `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const ${constName(klass)}: GeneratedJSON = {\n  exportJSON: export${klass.name},${
+        compact === null
+          ? ''
+          : `\n  exportCompactJSON: exportCompact${klass.name},`
+      }${
+        updateFromJSON === null
+          ? ''
+          : `\n  updateFromJSON: update${klass.name},`
+      }\n};`,
+    );
   }
 
   return `${HEADER}
@@ -988,14 +902,8 @@ for (let i = 0; i < PACKAGES.length; i++) {
     throw new Error(`generate-node-json: manifest order mismatch ${pkg.file}`);
   }
   const source = generatePackage(pkg);
-  const expected = manifest.entries.map(e => e.name).sort();
-  const emitted = pkg.targets
-    .map(({klass}) =>
-      source.includes(`function ${factoryName(klass)}(`)
-        ? factoryName(klass)
-        : constName(klass),
-    )
-    .sort();
+  const expected = [...manifest.entries].sort();
+  const emitted = pkg.targets.map(({klass}) => constName(klass)).sort();
   if (JSON.stringify(expected) !== JSON.stringify(emitted)) {
     throw new Error(
       `generate-node-json: ${pkg.file} emits [${emitted}] but the manifest stubs [${expected}]; update MANIFEST (and the $config wiring) together`,

@@ -291,11 +291,11 @@ Three things are worth knowing before touching it:
   Adding a class means editing both, and the script fails loudly if they
   disagree.
 
-A class whose compact form needs a schema's own equality — MarkNode's `ids`,
-whose default is an array that no emitted literal could ever be `===` — gets a
-*factory* instead of a const, which its `$config` calls with the very schema
-it declared so the comparison closes over that schema's `defaultValue` and
-`isEqual`.
+A class whose compact form would need a schema's own equality — MarkNode's
+`ids`, whose default is an array that no emitted literal could ever be `===` —
+keeps the schema-driven walk for that form: its generated module has no
+`exportCompactJSON`, the script says so on stdout, and the legacy form and the
+parser are generated as for any other class.
 
 The schema-to-JavaScript compiler itself lives in `@lexical/compiler`'s
 `SchemaJsonCodegen` entry point, so it is testable independently of the

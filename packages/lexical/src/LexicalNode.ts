@@ -64,7 +64,7 @@ import {
 import {
   $applyJSONSetters,
   $cloneWithProperties,
-  $generatedExportJSONFor,
+  $generatedExportJSON,
   $getCompositionKey,
   $getNodeByKey,
   $hasAncestor,
@@ -75,7 +75,6 @@ import {
   $setNodeKey,
   $setSelection,
   $writeJSONGetters,
-  appendNodeStateJSON,
   errorOnInsertTextNodeOnRoot,
   getRegisteredNode,
   getStaticNodeConfig,
@@ -535,30 +534,6 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
   /** Slot values are parsed by the same rules, so they relax the same way. */
   $slots?: Record<string, SerializedPartial<SerializedLexicalNode>>;
 };
-
-/**
- * The generated exporter's result for `node`, or `undefined` when the
- * schema-driven walk has to run instead.
- *
- * A generated exporter is only ever right for the exact accessors its class
- * resolves, which is what {@link $generatedExportJSONFor} checks. Both forms
- * are generated — which properties the compact one drops depends on a node's
- * values, but the rule does not, so each form is its own straight-line
- * function. NodeState is appended afterwards rather than generated, because
- * what a node carries is not known when the code is written.
- *
- * @internal
- */
-export function $generatedExportJSON(
-  node: LexicalNode,
-  compact: boolean,
-): undefined | SerializedLexicalNode {
-  const generated = $generatedExportJSONFor(node, compact);
-  if (generated === undefined) {
-    return undefined;
-  }
-  return appendNodeStateJSON(node, generated(node));
-}
 
 /**
  * The shape {@link LexicalNode.updateFromJSON} accepts for a node whose
@@ -1729,24 +1704,29 @@ export class LexicalNode {
    */
   exportJSON(compact: boolean): SerializedPartial<SerializedLexicalNode>;
   exportJSON(compact = false): SerializedPartial<SerializedLexicalNode> {
-    const generated = $generatedExportJSON(this, compact);
-    if (generated !== undefined) {
-      return generated;
+    let json = $generatedExportJSON(this, compact);
+    if (json === undefined) {
+      // `children` is written first, before the schema's properties, so that
+      // an element's JSON reads structure-first — and so that this matches the
+      // key order the generated exporters emit.
+      json = $isElementNode(this) ? {children: []} : {};
+      $writeJSONGetters(this, json, compact);
+      json.type = this.__type;
+      if (!compact) {
+        // Deprecated and ignored on the way in; written only so the legacy
+        // form stays readable by older versions.
+        json.version = 1;
+      }
     }
-    // `children` is written first, before the schema's properties, so that an
-    // element's JSON reads structure-first — and so that this matches the key
-    // order the generated exporters emit.
-    const json: {[key: string]: unknown} = $isElementNode(this)
-      ? {children: []}
-      : {};
-    $writeJSONGetters(this, json, compact);
-    json.type = this.__type;
-    if (!compact) {
-      // Deprecated and ignored on the way in; written only so the legacy form
-      // stays readable by older versions.
-      json.version = 1;
+    // Neither a generated exporter nor the walk writes NodeState: what a node
+    // carries is not known when code is generated, and the walk's table is
+    // compiled from the schema alone. Appended here so the two paths cannot
+    // disagree about how it is written.
+    const state = this.__state ? this.__state.toJSON() : undefined;
+    if (state !== undefined) {
+      Object.assign(json, state);
     }
-    return appendNodeStateJSON(this, json);
+    return json as unknown as SerializedLexicalNode;
   }
 
   /**

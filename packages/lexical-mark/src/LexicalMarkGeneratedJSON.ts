@@ -37,71 +37,7 @@ function exportMarkNode(node: MarkNode): {[key: string]: unknown} {
   };
 }
 
-/**
- * MarkNode's generated implementations, for its `$config` — a factory,
- * because the compact comparison for `ids` goes through the
- * schema's own default and equality (its default is reference-typed, so no
- * literal a value could be `===` exists). The class passes the schemas it
- * declared and the comparisons close over them.
- *
- * @internal
- * @__NO_SIDE_EFFECTS__
- */
-export function createGeneratedMarkNode(config: {
-  ids: {
-    readonly defaultValue: unknown;
-    isEqual?(a: unknown, b: unknown): boolean;
-  };
-}): GeneratedJSON {
-  const ids_defaultValue = config.ids.defaultValue;
-  const ids_isEqual = config.ids.isEqual;
-  /** Generated from MarkNode's serialization schema. Do not edit by hand. */
-  function exportCompactMarkNode(node: MarkNode): {[key: string]: unknown} {
-    const textFormat = node.__textFormat;
-    const textStyle = node.__textStyle;
-    const shouldSerializeTextStyles =
-      (textFormat !== 0 || textStyle !== '') &&
-      node.shouldSerializeTextStyles();
-    const json: {[key: string]: unknown} = {children: []};
-    const ids = node.getIDs();
-    if (
-      ids !== undefined &&
-      ids !== ids_defaultValue &&
-      !(ids_isEqual !== undefined && ids_isEqual(ids, ids_defaultValue))
-    ) {
-      json.ids = ids;
-    }
-    const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
-      json.direction = direction;
-    }
-    const format = node.getFormatType();
-    if (format !== undefined && format !== '') {
-      json.format = format;
-    }
-    const indent = node.__indent;
-    if (indent !== undefined && indent !== 0) {
-      json.indent = indent;
-    }
-    if (
-      textFormat !== undefined &&
-      textFormat !== 0 &&
-      shouldSerializeTextStyles
-    ) {
-      json.textFormat = textFormat;
-    }
-    if (
-      textStyle !== undefined &&
-      textStyle !== '' &&
-      shouldSerializeTextStyles
-    ) {
-      json.textStyle = textStyle;
-    }
-    json.type = 'mark';
-    return json;
-  }
-  return {
-    exportJSON: exportMarkNode,
-    exportCompactJSON: exportCompactMarkNode,
-  };
-}
+/** MarkNode's generated implementations, for its `$config`. @internal */
+export const GENERATED_MARK: GeneratedJSON = {
+  exportJSON: exportMarkNode,
+};

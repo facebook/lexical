@@ -54,6 +54,8 @@ import {act, createRef, type JSX} from 'react';
 import {createRoot} from 'react-dom/client';
 import {afterEach, assert, beforeEach, expect} from 'vitest';
 
+import {$generatedExportJSON} from '../../LexicalUtils';
+
 const prettierConfig = prettier.resolveConfig(__filename);
 
 type TestEnv = {
@@ -609,6 +611,41 @@ export const DECORATOR_BOUNDARY_ANCHOR_HTML =
   '<img alt="" style="position: absolute !important; width: 0px !important; ' +
   'height: 0px !important; border: 0px !important; margin: 0px !important; ' +
   'padding: 0px !important;" data-lexical-decorator-boundary="true" />';
+
+/**
+ * Assert that a node with generated serialization code exports exactly what
+ * the schema-driven walk would — same values, same key order — in both forms.
+ *
+ * `walked` is a control node: an instance of a subclass that inherits the
+ * schema through the config chain but declares no `generated` of its own, so
+ * it takes the walk. Only the type string differs, by construction, and it is
+ * masked. The pair is first checked for not being vacuous — with the
+ * `generated` wiring dropped, both would walk and still agree.
+ */
+export function $expectSameJSON(
+  generated: LexicalNode,
+  walked: LexicalNode,
+): void {
+  expect($generatedExportJSON(generated, false)).toBeDefined();
+  expect($generatedExportJSON(walked, false)).toBeUndefined();
+  // Both forms: each is generated separately, so each has to agree with the
+  // walk separately.
+  for (const compact of [false, true]) {
+    const fromGenerated = generated.exportJSON(compact) as unknown as {
+      [key: string]: unknown;
+    };
+    const fromWalk = walked.exportJSON(compact) as unknown as {
+      [key: string]: unknown;
+    };
+    expect({compact, json: {...fromGenerated, type: null}}).toEqual({
+      compact,
+      json: {...fromWalk, type: null},
+    });
+    // Key order too: a document round-tripped through JSON.stringify should
+    // not reorder depending on which implementation exported it.
+    expect(Object.keys(fromGenerated)).toEqual(Object.keys(fromWalk));
+  }
+}
 
 export function expectHtmlToBeEqual(actual: string, expected: string): void {
   expect(prettifyHtml(actual)).toBe(prettifyHtml(expected));

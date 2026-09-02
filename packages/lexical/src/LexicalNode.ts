@@ -75,6 +75,7 @@ import {
   $setNodeKey,
   $setSelection,
   $writeJSONGetters,
+  appendNodeStateJSON,
   errorOnInsertTextNodeOnRoot,
   getRegisteredNode,
   getStaticNodeConfig,
@@ -543,8 +544,8 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
  * resolves, which is what {@link $generatedExportJSONFor} checks. Both forms
  * are generated — which properties the compact one drops depends on a node's
  * values, but the rule does not, so each form is its own straight-line
- * function. NodeState is appended here rather than generated, because what a
- * node carries is not known when the code is written.
+ * function. NodeState is appended afterwards rather than generated, because
+ * what a node carries is not known when the code is written.
  *
  * @internal
  */
@@ -556,12 +557,7 @@ export function $generatedExportJSON(
   if (generated === undefined) {
     return undefined;
   }
-  const json = generated(node);
-  const state = node.__state ? node.__state.toJSON() : undefined;
-  if (state !== undefined) {
-    Object.assign(json, state);
-  }
-  return json as unknown as SerializedLexicalNode;
+  return appendNodeStateJSON(node, generated(node));
 }
 
 /**
@@ -1750,11 +1746,7 @@ export class LexicalNode {
       // stays readable by older versions.
       json.version = 1;
     }
-    const state = this.__state ? this.__state.toJSON() : undefined;
-    if (state !== undefined) {
-      Object.assign(json, state);
-    }
-    return json as unknown as SerializedLexicalNode;
+    return appendNodeStateJSON(this, json);
   }
 
   /**

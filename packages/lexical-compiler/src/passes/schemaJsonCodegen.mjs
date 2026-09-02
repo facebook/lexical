@@ -256,6 +256,22 @@ export function verificationCorpus(meta) {
     '+1',
     'Infinity',
     'NaN',
+    // The edges of the JSON number grammar itself, each one a place the
+    // emitted regexp and numberValue's could be edited apart: a bare
+    // fraction, a trailing point, a signed zero, an exponent with no digits,
+    // an uppercase or signed exponent, and surrounding whitespace.
+    '.5',
+    '5.',
+    '-0',
+    '1e',
+    '1E5',
+    '1.5e3',
+    '1e+3',
+    '1e-3',
+    ' 1',
+    '1 ',
+    '1_000',
+    '--1',
     'banana',
     'toString',
     'constructor',
@@ -411,6 +427,21 @@ export function verifyTableCoversDomain({schema, table}) {
       throw new NotCompilable(
         `has no table entry for ${literal(value)}, which its schema produces`,
       );
+    }
+  }
+  if (meta.kind === 'enum') {
+    // The converse, which only an enum makes decidable: a key the schema can
+    // never produce is a member the table's author knows about and the enum
+    // does not — one list was extended and the other was not — and import
+    // would coerce that value to the default without anything noticing.
+    // Compared as property keys, which is what the lookup above compares.
+    const domain = new Set(meta.values.map(String));
+    for (const key of Object.keys(table)) {
+      if (!domain.has(key)) {
+        throw new NotCompilable(
+          `has a table entry for ${literal(key)} that its enum cannot produce`,
+        );
+      }
     }
   }
 }

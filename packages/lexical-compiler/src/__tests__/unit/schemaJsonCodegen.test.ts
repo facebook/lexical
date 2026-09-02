@@ -289,6 +289,26 @@ describe('verifyTableCoversDomain', () => {
       }),
     ).toThrow(/no table entry for "toString"/);
   });
+
+  test('a key the enum cannot produce is named', () => {
+    // The other direction of the same drift: a member added to the table and
+    // not to the enum is one import silently coerces to the default.
+    expect(() =>
+      verifyTableCoversDomain({
+        schema: mode,
+        table: {extra: 3, normal: 0, segmented: 2, token: 1},
+      }),
+    ).toThrow(/table entry for "extra" that its enum cannot produce/);
+  });
+
+  test('numeric members are compared as the property keys they become', () => {
+    expect(() =>
+      verifyTableCoversDomain({
+        schema: enumValue([0, 1]),
+        table: {0: 'a', 1: 'b'},
+      }),
+    ).not.toThrow();
+  });
 });
 
 describe('the emitted num helper', () => {

@@ -100,6 +100,8 @@ import {
   hasOwnKey,
   isSchemaField,
   type SchemaFieldBase,
+  type SchemaGetterField,
+  type SchemaSetterField,
 } from './LexicalSchema';
 import {
   $clampRangeSelectionToSlotFrame,
@@ -3744,6 +3746,58 @@ type CompiledGetter = CompactRule &
 
 const EMPTY_GETTERS: readonly CompiledGetter[] = [];
 
+/**
+ * The accessor `klass` reads a serialized property through: `null` for a
+ * property declared import-only, the {@link SchemaGetterField} when the direct
+ * field access holds, and otherwise the name of the getter method.
+ *
+ * This is the whole of the export direction's resolution rule, in one place:
+ * {@link compileGetters} builds the walk's table from it, and the codegen in
+ * `scripts/generate-node-json.mjs` emits its literal from it, so the two
+ * cannot describe different nodes.
+ *
+ * @internal
+ */
+export function resolveGetterAccessor(
+  klass: Klass<LexicalNode>,
+  key: string,
+  schema: AnySerializationSchema,
+): null | string | SchemaGetterField {
+  const declared = schema.getter;
+  if (declared === null) {
+    return null;
+  }
+  // `=== undefined`, not `||`: an empty recorded name is a mistake, not a
+  // request for the conventional one, and resolving it silently would apply
+  // some other accessor that happens to exist.
+  const named = declared === undefined ? defaultGetterName(key) : declared;
+  // A subclass override of the accessor a field stands in for reclaims the
+  // property; otherwise this is the field unchanged.
+  return isSchemaField(named)
+    ? resolveSchemaField(klass, key, named, defaultGetterName(key))
+    : named;
+}
+
+/**
+ * The setter mirror of {@link resolveGetterAccessor}.
+ *
+ * @internal
+ */
+export function resolveSetterAccessor(
+  klass: Klass<LexicalNode>,
+  key: string,
+  schema: AnySerializationSchema,
+): null | string | SchemaSetterField {
+  const declared = schema.setter;
+  if (declared === null) {
+    return null;
+  }
+  const named = declared === undefined ? defaultSetterName(key) : declared;
+  return isSchemaField(named)
+    ? resolveSchemaField(klass, key, named, defaultSetterName(key))
+    : named;
+}
+
 function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
   const prototype = klass.prototype as unknown as Record<string, unknown>;
   const fields = new Map<string, CompiledGetter>();
@@ -3759,21 +3813,12 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
   // accessor names included — TabNode repeats `getter: 'getTextContent'` for
   // that reason.
   for (const [key, schema] of getComposedSchema(klass).fieldsDerivedFirst) {
-    const declared = schema.getter;
-    if (declared === null) {
+    const getter = resolveGetterAccessor(klass, key, schema);
+    if (getter === null) {
       // Declared import-only; the property is written by an exportJSON
       // override, or not written at all.
       continue;
     }
-    // `=== undefined`, not `||`: an empty recorded name is a mistake, not a
-    // request for the conventional one, and resolving it silently would apply
-    // some other accessor that happens to exist.
-    const named = declared === undefined ? defaultGetterName(key) : declared;
-    // A subclass override of the accessor a field stands in for reclaims the
-    // property; otherwise this is the field unchanged.
-    const getter = isSchemaField(named)
-      ? resolveSchemaField(klass, key, named, defaultGetterName(key))
-      : named;
     if (isSchemaField(getter)) {
       const getterName = getter.field;
       // withField: the property *is* this node field, so reading it is a
@@ -4019,19 +4064,12 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
   // Applied ancestors-first: a base property is set before the subclass
   // properties that may depend on it.
   for (const [key, schema] of fieldsBaseFirst) {
-    const declared = schema.setter;
-    if (declared === null) {
+    const setter = resolveSetterAccessor(klass, key, schema);
+    if (setter === null) {
       // Declared export-only: the value is derived from other properties on
       // the way in (ListNode's `tag` follows from `listType`).
       continue;
     }
-    // `=== undefined` rather than `||`, as in the getter mirror.
-    const named = declared === undefined ? defaultSetterName(key) : declared;
-    // As in the getter mirror: a subclass override of the accessor this field
-    // stands in for is what the value goes through.
-    const setter = isSchemaField(named)
-      ? resolveSchemaField(klass, key, named, defaultSetterName(key))
-      : named;
     if (isSchemaField(setter)) {
       const setterName = setter.field;
       // withField: the property *is* this node field, so applying it is an
@@ -4159,6 +4197,29 @@ export function $generatedExportJSONFor(
   // passing the flag on. A class whose compact form could not be generated —
   // one with a property that compares by content — keeps the walk for it.
   return compact ? generated.exportCompactJSON : generated.exportJSON;
+}
+
+/**
+ * Finish a node's JSON by appending its NodeState.
+ *
+ * Neither a generated exporter nor the schema walk writes it: what a node
+ * carries is not known when the code is generated, and the walk's table is
+ * compiled from the schema alone. Every export path — the base `exportJSON`,
+ * {@link $generatedExportJSON} behind an override's `super` call, and the
+ * method {@link installGeneratedExportJSON} puts on a prototype — ends here,
+ * so they cannot disagree about how state is written.
+ *
+ * @internal
+ */
+export function appendNodeStateJSON(
+  node: LexicalNode,
+  json: {[key: string]: unknown},
+): SerializedLexicalNode {
+  const state = node.__state ? node.__state.toJSON() : undefined;
+  if (state !== undefined) {
+    Object.assign(json, state);
+  }
+  return json as unknown as SerializedLexicalNode;
 }
 
 /**
@@ -4509,9 +4570,11 @@ function injectSynthesizedStatics(
  *
  * The fast path is narrower than the export side's. It wants a node that is
  * exactly this class ({@link $applyNodeReplacement} may return a subclass, whose
- * own parser is not this one) and JSON carrying no NodeState (what a node
- * carries is not known when the code is generated, so the generated parser does
- * not write it). Anything else is the general path, unchanged.
+ * own parser is not this one) and no NodeState on either side — none in the
+ * JSON, and none the constructor put on the node (what a node carries is not
+ * known when the code is generated, so the generated parser neither writes it
+ * nor resets it the way {@link $updateStateFromJSON} would). Anything else is
+ * the general path, unchanged.
  */
 function synthesizeImportJSON(
   klass: Klass<LexicalNode>,
@@ -4530,6 +4593,7 @@ function synthesizeImportJSON(
     const node = $create(klass);
     if (
       node.constructor === klass &&
+      !node.__state &&
       serializedNode[NODE_STATE_KEY] === undefined
     ) {
       if (__DEV__) {
@@ -4537,8 +4601,9 @@ function synthesizeImportJSON(
         // is once per class rather than per node.
         validateOwnFields(record, node);
       }
-      generatedUpdateFromJSON(node, serializedNode);
-      return node;
+      // The parser's return is the walk's: the node passed in, unless a setter
+      // replaced it.
+      return generatedUpdateFromJSON(node, serializedNode);
     }
     return $applyImportJSON(node, serializedNode);
   };
@@ -4601,14 +4666,7 @@ function installGeneratedExportJSON(klass: Klass<LexicalNode>): void {
       // only export path these classes take.
       validateOwnFields(record, this);
     }
-    const json = generatedForm(this);
-    // What a node carries is not known when the code is generated, so
-    // NodeState is appended here rather than by the literal.
-    const state = this.__state ? this.__state.toJSON() : undefined;
-    if (state !== undefined) {
-      Object.assign(json, state);
-    }
-    return json as unknown as SerializedLexicalNode;
+    return appendNodeStateJSON(this, generatedForm(this));
   };
 }
 

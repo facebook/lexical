@@ -118,16 +118,6 @@ const TEXT_MODE_ENCODE: {readonly [key: string]: 0 | 1 | 2} =
     token: 1,
   });
 
-// Null-prototype: a key the table does not have must miss rather than
-// resolve to Object.prototype.
-const TAB_MODE_DECODE: {
-  readonly [key: string]: 'normal' | 'segmented' | 'token';
-} = /* @__PURE__ */ Object.assign(Object.create(null), {
-  '0': 'normal',
-  '1': 'token',
-  '2': 'segmented',
-});
-
 /** Generated from TextNode's serialization schema. Do not edit by hand. */
 function exportTextNode(node: TextNode): {[key: string]: unknown} {
   return {
@@ -331,7 +321,7 @@ export const GENERATED_LINEBREAK: GeneratedJSON = {
 function exportTabNode(node: TabNode): {[key: string]: unknown} {
   return {
     detail: node.__detail,
-    mode: TAB_MODE_DECODE[node.__mode],
+    mode: TEXT_MODE_DECODE[node.__mode],
     text: node.__text,
     format: node.__format,
     style: node.__style,

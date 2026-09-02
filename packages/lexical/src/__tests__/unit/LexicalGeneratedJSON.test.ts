@@ -22,6 +22,7 @@ import {
   $getState,
   $isElementNode,
   $isParagraphNode,
+  $isTextNode,
   $setState,
   createEditor,
   createState,
@@ -30,6 +31,7 @@ import {
   LineBreakNode,
   NODE_STATE_KEY,
   ParagraphNode,
+  type SerializedTextNode,
   TabNode,
   TextNode,
 } from '../..';
@@ -38,9 +40,14 @@ import {
   GENERATED_PARAGRAPH,
   GENERATED_TAB,
   GENERATED_TEXT,
+  type GeneratedJSON,
 } from '../../LexicalGeneratedJSON';
 import {LexicalNode as LexicalNodeClass} from '../../LexicalNode';
-import {$writeJSONGetters, getStaticNodeConfig} from '../../LexicalUtils';
+import {
+  $applyImportJSON,
+  $writeJSONGetters,
+  getStaticNodeConfig,
+} from '../../LexicalUtils';
 import {initializeUnitTest, invariant} from '../utils';
 
 const REPO = join(import.meta.dirname, '..', '..', '..', '..', '..');
@@ -419,6 +426,109 @@ describe('the synthesized importJSON closes over its generated parser', () => {
       expect(node).toBeInstanceOf(ReplacedText);
       expect(node.getTextContent()).toBe('hello');
     });
+  });
+
+  // The two properties of the general path that the fast path has to keep. A
+  // hand-built GeneratedJSON stands in for the generator's output: each class
+  // declares it in its own $config, which is all generatedFor asks.
+  const replacingGenerated: GeneratedJSON = {
+    exportJSON: node => ({text: (node as TextNode).__text}),
+    updateFromJSON: (node, json) => {
+      // What a schema setter that hands back another node looks like to the
+      // parser: the walk follows it, so the parser's caller must too.
+      const replacement = $createTextNode(String(json.text)).setStyle(
+        'swapped',
+      );
+      node.remove();
+      return replacement;
+    },
+  };
+
+  class ReplacingText extends TextNode {
+    $config() {
+      return this.config('replacing-text', {
+        extends: TextNode,
+        generated: replacingGenerated,
+      });
+    }
+  }
+
+  test('follows the node the generated parser returns', () => {
+    const editor = createEditor({
+      namespace: '',
+      nodes: [ReplacingText],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        const node = ReplacingText.importJSON({
+          text: 'hello',
+          type: 'replacing-text',
+          version: 1,
+        } as SerializedTextNode);
+        // $applyJSONSetters returns what the parser returned; the closure the
+        // synthesized importJSON keeps has to agree.
+        expect(node).not.toBeInstanceOf(ReplacingText);
+        invariant($isTextNode(node), 'expected the replacement TextNode');
+        expect(node.getStyle()).toBe('swapped');
+        expect(node.getTextContent()).toBe('hello');
+      },
+      {discrete: true},
+    );
+  });
+
+  const ctorState = createState('ctorFlag', {
+    parse: v => (typeof v === 'string' ? v : ''),
+  });
+
+  const passthroughGenerated: GeneratedJSON = {
+    exportJSON: node => ({text: (node as TextNode).__text}),
+    updateFromJSON: node => node,
+  };
+
+  class ConstructedStateText extends TextNode {
+    constructor(text = '', key?: string) {
+      super(text, key);
+      // A node that carries state before any property is applied: the general
+      // path resets known state from the JSON (which has none), so the fast
+      // path must not skip that reset.
+      $setState(this, ctorState, 'from-constructor');
+    }
+    $config() {
+      return this.config('constructed-state-text', {
+        extends: TextNode,
+        generated: passthroughGenerated,
+      });
+    }
+  }
+
+  test('a node constructed with NodeState takes the general path', () => {
+    const editor = createEditor({
+      namespace: '',
+      nodes: [ConstructedStateText],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        const fresh = $create(ConstructedStateText);
+        expect($getState(fresh, ctorState)).toBe('from-constructor');
+        const json = {
+          text: '',
+          type: 'constructed-state-text',
+          version: 1,
+        } as SerializedTextNode;
+        const imported = ConstructedStateText.importJSON(json);
+        const walked = $applyImportJSON($create(ConstructedStateText), json);
+        expect($getState(imported, ctorState)).toBe(
+          $getState(walked, ctorState),
+        );
+      },
+      {discrete: true},
+    );
   });
 });
 

@@ -214,18 +214,14 @@ if (!process.env.LEXICAL_CODEGEN_PHASE_TWO) {
 // ending in `.ts` is a type error under this repo's settings.
 const {isSchemaField, LineBreakNode, ParagraphNode, TabNode, TextNode} =
   await import('lexical');
-// Both are `@internal` — how a class composes its schema and which accessor a
+// All three are `@internal` — how a class composes its schema and which accessor a
 // field stands in for are this codegen's concern and the walk's, not a public
 // API to be frozen by the backwards-compatibility rule — so they are reached
 // through the module that declares them rather than the package entry point.
 // `paths` maps `lexical/src/*` the same way it maps `lexical`, so this is the
 // same module instance the editor uses, not a second copy.
-const {
-  defaultGetterName,
-  defaultSetterName,
-  getComposedSchema,
-  resolveSchemaField,
-} = await import('lexical/src/LexicalUtils');
+const {getComposedSchema, resolveGetterAccessor, resolveSetterAccessor} =
+  await import('lexical/src/LexicalUtils');
 const {HeadingNode, QuoteNode} = await import('@lexical/rich-text');
 const {AutoLinkNode, LinkNode} = await import('@lexical/link');
 const {MarkNode} = await import('@lexical/mark');
@@ -294,6 +290,16 @@ const factoryName = (/** @type {NodeClass} */ klass) =>
 const tables = new Map();
 
 /**
+ * The name each table object was first recorded under, so a schema table two
+ * classes share (TabNode's `mode` decodes through the same TEXT_TYPE_TO_MODE
+ * as TextNode's) is emitted once under the first name rather than once per
+ * class.
+ *
+ * @type {Map<{readonly [key: string]: unknown}, string>}
+ */
+const tableNames = new Map();
+
+/**
  * Name and record a lookup table for the generated module.
  *
  * Every table is null-prototype, because every table can be reached by a key
@@ -311,6 +317,11 @@ const tables = new Map();
  * @returns {string}
  */
 function addTable(name, table) {
+  const existing = tableNames.get(table);
+  if (existing !== undefined) {
+    return existing;
+  }
+  tableNames.set(table, name);
   tables.set(name, table);
   return name;
 }
@@ -318,51 +329,6 @@ function addTable(name, table) {
 /** @param {NodeClass} klass @param {string} key @param {string} suffix */
 function tableName(klass, key, suffix) {
   return `${klass.name.replace(/Node$/, '').toUpperCase()}_${key.toUpperCase()}_${suffix}`;
-}
-
-/**
- * The accessor `klass` reaches one direction of `key` through, after the
- * subclass-override guard — the same resolution the walk makes, from the same
- * function, so a generated literal cannot describe a different node.
- *
- * Split by direction rather than taking a `'getter' | 'setter'` argument so
- * each returns the field type that carries its own table: the getter's
- * `decode` and the setter's `encode` are then the only one in scope, with no
- * cast to reintroduce the other.
- *
- * @param {NodeClass} klass
- * @param {AnySchema} schema
- * @param {string} key
- * @returns {undefined | null | string | import('lexical').SchemaGetterField}
- */
-function getterAccessor(klass, schema, key) {
-  const declared = schema.getter;
-  if (declared === null) {
-    return null;
-  }
-  const named = declared === undefined ? defaultGetterName(key) : declared;
-  return isSchemaField(named)
-    ? resolveSchemaField(klass, key, named, defaultGetterName(key))
-    : named;
-}
-
-/**
- * The setter mirror of {@link getterAccessor}.
- *
- * @param {NodeClass} klass
- * @param {AnySchema} schema
- * @param {string} key
- * @returns {undefined | null | string | import('lexical').SchemaSetterField}
- */
-function setterAccessor(klass, schema, key) {
-  const declared = schema.setter;
-  if (declared === null) {
-    return null;
-  }
-  const named = declared === undefined ? defaultSetterName(key) : declared;
-  return isSchemaField(named)
-    ? resolveSchemaField(klass, key, named, defaultSetterName(key))
-    : named;
 }
 
 /**
@@ -376,7 +342,7 @@ function setterAccessor(klass, schema, key) {
  * @returns {null | {expression: string, when?: string}}
  */
 function readExpression(klass, schema, key) {
-  const getter = getterAccessor(klass, schema, key);
+  const getter = resolveGetterAccessor(klass, key, schema);
   if (getter === null) {
     // Declared import-only, like the walk's compiled getters skip it.
     return null;
@@ -703,7 +669,7 @@ function writeExpression(klass, schema, key) {
     // verification compares values, so it would not notice.
     throw new NotCompilable(`"${key}" is also an Object.prototype member`);
   }
-  const setter = setterAccessor(klass, schema, key);
+  const setter = resolveSetterAccessor(klass, key, schema);
   if (setter === null) {
     throw new NotCompilable(`"${key}" is export-only`);
   }
@@ -714,7 +680,9 @@ function writeExpression(klass, schema, key) {
   );
   const nullPrototypeTables = parseTables.map(({name}) => name);
   for (const {name, table} of parseTables) {
-    addTable(name, table);
+    // Recorded under the name the compiler already wrote into `expression`,
+    // so these are not shared the way addTable shares a schema's own tables.
+    tables.set(name, table);
   }
   if (!isSchemaField(setter)) {
     // Applied through a method: call it and follow what it returns, which is
@@ -746,8 +714,7 @@ function writeExpression(klass, schema, key) {
   // property per node is most of what generating this was meant to remove.
   let statements = `  v = json.${key};\n  self.${setter.field} = ${expression};`;
   if (encode !== undefined) {
-    const name = tableName(klass, key, 'ENCODE');
-    addTable(name, encode);
+    const name = addTable(tableName(klass, key, 'ENCODE'), encode);
     nullPrototypeTables.push(name);
     // The schema already reduced the value to its own domain, so the table is
     // total over what reaches it; the guard is for a domain member with no
@@ -854,6 +821,7 @@ function tableValueType(table) {
  */
 function generatePackage(pkg) {
   tables.clear();
+  tableNames.clear();
   // Every class is exportable: the base `exportJSON` writes exactly the
   // schema's properties plus type/version, and NodeState is appended by the
   // dispatch. A class that overrides `exportJSON` for output no schema

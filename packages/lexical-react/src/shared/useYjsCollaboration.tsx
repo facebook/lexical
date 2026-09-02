@@ -65,6 +65,7 @@ import {
   type Snapshot,
   type Transaction,
   UndoManager,
+  type XmlElement,
   type YEvent,
 } from 'yjs';
 
@@ -210,6 +211,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData?: object;
     excludedProperties?: ExcludedProperties;
     rootName?: string;
+    getXmlElement?: (ydoc: Doc) => XmlElement;
     selectionHighlight?: boolean;
     __shouldBootstrapUnsafe?: boolean;
   } = {},
@@ -218,6 +220,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData,
     excludedProperties,
     rootName,
+    getXmlElement,
     selectionHighlight = false,
     __shouldBootstrapUnsafe: shouldBootstrap,
   } = options;
@@ -225,13 +228,19 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
   // Note: v2 does not support 'reload' event, which is not an actual Yjs event type.
   const isReloadingDoc = useMemo(() => ({current: false}), []);
 
-  const binding = useMemo(
-    () =>
-      createBindingV2__EXPERIMENTAL(editor, id, doc, docMap, {
-        excludedProperties,
-        rootName,
-      }),
-    [editor, id, doc, docMap, excludedProperties, rootName],
+  // Built once for this mount, in state rather than a memo: `useMemo` is a
+  // hint React may discard, and its inputs include values (an inline
+  // `excludedProperties` map, an inline root resolver) whose identity changes
+  // on every render. Rebuilding would re-run `getXmlElement` -- which the
+  // caller may use to create shared types -- and hand the editor a binding on
+  // another root, which the next local update would then overwrite with this
+  // editor's current content. Remount to edit a different document.
+  const [binding] = useState(() =>
+    createBindingV2__EXPERIMENTAL(editor, id, doc, docMap, {
+      excludedProperties,
+      getXmlElement,
+      rootName,
+    }),
   );
 
   useEffect(() => {

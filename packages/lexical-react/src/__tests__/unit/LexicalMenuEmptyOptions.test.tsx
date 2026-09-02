@@ -118,8 +118,11 @@ describe('LexicalMenu arrow keys with no options', () => {
       COMMAND_PRIORITY_EDITOR,
     );
     const event = new KeyboardEvent('keydown', {cancelable: true});
+    let handled: boolean = false;
     try {
-      const handled = editor.dispatchCommand(command, event);
+      act(() => {
+        handled = editor.dispatchCommand(command, event);
+      });
       return {defaultPrevented: event.defaultPrevented, handled, reachedEditor};
     } finally {
       removeFallback();

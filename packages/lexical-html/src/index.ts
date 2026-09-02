@@ -19,6 +19,7 @@ import {
   $getSelectionSlotFrame,
   $isBlockElementNode,
   $isElementNode,
+  $isLineBreakNode,
   $isNodeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
@@ -275,6 +276,43 @@ export function $generateHtmlFromNodes(
   ).innerHTML;
 }
 
+/**
+ * A `<br>` that is the last (or only) child of a block element is not rendered
+ * by browsers, so both HTML importers drop it — see `isLastChildInBlockNode`
+ * and `isOnlyChildInBlockNode`. The reconciler works around that in the live
+ * DOM by appending a managed terminator `<br>` after a trailing LineBreakNode
+ * (`ElementDOMSlot.insertManagedLineBreak`); exported HTML had no equivalent,
+ * so `<p>a<br></p>` rendered as a single line and re-imported without the
+ * LineBreakNode at all.
+ *
+ * Emit the same terminator here, marked with the same
+ * `data-lexical-managed-linebreak` attribute the reconciler uses, so exported
+ * HTML and a scrape of the live DOM describe a trailing break identically and
+ * a consumer can tell the terminator apart from authored content. The
+ * importers drop it and keep the authored break, which makes the export/import
+ * round trip lossless without relaxing the rendering-faithful import rules —
+ * they match on position, so the marker is metadata rather than load-bearing
+ * and a sanitizer that strips it changes nothing.
+ */
+function $appendTerminatingLineBreak(
+  element: HTMLElement | DocumentFragment,
+  lastIncludedChild: null | LexicalNode,
+): void {
+  const lastChild = element.lastChild;
+  if (
+    $isLineBreakNode(lastIncludedChild) &&
+    isHTMLElement(element) &&
+    isBlockDomNode(element) &&
+    lastChild !== null &&
+    lastChild.nodeName === 'BR'
+  ) {
+    const br = $getDocument().createElement('br');
+    // Same marker as ElementDOMSlot.insertManagedLineBreak writes in the live DOM.
+    br.setAttribute('data-lexical-managed-linebreak', 'true');
+    element.append(br);
+  }
+}
+
 function $appendNodesToHTML(
   editor: LexicalEditor,
   currentNode: LexicalNode,
@@ -320,6 +358,7 @@ function $appendNodesToHTML(
       ? null
       : selection;
   const fragmentAppend = fragment.append.bind(fragment);
+  let lastIncludedChild: null | LexicalNode = null;
   for (const childNode of children) {
     const shouldIncludeChild = $appendNodesToHTML(
       editor,
@@ -328,6 +367,10 @@ function $appendNodesToHTML(
       childSelection,
       domConfig,
     );
+
+    if (shouldIncludeChild) {
+      lastIncludedChild = childNode;
+    }
 
     if (
       !shouldInclude &&
@@ -351,6 +394,7 @@ function $appendNodesToHTML(
       } else {
         element.append(fragment);
       }
+      $appendTerminatingLineBreak(element, lastIncludedChild);
     }
     if (isDocumentFragment(element)) {
       // Resolve `after` before handing the fragment to the parent: appending a

@@ -10,6 +10,7 @@ import {
   batch,
   effect,
   getPeerDependencyFromEditor,
+  type HMRExtension,
   namedSignals,
   type ReadonlySignal,
   type Signal,
@@ -822,6 +823,8 @@ export const HistoryExtension = defineExtension({
   },
 });
 
+const HMR_EXTENSION_NAME = '@lexical/extension/HMR';
+
 function getHistoryPeer(editor: LexicalEditor | null | undefined) {
   return editor
     ? getPeerDependencyFromEditor<typeof HistoryExtension>(
@@ -829,6 +832,29 @@ function getHistoryPeer(editor: LexicalEditor | null | undefined) {
         HistoryExtension.name,
       )
     : null;
+}
+
+/**
+ * Reads `editor`'s HMR restore counter, subscribing the calling effect to it.
+ *
+ * `HMRExtension` restores an editor's `HistoryState` by assigning a rebuilt
+ * one to that editor's signal, which for a shared history would leave this
+ * editor and its parent holding two different histories — this editor's own
+ * restore replacing the shared object, or the parent's leaving this one
+ * pointing at the object the parent no longer uses. Depending on the counter
+ * re-runs the sync below after either, which re-links them.
+ *
+ * A peer lookup by name rather than a dependency: HMRExtension is a
+ * development-time extension that most editors do not have.
+ */
+function hmrRestoreCount(editor: LexicalEditor | null | undefined): number {
+  const peer = editor
+    ? getPeerDependencyFromEditor<typeof HMRExtension>(
+        editor,
+        HMR_EXTENSION_NAME,
+      )
+    : undefined;
+  return peer ? peer.output.restoreCount.value : 0;
 }
 
 export interface SharedHistoryConfig {
@@ -870,6 +896,10 @@ export const SharedHistoryExtension = defineExtension({
       const {disabled, parentEditor} = state.getOutput();
       if (!disabled.value) {
         const {output} = state.getDependency(HistoryExtension);
+        // Subscribe to both restore counters, so that an HMR reload that
+        // rebuilds either editor's history re-links the two.
+        hmrRestoreCount(editor);
+        hmrRestoreCount(parentEditor.value);
         const parentPeer = getHistoryPeer(parentEditor.value);
         if (!parentPeer) {
           return;

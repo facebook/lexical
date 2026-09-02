@@ -82,6 +82,7 @@ export type {
   Binding,
   BindingV2,
   ClientID,
+  CreateBindingV2Options__EXPERIMENTAL,
   CreateYjsBindingOptions,
   ExcludedProperties,
 } from './Bindings';

@@ -103,6 +103,7 @@ import {
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   INSERT_TAB_COMMAND,
+  INTERNAL_$expandSelectionToWholeDocument,
   IS_APPLE_WEBKIT,
   IS_IOS,
   IS_SAFARI,
@@ -556,6 +557,20 @@ async function onCutForRichText(
   event: CommandPayloadType<typeof CUT_COMMAND>,
   editor: LexicalEditor,
 ): Promise<void> {
+  // Widen a whole-document range to the blocks themselves *before* the copy, so
+  // the clipboard carries exactly what the removal below takes out: Cmd+X then
+  // Cmd+V has to restore the heading, quote or list it took, not just its text
+  // (#5835). A collapsed caret cuts nothing and is left alone. Tagged like the
+  // removal so the two stay one entry in history.
+  editor.update(
+    () => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+        INTERNAL_$expandSelectionToWholeDocument(selection);
+      }
+    },
+    {discrete: true, tag: CUT_TAG},
+  );
   await copyToClipboard(
     editor,
     objectKlassEquals(event, ClipboardEvent) ? event : null,

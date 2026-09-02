@@ -301,11 +301,7 @@ function $normalizeMarkdownTextNode(textNode: TextNode): void {
   }
   const format = textNode.getFormat();
   const style = textNode.getStyle();
-  let target: LexicalNode = textNode;
-  const append = (node: LexicalNode) => {
-    target.insertAfter(node);
-    target = node;
-  };
+  const nodes: LexicalNode[] = [];
   let start = 0;
   for (
     let index = text.indexOf('\t');
@@ -313,21 +309,21 @@ function $normalizeMarkdownTextNode(textNode: TextNode): void {
     index = text.indexOf('\t', index + 1)
   ) {
     if (index > start) {
-      append(
+      nodes.push(
         $createTextNode(text.slice(start, index))
           .setFormat(format)
           .setStyle(style),
       );
     }
-    append($createTabNode());
+    nodes.push($createTabNode());
     start = index + 1;
   }
   if (start < text.length) {
-    append(
+    nodes.push(
       $createTextNode(text.slice(start)).setFormat(format).setStyle(style),
     );
   }
-  textNode.remove();
+  textNode.getParentOrThrow().splice(textNode.getIndexWithinParent(), 1, nodes);
 }
 
 function createTextFormatTransformersIndex(

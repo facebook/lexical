@@ -345,6 +345,7 @@ describe('LexicalTableMobileSelection touch gestures (#8538)', () => {
       defineExtension({
         dependencies: [TableExtension],
         name: '@lexical/table/MobileSelectionTest',
+        theme: {tableScrollableWrapper: ''},
       }),
     );
     editor.setRootElement(container);

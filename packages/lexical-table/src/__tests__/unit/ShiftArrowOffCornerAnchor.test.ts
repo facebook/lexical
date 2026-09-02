@@ -23,11 +23,12 @@ import {
   $setSelection,
   defineExtension,
   KEY_ARROW_DOWN_COMMAND,
+  type LexicalEditorWithDispose,
 } from 'lexical';
 import {afterEach, assert, beforeEach, describe, expect, test} from 'vitest';
 
 let container: HTMLDivElement;
-let editor: ReturnType<typeof buildEditorFromExtensions>;
+let editor: LexicalEditorWithDispose;
 
 beforeEach(() => {
   container = document.createElement('div');
@@ -36,6 +37,7 @@ beforeEach(() => {
     defineExtension({
       dependencies: [TableExtension],
       name: 'shift-arrow-corner-host',
+      theme: {tableScrollableWrapper: ''},
     }),
   );
   // The arrow key handlers come from the table selection observer, which needs

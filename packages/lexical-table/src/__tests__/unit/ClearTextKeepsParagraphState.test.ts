@@ -23,11 +23,12 @@ import {
   $setSelection,
   defineExtension,
   KEY_BACKSPACE_COMMAND,
+  type LexicalEditorWithDispose,
 } from 'lexical';
 import {afterEach, assert, beforeEach, describe, expect, test} from 'vitest';
 
 let container: HTMLDivElement;
-let editor: ReturnType<typeof buildEditorFromExtensions>;
+let editor: LexicalEditorWithDispose;
 
 beforeEach(() => {
   container = document.createElement('div');
@@ -36,6 +37,7 @@ beforeEach(() => {
     defineExtension({
       dependencies: [TableExtension],
       name: 'clear-text-host',
+      theme: {tableScrollableWrapper: ''},
     }),
   );
   // The table selection observer only registers its key handlers once the

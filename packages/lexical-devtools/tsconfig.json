@@ -65,6 +65,9 @@
       "@lexical/react/LexicalAutoEmbedPlugin": [
         "../lexical-react/src/LexicalAutoEmbedPlugin.tsx"
       ],
+      "@lexical/react/LexicalAutoEmbedPluginUtils": [
+        "../lexical-react/src/LexicalAutoEmbedPluginUtils.ts"
+      ],
       "@lexical/react/LexicalAutoFocusPlugin": [
         "../lexical-react/src/LexicalAutoFocusPlugin.ts"
       ],
@@ -88,6 +91,9 @@
       ],
       "@lexical/react/LexicalCollaborationContext": [
         "../lexical-react/src/LexicalCollaborationContext.tsx"
+      ],
+      "@lexical/react/LexicalCollaborationContextUtils": [
+        "../lexical-react/src/LexicalCollaborationContextUtils.ts"
       ],
       "@lexical/react/LexicalCollaborationPlugin": [
         "../lexical-react/src/LexicalCollaborationPlugin.tsx"
@@ -140,6 +146,9 @@
       "@lexical/react/LexicalMarkdownShortcutPlugin": [
         "../lexical-react/src/LexicalMarkdownShortcutPlugin.tsx"
       ],
+      "@lexical/react/LexicalMenuOption": [
+        "../lexical-react/src/LexicalMenuOption.ts"
+      ],
       "@lexical/react/LexicalNestedComposer": [
         "../lexical-react/src/LexicalNestedComposer.tsx"
       ],
@@ -178,6 +187,9 @@
       ],
       "@lexical/react/LexicalTypeaheadMenuPlugin": [
         "../lexical-react/src/LexicalTypeaheadMenuPlugin.tsx"
+      ],
+      "@lexical/react/LexicalTypeaheadMenuPluginUtils": [
+        "../lexical-react/src/LexicalTypeaheadMenuPluginUtils.ts"
       ],
       "@lexical/react/ReactExtension": [
         "../lexical-react/src/ReactExtension.tsx"

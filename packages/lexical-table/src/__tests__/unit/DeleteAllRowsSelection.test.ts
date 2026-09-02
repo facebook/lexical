@@ -37,6 +37,7 @@ function deleteWholeTable(kind: 'row' | 'column'): {
     defineExtension({
       dependencies: [TableExtension],
       name: `delete-all-${kind}-host`,
+      theme: {tableScrollableWrapper: ''},
     }),
   );
 

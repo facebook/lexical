@@ -10,7 +10,7 @@
     "serialization"
   ],
   "license": "MIT",
-  "version": "0.49.0",
+  "version": "0.50.0",
   "main": "./dist/LexicalFastCheck.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {

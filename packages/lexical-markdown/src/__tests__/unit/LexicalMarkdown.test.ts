@@ -62,7 +62,10 @@ import {
   $setSelectionFromCaretRange,
   $setState,
   COMPOSITION_END_TAG,
+  type CreateEditorArgs,
   KEY_ENTER_COMMAND,
+  type LexicalEditor,
+  type LexicalNode,
   TEXT_TYPE_TO_FORMAT,
   type TextNode,
 } from 'lexical';
@@ -83,8 +86,8 @@ import {
  * `buildEditorFromExtensions` does by default.
  */
 function createTestEditor(
-  config: Parameters<typeof createHeadlessEditor>[0] = {},
-): ReturnType<typeof createHeadlessEditor> {
+  config: CreateEditorArgs | undefined = {},
+): LexicalEditor {
   return createHeadlessEditor({
     nodes: [HeadingNode, ListNode, ListItemNode, QuoteNode, CodeNode, LinkNode],
     ...config,
@@ -3420,10 +3423,7 @@ describe('Typed sublist shortcuts', () => {
     LinkNode,
   ];
 
-  function typeLines(
-    editor: ReturnType<typeof createHeadlessEditor>,
-    lines: string[],
-  ): void {
+  function typeLines(editor: LexicalEditor, lines: string[]): void {
     for (const line of lines) {
       editor.update(
         () => {
@@ -3450,7 +3450,7 @@ describe('Typed sublist shortcuts', () => {
     }
   }
 
-  function caretText(editor: ReturnType<typeof createHeadlessEditor>): string {
+  function caretText(editor: LexicalEditor): string {
     return editor.read('latest', () => {
       const selection = $getSelection();
       assert($isRangeSelection(selection), 'expected a range selection');
@@ -3718,7 +3718,7 @@ describe('$generateNodesFromMarkdownString', () => {
       {discrete: true},
     );
 
-    let nodes: ReturnType<typeof $generateNodesFromMarkdownString> = [];
+    let nodes: LexicalNode[] = [];
     editor.update(
       () => {
         nodes = $generateNodesFromMarkdownString(
@@ -3804,7 +3804,7 @@ describe('$generateNodesFromMarkdownString', () => {
   it('handles adjacent line merging (commonmark)', () => {
     const editor = createTestEditor();
 
-    let nodes: ReturnType<typeof $generateNodesFromMarkdownString> = [];
+    let nodes: LexicalNode[] = [];
     editor.update(
       () => {
         nodes = $generateNodesFromMarkdownString(

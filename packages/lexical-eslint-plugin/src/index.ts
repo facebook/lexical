@@ -15,12 +15,14 @@ import type {Rule} from 'eslint';
 
 import * as jsPlugin from './LexicalEslintPlugin.js';
 
+export type {NoNestedEditorUpdatesOptions} from './rules/no-nested-editor-updates.js';
 export type {RulesOfLexicalOptions} from './rules/rules-of-lexical.js';
 
 // Legacy config format (ESLint 7-8)
 export interface LegacyConfig {
   plugins: string[];
   rules: {
+    '@lexical/no-nested-editor-updates': 'warn' | 'error' | 'off';
     '@lexical/rules-of-lexical': 'warn' | 'error' | 'off';
   };
 }
@@ -31,6 +33,7 @@ export interface FlatConfig {
     '@lexical': Plugin;
   };
   rules: {
+    '@lexical/no-nested-editor-updates': 'warn' | 'error' | 'off';
     '@lexical/rules-of-lexical': 'warn' | 'error' | 'off';
   };
 }
@@ -42,6 +45,7 @@ export interface Plugin {
   };
   rules: {
     'no-document-in-dom-methods': Rule.RuleModule;
+    'no-nested-editor-updates': Rule.RuleModule;
     'rules-of-lexical': Rule.RuleModule;
   };
   configs: {

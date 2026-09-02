@@ -38,7 +38,11 @@ For ESLint 7 or 8 with the legacy `.eslintrc` format, extend the recommended con
 }
 ```
 
-> **Note:** The `recommended` and `all` configs are currently aliases to `legacy-recommended` and `legacy-all`. `all` and `recommended` will be migrated to flat config in a future version.
+> **Note:** The unprefixed `recommended` and `all` configs are legacy aliases.
+> Use `flat/recommended` or `flat/all` with ESLint 9+. The default presets enable
+> `@lexical/rules-of-lexical` and `@lexical/no-nested-editor-updates` as
+> warnings. `@lexical/no-document-in-dom-methods` remains opt-in because it is
+> specific to Lexical DOM method implementations.
 
 ### Custom Configuration
 
@@ -73,6 +77,141 @@ export default [
   }
 }
 ```
+
+### Preventing nested editor updates
+
+`@lexical/no-nested-editor-updates` reports `editor.update()` calls that are
+already inside an update context for the same editor. This includes callbacks
+passed directly to `editor.update`, `editor.registerCommand`, and
+`editor.registerNodeTransform` when the outer and inner receiver can be tied to
+the same expression and identifier binding.
+
+The rule also reports a same-editor update directly inside `editor.read()`,
+including the `editor.read(mode, callback)` overload. A read callback is
+read-only, so this diagnostic does not suggest removing the wrapper. It explains
+that the update is deferred until the read returns and should be moved after the
+read callback.
+
+The rule also reports an `editor.update()` directly inside a $function. In
+that case the diagnostic explains both valid fixes: remove the update wrapper
+if the function uses the active editor context, or remove the `$` prefix if the
+function intentionally owns the update.
+
+The default presets enable the rule as a warning. You can promote it to an error
+or turn it off in the `rules` object in either configuration format:
+
+```js
+const rules = {
+  '@lexical/no-nested-editor-updates': 'error'
+};
+```
+
+For example, this command listener schedules a nested update:
+
+```js
+editor.registerCommand(
+  REMOVE_NODE_COMMAND,
+  () => {
+    editor.update(() => {
+      $getSelection().removeText();
+    });
+    return true;
+  },
+  COMMAND_PRIORITY_EDITOR,
+);
+```
+
+The listener already has an implicit update context, so the callback should run
+directly:
+
+```js
+editor.registerCommand(
+  REMOVE_NODE_COMMAND,
+  () => {
+    $getSelection().removeText();
+    return true;
+  },
+  COMMAND_PRIORITY_EDITOR,
+);
+```
+
+A nested update in a read callback must retain its wrapper, but it should run
+after the read:
+
+```js
+const shouldRemove = editor.read('latest', () => {
+  return $getSelection()?.isCollapsed() === false;
+});
+
+if (shouldRemove) {
+  editor.update(() => {
+    $getSelection()?.removeText();
+  });
+}
+```
+
+An update to a different editor is valid and is not reported:
+
+```js
+editor.registerCommand(
+  SYNC_CHILD_COMMAND,
+  () => {
+    childEditor.update(() => {
+      $getRoot().clear();
+    });
+    return true;
+  },
+  COMMAND_PRIORITY_EDITOR,
+);
+```
+
+When a nested update has a statically analyzable `options` object, the diagnostic
+also explains how to preserve options that can be applied to the current update
+context: use `$addUpdateTag` for `tag`, `$flushSyncAfterUpdate` for `discrete`,
+and `$onUpdate` for `onUpdate`, then remove the wrapper. Call `$addUpdateTag`
+once for each value when `tag` is an array.
+
+`skipTransforms` has no in-place equivalent. The rule therefore leaves alone
+options objects containing `skipTransforms` as well as identifiers, spreads,
+computed properties, and unknown properties that might hide it. Options on an
+update inside `read()` are preserved unchanged when that update is moved after
+the read callback.
+
+To avoid matching unrelated APIs that also have an `update` method, editor
+expressions must end in `editor`, ignoring case. This recognizes names such as
+`editor`, `childEditor`, `props.editor`, `$getEditor()`, and `this.editor`, but
+callback checks report only when the inner expression can be tied to the outer
+expression. `this.editor` is treated as the same receiver across an arrow
+callback, where `this` is lexical; it is not assumed to be the same across an
+ordinary function callback.
+
+Inside a $function, the default active-editor names are `editor` and
+`$getEditor()`; differently named receivers are left alone because they may
+refer to another editor. Additional names or patterns can be configured with
+`isEditor`. The `isDollarFunction` option extends the default `/^\$[a-z_]/`
+function-name matcher:
+
+```js
+const rules = {
+  '@lexical/no-nested-editor-updates': [
+    'error',
+    {
+      isDollarFunction: '^INTERNAL_\\$',
+      isEditor: ['^lexicalInstance$', '^getMyEditor$'],
+    },
+  ],
+};
+```
+
+Configured zero-argument accessors are compared consistently, so repeated
+`getMyEditor()` calls in the same direct callback are recognized as the same
+editor expression.
+
+The analysis is deliberately local. It does not follow callbacks passed by
+reference, aliases between differently named editor variables, or updates
+inside another nested callback such as `setTimeout(() => editor.update(...))`.
+These limits avoid suggestions that could change behavior when the editor or
+execution context cannot be proven statically.
 
 ### Advanced configuration
 

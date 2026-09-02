@@ -12,12 +12,16 @@ const {name, version} = require('../package.json');
 const {
   noDocumentInDomMethods,
 } = require('./rules/no-document-in-dom-methods.js');
+const {noNestedEditorUpdates} = require('./rules/no-nested-editor-updates.js');
 const {rulesOfLexical} = require('./rules/rules-of-lexical.js');
 
 // Legacy config format (ESLint 7-8)
 const legacyAll = {
   plugins: ['@lexical'],
   rules: {
+    '@lexical/no-nested-editor-updates': /** @type {'warn'|'error'|'off'}*/ (
+      'warn'
+    ),
     '@lexical/rules-of-lexical': /** @type {'warn'|'error'|'off'}*/ ('warn'),
   },
 };
@@ -36,6 +40,7 @@ const plugin = {
   meta: {name, version},
   rules: {
     'no-document-in-dom-methods': noDocumentInDomMethods,
+    'no-nested-editor-updates': noNestedEditorUpdates,
     'rules-of-lexical': rulesOfLexical,
   },
 };
@@ -47,6 +52,8 @@ const flatAll = {
     '@lexical': plugin,
   },
   rules: {
+    '@lexical/no-nested-editor-updates':
+      'warn' /** @type {'warn'|'error'|'off'}*/,
     '@lexical/rules-of-lexical': 'warn' /** @type {'warn'|'error'|'off'}*/,
   },
 };

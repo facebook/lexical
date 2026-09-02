@@ -335,6 +335,11 @@ export default [
   })),
   lexicalPlugin.configs['flat/all'],
   {
+    rules: {
+      '@lexical/no-nested-editor-updates': ERROR,
+    },
+  },
+  {
     files: ['**/*.ts', '**/*.tsx', '**/*.mts'],
     languageOptions: {
       globals: {

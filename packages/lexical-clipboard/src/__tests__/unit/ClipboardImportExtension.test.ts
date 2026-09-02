@@ -50,7 +50,7 @@ function dataTransferWithPlainText(text: string): DataTransfer {
   return dt as unknown as DataTransfer;
 }
 
-function $pasteHtml(
+function pasteHtml(
   editor: ReturnType<typeof buildEditorFromExtensions>,
   html: string,
 ) {
@@ -73,7 +73,7 @@ describe('ClipboardImportExtension', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({$initialEditorState, name: 'host'}),
     );
-    $pasteHtml(editor, '<p>hello</p>');
+    pasteHtml(editor, '<p>hello</p>');
     editor.read(() => {
       const lastChild = $getRoot().getLastChild();
       assert($isParagraphNode(lastChild), 'expected paragraph');
@@ -105,7 +105,7 @@ describe('ClipboardImportExtension', () => {
         name: 'host',
       }),
     );
-    $pasteHtml(editor, '<p>ignored</p>');
+    pasteHtml(editor, '<p>ignored</p>');
     editor.read(() => {
       const lastChild = $getRoot().getLastChild();
       assert($isParagraphNode(lastChild), 'expected paragraph');
@@ -134,7 +134,7 @@ describe('ClipboardImportExtension', () => {
         name: 'host',
       }),
     );
-    $pasteHtml(editor, '<p>hello</p>');
+    pasteHtml(editor, '<p>hello</p>');
     editor.read(() => {
       const lastChild = $getRoot().getLastChild();
       assert($isParagraphNode(lastChild), 'expected paragraph');
@@ -267,7 +267,7 @@ describe('ClipboardImportExtension', () => {
         name: 'host',
       }),
     );
-    $pasteHtml(editor, '<p>via <strong>new</strong> pipeline</p>');
+    pasteHtml(editor, '<p>via <strong>new</strong> pipeline</p>');
     editor.read(() => {
       const lastChild = $getRoot().getLastChild();
       assert($isParagraphNode(lastChild), 'expected paragraph');
@@ -298,7 +298,7 @@ describe('$insertDataTransferForRichText selection argument (#6278)', () => {
     );
   }
 
-  function $insertOverFirstParagraph(
+  function insertOverFirstParagraph(
     editor: ReturnType<typeof buildEditorFromExtensions>,
     dataTransfer: DataTransfer,
   ) {
@@ -326,13 +326,13 @@ describe('$insertDataTransferForRichText selection argument (#6278)', () => {
 
   test('text/plain is inserted at the supplied selection', () => {
     using editor = makeEditor();
-    $insertOverFirstParagraph(editor, dataTransferWithPlainText('replacement'));
+    insertOverFirstParagraph(editor, dataTransferWithPlainText('replacement'));
     expect(paragraphTexts(editor)).toEqual(['replacement', 'second']);
   });
 
   test('multi-line text/plain is inserted at the supplied selection', () => {
     using editor = makeEditor();
-    $insertOverFirstParagraph(editor, dataTransferWithPlainText('one\ntwo'));
+    insertOverFirstParagraph(editor, dataTransferWithPlainText('one\ntwo'));
     expect(paragraphTexts(editor)).toEqual(['one', 'two', 'second']);
   });
 
@@ -340,7 +340,7 @@ describe('$insertDataTransferForRichText selection argument (#6278)', () => {
     using editor = makeEditor();
     const dt = new DataTransfer();
     dt.setData('text/uri-list', 'https://lexical.dev');
-    $insertOverFirstParagraph(editor, dt as unknown as DataTransfer);
+    insertOverFirstParagraph(editor, dt as unknown as DataTransfer);
     expect(paragraphTexts(editor)).toEqual(['https://lexical.dev', 'second']);
   });
 
@@ -348,7 +348,7 @@ describe('$insertDataTransferForRichText selection argument (#6278)', () => {
     // Control: the text/html handler already honored the argument before
     // this fix, so this passes with or without it.
     using editor = makeEditor();
-    $insertOverFirstParagraph(
+    insertOverFirstParagraph(
       editor,
       dataTransferWithHtml('<p>replacement</p>'),
     );

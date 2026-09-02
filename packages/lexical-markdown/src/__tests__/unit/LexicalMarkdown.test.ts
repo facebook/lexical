@@ -1329,7 +1329,7 @@ describe('Markdown', () => {
   it.each(['# ', '## ', '###### ', '1. ', '- ', '* ', '+ '])(
     'should preserve a quote when typing the "%s" shortcut (#7407)',
     shortcut => {
-      const editor = createHeadlessEditor({
+      const editor = createTestEditor({
         nodes: [
           HeadingNode,
           ListNode,
@@ -1376,7 +1376,7 @@ describe('Markdown', () => {
   );
 
   it('should preserve a quote when the code fence shortcut is typed in it (#7407)', () => {
-    const editor = createHeadlessEditor({
+    const editor = createTestEditor({
       nodes: [
         HeadingNode,
         ListNode,
@@ -3824,7 +3824,7 @@ describe('$generateNodesFromMarkdownString', () => {
 
 describe('$convertSelectionToMarkdownString whitespace slices', () => {
   it('does not emit a dangling closing tag when the selection slices a format down to whitespace', () => {
-    const editor = createHeadlessEditor({nodes: [LinkNode]});
+    const editor = createTestEditor({nodes: [LinkNode]});
     editor.update(
       () => {
         const root = $getRoot();
@@ -3853,7 +3853,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
 type ImportedLink = {title: null | string; url: string};
 
 function importLinks(md: string): ImportedLink[] {
-  const editor = createHeadlessEditor({nodes: [LinkNode]});
+  const editor = createTestEditor({nodes: [LinkNode]});
   editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
     discrete: true,
   });
@@ -3965,7 +3965,7 @@ describe('link destination whitespace does not backtrack', () => {
 
   for (const [name, md] of CASES) {
     it(`reads ${name}`, {timeout: 5000}, () => {
-      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      const editor = createTestEditor({nodes: [LinkNode]});
       editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
         discrete: true,
       });
@@ -4036,7 +4036,7 @@ describe('link destination round trip', () => {
 
   for (const [url, md] of CASES) {
     it(`preserves "${url}"`, () => {
-      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      const editor = createTestEditor({nodes: [LinkNode]});
       editor.update(
         () => {
           $getRoot()
@@ -4055,7 +4055,7 @@ describe('link destination round trip', () => {
       );
       expect(exported).toBe(md);
 
-      const reimported = createHeadlessEditor({nodes: [LinkNode]});
+      const reimported = createTestEditor({nodes: [LinkNode]});
       reimported.update(
         () => $convertFromMarkdownString(exported, TRANSFORMERS),
         {discrete: true},
@@ -4088,7 +4088,7 @@ describe('link title round trip', () => {
 
   for (const [title, md] of CASES) {
     it(`preserves "${title}"`, () => {
-      const editor = createHeadlessEditor({nodes: [LinkNode]});
+      const editor = createTestEditor({nodes: [LinkNode]});
       editor.update(
         () => {
           $getRoot()
@@ -4107,7 +4107,7 @@ describe('link title round trip', () => {
       );
       expect(exported).toBe(md);
 
-      const reimported = createHeadlessEditor({nodes: [LinkNode]});
+      const reimported = createTestEditor({nodes: [LinkNode]});
       reimported.update(
         () => $convertFromMarkdownString(exported, TRANSFORMERS),
         {discrete: true},

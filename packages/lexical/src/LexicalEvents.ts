@@ -1001,15 +1001,6 @@ function $handleBeforeInput(event: InputEvent): boolean {
         editor,
         inputType === 'historyUndo' ? UNDO_COMMAND : REDO_COMMAND,
       );
-    } else if ($isNodeSelection(selection)) {
-      // A NodeSelection is Lexical's whole selection: there is no text
-      // position for the browser to edit, and any DOM caret still standing is
-      // scaffolding (on iOS the reconciler keeps one beside the selected node
-      // so the tap-to-focus reveal has a rect to scroll to, see
-      // $updateDOMSelection). Left to its default the browser would insert or
-      // delete at that caret and the mutation observer would have to revert
-      // it, so stop the edit before it reaches the DOM.
-      event.preventDefault();
     }
     return true;
   }

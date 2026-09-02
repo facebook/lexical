@@ -54,7 +54,7 @@ import {
   SKIP_SCROLL_INTO_VIEW_TAG,
   type TextNode,
 } from '.';
-import {IS_FIREFOX, IS_IOS} from './environment';
+import {IS_FIREFOX} from './environment';
 import {DOM_TEXT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
@@ -4093,41 +4093,6 @@ function $getElementAndOffsetForPoint(
   return [element, offset];
 }
 
-/**
- * The DOM caret to keep beside a selected node on iOS instead of clearing the
- * DOM selection for a NodeSelection.
- *
- * When a tap focuses a contentEditable, iOS scrolls to reveal it once the tap
- * has been handled. With a DOM selection it reveals the selection rect; with
- * none — which is what `removeAllRanges()` leaves behind — it reveals the
- * top of the whole contentEditable, so tapping a decorator (which selects it
- * as a NodeSelection) jumped the page to the top of the editor and scrolled
- * the decorator itself out of view (#9112). A collapsed caret at the
- * selected node's element point keeps the reveal target beside the node. The
- * caret is never editable: `$handleBeforeInput` prevents native input while
- * the selection is a NodeSelection.
- *
- * Returns null (fall back to clearing the DOM selection) when no selected
- * node has a reconciled parent to anchor the caret in.
- */
-function $getNodeSelectionCaretForIOS(
-  editor: LexicalEditor,
-  selection: NodeSelection,
-): null | [HTMLElement, number] {
-  for (const node of selection.getNodes()) {
-    const parent = node.getParent();
-    if (parent === null) {
-      continue;
-    }
-    const index = node.getIndexWithinParent();
-    if (index < 0 || editor.getElementByKey(parent.getKey()) === null) {
-      continue;
-    }
-    return $getElementAndOffsetForPoint(editor, parent, index + 1);
-  }
-  return null;
-}
-
 /** @internal */
 export function $updateDOMSelection(
   prevSelection: BaseSelection | null,
@@ -4190,29 +4155,7 @@ export function $updateDOMSelection(
         currentPoints.focusNode,
       )
     ) {
-      const nodeSelectionCaret =
-        IS_IOS && $isNodeSelection(nextSelection)
-          ? $getNodeSelectionCaretForIOS(editor, nextSelection)
-          : null;
-      if (nodeSelectionCaret !== null) {
-        const [caretDOM, caretOffset] = nodeSelectionCaret;
-        setDOMSelectionBaseAndExtent(
-          domSelection,
-          caretDOM,
-          caretOffset,
-          caretDOM,
-          caretOffset,
-        );
-        markSelectionChangeFromDOMUpdate(
-          editor,
-          caretDOM,
-          caretOffset,
-          caretDOM,
-          caretOffset,
-        );
-      } else {
-        domSelection.removeAllRanges();
-      }
+      domSelection.removeAllRanges();
     }
 
     return;

@@ -62,6 +62,17 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 // `__`) keeps syncing — only the framework's `__slots` is reserved.
 export const SLOTS_ATTR_KEY = '__slots';
 
+/**
+ * The `nodeName` yjs gives an `XmlElement` created without one, which is what
+ * `doc.get(name, XmlElement)` produces for a top-level type. V2 identifies the
+ * root of an editor's tree by this name, so an `XmlElement` supplied through
+ * `getXmlElement` must have been created as `new XmlElement()`.
+ *
+ * https://docs.yjs.dev/api/shared-types/y.xmlelement
+ * "Define a top-level type; Note that the nodeName is always "undefined""
+ */
+export const ROOT_NODE_NAME = 'UNDEFINED';
+
 const baseExcludedProperties = new Set<string>([
   '__key',
   '__parent',

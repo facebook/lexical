@@ -21,7 +21,9 @@
  *
  * Each package gets its own generated module beside its nodes, and each class
  * passes its own generated code to `$config`, so the association is carried by
- * the class rather than derived from its type string. The compact form
+ * the class rather than derived from its type string; a subclass whose
+ * accessor tables compile the same way inherits it, which is why `type` is
+ * read off the node rather than emitted as a literal. The compact form
  * compares each property against its default; a reference-typed default has no
  * literal a value could be `===`, so it gets the structural test the schema's
  * own equality reduces to where that can be stated (MarkNode's `ids`, an empty
@@ -492,7 +494,6 @@ function differsFromDefault(schema, name) {
  * @returns {null | string}
  */
 function generateCompactExport(klass) {
-  const type = klass.getType();
   const writes = [];
   const reads = schemaReads(klass);
   // The same hoist the legacy form uses, so the two call a shared predicate
@@ -542,15 +543,15 @@ function generateCompactExport(klass) {
     // generateExport, and for the same reason: an object that lands on its
     // final shape in one allocation beats one built by assignment.
     return `${header}
-function exportCompact${klass.name}(): {[key: string]: unknown} {
-  return {${isElement ? 'children: [], ' : ''}type: '${type}'};
+function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
+  return {${isElement ? 'children: [], ' : ''}type: node.__type};
 }`;
   }
   return `${header}
 function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
 ${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
 ${writes.join('\n')}
-  json.type = '${type}';
+  json.type = node.__type;
   return json;
 }`;
 }
@@ -573,22 +574,22 @@ ${writes.join('\n')}
  * @returns {string}
  */
 function generateExport(klass) {
-  const type = klass.getType();
   const reads = schemaReads(klass);
   // An element's JSON leads with `children`, which is structural rather than
   // schema-declared: the key order below is byte-identical to the walk's.
   const isElement = isElementish(klass);
   const hoist = hoistGatedReads(reads);
+  // `type` is read off the node rather than baked in as the literal the class
+  // registered under: the same code serves a subclass whose accessor tables
+  // compile the same way, and its type is not this one's.
   const entries = [
     ...(isElement ? ['children: []'] : []),
     ...reads.map(read => `${read.key}: ${hoist.value(read)}`),
-    `type: '${type}'`,
+    'type: node.__type',
     'version: 1',
   ];
   return `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */
-function export${klass.name}(${
-    reads.length === 0 ? '' : `node: ${klass.name}`
-  }): {[key: string]: unknown} {
+function export${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
 ${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  return {
     ${entries.join(',\n    ')},
   };
@@ -831,11 +832,9 @@ function generatePackage(pkg) {
   /** Class names by the module that declares them. @type {Map<string, Set<string>>} */
   const typeImports = new Map();
   for (const {klass, module} of pkg.targets) {
-    if (schemaReads(klass).length > 0) {
-      const names = typeImports.get(module) || new Set();
-      names.add(klass.name);
-      typeImports.set(module, names);
-    }
+    const names = typeImports.get(module) || new Set();
+    names.add(klass.name);
+    typeImports.set(module, names);
   }
   // Type-only, so this module has no runtime imports at all. A value import
   // of the node classes would be a cycle — they import LexicalNode, which

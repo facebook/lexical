@@ -32,7 +32,7 @@ function exportMarkNode(node: MarkNode): {[key: string]: unknown} {
       textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
     textStyle:
       textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: 'mark',
+    type: node.__type,
     version: 1,
   };
 }
@@ -74,7 +74,7 @@ function exportCompactMarkNode(node: MarkNode): {[key: string]: unknown} {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = 'mark';
+  json.type = node.__type;
   return json;
 }
 

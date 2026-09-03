@@ -7,45 +7,38 @@
  */
 
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import {$expectSameJSON, initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {
+  $expectSameJSON,
+  $expectSameParse,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
 import {GENERATED_QUOTE} from '../../LexicalRichTextGeneratedJSON';
 
-// The control classes: same schema (inherited through the config chain), same
-// fields, but no `generated` in their own $config, so they export through the
-// schema-driven walk — which is exactly what the generated code has to agree
-// with. Only the type string differs, by construction.
-class WalkHeadingNode extends HeadingNode {
-  $config() {
-    return this.config('walk-heading', {extends: HeadingNode});
-  }
-}
-
-class WalkQuoteNode extends QuoteNode {
-  $config() {
-    return this.config('walk-quote', {extends: QuoteNode});
-  }
-}
-
-describe('rich-text generated exportJSON', () => {
+describe('rich-text generated JSON', () => {
   initializeUnitTest(
     testEnv => {
       test('HeadingNode agrees with the schema-driven walk', () => {
         testEnv.editor.update(
           () => {
-            $expectSameJSON(new HeadingNode(), new WalkHeadingNode());
-            const $configured = <T extends HeadingNode>(node: T) =>
-              node
+            $expectSameJSON(new HeadingNode());
+            $expectSameJSON(
+              new HeadingNode('h3')
                 .setDirection('rtl')
                 .setIndent(2)
                 .setFormat('center')
                 .setTextFormat(1)
-                .setTextStyle('color: red');
-            $expectSameJSON(
-              $configured(new HeadingNode('h3')),
-              $configured(new WalkHeadingNode('h3')),
+                .setTextStyle('color: red'),
             );
+            $expectSameParse(HeadingNode, {
+              direction: 'rtl',
+              format: 'center',
+              indent: 2,
+              tag: 'h3',
+              textFormat: 1,
+              textStyle: 'color: red',
+            });
           },
           {discrete: true},
         );
@@ -54,13 +47,15 @@ describe('rich-text generated exportJSON', () => {
       test('QuoteNode agrees with the schema-driven walk', () => {
         testEnv.editor.update(
           () => {
-            $expectSameJSON(new QuoteNode(), new WalkQuoteNode());
-            // The shadowRoot flat state is appended by the dispatch rather
-            // than the generated literal; it has to survive the composition.
+            $expectSameJSON(new QuoteNode());
             $expectSameJSON(
-              new QuoteNode().setIsShadowRoot(true),
-              new WalkQuoteNode().setIsShadowRoot(true),
+              new QuoteNode().setDirection('rtl').setIndent(1).setFormat('end'),
             );
+            // The shadowRoot flat state is appended by the dispatch rather
+            // than written by either path; it has to survive the composition.
+            expect(
+              new QuoteNode().setIsShadowRoot(true).exportJSON(),
+            ).toHaveProperty('shadowRoot', true);
           },
           {discrete: true},
         );
@@ -73,19 +68,16 @@ describe('rich-text generated exportJSON', () => {
         expect(GENERATED_QUOTE.updateFromJSON).toBeDefined();
         testEnv.editor.update(
           () => {
-            const json = {
+            const node = $expectSameParse(QuoteNode, {
               direction: 'rtl',
               format: 'center',
               indent: 2,
               shadowRoot: true,
               textFormat: 1,
               textStyle: 'color: red',
-            } as never;
-            const viaGenerated = new QuoteNode().updateFromJSON(json);
-            const viaWalk = new WalkQuoteNode().updateFromJSON(json);
-            expect(viaGenerated.isShadowRoot()).toBe(true);
-            expect(viaGenerated.getIndent()).toBe(2);
-            $expectSameJSON(viaGenerated, viaWalk);
+            });
+            expect(node.isShadowRoot()).toBe(true);
+            expect(node.getIndent()).toBe(2);
           },
           {discrete: true},
         );
@@ -93,7 +85,7 @@ describe('rich-text generated exportJSON', () => {
     },
     {
       namespace: 'test',
-      nodes: [HeadingNode, QuoteNode, WalkHeadingNode, WalkQuoteNode],
+      nodes: [HeadingNode, QuoteNode],
       theme: {},
     },
   );

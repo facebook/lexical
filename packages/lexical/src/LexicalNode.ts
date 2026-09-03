@@ -74,7 +74,7 @@ import {
   $setCompositionKey,
   $setNodeKey,
   $setSelection,
-  $writeJSONGetters,
+  $walkExportJSON,
   errorOnInsertTextNodeOnRoot,
   getRegisteredNode,
   getStaticNodeConfig,
@@ -1706,17 +1706,7 @@ export class LexicalNode {
   exportJSON(compact = false): SerializedPartial<SerializedLexicalNode> {
     let json = $generatedExportJSON(this, compact);
     if (json === undefined) {
-      // `children` is written first, before the schema's properties, so that
-      // an element's JSON reads structure-first — and so that this matches the
-      // key order the generated exporters emit.
-      json = $isElementNode(this) ? {children: []} : {};
-      $writeJSONGetters(this, json, compact);
-      json.type = this.__type;
-      if (!compact) {
-        // Deprecated and ignored on the way in; written only so the legacy
-        // form stays readable by older versions.
-        json.version = 1;
-      }
+      json = $walkExportJSON(this, compact);
     }
     // Neither a generated exporter nor the walk writes NodeState: what a node
     // carries is not known when code is generated, and the walk's table is

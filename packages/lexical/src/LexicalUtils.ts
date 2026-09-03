@@ -3315,8 +3315,9 @@ interface CompiledNodeClass {
    */
   readonly flatStates: readonly AnyStateConfig[];
   /**
-   * The generated JSON functions this class may use, or `null` for a class
-   * that may not (see {@link resolveGenerated}).
+   * The generated JSON functions this class runs — its own, or an ancestor's
+   * where they still apply — or `null` for a class that walks (see
+   * {@link resolveGenerated}).
    */
   readonly generated: null | GeneratedJSON;
 }
@@ -4105,39 +4106,52 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
 }
 
 /**
- * The generated JSON functions for a node class, or `null` for a class the
+ * The generated JSON functions a node class runs, or `null` for a class the
  * generated code does not describe.
  *
  * A class declares its own through `$config`, so the association is the same
- * one its schema has, and the check is that this class is the one that declared
- * it: a subclass with no `$config` of its own inherits the whole config —
- * generated code included — while being free to override an accessor that code
- * compiled away, so inheriting the declaration is exactly the case to reject.
- * Compared by identity against the most basal class in the chain that names the
- * same functions, for the same reason `declaredBy` is.
+ * one its schema has. A subclass inherits them along with the schema, on one
+ * condition: that its compiled tables are the ones the code was generated from.
+ * Generated code reads the fields the declaring class resolved its properties
+ * to and calls the methods it resolved them to; a subclass that overrides an
+ * accessor a field stands in for, or declares a property of its own, resolves
+ * differently, and for it the code would be wrong. Comparing the two classes'
+ * tables entry for entry is what decides ({@link sameCompiledTables}) — they
+ * are the tables the walk would use, so what runs is always what the walk
+ * would have done. The declaring class is the most basal one in the chain that
+ * names the same functions, for the same reason `declaredBy` is.
  *
- * A `$config` of its own that passes an ancestor's generated code is the same
- * mistake made on purpose — that code reads the ancestor's fields and calls
- * the ancestor's accessors, whatever this class overrides — and is refused the
- * same way, but in DEV it says so: silently running the walk instead would
- * leave the class believing it ships the code it named.
+ * A `$config` of its own that names an ancestor's generated code is refused in
+ * DEV: inheriting is automatic where it applies, and where it does not, a
+ * declaration that silently ran the walk would leave the class believing it
+ * ships the code it named.
  */
 function resolveGenerated(
   klass: Klass<LexicalNode>,
   ownNodeConfig:
     | undefined
     | StaticNodeConfigValue<LexicalNode, string | symbol>,
+  tables: Pick<CompiledNodeClass, 'getters' | 'setters'>,
 ): null | GeneratedJSON {
-  const declared = ownNodeConfig ? ownNodeConfig.generated : undefined;
+  // The nearest declaration up the chain. A class with no `$config` of its own
+  // reads its ancestor's, declaration included, as its own; one whose `$config`
+  // names none inherits from the first ancestor that does.
+  let declared: undefined | GeneratedJSON;
+  for (const {ownNodeConfig: config} of iterStaticNodeConfigChain(klass)) {
+    if (config && config.generated !== undefined) {
+      declared = config.generated;
+      break;
+    }
+  }
   if (declared === undefined) {
     return null;
   }
   let declaringKlass = klass;
   for (const {
     klass: currentKlass,
-    ownNodeConfig: currentConfig,
+    ownNodeConfig: config,
   } of iterStaticNodeConfigChain(klass)) {
-    if (currentConfig && currentConfig.generated === declared) {
+    if (config && config.generated === declared) {
       declaringKlass = currentKlass;
     }
   }
@@ -4146,14 +4160,116 @@ function resolveGenerated(
   }
   if (__DEV__) {
     invariant(
-      !hasOwnKey(klass.prototype as unknown as object, PROTOTYPE_CONFIG_METHOD),
-      '%s: $config passes the generated JSON code that %s declared, which reads the fields and accessors of that class; generate code for %s or omit it',
+      !(
+        ownNodeConfig !== undefined &&
+        ownNodeConfig.generated === declared &&
+        hasOwnKey(klass.prototype as unknown as object, PROTOTYPE_CONFIG_METHOD)
+      ),
+      '%s: $config names the generated JSON code that %s declared; generated code is inherited wherever it still applies, so omit it',
       klass.name,
       declaringKlass.name,
-      klass.name,
     );
   }
-  return null;
+  return sameCompiledTables(
+    tables,
+    getCompiled(getNodeClassRecord(declaringKlass)),
+  )
+    ? declared
+    : null;
+}
+
+/**
+ * Whether two classes' compiled tables would run the same generated code:
+ * every entry the same kind for the same key, reading or writing the same
+ * field through the same tables, against the same schema. A method entry
+ * needs no more than kind and key — generated code calls the method by name,
+ * so an override is honored the way the walk honors it — and so does a
+ * predicate; the schema is compared by identity, since the tables were
+ * compiled from it.
+ */
+function sameCompiledTables(
+  a: Pick<CompiledNodeClass, 'getters' | 'setters'>,
+  b: Pick<CompiledNodeClass, 'getters' | 'setters'>,
+): boolean {
+  if (
+    a.getters.length !== b.getters.length ||
+    a.setters.length !== b.setters.length
+  ) {
+    return false;
+  }
+  for (let i = 0; i < a.getters.length; i++) {
+    const x = a.getters[i];
+    const y = b.getters[i];
+    if (
+      x.kind !== y.kind ||
+      x.key !== y.key ||
+      x.derived !== y.derived ||
+      x.isEqual !== y.isEqual ||
+      !Object.is(x.defaultValue, y.defaultValue) ||
+      (x.kind === 'ownField' &&
+        y.kind === 'ownField' &&
+        (x.field !== y.field || x.decode !== y.decode))
+    ) {
+      return false;
+    }
+  }
+  for (let i = 0; i < a.setters.length; i++) {
+    const x = a.setters[i];
+    const y = b.setters[i];
+    if (
+      x.kind !== y.kind ||
+      x.key !== y.key ||
+      x.schema !== y.schema ||
+      (x.kind === 'ownField' &&
+        y.kind === 'ownField' &&
+        (x.field !== y.field || x.encode !== y.encode))
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * The generated JSON functions `klass` runs (see {@link resolveGenerated}), or
+ * `null`. For tests, which need to know whether a comparison against the walk
+ * is comparing anything.
+ *
+ * @internal
+ */
+export function getGeneratedJSON(
+  klass: Klass<LexicalNode>,
+): null | GeneratedJSON {
+  return getCompiled(getNodeClassRecord(klass)).generated;
+}
+
+/**
+ * The schema-driven walk's export of `node` in the form asked for, without
+ * NodeState: `children` first for an element, then every property the schema
+ * declares through {@link $writeJSONGetters}, then `type` and — legacy form
+ * only — `version`, which is the key order the generated exporters reproduce.
+ * What {@link LexicalNode.exportJSON} runs for a class without generated code,
+ * and what generated code is checked against.
+ *
+ * @internal
+ */
+export function $walkExportJSON(
+  node: LexicalNode,
+  compact: boolean,
+): {[key: string]: unknown} {
+  // `children` is written first, before the schema's properties, so that an
+  // element's JSON reads structure-first.
+  const json: {[key: string]: unknown} = $isElementNode(node)
+    ? {children: []}
+    : {};
+  $writeJSONGetters(node, json, compact);
+  json.type = node.__type;
+  if (!compact) {
+    // Deprecated and ignored on the way in; written only so the legacy form
+    // stays readable by older versions.
+    json.version = 1;
+  }
+  return json;
 }
 
 /**
@@ -4244,10 +4360,12 @@ export function $applyImportJSON<T extends LexicalNode>(
 }
 
 /**
- * Apply a node's compiled serialization schema (see {@link compileSetters})
- * by calling each property's setter with its parsed value, returning the
- * (writable) node. Used by the base {@link LexicalNode.updateFromJSON} so a node
- * that declares a serialization schema needs no `updateFromJSON` boilerplate.
+ * Apply a node's compiled serialization schema (see {@link compileSetters}),
+ * returning the (writable) node: flat NodeState first, then the schema's
+ * properties — through the class's generated parser when it has one, and
+ * otherwise by calling each property's setter with its parsed value. Used by
+ * the base {@link LexicalNode.updateFromJSON} so a node that declares a
+ * serialization schema needs no `updateFromJSON` boilerplate.
  *
  * @internal
  */
@@ -4255,19 +4373,57 @@ export function $applyJSONSetters<T extends LexicalNode>(
   node: T,
   serializedNode: {readonly [key: string]: unknown},
 ): T {
-  const klass = node.constructor as Klass<LexicalNode>;
-  const record = getNodeClassRecord(klass);
+  const record = getNodeClassRecord(node.constructor as Klass<LexicalNode>);
   if (__DEV__) {
     validateOwnFields(record, node);
   }
   const {flatStates, generated, setters} = getCompiled(record);
+  const self = $applyFlatStates(node, serializedNode, flatStates);
+  if (generated !== null && generated.updateFromJSON !== undefined) {
+    // The generated parser applies the same properties in the same order and
+    // follows a setter's return the same way, so what it hands back is what
+    // the walk would have: the node passed in, unless a setter replaced it.
+    return generated.updateFromJSON(self, serializedNode) as T;
+  }
+  return $walkSetters(self, serializedNode, setters);
+}
+
+/**
+ * {@link $applyJSONSetters} with the generated parser left out — the
+ * schema-driven walk alone — which is what generated code is checked against.
+ *
+ * @internal
+ */
+export function $walkJSONSetters<T extends LexicalNode>(
+  node: T,
+  serializedNode: {readonly [key: string]: unknown},
+): T {
+  const record = getNodeClassRecord(node.constructor as Klass<LexicalNode>);
+  if (__DEV__) {
+    validateOwnFields(record, node);
+  }
+  const {flatStates, setters} = getCompiled(record);
+  return $walkSetters(
+    $applyFlatStates(node, serializedNode, flatStates),
+    serializedNode,
+    setters,
+  );
+}
+
+/**
+ * Flat state first, matching the order in which $updateStateFromJSON ran
+ * before a node's own setters — and by the walk whether or not the class has a
+ * generated parser, which is handed the node with its state already applied.
+ * What a node carries in state is not known when code is generated; this is
+ * the mirror of exportJSON appending `__state.toJSON()` around the generated
+ * literal.
+ */
+function $applyFlatStates<T extends LexicalNode>(
+  node: T,
+  serializedNode: {readonly [key: string]: unknown},
+  flatStates: readonly AnyStateConfig[],
+): T {
   let self = node;
-  // Flat state first, matching the order in which $updateStateFromJSON ran
-  // before a node's own setters — and by this walk whether or not the class
-  // has a generated parser, which is handed the node with its state already
-  // applied. What a node carries in state is not known when code is generated;
-  // this is the mirror of exportJSON appending `__state.toJSON()` around the
-  // generated literal.
   for (let i = 0; i < flatStates.length; i++) {
     const stateConfig = flatStates[i];
     // Only apply a flat state that is actually present so a partial update
@@ -4282,12 +4438,16 @@ export function $applyJSONSetters<T extends LexicalNode>(
       self = $setState(self, stateConfig, () => parsed);
     }
   }
-  if (generated !== null && generated.updateFromJSON !== undefined) {
-    // The generated parser applies the same properties in the same order and
-    // follows a setter's return the same way, so what it hands back is what
-    // this walk would have: the node passed in, unless a setter replaced it.
-    return generated.updateFromJSON(self, serializedNode) as T;
-  }
+  return self;
+}
+
+/** The walk over a class's compiled setters: one property at a time. */
+function $walkSetters<T extends LexicalNode>(
+  node: T,
+  serializedNode: {readonly [key: string]: unknown},
+  setters: readonly CompiledSetter[],
+): T {
+  let self = node;
   for (let i = 0; i < setters.length; i++) {
     const entry = setters[i];
     const parsed = entry.schema(
@@ -4432,7 +4592,7 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
       // $updateStateFromJSON; these are the ones serialized as top-level
       // properties alongside the schema's.
       flatStates: getComposedSchema(klass).flatStates,
-      generated: resolveGenerated(klass, ownNodeConfig),
+      generated: resolveGenerated(klass, ownNodeConfig, {getters, setters}),
       getters,
       setters,
     };

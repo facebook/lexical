@@ -264,10 +264,13 @@ It writes one module per package, beside the nodes it serializes:
 | `packages/lexical-mark/src/LexicalMarkGeneratedJSON.ts` | MarkNode |
 
 Each class receives its own generated code through its `$config`'s
-`generated` property, so nothing has to match code to class at runtime, and a
-subclass that inherits the config without redeclaring it falls back to the
-schema-driven walk (which resolves accessors per class, as an override
-requires).
+`generated` property, so nothing has to match code to class by type string at
+runtime. A subclass inherits it along with the schema when its compiled
+accessor tables are the ones the code was generated from — checked entry for
+entry at registration — while one that overrides an accessor a field stands in
+for, or declares a serialized property of its own, resolves differently and
+takes the schema-driven walk instead. Generated exporters read `type` off the
+node for the same reason.
 
 Three things are worth knowing before touching it:
 

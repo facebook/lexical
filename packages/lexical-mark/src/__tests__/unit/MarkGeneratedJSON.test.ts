@@ -12,28 +12,15 @@ import {describe, expect, test} from 'vitest';
 
 import {GENERATED_MARK} from '../../LexicalMarkGeneratedJSON';
 
-// The control class: same schema (inherited through the config chain), same
-// fields, but no `generated` in its own $config, so it exports through the
-// schema-driven walk — which is exactly what the generated code has to agree
-// with. Only the type string differs, by construction.
-class WalkMarkNode extends MarkNode {
-  $config() {
-    return this.config('walk-mark', {extends: MarkNode});
-  }
-}
-
 describe('mark generated exportJSON', () => {
   initializeUnitTest(
     testEnv => {
       test('MarkNode agrees with the schema-driven walk', () => {
         testEnv.editor.update(
           () => {
-            $expectSameJSON(new MarkNode(), new WalkMarkNode());
-            $expectSameJSON(new MarkNode([]), new WalkMarkNode([]));
-            $expectSameJSON(
-              new MarkNode(['a', 'b']),
-              new WalkMarkNode(['a', 'b']),
-            );
+            $expectSameJSON(new MarkNode());
+            $expectSameJSON(new MarkNode([]));
+            $expectSameJSON(new MarkNode(['a', 'b']));
           },
           {discrete: true},
         );
@@ -71,7 +58,7 @@ describe('mark generated exportJSON', () => {
     },
     {
       namespace: 'test',
-      nodes: [MarkNode, WalkMarkNode],
+      nodes: [MarkNode],
       theme: {},
     },
   );

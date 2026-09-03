@@ -35,7 +35,7 @@ function exportLinkNode(node: LinkNode): {[key: string]: unknown} {
       textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
     textStyle:
       textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: 'link',
+    type: node.__type,
     version: 1,
   };
 }
@@ -89,7 +89,7 @@ function exportCompactLinkNode(node: LinkNode): {[key: string]: unknown} {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = 'link';
+  json.type = node.__type;
   return json;
 }
 
@@ -119,7 +119,7 @@ function exportAutoLinkNode(node: AutoLinkNode): {[key: string]: unknown} {
       textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
     textStyle:
       textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: 'autolink',
+    type: node.__type,
     version: 1,
   };
 }
@@ -179,7 +179,7 @@ function exportCompactAutoLinkNode(node: AutoLinkNode): {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = 'autolink';
+  json.type = node.__type;
   return json;
 }
 

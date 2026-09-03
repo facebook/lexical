@@ -60,7 +60,7 @@ function exportHeadingNode(node: HeadingNode): {[key: string]: unknown} {
       textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
     textStyle:
       textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: 'heading',
+    type: node.__type,
     version: 1,
   };
 }
@@ -102,7 +102,7 @@ function exportCompactHeadingNode(node: HeadingNode): {[key: string]: unknown} {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = 'heading';
+  json.type = node.__type;
   return json;
 }
 
@@ -172,7 +172,7 @@ function exportQuoteNode(node: QuoteNode): {[key: string]: unknown} {
       textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
     textStyle:
       textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: 'quote',
+    type: node.__type,
     version: 1,
   };
 }
@@ -210,7 +210,7 @@ function exportCompactQuoteNode(node: QuoteNode): {[key: string]: unknown} {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = 'quote';
+  json.type = node.__type;
   return json;
 }
 

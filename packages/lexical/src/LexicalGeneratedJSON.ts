@@ -14,6 +14,7 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
 import type {LexicalNode} from './LexicalNode';
+import type {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import type {ParagraphNode} from './nodes/LexicalParagraphNode';
 import type {TabNode} from './nodes/LexicalTabNode';
 import type {TextNode} from './nodes/LexicalTextNode';
@@ -123,7 +124,7 @@ function exportTextNode(node: TextNode): {[key: string]: unknown} {
     mode: TEXT_MODE_DECODE[node.__mode],
     style: node.__style,
     text: node.__text,
-    type: 'text',
+    type: node.__type,
     version: 1,
   };
 }
@@ -151,7 +152,7 @@ function exportCompactTextNode(node: TextNode): {[key: string]: unknown} {
   if (text !== undefined && text !== '') {
     json.text = text;
   }
-  json.type = 'text';
+  json.type = node.__type;
   return json;
 }
 
@@ -204,7 +205,7 @@ function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
       textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
     textStyle:
       textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: 'paragraph',
+    type: node.__type,
     version: 1,
   };
 }
@@ -244,7 +245,7 @@ function exportCompactParagraphNode(node: ParagraphNode): {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = 'paragraph';
+  json.type = node.__type;
   return json;
 }
 
@@ -290,16 +291,18 @@ export const GENERATED_PARAGRAPH: GeneratedJSON = {
 };
 
 /** Generated from LineBreakNode's serialization schema. Do not edit by hand. */
-function exportLineBreakNode(): {[key: string]: unknown} {
+function exportLineBreakNode(node: LineBreakNode): {[key: string]: unknown} {
   return {
-    type: 'linebreak',
+    type: node.__type,
     version: 1,
   };
 }
 
 /** Generated from LineBreakNode's serialization schema. Do not edit by hand. */
-function exportCompactLineBreakNode(): {[key: string]: unknown} {
-  return {type: 'linebreak'};
+function exportCompactLineBreakNode(node: LineBreakNode): {
+  [key: string]: unknown;
+} {
+  return {type: node.__type};
 }
 
 /** LineBreakNode's generated implementations, for its `$config`. @internal */
@@ -316,7 +319,7 @@ function exportTabNode(node: TabNode): {[key: string]: unknown} {
     text: node.__text,
     format: node.__format,
     style: node.__style,
-    type: 'tab',
+    type: node.__type,
     version: 1,
   };
 }
@@ -332,7 +335,7 @@ function exportCompactTabNode(node: TabNode): {[key: string]: unknown} {
   if (style !== undefined && style !== '') {
     json.style = style;
   }
-  json.type = 'tab';
+  json.type = node.__type;
   return json;
 }
 

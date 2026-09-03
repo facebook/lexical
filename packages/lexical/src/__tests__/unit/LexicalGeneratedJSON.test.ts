@@ -28,10 +28,13 @@ import {
   IS_BOLD,
   LineBreakNode,
   NODE_STATE_KEY,
+  nodeSchema,
   ParagraphNode,
   type SerializedTextNode,
+  stringValue,
   TabNode,
   TextNode,
+  withField,
 } from '../..';
 import {
   GENERATED_LINEBREAK,
@@ -40,38 +43,15 @@ import {
   GENERATED_TEXT,
   type GeneratedJSON,
 } from '../../LexicalGeneratedJSON';
-import {$generatedExportJSON, getStaticNodeConfig} from '../../LexicalUtils';
-import {$expectSameJSON, initializeUnitTest, invariant} from '../utils';
+import {getGeneratedJSON, getStaticNodeConfig} from '../../LexicalUtils';
+import {
+  $expectSameJSON,
+  $expectSameParse,
+  initializeUnitTest,
+  invariant,
+} from '../utils';
 
 const REPO = join(import.meta.dirname, '..', '..', '..', '..', '..');
-
-// The control classes: same schema (inherited through the config chain), same
-// fields, but no `generated` in their own $config, so they export through the
-// schema-driven walk — which is exactly what the generated code has to agree
-// with. Only the type string differs, by construction.
-class WalkTextNode extends TextNode {
-  $config() {
-    return this.config('walk-text', {extends: TextNode});
-  }
-}
-
-class WalkParagraphNode extends ParagraphNode {
-  $config() {
-    return this.config('walk-paragraph', {extends: ParagraphNode});
-  }
-}
-
-class WalkLineBreakNode extends LineBreakNode {
-  $config() {
-    return this.config('walk-linebreak', {extends: LineBreakNode});
-  }
-}
-
-class WalkTabNode extends TabNode {
-  $config() {
-    return this.config('walk-tab', {extends: TabNode});
-  }
-}
 
 describe('generated exportJSON', () => {
   test('the checked-in outputs are what the generator produces; `pnpm run generate-node-json` to fix', () => {
@@ -113,52 +93,71 @@ describe('generated exportJSON', () => {
       test('every generated exporter agrees with the schema-driven walk', () => {
         testEnv.editor.update(
           () => {
-            const $styled = <T extends TextNode>(node: T) =>
-              node.setFormat('bold').setStyle('color: red');
             $expectSameJSON(
-              $styled(new TextNode('hello')),
-              $styled(new WalkTextNode('hello')),
+              $createTextNode('hello').setFormat('bold').setStyle('color: red'),
             );
-            $expectSameJSON(new TextNode(''), new WalkTextNode(''));
-            const $token = <T extends TextNode>(node: T) =>
-              node.setMode('token').setDetail('directionless');
+            $expectSameJSON($createTextNode(''));
             $expectSameJSON(
-              $token(new TextNode('tok')),
-              $token(new WalkTextNode('tok')),
+              $createTextNode('tok')
+                .setMode('token')
+                .setDetail('directionless'),
             );
-            $expectSameJSON($createLineBreakNode(), new WalkLineBreakNode());
-            $expectSameJSON($createTabNode(), new WalkTabNode());
+            $expectSameJSON($createLineBreakNode());
+            $expectSameJSON($createTabNode());
             // ParagraphNode belongs here most of all: it is the only element
             // among them, so the only one whose generated code has to lead
             // with `children`, and the only one whose properties are a mix of
             // fields and methods. Its exportJSON override back-fills #7971 on
-            // top of the generated literal; the control inherits the override
-            // and back-fills on top of the walk, so the two compare like for
-            // like.
-            const $laidOut = <T extends ParagraphNode>(node: T) =>
-              node.setDirection('rtl').setIndent(3);
+            // top of whichever of the two ran, so the two are compared
+            // underneath it.
             $expectSameJSON(
-              $laidOut($createParagraphNode()),
-              $laidOut(new WalkParagraphNode()),
+              $createParagraphNode().setDirection('rtl').setIndent(3),
             );
-            $expectSameJSON($createParagraphNode(), new WalkParagraphNode());
+            $expectSameJSON($createParagraphNode());
             // Both arms of the `when` gate, which the paragraphs above leave
             // at their defaults and so never enter: the generated code hoists
             // one shared `shouldSerializeTextStyles` where the walk tests the
             // default and calls the predicate per property, so agreeing when
             // the property is trivially omitted proves nothing about either.
-            const $textStyled = <T extends ParagraphNode>(node: T) =>
-              node.setTextFormat(IS_BOLD).setTextStyle('color: red');
             $expectSameJSON(
-              $textStyled($createParagraphNode()),
-              $textStyled(new WalkParagraphNode()),
+              $createParagraphNode()
+                .setTextFormat(IS_BOLD)
+                .setTextStyle('color: red'),
             );
             // Predicate false with a non-default value — the case the two
             // decide differently if the hoist ever stops mirroring the walk.
             $expectSameJSON(
-              $textStyled($createParagraphNode()).append($createTextNode('x')),
-              $textStyled(new WalkParagraphNode()).append($createTextNode('x')),
+              $createParagraphNode()
+                .setTextFormat(IS_BOLD)
+                .setTextStyle('color: red')
+                .append($createTextNode('x')),
             );
+          },
+          {discrete: true},
+        );
+      });
+
+      test('every generated parser agrees with the schema-driven walk', () => {
+        testEnv.editor.update(
+          () => {
+            $expectSameParse(TextNode, {
+              detail: 'directionless',
+              format: 'bold',
+              mode: 'token',
+              style: 'color: red',
+              text: 'hi',
+            });
+            $expectSameParse(TextNode, {});
+            $expectSameParse(ParagraphNode, {
+              direction: 'rtl',
+              format: 'center',
+              indent: 2,
+              textFormat: 1,
+              textStyle: 'color: red',
+            });
+            // Out of domain on both counts: the emitted bounds and enum test
+            // have to fall back exactly where the schemas do.
+            $expectSameParse(ParagraphNode, {format: 'nope', indent: -1});
           },
           {discrete: true},
         );
@@ -212,13 +211,13 @@ describe('generated exportJSON', () => {
     },
     {
       namespace: 'test',
-      nodes: [WalkTextNode, WalkParagraphNode, WalkLineBreakNode, WalkTabNode],
+      nodes: [],
       theme: {},
     },
   );
 });
 
-describe('the generated code reaches only the class it was generated for', () => {
+describe('generated code is inherited where it still applies', () => {
   // Handed over through `$config` rather than looked up by node type, so there
   // is no second derivation that could stop matching the first — the check is
   // that each class named its own.
@@ -230,12 +229,45 @@ describe('the generated code reaches only the class it was generated for', () =>
   ])('%s', (_type, klass, generated) => {
     const {ownNodeConfig} = getStaticNodeConfig(klass);
     expect(ownNodeConfig && ownNodeConfig.generated).toBe(generated);
+    expect(getGeneratedJSON(klass)).toBe(generated);
   });
 
-  test('a subclass that inherits the declaration takes the walk', () => {
+  test('a subclass whose tables compile the same way inherits it', () => {
+    // Its own `$config`, its own type, no accessor overridden and no property
+    // added: the code TextNode was generated from reads and writes exactly
+    // what the walk would for this class too, so it runs here as well.
+    class PlainSub extends TextNode {
+      $config() {
+        return this.config('plain-sub', {extends: TextNode});
+      }
+    }
+    const editor = createEditor({
+      namespace: '',
+      nodes: [PlainSub],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        expect(getGeneratedJSON(PlainSub)).toBe(GENERATED_TEXT);
+        const node = $create(PlainSub)
+          .setTextContent('hi')
+          .setStyle('color: red');
+        // The exporter reads `type` off the node, so it is this class's.
+        expect(node.exportJSON().type).toBe('plain-sub');
+        $expectSameJSON(node);
+        $expectSameParse(PlainSub, {style: 'color: red', text: 'hi'});
+      },
+      {discrete: true},
+    );
+  });
+
+  test('a subclass that overrides an accessor a field stands in for takes the walk', () => {
     // No `$config` of its own, so it inherits TextNode's — the node type and
     // the generated code with it — while overriding an accessor that code
-    // compiled away. The generated code is refused for it, so the override is
+    // compiled away. Its tables resolve that property through the method, so
+    // they are not the ones the code was generated from, and the override is
     // honored.
     class InheritsEverything extends TextNode {
       getStyle(): string {
@@ -252,19 +284,41 @@ describe('the generated code reaches only the class it was generated for', () =>
     editor.update(
       () => {
         $getRoot().clear();
+        expect(getGeneratedJSON(InheritsEverything)).toBeNull();
         const node = $create(InheritsEverything).setStyle('color: red');
-        expect($generatedExportJSON(node, false)).toBeUndefined();
         expect(node.exportJSON().style).toBe('color: red;extra');
       },
       {discrete: true},
     );
   });
 
-  test("a $config that passes an ancestor's generated code is refused", () => {
-    // The same mistake made on purpose: TextNode's code reads TextNode's
-    // fields and calls TextNode's accessors, whatever this class overrides, so
-    // it is refused like the inherited case — but loudly, at registration,
-    // because the class asked for it by name.
+  test('a subclass that declares a property of its own takes the walk', () => {
+    // Its tables carry an entry TextNode's code knows nothing about.
+    class ExtraField extends TextNode {
+      __extra = '';
+      $config() {
+        return this.config('extra-field', {
+          extends: TextNode,
+          json: nodeSchema<ExtraField>({
+            extra: withField(stringValue(), {field: '__extra'}),
+          }),
+        });
+      }
+    }
+    createEditor({
+      namespace: '',
+      nodes: [ExtraField],
+      onError: err => {
+        throw err;
+      },
+    });
+    expect(getGeneratedJSON(ExtraField)).toBeNull();
+  });
+
+  test("a $config that names an ancestor's generated code is refused", () => {
+    // Inheriting is automatic where it applies; a declaration that silently
+    // ran the walk where it does not would leave the class believing it ships
+    // the code it named, so this fails loudly, at registration.
     class PassesParentGenerated extends TextNode {
       $config() {
         return this.config('passes-parent-generated', {
@@ -281,7 +335,7 @@ describe('the generated code reaches only the class it was generated for', () =>
           throw err;
         },
       }),
-    ).toThrow(/passes the generated JSON code that TextNode declared/);
+    ).toThrow(/names the generated JSON code that TextNode declared/);
   });
 });
 

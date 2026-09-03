@@ -407,7 +407,17 @@ describe('HTML', () => {
         html: '<p dir="ltr">Hello</p>',
         name: 'paragraph with dir="ltr"',
       },
+      {
+        expected: 'auto',
+        html: '<p dir="auto">Hello</p>',
+        name: 'paragraph with dir="auto"',
+      },
       {expected: null, html: '<p>Hello</p>', name: 'paragraph without dir'},
+      {
+        expected: null,
+        html: '<p dir="nonsense">Hello</p>',
+        name: 'paragraph with an invalid dir',
+      },
       {
         expected: 'rtl',
         html: '<h1 dir="rtl">عنوان</h1>',

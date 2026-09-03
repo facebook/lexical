@@ -1010,14 +1010,14 @@ declare export class ElementNode extends LexicalNode {
    */
   getChildAtIndex<T extends LexicalNode>(index: number): null | T;
   getTextContent(): string;
-  getDirection(): 'ltr' | 'rtl' | null;
+  getDirection(): 'ltr' | 'rtl' | 'auto' | null;
   hasFormat(type: ElementFormatType): boolean;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   selectStart(): RangeSelection;
   selectEnd(): RangeSelection;
   clear(): this;
   append(...nodesToAppend: LexicalNode[]): this;
-  setDirection(direction: 'ltr' | 'rtl' | null): this;
+  setDirection(direction: 'ltr' | 'rtl' | 'auto' | null): this;
   setFormat(type: ElementFormatType): this;
   setIndent(indentLevel: number): this;
   insertNewAfter(
@@ -1416,6 +1416,7 @@ export type SerializedTextNode = {
 export type SerializedElementNode = {
   ...SerializedLexicalNode,
   children: SerializedLexicalNode[],
+  dirAuto?: boolean,
   direction: 'ltr' | 'rtl' | null,
   format: ElementFormatType,
   indent: number,

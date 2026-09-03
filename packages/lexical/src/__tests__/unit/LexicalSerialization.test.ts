@@ -11,7 +11,12 @@ import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {$createTableNodeWithDimensions} from '@lexical/table';
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $isElementNode,
+} from 'lexical';
 import {describe, expect, test} from 'vitest';
 
 import {initializeUnitTest} from '../utils';
@@ -123,6 +128,83 @@ describe('LexicalSerialization tests', () => {
       expect(JSON.parse(otherStringifiedEditorState)).toEqual(
         JSON.parse(expectedStringifiedEditorState),
       );
+    });
+
+    test('auto direction serializes as a flat dirAuto key, not as direction', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('Hello')));
+      });
+      const plain = JSON.parse(JSON.stringify(editor.getEditorState()));
+      expect(plain.root.children[0].dirAuto).toBeUndefined();
+
+      await editor.update(() => {
+        const paragraph = $getRoot().getFirstChild();
+        if ($isElementNode(paragraph)) {
+          paragraph.setDirection('auto');
+        }
+      });
+      const withAuto = JSON.parse(JSON.stringify(editor.getEditorState()));
+      // Flat key at the top level, and `direction` keeps its existing domain.
+      expect(withAuto.root.children[0].dirAuto).toBe(true);
+      expect(withAuto.root.children[0].direction).toBe(null);
+
+      const roundTripped = editor.parseEditorState(
+        JSON.stringify(editor.getEditorState()),
+      );
+      expect(JSON.parse(JSON.stringify(roundTripped))).toEqual(withAuto);
+      expect(
+        roundTripped.read(() => {
+          const paragraph = $getRoot().getFirstChild();
+          return $isElementNode(paragraph) ? paragraph.getDirection() : null;
+        }),
+      ).toBe('auto');
+    });
+
+    test('a hand-written direction:"auto" payload normalizes into dirAuto', async () => {
+      const {editor} = testEnv;
+
+      // ElementNode.updateFromJSON does not validate `direction`, so documents
+      // carrying this out-of-domain value already exist. They must land in the
+      // canonical representation rather than pinning 'auto' into __dir.
+      const state = editor.parseEditorState(
+        JSON.stringify({
+          root: {
+            children: [
+              {
+                children: [],
+                direction: 'auto',
+                format: '',
+                indent: 0,
+                type: 'paragraph',
+                version: 1,
+              },
+            ],
+            direction: null,
+            format: '',
+            indent: 0,
+            type: 'root',
+            version: 1,
+          },
+        }),
+      );
+
+      expect(
+        state.read(() => {
+          const paragraph = $getRoot().getFirstChild();
+          if (!$isElementNode(paragraph)) {
+            return null;
+          }
+          return [paragraph.getLatest().__dir, paragraph.getDirection()];
+        }),
+      ).toEqual([null, 'auto']);
+
+      const reExported = JSON.parse(JSON.stringify(state));
+      expect(reExported.root.children[0].direction).toBe(null);
+      expect(reExported.root.children[0].dirAuto).toBe(true);
     });
   });
 });

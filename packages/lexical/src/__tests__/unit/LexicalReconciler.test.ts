@@ -196,6 +196,120 @@ describe('LexicalReconciler', () => {
       expect(directions).toEqual(['auto', 'ltr']);
     });
 
+    test('Should resolve auto direction even when the root has a direction', async () => {
+      const {editor} = testEnv;
+
+      editor.update(() => {
+        const root = $getRoot().clear();
+        root.setDirection('rtl');
+        root.append(
+          $createParagraphNode()
+            .setDirection('auto')
+            .append($createTextNode('فرعي')),
+          $createParagraphNode()
+            .setDirection('ltr')
+            .append($createTextNode('Hello')),
+        );
+      });
+
+      const directions = editor.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(child =>
+            $getReconciledDirection($assertNodeType(child, $isElementNode)),
+          ),
+      );
+      expect(directions).toEqual(['auto', 'ltr']);
+    });
+
+    test('Should re-render the dir attribute when auto is toggled in a later update', async () => {
+      const {editor} = testEnv;
+      let key = '';
+
+      // First update mounts the paragraph with no direction. The toggle MUST
+      // happen in a second, incremental update: a single update (or
+      // setEditorState) sets treatAllNodesAsDirty, which reconciles the dir
+      // attribute anyway and hides a broken dirty gate entirely.
+      editor.update(
+        () => {
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('فرعي'),
+          );
+          $getRoot().clear().setDirection('rtl').append(paragraph);
+          key = paragraph.getKey();
+        },
+        {discrete: true},
+      );
+      expect(editor.getElementByKey(key)!.getAttribute('dir')).toBe(null);
+
+      editor.update(
+        () => {
+          $assertNodeType($getNodeByKey(key), $isElementNode).setDirection(
+            'auto',
+          );
+        },
+        {discrete: true},
+      );
+      expect(editor.getElementByKey(key)!.getAttribute('dir')).toBe('auto');
+
+      editor.update(
+        () => {
+          $assertNodeType($getNodeByKey(key), $isElementNode).setDirection(
+            null,
+          );
+        },
+        {discrete: true},
+      );
+      expect(editor.getElementByKey(key)!.getAttribute('dir')).toBe(null);
+    });
+
+    test('Should keep per-child auto detection when the root itself is auto', async () => {
+      const {editor} = testEnv;
+
+      editor.update(() => {
+        const root = $getRoot().clear();
+        root.setDirection('auto');
+        root.append(
+          $createParagraphNode().append($createTextNode('فرعي')),
+          $createParagraphNode().append($createTextNode('Hello')),
+        );
+      });
+
+      // The point of keeping auto out of __dir: the root staying null means
+      // the parent short-circuit does not fire, so children still detect
+      // their own direction rather than inheriting one document-wide answer.
+      const directions = editor.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(child =>
+            $getReconciledDirection($assertNodeType(child, $isElementNode)),
+          ),
+      );
+      expect(directions).toEqual(['auto', 'auto']);
+      expect(editor.read(() => $getRoot().getDirection())).toBe('auto');
+    });
+
+    test('Should treat auto and an explicit direction as mutually exclusive', async () => {
+      const {editor} = testEnv;
+
+      editor.update(() => {
+        const paragraph = $createParagraphNode();
+        $getRoot().clear().append(paragraph);
+
+        paragraph.setDirection('auto');
+        expect(paragraph.getDirection()).toBe('auto');
+        expect(paragraph.getLatest().__dir).toBe(null);
+
+        paragraph.setDirection('rtl');
+        expect(paragraph.getDirection()).toBe('rtl');
+        expect(paragraph.exportJSON().dirAuto).toBeUndefined();
+
+        paragraph.setDirection('auto');
+        expect(paragraph.getLatest().__dir).toBe(null);
+        expect(paragraph.exportJSON().dirAuto).toBe(true);
+      });
+    });
+
     describe('Cross-parent moves reuse DOM (regression #8420)', () => {
       afterEach(() => {
         vi.restoreAllMocks();

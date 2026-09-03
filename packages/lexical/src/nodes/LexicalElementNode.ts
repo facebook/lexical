@@ -24,6 +24,7 @@ import {
   ELEMENT_TYPE_TO_FORMAT,
   TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
+import {directionAutoState} from '../LexicalDirectionState';
 import {ElementDOMSlot} from '../LexicalDOMSlot';
 import {
   $isEphemeral,
@@ -34,6 +35,7 @@ import {
   type SlotChildNode,
   type SlotHostNode,
 } from '../LexicalNode';
+import {$getState, $setState} from '../LexicalNodeState';
 import {
   $getSelection,
   $internalMakeRangeSelection,
@@ -65,6 +67,7 @@ export type SerializedElementNode<
 > = Spread<
   {
     children: T[];
+    dirAuto?: boolean;
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;
@@ -167,6 +170,7 @@ export class ElementNode
        */
       $transform: $normalizeShadowRootChildren,
       extends: LexicalNode,
+      stateConfigs: [{flat: true, stateConfig: directionAutoState}],
     });
   }
 
@@ -535,9 +539,12 @@ export class ElementNode
     }
     return textContentSize;
   }
-  getDirection(): 'ltr' | 'rtl' | null {
+  getDirection(): 'ltr' | 'rtl' | 'auto' | null {
     const self = this.getLatest();
-    return self.__dir;
+    if (self.__dir !== null) {
+      return self.__dir;
+    }
+    return $getState(self, directionAutoState) ? 'auto' : null;
   }
   getTextFormat(): number {
     const self = this.getLatest();
@@ -634,10 +641,16 @@ export class ElementNode
   append(...nodesToAppend: LexicalNode[]): this {
     return this.splice(this.getChildrenSize(), 0, nodesToAppend);
   }
-  setDirection(direction: 'ltr' | 'rtl' | null): this {
+  setDirection(direction: 'ltr' | 'rtl' | 'auto' | null): this {
     const self = this.getWritable();
-    self.__dir = direction;
-    return self;
+    const isAuto = direction === 'auto';
+    self.__dir = isAuto ? null : direction;
+    // Only touch the state when it is or becomes set, so the common path
+    // (updateFromJSON calls this for every element of every document)
+    // does not allocate a NodeState for elements that never opt in.
+    return isAuto || $getState(self, directionAutoState)
+      ? $setState(self, directionAutoState, isAuto)
+      : self;
   }
   setFormat(type: ElementFormatType): this {
     const self = this.getWritable();
@@ -855,7 +868,9 @@ export class ElementNode
   exportJSON(): SerializedElementNode {
     const json: SerializedElementNode = {
       children: [],
-      direction: this.getDirection(),
+      // Pinned to __dir rather than getDirection(): 'auto' is carried by the
+      // dirAuto state, and this field keeps its 'ltr' | 'rtl' | null domain.
+      direction: this.getLatest().__dir,
       format: this.getFormatType(),
       indent: this.getIndent(),
       // As an exception here we invoke super at the end for historical reasons.
@@ -884,13 +899,20 @@ export class ElementNode
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedElementNode>,
   ): this {
-    return super
+    const self = super
       .updateFromJSON(serializedNode)
       .setFormat(serializedNode.format)
       .setIndent(serializedNode.indent)
-      .setDirection(serializedNode.direction)
       .setTextFormat(serializedNode.textFormat || 0)
       .setTextStyle(serializedNode.textStyle || '');
+    // super lifted any dirAuto flat state, so direction is applied last and
+    // must not clobber it: a payload with no explicit direction keeps the
+    // flag, an explicit 'ltr'/'rtl' clears it, and a legacy out-of-domain
+    // 'auto' (this field has never been validated) normalizes into the flag.
+    return self.setDirection(
+      serializedNode.direction ??
+        ($getState(self, directionAutoState) ? 'auto' : null),
+    );
   }
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(

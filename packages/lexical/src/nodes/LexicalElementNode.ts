@@ -35,7 +35,7 @@ import {
   type SlotChildNode,
   type SlotHostNode,
 } from '../LexicalNode';
-import {$getState, $setState} from '../LexicalNodeState';
+import {$getState, $setState, NODE_STATE_DIRECT} from '../LexicalNodeState';
 import {
   $getSelection,
   $internalMakeRangeSelection,
@@ -911,7 +911,9 @@ export class ElementNode
     // 'auto' (this field has never been validated) normalizes into the flag.
     return self.setDirection(
       serializedNode.direction ??
-        ($getState(self, directionAutoState) ? 'auto' : null),
+        ($getState(self, directionAutoState, NODE_STATE_DIRECT)
+          ? 'auto'
+          : null),
     );
   }
   // These are intended to be extends for specific element heuristics.

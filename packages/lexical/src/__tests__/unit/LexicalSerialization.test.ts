@@ -11,7 +11,12 @@ import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {$createTableNodeWithDimensions} from '@lexical/table';
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $isElementNode,
+} from 'lexical';
 import {describe, expect, test} from 'vitest';
 
 import {initializeUnitTest} from '../utils';
@@ -103,12 +108,15 @@ function $createEditorContent() {
 
 describe('LexicalSerialization tests', () => {
   initializeUnitTest(testEnv => {
-    test('serializes and deserializes from JSON', async () => {
+    test('serializes and deserializes from JSON', () => {
       const {editor} = testEnv;
 
-      await editor.update(() => {
-        $createEditorContent();
-      });
+      editor.update(
+        () => {
+          $createEditorContent();
+        },
+        {discrete: true},
+      );
 
       const stringifiedEditorState = JSON.stringify(editor.getEditorState());
       const expectedStringifiedEditorState = `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Welcome to the playground","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"In case you were wondering what the black box at the bottom is – it's the debug view, showing the current state of the editor. You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"quote","version":1},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"The playground is a demo environment built with ","type":"text","version":1},{"detail":0,"format":16,"mode":"normal","style":"","text":"@lexical/react","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":". Try typing in ","type":"text","version":1},{"detail":0,"format":1,"mode":"normal","style":"","text":"some text","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":" with ","type":"text","version":1},{"detail":0,"format":2,"mode":"normal","style":"","text":"different","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":" formats.","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Make sure to check out the various plugins in the toolbar. You can also use #hashtags or @-mentions too!","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"If you'd like to find out more about Lexical, you can:","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""},{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Visit the ","type":"text","version":1},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Lexical website","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"link","version":1,"rel":null,"target":null,"title":null,"url":"https://lexical.dev/"},{"detail":0,"format":0,"mode":"normal","style":"","text":" for documentation and more information.","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"listitem","version":1,"value":1},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Check out the code on our ","type":"text","version":1},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"GitHub repository","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"link","version":1,"rel":null,"target":null,"title":null,"url":"https://github.com/facebook/lexical"},{"detail":0,"format":0,"mode":"normal","style":"","text":".","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"listitem","version":1,"value":2},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Playground code can be found ","type":"text","version":1},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"here","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"link","version":1,"rel":null,"target":null,"title":null,"url":"https://github.com/facebook/lexical/tree/main/packages/lexical-playground"},{"detail":0,"format":0,"mode":"normal","style":"","text":".","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"listitem","version":1,"value":3},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Join our ","type":"text","version":1},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Discord Server","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"link","version":1,"rel":null,"target":null,"title":null,"url":"https://discord.com/invite/KmG4wQnnD9"},{"detail":0,"format":0,"mode":"normal","style":"","text":" and chat with the team.","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"listitem","version":1,"value":4}],"direction":null,"format":"","indent":0,"type":"list","version":1,"listType":"bullet","start":1,"tag":"ul"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Lastly, we're constantly adding cool new features to this playground. So make sure you check back here when you next get a chance :).","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"const lexical = \\"awesome\\"","type":"code-highlight","version":1}],"direction":null,"format":"","indent":0,"type":"code","version":1,"language":"javascript"},{"children":[{"children":[{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":3,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":1,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":1,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":1,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":1,"rowSpan":1}],"direction":null,"format":"","indent":0,"type":"tablerow","version":1},{"children":[{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":2,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1}],"direction":null,"format":"","indent":0,"type":"tablerow","version":1},{"children":[{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":2,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1}],"direction":null,"format":"","indent":0,"type":"tablerow","version":1},{"children":[{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":2,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1}],"direction":null,"format":"","indent":0,"type":"tablerow","version":1},{"children":[{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":2,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1},{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":0,"rowSpan":1}],"direction":null,"format":"","indent":0,"type":"tablerow","version":1}],"direction":null,"format":"","indent":0,"type":"table","version":1}],"direction":null,"format":"","indent":0,"type":"root","version":1}}`;
@@ -123,6 +131,89 @@ describe('LexicalSerialization tests', () => {
       expect(JSON.parse(otherStringifiedEditorState)).toEqual(
         JSON.parse(expectedStringifiedEditorState),
       );
+    });
+
+    test('auto direction serializes as a flat dirAuto key, not as direction', () => {
+      const {editor} = testEnv;
+
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('Hello')));
+        },
+        {discrete: true},
+      );
+      const plain = JSON.parse(JSON.stringify(editor.getEditorState()));
+      expect(plain.root.children[0].dirAuto).toBeUndefined();
+
+      editor.update(
+        () => {
+          const paragraph = $getRoot().getFirstChild();
+          if ($isElementNode(paragraph)) {
+            paragraph.setDirection('auto');
+          }
+        },
+        {discrete: true},
+      );
+      const withAuto = JSON.parse(JSON.stringify(editor.getEditorState()));
+      // Flat key at the top level, and `direction` keeps its existing domain.
+      expect(withAuto.root.children[0].dirAuto).toBe(true);
+      expect(withAuto.root.children[0].direction).toBe(null);
+
+      const roundTripped = editor.parseEditorState(
+        JSON.stringify(editor.getEditorState()),
+      );
+      expect(JSON.parse(JSON.stringify(roundTripped))).toEqual(withAuto);
+      expect(
+        roundTripped.read(() => {
+          const paragraph = $getRoot().getFirstChild();
+          return $isElementNode(paragraph) ? paragraph.getDirection() : null;
+        }),
+      ).toBe('auto');
+    });
+
+    test('a hand-written direction:"auto" payload normalizes into dirAuto', () => {
+      const {editor} = testEnv;
+
+      // ElementNode.updateFromJSON does not validate `direction`, so documents
+      // carrying this out-of-domain value already exist. They must land in the
+      // canonical representation rather than pinning 'auto' into __dir.
+      const state = editor.parseEditorState(
+        JSON.stringify({
+          root: {
+            children: [
+              {
+                children: [],
+                direction: 'auto',
+                format: '',
+                indent: 0,
+                type: 'paragraph',
+                version: 1,
+              },
+            ],
+            direction: null,
+            format: '',
+            indent: 0,
+            type: 'root',
+            version: 1,
+          },
+        }),
+      );
+
+      expect(
+        state.read(() => {
+          const paragraph = $getRoot().getFirstChild();
+          if (!$isElementNode(paragraph)) {
+            return null;
+          }
+          return [paragraph.getLatest().__dir, paragraph.getDirection()];
+        }),
+      ).toEqual([null, 'auto']);
+
+      const reExported = JSON.parse(JSON.stringify(state));
+      expect(reExported.root.children[0].direction).toBe(null);
+      expect(reExported.root.children[0].dirAuto).toBe(true);
     });
   });
 });

@@ -44,7 +44,13 @@ import {
   IS_ALIGN_RIGHT,
   IS_ALIGN_START,
 } from './LexicalConstants';
+import {directionAutoState} from './LexicalDirectionState';
 import {cloneMap} from './LexicalGenMap';
+import {
+  $getState,
+  $getStateChange,
+  NODE_STATE_DIRECT,
+} from './LexicalNodeState';
 import {$isSlotChild, $isSlotHost, EMPTY_SLOTS} from './LexicalSlot';
 import {
   $createChildrenArray,
@@ -425,6 +431,10 @@ export function $getReconciledDirection(
   const direction = node.__dir;
   if (direction !== null) {
     return direction;
+  }
+  // Read DIRECT to match the raw __dir access above.
+  if ($getState(node, directionAutoState, NODE_STATE_DIRECT)) {
+    return 'auto';
   }
   if ($isRootNode(node)) {
     return null;
@@ -1859,7 +1869,12 @@ function $reconcileNode(
     if (
       treatAllNodesAsDirty ||
       nextNode.__dir !== prevNode.__dir ||
-      nextNode.__parent !== prevNode.__parent
+      nextNode.__parent !== prevNode.__parent ||
+      // dirAuto lives in NodeState, so a state swap can change the rendered
+      // dir without touching __dir or __parent. The identity pre-check keeps
+      // the common case free: elements with no state never allocate one.
+      (nextNode.__state !== prevNode.__state &&
+        $getStateChange(nextNode, prevNode, directionAutoState) !== null)
     ) {
       $setElementDirection(dom, nextNode);
       if (

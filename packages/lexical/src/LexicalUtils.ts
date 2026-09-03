@@ -3308,6 +3308,13 @@ interface CompiledNodeClass {
   /** The import-direction table (see {@link compileSetters}). */
   readonly setters: readonly CompiledSetter[];
   /**
+   * The flat NodeStates the class carries, applied by {@link $applyJSONSetters}
+   * before the setters — and before a generated parser, which knows nothing of
+   * them: what a node carries in state is not known when code is generated,
+   * the same reason the export side appends it around the generated literal.
+   */
+  readonly flatStates: readonly AnyStateConfig[];
+  /**
    * The generated JSON functions this class may use, or `null` for a class
    * that may not (see {@link resolveGenerated}).
    */
@@ -3365,13 +3372,17 @@ const IS_UNOPTIMIZED_DEV_BUILD =
   TextNode.name === 'TextNode';
 
 /**
- * A precompiled step for applying one of a node's serialized top-level
- * properties in {@link LexicalNode.updateFromJSON}: either a schema field
- * applied through a named setter (`set<Prop>` by default, or the name recorded
- * with `withAccessors`), or a flat NodeState applied through the single
- * {@link $setState} entry point. Compiled once per class and cached so the base
+ * A precompiled step for applying one of a node's serialized schema properties
+ * in {@link LexicalNode.updateFromJSON}: a field applied through a named setter
+ * (`set<Prop>` by default, or the name recorded with `withAccessors`), or
+ * assigned directly. Compiled once per class and cached so the base
  * updateFromJSON iterates an array and applies each directly, without walking
  * the class chain or materializing an intermediate parsed object on every call.
+ *
+ * A flat NodeState is serialized at the top level alongside these, but is not
+ * one of them: it is applied through the single {@link $setState} entry point,
+ * from the class's own list of them (see {@link CompiledNodeClass}), before
+ * any of these run.
  */
 type CompiledSetter =
   | {
@@ -3392,11 +3403,6 @@ type CompiledSetter =
       readonly field: string;
       /** Maps the parsed value to the stored one; see {@link SchemaField}. */
       readonly encode?: {readonly [key: string]: unknown};
-    }
-  | {
-      readonly kind: 'state';
-      readonly key: string;
-      readonly stateConfig: AnyStateConfig;
     };
 
 const EMPTY_SETTERS: readonly CompiledSetter[] = [];
@@ -4042,7 +4048,7 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
   // name needs the widening cast.
   const prototype = klass.prototype as unknown as Record<string, unknown>;
   const fields = new Map<string, CompiledSetter>();
-  const {fieldsBaseFirst, flatStates} = getComposedSchema(klass);
+  const {fieldsBaseFirst} = getComposedSchema(klass);
   // Applied ancestors-first: a base property is set before the subclass
   // properties that may depend on it.
   for (const [key, schema] of fieldsBaseFirst) {
@@ -4095,21 +4101,7 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
       setter: method as (this: LexicalNode, value: unknown) => LexicalNode,
     });
   }
-  // Flat NodeStates are serialized at the top level alongside schema fields
-  // (non-flat states live under NODE_STATE_KEY and are applied by
-  // $updateStateFromJSON). They are applied through the single $setState entry
-  // point rather than a per-property setter.
-  const states: CompiledSetter[] = flatStates.map(stateConfig => ({
-    key: stateConfig.key,
-    kind: 'state' as const,
-    stateConfig,
-  }));
-  if (fields.size === 0 && states.length === 0) {
-    return EMPTY_SETTERS;
-  }
-  // Apply flat states before named setters, matching the previous ordering in
-  // which $updateStateFromJSON ran before a node's own setters.
-  return [...states, ...fields.values()];
+  return fields.size === 0 ? EMPTY_SETTERS : [...fields.values()];
 }
 
 /**
@@ -4268,30 +4260,36 @@ export function $applyJSONSetters<T extends LexicalNode>(
   if (__DEV__) {
     validateOwnFields(record, node);
   }
-  const {generated, setters} = getCompiled(record);
+  const {flatStates, generated, setters} = getCompiled(record);
+  let self = node;
+  // Flat state first, matching the order in which $updateStateFromJSON ran
+  // before a node's own setters — and by this walk whether or not the class
+  // has a generated parser, which is handed the node with its state already
+  // applied. What a node carries in state is not known when code is generated;
+  // this is the mirror of exportJSON appending `__state.toJSON()` around the
+  // generated literal.
+  for (let i = 0; i < flatStates.length; i++) {
+    const stateConfig = flatStates[i];
+    // Only apply a flat state that is actually present so a partial update
+    // doesn't reset it to its default. An own-property check, not `in`:
+    // `serializedNode` came from JSON.parse, so `in` would find every
+    // Object.prototype member and treat a state keyed 'constructor' or
+    // 'toString' as present in JSON that never carried it.
+    if (hasOwnKey(serializedNode, stateConfig.key)) {
+      const parsed = stateConfig.parse(serializedNode[stateConfig.key]);
+      // Wrapped in an updater thunk so a parse that returns a function value
+      // is stored verbatim instead of being invoked as an updater.
+      self = $setState(self, stateConfig, () => parsed);
+    }
+  }
   if (generated !== null && generated.updateFromJSON !== undefined) {
     // The generated parser applies the same properties in the same order and
     // follows a setter's return the same way, so what it hands back is what
     // this walk would have: the node passed in, unless a setter replaced it.
-    return generated.updateFromJSON(node, serializedNode) as T;
+    return generated.updateFromJSON(self, serializedNode) as T;
   }
-  let self = node;
   for (let i = 0; i < setters.length; i++) {
     const entry = setters[i];
-    if (entry.kind === 'state') {
-      // Only apply a flat state that is actually present so a partial update
-      // doesn't reset it to its default. An own-property check, not `in`:
-      // `serializedNode` came from JSON.parse, so `in` would find every
-      // Object.prototype member and treat a state keyed 'constructor' or
-      // 'toString' as present in JSON that never carried it.
-      if (hasOwnKey(serializedNode, entry.key)) {
-        const parsed = entry.stateConfig.parse(serializedNode[entry.key]);
-        // Wrapped in an updater thunk so a parse that returns a function
-        // value is stored verbatim instead of being invoked as an updater.
-        self = $setState(self, entry.stateConfig, () => parsed);
-      }
-      continue;
-    }
     const parsed = entry.schema(
       hasOwnKey(serializedNode, entry.key)
         ? serializedNode[entry.key]
@@ -4430,6 +4428,10 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
     const setters = compileSetters(klass);
     const getters = compileGetters(klass);
     record.compiled = {
+      // Non-flat states live under NODE_STATE_KEY and are applied by
+      // $updateStateFromJSON; these are the ones serialized as top-level
+      // properties alongside the schema's.
+      flatStates: getComposedSchema(klass).flatStates,
       generated: resolveGenerated(klass, ownNodeConfig),
       getters,
       setters,

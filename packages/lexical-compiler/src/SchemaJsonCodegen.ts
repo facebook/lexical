@@ -48,6 +48,9 @@ export interface SchemaJsonSchema {
   (value: unknown): unknown;
   readonly defaultValue: unknown;
   readonly meta: SchemaJsonMeta;
+  // Method syntax, so a schema over a narrower domain is assignable here — the
+  // same reason `SerializationSchema.isEqual` is declared this way.
+  isEqual?(a: unknown, b: unknown): boolean;
 }
 
 /** A lookup table a compiled expression refers to by name. */
@@ -160,4 +163,32 @@ export function verifyTableCoversDomain(options: {
   table: {readonly [key: string]: unknown};
 }): void {
   impl.verifyTableCoversDomain(options);
+}
+
+/**
+ * A JavaScript expression over the variable `name`, true exactly when a value
+ * of `schema` is not its default — what a compact export tests before writing
+ * a property. A primitive default compares against its literal; an empty-array
+ * default becomes the length test `arrayValue`'s equality reduces to. Any other
+ * reference-typed default throws {@link NotCompilable}. Like a compiled parse,
+ * the result is a claim to be checked with {@link verifyDiffersFromDefault}.
+ */
+export function compileDiffersFromDefault(
+  schema: SchemaJsonSchema,
+  name: string,
+): string {
+  return impl.compileDiffersFromDefault(schema, name);
+}
+
+/**
+ * Run a {@link compileDiffersFromDefault} expression against the schema's own
+ * default and equality over the verification corpus, and throw
+ * {@link NotCompilable} naming the first value they disagree on.
+ */
+export function verifyDiffersFromDefault(options: {
+  expression: string;
+  name: string;
+  schema: SchemaJsonSchema;
+}): void {
+  impl.verifyDiffersFromDefault(options);
 }

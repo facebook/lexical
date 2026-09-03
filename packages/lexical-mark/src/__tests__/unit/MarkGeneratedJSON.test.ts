@@ -39,15 +39,14 @@ describe('mark generated exportJSON', () => {
         );
       });
 
-      test('the compact form keeps the walk for a reference-typed default', () => {
+      test('the compact form compares an empty-array default by content', () => {
         // `ids` defaults to an array, which no emitted literal could ever be
-        // `===`, so the generator emits no compact exporter for MarkNode and
-        // that form goes through the walk, which compares through the schema's
-        // own isEqual. `getIDs()` also copies, so even the identical-default
-        // node never hands back the default by reference — both cases below
-        // are decided by that equality, not by `===`.
-        expect(GENERATED_MARK.exportCompactJSON).toBeUndefined();
-        expect(GENERATED_MARK.exportJSON).toBeDefined();
+        // `===`, so the generated comparison is the length test arrayValue's
+        // own equality reduces to for an empty default — verified against that
+        // equality when it was generated. `getIDs()` also copies, so even the
+        // identical-default node never hands back the default by reference;
+        // both cases below are decided by content, not by `===`.
+        expect(GENERATED_MARK.exportCompactJSON).toBeDefined();
         testEnv.editor.update(
           () => {
             expect(new MarkNode().exportJSON(true)).toEqual({

@@ -8,7 +8,9 @@
 
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$expectSameJSON, initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {describe, test} from 'vitest';
+import {describe, expect, test} from 'vitest';
+
+import {GENERATED_QUOTE} from '../../LexicalRichTextGeneratedJSON';
 
 // The control classes: same schema (inherited through the config chain), same
 // fields, but no `generated` in their own $config, so they export through the
@@ -59,6 +61,31 @@ describe('rich-text generated exportJSON', () => {
               new QuoteNode().setIsShadowRoot(true),
               new WalkQuoteNode().setIsShadowRoot(true),
             );
+          },
+          {discrete: true},
+        );
+      });
+
+      test('QuoteNode parses through its generated parser, flat state included', () => {
+        // A class that carries flat NodeState still gets a parser: the walk
+        // applies the state before handing the node to the generated code,
+        // the mirror of how export appends it after the generated literal.
+        expect(GENERATED_QUOTE.updateFromJSON).toBeDefined();
+        testEnv.editor.update(
+          () => {
+            const json = {
+              direction: 'rtl',
+              format: 'center',
+              indent: 2,
+              shadowRoot: true,
+              textFormat: 1,
+              textStyle: 'color: red',
+            } as never;
+            const viaGenerated = new QuoteNode().updateFromJSON(json);
+            const viaWalk = new WalkQuoteNode().updateFromJSON(json);
+            expect(viaGenerated.isShadowRoot()).toBe(true);
+            expect(viaGenerated.getIndent()).toBe(2);
+            $expectSameJSON(viaGenerated, viaWalk);
           },
           {discrete: true},
         );

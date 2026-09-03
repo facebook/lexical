@@ -291,11 +291,18 @@ Three things are worth knowing before touching it:
   Adding a class means editing both, and the script fails loudly if they
   disagree.
 
-A class whose compact form would need a schema's own equality — MarkNode's
-`ids`, whose default is an array that no emitted literal could ever be `===` —
-keeps the schema-driven walk for that form: its generated module has no
-`exportCompactJSON`, the script says so on stdout, and the legacy form and the
-parser are generated as for any other class.
+The compact form compares each property against its default. A primitive
+default is a literal; a reference-typed default has no literal a value could
+be `===`, so it gets the structural test the schema's own equality reduces to
+where that can be stated — MarkNode's `ids`, whose default is an empty array,
+becomes a length test — and every emitted comparison is verified against that
+equality over a corpus, the way a parse is. A default the generator cannot
+state that way (an object, a non-empty array, a non-finite number) takes the
+class out of the compact half only: the script says so on stdout and the other
+forms are generated as usual. A class that carries flat NodeState is generated
+like any other; the walk applies the state before handing the node to the
+generated parser, the mirror of how export appends it after the generated
+literal.
 
 The schema-to-JavaScript compiler itself lives in `@lexical/compiler`'s
 `SchemaJsonCodegen` entry point, so it is testable independently of the

@@ -66,6 +66,7 @@
  *   (value: unknown): unknown,
  *   readonly defaultValue: unknown,
  *   readonly meta: SchemaMeta,
+ *   readonly isEqual?: (a: any, b: any) => boolean,
  * }} AnySchema
  */
 /** @typedef {{readonly [key: string]: unknown}} Table */
@@ -439,6 +440,127 @@ export function verifyTableCoversDomain({schema, table}) {
           `has a table entry for ${literal(key)} that its enum cannot produce`,
         );
       }
+    }
+  }
+}
+
+/**
+ * Whether `literal(value)` evaluates back to a value that is `===` this one,
+ * which is what an emitted comparison against it needs in order to mean what
+ * the walk's `value === defaultValue` means.
+ *
+ * True for the primitives JSON round-trips. False for an object or array — a
+ * literal allocates a fresh one, never `===` the default the walk holds — and
+ * for a non-finite number, which `JSON.stringify` renders as `null`. `-0` is
+ * rendered as `0`, which is fine: `-0 !== 0` is false either way.
+ *
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function hasFaithfulLiteral(value) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value);
+  }
+  return (
+    value === undefined ||
+    value === null ||
+    typeof value === 'boolean' ||
+    typeof value === 'string'
+  );
+}
+
+/**
+ * A JavaScript expression over the variable `name`, true exactly when a value
+ * of `schema` is *not* its default — the negation of the walk's
+ * `value === defaultValue || isEqual(value, defaultValue)`, which is what the
+ * compact form tests before writing a property, and what a property gated by a
+ * predicate tests before calling it.
+ *
+ * A primitive default compares against its literal. A reference-typed default
+ * has no literal a value could be `===`; the walk compares those through the
+ * schema's own equality, and the one such equality this can restate from the
+ * default alone is `arrayValue`'s against an empty array, which reduces to a
+ * length test. Anything else — an object, a non-empty array, a non-finite
+ * number — throws {@link NotCompilable}. Like a compiled parse, the result is
+ * a claim about the schema, not a fact about it: run it through
+ * {@link verifyDiffersFromDefault} before emitting it.
+ *
+ * @param {AnySchema} schema
+ * @param {string} name the variable holding the value
+ * @returns {string}
+ */
+export function compileDiffersFromDefault(schema, name) {
+  const {defaultValue} = schema;
+  if (hasFaithfulLiteral(defaultValue)) {
+    return `${name} !== ${literal(defaultValue)}`;
+  }
+  if (
+    schema.meta.kind === 'array' &&
+    schema.isEqual !== undefined &&
+    Array.isArray(defaultValue) &&
+    defaultValue.length === 0
+  ) {
+    return `!(Array.isArray(${name}) && ${name}.length === 0)`;
+  }
+  throw new NotCompilable(
+    `has a default with no faithful literal (${literal(defaultValue)})`,
+  );
+}
+
+/**
+ * Run a {@link compileDiffersFromDefault} expression against the schema's own
+ * rule — `value === defaultValue || isEqual(value, defaultValue)`, negated —
+ * and throw {@link NotCompilable} naming the first value they disagree on.
+ *
+ * The values are {@link verificationCorpus} plus the default itself, a copy of
+ * it (which is `===` to nothing the schema holds), and the array and object
+ * shapes a structural comparison could confuse. A schema's `isEqual` is a
+ * function its meta does not describe — a `transformValue` may declare any
+ * equality over a primitive domain — so a literal comparison can be plausible
+ * and wrong, and only running the two against each other catches it.
+ *
+ * @param {object} args
+ * @param {string} args.expression a compiled expression over `name`
+ * @param {string} args.name
+ * @param {AnySchema} args.schema
+ * @returns {void}
+ */
+export function verifyDiffersFromDefault({expression, name, schema}) {
+  const {defaultValue, isEqual} = schema;
+  // Build-time only, over a fixed corpus, with nothing untrusted in scope.
+  // eslint-disable-next-line no-new-func
+  const compiled = new Function(name, `return (${expression});`);
+  const copy = Array.isArray(defaultValue)
+    ? [...defaultValue]
+    : defaultValue !== null && typeof defaultValue === 'object'
+      ? {...defaultValue}
+      : defaultValue;
+  const values = [
+    ...verificationCorpus(schema.meta),
+    defaultValue,
+    copy,
+    [],
+    [0],
+    ['a'],
+    [undefined],
+    new Array(1),
+    {},
+    {length: 0},
+  ];
+  for (const value of values) {
+    const want = !(
+      value === defaultValue ||
+      (isEqual !== undefined && isEqual(value, defaultValue))
+    );
+    const got = Boolean(compiled(value));
+    if (want !== got) {
+      throw new NotCompilable(
+        `disagrees with its schema on whether ${literal(
+          value,
+        )} is the default: schema says ${want ? 'no' : 'yes'}, generated says ${
+          got ? 'no' : 'yes'
+        }`,
+      );
     }
   }
 }

@@ -21,10 +21,12 @@
  *
  * Each package gets its own generated module beside its nodes, and each class
  * passes its own generated code to `$config`, so the association is carried by
- * the class rather than looked up at runtime. A class whose compact form would
- * need a schema's own equality — MarkNode's `ids`, whose default is an array
- * that no emitted literal could ever be `===` — keeps the walk for that form
- * and gets generated code for the other.
+ * the class rather than derived from its type string. The compact form
+ * compares each property against its default; a reference-typed default has no
+ * literal a value could be `===`, so it gets the structural test the schema's
+ * own equality reduces to where that can be stated (MarkNode's `ids`, an empty
+ * array), verified against that equality the way a parse is verified, and
+ * otherwise keeps the walk for that one form.
  *
  * The import direction is the untrusted-JSON boundary and has to reproduce
  * each property's validation exactly, so every emitted parser is checked here
@@ -46,12 +48,14 @@ import {dirname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 import {
+  compileDiffersFromDefault,
   compileParse,
   literal,
   NotCompilable,
   NUM_HELPER_SOURCE,
   NUM_RANGE_HELPER_SOURCE,
   verifyCompiledParse,
+  verifyDiffersFromDefault,
   verifyTableCoversDomain,
 } from '../packages/lexical-compiler/src/passes/schemaJsonCodegen.mjs';
 
@@ -391,45 +395,50 @@ function schemaReads(klass) {
  * before calling it, so an element with nothing to persist — every element
  * with a TextNode child — still never reaches it.
  *
- * That comparison is emitted as a `!==` against a literal, so a gated property
- * whose default has no faithful literal has no generated form: `key !== []`
- * allocates a fresh array and is always true, which would write the property
- * where the walk's own equality omits it. The compact form can leave such a
- * property to the walk; the legacy form writes every property, so this
- * refuses rather than emitting a comparison that means something else. No
- * such property exists; the check is here so that declaring one fails the
- * build instead of the round trip.
+ * That comparison is the one {@link differsFromDefault} states and verifies
+ * for the property's default. A gated property whose default it cannot state
+ * has no generated form: the compact form can leave such a property to the
+ * walk, but the legacy form writes every property, so this refuses rather than
+ * emitting a comparison that means something else. No such property exists;
+ * the check is here so that declaring one fails the build instead of the
+ * round trip.
  *
  * @param {{expression: string, key: string, schema: AnySchema, when?: string}[]} reads
  * @returns {{lines: string[], value: (read: {expression: string, key: string, schema: AnySchema, when?: string}) => string}}
  */
 function hoistGatedReads(reads) {
   // Built by hand rather than filtered, so `when` is a string in what follows.
-  /** @type {{expression: string, key: string, schema: AnySchema, when: string}[]} */
+  /** @type {{differs: string, expression: string, key: string, when: string}[]} */
   const gated = [];
   for (const read of reads) {
     if (read.when !== undefined) {
-      if (!hasFaithfulLiteral(read.schema.defaultValue)) {
+      let differs;
+      try {
+        differs = differsFromDefault(read.schema, read.key);
+      } catch (error) {
+        if (!(error instanceof NotCompilable)) {
+          throw error;
+        }
         throw new Error(
-          `generate-node-json: "${read.key}" is gated by ${read.when}() but its default (${String(
-            read.schema.defaultValue,
-          )}) has no faithful literal to compare against`,
+          `generate-node-json: "${read.key}" is gated by ${read.when}() but ${error.message}`,
         );
       }
-      gated.push({...read, when: read.when});
+      gated.push({...read, differs, when: read.when});
     }
   }
   if (gated.length === 0) {
     return {lines: [], value: read => read.expression};
   }
   const lines = gated.map(read => `  const ${read.key} = ${read.expression};`);
+  /** @type {Map<string, string>} */
+  const differsByKey = new Map();
   /** @type {Map<string, string[]>} */
   const byPredicate = new Map();
   for (const read of gated) {
-    const differs = `${read.key} !== ${literal(read.schema.defaultValue)}`;
+    differsByKey.set(read.key, read.differs);
     byPredicate.set(read.when, [
       ...(byPredicate.get(read.when) || []),
-      differs,
+      read.differs,
     ]);
   }
   for (const [predicate, tests] of byPredicate) {
@@ -442,34 +451,24 @@ function hoistGatedReads(reads) {
     value: read =>
       read.when === undefined
         ? read.expression
-        : `${read.key} !== ${literal(read.schema.defaultValue)} && ${read.when}\n      ? ${read.key}\n      : undefined`,
+        : `${differsByKey.get(read.key)} && ${read.when}\n      ? ${read.key}\n      : undefined`,
   };
 }
 
 /**
- * Whether `literal(value)` evaluates back to a value that is `===` this one,
- * which is what an emitted `!==` comparison needs in order to mean what the
- * walk's `value === defaultValue` means.
+ * The test that a property's value is not its default, as the compact form
+ * (and a gated property) needs it: compiled from the schema's default and
+ * verified against the schema's own equality, so what is emitted is what the
+ * walk decides. Throws {@link NotCompilable} for a default it cannot state.
  *
- * True for the primitives JSON round-trips. False for an object or array — a
- * literal allocates a fresh one, never `===` the default the walk holds, which
- * compares those through the schema's own equality instead — and for a
- * non-finite number, which `JSON.stringify` renders as `null`. `-0` is
- * rendered as `0`, which is fine: `-0 !== 0` is false either way.
- *
- * @param {unknown} value
- * @returns {boolean}
+ * @param {AnySchema} schema
+ * @param {string} name the local holding the value
+ * @returns {string}
  */
-function hasFaithfulLiteral(value) {
-  if (typeof value === 'number') {
-    return Number.isFinite(value);
-  }
-  return (
-    value === undefined ||
-    value === null ||
-    typeof value === 'boolean' ||
-    typeof value === 'string'
-  );
+function differsFromDefault(schema, name) {
+  const expression = compileDiffersFromDefault(schema, name);
+  verifyDiffersFromDefault({expression, name, schema});
+  return expression;
 }
 
 /**
@@ -483,11 +482,11 @@ function hasFaithfulLiteral(value) {
  * the legacy form does, and the `compact` argument picks between two
  * straight-line functions rather than branching inside one.
  *
- * A property whose default has no faithful literal — a reference-typed one,
- * which the walk compares through the schema's own equality, or a non-finite
- * number — has no `!==` this could emit, so its class keeps the walk for this
- * form: the generated module simply has no `exportCompactJSON` for it, and
- * the dispatch falls back per form.
+ * Each comparison is the one {@link differsFromDefault} states and verifies
+ * for the property's default. A default it cannot state — an object, a
+ * non-empty array, a non-finite number — takes the class out of this form
+ * only: the generated module simply has no `exportCompactJSON` for it, and
+ * the dispatch falls back to the walk per form.
  *
  * @param {NodeClass} klass
  * @returns {null | string}
@@ -507,30 +506,33 @@ function generateCompactExport(klass) {
       // not even call the getter to find out what it would have written.
       continue;
     }
-    const {defaultValue} = schema;
-    if (!hasFaithfulLiteral(defaultValue)) {
+    let differs;
+    try {
+      differs = differsFromDefault(schema, key);
+    } catch (error) {
+      if (!(error instanceof NotCompilable)) {
+        throw error;
+      }
       process.stdout.write(
-        `${klass.name}: no generated compact export, "${key}" has a default with no faithful literal (${JSON.stringify(
-          defaultValue,
-        )})\n`,
+        `${klass.name}: no generated compact export, "${key}" ${error.message}\n`,
       );
       return null;
     }
-    // A default of `undefined` needs no second comparison: the walk skips an
-    // undefined value before it ever looks at the default, and so does this.
-    const isDefault =
-      defaultValue === undefined
-        ? ''
-        : ` && ${key} !== ${literal(defaultValue)}`;
+    // The walk skips an undefined value before it ever looks at the default,
+    // and so does this; for a default of `undefined` that is the whole test.
+    const test =
+      schema.defaultValue === undefined
+        ? `${key} !== undefined`
+        : `${key} !== undefined && ${differs}`;
     writes.push(
       when === undefined
-        ? `  const ${key} = ${expression};\n  if (${key} !== undefined${isDefault}) {\n    json.${key} = ${key};\n  }`
+        ? `  const ${key} = ${expression};\n  if (${test}) {\n    json.${key} = ${key};\n  }`
         : // `${key}` and the predicate are already hoisted above, so this is
           // the same test the legacy form makes plus the compact form's own
           // `!== undefined`, written as a statement. The legacy form has no
           // need of that one: it writes `undefined` into the literal, which
           // stringify omits, where an omitted key is what compaction means.
-          `  if (${key} !== undefined${isDefault} && ${when}) {\n    json.${key} = ${key};\n  }`,
+          `  if (${test} && ${when}) {\n    json.${key} = ${key};\n  }`,
     );
   }
   const isElement = isElementish(klass);
@@ -712,17 +714,20 @@ function writeExpression(klass, schema, key) {
 }
 
 /**
+ * The import direction of one class's schema, or `null` for a class the
+ * generator cannot compile faithfully.
+ *
+ * Fields only. A flat NodeState the class carries is applied by
+ * `$applyJSONSetters` before it hands the node to this parser — the mirror of
+ * the export side, where the dispatch appends `__state.toJSON()` around the
+ * generated literal — so what a node carries in state, which is not known when
+ * this is generated, never has to be.
+ *
  * @param {NodeClass} klass
  * @returns {null | string}
  */
 function generateUpdate(klass) {
-  const {fieldsBaseFirst, flatStates} = getComposedSchema(klass);
-  if (flatStates.length > 0) {
-    process.stdout.write(
-      `${klass.name}: no generated parser, it carries flat NodeState\n`,
-    );
-    return null;
-  }
+  const {fieldsBaseFirst} = getComposedSchema(klass);
   const writes = [];
   for (const [key, schema] of fieldsBaseFirst) {
     try {

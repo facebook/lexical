@@ -24,6 +24,7 @@ import {
 import {describe, expect, test} from 'vitest';
 
 import {
+  compileDiffersFromDefault,
   compileParse,
   JSON_NUMBER_SOURCE,
   NotCompilable,
@@ -31,6 +32,7 @@ import {
   NUM_HELPER_SOURCE,
   verificationCorpus,
   verifyCompiledParse,
+  verifyDiffersFromDefault,
   verifyTableCoversDomain,
 } from '../../passes/schemaJsonCodegen.mjs';
 
@@ -308,6 +310,80 @@ describe('verifyTableCoversDomain', () => {
         table: {0: 'a', 1: 'b'},
       }),
     ).not.toThrow();
+  });
+});
+
+describe('compileDiffersFromDefault', () => {
+  /** Compile and verify, the way the generator uses the two together. */
+  function differs(schema: AnySerializationSchema): string {
+    const expression = compileDiffersFromDefault(schema, 'value');
+    verifyDiffersFromDefault({expression, name: 'value', schema});
+    return expression;
+  }
+
+  test('a primitive default compares against its literal', () => {
+    expect(differs(stringValue('fallback'))).toBe('value !== "fallback"');
+    expect(differs(numberValue(7))).toBe('value !== 7');
+    expect(differs(booleanValue(true))).toBe('value !== true');
+    expect(differs(optional(numberValue()))).toBe('value !== undefined');
+    expect(differs(nullable(stringValue()))).toBe('value !== null');
+  });
+
+  test('an empty array default becomes the length test its equality reduces to', () => {
+    // arrayValue compares by content, so a fresh empty array *is* the default
+    // even though no literal could be `===` to it.
+    expect(differs(arrayValue(stringValue()))).toBe(
+      '!(Array.isArray(value) && value.length === 0)',
+    );
+  });
+
+  test.each([
+    ['an object', () => objectValue({a: stringValue()})],
+    ['a non-finite number', () => numberValue(Infinity)],
+    [
+      'a non-empty array',
+      () => transformValue(arrayValue(numberValue()), () => [1] as number[]),
+    ],
+  ])('%s has no faithful comparison', (_label, build) => {
+    const schema = build() as AnySerializationSchema;
+    expect(() => compileDiffersFromDefault(schema, 'value')).toThrow(
+      NotCompilable,
+    );
+  });
+
+  test('a declared equality the literal does not reproduce is caught', () => {
+    // The meta of a transformValue is its inner schema's, so this compiles to
+    // `value !== 0` — and the schema itself says 1 is the default too.
+    const schema = transformValue(numberValue(), value => value, {
+      isEqual: (a, b) =>
+        typeof a === 'number' && typeof b === 'number' && Math.abs(a - b) < 2,
+    }) as AnySerializationSchema;
+    const expression = compileDiffersFromDefault(schema, 'value');
+    expect(expression).toBe('value !== 0');
+    expect(() =>
+      verifyDiffersFromDefault({expression, name: 'value', schema}),
+    ).toThrow(/disagrees with its schema on whether 1 is the default/);
+  });
+
+  test('a structural test for a default compared by identity is caught', () => {
+    // An empty-array default without arrayValue's equality: the walk omits
+    // only the very object it holds, so a length test would omit too much.
+    // compileDiffersFromDefault refuses it outright, and the verification
+    // would have refused the expression had it been emitted.
+    const schema = transformValue(
+      stringValue(),
+      () => [] as string[],
+    ) as AnySerializationSchema;
+    expect(() => compileDiffersFromDefault(schema, 'value')).toThrow(
+      NotCompilable,
+    );
+    expect(() =>
+      verifyDiffersFromDefault({
+        expression: '!(Array.isArray(value) && value.length === 0)',
+        name: 'value',
+        schema,
+      }),
+    ).toThrow(/disagrees with its schema on whether \[\] is the default/);
   });
 });
 

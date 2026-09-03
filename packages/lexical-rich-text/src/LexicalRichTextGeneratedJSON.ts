@@ -214,8 +214,43 @@ function exportCompactQuoteNode(node: QuoteNode): {[key: string]: unknown} {
   return json;
 }
 
+/** Generated from QuoteNode's serialization schema. Do not edit by hand. */
+function updateQuoteNode(
+  node: QuoteNode,
+  json: {readonly [key: string]: unknown},
+): QuoteNode {
+  let self = node;
+  let n: unknown;
+  let v: unknown;
+  v = json.direction;
+  self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+  v = json.format;
+  n = self.setFormat(
+    v === '' ||
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
+      ? v
+      : '',
+  );
+  self = (n || self) as QuoteNode;
+  v = json.indent;
+  self.__indent = numC(v, 0, 0, Infinity, true);
+  v = json.textFormat;
+  n = self.setTextFormat(num(v, 0));
+  self = (n || self) as QuoteNode;
+  v = json.textStyle;
+  n = self.setTextStyle(typeof v === 'string' ? v : '');
+  self = (n || self) as QuoteNode;
+  return self;
+}
+
 /** QuoteNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_QUOTE: GeneratedJSON = {
   exportJSON: exportQuoteNode,
   exportCompactJSON: exportCompactQuoteNode,
+  updateFromJSON: updateQuoteNode,
 };

@@ -505,6 +505,57 @@ describe('the synthesized importJSON', () => {
       {discrete: true},
     );
   });
+
+  const flatState = createState('flatFlag', {
+    parse: v => (typeof v === 'string' ? v : ''),
+  });
+
+  // A parser that applies only the schema's fields, as every generated parser
+  // does: what a node carries in state is not known when code is generated.
+  const fieldsOnlyGenerated: GeneratedJSON = {
+    exportJSON: node => ({text: (node as TextNode).__text}),
+    updateFromJSON: (node, json) => {
+      (node as TextNode).__text =
+        typeof json.text === 'string' ? json.text : '';
+      return node;
+    },
+  };
+
+  class FlatStateText extends TextNode {
+    $config() {
+      return this.config('flat-state-text', {
+        extends: TextNode,
+        generated: fieldsOnlyGenerated,
+        stateConfigs: [{flat: true, stateConfig: flatState}],
+      });
+    }
+  }
+
+  test('flat NodeState is applied before the generated parser runs', () => {
+    // The mirror of export, where the dispatch appends `__state.toJSON()`
+    // around the generated literal: here the walk applies the flat state and
+    // then hands the node to the parser for the fields.
+    const editor = createEditor({
+      namespace: '',
+      nodes: [FlatStateText],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        const node = FlatStateText.importJSON({
+          flatFlag: 'set',
+          text: 'hello',
+          type: 'flat-state-text',
+          version: 1,
+        } as never);
+        expect($getState(node, flatState)).toBe('set');
+        expect(node.getTextContent()).toBe('hello');
+      },
+      {discrete: true},
+    );
+  });
 });
 
 describe('generated updateFromJSON', () => {

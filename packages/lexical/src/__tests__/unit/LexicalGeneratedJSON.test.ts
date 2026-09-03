@@ -74,7 +74,7 @@ class WalkTabNode extends TabNode {
 }
 
 describe('generated exportJSON', () => {
-  test('the checked-in outputs are what the generator produces', () => {
+  test('the checked-in outputs are what the generator produces; `pnpm run generate-node-json` to fix', () => {
     // A schema change that nobody regenerated for would otherwise ship
     // specialized code describing the previous schema.
     //

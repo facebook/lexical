@@ -514,9 +514,7 @@ function $appendNodesToJSON(
   // children array, so this only has to narrow the type rather than re-check
   // the condition and state the same failure a second way.
   const children = $isElementNode(target) ? target.getChildren() : [];
-  const childTarget = (
-    $isElementNode(target) ? serializedNode.children : []
-  ) as BaseSerializedNode[];
+  const childTarget = serializedNode.children || [];
   if ($isTextNode(target) && target.getTextContentSize() === 0) {
     // If an uncollapsed selection ends or starts at the end of a line of specialized,
     // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one

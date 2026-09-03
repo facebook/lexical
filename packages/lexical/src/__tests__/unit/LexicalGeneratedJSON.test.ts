@@ -6,7 +6,6 @@
  *
  */
 
-import {execFileSync} from 'node:child_process';
 import {mkdtempSync, readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -54,39 +53,31 @@ import {
 const REPO = join(import.meta.dirname, '..', '..', '..', '..', '..');
 
 describe('generated exportJSON', () => {
-  test('the checked-in outputs are what the generator produces; `pnpm run generate-node-json` to fix', () => {
+  test('the checked-in outputs are what the generator produces; `pnpm run generate-node-json` to fix', async () => {
     // A schema change that nobody regenerated for would otherwise ship
     // specialized code describing the previous schema.
     //
     // Generated somewhere else and compared, rather than regenerated in place:
     // the files under test are source modules other workers in this run
-    // import, and rewriting one — first with the generator's phase-one stub,
-    // then with the real output — makes whichever of them happens to be
-    // loading it fail. The generator writes its repo-relative layout under the
-    // directory plus a manifest listing every file, so this covers every
-    // package it generates for without keeping a second copy of that list.
+    // import, and rewriting one out from under them makes whichever happens to
+    // be loading it fail. Run in-process rather than spawned: the generator
+    // reads the schemas by importing the packages, which this worker has
+    // already loaded, so nothing here waits on a second process, a loader, or
+    // whatever else the machine is doing.
+    const {generateNodeJSON} =
+      await import('../../../../../scripts/shared/generateNodeJSON.mjs');
     const out = mkdtempSync(join(tmpdir(), 'lexical-codegen-'));
-    execFileSync(
-      'npx',
-      ['tsx', join(REPO, 'scripts', 'generate-node-json.mjs'), out],
-      {
-        cwd: REPO,
-        stdio: 'pipe',
-      },
+    const written = generateNodeJSON(out);
+    expect(written.map(w => w.path)).toContain(
+      'packages/lexical/src/LexicalGeneratedJSON.ts',
     );
-    const manifest: string[] = JSON.parse(
-      readFileSync(join(out, 'manifest.json'), 'utf8'),
-    );
-    expect(manifest).toContain('packages/lexical/src/LexicalGeneratedJSON.ts');
-    for (const file of manifest) {
-      expect({content: readFileSync(join(out, file), 'utf8'), file}).toEqual({
-        content: readFileSync(join(REPO, file), 'utf8'),
-        file,
+    for (const {path, target} of written) {
+      expect({content: readFileSync(target, 'utf8'), file: path}).toEqual({
+        content: readFileSync(join(REPO, path), 'utf8'),
+        file: path,
       });
     }
-    // Spawning the generator dominates: it type-strips the whole core module
-    // graph to read the schemas.
-  }, 120_000);
+  }, 30_000);
 
   initializeUnitTest(
     testEnv => {

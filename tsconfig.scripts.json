@@ -1,8 +1,5 @@
 {
   "compilerOptions": {
-    // The generator imports the compiler's SchemaJsonCodegen.ts by path, with
-    // its extension, which is how plain Node loads it before anything is built.
-    "allowImportingTsExtensions": true,
     "checkJs": true,
     "noEmit": true
   },

@@ -289,10 +289,12 @@ Three things are worth knowing before touching it:
 - **Two lists, deliberately.** The script runs in two phases, because reading
   the schemas means importing the packages and each package imports the file
   the script writes for it. Phase one replaces every output with a valid
-  do-nothing stub from a static `MANIFEST` so the imports always succeed;
-  phase two re-enters under `tsx` and writes the real thing from `PACKAGES`.
-  Adding a class means editing both, and the script fails loudly if they
-  disagree.
+  do-nothing stub from the static `MANIFEST` in
+  `scripts/shared/generateNodeJSONManifest.mjs` so the imports always succeed;
+  phase two re-enters under `tsx` and writes the real thing from `PACKAGES` in
+  `scripts/shared/generateNodeJSON.mjs`, which is also what the drift test
+  runs in-process. Adding a class means editing both lists, and the generation
+  fails loudly if they disagree.
 
 The compact form compares each property against its default. A primitive
 default is a literal; a reference-typed default has no literal a value could

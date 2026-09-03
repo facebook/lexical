@@ -22,6 +22,7 @@
   "homepage": "https://lexical.dev/docs/packages/lexical-compiler",
   "dependencies": {
     "@babel/parser": "^8.0.0",
+    "lexical": "workspace:*",
     "magic-string": "^0.30.21"
   },
   "devDependencies": {

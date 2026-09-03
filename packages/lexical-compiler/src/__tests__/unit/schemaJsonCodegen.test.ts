@@ -34,7 +34,7 @@ import {
   verifyCompiledParse,
   verifyDiffersFromDefault,
   verifyTableCoversDomain,
-} from '../../passes/schemaJsonCodegen.mjs';
+} from '../../SchemaJsonCodegen';
 
 /**
  * Build and run a compiled parse the way the generator's output does, so a

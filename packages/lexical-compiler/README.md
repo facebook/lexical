@@ -249,6 +249,12 @@ turn a node's declarative serialization schema (the `json` property of
   `Object.prototype` member names included — and throws naming the first
   value they disagree on. `verifyTableCoversDomain` proves an emitted lookup
   table total over a schema's domain, so its miss-fallback is dead code.
+- The compact form's comparisons are compiled the same way.
+  `compileDiffersFromDefault(schema, name)` states the test that a value is
+  not the schema's default — a literal for a primitive default, and the
+  length test `arrayValue`'s equality reduces to for an empty-array default —
+  and `verifyDiffersFromDefault` runs it against the schema's own `isEqual`
+  over the corpus.
 - `NUM_HELPER_SOURCE` and `JSON_NUMBER_SOURCE` are the number-parsing helper
   as source text, so an emitted module and the verification share one
   definition rather than two copies that could drift.

@@ -33,19 +33,20 @@ export {
 
 export type {
   CompileParseResult,
-  SchemaJsonMeta,
-  SchemaJsonSchema,
   SchemaJsonTable,
   VerifyCompiledParseOptions,
 } from './LexicalCompilerSchemaJsonCodegen';
 
 export {
+  compileDiffersFromDefault,
   compileParse,
   JSON_NUMBER_SOURCE,
   literal,
   NotCompilable,
   NUM_HELPER_SOURCE,
+  NUM_RANGE_HELPER_SOURCE,
   verificationCorpus,
   verifyCompiledParse,
+  verifyDiffersFromDefault,
   verifyTableCoversDomain,
 } from './LexicalCompilerSchemaJsonCodegen';

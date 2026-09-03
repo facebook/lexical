@@ -59,7 +59,7 @@ import {
   verifyCompiledParse,
   verifyDiffersFromDefault,
   verifyTableCoversDomain,
-} from '../packages/lexical-compiler/src/passes/schemaJsonCodegen.mjs';
+} from '../packages/lexical-compiler/src/SchemaJsonCodegen.ts';
 
 /** @typedef {import('lexical').LexicalNode} LexicalNode */
 /** @typedef {import('lexical').Klass<LexicalNode>} NodeClass */

@@ -15,7 +15,9 @@ import {
   $getRoot,
   createEditor,
   type Klass,
+  type LexicalExportJSON,
   type LexicalNode,
+  type LexicalParseJSON,
   type NodeKey,
   TextNode,
 } from 'lexical';
@@ -37,7 +39,7 @@ import {describe, expect, test} from 'vitest';
  */
 function expectCloneCarriesSchemaFields<T extends LexicalNode>(
   klass: Klass<T>,
-  props: {readonly [key: string]: unknown},
+  props: LexicalParseJSON<LexicalExportJSON<T>>,
 ): void {
   const editor = createEditor({
     namespace: 'clone-property',
@@ -56,7 +58,7 @@ function expectCloneCarriesSchemaFields<T extends LexicalNode>(
   editor.update(
     () => {
       const node = $create(klass);
-      node.updateFromJSON(props as never);
+      node.updateFromJSON(props);
       $getRoot().clear().append($createParagraphNode().append(node));
       key = node.getKey();
       original = node;

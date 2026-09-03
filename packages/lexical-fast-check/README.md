@@ -21,6 +21,11 @@ property is generated independently as present or absent, because that is the
 domain parsers actually face: an older document predates a property, and a
 compact export omits one whose value equals its default.
 
+The values are typed as the parse shape of the class's own serialized type —
+`LexicalParseJSON<SerializedMyNode>` for a `MyNode` that declares
+`exportJSON(): SerializedMyNode` — which is what its `updateFromJSON` accepts,
+so they can be handed to it without a cast.
+
 ```ts
 import {nodeArbitrary} from '@lexical/fast-check';
 import * as fc from 'fast-check';

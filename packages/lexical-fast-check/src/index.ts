@@ -6,7 +6,13 @@
  *
  */
 
-import type {Klass, LexicalNode, SerializationSchemaMeta} from 'lexical';
+import type {
+  Klass,
+  LexicalExportJSON,
+  LexicalNode,
+  LexicalParseJSON,
+  SerializationSchemaMeta,
+} from 'lexical';
 
 import * as fc from 'fast-check';
 import {getComposedSchemaFields} from 'lexical';
@@ -26,16 +32,31 @@ import {getComposedSchemaFields} from 'lexical';
  * predate a property, and a compact export omits one whose value equals its
  * default. Generating complete records only would leave the defaulting path
  * (the whole point of a schema carrying a `defaultValue`) untested.
+ *
+ * The values are typed as the parse shape of the class's own serialized type —
+ * `LexicalParseJSON<SerializedTextNode>` for `TextNode` — which is what its
+ * `updateFromJSON` accepts, so nothing has to be cast on the way in. That type
+ * is read off the class's `exportJSON` declaration (see `LexicalExportJSON`);
+ * a class that declares none gets the base node's, with its own properties
+ * present in the value but not in the type.
  */
-export function nodeArbitrary(
-  klass: Klass<LexicalNode>,
-): fc.Arbitrary<{[key: string]: unknown}> {
+export function nodeArbitrary<T extends LexicalNode>(
+  klass: Klass<T>,
+): fc.Arbitrary<LexicalParseJSON<LexicalExportJSON<T>>> {
   const fields = getComposedSchemaFields(klass);
   const record: {[key: string]: fc.Arbitrary<unknown>} = {};
   for (const key of Object.keys(fields)) {
     record[key] = metaArbitrary(fields[key].meta);
   }
-  return fc.record(record, {requiredKeys: []});
+  // The value is built from the schema and the type is read from the class's
+  // declared serialization; what ties them is `nodeSchema<T>`, which checks
+  // every declared property against the node at compile time, and `$config`,
+  // which requires a schema built that way. A class whose declared type and
+  // schema nonetheless disagree is already misdescribing its own
+  // `updateFromJSON`, and this reports that type rather than inventing one.
+  return fc.record(record, {requiredKeys: []}) as fc.Arbitrary<
+    LexicalParseJSON<LexicalExportJSON<T>>
+  >;
 }
 
 function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {

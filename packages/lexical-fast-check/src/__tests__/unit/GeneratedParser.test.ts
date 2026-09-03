@@ -54,10 +54,11 @@ describe('the generated TextNode parser', () => {
         $getRoot().clear();
         fc.assert(
           fc.property(nodeArbitrary(TextNode), json => {
+            // Typed as what TextNode's updateFromJSON accepts, so no cast.
             const viaGenerated = new TextNode('');
-            viaGenerated.updateFromJSON(json as never);
+            viaGenerated.updateFromJSON(json);
             const viaWalk = new WalkTextNode('');
-            viaWalk.updateFromJSON(json as never);
+            viaWalk.updateFromJSON(json);
             expect(readFields(viaGenerated)).toEqual(readFields(viaWalk));
           }),
           {numRuns: 1000},

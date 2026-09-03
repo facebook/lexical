@@ -71,7 +71,7 @@ function exportCompactHeadingNode(node: HeadingNode): {[key: string]: unknown} {
   const textStyle = node.__textStyle;
   const shouldSerializeTextStyles =
     (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {children: []};
+  const json: {[key: string]: unknown} = {type: node.__type, children: []};
   const tag = node.__tag;
   if (tag !== undefined && tag !== 'h1') {
     json.tag = tag;
@@ -102,7 +102,6 @@ function exportCompactHeadingNode(node: HeadingNode): {[key: string]: unknown} {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = node.__type;
   return json;
 }
 
@@ -183,7 +182,7 @@ function exportCompactQuoteNode(node: QuoteNode): {[key: string]: unknown} {
   const textStyle = node.__textStyle;
   const shouldSerializeTextStyles =
     (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {children: []};
+  const json: {[key: string]: unknown} = {type: node.__type, children: []};
   const direction = node.__dir;
   if (direction !== undefined && direction !== null) {
     json.direction = direction;
@@ -210,7 +209,6 @@ function exportCompactQuoteNode(node: QuoteNode): {[key: string]: unknown} {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = node.__type;
   return json;
 }
 

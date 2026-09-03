@@ -714,11 +714,13 @@ it internally. It is deliberately not set by a node's own
 having it set the walk's form would report a whole document as compact when a
 single node was asked to be.
 
-Parsing restores each, so both forms describe the same document. Compaction
-happens as the properties are written rather than as a pass over the finished
-object, so a derived property is skipped without even calling its getter — and
-a node with generated serialization code (see below) inlines the same
-decisions and never consults the schema at runtime.
+Parsing restores each, so both forms describe the same document. The compact
+form leads each node with `type`, where the legacy form ends with `type` and
+`version`; key order is part of neither format, since parsing reads properties
+by name. Compaction happens as the properties are written rather than as a
+pass over the finished object, so a derived property is skipped without even
+calling its getter — and a node with generated serialization code (see below)
+inlines the same decisions and never consults the schema at runtime.
 
 Know what the smaller form buys you before reaching for it. The raw JSON is
 much smaller — a representative rich document compacts to well under half the

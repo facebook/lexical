@@ -538,20 +538,24 @@ function generateCompactExport(klass) {
   }
   const isElement = isElementish(klass);
   const header = `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */`;
+  // The compact form leads with `type` — it is new, so it can read type-first
+  // where the legacy form keeps `type` last — and an element's `children`
+  // follows, so the object is allocated on its fixed keys and the rest are
+  // added as they pass their comparisons. The walk writes the same order.
+  const fixed = `{type: node.__type${isElement ? ', children: []' : ''}}`;
   if (writes.length === 0) {
     // Nothing to compare, so the literal is the whole function — as in
     // generateExport, and for the same reason: an object that lands on its
     // final shape in one allocation beats one built by assignment.
     return `${header}
 function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
-  return {${isElement ? 'children: [], ' : ''}type: node.__type};
+  return ${fixed};
 }`;
   }
   return `${header}
 function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
-${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
+${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  const json: {[key: string]: unknown} = ${fixed};
 ${writes.join('\n')}
-  json.type = node.__type;
   return json;
 }`;
 }

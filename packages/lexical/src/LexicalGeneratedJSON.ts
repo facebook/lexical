@@ -131,7 +131,7 @@ function exportTextNode(node: TextNode): {[key: string]: unknown} {
 
 /** Generated from TextNode's serialization schema. Do not edit by hand. */
 function exportCompactTextNode(node: TextNode): {[key: string]: unknown} {
-  const json: {[key: string]: unknown} = {};
+  const json: {[key: string]: unknown} = {type: node.__type};
   const detail = node.__detail;
   if (detail !== undefined && detail !== 0) {
     json.detail = detail;
@@ -152,7 +152,6 @@ function exportCompactTextNode(node: TextNode): {[key: string]: unknown} {
   if (text !== undefined && text !== '') {
     json.text = text;
   }
-  json.type = node.__type;
   return json;
 }
 
@@ -218,7 +217,7 @@ function exportCompactParagraphNode(node: ParagraphNode): {
   const textStyle = node.__textStyle;
   const shouldSerializeTextStyles =
     (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {children: []};
+  const json: {[key: string]: unknown} = {type: node.__type, children: []};
   const direction = node.__dir;
   if (direction !== undefined && direction !== null) {
     json.direction = direction;
@@ -245,7 +244,6 @@ function exportCompactParagraphNode(node: ParagraphNode): {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = node.__type;
   return json;
 }
 
@@ -326,7 +324,7 @@ function exportTabNode(node: TabNode): {[key: string]: unknown} {
 
 /** Generated from TabNode's serialization schema. Do not edit by hand. */
 function exportCompactTabNode(node: TabNode): {[key: string]: unknown} {
-  const json: {[key: string]: unknown} = {};
+  const json: {[key: string]: unknown} = {type: node.__type};
   const format = node.__format;
   if (format !== undefined && format !== 0) {
     json.format = format;
@@ -335,7 +333,6 @@ function exportCompactTabNode(node: TabNode): {[key: string]: unknown} {
   if (style !== undefined && style !== '') {
     json.style = style;
   }
-  json.type = node.__type;
   return json;
 }
 

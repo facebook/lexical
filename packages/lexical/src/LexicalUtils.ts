@@ -4245,11 +4245,14 @@ export function getGeneratedJSON(
 
 /**
  * The schema-driven walk's export of `node` in the form asked for, without
- * NodeState: `children` first for an element, then every property the schema
- * declares through {@link $writeJSONGetters}, then `type` and — legacy form
- * only — `version`, which is the key order the generated exporters reproduce.
- * What {@link LexicalNode.exportJSON} runs for a class without generated code,
- * and what generated code is checked against.
+ * NodeState, in the key order the generated exporters reproduce. The legacy
+ * form is `children` first for an element, then every property the schema
+ * declares through {@link $writeJSONGetters}, then `type` and `version` — the
+ * order it has always had. The compact form is new and leads with `type`, so
+ * a node reads type-first and generated code can allocate the object on its
+ * fixed keys; key order is part of neither format, since parsing reads
+ * properties by name. What {@link LexicalNode.exportJSON} runs for a class
+ * without generated code, and what generated code is checked against.
  *
  * @internal
  */
@@ -4257,14 +4260,15 @@ export function $walkExportJSON(
   node: LexicalNode,
   compact: boolean,
 ): {[key: string]: unknown} {
-  // `children` is written first, before the schema's properties, so that an
-  // element's JSON reads structure-first.
-  const json: {[key: string]: unknown} = $isElementNode(node)
-    ? {children: []}
-    : {};
+  const json: {[key: string]: unknown} = compact ? {type: node.__type} : {};
+  if ($isElementNode(node)) {
+    // Before the schema's properties, so that an element's JSON reads
+    // structure-first.
+    json.children = [];
+  }
   $writeJSONGetters(node, json, compact);
-  json.type = node.__type;
   if (!compact) {
+    json.type = node.__type;
     // Deprecated and ignored on the way in; written only so the legacy form
     // stays readable by older versions.
     json.version = 1;

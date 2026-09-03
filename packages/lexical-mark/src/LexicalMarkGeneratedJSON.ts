@@ -43,7 +43,7 @@ function exportCompactMarkNode(node: MarkNode): {[key: string]: unknown} {
   const textStyle = node.__textStyle;
   const shouldSerializeTextStyles =
     (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {children: []};
+  const json: {[key: string]: unknown} = {type: node.__type, children: []};
   const ids = node.getIDs();
   if (ids !== undefined && !(Array.isArray(ids) && ids.length === 0)) {
     json.ids = ids;
@@ -74,7 +74,6 @@ function exportCompactMarkNode(node: MarkNode): {[key: string]: unknown} {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = node.__type;
   return json;
 }
 

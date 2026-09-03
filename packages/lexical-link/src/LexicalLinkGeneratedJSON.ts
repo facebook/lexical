@@ -46,7 +46,7 @@ function exportCompactLinkNode(node: LinkNode): {[key: string]: unknown} {
   const textStyle = node.__textStyle;
   const shouldSerializeTextStyles =
     (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {children: []};
+  const json: {[key: string]: unknown} = {type: node.__type, children: []};
   const rel = node.__rel;
   if (rel !== undefined && rel !== null) {
     json.rel = rel;
@@ -89,7 +89,6 @@ function exportCompactLinkNode(node: LinkNode): {[key: string]: unknown} {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = node.__type;
   return json;
 }
 
@@ -132,7 +131,7 @@ function exportCompactAutoLinkNode(node: AutoLinkNode): {
   const textStyle = node.__textStyle;
   const shouldSerializeTextStyles =
     (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {children: []};
+  const json: {[key: string]: unknown} = {type: node.__type, children: []};
   const isUnlinked = node.__isUnlinked;
   if (isUnlinked !== undefined && isUnlinked !== false) {
     json.isUnlinked = isUnlinked;
@@ -179,7 +178,6 @@ function exportCompactAutoLinkNode(node: AutoLinkNode): {
   ) {
     json.textStyle = textStyle;
   }
-  json.type = node.__type;
   return json;
 }
 

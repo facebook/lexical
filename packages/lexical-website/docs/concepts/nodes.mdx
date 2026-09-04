@@ -208,9 +208,17 @@ class MyCustomNode extends SomeOtherNode {
 
 ## Creating custom nodes with a serialization schema
 
-A node's properties have to be described three times: written to JSON, read
-back from untrusted JSON, and carried across a clone. `$config`'s `json` option
-replaces all three with one declaration of what each property _is_.
+:::caution Experimental
+
+This feature became available in the lexical v0.51.0 release and is still
+considered experimental. Its implementation may change in any release
+without a deprecation period.
+
+:::
+
+A node's properties have to be propagated three times: exported to JSON,
+imported from untrusted JSON, and carried across a clone.
+`$config`'s `json` option replaces all three with a declarative schema.
 
 ```ts
 import {
@@ -255,16 +263,45 @@ export class CalloutNode extends ElementNode {
 }
 ```
 
+Stating the domain (all possible values the property may inhabit) as data
+is the prerequisite that enables all of the new features. In the initial
+release, we have:
+
+- **Safer JSON import** - any missing or invalid properties are parsed as
+  the default value, instead of potentially silently corrupting the node's
+  state
+- **Less boilerplate** - all of the boilerplate for `exportJSON`,
+  `updateFromJSON` and `afterCloneFrom` is handled automatically.
+- **Performance** - a `@lexical/compiler` code generator is used to produce
+  optimized implementations of export and import for performance that is
+  indistinguishable (or better) than a hand-written implementation.
+- **Property Tests** - the `@lexical/fast-check` package can be used to
+  generate arbitrary valid serialized nodes for thorough testing of your
+  custom nodes. It's never been easier to find edge cases, automatically.
+
+In the future, this declarative schema can be used to assist in supporting
+additional protocols, improving developer tools, porting to other
+language/platforms, etc.
+
+The combinators (`stringValue`, `numberValue`, `enumValue`, `nullable`,
+`optional`, `arrayValue`, `unionValue`, `withField`, `withAccessors`, …) and
+the rules for properties that are not plain fields are covered in
+[Serialization & Deserialization](/docs/serialization/serialization#declarative-serialization-schemas-with-config).
+
+For performance reasons, you should prefer serialization schema over NodeState
+when the property is inherent to the node type and not ad-hoc.
+
+### Backwards compatible return types
+
 That declaration is the whole of the node's serialization. `exportJSON`,
 `updateFromJSON` and `afterCloneFrom` are all derived from it.
 
-Their static types stay the ones the node inherits: `exportJSON()` is typed as
-`SerializedElementNode` here, whatever it actually writes. That is fine for a
-node whose JSON nothing reads back by property name. A node that is part of a
-library's public API, whose callers have always read its own serialized type
-off `exportJSON()`, narrows the two methods by declaration merging — the one
-thing `$config` cannot do, because the members have to land on the node's own
-interface to override the ones it inherits:
+Their types stay the ones the node inherits: `exportJSON()` is typed as
+`SerializedElementNode` here, whatever it actually writes.
+
+Declaration merging can be used to provide a backwards compatible type
+interface, for nodes where the `exportJSON()` return type might have been
+treated as a public API:
 
 ```ts
 export type SerializedCalloutNode = Spread<
@@ -280,32 +317,9 @@ export interface CalloutNode {
 }
 ```
 
-Lexical's own nodes do this so their types stay what they were; a node that
-lives inside one application has no such callers and can leave it out.
-
-Stating the domain rather than the type is what earns its keep on the way in.
-`updateFromJSON` is the untrusted-JSON boundary: `level: 9` or `level: "big"`
-or a missing `level` all land on `1` here, because that is what
-`numberValue(1, {integer: true, min: 1, max: 3})` says the property accepts.
-Hand-written parsers tend to write `serializedNode.level ?? 1`, which stores
-`9` and `"big"` verbatim.
-
-The declaration is also _data_, which several things read:
-
-- **A compact export.** `editorState.toJSON(true)` omits every property whose
-  value is the default the parser would restore anyway, because the schema says
-  what that default is.
-- **Generated code.** Lexical compiles its own nodes' `exportJSON` and
-  `updateFromJSON` to straight-line functions from these declarations at build
-  time, with each emitted parser checked against the schema it came from.
-- **Generated tests.** [`@lexical/fast-check`](/docs/packages/lexical-fast-check)
-  turns a schema into a `fast-check` arbitrary, so property-based tests generate
-  exactly the JSON the node accepts.
-
-The combinators (`stringValue`, `numberValue`, `enumValue`, `nullable`,
-`optional`, `arrayValue`, `unionValue`, `withField`, `withAccessors`, …) and
-the rules for properties that are not plain fields are covered in
-[Serialization & Deserialization](/docs/serialization/serialization#declarative-serialization-schemas-with-config).
+For backwards compatibility, these interfaces are provided for Lexical's
+exported node classes. We do not recommend maintaining this type boilerplate
+unless you have code that requires it.
 
 ## Creating custom nodes with $config and NodeState
 

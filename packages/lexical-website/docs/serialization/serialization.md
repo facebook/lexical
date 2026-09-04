@@ -495,8 +495,8 @@ newNode.updateFromJSON(serializedNode);
 :::caution Experimental
 
 The schema and export-context APIs in this section and the next are
-experimental: the details may still change in a minor release based on
-feedback.
+experimental: the details may change in any release without a
+deprecation period.
 
 :::
 

@@ -315,7 +315,12 @@ that declares one gets an `afterCloneFrom` synthesized at registration —
 generated straight-line code when the class has some, and otherwise a loop over
 the field names — copying the fields that class's own `$config` declared and
 delegating the rest through `super`, which is why the emitted function covers
-one class's own fields and nothing above it. Both accessor directions are read
+one class's own fields and nothing above it. A field an ancestor declares too
+is left to the ancestor, whose method has already assigned it: re-declaring an
+inherited property changes how it is serialized, not where it is stored, so a
+class that only re-declares gets no method at all — `TabNode`, which restates
+`TextNode`'s `text`, `detail` and `mode`, is the in-tree case and simply
+inherits `TextNode`'s. Both accessor directions are read
 for a field name, and the declared field is used rather than the one
 `resolveGetterAccessor` resolves to: an override changes how a property is
 serialized, not where it lives. A class that writes its own `afterCloneFrom` is

@@ -351,16 +351,8 @@ function exportCompactTabNode(node: TabNode): {[key: string]: unknown} {
   return json;
 }
 
-/** Generated from TabNode's serialization schema. Do not edit by hand. */
-function afterCloneTabNode(node: TabNode, prevNode: TabNode): void {
-  node.__detail = prevNode.__detail;
-  node.__mode = prevNode.__mode;
-  node.__text = prevNode.__text;
-}
-
 /** TabNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TAB: GeneratedJSON = {
   exportJSON: exportTabNode,
   exportCompactJSON: exportCompactTabNode,
-  afterCloneFrom: afterCloneTabNode,
 };

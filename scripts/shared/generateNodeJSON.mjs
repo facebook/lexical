@@ -485,9 +485,12 @@ ${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  return {
  * The copy half of one class's `afterCloneFrom`, or `null` for a class whose
  * own `$config` declares no field to copy.
  *
- * Only the fields this class declared: the synthesized method delegates the
- * rest to its superclass, the way a hand-written one delegates through `super`,
- * so what is emitted here is one class's own storage and nothing above it.
+ * Only the fields this class carries: the synthesized method delegates the rest
+ * to its superclass, the way a hand-written one delegates through `super`, so
+ * what is emitted here is one class's own storage and nothing above it. A field
+ * an ancestor declares too belongs to the ancestor, whose `afterCloneFrom` has
+ * already assigned it by the time this runs — which is why TabNode, whose
+ * `text`/`detail`/`mode` restate TextNode's, gets no function at all.
  *
  * `ownSchemaFields` reads the declared field rather than the accessor
  * {@link resolveGetterAccessor} would resolve to. A clone carries storage

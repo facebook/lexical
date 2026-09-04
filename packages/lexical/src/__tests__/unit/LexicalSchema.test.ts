@@ -21,6 +21,7 @@ import {
   enumValue,
   type Klass,
   type LexicalExportJSON,
+  type LexicalNode,
   type LexicalUpdateJSON,
   nodeSchema,
   type NodeSerializationSchema,
@@ -35,6 +36,7 @@ import {
   type SerializedPartial,
   type SerializedTextNode,
   stringValue,
+  TabNode,
   TextNode,
   transformValue,
   unionValue,
@@ -1065,6 +1067,14 @@ describe('reference-typed defaults compact by content', () => {
 });
 
 describe('a clone carries the fields the schema declares', () => {
+  /** Whether this exact class carries a method, rather than inheriting one. */
+  function hasOwnAfterCloneFrom(klass: Klass<LexicalNode>): boolean {
+    return Object.prototype.hasOwnProperty.call(
+      klass.prototype,
+      'afterCloneFrom',
+    );
+  }
+
   /**
    * A node is only cloned across updates: within one, `$setNodeKey` has put it
    * in `_cloneNotNeeded` and `getWritable()` hands back the same object, so a
@@ -1223,6 +1233,69 @@ describe('a clone carries the fields the schema declares', () => {
     });
     expect(cloned.__ids).toEqual(['a', 'b']);
     expect(calls).toBeGreaterThan(0);
+  });
+
+  test('a re-declared field is assigned once, by the class that owns it', () => {
+    // Re-declaring an inherited property changes how it is serialized, not
+    // where it is stored, and the ancestor's afterCloneFrom has already
+    // assigned it by the time the subclass's would. TabNode is the in-tree
+    // case: it restates TextNode's `text`, `detail` and `mode`.
+    class StoreNode extends ElementNode {
+      __shared: string = '';
+      $config() {
+        return this.config('assign-once-base', {
+          extends: ElementNode,
+          json: nodeSchema<StoreNode>({
+            shared: withField(stringValue(), {field: '__shared'}),
+          }),
+        });
+      }
+    }
+    class RestateNode extends StoreNode {
+      $config() {
+        return this.config('assign-once-derived', {
+          extends: StoreNode,
+          json: nodeSchema<RestateNode>({
+            shared: withField(stringValue('other'), {field: '__shared'}),
+          }),
+        });
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[assign-once]',
+        nodes: [StoreNode, RestateNode],
+      }),
+    );
+    // Only the class that declared it first gets a method; the subclass has
+    // nothing left of its own and inherits that one.
+    expect(hasOwnAfterCloneFrom(StoreNode)).toBe(true);
+    expect(hasOwnAfterCloneFrom(RestateNode)).toBe(false);
+    // Same rule, applied to the real pair.
+    expect(hasOwnAfterCloneFrom(TextNode)).toBe(true);
+    expect(hasOwnAfterCloneFrom(TabNode)).toBe(false);
+
+    editor.update(
+      () => {
+        const node = $create(RestateNode);
+        const writes: string[] = [];
+        let stored = node.__shared;
+        Object.defineProperty(node, '__shared', {
+          configurable: true,
+          get: () => stored,
+          set: (value: string) => {
+            writes.push(value);
+            stored = value;
+          },
+        });
+        const prev = $create(RestateNode);
+        prev.__shared = 'carried';
+        node.afterCloneFrom(prev);
+        expect(writes).toEqual(['carried']);
+      },
+      {discrete: true},
+    );
   });
 
   test('what a base class carries does not depend on registration order', () => {

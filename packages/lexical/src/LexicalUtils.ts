@@ -4753,9 +4753,10 @@ function schemaFieldNames(schema: AnySerializationSchema): readonly string[] {
  * Per declaring class, not per registered class: each class copies the fields
  * its own `$config` declared and delegates the rest to its superclass, which is
  * what a hand-written `afterCloneFrom` does with its `super` call, and it means
- * a base class shared by several subclasses is fixed up once. `declaredBy`
- * gives the owner of each field's winning schema, so a subclass that
- * re-declares an inherited field owns it here too.
+ * a base class shared by several subclasses is fixed up once. A field an
+ * ancestor declares too is left to that ancestor — see
+ * {@link ownSchemaFields} — so a class that only re-declares inherited
+ * properties gets no method of its own at all.
  *
  * A class that defines its own `afterCloneFrom` keeps it and is trusted with
  * its own fields, the same rule the synthesized statics follow. That is what
@@ -4820,13 +4821,10 @@ function injectSynthesizedAfterCloneFrom(klass: Klass<LexicalNode>): void {
 /**
  * The node fields a class's own `$config` declares, deduplicated.
  *
- * Shared with the codegen in `scripts/shared/generateNodeJSON.mjs`, which emits
- * the straight-line form of exactly this list, so the two cannot disagree about
- * which class carries which field.
- *
- * @internal
+ * Raw, in the sense that it says nothing about which class ends up carrying
+ * each one: {@link ownSchemaFields} is what answers that.
  */
-export function ownSchemaFields(klass: Klass<LexicalNode>): readonly string[] {
+function declaredSchemaFields(klass: Klass<LexicalNode>): readonly string[] {
   const {declaredBy, fieldsBaseFirst} = getComposedSchema(klass);
   const fields: string[] = [];
   for (const [key, schema] of fieldsBaseFirst) {
@@ -4842,6 +4840,47 @@ export function ownSchemaFields(klass: Klass<LexicalNode>): readonly string[] {
     }
   }
   return fields;
+}
+
+/**
+ * The node fields a class carries across a clone: the ones its own `$config`
+ * declares, less any an ancestor declares too.
+ *
+ * A class re-declares an inherited property to change how it is *serialized* —
+ * `TabNode` restates `text`, `detail` and `mode` for their accessors and
+ * narrower domains — which makes it the owner of that key in its own
+ * composition and in every subclass's. Where it is *stored* does not change,
+ * though, and the ancestor's `afterCloneFrom` already ran by then and is
+ * responsible for the fields it declares, so assigning them a second time
+ * writes the same values again for nothing.
+ *
+ * The ancestor's declarations are what is subtracted, not the fields it
+ * actually assigns, and the two are the same set transitively: an ancestor
+ * that skipped a field skipped it because *its* own ancestor declares it, and
+ * that class is in this chain too.
+ *
+ * Shared with the codegen in `scripts/shared/generateNodeJSON.mjs`, which emits
+ * the straight-line form of exactly this list, so the two cannot disagree about
+ * which class carries which field.
+ *
+ * @internal
+ */
+export function ownSchemaFields(klass: Klass<LexicalNode>): readonly string[] {
+  const declared = declaredSchemaFields(klass);
+  if (declared.length === 0) {
+    return declared;
+  }
+  const inherited = new Set<string>();
+  for (const {klass: currentKlass} of iterStaticNodeConfigChain(klass)) {
+    if (currentKlass !== klass) {
+      for (const field of declaredSchemaFields(currentKlass)) {
+        inherited.add(field);
+      }
+    }
+  }
+  return inherited.size === 0
+    ? declared
+    : declared.filter(field => !inherited.has(field));
 }
 
 /**

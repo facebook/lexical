@@ -15,9 +15,6 @@ import {
   type LexicalNode,
   type NodeKey,
   nodeSchema,
-  type SerializedPartial,
-  type SerializedTextNode,
-  type Spread,
   stringValue,
   type TextFormatType,
   TextNode,
@@ -41,23 +38,8 @@ const mentionNodeSchema = nodeSchema<MentionNode>({
   }),
 });
 
-export type SerializedMentionNode = Spread<
-  {
-    mentionName: string;
-  },
-  SerializedTextNode
->;
-
 const mentionBackgroundColor = 'rgba(24, 119, 232, 0.2)';
-// The serialized shape this node exports; the runtime implementation is the
-// schema-driven LexicalNode.exportJSON.
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface MentionNode {
-  exportJSON(compact?: false): SerializedMentionNode;
-  exportJSON(compact: boolean): SerializedPartial<SerializedMentionNode>;
-}
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class MentionNode extends TextNode {
   __mention: string;
 

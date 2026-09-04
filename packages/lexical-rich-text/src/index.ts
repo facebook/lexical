@@ -191,7 +191,6 @@ export const quoteShadowRootState = createState('shadowRoot', {
   parse: booleanValue(),
 });
 
-/** @noInheritDoc */
 // The serialized shape this node exports; the runtime implementation is the
 // schema-driven LexicalNode.exportJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -200,6 +199,7 @@ export interface QuoteNode {
   exportJSON(compact: boolean): SerializedPartial<SerializedQuoteNode>;
 }
 
+/** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class QuoteNode extends ElementNode {
   $config() {

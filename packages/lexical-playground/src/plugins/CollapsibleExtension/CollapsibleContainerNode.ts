@@ -23,9 +23,6 @@ import {
   type NodeKey,
   nodeSchema,
   type RangeSelection,
-  type SerializedElementNode,
-  type SerializedPartial,
-  type Spread,
 } from 'lexical';
 
 import {setDomHiddenUntilFound} from './CollapsibleUtils';
@@ -34,24 +31,6 @@ const collapsibleContainerNodeSchema = nodeSchema<CollapsibleContainerNode>({
   open: booleanValue(),
 });
 
-type SerializedCollapsibleContainerNode = Spread<
-  {
-    open: boolean;
-  },
-  SerializedElementNode
->;
-
-// The serialized shape this node exports; the runtime implementation is the
-// schema-driven LexicalNode.exportJSON.
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface CollapsibleContainerNode {
-  exportJSON(compact?: false): SerializedCollapsibleContainerNode;
-  exportJSON(
-    compact: boolean,
-  ): SerializedPartial<SerializedCollapsibleContainerNode>;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class CollapsibleContainerNode extends ElementNode {
   __open: boolean;
 

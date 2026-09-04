@@ -216,20 +216,11 @@ replaces all three with one declaration of what each property _is_.
 import {
   ElementNode,
   enumValue,
-  type LexicalParseJSON,
   nodeSchema,
   numberValue,
-  type SerializedElementNode,
-  type SerializedPartial,
-  type Spread,
   stringValue,
   withField,
 } from 'lexical';
-
-export type SerializedCalloutNode = Spread<
-  {label: string; level: number; tone: 'info' | 'warning' | 'danger'},
-  SerializedElementNode
->;
 
 const calloutNodeSchema = nodeSchema<CalloutNode>({
   // Each property *is* a field: exported by reading it, imported by assigning
@@ -241,14 +232,6 @@ const calloutNodeSchema = nodeSchema<CalloutNode>({
   tone: withField(enumValue(['info', 'warning', 'danger']), {field: '__tone'}),
 });
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export interface CalloutNode {
-  exportJSON(compact?: false): SerializedCalloutNode;
-  exportJSON(compact: boolean): SerializedPartial<SerializedCalloutNode>;
-  updateFromJSON(serializedNode: LexicalParseJSON<SerializedCalloutNode>): this;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class CalloutNode extends ElementNode {
   __label: string = '';
   __level: number = 1;
@@ -273,10 +256,32 @@ export class CalloutNode extends ElementNode {
 ```
 
 That declaration is the whole of the node's serialization. `exportJSON`,
-`updateFromJSON` and `afterCloneFrom` are all derived from it, and the
-`interface` block above narrows their types to this node's serialized shape —
-`$config` cannot do that part, because the members have to land on the node's
-own interface to override the ones it inherits.
+`updateFromJSON` and `afterCloneFrom` are all derived from it.
+
+Their static types stay the ones the node inherits: `exportJSON()` is typed as
+`SerializedElementNode` here, whatever it actually writes. That is fine for a
+node whose JSON nothing reads back by property name. A node that is part of a
+library's public API, whose callers have always read its own serialized type
+off `exportJSON()`, narrows the two methods by declaration merging — the one
+thing `$config` cannot do, because the members have to land on the node's own
+interface to override the ones it inherits:
+
+```ts
+export type SerializedCalloutNode = Spread<
+  {label: string; level: number; tone: 'info' | 'warning' | 'danger'},
+  SerializedElementNode
+>;
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface CalloutNode {
+  exportJSON(compact?: false): SerializedCalloutNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedCalloutNode>;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedCalloutNode>): this;
+}
+```
+
+Lexical's own nodes do this so their types stay what they were; a node that
+lives inside one application has no such callers and can leave it out.
 
 Stating the domain rather than the type is what earns its keep on the way in.
 `updateFromJSON` is the untrusted-JSON boundary: `level: 9` or `level: "big"`

@@ -1700,8 +1700,11 @@ describe('LexicalEditor tests', () => {
         //
       });
       editor.setRootElement(contentEditable);
-      expect(JSON.stringify(editor.getEditorState().toJSON())).toBe(
-        JSON_EDITOR_STATE,
+      // Compared as a structure rather than as bytes: what this test is about
+      // is that setEditorState round-trips the document, and key order is not
+      // part of the serialization format.
+      expect(editor.getEditorState().toJSON()).toEqual(
+        JSON.parse(JSON_EDITOR_STATE),
       );
     });
   }

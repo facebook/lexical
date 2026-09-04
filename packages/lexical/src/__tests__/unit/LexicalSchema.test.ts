@@ -14,6 +14,7 @@ import {
   $getRoot,
   $isTabNode,
   $withCompactExport,
+  aliasedValue,
   arrayValue,
   booleanValue,
   createState,
@@ -22,6 +23,7 @@ import {
   type Klass,
   type LexicalExportJSON,
   type LexicalNode,
+  type LexicalParseJSON,
   type LexicalUpdateJSON,
   nodeSchema,
   type NodeSerializationSchema,
@@ -112,6 +114,14 @@ describe('LexicalSchema value schemas', () => {
     const direction = enumValue([null, 'ltr', 'rtl']);
     expect(direction('rtl')).toBe('rtl');
     expect(direction('bogus')).toBe(null);
+    // An empty domain admits nothing, so every value would parse to a default
+    // that came from nowhere. Refused by the type...
+    // @ts-expect-error - values must be a non-empty tuple
+    expect(() => enumValue([])).toThrow();
+    // ...and at runtime, since a type can be asserted past.
+    expect(() => enumValue([] as unknown as [string, ...string[]])).toThrow(
+      /must not be empty/,
+    );
     expect(direction(null)).toBe(null);
   });
 
@@ -681,13 +691,12 @@ describe('defaults and untrusted input', () => {
 });
 
 describe('the export and parse shapes differ only where parsing is looser', () => {
-  test('version is optional in both directions', () => {
-    // Nothing reads it: parsing ignores it, and `exportJSON(true)` does not
-    // write it, so requiring it on the export shape would promise a property
-    // that is genuinely absent half the time.
-    expectTypeOf<SerializedLexicalNode['version']>().toEqualTypeOf<
-      number | undefined
-    >();
+  test('version is optional exactly where it is absent', () => {
+    // The legacy form writes it unconditionally, so the full output type
+    // promises it — relaxing it at the base would take that promise away from
+    // every consumer of a legacy export to describe a case they are not in.
+    expectTypeOf<SerializedLexicalNode['version']>().toEqualTypeOf<number>();
+    // The compact form omits it, along with everything else parsing restores.
     expectTypeOf<
       SerializedPartial<SerializedLexicalNode>['version']
     >().toEqualTypeOf<number | undefined>();
@@ -697,6 +706,33 @@ describe('the export and parse shapes differ only where parsing is looser', () =
         SerializedPartial<SerializedLexicalNode>['$slots']
       >[string]['version']
     >().toEqualTypeOf<number | undefined>();
+    // Parsing drops it outright rather than relaxing it: nothing reads it.
+    expectTypeOf<
+      'version' extends keyof LexicalParseJSON<SerializedLexicalNode>
+        ? true
+        : false
+    >().toEqualTypeOf<false>();
+  });
+
+  test('an element relaxes its children too', () => {
+    // Every node in a compact document is compact, not just the root: a child
+    // read off the array is another node written in the same form, and the
+    // properties it omitted are absent there as well.
+    type CompactParagraph = SerializedPartial<SerializedParagraphNode>;
+    const child: NonNullable<CompactParagraph['children']>[number] = {
+      type: 'text',
+    };
+    expectTypeOf(child.version).toEqualTypeOf<number | undefined>();
+    // The legacy form still promises what it writes, at every depth.
+    expectTypeOf<
+      SerializedParagraphNode['children'][number]['version']
+    >().toEqualTypeOf<number>();
+    // A node with no children is not given one.
+    expectTypeOf<
+      'children' extends keyof SerializedPartial<SerializedTextNode>
+        ? true
+        : false
+    >().toEqualTypeOf<false>();
   });
 
   initializeUnitTest(testEnv => {
@@ -1676,6 +1712,38 @@ describe('a union member knows its own domain', () => {
     // Still not a number, so still the union's fallback.
     expect(dimension('banana')).toBe('inherit');
     expect(dimension('inherit')).toBe('inherit');
+  });
+
+  test('an alias whose target is the inner default is still that member', () => {
+    // The same ambiguity one level down, and the reason an aliased schema
+    // always declares `accepts`: `stringValue` declares none, so membership
+    // would be inferred from a parse that lands on the default — which the
+    // inference reads as "did not recognize it" — and the union would fall
+    // back for a value its only member does accept.
+    const legacy = aliasedValue(stringValue(), {none: ''});
+    expect(legacy('none')).toBe('');
+    expect(unionValue([legacy], 'fallback')('none')).toBe('');
+    // A value no member accepts still falls back.
+    expect(unionValue([legacy], 'fallback')(42)).toBe('fallback');
+  });
+
+  test('a comparator only sees values its own member recognizes', () => {
+    // A custom isEqual is arbitrary code written for one domain. Asking every
+    // member would run it on values that member never produced, and a stray
+    // `true` reports two different values as equal — which compaction reads as
+    // "this is the default, omit it".
+    const byId = transformValue(
+      objectValue({id: numberValue(), tag: stringValue()}),
+      value => value,
+      {isEqual: (a, b) => a.id === b.id},
+    );
+    const plain = objectValue({v: numberValue()});
+    const union = unionValue([byId, plain]);
+    expect(union.isEqual!({v: 1} as never, {v: 2} as never)).toBe(false);
+    // Its own member's values still compare by that member's rule.
+    expect(
+      union.isEqual!({id: 1, tag: 'a'} as never, {id: 1, tag: 'b'} as never),
+    ).toBe(true);
   });
 
   test('nodeSchema rejects a name the node does not have', () => {

@@ -695,6 +695,11 @@ export function booleanValue(
  * selects `values[0]` rather than an `undefined` default; to make `undefined`
  * the default, list it first in `values` instead.
  *
+ * `values` must be non-empty, which the type states as a tuple: an empty
+ * domain admits nothing, so every value — including one the caller believes is
+ * in the enum — would parse to a default that came from nowhere. A list built
+ * at runtime is checked as well, since a type can be asserted past.
+ *
  * @example
  * ```ts
  * const parseMode = enumValue(['normal', 'token', 'segmented']);
@@ -703,9 +708,13 @@ export function booleanValue(
  * @__NO_SIDE_EFFECTS__
  */
 export function enumValue<const T>(
-  values: readonly T[],
+  values: readonly [T, ...T[]],
   defaultValue: T = values[0],
 ): SerializationSchema<T> {
+  invariant(
+    values.length > 0,
+    'enumValue: values must not be empty; an enum with no members admits no value',
+  );
   const allowed = new Set<unknown>(values);
   return makeSchema(
     // `undefined` is checked before membership even when it is one of the
@@ -825,6 +834,40 @@ export function optional<T, Names extends string = never>(
 }
 
 /**
+ * Whether one schema recognizes `value`, and what it parsed to.
+ *
+ * The membership rule, stated once: a schema that knows its own domain answers
+ * directly, and one that does not has its answer inferred from what it parsed.
+ * Landing on the schema's default is the one ambiguous result — it means either
+ * "this value *is* the default" or "this value was out of domain and I fell
+ * back" — and comparing the *input* against the default separates the two for a
+ * schema whose domain is a single value type. Every other result is proof the
+ * schema recognized the value, including one it normalized, which is why the
+ * parsed value is what comes back.
+ *
+ * Shared by {@link unionValue}, which asks it per member, and
+ * {@link aliasedValue}, which needs it to answer for its inner schema: an alias
+ * whose target *is* the inner default is exactly the case the inference cannot
+ * see, so an aliased schema has to declare `accepts` rather than be inferred.
+ *
+ * @internal
+ */
+function $schemaMatch(
+  schema: AnySerializationSchema,
+  value: unknown,
+): undefined | {parsed: unknown} {
+  const {accepts} = schema;
+  if (accepts !== undefined) {
+    return accepts(value) ? {parsed: schema(value)} : undefined;
+  }
+  const parsed = schema(value);
+  return !isSchemaDefault(schema, parsed) ||
+    isSchemaEqual(schema, value, schema.defaultValue)
+    ? {parsed}
+    : undefined;
+}
+
+/**
  * Combinator for a value whose domain is the union of several schemas, such as
  * a dimension that is either a number or the literal `'inherit'`. The domain
  * is inferred as the union of the members' value types; annotate the result
@@ -884,32 +927,14 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
    * the membership rule is stated, so `accepts` cannot answer differently from
    * the parse that follows it.
    */
-  const $match = (value: unknown): undefined | {parsed: T} => {
+  const $match = (
+    value: unknown,
+  ): undefined | {member: AnySerializationSchema; parsed: T} => {
     for (let i = 0; i < members.length; i++) {
       const member = members[i];
-      // A member that knows its own domain answers directly; that is the
-      // only way to recognize a value it normalizes *into* its default,
-      // which the inference below reads as a fallback.
-      const {accepts} = member;
-      if (accepts !== undefined) {
-        if (accepts(value)) {
-          return {parsed: member(value) as T};
-        }
-        continue;
-      }
-      const parsed = member(value);
-      // Landing on the member's default is the one result that is ambiguous:
-      // it means either "this value is the default" or "this value was out of
-      // domain and I fell back". Comparing the *input* against the default
-      // separates them for a member whose domain is a single value type, and
-      // every other result is proof the member recognized the value —
-      // including one it normalized, which is why the parsed value is what
-      // gets returned.
-      if (
-        !isSchemaDefault(member, parsed) ||
-        isSchemaEqual(member, value, member.defaultValue)
-      ) {
-        return {parsed: parsed as T};
+      const matched = $schemaMatch(member, value);
+      if (matched !== undefined) {
+        return {member, parsed: matched.parsed as T};
       }
     }
     return undefined;
@@ -941,15 +966,33 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
     // node on every write of an equal value.
     //
     // Declared unconditionally, including when no member has one to defer to.
-    // The `some` is then always false, which leaves `isSchemaEqual`'s leading
-    // `a === b` as the whole comparison — sound, with the false negatives
+    // The comparison is then identity, which is sound with the false negatives
     // identity always has. Withholding it instead would say something else:
     // the codegen reads `isEqual === undefined` as "this property cannot be
     // compared here" and takes the whole class out of the compact half, so a
     // union that has nothing better than identity to offer would cost its
     // class a generated compact exporter rather than one property's
     // compaction.
-    (a, b) => members.some(m => m.isEqual !== undefined && m.isEqual(a, b)),
+    //
+    // The member is found the same way the parse finds it, and has to
+    // recognize *both* values before its comparator is consulted. Asking every
+    // member instead would run a comparator on values it never produced — a
+    // custom one from `transformValue` is arbitrary code reading fields its
+    // own domain has — and one stray `true` would report two different values
+    // as equal, which compaction reads as "this is the default, omit it".
+    (a, b) => {
+      for (let i = 0; i < members.length; i++) {
+        const member = members[i];
+        if (
+          $schemaMatch(member, a) !== undefined &&
+          $schemaMatch(member, b) !== undefined
+        ) {
+          return isSchemaEqual(member, a, b);
+        }
+      }
+      // Recognized by no single member, so nothing but identity can say.
+      return a === b;
+    },
     // Declared for the same reason every wrapper declares one: a union used as
     // a member of another union (or wrapped and then used) would otherwise be
     // read by the parse-inference above, which cannot see a value this
@@ -1071,12 +1114,17 @@ export function aliasedValue<T, Names extends string = never>(
     // Naming an alias says nothing about which value is the default.
     inner.defaultValue,
     inner.isEqual,
-    // Declared only when the inner schema declares one: without it, a union
-    // infers membership from the parse, and that inference reads an aliased
-    // schema exactly as well as it reads its inner.
-    accepts === undefined
-      ? undefined
-      : value => isAlias(value) || accepts(value),
+    // Declared unconditionally. An alias whose target *is* the inner default
+    // is precisely what the parse-inference cannot see — it lands on the
+    // default, and the input is not the default, so the inference reads it as
+    // a fallback and a union skips the member that in fact accepts it. Saying
+    // so here is the only way to answer for those, and for the rest this
+    // defers to the same inference a union would have made.
+    value =>
+      isAlias(value) ||
+      (accepts === undefined
+        ? $schemaMatch(inner, value) !== undefined
+        : accepts(value)),
   );
 }
 

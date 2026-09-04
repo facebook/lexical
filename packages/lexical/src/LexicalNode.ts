@@ -94,15 +94,17 @@ export type SerializedLexicalNode = {
   type: string;
   /**
    * @deprecated A numeric schema version. Nothing reads it — parsing ignores
-   * it entirely — and nothing should: it is optional in both directions, so
-   * neither an exporter nor a parser may assume it is there.
+   * it entirely — and nothing should.
    *
    * `exportJSON()` still writes it as `1` so the output stays readable by
-   * older versions, which is the only reason it remains. `exportJSON(true)`
-   * omits it along with everything else parsing restores on its own, which is
-   * why it cannot be required here.
+   * older versions, which is the only reason it remains, and it stays required
+   * here so that the legacy form promises what it actually writes. The two
+   * places it is genuinely absent relax it themselves: a compact export omits
+   * it along with everything else parsing restores on its own (see
+   * {@link SerializedPartial}), and the parse shapes drop it outright (see
+   * {@link LexicalUpdateJSON}).
    */
-  version?: number;
+  version: number;
   /**
    * Any state persisted with the NodeState API that is not
    * configured for flat storage
@@ -493,11 +495,12 @@ export type LexicalExportJSON<T extends LexicalNode> = Prettify<
     type: GetStaticNodeType<T>;
     /**
      * Written by `exportJSON()` so the output remains readable by older
-     * versions, and omitted by `exportJSON(true)` along with everything else
-     * parsing restores on its own — hence optional, matching
-     * {@link SerializedLexicalNode.version}.
+     * versions. Required, like {@link SerializedLexicalNode.version}: this is
+     * the legacy form, which writes it unconditionally. `exportJSON(true)`
+     * returns the {@link SerializedPartial} of this, where it is optional
+     * along with everything else parsing restores on its own.
      */
-    version?: number;
+    version: number;
   } & NodeStateJSON<T>
 >;
 
@@ -524,16 +527,32 @@ export type LexicalUpdateJSON<
  * enables a "compact" serialization variant in which any property left at its
  * default is omitted.
  *
- * The deprecated `version` needs no relaxing here — it is already optional on
- * {@link SerializedLexicalNode}, because a compact export omits it.
+ * The deprecated `version` is relaxed here rather than on
+ * {@link SerializedLexicalNode}: a compact export omits it, but the legacy
+ * form always writes it, and making it optional at the base would take that
+ * promise away from the full output type as well.
  */
 export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
   SerializedLexicalNode & Partial<T>,
-  '$slots'
+  '$slots' | 'children' | 'version'
 > & {
   /** Slot values are parsed by the same rules, so they relax the same way. */
   $slots?: Record<string, SerializedPartial<SerializedLexicalNode>>;
-};
+  /** Omitted by a compact export, like every other restorable property. */
+  version?: number;
+} & (T extends {children: readonly (infer C extends SerializedLexicalNode)[]}
+    ? {
+        /**
+         * An element's children are nodes of the same document, written in the
+         * same form, so they relax too: `Partial<T>` alone would make the array
+         * optional while still promising that everything in it is fully
+         * serialized, which is untrue of every compact element but the leaves.
+         */
+        children?: SerializedPartial<C>[];
+      }
+    : // Not an element. Intersecting with `unknown` leaves the type alone,
+      // rather than giving every node an optional `children` it never has.
+      unknown);
 
 /**
  * The shape {@link LexicalNode.updateFromJSON} accepts for a node whose

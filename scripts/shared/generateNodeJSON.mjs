@@ -199,14 +199,101 @@ function addTable(name, table) {
   if (existing !== undefined) {
     return existing;
   }
+  claimTableName(name, table);
   tableNames.set(table, name);
-  tables.set(name, table);
   return name;
+}
+
+/**
+ * Record a table under a name, refusing to give two different tables the same
+ * one.
+ *
+ * Names are derived by upper-casing the class and property, which is not
+ * injective — `textFormat` and `textformat` produce the same name, as do two
+ * classes whose stripped names match. Without this the second `set` would
+ * replace the first table under a name the first class's emitted code is
+ * already reading, which no amount of verification downstream would catch:
+ * both classes compile, and one of them silently decodes through the other's
+ * table.
+ *
+ * Exported for `generateNodeJSON.test.ts`, which is the only place the
+ * collision can be provoked: the checked-in manifest has none.
+ *
+ * @param {string} name
+ * @param {{readonly [key: string]: unknown}} table
+ */
+export function claimTableName(name, table) {
+  const existing = tables.get(name);
+  if (existing !== undefined && existing !== table) {
+    throw new Error(
+      `generate-node-json: two different lookup tables both want the name ${name}; rename one of the properties it was derived from`,
+    );
+  }
+  tables.set(name, table);
 }
 
 /** @param {NodeClass} klass @param {string} key @param {string} suffix */
 function tableName(klass, key, suffix) {
   return `${klass.name.replace(/Node$/, '').toUpperCase()}_${key.toUpperCase()}_${suffix}`;
+}
+
+// A plain JavaScript identifier, which is what every name below is interpolated
+// into the output as — `node.<field>`, `const <key>`, `{<key>: ...}`. Anything
+// else is either a syntax error the formatter would report against generated
+// code rather than against the schema that caused it, or — for a name that
+// happens to parse — code that reads something other than what was declared.
+const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
+// Reserved words cannot be bound, so a property named for one breaks only the
+// forms that declare a local. Kept separate from IDENTIFIER for that reason.
+const RESERVED = new Set(
+  `await break case catch class const continue debugger default delete do else
+   enum export extends false finally for function if implements import in
+   instanceof interface let new null package private protected public return
+   static super switch this throw true try typeof var void while with yield`.split(
+    /\s+/,
+  ),
+);
+
+// The names the emitted functions bind themselves. A property named for one of
+// these would shadow it — `const node = node.__node` — and is refused rather
+// than renamed, so that what the generated code calls a thing is always what
+// the schema called it.
+const EMITTED_LOCALS = new Set([
+  'json',
+  'n',
+  'node',
+  'num',
+  'numC',
+  'prevNode',
+  'self',
+  'v',
+]);
+
+/**
+ * Check a name before it is interpolated into the output as an identifier.
+ *
+ * Exported for `generateNodeJSON.test.ts`: every name in the checked-in
+ * manifest passes, so the refusals have no other way to be exercised.
+ *
+ * @param {string} name
+ * @param {string} what how the name is used, for the message
+ * @param {boolean} [binds] whether the emitted form declares a local of this
+ *   name, which additionally rules out reserved words and the emitted locals
+ * @returns {string} the name, so this can wrap an interpolation
+ */
+export function emittable(name, what, binds = false) {
+  if (!IDENTIFIER.test(name)) {
+    throw new NotCompilable(
+      `${what} ${JSON.stringify(name)} is not a plain identifier`,
+    );
+  }
+  if (binds && (RESERVED.has(name) || EMITTED_LOCALS.has(name))) {
+    throw new NotCompilable(
+      `${what} ${JSON.stringify(name)} collides with a name the generated code binds`,
+    );
+  }
+  return name;
 }
 
 /**
@@ -225,23 +312,30 @@ function readExpression(klass, schema, key) {
     // Declared import-only, like the walk's compiled getters skip it.
     return null;
   }
+  // The key names a local in the compact form and an object key in the legacy
+  // one, so it has to survive both.
+  emittable(key, 'schema key', true);
   if (isSchemaField(getter)) {
+    const field = emittable(getter.field, 'getter field');
     const read =
       getter.decode === undefined
-        ? `node.${getter.field}`
+        ? `node.${field}`
         : // The table is plain data, so it is inlined rather than imported:
           // keeping this module free of runtime imports is what keeps it out
           // of the cycle.
-          `${addTable(tableName(klass, key, 'DECODE'), getter.decode)}[node.${getter.field}]`;
+          `${addTable(tableName(klass, key, 'DECODE'), getter.decode)}[node.${field}]`;
     if (getter.when === undefined) {
       return {expression: read};
     }
     // A conditionally-persisted property. The walk tests the default first
     // and then calls the predicate; here the value is already in a local, and
     // the predicate is hoisted so properties that share one call it once.
-    return {expression: read, when: getter.when};
+    return {
+      expression: read,
+      when: emittable(getter.when, 'when predicate', true),
+    };
   }
-  return {expression: `node.${getter}()`};
+  return {expression: `node.${emittable(getter, 'getter method')}()`};
 }
 
 /**
@@ -512,7 +606,12 @@ function generateAfterCloneFrom(klass) {
   }
   return `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */
 function afterClone${klass.name}(node: ${klass.name}, prevNode: ${klass.name}): void {
-${fields.map(field => `  node.${field} = prevNode.${field};`).join('\n')}
+${fields
+  .map(field => {
+    const name = emittable(field, 'schema field');
+    return `  node.${name} = prevNode.${name};`;
+  })
+  .join('\n')}
 }`;
 }
 
@@ -559,6 +658,7 @@ function writeExpression(klass, schema, key) {
     // verification compares values, so it would not notice.
     throw new NotCompilable(`"${key}" is also an Object.prototype member`);
   }
+  emittable(key, 'schema key');
   const setter = resolveSetterAccessor(klass, key, schema);
   if (setter === null) {
     throw new NotCompilable(`"${key}" is export-only`);
@@ -593,14 +693,15 @@ function writeExpression(klass, schema, key) {
     return {
       key,
       needsSelf: true,
-      statements: `  v = json.${key};\n  n = self.${setter}(${expression});\n  self = (n || self) as ${klass.name};`,
+      statements: `  v = json.${key};\n  n = self.${emittable(setter, 'setter method')}(${expression});\n  self = (n || self) as ${klass.name};`,
     };
   }
   const {encode} = setter;
   // Two statements rather than one expression when a table has to be applied
   // after parsing: folding them together needs an IIFE, and a closure per
   // property per node is most of what generating this was meant to remove.
-  let statements = `  v = json.${key};\n  self.${setter.field} = ${expression};`;
+  const setterField = emittable(setter.field, 'setter field');
+  let statements = `  v = json.${key};\n  self.${setterField} = ${expression};`;
   if (encode !== undefined) {
     const name = addTable(tableName(klass, key, 'ENCODE'), encode);
     nullPrototypeTables.push(name);
@@ -611,7 +712,7 @@ function writeExpression(klass, schema, key) {
       encode[/** @type {string} */ (schema.defaultValue)],
     );
     const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
-    statements = `  v = json.${key};\n  v = ${expression};\n  self.${setter.field} = ${lookup};`;
+    statements = `  v = json.${key};\n  v = ${expression};\n  self.${setterField} = ${lookup};`;
   }
   try {
     verifyCompiledParse({
@@ -719,13 +820,26 @@ function generatePackage(pkg) {
   // describes — ParagraphNode and its #7971 textFormat/textStyle back-fill —
   // still composes, because the override's `super.exportJSON(compact)` is what
   // reaches the generated literal.
-  const generated = pkg.targets.map(({klass}) => ({
-    afterCloneFrom: generateAfterCloneFrom(klass),
-    compact: generateCompactExport(klass),
-    exportJSON: generateExport(klass),
-    klass,
-    updateFromJSON: generateUpdate(klass),
-  }));
+  const generated = pkg.targets.map(({klass}) => {
+    try {
+      return {
+        afterCloneFrom: generateAfterCloneFrom(klass),
+        compact: generateCompactExport(klass),
+        exportJSON: generateExport(klass),
+        klass,
+        updateFromJSON: generateUpdate(klass),
+      };
+    } catch (error) {
+      // The forms that have a fallback catch NotCompilable themselves and
+      // return null; one that reaches here is from a form that has none — the
+      // legacy export, or a name that cannot be written into the output at all
+      // — so it fails the build, named for the class whose schema caused it.
+      if (error instanceof NotCompilable) {
+        throw new Error(`generate-node-json: ${klass.name}: ${error.message}`);
+      }
+      throw error;
+    }
+  });
 
   const tableSource = [...tables]
     .map(

@@ -117,10 +117,10 @@ describe('compact export', () => {
       JSON.stringify(legacy).length,
     );
 
-    const fromCompact = editor.parseEditorState({
-      root: compact,
-    } as never);
-    const fromLegacy = editor.parseEditorState({root: legacy} as never);
+    // No cast: parseEditorState accepts either form, which is the point of
+    // the compact one being parseable at all.
+    const fromCompact = editor.parseEditorState({root: compact});
+    const fromLegacy = editor.parseEditorState({root: legacy});
     // both restore the same content, and re-exporting the compact-parsed state
     // in legacy form reproduces the original legacy JSON exactly
     for (const state of [fromCompact, fromLegacy]) {
@@ -161,8 +161,8 @@ describe('compact export', () => {
       textFormat: 1,
       textStyle: 'color: red',
     });
-    const fromLegacy = editor.parseEditorState({root: legacy} as never);
-    const fromCompact = editor.parseEditorState({root: compact} as never);
+    const fromLegacy = editor.parseEditorState({root: legacy});
+    const fromCompact = editor.parseEditorState({root: compact});
     for (const state of [fromLegacy, fromCompact]) {
       expect(
         state.read(() => {

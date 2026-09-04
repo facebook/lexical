@@ -855,7 +855,7 @@ node reference you kept across a mutation and then exported by hand.
 
 ### Versioning & Breaking Changes
 
-It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. Lexical's own `version` property is deprecated and no longer the way to do this — it is optional in both directions, nothing reads it, and the reason it does not work is explained under [Dangers of a flat version property](#dangers-of-a-flat-version-property). Evolve your serialized type additively instead, and give each new property a default its parser can fall back to. Here's the serialized type definition for Lexical's base `TextNode` class:
+It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. Lexical's own `version` property is deprecated and no longer the way to do this — nothing reads it, parsing drops it outright, a compact export omits it, and the reason it does not work is explained under [Dangers of a flat version property](#dangers-of-a-flat-version-property). Evolve your serialized type additively instead, and give each new property a default its parser can fall back to. Here's the serialized type definition for Lexical's base `TextNode` class:
 
 ```ts
 import type {Spread} from 'lexical';

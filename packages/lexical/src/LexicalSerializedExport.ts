@@ -6,7 +6,11 @@
  *
  */
 
-import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
+import type {
+  LexicalNode,
+  SerializedLexicalNode,
+  SerializedPartial,
+} from './LexicalNode';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -140,9 +144,16 @@ function isThenable(value: unknown): boolean {
  * `@lexical/clipboard` selection export both call, so {@link $withCompactExport}
  * governs every one of them alike.
  *
+ * Which form that is decides the shape, so the return type is the
+ * {@link SerializedPartial} — the one both forms satisfy. A caller that knows
+ * it is not under {@link $withCompactExport} and wants the full type should
+ * call `node.exportJSON()` directly.
+ *
  * @experimental
  */
-export function $exportNodeJSON(node: LexicalNode): SerializedLexicalNode {
+export function $exportNodeJSON(
+  node: LexicalNode,
+): SerializedPartial<SerializedLexicalNode> {
   const serializedNode = node.exportJSON(compactExport);
   const nodeClass = node.constructor;
   if (serializedNode.type !== nodeClass.getType()) {

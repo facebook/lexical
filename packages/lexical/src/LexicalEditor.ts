@@ -27,6 +27,7 @@ import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {DequeSet} from './LexicalDequeSet';
 import {
   cloneEditorState,
+  type CompactSerializedEditorState,
   createEmptyEditorState,
   type EditorState,
   type SerializedEditorState,
@@ -1810,12 +1811,20 @@ export class LexicalEditor {
    * Parses a SerializedEditorState (usually produced by {@link EditorState.toJSON}) and returns
    * and EditorState object that can be, for example, passed to {@link LexicalEditor.setEditorState}. Typically,
    * deserialization from JSON stored in a database uses this method.
+   *
+   * Either form is accepted: parsing restores what a compact document omitted,
+   * which is the whole reason it may omit it, so
+   * {@link CompactSerializedEditorState} — what `toJSON(true)` returns — goes
+   * back in without a cast.
    * @param maybeStringifiedEditorState
    * @param updateFn
    * @returns
    */
   parseEditorState(
-    maybeStringifiedEditorState: string | SerializedEditorState,
+    maybeStringifiedEditorState:
+      | string
+      | SerializedEditorState
+      | CompactSerializedEditorState,
     updateFn?: () => void,
   ): EditorState {
     const serializedEditorState =

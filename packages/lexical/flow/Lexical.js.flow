@@ -1411,9 +1411,9 @@ declare export function $applyNodeReplacement<N extends LexicalNode>(
 export type SerializedLexicalNode = {
   type: string,
   // Deprecated: nothing reads it. exportJSON() writes it as 1 for backwards
-  // compatible output, but exportJSON(true) omits it, so it is optional in
-  // both directions.
-  version?: number,
+  // compatible output and so promises it here; exportJSON(true) omits it,
+  // which SerializedPartial relaxes, and parsing drops it outright.
+  version: number,
   ...
 };
 

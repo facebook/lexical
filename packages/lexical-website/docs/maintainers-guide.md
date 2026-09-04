@@ -309,6 +309,24 @@ like any other; the walk applies the state before handing the node to the
 generated parser, the mirror of how export appends it after the generated
 literal.
 
+`afterCloneFrom` is generated too, and is the one direction whose fallback is
+not the walk. A schema field is where a property is *stored*, so every class
+that declares one gets an `afterCloneFrom` synthesized at registration —
+generated straight-line code when the class has some, and otherwise a loop over
+the field names — copying the fields that class's own `$config` declared and
+delegating the rest through `super`, which is why the emitted function covers
+one class's own fields and nothing above it. Both accessor directions are read
+for a field name, and the declared field is used rather than the one
+`resolveGetterAccessor` resolves to: an override changes how a property is
+serialized, not where it lives. A class that writes its own `afterCloneFrom` is
+left alone and owns all of its properties, which is how `ElementNode` keeps
+carrying `__first`/`__last`/`__size` and its slot bookkeeping; so is a property
+declared through accessor methods on both sides, which names no field for
+anything to copy — `MarkNode`'s `ids` is the one in-tree example, and the reason
+`MarkNode` still has a hand-written method. `ownSchemaFields` in
+`LexicalUtils.ts` is the single definition of that field list, called by both
+the generator and the synthesized fallback.
+
 The schema-to-JavaScript compiler itself lives in `@lexical/compiler`'s
 `SchemaJsonCodegen` entry point, so it is testable independently of the
 generator that drives it.

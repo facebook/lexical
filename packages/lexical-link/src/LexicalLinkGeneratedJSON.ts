@@ -92,10 +92,19 @@ function exportCompactLinkNode(node: LinkNode): {[key: string]: unknown} {
   return json;
 }
 
+/** Generated from LinkNode's serialization schema. Do not edit by hand. */
+function afterCloneLinkNode(node: LinkNode, prevNode: LinkNode): void {
+  node.__rel = prevNode.__rel;
+  node.__target = prevNode.__target;
+  node.__title = prevNode.__title;
+  node.__url = prevNode.__url;
+}
+
 /** LinkNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_LINK: GeneratedJSON = {
   exportJSON: exportLinkNode,
   exportCompactJSON: exportCompactLinkNode,
+  afterCloneFrom: afterCloneLinkNode,
 };
 
 /** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
@@ -181,8 +190,17 @@ function exportCompactAutoLinkNode(node: AutoLinkNode): {
   return json;
 }
 
+/** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
+function afterCloneAutoLinkNode(
+  node: AutoLinkNode,
+  prevNode: AutoLinkNode,
+): void {
+  node.__isUnlinked = prevNode.__isUnlinked;
+}
+
 /** AutoLinkNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_AUTOLINK: GeneratedJSON = {
   exportJSON: exportAutoLinkNode,
   exportCompactJSON: exportCompactAutoLinkNode,
+  afterCloneFrom: afterCloneAutoLinkNode,
 };

@@ -2009,7 +2009,8 @@ export type GeneratedJSON = {
   updateFromJSON?: (
     node: LexicalNode,
     json: {readonly [key: string]: unknown},
-  ) => void,
+  ) => LexicalNode,
+  afterCloneFrom?: (node: LexicalNode, prevNode: LexicalNode) => void,
 };
 
 export interface StaticNodeConfigValue<

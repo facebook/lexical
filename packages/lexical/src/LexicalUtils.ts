@@ -4601,6 +4601,10 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
       setters,
     };
     injectSynthesizedStatics(klass, isAbstract, ownNodeType, ownNodeConfig);
+    // Not gated on `isAbstract`: an abstract base that declares schema fields
+    // stores them on every subclass instance, so its clone has to carry them
+    // too.
+    injectSynthesizedAfterCloneFrom(klass);
   } catch (error) {
     NODE_CLASS_CACHE.delete(klass);
     throw error;
@@ -4703,6 +4707,141 @@ function injectSynthesizedStatics(
       }
     }
   }
+}
+
+/**
+ * The node fields a schema names, in either direction.
+ *
+ * Both directions, and the *declared* field rather than the one
+ * {@link resolveGetterAccessor} resolves to: which accessor serialization uses
+ * is a question about this class's methods, and a subclass that overrides
+ * `getStyle()` still stores its value in `__style`. A clone carries storage, so
+ * it wants every field name the schema knows, whichever direction named it and
+ * whether or not an override sends the serialization through a method instead.
+ *
+ * A property with no `field` at all — declared through accessor methods on both
+ * sides — names no storage here, and is left to the class (see
+ * {@link injectSynthesizedAfterCloneFrom}).
+ */
+function schemaFieldNames(schema: AnySerializationSchema): readonly string[] {
+  const names: string[] = [];
+  for (const accessor of [schema.getter, schema.setter]) {
+    if (
+      isSchemaField(accessor) &&
+      // Rejected on both accessor paths for the same reason: it names the
+      // prototype rather than a field, so copying it would re-parent the clone.
+      accessor.field !== '__proto__' &&
+      !names.includes(accessor.field)
+    ) {
+      names.push(accessor.field);
+    }
+  }
+  return names;
+}
+
+/**
+ * Give each class in this one's chain the `afterCloneFrom` its schema implies,
+ * unless it wrote one for itself.
+ *
+ * A schema field is persisted state, so it has to survive
+ * {@link $cloneWithProperties} — the clone `getWritable()` makes on the first
+ * write of every update — or the node loses it on the next edit rather than
+ * failing anywhere. Declaring the field is already saying so, so the copy is
+ * derived from the same declaration `exportJSON` and `updateFromJSON` come
+ * from rather than written a third time.
+ *
+ * Per declaring class, not per registered class: each class copies the fields
+ * its own `$config` declared and delegates the rest to its superclass, which is
+ * what a hand-written `afterCloneFrom` does with its `super` call, and it means
+ * a base class shared by several subclasses is fixed up once. `declaredBy`
+ * gives the owner of each field's winning schema, so a subclass that
+ * re-declares an inherited field owns it here too.
+ *
+ * A class that defines its own `afterCloneFrom` keeps it and is trusted with
+ * its own fields, the same rule the synthesized statics follow. That is what
+ * lets `ElementNode` — whose clone also has to carry `__first`/`__last`/`__size`
+ * and the slot bookkeeping, none of which any schema describes — keep a
+ * hand-written method, and it is why {@link $cloneWithProperties} still checks
+ * that an override called `super`.
+ */
+function injectSynthesizedAfterCloneFrom(klass: Klass<LexicalNode>): void {
+  for (const {klass: currentKlass, ownNodeConfig} of iterStaticNodeConfigChain(
+    klass,
+  )) {
+    const prototype = currentKlass.prototype as unknown as object;
+    if (hasOwnKey(prototype, 'afterCloneFrom')) {
+      // Hand-written, or synthesized by an earlier registration.
+      continue;
+    }
+    // From this class's own composition rather than the registered subclass's,
+    // so what it copies does not depend on which class was registered first: a
+    // subclass that re-declares an inherited field owns that field in its own
+    // composition and in every subclass's, but the ancestor still owns it in
+    // the composition that has no such subclass in it.
+    const fields = ownSchemaFields(currentKlass);
+    if (fields.length === 0) {
+      // Nothing of its own to carry — including every class with no `$config`
+      // of its own, which reports its ancestor's fields but declares none.
+      continue;
+    }
+    // Resolved when the clone runs, not now: a base class in this chain may
+    // still be waiting for its own synthesized method, and registration order
+    // is whatever order the classes were passed to `createEditor`.
+    const superPrototype = Object.getPrototypeOf(prototype) as LexicalNode;
+    // The straight-line function the build generated for this class when it
+    // has one, and otherwise a walk of the field names — the same pairing as
+    // the export and import directions, for the same reason: the fields are
+    // fixed once the schema is written, and a keyed store whose key changes
+    // every iteration is what generating the code removes.
+    const copyFields =
+      (ownNodeConfig &&
+        ownNodeConfig.generated &&
+        ownNodeConfig.generated.afterCloneFrom) ||
+      ((node: LexicalNode, prevNode: LexicalNode): void => {
+        const self = node as unknown as Record<string, unknown>;
+        const prev = prevNode as unknown as Record<string, unknown>;
+        for (let i = 0; i < fields.length; i++) {
+          const field = fields[i];
+          self[field] = prev[field];
+        }
+      });
+    (
+      prototype as {afterCloneFrom: LexicalNode['afterCloneFrom']}
+    ).afterCloneFrom = function (
+      this: LexicalNode,
+      prevNode: LexicalNode,
+    ): void {
+      superPrototype.afterCloneFrom.call(this, prevNode);
+      copyFields(this, prevNode);
+    };
+  }
+}
+
+/**
+ * The node fields a class's own `$config` declares, deduplicated.
+ *
+ * Shared with the codegen in `scripts/shared/generateNodeJSON.mjs`, which emits
+ * the straight-line form of exactly this list, so the two cannot disagree about
+ * which class carries which field.
+ *
+ * @internal
+ */
+export function ownSchemaFields(klass: Klass<LexicalNode>): readonly string[] {
+  const {declaredBy, fieldsBaseFirst} = getComposedSchema(klass);
+  const fields: string[] = [];
+  for (const [key, schema] of fieldsBaseFirst) {
+    if (declaredBy.get(key) !== klass) {
+      continue;
+    }
+    for (const field of schemaFieldNames(schema)) {
+      if (!fields.includes(field)) {
+        // Two properties may name one field (a field exported under a second
+        // key), and it is copied once.
+        fields.push(field);
+      }
+    }
+  }
+  return fields;
 }
 
 /**

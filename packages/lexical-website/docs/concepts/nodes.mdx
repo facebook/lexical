@@ -271,9 +271,13 @@ release, we have:
   the default value, instead of potentially silently corrupting the node's
   state
 - **Less boilerplate** - all of the boilerplate for `exportJSON`,
-  `updateFromJSON` and `afterCloneFrom` is handled automatically.
+  `updateFromJSON` and `afterCloneFrom` is handled automatically. Declaring a
+  property as a field says where it is stored, which is exactly what a clone
+  has to carry; a property declared through accessor methods names no field, so
+  a node with one of those still writes its own `afterCloneFrom`. See
+  [Carrying properties across a clone](/docs/serialization/serialization#carrying-properties-across-a-clone).
 - **Performance** - a `@lexical/compiler` code generator is used to produce
-  optimized implementations of export and import for performance that is
+  optimized implementations of export, import and clone for performance that is
   indistinguishable (or better) than a hand-written implementation.
 - **Property Tests** - the `@lexical/fast-check` package can be used to
   generate arbitrary valid serialized nodes for thorough testing of your

@@ -401,11 +401,6 @@ export class HeadingNode extends ElementNode {
     });
   }
 
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__tag = prevNode.__tag;
-  }
-
   constructor(tag: HeadingTagType = 'h1', key?: NodeKey) {
     super(key);
     this.__tag = tag;

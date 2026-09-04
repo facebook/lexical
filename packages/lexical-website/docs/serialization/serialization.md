@@ -523,8 +523,11 @@ class CounterNode extends ElementNode {
   __count = 0;
   __variant: 'a' | 'b' = 'a';
 
-  // Node properties live on the node, so a clone has to carry them across —
-  // this is required of any custom node, schema or not.
+  // Node properties live on the node, so a clone has to carry them across.
+  // These two are declared through accessor methods, which name no field for
+  // the schema to copy, so the class carries them itself; a property declared
+  // with `withField` needs none of this. See "Carrying properties across a
+  // clone" below.
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__count = prevNode.__count;
@@ -682,6 +685,54 @@ Because the node itself declares the schema, tooling can introspect it. The
 `@lexical/fast-check` package derives property-based test generators
 directly from a node class (`nodeArbitrary(TextNode)`), so a single
 declaration powers both parsing and example generation in tests.
+
+#### Carrying properties across a clone
+
+A node is cloned on the first write of every update, and a property that the
+clone does not carry reverts to its constructor default there — silently, since
+the field still exists and still holds a valid value. Declaring a property as a
+field says where it is stored, so that is where `afterCloneFrom` comes from
+too: a class that declares only fields needs no `afterCloneFrom` at all, and one
+that declares some gets those carried without writing them out again.
+
+```ts
+class CalloutNode extends ElementNode {
+  __label: string = '';
+
+  // No afterCloneFrom: `__label` is declared below, so it is carried.
+  $config() {
+    return this.config('callout', {
+      extends: ElementNode,
+      json: nodeSchema<CalloutNode>({
+        label: withField(stringValue(), {field: '__label'}),
+      }),
+    });
+  }
+}
+```
+
+Both directions are read, so a property declared with `withAccessors` in one
+direction and a field in the other is still carried, and so is one whose
+accessor a subclass overrides — where the value is *stored* does not change
+when the way it is serialized does.
+
+Two cases stay the class's own, and both follow the same rule the synthesized
+`clone` and `importJSON` follow — declare it yourself and you own it:
+
+- **A property declared through accessor methods on both sides**, like
+  `MarkNode`'s `ids` (`getIDs`/`setIDs`) or `CounterNode`'s above. The schema
+  names no field, so there is nothing to copy, and the class writes an
+  `afterCloneFrom` for it.
+- **A class that defines its own `afterCloneFrom`**, which is left alone and is
+  then responsible for all of its own properties. `ElementNode` is one: its
+  clone also has to carry `__first`, `__last`, `__size` and its slot
+  bookkeeping, none of which any schema describes.
+
+`@lexical/fast-check` is the way to hold a node to this, whichever case it
+falls into — see [Generated tests](/docs/packages/lexical-fast-check). A
+hand-written fixture tends to leave properties at their defaults, and a dropped
+property compares equal to its default, so the bug is invisible exactly when
+the test looks like it passed.
 
 ### Compact JSON
 

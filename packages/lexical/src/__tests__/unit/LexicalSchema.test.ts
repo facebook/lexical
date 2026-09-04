@@ -19,6 +19,7 @@ import {
   createState,
   ElementNode,
   enumValue,
+  type Klass,
   type LexicalExportJSON,
   type LexicalUpdateJSON,
   nodeSchema,
@@ -1029,10 +1030,6 @@ describe('reference-typed defaults compact by content', () => {
           }),
         });
       }
-      afterCloneFrom(prevNode: this): void {
-        super.afterCloneFrom(prevNode);
-        this.__tags = prevNode.__tags;
-      }
     }
     using editor = buildEditorFromExtensions(
       defineExtension({
@@ -1064,6 +1061,214 @@ describe('reference-typed defaults compact by content', () => {
           .map(n => (n as TagsNode).__tags),
       ),
     ).toEqual([[], ['a']]);
+  });
+});
+
+describe('a clone carries the fields the schema declares', () => {
+  /**
+   * A node is only cloned across updates: within one, `$setNodeKey` has put it
+   * in `_cloneNotNeeded` and `getWritable()` hands back the same object, so a
+   * single-update test would never reach `afterCloneFrom` at all.
+   */
+  function writeThenRewrite<T extends ElementNode>(
+    editor: ReturnType<typeof buildEditorFromExtensions>,
+    klass: Klass<T>,
+    write: (node: T) => void,
+  ): T {
+    let key = '';
+    editor.update(
+      () => {
+        const node = $create(klass);
+        write(node);
+        $getRoot().clear().append(node);
+        key = node.getKey();
+      },
+      {discrete: true},
+    );
+    let cloned!: T;
+    editor.update(
+      () => {
+        cloned = $getRoot().getFirstChild()!.getWritable() as T;
+        expect(cloned.getKey()).toBe(key);
+      },
+      {discrete: true},
+    );
+    return cloned;
+  }
+
+  test('a node that declares only fields needs no afterCloneFrom', () => {
+    // The node the docs teach: three properties, each declared as a field, and
+    // no clone boilerplate. Before the schema carried them, every one of them
+    // reverted to its constructor default on the first edit after the node was
+    // created.
+    class CalloutNode extends ElementNode {
+      __label: string = '';
+      __level: number = 1;
+      __tone: 'info' | 'warning' | 'danger' = 'info';
+      $config() {
+        return this.config('callout', {
+          extends: ElementNode,
+          json: nodeSchema<CalloutNode>({
+            label: withField(stringValue(), {field: '__label'}),
+            level: withField(numberValue(1, {integer: true, max: 3, min: 1}), {
+              field: '__level',
+            }),
+            tone: withField(enumValue(['info', 'warning', 'danger']), {
+              field: '__tone',
+            }),
+          }),
+        });
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[callout-clone]',
+        nodes: [CalloutNode],
+      }),
+    );
+    const cloned = writeThenRewrite(editor, CalloutNode, node => {
+      node.__label = 'Heads up';
+      node.__level = 3;
+      node.__tone = 'danger';
+    });
+    editor.read(() =>
+      expect(cloned.exportJSON()).toMatchObject({
+        label: 'Heads up',
+        level: 3,
+        tone: 'danger',
+      }),
+    );
+  });
+
+  test('each class carries its own fields and delegates the rest', () => {
+    class BaseNode extends ElementNode {
+      __base: string = '';
+      $config() {
+        return this.config('carry-base', {
+          extends: ElementNode,
+          json: nodeSchema<BaseNode>({
+            base: withField(stringValue(), {field: '__base'}),
+          }),
+        });
+      }
+    }
+    class DerivedNode extends BaseNode {
+      __derived: string = '';
+      $config() {
+        return this.config('carry-derived', {
+          extends: BaseNode,
+          json: nodeSchema<DerivedNode>({
+            derived: withField(stringValue(), {field: '__derived'}),
+          }),
+        });
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[carry-chain]',
+        nodes: [BaseNode, DerivedNode],
+      }),
+    );
+    const cloned = writeThenRewrite(editor, DerivedNode, node => {
+      node.__base = 'from the base';
+      node.__derived = 'from the subclass';
+    });
+    expect(cloned.__base).toBe('from the base');
+    expect(cloned.__derived).toBe('from the subclass');
+  });
+
+  test('a hand-written afterCloneFrom is left alone', () => {
+    // A property declared through accessor methods names no field, so nothing
+    // is derived for it and the class stays responsible — as MarkNode's `ids`
+    // is. The counter proves the class's own method is what ran.
+    let calls = 0;
+    class AccessorNode extends ElementNode {
+      __ids: readonly string[] = [];
+      $config() {
+        return this.config('carry-accessor', {
+          extends: ElementNode,
+          json: nodeSchema<AccessorNode>({
+            ids: withAccessors(arrayValue(stringValue()), {
+              getter: 'getIds',
+              setter: 'setIds',
+            }),
+          }),
+        });
+      }
+      afterCloneFrom(prevNode: this): void {
+        super.afterCloneFrom(prevNode);
+        calls += 1;
+        this.__ids = prevNode.__ids;
+      }
+      getIds(): readonly string[] {
+        return this.getLatest().__ids;
+      }
+      setIds(ids: readonly string[]): this {
+        const self = this.getWritable();
+        self.__ids = ids;
+        return self;
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[carry-accessor]',
+        nodes: [AccessorNode],
+      }),
+    );
+    const cloned = writeThenRewrite(editor, AccessorNode, node => {
+      node.__ids = ['a', 'b'];
+    });
+    expect(cloned.__ids).toEqual(['a', 'b']);
+    expect(calls).toBeGreaterThan(0);
+  });
+
+  test('what a base class carries does not depend on registration order', () => {
+    // The subclass re-declares the base's field, so it owns that key in every
+    // composition that contains it. Registering the subclass must not leave the
+    // base with a method that has stopped copying its own field, which is what
+    // deriving each class's list from the registered class's view would do.
+    class ReBaseNode extends ElementNode {
+      __shared: string = '';
+      $config() {
+        return this.config('order-base', {
+          extends: ElementNode,
+          json: nodeSchema<ReBaseNode>({
+            shared: withField(stringValue(), {field: '__shared'}),
+          }),
+        });
+      }
+    }
+    class ReDerivedNode extends ReBaseNode {
+      $config() {
+        return this.config('order-derived', {
+          extends: ReBaseNode,
+          json: nodeSchema<ReDerivedNode>({
+            shared: withField(stringValue('fallback'), {field: '__shared'}),
+          }),
+        });
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[order-independence]',
+        // The subclass first, so the base is only ever reached through it.
+        nodes: [ReDerivedNode, ReBaseNode],
+      }),
+    );
+    expect(
+      writeThenRewrite(editor, ReBaseNode, node => {
+        node.__shared = 'base value';
+      }).__shared,
+    ).toBe('base value');
+    expect(
+      writeThenRewrite(editor, ReDerivedNode, node => {
+        node.__shared = 'derived value';
+      }).__shared,
+    ).toBe('derived value');
   });
 });
 

@@ -93,6 +93,11 @@ export interface GeneratedJSON {
     node: LexicalNode,
     json: {readonly [key: string]: unknown},
   ): LexicalNode;
+  // Copies the fields this class's own \`$config\` declared, for the
+  // \`afterCloneFrom\` synthesized from the same schema. The superclass's half is
+  // that method's \`super\` call, so this covers one class's own fields and
+  // nothing above it.
+  afterCloneFrom?(node: LexicalNode, prevNode: LexicalNode): void;
 }`;
 
 /**

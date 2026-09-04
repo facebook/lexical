@@ -42,6 +42,11 @@ export interface GeneratedJSON {
     node: LexicalNode,
     json: {readonly [key: string]: unknown},
   ): LexicalNode;
+  // Copies the fields this class's own `$config` declared, for the
+  // `afterCloneFrom` synthesized from the same schema. The superclass's half is
+  // that method's `super` call, so this covers one class's own fields and
+  // nothing above it.
+  afterCloneFrom?(node: LexicalNode, prevNode: LexicalNode): void;
 }
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
@@ -182,11 +187,21 @@ function updateTextNode(
   return node;
 }
 
+/** Generated from TextNode's serialization schema. Do not edit by hand. */
+function afterCloneTextNode(node: TextNode, prevNode: TextNode): void {
+  node.__detail = prevNode.__detail;
+  node.__format = prevNode.__format;
+  node.__mode = prevNode.__mode;
+  node.__style = prevNode.__style;
+  node.__text = prevNode.__text;
+}
+
 /** TextNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TEXT: GeneratedJSON = {
   exportJSON: exportTextNode,
   exportCompactJSON: exportCompactTextNode,
   updateFromJSON: updateTextNode,
+  afterCloneFrom: afterCloneTextNode,
 };
 
 /** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
@@ -336,8 +351,16 @@ function exportCompactTabNode(node: TabNode): {[key: string]: unknown} {
   return json;
 }
 
+/** Generated from TabNode's serialization schema. Do not edit by hand. */
+function afterCloneTabNode(node: TabNode, prevNode: TabNode): void {
+  node.__detail = prevNode.__detail;
+  node.__mode = prevNode.__mode;
+  node.__text = prevNode.__text;
+}
+
 /** TabNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TAB: GeneratedJSON = {
   exportJSON: exportTabNode,
   exportCompactJSON: exportCompactTabNode,
+  afterCloneFrom: afterCloneTabNode,
 };

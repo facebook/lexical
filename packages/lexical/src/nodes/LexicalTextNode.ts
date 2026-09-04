@@ -456,15 +456,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     });
   }
 
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__text = prevNode.__text;
-    this.__format = prevNode.__format;
-    this.__style = prevNode.__style;
-    this.__mode = prevNode.__mode;
-    this.__detail = prevNode.__detail;
-  }
-
   constructor(text: string = '', key?: NodeKey) {
     super(key);
     this.__text = text;

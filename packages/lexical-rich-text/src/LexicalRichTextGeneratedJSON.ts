@@ -149,11 +149,17 @@ function updateHeadingNode(
   return self;
 }
 
+/** Generated from HeadingNode's serialization schema. Do not edit by hand. */
+function afterCloneHeadingNode(node: HeadingNode, prevNode: HeadingNode): void {
+  node.__tag = prevNode.__tag;
+}
+
 /** HeadingNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_HEADING: GeneratedJSON = {
   exportJSON: exportHeadingNode,
   exportCompactJSON: exportCompactHeadingNode,
   updateFromJSON: updateHeadingNode,
+  afterCloneFrom: afterCloneHeadingNode,
 };
 
 /** Generated from QuoteNode's serialization schema. Do not edit by hand. */

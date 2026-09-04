@@ -7,9 +7,10 @@
  */
 
 /**
- * Emit specialized `exportJSON` and `updateFromJSON` implementations for the
- * node classes in {@link MANIFEST}, from the same serialization schema those
- * classes declare, using `@lexical/compiler`'s SchemaJsonCodegen pass.
+ * Emit specialized `exportJSON`, `updateFromJSON` and `afterCloneFrom`
+ * implementations for the node classes in {@link MANIFEST}, from the same
+ * serialization schema those classes declare, using `@lexical/compiler`'s
+ * SchemaJsonCodegen pass.
  *
  * Both schema-driven paths walk a compiled table per node: a loop, an indirect
  * call per property, and a keyed store whose key changes every iteration.
@@ -36,6 +37,13 @@
  * schema plus a fixed set of hostile values. A property whose schema this
  * cannot compile — or compiles wrongly — takes the class out of the import
  * half rather than shipping a parser that disagrees with the walk.
+ *
+ * `afterCloneFrom` is the third direction, and the one whose fallback is not
+ * the walk: a class that declares schema fields gets one synthesized at
+ * registration whether or not it is generated here, because a field is where a
+ * property is stored and a clone that drops it loses the value silently. What
+ * is emitted is that same field list as straight-line assignments, so a class
+ * generated here pays no loop for it.
  *
  * Reading a schema needs no editor and constructs no node: `$config()` is a
  * plain method on the prototype, so this runs as an ordinary build step.
@@ -90,8 +98,12 @@ const {isSchemaField, LineBreakNode, ParagraphNode, TabNode, TextNode} =
 // through the module that declares them rather than the package entry point.
 // `paths` maps `lexical/src/*` the same way it maps `lexical`, so this is the
 // same module instance the editor uses, not a second copy.
-const {getComposedSchema, resolveGetterAccessor, resolveSetterAccessor} =
-  await import('lexical/src/LexicalUtils');
+const {
+  getComposedSchema,
+  ownSchemaFields,
+  resolveGetterAccessor,
+  resolveSetterAccessor,
+} = await import('lexical/src/LexicalUtils');
 const {HeadingNode, QuoteNode} = await import('@lexical/rich-text');
 const {AutoLinkNode, LinkNode} = await import('@lexical/link');
 const {MarkNode} = await import('@lexical/mark');
@@ -470,6 +482,38 @@ ${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  return {
 }
 
 /**
+ * The copy half of one class's `afterCloneFrom`, or `null` for a class whose
+ * own `$config` declares no field to copy.
+ *
+ * Only the fields this class declared: the synthesized method delegates the
+ * rest to its superclass, the way a hand-written one delegates through `super`,
+ * so what is emitted here is one class's own storage and nothing above it.
+ *
+ * `ownSchemaFields` reads the declared field rather than the accessor
+ * {@link resolveGetterAccessor} would resolve to. A clone carries storage
+ * rather than serializing it, so an override that sends the export through a
+ * method changes nothing about where the value lives, and a property declared
+ * through accessor methods on both sides names no storage at all and is left
+ * to the class — which is why MarkNode, whose `ids` is `getIDs`/`setIDs`,
+ * still writes its own.
+ *
+ * @param {NodeClass} klass
+ * @returns {null | string}
+ */
+function generateAfterCloneFrom(klass) {
+  // The same list the synthesized method walks, from the same function, so the
+  // generated form cannot copy a different set than the fallback would.
+  const fields = ownSchemaFields(klass);
+  if (fields.length === 0) {
+    return null;
+  }
+  return `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */
+function afterClone${klass.name}(node: ${klass.name}, prevNode: ${klass.name}): void {
+${fields.map(field => `  node.${field} = prevNode.${field};`).join('\n')}
+}`;
+}
+
+/**
  * Whether a class extends ElementNode, and so leads its JSON with `children`.
  *
  * By name rather than by `instanceof` the imported class, so this stays a plain
@@ -673,6 +717,7 @@ function generatePackage(pkg) {
   // still composes, because the override's `super.exportJSON(compact)` is what
   // reaches the generated literal.
   const generated = pkg.targets.map(({klass}) => ({
+    afterCloneFrom: generateAfterCloneFrom(klass),
     compact: generateCompactExport(klass),
     exportJSON: generateExport(klass),
     klass,
@@ -728,13 +773,22 @@ function generatePackage(pkg) {
     );
 
   const pieces = [];
-  for (const {compact, exportJSON, klass, updateFromJSON} of generated) {
+  for (const {
+    afterCloneFrom,
+    compact,
+    exportJSON,
+    klass,
+    updateFromJSON,
+  } of generated) {
     pieces.push(exportJSON);
     if (compact !== null) {
       pieces.push(compact);
     }
     if (updateFromJSON !== null) {
       pieces.push(updateFromJSON);
+    }
+    if (afterCloneFrom !== null) {
+      pieces.push(afterCloneFrom);
     }
     pieces.push(
       `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const ${constName(klass)}: GeneratedJSON = {\n  exportJSON: export${klass.name},${
@@ -745,6 +799,10 @@ function generatePackage(pkg) {
         updateFromJSON === null
           ? ''
           : `\n  updateFromJSON: update${klass.name},`
+      }${
+        afterCloneFrom === null
+          ? ''
+          : `\n  afterCloneFrom: afterClone${klass.name},`
       }\n};`,
     );
   }

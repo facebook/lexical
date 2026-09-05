@@ -602,8 +602,15 @@ a string, `aliasedValue` reads the legacy spellings a document may still carry,
 `optional` reads an absent property. `SchemaInput<typeof schema>` is that type,
 and `SerializationSchemaValue<typeof schema>` is the parsed one — for
 `aliasedValue(numberValue(), {bold: 1})` they are `number | string | 'bold'`
-and `number`. Anything describing an *input* — a generated example, a document
-about to be parsed — should say the first.
+and `number`.
+
+That difference is why `updateFromJSON` does not constrain the *values* it is
+handed. It is the untrusted-JSON boundary and the parser there is total — every
+property is validated against the schema's domain and anything outside it
+becomes the default — so `LexicalParseJSON` keeps the property *names* and
+types each value as `unknown`. `node.updateFromJSON({format: 'bold'})` is valid
+input that a narrower type rejected while it worked perfectly at runtime, and a
+misspelled `frmat` is still an error.
 
 A property that is only persisted in some states names the predicate that
 decides, with `when`, rather than going through a hand-written getter:

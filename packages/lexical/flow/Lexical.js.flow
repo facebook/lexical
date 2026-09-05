@@ -1418,8 +1418,13 @@ export type SerializedLexicalNode = {
 };
 
 // The shape updateFromJSON accepts for a node whose serialized type is S.
-export type LexicalParseJSON<S extends SerializedLexicalNode> =
-  Omit<SerializedPartial<S>, 'children' | 'type' | 'version'>;
+// This is the untrusted-JSON boundary and the parser is total — it validates
+// every property and defaults anything out of domain — so the values are not
+// constrained to what parsing produces. A schema accepts more than it writes
+// wherever it has an alias table or reads a number spelled as a string.
+export type LexicalParseJSON<S extends SerializedLexicalNode> = {
+  [K in keyof Omit<SerializedPartial<S>, 'children' | 'type' | 'version'>]?: unknown,
+};
 export type SerializedPartial<T extends SerializedLexicalNode> = {
   ...Partial<T>,
   type: string,

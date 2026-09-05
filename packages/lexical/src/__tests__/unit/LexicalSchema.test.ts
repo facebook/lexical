@@ -19,6 +19,7 @@ import {
   createState,
   ElementNode,
   enumValue,
+  IS_BOLD,
   type Klass,
   type LexicalExportJSON,
   type LexicalNode,
@@ -1669,6 +1670,39 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
       readonly label?: string;
       readonly x?: number | string;
     }>();
+  });
+});
+
+describe('the parse shape accepts what a parser actually accepts', () => {
+  initializeUnitTest(testEnv => {
+    test('a legacy alias and a stringified number type-check as input', () => {
+      testEnv.editor.update(
+        () => {
+          const node = $createTextNode('hi');
+          // Both are values TextNode's schema accepts and normalizes. Before
+          // the parse shape was widened, each was a type error at the call
+          // site while working perfectly at runtime — the type described what
+          // the parser produces rather than what it takes.
+          node.updateFromJSON({detail: 'directionless', format: 'bold'});
+          expect(node.getFormat()).toBe(IS_BOLD);
+          expect(node.isDirectionless()).toBe(true);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('a property the node does not have is still refused', () => {
+      testEnv.editor.update(
+        () => {
+          const node = $createTextNode('hi');
+          node.updateFromJSON({
+            // @ts-expect-error -- widening the values keeps the names checked
+            frmat: 'bold',
+          });
+        },
+        {discrete: true},
+      );
+    });
   });
 });
 

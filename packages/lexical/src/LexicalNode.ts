@@ -510,10 +510,29 @@ export type LexicalExportJSON<T extends LexicalNode> = Prettify<
  * Constrained to the *parse* shape rather than {@link SerializedLexicalNode},
  * so a {@link SerializedPartial} — where every node-specific property is
  * optional, as they are in compact JSON — is a valid argument.
+ *
+ * Each remaining property is widened to `unknown`, because this is the
+ * untrusted-JSON boundary and a parser here is *total*: it validates every
+ * property against the schema's domain and substitutes a default for anything
+ * outside it. Typing a property as what it parses *to* claims the caller has
+ * already done that validation, which is both untrue and narrower than what is
+ * accepted — a schema reads more than it writes wherever it has an alias table
+ * or reads a number spelled as a string, so `format: 'bold'` and
+ * `width: '640'` are valid input that the narrower type rejected. The property
+ * *names* stay, so a misspelled one is still an excess-property error.
+ *
+ * NodeState and slots keep their declared shapes: neither is a schema-declared
+ * property, and each is read structurally by the code that applies it rather
+ * than validated against a domain.
  */
 export type LexicalUpdateJSON<
   T extends SerializedPartial<SerializedLexicalNode>,
-> = Omit<T, 'children' | 'type' | 'version'>;
+> = Pick<T, Extract<keyof T, typeof NODE_STATE_KEY | '$slots'>> & {
+  [K in keyof Omit<
+    T,
+    '$slots' | 'children' | 'type' | typeof NODE_STATE_KEY | 'version'
+  >]?: unknown;
+};
 
 /**
  * The serialized form of a node as accepted by the parsing methods

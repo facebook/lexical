@@ -33,6 +33,7 @@ import {
   stringValue,
   TabNode,
   TextNode,
+  withAccessors,
   withField,
 } from '../..';
 import {
@@ -304,6 +305,80 @@ describe('generated code is inherited where it still applies', () => {
       },
     });
     expect(getGeneratedJSON(ExtraField)).toBeNull();
+  });
+
+  test('a subclass that re-declares a property with a different predicate takes the walk', () => {
+    // The case a field-by-field comparison misses: everything the compiled
+    // entry records is identical — same kind, key, field, default, equality,
+    // no decode table — and only the `when` predicate differs, which the entry
+    // holds as a resolved function rather than the name the generated code
+    // emits. Inheriting here would run code that calls the ancestor's
+    // predicate. What separates them is that re-declaring means a new schema.
+    // Stands in for a build-generated bundle, so that inheriting it is
+    // observable: the marker is what a class running this code writes.
+    const GENERATED_GATED: GeneratedJSON = {
+      exportJSON: node => ({ranGeneratedCode: true, type: node.getType()}),
+    };
+    class GatedBase extends TextNode {
+      __label = '';
+      $config() {
+        return this.config('gated-base', {
+          extends: TextNode,
+          generated: GENERATED_GATED,
+          json: nodeSchema<GatedBase>({
+            // Export-only, so the two classes differ in nothing but the
+            // predicate — no setter name to tell them apart either.
+            label: withAccessors(stringValue(), {
+              getter: {field: '__label', when: 'writeAlways'},
+              setter: null,
+            }),
+          }),
+        });
+      }
+      writeAlways(): boolean {
+        return true;
+      }
+      writeNever(): boolean {
+        return false;
+      }
+    }
+    class GatedSub extends GatedBase {
+      $config() {
+        return this.config('gated-sub', {
+          extends: GatedBase,
+          json: nodeSchema<GatedSub>({
+            label: withAccessors(stringValue(), {
+              getter: {field: '__label', when: 'writeNever'},
+              setter: null,
+            }),
+          }),
+        });
+      }
+    }
+    const editor = createEditor({
+      namespace: '',
+      nodes: [GatedBase, GatedSub],
+      onError: err => {
+        throw err;
+      },
+    });
+    expect(getGeneratedJSON(GatedBase)).toBe(GENERATED_GATED);
+    expect(getGeneratedJSON(GatedSub)).toBeNull();
+    editor.update(
+      () => {
+        const sub = $create(GatedSub);
+        sub.__label = 'hidden';
+        // The walk, honoring this class's own predicate rather than the
+        // ancestor's — and not the generated code, which would have written
+        // the marker.
+        const json = sub.exportJSON();
+        expect(json).not.toHaveProperty('ranGeneratedCode');
+        // The legacy form writes every key, `undefined` where the predicate
+        // says no — under the ancestor's predicate this would be 'hidden'.
+        expect(json).toHaveProperty('label', undefined);
+      },
+      {discrete: true},
+    );
   });
 
   test("a $config that names an ancestor's generated code is refused", () => {

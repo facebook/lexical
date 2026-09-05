@@ -3686,6 +3686,17 @@ export function getComposedSchemaFields(
  * equal to the default parsing would restore says nothing either.
  */
 interface CompactRule {
+  /**
+   * The schema this entry was compiled from, carried for the same reason the
+   * setter side carries it: {@link sameCompiledTables} compares it by identity
+   * to decide whether one class's generated code describes another's node.
+   * Everything the emitted code says about a property beyond its kind and
+   * field — which accessor it calls, which predicate gates it, what its domain
+   * admits — comes from here, and a class that re-declares a property declares
+   * a new schema, so identity is what separates "inherited unchanged" from
+   * "restated, possibly differently".
+   */
+  readonly schema: AnySerializationSchema;
   readonly derived: boolean;
   /**
    * What parsing restores for an absent property, and so what the compact form
@@ -3853,6 +3864,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
         isEqual: schema.isEqual,
         key,
         kind: 'ownField',
+        schema,
         when,
       });
       continue;
@@ -3875,6 +3887,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       isEqual: schema.isEqual,
       key,
       kind: 'method',
+      schema,
     });
   }
   return fields.size === 0 ? EMPTY_GETTERS : [...fields.values()];
@@ -4181,11 +4194,22 @@ function resolveGenerated(
 /**
  * Whether two classes' compiled tables would run the same generated code:
  * every entry the same kind for the same key, reading or writing the same
- * field through the same tables, against the same schema. A method entry
- * needs no more than kind and key — generated code calls the method by name,
- * so an override is honored the way the walk honors it — and so does a
- * predicate; the schema is compared by identity, since the tables were
- * compiled from it.
+ * field through the same tables, against the same schema.
+ *
+ * The schema is compared by identity in both directions, and it is what makes
+ * this sound rather than a list of the details anyone remembered to compare.
+ * Generated code says more about a property than its kind and field: which
+ * accessor method it calls, which `when` predicate gates writing it, what its
+ * domain admits. All of that comes from the schema, none of it is on the
+ * compiled entry, and a class that re-declares a property declares a new
+ * schema — so identity separates a property inherited unchanged from one
+ * restated, possibly differently, and a class that restates anything takes the
+ * walk instead.
+ *
+ * Identity is not too strict for an *override*, which is the case inheritance
+ * exists for: a subclass that overrides an accessor or a predicate without
+ * re-declaring the property shares the schema object, and the emitted code
+ * calls both by name, so the override is honored the way the walk honors it.
  */
 function sameCompiledTables(
   a: Pick<CompiledNodeClass, 'getters' | 'setters'>,
@@ -4203,6 +4227,7 @@ function sameCompiledTables(
     if (
       x.kind !== y.kind ||
       x.key !== y.key ||
+      x.schema !== y.schema ||
       x.derived !== y.derived ||
       x.isEqual !== y.isEqual ||
       !Object.is(x.defaultValue, y.defaultValue) ||

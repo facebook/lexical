@@ -750,9 +750,12 @@ A whole document is written in the compact form by asking for it at the call
 site, `editorState.toJSON(true)`, which is also what lets its return type say
 which of the two shapes came back: the compact form omits properties, so it is
 typed as `CompactSerializedEditorState` rather than `SerializedEditorState`.
-Calling `toJSON()` with no argument writes the form of an enclosing
-`$withCompactExport`, which is what keeps a nested editor (an image caption) in
-the same form as the document containing it.
+Calling `toJSON()` with no argument writes the legacy form, whatever
+`$withCompactExport` encloses it — which is what makes that signature true of
+what it returns. A nested editor (an image caption) still follows the document
+containing it, because `editor.toJSON()` passes the enclosing form on to the
+nested `editorState.toJSON` explicitly; its `editorState` is typed as the
+compact shape for that reason, since either form may come back.
 
 Anything with a call site of its own should take the form as an argument. The
 exception is a schema getter: the walk calls `get<Prop>()` with no arguments —

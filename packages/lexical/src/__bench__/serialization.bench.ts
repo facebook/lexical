@@ -13,7 +13,6 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  $withCompactExport,
   type EditorState,
   type LexicalEditor,
   type LexicalNode,
@@ -70,7 +69,7 @@ describe('EditorState.toJSON', () => {
   bench(
     `compact, ${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
     () => {
-      _benchSink = $withCompactExport(true, () => editorState.toJSON());
+      _benchSink = editorState.toJSON(true);
     },
     {
       setup: () => {

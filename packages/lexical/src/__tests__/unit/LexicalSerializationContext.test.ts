@@ -22,6 +22,7 @@ import {
   rawValue,
   type SerializedElementNode,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type SerializedRootNode,
   TextNode,
   withAccessors,
@@ -37,9 +38,12 @@ import {
 
 // The walk only ever produces elements where this is used, but serialized
 // JSON carries no discriminator beyond `type`, so the shape is asserted here
-// rather than at every call site.
-function childrenOf(node: SerializedLexicalNode): SerializedLexicalNode[] {
-  return (node as SerializedElementNode).children;
+// rather than at every call site. Typed for the compact shape, which the
+// legacy one also satisfies, so both forms go through it.
+function childrenOf(
+  node: SerializedPartial<SerializedLexicalNode>,
+): SerializedPartial<SerializedLexicalNode>[] {
+  return (node as SerializedPartial<SerializedElementNode>).children!;
 }
 
 describe('compact export', () => {
@@ -68,8 +72,11 @@ describe('compact export', () => {
   });
 
   function toJSON(compact = false): SerializedRootNode {
-    return editor.read(() =>
-      $withCompactExport(compact, () => editor.getEditorState().toJSON().root),
+    // The form is stated rather than left to an enclosing
+    // $withCompactExport: a bare toJSON() writes the legacy form whatever
+    // encloses it, which is what makes its return type true.
+    return editor.read(
+      () => editor.getEditorState().toJSON(compact).root as SerializedRootNode,
     );
   }
 
@@ -196,11 +203,8 @@ describe('compact export: slot hosts', () => {
       }),
     );
     for (const compact of [false, true]) {
-      const root = editor.read(() =>
-        $withCompactExport(
-          compact,
-          () => editor.getEditorState().toJSON().root,
-        ),
+      const root = editor.read(
+        () => editor.getEditorState().toJSON(compact).root,
       );
       // a decorator host has no children array, so its slots are the only
       // subtree it carries
@@ -243,10 +247,9 @@ describe('editorState.toJSON states its form at the call site', () => {
     });
   });
 
-  test('no argument inherits the ambient form, for a nested editor', () => {
-    // A nested editor (an image caption) is serialized by its node's
-    // exportJSON, which has no form to pass down — it has to write whatever
-    // the document containing it is writing.
+  test('no argument writes the legacy form whatever encloses it', () => {
+    // What makes the signature true: `toJSON(): SerializedEditorState` cannot
+    // promise the full shape if an enclosing walk can turn it compact.
     using editor = buildEditor();
     // $initialEditorState is applied on the first read, so the state has to be
     // taken from inside one — otherwise every case below runs on an empty
@@ -254,7 +257,24 @@ describe('editorState.toJSON states its form at the call site', () => {
     const state = editor.read(() => editor.getEditorState());
     expect(state.toJSON().root).toHaveProperty('version');
     $withCompactExport(true, () => {
-      expect(state.toJSON().root).not.toHaveProperty('version');
+      expect(state.toJSON().root).toHaveProperty('version');
+      // The form is still this call's to state.
+      expect(state.toJSON(true).root).not.toHaveProperty('version');
+    });
+  });
+
+  test('a nested editor follows the document containing it', () => {
+    // The inheritance the ambient form exists for, now carried by
+    // LexicalEditor.toJSON, which passes the enclosing form on explicitly
+    // instead of leaving EditorState.toJSON to pick it up.
+    using editor = buildEditor();
+    editor.read(() => {
+      expect(editor.toJSON().editorState.root).toHaveProperty('version');
+    });
+    $withCompactExport(true, () => {
+      editor.read(() => {
+        expect(editor.toJSON().editorState.root).not.toHaveProperty('version');
+      });
     });
   });
 

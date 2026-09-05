@@ -196,11 +196,15 @@ export class EditorState {
   /**
    * This document's JSON, in the legacy form that writes every property.
    *
-   * Called with no argument — including by `JSON.stringify`, for which this is
-   * the `toJSON` hook — it writes the form of an enclosing
-   * {@link $withCompactExport}, which is what keeps a nested editor's JSON
-   * (an image caption) in the same form as the document that contains it. With
-   * nothing enclosing it, that is the legacy form.
+   * The form is this call's to state, never inherited: called with no argument
+   * — including by `JSON.stringify`, for which this is the `toJSON` hook — it
+   * writes the legacy form whatever {@link $withCompactExport} encloses it.
+   * That is what makes this signature true, and it is the behavior that
+   * predates the compact form.
+   *
+   * A nested editor still follows the document containing it, because
+   * {@link LexicalEditor.toJSON} passes the enclosing form on explicitly
+   * rather than leaving it to be picked up here.
    */
   toJSON(compact?: false): SerializedEditorState;
   /**
@@ -211,20 +215,16 @@ export class EditorState {
    */
   toJSON(compact: boolean): CompactSerializedEditorState;
   toJSON(compact?: unknown): CompactSerializedEditorState {
-    const $toJSON = () =>
+    // `typeof compact === 'boolean'`, not a truthy test, because
+    // `JSON.stringify` invokes this hook with the *property name* the value is
+    // under: `''` at the top level, but `'state'` for
+    // `JSON.stringify({state: editorState})`. A truthy check would silently
+    // write the compact form for the latter. Anything that is not a stated
+    // form is the legacy one, which is what both overloads promise.
+    return $withCompactExport(typeof compact === 'boolean' && compact, () =>
       readEditorState(null, this, () => ({
         root: $exportNodeToJSON($getRoot()) as SerializedRootNode,
-      }));
-    // `=== true` rather than a truthy test, because `JSON.stringify` invokes
-    // this hook with the *property name* the value is under: `''` at the top
-    // level, but `'state'` for `JSON.stringify({state: editorState})`. A
-    // truthy check would silently write the compact form for the latter.
-    // A stated form wins, so both overloads are true of what they return.
-    // Anything else — `undefined`, or a key — leaves the ambient form alone
-    // rather than forcing the legacy one, so a nested editor serialized inside
-    // a compact walk still writes compact.
-    return typeof compact === 'boolean'
-      ? $withCompactExport(compact, $toJSON)
-      : $toJSON();
+      })),
+    );
   }
 }

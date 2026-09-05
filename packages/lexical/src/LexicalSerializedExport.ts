@@ -20,9 +20,15 @@ const __DEV__ = process.env.NODE_ENV !== 'production';
 
 /**
  * Whether the export in progress is writing the compact form. A module-scope
- * flag rather than something threaded through every walk: `editorState.toJSON()`
- * takes no arguments, and the walk deliberately spans editors, so a nested one
- * (an image caption) writes the same form as the document that contains it.
+ * flag rather than something threaded through every walk, because the walks it
+ * governs — the `@lexical/clipboard` selection export, a walk of your own —
+ * have no argument to take it in, and it deliberately spans editors so a
+ * nested one (an image caption) writes the same form as the document that
+ * contains it.
+ *
+ * `EditorState.toJSON` is not one of those: it takes the form as an argument
+ * and states it here for the duration, and a call that states nothing writes
+ * the legacy form rather than reading this, so that its return type is true.
  */
 let compactExport = false;
 
@@ -103,9 +109,12 @@ export function $withCompactExport<T>(
  * }
  * ```
  *
- * A getter that serializes a *nested editor* needs nothing: `toJSON()` with no
- * argument writes the ambient form, which is what keeps an image caption in
- * the same form as the document containing it.
+ * A getter that serializes a *nested editor* needs nothing either, as long as
+ * it goes through `editor.toJSON()`: that passes the form reported here on to
+ * the nested `EditorState.toJSON`, which is what keeps an image caption in the
+ * same form as the document containing it. A getter that reaches past it to
+ * `editorState.toJSON()` gets the legacy form, and has to pass
+ * `$isCompactExport()` itself to follow the document.
  *
  * This reports the form of the surrounding **export walk** — what
  * {@link $withCompactExport} established, and so what

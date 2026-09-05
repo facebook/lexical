@@ -13,7 +13,6 @@ import {
   $createTextNode,
   $getRoot,
   $isTabNode,
-  $withCompactExport,
   aliasedValue,
   arrayValue,
   booleanValue,
@@ -1085,10 +1084,8 @@ describe('reference-typed defaults compact by content', () => {
       },
       {discrete: true},
     );
-    const root = editor.read(() =>
-      $withCompactExport(true, () => editor.getEditorState().toJSON().root),
-    );
-    const [emptyJSON, fullJSON] = root.children;
+    const root = editor.read(() => editor.getEditorState().toJSON(true).root);
+    const [emptyJSON, fullJSON] = root.children!;
     expect(emptyJSON).not.toHaveProperty('tags');
     expect(fullJSON).toMatchObject({tags: ['a']});
     // and it still round-trips

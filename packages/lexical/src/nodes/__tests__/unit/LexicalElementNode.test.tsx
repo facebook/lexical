@@ -142,7 +142,9 @@ describe('LexicalElementNode tests', () => {
           );
       });
       editor.read(() => {
-        expect(editor.toJSON().editorState.root.children[0]).toEqual({
+        // `children` is optional on the compact shape SerializedEditor promises;
+        // this export is the legacy form, so it is there.
+        expect(editor.toJSON().editorState.root.children![0]).toEqual({
           children: [
             {
               detail: 0,

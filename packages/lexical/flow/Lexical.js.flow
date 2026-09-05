@@ -1482,7 +1482,10 @@ export interface SerializedEditorState {
 }
 
 export type SerializedEditor = {
-  editorState: SerializedEditorState,
+  // The compact shape, which the legacy one also satisfies: editor.toJSON()
+  // writes whichever form encloses it, so a nested editor inside a compact
+  // document is compact too.
+  editorState: CompactSerializedEditorState,
 };
 
 /**

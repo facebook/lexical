@@ -70,7 +70,8 @@ declare export function $writeDragSourceToDataTransfer(
 interface BaseSerializedNode {
   children?: BaseSerializedNode[];
   type: string;
-  version: number;
+  // Deprecated: ignored when parsing, and omitted by a compact export.
+  version?: number;
 }
 
 declare export function $generateJSONFromSelectedNodes<

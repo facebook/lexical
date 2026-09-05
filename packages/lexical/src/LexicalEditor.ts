@@ -27,6 +27,7 @@ import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {DequeSet} from './LexicalDequeSet';
 import {
   cloneEditorState,
+  type CompactSerializedEditorState,
   createEmptyEditorState,
   type EditorState,
   type SerializedEditorState,
@@ -48,6 +49,7 @@ import {
   type NodeKey,
 } from './LexicalNode';
 import {createSharedNodeState, type SharedNodeState} from './LexicalNodeState';
+import {$isCompactExport} from './LexicalSerializedExport';
 import {
   $commitPendingUpdates,
   $fullReconcile,
@@ -763,7 +765,13 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 type DOMConversionCache = Map<string, ((node: Node) => DOMConversion | null)[]>;
 
 export type SerializedEditor = {
-  editorState: SerializedEditorState;
+  /**
+   * Typed as the compact shape because {@link LexicalEditor.toJSON} writes
+   * whichever form encloses it: a nested editor serialized inside a compact
+   * document is compact too, so promising the full shape here would promise
+   * properties that are not there. Both forms satisfy this, and both parse.
+   */
+  editorState: CompactSerializedEditorState;
 };
 
 /** @internal */
@@ -1810,12 +1818,20 @@ export class LexicalEditor {
    * Parses a SerializedEditorState (usually produced by {@link EditorState.toJSON}) and returns
    * and EditorState object that can be, for example, passed to {@link LexicalEditor.setEditorState}. Typically,
    * deserialization from JSON stored in a database uses this method.
+   *
+   * Either form is accepted: parsing restores what a compact document omitted,
+   * which is the whole reason it may omit it, so
+   * {@link CompactSerializedEditorState} — what `toJSON(true)` returns — goes
+   * back in without a cast.
    * @param maybeStringifiedEditorState
    * @param updateFn
    * @returns
    */
   parseEditorState(
-    maybeStringifiedEditorState: string | SerializedEditorState,
+    maybeStringifiedEditorState:
+      | string
+      | SerializedEditorState
+      | CompactSerializedEditorState,
     updateFn?: () => void,
   ): EditorState {
     const serializedEditorState =
@@ -1972,9 +1988,18 @@ export class LexicalEditor {
    *
    * @returns A JSON-serializable javascript object
    */
+  /**
+   * This editor's serialized state, in whichever form the export around it is
+   * writing — which is how a nested editor (an image caption) stays in the
+   * same form as the document containing it.
+   *
+   * The form is passed on explicitly rather than picked up by the call below:
+   * `EditorState.toJSON()` with no argument always writes the legacy form, so
+   * that its return type is true of what it returns.
+   */
   toJSON(): SerializedEditor {
     return {
-      editorState: this._editorState.toJSON(),
+      editorState: this._editorState.toJSON($isCompactExport()),
     };
   }
 }

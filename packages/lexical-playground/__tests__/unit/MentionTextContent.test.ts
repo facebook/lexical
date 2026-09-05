@@ -101,7 +101,10 @@ describe('MentionNode display text', () => {
     target.read(() => {
       const mention = $getMention();
       expect(mention.getTextContent()).toBe('Luke Skywalker');
-      expect(mention.exportJSON().mentionName).toBe('luke_skywalker');
+      expect(mention.exportJSON()).toHaveProperty(
+        'mentionName',
+        'luke_skywalker',
+      );
     });
   });
 });

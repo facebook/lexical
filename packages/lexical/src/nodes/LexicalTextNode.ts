@@ -37,15 +37,25 @@ import {
   TEXT_TYPE_TO_FORMAT,
   TEXT_TYPE_TO_MODE,
 } from '../LexicalConstants';
+import {GENERATED_TEXT} from '../LexicalGeneratedJSON';
 import {
   type DOMConversionOutput,
   type DOMExportOutput,
   LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
   type SerializedLexicalNode,
+  type SerializedPartial,
 } from '../LexicalNode';
 import {$cloneNodeState} from '../LexicalNodeState';
+import {
+  aliasedValue,
+  enumValue,
+  nodeSchema,
+  numberValue,
+  stringValue,
+  withField,
+} from '../LexicalSchema';
 import {
   $generateNodesFromRawText,
   $getSelection,
@@ -106,6 +116,49 @@ export type TextModeType = 'normal' | 'token' | 'segmented';
 export type TextMark = {end: null | number; id: string; start: null | number};
 
 export type TextMarks = TextMark[];
+
+// Single source of truth for parsing the node-specific properties of a
+// SerializedTextNode; declared on the node via `$config`.
+//
+// Every property here *is* one of TextNode's own fields in both directions, so
+// each is declared as the field it is rather than as the accessor pair that
+// wraps it — a read and a write with no method call, and none of the
+// getWritable() a set<Prop> repeats for a node updateFromJSON already holds
+// writable. Each names the accessor it stands in for, so a subclass that
+// overrides one is still the one that decides: see {@link SchemaFieldBase.method}.
+//
+// Nothing here is a transformValue, which is what lets the codegen emit a
+// specialized parser for this class: every domain is stated as data the
+// generator can compile — the alias tables below, and mode's encode/decode.
+const textNodeSchema = nodeSchema<TextNode>({
+  // `format` and `detail` also accept the legacy string names that
+  // hand-authored and older documents carry (e.g. `format: 'bold'`),
+  // normalized to the stored numeric form — so what reaches the field is
+  // already what setDetail/setFormat would have stored.
+  detail: withField(aliasedValue(numberValue(), DETAIL_TYPE_TO_DETAIL), {
+    field: '__detail',
+  }),
+  format: withField(aliasedValue(numberValue(), TEXT_TYPE_TO_FORMAT), {
+    field: '__format',
+  }),
+  // Stored as a bitmask, serialized as the name, so this one needs both
+  // tables to stay off the accessors.
+  mode: withField(enumValue(['normal', 'token', 'segmented']), {
+    decode: TEXT_TYPE_TO_MODE,
+    encode: TEXT_MODE_TO_TYPE,
+    field: '__mode',
+  }),
+  style: withField(stringValue(), {
+    field: '__style',
+  }),
+  // The accessors are getTextContent/setTextContent rather than the
+  // conventional getText/setText, which TextNode does not have.
+  text: withField(stringValue(), {
+    field: '__text',
+    getter: 'getTextContent',
+    setter: 'setTextContent',
+  }),
+});
 
 function getElementOuterTag(node: TextNode, format: number): string | null {
   if (format & IS_CODE) {
@@ -302,6 +355,9 @@ function $wrapElementWith(
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TextNode {
+  exportJSON(compact?: false): SerializedTextNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedTextNode>;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedTextNode>): this;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
 }
@@ -345,6 +401,7 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
 
   $config() {
     return this.config('text', {
+      generated: GENERATED_TEXT,
       importDOM: {
         '#text': () => ({
           conversion: $convertTextDOMNode,
@@ -395,16 +452,8 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
           priority: 0,
         }),
       },
+      json: textNodeSchema,
     });
-  }
-
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__text = prevNode.__text;
-    this.__format = prevNode.__format;
-    this.__style = prevNode.__style;
-    this.__mode = prevNode.__mode;
-    this.__detail = prevNode.__detail;
   }
 
   constructor(text: string = '', key?: NodeKey) {
@@ -657,16 +706,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     return false;
   }
 
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTextNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setTextContent(serializedNode.text)
-      .setFormat(serializedNode.format)
-      .setDetail(serializedNode.detail)
-      .setMode(serializedNode.mode)
-      .setStyle(serializedNode.style);
-  }
-
   // This improves Lexical's basic text output in copy+paste plus
   // for headless mode where people might use Lexical to generate
   // HTML content and not have the ability to use CSS classes.
@@ -705,20 +744,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
 
     return {
       element,
-    };
-  }
-
-  exportJSON(): SerializedTextNode {
-    return {
-      detail: this.getDetail(),
-      format: this.getFormat(),
-      mode: this.getMode(),
-      style: this.getStyle(),
-      text: this.getTextContent(),
-      // As an exception here we invoke super at the end for historical reasons.
-      // Namely, to preserve the order of the properties and not to break the tests
-      // that use the serialized string representation.
-      ...super.exportJSON(),
     };
   }
 

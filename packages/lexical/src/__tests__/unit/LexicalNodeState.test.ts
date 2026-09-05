@@ -859,3 +859,223 @@ describe('$config interleaved abstract/concrete classes', () => {
     expect(interleaveTransforms).toContain('interleave-concrete');
   });
 });
+
+describe('flat NodeState through a node replacement', () => {
+  const replacedFlatState = createState('replacedFlatKey', {
+    parse: v => (typeof v === 'string' ? v : ''),
+  });
+
+  class FlatParagraph extends ParagraphNode {
+    $config() {
+      return this.config('flat-paragraph', {
+        extends: ParagraphNode,
+        stateConfigs: [{flat: true, stateConfig: replacedFlatState}],
+      });
+    }
+  }
+
+  // A replacement class that reuses the replaced class's type — the only shape
+  // in which the RegisteredNode for a live node's type could come from the
+  // `replace` entry rather than from the subclass's own registration.
+  class SameTypeParagraph extends ParagraphNode {
+    $config() {
+      return this.config('paragraph', {
+        extends: ParagraphNode,
+        stateConfigs: [{flat: true, stateConfig: replacedFlatState}],
+      });
+    }
+  }
+
+  test('the subclass writes and reads its own flat state top-level', () => {
+    // Flat state is applied on import from the composed schema of
+    // `node.constructor`, but written on export from the SharedNodeState the
+    // node's *type* is registered with. Those agree here because a replacement
+    // class is registered under its own type: the two directions cannot drift.
+    const editor = createEditor({
+      namespace: '',
+      nodes: [
+        FlatParagraph,
+        {
+          replace: ParagraphNode,
+          with: () => new FlatParagraph(),
+          withKlass: FlatParagraph,
+        },
+      ],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        const p = $createParagraphNode();
+        expect(p).toBeInstanceOf(FlatParagraph);
+        expect(p.getType()).toBe('flat-paragraph');
+        $getRoot()
+          .clear()
+          .append(p.append($createTextNode('x')));
+        $setState(p, replacedFlatState, 'hello');
+      },
+      {discrete: true},
+    );
+
+    const json = editor.getEditorState().toJSON();
+    const exported = json.root.children[0];
+    // written top-level, not nested under the NodeState key
+    expect(exported).toMatchObject({replacedFlatKey: 'hello'});
+    expect(exported[NODE_STATE_KEY]).toBeUndefined();
+
+    const reparsed = editor.parseEditorState(JSON.stringify(json));
+    expect(
+      reparsed.read(() =>
+        $getState($getRoot().getFirstChildOrThrow(), replacedFlatState),
+      ),
+    ).toBe('hello');
+  });
+
+  test('withKlass must itself be registered', () => {
+    const editor = createEditor({
+      namespace: '',
+      nodes: [
+        {
+          replace: ParagraphNode,
+          with: () => new FlatParagraph(),
+          withKlass: FlatParagraph,
+        },
+      ],
+      onError: err => {
+        throw err;
+      },
+    });
+    expect(() =>
+      editor.update(() => void $createParagraphNode(), {discrete: true}),
+    ).toThrow(/not configured to be used on the editor/);
+  });
+
+  test('a replacement class cannot reuse the replaced type', () => {
+    const editor = createEditor({
+      namespace: '',
+      nodes: [
+        {
+          replace: ParagraphNode,
+          with: () => new SameTypeParagraph(),
+          withKlass: SameTypeParagraph,
+        },
+      ],
+      onError: err => {
+        throw err;
+      },
+    });
+    expect(() =>
+      editor.update(() => void $createParagraphNode(), {discrete: true}),
+    ).toThrow(/does not match registered node ParagraphNode/);
+  });
+});
+
+describe('importJSON applies state to the node it just built', () => {
+  // importJSON constructs the node itself, so it skips the getWritable() that
+  // updateFromJSON opens with — $setNodeKey already made that node the
+  // writable latest. What must not be skipped is the state itself.
+  const flatKey = createState('importFlatKey', {
+    parse: v => (typeof v === 'string' ? v : ''),
+  });
+  const directKey = createState('importDirectKey', {
+    parse: v => (typeof v === 'number' ? v : 0),
+  });
+
+  class StatefulParagraph extends ParagraphNode {
+    $config() {
+      return this.config('stateful-paragraph', {
+        extends: ParagraphNode,
+        stateConfigs: [{flat: true, stateConfig: flatKey}],
+      });
+    }
+  }
+
+  function editorWith() {
+    return createEditor({
+      namespace: '',
+      nodes: [StatefulParagraph],
+      onError: err => {
+        throw err;
+      },
+    });
+  }
+
+  test('both flat and nested state survive a round trip through importJSON', () => {
+    const editor = editorWith();
+    editor.update(
+      () => {
+        const p = $create(StatefulParagraph);
+        $getRoot()
+          .clear()
+          .append(p.append($createTextNode('x')));
+        $setState(p, flatKey, 'flat-value');
+        $setState(p, directKey, 42);
+      },
+      {discrete: true},
+    );
+    const json = JSON.stringify(editor.getEditorState().toJSON());
+    const reparsed = editor.parseEditorState(json);
+    reparsed.read(() => {
+      const p = $getRoot().getFirstChildOrThrow();
+      // The flat one comes back through the compiled schema, the nested one
+      // through $updateStateFromJSON — the branch importJSON only takes when
+      // the JSON actually carries state.
+      expect($getState(p, flatKey)).toBe('flat-value');
+      expect($getState(p, directKey)).toBe(42);
+    });
+  });
+
+  test('a node whose JSON carries no state still imports its own properties', () => {
+    const editor = editorWith();
+    editor.update(
+      () => {
+        const p = $create(StatefulParagraph);
+        $getRoot()
+          .clear()
+          .append(p.append($createTextNode('hello')));
+        p.setIndent(2);
+      },
+      {discrete: true},
+    );
+    const json = JSON.stringify(editor.getEditorState().toJSON());
+    expect(json).not.toContain(NODE_STATE_KEY);
+    const reparsed = editor.parseEditorState(json);
+    reparsed.read(() => {
+      const p = $getRoot().getFirstChildOrThrow();
+      invariant($isParagraphNode(p), 'expected a paragraph');
+      expect(p.getIndent()).toBe(2);
+      expect(p.getTextContent()).toBe('hello');
+      expect($getState(p, flatKey)).toBe('');
+    });
+  });
+
+  test('the node importJSON returns is writable, so its properties stick', () => {
+    // If the skipped getWritable() had been load-bearing, the writes would
+    // land on a stale version and the reconciled state would not see them.
+    const editor = editorWith();
+    editor.update(
+      () => {
+        const node = ParagraphNode.importJSON({
+          children: [],
+          direction: null,
+          format: '',
+          indent: 3,
+          type: 'paragraph',
+          version: 1,
+        });
+        invariant($isParagraphNode(node), 'expected a paragraph');
+        $getRoot()
+          .clear()
+          .append(node.append($createTextNode('y')));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const p = $getRoot().getFirstChildOrThrow();
+      invariant($isParagraphNode(p), 'expected a paragraph');
+      expect(p.getIndent()).toBe(3);
+      expect(p.getTextContent()).toBe('y');
+    });
+  });
+});

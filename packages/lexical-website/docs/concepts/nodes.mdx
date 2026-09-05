@@ -206,160 +206,124 @@ class MyCustomNode extends SomeOtherNode {
 }
 ```
 
-## Creating custom nodes
+## Creating custom nodes with a serialization schema
 
-As mentioned above, Lexical exposes three base nodes that can be extended.
+:::caution Experimental
 
-> Did you know? Nodes such as `ElementNode` are already extended in the core by Lexical, such as `ParagraphNode` and `RootNode`!
+This feature became available in the lexical v0.51.0 release and is still
+considered experimental. Its implementation may change in any release
+without a deprecation period.
 
-### Extending `ElementNode`
+:::
 
-Below is an example of how you might extend `ElementNode`:
+A node's properties have to be propagated three times: exported to JSON,
+imported from untrusted JSON, and carried across a clone.
+`$config`'s `json` option replaces all three with a declarative schema.
 
 ```ts
-import {ElementNode, LexicalNode} from 'lexical';
+import {
+  ElementNode,
+  enumValue,
+  nodeSchema,
+  numberValue,
+  stringValue,
+  withField,
+} from 'lexical';
 
-export class CustomParagraph extends ElementNode {
-  static getType(): string {
-    return 'custom-paragraph';
-  }
+const calloutNodeSchema = nodeSchema<CalloutNode>({
+  // Each property *is* a field: exported by reading it, imported by assigning
+  // it, with no method call on either side.
+  label: withField(stringValue(), {field: '__label'}),
+  level: withField(numberValue(1, {integer: true, max: 3, min: 1}), {
+    field: '__level',
+  }),
+  tone: withField(enumValue(['info', 'warning', 'danger']), {field: '__tone'}),
+});
 
-  static clone(node: CustomParagraph): CustomParagraph {
-    return new CustomParagraph(node.__key);
+export class CalloutNode extends ElementNode {
+  __label: string = '';
+  __level: number = 1;
+  __tone: 'info' | 'warning' | 'danger' = 'info';
+
+  $config() {
+    return this.config('callout', {
+      extends: ElementNode,
+      // highlight-next-line
+      json: calloutNodeSchema,
+    });
   }
 
   createDOM(): HTMLElement {
-    // Define the DOM element here
-    const dom = document.createElement('p');
-    return dom;
-  }
-
-  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    // Returning false tells Lexical that this node does not need its
-    // DOM element replacing with a new copy from createDOM.
-    return false;
-  }
-}
-```
-
-It's also good etiquette to provide some `$` prefixed utility functions for
-your custom `ElementNode` so that others can easily consume and validate nodes
-are that of your custom node. Here's how you might do this for the above example:
-
-```js
-export function $createCustomParagraphNode(): CustomParagraph {
-  return $applyNodeReplacement(new CustomParagraph());
-}
-
-export function $isCustomParagraphNode(
-  node: LexicalNode | null | undefined
-): node is CustomParagraph  {
-  return node instanceof CustomParagraph;
-}
-```
-
-### Extending `TextNode`
-
-```ts
-export class ColoredNode extends TextNode {
-  __color: string;
-
-  constructor(text: string, color: string, key?: NodeKey): void {
-    super(text, key);
-    this.__color = color;
-  }
-
-  static getType(): string {
-    return 'colored';
-  }
-
-  static clone(node: ColoredNode): ColoredNode {
-    return new ColoredNode(node.__text, node.__color, node.__key);
-  }
-
-  createDOM(config: EditorConfig): HTMLElement {
-    const element = super.createDOM(config);
-    element.style.color = this.__color;
-    return element;
-  }
-
-  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    const isUpdated = super.updateDOM(prevNode, dom, config);
-    if (prevNode.__color !== this.__color) {
-      dom.style.color = this.__color;
-    }
-    return isUpdated;
-  }
-}
-
-export function $createColoredNode(text: string, color: string): ColoredNode {
-  return $applyNodeReplacement(new ColoredNode(text, color));
-}
-
-export function $isColoredNode(
-  node: LexicalNode | null | undefined,
-): node is ColoredNode {
-  return node instanceof ColoredNode;
-}
-```
-
-### Extending `DecoratorNode`
-
-```ts
-export class VideoNode extends DecoratorNode<ReactNode> {
-  __id: string;
-
-  static getType(): string {
-    return 'video';
-  }
-
-  static clone(node: VideoNode): VideoNode {
-    return new VideoNode(node.__id, node.__key);
-  }
-
-  constructor(id: string, key?: NodeKey) {
-    super(key);
-    this.__id = id;
-  }
-
-  createDOM(): HTMLElement {
-    return document.createElement('div');
+    return document.createElement('aside');
   }
 
   updateDOM(): false {
     return false;
   }
-
-  decorate(): ReactNode {
-    return <VideoPlayer videoID={this.__id} />;
-  }
-}
-
-export function $createVideoNode(id: string): VideoNode {
-  return $applyNodeReplacement(new VideoNode(id));
-}
-
-export function $isVideoNode(
-  node: LexicalNode | null | undefined,
-): node is VideoNode {
-  return node instanceof VideoNode;
 }
 ```
 
-Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
-where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
-and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.
+Stating the domain (all possible values the property may inhabit) as data
+is the prerequisite that enables all of the new features. In the initial
+release, we have:
 
-### The rest of the boilerplate
+- **Safer JSON import** - any missing or invalid properties are parsed as
+  the default value, instead of potentially silently corrupting the node's
+  state
+- **Less boilerplate** - all of the boilerplate for `exportJSON`,
+  `updateFromJSON` and `afterCloneFrom` is handled automatically. Declaring a
+  property as a field says where it is stored, which is exactly what a clone
+  has to carry; a property declared through accessor methods names no field, so
+  a node with one of those still writes its own `afterCloneFrom`. See
+  [Carrying properties across a clone](/docs/serialization/serialization#carrying-properties-across-a-clone).
+- **Performance** - a `@lexical/compiler` code generator is used to produce
+  optimized implementations of export, import and clone for performance that is
+  indistinguishable (or better) than a hand-written implementation.
+- **Property Tests** - the `@lexical/fast-check` package can be used to
+  generate arbitrary valid serialized nodes for thorough testing of your
+  custom nodes. It's never been easier to find edge cases, automatically.
 
-When using this method of extension, it is also required to implement the
-following methods:
+In the future, this declarative schema can be used to assist in supporting
+additional protocols, improving developer tools, porting to other
+language/platforms, etc.
 
-- `static clone` (always - this is already in the above examples)
-- `static importFromJSON` (always)
-- `updateFromJSON` (if any custom properties are defined)
-- `afterCloneFrom` (if any custom properties are defined that are not carried over from static clone)
-- `exportJSON` (if any custom properties are defined)
+The combinators (`stringValue`, `numberValue`, `enumValue`, `nullable`,
+`optional`, `arrayValue`, `unionValue`, `withField`, `withAccessors`, …) and
+the rules for properties that are not plain fields are covered in
+[Serialization & Deserialization](/docs/serialization/serialization#declarative-serialization-schemas-with-config).
+
+For performance reasons, you should prefer serialization schema over NodeState
+when the property is inherent to the node type and not ad-hoc.
+
+### Backwards compatible return types
+
+That declaration is the whole of the node's serialization. `exportJSON`,
+`updateFromJSON` and `afterCloneFrom` are all derived from it.
+
+Their types stay the ones the node inherits: `exportJSON()` is typed as
+`SerializedElementNode` here, whatever it actually writes.
+
+Declaration merging can be used to provide a backwards compatible type
+interface, for nodes where the `exportJSON()` return type might have been
+treated as a public API:
+
+```ts
+export type SerializedCalloutNode = Spread<
+  {label: string; level: number; tone: 'info' | 'warning' | 'danger'},
+  SerializedElementNode
+>;
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface CalloutNode {
+  exportJSON(compact?: false): SerializedCalloutNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedCalloutNode>;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedCalloutNode>): this;
+}
+```
+
+For backwards compatibility, these interfaces are provided for Lexical's
+exported node classes. We do not recommend maintaining this type boilerplate
+unless you have code that requires it.
 
 ## Creating custom nodes with $config and NodeState
 
@@ -906,3 +870,160 @@ subclass remains assignable to the base. It works at every level of the
 hierarchy — a subclass of `TabNode` is likewise distinct from `TabNode` — it is
 type-only with no runtime cost, and there is nothing to declare on the class
 beyond the `extends` you already provide.
+
+## Legacy: custom nodes without `$config`
+
+This is how custom nodes were written before `$config` (Lexical v0.33.0). It still works, and nothing here is deprecated — but every one of these methods is something `$config` writes for you, so prefer the sections above for new code.
+
+As mentioned above, Lexical exposes three base nodes that can be extended.
+
+> Did you know? Nodes such as `ElementNode` are already extended in the core by Lexical, such as `ParagraphNode` and `RootNode`!
+
+### Extending `ElementNode`
+
+Below is an example of how you might extend `ElementNode`:
+
+```ts
+import {ElementNode, LexicalNode} from 'lexical';
+
+export class CustomParagraph extends ElementNode {
+  static getType(): string {
+    return 'custom-paragraph';
+  }
+
+  static clone(node: CustomParagraph): CustomParagraph {
+    return new CustomParagraph(node.__key);
+  }
+
+  createDOM(): HTMLElement {
+    // Define the DOM element here
+    const dom = document.createElement('p');
+    return dom;
+  }
+
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    // Returning false tells Lexical that this node does not need its
+    // DOM element replacing with a new copy from createDOM.
+    return false;
+  }
+}
+```
+
+It's also good etiquette to provide some `$` prefixed utility functions for
+your custom `ElementNode` so that others can easily consume and validate nodes
+are that of your custom node. Here's how you might do this for the above example:
+
+```js
+export function $createCustomParagraphNode(): CustomParagraph {
+  return $applyNodeReplacement(new CustomParagraph());
+}
+
+export function $isCustomParagraphNode(
+  node: LexicalNode | null | undefined
+): node is CustomParagraph  {
+  return node instanceof CustomParagraph;
+}
+```
+
+### Extending `TextNode`
+
+```ts
+export class ColoredNode extends TextNode {
+  __color: string;
+
+  constructor(text: string, color: string, key?: NodeKey): void {
+    super(text, key);
+    this.__color = color;
+  }
+
+  static getType(): string {
+    return 'colored';
+  }
+
+  static clone(node: ColoredNode): ColoredNode {
+    return new ColoredNode(node.__text, node.__color, node.__key);
+  }
+
+  createDOM(config: EditorConfig): HTMLElement {
+    const element = super.createDOM(config);
+    element.style.color = this.__color;
+    return element;
+  }
+
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    const isUpdated = super.updateDOM(prevNode, dom, config);
+    if (prevNode.__color !== this.__color) {
+      dom.style.color = this.__color;
+    }
+    return isUpdated;
+  }
+}
+
+export function $createColoredNode(text: string, color: string): ColoredNode {
+  return $applyNodeReplacement(new ColoredNode(text, color));
+}
+
+export function $isColoredNode(
+  node: LexicalNode | null | undefined,
+): node is ColoredNode {
+  return node instanceof ColoredNode;
+}
+```
+
+### Extending `DecoratorNode`
+
+```ts
+export class VideoNode extends DecoratorNode<ReactNode> {
+  __id: string;
+
+  static getType(): string {
+    return 'video';
+  }
+
+  static clone(node: VideoNode): VideoNode {
+    return new VideoNode(node.__id, node.__key);
+  }
+
+  constructor(id: string, key?: NodeKey) {
+    super(key);
+    this.__id = id;
+  }
+
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+
+  updateDOM(): false {
+    return false;
+  }
+
+  decorate(): ReactNode {
+    return <VideoPlayer videoID={this.__id} />;
+  }
+}
+
+export function $createVideoNode(id: string): VideoNode {
+  return $applyNodeReplacement(new VideoNode(id));
+}
+
+export function $isVideoNode(
+  node: LexicalNode | null | undefined,
+): node is VideoNode {
+  return node instanceof VideoNode;
+}
+```
+
+Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
+where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
+and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.
+
+### The rest of the boilerplate
+
+When using this method of extension, it is also required to implement the
+following methods:
+
+- `static clone` (always - this is already in the above examples)
+- `static importFromJSON` (always)
+- `updateFromJSON` (if any custom properties are defined)
+- `afterCloneFrom` (if any custom properties are defined that are not carried over from static clone)
+- `exportJSON` (if any custom properties are defined)

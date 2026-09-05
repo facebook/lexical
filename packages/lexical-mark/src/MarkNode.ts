@@ -11,17 +11,24 @@ import {
   $getDocument,
   $isRangeSelection,
   addClassNamesToElement,
+  arrayValue,
   type BaseSelection,
   type EditorConfig,
   ElementNode,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
   type RangeSelection,
   removeClassNamesFromElement,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
+  stringValue,
+  withAccessors,
 } from 'lexical';
+
+import {GENERATED_MARK} from './LexicalMarkGeneratedJSON';
 
 export type SerializedMarkNode = Spread<
   {
@@ -30,31 +37,41 @@ export type SerializedMarkNode = Spread<
   SerializedElementNode
 >;
 
+// Single source of truth for parsing the node-specific properties of a
+// SerializedMarkNode (those it adds over a SerializedElementNode).
+const markNodeSchema = nodeSchema<MarkNode>({
+  ids: withAccessors(arrayValue(stringValue()), {
+    getter: 'getIDs',
+    setter: 'setIDs',
+  }),
+});
+
 const NO_IDS: readonly string[] = [];
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface MarkNode {
+  exportJSON(compact?: false): SerializedMarkNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedMarkNode>;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedMarkNode>): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class MarkNode extends ElementNode {
   /** @internal */
   __ids: readonly string[];
 
   $config() {
-    return this.config('mark', {extends: ElementNode});
+    return this.config('mark', {
+      extends: ElementNode,
+      generated: GENERATED_MARK,
+      json: markNodeSchema,
+    });
   }
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__ids = prevNode.__ids;
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedMarkNode>): this {
-    return super.updateFromJSON(serializedNode).setIDs(serializedNode.ids);
-  }
-
-  exportJSON(): SerializedMarkNode {
-    return {
-      ...super.exportJSON(),
-      ids: this.getIDs(),
-    };
   }
 
   constructor(ids: readonly string[] = NO_IDS, key?: NodeKey) {

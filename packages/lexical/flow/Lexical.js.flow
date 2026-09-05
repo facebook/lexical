@@ -452,7 +452,11 @@ export interface EditorState {
   constructor(nodeMap: NodeMap, selection?: BaseSelection | null): void;
   isEmpty(): boolean;
   read<V>(callbackFn: () => V, options?: EditorStateReadOptions): V;
-  toJSON(): SerializedEditorState;
+  // TypeScript overloads this on `compact` so the return type says which
+  // shape came back; Flow cannot overload a method across a class hierarchy
+  // (see exportJSON above), so this describes the legacy form. A Flow caller
+  // passing `true` gets a type that promises more than the value has.
+  toJSON(compact?: boolean): SerializedEditorState;
   clone(selection?: BaseSelection | null): EditorState;
 }
 type EditorStateReadOptions = {
@@ -498,7 +502,14 @@ declare export class LexicalNode {
   static importJSON(serializedNode: $FlowFixMe): LexicalNode;
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
-  exportJSON(): SerializedLexicalNode;
+  // TypeScript declares two overloads here — the compact form omits
+  // properties, so it returns SerializedPartial<T> rather than T. Flow cannot:
+  // its method-override check compares a subclass's overload set against the
+  // base's as an intersection and pairs no branch, so every node from TextNode
+  // down fails to extend. This single signature describes the legacy form,
+  // which is what it described before `compact` existed; a Flow caller passing
+  // `true` gets a type that promises more than the value has.
+  exportJSON(compact?: boolean): SerializedLexicalNode;
   updateFromJSON(serializedNode: $FlowFixMe): this;
   getType(): string;
   isAttached(): boolean;
@@ -834,7 +845,7 @@ declare export class TextNode extends LexicalNode {
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
   static importJSON(serializedTextNode: SerializedTextNode): TextNode;
-  exportJSON(): SerializedTextNode;
+  exportJSON(compact?: boolean): SerializedTextNode;
 }
 export interface InlineFormattableNode {
   readonly __isInlineFormattable: true;
@@ -867,7 +878,7 @@ declare export function $isTabNode(
 declare export class TabNode extends TextNode {
   constructor(key?: NodeKey): void;
   static importJSON(serializedTabNode: SerializedTabNode): TabNode;
-  exportJSON(): SerializedTabNode;
+  exportJSON(compact?: boolean): SerializedTabNode;
 }
 
 /**
@@ -881,9 +892,9 @@ declare export class LineBreakNode extends LexicalNode {
   updateDOM(): false;
   isInline(): true;
   static importJSON(
-    serializedLineBreakNode: SerializedLineBreakNode,
+    serializedLineBreakNode: SerializedPartial<SerializedLineBreakNode>,
   ): LineBreakNode;
-  exportJSON(): SerializedLexicalNode;
+  exportJSON(compact?: boolean): SerializedLexicalNode;
 }
 declare export function $createLineBreakNode(): LineBreakNode;
 declare export function $isLineBreakNode(
@@ -1045,7 +1056,7 @@ declare export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: LexicalNode[],
   ): this;
-  exportJSON(): SerializedElementNode;
+  exportJSON(compact?: boolean): SerializedElementNode;
   getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement>;
 }
 declare export function $isElementNode(
@@ -1134,9 +1145,9 @@ declare export class ParagraphNode extends ElementNode {
   ): ParagraphNode;
   collapseAtStart(): boolean;
   static importJSON(
-    serializedParagraphNode: SerializedParagraphNode,
+    serializedParagraphNode: SerializedPartial<SerializedParagraphNode>,
   ): ParagraphNode;
-  exportJSON(): SerializedElementNode;
+  exportJSON(compact?: boolean): SerializedElementNode;
 }
 declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(
@@ -1386,7 +1397,7 @@ declare export function createRefCountedRegistry<Key, Options = void>(
 type InternalSerializedNode = {
   children?: InternalSerializedNode[],
   type: string,
-  version: number,
+  version?: number,
 };
 
 declare export function $parseSerializedNode(
@@ -1399,7 +1410,20 @@ declare export function $applyNodeReplacement<N extends LexicalNode>(
 
 export type SerializedLexicalNode = {
   type: string,
+  // Deprecated: nothing reads it. exportJSON() writes it as 1 for backwards
+  // compatible output and so promises it here; exportJSON(true) omits it,
+  // which SerializedPartial relaxes, and parsing drops it outright.
   version: number,
+  ...
+};
+
+// The shape updateFromJSON accepts for a node whose serialized type is S.
+export type LexicalParseJSON<S extends SerializedLexicalNode> =
+  Omit<SerializedPartial<S>, 'children' | 'type' | 'version'>;
+export type SerializedPartial<T extends SerializedLexicalNode> = {
+  ...Partial<T>,
+  type: string,
+  version?: number,
   ...
 };
 
@@ -1448,12 +1472,20 @@ export type SerializedGridCellNode = {
   ...
 };
 
+// The compact form of a document: every node written without the properties
+// parsing restores on its own.
+export interface CompactSerializedEditorState {
+  root: SerializedPartial<SerializedRootNode>;
+}
 export interface SerializedEditorState {
   root: SerializedRootNode;
 }
 
 export type SerializedEditor = {
-  editorState: SerializedEditorState,
+  // The compact shape, which the legacy one also satisfies: editor.toJSON()
+  // writes whichever form encloses it, so a nested editor inside a compact
+  // document is compact too.
+  editorState: CompactSerializedEditorState,
 };
 
 /**
@@ -1772,6 +1804,7 @@ declare export class StateConfig<K extends string, V> {
   readonly isEqual: (a: V, b: V) => boolean;
   readonly defaultValue: V;
   readonly resetOnCopyNode: boolean;
+  readonly schema?: AnySerializationSchema;
   constructor(key: K, stateValueConfig: StateValueConfig<V>): this;
 }
 
@@ -1781,6 +1814,186 @@ export type StateValueConfig<V> = {
   isEqual?: (a: V, b: V) => boolean;
   resetOnCopyNode?: boolean;
 }
+
+export type Parse<T> = (value: unknown) => T;
+// A callable carrying its own metadata, so introspecting tooling
+// (getComposedSchemaFields, @lexical/fast-check) can read `meta` and
+// `defaultValue` off a schema rather than only calling it.
+export type SerializationSchema<T> = Parse<T> & {
+  readonly defaultValue: T,
+  readonly meta: SerializationSchemaMeta,
+  readonly getter?: SchemaGetterAccessor,
+  readonly setter?: SchemaSetterAccessor,
+  readonly isEqual?: (a: T, b: T) => boolean,
+  readonly accepts?: (value: unknown) => boolean,
+};
+declare export function $exportNodeJSON(
+  node: LexicalNode,
+): SerializedLexicalNode;
+// TypeScript additionally rejects an async callback at the call site, through
+// a trailing parameter that is an empty tuple for every other return type;
+// Flow has no equivalent, so here that is caught by the runtime check, which
+// runs in every build.
+declare export function $withCompactExport<T>(
+  compact: boolean,
+  f: () => T,
+): T;
+// Whether the export walk in progress writes the compact form, for a schema
+// getter to read — the walk calls get<Prop>() with no arguments, so there is
+// nothing to pass one. Established by $withCompactExport (and so by
+// editorState.toJSON(compact) and the clipboard selection export), not by an
+// individual node's exportJSON(compact).
+declare export function $isCompactExport(): boolean;
+export type AnySerializationSchema = SerializationSchema<unknown>;
+export type SerializationSchemaFields = {
+  readonly [key: string]: AnySerializationSchema,
+};
+// The record of per-property schemas for an object type: every key of `T`,
+// each with a schema for that key's type. Spelled out rather than aliased to
+// SerializationSchemaFields so that it checks what its TypeScript counterpart
+// checks — a shape missing a property, or describing one with the wrong
+// schema, is an error where it is declared.
+export type SerializationSchemaShape<T> = {
+  readonly [K in keyof T]: SerializationSchema<T[K]>,
+};
+export type SerializationSchemaMeta = {
+  readonly kind: string,
+  readonly values?: ReadonlyArray<unknown>,
+  readonly aliases?: {readonly [alias: string]: unknown},
+  readonly inner?: AnySerializationSchema,
+  readonly item?: AnySerializationSchema,
+  readonly fields?: SerializationSchemaFields,
+  readonly members?: ReadonlyArray<AnySerializationSchema>,
+  readonly min?: number,
+  readonly max?: number,
+  readonly integer?: boolean,
+  readonly omitDefault?: boolean,
+  readonly defaultAsNull?: boolean,
+};
+export type NumberValueOptions = {
+  readonly min?: number,
+  readonly max?: number,
+  readonly integer?: boolean,
+};
+declare export function stringValue(defaultValue?: string): SerializationSchema<string>;
+declare export function numberValue(
+  defaultValue?: number,
+  options?: NumberValueOptions,
+): SerializationSchema<number>;
+declare export function booleanValue(defaultValue?: boolean): SerializationSchema<boolean>;
+declare export function enumValue<T>(
+  values: ReadonlyArray<T>,
+  defaultValue?: T,
+): SerializationSchema<T>;
+declare export function nullable<T>(
+  inner: SerializationSchema<T>,
+  options?: {readonly defaultAsNull?: boolean},
+): SerializationSchema<T | null>;
+declare export function optional<T>(
+  inner: SerializationSchema<T>,
+  options?: {readonly omitDefault?: boolean},
+): SerializationSchema<T | void>;
+export type SerializationSchemaValue<S> =
+  S extends SerializationSchema<infer T> ? T : empty;
+declare export function unionValue<M extends ReadonlyArray<AnySerializationSchema>>(
+  members: M,
+  defaultValue?: SerializationSchemaValue<M[number]>,
+): SerializationSchema<SerializationSchemaValue<M[number]>>;
+declare export function transformValue<In, Out>(
+  inner: SerializationSchema<In>,
+  transform: (value: In) => Out,
+  options?: {readonly isEqual?: (a: Out, b: Out) => boolean},
+): SerializationSchema<Out>;
+declare export function aliasedValue<T>(
+  inner: SerializationSchema<T>,
+  aliases: {readonly [alias: string]: T},
+): SerializationSchema<T>;
+declare export function rawValue<T>(): SerializationSchema<T | void>;
+declare export function arrayValue<T>(item: SerializationSchema<T>): SerializationSchema<T[]>;
+declare export function objectValue<T>(fields: SerializationSchemaShape<T>): SerializationSchema<T>;
+
+// Every member of `N` a schema may name: its own `__`-prefixed fields and its
+// methods, which covers accessors and `when` predicates alike.
+export type MemberOf<N> = keyof N;
+// The members a schema's declarations name. TypeScript carries these in a
+// phantom type parameter so that `nodeSchema` can check them against the node;
+// Flow declares the surface without that check, and the DEV-time runtime
+// invariants catch the same mistakes here.
+export type NamesOf<S> = string;
+// The serialized values a schema accepts, which is wider than what it parses
+// to wherever it reads more than it writes (a stringified number, a legacy
+// alias, an absent property). TypeScript computes this per combinator; Flow
+// declares the surface without that computation.
+export type SchemaInput<S> = unknown;
+// The phantom N records which node the names were checked against; Flow has
+// no equivalent of the TypeScript declaration's variance trick, so this stays
+// the unparameterized shape and the binding is enforced by TypeScript alone.
+export type NodeSerializationSchema = AnySerializationSchema;
+// A node's serialization schema, checked against the node it is for. Under
+// TypeScript a `field`, accessor `method` or `when` predicate the node does
+// not have is a compile error; under Flow it is caught at registration.
+declare export function nodeSchema<N>(fields: {
+  readonly [key: string]: AnySerializationSchema,
+}): NodeSerializationSchema;
+// A node field, read or written directly rather than through a method. The
+// lookup table for a property whose stored and serialized forms differ is
+// declared only on the direction that reads it — `decode` on the getter,
+// `encode` on the setter — so naming the wrong one is an error rather than a
+// silently ignored property, and `when` (the predicate that decides whether
+// the property is written at all) is the getter's for the same reason.
+// `method` names the accessor the field access stands in for, so a subclass
+// that overrides it still decides.
+export type SchemaFieldBase = {
+  readonly field: string,
+  readonly method?: string,
+};
+export type SchemaGetterField = {
+  ...SchemaFieldBase,
+  readonly decode?: {readonly [key: string]: unknown},
+  readonly encode?: empty,
+  readonly when?: string,
+};
+export type SchemaSetterField = {
+  ...SchemaFieldBase,
+  readonly decode?: empty,
+  readonly encode?: {readonly [key: string]: unknown},
+  readonly when?: empty,
+};
+export type SchemaField = SchemaGetterField | SchemaSetterField;
+export type SchemaGetterAccessor = string | SchemaGetterField | null;
+export type SchemaSetterAccessor = string | SchemaSetterField | null;
+// Both directions of a property that *is* a node field, as withField takes
+// them. `decode`, `encode` and `when` each belong to the one direction that
+// reads them, and are split onto it.
+export type FieldOptions = {
+  readonly field: string,
+  readonly decode?: {readonly [key: string]: unknown},
+  readonly encode?: {readonly [key: string]: unknown},
+  readonly getter?: string,
+  readonly setter?: string,
+  readonly when?: string,
+};
+// One direction of a schema field: a method name, a node field, or null for a
+// direction that is deliberately unsupported.
+export type SchemaAccessor = string | SchemaField | null;
+export type SchemaAccessors = {
+  readonly getter?: SchemaGetterAccessor,
+  readonly setter?: SchemaSetterAccessor,
+};
+declare export function isSchemaField<T extends SchemaFieldBase>(
+  accessor: string | T | null | void,
+): implies accessor is T;
+declare export function withField<T>(
+  schema: SerializationSchema<T>,
+  field: FieldOptions,
+): SerializationSchema<T>;
+declare export function withAccessors<T>(
+  schema: SerializationSchema<T>,
+  accessors: SchemaAccessors,
+): SerializationSchema<T>;
+declare export function getComposedSchemaFields(
+  klass: Class<LexicalNode>,
+): {[key: string]: AnySerializationSchema};
 
 export type UnionToIntersection<T> = (
   // $FlowFixMe[unclear-type]
@@ -1799,6 +2012,18 @@ export type CollectStateJSON<
 
 export const PROTOTYPE_CONFIG_METHOD = '$config';
 
+// The generated JSON implementations for one node class, passed to that
+// class's $config as `generated`.
+export type GeneratedJSON = {
+  exportJSON: (node: LexicalNode) => {[key: string]: unknown},
+  exportCompactJSON?: (node: LexicalNode) => {[key: string]: unknown},
+  updateFromJSON?: (
+    node: LexicalNode,
+    json: {readonly [key: string]: unknown},
+  ) => LexicalNode,
+  afterCloneFrom?: (node: LexicalNode, prevNode: LexicalNode) => void,
+};
+
 export interface StaticNodeConfigValue<
   T extends LexicalNode,
   Type extends string,
@@ -1807,6 +2032,8 @@ export interface StaticNodeConfigValue<
   readonly $transform?: (node: T) => void;
   readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
   readonly importDOM?: DOMConversionMap;
+  readonly json?: AnySerializationSchema;
+  readonly generated?: GeneratedJSON;
   readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
   readonly slots?: ReadonlyArray<string>;
   readonly extends?: Class<LexicalNode>;

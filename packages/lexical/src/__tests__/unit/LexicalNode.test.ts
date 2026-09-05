@@ -31,6 +31,7 @@ import {
   type NodeKey,
   ParagraphNode,
   type RangeSelection,
+  type SerializedTextNode,
   type TabNode,
   TextNode,
 } from 'lexical';
@@ -45,7 +46,11 @@ import {
   vi,
 } from 'vitest';
 
-import {LexicalNode} from '../../LexicalNode';
+import {
+  type GetStaticNodeType,
+  type LexicalExportJSON,
+  LexicalNode,
+} from '../../LexicalNode';
 import {
   $createTestElementNode,
   $createTestInlineElementNode,
@@ -1566,7 +1571,7 @@ describe('LexicalNode tests', () => {
                 text: 'codegen!',
                 type: 'custom-text',
                 version: 1,
-              });
+              } as SerializedTextNode);
               expect(node).toBeInstanceOf(CustomTextNode);
               expect(node.getType()).toBe('custom-text');
               expect(node.getTextContent()).toBe('codegen!');
@@ -3090,6 +3095,17 @@ describe('replace(other, includeChildren) selection mapping', () => {
   });
 });
 
+describe('LexicalNode.$config() inferred types', () => {
+  test('GetStaticNodeType / LexicalExportJSON recover the literal node type', () => {
+    // Left to inference (not widened to BaseStaticNodeConfig), $config()'s
+    // return type lets GetStaticNodeType recover the literal node `type`, so
+    // LexicalExportJSON can build the full serialized type from it. Annotating
+    // `$config(): BaseStaticNodeConfig` would collapse both to `string`.
+    expectTypeOf<GetStaticNodeType<TextNode>>().toEqualTypeOf<'text'>();
+    expectTypeOf<LexicalExportJSON<TextNode>['type']>().toEqualTypeOf<'text'>();
+  });
+});
+
 // These are outside of the above suite because of the
 // LexicalNode getType mock which ruins it
 describe('LexicalNode.$config() without registration', () => {
@@ -3375,5 +3391,40 @@ describe('LexicalNode.$config() without registration', () => {
       },
       {discrete: true},
     );
+  });
+});
+
+describe('a setter returns the version it wrote to', () => {
+  initializeUnitTest(testEnv => {
+    test('setFormat/setStyle/setIndent return the writable, not the receiver', () => {
+      // Each takes a writable, writes to it, and used to return `this` — the
+      // version it was called on, which getWritable() had just superseded.
+      // Their neighbours setTextFormat/setTextStyle return `self`, which is
+      // what makes this a slip rather than a decision.
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          $getRoot().clear().append($createParagraphNode());
+        },
+        {discrete: true},
+      );
+      // A node is cloned only *across* updates: within the one that created it
+      // getWritable() hands back the same object, so the two never diverge.
+      editor.update(
+        () => {
+          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const afterIndent = paragraph.setIndent(2);
+          expect(afterIndent).not.toBe(paragraph);
+          expect(afterIndent).toBe(paragraph.getLatest());
+          // The rest of the update no longer clones, so the remaining two are
+          // checked against the latest rather than against a fresh receiver.
+          expect(afterIndent.setStyle('color: red')).toBe(
+            paragraph.getLatest(),
+          );
+          expect(afterIndent.setFormat('center')).toBe(paragraph.getLatest());
+        },
+        {discrete: true},
+      );
+    });
   });
 });

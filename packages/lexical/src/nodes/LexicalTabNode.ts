@@ -11,7 +11,15 @@ import type {LexicalNode, NodeKey} from '../LexicalNode';
 
 import invariant from '@lexical/internal/invariant';
 
-import {IS_UNMERGEABLE} from '../LexicalConstants';
+import {IS_UNMERGEABLE, TEXT_TYPE_TO_MODE} from '../LexicalConstants';
+import {GENERATED_TAB} from '../LexicalGeneratedJSON';
+import {
+  enumValue,
+  nodeSchema,
+  numberValue,
+  stringValue,
+  withAccessors,
+} from '../LexicalSchema';
 import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {
   type SerializedTextNode,
@@ -25,7 +33,38 @@ export type SerializedTabNode = SerializedTextNode;
 /** @noInheritDoc */
 export class TabNode extends TextNode {
   $config() {
-    return this.config('tab', {extends: TextNode});
+    return this.config('tab', {
+      extends: TextNode,
+      generated: GENERATED_TAB,
+      // A tab's content, detail and mode are fixed rather than stored:
+      // setTextContent normalizes any input to '\t', and setDetail/setMode
+      // reject anything but IS_UNMERGEABLE/'normal'. They are therefore
+      // derived on import — declaring that (rather than relying on defaults)
+      // both keeps a hand-authored or foreign `{detail: 0}` / `{mode:
+      // 'token'}` from reaching a setter that throws, and lets the compact
+      // form omit them.
+      json: nodeSchema<TabNode>({
+        // Read straight off the inherited fields — mode through the decode
+        // table, since it is stored as a bitmask. All three are export-only:
+        // the values are fixed for a tab, so they are derived on import rather
+        // than applied.
+        detail: withAccessors(numberValue(IS_UNMERGEABLE), {
+          getter: {field: '__detail'},
+          setter: null,
+        }),
+        mode: withAccessors(enumValue(['normal']), {
+          getter: {
+            decode: TEXT_TYPE_TO_MODE,
+            field: '__mode',
+          },
+          setter: null,
+        }),
+        text: withAccessors(stringValue('\t'), {
+          getter: {field: '__text', method: 'getTextContent'},
+          setter: null,
+        }),
+      }),
+    });
   }
 
   // `key` carries an explicit `undefined` default (rather than the usual `?`)

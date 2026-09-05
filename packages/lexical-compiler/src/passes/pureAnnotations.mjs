@@ -44,6 +44,11 @@ import * as path from 'node:path';
  * @type {ReadonlyArray<string>}
  */
 export const PURE_FACTORY_FUNCTIONS = [
+  // The combinators that build a node's serialization schema at module
+  // scope, nested inside each other and inside createState.
+  'aliasedValue',
+  'arrayValue',
+  'booleanValue',
   'configExtension',
   'createCommand',
   'createContextState',
@@ -55,7 +60,19 @@ export const PURE_FACTORY_FUNCTIONS = [
   'defineImportRule',
   'defineOverlayRules',
   'domOverride',
+  'enumValue',
+  'nodeSchema',
+  'nullable',
+  'numberValue',
+  'objectValue',
+  'optional',
+  'rawValue',
   'safeCast',
+  'stringValue',
+  'transformValue',
+  'unionValue',
+  'withAccessors',
+  'withField',
 ];
 
 /**

@@ -17,10 +17,15 @@ import {
   type EditorConfig,
   ElementNode,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
+  numberValue,
+  optional,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
+  withField,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
@@ -33,7 +38,23 @@ export type SerializedTableRowNode = Spread<
   SerializedElementNode
 >;
 
+const tableRowNodeSchema = nodeSchema<TableRowNode>({
+  height: withField(optional(numberValue()), {
+    field: '__height',
+  }),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface TableRowNode {
+  exportJSON(compact?: false): SerializedTableRowNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedTableRowNode>;
+  updateFromJSON(
+    serializedNode: LexicalParseJSON<SerializedTableRowNode>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TableRowNode extends ElementNode {
   /** @internal */
   __height?: number;
@@ -47,6 +68,7 @@ export class TableRowNode extends ElementNode {
           priority: 0,
         }),
       },
+      json: tableRowNodeSchema,
     });
   }
 
@@ -55,27 +77,11 @@ export class TableRowNode extends ElementNode {
     this.__height = prevNode.__height;
   }
 
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedTableRowNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setHeight(serializedNode.height);
-  }
-
   // `height` carries an explicit `undefined` default so the constructor reports
   // zero required arguments and `$config` can synthesize the static `clone`.
   constructor(height: number | undefined = undefined, key?: NodeKey) {
     super(key);
     this.__height = height;
-  }
-
-  exportJSON(): SerializedTableRowNode {
-    const height = this.getHeight();
-    return {
-      ...super.exportJSON(),
-      ...(height === undefined ? undefined : {height}),
-    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

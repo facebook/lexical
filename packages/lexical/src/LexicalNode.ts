@@ -13,6 +13,7 @@ import type {
   KlassConstructor,
   LexicalEditor,
 } from './LexicalEditor';
+import type {GeneratedJSON} from './LexicalGeneratedJSON';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -37,6 +38,7 @@ import {
   type RequiredNodeStateConfig,
 } from './LexicalNodeState';
 import {CACHED_TEXT_SIZE_KEY} from './LexicalReconciler';
+import {type NodeSerializationSchema} from './LexicalSchema';
 import {
   $getSelection,
   $isNodeSelection,
@@ -60,7 +62,9 @@ import {
   getActiveEditorState,
 } from './LexicalUpdates';
 import {
+  $applyJSONSetters,
   $cloneWithProperties,
+  $generatedExportJSON,
   $getCompositionKey,
   $getNodeByKey,
   $hasAncestor,
@@ -70,6 +74,7 @@ import {
   $setCompositionKey,
   $setNodeKey,
   $setSelection,
+  $walkExportJSON,
   errorOnInsertTextNodeOnRoot,
   getRegisteredNode,
   getStaticNodeConfig,
@@ -87,7 +92,18 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 export type SerializedLexicalNode = {
   /** The type string used by the Node class */
   type: string;
-  /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
+  /**
+   * @deprecated A numeric schema version. Nothing reads it — parsing ignores
+   * it entirely — and nothing should.
+   *
+   * `exportJSON()` still writes it as `1` so the output stays readable by
+   * older versions, which is the only reason it remains, and it stays required
+   * here so that the legacy form promises what it actually writes. The two
+   * places it is genuinely absent relax it themselves: a compact export omits
+   * it along with everything else parsing restores on its own (see
+   * {@link SerializedPartial}), and the parse shapes drop it outright (see
+   * {@link LexicalUpdateJSON}).
+   */
   version: number;
   /**
    * Any state persisted with the NodeState API that is not
@@ -142,7 +158,9 @@ export interface StaticNodeConfigValue<
    * An alternative to the static importJSON() method
    * that provides better type inference.
    */
-  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
+  readonly $importJSON?: (
+    serializedNode: SerializedPartial<SerializedLexicalNode>,
+  ) => T;
   /**
    * An alternative to the static importDOM() method
    */
@@ -206,6 +224,37 @@ export interface StaticNodeConfigValue<
    * types for your node class might be missing some of that.
    */
   readonly extends?: Klass<LexicalNode>;
+  /**
+   * EXPERIMENTAL
+   *
+   * A {@link SerializationSchema} describing this node's serialized JSON (the
+   * node-specific properties it adds over its parent's, not including
+   * `type`/`version`/`children` or node state). When provided it is the single
+   * source of truth for parsing those properties — a node's `updateFromJSON`
+   * can apply it — and, because the schema is introspectable, tooling such as
+   * `@lexical/fast-check` can use it to generate example serializations.
+   *
+   * It is named `json` rather than `schema` to avoid ambiguity with other kinds
+   * of node schema (e.g. a schema of allowed children).
+   */
+  readonly json?: NodeSerializationSchema<T>;
+  /**
+   * @internal
+   *
+   * Specialized `exportJSON`/`updateFromJSON` implementations compiled from
+   * this class's serialization schema by `scripts/generate-node-json.mjs`,
+   * which the schema-driven walks use in place of walking. Set by the core
+   * node classes
+   * that are code-generated; there is no reason to write it by hand.
+   *
+   * Carried here rather than looked up by node type, because a type does not
+   * identify a class: a subclass that declares no `$config` of its own inherits
+   * its ancestor's, type included, and may still override an accessor the
+   * generated code compiled away. Passing the code through the config makes the
+   * association the same one the schema itself has — the class whose `$config`
+   * named it — so the two cannot come apart.
+   */
+  readonly generated?: GeneratedJSON;
 }
 
 /**
@@ -413,6 +462,28 @@ export type GetStaticNodeOwnConfig<T extends LexicalNode> =
     : never;
 
 /**
+ * What `T.exportJSON(compact)` returns for the *legacy* form, which is the one
+ * that writes every property. The compact form omits properties and so returns
+ * the {@link SerializedPartial} of this.
+ *
+ * Matched against the whole overload set rather than read with `ReturnType`,
+ * which resolves an overloaded type to its *last* signature — the compact one,
+ * where nothing is promised. Both signatures have to appear in the pattern:
+ * matching only the first infers `never`, because an overloaded source is
+ * assignable to a single-signature target through its last overload.
+ *
+ * A node that declares one `exportJSON(compact?: boolean)` signature — a
+ * narrowing of both overloads at once, which therefore cannot distinguish
+ * them — satisfies both and matches too.
+ */
+type LexicalFullExportJSON<T extends LexicalNode> = T['exportJSON'] extends {
+  (compact?: false): infer R;
+  (compact: boolean): unknown;
+}
+  ? R
+  : ReturnType<T['exportJSON']>;
+
+/**
  * The most precise type we can infer for the JSON that will
  * be produced by T.exportJSON().
  *
@@ -420,18 +491,103 @@ export type GetStaticNodeOwnConfig<T extends LexicalNode> =
  * a more generic type to be compatible with subclassing.
  */
 export type LexicalExportJSON<T extends LexicalNode> = Prettify<
-  Omit<ReturnType<T['exportJSON']>, 'type'> & {
+  Omit<LexicalFullExportJSON<T>, 'type' | 'version'> & {
     type: GetStaticNodeType<T>;
+    /**
+     * Written by `exportJSON()` so the output remains readable by older
+     * versions. Required, like {@link SerializedLexicalNode.version}: this is
+     * the legacy form, which writes it unconditionally. `exportJSON(true)`
+     * returns the {@link SerializedPartial} of this, where it is optional
+     * along with everything else parsing restores on its own.
+     */
+    version: number;
   } & NodeStateJSON<T>
 >;
 
 /**
  * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
+ *
+ * Constrained to the *parse* shape rather than {@link SerializedLexicalNode},
+ * so a {@link SerializedPartial} — where every node-specific property is
+ * optional, as they are in compact JSON — is a valid argument.
  */
-export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
-  T,
-  'children' | 'type' | 'version'
->;
+export type LexicalUpdateJSON<
+  T extends SerializedPartial<SerializedLexicalNode>,
+> = Omit<T, 'children' | 'type' | 'version'>;
+
+/**
+ * The serialized form of a node as accepted by the parsing methods
+ * ({@link LexicalNode.importJSON} and {@link LexicalNode.updateFromJSON}).
+ *
+ * Only `type` identifies the node here: every node-specific property is made
+ * optional via `Partial`. Parsing is generally untrusted and must tolerate
+ * missing or out-of-domain values, so implementations are expected to
+ * substitute sensible defaults — see the {@link Parse} helpers such as
+ * {@link stringValue}, {@link numberValue}, and {@link enumValue}. This also
+ * enables a "compact" serialization variant in which any property left at its
+ * default is omitted.
+ *
+ * The deprecated `version` is relaxed here rather than on
+ * {@link SerializedLexicalNode}: a compact export omits it, but the legacy
+ * form always writes it, and making it optional at the base would take that
+ * promise away from the full output type as well.
+ */
+export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
+  SerializedLexicalNode & Partial<T>,
+  '$slots' | 'children' | 'version'
+> & {
+  /** Slot values are parsed by the same rules, so they relax the same way. */
+  $slots?: Record<string, SerializedPartial<SerializedLexicalNode>>;
+  /** Omitted by a compact export, like every other restorable property. */
+  version?: number;
+} & (T extends {children: readonly (infer C extends SerializedLexicalNode)[]}
+    ? {
+        /**
+         * An element's children are nodes of the same document, written in the
+         * same form, so they relax too: `Partial<T>` alone would make the array
+         * optional while still promising that everything in it is fully
+         * serialized, which is untrue of every compact element but the leaves.
+         */
+        children?: SerializedPartial<C>[];
+      }
+    : // Not an element. Intersecting with `unknown` leaves the type alone,
+      // rather than giving every node an optional `children` it never has.
+      unknown);
+
+/**
+ * The shape {@link LexicalNode.updateFromJSON} accepts for a node whose
+ * serialized type is `S`: every node-specific property optional (a compact
+ * export omits a default-valued one, and an older document predates a newer
+ * one), with `type`, `version` and `children` dropped.
+ *
+ * A node that declares a serialization schema narrows both JSON methods to its
+ * own serialized type by declaration merging, which is the one thing a schema
+ * cannot do for it — the members have to be declared on the node's own
+ * interface, since inheriting them (from a shared base, or via `extends` on
+ * the interface) collides with the ones it gets from its superclass rather
+ * than overriding them:
+ *
+ * ```ts
+ * // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+ * export interface MarkNode {
+ *   exportJSON(compact?: false): SerializedMarkNode;
+ *   exportJSON(compact: boolean): SerializedPartial<SerializedMarkNode>;
+ *   updateFromJSON(serializedNode: LexicalParseJSON<SerializedMarkNode>): this;
+ * }
+ * ```
+ *
+ * Export takes two signatures because the two forms have different shapes: the
+ * compact one omits every property parsing would restore, so what it returns is
+ * the {@link SerializedPartial} rather than the full type. Declaring only
+ * `exportJSON(compact?: boolean): SerializedMarkNode` compiles, and is what the
+ * compact form makes untrue.
+ *
+ * All three narrow the *type* only: the runtime implementations are the
+ * schema-driven ones on {@link LexicalNode}, which such a node does not
+ * override.
+ */
+export type LexicalParseJSON<S extends SerializedLexicalNode> =
+  LexicalUpdateJSON<SerializedPartial<S>>;
 
 /** @internal */
 export interface LexicalPrivateDOM {
@@ -1533,14 +1689,53 @@ export class LexicalNode {
    * if you're serializing to JSON for persistent storage somewhere.
    * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
    *
+   * The base implementation writes every property the node's schema declares
+   * (its own and those it inherits), reading each through its getter —
+   * `get<Prop>` by default, or the name recorded with `withAccessors`. A getter
+   * that returns `undefined` omits its property. Override this only for output
+   * a schema can not describe, and call `super.exportJSON(compact)` when you do.
+   *
+   * This serializes **the version it is called on**, not the latest one. A
+   * property declared with {@link withField} is read straight off the node as
+   * an optimization, which the serialization walk relies on — every node it
+   * reaches comes from the EditorState's node map and is already current, so
+   * it resolves nothing per node. Calling this method directly on a reference
+   * that a `getWritable()` (any `set<Prop>`) has since superseded therefore
+   * serializes the pre-mutation values; call `node.getLatest().exportJSON()`
+   * when you hold such a reference. Previously every property went through an
+   * accessor that resolved the latest version on each read, so this is a
+   * behavior change for that case.
+   *
+   * @param compact Write the compact form: omit a property the parser derives
+   *   rather than reads, one whose value is the schema default parsing would
+   *   restore, and the deprecated `version`. The two forms describe the same
+   *   document. A node that overrides this and ignores the flag simply keeps
+   *   writing the full form, which still parses.
    * */
-  exportJSON(): SerializedLexicalNode {
+  exportJSON(compact?: false): SerializedLexicalNode;
+  /**
+   * The compact form omits properties, so what it returns is the *partial*
+   * serialized type — every node-specific property optional — rather than the
+   * full one. Passing a `boolean` whose value is not statically known selects
+   * this overload too, which is right: neither form can be promised then.
+   *
+   * @see {@link SerializedPartial}
+   */
+  exportJSON(compact: boolean): SerializedPartial<SerializedLexicalNode>;
+  exportJSON(compact = false): SerializedPartial<SerializedLexicalNode> {
+    let json = $generatedExportJSON(this, compact);
+    if (json === undefined) {
+      json = $walkExportJSON(this, compact);
+    }
+    // Neither a generated exporter nor the walk writes NodeState: what a node
+    // carries is not known when code is generated, and the walk's table is
+    // compiled from the schema alone. Appended here so the two paths cannot
+    // disagree about how it is written.
     const state = this.__state ? this.__state.toJSON() : undefined;
-    return {
-      type: this.__type,
-      version: 1,
-      ...state,
-    };
+    if (state !== undefined) {
+      Object.assign(json, state);
+    }
+    return json as unknown as SerializedLexicalNode;
   }
 
   /**
@@ -1551,7 +1746,8 @@ export class LexicalNode {
    *
    * */
   static importJSON(
-    _serializedNode: SerializedLexicalNode & Record<string, unknown>,
+    _serializedNode: SerializedPartial<SerializedLexicalNode> &
+      Record<string, unknown>,
   ): LexicalNode {
     invariant(
       false,
@@ -1587,11 +1783,21 @@ export class LexicalNode {
    *   }
    * }
    * ```
-   **/
+   *
+   * The whole schema is applied, so a property the JSON omits is set to
+   * its schema default rather than left as it is — that is what lets the
+   * compact form omit a default-valued property and have parsing restore it.
+   * (A flat NodeState is the exception: it is applied only when present.) Pass
+   * the node's complete serialized form unless you mean to reset what you
+   * leave out.
+   */
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLexicalNode>>,
   ): this {
-    return $updateStateFromJSON(this, serializedNode);
+    return $applyJSONSetters(
+      $updateStateFromJSON(this, serializedNode),
+      serializedNode,
+    );
   }
 
   /**

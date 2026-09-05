@@ -75,6 +75,7 @@ import {
   $setState,
   $setTextFormat,
   addClassNamesToElement,
+  booleanValue,
   CAN_USE_BEFORE_INPUT,
   type CaretDirection,
   CLICK_COMMAND,
@@ -96,6 +97,7 @@ import {
   DROP_COMMAND,
   type EditorConfig,
   ElementNode,
+  enumValue,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   getDOMSelection,
@@ -122,11 +124,12 @@ import {
   type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
   type NodeKey,
+  nodeSchema,
   type NodeSelection,
   OUTDENT_CONTENT_COMMAND,
   type ParagraphNode,
@@ -136,11 +139,18 @@ import {
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
   type SerializedElementNode,
+  type SerializedPartial,
   SET_TEXT_FORMAT_COMMAND,
   setNodeIndentFromDOM,
   type Spread,
   type TextFormatType,
+  withField,
 } from 'lexical';
+
+import {
+  GENERATED_HEADING,
+  GENERATED_QUOTE,
+} from './LexicalRichTextGeneratedJSON';
 
 export type SerializedHeadingNode = Spread<
   {
@@ -175,14 +185,27 @@ export type SerializedQuoteNode = Spread<
  * change to the legacy behavior (and nothing extra is serialized).
  */
 export const quoteShadowRootState = createState('shadowRoot', {
-  parse: Boolean,
+  // `booleanValue()`, not `Boolean`: the state's own serializer only ever
+  // writes `true`/`false`, so anything else was never produced by Lexical and
+  // is out of domain rather than a legacy form to coerce.
+  parse: booleanValue(),
 });
 
+// The serialized shape this node exports; the runtime implementation is the
+// schema-driven LexicalNode.exportJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface QuoteNode {
+  exportJSON(compact?: false): SerializedQuoteNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedQuoteNode>;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class QuoteNode extends ElementNode {
   $config() {
     return this.config('quote', {
       extends: ElementNode,
+      generated: GENERATED_QUOTE,
       importDOM: {
         blockquote: () => ({
           conversion: $convertBlockquoteElement,
@@ -249,11 +272,9 @@ export class QuoteNode extends ElementNode {
     };
   }
 
-  exportJSON(): SerializedQuoteNode {
-    return super.exportJSON();
-  }
-
-  static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedQuoteNode>,
+  ): QuoteNode {
     return $createQuoteNode().updateFromJSON(serializedNode);
   }
 
@@ -316,7 +337,25 @@ export function $isQuoteNode(
 
 export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
+// Single source of truth for parsing the node-specific properties of a
+// SerializedHeadingNode (those it adds over a SerializedElementNode).
+const headingNodeSchema = nodeSchema<HeadingNode>({
+  // The tag *is* the field in both directions; getTag/setTag are bare
+  // accessors, so a subclass overriding either reclaims the property.
+  tag: withField(enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']), {
+    field: '__tag',
+  }),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface HeadingNode {
+  exportJSON(compact?: false): SerializedHeadingNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedHeadingNode>;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedHeadingNode>): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class HeadingNode extends ElementNode {
   /** @internal */
   __tag: HeadingTagType;
@@ -324,6 +363,7 @@ export class HeadingNode extends ElementNode {
   $config() {
     return this.config('heading', {
       extends: ElementNode,
+      generated: GENERATED_HEADING,
       importDOM: {
         h1: () => ({conversion: $convertHeadingElement, priority: 0}),
         h2: () => ({conversion: $convertHeadingElement, priority: 0}),
@@ -357,12 +397,8 @@ export class HeadingNode extends ElementNode {
           return null;
         },
       },
+      json: headingNodeSchema,
     });
-  }
-
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__tag = prevNode.__tag;
   }
 
   constructor(tag: HeadingTagType = 'h1', key?: NodeKey) {
@@ -419,19 +455,6 @@ export class HeadingNode extends ElementNode {
 
     return {
       element,
-    };
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedHeadingNode>,
-  ): this {
-    return super.updateFromJSON(serializedNode).setTag(serializedNode.tag);
-  }
-
-  exportJSON(): SerializedHeadingNode {
-    return {
-      ...super.exportJSON(),
-      tag: this.getTag(),
     };
   }
 

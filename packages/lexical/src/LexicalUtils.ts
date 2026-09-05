@@ -7,6 +7,7 @@
  */
 
 import type {EditorState} from './LexicalEditorState';
+import type {GeneratedJSON} from './LexicalGeneratedJSON';
 import type {RootNode} from './nodes/LexicalRootNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -52,6 +53,7 @@ import {
   HAS_DIRTY_NODES,
   LTR_REGEX,
   NO_DIRTY_NODES,
+  NODE_STATE_KEY,
   PROTOTYPE_CONFIG_METHOD,
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
@@ -80,11 +82,27 @@ import {
   $markEphemeral,
   LexicalNode,
   type LexicalPrivateDOM,
+  type LexicalUpdateJSON,
   type NodeKey,
   type NodeMap,
+  type SerializedLexicalNode,
+  type SerializedPartial,
   type StaticNodeConfigValue,
 } from './LexicalNode';
+import {
+  $setState,
+  $updateStateFromJSON,
+  type AnyStateConfig,
+} from './LexicalNodeState';
 import {$normalizeSelection} from './LexicalNormalization';
+import {
+  type AnySerializationSchema,
+  hasOwnKey,
+  isSchemaField,
+  type SchemaFieldBase,
+  type SchemaGetterField,
+  type SchemaSetterField,
+} from './LexicalSchema';
 import {
   $clampRangeSelectionToSlotFrame,
   type BaseSelection,
@@ -131,7 +149,7 @@ export function getPendingNodeToClone(): null | LexicalNode {
 }
 
 // Internal, module-private sentinel passed as the second argument to an
-// auto-synthesized clone (see getStaticNodeConfig) by the internal clone
+// auto-synthesized clone (see injectSynthesizedStatics) by the internal clone
 // wrappers ($cloneWithProperties / $copyNode). Those wrappers are contractually
 // responsible for calling `afterCloneFrom(node)` on the result exactly once, so
 // they pass this sentinel to tell the synthesized clone NOT to call it too.
@@ -3215,10 +3233,6 @@ export function isDOMCapturingSelection(
  *
  * Object.hasOwn ponyfill
  */
-function hasOwn(o: object, k: string): boolean {
-  return Object.prototype.hasOwnProperty.call(o, k);
-}
-
 /**
  * @internal
  */
@@ -3226,7 +3240,7 @@ export function hasOwnStaticMethod(
   klass: Klass<LexicalNode>,
   k: keyof Klass<LexicalNode>,
 ): boolean {
-  return hasOwn(klass, k) && klass[k] !== LexicalNode[k];
+  return hasOwnKey(klass, k) && klass[k] !== LexicalNode[k];
 }
 
 /** @internal */
@@ -3266,12 +3280,78 @@ export interface OwnStaticNodeConfig {
     | undefined
     | StaticNodeConfigValue<LexicalNode, string | symbol>;
 }
-const STATIC_NODE_CONFIG_CACHE = new WeakMap<
-  Klass<LexicalNode>,
-  OwnStaticNodeConfig
->();
+/**
+ * Everything derived once per node class: the `$config()` result and what is
+ * compiled from it. One record in one map, so a serialization path that needs
+ * a compiled table does not chase a second and third WeakMap keyed by the same
+ * class, and there is a single place to populate.
+ *
+ * `compiled` is filled in *after* the record is cached, because compiling walks
+ * the class chain and re-enters this cache for `klass` itself. It is
+ * `undefined` only inside that window — a record whose compilation threw is
+ * dropped rather than left behind — and nothing that runs during compilation
+ * reads it, so {@link getCompiled} treats finding it missing as the error it
+ * is: a `$config()` body serializing a node of the class being built.
+ */
+interface NodeClassRecord {
+  readonly config: OwnStaticNodeConfig;
+  composed: undefined | ComposedSchema;
+  compiled: undefined | CompiledNodeClass;
+  /** DEV only: whether validateOwnFields has run for this class. */
+  ownFieldsValidated: boolean;
+}
+
+/** What a class's serialization runs on, compiled once at registration. */
+interface CompiledNodeClass {
+  /** The export-direction table (see {@link compileGetters}). */
+  readonly getters: readonly CompiledGetter[];
+  /** The import-direction table (see {@link compileSetters}). */
+  readonly setters: readonly CompiledSetter[];
+  /**
+   * The flat NodeStates the class carries, applied by {@link $applyJSONSetters}
+   * before the setters — and before a generated parser, which knows nothing of
+   * them: what a node carries in state is not known when code is generated,
+   * the same reason the export side appends it around the generated literal.
+   */
+  readonly flatStates: readonly AnyStateConfig[];
+  /**
+   * The generated JSON functions this class runs — its own, or an ancestor's
+   * where they still apply — or `null` for a class that walks (see
+   * {@link resolveGenerated}).
+   */
+  readonly generated: null | GeneratedJSON;
+}
+// A WeakMap so dynamically created node classes (tests, HMR reloads) stay
+// collectable — more so now that one record pins a class's composed schema,
+// both compiled tables, and every prototype method they resolved.
+const NODE_CLASS_CACHE = new WeakMap<Klass<LexicalNode>, NodeClassRecord>();
+
+/**
+ * The cache record for a node class, building it (and injecting the class's
+ * synthesized statics) on first use.
+ */
+function getNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
+  const cached = NODE_CLASS_CACHE.get(klass);
+  return cached !== undefined ? cached : buildNodeClassRecord(klass);
+}
+
+/**
+ * A class's compiled tables. {@link buildNodeClassRecord} fills them before it
+ * returns, so the one way to find them missing is to serialize a node of the
+ * class from inside its own `$config()`.
+ */
+function getCompiled(record: NodeClassRecord): CompiledNodeClass {
+  const {compiled} = record;
+  invariant(
+    compiled !== undefined,
+    '%s is still being registered: a $config() must not serialize a node of its own class',
+    record.config.klass.name,
+  );
+  return compiled;
+}
+
 // Brands a getType() closure that Lexical synthesized (as opposed to a
-// user-defined static getType()). getStaticNodeConfig uses this to avoid
+// user-defined static getType()). buildNodeClassRecord uses this to avoid
 // re-entering a synthesized closure while deriving a node's type, which would
 // otherwise recurse infinitely for subclasses under compiled class output.
 const SYNTHESIZED_GET_TYPE: unique symbol = Symbol(
@@ -3292,14 +3372,1168 @@ const IS_UNOPTIMIZED_DEV_BUILD =
   // Class name mangling is another signal that this may be unreliable
   TextNode.name === 'TextNode';
 
+/**
+ * A precompiled step for applying one of a node's serialized schema properties
+ * in {@link LexicalNode.updateFromJSON}: a field applied through a named setter
+ * (`set<Prop>` by default, or the name recorded with `withAccessors`), or
+ * assigned directly. Compiled once per class and cached so the base
+ * updateFromJSON iterates an array and applies each directly, without walking
+ * the class chain or materializing an intermediate parsed object on every call.
+ *
+ * A flat NodeState is serialized at the top level alongside these, but is not
+ * one of them: it is applied through the single {@link $setState} entry point,
+ * from the class's own list of them (see {@link CompiledNodeClass}), before
+ * any of these run.
+ */
+type CompiledSetter =
+  | {
+      readonly kind: 'field';
+      readonly key: string;
+      readonly schema: AnySerializationSchema;
+      // Resolved once at compile time so applying a field is a direct call
+      // rather than a per-node string-keyed method lookup.
+      readonly setter: (this: LexicalNode, value: unknown) => LexicalNode;
+    }
+  | {
+      // The fast path: the property *is* a node field, declared with
+      // withField, so applying it is an assignment with no method call and no
+      // getWritable() — $applyJSONSetters already holds the writable node.
+      readonly kind: 'ownField';
+      readonly key: string;
+      readonly schema: AnySerializationSchema;
+      readonly field: string;
+      /** Maps the parsed value to the stored one; see {@link SchemaField}. */
+      readonly encode?: {readonly [key: string]: unknown};
+    };
+
+const EMPTY_SETTERS: readonly CompiledSetter[] = [];
+
+/**
+ * How `klass` reaches one direction of a serialized property: the
+ * {@link SchemaField} unchanged when the direct field access holds, and the
+ * name of the accessor it stands in for when it does not.
+ *
+ * A `SchemaField` that names a `method` is saying the two are equivalent *for
+ * the class that declared it*. A subclass that overrides that method has said
+ * otherwise, and it wins: before the property had a schema both JSON methods
+ * went through the accessor, so overriding one changed the node's
+ * serialization, and compiling the accessor away would silently take that back.
+ *
+ * The comparison resolves through each prototype chain, so it catches an
+ * override anywhere between the declaring class and this one.
+ *
+ * `conventional` is the `get<Prop>`/`set<Prop>` name for this direction, used
+ * when the field names no `method` of its own — which is the common case, and
+ * why nearly every declaration can leave it out. A class that has no such
+ * method defers to nothing, because both prototypes then resolve `undefined`
+ * and compare equal; there is no separate way to say "bypass the accessor",
+ * and deliberately so: a subclass that overrode one always meant to be asked.
+ *
+ * Shared with the codegen in `scripts/generate-node-json.mjs`, which has to
+ * make the identical choice or its literal would describe a different node.
+ *
+ * @internal
+ */
+export function resolveSchemaField<T extends SchemaFieldBase>(
+  klass: Klass<LexicalNode>,
+  key: string,
+  accessor: T,
+  conventional: string,
+): T | string {
+  const method = accessor.method === undefined ? conventional : accessor.method;
+  if (__DEV__ && accessor.method !== undefined) {
+    // Only a name the declaration spelled out: a derived one that resolves to
+    // nothing is the ordinary "this property has no accessor" case, while a
+    // spelled one that resolves to nothing is a typo, and a typo here is
+    // silent — both prototypes read `undefined`, compare equal, and the field
+    // access is kept, quietly retiring the override guard this option exists
+    // to provide. DEV-only: what it catches is a mistaken intent, and the
+    // behavior either way is well defined.
+    invariant(
+      typeof (klass.prototype as unknown as Record<string, unknown>)[method] ===
+        'function',
+      '%s: serialization schema field "%s" names a method %s() that the node does not have',
+      klass.name,
+      key,
+      method,
+    );
+  }
+  const declaringKlass = getComposedSchema(klass).declaredBy.get(key);
+  if (declaringKlass === undefined) {
+    return accessor;
+  }
+  const prototype = klass.prototype as unknown as Record<string, unknown>;
+  const declared = declaringKlass.prototype as unknown as Record<
+    string,
+    unknown
+  >;
+  return prototype[method] === declared[method] ? accessor : method;
+}
+
+/**
+ * The default setter name for a serialized property, e.g. `foo` → `setFoo`.
+ *
+ * Exported for the same reason {@link resolveSchemaField} is: the codegen in
+ * `scripts/generate-node-json.mjs` has to derive the identical name, and a
+ * second copy of the rule is a second thing that can drift.
+ *
+ * @internal
+ */
+export function defaultSetterName(key: string): string {
+  return `set${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+}
+
+/**
+ * The default getter name for a serialized property, e.g. `foo` → `getFoo`.
+ *
+ * @see {@link defaultSetterName}
+ * @internal
+ */
+export function defaultGetterName(key: string): string {
+  return `get${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+}
+
+/**
+ * The serialization schema fields and flat NodeStates a node class serializes,
+ * composed across its config chain. Every consumer of "what does this class
+ * serialize" derives from this one walk so they cannot disagree about
+ * precedence: a subclass field overrides an ancestor's, while a re-declared
+ * flat state keeps the ancestor's config (matching createSharedNodeState).
+ *
+ * @internal
+ */
+export interface ComposedSchema {
+  /**
+   * Fields ordered most-derived first — the order properties are written in,
+   * which the hand-written exportJSON methods this replaces also produced for
+   * the core classes, and which some tests compare as strings.
+   */
+  readonly fieldsDerivedFirst: readonly (readonly [
+    string,
+    AnySerializationSchema,
+  ])[];
+  /**
+   * The same fields ordered ancestors first — the order setters are applied
+   * in, so a base property is set before the subclass properties that may
+   * depend on it.
+   */
+  readonly fieldsBaseFirst: readonly (readonly [
+    string,
+    AnySerializationSchema,
+  ])[];
+  /** Flat NodeStates, ancestors first. */
+  readonly flatStates: readonly AnyStateConfig[];
+  /**
+   * The class whose `$config` declared each field's winning schema, which is
+   * where {@link SchemaFieldBase.method} is measured from: a method the declaring
+   * class and the node's class resolve differently is one somebody overrode in
+   * between.
+   */
+  readonly declaredBy: ReadonlyMap<string, Klass<LexicalNode>>;
+}
+
+const EMPTY_COMPOSED_SCHEMA: ComposedSchema = {
+  declaredBy: new Map(),
+  fieldsBaseFirst: [],
+  fieldsDerivedFirst: [],
+  flatStates: [],
+};
+
+function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
+  // One walk of the config chain (iterStaticNodeConfigChain honors an explicit
+  // `extends` and severed static prototype chains, e.g. Babel's loose class
+  // transform), collected per class so both orderings fall out of it.
+  const fieldGroups: (readonly (readonly [
+    string,
+    AnySerializationSchema,
+  ])[])[] = [];
+  const groupKlasses: Klass<LexicalNode>[] = [];
+  const stateGroups: (readonly AnyStateConfig[])[] = [];
+  for (const {klass: currentKlass, ownNodeConfig} of iterStaticNodeConfigChain(
+    klass,
+  )) {
+    const json = ownNodeConfig && ownNodeConfig.json;
+    groupKlasses.push(currentKlass);
+    if (__DEV__ && json) {
+      // `json` is typed as any schema, but only an objectValue names fields.
+      // Anything else contributes nothing, which would silently turn off the
+      // node's whole serialization — the one thing declaring `json` is for.
+      invariant(
+        json.meta.kind === 'object',
+        '%s: $config json must be an objectValue(...), got %s',
+        klass.name,
+        json.meta.kind,
+      );
+    }
+    fieldGroups.push(
+      json && json.meta.kind === 'object'
+        ? (Object.entries(json.meta.fields) as (readonly [
+            string,
+            AnySerializationSchema,
+          ])[])
+        : [],
+    );
+    const flat: AnyStateConfig[] = [];
+    if (ownNodeConfig && ownNodeConfig.stateConfigs) {
+      for (const required of ownNodeConfig.stateConfigs) {
+        if ('stateConfig' in required && required.flat) {
+          flat.push(required.stateConfig);
+        }
+      }
+    }
+    stateGroups.push(flat);
+  }
+  // Most-derived first, first write wins, so a subclass field overrides an
+  // ancestor's and keeps the subclass's position.
+  const derivedFirst = new Map<string, AnySerializationSchema>();
+  for (let i = 0; i < fieldGroups.length; i++) {
+    for (const [key, schema] of fieldGroups[i]) {
+      if (!derivedFirst.has(key)) {
+        derivedFirst.set(key, schema);
+      }
+    }
+  }
+  // The same winning schemas in ancestors-first order.
+  const baseFirst = new Map<string, AnySerializationSchema>();
+  const declaredBy = new Map<string, Klass<LexicalNode>>();
+  const flatStates = new Map<string, AnyStateConfig>();
+  for (let i = fieldGroups.length - 1; i >= 0; i--) {
+    for (const [key, schema] of fieldGroups[i]) {
+      const winner = derivedFirst.get(key);
+      if (winner !== undefined && !baseFirst.has(key)) {
+        baseFirst.set(key, winner);
+      }
+      // The most basal class declaring the *winning* schema, which is not the
+      // same as the most basal one declaring the key: a subclass that
+      // re-declares an inherited field is where that field now comes from.
+      // Compared by identity because a subclass with no `$config` of its own
+      // inherits the method and so reports its ancestor's fields as its own —
+      // recording it here would measure SchemaField.method against a class
+      // that never declared the property, and every override would look like
+      // no override at all.
+      if (winner !== undefined && schema === winner && !declaredBy.has(key)) {
+        declaredBy.set(key, groupKlasses[i]);
+      }
+    }
+    for (const stateConfig of stateGroups[i]) {
+      if (!flatStates.has(stateConfig.key)) {
+        flatStates.set(stateConfig.key, stateConfig);
+      }
+    }
+  }
+  if (__DEV__) {
+    for (const key of flatStates.keys()) {
+      // Export writes the flat state over the field, import applies the field
+      // over the state, so such a property would flip on every round trip.
+      invariant(
+        !derivedFirst.has(key),
+        '%s: "%s" is declared both as a serialization schema field and as a flat NodeState; it must be one or the other',
+        klass.name,
+        key,
+      );
+    }
+  }
+  return derivedFirst.size === 0 && flatStates.size === 0
+    ? EMPTY_COMPOSED_SCHEMA
+    : {
+        declaredBy,
+        fieldsBaseFirst: [...baseFirst],
+        fieldsDerivedFirst: [...derivedFirst],
+        flatStates: [...flatStates.values()],
+      };
+}
+
+/**
+ * The composed serialization schema of a node class, compiled once per class.
+ *
+ * @internal
+ */
+export function getComposedSchema(klass: Klass<LexicalNode>): ComposedSchema {
+  const record = getNodeClassRecord(klass);
+  if (record.composed === undefined) {
+    record.composed = composeSchema(klass);
+  }
+  return record.composed;
+}
+
+/**
+ * Every node-specific property of a class's serialized JSON — its composed
+ * serialization schema fields plus any flat NodeState whose value schema is
+ * introspectable — keyed by serialized property name.
+ *
+ * @internal
+ */
+export function getComposedSchemaFields(
+  klass: Klass<LexicalNode>,
+): Record<string, AnySerializationSchema> {
+  const {fieldsDerivedFirst, flatStates} = getComposedSchema(klass);
+  const fields: Record<string, AnySerializationSchema> = {};
+  for (const stateConfig of flatStates) {
+    if (stateConfig.schema) {
+      fields[stateConfig.key] = stateConfig.schema;
+    }
+  }
+  for (const [key, schema] of fieldsDerivedFirst) {
+    fields[key] = schema;
+  }
+  return fields;
+}
+
+/**
+ * What the compact form may drop for one property, resolved with the accessor
+ * so writing the compact form needs no second pass over the schema: a derived
+ * property (`{setter: null}`) is bytes nothing will ever read, and a value
+ * equal to the default parsing would restore says nothing either.
+ */
+interface CompactRule {
+  /**
+   * The schema this entry was compiled from, carried for the same reason the
+   * setter side carries it: {@link sameCompiledTables} compares it by identity
+   * to decide whether one class's generated code describes another's node.
+   * Everything the emitted code says about a property beyond its kind and
+   * field — which accessor it calls, which predicate gates it, what its domain
+   * admits — comes from here, and a class that re-declares a property declares
+   * a new schema, so identity is what separates "inherited unchanged" from
+   * "restated, possibly differently".
+   */
+  readonly schema: AnySerializationSchema;
+  readonly derived: boolean;
+  /**
+   * What parsing restores for an absent property, and so what the compact form
+   * omits. Resolved with the accessor so the write path needs no second look at
+   * the schema.
+   */
+  readonly defaultValue: unknown;
+  /**
+   * The schema's own equality, hoisted, or `undefined` where identity is the
+   * whole answer.
+   *
+   * Kept apart from the value so the common case is a comparison rather than a
+   * call. Only {@link arrayValue} and {@link objectValue} declare one — every
+   * primitive domain, which is nearly every serialized property, compares by
+   * identity — and the write path checks that first either way, so a declared
+   * equality costs a call only for a value that is not already identical.
+   */
+  readonly isEqual: undefined | ((a: unknown, b: unknown) => boolean);
+}
+
+/**
+ * The mirror of {@link CompiledSetter} for the export direction: one of a
+ * node's serialized properties read back through a named getter (`get<Prop>`
+ * by default, or the name recorded with `withAccessors`). Compiled once per
+ * class so {@link LexicalNode.exportJSON} writes an object without walking the
+ * class chain on every call.
+ */
+type CompiledGetter = CompactRule &
+  (
+    | {
+        readonly kind: 'method';
+        readonly key: string;
+        // Resolved once at compile time, like the setter counterpart.
+        readonly getter: (this: LexicalNode) => unknown;
+      }
+    | {
+        // The fast path, mirroring the setter side: the property *is* a node
+        // field, so reading it is a property access — no method call and no
+        // version resolution (see $writeJSONGetters).
+        readonly kind: 'ownField';
+        readonly key: string;
+        readonly field: string;
+        /** Maps the stored value to the serialized one; see {@link SchemaField}. */
+        readonly decode?: {readonly [key: string]: unknown};
+        /**
+         * Resolved once at compile time, like the method getter: the predicate
+         * named by {@link SchemaGetterField.when}, which gates writing this
+         * property at all.
+         */
+        readonly when?: (this: LexicalNode) => boolean;
+      }
+  );
+
+const EMPTY_GETTERS: readonly CompiledGetter[] = [];
+
+/**
+ * The accessor `klass` reads a serialized property through: `null` for a
+ * property declared import-only, the {@link SchemaGetterField} when the direct
+ * field access holds, and otherwise the name of the getter method.
+ *
+ * This is the whole of the export direction's resolution rule, in one place:
+ * {@link compileGetters} builds the walk's table from it, and the codegen in
+ * `scripts/generate-node-json.mjs` emits its literal from it, so the two
+ * cannot describe different nodes.
+ *
+ * @internal
+ */
+export function resolveGetterAccessor(
+  klass: Klass<LexicalNode>,
+  key: string,
+  schema: AnySerializationSchema,
+): null | string | SchemaGetterField {
+  const declared = schema.getter;
+  if (declared === null) {
+    return null;
+  }
+  // `=== undefined`, not `||`: an empty recorded name is a mistake, not a
+  // request for the conventional one, and resolving it silently would apply
+  // some other accessor that happens to exist.
+  const named = declared === undefined ? defaultGetterName(key) : declared;
+  // A subclass override of the accessor a field stands in for reclaims the
+  // property; otherwise this is the field unchanged.
+  return isSchemaField(named)
+    ? resolveSchemaField(klass, key, named, defaultGetterName(key))
+    : named;
+}
+
+/**
+ * The setter mirror of {@link resolveGetterAccessor}.
+ *
+ * @internal
+ */
+export function resolveSetterAccessor(
+  klass: Klass<LexicalNode>,
+  key: string,
+  schema: AnySerializationSchema,
+): null | string | SchemaSetterField {
+  const declared = schema.setter;
+  if (declared === null) {
+    return null;
+  }
+  const named = declared === undefined ? defaultSetterName(key) : declared;
+  return isSchemaField(named)
+    ? resolveSchemaField(klass, key, named, defaultSetterName(key))
+    : named;
+}
+
+function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
+  const prototype = klass.prototype as unknown as Record<string, unknown>;
+  const fields = new Map<string, CompiledGetter>();
+  // Most-derived first, which reproduces the order TextNode and ElementNode's
+  // hand-written exportJSON produced for their own fields. It does *not*
+  // reproduce it for a subclass: `{...super.exportJSON(), ownProps}` put the
+  // subclass's properties last, and they now come first, with `type`/`version`
+  // appended afterwards. The JSON is equivalent — key order carries no
+  // meaning — but `JSON.stringify(editorState.toJSON())` is byte-different for
+  // an existing document, so anything comparing serialized strings sees a
+  // change. Composition already resolved each key to exactly one schema, so a
+  // subclass that re-declares an inherited field replaces it outright,
+  // accessor names included — TabNode repeats `getter: 'getTextContent'` for
+  // that reason.
+  for (const [key, schema] of getComposedSchema(klass).fieldsDerivedFirst) {
+    const getter = resolveGetterAccessor(klass, key, schema);
+    if (getter === null) {
+      // Declared import-only; the property is written by an exportJSON
+      // override, or not written at all.
+      continue;
+    }
+    if (isSchemaField(getter)) {
+      const getterName = getter.field;
+      // withField: the property *is* this node field, so reading it is a
+      // property access — no method call, and no getLatest() (see
+      // $writeJSONGetters). The field only exists on a constructed node, so
+      // unlike the method below it is checked on first read.
+      //
+      // `__proto__` names the prototype rather than a field, so reading it
+      // would write the node's whole prototype chain into the JSON (and throw
+      // on stringify); the setter mirror rejects it for the same reason.
+      invariant(
+        getterName !== '__proto__',
+        '%s: serialization schema field "%s" cannot be read from __proto__',
+        klass.name,
+        key,
+      );
+      const whenName = getter.when;
+      let when: undefined | ((this: LexicalNode) => boolean);
+      if (whenName !== undefined) {
+        const predicate = prototype[whenName];
+        // Same reasoning as the accessor check below: a predicate that does
+        // not resolve would silently drop the property from every export.
+        invariant(
+          typeof predicate === 'function',
+          '%s: serialization schema field "%s" names a predicate %s() that the node does not have',
+          klass.name,
+          key,
+          whenName,
+        );
+        when = predicate as (this: LexicalNode) => boolean;
+      }
+      fields.set(key, {
+        decode: getter.decode,
+        defaultValue: schema.defaultValue,
+        derived: schema.setter === null,
+        field: getterName,
+        isEqual: schema.isEqual,
+        key,
+        kind: 'ownField',
+        schema,
+        when,
+      });
+      continue;
+    }
+    const method = prototype[getter];
+    // A field the class cannot read would be silently missing from every
+    // export — data loss, not a degraded experience — so this fails in every
+    // build, not only in DEV. It runs once per class at registration.
+    invariant(
+      typeof method === 'function',
+      '%s: serialization schema field "%s" has no getter %s(); name one with withAccessors({getter}) or declare {getter: null} if it is deliberately not exported',
+      klass.name,
+      key,
+      getter,
+    );
+    fields.set(key, {
+      defaultValue: schema.defaultValue,
+      derived: schema.setter === null,
+      getter: method as (this: LexicalNode) => unknown,
+      isEqual: schema.isEqual,
+      key,
+      kind: 'method',
+      schema,
+    });
+  }
+  return fields.size === 0 ? EMPTY_GETTERS : [...fields.values()];
+}
+
+/**
+ * Read a node field by name. A node type has no index signature, so a dynamic
+ * property access needs the widening cast; keeping it in one named place
+ * leaves the call sites cast-free.
+ */
+function ownFieldRecord(node: LexicalNode): Record<string, unknown> {
+  return node as unknown as Record<string, unknown>;
+}
+
+/**
+ * Check every field name a class's schema declares (`withField`, or an
+ * accessor named `__something`) against a real instance of it. A misspelled
+ * one is silent, total loss of that property — nothing is ever exported, and
+ * importing writes a field the node does not read.
+ *
+ * Both compiled tables are checked, not just the caller's. A getter name and a
+ * setter name are declared independently — `withAccessors` takes them
+ * separately, and either direction may be `null` — so a class can carry an
+ * `ownField` entry on one side and not the other. Checking only the direction
+ * that happened to serialize first would leave the other side's name unchecked
+ * for the life of the process.
+ *
+ * Unlike the method-name checks in {@link compileGetters} / {@link compileSetters},
+ * this one is DEV-only. A field exists on a constructed node, not on the
+ * prototype, so it cannot be resolved when the class is registered: the check
+ * needs an instance, which means it can only run on a serialization path, and
+ * it would reject a node that legitimately leaves a declared field unassigned.
+ * Registration-time checks have neither cost — they run once, on the class
+ * alone — which is why those fail in every build and this does not. Running it
+ * once per class keeps it off the per-node path in DEV too.
+ */
+function validateOwnFields(record: NodeClassRecord, node: LexicalNode): void {
+  if (record.ownFieldsValidated) {
+    return;
+  }
+  const {klass} = record.config;
+  const fields = ownFieldRecord(node);
+  const {getters, setters} = getCompiled(record);
+  for (const entries of [getters, setters]) {
+    for (const entry of entries) {
+      if (entry.kind === 'ownField') {
+        invariant(
+          hasOwnKey(fields, entry.field),
+          '%s: serialization schema field "%s" names a node field %s that the node does not have',
+          klass.name,
+          entry.key,
+          entry.field,
+        );
+      }
+    }
+  }
+  // Recorded only once the whole pass has run. The editor catches what a
+  // serialization path throws — parseEditorState routes it to `_onError`
+  // rather than rethrowing — so marking the class first would let one caught
+  // failure retire the check with every field after it still unexamined.
+  record.ownFieldsValidated = true;
+}
+
+/**
+ * Write the serialized properties a node's schema declares, reading each
+ * through its getter. A getter that returns `undefined` omits the property:
+ * absent and explicitly-undefined are indistinguishable once the JSON is
+ * stringified, so this is how an optional (or conditionally persisted)
+ * property is expressed.
+ *
+ * Compaction is applied here rather than as a pass over the finished object:
+ * with `compact`, a property the parser derives is skipped without calling its
+ * getter at all, and one whose value equals the schema default parsing would
+ * restore is simply not written. That leaves nothing for a later pass to
+ * inspect, so a node that generates its own `exportJSON` can inline the same
+ * decisions and never consult the schema at runtime.
+ *
+ * A field is read off `node` as given, with no `getLatest()`. Serializing a
+ * graph only needs to resolve its root: every node the walk reaches after that
+ * comes from the EditorState's node map — `$getRoot()`, `getChildren()`,
+ * `$getSlot()` — so it is already the current version. (An ephemeral node, such
+ * as the sliced clone the clipboard walk exports, is deliberately not in the
+ * map, and reading it as given is the only correct thing to do.)
+ *
+ * @internal
+ */
+export function $writeJSONGetters(
+  node: LexicalNode,
+  json: {[key: string]: unknown},
+  compact: boolean,
+): void {
+  const klass = node.constructor as Klass<LexicalNode>;
+  const record = getNodeClassRecord(klass);
+  const {getters} = getCompiled(record);
+  if (__DEV__) {
+    validateOwnFields(record, node);
+  }
+  for (let i = 0; i < getters.length; i++) {
+    const entry = getters[i];
+    if (compact && entry.derived) {
+      // Nothing will read it back, so the compact form does not even call the
+      // getter to find out what it would have written.
+      continue;
+    }
+    let value: unknown;
+    if (entry.kind === 'ownField') {
+      const stored = ownFieldRecord(node)[entry.field];
+      // hasOwnKey for the same reason the import mirror uses it: the field
+      // holds whatever was stored, which for a schema whose domain is wider
+      // than the table's keys can be a name Object.prototype also carries —
+      // writing that method into the JSON as a value. A genuine miss still
+      // yields `undefined`, exactly as the bare lookup did, which is also what
+      // the generated exporters emit for one.
+      value =
+        entry.decode === undefined
+          ? stored
+          : hasOwnKey(entry.decode, stored as string)
+            ? entry.decode[stored as string]
+            : undefined;
+    } else {
+      value = entry.getter.call(node);
+    }
+    if (entry.kind === 'ownField' && entry.when !== undefined) {
+      // A conditionally-persisted property: written only when it differs from
+      // the schema default *and* the node's predicate agrees. The default is
+      // tested first, so the predicate stays off the common path — a property
+      // holding what parsing would restore is omitted without asking. Written
+      // out rather than routed through isSchemaDefault for the same reason the
+      // compact comparison below is: this runs per property per node.
+      //
+      // Generated code hoists a predicate shared by several properties and so
+      // calls it once where this calls it per property, which is why it is
+      // required to be pure.
+      const {defaultValue, isEqual} = entry;
+      if (
+        value === defaultValue ||
+        (isEqual !== undefined && isEqual(value, defaultValue)) ||
+        !entry.when.call(node)
+      ) {
+        value = undefined;
+      }
+    }
+    if (compact) {
+      // The compact form omits, because its output is for storage and an
+      // object-level consumer (a structured clone into IndexedDB) counts keys
+      // the way stringify counts bytes. Inline rather than
+      // isSchemaDefault(schema, value): this runs per property per node, and
+      // for a primitive domain the whole answer is the comparison.
+      const {defaultValue, isEqual} = entry;
+      if (
+        value === undefined ||
+        value === defaultValue ||
+        (isEqual !== undefined && isEqual(value, defaultValue))
+      ) {
+        continue;
+      }
+    }
+    // The legacy form writes unconditionally, `undefined` included:
+    // JSON.stringify omits an undefined-valued property, so the serialized
+    // bytes are identical either way, and present-with-undefined is the shape
+    // the hand-written exporters always had — main's ListItemNode writes
+    // `checked: this.getChecked()` on every non-checklist item, TableNode
+    // writes `colWidths: undefined` by explicit ternary. Writing the key also
+    // keeps every export of a class on one object shape, and is one branch
+    // less per property.
+    json[entry.key] = value;
+  }
+}
+
+function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
+  // A class instance type has no index signature, so reading a setter by
+  // name needs the widening cast.
+  const prototype = klass.prototype as unknown as Record<string, unknown>;
+  const fields = new Map<string, CompiledSetter>();
+  const {fieldsBaseFirst} = getComposedSchema(klass);
+  // Applied ancestors-first: a base property is set before the subclass
+  // properties that may depend on it.
+  for (const [key, schema] of fieldsBaseFirst) {
+    const setter = resolveSetterAccessor(klass, key, schema);
+    if (setter === null) {
+      // Declared export-only: the value is derived from other properties on
+      // the way in (ListNode's `tag` follows from `listType`).
+      continue;
+    }
+    if (isSchemaField(setter)) {
+      const setterName = setter.field;
+      // withField: the property *is* this node field, so applying it is an
+      // assignment — no method call, and no getWritable(), since the node
+      // $applyJSONSetters walks is writable by construction.
+      //
+      // `__proto__` would reparent the node rather than write a property, so
+      // it is never a field name; the rest is checked on the prototype, where
+      // a class field declared with an initializer is not visible, so the
+      // getter mirror does the per-instance check.
+      invariant(
+        setterName !== '__proto__',
+        '%s: serialization schema field "%s" cannot be applied to __proto__',
+        klass.name,
+        key,
+      );
+      fields.set(key, {
+        encode: setter.encode,
+        field: setterName,
+        key,
+        kind: 'ownField',
+        schema,
+      });
+      continue;
+    }
+    const method = prototype[setter];
+    // A field the class cannot apply would be silently dropped from every
+    // import — it exports but never comes back — so, like the getter mirror,
+    // this fails in every build rather than only in DEV.
+    invariant(
+      typeof method === 'function',
+      '%s: serialization schema field "%s" has no setter %s(); name one with withAccessors or declare {setter: null} if it is derived on import',
+      klass.name,
+      key,
+      setter,
+    );
+    fields.set(key, {
+      key,
+      kind: 'field',
+      schema,
+      setter: method as (this: LexicalNode, value: unknown) => LexicalNode,
+    });
+  }
+  return fields.size === 0 ? EMPTY_SETTERS : [...fields.values()];
+}
+
+/**
+ * The generated JSON functions a node class runs, or `null` for a class the
+ * generated code does not describe.
+ *
+ * A class declares its own through `$config`, so the association is the same
+ * one its schema has. A subclass inherits them along with the schema, on one
+ * condition: that its compiled tables are the ones the code was generated from.
+ * Generated code reads the fields the declaring class resolved its properties
+ * to and calls the methods it resolved them to; a subclass that overrides an
+ * accessor a field stands in for, or declares a property of its own, resolves
+ * differently, and for it the code would be wrong. Comparing the two classes'
+ * tables entry for entry is what decides ({@link sameCompiledTables}) — they
+ * are the tables the walk would use, so what runs is always what the walk
+ * would have done. The declaring class is the most basal one in the chain that
+ * names the same functions, for the same reason `declaredBy` is.
+ *
+ * A `$config` of its own that names an ancestor's generated code is refused in
+ * DEV: inheriting is automatic where it applies, and where it does not, a
+ * declaration that silently ran the walk would leave the class believing it
+ * ships the code it named.
+ */
+function resolveGenerated(
+  klass: Klass<LexicalNode>,
+  ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>,
+  tables: Pick<CompiledNodeClass, 'getters' | 'setters'>,
+): null | GeneratedJSON {
+  // The nearest declaration up the chain. A class with no `$config` of its own
+  // reads its ancestor's, declaration included, as its own; one whose `$config`
+  // names none inherits from the first ancestor that does.
+  let declared: undefined | GeneratedJSON;
+  for (const {ownNodeConfig: config} of iterStaticNodeConfigChain(klass)) {
+    if (config && config.generated !== undefined) {
+      declared = config.generated;
+      break;
+    }
+  }
+  if (declared === undefined) {
+    return null;
+  }
+  let declaringKlass = klass;
+  for (const {
+    klass: currentKlass,
+    ownNodeConfig: config,
+  } of iterStaticNodeConfigChain(klass)) {
+    if (config && config.generated === declared) {
+      declaringKlass = currentKlass;
+    }
+  }
+  if (declaringKlass === klass) {
+    return declared;
+  }
+  if (__DEV__) {
+    invariant(
+      !(
+        ownNodeConfig !== undefined &&
+        ownNodeConfig.generated === declared &&
+        hasOwnKey(klass.prototype as unknown as object, PROTOTYPE_CONFIG_METHOD)
+      ),
+      '%s: $config names the generated JSON code that %s declared; generated code is inherited wherever it still applies, so omit it',
+      klass.name,
+      declaringKlass.name,
+    );
+  }
+  return sameCompiledTables(
+    tables,
+    getCompiled(getNodeClassRecord(declaringKlass)),
+  )
+    ? declared
+    : null;
+}
+
+/**
+ * Whether two classes' compiled tables would run the same generated code:
+ * every entry the same kind for the same key, reading or writing the same
+ * field through the same tables, against the same schema.
+ *
+ * The schema is compared by identity in both directions, and it is what makes
+ * this sound rather than a list of the details anyone remembered to compare.
+ * Generated code says more about a property than its kind and field: which
+ * accessor method it calls, which `when` predicate gates writing it, what its
+ * domain admits. All of that comes from the schema, none of it is on the
+ * compiled entry, and a class that re-declares a property declares a new
+ * schema — so identity separates a property inherited unchanged from one
+ * restated, possibly differently, and a class that restates anything takes the
+ * walk instead.
+ *
+ * Identity is not too strict for an *override*, which is the case inheritance
+ * exists for: a subclass that overrides an accessor or a predicate without
+ * re-declaring the property shares the schema object, and the emitted code
+ * calls both by name, so the override is honored the way the walk honors it.
+ */
+function sameCompiledTables(
+  a: Pick<CompiledNodeClass, 'getters' | 'setters'>,
+  b: Pick<CompiledNodeClass, 'getters' | 'setters'>,
+): boolean {
+  if (
+    a.getters.length !== b.getters.length ||
+    a.setters.length !== b.setters.length
+  ) {
+    return false;
+  }
+  for (let i = 0; i < a.getters.length; i++) {
+    const x = a.getters[i];
+    const y = b.getters[i];
+    if (
+      x.kind !== y.kind ||
+      x.key !== y.key ||
+      x.schema !== y.schema ||
+      x.derived !== y.derived ||
+      x.isEqual !== y.isEqual ||
+      !Object.is(x.defaultValue, y.defaultValue) ||
+      (x.kind === 'ownField' &&
+        y.kind === 'ownField' &&
+        (x.field !== y.field || x.decode !== y.decode))
+    ) {
+      return false;
+    }
+  }
+  for (let i = 0; i < a.setters.length; i++) {
+    const x = a.setters[i];
+    const y = b.setters[i];
+    if (
+      x.kind !== y.kind ||
+      x.key !== y.key ||
+      x.schema !== y.schema ||
+      (x.kind === 'ownField' &&
+        y.kind === 'ownField' &&
+        (x.field !== y.field || x.encode !== y.encode))
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * The generated JSON functions `klass` runs (see {@link resolveGenerated}), or
+ * `null`. For tests, which need to know whether a comparison against the walk
+ * is comparing anything.
+ *
+ * @internal
+ */
+export function getGeneratedJSON(
+  klass: Klass<LexicalNode>,
+): null | GeneratedJSON {
+  return getCompiled(getNodeClassRecord(klass)).generated;
+}
+
+/**
+ * The schema-driven walk's export of `node` in the form asked for, without
+ * NodeState, in the key order the generated exporters reproduce. The legacy
+ * form is `children` first for an element, then every property the schema
+ * declares through {@link $writeJSONGetters}, then `type` and `version` — the
+ * order it has always had. The compact form is new and leads with `type`, so
+ * a node reads type-first and generated code can allocate the object on its
+ * fixed keys; key order is part of neither format, since parsing reads
+ * properties by name. What {@link LexicalNode.exportJSON} runs for a class
+ * without generated code, and what generated code is checked against.
+ *
+ * @internal
+ */
+export function $walkExportJSON(
+  node: LexicalNode,
+  compact: boolean,
+): {[key: string]: unknown} {
+  const json: {[key: string]: unknown} = compact ? {type: node.__type} : {};
+  if ($isElementNode(node)) {
+    // Before the schema's properties, so that an element's JSON reads
+    // structure-first.
+    json.children = [];
+  }
+  $writeJSONGetters(node, json, compact);
+  if (!compact) {
+    json.type = node.__type;
+    // Deprecated and ignored on the way in; written only so the legacy form
+    // stays readable by older versions.
+    json.version = 1;
+  }
+  return json;
+}
+
+/**
+ * What the generated exporter writes for `node` in the form asked for, or
+ * `undefined` when its class has no generated code for that form and the
+ * schema-driven walk has to run instead.
+ *
+ * A generated exporter is only ever right for the exact accessors its class
+ * resolves, which is what {@link resolveGenerated} settled at registration.
+ * Both forms are generated — which properties the compact one drops depends on
+ * a node's values, but the rule does not, so each form is its own
+ * straight-line function. NodeState is not part of either: what a node carries
+ * is not known when the code is generated, so {@link LexicalNode.exportJSON}
+ * appends it to this result and to the walk's alike.
+ *
+ * @internal
+ */
+export function $generatedExportJSON(
+  node: LexicalNode,
+  compact: boolean,
+): undefined | {[key: string]: unknown} {
+  const record = getNodeClassRecord(node.constructor as Klass<LexicalNode>);
+  const {generated} = getCompiled(record);
+  if (generated === null) {
+    return undefined;
+  }
+  // Each form is generated separately, so this picks a function rather than
+  // passing the flag on. A class whose compact form could not be generated —
+  // one with a property that compares by content — keeps the walk for it.
+  const exporter = compact ? generated.exportCompactJSON : generated.exportJSON;
+  if (exporter === undefined) {
+    return undefined;
+  }
+  if (__DEV__) {
+    // The check the walk would have run. Generated code reads the field names
+    // the schema declared, so a misspelled one is the same silent, total loss
+    // of a property here as it is there.
+    validateOwnFields(record, node);
+  }
+  return exporter(node);
+}
+
+/**
+ * Apply a serialized node to one this update has just constructed, which is
+ * what {@link LexicalNode.importJSON} does after building the node.
+ *
+ * The difference from {@link LexicalNode.updateFromJSON} is the `getWritable()`
+ * that one opens with. It has to: it is public API and may be handed any node,
+ * from any version, at any point in an update. A node `importJSON` just built
+ * is none of those things — {@link $setNodeKey} put it in the node map, in the
+ * dirty set and in `_cloneNotNeeded` a moment earlier, so it already *is* the
+ * writable latest version and `getWritable()` can only re-derive what the
+ * constructor established: resolve the latest by key, re-mark a node that is
+ * already dirty, and walk parents it does not yet have.
+ *
+ * That cost is per node and the parse path pays it for every node in the
+ * document, which is why this exists rather than the caller simply chaining
+ * `updateFromJSON`. The node a replacement returns is fresh in the same sense —
+ * {@link $applyNodeReplacement} requires it to carry a key of its own — so it
+ * qualifies too.
+ *
+ * @internal
+ */
+export function $applyImportJSON<T extends LexicalNode>(
+  node: T,
+  serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLexicalNode>>,
+): T {
+  if (__DEV__) {
+    // The whole point is skipping getWritable(), so assert what it would have
+    // returned rather than calling it: a key in _cloneNotNeeded is one whose
+    // node this update created (or already cloned), which is exactly the
+    // branch of getWritable() that returns the node unchanged.
+    invariant(
+      $isEphemeral(node) || getActiveEditor()._cloneNotNeeded.has(node.__key),
+      '$applyImportJSON: node %s with key %s was not constructed by this update; use updateFromJSON instead',
+      node.constructor.name,
+      node.__key,
+    );
+  }
+  // Skipped entirely for the common node, which carries no state and is
+  // imported from JSON that has none; $updateStateFromJSON is the one other
+  // place the getWritable would have come from.
+  const self =
+    node.__state || serializedNode[NODE_STATE_KEY] !== undefined
+      ? $updateStateFromJSON(node, serializedNode)
+      : node;
+  return $applyJSONSetters(self, serializedNode);
+}
+
+/**
+ * Apply a node's compiled serialization schema (see {@link compileSetters}),
+ * returning the (writable) node: flat NodeState first, then the schema's
+ * properties — through the class's generated parser when it has one, and
+ * otherwise by calling each property's setter with its parsed value. Used by
+ * the base {@link LexicalNode.updateFromJSON} so a node that declares a
+ * serialization schema needs no `updateFromJSON` boilerplate.
+ *
+ * @internal
+ */
+export function $applyJSONSetters<T extends LexicalNode>(
+  node: T,
+  serializedNode: {readonly [key: string]: unknown},
+): T {
+  const record = getNodeClassRecord(node.constructor as Klass<LexicalNode>);
+  if (__DEV__) {
+    validateOwnFields(record, node);
+  }
+  const {flatStates, generated, setters} = getCompiled(record);
+  const self = $applyFlatStates(node, serializedNode, flatStates);
+  if (generated !== null && generated.updateFromJSON !== undefined) {
+    // The generated parser applies the same properties in the same order and
+    // follows a setter's return the same way, so what it hands back is what
+    // the walk would have: the node passed in, unless a setter replaced it.
+    return generated.updateFromJSON(self, serializedNode) as T;
+  }
+  return $walkSetters(self, serializedNode, setters);
+}
+
+/**
+ * {@link $applyJSONSetters} with the generated parser left out — the
+ * schema-driven walk alone — which is what generated code is checked against.
+ *
+ * @internal
+ */
+export function $walkJSONSetters<T extends LexicalNode>(
+  node: T,
+  serializedNode: {readonly [key: string]: unknown},
+): T {
+  const record = getNodeClassRecord(node.constructor as Klass<LexicalNode>);
+  if (__DEV__) {
+    validateOwnFields(record, node);
+  }
+  const {flatStates, setters} = getCompiled(record);
+  return $walkSetters(
+    $applyFlatStates(node, serializedNode, flatStates),
+    serializedNode,
+    setters,
+  );
+}
+
+/**
+ * Flat state first, matching the order in which $updateStateFromJSON ran
+ * before a node's own setters — and by the walk whether or not the class has a
+ * generated parser, which is handed the node with its state already applied.
+ * What a node carries in state is not known when code is generated; this is
+ * the mirror of exportJSON appending `__state.toJSON()` around the generated
+ * literal.
+ */
+function $applyFlatStates<T extends LexicalNode>(
+  node: T,
+  serializedNode: {readonly [key: string]: unknown},
+  flatStates: readonly AnyStateConfig[],
+): T {
+  let self = node;
+  for (let i = 0; i < flatStates.length; i++) {
+    const stateConfig = flatStates[i];
+    // Only apply a flat state that is actually present so a partial update
+    // doesn't reset it to its default. An own-property check, not `in`:
+    // `serializedNode` came from JSON.parse, so `in` would find every
+    // Object.prototype member and treat a state keyed 'constructor' or
+    // 'toString' as present in JSON that never carried it.
+    if (hasOwnKey(serializedNode, stateConfig.key)) {
+      const parsed = stateConfig.parse(serializedNode[stateConfig.key]);
+      // Wrapped in an updater thunk so a parse that returns a function value
+      // is stored verbatim instead of being invoked as an updater.
+      self = $setState(self, stateConfig, () => parsed);
+    }
+  }
+  return self;
+}
+
+/** The walk over a class's compiled setters: one property at a time. */
+function $walkSetters<T extends LexicalNode>(
+  node: T,
+  serializedNode: {readonly [key: string]: unknown},
+  setters: readonly CompiledSetter[],
+): T {
+  let self = node;
+  for (let i = 0; i < setters.length; i++) {
+    const entry = setters[i];
+    const parsed = entry.schema(
+      hasOwnKey(serializedNode, entry.key)
+        ? serializedNode[entry.key]
+        : undefined,
+    );
+    if (entry.kind === 'ownField') {
+      // `self` is writable already — updateFromJSON starts from getWritable()
+      // and every setter that replaces it returns a writable node — so this is
+      // the whole of applying the property.
+      //
+      // The table is reached with hasOwnKey, as the codegen's emitted lookup
+      // is (`v in TABLE ? TABLE[v] : <default>` over a null-prototype table).
+      // The schema has already reduced the value to its own domain, but that
+      // domain can be wider than the table's keys — `withField(stringValue(),
+      // {encode})` admits any string — and a bare lookup would then resolve
+      // `'toString'` to Object.prototype's method and store *that* in the
+      // field. A genuine miss still yields `undefined`, exactly as the bare
+      // lookup did.
+      ownFieldRecord(self)[entry.field] =
+        entry.encode === undefined
+          ? parsed
+          : hasOwnKey(entry.encode, parsed as string)
+            ? entry.encode[parsed as string]
+            : undefined;
+    } else {
+      const next = entry.setter.call(self, parsed);
+      // Lexical setters conventionally return the writable node so calls can
+      // be chained, but a `void` setter is perfectly valid — it has already
+      // mutated the node through getWritable() — so a nullish return means
+      // "unchanged" rather than stranding the rest of the schema on
+      // `undefined`.
+      //
+      // Anything else is followed as given. A setter is declared to return
+      // `this`; one that returns some other value is a contract violation, and
+      // following it — which will throw on the next setter's `getWritable()` —
+      // is a better answer than quietly ignoring it and writing the remaining
+      // properties to a node the setter said it had replaced.
+      self = (next || self) as T;
+    }
+  }
+  return self;
+}
+
 /** @internal */
 export function getStaticNodeConfig(
   klass: Klass<LexicalNode>,
 ): OwnStaticNodeConfig {
-  const cache = STATIC_NODE_CONFIG_CACHE.get(klass);
-  if (cache) {
-    return cache;
-  }
+  return getNodeClassRecord(klass).config;
+}
+
+/**
+ * Derive everything this class needs once: read its `$config()`, inject the
+ * statics it did not declare, then compile its accessor tables.
+ */
+function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
   const nodeConfigRecord =
     klass.prototype != null && PROTOTYPE_CONFIG_METHOD in klass.prototype
       ? klass.prototype[PROTOTYPE_CONFIG_METHOD]()
@@ -3351,6 +4585,71 @@ export function getStaticNodeConfig(
       }
     }
   }
+  const record: NodeClassRecord = {
+    compiled: undefined,
+    composed: undefined,
+    config: {klass, ownNodeConfig, ownNodeType},
+    ownFieldsValidated: false,
+  };
+  // Cached before compiling, because compileSetters walks this class chain
+  // (which includes klass) and re-enters this cache, which must hit rather
+  // than recurse.
+  NODE_CLASS_CACHE.set(klass, record);
+  // Compiled eagerly rather than on first export/import so that a schema
+  // naming an accessor the class does not have — or a `$config` naming
+  // generated code that is not its own — fails while the class is being
+  // registered, where the error names the class that is misconfigured, and
+  // not later, out of an autosave or a copy handler.
+  //
+  // Everything that can throw is inside the try, injection included: that is
+  // where the DEV clone-arity invariant lives. Dropping the record on the way
+  // out is what keeps the error attributable — without it a second
+  // createEditor() finds the cached record, never reaches this block again,
+  // and registers the broken class in silence, leaving the throw to whichever
+  // serialization call happens to come first.
+  //
+  // Injection goes last within the try because a class cannot be un-mutated:
+  // nothing compiled above reads a synthesized static (compileSetters and
+  // compileGetters resolve names off `klass.prototype` and walk the config
+  // chain, never `klass.getType` or `klass.clone`), so ordering it here leaves
+  // the class untouched on every failure path rather than half-registered.
+  try {
+    const setters = compileSetters(klass);
+    const getters = compileGetters(klass);
+    record.compiled = {
+      // Non-flat states live under NODE_STATE_KEY and are applied by
+      // $updateStateFromJSON; these are the ones serialized as top-level
+      // properties alongside the schema's.
+      flatStates: getComposedSchema(klass).flatStates,
+      generated: resolveGenerated(klass, ownNodeConfig, {getters, setters}),
+      getters,
+      setters,
+    };
+    injectSynthesizedStatics(klass, isAbstract, ownNodeType, ownNodeConfig);
+    // Not gated on `isAbstract`: an abstract base that declares schema fields
+    // stores them on every subclass instance, so its clone has to carry them
+    // too.
+    injectSynthesizedAfterCloneFrom(klass);
+  } catch (error) {
+    NODE_CLASS_CACHE.delete(klass);
+    throw error;
+  }
+  return record;
+}
+
+/**
+ * Give a concrete node class the statics it did not define for itself:
+ * `getType`, `clone`, `importJSON` and `importDOM`, each derived from what its
+ * `$config()` declared. A class that defines its own keeps it.
+ */
+function injectSynthesizedStatics(
+  klass: Klass<LexicalNode>,
+  isAbstract: boolean,
+  ownNodeType: undefined | string,
+  ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>,
+): void {
   if (!isAbstract && ownNodeType) {
     if (!hasOwnStaticMethod(klass, 'getType')) {
       // Guard against subclass inheritance: a subclass that does not define its
@@ -3369,7 +4668,7 @@ export function getStaticNodeConfig(
         }
         return ownNodeType;
       };
-      // Brand the closure so getStaticNodeConfig can recognize it and avoid
+      // Brand the closure so buildNodeClassRecord can recognize it and avoid
       // calling it to derive the node type (which would recurse). See the note
       // at the `ownGetType` computation above.
       (synthesizedGetType as {[SYNTHESIZED_GET_TYPE]?: true})[
@@ -3424,7 +4723,7 @@ export function getStaticNodeConfig(
       }
       klass.importJSON =
         (ownNodeConfig && ownNodeConfig.$importJSON) ||
-        (serializedNode => $create(klass).updateFromJSON(serializedNode));
+        synthesizeImportJSON(klass);
     }
     if (!hasOwnStaticMethod(klass, 'importDOM') && ownNodeConfig) {
       const {importDOM} = ownNodeConfig;
@@ -3433,9 +4732,195 @@ export function getStaticNodeConfig(
       }
     }
   }
-  const result = {klass, ownNodeConfig, ownNodeType};
-  STATIC_NODE_CONFIG_CACHE.set(klass, result);
-  return result;
+}
+
+/**
+ * The node fields a schema names, in either direction.
+ *
+ * Both directions, and the *declared* field rather than the one
+ * {@link resolveGetterAccessor} resolves to: which accessor serialization uses
+ * is a question about this class's methods, and a subclass that overrides
+ * `getStyle()` still stores its value in `__style`. A clone carries storage, so
+ * it wants every field name the schema knows, whichever direction named it and
+ * whether or not an override sends the serialization through a method instead.
+ *
+ * A property with no `field` at all — declared through accessor methods on both
+ * sides — names no storage here, and is left to the class (see
+ * {@link injectSynthesizedAfterCloneFrom}).
+ */
+function schemaFieldNames(schema: AnySerializationSchema): readonly string[] {
+  const names: string[] = [];
+  for (const accessor of [schema.getter, schema.setter]) {
+    if (
+      isSchemaField(accessor) &&
+      // Rejected on both accessor paths for the same reason: it names the
+      // prototype rather than a field, so copying it would re-parent the clone.
+      accessor.field !== '__proto__' &&
+      !names.includes(accessor.field)
+    ) {
+      names.push(accessor.field);
+    }
+  }
+  return names;
+}
+
+/**
+ * Give each class in this one's chain the `afterCloneFrom` its schema implies,
+ * unless it wrote one for itself.
+ *
+ * A schema field is persisted state, so it has to survive
+ * {@link $cloneWithProperties} — the clone `getWritable()` makes on the first
+ * write of every update — or the node loses it on the next edit rather than
+ * failing anywhere. Declaring the field is already saying so, so the copy is
+ * derived from the same declaration `exportJSON` and `updateFromJSON` come
+ * from rather than written a third time.
+ *
+ * Per declaring class, not per registered class: each class copies the fields
+ * its own `$config` declared and delegates the rest to its superclass, which is
+ * what a hand-written `afterCloneFrom` does with its `super` call, and it means
+ * a base class shared by several subclasses is fixed up once. A field an
+ * ancestor declares too is left to that ancestor — see
+ * {@link ownSchemaFields} — so a class that only re-declares inherited
+ * properties gets no method of its own at all.
+ *
+ * A class that defines its own `afterCloneFrom` keeps it and is trusted with
+ * its own fields, the same rule the synthesized statics follow. That is what
+ * lets `ElementNode` — whose clone also has to carry `__first`/`__last`/`__size`
+ * and the slot bookkeeping, none of which any schema describes — keep a
+ * hand-written method, and it is why {@link $cloneWithProperties} still checks
+ * that an override called `super`.
+ */
+function injectSynthesizedAfterCloneFrom(klass: Klass<LexicalNode>): void {
+  for (const {klass: currentKlass, ownNodeConfig} of iterStaticNodeConfigChain(
+    klass,
+  )) {
+    const prototype = currentKlass.prototype as unknown as object;
+    if (hasOwnKey(prototype, 'afterCloneFrom')) {
+      // Hand-written, or synthesized by an earlier registration.
+      continue;
+    }
+    // From this class's own composition rather than the registered subclass's,
+    // so what it copies does not depend on which class was registered first: a
+    // subclass that re-declares an inherited field owns that field in its own
+    // composition and in every subclass's, but the ancestor still owns it in
+    // the composition that has no such subclass in it.
+    const fields = ownSchemaFields(currentKlass);
+    if (fields.length === 0) {
+      // Nothing of its own to carry — including every class with no `$config`
+      // of its own, which reports its ancestor's fields but declares none.
+      continue;
+    }
+    // Resolved when the clone runs, not now: a base class in this chain may
+    // still be waiting for its own synthesized method, and registration order
+    // is whatever order the classes were passed to `createEditor`.
+    const superPrototype = Object.getPrototypeOf(prototype) as LexicalNode;
+    // The straight-line function the build generated for this class when it
+    // has one, and otherwise a walk of the field names — the same pairing as
+    // the export and import directions, for the same reason: the fields are
+    // fixed once the schema is written, and a keyed store whose key changes
+    // every iteration is what generating the code removes.
+    const copyFields =
+      (ownNodeConfig &&
+        ownNodeConfig.generated &&
+        ownNodeConfig.generated.afterCloneFrom) ||
+      ((node: LexicalNode, prevNode: LexicalNode): void => {
+        const self = node as unknown as Record<string, unknown>;
+        const prev = prevNode as unknown as Record<string, unknown>;
+        for (let i = 0; i < fields.length; i++) {
+          const field = fields[i];
+          self[field] = prev[field];
+        }
+      });
+    (
+      prototype as {afterCloneFrom: LexicalNode['afterCloneFrom']}
+    ).afterCloneFrom = function (
+      this: LexicalNode,
+      prevNode: LexicalNode,
+    ): void {
+      superPrototype.afterCloneFrom.call(this, prevNode);
+      copyFields(this, prevNode);
+    };
+  }
+}
+
+/**
+ * The node fields a class's own `$config` declares, deduplicated.
+ *
+ * Raw, in the sense that it says nothing about which class ends up carrying
+ * each one: {@link ownSchemaFields} is what answers that.
+ */
+function declaredSchemaFields(klass: Klass<LexicalNode>): readonly string[] {
+  const {declaredBy, fieldsBaseFirst} = getComposedSchema(klass);
+  const fields: string[] = [];
+  for (const [key, schema] of fieldsBaseFirst) {
+    if (declaredBy.get(key) !== klass) {
+      continue;
+    }
+    for (const field of schemaFieldNames(schema)) {
+      if (!fields.includes(field)) {
+        // Two properties may name one field (a field exported under a second
+        // key), and it is copied once.
+        fields.push(field);
+      }
+    }
+  }
+  return fields;
+}
+
+/**
+ * The node fields a class carries across a clone: the ones its own `$config`
+ * declares, less any an ancestor declares too.
+ *
+ * A class re-declares an inherited property to change how it is *serialized* —
+ * `TabNode` restates `text`, `detail` and `mode` for their accessors and
+ * narrower domains — which makes it the owner of that key in its own
+ * composition and in every subclass's. Where it is *stored* does not change,
+ * though, and the ancestor's `afterCloneFrom` already ran by then and is
+ * responsible for the fields it declares, so assigning them a second time
+ * writes the same values again for nothing.
+ *
+ * The ancestor's declarations are what is subtracted, not the fields it
+ * actually assigns, and the two are the same set transitively: an ancestor
+ * that skipped a field skipped it because *its* own ancestor declares it, and
+ * that class is in this chain too.
+ *
+ * Shared with the codegen in `scripts/shared/generateNodeJSON.mjs`, which emits
+ * the straight-line form of exactly this list, so the two cannot disagree about
+ * which class carries which field.
+ *
+ * @internal
+ */
+export function ownSchemaFields(klass: Klass<LexicalNode>): readonly string[] {
+  const declared = declaredSchemaFields(klass);
+  if (declared.length === 0) {
+    return declared;
+  }
+  const inherited = new Set<string>();
+  for (const {klass: currentKlass} of iterStaticNodeConfigChain(klass)) {
+    if (currentKlass !== klass) {
+      for (const field of declaredSchemaFields(currentKlass)) {
+        inherited.add(field);
+      }
+    }
+  }
+  return inherited.size === 0
+    ? declared
+    : declared.filter(field => !inherited.has(field));
+}
+
+/**
+ * The `importJSON` a class gets when it declares none: build the node, then
+ * apply the serialized properties to it. A generated parser, when the class
+ * has one, is reached through {@link $applyJSONSetters} the way every other
+ * path reaches it.
+ */
+function synthesizeImportJSON(
+  klass: Klass<LexicalNode>,
+): (
+  serializedNode: SerializedPartial<SerializedLexicalNode> &
+    Record<string, unknown>,
+) => LexicalNode {
+  return serializedNode => $applyImportJSON($create(klass), serializedNode);
 }
 
 /**

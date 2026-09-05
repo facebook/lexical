@@ -19,14 +19,23 @@ import {
   type DOMExportOutput,
   type EditorConfig,
   ElementNode,
+  enumValue,
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
+  nullable,
+  numberValue,
+  optional,
   type ParagraphNode,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
+  stringValue,
+  withAccessors,
+  withField,
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
@@ -41,6 +50,43 @@ export const TableCellHeaderStates = {
 export type TableCellHeaderState =
   (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates];
 
+const tableCellNodeSchema = nodeSchema<TableCellNode>({
+  // defaultAsNull preserves the legacy `backgroundColor || null` semantics:
+  // an empty string means "no background", which exportDOM checks for.
+  backgroundColor: withField(nullable(stringValue(), {defaultAsNull: true}), {
+    field: '__backgroundColor',
+  }),
+  // A span is a positive integer; 0 (the historical `|| 1` case), a negative,
+  // or a fractional span is out of domain and falls back to 1.
+  colSpan: withField(numberValue(1, {integer: true, min: 1}), {
+    field: '__colSpan',
+  }),
+  // Neither accessor is the conventional get<Prop>/set<Prop>: headerState is
+  // read through getHeaderStyles and applied through setHeaderStyles (with its
+  // default BOTH mask). The read is still the field, standing in for the
+  // getter so a subclass that overrides it reclaims the property; the write
+  // goes through the method, which supplies that mask.
+  headerState: withAccessors(numberValue(TableCellHeaderStates.NO_STATUS), {
+    getter: {field: '__headerState', method: 'getHeaderStyles'},
+    setter: 'setHeaderStyles',
+  }),
+  rowSpan: withField(numberValue(1, {integer: true, min: 1}), {
+    field: '__rowSpan',
+  }),
+  // The domain exportJSON already enforces via isValidVerticalAlign; anything
+  // else (including the historical falsy `|| undefined` case) is absent.
+  // `undefined` leads the list so it is the default: passing it explicitly as
+  // enumValue's second argument would instead select values[0].
+  verticalAlign: withAccessors(enumValue([undefined, 'middle', 'bottom']), {
+    getter: 'getSerializedVerticalAlign',
+  }),
+  // A width of 0 is not a real width, matching the historical
+  // `serializedNode.width || undefined`.
+  width: withField(optional(numberValue(), {omitDefault: true}), {
+    field: '__width',
+  }),
+});
+
 export type SerializedTableCellNode = Spread<
   {
     colSpan?: number;
@@ -53,7 +99,17 @@ export type SerializedTableCellNode = Spread<
   SerializedElementNode
 >;
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface TableCellNode {
+  exportJSON(compact?: false): SerializedTableCellNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedTableCellNode>;
+  updateFromJSON(
+    serializedNode: LexicalParseJSON<SerializedTableCellNode>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TableCellNode extends ElementNode {
   /** @internal */
   __colSpan: number;
@@ -81,6 +137,7 @@ export class TableCellNode extends ElementNode {
           priority: 0,
         }),
       },
+      json: tableCellNodeSchema,
     });
   }
 
@@ -92,19 +149,6 @@ export class TableCellNode extends ElementNode {
     this.__colSpan = node.__colSpan;
     this.__headerState = node.__headerState;
     this.__width = node.__width;
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedTableCellNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setHeaderStyles(serializedNode.headerState)
-      .setColSpan(serializedNode.colSpan || 1)
-      .setRowSpan(serializedNode.rowSpan || 1)
-      .setWidth(serializedNode.width || undefined)
-      .setBackgroundColor(serializedNode.backgroundColor || null)
-      .setVerticalAlign(serializedNode.verticalAlign || undefined);
   }
 
   constructor(
@@ -178,20 +222,6 @@ export class TableCellNode extends ElementNode {
     return output;
   }
 
-  exportJSON(): SerializedTableCellNode {
-    return {
-      ...super.exportJSON(),
-      ...(isValidVerticalAlign(this.__verticalAlign) && {
-        verticalAlign: this.__verticalAlign,
-      }),
-      backgroundColor: this.getBackgroundColor(),
-      colSpan: this.__colSpan,
-      headerState: this.__headerState,
-      rowSpan: this.__rowSpan,
-      width: this.getWidth(),
-    };
-  }
-
   getColSpan(): number {
     return this.getLatest().__colSpan;
   }
@@ -237,6 +267,12 @@ export class TableCellNode extends ElementNode {
 
   getWidth(): number | undefined {
     return this.getLatest().__width;
+  }
+
+  /** @internal Serialized `verticalAlign`, or undefined to omit it. */
+  getSerializedVerticalAlign(): string | undefined {
+    const verticalAlign = this.getLatest().__verticalAlign;
+    return isValidVerticalAlign(verticalAlign) ? verticalAlign : undefined;
   }
 
   getBackgroundColor(): null | string {

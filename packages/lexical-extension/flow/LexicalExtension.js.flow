@@ -26,6 +26,7 @@ import type {
   EditorUpdateOptions,
   EditorSetOptions,
   InitialEditorConfig,
+  SerializedEditorState,
   SerializedLexicalNode,
   TextFormatType
 } from 'lexical';

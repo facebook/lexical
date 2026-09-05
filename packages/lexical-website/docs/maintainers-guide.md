@@ -245,6 +245,97 @@ Run the unit tests
 
 Run eslint
 
+### pnpm run generate-node-json
+
+Regenerate the specialized JSON serialization code for the built-in node
+classes. A node's [serialization schema](/docs/serialization/serialization#declarative-serialization-schemas-with-config)
+states everything about a serialized property ahead of time — which accessor
+or field it uses, what its default is, what its domain admits — so the
+generic walk over that schema can be compiled into straight-line code. This
+script does that compiling; the output is checked in.
+
+It writes one module per package, beside the nodes it serializes:
+
+| Module | Classes |
+| --- | --- |
+| `packages/lexical/src/LexicalGeneratedJSON.ts` | TextNode, ParagraphNode, LineBreakNode, TabNode |
+| `packages/lexical-rich-text/src/LexicalRichTextGeneratedJSON.ts` | HeadingNode, QuoteNode |
+| `packages/lexical-link/src/LexicalLinkGeneratedJSON.ts` | LinkNode, AutoLinkNode |
+| `packages/lexical-mark/src/LexicalMarkGeneratedJSON.ts` | MarkNode |
+
+Each class receives its own generated code through its `$config`'s
+`generated` property, so nothing has to match code to class by type string at
+runtime. A subclass inherits it along with the schema when its compiled
+accessor tables are the ones the code was generated from — checked entry for
+entry at registration — while one that overrides an accessor a field stands in
+for, or declares a serialized property of its own, resolves differently and
+takes the schema-driven walk instead. Generated exporters read `type` off the
+node for the same reason.
+
+Three things are worth knowing before touching it:
+
+- **The output is verified, not trusted.** The import direction is the
+  untrusted-JSON boundary, so every generated parser is run against the schema
+  it was compiled from over a corpus drawn from that schema plus a fixed set of
+  hostile values (`'__proto__'`, `'toString'`, `'1e999'`, …). A property whose
+  schema cannot be compiled faithfully takes its class out of the import half
+  rather than shipping a parser that disagrees with the walk — the script says
+  so on stdout when it happens.
+- **A stale checkout fails the tests.** `LexicalGeneratedJSON.test.ts`
+  regenerates into a temporary directory and compares every file byte for
+  byte, and separately asserts that each generated exporter agrees with the
+  schema-driven walk for both the legacy and compact forms. Change a schema
+  without rerunning this script and that test fails.
+- **Two lists, deliberately.** The script runs in two phases, because reading
+  the schemas means importing the packages and each package imports the file
+  the script writes for it. Phase one replaces every output with a valid
+  do-nothing stub from the static `MANIFEST` in
+  `scripts/shared/generateNodeJSONManifest.mjs` so the imports always succeed;
+  phase two re-enters under `tsx` and writes the real thing from `PACKAGES` in
+  `scripts/shared/generateNodeJSON.mjs`, which is also what the drift test
+  runs in-process. Adding a class means editing both lists, and the generation
+  fails loudly if they disagree.
+
+The compact form compares each property against its default. A primitive
+default is a literal; a reference-typed default has no literal a value could
+be `===`, so it gets the structural test the schema's own equality reduces to
+where that can be stated — MarkNode's `ids`, whose default is an empty array,
+becomes a length test — and every emitted comparison is verified against that
+equality over a corpus, the way a parse is. A default the generator cannot
+state that way (an object, a non-empty array, a non-finite number) takes the
+class out of the compact half only: the script says so on stdout and the other
+forms are generated as usual. A class that carries flat NodeState is generated
+like any other; the walk applies the state before handing the node to the
+generated parser, the mirror of how export appends it after the generated
+literal.
+
+`afterCloneFrom` is generated too, and is the one direction whose fallback is
+not the walk. A schema field is where a property is *stored*, so every class
+that declares one gets an `afterCloneFrom` synthesized at registration —
+generated straight-line code when the class has some, and otherwise a loop over
+the field names — copying the fields that class's own `$config` declared and
+delegating the rest through `super`, which is why the emitted function covers
+one class's own fields and nothing above it. A field an ancestor declares too
+is left to the ancestor, whose method has already assigned it: re-declaring an
+inherited property changes how it is serialized, not where it is stored, so a
+class that only re-declares gets no method at all — `TabNode`, which restates
+`TextNode`'s `text`, `detail` and `mode`, is the in-tree case and simply
+inherits `TextNode`'s. Both accessor directions are read
+for a field name, and the declared field is used rather than the one
+`resolveGetterAccessor` resolves to: an override changes how a property is
+serialized, not where it lives. A class that writes its own `afterCloneFrom` is
+left alone and owns all of its properties, which is how `ElementNode` keeps
+carrying `__first`/`__last`/`__size` and its slot bookkeeping; so is a property
+declared through accessor methods on both sides, which names no field for
+anything to copy — `MarkNode`'s `ids` is the one in-tree example, and the reason
+`MarkNode` still has a hand-written method. `ownSchemaFields` in
+`LexicalUtils.ts` is the single definition of that field list, called by both
+the generator and the synthesized fallback.
+
+The schema-to-JavaScript compiler itself lives in `@lexical/compiler`'s
+`SchemaJsonCodegen` entry point, so it is testable independently of the
+generator that drives it.
+
 ## Scripts for release managers
 
 ### pnpm run extract-codes

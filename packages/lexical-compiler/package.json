@@ -22,6 +22,7 @@
   "homepage": "https://lexical.dev/docs/packages/lexical-compiler",
   "dependencies": {
     "@babel/parser": "^8.0.0",
+    "lexical": "workspace:*",
     "magic-string": "^0.30.21"
   },
   "devDependencies": {
@@ -63,6 +64,42 @@
         "development": "./dist/LexicalCompilerPureAnnotations.dev.js",
         "production": "./dist/LexicalCompilerPureAnnotations.prod.js",
         "default": "./dist/LexicalCompilerPureAnnotations.js"
+      }
+    },
+    "./SchemaJsonCodegen": {
+      "source": "./src/SchemaJsonCodegen.ts",
+      "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/SchemaJsonCodegen.d.ts",
+        "development": "./dist/LexicalCompilerSchemaJsonCodegen.dev.mjs",
+        "production": "./dist/LexicalCompilerSchemaJsonCodegen.prod.mjs",
+        "node": "./dist/LexicalCompilerSchemaJsonCodegen.node.mjs",
+        "default": "./dist/LexicalCompilerSchemaJsonCodegen.mjs"
+      },
+      "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/SchemaJsonCodegen.d.ts",
+        "development": "./dist/LexicalCompilerSchemaJsonCodegen.dev.js",
+        "production": "./dist/LexicalCompilerSchemaJsonCodegen.prod.js",
+        "default": "./dist/LexicalCompilerSchemaJsonCodegen.js"
+      }
+    },
+    "./SchemaJsonCodegen.js": {
+      "source": "./src/SchemaJsonCodegen.ts",
+      "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/SchemaJsonCodegen.d.ts",
+        "development": "./dist/LexicalCompilerSchemaJsonCodegen.dev.mjs",
+        "production": "./dist/LexicalCompilerSchemaJsonCodegen.prod.mjs",
+        "node": "./dist/LexicalCompilerSchemaJsonCodegen.node.mjs",
+        "default": "./dist/LexicalCompilerSchemaJsonCodegen.mjs"
+      },
+      "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/SchemaJsonCodegen.d.ts",
+        "development": "./dist/LexicalCompilerSchemaJsonCodegen.dev.js",
+        "production": "./dist/LexicalCompilerSchemaJsonCodegen.prod.js",
+        "default": "./dist/LexicalCompilerSchemaJsonCodegen.js"
       }
     },
     ".": {

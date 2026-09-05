@@ -31,10 +31,14 @@
       "@lexical/compiler/PureAnnotations": [
         "../lexical-compiler/src/PureAnnotations.ts"
       ],
+      "@lexical/compiler/SchemaJsonCodegen": [
+        "../lexical-compiler/src/SchemaJsonCodegen.ts"
+      ],
       "@lexical/devtools-core": ["../lexical-devtools-core/src/index.ts"],
       "@lexical/dragon": ["../lexical-dragon/src/index.ts"],
       "@lexical/eslint-plugin": ["../lexical-eslint-plugin/src/index.ts"],
       "@lexical/extension": ["../lexical-extension/src/index.ts"],
+      "@lexical/fast-check": ["../lexical-fast-check/src/index.ts"],
       "@lexical/file": ["../lexical-file/src/index.ts"],
       "@lexical/hashtag": ["../lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["../lexical-headless/src/index.ts"],

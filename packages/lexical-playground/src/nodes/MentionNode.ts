@@ -30,7 +30,7 @@ const FORMAT_WRAPPER_TAGS: readonly (readonly [TextFormatType, string])[] = [
   ['underline', 'u'],
 ];
 
-const mentionNodeSchema = nodeSchema<MentionNode>({
+const mentionNodeSchema = nodeSchema<MentionNode>()({
   mentionName: withAccessors(stringValue(), {
     getter: {
       field: '__mention',

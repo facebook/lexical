@@ -72,7 +72,7 @@ export type SerializedTableNode = Spread<
   SerializedElementNode
 >;
 
-const tableNodeSchema = nodeSchema<TableNode>({
+const tableNodeSchema = nodeSchema<TableNode>()({
   // Read straight off the field; applied through setColWidths, which freezes
   // the stored array in DEV.
   colWidths: withAccessors(optional(arrayValue(numberValue())), {

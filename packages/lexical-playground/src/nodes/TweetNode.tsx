@@ -27,7 +27,7 @@ import {
 import * as React from 'react';
 import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
 
-const tweetNodeSchema = nodeSchema<TweetNode>({
+const tweetNodeSchema = nodeSchema<TweetNode>()({
   id: withAccessors(stringValue(), {
     getter: {
       field: '__id',

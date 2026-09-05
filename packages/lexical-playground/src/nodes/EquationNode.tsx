@@ -28,7 +28,7 @@ import * as React from 'react';
 
 const EquationComponent = React.lazy(() => import('./EquationComponent'));
 
-const equationNodeSchema = nodeSchema<EquationNode>({
+const equationNodeSchema = nodeSchema<EquationNode>()({
   equation: stringValue(),
   inline: withAccessors(booleanValue(), {
     getter: 'isInline',

@@ -61,7 +61,7 @@ export type SerializedCodeNode = Spread<
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedCodeNode (those it adds over a SerializedElementNode).
-const codeNodeSchema = nodeSchema<CodeNode>({
+const codeNodeSchema = nodeSchema<CodeNode>()({
   // Read straight off the fields; applied through the setters, which
   // normalize a falsy value to undefined.
   language: withAccessors(optional(nullable(stringValue())), {

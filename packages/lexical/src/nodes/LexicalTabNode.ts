@@ -43,7 +43,7 @@ export class TabNode extends TextNode {
       // both keeps a hand-authored or foreign `{detail: 0}` / `{mode:
       // 'token'}` from reaching a setter that throws, and lets the compact
       // form omit them.
-      json: nodeSchema<TabNode>({
+      json: nodeSchema<TabNode>()({
         // Read straight off the inherited fields — mode through the decode
         // table, since it is stored as a bitmask. All three are export-only:
         // the values are fixed for a tab, so they are derived on import rather

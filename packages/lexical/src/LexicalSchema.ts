@@ -1230,7 +1230,8 @@ function unionAccessors(
  */
 export interface NodeSerializationSchema<
   N = unknown,
-> extends SerializationSchema<unknown, never> {
+  In = unknown,
+> extends SerializationSchema<unknown, never, In> {
   /**
    * Declared as a function of `N` rather than an `N`, so the parameter
    * position gives the assignability its direction: a schema for a base class
@@ -1253,7 +1254,7 @@ export interface NodeSerializationSchema<
  * error at the property that declares it, with the correction suggested:
  *
  * ```ts
- * const codeNodeSchema = nodeSchema<CodeNode>({
+ * const codeNodeSchema = nodeSchema<CodeNode>()({
  *   language: withField(optional(nullable(stringValue())), {
  *     field: '__langauge',
  *   }),
@@ -1272,10 +1273,25 @@ export interface NodeSerializationSchema<
  *
  * @__NO_SIDE_EFFECTS__
  */
-export function nodeSchema<N>(fields: {
-  readonly [key: string]: SerializationSchema<unknown, MemberOf<N>>;
-}): NodeSerializationSchema<N> {
-  return objectValue(fields) as NodeSerializationSchema<N>;
+export function nodeSchema<N>() {
+  return <
+    const F extends {
+      readonly [key: string]: SerializationSchema<
+        unknown,
+        MemberOf<N>,
+        unknown
+      >;
+    },
+  >(
+    fields: F,
+  ): NodeSerializationSchema<
+    N,
+    {readonly [K in keyof F]?: SchemaInput<F[K]>}
+  > =>
+    objectValue(fields) as unknown as NodeSerializationSchema<
+      N,
+      {readonly [K in keyof F]?: SchemaInput<F[K]>}
+    >;
 }
 
 /**

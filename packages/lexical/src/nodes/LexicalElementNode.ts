@@ -86,7 +86,7 @@ export type SerializedElementNode<
 // Single source of truth for parsing the node-specific properties of a
 // SerializedElementNode (those it adds over a SerializedLexicalNode), applied
 // by the base LexicalNode.updateFromJSON.
-const elementNodeSchema = nodeSchema<ElementNode>({
+const elementNodeSchema = nodeSchema<ElementNode>()({
   // `direction` and `indent` *are* these fields in both directions —
   // get/setDirection and get/setIndent do nothing else — so they are declared
   // as the fields they are. Each still stands in for the conventional

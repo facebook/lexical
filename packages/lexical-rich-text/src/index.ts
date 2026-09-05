@@ -339,7 +339,7 @@ export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedHeadingNode (those it adds over a SerializedElementNode).
-const headingNodeSchema = nodeSchema<HeadingNode>({
+const headingNodeSchema = nodeSchema<HeadingNode>()({
   // The tag *is* the field in both directions; getTag/setTag are bare
   // accessors, so a subclass overriding either reclaims the property.
   tag: withField(enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']), {

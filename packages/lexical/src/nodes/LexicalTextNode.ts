@@ -130,7 +130,7 @@ export type TextMarks = TextMark[];
 // Nothing here is a transformValue, which is what lets the codegen emit a
 // specialized parser for this class: every domain is stated as data the
 // generator can compile — the alias tables below, and mode's encode/decode.
-const textNodeSchema = nodeSchema<TextNode>({
+const textNodeSchema = nodeSchema<TextNode>()({
   // `format` and `detail` also accept the legacy string names that
   // hand-authored and older documents carry (e.g. `format: 'bold'`),
   // normalized to the stored numeric form — so what reaches the field is

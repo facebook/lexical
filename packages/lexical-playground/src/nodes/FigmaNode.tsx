@@ -24,7 +24,7 @@ import {
 import {nodeSchema, stringValue, withAccessors} from 'lexical';
 import * as React from 'react';
 
-const figmaNodeSchema = nodeSchema<FigmaNode>({
+const figmaNodeSchema = nodeSchema<FigmaNode>()({
   documentID: withAccessors(stringValue(), {
     getter: {
       field: '__id',

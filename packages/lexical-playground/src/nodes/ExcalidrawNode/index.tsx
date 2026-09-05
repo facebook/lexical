@@ -48,7 +48,7 @@ const dimensionSchema = unionValue(
   'inherit',
 );
 
-const excalidrawNodeSchema = nodeSchema<ExcalidrawNode>({
+const excalidrawNodeSchema = nodeSchema<ExcalidrawNode>()({
   // '[]' is the empty-scene default the constructor uses; an absent or
   // out-of-domain `data` must not become '' (JSON.parse('') throws).
   // `setData` is a bare field write, so this property *is* `__data` in both

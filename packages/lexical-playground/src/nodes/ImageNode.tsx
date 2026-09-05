@@ -132,7 +132,7 @@ export type SerializedImageNode = Spread<
   SerializedLexicalNode
 >;
 
-const imageNodeSchema = nodeSchema<ImageNode>({
+const imageNodeSchema = nodeSchema<ImageNode>()({
   altText: stringValue(),
   caption: withAccessors(rawValue<SerializedEditor>(), {
     getter: 'getSerializedCaption',

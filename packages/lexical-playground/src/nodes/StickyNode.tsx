@@ -46,7 +46,7 @@ const StickyComponent = React.lazy(() => import('./StickyComponent'));
 
 type StickyNoteColor = 'pink' | 'yellow';
 
-const stickyNodeSchema = nodeSchema<StickyNode>({
+const stickyNodeSchema = nodeSchema<StickyNode>()({
   caption: withAccessors(rawValue<SerializedEditor>(), {
     getter: 'getSerializedCaption',
   }),

@@ -28,7 +28,7 @@ import {
 } from 'lexical';
 import * as React from 'react';
 
-const youTubeNodeSchema = nodeSchema<YouTubeNode>({
+const youTubeNodeSchema = nodeSchema<YouTubeNode>()({
   videoID: withAccessors(stringValue(), {
     getter: {
       field: '__id',

@@ -38,7 +38,7 @@ export type SerializedTableRowNode = Spread<
   SerializedElementNode
 >;
 
-const tableRowNodeSchema = nodeSchema<TableRowNode>({
+const tableRowNodeSchema = nodeSchema<TableRowNode>()({
   height: withField(optional(numberValue()), {
     field: '__height',
   }),

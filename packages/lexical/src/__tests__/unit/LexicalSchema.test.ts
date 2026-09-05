@@ -809,7 +809,7 @@ describe('withField compiles to direct field access', () => {
     $config() {
       return this.config('field-node', {
         extends: CountingNode,
-        json: nodeSchema<FieldNode>({
+        json: nodeSchema<FieldNode>()({
           label: withField(stringValue('default'), {field: '__label'}),
         }),
       });
@@ -1065,7 +1065,7 @@ describe('reference-typed defaults compact by content', () => {
       $config() {
         return this.config('tags-node', {
           extends: ElementNode,
-          json: nodeSchema<TagsNode>({
+          json: nodeSchema<TagsNode>()({
             tags: withField(arrayValue(stringValue()), {field: '__tags'}),
           }),
         });
@@ -1154,7 +1154,7 @@ describe('a clone carries the fields the schema declares', () => {
       $config() {
         return this.config('callout', {
           extends: ElementNode,
-          json: nodeSchema<CalloutNode>({
+          json: nodeSchema<CalloutNode>()({
             label: withField(stringValue(), {field: '__label'}),
             level: withField(numberValue(1, {integer: true, max: 3, min: 1}), {
               field: '__level',
@@ -1193,7 +1193,7 @@ describe('a clone carries the fields the schema declares', () => {
       $config() {
         return this.config('carry-base', {
           extends: ElementNode,
-          json: nodeSchema<BaseNode>({
+          json: nodeSchema<BaseNode>()({
             base: withField(stringValue(), {field: '__base'}),
           }),
         });
@@ -1204,7 +1204,7 @@ describe('a clone carries the fields the schema declares', () => {
       $config() {
         return this.config('carry-derived', {
           extends: BaseNode,
-          json: nodeSchema<DerivedNode>({
+          json: nodeSchema<DerivedNode>()({
             derived: withField(stringValue(), {field: '__derived'}),
           }),
         });
@@ -1235,7 +1235,7 @@ describe('a clone carries the fields the schema declares', () => {
       $config() {
         return this.config('carry-accessor', {
           extends: ElementNode,
-          json: nodeSchema<AccessorNode>({
+          json: nodeSchema<AccessorNode>()({
             ids: withAccessors(arrayValue(stringValue()), {
               getter: 'getIds',
               setter: 'setIds',
@@ -1281,7 +1281,7 @@ describe('a clone carries the fields the schema declares', () => {
       $config() {
         return this.config('assign-once-base', {
           extends: ElementNode,
-          json: nodeSchema<StoreNode>({
+          json: nodeSchema<StoreNode>()({
             shared: withField(stringValue(), {field: '__shared'}),
           }),
         });
@@ -1291,7 +1291,7 @@ describe('a clone carries the fields the schema declares', () => {
       $config() {
         return this.config('assign-once-derived', {
           extends: StoreNode,
-          json: nodeSchema<RestateNode>({
+          json: nodeSchema<RestateNode>()({
             shared: withField(stringValue('other'), {field: '__shared'}),
           }),
         });
@@ -1344,7 +1344,7 @@ describe('a clone carries the fields the schema declares', () => {
       $config() {
         return this.config('order-base', {
           extends: ElementNode,
-          json: nodeSchema<ReBaseNode>({
+          json: nodeSchema<ReBaseNode>()({
             shared: withField(stringValue(), {field: '__shared'}),
           }),
         });
@@ -1354,7 +1354,7 @@ describe('a clone carries the fields the schema declares', () => {
       $config() {
         return this.config('order-derived', {
           extends: ReBaseNode,
-          json: nodeSchema<ReDerivedNode>({
+          json: nodeSchema<ReDerivedNode>()({
             shared: withField(stringValue('fallback'), {field: '__shared'}),
           }),
         });
@@ -1663,6 +1663,30 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
     expect(dimension('640')).toBe(640);
   });
 
+  test('a node schema keeps the input of the fields it was given', () => {
+    // What the currying is for. `nodeSchema<N>` has to take `N` explicitly,
+    // and TypeScript will not infer the field types alongside a type argument
+    // that was written out — so with both on one call the fields were widened
+    // to the index signature and their input went with them. Split in two, the
+    // node is explicit on the first and the fields are inferred on the second.
+    class InputNode extends ElementNode {
+      __format = 0;
+      __label = '';
+    }
+    const schema = nodeSchema<InputNode>()({
+      format: withField(aliasedValue(numberValue(), {bold: 1}), {
+        field: '__format',
+      }),
+      label: withField(stringValue(), {field: '__label'}),
+    });
+    expectTypeOf<SchemaInput<typeof schema>>().toEqualTypeOf<{
+      readonly format?: number | string;
+      readonly label?: string;
+    }>();
+    // and the alias really parses, which is what the type is describing
+    expect(schema({format: 'bold'})).toMatchObject({format: 1});
+  });
+
   test('an object accepts each property’s input, any of them absent', () => {
     const point = objectValue({label: stringValue(), x: numberValue()});
     expect(point({x: '3'})).toEqual({label: '', x: 3});
@@ -1721,7 +1745,7 @@ describe('a schema is bound to the node it was checked against', () => {
   class Beta extends ElementNode {
     __beta = '';
   }
-  const alphaSchema = nodeSchema<Alpha>({
+  const alphaSchema = nodeSchema<Alpha>()({
     alpha: withField(stringValue(), {field: '__alpha'}),
   });
 
@@ -1926,7 +1950,7 @@ describe('a union member knows its own domain', () => {
       }
     }
     // Every name resolves, so this compiles.
-    const ok = nodeSchema<NamedNode>({
+    const ok = nodeSchema<NamedNode>()({
       gated: withAccessors(stringValue(), {
         getter: {field: '__label', method: 'getLabel', when: 'shouldWrite'},
       }),
@@ -1934,21 +1958,21 @@ describe('a union member knows its own domain', () => {
     });
     expect(typeof ok).toBe('function');
 
-    nodeSchema<NamedNode>({
+    nodeSchema<NamedNode>()({
       // @ts-expect-error -- __lable is not a field of NamedNode
       label: withField(stringValue(), {field: '__lable'}),
     });
-    nodeSchema<NamedNode>({
+    nodeSchema<NamedNode>()({
       // @ts-expect-error -- getLabl is not a method of NamedNode
       label: withField(stringValue(), {field: '__label', getter: 'getLabl'}),
     });
-    nodeSchema<NamedNode>({
+    nodeSchema<NamedNode>()({
       // @ts-expect-error -- shouldWrit is not a method of NamedNode
       label: withAccessors(stringValue(), {
         getter: {field: '__label', when: 'shouldWrit'},
       }),
     });
-    nodeSchema<NamedNode>({
+    nodeSchema<NamedNode>()({
       // @ts-expect-error -- withField declares a predicate the same way
       label: withField(stringValue(), {field: '__label', when: 'shouldWrit'}),
     });
@@ -1981,7 +2005,7 @@ describe('a union member knows its own domain', () => {
     }
     // The correct positions still compile.
     expect(
-      typeof nodeSchema<RoleNode>({
+      typeof nodeSchema<RoleNode>()({
         label: withAccessors(stringValue(), {
           getter: {field: '__label', method: 'getLabel', when: 'shouldWrite'},
           setter: 'setLabel',
@@ -1989,19 +2013,19 @@ describe('a union member knows its own domain', () => {
       }),
     ).toBe('function');
 
-    nodeSchema<RoleNode>({
+    nodeSchema<RoleNode>()({
       // @ts-expect-error -- setLabel needs an argument the walk does not pass
       label: withField(stringValue(), {field: '__label', getter: 'setLabel'}),
     });
-    nodeSchema<RoleNode>({
+    nodeSchema<RoleNode>()({
       // @ts-expect-error -- getLabel takes nothing, so it cannot apply a value
       label: withField(stringValue(), {field: '__label', setter: 'getLabel'}),
     });
-    nodeSchema<RoleNode>({
+    nodeSchema<RoleNode>()({
       // @ts-expect-error -- describe() returns a string, not a boolean
       label: withField(stringValue(), {field: '__label', when: 'describe'}),
     });
-    nodeSchema<RoleNode>({
+    nodeSchema<RoleNode>()({
       // @ts-expect-error -- gated() takes an argument; a predicate takes none
       label: withField(stringValue(), {field: '__label', when: 'gated'}),
     });
@@ -2029,7 +2053,7 @@ describe('a union member knows its own domain', () => {
     }
     // The types line up, so this compiles.
     expect(
-      typeof nodeSchema<TypedNode>({
+      typeof nodeSchema<TypedNode>()({
         count: withField(numberValue(), {field: '__count'}),
         // `readonly` is a property of the reference, not of the JSON, so a
         // readonly array satisfies an arrayValue property.
@@ -2037,15 +2061,15 @@ describe('a union member knows its own domain', () => {
       }),
     ).toBe('function');
 
-    nodeSchema<TypedNode>({
+    nodeSchema<TypedNode>()({
       // @ts-expect-error -- __count holds a number, not a string
       count: withField(stringValue(), {field: '__count'}),
     });
-    nodeSchema<TypedNode>({
+    nodeSchema<TypedNode>()({
       // @ts-expect-error -- getCount() returns a number, not a string
       count: withAccessors(stringValue(), {getter: 'getCount'}),
     });
-    nodeSchema<TypedNode>({
+    nodeSchema<TypedNode>()({
       // @ts-expect-error -- setCount() takes a number, not a string
       count: withAccessors(stringValue(), {setter: 'setCount'}),
     });
@@ -2062,7 +2086,7 @@ describe('a union member knows its own domain', () => {
       __mode: 0 | 1 | 2 = 0;
     }
     expect(
-      typeof nodeSchema<ModeNode>({
+      typeof nodeSchema<ModeNode>()({
         mode: withField(enumValue(['normal', 'token', 'segmented']), {
           decode: NAMES,
           encode: MODES,

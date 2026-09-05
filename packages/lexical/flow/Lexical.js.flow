@@ -1937,9 +1937,12 @@ export type NodeSerializationSchema = AnySerializationSchema;
 // A node's serialization schema, checked against the node it is for. Under
 // TypeScript a `field`, accessor `method` or `when` predicate the node does
 // not have is a compile error; under Flow it is caught at registration.
-declare export function nodeSchema<N>(fields: {
+// Called in two steps: the node is named explicitly, and the fields are
+// inferred on the second call. TypeScript cannot infer both on one call, and
+// the field types are what carry each property's accepted input.
+declare export function nodeSchema<N>(): (fields: {
   readonly [key: string]: AnySerializationSchema,
-}): NodeSerializationSchema;
+}) => NodeSerializationSchema;
 // A node field, read or written directly rather than through a method. The
 // lookup table for a property whose stored and serialized forms differ is
 // declared only on the direction that reads it — `decode` on the getter,

@@ -61,7 +61,7 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
   ul: 'bullet',
 };
 
-const listNodeSchema = nodeSchema<ListNode>({
+const listNodeSchema = nodeSchema<ListNode>()({
   // 'ul'/'ol' are the legacy tag-form listType some older documents carry,
   // normalized to the modern form.
   // Read straight off the field; applied through setListType, which also

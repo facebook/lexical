@@ -27,7 +27,7 @@ import {
 
 import {setDomHiddenUntilFound} from './CollapsibleUtils';
 
-const collapsibleContainerNodeSchema = nodeSchema<CollapsibleContainerNode>({
+const collapsibleContainerNodeSchema = nodeSchema<CollapsibleContainerNode>()({
   open: booleanValue(),
 });
 

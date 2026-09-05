@@ -329,7 +329,7 @@ describe('$isCompactExport reports the walk, not a single node', () => {
       $config() {
         return this.config('serialization-probe', {
           extends: TextNode,
-          json: nodeSchema<ProbeNode>({
+          json: nodeSchema<ProbeNode>()({
             // Not `setter: null`: a derived property is skipped by the
             // compact walk without its getter being called at all, so the
             // probe would never run for the form under test.

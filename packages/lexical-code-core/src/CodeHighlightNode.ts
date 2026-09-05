@@ -37,7 +37,7 @@ type SerializedCodeHighlightNode = Spread<
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedCodeHighlightNode (those it adds over a SerializedTextNode).
-const codeHighlightNodeSchema = nodeSchema<CodeHighlightNode>({
+const codeHighlightNodeSchema = nodeSchema<CodeHighlightNode>()({
   highlightType: optional(nullable(stringValue())),
 });
 

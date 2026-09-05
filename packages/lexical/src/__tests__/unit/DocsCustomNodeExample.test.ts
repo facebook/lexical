@@ -28,7 +28,7 @@ export type SerializedCalloutNode = Spread<
   SerializedElementNode
 >;
 
-const calloutNodeSchema = nodeSchema<CalloutNode>({
+const calloutNodeSchema = nodeSchema<CalloutNode>()({
   // Each property *is* a field: exported by reading it, imported by assigning
   // it, with no method call on either side.
   label: withField(stringValue(), {field: '__label'}),

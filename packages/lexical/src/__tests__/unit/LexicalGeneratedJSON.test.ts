@@ -291,7 +291,7 @@ describe('generated code is inherited where it still applies', () => {
       $config() {
         return this.config('extra-field', {
           extends: TextNode,
-          json: nodeSchema<ExtraField>({
+          json: nodeSchema<ExtraField>()({
             extra: withField(stringValue(), {field: '__extra'}),
           }),
         });
@@ -325,7 +325,7 @@ describe('generated code is inherited where it still applies', () => {
         return this.config('gated-base', {
           extends: TextNode,
           generated: GENERATED_GATED,
-          json: nodeSchema<GatedBase>({
+          json: nodeSchema<GatedBase>()({
             // Export-only, so the two classes differ in nothing but the
             // predicate — no setter name to tell them apart either.
             label: withAccessors(stringValue(), {
@@ -346,7 +346,7 @@ describe('generated code is inherited where it still applies', () => {
       $config() {
         return this.config('gated-sub', {
           extends: GatedBase,
-          json: nodeSchema<GatedSub>({
+          json: nodeSchema<GatedSub>()({
             label: withAccessors(stringValue(), {
               getter: {field: '__label', when: 'writeNever'},
               setter: null,

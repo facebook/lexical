@@ -20,7 +20,7 @@ import {
   TextNode,
 } from 'lexical';
 
-const emojiNodeSchema = nodeSchema<EmojiNode>({
+const emojiNodeSchema = nodeSchema<EmojiNode>()({
   className: stringValue(),
 });
 

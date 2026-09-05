@@ -39,7 +39,7 @@ export type SerializedDecoratorBlockNode = Spread<
 // no concrete node type) so it publishes its schema on `$config` under the
 // well-known `Symbol.for('DecoratorBlockNode')` key; concrete subclasses
 // compose it with their own.
-const decoratorBlockNodeSchema = nodeSchema<DecoratorBlockNode>({
+const decoratorBlockNodeSchema = nodeSchema<DecoratorBlockNode>()({
   format: withField(
     enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
     {field: '__format'},

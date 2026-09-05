@@ -1920,6 +1920,11 @@ export type MemberOf<N> = keyof N;
 // Flow declares the surface without that check, and the DEV-time runtime
 // invariants catch the same mistakes here.
 export type NamesOf<S> = string;
+// The serialized values a schema accepts, which is wider than what it parses
+// to wherever it reads more than it writes (a stringified number, a legacy
+// alias, an absent property). TypeScript computes this per combinator; Flow
+// declares the surface without that computation.
+export type SchemaInput<S> = unknown;
 // The phantom N records which node the names were checked against; Flow has
 // no equivalent of the TypeScript declaration's variance trick, so this stays
 // the unparameterized shape and the binding is enforced by TypeScript alone.

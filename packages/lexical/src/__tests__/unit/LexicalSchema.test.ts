@@ -32,6 +32,8 @@ import {
   optional,
   type ParagraphNode,
   rawValue,
+  type SchemaInput,
+  type SerializationSchemaValue,
   type SerializedLexicalNode,
   type SerializedParagraphNode,
   type SerializedPartial,
@@ -1598,6 +1600,78 @@ describe('isEqual is total over the values a getter can return', () => {
   });
 });
 
+describe('a schema tracks what it accepts, not only what it parses to', () => {
+  // The two differ wherever a schema reads more than it writes, and the
+  // difference is not decoration: `nodeArbitrary` generates the legacy
+  // spellings an `aliasedValue` accepts, so a type that describes only the
+  // parsed output is wrong about the values that actually reach a parser.
+
+  test('a primitive accepts what it parses, except where it reads more', () => {
+    expectTypeOf<
+      SchemaInput<ReturnType<typeof stringValue>>
+    >().toEqualTypeOf<string>();
+    expectTypeOf<
+      SchemaInput<ReturnType<typeof booleanValue>>
+    >().toEqualTypeOf<boolean>();
+    // numberValue also reads a number spelled as a string.
+    expectTypeOf<SchemaInput<ReturnType<typeof numberValue>>>().toEqualTypeOf<
+      number | string
+    >();
+  });
+
+  test('an alias table widens the accepted input, not the output', () => {
+    const format = aliasedValue(numberValue(), {bold: 1, italic: 2});
+    expectTypeOf<
+      SerializationSchemaValue<typeof format>
+    >().toEqualTypeOf<number>();
+    expectTypeOf<SchemaInput<typeof format>>().toEqualTypeOf<
+      number | string | 'bold' | 'italic'
+    >();
+    // and the values really are accepted
+    expect(format('bold')).toBe(1);
+    expect(format('2')).toBe(2);
+  });
+
+  test('the wrappers widen their inner the way they widen its output', () => {
+    const s = stringValue();
+    expect(s('x')).toBe('x');
+    expectTypeOf<
+      SchemaInput<ReturnType<typeof optional<string>>>
+    >().toEqualTypeOf<string | undefined>();
+    expectTypeOf<SchemaInput<typeof s>>().toEqualTypeOf<string>();
+    expectTypeOf<
+      SchemaInput<ReturnType<typeof nullable<string>>>
+    >().toEqualTypeOf<string | null | undefined>();
+    // an array of whatever the item accepts
+    expectTypeOf<
+      SchemaInput<ReturnType<typeof arrayValue<number>>>
+    >().toEqualTypeOf<readonly number[]>();
+  });
+
+  test('a union accepts what any member accepts', () => {
+    const dimension = unionValue(
+      [numberValue(), enumValue(['inherit'])],
+      'inherit',
+    );
+    expectTypeOf<SerializationSchemaValue<typeof dimension>>().toEqualTypeOf<
+      number | 'inherit'
+    >();
+    expectTypeOf<SchemaInput<typeof dimension>>().toEqualTypeOf<
+      number | string | 'inherit'
+    >();
+    expect(dimension('640')).toBe(640);
+  });
+
+  test('an object accepts each property’s input, any of them absent', () => {
+    const point = objectValue({label: stringValue(), x: numberValue()});
+    expect(point({x: '3'})).toEqual({label: '', x: 3});
+    expectTypeOf<SchemaInput<typeof point>>().toEqualTypeOf<{
+      readonly label?: string;
+      readonly x?: number | string;
+    }>();
+  });
+});
+
 describe('a schema is bound to the node it was checked against', () => {
   class Alpha extends ElementNode {
     __alpha = '';
@@ -1844,6 +1918,124 @@ describe('a union member knows its own domain', () => {
       // @ts-expect-error -- withField declares a predicate the same way
       label: withField(stringValue(), {field: '__label', when: 'shouldWrit'}),
     });
+  });
+
+  test('nodeSchema rejects a name used in the wrong position', () => {
+    // Every name below is a real member. What is wrong is the position it was
+    // written in, which a check that only asks "does the node have this?"
+    // cannot see: the walk resolves the method, calls it, and quietly does
+    // something other than what was declared.
+    class RoleNode extends ElementNode {
+      __label = '';
+      getLabel(): string {
+        return this.getLatest().__label;
+      }
+      setLabel(label: string): this {
+        const self = this.getWritable();
+        self.__label = label;
+        return self;
+      }
+      describe(): string {
+        return `label=${this.__label}`;
+      }
+      gated(flag: boolean): boolean {
+        return flag;
+      }
+      shouldWrite(): boolean {
+        return true;
+      }
+    }
+    // The correct positions still compile.
+    expect(
+      typeof nodeSchema<RoleNode>({
+        label: withAccessors(stringValue(), {
+          getter: {field: '__label', method: 'getLabel', when: 'shouldWrite'},
+          setter: 'setLabel',
+        }),
+      }),
+    ).toBe('function');
+
+    nodeSchema<RoleNode>({
+      // @ts-expect-error -- setLabel needs an argument the walk does not pass
+      label: withField(stringValue(), {field: '__label', getter: 'setLabel'}),
+    });
+    nodeSchema<RoleNode>({
+      // @ts-expect-error -- getLabel takes nothing, so it cannot apply a value
+      label: withField(stringValue(), {field: '__label', setter: 'getLabel'}),
+    });
+    nodeSchema<RoleNode>({
+      // @ts-expect-error -- describe() returns a string, not a boolean
+      label: withField(stringValue(), {field: '__label', when: 'describe'}),
+    });
+    nodeSchema<RoleNode>({
+      // @ts-expect-error -- gated() takes an argument; a predicate takes none
+      label: withField(stringValue(), {field: '__label', when: 'gated'}),
+    });
+  });
+
+  test('nodeSchema rejects a type the node member cannot hold', () => {
+    // Every name here resolves and is used in the right position. What is
+    // wrong is the type behind it, which nothing checked: the parser wrote a
+    // string into a numeric field, and the schema's default and equality were
+    // string-shaped, so the property could never compact and nothing failed.
+    class TypedNode extends ElementNode {
+      __count = 0;
+      __ids: readonly string[] = [];
+      getCount(): number {
+        return this.getLatest().__count;
+      }
+      setCount(count: number): this {
+        const self = this.getWritable();
+        self.__count = count;
+        return self;
+      }
+      getIds(): readonly string[] {
+        return this.getLatest().__ids;
+      }
+    }
+    // The types line up, so this compiles.
+    expect(
+      typeof nodeSchema<TypedNode>({
+        count: withField(numberValue(), {field: '__count'}),
+        // `readonly` is a property of the reference, not of the JSON, so a
+        // readonly array satisfies an arrayValue property.
+        ids: withAccessors(arrayValue(stringValue()), {getter: 'getIds'}),
+      }),
+    ).toBe('function');
+
+    nodeSchema<TypedNode>({
+      // @ts-expect-error -- __count holds a number, not a string
+      count: withField(stringValue(), {field: '__count'}),
+    });
+    nodeSchema<TypedNode>({
+      // @ts-expect-error -- getCount() returns a number, not a string
+      count: withAccessors(stringValue(), {getter: 'getCount'}),
+    });
+    nodeSchema<TypedNode>({
+      // @ts-expect-error -- setCount() takes a number, not a string
+      count: withAccessors(stringValue(), {setter: 'setCount'}),
+    });
+  });
+
+  test('a value table declares that the two forms differ', () => {
+    // A field whose stored and serialized forms differ says so with a table,
+    // and the table is that declaration — so the field is not held to the
+    // schema's type. TextNode's `mode` is the in-tree case: a bitmask stored,
+    // a name serialized. Without this carve-out it would fail its own check.
+    const MODES = {normal: 0, segmented: 2, token: 1} as const;
+    const NAMES = {0: 'normal', 1: 'token', 2: 'segmented'} as const;
+    class ModeNode extends ElementNode {
+      __mode: 0 | 1 | 2 = 0;
+    }
+    expect(
+      typeof nodeSchema<ModeNode>({
+        mode: withField(enumValue(['normal', 'token', 'segmented']), {
+          decode: NAMES,
+          encode: MODES,
+          field: '__mode',
+        }),
+      }),
+    ).toBe('function');
   });
 
   test('each value table is declared only on the direction that reads it', () => {

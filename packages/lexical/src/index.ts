@@ -280,6 +280,7 @@ export {
   type SchemaFieldBase,
   type SchemaGetterAccessor,
   type SchemaGetterField,
+  type SchemaInput,
   type SchemaSetterAccessor,
   type SchemaSetterField,
   type SerializationSchema,

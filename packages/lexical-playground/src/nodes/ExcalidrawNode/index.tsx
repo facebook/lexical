@@ -19,7 +19,6 @@ import {
   type NodeKey,
   nodeSchema,
   numberValue,
-  type SerializationSchema,
   type SerializedLexicalNode,
   type Spread,
   stringValue,
@@ -38,8 +37,13 @@ const ExcalidrawComponent = React.lazy(() => import('./ExcalidrawComponent'));
  * {@link unionValue}. This also closes a hole in the previous
  * `serializedNode.width ?? 'inherit'` parsing, which stored any non-nullish
  * value (including a string like `'banana'`) verbatim.
+ *
+ * Left uninferred rather than annotated `SerializationSchema<Dimension>`: what
+ * it *accepts* is wider than what it parses to, since `numberValue` also reads
+ * a stringified number, and annotating the output type alone would claim
+ * otherwise.
  */
-const dimensionSchema: SerializationSchema<Dimension> = unionValue(
+const dimensionSchema = unionValue(
   [numberValue(), enumValue(['inherit'])],
   'inherit',
 );

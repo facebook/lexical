@@ -60,9 +60,9 @@ export interface QuoteAnnounceExtensionConfig {
  * reports the removal and where the caret ended up together. Announcing only
  * the removal leaves the user inside the quote above with no way to know it.
  */
-export const QuoteAnnounceExtension = /* @__PURE__ */ defineExtension({
+export const QuoteAnnounceExtension = defineExtension({
   build: (_editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<QuoteAnnounceExtensionConfig>({
+  config: safeCast<QuoteAnnounceExtensionConfig>({
     created: 'Block quote',
     destroyed: 'Block quote removed',
     destroyedInside: 'Block quote removed, in block quote',

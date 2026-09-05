@@ -1920,6 +1920,9 @@ export type MemberOf<N> = keyof N;
 // Flow declares the surface without that check, and the DEV-time runtime
 // invariants catch the same mistakes here.
 export type NamesOf<S> = string;
+// The phantom N records which node the names were checked against; Flow has
+// no equivalent of the TypeScript declaration's variance trick, so this stays
+// the unparameterized shape and the binding is enforced by TypeScript alone.
 export type NodeSerializationSchema = AnySerializationSchema;
 // A node's serialization schema, checked against the node it is for. Under
 // TypeScript a `field`, accessor `method` or `when` predicate the node does

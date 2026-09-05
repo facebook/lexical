@@ -1598,6 +1598,70 @@ describe('isEqual is total over the values a getter can return', () => {
   });
 });
 
+describe('a schema is bound to the node it was checked against', () => {
+  class Alpha extends ElementNode {
+    __alpha = '';
+    getAlpha(): string {
+      return this.getLatest().__alpha;
+    }
+    setAlpha(alpha: string): this {
+      const self = this.getWritable();
+      self.__alpha = alpha;
+      return self;
+    }
+  }
+  class Beta extends ElementNode {
+    __beta = '';
+  }
+  const alphaSchema = nodeSchema<Alpha>({
+    alpha: withField(stringValue(), {field: '__alpha'}),
+  });
+
+  test('it installs on the node it names, and on a subclass of it', () => {
+    class AlphaNode extends Alpha {
+      $config() {
+        return this.config('bound-alpha', {
+          extends: ElementNode,
+          json: alphaSchema,
+        });
+      }
+    }
+    expect(typeof AlphaNode).toBe('function');
+    expectTypeOf(alphaSchema).toMatchTypeOf<NodeSerializationSchema<Alpha>>();
+  });
+
+  test('it does not install on an unrelated node', () => {
+    class BetaNode extends Beta {
+      $config() {
+        // @ts-expect-error -- alphaSchema was checked against Alpha, whose
+        // members Beta does not have: "Type 'BetaNode' is missing the
+        // following properties from type 'Alpha': __alpha, getAlpha, setAlpha"
+        return this.config('bound-beta', {
+          extends: ElementNode,
+          json: alphaSchema,
+        });
+      }
+    }
+    // Nothing to assert at runtime: the names would simply fail to resolve at
+    // registration. The point is that it is refused before that.
+    expect(typeof BetaNode).toBe('function');
+  });
+
+  test('a schema that names nothing installs anywhere', () => {
+    // objectValue names no node member, so it was checked against nothing and
+    // is not bound to anything either.
+    class AnyNode extends Beta {
+      $config() {
+        return this.config('bound-any', {
+          extends: ElementNode,
+          json: objectValue({label: rawValue()}),
+        });
+      }
+    }
+    expect(typeof AnyNode).toBe('function');
+  });
+});
+
 describe('a misconfigured accessor fails at registration', () => {
   class MissingSetterNode extends ElementNode {
     $config() {

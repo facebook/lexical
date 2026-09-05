@@ -20,6 +20,15 @@ const __DEV__ = process.env.NODE_ENV !== 'production';
 declare const NAMES: unique symbol;
 
 /**
+ * The key of {@link NodeSerializationSchema}'s phantom `N` member, which
+ * records the node a schema's names were checked against. Declared rather than
+ * defined, like {@link NAMES}.
+ *
+ * @internal
+ */
+declare const CHECKED_AGAINST: unique symbol;
+
+/**
  * A function that validates an untrusted `value` (such as a property parsed
  * from JSON) and coerces it into the expected type `T`, returning a default
  * value when `value` is not in the expected domain.
@@ -1028,8 +1037,30 @@ function unionAccessors(
  *
  * `$config`'s `json` asks for this, so a schema that names anything has to be
  * built with {@link nodeSchema} and cannot reach a node unchecked.
+ *
+ * `N` records *which* node it was checked against, so discharging the names
+ * does not also lose track of whose they were: `$config` asks for the schema
+ * of the node it is declared on, and one checked against an unrelated class is
+ * a compile error there rather than a set of accessors that happen not to
+ * resolve at runtime. A schema checked against a base class still installs on
+ * a subclass, which is the direction that stays true — every member it names
+ * is inherited — and not the reverse.
  */
-export type NodeSerializationSchema = SerializationSchema<unknown, never>;
+export interface NodeSerializationSchema<
+  N = unknown,
+> extends SerializationSchema<unknown, never> {
+  /**
+   * Declared as a function of `N` rather than an `N`, so the parameter
+   * position gives the assignability its direction: a schema for a base class
+   * satisfies a subclass's `$config`, and a subclass's does not satisfy the
+   * base's. Optional and never assigned, like {@link SerializationSchema}'s
+   * own phantom — a schema that names nothing is checked against nothing and
+   * is installable anywhere.
+   *
+   * @internal
+   */
+  readonly [CHECKED_AGAINST]?: (node: N) => void;
+}
 
 /**
  * A node's serialization schema, checked against the node it is for.
@@ -1061,11 +1092,8 @@ export type NodeSerializationSchema = SerializationSchema<unknown, never>;
  */
 export function nodeSchema<N>(fields: {
   readonly [key: string]: SerializationSchema<unknown, MemberOf<N>>;
-}): SerializationSchema<{readonly [key: string]: unknown}, never> {
-  return objectValue(fields) as SerializationSchema<
-    {readonly [key: string]: unknown},
-    never
-  >;
+}): NodeSerializationSchema<N> {
+  return objectValue(fields) as NodeSerializationSchema<N>;
 }
 
 /**

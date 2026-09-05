@@ -237,7 +237,7 @@ export interface StaticNodeConfigValue<
    * It is named `json` rather than `schema` to avoid ambiguity with other kinds
    * of node schema (e.g. a schema of allowed children).
    */
-  readonly json?: NodeSerializationSchema;
+  readonly json?: NodeSerializationSchema<T>;
   /**
    * @internal
    *

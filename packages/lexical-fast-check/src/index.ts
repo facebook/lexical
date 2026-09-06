@@ -47,12 +47,13 @@ export function nodeArbitrary<T extends LexicalNode>(
   for (const key of Object.keys(fields)) {
     record[key] = metaArbitrary(fields[key].meta);
   }
-  // The value is built from the schema and the type is read from the class's
-  // declared serialization; what ties them is `nodeSchema<T>`, which checks
-  // every declared property against the node at compile time, and `$config`,
-  // which requires a schema built that way. A class whose declared type and
-  // schema nonetheless disagree is already misdescribing its own
-  // `updateFromJSON`, and this reports that type rather than inventing one.
+  // Both sides now read the same `$config` chain — the value through
+  // `getComposedSchemaFields`, the type through `LexicalSchemaInput` — so the
+  // cast is asserting that two walks of one declaration agree. Where they can
+  // still part company is a config that names no `extends`: the runtime walk
+  // falls back to the prototype parent, the type walk has nothing to follow
+  // and stops, and the type comes back missing the properties the value
+  // carries. Naming `extends` is what keeps them together.
   return fc.record(record, {requiredKeys: []}) as fc.Arbitrary<
     LexicalSchemaInput<T>
   >;

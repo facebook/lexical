@@ -3279,6 +3279,17 @@ export interface OwnStaticNodeConfig {
   ownNodeConfig:
     | undefined
     | StaticNodeConfigValue<LexicalNode, string | symbol>;
+  /**
+   * Whether `klass` declared `$config()` itself.
+   *
+   * `ownNodeConfig` is the config the class *resolves* to, which for a class
+   * that declared none is its ancestor's — reached through the inherited
+   * method, and a fresh object each time, since `$config()` builds its result
+   * per call. Anything walking the chain has to tell the two apart or it
+   * attributes an ancestor's declarations to the subclass and counts them
+   * twice; see {@link iterStaticNodeConfigChain}.
+   */
+  declaresOwnConfig: boolean;
 }
 /**
  * Everything derived once per node class: the `$config()` result and what is
@@ -4588,7 +4599,15 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
   const record: NodeClassRecord = {
     compiled: undefined,
     composed: undefined,
-    config: {klass, ownNodeConfig, ownNodeType},
+    config: {
+      declaresOwnConfig: hasOwnKey(
+        klass.prototype as unknown as object,
+        PROTOTYPE_CONFIG_METHOD,
+      ),
+      klass,
+      ownNodeConfig,
+      ownNodeType,
+    },
     ownFieldsValidated: false,
   };
   // Cached before compiling, because compileSetters walks this class chain
@@ -4936,18 +4955,22 @@ export function* iterStaticNodeConfigChain(
     current && (current === LexicalNode || $isLexicalNode(current.prototype));
   ) {
     const config = getStaticNodeConfig(current);
-    yield config;
-    // `extends` is honored only from a class that declared its own `$config`.
-    // A subclass that declares none reads its ancestor's — `extends` included
-    // — so following it here would jump to that ancestor's parent and skip the
-    // ancestor itself, which is where the properties it inherits are declared.
+    // A class that declared no `$config()` of its own contributes nothing to
+    // the chain: what `getStaticNodeConfig` resolved for it is its ancestor's
+    // config, and the ancestor is the next link, which yields that config
+    // itself. Yielding it here too would attribute the ancestor's `json`,
+    // `$transform`, `stateConfigs` and `slots` to the subclass and present
+    // them twice — and a `$transform` written inline is a fresh closure per
+    // `$config()` call, so the `Set` that collects them cannot tell the two
+    // copies apart and the transform runs twice per node.
+    //
+    // `extends` goes with it, which is also what keeps the walk from jumping
+    // to the ancestor's parent and skipping the ancestor.
+    const declared = config.declaresOwnConfig;
+    yield declared ? config : {...config, ownNodeConfig: undefined};
     current =
-      (hasOwnKey(
-        current.prototype as unknown as object,
-        PROTOTYPE_CONFIG_METHOD,
-      )
-        ? config.ownNodeConfig && config.ownNodeConfig.extends
-        : undefined) || getSuperclassOf(current);
+      (declared && config.ownNodeConfig && config.ownNodeConfig.extends) ||
+      getSuperclassOf(current);
   }
 }
 

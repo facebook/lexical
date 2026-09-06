@@ -32,6 +32,8 @@ import {
 import {DOMSlot} from './LexicalDOMSlot';
 import {
   $updateStateFromJSON,
+  type CollectStateJSON,
+  type GetNodeStateConfig,
   type NodeState,
   type NodeStateJSON,
   type Prettify,
@@ -484,13 +486,6 @@ type LexicalFullExportJSON<T extends LexicalNode> = T['exportJSON'] extends {
   : ReturnType<T['exportJSON']>;
 
 /**
- * The most precise type we can infer for the JSON that will
- * be produced by T.exportJSON().
- *
- * Do not use this for the return type of T.exportJSON()! It must be
- * a more generic type to be compatible with subclassing.
- */
-/**
  * The contribution of a class that declares no schema: no properties, and the
  * neutral element of the intersection in {@link LexicalSchemaInput}.
  *
@@ -533,18 +528,34 @@ type OwnSchemaInputOf<T extends LexicalNode> = [
  * string, an absent property. That is what a generator of example JSON should
  * say it produces.
  *
- * The walk follows each config's `extends`, which is why every abstract config
- * in the tree names one — the runtime defaults it to the superclass, but the
- * type has no way to recover what was left out. It terminates at the first
- * class that names none, which is what {@link LexicalNode}'s own `$config()`
- * does.
+ * The walk follows each config's `extends`, which is why every config in the
+ * tree names one — the runtime defaults it to the superclass, but the type has
+ * no way to recover what was left out, and a class that omits it contributes
+ * nothing here and hides its ancestors too.
+ *
+ * A class with no config of its own resolves `ConfigParentOf` to `LexicalNode`
+ * rather than to `never` — the check is an alias instantiation, so it does not
+ * distribute, and `infer Parent extends LexicalNode` falls back to its
+ * constraint. The walk therefore does not stop there; it keeps yielding
+ * `LexicalNode`, whose contribution is empty, until `Depth` runs out. The
+ * answer is right either way, but the bound is what ends it.
  */
-export type LexicalSchemaInput<
+export type LexicalSchemaInput<T extends LexicalNode> = ComposedSchemaInput<T> &
+  // Flat NodeState is the other half of what a node serializes as top-level
+  // properties — `getComposedSchemaFields` folds it in beside the schema's,
+  // so anything describing what a node accepts has to as well. It composes
+  // itself, over its own walk of the same chain.
+  CollectStateJSON<GetNodeStateConfig<T>, true>;
+
+/** The schema half of {@link LexicalSchemaInput}. */
+type ComposedSchemaInput<
   T extends LexicalNode,
   /**
    * Bounds the walk. TypeScript cannot see that the chain terminates and
-   * refuses the recursion without it; a chain deeper than this resolves to
-   * `unknown` rather than failing to compile.
+   * refuses the recursion without it. A chain deeper than this resolves to
+   * {@link NoSchemaInput} rather than failing to compile, which means it goes
+   * quiet rather than loud: `{}` is the identity of the intersection, so the
+   * ancestors past the bound contribute nothing and nothing says so.
    *
    * @internal
    */
@@ -552,9 +563,16 @@ export type LexicalSchemaInput<
 > = Depth extends readonly [unknown, ...infer Rest]
   ? [ConfigParentOf<T>] extends [never]
     ? OwnSchemaInputOf<T>
-    : OwnSchemaInputOf<T> & LexicalSchemaInput<ConfigParentOf<T>, Rest>
+    : OwnSchemaInputOf<T> & ComposedSchemaInput<ConfigParentOf<T>, Rest>
   : NoSchemaInput;
 
+/**
+ * The most precise type we can infer for the JSON that will
+ * be produced by T.exportJSON().
+ *
+ * Do not use this for the return type of T.exportJSON()! It must be
+ * a more generic type to be compatible with subclassing.
+ */
 export type LexicalExportJSON<T extends LexicalNode> = Prettify<
   Omit<LexicalFullExportJSON<T>, 'type' | 'version'> & {
     type: GetStaticNodeType<T>;

@@ -6,6 +6,8 @@
  *
  */
 
+import type {QuoteNode} from '@lexical/rich-text';
+
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $create,
@@ -1701,6 +1703,16 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
     expectTypeOf<LexicalSchemaInput<TextNode>['format']>().toEqualTypeOf<
       number | string | undefined
     >();
+  });
+
+  test('a node composes its flat NodeState too', () => {
+    // `getComposedSchemaFields` folds flat NodeState in beside the schema's
+    // own properties, and `nodeArbitrary` generates from that — so a type
+    // describing what a node accepts has to carry those keys or it denies
+    // values the generator really produces. QuoteNode's `shadowRoot` is the
+    // in-tree case.
+    const key: keyof LexicalSchemaInput<QuoteNode> = 'shadowRoot';
+    expect(key).toBe('shadowRoot');
   });
 
   test('an object accepts each property’s input, any of them absent', () => {

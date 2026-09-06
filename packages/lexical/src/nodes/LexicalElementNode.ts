@@ -217,9 +217,11 @@ export class ElementNode
   /** @internal */
   __slots: null | Map<string, NodeKey>;
 
-  // Specific type information is discarded for backwards compatibility,
-  // there is nothing meaninful to gain from requiring `{extends: ElementNode}`
-  // with the current shape here (just a `$transform`)
+  // Left to inference rather than annotated `: BaseStaticNodeConfig`. The
+  // annotation discarded the record, and with it every element's schema — what
+  // `LexicalSchemaInput` walks to compose the properties a node accepts. The
+  // cost is that a subclass overriding `$config()` has to name its `extends`,
+  // which is the convention every config in the tree already follows.
   $config() {
     return this.config(Symbol.for('ElementNode'), {
       /*

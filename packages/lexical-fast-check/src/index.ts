@@ -8,9 +8,8 @@
 
 import type {
   Klass,
-  LexicalExportJSON,
   LexicalNode,
-  LexicalParseJSON,
+  LexicalSchemaInput,
   SerializationSchemaMeta,
 } from 'lexical';
 
@@ -33,16 +32,16 @@ import {getComposedSchemaFields} from 'lexical';
  * default. Generating complete records only would leave the defaulting path
  * (the whole point of a schema carrying a `defaultValue`) untested.
  *
- * The values are typed as the parse shape of the class's own serialized type —
- * `LexicalParseJSON<SerializedTextNode>` for `TextNode` — which is what its
- * `updateFromJSON` accepts, so nothing has to be cast on the way in. That type
- * is read off the class's `exportJSON` declaration (see `LexicalExportJSON`);
- * a class that declares none gets the base node's, with its own properties
- * present in the value but not in the type.
+ * The values are typed as what the class's schemas *accept*, composed across
+ * its `$config` chain — not as what they parse to. The two differ wherever a
+ * schema reads more than it writes, and this generator produces exactly that
+ * difference: an `aliasedValue`'s legacy spellings are in the generated domain
+ * (see the `aliased` case below), so a type describing the parsed output would
+ * be wrong about the values it hands back.
  */
 export function nodeArbitrary<T extends LexicalNode>(
   klass: Klass<T>,
-): fc.Arbitrary<LexicalParseJSON<LexicalExportJSON<T>>> {
+): fc.Arbitrary<LexicalSchemaInput<T>> {
   const fields = getComposedSchemaFields(klass);
   const record: {[key: string]: fc.Arbitrary<unknown>} = {};
   for (const key of Object.keys(fields)) {
@@ -55,7 +54,7 @@ export function nodeArbitrary<T extends LexicalNode>(
   // schema nonetheless disagree is already misdescribing its own
   // `updateFromJSON`, and this reports that type rather than inventing one.
   return fc.record(record, {requiredKeys: []}) as fc.Arbitrary<
-    LexicalParseJSON<LexicalExportJSON<T>>
+    LexicalSchemaInput<T>
   >;
 }
 

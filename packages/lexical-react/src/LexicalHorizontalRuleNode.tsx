@@ -87,6 +87,7 @@ export class HorizontalRuleNode extends BaseHorizontalRuleNode {
     // shape compatible with the base node it reuses the 'horizontalrule' type
     // from.
     return this.config('horizontalrule', {
+      extends: BaseHorizontalRuleNode,
       importDOM: {
         hr: () => ({
           conversion: $convertHorizontalRuleElement,

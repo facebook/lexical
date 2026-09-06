@@ -38,7 +38,7 @@ import {
   type RequiredNodeStateConfig,
 } from './LexicalNodeState';
 import {CACHED_TEXT_SIZE_KEY} from './LexicalReconciler';
-import {type NodeSerializationSchema} from './LexicalSchema';
+import {type NodeSerializationSchema, type SchemaInput} from './LexicalSchema';
 import {
   $getSelection,
   $isNodeSelection,
@@ -490,6 +490,71 @@ type LexicalFullExportJSON<T extends LexicalNode> = T['exportJSON'] extends {
  * Do not use this for the return type of T.exportJSON()! It must be
  * a more generic type to be compatible with subclassing.
  */
+/**
+ * The contribution of a class that declares no schema: no properties, and the
+ * neutral element of the intersection in {@link LexicalSchemaInput}.
+ *
+ * An empty object rather than `unknown`, which is also neutral for `&` but is
+ * not a *value* type — a node with no schema anywhere in its chain would
+ * otherwise come back as `unknown`, which cannot even be spread.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+type NoSchemaInput = {};
+
+/** The class `T`'s `$config()` names as its superclass, if it named one. */
+type ConfigParentOf<T extends LexicalNode> =
+  GetStaticNodeOwnConfig<T> extends {
+    extends: abstract new (...args: never) => infer Parent extends LexicalNode;
+  }
+    ? Parent
+    : never;
+
+/**
+ * What `T`'s own schema accepts, or {@link NoSchemaInput} where it declares
+ * none.
+ */
+type OwnSchemaInputOf<T extends LexicalNode> = [
+  GetStaticNodeOwnConfig<T>,
+] extends [never]
+  ? // No `$config` of its own at all. Tested before the shape below, because
+    // `never` satisfies every `extends` and would otherwise take the `json`
+    // branch and reduce the whole intersection to `never`.
+    NoSchemaInput
+  : GetStaticNodeOwnConfig<T> extends {json: infer Json}
+    ? SchemaInput<Json>
+    : NoSchemaInput;
+
+/**
+ * Every serialized property `T` accepts, composed across its `$config` chain —
+ * its own and the ones it inherits.
+ *
+ * The *accepted* input rather than the parsed output, which is wider wherever
+ * a schema reads more than it writes: a legacy alias, a number spelled as a
+ * string, an absent property. That is what a generator of example JSON should
+ * say it produces.
+ *
+ * The walk follows each config's `extends`, which is why every abstract config
+ * in the tree names one — the runtime defaults it to the superclass, but the
+ * type has no way to recover what was left out. It terminates at the first
+ * class that names none, which is what {@link LexicalNode}'s own `$config()`
+ * does.
+ */
+export type LexicalSchemaInput<
+  T extends LexicalNode,
+  /**
+   * Bounds the walk. TypeScript cannot see that the chain terminates and
+   * refuses the recursion without it; a chain deeper than this resolves to
+   * `unknown` rather than failing to compile.
+   *
+   * @internal
+   */
+  Depth extends readonly unknown[] = [0, 0, 0, 0, 0, 0, 0, 0],
+> = Depth extends readonly [unknown, ...infer Rest]
+  ? [ConfigParentOf<T>] extends [never]
+    ? OwnSchemaInputOf<T>
+    : OwnSchemaInputOf<T> & LexicalSchemaInput<ConfigParentOf<T>, Rest>
+  : NoSchemaInput;
+
 export type LexicalExportJSON<T extends LexicalNode> = Prettify<
   Omit<LexicalFullExportJSON<T>, 'type' | 'version'> & {
     type: GetStaticNodeType<T>;

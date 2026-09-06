@@ -68,6 +68,7 @@ export class HorizontalRuleNode extends DecoratorNode<unknown> {
     // same 'horizontalrule' type, so both `$config()` overrides must infer a
     // matching shape.
     return this.config('horizontalrule', {
+      extends: DecoratorNode,
       importDOM: {
         hr: () => ({
           conversion: $convertHorizontalRuleElement,

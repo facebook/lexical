@@ -219,6 +219,7 @@ export type {
   LexicalExportJSON,
   LexicalNode,
   LexicalParseJSON,
+  LexicalSchemaInput,
   LexicalUpdateJSON,
   NodeKey,
   NodeMap,

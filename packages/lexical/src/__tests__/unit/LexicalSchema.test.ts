@@ -24,6 +24,7 @@ import {
   type LexicalExportJSON,
   type LexicalNode,
   type LexicalParseJSON,
+  type LexicalSchemaInput,
   type LexicalUpdateJSON,
   nodeSchema,
   type NodeSerializationSchema,
@@ -1687,6 +1688,21 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
     expect(schema({format: 'bold'})).toMatchObject({format: 1});
   });
 
+  test('a node composes the input it accepts across its config chain', () => {
+    // ParagraphNode declares no schema of its own, so everything here is
+    // ElementNode's — reached by following each config's `extends`, which is
+    // why every config in the tree names one even though the runtime defaults
+    // it to the superclass.
+    expectTypeOf<keyof LexicalSchemaInput<ParagraphNode>>().toEqualTypeOf<
+      'direction' | 'format' | 'indent' | 'textFormat' | 'textStyle'
+    >();
+    // TextNode's are its own, and `format` accepts the legacy spellings its
+    // aliasedValue declares as well as the number it stores.
+    expectTypeOf<LexicalSchemaInput<TextNode>['format']>().toEqualTypeOf<
+      number | string | undefined
+    >();
+  });
+
   test('an object accepts each property’s input, any of them absent', () => {
     const point = objectValue({label: stringValue(), x: numberValue()});
     expect(point({x: '3'})).toEqual({label: '', x: 3});
@@ -1763,20 +1779,16 @@ describe('a schema is bound to the node it was checked against', () => {
   });
 
   test('it does not install on an unrelated node', () => {
-    class BetaNode extends Beta {
-      $config() {
-        // @ts-expect-error -- alphaSchema was checked against Alpha, whose
-        // members Beta does not have: "Type 'BetaNode' is missing the
-        // following properties from type 'Alpha': __alpha, getAlpha, setAlpha"
-        return this.config('bound-beta', {
-          extends: ElementNode,
-          json: alphaSchema,
-        });
-      }
-    }
-    // Nothing to assert at runtime: the names would simply fail to resolve at
-    // registration. The point is that it is refused before that.
-    expect(typeof BetaNode).toBe('function');
+    // Asserted on `config()` directly rather than inside a `$config()`
+    // override: a rejected call has the error type for a return type, which
+    // would fail the override check too and report twice for one mistake.
+    // Declared, never called: the assertion is the compile error below.
+    const _refused = (beta: Beta) =>
+      // @ts-expect-error -- alphaSchema was checked against Alpha, whose
+      // members Beta does not have: "Type 'Beta' is missing the following
+      // properties from type 'Alpha': __alpha, getAlpha, setAlpha"
+      beta.config('bound-beta', {extends: ElementNode, json: alphaSchema});
+    expect(typeof _refused).toBe('function');
   });
 
   test('a schema that names nothing installs anywhere', () => {

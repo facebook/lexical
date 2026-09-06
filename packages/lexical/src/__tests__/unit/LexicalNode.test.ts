@@ -1583,7 +1583,7 @@ describe('LexicalNode tests', () => {
           class SNCVersionedTextNode extends TextNode {
             __version = 0;
             $config() {
-              return this.config('snc-vtext', {});
+              return this.config('snc-vtext', {extends: TextNode});
             }
             afterCloneFrom(node: this): void {
               super.afterCloneFrom(node);
@@ -3250,6 +3250,7 @@ describe('LexicalNode.$config() without registration', () => {
           $transform: (node: AbstractBaseNode) => {
             transformed.push(node.getType());
           },
+          extends: ElementNode,
         });
       }
     }

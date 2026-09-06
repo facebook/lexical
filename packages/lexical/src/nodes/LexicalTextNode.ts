@@ -401,6 +401,7 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
 
   $config() {
     return this.config('text', {
+      extends: LexicalNode,
       generated: GENERATED_TEXT,
       importDOM: {
         '#text': () => ({

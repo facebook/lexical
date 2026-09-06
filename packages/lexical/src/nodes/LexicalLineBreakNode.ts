@@ -30,6 +30,7 @@ export class LineBreakNode extends LexicalNode {
 
   $config() {
     return this.config('linebreak', {
+      extends: LexicalNode,
       generated: GENERATED_LINEBREAK,
       importDOM: {
         br: (node: Node) => {

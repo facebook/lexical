@@ -7,7 +7,6 @@
  */
 
 import type {
-  BaseStaticNodeConfig,
   KlassConstructor,
   LexicalEditor,
   Spread,
@@ -221,7 +220,7 @@ export class ElementNode
   // Specific type information is discarded for backwards compatibility,
   // there is nothing meaninful to gain from requiring `{extends: ElementNode}`
   // with the current shape here (just a `$transform`)
-  $config(): BaseStaticNodeConfig {
+  $config() {
     return this.config(Symbol.for('ElementNode'), {
       /*
        * Built-in normalize for shadow-root ElementNodes: wraps any direct child

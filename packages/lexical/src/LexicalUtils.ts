@@ -4937,9 +4937,17 @@ export function* iterStaticNodeConfigChain(
   ) {
     const config = getStaticNodeConfig(current);
     yield config;
+    // `extends` is honored only from a class that declared its own `$config`.
+    // A subclass that declares none reads its ancestor's — `extends` included
+    // — so following it here would jump to that ancestor's parent and skip the
+    // ancestor itself, which is where the properties it inherits are declared.
     current =
-      (config.ownNodeConfig && config.ownNodeConfig.extends) ||
-      getSuperclassOf(current);
+      (hasOwnKey(
+        current.prototype as unknown as object,
+        PROTOTYPE_CONFIG_METHOD,
+      )
+        ? config.ownNodeConfig && config.ownNodeConfig.extends
+        : undefined) || getSuperclassOf(current);
   }
 }
 

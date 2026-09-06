@@ -34,6 +34,7 @@ import {
   $updateStateFromJSON,
   type CollectStateJSON,
   type GetNodeStateConfig,
+  type GetStaticNodeConfig,
   type NodeState,
   type NodeStateJSON,
   type Prettify,
@@ -496,11 +497,15 @@ type LexicalFullExportJSON<T extends LexicalNode> = T['exportJSON'] extends {
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type NoSchemaInput = {};
 
-/** The class `T`'s `$config()` names as its superclass, if it named one. */
+/**
+ * The class `T`'s `$config()` names as its superclass, if it named one.
+ *
+ * `Klass<infer Parent>` is the spelling the field is declared with and the one
+ * {@link GetStaticNodeConfigs} matches it by, rather than a fourth hand-rolled
+ * copy of its constructor signature.
+ */
 type ConfigParentOf<T extends LexicalNode> =
-  GetStaticNodeOwnConfig<T> extends {
-    extends: abstract new (...args: never) => infer Parent extends LexicalNode;
-  }
+  GetStaticNodeConfig<T> extends {extends: Klass<infer Parent>}
     ? Parent
     : never;
 
@@ -509,13 +514,13 @@ type ConfigParentOf<T extends LexicalNode> =
  * none.
  */
 type OwnSchemaInputOf<T extends LexicalNode> = [
-  GetStaticNodeOwnConfig<T>,
+  GetStaticNodeConfig<T>,
 ] extends [never]
   ? // No `$config` of its own at all. Tested before the shape below, because
     // `never` satisfies every `extends` and would otherwise take the `json`
     // branch and reduce the whole intersection to `never`.
     NoSchemaInput
-  : GetStaticNodeOwnConfig<T> extends {json: infer Json}
+  : GetStaticNodeConfig<T> extends {json: infer Json}
     ? SchemaInput<Json>
     : NoSchemaInput;
 
@@ -551,28 +556,64 @@ export type LexicalSchemaInput<T extends LexicalNode> = ComposedSchemaInput<T> &
 type ComposedSchemaInput<
   T extends LexicalNode,
   /**
-   * Bounds the walk. TypeScript cannot see that the chain terminates and
-   * refuses the recursion without it. A chain deeper than this resolves to
-   * {@link NoSchemaInput} rather than failing to compile, which means it goes
-   * quiet rather than loud: `{}` is the identity of the intersection, so the
-   * ancestors past the bound contribute nothing and nothing says so.
+   * A safety net, not the termination condition — the walk ends at the first
+   * class with no `$config()` of its own, which is what {@link LexicalNode}'s
+   * own does. TypeScript cannot see that for itself and refuses the recursion
+   * without a bound, so a chain longer than this resolves to
+   * {@link ChainTooDeep}, which is loud: it poisons any use of the result
+   * rather than quietly contributing no properties, which is what an empty
+   * object would do.
    *
    * @internal
    */
-  Depth extends readonly unknown[] = [0, 0, 0, 0, 0, 0, 0, 0],
+  Depth extends readonly unknown[] = [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ],
 > = Depth extends readonly [unknown, ...infer Rest]
-  ? [ConfigParentOf<T>] extends [never]
-    ? OwnSchemaInputOf<T>
-    : OwnSchemaInputOf<T> & ComposedSchemaInput<ConfigParentOf<T>, Rest>
-  : NoSchemaInput;
+  ? [GetStaticNodeConfig<T>] extends [never]
+    ? // Declares no config, so it contributes nothing and names no parent.
+      NoSchemaInput
+    : [ConfigParentOf<T>] extends [never]
+      ? OwnSchemaInputOf<T>
+      : OwnSchemaInputOf<T> &
+          // `Omit`, not a bare intersection: a subclass that re-declares an
+          // inherited property *replaces* it — `composeSchema` resolves the key
+          // to one winning schema, most-derived first — so intersecting the two
+          // would report the ancestor's domain for a property the subclass
+          // widened, and `never` for one it changed outright.
+          Omit<
+            ComposedSchemaInput<ConfigParentOf<T>, Rest>,
+            keyof OwnSchemaInputOf<T>
+          >
+  : ChainTooDeep;
 
 /**
- * The most precise type we can infer for the JSON that will
- * be produced by T.exportJSON().
+ * What a `$config` chain longer than {@link ComposedSchemaInput}'s bound
+ * resolves to.
  *
- * Do not use this for the return type of T.exportJSON()! It must be
- * a more generic type to be compatible with subclassing.
+ * A branded type rather than an empty object, so exhausting the bound names
+ * itself at the first use instead of silently asserting that everything past
+ * it contributes nothing.
  */
+export interface ChainTooDeep {
+  readonly __lexicalConfigChainTooDeep: never;
+}
+
 export type LexicalExportJSON<T extends LexicalNode> = Prettify<
   Omit<LexicalFullExportJSON<T>, 'type' | 'version'> & {
     type: GetStaticNodeType<T>;

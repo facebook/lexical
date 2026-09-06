@@ -144,7 +144,8 @@ export type CollectStateJSON<
 // by it. The own type is read through a mapped type (`{[P in Type]: ...}[Type]`)
 // so that the indexed access resolves against the concrete key literal rather
 // than the record's broad string index signature when `T` is still generic.
-type GetStaticNodeConfig<T extends LexicalNode> = [
+/** @internal */
+export type GetStaticNodeConfig<T extends LexicalNode> = [
   GetStaticNodeOwnConfig<T>,
 ] extends [never]
   ? GetStaticNodeType<T> extends infer Type extends string

@@ -19,8 +19,10 @@ import {
   arrayValue,
   booleanValue,
   createState,
+  DecoratorNode,
   ElementNode,
   enumValue,
+  getComposedSchemaFields,
   IS_BOLD,
   type Klass,
   type LexicalExportJSON,
@@ -1703,6 +1705,59 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
     expectTypeOf<LexicalSchemaInput<TextNode>['format']>().toEqualTypeOf<
       number | string | undefined
     >();
+  });
+
+  test('a node that omits extends keeps its own schema', () => {
+    // Its superclass declares no `$config()`, so the record carries no
+    // accessor and the walk has nothing to follow — but the node's own
+    // declaration is still there to be read, by type as it is at runtime.
+    class CaptionNode extends DecoratorNode<null> {
+      __caption = '';
+      $config() {
+        return this.config('caption-no-extends', {
+          json: nodeSchema<CaptionNode>()({
+            caption: withField(stringValue(), {field: '__caption'}),
+          }),
+        });
+      }
+      decorate(): null {
+        return null;
+      }
+    }
+    const key: keyof LexicalSchemaInput<CaptionNode> = 'caption';
+    expect(key).toBe('caption');
+  });
+
+  test('a re-declared property is the subclass’s, not the intersection', () => {
+    // `composeSchema` resolves a re-declared key to one winning schema, most
+    // derived first, so a subclass that widens a domain really does accept the
+    // wider one. Intersecting the two would report the ancestor's.
+    class TagBase extends ElementNode {
+      __tag: 'a' | 'b' | 'c' = 'a';
+      $config() {
+        return this.config('tag-base', {
+          extends: ElementNode,
+          json: nodeSchema<TagBase>()({
+            tag: withField(enumValue(['a']), {field: '__tag'}),
+          }),
+        });
+      }
+    }
+    class TagSub extends TagBase {
+      $config() {
+        return this.config('tag-sub', {
+          extends: TagBase,
+          json: nodeSchema<TagSub>()({
+            tag: withField(enumValue(['a', 'b', 'c']), {field: '__tag'}),
+          }),
+        });
+      }
+    }
+    const widened: LexicalSchemaInput<TagSub>['tag'] = 'c';
+    expect(widened).toBe('c');
+    // and the runtime agrees, which is what makes the type worth pinning
+    expect(getComposedSchemaFields(TagSub).tag('c')).toBe('c');
+    expect(getComposedSchemaFields(TagBase).tag('c')).toBe('a');
   });
 
   test('a node composes its flat NodeState too', () => {

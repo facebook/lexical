@@ -218,13 +218,20 @@ export interface StaticNodeConfigValue<
    */
   readonly slots?: readonly string[];
   /**
-   * If specified, this must be the exact superclass of the node. It is not
-   * checked at compile time and it is provided automatically at runtime.
+   * The exact superclass of the node. Always name it.
    *
-   * You would want to specify this when you are extending a node that
-   * has non-trivial configuration in its $config such
-   * as required state. If you do not specify this, the inferred
-   * types for your node class might be missing some of that.
+   * The runtime fills it in from the prototype chain when it is left out, but
+   * the type system cannot: `extends` is what puts a config on the record the
+   * composed serialization types walk, so omitting it costs the node its own
+   * schema in {@link LexicalSchemaInput} and hides its ancestors' from every
+   * subclass. Where the superclass itself declares a `$config()` — which
+   * `TextNode`, `ElementNode` and `LineBreakNode` all do — omitting it is a
+   * compile error on the override rather than a silent loss.
+   *
+   * It must be the *exact* superclass. Nothing checks that: naming a class
+   * further up the chain silently skips everything in between, which drops
+   * those classes' schema fields, `$transform`, `slots` and `stateConfigs`
+   * from every walk.
    */
   readonly extends?: Klass<LexicalNode>;
   /**

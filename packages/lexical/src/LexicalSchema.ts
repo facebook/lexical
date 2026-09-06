@@ -1401,6 +1401,14 @@ export function aliasedValue<
  * away and, used as a `createState` parse, dirties its node on every write of
  * an equal value.
  *
+ * Only then: an equality is for a domain `===` cannot compare, so declaring
+ * one over a primitive output is an error. `===` already answers there, and a
+ * comparator can only widen it — call two distinct serialized values equal —
+ * after which the compact form omits whichever is not the default and parsing
+ * restores the default in its place. A rotation compared modulo 360 serializes
+ * `360` as nothing and reads back as `0`. Normalize in the `transform`
+ * instead, where the value that reaches storage is the one that round-trips.
+ *
  * @example
  * ```ts
  * const parseFormat = transformValue(
@@ -1422,7 +1430,7 @@ export function transformValue<Inner, Out, Decls = never, In = Inner>(
   transform: (value: Inner) => Out,
   options: {readonly isEqual?: (a: Out, b: Out) => boolean} = {},
 ): SerializationSchema<Out, Decls, In> {
-  return makeSchema(
+  const schema = makeSchema<Out, Decls, In>(
     value => transform(inner(value)),
     {inner, kind: 'transform'},
     inner,
@@ -1436,6 +1444,24 @@ export function transformValue<Inner, Out, Decls = never, In = Inner>(
     // so what the inner schema admits is exactly what this admits.
     inner.accepts,
   );
+  // An equality is for a domain `===` cannot compare, which means a
+  // reference-typed one. Over primitives `===` is already the answer, so a
+  // comparator can only widen it — declare two distinct serialized values
+  // equal — and the compact form then drops whichever one is not the default
+  // and parses it back as the default. `transformValue(numberValue(), v => v,
+  // {isEqual: (a, b) => a % 360 === b % 360})` writes no `rotation` for 360 and
+  // reads it back as 0.
+  //
+  // Checked here because this is the only place a comparator is a caller's to
+  // pass: `arrayValue` and `objectValue` derive their own, and every wrapper
+  // lifts its inner schema's, which has already been through here.
+  invariant(
+    options.isEqual === undefined ||
+      (schema.defaultValue !== null && typeof schema.defaultValue === 'object'),
+    'transformValue: isEqual compares reference-typed values, but this schema parses to %s. Two primitives that are not === are two different serialized values; declaring them equal loses one of them in the compact form.',
+    typeof schema.defaultValue,
+  );
+  return schema;
 }
 
 /**

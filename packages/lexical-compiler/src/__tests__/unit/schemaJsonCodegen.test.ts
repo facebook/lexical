@@ -357,18 +357,34 @@ describe('compileDiffersFromDefault', () => {
     );
   });
 
-  test('a declared equality the literal does not reproduce is caught', () => {
-    // The meta of a transformValue is its inner schema's, so this compiles to
-    // `value !== 0` — and the schema itself says 1 is the default too.
-    const schema = transformValue(numberValue(), value => value, {
-      isEqual: (a, b) =>
-        typeof a === 'number' && typeof b === 'number' && Math.abs(a - b) < 2,
-    }) as AnySerializationSchema;
-    const expression = compileDiffersFromDefault(schema, 'value');
-    expect(expression).toBe('value !== 0');
+  test('an equality over a primitive domain is refused at the schema', () => {
+    // Not a codegen limitation: `===` already decides a primitive, so a
+    // comparator can only declare two distinct serialized values equal, and
+    // the compact form then drops one and parses it back as the other. The
+    // sampled verification cannot be the backstop — this comparator agrees
+    // with `value !== 0` on every value the corpus tries and disagrees on the
+    // first rotation a real document carries — so it is refused where it is
+    // written.
     expect(() =>
-      verifyDiffersFromDefault({expression, name: 'value', schema}),
-    ).toThrow(/disagrees with its schema on whether 1 is the default/);
+      transformValue(numberValue(), value => value, {
+        isEqual: (a, b) => a % 360 === b % 360,
+      }),
+    ).toThrow(/isEqual compares reference-typed values/);
+  });
+
+  test('an equality lifted onto a primitive default is refused by the codegen', () => {
+    // The shape that survives the rule above: the comparator belongs to the
+    // inner array, whose domain really is reference-typed, and the wrapper
+    // that lifted it has `null` for a default. Emitting `value !== null` here
+    // happens to be right, but nothing available can establish that, so it is
+    // not emitted.
+    const schema = nullable(arrayValue(stringValue()), {
+      defaultAsNull: true,
+    }) as AnySerializationSchema;
+    expect(schema.isEqual).toBeTypeOf('function');
+    expect(() => compileDiffersFromDefault(schema, 'value')).toThrow(
+      /an equality of its own/,
+    );
   });
 
   test('a structural test for a default compared by identity is caught', () => {

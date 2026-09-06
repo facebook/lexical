@@ -484,6 +484,22 @@ export function compileDiffersFromDefault(
 ): string {
   const {defaultValue} = schema;
   if (hasFaithfulLiteral(defaultValue)) {
+    // `!==` is the whole of the walk's rule only while there is no second
+    // clause. A comparator is an opaque closure, so nothing here can establish
+    // that it never widens `===` — and a sampled check cannot either: an
+    // equality modulo 360 agrees with `!== 0` on every value a corpus would
+    // think to try, and disagrees on the first rotation a document actually
+    // carries. `transformValue` refuses a comparator over a primitive domain
+    // outright, so reaching this means one was lifted from an inner schema
+    // whose own domain is reference-typed; that is coherent, but it is not
+    // something this can compile.
+    if (schema.isEqual !== undefined) {
+      throw new NotCompilable(
+        `compares against its default (${literal(
+          defaultValue,
+        )}) with an equality of its own`,
+      );
+    }
     return `${name} !== ${literal(defaultValue)}`;
   }
   if (
@@ -506,10 +522,15 @@ export function compileDiffersFromDefault(
  *
  * The values are {@link verificationCorpus} plus the default itself, a copy of
  * it (which is `===` to nothing the schema holds), and the array and object
- * shapes a structural comparison could confuse. A schema's `isEqual` is a
- * function its meta does not describe — a `transformValue` may declare any
- * equality over a primitive domain — so a literal comparison can be plausible
- * and wrong, and only running the two against each other catches it.
+ * shapes a structural comparison could confuse.
+ *
+ * This samples; it does not prove. It catches an expression that is wrong about
+ * a value the schema itself names — an enum member, an alias, the default's own
+ * shape — which is what a mistake in the emitted comparison looks like. It
+ * cannot catch an expression that is wrong only about values nobody listed,
+ * which is what an arbitrary `isEqual` produces, so
+ * {@link compileDiffersFromDefault} refuses to emit against one rather than
+ * bring it here.
  */
 export function verifyDiffersFromDefault({
   expression,

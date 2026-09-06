@@ -91,6 +91,12 @@ function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
         metaArbitrary(meta.inner.meta),
         fc.constantFrom(...Object.keys(meta.aliases)),
       );
+    case 'transform':
+      // What is generated here is serialized *input*, and a transform changes
+      // only the output, so the domain to draw from is the inner one — the
+      // same answer inheriting the inner meta used to give, now reached
+      // deliberately rather than by the transform being invisible.
+      return metaArbitrary(meta.inner.meta);
     case 'raw':
       // The schema deliberately does not describe this value's domain (its
       // owner validates it), so there is nothing to generate from.

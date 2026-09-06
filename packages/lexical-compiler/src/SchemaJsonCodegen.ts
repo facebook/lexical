@@ -289,6 +289,12 @@ export function verificationCorpus(meta: SerializationSchemaMeta): unknown[] {
     } else if (m.kind === 'aliased') {
       values.push(...Object.keys(m.aliases), ...Object.values(m.aliases));
       walk(m.inner.meta);
+    } else if (m.kind === 'transform') {
+      // The transform is opaque, but its input domain is not, and a corpus
+      // drawn from it is what gives the verification something to say about a
+      // schema wrapped in one — the fallback of an `optional(transformValue(
+      // enumValue([...]), f))`, say, is still checked over the enum's values.
+      walk(m.inner.meta);
     }
   };
   walk(meta);

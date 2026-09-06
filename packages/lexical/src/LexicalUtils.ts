@@ -3478,7 +3478,35 @@ export function resolveSchemaField<T extends SchemaFieldBase>(
     string,
     unknown
   >;
-  return prototype[method] === declared[method] ? accessor : method;
+  // The conventional name is guarded alongside the spelled one, because a
+  // spelled accessor is typically a wrapper *over* the conventional one rather
+  // than a replacement for it: ElementNode's `textFormat` names
+  // `getSerializedTextFormat`, which computes its result from `getTextFormat`.
+  // Guarding only the wrapper would keep the direct field read for a subclass
+  // that overrides `getTextFormat` — the accessor that has been public since
+  // long before this schema existed, and the one such a subclass would
+  // naturally reach for — silently exporting the stored field instead of what
+  // the node says the property is.
+  //
+  // Only the guard widens: the property is still read through the spelled
+  // accessor when it is reclaimed, since that is the one whose return type is
+  // the serialized form. A conventional name the class does not have costs
+  // nothing, as both prototypes then resolve `undefined` — which is the usual
+  // case for a spelled accessor (`getText` alongside TextNode's
+  // `getTextContent`, `getUrl` alongside LinkNode's `getURL`).
+  return isUnchangedFrom(prototype, declared, method) &&
+    isUnchangedFrom(prototype, declared, conventional)
+    ? accessor
+    : method;
+}
+
+/** Whether `klass` inherits `name` from the class that declared the property. */
+function isUnchangedFrom(
+  prototype: Record<string, unknown>,
+  declared: Record<string, unknown>,
+  name: string,
+): boolean {
+  return prototype[name] === declared[name];
 }
 
 /**
@@ -4932,6 +4960,17 @@ export function ownSchemaFields(klass: Klass<LexicalNode>): readonly string[] {
  * apply the serialized properties to it. A generated parser, when the class
  * has one, is reached through {@link $applyJSONSetters} the way every other
  * path reaches it.
+ *
+ * {@link $applyImportJSON} is the base `updateFromJSON` minus a `getWritable()`
+ * the fresh node does not need, so it may only stand in for that method when
+ * the node has not overridden it. A class is free to declare a schema *and* an
+ * `updateFromJSON` — to migrate an older payload, or to apply something the
+ * schema cannot describe — and calling the schema directly would drop that work
+ * on the import path while leaving it in place everywhere else.
+ *
+ * The node `$create` returns is what is asked, not `klass`: a replacement
+ * registered for this type is a different class, with its own override or lack
+ * of one.
  */
 function synthesizeImportJSON(
   klass: Klass<LexicalNode>,
@@ -4939,7 +4978,12 @@ function synthesizeImportJSON(
   serializedNode: SerializedPartial<SerializedLexicalNode> &
     Record<string, unknown>,
 ) => LexicalNode {
-  return serializedNode => $applyImportJSON($create(klass), serializedNode);
+  return serializedNode => {
+    const node = $create(klass);
+    return node.updateFromJSON === LexicalNode.prototype.updateFromJSON
+      ? $applyImportJSON(node, serializedNode)
+      : node.updateFromJSON(serializedNode);
+  };
 }
 
 /**

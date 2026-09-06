@@ -201,28 +201,34 @@ describe('a constrained numberValue compiles to its bounds', () => {
 });
 
 describe('verifyCompiledParse is what catches a plausible-but-wrong parse', () => {
-  test('a transformValue compiles to something the check rejects', () => {
-    // The reason the verification exists: transformValue inherits its inner
-    // schema's meta and keeps the function to itself, so nothing about the meta
-    // reveals that the compiled expression stores the un-transformed value.
+  test('a transformValue is refused rather than sampled', () => {
+    // A transform is an opaque closure, so the corpus cannot be trusted to
+    // contain a value that reveals it: this one differs from the identity on
+    // every input, but `value => value === 'special' ? 'other' : value` would
+    // differ on none the corpus knows to try, and the compiled parse — which
+    // stores the un-transformed input — would pass verification and ship.
+    // Naming the transform in the meta is what makes the refusal structural.
     const schema = transformValue(
       enumValue(['a', 'b']),
       value => (value === 'a' ? 1 : 2) as unknown,
     ) as AnySerializationSchema;
-    const {expression, tables} = compileParse(
-      schema.meta,
-      schema.defaultValue,
-      'T',
-    );
-    // It compiles happily — and to something that returns the *input* 'a'
-    // where the schema returns the transformed 1.
-    expect(expression).toContain('v === "a"');
-    // Only running it against the schema shows that.
-    expect(() => verifyCompiledParse({expression, schema, tables})).toThrow(
+    expect(() => compileParse(schema.meta, schema.defaultValue, 'T')).toThrow(
       NotCompilable,
     );
-    expect(() => verifyCompiledParse({expression, schema, tables})).toThrow(
-      /disagrees with its schema/,
+    expect(() => compileParse(schema.meta, schema.defaultValue, 'T')).toThrow(
+      /a transform schema/,
+    );
+  });
+
+  test('the corpus still reaches through a transform to its input domain', () => {
+    // The refusal is not the end of the transform's meta: an enum wrapped in
+    // one still names its members, and those are what a schema *around* the
+    // transform gets verified over.
+    const schema = transformValue(enumValue(['a', 'b']), value =>
+      value.toUpperCase(),
+    ) as AnySerializationSchema;
+    expect(verificationCorpus(schema.meta)).toEqual(
+      expect.arrayContaining(['a', 'b']),
     );
   });
 

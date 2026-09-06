@@ -15,6 +15,7 @@ import {
   $createTextNode,
   $getRoot,
   $isTabNode,
+  $isTextNode,
   aliasedValue,
   arrayValue,
   booleanValue,
@@ -491,12 +492,15 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       expect(upper.defaultValue).toBe('A');
       expect(upper('bc')).toBe('BC');
     });
-    test('meta and setter are inherited from the inner schema', () => {
-      // Introspection describes the accepted input domain, so generated
-      // examples keep exercising the legacy forms.
+    test('meta names the transform and holds the inner schema', () => {
+      // Introspection still reaches the accepted input domain, so generated
+      // examples keep exercising the legacy forms — but through a kind of its
+      // own rather than by wearing the inner schema's. The transform is the
+      // one part of a schema that cannot be described structurally, and a
+      // consumer that reasons about the *output* has to be told that.
       const inner = withAccessors(stringValue(), {setter: 'setFoo'});
       const t = transformValue(inner, s => s.length);
-      expect(t.meta).toBe(inner.meta);
+      expect(t.meta).toEqual({inner, kind: 'transform'});
       expect(t.setter).toBe('setFoo');
     });
   });
@@ -1707,10 +1711,14 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
     >();
   });
 
-  test('a chain of any depth resolves, base included', () => {
-    // Composed over `GetStaticNodeConfigs`, which resolves the chain to a
-    // tuple before this folds it — so there is no recursion for TypeScript to
-    // bound, and no depth past which ancestors quietly stop contributing.
+  test('a chain deeper than any bound resolves, base included', () => {
+    // Twenty links, which is past the fixed slot count an earlier
+    // hand-rolled fold here allowed: the walk resolves the chain to a tuple
+    // and the fold over it is tail-recursive, so ancestors do not quietly
+    // stop contributing at a depth nothing names. Only the two ends declare
+    // a schema — the assertion reads those, and the eighteen links between
+    // them are what makes it a depth test, so paying `nodeSchema`'s
+    // per-member obligation check on each of them buys nothing.
     class Deep1 extends ElementNode {
       __p1 = '';
       $config() {
@@ -1723,108 +1731,255 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
       }
     }
     class Deep2 extends Deep1 {
-      __p2 = '';
       $config() {
-        return this.config('deep-2', {
-          extends: Deep1,
-          json: nodeSchema<Deep2>()({
-            p2: withField(stringValue(), {field: '__p2'}),
-          }),
-        });
+        return this.config('deep-2', {extends: Deep1});
       }
     }
     class Deep3 extends Deep2 {
-      __p3 = '';
       $config() {
-        return this.config('deep-3', {
-          extends: Deep2,
-          json: nodeSchema<Deep3>()({
-            p3: withField(stringValue(), {field: '__p3'}),
-          }),
-        });
+        return this.config('deep-3', {extends: Deep2});
       }
     }
     class Deep4 extends Deep3 {
-      __p4 = '';
       $config() {
-        return this.config('deep-4', {
-          extends: Deep3,
-          json: nodeSchema<Deep4>()({
-            p4: withField(stringValue(), {field: '__p4'}),
-          }),
-        });
+        return this.config('deep-4', {extends: Deep3});
       }
     }
     class Deep5 extends Deep4 {
-      __p5 = '';
       $config() {
-        return this.config('deep-5', {
-          extends: Deep4,
-          json: nodeSchema<Deep5>()({
-            p5: withField(stringValue(), {field: '__p5'}),
-          }),
-        });
+        return this.config('deep-5', {extends: Deep4});
       }
     }
     class Deep6 extends Deep5 {
-      __p6 = '';
       $config() {
-        return this.config('deep-6', {
-          extends: Deep5,
-          json: nodeSchema<Deep6>()({
-            p6: withField(stringValue(), {field: '__p6'}),
-          }),
-        });
+        return this.config('deep-6', {extends: Deep5});
       }
     }
     class Deep7 extends Deep6 {
-      __p7 = '';
       $config() {
-        return this.config('deep-7', {
-          extends: Deep6,
-          json: nodeSchema<Deep7>()({
-            p7: withField(stringValue(), {field: '__p7'}),
-          }),
-        });
+        return this.config('deep-7', {extends: Deep6});
       }
     }
     class Deep8 extends Deep7 {
-      __p8 = '';
       $config() {
-        return this.config('deep-8', {
-          extends: Deep7,
-          json: nodeSchema<Deep8>()({
-            p8: withField(stringValue(), {field: '__p8'}),
-          }),
-        });
+        return this.config('deep-8', {extends: Deep7});
       }
     }
     class Deep9 extends Deep8 {
-      __p9 = '';
       $config() {
-        return this.config('deep-9', {
-          extends: Deep8,
-          json: nodeSchema<Deep9>()({
-            p9: withField(stringValue(), {field: '__p9'}),
-          }),
-        });
+        return this.config('deep-9', {extends: Deep8});
       }
     }
     class Deep10 extends Deep9 {
-      __p10 = '';
       $config() {
-        return this.config('deep-10', {
-          extends: Deep9,
-          json: nodeSchema<Deep10>()({
-            p10: withField(stringValue(), {field: '__p10'}),
+        return this.config('deep-10', {extends: Deep9});
+      }
+    }
+    class Deep11 extends Deep10 {
+      $config() {
+        return this.config('deep-11', {extends: Deep10});
+      }
+    }
+    class Deep12 extends Deep11 {
+      $config() {
+        return this.config('deep-12', {extends: Deep11});
+      }
+    }
+    class Deep13 extends Deep12 {
+      $config() {
+        return this.config('deep-13', {extends: Deep12});
+      }
+    }
+    class Deep14 extends Deep13 {
+      $config() {
+        return this.config('deep-14', {extends: Deep13});
+      }
+    }
+    class Deep15 extends Deep14 {
+      $config() {
+        return this.config('deep-15', {extends: Deep14});
+      }
+    }
+    class Deep16 extends Deep15 {
+      $config() {
+        return this.config('deep-16', {extends: Deep15});
+      }
+    }
+    class Deep17 extends Deep16 {
+      $config() {
+        return this.config('deep-17', {extends: Deep16});
+      }
+    }
+    class Deep18 extends Deep17 {
+      $config() {
+        return this.config('deep-18', {extends: Deep17});
+      }
+    }
+    class Deep19 extends Deep18 {
+      $config() {
+        return this.config('deep-19', {extends: Deep18});
+      }
+    }
+    class Deep20 extends Deep19 {
+      $config() {
+        return this.config('deep-45', {extends: Deep19});
+      }
+    }
+    class Deep21 extends Deep20 {
+      $config() {
+        return this.config('deep-21', {extends: Deep20});
+      }
+    }
+    class Deep22 extends Deep21 {
+      $config() {
+        return this.config('deep-22', {extends: Deep21});
+      }
+    }
+    class Deep23 extends Deep22 {
+      $config() {
+        return this.config('deep-23', {extends: Deep22});
+      }
+    }
+    class Deep24 extends Deep23 {
+      $config() {
+        return this.config('deep-24', {extends: Deep23});
+      }
+    }
+    class Deep25 extends Deep24 {
+      $config() {
+        return this.config('deep-25', {extends: Deep24});
+      }
+    }
+    class Deep26 extends Deep25 {
+      $config() {
+        return this.config('deep-26', {extends: Deep25});
+      }
+    }
+    class Deep27 extends Deep26 {
+      $config() {
+        return this.config('deep-27', {extends: Deep26});
+      }
+    }
+    class Deep28 extends Deep27 {
+      $config() {
+        return this.config('deep-28', {extends: Deep27});
+      }
+    }
+    class Deep29 extends Deep28 {
+      $config() {
+        return this.config('deep-29', {extends: Deep28});
+      }
+    }
+    class Deep30 extends Deep29 {
+      $config() {
+        return this.config('deep-30', {extends: Deep29});
+      }
+    }
+    class Deep31 extends Deep30 {
+      $config() {
+        return this.config('deep-31', {extends: Deep30});
+      }
+    }
+    class Deep32 extends Deep31 {
+      $config() {
+        return this.config('deep-32', {extends: Deep31});
+      }
+    }
+    class Deep33 extends Deep32 {
+      $config() {
+        return this.config('deep-33', {extends: Deep32});
+      }
+    }
+    class Deep34 extends Deep33 {
+      $config() {
+        return this.config('deep-34', {extends: Deep33});
+      }
+    }
+    class Deep35 extends Deep34 {
+      $config() {
+        return this.config('deep-35', {extends: Deep34});
+      }
+    }
+    class Deep36 extends Deep35 {
+      $config() {
+        return this.config('deep-36', {extends: Deep35});
+      }
+    }
+    class Deep37 extends Deep36 {
+      $config() {
+        return this.config('deep-37', {extends: Deep36});
+      }
+    }
+    class Deep38 extends Deep37 {
+      $config() {
+        return this.config('deep-38', {extends: Deep37});
+      }
+    }
+    class Deep39 extends Deep38 {
+      $config() {
+        return this.config('deep-39', {extends: Deep38});
+      }
+    }
+    class Deep40 extends Deep39 {
+      $config() {
+        return this.config('deep-40', {extends: Deep39});
+      }
+    }
+    class Deep41 extends Deep40 {
+      $config() {
+        return this.config('deep-41', {extends: Deep40});
+      }
+    }
+    class Deep42 extends Deep41 {
+      $config() {
+        return this.config('deep-42', {extends: Deep41});
+      }
+    }
+    class Deep43 extends Deep42 {
+      $config() {
+        return this.config('deep-43', {extends: Deep42});
+      }
+    }
+    class Deep44 extends Deep43 {
+      $config() {
+        return this.config('deep-44', {extends: Deep43});
+      }
+    }
+    class Deep45 extends Deep44 {
+      __p45 = '';
+      $config() {
+        return this.config('deep-20', {
+          extends: Deep44,
+          json: nodeSchema<Deep45>()({
+            p45: withField(stringValue(), {field: '__p45'}),
           }),
         });
       }
     }
-    const deepest: keyof LexicalSchemaInput<Deep10> = 'p1';
-    const nearest: keyof LexicalSchemaInput<Deep10> = 'p10';
-    const inherited: keyof LexicalSchemaInput<Deep10> = 'direction';
-    expect([deepest, nearest, inherited]).toEqual(['p1', 'p10', 'direction']);
+    // Exact, not assignable-to: a fold that dropped the base would still
+    // satisfy `const k: keyof ... = 'p20'`, which is the whole failure being
+    // guarded against.
+    expectTypeOf<keyof LexicalSchemaInput<Deep45>>().toEqualTypeOf<
+      | 'p1'
+      | 'p45'
+      | 'direction'
+      | 'format'
+      | 'indent'
+      | 'textFormat'
+      | 'textStyle'
+    >();
+    // and the runtime walk reaches just as far, which is what the type is
+    // claiming to describe. (Type assertions are erased by the test runner,
+    // so without this the case would pass under `test-unit` either way.)
+    expect(Object.keys(getComposedSchemaFields(Deep45)).sort()).toEqual([
+      'direction',
+      'format',
+      'indent',
+      'p1',
+      'p45',
+      'textFormat',
+      'textStyle',
+    ]);
   });
 
   test('a node that omits extends keeps its own schema', () => {
@@ -2453,5 +2608,99 @@ describe('objectValue refuses a __proto__ field in every build', () => {
     const result: {[key: string]: unknown} = {};
     result[key] = {reparented: true};
     expect(Object.keys(result)).toEqual([]);
+  });
+});
+
+describe('a schema does not take back an override the node already had', () => {
+  class PlainBlock extends ElementNode {
+    $config() {
+      return this.config('schema-plain-block', {extends: ElementNode});
+    }
+    createDOM(): HTMLElement {
+      return document.createElement('div');
+    }
+    updateDOM(): boolean {
+      return false;
+    }
+  }
+  class StyledBlock extends PlainBlock {
+    $config() {
+      return this.config('schema-styled-block', {extends: PlainBlock});
+    }
+    getTextFormat(): number {
+      return IS_BOLD;
+    }
+    getTextStyle(): string {
+      return 'color: red;';
+    }
+  }
+  class MigratingText extends TextNode {
+    $config() {
+      return this.config('schema-migrating-text', {extends: TextNode});
+    }
+    updateFromJSON(json: LexicalUpdateJSON<SerializedTextNode>): this {
+      return super.updateFromJSON(json).setStyle('color: red;');
+    }
+  }
+
+  test('an overridden getTextFormat/getTextStyle still decides the export', () => {
+    // ElementNode's schema reads both from `__textFormat`/`__textStyle`
+    // through `getSerializedTextFormat`/`getSerializedTextStyle`. Those
+    // wrappers are new; `getTextFormat`/`getTextStyle` are what a subclass has
+    // always overridden, and what exportJSON called before the schema existed.
+    // A field read that ignored them would export the stored 0/'' instead.
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        name: '[root]',
+        nodes: [PlainBlock, StyledBlock],
+      }),
+    );
+    editor.update(
+      () => {
+        expect($create(StyledBlock).exportJSON()).toMatchObject({
+          textFormat: IS_BOLD,
+          textStyle: 'color: red;',
+        });
+        // The class that overrides nothing keeps the direct-field path, so the
+        // guard costs it nothing: both are at their defaults and omitted.
+        const plain = $create(PlainBlock).exportJSON() as Record<
+          string,
+          unknown
+        >;
+        expect(plain.textFormat).toBeUndefined();
+        expect(plain.textStyle).toBeUndefined();
+      },
+      {discrete: true},
+    );
+    editor.dispose();
+  });
+
+  test('a synthesized importJSON calls an overridden updateFromJSON', () => {
+    // The synthesized importJSON applies the schema directly, skipping the
+    // getWritable() a fresh node does not need. That shortcut is only the base
+    // updateFromJSON when the node has not replaced it — a node that migrates
+    // an older payload there would otherwise be silently skipped on import
+    // while still running everywhere else.
+    const editor = buildEditorFromExtensions(
+      defineExtension({name: '[root]', nodes: [MigratingText]}),
+    );
+    editor.update(
+      () => {
+        const imported = MigratingText.importJSON({
+          detail: 0,
+          format: 0,
+          mode: 'normal',
+          style: '',
+          text: 'hi',
+          type: 'schema-migrating-text',
+          version: 1,
+        });
+        assert($isTextNode(imported));
+        expect(imported.getStyle()).toBe('color: red;');
+        expect(imported.getTextContent()).toBe('hi');
+      },
+      {discrete: true},
+    );
+    editor.dispose();
   });
 });

@@ -29,6 +29,7 @@ import {
 import {
   type AnySerializationSchema,
   isSchemaEqual,
+  type SchemaInput,
   type SerializationSchema,
 } from './LexicalSchema';
 import {errorOnReadOnly} from './LexicalUpdates';
@@ -163,8 +164,7 @@ export type GetStaticNodeConfig<T extends LexicalNode> = [
         AnyStaticNodeConfigValue
     ? Config & {readonly type: GetStaticNodeType<T>}
     : never;
-/** @internal */
-export type GetStaticNodeConfigs<T extends LexicalNode> =
+type GetStaticNodeConfigs<T extends LexicalNode> =
   GetStaticNodeConfig<T> extends infer OwnConfig
     ? // `[X] extends [never]` checks for never without distributing (a naked
       // `never` would otherwise collapse the whole conditional to never). A node
@@ -193,6 +193,97 @@ type CollectStateConfigs<Configs> = Configs extends [
 export type GetNodeStateConfig<T extends LexicalNode> = CollectStateConfigs<
   GetStaticNodeConfigs<T>
 >;
+
+/**
+ * The contribution of a class that declares no schema: no properties, and the
+ * neutral element of the fold below.
+ *
+ * An empty object rather than `unknown`, which is also neutral for `&` but is
+ * not a *value* type — a node with no schema anywhere in its chain would
+ * otherwise come back as `unknown`, which cannot even be spread.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+type NoSchemaInput = {};
+
+/**
+ * What one config's schema accepts, or {@link NoSchemaInput} where it declares
+ * none.
+ *
+ * Both tests are written against `[Config]` so that neither distributes.
+ * `never` is the fold's absorbing element twice over — `never & X` is `never`,
+ * and `keyof never` is every key, so an `Omit` against it erases the whole
+ * ancestor chain — and a naked check maps `never` to `never` rather than to the
+ * neutral element. Not distributing also gives a union-valued config the
+ * conservative answer: `keyof` a union is the *intersection* of its keys, so a
+ * distributed check would quietly hand the `Omit` below an empty key set and
+ * turn off the derived-wins rule it exists to enforce.
+ */
+type SchemaInputOfConfig<Config> = [Config] extends [never]
+  ? NoSchemaInput
+  : [Config] extends [{json: infer Json}]
+    ? SchemaInput<Json>
+    : NoSchemaInput;
+
+/**
+ * Fold a class's config chain, most derived first, into the properties it
+ * accepts.
+ *
+ * `Omit` rather than a bare intersection: a subclass that re-declares an
+ * inherited property *replaces* it — `composeSchema` resolves the key to one
+ * winning schema, most derived first — so intersecting the two would report
+ * the ancestor's domain for a property the subclass widened, and `never` for
+ * one it changed outright. Accumulating derived-first means the winner is
+ * always already in `Acc`, so each ancestor is admitted only for the keys
+ * nothing below it claimed.
+ *
+ * An accumulator rather than the direct form (`Own & Omit<Rest, keyof Own>`):
+ * the recursive call is then the whole of the true branch, which is what makes
+ * it a tail call TypeScript can eliminate. Nesting it inside the intersection
+ * instead caps the fold at ~30 links with a bare TS2589 and a silently
+ * truncated result.
+ */
+type ComposeSchemaInputs<
+  Configs extends readonly unknown[],
+  Acc = NoSchemaInput,
+> = Configs extends [infer OwnConfig, ...infer ParentConfigs]
+  ? ComposeSchemaInputs<
+      ParentConfigs,
+      Spread<Acc, SchemaInputOfConfig<OwnConfig>>
+    >
+  : Acc;
+
+/**
+ * Every serialized property `T` accepts, composed across its `$config` chain —
+ * its own and the ones it inherits.
+ *
+ * The *accepted* input rather than the parsed output, which is wider wherever
+ * a schema reads more than it writes: a legacy alias, a number spelled as a
+ * string, an absent property. That is what a generator of example JSON should
+ * say it produces.
+ *
+ * Both halves are folded over one binding of {@link GetStaticNodeConfigs} — the
+ * chain walk NodeState already runs for its own configs — so nothing here can
+ * disagree with `getComposedSchemaFields` about which classes are in a node's
+ * chain. That walk follows each config's `extends`, which is why every config
+ * in the tree names one: the runtime defaults it to the superclass, but the
+ * type has no way to recover what was left out, and a class that omits it
+ * contributes only its own declarations and hides its ancestors'.
+ *
+ * The walk is the only bound on chain depth, shared with `GetNodeStateConfig`
+ * and reached in the hundreds rather than the sixteen an earlier bound here
+ * allowed; the fold itself is tail-recursive and adds none.
+ */
+export type LexicalSchemaInput<T extends LexicalNode> =
+  GetStaticNodeConfigs<T> extends infer Configs extends readonly unknown[]
+    ? Prettify<
+        ComposeSchemaInputs<Configs> &
+          // Flat NodeState is the other half of what a node serializes as
+          // top-level properties — `getComposedSchemaFields` folds it in
+          // beside the schema's, so anything describing what a node accepts
+          // has to as well.
+          CollectStateJSON<CollectStateConfigs<Configs>, true>
+      >
+    : never;
 
 /**
  * The NodeState JSON produced by this LexicalNode

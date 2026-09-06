@@ -91,6 +91,23 @@ export type SerializationSchemaMeta =
       readonly inner: AnySerializationSchema;
       /** Legacy input spellings, mapped to the value each denotes. */
       readonly aliases: {readonly [alias: string]: unknown};
+    }
+  | {
+      /**
+       * A {@link transformValue}: `inner`'s domain on the way in, and an
+       * opaque function on the way out.
+       *
+       * The kind exists to say that last part. The transform is an arbitrary
+       * closure, so it is the one part of a schema that cannot be described
+       * structurally, and a consumer that walked into `inner` and stopped —
+       * which is what inheriting `inner`'s meta made every consumer do — would
+       * be describing the schema's *input* while believing it had described
+       * its output. For a generator of example inputs that is the right
+       * answer; for a code generator it is a parse that silently drops the
+       * transform.
+       */
+      readonly kind: 'transform';
+      readonly inner: AnySerializationSchema;
     };
 
 /** Domain constraints for {@link numberValue}. */
@@ -1407,7 +1424,7 @@ export function transformValue<Inner, Out, Decls = never, In = Inner>(
 ): SerializationSchema<Out, Decls, In> {
   return makeSchema(
     value => transform(inner(value)),
-    inner.meta,
+    {inner, kind: 'transform'},
     inner,
     // Derived here rather than by makeSchema calling `parse(undefined)`, which
     // is the same value: `transform` is the caller's function, so what it

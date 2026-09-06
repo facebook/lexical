@@ -32,16 +32,13 @@ import {
 import {DOMSlot} from './LexicalDOMSlot';
 import {
   $updateStateFromJSON,
-  type CollectStateJSON,
-  type GetNodeStateConfig,
-  type GetStaticNodeConfigs,
   type NodeState,
   type NodeStateJSON,
   type Prettify,
   type RequiredNodeStateConfig,
 } from './LexicalNodeState';
 import {CACHED_TEXT_SIZE_KEY} from './LexicalReconciler';
-import {type NodeSerializationSchema, type SchemaInput} from './LexicalSchema';
+import {type NodeSerializationSchema} from './LexicalSchema';
 import {
   $getSelection,
   $isNodeSelection,
@@ -221,12 +218,14 @@ export interface StaticNodeConfigValue<
    * The exact superclass of the node. Always name it.
    *
    * The runtime fills it in from the prototype chain when it is left out, but
-   * the type system cannot: `extends` is what puts a config on the record the
-   * composed serialization types walk, so omitting it costs the node its own
-   * schema in {@link LexicalSchemaInput} and hides its ancestors' from every
-   * subclass. Where the superclass itself declares a `$config()` — which
-   * `TextNode`, `ElementNode` and `LineBreakNode` all do — omitting it is a
-   * compile error on the override rather than a silent loss.
+   * the type system cannot: `extends` is what the composed serialization types
+   * follow from one config to the next. A node that omits it still contributes
+   * its own declarations — `LexicalSchemaInput` reads the config in hand — but
+   * the walk stops there, so every property the node inherits is missing from
+   * the type while the runtime keeps applying it. Where the superclass itself
+   * declares a `$config()` — which `TextNode`, `ElementNode` and
+   * `LineBreakNode` all do — omitting it is a compile error on the override
+   * rather than a silent loss.
    *
    * It must be the *exact* superclass. Nothing checks that: naming a class
    * further up the chain silently skips everything in between, which drops
@@ -492,72 +491,6 @@ type LexicalFullExportJSON<T extends LexicalNode> = T['exportJSON'] extends {
 }
   ? R
   : ReturnType<T['exportJSON']>;
-
-/**
- * The contribution of a class that declares no schema: no properties, and the
- * neutral element of the intersection in {@link LexicalSchemaInput}.
- *
- * An empty object rather than `unknown`, which is also neutral for `&` but is
- * not a *value* type — a node with no schema anywhere in its chain would
- * otherwise come back as `unknown`, which cannot even be spread.
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-type NoSchemaInput = {};
-
-/**
- * What one config's schema accepts, or {@link NoSchemaInput} where it declares
- * none — the neutral element of the fold below.
- */
-type SchemaInputOfConfig<Config> = Config extends {json: infer Json}
-  ? SchemaInput<Json>
-  : NoSchemaInput;
-
-/**
- * Fold a class's config chain, most derived first, into the properties it
- * accepts.
- *
- * `Omit` rather than a bare intersection: a subclass that re-declares an
- * inherited property *replaces* it — `composeSchema` resolves the key to one
- * winning schema, most derived first — so intersecting the two would report
- * the ancestor's domain for a property the subclass widened, and `never` for
- * one it changed outright.
- */
-type ComposeSchemaInputs<Configs> = Configs extends [
-  infer OwnConfig,
-  ...infer ParentConfigs,
-]
-  ? SchemaInputOfConfig<OwnConfig> &
-      Omit<
-        ComposeSchemaInputs<ParentConfigs>,
-        keyof SchemaInputOfConfig<OwnConfig>
-      >
-  : NoSchemaInput;
-
-/**
- * Every serialized property `T` accepts, composed across its `$config` chain —
- * its own and the ones it inherits.
- *
- * The *accepted* input rather than the parsed output, which is wider wherever
- * a schema reads more than it writes: a legacy alias, a number spelled as a
- * string, an absent property. That is what a generator of example JSON should
- * say it produces.
- *
- * Composed over {@link GetStaticNodeConfigs} — the same chain walk NodeState
- * folds for its own configs — so the two cannot disagree about which classes
- * are in a node's chain, and this needs no recursion bound of its own: the
- * walk has already resolved the chain to a tuple. That walk follows each
- * config's `extends`, which is why every config in the tree names one: the
- * runtime defaults it to the superclass, but the type has no way to recover
- * what was left out, and a class that omits it contributes only its own
- * declarations and hides its ancestors'.
- */
-export type LexicalSchemaInput<T extends LexicalNode> = ComposeSchemaInputs<
-  GetStaticNodeConfigs<T>
-> &
-  // Flat NodeState is the other half of what a node serializes as top-level
-  // properties — `getComposedSchemaFields` folds it in beside the schema's, so
-  // anything describing what a node accepts has to as well.
-  CollectStateJSON<GetNodeStateConfig<T>, true>;
 
 export type LexicalExportJSON<T extends LexicalNode> = Prettify<
   Omit<LexicalFullExportJSON<T>, 'type' | 'version'> & {

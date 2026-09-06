@@ -118,8 +118,12 @@ const elementNodeSchema = nodeSchema<ElementNode>()({
   // plus the predicate that gates it — rather than reading through
   // `getSerializedTextFormat`/`getSerializedTextStyle` — keeps both on the
   // direct-field path, and lets generated code call the shared predicate once
-  // instead of once per property. The accessors are still named, so a
-  // subclass that overrides either reclaims its property.
+  // instead of once per property.
+  //
+  // Naming the wrapper keeps a subclass in charge of its own property: an
+  // override of it, or of the `getTextFormat`/`getTextStyle` it computes from
+  // — the accessors `exportJSON` read before this schema existed, and the ones
+  // a subclass would reach for — abandons the field and calls the wrapper.
   textFormat: withAccessors(numberValue(), {
     getter: {
       field: '__textFormat',

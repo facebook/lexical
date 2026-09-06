@@ -163,7 +163,8 @@ export type GetStaticNodeConfig<T extends LexicalNode> = [
         AnyStaticNodeConfigValue
     ? Config & {readonly type: GetStaticNodeType<T>}
     : never;
-type GetStaticNodeConfigs<T extends LexicalNode> =
+/** @internal */
+export type GetStaticNodeConfigs<T extends LexicalNode> =
   GetStaticNodeConfig<T> extends infer OwnConfig
     ? // `[X] extends [never]` checks for never without distributing (a naked
       // `never` would otherwise collapse the whole conditional to never). A node

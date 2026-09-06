@@ -34,7 +34,7 @@ import {
   $updateStateFromJSON,
   type CollectStateJSON,
   type GetNodeStateConfig,
-  type GetStaticNodeConfig,
+  type GetStaticNodeConfigs,
   type NodeState,
   type NodeStateJSON,
   type Prettify,
@@ -505,31 +505,33 @@ type LexicalFullExportJSON<T extends LexicalNode> = T['exportJSON'] extends {
 type NoSchemaInput = {};
 
 /**
- * The class `T`'s `$config()` names as its superclass, if it named one.
- *
- * `Klass<infer Parent>` is the spelling the field is declared with and the one
- * {@link GetStaticNodeConfigs} matches it by, rather than a fourth hand-rolled
- * copy of its constructor signature.
+ * What one config's schema accepts, or {@link NoSchemaInput} where it declares
+ * none — the neutral element of the fold below.
  */
-type ConfigParentOf<T extends LexicalNode> =
-  GetStaticNodeConfig<T> extends {extends: Klass<infer Parent>}
-    ? Parent
-    : never;
+type SchemaInputOfConfig<Config> = Config extends {json: infer Json}
+  ? SchemaInput<Json>
+  : NoSchemaInput;
 
 /**
- * What `T`'s own schema accepts, or {@link NoSchemaInput} where it declares
- * none.
+ * Fold a class's config chain, most derived first, into the properties it
+ * accepts.
+ *
+ * `Omit` rather than a bare intersection: a subclass that re-declares an
+ * inherited property *replaces* it — `composeSchema` resolves the key to one
+ * winning schema, most derived first — so intersecting the two would report
+ * the ancestor's domain for a property the subclass widened, and `never` for
+ * one it changed outright.
  */
-type OwnSchemaInputOf<T extends LexicalNode> = [
-  GetStaticNodeConfig<T>,
-] extends [never]
-  ? // No `$config` of its own at all. Tested before the shape below, because
-    // `never` satisfies every `extends` and would otherwise take the `json`
-    // branch and reduce the whole intersection to `never`.
-    NoSchemaInput
-  : GetStaticNodeConfig<T> extends {json: infer Json}
-    ? SchemaInput<Json>
-    : NoSchemaInput;
+type ComposeSchemaInputs<Configs> = Configs extends [
+  infer OwnConfig,
+  ...infer ParentConfigs,
+]
+  ? SchemaInputOfConfig<OwnConfig> &
+      Omit<
+        ComposeSchemaInputs<ParentConfigs>,
+        keyof SchemaInputOfConfig<OwnConfig>
+      >
+  : NoSchemaInput;
 
 /**
  * Every serialized property `T` accepts, composed across its `$config` chain —
@@ -540,86 +542,22 @@ type OwnSchemaInputOf<T extends LexicalNode> = [
  * string, an absent property. That is what a generator of example JSON should
  * say it produces.
  *
- * The walk follows each config's `extends`, which is why every config in the
- * tree names one — the runtime defaults it to the superclass, but the type has
- * no way to recover what was left out, and a class that omits it contributes
- * nothing here and hides its ancestors too.
- *
- * A class with no config of its own resolves `ConfigParentOf` to `LexicalNode`
- * rather than to `never` — the check is an alias instantiation, so it does not
- * distribute, and `infer Parent extends LexicalNode` falls back to its
- * constraint. The walk therefore does not stop there; it keeps yielding
- * `LexicalNode`, whose contribution is empty, until `Depth` runs out. The
- * answer is right either way, but the bound is what ends it.
+ * Composed over {@link GetStaticNodeConfigs} — the same chain walk NodeState
+ * folds for its own configs — so the two cannot disagree about which classes
+ * are in a node's chain, and this needs no recursion bound of its own: the
+ * walk has already resolved the chain to a tuple. That walk follows each
+ * config's `extends`, which is why every config in the tree names one: the
+ * runtime defaults it to the superclass, but the type has no way to recover
+ * what was left out, and a class that omits it contributes only its own
+ * declarations and hides its ancestors'.
  */
-export type LexicalSchemaInput<T extends LexicalNode> = ComposedSchemaInput<T> &
+export type LexicalSchemaInput<T extends LexicalNode> = ComposeSchemaInputs<
+  GetStaticNodeConfigs<T>
+> &
   // Flat NodeState is the other half of what a node serializes as top-level
-  // properties — `getComposedSchemaFields` folds it in beside the schema's,
-  // so anything describing what a node accepts has to as well. It composes
-  // itself, over its own walk of the same chain.
+  // properties — `getComposedSchemaFields` folds it in beside the schema's, so
+  // anything describing what a node accepts has to as well.
   CollectStateJSON<GetNodeStateConfig<T>, true>;
-
-/** The schema half of {@link LexicalSchemaInput}. */
-type ComposedSchemaInput<
-  T extends LexicalNode,
-  /**
-   * A safety net, not the termination condition — the walk ends at the first
-   * class with no `$config()` of its own, which is what {@link LexicalNode}'s
-   * own does. TypeScript cannot see that for itself and refuses the recursion
-   * without a bound, so a chain longer than this resolves to
-   * {@link ChainTooDeep}, which is loud: it poisons any use of the result
-   * rather than quietly contributing no properties, which is what an empty
-   * object would do.
-   *
-   * @internal
-   */
-  Depth extends readonly unknown[] = [
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-  ],
-> = Depth extends readonly [unknown, ...infer Rest]
-  ? [GetStaticNodeConfig<T>] extends [never]
-    ? // Declares no config, so it contributes nothing and names no parent.
-      NoSchemaInput
-    : [ConfigParentOf<T>] extends [never]
-      ? OwnSchemaInputOf<T>
-      : OwnSchemaInputOf<T> &
-          // `Omit`, not a bare intersection: a subclass that re-declares an
-          // inherited property *replaces* it — `composeSchema` resolves the key
-          // to one winning schema, most-derived first — so intersecting the two
-          // would report the ancestor's domain for a property the subclass
-          // widened, and `never` for one it changed outright.
-          Omit<
-            ComposedSchemaInput<ConfigParentOf<T>, Rest>,
-            keyof OwnSchemaInputOf<T>
-          >
-  : ChainTooDeep;
-
-/**
- * What a `$config` chain longer than {@link ComposedSchemaInput}'s bound
- * resolves to.
- *
- * A branded type rather than an empty object, so exhausting the bound names
- * itself at the first use instead of silently asserting that everything past
- * it contributes nothing.
- */
-export interface ChainTooDeep {
-  readonly __lexicalConfigChainTooDeep: never;
-}
 
 export type LexicalExportJSON<T extends LexicalNode> = Prettify<
   Omit<LexicalFullExportJSON<T>, 'type' | 'version'> & {

@@ -1707,6 +1707,126 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
     >();
   });
 
+  test('a chain of any depth resolves, base included', () => {
+    // Composed over `GetStaticNodeConfigs`, which resolves the chain to a
+    // tuple before this folds it — so there is no recursion for TypeScript to
+    // bound, and no depth past which ancestors quietly stop contributing.
+    class Deep1 extends ElementNode {
+      __p1 = '';
+      $config() {
+        return this.config('deep-1', {
+          extends: ElementNode,
+          json: nodeSchema<Deep1>()({
+            p1: withField(stringValue(), {field: '__p1'}),
+          }),
+        });
+      }
+    }
+    class Deep2 extends Deep1 {
+      __p2 = '';
+      $config() {
+        return this.config('deep-2', {
+          extends: Deep1,
+          json: nodeSchema<Deep2>()({
+            p2: withField(stringValue(), {field: '__p2'}),
+          }),
+        });
+      }
+    }
+    class Deep3 extends Deep2 {
+      __p3 = '';
+      $config() {
+        return this.config('deep-3', {
+          extends: Deep2,
+          json: nodeSchema<Deep3>()({
+            p3: withField(stringValue(), {field: '__p3'}),
+          }),
+        });
+      }
+    }
+    class Deep4 extends Deep3 {
+      __p4 = '';
+      $config() {
+        return this.config('deep-4', {
+          extends: Deep3,
+          json: nodeSchema<Deep4>()({
+            p4: withField(stringValue(), {field: '__p4'}),
+          }),
+        });
+      }
+    }
+    class Deep5 extends Deep4 {
+      __p5 = '';
+      $config() {
+        return this.config('deep-5', {
+          extends: Deep4,
+          json: nodeSchema<Deep5>()({
+            p5: withField(stringValue(), {field: '__p5'}),
+          }),
+        });
+      }
+    }
+    class Deep6 extends Deep5 {
+      __p6 = '';
+      $config() {
+        return this.config('deep-6', {
+          extends: Deep5,
+          json: nodeSchema<Deep6>()({
+            p6: withField(stringValue(), {field: '__p6'}),
+          }),
+        });
+      }
+    }
+    class Deep7 extends Deep6 {
+      __p7 = '';
+      $config() {
+        return this.config('deep-7', {
+          extends: Deep6,
+          json: nodeSchema<Deep7>()({
+            p7: withField(stringValue(), {field: '__p7'}),
+          }),
+        });
+      }
+    }
+    class Deep8 extends Deep7 {
+      __p8 = '';
+      $config() {
+        return this.config('deep-8', {
+          extends: Deep7,
+          json: nodeSchema<Deep8>()({
+            p8: withField(stringValue(), {field: '__p8'}),
+          }),
+        });
+      }
+    }
+    class Deep9 extends Deep8 {
+      __p9 = '';
+      $config() {
+        return this.config('deep-9', {
+          extends: Deep8,
+          json: nodeSchema<Deep9>()({
+            p9: withField(stringValue(), {field: '__p9'}),
+          }),
+        });
+      }
+    }
+    class Deep10 extends Deep9 {
+      __p10 = '';
+      $config() {
+        return this.config('deep-10', {
+          extends: Deep9,
+          json: nodeSchema<Deep10>()({
+            p10: withField(stringValue(), {field: '__p10'}),
+          }),
+        });
+      }
+    }
+    const deepest: keyof LexicalSchemaInput<Deep10> = 'p1';
+    const nearest: keyof LexicalSchemaInput<Deep10> = 'p10';
+    const inherited: keyof LexicalSchemaInput<Deep10> = 'direction';
+    expect([deepest, nearest, inherited]).toEqual(['p1', 'p10', 'direction']);
+  });
+
   test('a node that omits extends keeps its own schema', () => {
     // Its superclass declares no `$config()`, so the record carries no
     // accessor and the walk has nothing to follow — but the node's own

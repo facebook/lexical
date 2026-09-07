@@ -168,7 +168,10 @@ export function registerLexicalTextEntity<T extends TextNode>(
       );
 
       const replacementNode = createNode(nodeToReplace);
-      replacementNode.setFormat(nodeToReplace.getFormat());
+      replacementNode
+        .setFormat(nodeToReplace.getFormat())
+        .setStyle(nodeToReplace.getStyle())
+        .setDetail(nodeToReplace.getDetail());
       nodeToReplace.replace(replacementNode);
 
       if (currentNode == null) {

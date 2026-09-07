@@ -48,6 +48,7 @@ export const PURE_FACTORY_FUNCTIONS = [
   'createCommand',
   'createContextState',
   'createImportState',
+  'createRefCountedRegistry',
   'createRenderState',
   'createState',
   'declarePeerDependency',

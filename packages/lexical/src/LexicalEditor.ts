@@ -1120,7 +1120,7 @@ export class LexicalEditor {
   declare ['constructor']: KlassConstructor<typeof LexicalEditor>;
 
   /** The version with build identifiers for this editor (since 0.17.1) */
-  static version: string | undefined;
+  static version: string | undefined = LEXICAL_VERSION;
 
   /** @internal */
   _headless: boolean;
@@ -1978,5 +1978,3 @@ export class LexicalEditor {
     };
   }
 }
-
-LexicalEditor.version = LEXICAL_VERSION;

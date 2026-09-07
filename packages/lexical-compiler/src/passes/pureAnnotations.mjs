@@ -53,6 +53,8 @@ export const PURE_FACTORY_FUNCTIONS = [
   'createCommand',
   'createContextState',
   'createImportState',
+  'createLinkMatcherWithRegExp',
+  'createRefCountedRegistry',
   'createRenderState',
   'createState',
   'declarePeerDependency',
@@ -71,6 +73,7 @@ export const PURE_FACTORY_FUNCTIONS = [
   'stringValue',
   'transformValue',
   'unionValue',
+  'warnOnlyOnce',
   'withAccessors',
   'withField',
 ];
@@ -151,9 +154,17 @@ export const PURE_NAMESPACES = ['sel'];
  *
  * @type {ReadonlyMap<string, string>}
  */
-export const INLINE_FACTORY_FORMS = new Map(
-  Array.from(INLINE_FACTORIES, ([name, spec]) => [name, spec.form]),
-);
+export const INLINE_FACTORY_FORMS = inlineFactoryForms();
+
+/**
+ * @__NO_SIDE_EFFECTS__
+ * @returns {ReadonlyMap<string, string>}
+ */
+function inlineFactoryForms() {
+  return new Map(
+    Array.from(INLINE_FACTORIES, ([name, spec]) => [name, spec.form]),
+  );
+}
 
 /**
  * The annotation inserted before a module-scope factory call. No trailing
@@ -1047,6 +1058,16 @@ function collectFactoryNames(program, functions, opts) {
       continue;
     }
     for (const specifier of statement.specifiers) {
+      if (specifier.type === 'ImportDefaultSpecifier') {
+        // A Lexical module with a default export is named for it (the
+        // `warnOnlyOnce` module of the internal package exports `warnOnlyOnce`),
+        // which is the only name a default import can be matched against.
+        const name = source.slice(source.lastIndexOf('/') + 1);
+        if (trusted && functions.has(name)) {
+          add(specifier.local.name, name, null, true);
+        }
+        continue;
+      }
       if (
         specifier.type !== 'ImportSpecifier' ||
         specifier.imported.type !== 'Identifier'

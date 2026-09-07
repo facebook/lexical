@@ -148,31 +148,39 @@ type RootElementEvents = [
   string,
   Record<string, unknown> | ((event: Event, editor: LexicalEditor) => void),
 ][];
-const PASS_THROUGH_COMMAND = Object.freeze({});
+const PASS_THROUGH_COMMAND = /* @__PURE__ */ Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
-const rootElementEvents: RootElementEvents = [
-  ['keydown', onKeyDown],
-  ['pointerdown', onPointerDown],
-  ['compositionstart', onCompositionStart],
-  ['compositionend', onCompositionEnd],
-  ['input', onInput],
-  ['click', onClick],
-  ['cut', PASS_THROUGH_COMMAND],
-  ['copy', PASS_THROUGH_COMMAND],
-  ['dragstart', PASS_THROUGH_COMMAND],
-  ['dragover', PASS_THROUGH_COMMAND],
-  ['dragend', PASS_THROUGH_COMMAND],
-  ['paste', PASS_THROUGH_COMMAND],
-  ['focus', PASS_THROUGH_COMMAND],
-  ['blur', PASS_THROUGH_COMMAND],
-  ['drop', PASS_THROUGH_COMMAND],
-];
+let rootElementEvents: RootElementEvents | undefined;
 
-if (CAN_USE_BEFORE_INPUT) {
-  rootElementEvents.push([
-    'beforeinput',
-    (event, editor) => onBeforeInput(event as InputEvent, editor),
-  ]);
+function getRootElementEvents(): RootElementEvents {
+  if (rootElementEvents !== undefined) {
+    return rootElementEvents;
+  }
+  const events: RootElementEvents = [
+    ['keydown', onKeyDown],
+    ['pointerdown', onPointerDown],
+    ['compositionstart', onCompositionStart],
+    ['compositionend', onCompositionEnd],
+    ['input', onInput],
+    ['click', onClick],
+    ['cut', PASS_THROUGH_COMMAND],
+    ['copy', PASS_THROUGH_COMMAND],
+    ['dragstart', PASS_THROUGH_COMMAND],
+    ['dragover', PASS_THROUGH_COMMAND],
+    ['dragend', PASS_THROUGH_COMMAND],
+    ['paste', PASS_THROUGH_COMMAND],
+    ['focus', PASS_THROUGH_COMMAND],
+    ['blur', PASS_THROUGH_COMMAND],
+    ['drop', PASS_THROUGH_COMMAND],
+  ];
+  if (CAN_USE_BEFORE_INPUT) {
+    events.push([
+      'beforeinput',
+      (event, editor) => onBeforeInput(event as InputEvent, editor),
+    ]);
+  }
+  rootElementEvents = events;
+  return events;
 }
 
 // Node can be moved between documents (for example using createPortal), so we
@@ -1607,7 +1615,9 @@ const ANY_MODIFIERS = {
 const CTRL_KEY = {ctrlKey: true} as const;
 const META_KEY = {metaKey: true} as const;
 const SHIFT_KEY_ANY = {shiftKey: 'any'} as const;
-const ALT_SHIFT_KEY_ANY = {...SHIFT_KEY_ANY, altKey: 'any'} as const;
+// Spelled out rather than spread from SHIFT_KEY_ANY: an object spread at
+// module scope is a side effect to bundlers.
+const ALT_SHIFT_KEY_ANY = {altKey: 'any', shiftKey: 'any'} as const;
 
 /**
  * The keydown shortcuts that the editor handles natively, compiled to
@@ -2023,8 +2033,9 @@ export function addRootElementEvents(
   // with this root element's other listeners in removeRootElementEvents.
   removeHandles.push(documentSelectionChange.register(doc));
 
-  for (let i = 0; i < rootElementEvents.length; i++) {
-    const [eventName, onEvent] = rootElementEvents[i];
+  const events = getRootElementEvents();
+  for (let i = 0; i < events.length; i++) {
+    const [eventName, onEvent] = events[i];
     const eventHandler =
       typeof onEvent === 'function'
         ? (event: Event) => {

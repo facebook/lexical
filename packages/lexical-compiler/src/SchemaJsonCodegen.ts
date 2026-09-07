@@ -114,14 +114,32 @@ const NUM_RANGE_BODY = `  const n = num(v, d);
  * parse. The verification evaluates the same body, so the emitted helper and
  * the checked one cannot be different functions.
  */
-export const NUM_HELPER_SOURCE = `const JSON_NUMBER = ${JSON_NUMBER_SOURCE};
+export const NUM_HELPER_SOURCE = numHelperSource();
+
+/** The `numC` helper, emitted alongside `num` when a domain is constrained. */
+export const NUM_RANGE_HELPER_SOURCE = numRangeHelperSource();
+
+/**
+ * Assembled in a function rather than written as a module-scope template
+ * literal, which esbuild retains: an interpolation can call user code through
+ * `ToPrimitive`, so it is a side effect to a bundler that cannot see the
+ * operand is a string, and one retained constant pins every constant it reads.
+ * Behind a call declared side-effect free, a consumer that imports nothing
+ * from this module keeps none of it.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+function numHelperSource(): string {
+  return `const JSON_NUMBER = ${JSON_NUMBER_SOURCE};
 
 function num(v: unknown, d: number): number {
 ${NUM_BODY}
 }`;
+}
 
-/** The `numC` helper, emitted alongside `num` when a domain is constrained. */
-export const NUM_RANGE_HELPER_SOURCE = `function numC(
+/** @__NO_SIDE_EFFECTS__ */
+function numRangeHelperSource(): string {
+  return `function numC(
   v: unknown,
   d: number,
   min: number,
@@ -130,6 +148,7 @@ export const NUM_RANGE_HELPER_SOURCE = `function numC(
 ): number {
 ${NUM_RANGE_BODY}
 }`;
+}
 
 /**
  * A JavaScript literal denoting `value`, or the token `undefined`. Faithful

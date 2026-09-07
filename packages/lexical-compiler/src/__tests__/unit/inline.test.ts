@@ -51,7 +51,16 @@ function packageExports(pkg: string): Set<string> {
   }
   const names = new Set<string>();
   packageExportCache.set(pkg, names);
-  const ast = parse(fs.readFileSync(`${pkg}/src/index.ts`, 'utf8'), {
+  const barrel = `${pkg}/src/index.ts`;
+  if (!fs.existsSync(barrel)) {
+    // A package whose modules are each their own entry point — `@lexical/react`
+    // is the one in the tree — has no barrel to read. Its public names are the
+    // union of what every module its `exports` map exposes declares, which is
+    // not what this reads; treating it as exporting nothing keeps the check to
+    // the packages it can answer for rather than guessing about the rest.
+    return names;
+  }
+  const ast = parse(fs.readFileSync(barrel, 'utf8'), {
     plugins: ['typescript'],
     sourceType: 'module',
   });
@@ -645,7 +654,9 @@ describe('the inlined factories are still trivial', () => {
       const ast = parse(code, {plugins: ['typescript'], sourceType: 'module'});
       for (const statement of ast.program.body) {
         const declaration =
-          statement.type === 'ExportNamedDeclaration' && statement.declaration
+          (statement.type === 'ExportNamedDeclaration' ||
+            statement.type === 'ExportDefaultDeclaration') &&
+          statement.declaration
             ? statement.declaration
             : statement;
         const marked = (statement.leadingComments || []).some(comment =>

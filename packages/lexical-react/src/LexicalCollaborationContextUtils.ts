@@ -42,7 +42,17 @@ const entries = [
   ['Squid', 'rgb(150, 0, 150)'],
 ];
 
-const randomEntry = entries[Math.floor(Math.random() * entries.length)];
+// Picked on first use rather than at module scope, where the `Math.random()`
+// call is a side effect to bundlers that would pin this module (and the
+// table above) into every bundle importing it. It is still picked once and
+// shared by every context created afterwards, as before.
+let randomEntry: undefined | (typeof entries)[number];
+function getRandomEntry(): (typeof entries)[number] {
+  if (randomEntry === undefined) {
+    randomEntry = entries[Math.floor(Math.random() * entries.length)];
+  }
+  return randomEntry;
+}
 
 /**
  * The React context that holds the shared {@link CollaborationContextType} for
@@ -50,14 +60,21 @@ const randomEntry = entries[Math.floor(Math.random() * entries.length)];
  * it with {@link useCollaborationContext}.
  */
 export const CollaborationContext =
-  createContext<CollaborationContextType | null>(null);
+  // Annotated by hand: React's createContext is not a Lexical factory, so the
+  // build does not annotate it, and an unannotated module-scope call pins the
+  // module into every bundle.
+  /* @__PURE__ */ createContext<CollaborationContextType | null>(null);
 
-/** @internal */
+/**
+ * @internal
+ * @__NO_SIDE_EFFECTS__
+ */
 export function newContext(): CollaborationContextType {
+  const [name, color] = getRandomEntry();
   return {
-    color: randomEntry[1],
+    color,
     isCollabActive: false,
-    name: randomEntry[0],
+    name,
     yjsDocMap: new Map(),
   };
 }

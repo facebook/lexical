@@ -2939,7 +2939,16 @@ function shouldDeleteExactlyOneCodeUnit(text: string) {
  * return false on pre-2020 platforms that do not have unicode character
  * class support.
  */
-const doesContainEmoji: (text: string) => boolean = (() => {
+/**
+ * Feature-detect Unicode property escapes and return the emoji test. A
+ * function declared side-effect free (so the build annotates the call below)
+ * rather than an IIFE at module scope: an IIFE containing a `try` is a side
+ * effect to bundlers, which would pin this module — and with it most of
+ * `lexical` — into every bundle that imports it.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+function createEmojiTest(): (text: string) => boolean {
   try {
     const re = new RegExp('\\p{Emoji}', 'u');
     const test = re.test.bind(re);
@@ -2961,7 +2970,9 @@ const doesContainEmoji: (text: string) => boolean = (() => {
   }
   // fallback, surrogate pair already checked
   return () => false;
-})();
+}
+
+const doesContainEmoji: (text: string) => boolean = createEmojiTest();
 
 function $removeSegment(
   node: TextNode,

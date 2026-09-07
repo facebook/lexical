@@ -107,6 +107,26 @@ declare the function side-effect free so its calls are annotated too. A
 third-party factory that cannot be declared is annotated by hand at the call
 site, which is what the remaining hand-written annotations in the tree are.
 
+Factory calls are not the only module-scope statements that pin a module.
+esbuild and webpack keep, as a side effect, any property read at module scope
+(`navigator.userAgent`, `Date.now`, `SomeExtension.name`), any call or `new`
+they were not told is pure (`new RegExp(...)`, `Object.freeze(...)`,
+`[...].join(',')`), an array or object spread, an `in` test, a `try`
+statement, a mutation (`table.push(...)`, `Klass.static = ...`), a class with
+a computed member (`[SOME_SYMBOL]?: number` — write `declare` on it), and an
+IIFE — together with everything the statement references. One
+`LexicalEditor.version = ...` after the class kept nearly all of `lexical` in
+a bundle that imported only `createCommand` (#9120). Move such work into a
+function declared `@__NO_SIDE_EFFECTS__` and call it at module scope, so the
+build annotates the call; annotate a call to a builtin or to a third-party
+function (`/* @__PURE__ */ forwardRef(...)`) by hand. Two tests enforce this
+by bundling a bare `import 'pkg'` of every entry with esbuild and requiring
+that nothing is retained: `scripts/__tests__/unit/treeShakingSource.test.ts`
+on the sources (runs with `pnpm run test-unit`) and
+`scripts/__tests__/integration/tree-shaking.test.mjs` on the published
+builds. A failure prints the retained code; its first statement is usually
+the culprit.
+
 A factory whose body is a trivial expression over its own arguments (like
 `safeCast`, `defineExtension`, or `configExtension`) is additionally marked
 `@lexical-inline <form>` and listed in that file's `INLINE_FACTORIES`: the

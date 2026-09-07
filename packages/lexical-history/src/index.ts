@@ -785,7 +785,10 @@ export const HistoryExtension = defineExtension({
     delay: 300,
     disabled: typeof window === 'undefined',
     maxDepth: null,
-    now: Date.now,
+    // Wrapped rather than passing `Date.now` itself: a module-scope property
+    // read is a side effect to bundlers, which would pin this extension into
+    // every bundle that imports the module.
+    now: () => Date.now(),
   }),
   init: (): HistoryExtensionInit => ({
     canRedo: signal(false),

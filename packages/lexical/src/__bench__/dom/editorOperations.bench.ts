@@ -19,6 +19,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   $selectAll,
+  type EditorState,
   type LexicalEditor,
 } from '../../';
 import {createTestEditor} from '../../__tests__/utils';
@@ -173,10 +174,17 @@ for (const size of SIZES) {
     );
   });
 
-  // Accumulative: inserts 10 paragraphs at the end per iteration.
+  // Insert 10 paragraphs into the same initial document each iteration.
+  // Tinybench runs task hooks outside the timed body, so restoring the state
+  // keeps the paste workload at the requested size throughout the run. Vitest
+  // passes options to Bench but creates Task without options: install its task
+  // hooks through the setup callback instead of bench options.
   describe(`size=${size} :: paste 10 paragraphs`, () => {
     let editor: LexicalEditor;
+    let initialState: EditorState;
     let cycle = 0;
+    let pasted = 0;
+    let checked = 0;
 
     bench(
       '$insertNodes at end',
@@ -204,17 +212,46 @@ for (const size of SIZES) {
             }
             $insertNodes(nodes);
             cycle++;
+            pasted++;
           },
           {discrete: true},
         );
       },
       {
-        setup: () => {
+        setup: task => {
           editor = createTestEditor();
           attachToDOM(editor);
           buildLargeDoc(editor, size);
+          initialState = editor.getEditorState();
           cycle = 0;
+          pasted = 0;
+          checked = 0;
+          task.opts.beforeEach = () => {
+            editor.setEditorState(initialState);
+            cycle = 0;
+          };
+          task.opts.afterEach = () => {
+            checked++;
+            editor.read(() => {
+              const actual = $getRoot().getChildrenSize();
+              invariant(
+                // The first pasted paragraph merges into the original last
+                // paragraph because the caret is at the end of its text.
+                actual === size + 9,
+                'Paste should leave %s paragraphs, got %s',
+                String(size + 9),
+                String(actual),
+              );
+            });
+          };
         },
+        teardown: () => {
+          invariant(
+            pasted === checked && cycle === 1,
+            'Paste benchmark hooks did not run on every iteration',
+          );
+        },
+        throws: true,
       },
     );
   });

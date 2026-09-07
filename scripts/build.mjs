@@ -166,6 +166,13 @@ const thirdPartyExternals = [
     ? [':server-only-hack:.*']
     : [
         '@floating-ui/react',
+        // @lexical/extension re-exports @preact/signals-core (a declared
+        // dependency). Keep it external in the npm build: its package declares
+        // `sideEffects: false`, so a consumer's bundler drops it when unused,
+        // whereas inlined its prototype patching is a module-scope side effect
+        // that pins the whole signals runtime into any bundle importing
+        // anything from @lexical/extension.
+        '@preact/signals-core',
         // @lexical/mdast delegates parsing/serialization to the
         // micromark/mdast ecosystem. Keep those (declared) dependencies
         // external in the npm build so consumer bundlers resolve them with
@@ -402,6 +409,10 @@ async function build(
       // been updated since Aug 2021
       isProd &&
         terser({
+          // terser prints Infinity as `1/0`, a division that esbuild and
+          // webpack have to keep as a side effect (see #9120), pinning the
+          // module-scope declaration it initializes into consumer bundles.
+          compress: {keep_infinity: true},
           ecma: 2019,
           // Keep /* @__PURE__ */ and @__NO_SIDE_EFFECTS__ annotations in the
           // prod output so downstream bundlers can tree-shake unused

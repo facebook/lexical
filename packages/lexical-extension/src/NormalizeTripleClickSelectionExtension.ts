@@ -156,7 +156,10 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
     namedSignals(config),
   config: safeCast<NormalizeTripleClickSelectionConfig>({
     $fixFocusOverselection,
-    dateNow: Date.now,
+    // Wrapped rather than passing `Date.now` itself: a module-scope property
+    // read is a side effect to bundlers, which would pin this extension into
+    // every bundle that imports the module.
+    dateNow: () => Date.now(),
     disabled: false,
     thresholdMsec: 100,
   }),

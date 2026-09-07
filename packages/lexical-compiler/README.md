@@ -39,6 +39,21 @@ Calls inside function bodies, class fields, and static blocks are left alone —
 they are not evaluated when the module is initialized, so an annotation there
 has no effect on tree-shaking.
 
+Factory calls are not the only module-scope statements a bundler has to keep.
+esbuild and webpack keep, as a side effect, any property read
+(`navigator.userAgent`, `Date.now`, `SomeExtension.name`), any call or `new`
+they were not told is pure (`new RegExp(...)`, `Object.freeze(...)`,
+`[...].join(',')`), an array or object spread, an `in` test, a `try`
+statement, a mutation (`table.push(...)`, `Klass.static = ...`), and a class
+with a computed member — and everything such a statement references, which is
+how one `LexicalEditor.version = ...` after the class kept nearly all of
+`lexical` in a bundle that imported only `createCommand`. The fix is the same
+mechanism: move the work into a function declared `@__NO_SIDE_EFFECTS__` and
+call it at module scope, so that this transform annotates the call and a
+bundler can drop it when its result is unused. A call to a builtin or to a
+third-party function that cannot be declared is annotated by hand at the call
+site.
+
 ## Guaranteeing a definition can be dropped
 
 An annotated definition is only droppable when everything it is built from is
@@ -122,7 +137,9 @@ in the module and annotates the call when that binding is:
   `@lexical/*` (configurable with `sources`). Every factory in
   `PURE_FACTORY_FUNCTIONS` is declared `@__NO_SIDE_EFFECTS__` in those
   packages, so the import is evidence enough. Aliased imports
-  (`import {defineExtension as define}`) are resolved too;
+  (`import {defineExtension as define}`) are resolved too, and so is a
+  default import from a Lexical module named for its export
+  (`import warnOnlyOnce from '@lexical/internal/warnOnlyOnce'`);
 - **declared in the same module with `@__NO_SIDE_EFFECTS__`**, or **imported
   from a relative module that declares it that way** — the imported file is
   read and parsed to check (turn this off with `relativeImports: false`).

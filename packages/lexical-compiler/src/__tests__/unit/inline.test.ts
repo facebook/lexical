@@ -18,6 +18,7 @@ import {
 import * as fs from 'node:fs';
 import {describe, expect, it} from 'vitest';
 
+import {packagesManager} from '../../../../../scripts/shared/packagesManager.mjs';
 import {
   INLINE_FACTORY_FORMS,
   PURE_FACTORY_FUNCTIONS,
@@ -37,31 +38,13 @@ function inline(code: string, filename = 'test.ts') {
   return transformPureAnnotations(code, {filename, inline: true});
 }
 
-/** The value names a package's entry point re-exports, by package directory. */
+/** The value names a package's entry points export, by package directory. */
 const packageExportCache = new Map<string, Set<string>>();
 
-/**
- * The names another package can import from `pkg`, which is what decides
- * whether {@link PURE_FACTORY_FUNCTIONS} has anything to say about one.
- */
-function packageExports(pkg: string): Set<string> {
-  const cached = packageExportCache.get(pkg);
-  if (cached !== undefined) {
-    return cached;
-  }
-  const names = new Set<string>();
-  packageExportCache.set(pkg, names);
-  const barrel = `${pkg}/src/index.ts`;
-  if (!fs.existsSync(barrel)) {
-    // A package whose modules are each their own entry point — `@lexical/react`
-    // is the one in the tree — has no barrel to read. Its public names are the
-    // union of what every module its `exports` map exposes declares, which is
-    // not what this reads; treating it as exporting nothing keeps the check to
-    // the packages it can answer for rather than guessing about the rest.
-    return names;
-  }
-  const ast = parse(fs.readFileSync(barrel, 'utf8'), {
-    plugins: ['typescript'],
+/** Add every value name `file` exports to `names`. */
+function collectExportedNames(file: string, names: Set<string>): void {
+  const ast = parse(fs.readFileSync(file, 'utf8'), {
+    plugins: ['typescript', 'jsx'],
     sourceType: 'module',
   });
   for (const statement of ast.program.body) {
@@ -71,13 +54,59 @@ function packageExports(pkg: string): Set<string> {
     ) {
       continue;
     }
+    const {declaration} = statement;
+    // `export function foo()` / `export const foo = …`, which is how a module
+    // that is its own entry point exports one. A barrel uses the specifier
+    // form below, and a package can have both.
+    if (declaration) {
+      if (declaration.type === 'FunctionDeclaration' && declaration.id) {
+        names.add(declaration.id.name);
+      } else if (declaration.type === 'VariableDeclaration') {
+        for (const declarator of declaration.declarations) {
+          if (declarator.id.type === 'Identifier') {
+            names.add(declarator.id.name);
+          }
+        }
+      }
+      continue;
+    }
     for (const specifier of statement.specifiers) {
       if (
         specifier.type === 'ExportSpecifier' &&
         specifier.exportKind !== 'type'
       ) {
+        // The local name, which is what the declaration this is matched
+        // against was found under.
         names.add(specifier.local.name);
       }
+    }
+  }
+}
+
+/**
+ * The names another package can import from `pkg`, which is what decides
+ * whether {@link PURE_FACTORY_FUNCTIONS} has anything to say about one.
+ *
+ * Read from the `source` export condition of every entry in the package's
+ * `exports` map rather than from `src/index.ts`, because a barrel is not what
+ * makes a name public — the export map is. Most packages have one entry that
+ * is a barrel and the two agree; `@lexical/react` publishes each module as its
+ * own entry and has no barrel at all, and its names are public just the same.
+ */
+function packageExports(pkg: string): Set<string> {
+  const cached = packageExportCache.get(pkg);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const names = new Set<string>();
+  packageExportCache.set(pkg, names);
+  const metadata = packagesManager.getPackageByDirectoryName(
+    pkg.slice(pkg.lastIndexOf('/') + 1),
+  );
+  for (const [, exports] of metadata.getNormalizedNpmModuleExportEntries()) {
+    const source = (exports as {source?: unknown}).source;
+    if (typeof source === 'string' && /\.[cm]?[jt]sx?$/.test(source)) {
+      collectExportedNames(metadata.resolve(source), names);
     }
   }
   return names;

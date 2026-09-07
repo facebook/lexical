@@ -63,6 +63,9 @@ export const PURE_FACTORY_FUNCTIONS = [
   'defineOverlayRules',
   'domOverride',
   'enumValue',
+  // @lexical/react publishes each module as its own entry, so this is public
+  // and callable by name from another package even though it is @internal.
+  'newContext',
   'nodeSchema',
   'nullable',
   'numberValue',

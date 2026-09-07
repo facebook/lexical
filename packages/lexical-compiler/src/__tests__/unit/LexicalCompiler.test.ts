@@ -45,6 +45,24 @@ describe('transformPureAnnotations', () => {
     ).toBe(mod(`export const E = ${PURE}defineExtension({name: 'e'});`));
   });
 
+  it('annotates a default import from a Lexical module named for the factory', () => {
+    const code = [
+      `import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';`,
+      `const deprecated = warnOnlyOnce('deprecated');`,
+    ].join('\n');
+    expect(transform(code)).toBe(
+      code.replace('warnOnlyOnce(', `${PURE}warnOnlyOnce(`),
+    );
+  });
+
+  it('leaves a default import alone when the module is not named for a factory', () => {
+    const code = [
+      `import warn from '@lexical/internal/devInvariant';`,
+      `const deprecated = warn('deprecated');`,
+    ].join('\n');
+    expect(transform(code)).toBe(code);
+  });
+
   it('annotates a call whose initializer is on its own line', () => {
     expect(transform(mod(`export const C =`, `  createCommand('C');`))).toBe(
       mod(`export const C =`, `  ${PURE}createCommand('C');`),

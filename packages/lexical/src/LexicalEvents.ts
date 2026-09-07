@@ -148,7 +148,7 @@ type RootElementEvents = [
   string,
   Record<string, unknown> | ((event: Event, editor: LexicalEditor) => void),
 ][];
-const PASS_THROUGH_COMMAND = Object.freeze({});
+const PASS_THROUGH_COMMAND = /* @__PURE__ */ Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
 let rootElementEvents: RootElementEvents | undefined;
 
@@ -1615,7 +1615,9 @@ const ANY_MODIFIERS = {
 const CTRL_KEY = {ctrlKey: true} as const;
 const META_KEY = {metaKey: true} as const;
 const SHIFT_KEY_ANY = {shiftKey: 'any'} as const;
-const ALT_SHIFT_KEY_ANY = {...SHIFT_KEY_ANY, altKey: 'any'} as const;
+// Spelled out rather than spread from SHIFT_KEY_ANY: an object spread at
+// module scope is a side effect to bundlers.
+const ALT_SHIFT_KEY_ANY = {altKey: 'any', shiftKey: 'any'} as const;
 
 /**
  * The keydown shortcuts that the editor handles natively, compiled to

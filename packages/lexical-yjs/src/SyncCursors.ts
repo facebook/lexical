@@ -69,10 +69,19 @@ export type CursorSelection = {
   selections: HTMLElement[];
 };
 
-const SUPPORTS_CSS_HIGHLIGHTS =
-  typeof Highlight !== 'undefined' &&
-  typeof CSS !== 'undefined' &&
-  'highlights' in CSS;
+/** @__NO_SIDE_EFFECTS__ */
+function supportsCSSHighlights(): boolean {
+  return (
+    typeof Highlight !== 'undefined' &&
+    typeof CSS !== 'undefined' &&
+    'highlights' in CSS
+  );
+}
+
+// A call to a function declared side-effect free, so that the probe (an `in`
+// test is a side effect to bundlers) does not pin this module into bundles
+// that never render a cursor.
+const SUPPORTS_CSS_HIGHLIGHTS = supportsCSSHighlights();
 
 /**
  * The subset of a binding that {@link getCursorHighlightSheet} reads. Declared

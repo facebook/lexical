@@ -433,6 +433,7 @@ function $setCodeMeta(parentNode: ElementNode, meta: string): void {
   }
 }
 
+/** @__NO_SIDE_EFFECTS__ */
 const createBlockNode = (
   createNode: (match: string[]) => ElementNode,
 ): ElementTransformer['replace'] => {
@@ -585,6 +586,7 @@ function setOpenColumn(
   columns[indent] = getContentColumn(match, listType);
 }
 
+/** @__NO_SIDE_EFFECTS__ */
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   return (parentNode, children, match, isImport) => {
     if (
@@ -1326,12 +1328,26 @@ export const TEXT_FORMAT_TRANSFORMERS: TextFormatTransformer[] = [
 
 export const TEXT_MATCH_TRANSFORMERS: TextMatchTransformer[] = [LINK];
 
-export const TRANSFORMERS: Transformer[] = [
-  ...ELEMENT_TRANSFORMERS,
-  ...MULTILINE_ELEMENT_TRANSFORMERS,
-  ...TEXT_FORMAT_TRANSFORMERS,
-  ...TEXT_MATCH_TRANSFORMERS,
-];
+/**
+ * Concatenate transformer lists. A function declared side-effect free (so the
+ * build annotates the call) rather than an array spread at module scope,
+ * which is a side effect to bundlers and would pin every transformer into
+ * every bundle that imports this module.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+function concatTransformers(
+  ...lists: (readonly Transformer[])[]
+): Transformer[] {
+  return lists.flat();
+}
+
+export const TRANSFORMERS: Transformer[] = concatTransformers(
+  ELEMENT_TRANSFORMERS,
+  MULTILINE_ELEMENT_TRANSFORMERS,
+  TEXT_FORMAT_TRANSFORMERS,
+  TEXT_MATCH_TRANSFORMERS,
+);
 
 export function normalizeMarkdown(
   input: string,

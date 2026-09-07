@@ -16,6 +16,7 @@ import {
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
+  $mergeCells,
   $moveTableColumn,
   $moveTableRow,
   $setTableColumnIsHeader,
@@ -29,6 +30,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isParagraphNode,
   defineExtension,
   type LexicalEditorWithDispose,
 } from 'lexical';
@@ -1429,6 +1431,133 @@ describe('$insertTableColumnAtNode', () => {
         ['A', 'B', 'V', 'X', 'X', ''],
         ['C0', 'C1', 'V', 'X', 'X', ''],
       ]);
+    });
+  });
+});
+
+describe('$mergeCells', () => {
+  // An empty string gives the cell a single empty paragraph, which is what
+  // $mergeCells treats as having no content.
+  function $cell(text: string): TableCellNode {
+    const paragraph = $createParagraphNode();
+    if (text !== '') {
+      paragraph.append($createTextNode(text));
+    }
+    return $createTableCellNode().append(paragraph);
+  }
+
+  function $appendTable(rows: TableCellNode[][]): void {
+    const table = $createTableNode();
+    for (const cells of rows) {
+      table.append($createTableRowNode().append(...cells));
+    }
+    $getRoot().append(table);
+  }
+
+  function $getAllCells(): TableCellNode[] {
+    const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+    return table.getChildren().flatMap(row =>
+      $assertNodeType(row, $isTableRowNode)
+        .getChildren()
+        .map(cell => $assertNodeType(cell, $isTableCellNode)),
+    );
+  }
+
+  function $getMergedCell(): TableCellNode {
+    const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+    const row = $assertNodeType(table.getFirstChild(), $isTableRowNode);
+    return $assertNodeType(row.getFirstChild(), $isTableCellNode);
+  }
+
+  function $getBlockTexts(cell: TableCellNode): string[] {
+    return cell.getChildren().map(child => child.getTextContent());
+  }
+
+  test('drops the empty paragraph of the target cell', () => {
+    editor.update(() => $appendTable([[$cell(''), $cell('hello')]]), {
+      discrete: true,
+    });
+
+    editor.update(() => void $mergeCells($getAllCells()), {discrete: true});
+
+    editor.read('latest', () => {
+      const merged = $getMergedCell();
+      expect($getBlockTexts(merged)).toEqual(['hello']);
+      expect(merged.getColSpan()).toBe(2);
+      expect(merged.getRowSpan()).toBe(1);
+    });
+  });
+
+  test("keeps every cell's content in order, and the spans", () => {
+    editor.update(
+      () =>
+        $appendTable([
+          [$cell(''), $cell('b')],
+          [$cell('c'), $cell('d')],
+        ]),
+      {discrete: true},
+    );
+
+    editor.update(() => void $mergeCells($getAllCells()), {discrete: true});
+
+    editor.read('latest', () => {
+      const merged = $getMergedCell();
+      expect($getBlockTexts(merged)).toEqual(['b', 'c', 'd']);
+      expect(merged.getColSpan()).toBe(2);
+      expect(merged.getRowSpan()).toBe(2);
+    });
+  });
+
+  test('keeps the same empty paragraph when every cell is empty', () => {
+    editor.update(() => $appendTable([[$cell(''), $cell(''), $cell('')]]), {
+      discrete: true,
+    });
+
+    let paragraphKey = '';
+    editor.read('latest', () => {
+      paragraphKey = $getMergedCell().getFirstChildOrThrow().getKey();
+    });
+
+    editor.update(() => void $mergeCells($getAllCells()), {discrete: true});
+
+    editor.read('latest', () => {
+      const merged = $getMergedCell();
+      expect(merged.getChildrenSize()).toBe(1);
+      const firstChild = merged.getFirstChildOrThrow();
+      expect($isParagraphNode(firstChild) && firstChild.isEmpty()).toBe(true);
+      // Nothing clears the target unless content is about to land, so this is
+      // the paragraph the cell started with rather than a replacement.
+      expect(firstChild.getKey()).toBe(paragraphKey);
+      expect(merged.getColSpan()).toBe(3);
+    });
+  });
+
+  test('leaves the target alone when only it has content', () => {
+    editor.update(() => $appendTable([[$cell('keep'), $cell(''), $cell('')]]), {
+      discrete: true,
+    });
+
+    editor.update(() => void $mergeCells($getAllCells()), {discrete: true});
+
+    editor.read('latest', () => {
+      const merged = $getMergedCell();
+      expect($getBlockTexts(merged)).toEqual(['keep']);
+      expect(merged.getColSpan()).toBe(3);
+    });
+  });
+
+  test('keeps the content of a non empty target ahead of the rest', () => {
+    editor.update(
+      () => $appendTable([[$cell('one'), $cell('two'), $cell('three')]]),
+      {discrete: true},
+    );
+
+    editor.update(() => void $mergeCells($getAllCells()), {discrete: true});
+
+    editor.read('latest', () => {
+      const merged = $getMergedCell();
+      expect($getBlockTexts(merged)).toEqual(['one', 'two', 'three']);
+      expect(merged.getColSpan()).toBe(3);
     });
   });
 });

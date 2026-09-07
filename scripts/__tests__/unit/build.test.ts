@@ -6,6 +6,8 @@
  *
  */
 
+import type {NpmModuleExports} from '../../shared/PackageMetadata.mjs';
+
 import * as fs from 'fs-extra';
 import * as glob from 'glob';
 import * as path from 'node:path';
@@ -123,15 +125,12 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
           );
         });
         const exportsEntries = Object.entries(
-          packageJson.exports as Record<
-            string,
-            Record<string, Record<string, string>>
-          >,
+          packageJson.exports as Record<string, NpmModuleExports>,
         );
         test.each(exportsEntries)(
           'exports["%s"] redirects sub-minimum TypeScript before the "types" condition',
           (_subpath, entry) => {
-            for (const group of [entry.import, entry.require]) {
+            for (const group of [entry, entry.browser]) {
               if (!group) {
                 continue;
               }
@@ -152,6 +151,36 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
           expect(packageJson.peerDependenciesMeta?.typescript).toEqual({
             optional: true,
           });
+        });
+      });
+      describe('publishes ESM only (CommonJS is built for www alone)', () => {
+        // Every file a consumer can resolve is an .mjs, a .d.ts, or the
+        // TypeScript source: no `require` condition and no `.js` build. A
+        // CommonJS consumer gets the .mjs through require(esm), so the
+        // fork module those conditions resolve to must not use top-level
+        // await (scripts/build.mjs keeps it that way).
+        const referenced: [string, string][] = [];
+        for (const field of ['main', 'module'] as const) {
+          if (typeof packageJson[field] === 'string') {
+            referenced.push([field, packageJson[field]]);
+          }
+        }
+        for (const [subpath, entry] of Object.entries(
+          packageJson.exports as Record<string, NpmModuleExports>,
+        )) {
+          for (const [condition, target] of Object.entries(entry)) {
+            if (typeof target === 'string') {
+              referenced.push([`exports["${subpath}"].${condition}`, target]);
+            } else {
+              for (const [k, v] of Object.entries(target)) {
+                referenced.push([`exports["${subpath}"].${condition}.${k}`, v]);
+              }
+            }
+          }
+        }
+        test.each(referenced)('%s -> %s', (location, target) => {
+          expect(location).not.toMatch(/\b(import|require|node)\b/);
+          expect(target).toMatch(/\.(mjs|d\.ts|tsx?)$/);
         });
       });
       if (!sourceFiles.includes('index')) {

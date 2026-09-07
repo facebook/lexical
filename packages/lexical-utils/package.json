@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalUtils.js",
+  "main": "./dist/LexicalUtils.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/internal": "workspace:*",
@@ -26,21 +26,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalUtils.dev.mjs",
-        "production": "./dist/LexicalUtils.prod.mjs",
-        "node": "./dist/LexicalUtils.node.mjs",
-        "default": "./dist/LexicalUtils.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalUtils.dev.js",
-        "production": "./dist/LexicalUtils.prod.js",
-        "default": "./dist/LexicalUtils.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalUtils.dev.mjs",
+      "production": "./dist/LexicalUtils.prod.mjs",
+      "default": "./dist/LexicalUtils.mjs"
     }
   },
   "files": [

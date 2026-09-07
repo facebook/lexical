@@ -10,7 +10,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalA11y.js",
+  "main": "./dist/LexicalA11y.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "repository": {
     "type": "git",
@@ -48,21 +48,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalA11y.dev.mjs",
-        "production": "./dist/LexicalA11y.prod.mjs",
-        "node": "./dist/LexicalA11y.node.mjs",
-        "default": "./dist/LexicalA11y.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalA11y.dev.js",
-        "production": "./dist/LexicalA11y.prod.js",
-        "default": "./dist/LexicalA11y.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalA11y.dev.mjs",
+      "production": "./dist/LexicalA11y.prod.mjs",
+      "default": "./dist/LexicalA11y.mjs"
     }
   },
   "typesVersions": {

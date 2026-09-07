@@ -48,9 +48,10 @@ The most common root causes of this issue are:
 - You have multiple builds of Lexical in your project. This could be because
   you have a dependency that has a direct dependency on some other version
   of Lexical (these packages should have Lexical as `peerDependencies`, but
-  not all do), or because your project mixes import and require statements
-  to import Lexical (including both the esm and cjs builds of the same
-  version of Lexical). Resolving this generally requires overriding what
+  not all do), or because your bundler resolves Lexical to different files
+  from different places (for example the `development` build in one and the
+  `production` build in another, or a `source` condition in one and `dist`
+  in another). Resolving this generally requires overriding what
   your package manager does in `package.json`, and/or what the bundler does in
   some configuration file for your framework or bundler. There are a lot of
   combinations of tools in the ecosystem (npm, pnpm, yarn, webpack, vite,

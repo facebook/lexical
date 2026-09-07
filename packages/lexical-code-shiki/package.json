@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalCodeShiki.js",
+  "main": "./dist/LexicalCodeShiki.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
@@ -34,21 +34,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalCodeShiki.dev.mjs",
-        "production": "./dist/LexicalCodeShiki.prod.mjs",
-        "node": "./dist/LexicalCodeShiki.node.mjs",
-        "default": "./dist/LexicalCodeShiki.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalCodeShiki.dev.js",
-        "production": "./dist/LexicalCodeShiki.prod.js",
-        "default": "./dist/LexicalCodeShiki.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalCodeShiki.dev.mjs",
+      "production": "./dist/LexicalCodeShiki.prod.mjs",
+      "default": "./dist/LexicalCodeShiki.mjs"
     }
   },
   "files": [

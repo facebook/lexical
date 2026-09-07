@@ -39,9 +39,8 @@ function publishedEntries() {
   const entries = [];
   for (const pkg of packagesManager.getPublicPackages()) {
     for (const [name, exports] of pkg.getNormalizedNpmModuleExportEntries()) {
-      // A package like @lexical/eslint-plugin has no ESM entry; and only a
-      // release build produces the development variant.
-      const {development, production} = exports.import || {};
+      // Only a release build produces the development variant.
+      const {development, production} = exports;
       for (const file of [production, development]) {
         if (typeof file === 'string' && fs.existsSync(pkg.resolve(file))) {
           entries.push([name, pkg.resolve(file)]);

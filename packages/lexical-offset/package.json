@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalOffset.js",
+  "main": "./dist/LexicalOffset.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "repository": {
     "type": "git",
@@ -21,21 +21,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalOffset.dev.mjs",
-        "production": "./dist/LexicalOffset.prod.mjs",
-        "node": "./dist/LexicalOffset.node.mjs",
-        "default": "./dist/LexicalOffset.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalOffset.dev.js",
-        "production": "./dist/LexicalOffset.prod.js",
-        "default": "./dist/LexicalOffset.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalOffset.dev.mjs",
+      "production": "./dist/LexicalOffset.prod.mjs",
+      "default": "./dist/LexicalOffset.mjs"
     }
   },
   "dependencies": {

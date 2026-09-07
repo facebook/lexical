@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalLink.js",
+  "main": "./dist/LexicalLink.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/a11y": "workspace:*",
@@ -29,21 +29,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalLink.dev.mjs",
-        "production": "./dist/LexicalLink.prod.mjs",
-        "node": "./dist/LexicalLink.node.mjs",
-        "default": "./dist/LexicalLink.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalLink.dev.js",
-        "production": "./dist/LexicalLink.prod.js",
-        "default": "./dist/LexicalLink.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalLink.dev.mjs",
+      "production": "./dist/LexicalLink.prod.mjs",
+      "default": "./dist/LexicalLink.mjs"
     }
   },
   "files": [

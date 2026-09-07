@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalMarkdown.js",
+  "main": "./dist/LexicalMarkdown.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
@@ -32,21 +32,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalMarkdown.dev.mjs",
-        "production": "./dist/LexicalMarkdown.prod.mjs",
-        "node": "./dist/LexicalMarkdown.node.mjs",
-        "default": "./dist/LexicalMarkdown.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalMarkdown.dev.js",
-        "production": "./dist/LexicalMarkdown.prod.js",
-        "default": "./dist/LexicalMarkdown.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalMarkdown.dev.mjs",
+      "production": "./dist/LexicalMarkdown.prod.mjs",
+      "default": "./dist/LexicalMarkdown.mjs"
     }
   },
   "files": [

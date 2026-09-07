@@ -10,7 +10,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalDragon.js",
+  "main": "./dist/LexicalDragon.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "repository": {
     "type": "git",
@@ -22,21 +22,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalDragon.dev.mjs",
-        "production": "./dist/LexicalDragon.prod.mjs",
-        "node": "./dist/LexicalDragon.node.mjs",
-        "default": "./dist/LexicalDragon.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalDragon.dev.js",
-        "production": "./dist/LexicalDragon.prod.js",
-        "default": "./dist/LexicalDragon.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalDragon.dev.mjs",
+      "production": "./dist/LexicalDragon.prod.mjs",
+      "default": "./dist/LexicalDragon.mjs"
     }
   },
   "dependencies": {

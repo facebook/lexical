@@ -31,7 +31,8 @@ const publicNpmNames = new Set(
 );
 
 /**
- * @typedef {{source?: string; import: Record<string, string>; require: Record<string, string>}} ImportRequireExports
+ * @typedef {import('./shared/PackageMetadata.mjs').ExportConditions} ExportConditions
+ * @typedef {import('./shared/PackageMetadata.mjs').NpmModuleExports} NpmModuleExports
  */
 
 /**
@@ -142,8 +143,7 @@ function replaceExtension(fileName, ext) {
 
 /**
  * webpack can use these conditions to choose a dev or prod
- * build without a fork module, which is especially helpful
- * in the ESM build.
+ * build without a fork module.
  *
  * @param {string} fileName may have .js or .mjs extension
  * @returns {Record<'development'|'production', string>}
@@ -166,6 +166,13 @@ const DIST_DIR = 'dist';
 /**
  * Build an export map for a particular entry point in the package.json
  *
+ * Only ESM is published (the CommonJS build is www-only, see
+ * scripts/build.mjs), so the conditions are not split into `import` and
+ * `require`: both resolve to the same `.mjs` files. A CommonJS consumer on
+ * any supported Node.js (>= 20.19) loads them through require(esm), which
+ * is why the fork module and everything it imports has no top-level await,
+ * and bundlers do not care about the extension.
+ *
  * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
  * @param {string} [typesBasename]
  * @param {string} [sourceRelPath] path relative to the package root for the
@@ -173,7 +180,7 @@ const DIST_DIR = 'dist';
  *   `source` condition is added so bundlers configured with
  *   `resolve.conditions: ['source', ...]` can consume the package
  *   without a build step (useful for `pnpm link` / `file:` consumers).
- * @returns {ImportRequireExports} The export map for this file
+ * @returns {NpmModuleExports} The export map for this file
  */
 function exportEntry(
   basename,
@@ -189,48 +196,37 @@ function exportEntry(
   // including the minimum) to the "too old" stub. Must precede `types`.
   const tooOld = tooOldStubPath(DIST_DIR);
   return {
-    /* eslint-disable sort-keys-fix/sort-keys-fix */
     ...(sourceRelPath ? {source: `./${sourceRelPath}`} : null),
-    import: {
-      [TYPESCRIPT_TOO_OLD_CONDITION]: tooOld,
-      types,
-      ...withEnvironments(`${prefix}.mjs`),
-      node: `${prefix}.node.mjs`,
-      default: `${prefix}.mjs`,
-    },
-    require: {
-      [TYPESCRIPT_TOO_OLD_CONDITION]: tooOld,
-      types,
-      ...withEnvironments(`${prefix}.js`),
-      default: `${prefix}.js`,
-    },
-    /* eslint-enable sort-keys-fix/sort-keys-fix */
+    [TYPESCRIPT_TOO_OLD_CONDITION]: tooOld,
+    types,
+    ...withEnvironments(`${prefix}.mjs`),
+    default: `${prefix}.mjs`,
   };
 }
 
 /**
  * Add a browser condition for a particular entry point in the package.json
  *
- * @param {ImportRequireExports} exports
- * @returns {Record<'browser'|'import'|'require', Record<string,string>>} The export map for this file
+ * @param {NpmModuleExports} exports
+ * @returns {NpmModuleExports} The export map for this file
  */
 function withBrowser(exports) {
-  const browser = Object.fromEntries(
-    Object.entries(exports.import).flatMap(([k, v]) => {
-      if (k === 'node') {
-        return [];
-      } else if (k === 'types' || k.startsWith('types@')) {
-        // `types` and the versioned `types@<min>` condition point at .d.ts
-        // files, never a browser bundle; pass them through unchanged.
-        return [[k, v]];
-      }
-      return [[k, v.replace(/((?:\.dev|\.prod)?\.m?js)$/, '.browser$1')]];
-    }),
+  const {source, browser: _ignored, ...conditions} = exports;
+  const browser = /** @type {ExportConditions} */ (
+    Object.fromEntries(
+      Object.entries(conditions).map(([k, v]) => {
+        if (k === 'types' || k.startsWith('types@')) {
+          // `types` and the versioned `types@<min>` condition point at .d.ts
+          // files, never a browser bundle; pass them through unchanged.
+          return [k, v];
+        }
+        return [k, v.replace(/((?:\.dev|\.prod)?\.mjs)$/, '.browser$1')];
+      }),
+    )
   );
   // Keep `source` first so a consumer that opts in with
   // `resolve.conditions: ['source', ...]` always wins over `browser`.
-  const {source, ...rest} = exports;
-  return {...(source ? {source} : null), browser, ...rest};
+  return {...(source ? {source} : null), browser, ...conditions};
 }
 
 /**
@@ -321,9 +317,15 @@ function updatePublicPackage(pkg) {
   }
   // If there's a main we expect a single entry point
   if (packageJson.main) {
-    const mainBase = stripDistPrefix(packageJson.main);
+    // `main` is the one resolver-agnostic entry, so it names the ESM fork
+    // module: a package.json written before the CommonJS build was dropped
+    // from npm still says `<Name>.js` and is normalized here.
+    const mainBase = replaceExtension(
+      stripDistPrefix(packageJson.main),
+      '.mjs',
+    );
     packageJson.main = `./${DIST_DIR}/${mainBase}`;
-    packageJson.module = `./${DIST_DIR}/${replaceExtension(mainBase, '.mjs')}`;
+    packageJson.module = packageJson.main;
     const sourceRelPath = findMainSourceRelPath(
       pkg,
       replaceExtension(mainBase, ''),

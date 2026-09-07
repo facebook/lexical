@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalHistory.js",
+  "main": "./dist/LexicalHistory.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
@@ -26,21 +26,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalHistory.dev.mjs",
-        "production": "./dist/LexicalHistory.prod.mjs",
-        "node": "./dist/LexicalHistory.node.mjs",
-        "default": "./dist/LexicalHistory.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalHistory.dev.js",
-        "production": "./dist/LexicalHistory.prod.js",
-        "default": "./dist/LexicalHistory.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalHistory.dev.mjs",
+      "production": "./dist/LexicalHistory.prod.mjs",
+      "default": "./dist/LexicalHistory.mjs"
     }
   },
   "files": [

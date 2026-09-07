@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalCodePrism.js",
+  "main": "./dist/LexicalCodePrism.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
@@ -30,21 +30,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalCodePrism.dev.mjs",
-        "production": "./dist/LexicalCodePrism.prod.mjs",
-        "node": "./dist/LexicalCodePrism.node.mjs",
-        "default": "./dist/LexicalCodePrism.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalCodePrism.dev.js",
-        "production": "./dist/LexicalCodePrism.prod.js",
-        "default": "./dist/LexicalCodePrism.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalCodePrism.dev.mjs",
+      "production": "./dist/LexicalCodePrism.prod.mjs",
+      "default": "./dist/LexicalCodePrism.mjs"
     }
   },
   "files": [

@@ -14,7 +14,7 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-tailwind"
   },
-  "main": "./dist/LexicalTailwind.js",
+  "main": "./dist/LexicalTailwind.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "bugs": {
     "url": "https://github.com/facebook/lexical/issues"
@@ -35,21 +35,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalTailwind.dev.mjs",
-        "production": "./dist/LexicalTailwind.prod.mjs",
-        "node": "./dist/LexicalTailwind.node.mjs",
-        "default": "./dist/LexicalTailwind.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalTailwind.dev.js",
-        "production": "./dist/LexicalTailwind.prod.js",
-        "default": "./dist/LexicalTailwind.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalTailwind.dev.mjs",
+      "production": "./dist/LexicalTailwind.prod.mjs",
+      "default": "./dist/LexicalTailwind.mjs"
     }
   },
   "files": [

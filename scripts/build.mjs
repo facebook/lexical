@@ -505,9 +505,10 @@ function getComment() {
  */
 function getFileName(fileName, isProd, format) {
   // Both www and npm builds use the `.dev`/`.prod` suffix. The bare
-  // `Foo.mjs`/`Foo.js` names are reserved for the fork module emitted by
-  // buildForkModules so the published exports map can resolve cleanly
-  // regardless of which variants were built.
+  // `Foo.mjs` name is reserved for the fork module emitted by
+  // buildForkModule so the published exports map can resolve cleanly
+  // regardless of which variants were built (www consolidates its `.js`
+  // files itself).
   return `${fileName}.${isProd ? 'prod' : 'dev'}${getExtension(format)}`;
 }
 
@@ -534,92 +535,85 @@ function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
  */
 
 /**
+ * The fork module that the exports map's `default` condition resolves to.
+ * It imports both variants and picks one at runtime, so a consumer with no
+ * `development`/`production` condition (Node.js, unless run with
+ * `--conditions`) evaluates both. It is deliberately free of top-level
+ * await: Node.js can only require() an ESM graph that has none, and since
+ * no CommonJS build is published this file, reached through the other
+ * packages' static imports as much as directly, is how every CommonJS
+ * consumer loads these packages.
  *
  * @param {ForkModuleContentOptions} opts
- * @param {'cjs'|'esm'|'node'} target
  * @returns {string}
  */
-function forkModuleContent(
-  {devFileName, exports, mode, outputFileName, prodFileName},
-  target,
-) {
+function forkModuleContent({
+  devFileName,
+  exports,
+  mode,
+  outputFileName,
+  prodFileName,
+}) {
   const lines = [getComment()];
-  if (target === 'cjs') {
-    lines.push(`'use strict'`);
-    if (mode === 'both') {
-      lines.push(
-        `const ${outputFileName} = process.env.NODE_ENV !== 'production' ? require('${devFileName}') : require('${prodFileName}');`,
-      );
-    } else if (mode === 'dev') {
-      lines.push(`const ${outputFileName} = require('${devFileName}');`);
-    } else {
-      lines.push(`const ${outputFileName} = require('${prodFileName}');`);
-    }
-    lines.push(`module.exports = ${outputFileName};`);
+  if (mode === 'both') {
+    lines.push(
+      `import * as modDev from '${devFileName}';`,
+      `import * as modProd from '${prodFileName}';`,
+      `const mod = process.env.NODE_ENV !== 'production' ? modDev : modProd;`,
+    );
+  } else if (mode === 'dev') {
+    lines.push(`import * as mod from '${devFileName}';`);
   } else {
-    if (target === 'esm') {
-      if (mode === 'both') {
-        lines.push(
-          `import * as modDev from '${devFileName}';`,
-          `import * as modProd from '${prodFileName}';`,
-          `const mod = process.env.NODE_ENV !== 'production' ? modDev : modProd;`,
-        );
-      } else if (mode === 'dev') {
-        lines.push(`import * as mod from '${devFileName}';`);
-      } else {
-        lines.push(`import * as mod from '${prodFileName}';`);
-      }
-    } else if (target === 'node') {
-      if (mode === 'both') {
-        lines.push(
-          `const mod = await (process.env.NODE_ENV !== 'production' ? import('${devFileName}') : import('${prodFileName}'));`,
-        );
-      } else if (mode === 'dev') {
-        lines.push(`const mod = await import('${devFileName}');`);
-      } else {
-        lines.push(`const mod = await import('${prodFileName}');`);
-      }
-    }
-    for (const name of exports) {
-      lines.push(
-        name === 'default'
-          ? `export default mod.default;`
-          : `export const ${name} = mod.${name};`,
-      );
-    }
+    lines.push(`import * as mod from '${prodFileName}';`);
+  }
+  for (const name of exports) {
+    lines.push(
+      name === 'default'
+        ? `export default mod.default;`
+        : `export const ${name} = mod.${name};`,
+    );
+  }
+  if (exports.length === 1 && exports[0] === 'default') {
+    // A module whose only export is its default (@lexical/eslint-plugin) is
+    // what a CommonJS consumer expects to get back from require() as a
+    // whole, the way its CommonJS build's `module.exports` used to be. Node
+    // honors this export name in require(esm) for exactly that purpose;
+    // import() and static imports see the default export as usual.
+    lines.push(`const ${outputFileName} = mod.default;`);
+    lines.push(`export {${outputFileName} as 'module.exports'};`);
   }
   return lines.join('\n');
 }
 
 /**
+ * Write the `<Name>.mjs` fork module for an ESM build.
  *
  * @param {string} outputPath
  * @param {string} outputFileName
- * @param {'cjs'|'esm'} format
  * @param {Array<string>} exports
  * @param {'dev'|'prod'|'both'} mode
  */
-function buildForkModules(outputPath, outputFileName, format, exports, mode) {
-  const extension = getExtension(format);
-  const devFileName = `./${outputFileName}.dev${extension}`;
-  const prodFileName = `./${outputFileName}.prod${extension}`;
-  const opts = {devFileName, exports, mode, outputFileName, prodFileName};
+function buildForkModule(outputPath, outputFileName, exports, mode) {
+  const extension = getExtension('esm');
   fs.outputFileSync(
     path.resolve(outputPath, `${outputFileName}${extension}`),
-    forkModuleContent(opts, format),
+    forkModuleContent({
+      devFileName: `./${outputFileName}.dev${extension}`,
+      exports,
+      mode,
+      outputFileName,
+      prodFileName: `./${outputFileName}.prod${extension}`,
+    }),
   );
-  if (format === 'esm') {
-    fs.outputFileSync(
-      path.resolve(outputPath, `${outputFileName}.node${extension}`),
-      forkModuleContent(opts, 'node'),
-    );
-  }
 }
 
 /**
  * Copy the package's hand-written Flow stubs from `flow/` into the build
- * output directory so Flow consumers find `<Name>.js.flow` next to the
- * matching `<Name>.js` shipped in the published package.
+ * output directory so Flow consumers find `<Name>.mjs.flow` next to the
+ * matching `<Name>.mjs` that `main` points at in the published package
+ * (Flow shadows a resolved file with its `.flow` neighbor, whatever the
+ * extension; the stubs are named `.js.flow` in `flow/` because www consumes
+ * a CommonJS `<Name>.js`).
  *
  * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
  * @param {string} outputPath
@@ -630,8 +624,11 @@ function copyFlowStubsIntoDist(pkg, outputPath) {
     return;
   }
   for (const fn of fs.readdirSync(flowDir)) {
-    if (fn.endsWith('.flow')) {
-      fs.copySync(path.resolve(flowDir, fn), path.resolve(outputPath, fn));
+    if (fn.endsWith('.js.flow')) {
+      fs.copySync(
+        path.resolve(flowDir, fn),
+        path.resolve(outputPath, fn.replace(/\.js\.flow$/, '.mjs.flow')),
+      );
     }
   }
 }
@@ -659,8 +656,13 @@ async function buildAll() {
     await buildTSDeclarationFiles();
   }
 
+  // The npm packages ship ESM only: a CommonJS consumer on any supported
+  // Node.js (>= 20.19) loads the same .mjs through require(esm), reached
+  // through the exports map's `default` condition (see exportEntry in
+  // scripts/updateVersion.mjs). www has no ESM pipeline, so it still gets
+  // the CommonJS variants (consolidated by prepare-www).
   /** @type {Array<'cjs' | 'esm'>} */
-  const formats = isWWW ? ['cjs'] : ['cjs', 'esm'];
+  const formats = isWWW ? ['cjs'] : ['esm'];
   for (const pkg of packagesManager.getPublicPackages()) {
     const {name, sourcePath, outputPath, packageName, modules} =
       pkg.getPackageBuildDefinition({consolidateBrowserSource: isWWW});
@@ -714,12 +716,11 @@ async function buildAll() {
 
         // www has its own consolidation step (prepare-www) and does not use
         // the npm-style fork modules.
-        if (!isWWW) {
+        if (format === 'esm') {
           const mode = isRelease ? 'both' : isProduction ? 'prod' : 'dev';
-          buildForkModules(
+          buildForkModule(
             outputPath,
             outputFileName,
-            format,
             primaryExports.length > 0
               ? primaryExports
               : (secondaryExports ?? []),

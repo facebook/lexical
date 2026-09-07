@@ -8,7 +8,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalRichText.js",
+  "main": "./dist/LexicalRichText.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "repository": {
     "type": "git",
@@ -20,21 +20,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalRichText.dev.mjs",
-        "production": "./dist/LexicalRichText.prod.mjs",
-        "node": "./dist/LexicalRichText.node.mjs",
-        "default": "./dist/LexicalRichText.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalRichText.dev.js",
-        "production": "./dist/LexicalRichText.prod.js",
-        "default": "./dist/LexicalRichText.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalRichText.dev.mjs",
+      "production": "./dist/LexicalRichText.prod.mjs",
+      "default": "./dist/LexicalRichText.mjs"
     }
   },
   "dependencies": {

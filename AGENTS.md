@@ -380,5 +380,7 @@ should follow this rule as written.
 - Uses Rollup for bundling
 - Build script: `scripts/build.mjs`
 - Supports multiple build modes: development, production, www (Meta internal)
-- TypeScript source → compiled to CommonJS and ESM
+- TypeScript source → compiled to ESM for npm (`dist/*.mjs`; CommonJS consumers
+  load it through `require(esm)`, so the fork modules must stay free of
+  top-level await) and to CommonJS for www only (`--www`)
 - Package manager logic in `scripts/shared/packagesManager.mjs`

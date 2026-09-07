@@ -10,7 +10,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalClipboard.js",
+  "main": "./dist/LexicalClipboard.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
@@ -32,21 +32,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalClipboard.dev.mjs",
-        "production": "./dist/LexicalClipboard.prod.mjs",
-        "node": "./dist/LexicalClipboard.node.mjs",
-        "default": "./dist/LexicalClipboard.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalClipboard.dev.js",
-        "production": "./dist/LexicalClipboard.prod.js",
-        "default": "./dist/LexicalClipboard.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalClipboard.dev.mjs",
+      "production": "./dist/LexicalClipboard.prod.mjs",
+      "default": "./dist/LexicalClipboard.mjs"
     }
   },
   "files": [

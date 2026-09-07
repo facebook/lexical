@@ -10,7 +10,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalSelection.js",
+  "main": "./dist/LexicalSelection.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "repository": {
     "type": "git",
@@ -22,21 +22,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalSelection.dev.mjs",
-        "production": "./dist/LexicalSelection.prod.mjs",
-        "node": "./dist/LexicalSelection.node.mjs",
-        "default": "./dist/LexicalSelection.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalSelection.dev.js",
-        "production": "./dist/LexicalSelection.prod.js",
-        "default": "./dist/LexicalSelection.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalSelection.dev.mjs",
+      "production": "./dist/LexicalSelection.prod.mjs",
+      "default": "./dist/LexicalSelection.mjs"
     }
   },
   "dependencies": {

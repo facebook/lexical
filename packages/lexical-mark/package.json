@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalMark.js",
+  "main": "./dist/LexicalMark.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/utils": "workspace:*",
@@ -25,21 +25,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalMark.dev.mjs",
-        "production": "./dist/LexicalMark.prod.mjs",
-        "node": "./dist/LexicalMark.node.mjs",
-        "default": "./dist/LexicalMark.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalMark.dev.js",
-        "production": "./dist/LexicalMark.prod.js",
-        "default": "./dist/LexicalMark.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalMark.dev.mjs",
+      "production": "./dist/LexicalMark.prod.mjs",
+      "default": "./dist/LexicalMark.mjs"
     }
   },
   "files": [

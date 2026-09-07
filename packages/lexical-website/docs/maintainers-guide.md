@@ -105,7 +105,7 @@ or use the template below):
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-eslint-plugin"
   },
-  "main": "LexicalEslintPlugin.js",
+  "main": "LexicalEslintPlugin.mjs",
   "types": "index.d.ts",
   "bugs": {
     "url": "https://github.com/facebook/lexical/issues"
@@ -200,14 +200,20 @@ of these scripts you might as well run them all.
 ### pnpm run prepare-release
 
 This runs `build-release` to produce all of the artifacts each public
-package needs (the `dev`/`prod`/`node` ESM and CJS variants plus their
-fork modules, `.d.ts` declarations, and `.flow` stubs under
+package needs (the `dev`/`prod` ESM variants plus their fork modules,
+`.d.ts` declarations, and `.mjs.flow` stubs under
 `packages/<name>/dist/`), then runs the publish-time guard in
 `scripts/npm/prepare-release.mjs` to confirm every path the package's
 `exports`/`main`/`module`/`types` fields reference actually exists on
 disk. The guard fails the build if e.g. you ran `pnpm run build` (dev
-only) and then tried to publish — the `.prod.{js,mjs}` files would be
+only) and then tried to publish — the `.prod.mjs` files would be
 missing.
+
+Only ESM is published to npm. A CommonJS consumer gets the same `.mjs`
+files through Node's `require(esm)` (Node.js 20.19+), which is why the
+fork module that the exports map's `default` condition resolves to has
+no top-level await. The CommonJS variants are only built for www
+(`pnpm run build-www`).
 
 Each package is its own publish root: `packages/<name>/` IS the
 publishable npm package after `build-release`. `pnpm publish` is run

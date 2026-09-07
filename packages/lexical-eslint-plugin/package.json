@@ -15,7 +15,7 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-eslint-plugin"
   },
-  "main": "./dist/LexicalEslintPlugin.js",
+  "main": "./dist/LexicalEslintPlugin.mjs",
   "types": "./dist/typescript-too-old.d.ts",
   "bugs": {
     "url": "https://github.com/facebook/lexical/issues"
@@ -29,21 +29,11 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalEslintPlugin.dev.mjs",
-        "production": "./dist/LexicalEslintPlugin.prod.mjs",
-        "node": "./dist/LexicalEslintPlugin.node.mjs",
-        "default": "./dist/LexicalEslintPlugin.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalEslintPlugin.dev.js",
-        "production": "./dist/LexicalEslintPlugin.prod.js",
-        "default": "./dist/LexicalEslintPlugin.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalEslintPlugin.dev.mjs",
+      "production": "./dist/LexicalEslintPlugin.prod.mjs",
+      "default": "./dist/LexicalEslintPlugin.mjs"
     }
   },
   "devDependencies": {

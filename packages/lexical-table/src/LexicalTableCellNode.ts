@@ -40,11 +40,22 @@ import {
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
 
+// Declared as bindings and collected into the exported object, rather than
+// written as literals inside it, so that the schema below can name one without
+// a module-scope property read. Such a read is a side effect to esbuild and
+// webpack — it cannot see that the object has no getter — and it retains the
+// whole statement plus everything the statement references, which here is the
+// entire schema (#9120).
+const NO_STATUS = 0;
+const ROW = 1;
+const COLUMN = 2;
+const BOTH = 3;
+
 export const TableCellHeaderStates = {
-  BOTH: 3,
-  COLUMN: 2,
-  NO_STATUS: 0,
-  ROW: 1,
+  BOTH,
+  COLUMN,
+  NO_STATUS,
+  ROW,
 };
 
 export type TableCellHeaderState =
@@ -66,7 +77,7 @@ const tableCellNodeSchema = nodeSchema<TableCellNode>()({
   // default BOTH mask). The read is still the field, standing in for the
   // getter so a subclass that overrides it reclaims the property; the write
   // goes through the method, which supplies that mask.
-  headerState: withAccessors(numberValue(TableCellHeaderStates.NO_STATUS), {
+  headerState: withAccessors(numberValue(NO_STATUS), {
     getter: {field: '__headerState', method: 'getHeaderStyles'},
     setter: 'setHeaderStyles',
   }),

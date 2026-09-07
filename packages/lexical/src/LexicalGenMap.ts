@@ -220,9 +220,7 @@ export class GenMap<K, V> implements Map<K, V> {
     // Skip per-entry override checks for an unmodified snapshot.
     if (!nursery) {
       if (old) {
-        for (const pair of old) {
-          yield pair;
-        }
+        yield* old;
       }
       return;
     }
@@ -233,9 +231,9 @@ export class GenMap<K, V> implements Map<K, V> {
         if (v === TOMBSTONE) {
           continue;
         } else if (v !== undefined) {
-          (pair as [K, V])[1] = v as V;
+          pair[1] = v;
         }
-        yield pair as [K, V];
+        yield pair;
       }
     }
     for (const pair of nursery) {

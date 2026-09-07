@@ -3283,14 +3283,25 @@ const SYNTHESIZED_GET_TYPE: unique symbol = Symbol(
 // warning. We also can't reliably provide this warning if the output
 // has been optimized because `arg=undefined` parameter defaults can
 // be stripped.
-const IS_UNOPTIMIZED_DEV_BUILD =
-  __DEV__ &&
-  // constructor(key=undefined)
-  TabNode.length === 0 &&
-  // constructor(text='', key?: NodeKey)
-  TextNode.length === 0 &&
-  // Class name mangling is another signal that this may be unreliable
-  TextNode.name === 'TextNode';
+//
+// A function declared side-effect free (so the build annotates the call
+// below) rather than an inline expression: the property reads on the node
+// classes are a side effect to bundlers, which would pin the classes into
+// every development bundle that imports the module.
+/** @__NO_SIDE_EFFECTS__ */
+function isUnoptimizedDevBuild(): boolean {
+  return (
+    __DEV__ &&
+    // constructor(key=undefined)
+    TabNode.length === 0 &&
+    // constructor(text='', key?: NodeKey)
+    TextNode.length === 0 &&
+    // Class name mangling is another signal that this may be unreliable
+    TextNode.name === 'TextNode'
+  );
+}
+
+const IS_UNOPTIMIZED_DEV_BUILD = isUnoptimizedDevBuild();
 
 /** @internal */
 export function getStaticNodeConfig(

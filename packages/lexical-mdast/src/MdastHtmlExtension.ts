@@ -708,23 +708,40 @@ export function rawHtmlBlock(...parts: RawHtmlBlockPart[]): HtmlBlock {
 // assembled (distinct from the serialized `data-mdast-child` placeholders,
 // which rawHtmlBlock assigns when the parts are put together).
 const EXPORT_MARK_ATTR = 'data-mdast-part';
-const EXPORT_MARK_SPLIT_RE = new RegExp(
-  `<template ${EXPORT_MARK_ATTR}="(\\d+)"></template>`,
-);
+/**
+ * A function declared side-effect free (so the build annotates the call
+ * below) rather than a module-scope `new RegExp`, which is a side effect to
+ * bundlers and would pin this module into every bundle that imports it.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+function createExportMarkSplitRegExp(): RegExp {
+  return new RegExp(`<template ${EXPORT_MARK_ATTR}="(\\d+)"></template>`);
+}
+const EXPORT_MARK_SPLIT_RE = createExportMarkSplitRegExp();
 
 // CommonMark's html block condition 6 tag names. A tag with any other name
 // (a custom element) only opens an html block via condition 7, which
 // requires the tag to stand ALONE on its line — so the serialized shell
 // must line-break around such tags to be re-importable.
-const HTML_BLOCK_TAGS = new Set(
-  (
-    'address article aside base basefont blockquote body caption center col ' +
+/**
+ * The set of the space-separated words. A function declared side-effect free
+ * (so the build annotates the call) because the `split` at module scope is a
+ * side effect to bundlers, which would pin the table into every bundle.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+function wordSet(words: string): ReadonlySet<string> {
+  return new Set(words.split(' '));
+}
+
+const HTML_BLOCK_TAGS = wordSet(
+  'address article aside base basefont blockquote body caption center col ' +
     'colgroup dd details dialog dir div dl dt fieldset figcaption figure ' +
     'footer form frame frameset h1 h2 h3 h4 h5 h6 head header hr html ' +
     'iframe legend li link main menu menuitem nav noframes ol optgroup ' +
     'option p param search section summary table tbody td tfoot th thead ' +
-    'title tr track ul'
-  ).split(' '),
+    'title tr track ul',
 );
 
 // Breaks the line after a segment's leading tag when that tag is a custom

@@ -1748,12 +1748,19 @@ export function objectValue<const S extends SerializationSchemaFields>(
     // default. What tells one object variant from another is its *keys*, which
     // is what the parse-inference this replaces was reading (through the
     // comparator, which rejects an undeclared key): a value belongs to this
-    // schema when it carries at least one field this schema declares, none it
-    // does not, and nothing out of a declared field's own domain.
+    // schema when it carries no field this schema does not declare, and nothing
+    // out of a declared field's own domain.
+    //
+    // Presence is deliberately not required. Every field is optional on the way
+    // in — a parse fills what is missing from the field's own default — so `{}`
+    // is in the domain, and it is a shape this schema really produces: an
+    // object whose fields are all `optional({omitDefault})` serializes to `{}`
+    // once they hold their defaults. Requiring one present key rejected that on
+    // reload, and because the check recurses, a nested one took its whole
+    // enclosing object down with it.
     value =>
       isPlainObject(value) &&
       !hasUndeclaredKey(value, fields) &&
-      entries.some(([key]) => hasOwnKey(value, key)) &&
       entries.every(
         ([key, schema]) =>
           !hasOwnKey(value, key) || $acceptsValue(schema, value[key]),

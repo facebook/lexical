@@ -2852,18 +2852,48 @@ describe('an object schema answers only for its own shape', () => {
   });
 
   test('and declines what belongs to neither', () => {
-    // No declared key, an out-of-domain value for one, and an array: none is
-    // this variant's, so the union falls back rather than committing.
-    for (const value of [{}, {x: 'banana'}, [1, 2], 'str']) {
+    // An out-of-domain value for a declared key, an array, a string: none is
+    // either variant's, so the union falls back rather than committing.
+    for (const value of [{x: 'banana'}, [1, 2], 'str']) {
       expect(union(value as never)).toEqual(union.defaultValue);
     }
+  });
+
+  test('an empty object belongs to every variant', () => {
+    // Every field is optional on the way in, so `{}` is in the domain — and it
+    // is a shape an object schema produces, since one whose fields are all
+    // `optional({omitDefault})` serializes to `{}`. The first variant answers,
+    // as it does for anything two members both accept.
+    expect(union({} as never)).toEqual({x: 0});
+  });
+
+  test('which is what lets a nested empty object survive a round trip', () => {
+    // The check recurses, so rejecting `{}` took the enclosing object with it:
+    // this parsed to `'auto'`, losing `label` outright.
+    const nested = unionValue([
+      enumValue(['auto']),
+      objectValue({
+        label: stringValue(),
+        options: objectValue({
+          color: optional(stringValue(), {omitDefault: true}),
+        }),
+      }),
+    ]);
+    const parsed = nested({label: 'hello', options: {color: ''}} as never);
+    expect(parsed).toEqual({label: 'hello', options: {color: undefined}});
+    // What JSON.stringify leaves of it, reparsed.
+    expect(nested(JSON.parse(JSON.stringify(parsed)))).toEqual({
+      label: 'hello',
+      options: {color: undefined},
+    });
   });
 
   test('membership is the same question the parse asks', () => {
     expect(point.accepts!({x: 1})).toBe(true);
     expect(point.accepts!({label: 'hello'})).toBe(false);
     expect(point.accepts!({label: 'hello', x: 1})).toBe(false);
-    expect(point.accepts!({})).toBe(false);
+    // In the domain: a parse fills what is missing.
+    expect(point.accepts!({})).toBe(true);
     expect(point.accepts!([])).toBe(false);
   });
 });

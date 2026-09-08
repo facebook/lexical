@@ -1117,8 +1117,12 @@ function $schemaMatch(
     return accepts(value) ? {parsed: schema(value)} : undefined;
   }
   const parsed = schema(value);
-  return !isSchemaDefault(schema, parsed) ||
-    isSchemaEqual(schema, value, schema.defaultValue)
+  // `value === schema.defaultValue`, not `isSchemaEqual`: an `isEqual` answers
+  // about two *values*, and `value` here is unparsed input. Every schema whose
+  // domain needs more than identity to recognize — including all four that
+  // carry a comparator — declares `accepts` and returns above, so identity is
+  // the whole of what is left to ask.
+  return !isSchemaDefault(schema, parsed) || value === schema.defaultValue
     ? {parsed}
     : undefined;
 }
@@ -1215,9 +1219,11 @@ function $sameContent(a: unknown, b: unknown): boolean {
  * consulted through a union** — two values it would call equal are reported as
  * different, so a property holding one is written out instead of compacted
  * away, `optional({omitDefault})` around the union keeps it instead of
- * dropping it, and as a `createState` parse it dirties the node. Never the
- * reverse, which would discard the difference. Outside a union the comparator
- * is used as declared.
+ * dropping it, and as a `createState` parse its `NodeState.toJSON()` writes the
+ * value rather than omitting it, `$getStateChange` reports a change, and an
+ * updater-form `$setState` performs the write. (A plain-value `$setState`
+ * compares nothing either way.) Never the reverse, which would discard the
+ * difference. Outside a union the comparator is used as declared.
  *
  * @example
  * ```ts
@@ -1652,6 +1658,11 @@ export function arrayValue<T, In = T>(
       }
       return true;
     },
+    // An array is what this reads; anything else falls back. Declared rather
+    // than inferred so that `$schemaMatch` never has to ask the comparator
+    // above about a raw input — a comparator answers about *values*, and the
+    // inference has only the input to offer.
+    value => Array.isArray(value),
   );
 }
 
@@ -1726,6 +1737,9 @@ export function objectValue<const S extends SerializationSchemaFields>(
       !hasUndeclaredKey(a, fields) &&
       !hasUndeclaredKey(b, fields) &&
       entries.every(([key, schema]) => isSchemaEqual(schema, a[key], b[key])),
+    // As with arrayValue, and for the same reason: a record is what this
+    // reads, and declaring it keeps the field comparators away from inputs.
+    isRecord,
   );
 }
 

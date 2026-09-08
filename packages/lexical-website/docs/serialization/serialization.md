@@ -695,8 +695,11 @@ either in a union changes nothing. A **custom `isEqual` you pass to
 `transformValue` is not consulted through a union**: two values it would call
 equal are reported as different, so such a property is written out instead of
 compacted away, `optional({omitDefault})` around the union keeps it rather than
-dropping it, and as a `createState` parse it dirties the node where it need not
-have. The answer is stricter than yours, never looser, so nothing is lost —
+dropping it, and as a `createState` parse its `NodeState.toJSON()` writes the
+value rather than omitting it, `$getStateChange` reports a change, and an
+updater-form `$setState` performs the write. (A plain-value `$setState` never
+compares, so it is unaffected — `isEqual` answers about values already in the
+state's domain, and `$setState` writes that domain verbatim.) The answer is stricter than yours, never looser, so nothing is lost —
 outside a union your comparator is used as declared. A default is also deeply frozen, since it is one value shared by every
 node that has none of its own — including as `createState`'s default, which
 `$getState` hands back directly.

@@ -9,4 +9,4 @@
 'use strict';
 // This file is here for bootstrapping reasons so we can use it without
 // building anything and still comply with the monorepo conventions
-module.exports = require('./src/LexicalEslintPlugin.js');
+module.exports = require('./dist/LexicalEslintPlugin.js');

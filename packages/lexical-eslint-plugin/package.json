@@ -10,13 +10,12 @@
   ],
   "version": "0.50.0",
   "license": "MIT",
-  "type": "commonjs",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-eslint-plugin"
   },
-  "main": "./dist/LexicalEslintPlugin.mjs",
+  "main": "./dist/LexicalEslintPlugin.js",
   "types": "./dist/typescript-too-old.d.ts",
   "bugs": {
     "url": "https://github.com/facebook/lexical/issues"
@@ -32,16 +31,16 @@
       "source": "./src/index.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/index.d.ts",
-      "development": "./dist/LexicalEslintPlugin.dev.mjs",
-      "production": "./dist/LexicalEslintPlugin.prod.mjs",
-      "default": "./dist/LexicalEslintPlugin.mjs"
+      "development": "./dist/LexicalEslintPlugin.dev.js",
+      "production": "./dist/LexicalEslintPlugin.prod.js",
+      "default": "./dist/LexicalEslintPlugin.js"
     }
   },
   "devDependencies": {
     "@types/eslint": "^9.6.1",
     "@types/estree": "^1.0.9"
   },
-  "module": "./dist/LexicalEslintPlugin.mjs",
+  "module": "./dist/LexicalEslintPlugin.js",
   "files": [
     "dist",
     "src",
@@ -66,5 +65,6 @@
     "typescript": {
       "optional": true
     }
-  }
+  },
+  "type": "module"
 }

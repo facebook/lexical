@@ -203,17 +203,6 @@ Object.entries(wwwMappings).forEach(([mapping, target]) => {
 });
 
 /**
- * @param {'esm'|'cjs'} format
- * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
- * @returns {'.mjs'|'.js'} the file extension of this package's build in this
- *   format: the www CommonJS build is always `.js`, the ESM build is `.js`
- *   in a `"type": "module"` package and `.mjs` otherwise
- */
-function getExtension(format, pkg) {
-  return format === 'esm' ? pkg.getEsmExtension() : '.js';
-}
-
-/**
  *
  * @param {string} name
  * @param {string} inputFile
@@ -503,17 +492,16 @@ function getComment() {
 /**
  * @param {string} fileName
  * @param {boolean} isProd
- * @param {'esm' | 'cjs'} format
- * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
  * @returns {string}
  */
-function getFileName(fileName, isProd, format, pkg) {
-  // Both www and npm builds use the `.dev`/`.prod` suffix. The bare
-  // `Foo.js` (or `Foo.mjs`) name is reserved for the fork module emitted by
-  // buildForkModule so the published exports map can resolve cleanly
-  // regardless of which variants were built (www consolidates its `.js`
-  // files itself).
-  return `${fileName}.${isProd ? 'prod' : 'dev'}${getExtension(format, pkg)}`;
+function getFileName(fileName, isProd) {
+  // Both www and npm builds use the `.dev`/`.prod` suffix (the npm build is
+  // ESM, the www build CommonJS; every public package is a `"type":
+  // "module"` package, so both are `.js`). The bare `Foo.js` name is
+  // reserved for the fork module emitted by buildForkModule so the
+  // published exports map can resolve cleanly regardless of which variants
+  // were built (www consolidates its files itself).
+  return `${fileName}.${isProd ? 'prod' : 'dev'}.js`;
 }
 
 async function buildTSDeclarationFiles() {
@@ -608,23 +596,21 @@ function forkModuleContent({devFileName, exports, mode, prodFileName}) {
 }
 
 /**
- * Write the `<Name>.js` (or `<Name>.mjs`) fork module for an ESM build.
+ * Write the `<Name>.js` fork module for an ESM build.
  *
  * @param {string} outputPath
  * @param {string} outputFileName
  * @param {Array<string>} exports
  * @param {'dev'|'prod'|'both'} mode
- * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
  */
-function buildForkModule(outputPath, outputFileName, exports, mode, pkg) {
-  const extension = getExtension('esm', pkg);
+function buildForkModule(outputPath, outputFileName, exports, mode) {
   fs.outputFileSync(
-    path.resolve(outputPath, `${outputFileName}${extension}`),
+    path.resolve(outputPath, `${outputFileName}.js`),
     forkModuleContent({
-      devFileName: `./${outputFileName}.dev${extension}`,
+      devFileName: `./${outputFileName}.dev.js`,
       exports,
       mode,
-      prodFileName: `./${outputFileName}.prod${extension}`,
+      prodFileName: `./${outputFileName}.prod.js`,
     }),
   );
 }
@@ -632,9 +618,7 @@ function buildForkModule(outputPath, outputFileName, exports, mode, pkg) {
 /**
  * Copy the package's hand-written Flow stubs from `flow/` into the build
  * output directory so Flow consumers find `<Name>.js.flow` next to the
- * matching `<Name>.js` that `main` points at in the published package. Flow
- * shadows a resolved file with its `.flow` neighbor whatever the extension,
- * so a package whose ESM build is `.mjs` gets `<Name>.mjs.flow`.
+ * matching `<Name>.js` that `main` points at in the published package.
  *
  * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
  * @param {string} outputPath
@@ -644,16 +628,9 @@ function copyFlowStubsIntoDist(pkg, outputPath) {
   if (!fs.existsSync(flowDir)) {
     return;
   }
-  const extension = getExtension('esm', pkg);
   for (const fn of fs.readdirSync(flowDir)) {
     if (fn.endsWith('.js.flow')) {
-      fs.copySync(
-        path.resolve(flowDir, fn),
-        path.resolve(
-          outputPath,
-          fn.replace(/\.js\.flow$/, `${extension}.flow`),
-        ),
-      );
+      fs.copySync(path.resolve(flowDir, fn), path.resolve(outputPath, fn));
     }
   }
 }
@@ -710,10 +687,7 @@ async function buildAll() {
           name,
           inputFile,
           outputPath,
-          path.resolve(
-            outputPath,
-            getFileName(outputFileName, isProduction, format, pkg),
-          ),
+          path.resolve(outputPath, getFileName(outputFileName, isProduction)),
           isProduction,
           format,
           version,
@@ -730,7 +704,7 @@ async function buildAll() {
             outputPath,
             path.resolve(
               outputPath,
-              getFileName(outputFileName, !isProduction, format, pkg),
+              getFileName(outputFileName, !isProduction),
             ),
             !isProduction,
             format,
@@ -750,7 +724,6 @@ async function buildAll() {
               ? primaryExports
               : (secondaryExports ?? []),
             mode,
-            pkg,
           );
         }
       }

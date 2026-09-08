@@ -59,7 +59,7 @@ function updatePackage(pkg) {
  *
  */
 async function updateVersion() {
-  await regenerateInternalVersionModule();
+  await regenerateVersionModules();
   packagesManager.getPackages().forEach(updatePackage);
   glob
     .sync([
@@ -74,24 +74,35 @@ async function updateVersion() {
 const INTERNAL_PACKAGE_NAME = '@lexical/internal';
 
 /**
- * Rewrite the generated literal in @lexical/internal's version module to the
- * current monorepo version. In a Rollup build `process.env.LEXICAL_VERSION`
- * is statically replaced with a build-specific string; this literal is the
- * fallback used when the source is consumed without that build step.
+ * The modules that carry the monorepo version as a generated literal. In a
+ * Rollup build `process.env.LEXICAL_VERSION` is statically replaced with a
+ * build-specific string; the literal is the fallback used when the source is
+ * consumed without that build step.
  */
-async function regenerateInternalVersionModule() {
-  const versionPath = path.resolve('packages/lexical-internal/src/version.ts');
-  if (!fs.existsSync(versionPath)) {
-    return;
+const VERSION_MODULES = [
+  'packages/lexical-internal/src/version.ts',
+  'packages/lexical-eslint-plugin/src/version.js',
+];
+
+/**
+ * Rewrite the generated literal in each version module to the current
+ * monorepo version.
+ */
+async function regenerateVersionModules() {
+  for (const relPath of VERSION_MODULES) {
+    const versionPath = path.resolve(relPath);
+    if (!fs.existsSync(versionPath)) {
+      continue;
+    }
+    const next = fs
+      .readFileSync(versionPath, 'utf8')
+      .replace(/'[^']*\+source'/, `'${version}+source'`);
+    const prettierConfig = (await prettier.resolveConfig(versionPath)) || {};
+    fs.writeFileSync(
+      versionPath,
+      await prettier.format(next, {...prettierConfig, filepath: versionPath}),
+    );
   }
-  const next = fs
-    .readFileSync(versionPath, 'utf8')
-    .replace(/'[^']*\+source'/, `'${version}+source'`);
-  const prettierConfig = (await prettier.resolveConfig(versionPath)) || {};
-  fs.writeFileSync(
-    versionPath,
-    await prettier.format(next, {...prettierConfig, filepath: versionPath}),
-  );
 }
 
 /**
@@ -168,14 +179,12 @@ const DIST_DIR = 'dist';
  *
  * Only ESM is published (the CommonJS build is www-only, see
  * scripts/build.mjs), so the conditions are not split into `import` and
- * `require`: both resolve to the same ESM files. A CommonJS consumer on
+ * `require`: both resolve to the same `.js` ES modules. A CommonJS consumer on
  * any supported Node.js (>= 20.19) loads them through require(esm), which
  * is why the fork module and everything it imports has no top-level await,
  * and bundlers do not care about the extension.
  *
  * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
- * @param {'.js' | '.mjs'} esmExtension the package's ESM extension (see
- *   PackageMetadata#getEsmExtension)
  * @param {string} [typesBasename]
  * @param {string} [sourceRelPath] path relative to the package root for the
  *   TypeScript (or CJS) source backing this entry. When provided, a
@@ -186,7 +195,6 @@ const DIST_DIR = 'dist';
  */
 function exportEntry(
   basename,
-  esmExtension,
   typesBasename = `${basename}.d.ts`,
   sourceRelPath,
 ) {
@@ -202,8 +210,8 @@ function exportEntry(
     ...(sourceRelPath ? {source: `./${sourceRelPath}`} : null),
     [TYPESCRIPT_TOO_OLD_CONDITION]: tooOld,
     types,
-    ...withEnvironments(`${prefix}${esmExtension}`),
-    default: `${prefix}${esmExtension}`,
+    ...withEnvironments(`${prefix}.js`),
+    default: `${prefix}.js`,
   };
 }
 
@@ -223,7 +231,7 @@ function withBrowser(exports) {
           // files, never a browser bundle; pass them through unchanged.
           return [k, v];
         }
-        return [k, v.replace(/((?:\.dev|\.prod)?\.m?js)$/, '.browser$1')];
+        return [k, v.replace(/((?:\.dev|\.prod)?\.js)$/, '.browser$1')];
       }),
     )
   );
@@ -319,22 +327,14 @@ function updatePublicPackage(pkg) {
     packageJson.sideEffects = false;
   }
   // Only ESM is published, so a package is an ES module package and its
-  // build is plain `.js`. A package whose own sources are CommonJS `.js`
-  // files opts out by hand with `"type": "commonjs"` and gets `.mjs` builds
-  // instead (see PackageMetadata#getEsmExtension).
-  if (packageJson.type === undefined) {
-    packageJson.type = 'module';
-  }
-  const esmExtension = pkg.getEsmExtension();
+  // `.js` build is ESM.
+  packageJson.type = 'module';
   // If there's a main we expect a single entry point
   if (packageJson.main) {
     // `main` is the one resolver-agnostic entry, so it names the ESM fork
     // module: a package.json written when the build had another extension
-    // is normalized here.
-    const mainBase = replaceExtension(
-      stripDistPrefix(packageJson.main),
-      esmExtension,
-    );
+    // (`.mjs`) is normalized here.
+    const mainBase = replaceExtension(stripDistPrefix(packageJson.main), '.js');
     packageJson.main = `./${DIST_DIR}/${mainBase}`;
     packageJson.module = packageJson.main;
     const sourceRelPath = findMainSourceRelPath(
@@ -351,7 +351,6 @@ function updatePublicPackage(pkg) {
     packageJson.exports = {
       '.': exportEntry(
         replaceExtension(mainBase, ''),
-        esmExtension,
         typesBase,
         sourceRelPath,
       ),
@@ -372,12 +371,7 @@ function updatePublicPackage(pkg) {
           ? packageName
           : `${packageName}/${basename}`;
         const entryName = npmToWwwName(entryNameInput);
-        let entry = exportEntry(
-          entryName,
-          esmExtension,
-          `${basename}.d.ts`,
-          `src/${fn}`,
-        );
+        let entry = exportEntry(entryName, `${basename}.d.ts`, `src/${fn}`);
         if (hasBrowser) {
           entry = withBrowser(entry);
         }

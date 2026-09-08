@@ -7,13 +7,13 @@
  */
 
 /**
- * For bootstrapping reasons, this module is written in CJS JavaScript so no
- * compilation is necessary
+ * For bootstrapping reasons, the plugin itself is written in plain JavaScript
+ * (ES modules) so no compilation is necessary to use it from this checkout.
  */
 
 import type {Rule} from 'eslint';
 
-import * as jsPlugin from './LexicalEslintPlugin.js';
+import jsPlugin from './LexicalEslintPlugin.js';
 
 export type {RulesOfLexicalOptions} from './rules/rules-of-lexical.js';
 
@@ -61,8 +61,7 @@ const plugin: Plugin = jsPlugin;
 // Named exports so that a CommonJS consumer can use what require() returns
 // from the ESM build as the plugin: require(esm) hands back the module
 // namespace, which ESLint accepts as a plugin as long as `rules`, `configs`,
-// and `meta` are named exports on it. (Re-exports rather than reads of
-// `plugin`, so a bare import of this module evaluates nothing.)
+// and `meta` are named exports on it.
 export {configs, meta, rules} from './LexicalEslintPlugin.js';
 
 // eslint-disable-next-line no-restricted-exports

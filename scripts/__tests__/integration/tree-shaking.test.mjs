@@ -25,10 +25,6 @@ const KNOWN_SIDE_EFFECTS = new Map([
     '@lexical/code-prism',
     'registers its language grammars on the global Prism object when imported',
   ],
-  [
-    '@lexical/eslint-plugin',
-    'reads `rules`, `configs`, and `meta` off its CommonJS plugin object at module scope so that a CommonJS consumer gets an ESLint plugin from require()',
-  ],
 ]);
 
 /**

@@ -159,12 +159,8 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
         // CommonJS build. A CommonJS consumer gets the ESM through
         // require(esm), so the fork module those conditions resolve to must
         // not use top-level await (scripts/build.mjs keeps it that way).
-        const esmExtension = pkg.getEsmExtension();
-        it('declares its module type explicitly', () => {
-          // `module` makes the `.js` build ESM; `commonjs` is the opt-out
-          // for a package whose own sources are CommonJS `.js` files, and
-          // its ESM build is `.mjs` instead.
-          expect(['module', 'commonjs']).toContain(packageJson.type);
+        it('is an ES module package', () => {
+          expect(packageJson.type).toBe('module');
         });
         const referenced: [string, string][] = [];
         for (const field of ['main', 'module'] as const) {
@@ -187,9 +183,7 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
         }
         test.each(referenced)('%s -> %s', (location, target) => {
           expect(location).not.toMatch(/\b(import|require|node)\b/);
-          expect(target).toMatch(
-            new RegExp(`(\\${esmExtension}|\\.d\\.ts|\\.tsx?)$`),
-          );
+          expect(target).toMatch(/\.(js|d\.ts|tsx?)$/);
         });
       });
       if (!sourceFiles.includes('index')) {

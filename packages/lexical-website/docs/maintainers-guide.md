@@ -211,13 +211,10 @@ missing.
 
 Only ESM is published to npm. Every public package is a
 `"type": "module"` package (`update-version` adds the field), so its
-build is plain `.js`; `@lexical/eslint-plugin` opts out with
-`"type": "commonjs"` because its own sources are CommonJS `.js` files, and
-its ESM build is `.mjs` instead. A CommonJS consumer gets the same files
-through Node's `require(esm)` (Node.js 20.19+), which is why the fork
-module that the exports map's `default` condition resolves to has no
-top-level await. The CommonJS variants are only built for www
-(`pnpm run build-www`).
+build is plain `.js`. A CommonJS consumer gets the same files through
+Node's `require(esm)` (Node.js 20.19+), which is why the fork module that
+the exports map's `default` condition resolves to has no top-level await.
+The CommonJS variants are only built for www (`pnpm run build-www`).
 
 Because a `.d.ts` in a `"type": "module"` package is an ES module
 declaration, the build gives the relative imports tsc emits an explicit

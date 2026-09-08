@@ -68,6 +68,27 @@ afterAll(() => {
   fs.removeSync(projectDir);
 });
 
+/**
+ * Whether the package that owns a declaration file declares the package a
+ * bare specifier names as a dependency.
+ *
+ * @param {string} fileName the declaration file (a real path under a
+ *   package's `dist/`)
+ * @param {string} specifier a bare import specifier
+ * @returns {boolean}
+ */
+function isDeclaredDependency(fileName, specifier) {
+  const packageName = /^(@[^/]+\/[^/]+|[^/]+)/.exec(specifier)?.[1];
+  const owner = packagesManager
+    .getPublicPackages()
+    .find(pkg => fileName.startsWith(`${pkg.resolve('dist')}${path.sep}`));
+  return (
+    packageName !== undefined &&
+    owner !== undefined &&
+    packageName in (owner.packageJson.dependencies ?? {})
+  );
+}
+
 describe('every published entry point types under nodenext resolution', () => {
   /** @type {Map<string, string[]>} */
   const diagnosticsByEntry = new Map();
@@ -81,6 +102,9 @@ describe('every published entry point types under nodenext resolution', () => {
       module: ts.ModuleKind.NodeNext,
       moduleResolution: ts.ModuleResolutionKind.NodeNext,
       noEmit: true,
+      // A side-effect import (`import 'prismjs/components/prism-clike.js'`)
+      // is only resolved with this on.
+      noUncheckedSideEffectImports: true,
       // Check the declarations themselves too: an import inside a `.d.ts`
       // that does not resolve is only reported this way.
       skipLibCheck: false,
@@ -106,15 +130,23 @@ describe('every published entry point types under nodenext resolution', () => {
           continue;
         }
       }
-      // The temporary project only links the Lexical packages, so a bare
-      // third-party import inside a declaration (`@preact/signals-core`,
-      // `prismjs/...`) cannot resolve here and is not what this test is
-      // about. A relative one that fails is exactly what it is about.
-      const isRelativeResolutionFailure =
+      // A relative import that fails is exactly what this test is about. A
+      // bare one is too when the declaration's package declares that
+      // dependency: it is installed next to the package, so it can only
+      // fail to resolve because of the specifier (an extensionless
+      // `prismjs/components/prism-clike`, say). An undeclared one (a
+      // transitive `@preact/signals-core`) is not installed next to the
+      // package and is out of scope here.
+      const specifier = /'([^']+)'/.exec(message)?.[1];
+      const isResolutionFailure =
         diagnostic.code === 2834 ||
         diagnostic.code === 2835 ||
-        (diagnostic.code === 2307 && /'\.{1,2}(\/|')/.test(message));
-      if (isRelativeResolutionFailure || (file && file.fileName === consumer)) {
+        ((diagnostic.code === 2307 || diagnostic.code === 2882) &&
+          specifier !== undefined &&
+          (/^\.{1,2}(\/|$)/.test(specifier) ||
+            (file !== undefined &&
+              isDeclaredDependency(file.fileName, specifier))));
+      if (isResolutionFailure || (file && file.fileName === consumer)) {
         otherDiagnostics.push(
           `${file ? path.relative(projectDir, file.fileName) : '?'}: TS${diagnostic.code}: ${message}`,
         );

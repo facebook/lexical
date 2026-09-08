@@ -518,7 +518,10 @@ async function buildTSDeclarationFiles() {
  * TypeScript's node16/nodenext resolution does not resolve extensionless
  * relative ESM imports at all: a consumer with `skipLibCheck` would see no
  * error and silently get `any` for everything. `./X.js` resolves to `X.d.ts`
- * under every resolution mode, so that is what gets written.
+ * under every resolution mode, so that is what gets written. A bare
+ * specifier gets the same treatment as in the JavaScript build
+ * (resolveExternalEsm): prismjs has no exports map, so its components are
+ * file paths that need their extension too.
  *
  * @param {string} packageName
  * @param {string} outputPath
@@ -531,10 +534,13 @@ function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
     const dir = path.dirname(fn);
     const source = fs.readFileSync(fn, 'utf8');
     const rewritten = source.replace(
-      /(\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(['"])(\.\.?(?:\/[^'"]*)?)\2/g,
+      /(\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(['"])([^'"]+)\2/g,
       (match, lead, quote, specifier) => {
         if (/\.(?:[cm]?js|json|d\.ts)$/.test(specifier)) {
           return match;
+        }
+        if (!/^\.{1,2}(\/|$)/.test(specifier)) {
+          return `${lead}${quote}${resolveExternalEsm(specifier)}${quote}`;
         }
         if (fs.existsSync(path.resolve(dir, `${specifier}.d.ts`))) {
           return `${lead}${quote}${specifier}.js${quote}`;

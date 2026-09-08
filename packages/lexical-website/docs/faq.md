@@ -186,7 +186,16 @@ from `process.env.NODE_ENV`.
 - **CommonJS** code can `require()` the packages on Node.js 20.19 or later,
   which loads ES modules from `require()` as long as nothing in the module
   graph uses top-level `await` (Lexical's builds do not). Older Node.js
-  versions have to use `await import('lexical')` instead.
+  versions have to use `await import('lexical')` instead. Loading is all
+  that `require()` guarantees: Lexical's builds import their own
+  dependencies as ES modules, so a dependency that a CommonJS application
+  also loads through `require()` can end up in the application twice, once
+  per module system, with separate classes and module state. That breaks
+  any integration that hands such a dependency's objects to Lexical, for
+  example `yjs` documents given to `@lexical/yjs`, or `@preact/signals-core`
+  effects observing signals from `@lexical/extension`. Load those
+  dependencies as ES modules too (`await import('yjs')`), or move the
+  application to ES modules.
 - **React Native (Metro)** bundles the packages without extra configuration,
   but Metro does not set the `development`/`production` conditions and does
   not drop the build the `default` entry leaves unused, so both end up in the

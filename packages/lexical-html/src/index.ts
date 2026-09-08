@@ -135,6 +135,7 @@ export type {
   DOMRenderMatchConfig,
   NodeMatch,
   RenderContextReader,
+  RenderStateConfig,
 } from './types';
 
 const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);

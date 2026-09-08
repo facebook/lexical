@@ -200,6 +200,12 @@ export interface SerializationSchema<T, Decls = never, In = T> {
    * array-valued property equal to its default would still be written out.
    * Mirrors `StateValueConfig.isEqual`, which exists for the same reason.
    *
+   * Not consulted through a {@link unionValue}, which compares structurally
+   * because it cannot know which member produced a value. The built-in
+   * reference-typed comparators *are* that comparison, so only a custom one
+   * from {@link transformValue} differs there; see `unionValue` for what it
+   * costs.
+   *
    * Declared with method syntax deliberately: TypeScript checks a method's
    * parameters bivariantly, which keeps `SerializationSchema<T>` assignable to
    * {@link AnySerializationSchema}. A property would make the type invariant
@@ -1197,9 +1203,21 @@ function $sameContent(a: unknown, b: unknown): boolean {
  *
  * The result is itself a member of the union in both respects: it declares an
  * `accepts` that asks each member in turn, so a union nested in another union
- * (or reached through a wrapper) keeps its domain, and an `isEqual` that
- * defers to whichever member recognizes the pair, so a union over a
- * reference-typed member still compares by content.
+ * (or reached through a wrapper) keeps its domain, and an `isEqual`, so a union
+ * over a reference-typed member still compares by content.
+ *
+ * That equality is a structural comparison, not a member's own: a union picks a
+ * member by what each *accepts*, and {@link transformValue} accepts one domain
+ * and produces another, so which member produced a value is not something a
+ * union can recover. {@link arrayValue} and {@link objectValue} compare
+ * element-wise and field-wise, which is what this does, so a union over either
+ * is unaffected. A **custom `isEqual` passed to `transformValue` is not
+ * consulted through a union** — two values it would call equal are reported as
+ * different, so a property holding one is written out instead of compacted
+ * away, `optional({omitDefault})` around the union keeps it instead of
+ * dropping it, and as a `createState` parse it dirties the node. Never the
+ * reverse, which would discard the difference. Outside a union the comparator
+ * is used as declared.
  *
  * @example
  * ```ts
@@ -1480,6 +1498,14 @@ export function aliasedValue<
  * reference-typed, or a transformed array/object property can never compact
  * away and, used as a `createState` parse, dirties its node on every write of
  * an equal value.
+ *
+ * A comparator passed here is used wherever this schema is used directly, but
+ * is *not* consulted when the schema is a {@link unionValue} member: a union
+ * selects by what a member accepts, and this accepts `inner`'s domain while
+ * producing another, so it cannot tell which member made a value and compares
+ * structurally instead. The effect is a stricter answer than yours — a value
+ * you would call the default is written out rather than compacted away — never
+ * a looser one.
  *
  * Only then: an equality is for a domain `===` cannot compare, so declaring
  * one over a primitive output is an error. `===` already answers there, and a

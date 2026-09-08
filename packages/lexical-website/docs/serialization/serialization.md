@@ -588,7 +588,7 @@ Each property's schema is built from composable helpers exported by
 - [`optional(inner, {omitDefault}?)`](/docs/api/modules/lexical#optional) — the property may be `undefined`
 - [`arrayValue(item)`](/docs/api/modules/lexical#arrayvalue) — an array of `item` values. Like `objectValue`, it compares by content rather than by reference (see `isEqual` below), so an array-valued property equal to its default still compacts away
 - [`unionValue(members, defaultValue)`](/docs/api/modules/lexical#unionvalue) — the first member schema whose domain contains the value wins, and the union yields what that member parsed. A member that normalizes its input composes here the same way it behaves alone, so `unionValue([numberValue(), enumValue(['inherit'])], 'inherit')` reads `"640"` as `640` and `"inherit"` as `'inherit'`
-- [`transformValue(inner, transform, {isEqual}?)`](/docs/api/modules/lexical#transformvalue) — normalizes what `inner` parsed into the stored domain; introspection still reaches `inner`'s accepted input domain, through a `meta` kind of its own that names the transform. That kind is what tells a consumer reasoning about the *output* to stop: the transform is an opaque function, so a code generator refuses such a property outright rather than emitting `inner`'s parse and hoping a sampled check notices the difference. `inner`'s `isEqual` is not inherited, since the transformed domain may be a different type entirely — pass one when the output domain is reference-typed, and only then: `===` already compares a primitive, so a comparator over one can only declare two distinct serialized values equal, and the compact form then omits whichever is not the default and parses it back as the default (a rotation compared modulo 360 writes nothing for `360` and reads back `0`). Normalizing in the `transform` is what makes such a value round-trip. Declaring one anyway is an error where it is written
+- [`transformValue(inner, transform, {isEqual}?)`](/docs/api/modules/lexical#transformvalue) — normalizes what `inner` parsed into the stored domain; introspection still reaches `inner`'s accepted input domain, through a `meta` kind of its own that names the transform. That kind is what tells a consumer reasoning about the *output* to stop: the transform is an opaque function, so a code generator refuses such a property outright rather than emitting `inner`'s parse and hoping a sampled check notices the difference. `inner`'s `isEqual` is not inherited, since the transformed domain may be a different type entirely — pass one when the output domain is reference-typed (though a `unionValue` will not consult it; see below), and only then: `===` already compares a primitive, so a comparator over one can only declare two distinct serialized values equal, and the compact form then omits whichever is not the default and parses it back as the default (a rotation compared modulo 360 writes nothing for `360` and reads back `0`). Normalizing in the `transform` is what makes such a value round-trip. Declaring one anyway is an error where it is written
 - [`aliasedValue(inner, aliases)`](/docs/api/modules/lexical#aliasedvalue) — a lookup-table normalization: a string matching a key of `aliases` yields the value it names, and anything else is `inner`'s to validate, so the domain, the default and the equality all stay `inner`'s. This is `transformValue` narrowed to the case where the normalization is a lookup, and the reason to prefer it is that the lookup is *data*: it is part of the schema's introspectable `meta`, where tooling can see it — example generation produces the legacy spellings, and a code generator can compile the table instead of being unable to see inside a function. `TextNode` declares its legacy `format: 'bold'` and `detail: 'directionless'` shorthands this way
 - [`rawValue()`](/docs/api/modules/lexical#rawvalue) — an escape hatch that passes the value through unparsed
 - [`nodeSchema<MyNode>()(fields)`](/docs/api/modules/lexical#nodeschema) — the record of properties, and what `$config`'s `json` takes. The one type argument names the node, which is what lets every `field`, accessor and `when` predicate be checked against it. It is called in two steps because those cannot be inferred together: naming the node explicitly would stop TypeScript inferring the field types on the same call, and they are what carry each property's accepted input into `SchemaInput`: a name the node does not have is a compile error at the property that declares it, with the correction suggested (`Type '"__langauge"' is not assignable to type 'MemberOf<CodeNode>'. Did you mean '"__language"'?`). Declaring the schema above the class it names is fine — a class's *type* is in scope before its definition.
@@ -683,7 +683,21 @@ declare an `isEqual` that compares by content — otherwise a property equal to
 its default could never be omitted, since no two parses are the same object.
 The same rule drives `optional({omitDefault})` and `nullable({defaultAsNull})`,
 and a schema of your own can declare `isEqual` for a domain with the same
-problem. A default is also deeply frozen, since it is one value shared by every
+problem.
+
+A `unionValue` compares structurally rather than asking a member. It picks a
+member by what each one *accepts*, and `transformValue` accepts one domain and
+produces another, so which member produced a value is not something a union can
+recover — and applying the wrong member's comparator is how two different values
+get reported as the same one. `arrayValue` and `objectValue` compare
+element-wise and field-wise, which is exactly what a union does, so putting
+either in a union changes nothing. A **custom `isEqual` you pass to
+`transformValue` is not consulted through a union**: two values it would call
+equal are reported as different, so such a property is written out instead of
+compacted away, `optional({omitDefault})` around the union keeps it rather than
+dropping it, and as a `createState` parse it dirties the node where it need not
+have. The answer is stricter than yours, never looser, so nothing is lost —
+outside a union your comparator is used as declared. A default is also deeply frozen, since it is one value shared by every
 node that has none of its own — including as `createState`'s default, which
 `$getState` hands back directly.
 

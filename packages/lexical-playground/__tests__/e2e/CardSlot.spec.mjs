@@ -112,6 +112,17 @@ async function bodyText(page) {
   });
 }
 
+async function placeholderBefore(page, selector) {
+  return evaluate(
+    page,
+    sel => {
+      const el = document.querySelector(sel);
+      return el && window.getComputedStyle(el, '::before').content;
+    },
+    selector,
+  );
+}
+
 async function assertCardIntact(page, {title, body}) {
   expect(await cardCount(page)).toBe(1);
   expect(await slotCount(page, 'title')).toBe(1);
@@ -417,34 +428,87 @@ test.describe('Card empty-field placeholders', () => {
     expect(await bodyText(page)).toBe('');
 
     // the placeholder text comes from CSS ::before, not from the DOM text
-    const placeholders = await evaluate(page, () => {
-      const titleP = document.querySelector(
-        '.lexical-card-node [data-lexical-slot="title"] p',
-      );
-      const bodyP = document.querySelector('.lexical-card-node > p');
-      const before = el =>
-        el && window.getComputedStyle(el, '::before').content;
-      return {body: before(bodyP), title: before(titleP)};
-    });
-    expect(placeholders.title).toContain('Title');
-    expect(placeholders.body).toContain('Body');
+    const titleSelector = '.lexical-card-node [data-lexical-slot="title"] p';
+    const bodySelector = '.lexical-card-node > p';
+    expect(await placeholderBefore(page, titleSelector)).toContain('Title');
+    expect(await placeholderBefore(page, bodySelector)).toContain('Body');
 
     // typing into the title clears its placeholder but not the body's
     await click(page, '[data-lexical-slot="title"] p');
     await page.keyboard.type('Hi');
     await sleep(120);
-    const afterTyping = await evaluate(page, () => {
-      const titleP = document.querySelector(
-        '.lexical-card-node [data-lexical-slot="title"] p',
-      );
-      const bodyP = document.querySelector('.lexical-card-node > p');
-      const before = el =>
-        el && window.getComputedStyle(el, '::before').content;
-      return {body: before(bodyP), title: before(titleP)};
-    });
-    // a non-empty title no longer matches :has(br:only-child); body still does
-    expect(afterTyping.title === 'none' || afterTyping.title === '').toBe(true);
-    expect(afterTyping.body).toContain('Body');
+    const titleAfterTyping = await placeholderBefore(page, titleSelector);
+    expect(titleAfterTyping === 'none' || titleAfterTyping === '').toBe(true);
+    expect(await placeholderBefore(page, bodySelector)).toContain('Body');
+  });
+
+  test('pasting text into an empty title clears its placeholder immediately (#9126)', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertEmptyCard(page);
+    await sleep(120);
+
+    await click(page, '[data-lexical-slot="title"] p');
+    await pasteFromClipboard(page, {'text/plain': 'Pasted Title'});
+    await sleep(120);
+
+    expect(await slotText(page, 'title')).toBe('Pasted Title');
+    const before = await placeholderBefore(
+      page,
+      '.lexical-card-node [data-lexical-slot="title"] p',
+    );
+    expect(before === 'none' || before === '').toBe(true);
+  });
+
+  test('pasting text into an empty body clears its placeholder immediately (#9126)', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertEmptyCard(page);
+    await sleep(120);
+
+    await click(page, '.lexical-card-node > p');
+    await pasteFromClipboard(page, {'text/plain': 'Pasted Body'});
+    await sleep(120);
+
+    expect(await bodyText(page)).toBe('Pasted Body');
+    const before = await placeholderBefore(page, '.lexical-card-node > p');
+    expect(before === 'none' || before === '').toBe(true);
+  });
+
+  test('a soft line break inside non-empty title/body does not resurrect the placeholder', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertEmptyCard(page);
+    await sleep(120);
+
+    await click(page, '[data-lexical-slot="title"] p');
+    await page.keyboard.type('Hello');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('Enter');
+    await page.keyboard.up('Shift');
+    await page.keyboard.type('World');
+    await sleep(120);
+
+    expect(await slotText(page, 'title')).toBe('HelloWorld');
+    const titleBefore = await placeholderBefore(
+      page,
+      '.lexical-card-node [data-lexical-slot="title"] p',
+    );
+    expect(titleBefore === 'none' || titleBefore === '').toBe(true);
+
+    await click(page, '.lexical-card-node > p');
+    await page.keyboard.type('Great');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('Enter');
+    await page.keyboard.up('Shift');
+    await page.keyboard.type('Product');
+    await sleep(120);
+
+    const bodyBefore = await placeholderBefore(page, '.lexical-card-node > p');
+    expect(bodyBefore === 'none' || bodyBefore === '').toBe(true);
   });
 
   test('the body placeholder shows only for a single empty body paragraph', async ({

@@ -155,7 +155,7 @@
     "concurrently": "^10.0.3",
     "confusing-browser-globals": "^1.0.10",
     "cross-env": "^10.1.0",
-    "esbuild": "^0.27.7",
+    "esbuild": "^0.28.1",
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-compat": "^7.0.2",

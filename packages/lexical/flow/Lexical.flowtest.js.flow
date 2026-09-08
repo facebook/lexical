@@ -1,0 +1,73 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+/**
+ * Type-only smoke test for the hand-maintained Flow declarations.
+ *
+ * `pnpm lint-flow` checks that the `.flow` files export the same names as the
+ * generated `.d.ts`, and `pnpm flow` checks that the declarations are
+ * internally consistent. Neither one ever *calls* the declared API, so a
+ * declaration can be exported, self-consistent, and still impossible to use
+ * from a Flow codebase — which is how the extension types came to ship with
+ * `defineExtension` uncallable.
+ *
+ * This file is that missing coverage: it consumes the public extension API
+ * the way a downstream Flow app does. It is never imported at runtime, and
+ * `flow/` is not in the package's published `files`.
+ *
+ * The `.js.flow` extension is load-bearing. Flow type-checks the contents of
+ * `.js.flow` files, but `tsc` (which runs over the packages tree with
+ * `allowJs`) does not recognise the extension, and both ESLint and Prettier
+ * already ignore every `.js.flow` path. A plain `.js` file here fails
+ * `pnpm tsc` on the Flow syntax (`error TS8006: 'import type' declarations
+ * can only be used in TypeScript files`), because tsconfig's `exclude` only
+ * covers `.js` files one directory below `packages`, which is one level
+ * above this directory.
+ */
+
+import type {
+  LexicalEditor,
+  LexicalExtensionConfig,
+  LexicalExtensionOutput,
+} from 'lexical';
+
+import {defineExtension} from 'lexical';
+
+type SmokeConfig = {greeting: string};
+
+// An extension that declares no config, build, or init.
+const minimalExtension = defineExtension({
+  name: '@lexical/flow-smoke-test/Minimal',
+});
+
+// An extension carrying config and an output built at editor build time.
+const configuredExtension = defineExtension({
+  build(editor: LexicalEditor, config: SmokeConfig): {upper: string} {
+    return {upper: config.greeting.toUpperCase()};
+  },
+  config: {greeting: 'hello'} as SmokeConfig,
+  name: '@lexical/flow-smoke-test/Configured',
+});
+
+// The Config/Output helpers must still extract from a defined extension.
+const extractedConfig: LexicalExtensionConfig<typeof configuredExtension> = {
+  greeting: 'hi',
+};
+const extractedOutput: LexicalExtensionOutput<typeof configuredExtension> = {
+  upper: 'HI',
+};
+
+export function flowSmokeTest(): string {
+  return [
+    minimalExtension.name,
+    configuredExtension.name,
+    extractedConfig.greeting,
+    extractedOutput.upper,
+  ].join(',');
+}

@@ -2208,10 +2208,15 @@ declare export function declarePeerDependency<
   config?: Partial<LexicalExtensionConfig<Extension>>,
 ): NormalizedPeerDependency<Extension>;
 declare export function defineExtension<
-  Config extends ExtensionConfigBase,
-  Name extends string,
-  Output,
-  Init,
+  Config extends ExtensionConfigBase = ExtensionConfigBase,
+  Name extends string = string,
+  // `Config`, `Output` and `Init` are only reachable through the optional
+  // `config`, `build` and `init` members, so an extension that declares none
+  // of them leaves the parameters unconstrained. TypeScript silently infers
+  // there; Flow reports `underconstrained-implicit-instantiation` unless a
+  // default is supplied.
+  Output = void,
+  Init = void,
 >(
   extension: LexicalExtension<Config, Name, Output, Init>,
 ): LexicalExtension<Config, Name, Output, Init>;
@@ -2311,7 +2316,7 @@ export type LexicalExtensionArgument<
   | LexicalExtension<Config, Name, Output, Init>
   | NormalizedLexicalExtensionArgument<Config, Name, Output, Init>;
 export type LexicalExtensionConfig<out Extension extends AnyLexicalExtension> =
-  NonNullable<Extension[typeof configTypeSymbol]>;
+  NonNullable<Extension['__configType']>;
 export interface LexicalExtensionDependency<
   out Dependency extends AnyLexicalExtension,
 > {
@@ -2319,22 +2324,42 @@ export interface LexicalExtensionDependency<
   readonly output: LexicalExtensionOutput<Dependency>;
 }
 export type LexicalExtensionInit<Extension extends AnyLexicalExtension> =
-  NonNullable<Extension[typeof initTypeSymbol]>;
+  NonNullable<Extension['__initType']>;
+/**
+ * The phantom brand properties that carry an extension's Config, Output and
+ * Init types.
+ *
+ * The TypeScript source keys these off `unique symbol`s
+ * (`configTypeSymbol`, `outputTypeSymbol`, `initTypeSymbol`), which Flow has
+ * no equivalent for: a computed key whose type is `symbol` is parsed as an
+ * *indexer* over all symbol keys, not as a single named property. That makes
+ * every other property of an extension (`name`, `nodes`, `config`, ...) have
+ * to conform to the indexer's value type, so no object literal can satisfy
+ * `LexicalExtension` and `defineExtension` cannot be called at all. Declaring
+ * all three at once additionally trips Flow's "Multiple indexers are not
+ * supported".
+ *
+ * Named optional read-only properties reproduce the TypeScript semantics that
+ * matter here — the three types are carried, the properties are never
+ * supplied by callers, and the `LexicalExtension{Config,Output,Init}` helpers
+ * still extract them. The symbols above remain exported to match the
+ * generated `.d.ts` surface.
+ */
 export interface LexicalExtensionInternal<Config, Output, Init> extends LexicalExtensionInternalConfig<Config>, LexicalExtensionInternalOutput<Output> {
-  [typeof initTypeSymbol]: Init;
+  readonly __initType?: Init;
 }
 interface LexicalExtensionInternalConfig<Config> {
-  [typeof configTypeSymbol]: Config;
+  readonly __configType?: Config;
 }
 interface LexicalExtensionInternalOutput<Output> {
-  [typeof outputTypeSymbol]: Output;
+  readonly __outputType?: Output;
 }
 
 export type LexicalExtensionName<Extension extends AnyLexicalExtension> =
   Extension['name'];
 
 export type LexicalExtensionOutput<out Extension extends AnyLexicalExtension> =
-  NonNullable<Extension[typeof outputTypeSymbol]>;
+  NonNullable<Extension['__outputType']>;
 declare export const peerDependencySymbol: symbol;
 export type NormalizedLexicalExtensionArgument<
   Config extends ExtensionConfigBase,

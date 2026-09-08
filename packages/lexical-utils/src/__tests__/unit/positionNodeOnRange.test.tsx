@@ -89,6 +89,38 @@ describe('positionNodeOnRange', () => {
     }
   });
 
+  it.each([0, 1])(
+    'notifies when overlay rectangles shrink to %i',
+    async remaining => {
+      const rootElement = createRootElement();
+      const editor = createTestEditor();
+      editor.setRootElement(rootElement);
+      const range = document.createRange();
+      range.selectNodeContents(rootElement);
+      let rects = [new DOMRect(0, 0, 10, 10), new DOMRect(0, 20, 10, 10)];
+      vi.spyOn(range, 'getClientRects').mockImplementation(
+        () => rects as unknown as DOMRectList,
+      );
+      const onReposition = vi.fn();
+      const cleanup = positionNodeOnRange(editor, range, onReposition);
+
+      try {
+        expect(onReposition).toHaveBeenCalledTimes(1);
+        expect(onReposition.mock.lastCall![0]).toHaveLength(2);
+        rects = rects.slice(0, remaining);
+        rootElement.setAttribute('data-layout', 'hidden');
+
+        await vi.waitFor(() => {
+          expect(onReposition).toHaveBeenCalledTimes(2);
+        });
+        expect(onReposition.mock.lastCall![0]).toHaveLength(remaining);
+      } finally {
+        cleanup();
+        editor.setRootElement(null);
+      }
+    },
+  );
+
   it('removes the overlay of an invocation that lands after it was disposed of', () => {
     const firstRootElement = createRootElement();
     const secondRootElement = createRootElement();

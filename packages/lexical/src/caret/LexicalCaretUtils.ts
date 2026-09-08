@@ -412,7 +412,11 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
         if (
           grandparent &&
           $isRootNode(grandparent) &&
-          grandparent.getChildrenSize() <= 1
+          grandparent.getChildrenSize() <= 1 &&
+          // Only keep the root's last child when it is valid while empty. One
+          // that declares `canBeEmpty()` false is removed like any other
+          // emptied ancestor, and the empty root is repaired below.
+          parent.canBeEmpty()
         ) {
           break;
         }

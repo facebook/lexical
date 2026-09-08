@@ -945,6 +945,11 @@ describe('Markdown', () => {
       md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
+      html: '<p><i><em style="white-space: pre-wrap;">[h</em></i><a href="https://lexical.dev"><i><em style="white-space: pre-wrap;">ello</em></i></a></p>',
+      md: '*[h[ello](https://lexical.dev)*',
+      mdAfterExport: '*[h*[*ello*](https://lexical.dev)',
+    },
+    {
       html: '<p><span style="white-space: pre-wrap;">[](https://lexical.dev)</span></p>',
       md: '[](https://lexical.dev)',
     },

@@ -299,6 +299,18 @@ export default [
     },
   },
 
+  // Override: the www stubs at each package root (`packages/*/Lexical*.js`,
+  // written by scripts/create-www-stubs.mjs) are CommonJS and stay that
+  // way: www does not read package.json, so the packages' `"type":
+  // "module"` does not apply to them, and neither should the ESM default
+  // for `.js` here.
+  {
+    files: ['packages/*/*.js'],
+    languageOptions: {
+      sourceType: 'commonjs',
+    },
+  },
+
   // Override: Package source files (module sourceType)
   {
     files: [

@@ -813,6 +813,25 @@ function isPlainRecord(
   return isRecord(value) && !Array.isArray(value);
 }
 
+/**
+ * {@link isPlainRecord}, and carrying no prototype but `Object.prototype` — so
+ * its own keys are the whole of it.
+ *
+ * A `Map`, a `Set` or a class instance is an object with no own keys at all, so
+ * a comparison that reads own keys reports any two of them as equal. That is
+ * the direction that loses data, and JSON.parse produces nothing but plain
+ * objects, so the values a schema really parses to are unaffected.
+ */
+function isPlainObject(
+  value: unknown,
+): value is {readonly [key: string]: unknown} {
+  if (!isPlainRecord(value)) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
 /** Whether `source` carries an own key that `fields` does not describe. */
 function hasUndeclaredKey(
   source: {readonly [key: string]: unknown},
@@ -1099,62 +1118,56 @@ function $schemaMatch(
 }
 
 /**
- * Whether `member`'s comparator may be asked about `value`.
+ * Structural equality over the values a schema parses to.
  *
- * A union finds the member to *parse* with by what each accepts, and for almost
- * every schema the values it produces are in that domain too, so the same test
- * serves both. `transformValue` is where the two part company: its input domain
- * is the inner schema's and its output is whatever the transform returns, so a
- * comparator written for the output is never reached by a test on the input —
- * `transformValue(stringValue(), s => s.split(','), {isEqual})` is asked about
- * two arrays, and every array is outside the string domain it accepts.
+ * What a union compares with, in place of deferring to a member's own
+ * comparator. Deferring needs to know which member *produced* a value, and a
+ * union cannot: it selects a member by what each one accepts, and
+ * `transformValue` is where accepting and producing part company — its input
+ * domain is the inner schema's and its output is whatever the transform
+ * returns. Every proxy for "this member produced that value" is a guess, and a
+ * wrong guess runs a comparator on a value it was not written for: an id
+ * comparator handed `['red']` and `['blue']` reads two `undefined` ids and
+ * calls them equal, and equal is the answer that drops an update.
  *
- * The output side is answered by shape, because a comparator only ever exists
- * for a reference-typed domain: `arrayValue` and `objectValue` derive one, and
- * `transformValue` requires a reference-typed default before it will take one.
- * The member's own default is the witness — it is a value that member produced
- * — so a value shaped like it is one the comparator was written for. That is
- * enough to keep a comparator away from another member's values, which is what
- * the input test was doing, without running arbitrary code to find out.
+ * Comparing content instead gives up nothing that was derivable. `arrayValue`
+ * and `objectValue` build exactly this comparison — element-wise and
+ * field-wise — so a union that would have deferred to one gets the same
+ * answer. The only comparator this does not reproduce is a custom
+ * `transformValue` one, which is precisely the one whose domain is unknowable;
+ * against that, content equality is stricter, and stricter is the safe
+ * direction. It reports two values a custom comparator would call equal as
+ * different, which costs a property its compaction or marks a node dirty —
+ * never the reverse, which loses data.
+ *
+ * Anything that is not a plain array or object compares by identity, since a
+ * value with its own prototype carries state these keys do not describe.
  */
-function $mayCompare(member: AnySerializationSchema, value: unknown): boolean {
-  if ($schemaMatch(member, value) !== undefined) {
+function $sameContent(a: unknown, b: unknown): boolean {
+  if (a === b) {
     return true;
   }
-  const {defaultValue, isEqual} = member;
-  return (
-    isEqual !== undefined &&
-    isRecord(value) &&
-    isRecord(defaultValue) &&
-    sameOutputShape(value, defaultValue)
-  );
-}
-
-/**
- * Whether `value` is shaped like `witness`, a value its schema produced.
- *
- * An array is compared only for being one: its length is data, not shape, and
- * the comparator is written for the element type either way. An object is
- * compared by its keys, which for the schemas that carry a comparator is
- * exactly what distinguishes one member's domain from another's — an
- * `objectValue` always produces its declared keys, and a transform that builds
- * an object builds the same one every time. Comparing only "is an object"
- * would hand `transformValue(objectValue({id, tag}), …, {isEqual: byId})` a
- * `{v}` from some other member and let it answer about fields neither value
- * has.
- */
-function sameOutputShape(
-  value: {readonly [key: string]: unknown},
-  witness: {readonly [key: string]: unknown},
-): boolean {
-  if (Array.isArray(value) || Array.isArray(witness)) {
-    return Array.isArray(value) && Array.isArray(witness);
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
+      return false;
+    }
+    // An index loop rather than `every`, for the reason `arrayValue` uses one:
+    // `every` skips the holes of a sparse array and would report `new Array(3)`
+    // as equal to any three-element array.
+    for (let i = 0; i < a.length; i++) {
+      if (!$sameContent(a[i], b[i])) {
+        return false;
+      }
+    }
+    return true;
   }
-  const keys = Object.keys(value);
-  const witnessKeys = Object.keys(witness);
+  if (!isPlainObject(a) || !isPlainObject(b)) {
+    return false;
+  }
+  const keys = Object.keys(a);
   return (
-    keys.length === witnessKeys.length &&
-    keys.every(key => hasOwnKey(witness, key))
+    keys.length === Object.keys(b).length &&
+    keys.every(key => hasOwnKey(b, key) && $sameContent(a[key], b[key]))
   );
 }
 
@@ -1250,39 +1263,24 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
     // A member that accepts `undefined` (an optional or raw one) would
     // otherwise make `undefined` the derived default, discarding `fallback`.
     fallback,
-    // Deferred to whichever member recognizes the pair, so a union over a
-    // reference-typed member (arrayValue/objectValue, which return a fresh
-    // value per parse) still compares by content — without this such a
-    // property could never equal its default and so could never compact, and
-    // as a `createState` parse it would fall back to Object.is and dirty the
-    // node on every write of an equal value.
+    // By content, so a union over a reference-typed member
+    // (arrayValue/objectValue, which return a fresh value per parse) still
+    // compares equal to its default — without this such a property could never
+    // compact, and as a `createState` parse it would fall back to Object.is and
+    // dirty the node on every write of an equal value.
     //
-    // Declared unconditionally, including when no member has one to defer to.
-    // The comparison is then identity, which is sound with the false negatives
-    // identity always has. Withholding it instead would say something else:
-    // the codegen reads `isEqual === undefined` as "this property cannot be
-    // compared here" and takes the whole class out of the compact half, so a
-    // union that has nothing better than identity to offer would cost its
-    // class a generated compact exporter rather than one property's
-    // compaction.
+    // Not by deferring to a member's own comparator, which needs to know which
+    // member *produced* a value: the union selects by what each member accepts,
+    // and `transformValue` accepts one domain and produces another. See
+    // {@link $sameContent} for why every proxy for that is a guess, and what a
+    // wrong guess costs.
     //
-    // The member has to recognize *both* values before its comparator is
-    // consulted — as input, or as something it could have produced (see
-    // {@link $mayCompare}). Asking every member instead would run a comparator
-    // on values it never produced — a custom one from `transformValue` is
-    // arbitrary code reading fields its own domain has — and one stray `true`
-    // would report two different values as equal, which compaction reads as
-    // "this is the default, omit it".
-    (a, b) => {
-      for (let i = 0; i < members.length; i++) {
-        const member = members[i];
-        if ($mayCompare(member, a) && $mayCompare(member, b)) {
-          return isSchemaEqual(member, a, b);
-        }
-      }
-      // Recognized by no single member, so nothing but identity can say.
-      return a === b;
-    },
+    // Declared unconditionally, which the codegen also depends on: it reads
+    // `isEqual === undefined` as "this property cannot be compared here" and
+    // takes the whole class out of the compact half, so a union that withheld
+    // one would cost its class a generated compact exporter rather than one
+    // property's compaction.
+    $sameContent,
     // Declared for the same reason every wrapper declares one: a union used as
     // a member of another union (or wrapped and then used) would otherwise be
     // read by the parse-inference above, which cannot see a value this
@@ -1697,8 +1695,8 @@ export function objectValue<const S extends SerializationSchemaFields>(
     // schema does not declare is *not* equal to the default: those keys say
     // something, and reporting equality would drop them from the export.
     (a, b) =>
-      isPlainRecord(a) &&
-      isPlainRecord(b) &&
+      isPlainObject(a) &&
+      isPlainObject(b) &&
       !hasUndeclaredKey(a, fields) &&
       !hasUndeclaredKey(b, fields) &&
       entries.every(([key, schema]) => isSchemaEqual(schema, a[key], b[key])),

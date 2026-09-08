@@ -2274,11 +2274,12 @@ describe('a union member knows its own domain', () => {
     expect(unionValue([legacy], 'fallback')(42)).toBe('fallback');
   });
 
-  test('a comparator only sees values its own member recognizes', () => {
-    // A custom isEqual is arbitrary code written for one domain. Asking every
-    // member would run it on values that member never produced, and a stray
-    // `true` reports two different values as equal — which compaction reads as
-    // "this is the default, omit it".
+  test('a comparator never sees values its own member did not produce', () => {
+    // A custom isEqual is arbitrary code written for one domain, and a union
+    // cannot know which member produced a value — it selects by what each
+    // member *accepts*, and a transform accepts one domain and produces
+    // another. So it defers to no member and compares by content, which is
+    // what arrayValue and objectValue's own comparators do anyway.
     const byId = transformValue(
       objectValue({id: numberValue(), tag: stringValue()}),
       value => value,
@@ -2287,10 +2288,16 @@ describe('a union member knows its own domain', () => {
     const plain = objectValue({v: numberValue()});
     const union = unionValue([byId, plain]);
     expect(union.isEqual!({v: 1} as never, {v: 2} as never)).toBe(false);
-    // Its own member's values still compare by that member's rule.
+    // The custom rule is not consulted, so two values it would call equal are
+    // reported as different. That is the safe direction: it costs a property
+    // its compaction, where the reverse would drop the difference.
     expect(
       union.isEqual!({id: 1, tag: 'a'} as never, {id: 1, tag: 'b'} as never),
-    ).toBe(true);
+    ).toBe(false);
+    // And the member's own comparator is untouched outside the union.
+    expect(isSchemaEqual(byId, {id: 1, tag: 'a'}, {id: 1, tag: 'b'})).toBe(
+      true,
+    );
   });
 
   test('nodeSchema rejects a name the node does not have', () => {
@@ -2755,14 +2762,14 @@ describe('a wrapper answers for its inner schema’s domain', () => {
   });
 });
 
-describe('a union comparator is chosen by what a member produces', () => {
-  // The transform leaves the string domain entirely, so its comparator is
-  // never reachable by a test on what the member accepts.
+describe('a union compares by content, not by a member’s comparator', () => {
+  // The transform leaves the string domain entirely, so nothing about what the
+  // member accepts says anything about the arrays it produces.
   const toArray = transformValue(stringValue(), value => value.split(','), {
     isEqual: (a, b) => a.length === b.length && a.every((x, i) => x === b[i]),
   });
 
-  test('a transformed output is compared by the comparator written for it', () => {
+  test('a transformed output compares by content', () => {
     const union = unionValue([toArray], ['']);
     // Two equal arrays, from two parses, are the same value. Falling back to
     // identity here reports every parse as a change.
@@ -2770,24 +2777,62 @@ describe('a union comparator is chosen by what a member produces', () => {
     expect(isSchemaEqual(union, union('a,b'), union('a,c'))).toBe(false);
   });
 
+  test('through nullable and optional, whose default is a nil', () => {
+    // A wrapper's default is `null`/`undefined`, so nothing about it describes
+    // the arrays the member underneath produces.
+    for (const member of [nullable(toArray), optional(toArray)]) {
+      const union = unionValue([member], null as never);
+      expect(isSchemaEqual(union, ['a', 'b'], ['a', 'b'])).toBe(true);
+      expect(isSchemaEqual(union, ['a', 'b'], ['a', 'c'])).toBe(false);
+    }
+  });
+
   test('so a wrapper around it can still recognize its own default', () => {
     // `omitDefault` asks the inner schema whether the parse *is* the default,
-    // which for a union is that comparator. Without it `''` parses to the
+    // which for a union is that comparison. Without it `''` parses to the
     // default array and is written out as one anyway.
     const schema = optional(unionValue([toArray], ['']), {omitDefault: true});
     expect(schema('')).toBeUndefined();
     expect(schema('a,b')).toEqual(['a', 'b']);
   });
 
-  test('and a comparator still never sees another member’s values', () => {
-    // The guard the shape test has to keep: `objectValue`'s comparator reads
-    // named fields, and an array is not one of its values.
-    const union = unionValue(
-      [arrayValue(stringValue()), objectValue({x: numberValue()})],
-      [],
+  test('and two members’ values are never confused for each other', () => {
+    // The failure a shape test could not rule out: an id comparator handed two
+    // plain strings reads two `undefined` ids and calls them equal, and equal
+    // is the answer that discards an update.
+    const toIds = transformValue(
+      stringValue(),
+      value => value.split(',').map(id => ({id: Number(id)})),
+      {
+        isEqual: (a, b) =>
+          a.length === b.length && a.every((x, i) => x.id === b[i].id),
+      },
     );
-    expect(isSchemaEqual(union, ['a'], ['a'])).toBe(true);
-    expect(isSchemaEqual(union, {x: 1}, {x: 1})).toBe(true);
-    expect(isSchemaEqual(union, ['a'], {x: 1})).toBe(false);
+    const union = unionValue([toIds, arrayValue(stringValue())], []);
+    expect(isSchemaEqual(union, ['red'], ['blue'])).toBe(false);
+    expect(isSchemaEqual(union, ['red'], ['red'])).toBe(true);
+    // Same key count, different property types — the other way a shape test
+    // sent values to a comparator written for something else.
+    const byId = transformValue(
+      objectValue({id: numberValue(), tag: stringValue()}),
+      value => value,
+      {isEqual: (a, b) => a.id === b.id},
+    );
+    const numeric = unionValue(
+      [byId, objectValue({id: numberValue(), tag: numberValue()})],
+      {id: 0, tag: 0},
+    );
+    expect(isSchemaEqual(numeric, {id: 1, tag: 5}, {id: 1, tag: 9})).toBe(
+      false,
+    );
+  });
+
+  test('a value with its own prototype compares by identity', () => {
+    // Own keys do not describe what a Map carries, so content equality has
+    // nothing to say and identity is the honest answer.
+    const union = unionValue([rawValue<unknown>()], null);
+    const map = new Map([['a', 1]]);
+    expect(isSchemaEqual(union, map, map)).toBe(true);
+    expect(isSchemaEqual(union, map, new Map([['a', 1]]))).toBe(false);
   });
 });

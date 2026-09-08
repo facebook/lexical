@@ -204,10 +204,13 @@ Object.entries(wwwMappings).forEach(([mapping, target]) => {
 
 /**
  * @param {'esm'|'cjs'} format
- * @returns {'.mjs'|'.js'} the correct file extension for this export format
+ * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
+ * @returns {'.mjs'|'.js'} the file extension of this package's build in this
+ *   format: the www CommonJS build is always `.js`, the ESM build is `.js`
+ *   in a `"type": "module"` package and `.mjs` otherwise
  */
-function getExtension(format) {
-  return `.${format === 'esm' ? 'm' : ''}js`;
+function getExtension(format, pkg) {
+  return format === 'esm' ? pkg.getEsmExtension() : '.js';
 }
 
 /**
@@ -501,15 +504,16 @@ function getComment() {
  * @param {string} fileName
  * @param {boolean} isProd
  * @param {'esm' | 'cjs'} format
+ * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
  * @returns {string}
  */
-function getFileName(fileName, isProd, format) {
+function getFileName(fileName, isProd, format, pkg) {
   // Both www and npm builds use the `.dev`/`.prod` suffix. The bare
-  // `Foo.mjs` name is reserved for the fork module emitted by
+  // `Foo.js` (or `Foo.mjs`) name is reserved for the fork module emitted by
   // buildForkModule so the published exports map can resolve cleanly
   // regardless of which variants were built (www consolidates its `.js`
   // files itself).
-  return `${fileName}.${isProd ? 'prod' : 'dev'}${getExtension(format)}`;
+  return `${fileName}.${isProd ? 'prod' : 'dev'}${getExtension(format, pkg)}`;
 }
 
 async function buildTSDeclarationFiles() {
@@ -517,12 +521,46 @@ async function buildTSDeclarationFiles() {
 }
 
 /**
+ * Copy the package's emitted declaration files into the build output and
+ * give their relative imports explicit extensions.
+ *
+ * tsc emits the sources' extensionless relative specifiers
+ * (`from './LexicalEditor'`, `import('./LexicalNode')`) as they are. In a
+ * `"type": "module"` package a `.d.ts` is an ES module declaration, and
+ * TypeScript's node16/nodenext resolution does not resolve extensionless
+ * relative ESM imports at all: a consumer with `skipLibCheck` would see no
+ * error and silently get `any` for everything. `./X.js` resolves to `X.d.ts`
+ * under every resolution mode, so that is what gets written.
  *
  * @param {string} packageName
  * @param {string} outputPath
  */
 function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
   fs.copySync(`./.ts-temp/packages/${packageName}/src`, outputPath);
+  for (const fn of glob.sync(path.resolve(outputPath, '**/*.d.ts'), {
+    windowsPathsNoEscape: true,
+  })) {
+    const dir = path.dirname(fn);
+    const source = fs.readFileSync(fn, 'utf8');
+    const rewritten = source.replace(
+      /(\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(['"])(\.\.?(?:\/[^'"]*)?)\2/g,
+      (match, lead, quote, specifier) => {
+        if (/\.(?:[cm]?js|json|d\.ts)$/.test(specifier)) {
+          return match;
+        }
+        if (fs.existsSync(path.resolve(dir, `${specifier}.d.ts`))) {
+          return `${lead}${quote}${specifier}.js${quote}`;
+        }
+        if (fs.existsSync(path.resolve(dir, specifier, 'index.d.ts'))) {
+          return `${lead}${quote}${specifier}/index.js${quote}`;
+        }
+        return match;
+      },
+    );
+    if (rewritten !== source) {
+      fs.writeFileSync(fn, rewritten);
+    }
+  }
 }
 
 /**
@@ -530,7 +568,6 @@ function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
  * @property {string} devFileName
  * @property {Array<string>} exports
  * @property {'dev'|'prod'|'both'} mode which variants this build produced
- * @property {string} outputFileName
  * @property {string} prodFileName
  */
 
@@ -547,13 +584,7 @@ function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
  * @param {ForkModuleContentOptions} opts
  * @returns {string}
  */
-function forkModuleContent({
-  devFileName,
-  exports,
-  mode,
-  outputFileName,
-  prodFileName,
-}) {
+function forkModuleContent({devFileName, exports, mode, prodFileName}) {
   const lines = [getComment()];
   if (mode === 'both') {
     lines.push(
@@ -573,35 +604,26 @@ function forkModuleContent({
         : `export const ${name} = mod.${name};`,
     );
   }
-  if (exports.length === 1 && exports[0] === 'default') {
-    // A module whose only export is its default (@lexical/eslint-plugin) is
-    // what a CommonJS consumer expects to get back from require() as a
-    // whole, the way its CommonJS build's `module.exports` used to be. Node
-    // honors this export name in require(esm) for exactly that purpose;
-    // import() and static imports see the default export as usual.
-    lines.push(`const ${outputFileName} = mod.default;`);
-    lines.push(`export {${outputFileName} as 'module.exports'};`);
-  }
   return lines.join('\n');
 }
 
 /**
- * Write the `<Name>.mjs` fork module for an ESM build.
+ * Write the `<Name>.js` (or `<Name>.mjs`) fork module for an ESM build.
  *
  * @param {string} outputPath
  * @param {string} outputFileName
  * @param {Array<string>} exports
  * @param {'dev'|'prod'|'both'} mode
+ * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
  */
-function buildForkModule(outputPath, outputFileName, exports, mode) {
-  const extension = getExtension('esm');
+function buildForkModule(outputPath, outputFileName, exports, mode, pkg) {
+  const extension = getExtension('esm', pkg);
   fs.outputFileSync(
     path.resolve(outputPath, `${outputFileName}${extension}`),
     forkModuleContent({
       devFileName: `./${outputFileName}.dev${extension}`,
       exports,
       mode,
-      outputFileName,
       prodFileName: `./${outputFileName}.prod${extension}`,
     }),
   );
@@ -609,11 +631,10 @@ function buildForkModule(outputPath, outputFileName, exports, mode) {
 
 /**
  * Copy the package's hand-written Flow stubs from `flow/` into the build
- * output directory so Flow consumers find `<Name>.mjs.flow` next to the
- * matching `<Name>.mjs` that `main` points at in the published package
- * (Flow shadows a resolved file with its `.flow` neighbor, whatever the
- * extension; the stubs are named `.js.flow` in `flow/` because www consumes
- * a CommonJS `<Name>.js`).
+ * output directory so Flow consumers find `<Name>.js.flow` next to the
+ * matching `<Name>.js` that `main` points at in the published package. Flow
+ * shadows a resolved file with its `.flow` neighbor whatever the extension,
+ * so a package whose ESM build is `.mjs` gets `<Name>.mjs.flow`.
  *
  * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
  * @param {string} outputPath
@@ -623,11 +644,15 @@ function copyFlowStubsIntoDist(pkg, outputPath) {
   if (!fs.existsSync(flowDir)) {
     return;
   }
+  const extension = getExtension('esm', pkg);
   for (const fn of fs.readdirSync(flowDir)) {
     if (fn.endsWith('.js.flow')) {
       fs.copySync(
         path.resolve(flowDir, fn),
-        path.resolve(outputPath, fn.replace(/\.js\.flow$/, '.mjs.flow')),
+        path.resolve(
+          outputPath,
+          fn.replace(/\.js\.flow$/, `${extension}.flow`),
+        ),
       );
     }
   }
@@ -657,9 +682,9 @@ async function buildAll() {
   }
 
   // The npm packages ship ESM only: a CommonJS consumer on any supported
-  // Node.js (>= 20.19) loads the same .mjs through require(esm), reached
-  // through the exports map's `default` condition (see exportEntry in
-  // scripts/updateVersion.mjs). www has no ESM pipeline, so it still gets
+  // Node.js (>= 20.19) loads the same ESM files through require(esm),
+  // reached through the exports map's `default` condition (see exportEntry
+  // in scripts/updateVersion.mjs). www has no ESM pipeline, so it still gets
   // the CommonJS variants (consolidated by prepare-www).
   /** @type {Array<'cjs' | 'esm'>} */
   const formats = isWWW ? ['cjs'] : ['esm'];
@@ -687,7 +712,7 @@ async function buildAll() {
           outputPath,
           path.resolve(
             outputPath,
-            getFileName(outputFileName, isProduction, format),
+            getFileName(outputFileName, isProduction, format, pkg),
           ),
           isProduction,
           format,
@@ -705,7 +730,7 @@ async function buildAll() {
             outputPath,
             path.resolve(
               outputPath,
-              getFileName(outputFileName, !isProduction, format),
+              getFileName(outputFileName, !isProduction, format, pkg),
             ),
             !isProduction,
             format,
@@ -725,6 +750,7 @@ async function buildAll() {
               ? primaryExports
               : (secondaryExports ?? []),
             mode,
+            pkg,
           );
         }
       }

@@ -58,5 +58,12 @@ export interface Plugin {
 
 const plugin: Plugin = jsPlugin;
 
+// Named exports so that a CommonJS consumer can use what require() returns
+// from the ESM build as the plugin: require(esm) hands back the module
+// namespace, which ESLint accepts as a plugin as long as `rules`, `configs`,
+// and `meta` are named exports on it. (Re-exports rather than reads of
+// `plugin`, so a bare import of this module evaluates nothing.)
+export {configs, meta, rules} from './LexicalEslintPlugin.js';
+
 // eslint-disable-next-line no-restricted-exports
 export default plugin;

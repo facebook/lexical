@@ -11,7 +11,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalMdast.mjs",
+  "main": "./dist/LexicalMdast.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
@@ -43,16 +43,16 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-mdast"
   },
-  "module": "./dist/LexicalMdast.mjs",
+  "module": "./dist/LexicalMdast.js",
   "sideEffects": false,
   "exports": {
     ".": {
       "source": "./src/index.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/index.d.ts",
-      "development": "./dist/LexicalMdast.dev.mjs",
-      "production": "./dist/LexicalMdast.prod.mjs",
-      "default": "./dist/LexicalMdast.mjs"
+      "development": "./dist/LexicalMdast.dev.js",
+      "production": "./dist/LexicalMdast.prod.js",
+      "default": "./dist/LexicalMdast.js"
     }
   },
   "files": [
@@ -82,5 +82,6 @@
     "typescript": {
       "optional": true
     }
-  }
+  },
+  "type": "module"
 }

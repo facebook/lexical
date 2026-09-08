@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalCode.mjs",
+  "main": "./dist/LexicalCode.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
@@ -22,16 +22,16 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-code"
   },
-  "module": "./dist/LexicalCode.mjs",
+  "module": "./dist/LexicalCode.js",
   "sideEffects": true,
   "exports": {
     ".": {
       "source": "./src/index.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/index.d.ts",
-      "development": "./dist/LexicalCode.dev.mjs",
-      "production": "./dist/LexicalCode.prod.mjs",
-      "default": "./dist/LexicalCode.mjs"
+      "development": "./dist/LexicalCode.dev.js",
+      "production": "./dist/LexicalCode.prod.js",
+      "default": "./dist/LexicalCode.js"
     }
   },
   "files": [
@@ -61,5 +61,6 @@
     "typescript": {
       "optional": true
     }
-  }
+  },
+  "type": "module"
 }

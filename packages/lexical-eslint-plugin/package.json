@@ -10,6 +10,7 @@
   ],
   "version": "0.50.0",
   "license": "MIT",
+  "type": "commonjs",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",

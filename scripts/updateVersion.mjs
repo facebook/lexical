@@ -168,12 +168,14 @@ const DIST_DIR = 'dist';
  *
  * Only ESM is published (the CommonJS build is www-only, see
  * scripts/build.mjs), so the conditions are not split into `import` and
- * `require`: both resolve to the same `.mjs` files. A CommonJS consumer on
+ * `require`: both resolve to the same ESM files. A CommonJS consumer on
  * any supported Node.js (>= 20.19) loads them through require(esm), which
  * is why the fork module and everything it imports has no top-level await,
  * and bundlers do not care about the extension.
  *
  * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
+ * @param {'.js' | '.mjs'} esmExtension the package's ESM extension (see
+ *   PackageMetadata#getEsmExtension)
  * @param {string} [typesBasename]
  * @param {string} [sourceRelPath] path relative to the package root for the
  *   TypeScript (or CJS) source backing this entry. When provided, a
@@ -184,6 +186,7 @@ const DIST_DIR = 'dist';
  */
 function exportEntry(
   basename,
+  esmExtension,
   typesBasename = `${basename}.d.ts`,
   sourceRelPath,
 ) {
@@ -199,8 +202,8 @@ function exportEntry(
     ...(sourceRelPath ? {source: `./${sourceRelPath}`} : null),
     [TYPESCRIPT_TOO_OLD_CONDITION]: tooOld,
     types,
-    ...withEnvironments(`${prefix}.mjs`),
-    default: `${prefix}.mjs`,
+    ...withEnvironments(`${prefix}${esmExtension}`),
+    default: `${prefix}${esmExtension}`,
   };
 }
 
@@ -220,7 +223,7 @@ function withBrowser(exports) {
           // files, never a browser bundle; pass them through unchanged.
           return [k, v];
         }
-        return [k, v.replace(/((?:\.dev|\.prod)?\.mjs)$/, '.browser$1')];
+        return [k, v.replace(/((?:\.dev|\.prod)?\.m?js)$/, '.browser$1')];
       }),
     )
   );
@@ -315,14 +318,22 @@ function updatePublicPackage(pkg) {
   if (packageJson.sideEffects === undefined) {
     packageJson.sideEffects = false;
   }
+  // Only ESM is published, so a package is an ES module package and its
+  // build is plain `.js`. A package whose own sources are CommonJS `.js`
+  // files opts out by hand with `"type": "commonjs"` and gets `.mjs` builds
+  // instead (see PackageMetadata#getEsmExtension).
+  if (packageJson.type === undefined) {
+    packageJson.type = 'module';
+  }
+  const esmExtension = pkg.getEsmExtension();
   // If there's a main we expect a single entry point
   if (packageJson.main) {
     // `main` is the one resolver-agnostic entry, so it names the ESM fork
-    // module: a package.json written before the CommonJS build was dropped
-    // from npm still says `<Name>.js` and is normalized here.
+    // module: a package.json written when the build had another extension
+    // is normalized here.
     const mainBase = replaceExtension(
       stripDistPrefix(packageJson.main),
-      '.mjs',
+      esmExtension,
     );
     packageJson.main = `./${DIST_DIR}/${mainBase}`;
     packageJson.module = packageJson.main;
@@ -340,6 +351,7 @@ function updatePublicPackage(pkg) {
     packageJson.exports = {
       '.': exportEntry(
         replaceExtension(mainBase, ''),
+        esmExtension,
         typesBase,
         sourceRelPath,
       ),
@@ -360,7 +372,12 @@ function updatePublicPackage(pkg) {
           ? packageName
           : `${packageName}/${basename}`;
         const entryName = npmToWwwName(entryNameInput);
-        let entry = exportEntry(entryName, `${basename}.d.ts`, `src/${fn}`);
+        let entry = exportEntry(
+          entryName,
+          esmExtension,
+          `${basename}.d.ts`,
+          `src/${fn}`,
+        );
         if (hasBrowser) {
           entry = withBrowser(entry);
         }

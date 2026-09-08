@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalUtils.mjs",
+  "main": "./dist/LexicalUtils.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/internal": "workspace:*",
@@ -21,16 +21,16 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-utils"
   },
-  "module": "./dist/LexicalUtils.mjs",
+  "module": "./dist/LexicalUtils.js",
   "sideEffects": false,
   "exports": {
     ".": {
       "source": "./src/index.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/index.d.ts",
-      "development": "./dist/LexicalUtils.dev.mjs",
-      "production": "./dist/LexicalUtils.prod.mjs",
-      "default": "./dist/LexicalUtils.mjs"
+      "development": "./dist/LexicalUtils.dev.js",
+      "production": "./dist/LexicalUtils.prod.js",
+      "default": "./dist/LexicalUtils.js"
     }
   },
   "files": [
@@ -60,5 +60,6 @@
     "typescript": {
       "optional": true
     }
-  }
+  },
+  "type": "module"
 }

@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalCodeShiki.mjs",
+  "main": "./dist/LexicalCodeShiki.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
@@ -29,16 +29,16 @@
   "devDependencies": {
     "@shikijs/types": "^4.2.0"
   },
-  "module": "./dist/LexicalCodeShiki.mjs",
+  "module": "./dist/LexicalCodeShiki.js",
   "sideEffects": true,
   "exports": {
     ".": {
       "source": "./src/index.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/index.d.ts",
-      "development": "./dist/LexicalCodeShiki.dev.mjs",
-      "production": "./dist/LexicalCodeShiki.prod.mjs",
-      "default": "./dist/LexicalCodeShiki.mjs"
+      "development": "./dist/LexicalCodeShiki.dev.js",
+      "production": "./dist/LexicalCodeShiki.prod.js",
+      "default": "./dist/LexicalCodeShiki.js"
     }
   },
   "files": [
@@ -68,5 +68,6 @@
     "typescript": {
       "optional": true
     }
-  }
+  },
+  "type": "module"
 }

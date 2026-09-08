@@ -20,129 +20,129 @@
       "source": "./src/devInvariant.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/devInvariant.d.ts",
-      "development": "./dist/LexicalInternalDevInvariant.dev.mjs",
-      "production": "./dist/LexicalInternalDevInvariant.prod.mjs",
-      "default": "./dist/LexicalInternalDevInvariant.mjs"
+      "development": "./dist/LexicalInternalDevInvariant.dev.js",
+      "production": "./dist/LexicalInternalDevInvariant.prod.js",
+      "default": "./dist/LexicalInternalDevInvariant.js"
     },
     "./devInvariant.js": {
       "source": "./src/devInvariant.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/devInvariant.d.ts",
-      "development": "./dist/LexicalInternalDevInvariant.dev.mjs",
-      "production": "./dist/LexicalInternalDevInvariant.prod.mjs",
-      "default": "./dist/LexicalInternalDevInvariant.mjs"
+      "development": "./dist/LexicalInternalDevInvariant.dev.js",
+      "production": "./dist/LexicalInternalDevInvariant.prod.js",
+      "default": "./dist/LexicalInternalDevInvariant.js"
     },
     "./formatDevErrorMessage": {
       "source": "./src/formatDevErrorMessage.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/formatDevErrorMessage.d.ts",
-      "development": "./dist/LexicalInternalFormatDevErrorMessage.dev.mjs",
-      "production": "./dist/LexicalInternalFormatDevErrorMessage.prod.mjs",
-      "default": "./dist/LexicalInternalFormatDevErrorMessage.mjs"
+      "development": "./dist/LexicalInternalFormatDevErrorMessage.dev.js",
+      "production": "./dist/LexicalInternalFormatDevErrorMessage.prod.js",
+      "default": "./dist/LexicalInternalFormatDevErrorMessage.js"
     },
     "./formatDevErrorMessage.js": {
       "source": "./src/formatDevErrorMessage.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/formatDevErrorMessage.d.ts",
-      "development": "./dist/LexicalInternalFormatDevErrorMessage.dev.mjs",
-      "production": "./dist/LexicalInternalFormatDevErrorMessage.prod.mjs",
-      "default": "./dist/LexicalInternalFormatDevErrorMessage.mjs"
+      "development": "./dist/LexicalInternalFormatDevErrorMessage.dev.js",
+      "production": "./dist/LexicalInternalFormatDevErrorMessage.prod.js",
+      "default": "./dist/LexicalInternalFormatDevErrorMessage.js"
     },
     "./formatDevWarningMessage": {
       "source": "./src/formatDevWarningMessage.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/formatDevWarningMessage.d.ts",
-      "development": "./dist/LexicalInternalFormatDevWarningMessage.dev.mjs",
-      "production": "./dist/LexicalInternalFormatDevWarningMessage.prod.mjs",
-      "default": "./dist/LexicalInternalFormatDevWarningMessage.mjs"
+      "development": "./dist/LexicalInternalFormatDevWarningMessage.dev.js",
+      "production": "./dist/LexicalInternalFormatDevWarningMessage.prod.js",
+      "default": "./dist/LexicalInternalFormatDevWarningMessage.js"
     },
     "./formatDevWarningMessage.js": {
       "source": "./src/formatDevWarningMessage.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/formatDevWarningMessage.d.ts",
-      "development": "./dist/LexicalInternalFormatDevWarningMessage.dev.mjs",
-      "production": "./dist/LexicalInternalFormatDevWarningMessage.prod.mjs",
-      "default": "./dist/LexicalInternalFormatDevWarningMessage.mjs"
+      "development": "./dist/LexicalInternalFormatDevWarningMessage.dev.js",
+      "production": "./dist/LexicalInternalFormatDevWarningMessage.prod.js",
+      "default": "./dist/LexicalInternalFormatDevWarningMessage.js"
     },
     "./formatProdErrorMessage": {
       "source": "./src/formatProdErrorMessage.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/formatProdErrorMessage.d.ts",
-      "development": "./dist/LexicalInternalFormatProdErrorMessage.dev.mjs",
-      "production": "./dist/LexicalInternalFormatProdErrorMessage.prod.mjs",
-      "default": "./dist/LexicalInternalFormatProdErrorMessage.mjs"
+      "development": "./dist/LexicalInternalFormatProdErrorMessage.dev.js",
+      "production": "./dist/LexicalInternalFormatProdErrorMessage.prod.js",
+      "default": "./dist/LexicalInternalFormatProdErrorMessage.js"
     },
     "./formatProdErrorMessage.js": {
       "source": "./src/formatProdErrorMessage.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/formatProdErrorMessage.d.ts",
-      "development": "./dist/LexicalInternalFormatProdErrorMessage.dev.mjs",
-      "production": "./dist/LexicalInternalFormatProdErrorMessage.prod.mjs",
-      "default": "./dist/LexicalInternalFormatProdErrorMessage.mjs"
+      "development": "./dist/LexicalInternalFormatProdErrorMessage.dev.js",
+      "production": "./dist/LexicalInternalFormatProdErrorMessage.prod.js",
+      "default": "./dist/LexicalInternalFormatProdErrorMessage.js"
     },
     "./formatProdWarningMessage": {
       "source": "./src/formatProdWarningMessage.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/formatProdWarningMessage.d.ts",
-      "development": "./dist/LexicalInternalFormatProdWarningMessage.dev.mjs",
-      "production": "./dist/LexicalInternalFormatProdWarningMessage.prod.mjs",
-      "default": "./dist/LexicalInternalFormatProdWarningMessage.mjs"
+      "development": "./dist/LexicalInternalFormatProdWarningMessage.dev.js",
+      "production": "./dist/LexicalInternalFormatProdWarningMessage.prod.js",
+      "default": "./dist/LexicalInternalFormatProdWarningMessage.js"
     },
     "./formatProdWarningMessage.js": {
       "source": "./src/formatProdWarningMessage.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/formatProdWarningMessage.d.ts",
-      "development": "./dist/LexicalInternalFormatProdWarningMessage.dev.mjs",
-      "production": "./dist/LexicalInternalFormatProdWarningMessage.prod.mjs",
-      "default": "./dist/LexicalInternalFormatProdWarningMessage.mjs"
+      "development": "./dist/LexicalInternalFormatProdWarningMessage.dev.js",
+      "production": "./dist/LexicalInternalFormatProdWarningMessage.prod.js",
+      "default": "./dist/LexicalInternalFormatProdWarningMessage.js"
     },
     "./invariant": {
       "source": "./src/invariant.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/invariant.d.ts",
-      "development": "./dist/LexicalInternalInvariant.dev.mjs",
-      "production": "./dist/LexicalInternalInvariant.prod.mjs",
-      "default": "./dist/LexicalInternalInvariant.mjs"
+      "development": "./dist/LexicalInternalInvariant.dev.js",
+      "production": "./dist/LexicalInternalInvariant.prod.js",
+      "default": "./dist/LexicalInternalInvariant.js"
     },
     "./invariant.js": {
       "source": "./src/invariant.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/invariant.d.ts",
-      "development": "./dist/LexicalInternalInvariant.dev.mjs",
-      "production": "./dist/LexicalInternalInvariant.prod.mjs",
-      "default": "./dist/LexicalInternalInvariant.mjs"
+      "development": "./dist/LexicalInternalInvariant.dev.js",
+      "production": "./dist/LexicalInternalInvariant.prod.js",
+      "default": "./dist/LexicalInternalInvariant.js"
     },
     "./version": {
       "source": "./src/version.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/version.d.ts",
-      "development": "./dist/LexicalInternalVersion.dev.mjs",
-      "production": "./dist/LexicalInternalVersion.prod.mjs",
-      "default": "./dist/LexicalInternalVersion.mjs"
+      "development": "./dist/LexicalInternalVersion.dev.js",
+      "production": "./dist/LexicalInternalVersion.prod.js",
+      "default": "./dist/LexicalInternalVersion.js"
     },
     "./version.js": {
       "source": "./src/version.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/version.d.ts",
-      "development": "./dist/LexicalInternalVersion.dev.mjs",
-      "production": "./dist/LexicalInternalVersion.prod.mjs",
-      "default": "./dist/LexicalInternalVersion.mjs"
+      "development": "./dist/LexicalInternalVersion.dev.js",
+      "production": "./dist/LexicalInternalVersion.prod.js",
+      "default": "./dist/LexicalInternalVersion.js"
     },
     "./warnOnlyOnce": {
       "source": "./src/warnOnlyOnce.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/warnOnlyOnce.d.ts",
-      "development": "./dist/LexicalInternalWarnOnlyOnce.dev.mjs",
-      "production": "./dist/LexicalInternalWarnOnlyOnce.prod.mjs",
-      "default": "./dist/LexicalInternalWarnOnlyOnce.mjs"
+      "development": "./dist/LexicalInternalWarnOnlyOnce.dev.js",
+      "production": "./dist/LexicalInternalWarnOnlyOnce.prod.js",
+      "default": "./dist/LexicalInternalWarnOnlyOnce.js"
     },
     "./warnOnlyOnce.js": {
       "source": "./src/warnOnlyOnce.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/warnOnlyOnce.d.ts",
-      "development": "./dist/LexicalInternalWarnOnlyOnce.dev.mjs",
-      "production": "./dist/LexicalInternalWarnOnlyOnce.prod.mjs",
-      "default": "./dist/LexicalInternalWarnOnlyOnce.mjs"
+      "development": "./dist/LexicalInternalWarnOnlyOnce.dev.js",
+      "production": "./dist/LexicalInternalWarnOnlyOnce.prod.js",
+      "default": "./dist/LexicalInternalWarnOnlyOnce.js"
     }
   },
   "files": [
@@ -173,5 +173,6 @@
     "typescript": {
       "optional": true
     }
-  }
+  },
+  "type": "module"
 }

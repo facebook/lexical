@@ -25,6 +25,10 @@ const KNOWN_SIDE_EFFECTS = new Map([
     '@lexical/code-prism',
     'registers its language grammars on the global Prism object when imported',
   ],
+  [
+    '@lexical/eslint-plugin',
+    'reads `rules`, `configs`, and `meta` off its CommonJS plugin object at module scope so that a CommonJS consumer gets an ESLint plugin from require()',
+  ],
 ]);
 
 /**
@@ -90,7 +94,7 @@ async function bundleLexicalConsumerSize(consumer) {
   if (lexical === undefined) {
     throw new Error('lexical package not found');
   }
-  const productionFile = lexical.resolve('dist/Lexical.prod.mjs');
+  const productionFile = lexical.resolve('dist/Lexical.prod.js');
   const result = await esbuild.build({
     bundle: true,
     define: {'process.env.NODE_ENV': '"production"'},

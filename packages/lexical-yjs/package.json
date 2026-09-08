@@ -12,7 +12,7 @@
   ],
   "license": "MIT",
   "version": "0.50.0",
-  "main": "./dist/LexicalYjs.mjs",
+  "main": "./dist/LexicalYjs.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/internal": "workspace:*",
@@ -31,16 +31,16 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-yjs"
   },
-  "module": "./dist/LexicalYjs.mjs",
+  "module": "./dist/LexicalYjs.js",
   "sideEffects": false,
   "exports": {
     ".": {
       "source": "./src/index.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
       "types": "./dist/index.d.ts",
-      "development": "./dist/LexicalYjs.dev.mjs",
-      "production": "./dist/LexicalYjs.prod.mjs",
-      "default": "./dist/LexicalYjs.mjs"
+      "development": "./dist/LexicalYjs.dev.js",
+      "production": "./dist/LexicalYjs.prod.js",
+      "default": "./dist/LexicalYjs.js"
     }
   },
   "files": [
@@ -67,5 +67,6 @@
     "typescript": {
       "optional": true
     }
-  }
+  },
+  "type": "module"
 }

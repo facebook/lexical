@@ -156,3 +156,49 @@ also should call `event.preventDefault()` unless your command relies on the
 browser's native processing of that event.
 
 :::
+
+## Which module formats are published? (ESM, CommonJS, Node.js, React Native)
+
+Every Lexical package is published as ES modules only. The packages declare
+`"type": "module"`, and their `exports` maps offer a `development` and a
+`production` build plus a `default` entry that picks one of the two at runtime
+from `process.env.NODE_ENV`.
+
+- **Bundlers** (webpack, Vite, Rollup, esbuild with the conditions set) resolve
+  the `development` or `production` condition and get exactly one build.
+- **Node.js** resolves `default`, which loads both builds and exports one. To
+  load a single build, pass the condition on the command line:
+  `node --conditions=production app.js` (or `--conditions=development`).
+- **CommonJS** code can `require()` the packages on Node.js 20.19 or later,
+  which loads ES modules from `require()` as long as nothing in the module
+  graph uses top-level `await` (Lexical's builds do not). Older Node.js
+  versions have to use `await import('lexical')` instead.
+- **React Native (Metro)** bundles the packages without extra configuration,
+  but Metro does not set the `development`/`production` conditions and does
+  not drop the build the `default` entry leaves unused, so both end up in the
+  bundle. To bundle only the one that matches the build mode, add the
+  condition for Lexical's packages in `metro.config.js`:
+
+  ```js
+  const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
+
+  module.exports = mergeConfig(getDefaultConfig(__dirname), {
+    resolver: {
+      resolveRequest: (context, moduleName, platform) =>
+        context.resolveRequest(
+          /^(lexical|@lexical\/)/.test(moduleName)
+            ? {
+                ...context,
+                unstable_conditionNames: [
+                  ...context.unstable_conditionNames,
+                  context.dev ? 'development' : 'production',
+                ],
+              }
+            : context,
+          moduleName,
+          platform,
+        ),
+    },
+  });
+  ```
+

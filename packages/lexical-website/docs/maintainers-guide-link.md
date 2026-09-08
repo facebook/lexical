@@ -22,7 +22,7 @@ directory:
 ```bash
 # in the Lexical checkout
 pnpm install
-pnpm run build-release   # produces dist/<Name>.{dev,prod}.mjs + .d.ts + .mjs.flow
+pnpm run build-release   # produces dist/<Name>.{dev,prod}.js + .d.ts + .js.flow
 
 # in your downstream app
 pnpm add link:/path/to/lexical/packages/lexical

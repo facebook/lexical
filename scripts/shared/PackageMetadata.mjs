@@ -38,7 +38,8 @@ import npmToWwwName from '../www/npmToWwwName.mjs';
 /**
  * The conditions of one entry in a published package's exports map. Only ESM
  * is published, so there is no `import`/`require` split: every condition
- * resolves to a `.mjs` (or, for `types`, a `.d.ts`).
+ * resolves to an ESM file (`.js` in a `"type": "module"` package, `.mjs`
+ * otherwise; see getEsmExtension) or, for `types`, a `.d.ts`.
  *
  * @typedef {Record<'types' | 'development' | 'production' | 'default', string> & Record<`types@${string}`, string>} ExportConditions
  * @typedef {ExportConditions & { source?: string; browser?: ExportConditions }} NpmModuleExports
@@ -100,6 +101,19 @@ export class PackageMetadata {
    */
   isPrivate() {
     return !!this.packageJson.private;
+  }
+
+  /**
+   * The extension of this package's published ESM build. Public packages
+   * declare `"type": "module"` (scripts/updateVersion.mjs adds it) so their
+   * ESM is plain `.js`; a package that opts out with `"type": "commonjs"`
+   * because its own sources are CommonJS `.js` files (@lexical/eslint-plugin)
+   * gets `.mjs` so Node.js still reads the build as ESM.
+   *
+   * @returns {'.js' | '.mjs'}
+   */
+  getEsmExtension() {
+    return this.packageJson.type === 'module' ? '.js' : '.mjs';
   }
 
   /**

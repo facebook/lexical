@@ -1285,13 +1285,17 @@ export const LINK: TextMatchTransformer = {
       outsideLinkText = '[' + linkTextParts[0];
       parsedLinkText = linkTextParts.slice(1).join('[');
     }
+    // Both new nodes stand in for the TextNode being replaced, so the text
+    // left outside the link carries its inline format just like the link's own
+    // text node does. Read the format before the replace below detaches it.
+    const format = textNode.getFormat();
     const linkTextNode = $createTextNode(parsedLinkText);
-    linkTextNode.setFormat(textNode.getFormat());
+    linkTextNode.setFormat(format);
     linkNode.append(linkTextNode);
     textNode.replace(linkNode);
 
     if (outsideLinkText) {
-      linkNode.insertBefore($createTextNode(outsideLinkText));
+      linkNode.insertBefore($createTextNode(outsideLinkText).setFormat(format));
     }
     return linkTextNode;
   },

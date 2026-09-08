@@ -269,6 +269,36 @@ When adding/modifying APIs, types must be maintained for both systems.
 - If an API genuinely must change, deprecate the old one first (keep it working, document the replacement) rather than removing it outright.
 - When in doubt, assume external code depends on the current behavior and keep it intact.
 
+## Dependencies: Lexical is a singleton within one app
+
+An application must resolve exactly one copy of `lexical`, and one copy of each
+`@lexical/*` package it uses. The active editor and editor state are
+module-scope variables in `LexicalUpdates.ts`, node registration and
+`instanceof LexicalNode` compare class references, and commands are object
+identities from `createCommand()` — none of which survive a second copy of the
+module. Two copies also mean two versions, which is API drift inside one editor.
+
+The boundary is the app, not the page: several self-contained apps, each with
+its own bundled Lexical, can coexist on one page (`isLexicalEditor` is an
+`instanceof` check precisely to support that). They just cannot interoperate —
+nodes, editors, `EditorState`s, selections and commands must never be passed
+across such a boundary, only serialized data.
+
+- Inside this monorepo, packages depend on siblings with `"lexical":
+  "workspace:*"`; `pnpm publish` rewrites that to the exact published version,
+  so every `@lexical/*` release pins the matching `lexical`. Keep that pattern
+  when adding a package — do not hand-write a version range.
+- A **library** published on top of Lexical (anything outside this repo that
+  imports `lexical` or `@lexical/*`) declares those packages in
+  `peerDependencies`, plus `devDependencies` for its own build and tests, never
+  in `dependencies`. Apps bring their own Lexical and own the version.
+- Code under `examples/` and `packages/lexical-playground` are applications, so
+  they depend on Lexical directly — that is correct and should stay.
+
+The user-facing version of this rule lives in
+`packages/lexical-website/docs/concepts/one-lexical-per-app.md`; keep the two in
+sync when either changes.
+
 ## Important Development Notes
 
 ### Reconciliation and Updates

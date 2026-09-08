@@ -452,11 +452,11 @@ async function build(
   /** @type {import('rollup').OutputOptions} */
   const outputOptions = {
     esModule: false,
-    exports:
-      // Special case for lexical-eslint-plugin which is written in cjs and
-      // requires a default export. Default exports in all other modules are
-      // deprecated.
-      name === 'Lexical Eslint Plugin' ? 'auto' : 'named',
+    // Only the www CommonJS build reads this. @lexical/eslint-plugin has a
+    // default export (deprecated everywhere else) next to the named `rules`,
+    // `configs`, and `meta`, so its CommonJS output is `exports.default`
+    // plus those names, which ESLint accepts as a plugin.
+    exports: 'named',
     externalLiveBindings: false,
     file: outputFile,
     format, // change between es and cjs modules

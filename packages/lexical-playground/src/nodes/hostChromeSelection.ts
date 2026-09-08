@@ -80,7 +80,7 @@ export function registerHostChromeSelection<T extends LexicalNode>(
     if (!isHTMLElement(target)) {
       return;
     }
-    const node = editor.read(() => $resolveChromeTarget(target));
+    const node = editor.read('latest', () => $resolveChromeTarget(target));
     if (node !== null) {
       mouseDownHostKey = node.getKey();
       event.preventDefault();

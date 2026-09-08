@@ -1737,9 +1737,27 @@ export function objectValue<const S extends SerializationSchemaFields>(
       !hasUndeclaredKey(a, fields) &&
       !hasUndeclaredKey(b, fields) &&
       entries.every(([key, schema]) => isSchemaEqual(schema, a[key], b[key])),
-    // As with arrayValue, and for the same reason: a record is what this
-    // reads, and declaring it keeps the field comparators away from inputs.
-    isRecord,
+    // As with arrayValue, and for the same reason: declaring membership keeps
+    // the field comparators away from inputs.
+    //
+    // Not merely "is an object": every objectValue would then accept every
+    // object, and the first one in a union would answer for all of them —
+    // `unionValue([objectValue({x}), objectValue({label})])` would read
+    // `{label: 'hello'}` as `{x: 0}`, losing the property and, through
+    // NodeState, the whole state along with it once it compares equal to the
+    // default. What tells one object variant from another is its *keys*, which
+    // is what the parse-inference this replaces was reading (through the
+    // comparator, which rejects an undeclared key): a value belongs to this
+    // schema when it carries at least one field this schema declares, none it
+    // does not, and nothing out of a declared field's own domain.
+    value =>
+      isPlainObject(value) &&
+      !hasUndeclaredKey(value, fields) &&
+      entries.some(([key]) => hasOwnKey(value, key)) &&
+      entries.every(
+        ([key, schema]) =>
+          !hasOwnKey(value, key) || $acceptsValue(schema, value[key]),
+      ),
   );
 }
 

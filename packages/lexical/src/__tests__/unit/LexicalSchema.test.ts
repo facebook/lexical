@@ -2836,3 +2836,34 @@ describe('a union compares by content, not by a member’s comparator', () => {
     expect(isSchemaEqual(union, map, new Map([['a', 1]]))).toBe(false);
   });
 });
+
+describe('an object schema answers only for its own shape', () => {
+  const point = objectValue({x: numberValue()});
+  const label = objectValue({label: stringValue()});
+  const union = unionValue([point, label]);
+
+  test('a union falls through to the variant whose keys match', () => {
+    // Accepting every object would let the first variant answer for all of
+    // them: `{label: 'hello'}` would read as `{x: 0}`, losing the property —
+    // and as a flat NodeState that parse equals the default, so exporting
+    // drops the state entirely.
+    expect(union({label: 'hello'} as never)).toEqual({label: 'hello'});
+    expect(union({x: 5} as never)).toEqual({x: 5});
+  });
+
+  test('and declines what belongs to neither', () => {
+    // No declared key, an out-of-domain value for one, and an array: none is
+    // this variant's, so the union falls back rather than committing.
+    for (const value of [{}, {x: 'banana'}, [1, 2], 'str']) {
+      expect(union(value as never)).toEqual(union.defaultValue);
+    }
+  });
+
+  test('membership is the same question the parse asks', () => {
+    expect(point.accepts!({x: 1})).toBe(true);
+    expect(point.accepts!({label: 'hello'})).toBe(false);
+    expect(point.accepts!({label: 'hello', x: 1})).toBe(false);
+    expect(point.accepts!({})).toBe(false);
+    expect(point.accepts!([])).toBe(false);
+  });
+});

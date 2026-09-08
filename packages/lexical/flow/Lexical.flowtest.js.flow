@@ -40,6 +40,7 @@ import type {
   SerializedEditorState,
   SerializedLexicalNode,
   SerializedPartial,
+  SerializedTextNode,
   TextNode,
 } from 'lexical';
 
@@ -109,6 +110,43 @@ export function flowCompactChildren(state: EditorState): number {
   // `version` is optional on a child, as it is on the root: writing
   // `child.version.toFixed(0)` is the error this recursion exists to produce.
   return child.version == null ? 0 : child.version;
+}
+
+// The same relaxation has to reach a `ReadonlyArray` of children, which is how
+// a consumer may well declare its own serialized element: `Array` is a subtype
+// of `ReadonlyArray`, so matching the latter covers both. Matching `Array`
+// alone left such children fully required — rejecting a valid compact child,
+// and promising a property a compact export omits.
+type FlowReadonlyElement = {
+  ...SerializedLexicalNode,
+  children: ReadonlyArray<SerializedTextNode>,
+  ...
+};
+
+// Nested, so the recursion is exercised past the first level.
+type FlowReadonlyOuter = {
+  ...SerializedLexicalNode,
+  children: ReadonlyArray<FlowReadonlyElement>,
+  ...
+};
+
+export function flowCompactReadonlyChildren(): number {
+  // A compact child carries only what a compact export writes.
+  const partial: SerializedPartial<FlowReadonlyOuter> = {
+    children: [{children: [{type: 'text'}], type: 'inner'}],
+    type: 'outer',
+  };
+  const {children} = partial;
+  if (children == null || children.length === 0) {
+    return 0;
+  }
+  const inner = children[0].children;
+  if (inner == null || inner.length === 0) {
+    return 0;
+  }
+  // `style` is optional on a compact child: reading `inner[0].style.length`
+  // is the error this branch exists to produce.
+  return inner[0].style == null ? 0 : inner[0].style.length;
 }
 
 // `exportJSON` cannot be overloaded (see the declaration), so the compact

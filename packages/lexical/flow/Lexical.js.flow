@@ -1459,7 +1459,12 @@ export type SerializedPartial<T extends SerializedLexicalNode> = {
   ...Partial<T>,
   type: string,
   version?: number,
-  ...(T extends {children: Array<infer C>, ...}
+  // Matched as `ReadonlyArray`, which `Array` is a subtype of, so a consumer
+  // whose serialized type declares `children: ReadonlyArray<...>` relaxes the
+  // same way — matching `Array` alone left those children fully required, so a
+  // valid compact child was rejected and an omitted property was still
+  // promised. This is what TypeScript's `readonly (infer C)[]` already covers.
+  ...(T extends {children: ReadonlyArray<infer C>, ...}
     ? C extends SerializedLexicalNode
       ? {children?: Array<SerializedPartial<C>>}
       : {}

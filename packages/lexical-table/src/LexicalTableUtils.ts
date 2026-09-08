@@ -920,6 +920,11 @@ export function $mergeCells(cellNodes: TableCellNode[]): TableCellNode | null {
         seenCells.add(key);
         const isEmpty = $cellContainsEmptyParagraph(currentCell);
         if (!isEmpty) {
+          // The loop skips the target, so drop its own empty paragraph before
+          // real content lands underneath it.
+          if ($cellContainsEmptyParagraph(targetCell)) {
+            targetCell.clear();
+          }
           targetCell.append(...currentCell.getChildren());
         }
         currentCell.remove();

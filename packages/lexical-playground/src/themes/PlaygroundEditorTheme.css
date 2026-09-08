@@ -968,22 +968,24 @@
    the moment the user types, so the model seeds no placeholder TextNodes. The
    author placeholder is just 'Author' now — the '— ' prefix above is
    permanent. */
-.lexical-review-author [data-lexical-slot='author'] > p:has(br:only-child),
-.lexical-review-children > p:only-of-type:has(br:only-child) {
+.lexical-review-author
+  [data-lexical-slot='author']
+  > p:has(> br):not(:has(> * + *)),
+.lexical-review-children > p:only-of-type:has(> br):not(:has(> * + *)) {
   position: relative;
 }
 .lexical-review-author
   [data-lexical-slot='author']
-  > p:has(br:only-child)::before {
+  > p:has(> br):not(:has(> * + *))::before {
   content: 'Author';
 }
-.lexical-review-children > p:only-of-type:has(br:only-child)::before {
+.lexical-review-children > p:only-of-type:has(> br):not(:has(> * + *))::before {
   content: 'Write a review…';
 }
 .lexical-review-author
   [data-lexical-slot='author']
-  > p:has(br:only-child)::before,
-.lexical-review-children > p:only-of-type:has(br:only-child)::before {
+  > p:has(> br):not(:has(> * + *))::before,
+.lexical-review-children > p:only-of-type:has(> br):not(:has(> * + *))::before {
   color: #a8a29e;
   left: 0;
   pointer-events: none;
@@ -1015,22 +1017,26 @@
   margin-top: 12px;
 }
 /* CSS placeholders for the empty title / body fields. Shown only while a
-   field holds just its empty-paragraph <br> (the codebase's
-   :has(br:only-child) idiom), hidden the moment the user types, so the model
-   seeds no placeholder TextNodes. Absolutely positioned and pointer-inert so
-   they overlay the empty line without shifting the caret or blocking clicks. */
-.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child),
-.lexical-card-node > p:only-of-type:has(br:only-child) {
+   field holds just its empty-paragraph <br>, hidden the moment the user
+   types, so the model seeds no placeholder TextNodes. Absolutely positioned
+   and pointer-inert so they overlay the empty line without shifting the
+   caret or blocking clicks. */
+.lexical-card-node [data-lexical-slot='title'] > p:has(> br):not(:has(> * + *)),
+.lexical-card-node > p:only-of-type:has(> br):not(:has(> * + *)) {
   position: relative;
 }
-.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child)::before {
+.lexical-card-node
+  [data-lexical-slot='title']
+  > p:has(> br):not(:has(> * + *))::before {
   content: 'Title';
 }
-.lexical-card-node > p:only-of-type:has(br:only-child)::before {
+.lexical-card-node > p:only-of-type:has(> br):not(:has(> * + *))::before {
   content: 'Body';
 }
-.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child)::before,
-.lexical-card-node > p:only-of-type:has(br:only-child)::before {
+.lexical-card-node
+  [data-lexical-slot='title']
+  > p:has(> br):not(:has(> * + *))::before,
+.lexical-card-node > p:only-of-type:has(> br):not(:has(> * + *))::before {
   color: #9ca3af;
   left: 0;
   pointer-events: none;

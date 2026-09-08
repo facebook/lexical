@@ -1099,6 +1099,66 @@ function $schemaMatch(
 }
 
 /**
+ * Whether `member`'s comparator may be asked about `value`.
+ *
+ * A union finds the member to *parse* with by what each accepts, and for almost
+ * every schema the values it produces are in that domain too, so the same test
+ * serves both. `transformValue` is where the two part company: its input domain
+ * is the inner schema's and its output is whatever the transform returns, so a
+ * comparator written for the output is never reached by a test on the input —
+ * `transformValue(stringValue(), s => s.split(','), {isEqual})` is asked about
+ * two arrays, and every array is outside the string domain it accepts.
+ *
+ * The output side is answered by shape, because a comparator only ever exists
+ * for a reference-typed domain: `arrayValue` and `objectValue` derive one, and
+ * `transformValue` requires a reference-typed default before it will take one.
+ * The member's own default is the witness — it is a value that member produced
+ * — so a value shaped like it is one the comparator was written for. That is
+ * enough to keep a comparator away from another member's values, which is what
+ * the input test was doing, without running arbitrary code to find out.
+ */
+function $mayCompare(member: AnySerializationSchema, value: unknown): boolean {
+  if ($schemaMatch(member, value) !== undefined) {
+    return true;
+  }
+  const {defaultValue, isEqual} = member;
+  return (
+    isEqual !== undefined &&
+    isRecord(value) &&
+    isRecord(defaultValue) &&
+    sameOutputShape(value, defaultValue)
+  );
+}
+
+/**
+ * Whether `value` is shaped like `witness`, a value its schema produced.
+ *
+ * An array is compared only for being one: its length is data, not shape, and
+ * the comparator is written for the element type either way. An object is
+ * compared by its keys, which for the schemas that carry a comparator is
+ * exactly what distinguishes one member's domain from another's — an
+ * `objectValue` always produces its declared keys, and a transform that builds
+ * an object builds the same one every time. Comparing only "is an object"
+ * would hand `transformValue(objectValue({id, tag}), …, {isEqual: byId})` a
+ * `{v}` from some other member and let it answer about fields neither value
+ * has.
+ */
+function sameOutputShape(
+  value: {readonly [key: string]: unknown},
+  witness: {readonly [key: string]: unknown},
+): boolean {
+  if (Array.isArray(value) || Array.isArray(witness)) {
+    return Array.isArray(value) && Array.isArray(witness);
+  }
+  const keys = Object.keys(value);
+  const witnessKeys = Object.keys(witness);
+  return (
+    keys.length === witnessKeys.length &&
+    keys.every(key => hasOwnKey(witness, key))
+  );
+}
+
+/**
  * Combinator for a value whose domain is the union of several schemas, such as
  * a dimension that is either a number or the literal `'inherit'`. The domain
  * is inferred as the union of the members' value types; annotate the result
@@ -1206,19 +1266,17 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
     // class a generated compact exporter rather than one property's
     // compaction.
     //
-    // The member is found the same way the parse finds it, and has to
-    // recognize *both* values before its comparator is consulted. Asking every
-    // member instead would run a comparator on values it never produced — a
-    // custom one from `transformValue` is arbitrary code reading fields its
-    // own domain has — and one stray `true` would report two different values
-    // as equal, which compaction reads as "this is the default, omit it".
+    // The member has to recognize *both* values before its comparator is
+    // consulted — as input, or as something it could have produced (see
+    // {@link $mayCompare}). Asking every member instead would run a comparator
+    // on values it never produced — a custom one from `transformValue` is
+    // arbitrary code reading fields its own domain has — and one stray `true`
+    // would report two different values as equal, which compaction reads as
+    // "this is the default, omit it".
     (a, b) => {
       for (let i = 0; i < members.length; i++) {
         const member = members[i];
-        if (
-          $schemaMatch(member, a) !== undefined &&
-          $schemaMatch(member, b) !== undefined
-        ) {
+        if ($mayCompare(member, a) && $mayCompare(member, b)) {
           return isSchemaEqual(member, a, b);
         }
       }

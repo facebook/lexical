@@ -2754,3 +2754,40 @@ describe('a wrapper answers for its inner schema’s domain', () => {
     expect(schema(7)).toBe(7);
   });
 });
+
+describe('a union comparator is chosen by what a member produces', () => {
+  // The transform leaves the string domain entirely, so its comparator is
+  // never reachable by a test on what the member accepts.
+  const toArray = transformValue(stringValue(), value => value.split(','), {
+    isEqual: (a, b) => a.length === b.length && a.every((x, i) => x === b[i]),
+  });
+
+  test('a transformed output is compared by the comparator written for it', () => {
+    const union = unionValue([toArray], ['']);
+    // Two equal arrays, from two parses, are the same value. Falling back to
+    // identity here reports every parse as a change.
+    expect(isSchemaEqual(union, union('a,b'), union('a,b'))).toBe(true);
+    expect(isSchemaEqual(union, union('a,b'), union('a,c'))).toBe(false);
+  });
+
+  test('so a wrapper around it can still recognize its own default', () => {
+    // `omitDefault` asks the inner schema whether the parse *is* the default,
+    // which for a union is that comparator. Without it `''` parses to the
+    // default array and is written out as one anyway.
+    const schema = optional(unionValue([toArray], ['']), {omitDefault: true});
+    expect(schema('')).toBeUndefined();
+    expect(schema('a,b')).toEqual(['a', 'b']);
+  });
+
+  test('and a comparator still never sees another member’s values', () => {
+    // The guard the shape test has to keep: `objectValue`'s comparator reads
+    // named fields, and an array is not one of its values.
+    const union = unionValue(
+      [arrayValue(stringValue()), objectValue({x: numberValue()})],
+      [],
+    );
+    expect(isSchemaEqual(union, ['a'], ['a'])).toBe(true);
+    expect(isSchemaEqual(union, {x: 1}, {x: 1})).toBe(true);
+    expect(isSchemaEqual(union, ['a'], {x: 1})).toBe(false);
+  });
+});

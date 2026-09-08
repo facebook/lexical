@@ -68,15 +68,36 @@ function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
       if (!integer) {
         return fc.double({max, min, noDefaultInfinity: true, noNaN: true});
       }
-      // An absent bound is not the absent bound `fc.integer` assumes: it
-      // defaults to the 32-bit range, so an unbounded-above domain starting
-      // past 2^31 - 1 arrives as a maximum below its own minimum and throws
-      // rather than generating. `numberValue`'s interval is over the safe
-      // integers, so that is what an omitted side means here.
-      return fc.integer({
-        max: max === undefined ? Number.MAX_SAFE_INTEGER : max,
-        min: min === undefined ? Number.MIN_SAFE_INTEGER : min,
-      });
+      // `fc.integer` takes an integral interval within the safe integers, and
+      // `numberValue` accepts a domain that is neither: a bound may be
+      // fractional (`{integer: true, min: 0.5}` admits 1 and up), and an
+      // absent one is unbounded, where fc.integer's own absent bound is the
+      // 32-bit range — so a domain starting past 2^31 - 1 arrived as a maximum
+      // below its own minimum and threw instead of generating.
+      //
+      // Rounding *inward* is what keeps every generated value in the schema's
+      // domain, and clamping to the safe integers keeps them exact: past
+      // 2^53 the integers are no longer adjacent — `1e16 + 1 === 1e16` — so
+      // generating there would produce values the schema's own `Number
+      // .isInteger` test cannot distinguish.
+      const low = Math.max(
+        min === undefined ? Number.MIN_SAFE_INTEGER : Math.ceil(min),
+        Number.MIN_SAFE_INTEGER,
+      );
+      const high = Math.min(
+        max === undefined ? Number.MAX_SAFE_INTEGER : Math.floor(max),
+        Number.MAX_SAFE_INTEGER,
+      );
+      if (low <= high) {
+        return fc.integer({max: high, min: low});
+      }
+      // Nothing survived: the domain lies entirely outside the safe integers
+      // (`{integer: true, min: 1e16}`), or holds no integer at all
+      // (`{min: 0.5, max: 0.7}`). Its own rounded bound is the closest thing
+      // to a member it has — in domain for the first, and for the second
+      // parsed back to the schema's default, which is what every value of an
+      // empty domain does.
+      return fc.constant(min === undefined ? high : Math.ceil(min));
     }
     case 'boolean':
       return fc.boolean();

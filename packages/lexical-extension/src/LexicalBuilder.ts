@@ -494,7 +494,13 @@ export class LexicalBuilder {
       config.theme = theme;
     }
     if (nodes.size) {
-      config.nodes = [...nodes];
+      // `Array.from` rather than `[...nodes]` on purpose. Some downstream
+      // builds lower iterable spread in loose mode, where `[...x]` becomes
+      // `[].concat(x)` — correct for arrays, but it wraps any other iterable
+      // instead of expanding it. That turned this into `[Set]`, which
+      // `createEditor` then read as a `{replace, with}` node replacement and
+      // rejected with "nodes[0] undefined is not a constructor".
+      config.nodes = Array.from(nodes);
     }
     const hasImport = Object.keys(htmlImport).length > 0;
     const hasExport = htmlExport.size > 0;

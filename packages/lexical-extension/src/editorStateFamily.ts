@@ -155,7 +155,10 @@ function serializeSelection(
     };
   }
   if ($isNodeSelection(selection)) {
-    return {keys: [...selection._nodes], type: 'node'};
+    // Array.from rather than spread: see the note in LexicalBuilder, some
+    // downstream builds lower `[...x]` to `[].concat(x)`, which wraps a Set
+    // instead of expanding it. `_nodes` is a Set<NodeKey>.
+    return {keys: Array.from(selection._nodes), type: 'node'};
   }
   // A TableSelection (or any other implementation) is left behind rather than
   // half-restored.
@@ -185,7 +188,9 @@ function $serializeNodeVersion(node: LexicalNode): SerializedNodeVersion {
   }
   const {__slotHost, __slots} = node as LexicalNode & SlotLinks;
   if (__slots != null) {
-    version.slots = [...__slots];
+    // Array.from rather than spread: `__slots` is a Map, and a loose-mode
+    // spread lowering would store the Map itself instead of its entries.
+    version.slots = Array.from(__slots);
   }
   if (__slotHost != null) {
     version.slotHost = __slotHost;

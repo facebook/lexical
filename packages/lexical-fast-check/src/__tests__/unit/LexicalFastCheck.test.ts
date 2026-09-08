@@ -9,6 +9,7 @@
 import {nodeArbitrary} from '@lexical/fast-check';
 import * as fc from 'fast-check';
 import {
+  aliasedValue,
   createEditor,
   createState,
   ElementNode,
@@ -17,6 +18,7 @@ import {
   getStaticNodeConfig,
   type Klass,
   type LexicalNode,
+  nodeSchema,
   numberValue,
   objectValue,
   ParagraphNode,
@@ -25,6 +27,7 @@ import {
   type SerializedPartial,
   type Spread,
   TextNode,
+  withField,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -265,6 +268,50 @@ describe('@lexical/fast-check', () => {
         expect(typeof exported.style).toBe('string');
         expect(['normal', 'token', 'segmented']).toContain(exported.mode);
       }),
+    );
+  });
+});
+
+describe('an arbitrary covers the whole domain a schema declares', () => {
+  class BoundedNode extends ElementNode {
+    // An interval whose lower bound is past fc.integer's default 32-bit
+    // maximum, which it would otherwise use as the (smaller) upper bound.
+    __big = 1e12;
+    // An alias table that declares no alias: legal, parses fine, and has
+    // nothing for `fc.constantFrom` to choose from.
+    __n = 0;
+    $config() {
+      return this.config('fast-check-bounded', {
+        extends: ElementNode,
+        json: nodeSchema<BoundedNode>()({
+          big: withField(numberValue(1e12, {integer: true, min: 1e12}), {
+            field: '__big',
+          }),
+          n: withField(aliasedValue(numberValue(), {}), {field: '__n'}),
+        }),
+      });
+    }
+    createDOM(): HTMLElement {
+      return document.createElement('div');
+    }
+    updateDOM(): boolean {
+      return false;
+    }
+  }
+
+  test('an unbounded-above integer domain and an empty alias table generate', () => {
+    const arbitrary = nodeArbitrary(BoundedNode);
+    fc.assert(
+      fc.property(arbitrary, value => {
+        const {big, n} = value as {big?: number; n?: number};
+        // Everything generated is in the domain the schema declared, which is
+        // what makes the generator worth trusting.
+        expect(
+          big === undefined || (Number.isInteger(big) && big >= 1e12),
+        ).toBe(true);
+        expect(n === undefined || typeof n === 'number').toBe(true);
+      }),
+      {numRuns: 50},
     );
   });
 });

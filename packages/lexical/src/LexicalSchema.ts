@@ -736,9 +736,22 @@ function liftIsEqual<T>(
 
 /**
  * Carry `inner`'s domain membership onto a wrapper that adds a nil to its
- * domain, declared only when `inner` declares one — the same convention as
- * {@link aliasedValue} — since without it a union's parse-inference reads the
- * wrapper as well as it reads the inner schema.
+ * domain.
+ *
+ * Declared unconditionally, and asked of `inner` *before* the wrapper
+ * normalizes: membership is a question about the input, and a wrapper answers
+ * it by delegating, so the fact that `inner` has no explicit `accepts` of its
+ * own is not a reason for the wrapper to have none either.
+ *
+ * Leaving it undefined in that case left a union inferring the wrapper's
+ * membership from what it *parsed to*, which for a wrapper is exactly where
+ * the inference breaks down: `nullable(stringValue(), {defaultAsNull: true})`
+ * reads `''` as `null`, its own default, so the inference reads a recognized
+ * value as a fallback and declines it —
+ * `unionValue([that, enumValue(['auto'])], 'auto')` answered `'auto'` for `''`
+ * instead of `null`. Asking `inner` first is the whole fix; `$schemaMatch` is
+ * the same inference the union would have run, applied one level down where it
+ * is sound.
  *
  * `isNil` is the wrapper's own nil test, not `== null` for both: `nullable`
  * maps `null` *and* `undefined` to null, while `optional` maps only
@@ -751,11 +764,22 @@ function liftIsEqual<T>(
 function liftAccepts<T>(
   inner: SerializationSchema<T, unknown, unknown>,
   isNil: (value: unknown) => boolean,
-): undefined | ((value: unknown) => boolean) {
-  const {accepts} = inner;
-  return accepts === undefined
-    ? undefined
-    : value => isNil(value) || accepts(value);
+): (value: unknown) => boolean {
+  return value => isNil(value) || $acceptsValue(inner, value);
+}
+
+/**
+ * Whether `schema` recognizes `value` — its declared `accepts` when it has one,
+ * and otherwise the parse-inference {@link $schemaMatch} applies.
+ *
+ * The membership half of `$schemaMatch` without the parsed value, for a caller
+ * that is deciding rather than parsing.
+ */
+function $acceptsValue<T>(
+  schema: SerializationSchema<T, unknown, unknown>,
+  value: unknown,
+): boolean {
+  return $schemaMatch(schema as AnySerializationSchema, value) !== undefined;
 }
 
 /**
@@ -1441,8 +1465,14 @@ export function transformValue<Inner, Out, Decls = never, In = Inner>(
     transform(inner.defaultValue),
     options.isEqual,
     // Membership is about the *input* domain, and the transform maps outputs,
-    // so what the inner schema admits is exactly what this admits.
-    inner.accepts,
+    // so what the inner schema admits is exactly what this admits — asked of
+    // `inner`, and declared whether or not `inner` declares one of its own.
+    // Forwarding a bare `inner.accepts` left this undefined for the common
+    // inner, and a union then inferred membership from the *transformed*
+    // output: a transform out of the inner's type reads every input as this
+    // schema's default and is declined, and the equality that decides it is the
+    // caller's, handed a value from the wrong side of the transform.
+    value => $acceptsValue(inner, value),
   );
   // An equality is for a domain `===` cannot compare, which means a
   // reference-typed one. Over primitives `===` is already the answer, so a

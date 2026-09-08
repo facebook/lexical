@@ -65,9 +65,18 @@ function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
       return fc.string();
     case 'number': {
       const {min, max, integer} = meta;
-      return integer
-        ? fc.integer({max, min})
-        : fc.double({max, min, noDefaultInfinity: true, noNaN: true});
+      if (!integer) {
+        return fc.double({max, min, noDefaultInfinity: true, noNaN: true});
+      }
+      // An absent bound is not the absent bound `fc.integer` assumes: it
+      // defaults to the 32-bit range, so an unbounded-above domain starting
+      // past 2^31 - 1 arrives as a maximum below its own minimum and throws
+      // rather than generating. `numberValue`'s interval is over the safe
+      // integers, so that is what an omitted side means here.
+      return fc.integer({
+        max: max === undefined ? Number.MAX_SAFE_INTEGER : max,
+        min: min === undefined ? Number.MIN_SAFE_INTEGER : min,
+      });
     }
     case 'boolean':
       return fc.boolean();
@@ -83,14 +92,19 @@ function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
       return fc.oneof(
         ...meta.members.map(member => metaArbitrary(member.meta)),
       );
-    case 'aliased':
+    case 'aliased': {
       // The aliases are legacy input spellings the schema still accepts, so
       // they belong in the generated domain exactly as much as the inner one
       // does — that is what makes them worth stating as data.
-      return fc.oneof(
-        metaArbitrary(meta.inner.meta),
-        fc.constantFrom(...Object.keys(meta.aliases)),
-      );
+      const inner = metaArbitrary(meta.inner.meta);
+      const aliases = Object.keys(meta.aliases);
+      // `fc.constantFrom()` with nothing to choose from throws, so a schema
+      // that declares no alias generates its inner domain alone — which is
+      // what it accepts. An empty table parses fine, so it must generate fine.
+      return aliases.length === 0
+        ? inner
+        : fc.oneof(inner, fc.constantFrom(...aliases));
+    }
     case 'transform':
       // What is generated here is serialized *input*, and a transform changes
       // only the output, so the domain to draw from is the inner one — the

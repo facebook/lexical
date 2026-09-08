@@ -2704,3 +2704,53 @@ describe('a schema does not take back an override the node already had', () => {
     editor.dispose();
   });
 });
+
+describe('a wrapper answers for its inner schema’s domain', () => {
+  test('a union picks the wrapper whose inner schema recognizes the value', () => {
+    // `''` is stringValue's default, so `defaultAsNull` reads it as null — the
+    // wrapper's own default. Inferring membership from *that* reads a value the
+    // schema recognized as one it fell back on, and the union moves on to a
+    // member whose domain does not contain it at all.
+    const schema = unionValue(
+      [nullable(stringValue(), {defaultAsNull: true}), enumValue(['auto'])],
+      'auto',
+    );
+    expect(schema('')).toBe(null);
+    expect(schema('left')).toBe('left');
+    expect(schema('auto')).toBe('auto');
+    // A value neither member's domain contains still falls back.
+    expect(schema(42)).toBe('auto');
+  });
+
+  test('the same holds for optional and for a transformed domain', () => {
+    const opt = unionValue(
+      [optional(stringValue(), {omitDefault: true}), enumValue(['auto'])],
+      'auto',
+    );
+    expect(opt('')).toBeUndefined();
+
+    // The transform leaves the inner domain entirely, so inferring membership
+    // from its output compares a parsed array against a string input — with the
+    // caller's own comparator, which is written for arrays.
+    const toArray = transformValue(stringValue(), value => value.split(','), {
+      isEqual: (a, b) => a.length === b.length && a.every((x, i) => x === b[i]),
+    });
+    const union = unionValue([toArray, enumValue(['auto'])], 'auto');
+    expect(union('')).toEqual(['']);
+    expect(union('a,b')).toEqual(['a', 'b']);
+  });
+
+  test('a wrapper still declines what its inner schema declines', () => {
+    // The guard the unconditional `accepts` must not give up: `null` is not
+    // `optional`'s nil, so it goes to `inner`, which does not recognize it —
+    // and the union must reach the member that does.
+    const schema = unionValue(
+      [optional(numberValue()), enumValue([null])],
+      null,
+    );
+    // `0` here would mean the optional member claimed `null` and handed it to
+    // numberValue, which falls back.
+    expect(schema(null)).toBe(null);
+    expect(schema(7)).toBe(7);
+  });
+});

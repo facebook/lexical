@@ -146,4 +146,9 @@ function ContentEditableElementImpl(
  * attributes. Prefer {@link ContentEditable}, which reads the editor from
  * context and adds placeholder support, unless you need this extra control.
  */
-export const ContentEditableElement = forwardRef(ContentEditableElementImpl);
+// Annotated by hand: React's forwardRef is not a Lexical factory, so the build
+// does not annotate it, and an unannotated module-scope call pins the module
+// into every bundle that imports it.
+export const ContentEditableElement = /* @__PURE__ */ forwardRef(
+  ContentEditableElementImpl,
+);

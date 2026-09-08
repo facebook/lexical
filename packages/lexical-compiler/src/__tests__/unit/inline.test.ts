@@ -600,7 +600,9 @@ describe('the inlined factories are still trivial', () => {
       const ast = parse(code, {plugins: ['typescript'], sourceType: 'module'});
       for (const statement of ast.program.body) {
         const declaration =
-          statement.type === 'ExportNamedDeclaration' && statement.declaration
+          (statement.type === 'ExportNamedDeclaration' ||
+            statement.type === 'ExportDefaultDeclaration') &&
+          statement.declaration
             ? statement.declaration
             : statement;
         const marked = (statement.leadingComments || []).some(comment =>

@@ -56,7 +56,9 @@ The most common root causes of this issue are:
   combinations of tools in the ecosystem (npm, pnpm, yarn, webpack, vite,
   next.js, etc.), so the syntax of that workaround is quite dependent on
   precisely which tools (and even versions of those tools) that your project
-  is using.
+  is using. See [One Lexical per app](../concepts/one-lexical-per-app.md) for
+  why one copy is required, how to confirm you have more than one, and why a
+  library should declare Lexical in `peerDependencies`.
 
 ## Hot Module Replacement (HMR)
 

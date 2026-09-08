@@ -58,6 +58,7 @@ const sidebars = {
         'concepts/shadow-dom',
         'concepts/traversals',
         'concepts/updates',
+        'concepts/one-lexical-per-app',
       ],
       label: 'Concepts',
       type: 'category',

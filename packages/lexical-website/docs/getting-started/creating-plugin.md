@@ -183,3 +183,12 @@ mergeRegister(
 ```
 
 <iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=1&ctl=1" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
+
+## Publishing your plugin
+
+If the plugin ships as its own npm package, declare `lexical` and any
+`@lexical/*` packages you import as `peerDependencies` (plus `devDependencies`
+for your own build and tests) rather than as `dependencies`. Lexical relies on
+module-scope state and class identity, so an app that ends up with two copies of
+`lexical` fails at runtime with errors that do not point at the cause. See
+[One Lexical per app](../concepts/one-lexical-per-app.md).

@@ -156,3 +156,17 @@ also should call `event.preventDefault()` unless your command relies on the
 browser's native processing of that event.
 
 :::
+
+## Why do I get "does not implement .getType()" or "does not match registered node"?
+
+```
+LexicalNode: Node FooNode does not implement .getType().
+Create node: Type heading in node HeadingNode does not match registered node HeadingNode with the same type
+```
+
+These almost always mean your app resolved **two copies of `lexical`**, not that
+the node is misdeclared — the `instanceof` and registration checks compare class
+references, and the two copies have different ones. Run `npm ls lexical` (or
+`pnpm why lexical`) from the app root: it must report exactly one version.
+See [One Lexical per app](concepts/one-lexical-per-app.md) for the causes and
+the fix, including why a library must declare `lexical` in `peerDependencies`.

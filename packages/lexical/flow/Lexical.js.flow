@@ -452,11 +452,13 @@ export interface EditorState {
   constructor(nodeMap: NodeMap, selection?: BaseSelection | null): void;
   isEmpty(): boolean;
   read<V>(callbackFn: () => V, options?: EditorStateReadOptions): V;
-  // TypeScript overloads this on `compact` so the return type says which
-  // shape came back; Flow cannot overload a method across a class hierarchy
-  // (see exportJSON above), so this describes the legacy form. A Flow caller
-  // passing `true` gets a type that promises more than the value has.
-  toJSON(compact?: boolean): SerializedEditorState;
+  // Overloaded on `compact`, as TypeScript does, so the return type says which
+  // shape came back. `EditorState` is not extended anywhere, so the
+  // override-check limitation that keeps `exportJSON` to one signature does not
+  // reach here: a Flow caller passing `true` gets the partial form, in which
+  // every property a compact export may omit is optional.
+  toJSON(compact?: false): SerializedEditorState;
+  toJSON(compact: boolean): CompactSerializedEditorState;
   clone(selection?: BaseSelection | null): EditorState;
 }
 type EditorStateReadOptions = {
@@ -506,10 +508,15 @@ declare export class LexicalNode {
   // properties, so it returns SerializedPartial<T> rather than T. Flow cannot:
   // its method-override check compares a subclass's overload set against the
   // base's as an intersection and pairs no branch, so every node from TextNode
-  // down fails to extend. This single signature describes the legacy form,
-  // which is what it described before `compact` existed; a Flow caller passing
-  // `true` gets a type that promises more than the value has.
-  exportJSON(compact?: boolean): SerializedLexicalNode;
+  // down fails to extend.
+  //
+  // So this describes the legacy form only, and `compact` is typed `false`
+  // rather than `boolean` to say so. Typing it `boolean` let a Flow caller
+  // write `exportJSON(true).text.length` and be handed a type promising a
+  // property the compact form omits; refusing the argument reports that where
+  // it is written instead. A Flow codebase that needs the compact form casts
+  // the result to `SerializedPartial<...>`, which is what it actually gets.
+  exportJSON(compact?: false): SerializedLexicalNode;
   updateFromJSON(serializedNode: $FlowFixMe): this;
   getType(): string;
   isAttached(): boolean;
@@ -845,7 +852,10 @@ declare export class TextNode extends LexicalNode {
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
   static importJSON(serializedTextNode: SerializedTextNode): TextNode;
-  exportJSON(compact?: boolean): SerializedTextNode;
+  // See LexicalNode.exportJSON: one signature, the legacy form, and `false`
+  // rather than `boolean` so a compact call is refused instead of answered
+  // with a shape the value does not have.
+  exportJSON(compact?: false): SerializedTextNode;
 }
 export interface InlineFormattableNode {
   readonly __isInlineFormattable: true;
@@ -878,7 +888,10 @@ declare export function $isTabNode(
 declare export class TabNode extends TextNode {
   constructor(key?: NodeKey): void;
   static importJSON(serializedTabNode: SerializedTabNode): TabNode;
-  exportJSON(compact?: boolean): SerializedTabNode;
+  // See LexicalNode.exportJSON: one signature, the legacy form, and `false`
+  // rather than `boolean` so a compact call is refused instead of answered
+  // with a shape the value does not have.
+  exportJSON(compact?: false): SerializedTabNode;
 }
 
 /**
@@ -894,7 +907,10 @@ declare export class LineBreakNode extends LexicalNode {
   static importJSON(
     serializedLineBreakNode: SerializedPartial<SerializedLineBreakNode>,
   ): LineBreakNode;
-  exportJSON(compact?: boolean): SerializedLexicalNode;
+  // See LexicalNode.exportJSON: one signature, the legacy form, and `false`
+  // rather than `boolean` so a compact call is refused instead of answered
+  // with a shape the value does not have.
+  exportJSON(compact?: false): SerializedLexicalNode;
 }
 declare export function $createLineBreakNode(): LineBreakNode;
 declare export function $isLineBreakNode(
@@ -1056,7 +1072,10 @@ declare export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: LexicalNode[],
   ): this;
-  exportJSON(compact?: boolean): SerializedElementNode;
+  // See LexicalNode.exportJSON: one signature, the legacy form, and `false`
+  // rather than `boolean` so a compact call is refused instead of answered
+  // with a shape the value does not have.
+  exportJSON(compact?: false): SerializedElementNode;
   getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement>;
 }
 declare export function $isElementNode(
@@ -1147,7 +1166,10 @@ declare export class ParagraphNode extends ElementNode {
   static importJSON(
     serializedParagraphNode: SerializedPartial<SerializedParagraphNode>,
   ): ParagraphNode;
-  exportJSON(compact?: boolean): SerializedElementNode;
+  // See LexicalNode.exportJSON: one signature, the legacy form, and `false`
+  // rather than `boolean` so a compact call is refused instead of answered
+  // with a shape the value does not have.
+  exportJSON(compact?: false): SerializedElementNode;
 }
 declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(

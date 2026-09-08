@@ -32,9 +32,15 @@
  */
 
 import type {
+  CompactSerializedEditorState,
+  EditorState,
   LexicalEditor,
   LexicalExtensionConfig,
   LexicalExtensionOutput,
+  SerializedEditorState,
+  SerializedLexicalNode,
+  SerializedPartial,
+  TextNode,
 } from 'lexical';
 
 import {defineExtension} from 'lexical';
@@ -70,4 +76,34 @@ export function flowSmokeTest(): string {
     extractedConfig.greeting,
     extractedOutput.upper,
   ].join(',');
+}
+
+/**
+ * The compact serialized form omits every property equal to its schema
+ * default, so a type that names those properties as present is wrong about the
+ * value. TypeScript overloads `exportJSON`/`toJSON` on `compact` to say which
+ * shape came back; these check that Flow does not hand a caller the legacy
+ * shape for a compact call.
+ */
+
+// `EditorState` is extended by nothing, so the overload carries over intact.
+export function flowCompactEditorState(
+  state: EditorState,
+): [SerializedEditorState, CompactSerializedEditorState] {
+  const legacy: SerializedEditorState = state.toJSON();
+  const compact: CompactSerializedEditorState = state.toJSON(true);
+  // `compact.root.indent` is optional here — writing `.toFixed()` on it is the
+  // error this overload exists to produce.
+  return [legacy, compact];
+}
+
+// `exportJSON` cannot be overloaded (see the declaration), so the compact
+// argument is refused rather than answered with a shape the value does not
+// have. A caller that wants it says what it really gets.
+export function flowLegacyNodeExport(node: TextNode): [number, unknown] {
+  const legacy: SerializedLexicalNode = node.exportJSON();
+  const compact: SerializedPartial<SerializedLexicalNode> =
+    // $FlowExpectedError[incompatible-type] the declaration takes no `true`
+    node.exportJSON(true) as $FlowFixMe;
+  return [legacy.version, compact.type];
 }

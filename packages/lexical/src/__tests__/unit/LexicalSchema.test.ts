@@ -2897,3 +2897,53 @@ describe('an object schema answers only for its own shape', () => {
     expect(point.accepts!([])).toBe(false);
   });
 });
+
+describe('a value is parsed once per traversal', () => {
+  // Deciding which member or field a value belongs to used to go through the
+  // parse, so a nested value was read once to decide and again to keep it —
+  // compounding, since each level asked the same of the one below. Ten levels
+  // of unionValue/objectValue reached 59,049 parses of a single leaf.
+  let parses = 0;
+  const leaf = () =>
+    transformValue(stringValue(), value => {
+      parses++;
+      return value;
+    });
+
+  function count(schema: (json: unknown) => unknown, value: unknown): number {
+    parses = 0;
+    schema(value);
+    return parses;
+  }
+
+  test('through an object, a union, and the wrappers', () => {
+    expect(count(objectValue({a: leaf()}), {a: 'x'})).toBe(1);
+    expect(
+      count(unionValue([enumValue(['auto']), objectValue({a: leaf()})]), {
+        a: 'x',
+      }),
+    ).toBe(1);
+    expect(count(nullable(objectValue({a: leaf()})), {a: 'x'})).toBe(1);
+    expect(
+      count(optional(unionValue([objectValue({a: leaf()})])), {a: 'x'}),
+    ).toBe(1);
+    expect(count(aliasedValue(objectValue({a: leaf()}), {}), {a: 'x'})).toBe(1);
+  });
+
+  test('once per element of an array, not once per element per element', () => {
+    expect(count(arrayValue(leaf()), ['a', 'b', 'c'])).toBe(3);
+  });
+
+  test('and stays linear as unions nest', () => {
+    let schema: unknown = objectValue({a: leaf()});
+    let value: unknown = {a: 'x'};
+    for (let i = 0; i < 10; i++) {
+      schema = unionValue([
+        enumValue(['auto']),
+        objectValue({inner: schema as never}),
+      ]);
+      value = {inner: value};
+    }
+    expect(count(schema as never, value)).toBe(1);
+  });
+});

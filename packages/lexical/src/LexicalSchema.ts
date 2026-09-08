@@ -780,12 +780,23 @@ function liftAccepts<T>(
  *
  * The membership half of `$schemaMatch` without the parsed value, for a caller
  * that is deciding rather than parsing.
+ *
+ * A declared `accepts` is asked directly rather than through `$schemaMatch`,
+ * which parses in order to return the parsed value alongside its answer. Every
+ * caller here throws that away, and `objectValue`'s own `accepts` asks this of
+ * each declared field — so routing through it made deciding cost a parse, and
+ * a parse of a nested object asked again for every field beneath it. Ten
+ * levels of `unionValue`/`objectValue` reached 59,049 parses of the leaf, 3 per
+ * level compounding, where the value is read once.
  */
 function $acceptsValue<T>(
   schema: SerializationSchema<T, unknown, unknown>,
   value: unknown,
 ): boolean {
-  return $schemaMatch(schema as AnySerializationSchema, value) !== undefined;
+  const {accepts} = schema;
+  return accepts !== undefined
+    ? accepts(value)
+    : $schemaMatch(schema as AnySerializationSchema, value) !== undefined;
 }
 
 /**
@@ -860,6 +871,15 @@ export function stringValue(defaultValue = ''): SerializationSchema<string> {
   return makeSchema(
     value => (typeof value === 'string' ? value : defaultValue),
     {kind: 'string'},
+    undefined,
+    undefined,
+    undefined,
+    // Declared, like every other combinator's, so that deciding whether a value
+    // is in this domain costs no parse: `$schemaMatch` falls back to inferring
+    // membership from a parse, and a caller that only wanted the answer — an
+    // `objectValue` asking about each of its fields — would then parse the
+    // value once to decide and once to read it.
+    value => typeof value === 'string',
   );
 }
 
@@ -933,6 +953,15 @@ export function booleanValue(
   return makeSchema(
     value => (typeof value === 'boolean' ? value : defaultValue),
     {kind: 'boolean'},
+    undefined,
+    undefined,
+    undefined,
+    // Declared, like every other combinator's, so that deciding whether a value
+    // is in this domain costs no parse: `$schemaMatch` falls back to inferring
+    // membership from a parse, and a caller that only wanted the answer — an
+    // `objectValue` asking about each of its fields — would then parse the
+    // value once to decide and once to read it.
+    value => typeof value === 'boolean',
   );
 }
 
@@ -986,6 +1015,14 @@ export function enumValue<const T>(
     // Passed explicitly because `undefined` may itself be the declared default,
     // which makeSchema would otherwise read as "derive it from parse".
     defaultValue,
+    undefined,
+    // Declared, like every other combinator's, so that deciding whether a value
+    // is in this domain costs no parse: `$schemaMatch` falls back to inferring
+    // membership from a parse, and a caller that only wanted the answer — an
+    // `objectValue` asking about each of its fields — would then parse the
+    // value once to decide and once to read it. The parse's own test, `undefined`
+    // included, so the two cannot answer differently.
+    value => value !== undefined && allowed.has(value),
   );
 }
 
@@ -1311,7 +1348,15 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
     // normalizes into its own default — `unionValue([numberValue(),
     // enumValue(['inherit'])])` parsing '0' to 0 would be read as a fallback
     // and the whole union skipped. `undefined` is excluded to match the parse.
-    value => value !== undefined && $match(value) !== undefined,
+    //
+    // Asked of the members rather than through `$match`, which parses with the
+    // member it picks: a caller deciding whether this union accepts a value
+    // would then parse the whole subtree, and parse it again once it decided
+    // to. The two agree by construction — `$match` takes the first member
+    // `$schemaMatch` recognizes, and this is that same test without the parse.
+    value =>
+      value !== undefined &&
+      members.some(member => $acceptsValue(member, value)),
   );
 }
 
@@ -1599,9 +1644,20 @@ export function rawValue<T>(): SerializationSchema<
   never,
   unknown
 > {
-  return makeSchema(value => (value === undefined ? undefined : (value as T)), {
-    kind: 'raw',
-  });
+  return makeSchema(
+    value => (value === undefined ? undefined : (value as T)),
+    {kind: 'raw'},
+    undefined,
+    undefined,
+    undefined,
+    // Declared, like every other combinator's, so that deciding whether a value
+    // is in this domain costs no parse: `$schemaMatch` falls back to inferring
+    // membership from a parse, and a caller that only wanted the answer — an
+    // `objectValue` asking about each of its fields — would then parse the
+    // value once to decide and once to read it. Everything but `undefined`, which is
+    // this schema's default: it validates nothing, so it declines nothing.
+    value => value !== undefined,
+  );
 }
 
 /**

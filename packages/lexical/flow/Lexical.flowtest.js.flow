@@ -97,6 +97,20 @@ export function flowCompactEditorState(
   return [legacy, compact];
 }
 
+// A compact export omits a default-valued property at every depth, so the
+// relaxation has to reach the children too — `Partial<T>` alone made the array
+// optional while still promising everything inside it was fully serialized.
+export function flowCompactChildren(state: EditorState): number {
+  const {children} = state.toJSON(true).root;
+  if (children == null || children.length === 0) {
+    return 0;
+  }
+  const child = children[0];
+  // `version` is optional on a child, as it is on the root: writing
+  // `child.version.toFixed(0)` is the error this recursion exists to produce.
+  return child.version == null ? 0 : child.version;
+}
+
 // `exportJSON` cannot be overloaded (see the declaration), so the compact
 // argument is refused rather than answered with a shape the value does not
 // have. A caller that wants it says what it really gets.

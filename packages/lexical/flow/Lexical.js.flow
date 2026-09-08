@@ -1447,10 +1447,24 @@ export type SerializedLexicalNode = {
 export type LexicalParseJSON<S extends SerializedLexicalNode> = {
   [K in keyof Omit<SerializedPartial<S>, 'children' | 'type' | 'version'>]?: unknown,
 };
+// Mirrors the TypeScript definition, recursion included: `Partial<T>` alone
+// relaxes the outer object only, so an element's `children` became optional
+// while still promising that everything inside it was fully serialized — which
+// is untrue of every compact element but the leaves, and let a caller write
+// `children[0].version.toFixed()` against a child whose `version` a compact
+// export omitted. Slot values are parsed by the same rules and relax the same
+// way. The conditional keeps a node that has no children from gaining an
+// optional one it never carries.
 export type SerializedPartial<T extends SerializedLexicalNode> = {
   ...Partial<T>,
   type: string,
   version?: number,
+  ...(T extends {children: Array<infer C>, ...}
+    ? C extends SerializedLexicalNode
+      ? {children?: Array<SerializedPartial<C>>}
+      : {}
+    : {}),
+  $slots?: {[string]: SerializedPartial<SerializedLexicalNode>},
   ...
 };
 

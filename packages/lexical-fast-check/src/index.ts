@@ -54,6 +54,13 @@ export function nodeArbitrary<T extends LexicalNode>(
   // falls back to the prototype parent, the type walk has nothing to follow
   // and stops, and the type comes back missing the properties the value
   // carries. Naming `extends` is what keeps them together.
+  //
+  // What the cast is *not* covering is a flat NodeState: this generates the
+  // JSON that carries one, and `LexicalSchemaInput` types those keys `unknown`
+  // for the same reason `StateConfig.parse` takes `unknown` — nothing records
+  // what a state accepted on the way in. It said `V` until recently, which the
+  // cast would have asserted away: a `string`-to-`Date` state generated strings
+  // that a caller could have read as dates.
   return fc.record(record, {requiredKeys: []}) as fc.Arbitrary<
     LexicalSchemaInput<T>
   >;

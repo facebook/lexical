@@ -18,6 +18,7 @@ import {
   getStaticNodeConfig,
   type Klass,
   type LexicalNode,
+  type LexicalSchemaInput,
   nodeSchema,
   numberValue,
   objectValue,
@@ -26,10 +27,12 @@ import {
   type SerializedLexicalNode,
   type SerializedPartial,
   type Spread,
+  stringValue,
   TextNode,
+  transformValue,
   withField,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, expectTypeOf, test} from 'vitest';
 
 type SerializedMergeNode = Spread<
   {variant: 'a' | 'b' | 'c'},
@@ -349,5 +352,43 @@ describe('an arbitrary covers the whole domain a schema declares', () => {
       }),
       {numRuns: 50},
     );
+  });
+});
+
+describe('a flat NodeState is generated as the JSON that carries it', () => {
+  // A state whose parse converts: the value type is Date, the JSON is a string.
+  const timestamp = createState('timestamp', {
+    parse: transformValue(stringValue('1970-01-01'), value => new Date(value), {
+      isEqual: (a, b) => a.getTime() === b.getTime(),
+    }),
+  });
+
+  class StampedNode extends ElementNode {
+    $config() {
+      return this.config('fast-check-stamped', {
+        extends: ElementNode,
+        stateConfigs: [{flat: true, stateConfig: timestamp}],
+      });
+    }
+    createDOM(): HTMLElement {
+      return document.createElement('div');
+    }
+    updateDOM(): boolean {
+      return false;
+    }
+  }
+
+  test('so its input type is unknown, not the parsed value type', () => {
+    // Typing it `Date` let a caller write `timestamp.getTime()` against a
+    // string, with no cast anywhere to warn them.
+    expectTypeOf<
+      LexicalSchemaInput<StampedNode>['timestamp']
+    >().toEqualTypeOf<unknown>();
+    for (const sample of fc.sample(nodeArbitrary(StampedNode), 20)) {
+      const {timestamp: value} = sample as {timestamp?: unknown};
+      // What is generated is what the JSON holds, which the state parses.
+      expect(value === undefined || typeof value === 'string').toBe(true);
+      expect(timestamp.parse(value)).toBeInstanceOf(Date);
+    }
   });
 });

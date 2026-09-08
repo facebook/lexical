@@ -4,7 +4,7 @@ module.exports = [
   {
     files: ['**/*.js'],
     ignores: [],
-    ...lexical.configs['flat/recommended'],
+    ...lexical.configs.recommended,
     rules: {
       '@lexical/rules-of-lexical': 'error',
     },

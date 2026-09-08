@@ -17,15 +17,7 @@ import jsPlugin from './LexicalEslintPlugin.js';
 
 export type {RulesOfLexicalOptions} from './rules/rules-of-lexical.js';
 
-// Legacy config format (ESLint 7-8)
-export interface LegacyConfig {
-  plugins: string[];
-  rules: {
-    '@lexical/rules-of-lexical': 'warn' | 'error' | 'off';
-  };
-}
-
-// Flat config format (ESLint 9-10+)
+// Flat config format (ESLint 9+)
 export interface FlatConfig {
   plugins: {
     '@lexical': Plugin;
@@ -45,12 +37,9 @@ export interface Plugin {
     'rules-of-lexical': Rule.RuleModule;
   };
   configs: {
-    // Legacy configs (ESLint 7-8) - available under multiple names
-    all: LegacyConfig;
-    'legacy-all': LegacyConfig;
-    'legacy-recommended': LegacyConfig;
-    recommended: LegacyConfig;
-    // Flat configs (ESLint 9-10+)
+    all: FlatConfig;
+    recommended: FlatConfig;
+    // Aliases from when `all` and `recommended` were the legacy configs
     'flat/all': FlatConfig;
     'flat/recommended': FlatConfig;
   };

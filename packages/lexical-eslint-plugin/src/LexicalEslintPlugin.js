@@ -14,11 +14,10 @@ import {SOURCE_VERSION} from './version.js';
 
 /**
  * @typedef {import('eslint').Rule.RuleModule} RuleModule
- * @typedef {{plugins: string[]; rules: {'@lexical/rules-of-lexical': 'warn' | 'error' | 'off'}}} LegacyConfig
  * @typedef {{plugins: {'@lexical': Plugin}; rules: {'@lexical/rules-of-lexical': 'warn' | 'error' | 'off'}}} FlatConfig
  * @typedef {{meta: {name: string; version: string}; rules: Rules; configs: Configs}} Plugin
  * @typedef {{'no-document-in-dom-methods': RuleModule; 'rules-of-lexical': RuleModule}} Rules
- * @typedef {{all: LegacyConfig; 'legacy-all': LegacyConfig; 'legacy-recommended': LegacyConfig; recommended: LegacyConfig; 'flat/all': FlatConfig; 'flat/recommended': FlatConfig}} Configs
+ * @typedef {{all: FlatConfig; recommended: FlatConfig; 'flat/all': FlatConfig; 'flat/recommended': FlatConfig}} Configs
  */
 
 // The plugin is assembled in functions declared free of side effects (and
@@ -52,13 +51,6 @@ function createMeta() {
  * @__NO_SIDE_EFFECTS__
  */
 function createConfigs(pluginMeta, pluginRules) {
-  /** @type {LegacyConfig} */
-  const legacyAll = {
-    plugins: ['@lexical'],
-    rules: {
-      '@lexical/rules-of-lexical': 'warn',
-    },
-  };
   // The flat configs reference the plugin, and the plugin carries the
   // configs, so the object the flat configs point at is created here with
   // the same rules, meta, and (once built) configs as the default export.
@@ -77,16 +69,15 @@ function createConfigs(pluginMeta, pluginRules) {
       '@lexical/rules-of-lexical': 'warn',
     },
   };
+  // Flat configs (ESLint 9+). `flat/all` and `flat/recommended` are the
+  // names from when `all` and `recommended` were the legacy (ESLint 7-8)
+  // configs, kept as aliases.
   /** @type {Configs} */
   const pluginConfigs = {
-    // Legacy configs (ESLint 7-8) - available under multiple names for compatibility
-    all: legacyAll,
-    // Flat configs (ESLint 9-10+)
+    all: flatAll,
     'flat/all': flatAll,
     'flat/recommended': flatAll,
-    'legacy-all': legacyAll,
-    'legacy-recommended': legacyAll,
-    recommended: legacyAll,
+    recommended: flatAll,
   };
   plugin.configs = pluginConfigs;
   return pluginConfigs;

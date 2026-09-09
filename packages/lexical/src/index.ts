@@ -224,6 +224,7 @@ export type {
   NodeMap,
   SerializedLexicalNode,
   SerializedPartial,
+  SerializedPartialNode,
   SlotChildNode,
   SlotHostNode,
   StaticNodeConfig,

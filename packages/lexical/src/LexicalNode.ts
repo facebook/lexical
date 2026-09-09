@@ -561,7 +561,7 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
   $slots?: Record<string, SerializedPartial<SerializedLexicalNode>>;
   /** Omitted by a compact export, like every other restorable property. */
   version?: number;
-} & (T extends {children: readonly (infer C extends SerializedLexicalNode)[]}
+} & (T extends {children: readonly SerializedLexicalNode[]}
     ? {
         /**
          * An element's children are nodes of the same document, written in the
@@ -569,11 +569,29 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
          * optional while still promising that everything in it is fully
          * serialized, which is untrue of every compact element but the leaves.
          */
-        children?: SerializedPartial<C>[];
+        children?: SerializedPartialNode[];
       }
     : // Not an element. Intersecting with `unknown` leaves the type alone,
       // rather than giving every node an optional `children` it never has.
       unknown);
+
+/**
+ * A node of a compact document read without knowing its type, which is every
+ * child: a node cannot declare what kind of children it accepts, so any node
+ * may appear under any element and there is no type to name their properties
+ * from. The outer node of a {@link SerializedPartial} is refinable — you know
+ * what you asked for — and its children never are.
+ *
+ * So the framework properties are the compact ones and everything else is
+ * `unknown`, which a reader narrows by `type` as it would any untrusted JSON.
+ * `children` recurse, because a compact export applies to a child exactly as it
+ * does to its parent: naming `SerializedPartial<SerializedLexicalNode>` here
+ * instead would leave a nested element unable to carry the children it has.
+ */
+export type SerializedPartialNode = SerializedPartial<SerializedLexicalNode> & {
+  children?: SerializedPartialNode[];
+  [key: string]: unknown;
+};
 
 /**
  * The shape {@link LexicalNode.updateFromJSON} accepts for a node whose

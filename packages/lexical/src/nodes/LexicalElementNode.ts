@@ -68,11 +68,15 @@ import {
   toggleTextFormatType,
 } from '../LexicalUtils';
 
-export type SerializedElementNode<
-  T extends SerializedLexicalNode = SerializedLexicalNode,
-> = Spread<
+/**
+ * No type parameter for the children: a node cannot declare what kind of
+ * children it accepts, so any node may appear under any element and
+ * `SerializedLexicalNode` is the only type this can honestly give them. The
+ * parameter that used to be here promised a narrowing nothing enforces.
+ */
+export type SerializedElementNode = Spread<
   {
-    children: T[];
+    children: SerializedLexicalNode[];
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;

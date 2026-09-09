@@ -31,10 +31,8 @@ import {
   type SerializedRootNode,
 } from './nodes/LexicalRootNode';
 
-export interface SerializedEditorState<
-  T extends SerializedLexicalNode = SerializedLexicalNode,
-> {
-  root: SerializedRootNode<T>;
+export interface SerializedEditorState {
+  root: SerializedRootNode;
 }
 
 /**
@@ -47,10 +45,8 @@ export interface SerializedEditorState<
  * a property the form omitted is absent, so promising the full type would
  * promise values that are not there.
  */
-export interface CompactSerializedEditorState<
-  T extends SerializedLexicalNode = SerializedLexicalNode,
-> {
-  root: SerializedPartial<SerializedRootNode<T>>;
+export interface CompactSerializedEditorState {
+  root: SerializedPartial<SerializedRootNode>;
 }
 
 export function editorStateHasDirtySelection(

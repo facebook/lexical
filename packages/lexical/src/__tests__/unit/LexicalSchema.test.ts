@@ -19,6 +19,7 @@ import {
   aliasedValue,
   arrayValue,
   booleanValue,
+  type CompactSerializedEditorState,
   createState,
   DecoratorNode,
   ElementNode,
@@ -41,9 +42,11 @@ import {
   rawValue,
   type SchemaInput,
   type SerializationSchemaValue,
+  type SerializedElementNode,
   type SerializedLexicalNode,
   type SerializedParagraphNode,
   type SerializedPartial,
+  type SerializedPartialNode,
   type SerializedTextNode,
   stringValue,
   TabNode,
@@ -2945,5 +2948,40 @@ describe('a value is parsed once per traversal', () => {
       value = {inner: value};
     }
     expect(count(schema as never, value)).toBe(1);
+  });
+});
+
+describe('a compact document relaxes at every depth', () => {
+  test('a nested element carries its own children', () => {
+    // The outer type is refinable — you know what you asked for — and its
+    // children are not: a node cannot declare what kind of children it takes,
+    // so any node may appear under any element. Naming them
+    // `SerializedPartial<SerializedLexicalNode>` said only what every node has,
+    // which left a nested element unable to carry the children it does have.
+    const compact: SerializedPartial<SerializedElementNode> = {
+      children: [
+        {
+          children: [{text: 'hi', type: 'text'}],
+          type: 'paragraph',
+        },
+      ],
+      type: 'root',
+    };
+    expect(compact.children).toHaveLength(1);
+  });
+
+  test('and the whole document does', () => {
+    const state: CompactSerializedEditorState = {
+      root: {children: [{type: 'paragraph'}], type: 'root'},
+    };
+    expect(state.root.children).toHaveLength(1);
+  });
+
+  test('a child property is unknown until it is narrowed', () => {
+    // There is no type to read a child's own properties from, so they arrive
+    // as `unknown` rather than as a promise the value may not keep.
+    expectTypeOf<SerializedPartialNode['text']>().toEqualTypeOf<unknown>();
+    // What every node does have keeps its type.
+    expectTypeOf<SerializedPartialNode['type']>().toEqualTypeOf<string>();
   });
 });

@@ -6,11 +6,7 @@
  *
  */
 
-import type {
-  LexicalNode,
-  SerializedLexicalNode,
-  SerializedPartial,
-} from '../LexicalNode';
+import type {LexicalNode, SerializedPartial} from '../LexicalNode';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -24,9 +20,7 @@ import {
   type SerializedElementNode,
 } from './LexicalElementNode';
 
-export type SerializedRootNode<
-  T extends SerializedLexicalNode = SerializedLexicalNode,
-> = SerializedElementNode<T>;
+export type SerializedRootNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class RootNode extends ElementNode {

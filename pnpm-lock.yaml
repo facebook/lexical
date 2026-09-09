@@ -680,9 +680,6 @@ importers:
       '@lexical/code-core':
         specifier: workspace:*
         version: link:../lexical-code-core
-      '@lexical/code-prism':
-        specifier: workspace:*
-        version: link:../lexical-code-prism
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension

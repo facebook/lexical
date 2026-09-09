@@ -909,8 +909,16 @@ declare export class LineBreakNode extends LexicalNode {
   createDOM(): HTMLElement;
   updateDOM(): false;
   isInline(): true;
+  // Both forms, because a Flow object property is invariant: `SerializedPartial`
+  // makes each property optional, and an optional property is not a supertype
+  // of a required one there, so naming only the relaxed form made the *full*
+  // serialized type unassignable — `LineBreakNode.importJSON(node.exportJSON())`
+  // stopped type-checking. TypeScript needs no union: a required property
+  // satisfies an optional one structurally.
   static importJSON(
-    serializedLineBreakNode: SerializedPartial<SerializedLineBreakNode>,
+    serializedLineBreakNode:
+      | SerializedLineBreakNode
+      | SerializedPartial<SerializedLineBreakNode>,
   ): LineBreakNode;
   // See LexicalNode.exportJSON: one signature, the legacy form, and `false`
   // rather than `boolean` so a compact call is refused instead of answered
@@ -1168,8 +1176,16 @@ declare export class ParagraphNode extends ElementNode {
     restoreSelection?: boolean,
   ): ParagraphNode;
   collapseAtStart(): boolean;
+  // Both forms, because a Flow object property is invariant: `SerializedPartial`
+  // makes each property optional, and an optional property is not a supertype
+  // of a required one there, so naming only the relaxed form made the *full*
+  // serialized type unassignable — `ParagraphNode.importJSON(node.exportJSON())`
+  // stopped type-checking. TypeScript needs no union: a required property
+  // satisfies an optional one structurally.
   static importJSON(
-    serializedParagraphNode: SerializedPartial<SerializedParagraphNode>,
+    serializedParagraphNode:
+      | SerializedParagraphNode
+      | SerializedPartial<SerializedParagraphNode>,
   ): ParagraphNode;
   // See LexicalNode.exportJSON: one signature, the legacy form, and `false`
   // rather than `boolean` so a compact call is refused instead of answered
@@ -1421,14 +1437,13 @@ declare export function createRefCountedRegistry<Key, Options = void>(
  * Serialization/Deserialization
  * */
 
-type InternalSerializedNode = {
-  children?: InternalSerializedNode[],
-  type: string,
-  version?: number,
-};
-
+// `SerializedPartialNode`, matching the TypeScript signature. This used to name
+// a private `InternalSerializedNode` of its own — `{children?, type, version?}`,
+// exact under `exact_by_default`, and so satisfied by neither `$slots` nor the
+// node state that `$parseSerializedNodeImpl` actually reads, nor by any of the
+// inexact serialized node types declared in this file.
 declare export function $parseSerializedNode(
-  serializedNode: InternalSerializedNode,
+  serializedNode: SerializedPartialNode,
 ): LexicalNode;
 
 declare export function $applyNodeReplacement<N extends LexicalNode>(
@@ -1489,20 +1504,26 @@ export type SerializedPartial<T extends SerializedLexicalNode> = {
 // A node of a compact document read without knowing its type, which is every
 // child: a node cannot declare what kind of children it accepts, so there is no
 // type to name their properties from. The outer node of a SerializedPartial is
-// refinable and its children never are, so this carries the framework
-// properties and nothing else — a node's own properties are not named, and a
-// reader refines by `type` as it would any untrusted JSON. `children` and
-// `$slots` recurse, because a compact export applies to a subtree exactly as it
-// does to its root. Inexact rather than indexed, for the reason the TypeScript
-// definition names no index signature: an indexer says "the key is there, we
-// cannot say what it holds", which is the opposite of the truth here and
-// answers for a misspelling just as readily.
+// refinable and its children never are, so the framework properties are named
+// and a node's own arrive as `unknown`, which a reader refines by `type` as it
+// would any untrusted JSON. `children` and `$slots` recurse, because a compact
+// export applies to a subtree exactly as it does to its root.
+//
+// Indexed, matching the TypeScript definition: without it a compact document
+// cannot be *written* — a hand-authored initial state, a fixture, a migration
+// script all name node-specific properties on a child, and TypeScript's
+// excess-property check refuses every one of them.
+//
+// The node-state key is spelled as the literal `$` rather than as
+// `[typeof NODE_STATE_KEY]`, which `NodeStateJSON` below uses: Flow has no
+// optional indexer (`[K]?:` is `unsupported-syntax`), and this key is optional.
 export type SerializedPartialNode = {
   type: string,
   version?: number,
   $?: {[string]: unknown},
   $slots?: {[string]: SerializedPartialNode},
   children?: Array<SerializedPartialNode>,
+  [string]: unknown,
   ...
 };
 

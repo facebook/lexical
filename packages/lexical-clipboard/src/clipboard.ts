@@ -56,6 +56,7 @@ import {
   type RangeSelection,
   safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
+  type SerializedPartialNode,
   shallowMergeConfig,
 } from 'lexical';
 
@@ -471,21 +472,17 @@ function $updateSelectionOnInsert(selection: BaseSelection): void {
   }
 }
 
-export interface BaseSerializedNode {
-  children?: BaseSerializedNode[];
-  /**
-   * Named slot subtrees keyed by slot name; present on serialized hosts.
-   * Mirrors {@link SerializedLexicalNode.$slots}.
-   * @experimental named-slots
-   */
-  $slots?: Record<string, BaseSerializedNode>;
-  type: string;
-  /**
-   * @deprecated Ignored when parsing, and omitted by a compact export; see
-   * {@link SerializedLexicalNode.version}.
-   */
-  version?: number;
-}
+/**
+ * A node of a clipboard payload, read without knowing its type.
+ *
+ * An alias of {@link SerializedPartialNode} rather than a fourth hand-copy of
+ * the same shape: this described a serialized node of unknown type, which is
+ * what that type is for, and the two had already drifted — this one names no
+ * NodeState, and having no index signature it was not assignable to the
+ * parameter of `$parseSerializedNode`, which is exactly what the payload is
+ * handed to. Kept as a name because it is exported.
+ */
+export type BaseSerializedNode = SerializedPartialNode;
 
 function $appendNodesToJSON(
   editor: LexicalEditor,

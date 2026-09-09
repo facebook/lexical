@@ -2765,76 +2765,152 @@ describe('a wrapper answers for its inner schema’s domain', () => {
   });
 });
 
-describe('a schema recognizes its own default', () => {
-  // A parse returns the default for everything out of domain, so a schema that
-  // declined that value would be rejecting what it had just produced. A union
-  // selects its member on `accepts`, so the cost is the whole value: the member
-  // that owns the data is passed over and the union falls back to its own.
-  //
-  // Every combinator that declares an `accepts` gets this from `makeSchema`
-  // rather than stating it itself — these are the shapes whose declared
-  // predicate really does say no to the value the schema defaults to.
-  const shapes = {
-    // Validates nothing, and its default is the one value it names.
-    'a raw value': rawValue<{note: string}>(),
-    // `accepts` describes the *input* domain while the default is an output,
-    // so once the transform leaves the inner type the two never coincide.
-    'a transform out of its inner type': transformValue(stringValue(), value =>
-      value.split(','),
-    ),
-    // `enumValue` checks `undefined` before membership, so the documented
-    // "make undefined the default" spelling declines the value it defaults to.
-    'an enum listing undefined': enumValue([undefined, 'top', 'middle']),
-    // A default outside the listed values, which `enumValue` allows.
-    'an enum whose default is not a value': enumValue(
-      ['top', 'middle'],
-      'unset' as 'top',
-    ),
-    // The derived default writes every declared key, so it is
-    // `{note: undefined}` — which the field's own predicate then declined,
-    // taking the enclosing object down with it.
-    'an object over a raw field': objectValue({note: rawValue<string>()}),
-  };
+describe('a schema declares the domain it reads, and only that', () => {
+  // `accepts` is a predicate on a schema's serialized *input*; `defaultValue`
+  // is one of its parsed *values*. An earlier version had `makeSchema` OR in
+  // `value === schema.defaultValue` around every declared predicate, to spare
+  // each combinator from restating "a schema recognizes its own default" —
+  // which conflated the two domains and cost more than it bought. These pin
+  // both halves: the shapes whose predicate really was wrong, fixed where they
+  // are declared, and the ones that must keep declining.
 
-  for (const [name, schema] of Object.entries(shapes)) {
-    test(name, () => {
-      // Each of these declares one; a shape that stopped would pass the
-      // assertion below vacuously.
-      expect(schema.accepts).toBeInstanceOf(Function);
-      expect(schema.accepts!(schema.defaultValue)).toBe(true);
-    });
-  }
+  test('a raw value validates nothing, so it declines nothing', () => {
+    // Was `value !== undefined`, which read as "an absent property is not
+    // mine" — but an absent property is exactly what a raw field holds when it
+    // has no value. `objectValue` asks this of every declared key the input
+    // carries, so one `{note: undefined}` took the whole enclosing object out
+    // of a union and lost every sibling property with it.
+    const raw = rawValue<string>();
+    expect(raw.accepts!(undefined)).toBe(true);
+    expect(raw.accepts!('hi')).toBe(true);
 
-  test('so a union keeps such a value instead of falling back', () => {
-    // The consequence, at the boundary where it is paid. A union reaches these
-    // through an enclosing `objectValue`, which asks each declared field about
-    // the input: a field holding the value its own schema defaults to said no,
-    // and the union answered `'auto'` — the whole object gone, not one
-    // property. (A union asked directly cannot reach them: it returns its
-    // fallback for an `undefined` input before consulting any member, so that
-    // a member whose domain contains `undefined` cannot contradict the default
-    // that compaction compares against.)
-    const raw = unionValue(
-      [objectValue({note: rawValue<string>()}), enumValue(['auto'])],
+    const union = unionValue(
+      [objectValue({note: raw, title: stringValue()}), enumValue(['auto'])],
       'auto',
     );
-    expect(raw({note: undefined})).toEqual({note: undefined});
-    expect(raw({note: 'hi'})).toEqual({note: 'hi'});
+    expect(union({note: undefined, title: 'keep me'})).toEqual({
+      note: undefined,
+      title: 'keep me',
+    });
+  });
 
-    const enumerated = unionValue(
+  test('an enum listing undefined recognizes it, when it is the default', () => {
+    // The documented spelling for defaulting to `undefined`, which
+    // `TableCellNode`'s `verticalAlign` uses. The parse reads `undefined` as
+    // "absent" before it checks membership, so claiming it is only honest when
+    // the default is `undefined` too.
+    expect(enumValue([undefined, 'top']).accepts!(undefined)).toBe(true);
+    // Listed but not the default: the parse answers `'top'`, so a union that
+    // committed here would be handed a value it never asked for.
+    expect(enumValue(['top', undefined]).accepts!(undefined)).toBe(false);
+    // And a default outside the listed values stays out of the domain.
+    expect(
+      enumValue(['top', 'middle'], 'unset' as 'top').accepts!('unset'),
+    ).toBe(false);
+
+    const union = unionValue(
       [
-        objectValue({align: enumValue([undefined, 'top'])}),
+        objectValue({align: enumValue([undefined, 'top']), id: stringValue()}),
         enumValue(['auto']),
       ],
       'auto',
     );
-    expect(enumerated({align: undefined})).toEqual({align: undefined});
-    expect(enumerated({align: 'top'})).toEqual({align: 'top'});
+    expect(union({align: undefined, id: 'x'})).toEqual({
+      align: undefined,
+      id: 'x',
+    });
+    expect(union({align: 'sideways', id: 'x'})).toBe('auto');
+  });
 
-    // Still declines what is genuinely out of domain — the escape widens the
-    // domain by exactly one value, not into "accepts anything".
-    expect(enumerated({align: 'sideways'})).toBe('auto');
-    expect(raw(42)).toBe('auto');
+  test('a constrained member still declines its own out-of-domain default', () => {
+    // What `unionValue`'s docblock promises, and what the blanket escape took
+    // away: a member whose `defaultValue` sits outside its own constraints is
+    // saying "this value is not mine", and the union must fall through.
+    expect(numberValue(0, {min: 1}).accepts!(0)).toBe(false);
+    expect(
+      unionValue([numberValue(0, {min: 1}), enumValue(['auto'])], 'auto')(0),
+    ).toBe('auto');
+    // The same for an enum whose default is not one of its values: the later
+    // member owns that value, and answers with its own type.
+    expect(
+      unionValue(
+        [enumValue(['a', 'b'], '42' as 'a'), numberValue()],
+        0 as never,
+      )('42'),
+    ).toBe(42);
+  });
+
+  test('a transform describes what it reads, not what it writes', () => {
+    // Its default is an output, so asking whether it "accepts its own default"
+    // is asking an input predicate about a value from the other side of the
+    // transform. The escape answered yes and a union then handed a caller
+    // `'n0'` where the member produces numbers.
+    const prefixed = transformValue(numberValue(), value => `n${value}`);
+    expect(prefixed.accepts!('n0')).toBe(false);
+    expect(prefixed.accepts!(0)).toBe(true);
+    expect(
+      unionValue(
+        [prefixed, aliasedValue(numberValue(), {n0: 42})],
+        0 as never,
+      )('n0'),
+    ).toBe(42);
+  });
+});
+
+describe('an array schema keeps what it can rather than falling back', () => {
+  test('one malformed element does not discard the good ones', () => {
+    // Asking `every` cost the whole array where the parse would have coerced a
+    // single element — and through an enclosing object, every sibling property
+    // with it.
+    expect(
+      unionValue(
+        [arrayValue(stringValue()), enumValue(['none'])],
+        'none',
+      )(['a', 1]),
+    ).toEqual(['a', '']);
+
+    const shape = objectValue({
+      label: stringValue(),
+      tags: arrayValue(numberValue()),
+    });
+    expect(
+      unionValue(
+        [shape, enumValue(['auto'])],
+        'auto',
+      )(JSON.parse('{"label":"keep me","tags":[1,null]}')),
+    ).toEqual({label: 'keep me', tags: [1, 0]});
+  });
+
+  test('an absent element says nothing either way', () => {
+    // A hole is filled from the item's own default exactly as `objectValue`
+    // fills an absent field, so an array of nothing else has nothing to
+    // contradict — as the empty array has nothing to contradict.
+    expect(arrayValue(stringValue()).accepts!(new Array(2))).toBe(true);
+    expect(arrayValue(stringValue()).accepts!([undefined])).toBe(true);
+    expect(arrayValue(stringValue()).accepts!([])).toBe(true);
+  });
+
+  test('and still picks the variant whose items match', () => {
+    // The selection this predicate exists for, undamaged by the leniency:
+    // nothing in these arrays is in the other member's item domain.
+    expect(
+      unionValue(
+        [arrayValue(numberValue()), arrayValue(stringValue())],
+        [] as never,
+      )(['red', 'blue']),
+    ).toEqual(['red', 'blue']);
+    expect(
+      unionValue(
+        [
+          arrayValue(objectValue({x: numberValue()})),
+          arrayValue(objectValue({y: numberValue()})),
+        ],
+        [] as never,
+      )([{y: 1}]),
+    ).toEqual([{y: 1}]);
+    expect(
+      objectValue({tags: arrayValue(stringValue())}).accepts!({tags: [1]}),
+    ).toBe(false);
   });
 });
 
@@ -3051,28 +3127,23 @@ describe('a compact document relaxes at every depth', () => {
     expect(state.root.children).toHaveLength(1);
   });
 
-  test('a child names only what every node has, so a reader narrows', () => {
-    const child: SerializedPartialNode = {type: 'text'};
-    // A property a particular node has is not on the partial type at all.
-    // Typing those keys `unknown` through an index signature read as "we know
-    // the key is there, we just cannot say what it holds", which is the
-    // opposite of the truth — and it made every misspelling legal as well,
-    // since an index signature answers for `childern` too.
-    // @ts-expect-error - `text` belongs to SerializedTextNode, not to any node
-    const misread: unknown = child.text;
-    expect(misread).toBeUndefined();
-    // Narrowing on the one property every node carries is what gets it back,
-    // and that is a claim about the value the reader has to make deliberately.
-    if (child.type === 'text') {
-      const text = child as SerializedPartial<SerializedTextNode>;
-      expectTypeOf(text.text).toEqualTypeOf<string | undefined>();
-      expect(text.text).toBeUndefined();
-    }
+  test('a child property is unknown until it is narrowed', () => {
+    // There is no type to read a child's own properties from, so they arrive
+    // as `unknown` rather than as a promise the value may not keep — and a
+    // document stays writable as a literal, which closing the type took away.
+    expectTypeOf<SerializedPartialNode['text']>().toEqualTypeOf<unknown>();
     // What every node does have keeps its type, at every depth.
     expectTypeOf<SerializedPartialNode['type']>().toEqualTypeOf<string>();
     expectTypeOf<SerializedPartialNode['children']>().toEqualTypeOf<
       SerializedPartialNode[] | undefined
     >();
+    // And a child really can carry a node's own data, which is the whole point
+    // of a compact document being something you can write down.
+    const doc: SerializedPartial<SerializedElementNode> = {
+      children: [{children: [{text: 'hi', type: 'text'}], type: 'paragraph'}],
+      type: 'root',
+    };
+    expect(doc.children?.[0].children).toHaveLength(1);
   });
 });
 

@@ -582,14 +582,22 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
  * from. The outer node of a {@link SerializedPartial} is refinable — you know
  * what you asked for — and its children never are.
  *
- * So this carries the framework properties and nothing else. A node's own
- * properties are not named — there is no type to name them from — and a reader
- * narrows by `type` as it would any untrusted JSON, which is also what keeps a
- * misspelled property on a child an error rather than a silent default at load.
- * `children` and `$slots` recurse, because a compact export applies to a
- * subtree exactly as it does to its root: naming
- * `SerializedPartial<SerializedLexicalNode>` for them instead would leave a
- * nested element unable to carry the children it has.
+ * So the framework properties are named and a node's own arrive as `unknown`,
+ * which a reader narrows by `type` as it would any untrusted JSON. `children`
+ * and `$slots` recurse, because a compact export applies to a subtree exactly
+ * as it does to its root: naming `SerializedPartial<SerializedLexicalNode>` for
+ * them instead would leave a nested element unable to carry the children it has.
+ *
+ * The index signature is what lets a document be *written*. Without it every
+ * node-specific property on a child is an excess-property error, so
+ * `editor.parseEditorState({root: {children: [{children: [{text: 'hi', type:
+ * 'text'}], …}], …}})` — a hand-authored initial state, the most ordinary
+ * literal a caller writes — does not compile, and neither does a fixture, a
+ * migration script, or `$parseSerializedNode` on a literal. Closing the type
+ * was tried for the misspelling it would catch; excess-property checking fires
+ * only on fresh literals, and everything arriving at load comes from
+ * `JSON.parse`, so it caught no misspelling that mattered and cost every
+ * correct property. Flow's counterpart is inexact for the same reason.
  */
 export type SerializedPartialNode = {
   /** The one property every node carries and a reader narrows by. */
@@ -602,6 +610,8 @@ export type SerializedPartialNode = {
   $slots?: Record<string, SerializedPartialNode>;
   /** Present when the node is an element; the same form all the way down. */
   children?: SerializedPartialNode[];
+  /** A node's own properties: there is no type here to name them from. */
+  [key: string]: unknown;
 };
 
 /**

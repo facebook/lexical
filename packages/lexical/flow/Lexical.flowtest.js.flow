@@ -46,7 +46,14 @@ import type {
   TextNode,
 } from 'lexical';
 
-import {defineExtension} from 'lexical';
+import type {LexicalNode} from 'lexical';
+
+import {
+  $parseSerializedNode,
+  defineExtension,
+  LineBreakNode,
+  ParagraphNode,
+} from 'lexical';
 
 type SmokeConfig = {greeting: string};
 
@@ -139,15 +146,13 @@ export const flowCompactElement: SerializedPartial<SerializedElementNode> = {
   type: 'root',
 };
 
-// A child names only what every node has. There is no type to read `text`
-// from — any node may appear under any element — so a reader refines by `type`
-// as it would with any untrusted JSON. An indexer would have answered `unknown`
-// here, which reads as "the key is there, we cannot say what it holds": the
-// opposite of the truth, and just as willing to answer for a misspelling.
+// A child's own properties are `unknown` — there is no type to name them from
+// — so a reader refines by `type` as it would with any untrusted JSON. Flow's
+// object is inexact here for the reason TypeScript's carries an index
+// signature: a compact document has to remain something you can write down.
 export function flowCompactChildIsNotNamed(
   child: SerializedPartialNode,
 ): unknown {
-  // $FlowExpectedError[prop-missing] `text` belongs to SerializedTextNode
   return child.text;
 }
 
@@ -183,4 +188,33 @@ export function flowLegacyNodeExport(node: TextNode): [number, unknown] {
     // $FlowExpectedError[incompatible-type] the declaration takes no `true`
     node.exportJSON(true) as $FlowFixMe;
   return [legacy.version, compact.type];
+}
+
+// A node's own full serialized type is what `exportJSON()` returns, and feeding
+// it straight back to `importJSON` is the most ordinary thing a caller does.
+// Flow compares an object property invariantly, so an `importJSON` declared
+// over `SerializedPartial<T>` alone — every property optional — refuses the
+// required-property `T`, and this round trip stopped type-checking.
+export function flowImportJSONTakesBothForms(
+  p: ParagraphNode,
+  l: LineBreakNode,
+): LexicalNode {
+  ParagraphNode.importJSON(p.exportJSON());
+  // And the relaxed form a compact document carries still goes through.
+  ParagraphNode.importJSON({type: 'paragraph'});
+  LineBreakNode.importJSON({type: 'linebreak'});
+  return LineBreakNode.importJSON(l.exportJSON());
+}
+
+// The public parse entry point takes a node of unknown type, node state and
+// slots included — a payload `@lexical/clipboard` builds and hands straight
+// back. Nothing called it before, so a parameter type that admitted none of
+// those went unnoticed.
+export function flowParseSerializedNode(): LexicalNode {
+  $parseSerializedNode({
+    $: {myState: 1},
+    children: [{text: 'hi', type: 'text'}],
+    type: 'paragraph',
+  });
+  return $parseSerializedNode({type: 'linebreak'});
 }

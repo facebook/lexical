@@ -21,7 +21,11 @@ function exportJSONParameterLists(source: string): string[] {
   const lists: string[] = [];
   // `exportJSON` followed by `(` is the method; `exportJSON:` is the property
   // on a DOM-export config, which takes a node rather than a compact flag.
-  const re = /\bexportJSON\s*\(/g;
+  // `static? exportJSON(` at the start of a member, not `.exportJSON(`: `\b`
+  // matches after a dot too, so a *call* — `node.exportJSON(true)`, which the
+  // flowtest file makes — was collected as a declaration and either reported as
+  // a bogus offender or padded the count enough to hide a real one.
+  const re = /(?:^|[;{}])\s*(?:static\s+)?exportJSON\s*\(/gm;
   for (let m = re.exec(code); m !== null; m = re.exec(code)) {
     let depth = 1;
     let i = re.lastIndex;
@@ -37,6 +41,14 @@ function exportJSONParameterLists(source: string): string[] {
     // reads the same as one that fits on a single line. The line-anchored
     // regex this replaced saw only the latter, so a wrap would have dropped a
     // declaration from the scan without failing anything.
+    if (depth !== 0) {
+      // The scan lost track — a stray paren, or a comment stripper that ate
+      // one. Say so, rather than pushing the rest of the file as a parameter
+      // list and silently dropping every later declaration with it.
+      throw new Error(
+        `exportJSONParameterLists: unbalanced parentheses after offset ${m.index}`,
+      );
+    }
     lists.push(
       code
         .slice(re.lastIndex, i - 1)
@@ -85,7 +97,11 @@ describe('a Flow exportJSON declaration refuses a compact call', () => {
     // takes nothing at all refuses a compact call too, and is equally fine.
     expect(
       declarations.filter(
-        decl => !/exportJSON\((|compact\?: false)\)$/.test(decl),
+        // A trailing comma is allowed because Prettier is configured with
+        // `trailingComma: "all"`: the moment a declaration is wrapped across
+        // lines — the case this scanner exists to read — the collapsed list is
+        // `compact?: false,`, and a correct, Prettier-formatted file failed.
+        decl => !/exportJSON\((|compact\?: false,?)\)$/.test(decl),
       ),
     ).toEqual([]);
     // A guard that finds nothing to check is not a guard, and the exact count

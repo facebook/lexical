@@ -220,12 +220,13 @@ export interface SerializationSchema<T, Decls = never, In = T> {
    * *normalizes into* its own default, which is why a schema that accepts more
    * than its own value type says so directly.
    *
-   * Reading it always answers `true` for this schema's own `defaultValue`,
-   * whatever the predicate a combinator declared would say: the parse returns
-   * that value for everything out of domain, so a schema declining it would be
-   * rejecting what it had just produced, and an enclosing union would discard
-   * the result. A combinator declaring one therefore only has to describe the
-   * domain it reads — the escape is added around it.
+   * This asks about a serialized *input*, not about a parsed value, so it is
+   * not a predicate on `T`: a schema that reads more than it writes accepts
+   * inputs no `T` ever equals, and a {@link transformValue} out of its inner
+   * type accepts none of the values it produces. In particular, a combinator
+   * may — and {@link numberValue} with a `min` deliberately does — decline the
+   * very value it defaults to, which is how a union member says "this value is
+   * not mine" and lets the union fall through to the member that owns it.
    */
   accepts?(value: unknown): boolean;
 }
@@ -694,27 +695,24 @@ function makeSchema<T, Decls = never, In = T>(
   // The cast is the phantom: `Names` has no runtime member to assign, which
   // is the whole point of carrying it in the type alone.
   return Object.assign(parse, {
-    // A schema always recognizes its own default, so the escape is added here
-    // rather than left to each combinator: the parse returns that value for
-    // everything out of domain, and a schema that declined it would be
-    // rejecting what it had just produced. `objectValue({r: rawValue()})`
-    // derives `{r: undefined}` as its default — the parse writes every declared
-    // key — and then said no to it, so an enclosing union discarded the whole
-    // object rather than the one property, on any input carrying `r` at the
-    // value `r`'s own schema defaults to.
+    // Passed through as declared. An earlier version wrapped this as
+    // `value === resolved || accepts(value)`, to spare each combinator from
+    // restating "a schema recognizes its own default" — which was the wrong
+    // rule in the wrong place. `accepts` is a predicate on a schema's *input*
+    // (`In`), and `defaultValue` is one of its *values* (`T`); the two are the
+    // same domain only where a schema reads exactly what it writes. Comparing
+    // them made `transformValue(numberValue(), v => 'n' + v)` claim the input
+    // `'n0'` because that is what its transform *produced*, and a union then
+    // handed a caller a value from the wrong side of the transform.
     //
-    // The parse-inference in `$schemaMatch` always had this clause; declaring
-    // an `accepts` bypassed it. Four shapes need it: `rawValue`, whose default
-    // is `undefined`; an `enumValue` whose default is not one of its values,
-    // including the `enumValue([undefined, …])` form the docs give for making
-    // `undefined` the default and `TableCellNode`'s `verticalAlign` uses; and
-    // `transformValue`, whose `accepts` describes the input domain while its
-    // default is an output. Wrapping it here also keeps the public
-    // `schema.accepts` honest for a caller asking it directly.
-    accepts:
-      accepts === undefined
-        ? undefined
-        : (value: unknown) => value === resolved || accepts(value),
+    // It was also wrong within one domain: a member that declares a default
+    // outside its own constraints (`numberValue(0, {min: 1})`) started
+    // accepting the one value it exists to reject, so the fall-through
+    // `unionValue`'s docblock promises stopped happening. And being `===`, it
+    // never fired for a reference-typed default read back from JSON — inert
+    // exactly where a caller would reach for it. The shapes that needed it
+    // needed their own predicate fixed instead; see `rawValue` and `enumValue`.
+    accepts,
     defaultValue: resolved,
     getter: accessors.getter,
     isEqual,
@@ -1045,9 +1043,18 @@ export function enumValue<const T>(
     // is in this domain costs no parse: `$schemaMatch` falls back to inferring
     // membership from a parse, and a caller that only wanted the answer — an
     // `objectValue` asking about each of its fields — would then parse the
-    // value once to decide and once to read it. The parse's own test, `undefined`
-    // included, so the two cannot answer differently.
-    value => value !== undefined && allowed.has(value),
+    // value once to decide and once to read it.
+    //
+    // The parse's own test. `undefined` is the one value the two could disagree
+    // about: the parse reads it as "absent" before it checks membership, and
+    // answers with the default. Claiming it is honest only when the default
+    // *is* `undefined` — `enumValue([undefined, 'top'])`, the documented
+    // spelling for defaulting to `undefined` that `TableCellNode`'s
+    // `verticalAlign` uses. Listed but not the default (`enumValue(['top',
+    // undefined])`) the parse answers `'top'`, so a union that committed here
+    // would be handed a value it never asked for.
+    value =>
+      allowed.has(value) && (value !== undefined || defaultValue === undefined),
   );
 }
 
@@ -1177,9 +1184,8 @@ function $schemaMatch(
   const {accepts} = schema;
   if (accepts !== undefined) {
     // Asked through `$acceptsValue` rather than by calling the destructured
-    // `accepts` — the same answer today, since `makeSchema` wraps whatever a
-    // combinator declares and both read that wrapper, but membership is then
-    // one function rather than two that have to be kept agreeing.
+    // `accepts`, so that every membership question in the file goes through one
+    // function — `aliasedValue` is the last site that still open-codes it.
     return $acceptsValue(schema, value) ? {parsed: schema(value)} : undefined;
   }
   const parsed = schema(value);
@@ -1264,8 +1270,8 @@ function $sameContent(a: unknown, b: unknown): boolean {
  * is `defaultValue` when given, otherwise the first member's default.
  *
  * The inference above is only the fallback. A member that declares its own
- * domain — every combinator but {@link arrayValue} and {@link objectValue} —
- * is asked directly, which is the only way to recognize a value it normalizes
+ * domain — which every combinator here does — is asked directly, and that is
+ * the only way to recognize a value it normalizes
  * *into* its own default (`numberValue()` reading `'0'`). A member whose
  * `defaultValue` lies outside its own constrained domain
  * (`numberValue(0, {min: 1})`) is therefore declined for that value rather
@@ -1531,7 +1537,6 @@ export function aliasedValue<
   // Object.prototype's method and be stored as this property's value.
   const isAlias = (value: unknown): value is string =>
     typeof value === 'string' && hasOwnKey(aliases, value);
-  const {accepts} = inner;
   return makeSchema(
     value => (isAlias(value) ? (aliases[value] as T) : inner(value)),
     {aliases, inner, kind: 'aliased'},
@@ -1545,13 +1550,9 @@ export function aliasedValue<
     // is precisely what the parse-inference cannot see — it lands on the
     // default, and the input is not the default, so the inference reads it as
     // a fallback and a union skips the member that in fact accepts it. Saying
-    // so here is the only way to answer for those, and for the rest this
-    // defers to the same inference a union would have made.
-    value =>
-      isAlias(value) ||
-      (accepts === undefined
-        ? $schemaMatch(inner, value) !== undefined
-        : accepts(value)),
+    // so here is the only way to answer for those; everything else is the
+    // inner schema's own domain, asked through the one membership helper.
+    value => isAlias(value) || $acceptsValue(inner, value),
   );
 }
 
@@ -1684,12 +1685,15 @@ export function rawValue<T>(): SerializationSchema<
     // is in this domain costs no parse: `$schemaMatch` falls back to inferring
     // membership from a parse, and a caller that only wanted the answer — an
     // `objectValue` asking about each of its fields — would then parse the
-    // value once to decide and once to read it. Everything but `undefined`: it
-    // validates nothing, so there is nothing else to decline. `undefined` is
-    // this schema's own default, which `makeSchema` accepts on every schema's
-    // behalf, so what a caller sees through `schema.accepts` is in fact
-    // everything — which is the domain a schema that validates nothing has.
-    value => value !== undefined,
+    // value once to decide and once to read it.
+    //
+    // Everything, `undefined` included: this schema validates nothing, so it
+    // has nothing to decline. Excluding `undefined` here read as "an absent
+    // property is not mine", but an absent property is precisely what a raw
+    // field holds when it has no value — and `objectValue` asks this of every
+    // declared key the input carries, so one `{note: undefined}` took the whole
+    // enclosing object out of a union and lost every sibling property with it.
+    () => true,
   );
 }
 
@@ -1758,22 +1762,38 @@ export function arrayValue<T, In = T>(
     // of them and coerce the elements into its own item domain —
     // `unionValue([arrayValue(numberValue()), arrayValue(stringValue())])`
     // read `['red', 'blue']` as `[0, 0]`, and with object items the payload
-    // went missing entirely. It also laundered through an enclosing object:
-    // `objectValue({tags: arrayValue(stringValue())})` accepted `{tags: [1]}`
-    // on the strength of an `accepts` its own parse contradicts.
+    // went missing entirely.
     //
-    // An index loop rather than `every`, which skips the holes of a sparse
-    // array — the same reason the comparator above uses one.
+    // *Some* element, not every. A union selects on this and a decline costs
+    // the whole array — where accepting costs at most one element, coerced to
+    // the item's default, which is what the parse does with a malformed
+    // element regardless. Asking `every` made one bad element discard every
+    // good one: `['a', 1]` fell through to a later member and lost the `'a'`,
+    // `{"label": "keep", "tags": [1, null]}` lost the label along with the
+    // array, and an `arrayValue` over a `transformValue` declined the very
+    // array it had produced, so a document was lost on reload rather than on
+    // import.
+    //
+    // An index loop rather than `some`, and one that passes over an absent
+    // element: a hole (or an explicit `undefined`) is filled from the item's
+    // own default exactly as `objectValue` fills an absent field, so it says
+    // nothing either way — and an array holding nothing else has nothing to
+    // contradict, which is the empty array's answer too.
     value => {
       if (!Array.isArray(value)) {
         return false;
       }
+      let judged = false;
       for (let i = 0; i < value.length; i++) {
-        if (!$acceptsValue(item, value[i])) {
-          return false;
+        if (value[i] === undefined) {
+          continue;
+        }
+        judged = true;
+        if ($acceptsValue(item, value[i])) {
+          return true;
         }
       }
-      return true;
+      return !judged;
     },
   );
 }

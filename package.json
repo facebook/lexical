@@ -196,7 +196,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.1",
     "vite": "^8.0.16",
-    "vitest": "^4.1.8",
+    "vitest": "^4.1.11",
     "y-websocket": "^2.1.0"
   },
   "dependencies": {

@@ -13,7 +13,6 @@
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
-    "@lexical/code-prism": "workspace:*",
     "@lexical/extension": "workspace:*",
     "lexical": "workspace:*"
   },
@@ -23,7 +22,7 @@
     "directory": "packages/lexical-code"
   },
   "module": "./dist/LexicalCode.js",
-  "sideEffects": true,
+  "sideEffects": false,
   "exports": {
     ".": {
       "source": "./src/index.ts",

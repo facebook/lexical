@@ -2765,6 +2765,79 @@ describe('a wrapper answers for its inner schema’s domain', () => {
   });
 });
 
+describe('a schema recognizes its own default', () => {
+  // A parse returns the default for everything out of domain, so a schema that
+  // declined that value would be rejecting what it had just produced. A union
+  // selects its member on `accepts`, so the cost is the whole value: the member
+  // that owns the data is passed over and the union falls back to its own.
+  //
+  // Every combinator that declares an `accepts` gets this from `makeSchema`
+  // rather than stating it itself — these are the shapes whose declared
+  // predicate really does say no to the value the schema defaults to.
+  const shapes = {
+    // Validates nothing, and its default is the one value it names.
+    'a raw value': rawValue<{note: string}>(),
+    // `accepts` describes the *input* domain while the default is an output,
+    // so once the transform leaves the inner type the two never coincide.
+    'a transform out of its inner type': transformValue(stringValue(), value =>
+      value.split(','),
+    ),
+    // `enumValue` checks `undefined` before membership, so the documented
+    // "make undefined the default" spelling declines the value it defaults to.
+    'an enum listing undefined': enumValue([undefined, 'top', 'middle']),
+    // A default outside the listed values, which `enumValue` allows.
+    'an enum whose default is not a value': enumValue(
+      ['top', 'middle'],
+      'unset' as 'top',
+    ),
+    // The derived default writes every declared key, so it is
+    // `{note: undefined}` — which the field's own predicate then declined,
+    // taking the enclosing object down with it.
+    'an object over a raw field': objectValue({note: rawValue<string>()}),
+  };
+
+  for (const [name, schema] of Object.entries(shapes)) {
+    test(name, () => {
+      // Each of these declares one; a shape that stopped would pass the
+      // assertion below vacuously.
+      expect(schema.accepts).toBeInstanceOf(Function);
+      expect(schema.accepts!(schema.defaultValue)).toBe(true);
+    });
+  }
+
+  test('so a union keeps such a value instead of falling back', () => {
+    // The consequence, at the boundary where it is paid. A union reaches these
+    // through an enclosing `objectValue`, which asks each declared field about
+    // the input: a field holding the value its own schema defaults to said no,
+    // and the union answered `'auto'` — the whole object gone, not one
+    // property. (A union asked directly cannot reach them: it returns its
+    // fallback for an `undefined` input before consulting any member, so that
+    // a member whose domain contains `undefined` cannot contradict the default
+    // that compaction compares against.)
+    const raw = unionValue(
+      [objectValue({note: rawValue<string>()}), enumValue(['auto'])],
+      'auto',
+    );
+    expect(raw({note: undefined})).toEqual({note: undefined});
+    expect(raw({note: 'hi'})).toEqual({note: 'hi'});
+
+    const enumerated = unionValue(
+      [
+        objectValue({align: enumValue([undefined, 'top'])}),
+        enumValue(['auto']),
+      ],
+      'auto',
+    );
+    expect(enumerated({align: undefined})).toEqual({align: undefined});
+    expect(enumerated({align: 'top'})).toEqual({align: 'top'});
+
+    // Still declines what is genuinely out of domain — the escape widens the
+    // domain by exactly one value, not into "accepts anything".
+    expect(enumerated({align: 'sideways'})).toBe('auto');
+    expect(raw(42)).toBe('auto');
+  });
+});
+
 describe('a union compares by content, not by a member’s comparator', () => {
   // The transform leaves the string domain entirely, so nothing about what the
   // member accepts says anything about the arrays it produces.
@@ -2961,13 +3034,14 @@ describe('a compact document relaxes at every depth', () => {
     const compact: SerializedPartial<SerializedElementNode> = {
       children: [
         {
-          children: [{text: 'hi', type: 'text'}],
+          children: [{type: 'text'}],
           type: 'paragraph',
         },
       ],
       type: 'root',
     };
     expect(compact.children).toHaveLength(1);
+    expect(compact.children?.[0].children).toHaveLength(1);
   });
 
   test('and the whole document does', () => {
@@ -2977,12 +3051,28 @@ describe('a compact document relaxes at every depth', () => {
     expect(state.root.children).toHaveLength(1);
   });
 
-  test('a child property is unknown until it is narrowed', () => {
-    // There is no type to read a child's own properties from, so they arrive
-    // as `unknown` rather than as a promise the value may not keep.
-    expectTypeOf<SerializedPartialNode['text']>().toEqualTypeOf<unknown>();
-    // What every node does have keeps its type.
+  test('a child names only what every node has, so a reader narrows', () => {
+    const child: SerializedPartialNode = {type: 'text'};
+    // A property a particular node has is not on the partial type at all.
+    // Typing those keys `unknown` through an index signature read as "we know
+    // the key is there, we just cannot say what it holds", which is the
+    // opposite of the truth — and it made every misspelling legal as well,
+    // since an index signature answers for `childern` too.
+    // @ts-expect-error - `text` belongs to SerializedTextNode, not to any node
+    const misread: unknown = child.text;
+    expect(misread).toBeUndefined();
+    // Narrowing on the one property every node carries is what gets it back,
+    // and that is a claim about the value the reader has to make deliberately.
+    if (child.type === 'text') {
+      const text = child as SerializedPartial<SerializedTextNode>;
+      expectTypeOf(text.text).toEqualTypeOf<string | undefined>();
+      expect(text.text).toBeUndefined();
+    }
+    // What every node does have keeps its type, at every depth.
     expectTypeOf<SerializedPartialNode['type']>().toEqualTypeOf<string>();
+    expectTypeOf<SerializedPartialNode['children']>().toEqualTypeOf<
+      SerializedPartialNode[] | undefined
+    >();
   });
 });
 

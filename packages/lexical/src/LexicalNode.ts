@@ -558,7 +558,7 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
   '$slots' | 'children' | 'version'
 > & {
   /** Slot values are parsed by the same rules, so they relax the same way. */
-  $slots?: Record<string, SerializedPartial<SerializedLexicalNode>>;
+  $slots?: Record<string, SerializedPartialNode>;
   /** Omitted by a compact export, like every other restorable property. */
   version?: number;
 } & (T extends {children: readonly SerializedLexicalNode[]}
@@ -582,15 +582,26 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
  * from. The outer node of a {@link SerializedPartial} is refinable — you know
  * what you asked for — and its children never are.
  *
- * So the framework properties are the compact ones and everything else is
- * `unknown`, which a reader narrows by `type` as it would any untrusted JSON.
- * `children` recurse, because a compact export applies to a child exactly as it
- * does to its parent: naming `SerializedPartial<SerializedLexicalNode>` here
- * instead would leave a nested element unable to carry the children it has.
+ * So this carries the framework properties and nothing else. A node's own
+ * properties are not named — there is no type to name them from — and a reader
+ * narrows by `type` as it would any untrusted JSON, which is also what keeps a
+ * misspelled property on a child an error rather than a silent default at load.
+ * `children` and `$slots` recurse, because a compact export applies to a
+ * subtree exactly as it does to its root: naming
+ * `SerializedPartial<SerializedLexicalNode>` for them instead would leave a
+ * nested element unable to carry the children it has.
  */
-export type SerializedPartialNode = SerializedPartial<SerializedLexicalNode> & {
+export type SerializedPartialNode = {
+  /** The one property every node carries and a reader narrows by. */
+  type: string;
+  /** Omitted by a compact export, like every other restorable property. */
+  version?: number;
+  /** Node state, parsed by the same rules whatever the node turns out to be. */
+  [NODE_STATE_KEY]?: Record<string, unknown>;
+  /** A slot holds a node subtree, so it relaxes exactly as `children` do. */
+  $slots?: Record<string, SerializedPartialNode>;
+  /** Present when the node is an element; the same form all the way down. */
   children?: SerializedPartialNode[];
-  [key: string]: unknown;
 };
 
 /**

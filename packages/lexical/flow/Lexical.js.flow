@@ -1482,20 +1482,27 @@ export type SerializedPartial<T extends SerializedLexicalNode> = {
   ...(T extends {children: Array<infer _C>, ...}
     ? {children?: Array<SerializedPartialNode>}
     : {}),
-  $slots?: {[string]: SerializedPartial<SerializedLexicalNode>},
+  $slots?: {[string]: SerializedPartialNode},
   ...
 };
 
 // A node of a compact document read without knowing its type, which is every
 // child: a node cannot declare what kind of children it accepts, so there is no
 // type to name their properties from. The outer node of a SerializedPartial is
-// refinable and its children never are, so the framework properties are the
-// compact ones and everything else is `unknown`. `children` recurse, because a
-// compact export applies to a child as it does to its parent.
+// refinable and its children never are, so this carries the framework
+// properties and nothing else — a node's own properties are not named, and a
+// reader refines by `type` as it would any untrusted JSON. `children` and
+// `$slots` recurse, because a compact export applies to a subtree exactly as it
+// does to its root. Inexact rather than indexed, for the reason the TypeScript
+// definition names no index signature: an indexer says "the key is there, we
+// cannot say what it holds", which is the opposite of the truth here and
+// answers for a misspelling just as readily.
 export type SerializedPartialNode = {
-  ...SerializedPartial<SerializedLexicalNode>,
+  type: string,
+  version?: number,
+  $?: {[string]: unknown},
+  $slots?: {[string]: SerializedPartialNode},
   children?: Array<SerializedPartialNode>,
-  [string]: unknown,
   ...
 };
 

@@ -16,8 +16,6 @@ import invariant from '@lexical/internal/invariant';
 
 import {$isElementNode} from '.';
 
-const __DEV__ = process.env.NODE_ENV !== 'production';
-
 /**
  * Whether the export in progress is writing the compact form. A module-scope
  * flag rather than something threaded through every walk, because the walks it

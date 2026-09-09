@@ -6,11 +6,7 @@
  *
  */
 
-import type {
-  LexicalNode,
-  SerializedLexicalNode,
-  SerializedPartial,
-} from './LexicalNode';
+import type {LexicalNode, SerializedPartialNode} from './LexicalNode';
 
 import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
@@ -405,7 +401,12 @@ type InternalSerializedNode = {
 
 /** Deserializes a SerializedLexicalNode JSON object into its corresponding LexicalNode instance. */
 export function $parseSerializedNode(
-  serializedNode: SerializedPartial<SerializedLexicalNode>,
+  // The node's type is not known here — that is what it reads `type` to
+  // discover — so this is `SerializedPartialNode`, which carries children and
+  // leaves the node-specific properties `unknown`. Naming
+  // `SerializedPartial<SerializedLexicalNode>` rejected any element subtree
+  // written as a literal, since that type has no `children` at all.
+  serializedNode: SerializedPartialNode,
 ): LexicalNode {
   const internalSerializedNode: InternalSerializedNode = serializedNode;
   return $parseSerializedNodeImpl(

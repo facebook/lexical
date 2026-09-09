@@ -42,6 +42,7 @@ import type {
   SerializedElementNode,
   SerializedLexicalNode,
   SerializedPartial,
+  SerializedPartialNode,
   TextNode,
 } from 'lexical';
 
@@ -137,6 +138,18 @@ export const flowCompactElement: SerializedPartial<SerializedElementNode> = {
   children: [{children: [{type: 'text'}], type: 'paragraph'}],
   type: 'root',
 };
+
+// A child names only what every node has. There is no type to read `text`
+// from — any node may appear under any element — so a reader refines by `type`
+// as it would with any untrusted JSON. An indexer would have answered `unknown`
+// here, which reads as "the key is there, we cannot say what it holds": the
+// opposite of the truth, and just as willing to answer for a misspelling.
+export function flowCompactChildIsNotNamed(
+  child: SerializedPartialNode,
+): unknown {
+  // $FlowExpectedError[prop-missing] `text` belongs to SerializedTextNode
+  return child.text;
+}
 
 // Both serialization forms cross the two public boundaries that carry them.
 // A Flow object property is invariant, so naming only the compact shape on

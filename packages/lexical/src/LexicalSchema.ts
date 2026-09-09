@@ -8,8 +8,6 @@
 
 import invariant from '@lexical/internal/invariant';
 
-const __DEV__ = process.env.NODE_ENV !== 'production';
-
 /**
  * The key of {@link SerializationSchema}'s phantom `Names` member. Declared
  * rather than defined: it exists only in the type system, so no value is ever
@@ -221,6 +219,13 @@ export interface SerializationSchema<T, Decls = never, In = T> {
    * value was recognized. That inference cannot see a value the schema
    * *normalizes into* its own default, which is why a schema that accepts more
    * than its own value type says so directly.
+   *
+   * Reading it always answers `true` for this schema's own `defaultValue`,
+   * whatever the predicate a combinator declared would say: the parse returns
+   * that value for everything out of domain, so a schema declining it would be
+   * rejecting what it had just produced, and an enclosing union would discard
+   * the result. A combinator declaring one therefore only has to describe the
+   * domain it reads — the escape is added around it.
    */
   accepts?(value: unknown): boolean;
 }
@@ -689,7 +694,27 @@ function makeSchema<T, Decls = never, In = T>(
   // The cast is the phantom: `Names` has no runtime member to assign, which
   // is the whole point of carrying it in the type alone.
   return Object.assign(parse, {
-    accepts,
+    // A schema always recognizes its own default, so the escape is added here
+    // rather than left to each combinator: the parse returns that value for
+    // everything out of domain, and a schema that declined it would be
+    // rejecting what it had just produced. `objectValue({r: rawValue()})`
+    // derives `{r: undefined}` as its default — the parse writes every declared
+    // key — and then said no to it, so an enclosing union discarded the whole
+    // object rather than the one property, on any input carrying `r` at the
+    // value `r`'s own schema defaults to.
+    //
+    // The parse-inference in `$schemaMatch` always had this clause; declaring
+    // an `accepts` bypassed it. Four shapes need it: `rawValue`, whose default
+    // is `undefined`; an `enumValue` whose default is not one of its values,
+    // including the `enumValue([undefined, …])` form the docs give for making
+    // `undefined` the default and `TableCellNode`'s `verticalAlign` uses; and
+    // `transformValue`, whose `accepts` describes the input domain while its
+    // default is an output. Wrapping it here also keeps the public
+    // `schema.accepts` honest for a caller asking it directly.
+    accepts:
+      accepts === undefined
+        ? undefined
+        : (value: unknown) => value === resolved || accepts(value),
     defaultValue: resolved,
     getter: accessors.getter,
     isEqual,
@@ -1151,7 +1176,11 @@ function $schemaMatch(
 ): undefined | {parsed: unknown} {
   const {accepts} = schema;
   if (accepts !== undefined) {
-    return accepts(value) ? {parsed: schema(value)} : undefined;
+    // Asked through `$acceptsValue` rather than by calling the destructured
+    // `accepts` — the same answer today, since `makeSchema` wraps whatever a
+    // combinator declares and both read that wrapper, but membership is then
+    // one function rather than two that have to be kept agreeing.
+    return $acceptsValue(schema, value) ? {parsed: schema(value)} : undefined;
   }
   const parsed = schema(value);
   // `value === schema.defaultValue`, not `isSchemaEqual`: an `isEqual` answers
@@ -1289,9 +1318,10 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
   const fallback =
     defaultValue !== undefined ? defaultValue : (members[0].defaultValue as T);
   /**
-   * The member that recognizes `value`, and what it parsed to — the one place
-   * the membership rule is stated, so `accepts` cannot answer differently from
-   * the parse that follows it.
+   * The member that recognizes `value`, and what it parsed to. The membership
+   * rule itself is `$schemaMatch`'s, which the `accepts` below applies through
+   * `$acceptsValue` without the parse: the two cannot answer differently
+   * because they ask the same question of the same members in the same order.
    */
   const $match = (
     value: unknown,
@@ -1654,8 +1684,11 @@ export function rawValue<T>(): SerializationSchema<
     // is in this domain costs no parse: `$schemaMatch` falls back to inferring
     // membership from a parse, and a caller that only wanted the answer — an
     // `objectValue` asking about each of its fields — would then parse the
-    // value once to decide and once to read it. Everything but `undefined`, which is
-    // this schema's default: it validates nothing, so it declines nothing.
+    // value once to decide and once to read it. Everything but `undefined`: it
+    // validates nothing, so there is nothing else to decline. `undefined` is
+    // this schema's own default, which `makeSchema` accepts on every schema's
+    // behalf, so what a caller sees through `schema.accepts` is in fact
+    // everything — which is the domain a schema that validates nothing has.
     value => value !== undefined,
   );
 }

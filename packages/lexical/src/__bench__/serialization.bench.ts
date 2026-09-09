@@ -133,7 +133,11 @@ describe('per-node exportJSON, TextNode', () => {
         }
       });
     },
-    {setup: () => (nodes = buildTextNodes())},
+    {
+      setup: () => {
+        nodes = buildTextNodes();
+      },
+    },
   );
 
   bench(
@@ -145,6 +149,10 @@ describe('per-node exportJSON, TextNode', () => {
         }
       });
     },
-    {setup: () => (nodes = buildTextNodes())},
+    {
+      setup: () => {
+        nodes = buildTextNodes();
+      },
+    },
   );
 });

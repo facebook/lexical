@@ -16,6 +16,7 @@ import {
   $getRoot,
   $isTabNode,
   $isTextNode,
+  type $parseSerializedNode,
   aliasedValue,
   arrayValue,
   booleanValue,
@@ -2890,6 +2891,37 @@ describe('an array schema keeps what it can rather than falling back', () => {
     expect(arrayValue(stringValue()).accepts!([])).toBe(true);
   });
 
+  test('a complete match beats a partial one, whichever comes first', () => {
+    // A container answers "mine" for a value it would only partly coerce, so
+    // the first accepting member is not always the member the value belongs
+    // to. `'42'` is a number spelled as a string, which made `['red', '42']`
+    // look like an array of numbers — and `'red'` was coerced away.
+    expect(
+      unionValue(
+        [arrayValue(numberValue()), arrayValue(stringValue())],
+        [] as never,
+      )(['red', '42']),
+    ).toEqual(['red', '42']);
+
+    // The same shape as a NodeState value: two object variants where one is
+    // the other plus an optional property. Saving a plain tag beside a
+    // coloured one and reading it back dropped the colour, because the plain
+    // variant accepted the array on the strength of its first element.
+    const tags = unionValue(
+      [
+        arrayValue(objectValue({label: stringValue()})),
+        arrayValue(
+          objectValue({color: optional(stringValue()), label: stringValue()}),
+        ),
+      ],
+      [] as never,
+    );
+    expect(tags([{label: 'a'}, {color: 'red', label: 'b'}] as never)).toEqual([
+      {label: 'a'},
+      {color: 'red', label: 'b'},
+    ]);
+  });
+
   test('and still picks the variant whose items match', () => {
     // The selection this predicate exists for, undamaged by the leniency:
     // nothing in these arrays is in the other member's item domain.
@@ -3125,6 +3157,37 @@ describe('a compact document relaxes at every depth', () => {
       root: {children: [{type: 'paragraph'}], type: 'root'},
     };
     expect(state.root.children).toHaveLength(1);
+  });
+
+  test('and a declared interface reaches the parse entry point', () => {
+    // An interface gets no implicit index signature in TypeScript, so a real
+    // serialized type extending another was not assignable to a type that has
+    // one — and the index signature is what keeps a document writable as a
+    // literal. The parameter names both, so each form is checked against the
+    // member it fits.
+    interface SerializedCustomText extends SerializedTextNode {
+      tag: string;
+    }
+    const declared: SerializedCustomText = {
+      detail: 0,
+      format: 0,
+      mode: 'normal',
+      style: '',
+      tag: 'x',
+      text: 'hi',
+      type: 'text',
+      version: 1,
+    };
+    // Plain assignments, so a regression reads as "not assignable to parameter"
+    // rather than as a failed constraint on a matcher's type argument.
+    const fromInterface: Parameters<typeof $parseSerializedNode>[0] = declared;
+    // And a literal carrying node data still goes through, at any depth.
+    const fromLiteral: Parameters<typeof $parseSerializedNode>[0] = {
+      children: [{text: 'hi', type: 'text'}],
+      type: 'paragraph',
+    };
+    expect(fromInterface.type).toBe('text');
+    expect(fromLiteral.type).toBe('paragraph');
   });
 
   test('a child property is unknown until it is narrowed', () => {

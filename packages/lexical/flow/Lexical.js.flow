@@ -1443,7 +1443,7 @@ declare export function createRefCountedRegistry<Key, Options = void>(
 // node state that `$parseSerializedNodeImpl` actually reads, nor by any of the
 // inexact serialized node types declared in this file.
 declare export function $parseSerializedNode(
-  serializedNode: SerializedPartialNode,
+  serializedNode: SerializedPartialNode | SerializedLexicalNode,
 ): LexicalNode;
 
 declare export function $applyNodeReplacement<N extends LexicalNode>(
@@ -1930,9 +1930,14 @@ export type SerializationSchema<T> = Parse<T> & {
   readonly isEqual?: (a: T, b: T) => boolean,
   readonly accepts?: (value: unknown) => boolean,
 };
+// `SerializedPartial`, matching TypeScript: this is the walk a compact export
+// runs through, so the properties it omits are exactly the ones a caller must
+// not be promised. Declared as the full type, Flow accepted
+// `$withCompactExport(true, () => $exportNodeJSON(node)).version.toFixed()`,
+// which throws — a compact export writes no `version`.
 declare export function $exportNodeJSON(
   node: LexicalNode,
-): SerializedLexicalNode;
+): SerializedPartial<SerializedLexicalNode>;
 // TypeScript additionally rejects an async callback at the call site, through
 // a trailing parameter that is an empty tuple for every other return type;
 // Flow has no equivalent, so here that is caught by the runtime check, which

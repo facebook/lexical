@@ -823,6 +823,83 @@ function $acceptsValue<T>(
 }
 
 /**
+ * Whether `schema` accepts *every* part of `value`, rather than merely enough
+ * of it to be worth coercing.
+ *
+ * The distinction only matters to {@link unionValue}, and only because a
+ * container schema has to answer one question with two useful answers. Asking
+ * "is every element mine?" makes one malformed element discard the whole array
+ * — and through an enclosing object, every sibling property with it. Asking "is
+ * any element mine?" lets a member claim an array that mostly belongs to a
+ * later one: `unionValue([arrayValue(numberValue()), arrayValue(stringValue())])`
+ * read `['red', '42']` as `[0, 42]`, because `'42'` is a number spelled as a
+ * string and `'red'` was then coerced away.
+ *
+ * So the union asks this first, of every member, and only falls back to the
+ * lenient `accepts` when no member owns the value outright. A complete match
+ * always wins; a partial one is still better than the union's own default,
+ * which keeps nothing at all.
+ *
+ * Walks `meta` rather than adding a second predicate to every schema: the
+ * lenient/strict split exists in exactly two combinators, and everything else
+ * either forwards or has one answer.
+ */
+function $acceptsWholly(
+  schema: AnySerializationSchema,
+  value: unknown,
+): boolean {
+  const {meta} = schema;
+  switch (meta.kind) {
+    case 'array': {
+      if (!Array.isArray(value)) {
+        return false;
+      }
+      for (let i = 0; i < value.length; i++) {
+        // An absent element is filled from the item's own default, exactly as
+        // `objectValue` fills an absent field, so it is not a mismatch.
+        if (value[i] !== undefined && !$acceptsWholly(meta.item, value[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    case 'object': {
+      if (!isPlainObject(value) || hasUndeclaredKey(value, meta.fields)) {
+        return false;
+      }
+      for (const [key, field] of Object.entries(meta.fields)) {
+        if (hasOwnKey(value, key) && !$acceptsWholly(field, value[key])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    case 'union':
+      return meta.members.some(member => $acceptsWholly(member, value));
+    case 'aliased':
+      // An alias is an exact spelling, so it is as whole a match as there is.
+      return (
+        (typeof value === 'string' && hasOwnKey(meta.aliases, value)) ||
+        $acceptsWholly(meta.inner, value)
+      );
+    case 'nullable':
+    case 'optional':
+    case 'transform':
+      // The wrapper owns whether the value reaches `inner` at all — a nil, or
+      // a domain the transform reads — and `inner` owns how much of it fits.
+      return (
+        $acceptsValue(schema, value) &&
+        (value === null ||
+          value === undefined ||
+          $acceptsWholly(meta.inner, value))
+      );
+    default:
+      // A leaf: nothing inside it to be partly right about.
+      return $acceptsValue(schema, value);
+  }
+}
+
+/**
  * Whether `source` carries `key` as its own property.
  *
  * A type predicate rather than a `boolean`, so a caller can read the value off
@@ -1332,6 +1409,20 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
   const $match = (
     value: unknown,
   ): undefined | {member: AnySerializationSchema; parsed: T} => {
+    // Two passes, because the first member to accept is not always the member
+    // the value belongs to. A container answers "mine" for a value it would
+    // partly coerce, so `['red', '42']` looked like an array of numbers on the
+    // strength of `'42'` alone. Asking every member for a complete match first
+    // gives the value to the member that owns all of it, and keeps the lenient
+    // pass for what it is good at: a value no member owns outright is still
+    // better coerced by the closest member than replaced by the union's own
+    // default, which keeps nothing.
+    for (let i = 0; i < members.length; i++) {
+      const member = members[i];
+      if ($acceptsWholly(member, value)) {
+        return {member, parsed: member(value) as T};
+      }
+    }
     for (let i = 0; i < members.length; i++) {
       const member = members[i];
       const matched = $schemaMatch(member, value);

@@ -37,6 +37,7 @@ import type {
   LexicalEditor,
   LexicalExtensionConfig,
   LexicalExtensionOutput,
+  LexicalNode,
   SerializedEditor,
   SerializedEditorState,
   SerializedElementNode,
@@ -46,10 +47,10 @@ import type {
   TextNode,
 } from 'lexical';
 
-import type {LexicalNode} from 'lexical';
-
 import {
+  $exportNodeJSON,
   $parseSerializedNode,
+  $withCompactExport,
   defineExtension,
   LineBreakNode,
   ParagraphNode,
@@ -217,4 +218,14 @@ export function flowParseSerializedNode(): LexicalNode {
     type: 'paragraph',
   });
   return $parseSerializedNode({type: 'linebreak'});
+}
+
+// A compact export omits every property equal to its default, `version`
+// included, so the walk that produces one cannot be typed as the full node.
+// Declared as `SerializedLexicalNode`, Flow accepted `.version.toFixed()` on
+// the result of a compact export — which throws.
+export function flowExportNodeJSONIsPartial(node: TextNode): number {
+  const json = $withCompactExport(true, () => $exportNodeJSON(node));
+  // $FlowExpectedError[incompatible-use] `version` is optional in the compact form
+  return json.version.toFixed(0).length;
 }

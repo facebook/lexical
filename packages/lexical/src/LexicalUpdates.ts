@@ -6,7 +6,11 @@
  *
  */
 
-import type {LexicalNode, SerializedPartialNode} from './LexicalNode';
+import type {
+  LexicalNode,
+  SerializedLexicalNode,
+  SerializedPartialNode,
+} from './LexicalNode';
 
 import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
@@ -406,7 +410,16 @@ export function $parseSerializedNode(
   // leaves the node-specific properties `unknown`. Naming
   // `SerializedPartial<SerializedLexicalNode>` rejected any element subtree
   // written as a literal, since that type has no `children` at all.
-  serializedNode: SerializedPartialNode,
+  //
+  // `SerializedLexicalNode` is in the union for the callers that hold a real
+  // serialized type rather than a literal. An *interface* gets no implicit
+  // index signature in TypeScript, so `interface SerializedCustomText extends
+  // SerializedTextNode` was not assignable to `SerializedPartialNode` alone —
+  // and the whole point of the index signature is that a document stays
+  // writable as a literal, which a closed type took away. A union keeps both:
+  // a literal is checked against the indexed member, a declared interface
+  // against the structural one.
+  serializedNode: SerializedPartialNode | SerializedLexicalNode,
 ): LexicalNode {
   const internalSerializedNode: InternalSerializedNode = serializedNode;
   return $parseSerializedNodeImpl(

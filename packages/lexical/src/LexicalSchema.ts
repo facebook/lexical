@@ -1714,11 +1714,34 @@ export function arrayValue<T, In = T>(
       }
       return true;
     },
-    // An array is what this reads; anything else falls back. Declared rather
-    // than inferred so that `$schemaMatch` never has to ask the comparator
-    // above about a raw input — a comparator answers about *values*, and the
+    // An array whose every element `item` recognizes. Declared rather than
+    // inferred so that `$schemaMatch` never has to ask the comparator above
+    // about a raw input — a comparator answers about *values*, and the
     // inference has only the input to offer.
-    value => Array.isArray(value),
+    //
+    // The elements are asked, not just the array-ness, for the reason
+    // `objectValue` asks about its fields: "is an array" is true of every
+    // array, so the first array-typed member of a union would answer for all
+    // of them and coerce the elements into its own item domain —
+    // `unionValue([arrayValue(numberValue()), arrayValue(stringValue())])`
+    // read `['red', 'blue']` as `[0, 0]`, and with object items the payload
+    // went missing entirely. It also laundered through an enclosing object:
+    // `objectValue({tags: arrayValue(stringValue())})` accepted `{tags: [1]}`
+    // on the strength of an `accepts` its own parse contradicts.
+    //
+    // An index loop rather than `every`, which skips the holes of a sparse
+    // array — the same reason the comparator above uses one.
+    value => {
+      if (!Array.isArray(value)) {
+        return false;
+      }
+      for (let i = 0; i < value.length; i++) {
+        if (!$acceptsValue(item, value[i])) {
+          return false;
+        }
+      }
+      return true;
+    },
   );
 }
 

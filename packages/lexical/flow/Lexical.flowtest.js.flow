@@ -37,6 +37,7 @@ import type {
   LexicalEditor,
   LexicalExtensionConfig,
   LexicalExtensionOutput,
+  SerializedEditor,
   SerializedEditorState,
   SerializedElementNode,
   SerializedLexicalNode,
@@ -136,6 +137,29 @@ export const flowCompactElement: SerializedPartial<SerializedElementNode> = {
   children: [{children: [{type: 'text'}], type: 'paragraph'}],
   type: 'root',
 };
+
+// Both serialization forms cross the two public boundaries that carry them.
+// A Flow object property is invariant, so naming only the compact shape on
+// `SerializedEditor.editorState` made the legacy value unassignable, and
+// `parseEditorState` declared only the legacy one while the compact form is
+// exactly what it exists to read.
+export function flowBothEditorForms(editor: LexicalEditor): EditorState {
+  const state = editor.getEditorState();
+  const legacy: SerializedEditor = {editorState: state.toJSON()};
+  const compact: SerializedEditor = {editorState: state.toJSON(true)};
+  void legacy;
+  void compact;
+  editor.parseEditorState(state.toJSON());
+  return editor.parseEditorState(state.toJSON(true));
+}
+
+// Reading a compact document still has to narrow: accepting the form does not
+// promise the properties it omits.
+export function flowCompactStillNarrows(editor: LexicalEditor): number {
+  const {root} = editor.getEditorState().toJSON(true);
+  // $FlowExpectedError[incompatible-use] `indent` is optional in the compact form
+  return root.indent.toFixed(0).length;
+}
 
 // `exportJSON` cannot be overloaded (see the declaration), so the compact
 // argument is refused rather than answered with a shape the value does not

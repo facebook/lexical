@@ -308,7 +308,12 @@ declare export class LexicalEditor {
   getEditorState(): EditorState;
   setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
   parseEditorState(
-    maybeStringifiedEditorState: string | SerializedEditorState,
+    // Both forms parse, as they do in TypeScript: a compact document omits
+    // what parsing restores, so it is readable by exactly this method.
+    maybeStringifiedEditorState:
+      | string
+      | SerializedEditorState
+      | CompactSerializedEditorState,
     updateFn?: () => void,
   ): EditorState;
   read<V>(callbackFn: () => V): V;
@@ -1549,10 +1554,13 @@ export interface SerializedEditorState {
 }
 
 export type SerializedEditor = {
-  // The compact shape, which the legacy one also satisfies: editor.toJSON()
-  // writes whichever form encloses it, so a nested editor inside a compact
-  // document is compact too.
-  editorState: CompactSerializedEditorState,
+  // Either form: `editor.toJSON()` writes whichever one encloses it, so a
+  // nested editor inside a compact document is compact and inside a legacy one
+  // is not. Stated as a union rather than as the compact shape alone — the
+  // legacy shape satisfies it structurally in TypeScript, but a Flow object
+  // property is invariant, so naming only the compact type made
+  // `{editorState: editorState.toJSON()}` a Flow error.
+  editorState: SerializedEditorState | CompactSerializedEditorState,
 };
 
 /**

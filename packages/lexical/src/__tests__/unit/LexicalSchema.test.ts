@@ -2985,3 +2985,40 @@ describe('a compact document relaxes at every depth', () => {
     expectTypeOf<SerializedPartialNode['type']>().toEqualTypeOf<string>();
   });
 });
+
+describe('an array schema answers only for its own element domain', () => {
+  test('a union falls through to the array variant whose items match', () => {
+    // "Is an array" is true of every array, so the first array-typed member
+    // would otherwise answer for all of them and coerce the elements into its
+    // own item domain — losing the data the later member describes exactly.
+    const union = unionValue([
+      arrayValue(numberValue()),
+      arrayValue(stringValue()),
+    ]);
+    expect(union(['red', 'blue'] as never)).toEqual(['red', 'blue']);
+    expect(union([1, 2] as never)).toEqual([1, 2]);
+
+    const objects = unionValue([
+      arrayValue(objectValue({x: numberValue()})),
+      arrayValue(objectValue({y: numberValue()})),
+    ]);
+    expect(objects([{y: 1}] as never)).toEqual([{y: 1}]);
+  });
+
+  test('and an enclosing object cannot launder a mismatched array through it', () => {
+    // `accepts` is what a union commits on, so an object whose field schema
+    // said yes to items its own parse would replace made the union pick it.
+    const shape = objectValue({tags: arrayValue(stringValue())});
+    expect(shape.accepts!({tags: ['a']})).toBe(true);
+    expect(shape.accepts!({tags: [1, 2]})).toBe(false);
+    // Which is the answer its own parse gives.
+    expect(shape({tags: [1, 2]})).toEqual({tags: ['', '']});
+  });
+
+  test('an empty array belongs to every array schema', () => {
+    // No element to disagree about, and it is a shape every array parse
+    // produces.
+    expect(arrayValue(numberValue()).accepts!([])).toBe(true);
+    expect(arrayValue(objectValue({x: numberValue()})).accepts!([])).toBe(true);
+  });
+});

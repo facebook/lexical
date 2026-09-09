@@ -25,26 +25,16 @@
   "devDependencies": {
     "@types/prismjs": "^1.26.6"
   },
-  "module": "./dist/LexicalCodePrism.mjs",
+  "module": "./dist/LexicalCodePrism.js",
   "sideEffects": true,
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalCodePrism.dev.mjs",
-        "production": "./dist/LexicalCodePrism.prod.mjs",
-        "node": "./dist/LexicalCodePrism.node.mjs",
-        "default": "./dist/LexicalCodePrism.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalCodePrism.dev.js",
-        "production": "./dist/LexicalCodePrism.prod.js",
-        "default": "./dist/LexicalCodePrism.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalCodePrism.dev.js",
+      "production": "./dist/LexicalCodePrism.prod.js",
+      "default": "./dist/LexicalCodePrism.js"
     }
   },
   "files": [
@@ -74,5 +64,6 @@
     "typescript": {
       "optional": true
     }
-  }
+  },
+  "type": "module"
 }

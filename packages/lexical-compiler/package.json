@@ -31,57 +31,27 @@
   "exports": {
     "./PureAnnotations": {
       "source": "./src/PureAnnotations.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/PureAnnotations.d.ts",
-        "development": "./dist/LexicalCompilerPureAnnotations.dev.mjs",
-        "production": "./dist/LexicalCompilerPureAnnotations.prod.mjs",
-        "node": "./dist/LexicalCompilerPureAnnotations.node.mjs",
-        "default": "./dist/LexicalCompilerPureAnnotations.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/PureAnnotations.d.ts",
-        "development": "./dist/LexicalCompilerPureAnnotations.dev.js",
-        "production": "./dist/LexicalCompilerPureAnnotations.prod.js",
-        "default": "./dist/LexicalCompilerPureAnnotations.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/PureAnnotations.d.ts",
+      "development": "./dist/LexicalCompilerPureAnnotations.dev.js",
+      "production": "./dist/LexicalCompilerPureAnnotations.prod.js",
+      "default": "./dist/LexicalCompilerPureAnnotations.js"
     },
     "./PureAnnotations.js": {
       "source": "./src/PureAnnotations.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/PureAnnotations.d.ts",
-        "development": "./dist/LexicalCompilerPureAnnotations.dev.mjs",
-        "production": "./dist/LexicalCompilerPureAnnotations.prod.mjs",
-        "node": "./dist/LexicalCompilerPureAnnotations.node.mjs",
-        "default": "./dist/LexicalCompilerPureAnnotations.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/PureAnnotations.d.ts",
-        "development": "./dist/LexicalCompilerPureAnnotations.dev.js",
-        "production": "./dist/LexicalCompilerPureAnnotations.prod.js",
-        "default": "./dist/LexicalCompilerPureAnnotations.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/PureAnnotations.d.ts",
+      "development": "./dist/LexicalCompilerPureAnnotations.dev.js",
+      "production": "./dist/LexicalCompilerPureAnnotations.prod.js",
+      "default": "./dist/LexicalCompilerPureAnnotations.js"
     },
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalCompiler.dev.mjs",
-        "production": "./dist/LexicalCompiler.prod.mjs",
-        "node": "./dist/LexicalCompiler.node.mjs",
-        "default": "./dist/LexicalCompiler.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalCompiler.dev.js",
-        "production": "./dist/LexicalCompiler.prod.js",
-        "default": "./dist/LexicalCompiler.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalCompiler.dev.js",
+      "production": "./dist/LexicalCompiler.prod.js",
+      "default": "./dist/LexicalCompiler.js"
     }
   },
   "types": "./dist/typescript-too-old.d.ts",
@@ -112,5 +82,6 @@
     "!src/**/*.bench.tsx",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "type": "module"
 }

@@ -1456,18 +1456,26 @@ export type LexicalParseJSON<S extends SerializedLexicalNode> = {
 // way. The conditional keeps a node that has no children from gaining an
 // optional one it never carries.
 export type SerializedPartial<T extends SerializedLexicalNode> = {
-  ...Partial<T>,
+  // `children` is removed before the spread rather than overridden after it:
+  // spreading an *optional* property over an existing one merges the two in
+  // Flow instead of replacing it, so `Partial<T>`'s fully-serialized children
+  // survived alongside the relaxed ones. TypeScript's definition `Omit`s the
+  // same keys for the same reason.
+  ...Omit<Partial<T>, 'children' | 'version' | '$slots'>,
   type: string,
   version?: number,
-  // Matched as `ReadonlyArray`, which `Array` is a subtype of, so a consumer
-  // whose serialized type declares `children: ReadonlyArray<...>` relaxes the
-  // same way — matching `Array` alone left those children fully required, so a
-  // valid compact child was rejected and an omitted property was still
-  // promised. This is what TypeScript's `readonly (infer C)[]` already covers.
-  ...(T extends {children: ReadonlyArray<infer C>, ...}
-    ? C extends SerializedLexicalNode
-      ? {children?: Array<SerializedPartial<C>>}
-      : {}
+  // The child type is not inferred, because nothing can narrow it: a node
+  // cannot declare what kind of children it accepts, so any node may appear
+  // under any element and `SerializedLexicalNode` is the only honest element
+  // type. The conditional only asks *whether* `T` has children, so that a node
+  // without them does not gain an optional one it never carries.
+  //
+  // Matched as `Array`, which is what every serialized element declares. Flow
+  // compares an array member invariantly here, so `ReadonlyArray<infer _C>`
+  // matches none of them — it silently answers "no children" and leaves the
+  // relaxation off entirely.
+  ...(T extends {children: Array<infer _C>, ...}
+    ? {children?: Array<SerializedPartial<SerializedLexicalNode>>}
     : {}),
   $slots?: {[string]: SerializedPartial<SerializedLexicalNode>},
   ...

@@ -43,6 +43,17 @@ updates:
           - '@shikijs/*'
           - 'shiki'
 
+      # vitest and its companion packages declare each other as exact-version
+      # peers (vitest@x.y.z requires @vitest/browser-playwright@x.y.z and vice
+      # versa), so a PR that bumps only one of them leaves the workspace on
+      # mixed versions and the browser test runner refuses to start. Group them
+      # so they always move together.
+      vitest:
+        patterns:
+          - 'vitest'
+          - 'vitest-*'
+          - '@vitest/*'
+
       dev-dependencies:
         dependency-type: 'development'
         patterns:

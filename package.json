@@ -148,7 +148,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/semver": "^7.7.1",
     "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/browser-playwright": "^4.1.8",
+    "@vitest/browser-playwright": "^4.1.11",
     "baseline-browser-mapping": "^2.10.33",
     "chokidar": "^5.0.0",
     "concurrently": "^10.0.3",

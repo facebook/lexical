@@ -904,7 +904,7 @@ importers:
   packages/lexical-eslint-plugin:
     dependencies:
       eslint:
-        specifier: '>=7.31.0'
+        specifier: '>=9.0.0'
         version: 10.3.0(jiti@2.7.0)(supports-color@10.2.2)
       typescript:
         specifier: '>=5.2'

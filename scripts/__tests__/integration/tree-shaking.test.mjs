@@ -39,9 +39,8 @@ function publishedEntries() {
   const entries = [];
   for (const pkg of packagesManager.getPublicPackages()) {
     for (const [name, exports] of pkg.getNormalizedNpmModuleExportEntries()) {
-      // A package like @lexical/eslint-plugin has no ESM entry; and only a
-      // release build produces the development variant.
-      const {development, production} = exports.import || {};
+      // Only a release build produces the development variant.
+      const {development, production} = exports;
       for (const file of [production, development]) {
         if (typeof file === 'string' && fs.existsSync(pkg.resolve(file))) {
           entries.push([name, pkg.resolve(file)]);
@@ -91,7 +90,7 @@ async function bundleLexicalConsumerSize(consumer) {
   if (lexical === undefined) {
     throw new Error('lexical package not found');
   }
-  const productionFile = lexical.resolve('dist/Lexical.prod.mjs');
+  const productionFile = lexical.resolve('dist/Lexical.prod.js');
   const result = await esbuild.build({
     bundle: true,
     define: {'process.env.NODE_ENV': '"production"'},

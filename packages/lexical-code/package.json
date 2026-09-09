@@ -22,26 +22,16 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-code"
   },
-  "module": "./dist/LexicalCode.mjs",
+  "module": "./dist/LexicalCode.js",
   "sideEffects": true,
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalCode.dev.mjs",
-        "production": "./dist/LexicalCode.prod.mjs",
-        "node": "./dist/LexicalCode.node.mjs",
-        "default": "./dist/LexicalCode.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalCode.dev.js",
-        "production": "./dist/LexicalCode.prod.js",
-        "default": "./dist/LexicalCode.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalCode.dev.js",
+      "production": "./dist/LexicalCode.prod.js",
+      "default": "./dist/LexicalCode.js"
     }
   },
   "files": [
@@ -71,5 +61,6 @@
     "typescript": {
       "optional": true
     }
-  }
+  },
+  "type": "module"
 }

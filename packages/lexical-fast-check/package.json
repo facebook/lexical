@@ -33,26 +33,16 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-fast-check"
   },
-  "module": "./dist/LexicalFastCheck.mjs",
+  "module": "./dist/LexicalFastCheck.js",
   "sideEffects": false,
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "import": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalFastCheck.dev.mjs",
-        "production": "./dist/LexicalFastCheck.prod.mjs",
-        "node": "./dist/LexicalFastCheck.node.mjs",
-        "default": "./dist/LexicalFastCheck.mjs"
-      },
-      "require": {
-        "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/index.d.ts",
-        "development": "./dist/LexicalFastCheck.dev.js",
-        "production": "./dist/LexicalFastCheck.prod.js",
-        "default": "./dist/LexicalFastCheck.js"
-      }
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/index.d.ts",
+      "development": "./dist/LexicalFastCheck.dev.js",
+      "production": "./dist/LexicalFastCheck.prod.js",
+      "default": "./dist/LexicalFastCheck.js"
     }
   },
   "files": [
@@ -74,5 +64,6 @@
         "./dist/typescript-too-old.d.ts"
       ]
     }
-  }
+  },
+  "type": "module"
 }

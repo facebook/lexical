@@ -785,8 +785,15 @@ const DERIVED_ACCEPTS = new WeakSet<(value: unknown) => boolean>();
 /**
  * The predicate `schema`'s author installed, or `undefined` where it has none
  * or carries only the one its combinator derived — see {@link DERIVED_ACCEPTS}.
+ *
+ * Exported for the two consumers that read a schema's *metadata* to stand in
+ * for the schema — `@lexical/fast-check`'s arbitraries and the JSON code
+ * generator — because a schema with one of these describes a domain no
+ * metadata records, so neither may answer for it from the metadata alone.
+ *
+ * @internal
  */
-function declaredAccepts(
+export function declaredAccepts(
   schema: AnySerializationSchema,
 ): undefined | ((value: unknown) => boolean) {
   const {accepts} = schema;
@@ -1036,10 +1043,21 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
           ? FIT_WHOLE
           : FIT_NONE;
     case 'array': {
-      if (!Array.isArray(value)) {
-        return FIT_NONE;
-      }
-      if (declared !== undefined && !declared.call(schema, value)) {
+      if (declared !== undefined) {
+        if (!declared.call(schema, value)) {
+          return FIT_NONE;
+        }
+        if (!Array.isArray(value)) {
+          // Claimed, but not an array, so it is a value the author's domain
+          // reaches and the metadata does not — a schema over `arrayValue`
+          // that also reads the comma-separated spelling an older version
+          // wrote. There are no items to walk, and the structural test is not
+          // entitled to overrule the claim: a predicate wider than its
+          // metadata used to report no fit for a value the schema really does
+          // parse, so a union declined the member that owned it.
+          return FIT_WHOLE;
+        }
+      } else if (!Array.isArray(value)) {
         return FIT_NONE;
       }
       if (meta.item == null) {
@@ -1062,10 +1080,17 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
     }
     case 'object': {
       const fields = meta.fields;
-      if (!isPlainObject(value)) {
-        return FIT_NONE;
-      }
-      if (declared !== undefined && !declared.call(schema, value)) {
+      if (declared !== undefined) {
+        if (!declared.call(schema, value)) {
+          return FIT_NONE;
+        }
+        if (!isPlainObject(value)) {
+          // Claimed but not a plain object — the author's domain reaching past
+          // the metadata, as in the `array` case above. Nothing to walk, and
+          // the claim stands.
+          return FIT_WHOLE;
+        }
+      } else if (!isPlainObject(value)) {
         return FIT_NONE;
       }
       if (fields == null) {
@@ -1714,7 +1739,14 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
   defaultValue?: SerializationSchemaValue<M[number]>,
 ): SerializationSchema<
   SerializationSchemaValue<M[number]>,
-  NamesOf<M[number]>,
+  // Restated for what the *union* parses, not what the member that declared
+  // them does — the same reason the wrappers restate theirs. A union parses to
+  // any member's value, so a setter named on one member is handed another
+  // member's value whenever that member wins:
+  // `unionValue([withAccessors(stringValue(), {setter: 'setLabel'}),
+  // numberValue()])` obliged `setLabel` to take a `string` while the union
+  // hands it a `number` for any numeric document.
+  RebindObligation<NamesOf<M[number]>, SerializationSchemaValue<M[number]>>,
   SchemaInput<M[number]>
 > {
   type T = SerializationSchemaValue<M[number]>;
@@ -1741,7 +1773,11 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
       : {member, parsed: member(value) as T};
   };
 
-  return makeSchema<T, NamesOf<M[number]>, SchemaInput<M[number]>>(
+  return makeSchema<
+    T,
+    RebindObligation<NamesOf<M[number]>, T>,
+    SchemaInput<M[number]>
+  >(
     value => {
       if (value === undefined) {
         // A member that accepts `undefined` (an optional or raw one) would
@@ -2387,7 +2423,7 @@ export function withAccessors<
   schema: SerializationSchema<T, Decls, In>,
   accessors: A,
 ): SerializationSchema<T, Decls | AccessorNames<A, T>, In> {
-  return makeSchema<T, Decls | AccessorNames<A, T>, In>(
+  const copy = makeSchema<T, Decls | AccessorNames<A, T>, In>(
     value => schema(value),
     schema.meta,
     {
@@ -2400,6 +2436,18 @@ export function withAccessors<
     // delegates here.
     schema.defaultValue,
     schema.isEqual,
-    schema.accepts,
+    // Not passed through above: this is the one place a predicate is
+    // *forwarded* rather than authored, and `makeSchema` claims what it is
+    // given as its own (see `DERIVED_ACCEPTS`). Since that claim is keyed by
+    // function identity, making it here would silence a caller's predicate on
+    // the copy *and* on the schema it came from — naming an accessor on a
+    // schema retroactively changed how an existing union parsed. Attached
+    // after instead, so the predicate keeps exactly the provenance it had.
+    undefined,
   );
+  return Object.assign(copy, {accepts: schema.accepts}) as SerializationSchema<
+    T,
+    Decls | AccessorNames<A, T>,
+    In
+  >;
 }

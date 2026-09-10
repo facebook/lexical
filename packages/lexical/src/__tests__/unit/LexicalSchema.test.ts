@@ -2473,6 +2473,14 @@ describe('a union member knows its own domain', () => {
         value => value.length,
       ),
     });
+    nodeSchema<LabelNode>()({
+      // @ts-expect-error -- a union parses to any member's value, so a setter
+      // named on one member is handed another's whenever that member wins
+      label: unionValue(
+        [withAccessors(stringValue(), {setter: 'setLabel'}), numberValue()],
+        '' as never,
+      ),
+    });
     // Declared around the wrapper rather than under it, which is the spelling
     // the docs use, the accessor is obliged to take what the property really
     // parses to — so this is the same schema, correctly stated.
@@ -3361,6 +3369,56 @@ describe('a container schema answers for its shape, not its contents', () => {
       expect(parse('#tag')).toBe('#TAG');
     },
   );
+
+  test('and naming an accessor on one neither silences it nor its original', () => {
+    // `withAccessors` is the one place a predicate is forwarded rather than
+    // authored, and the record of which predicates a combinator derived is
+    // keyed by function identity — so claiming a forwarded one as derived
+    // silenced it on the copy *and*, because the two share the function, on
+    // the schema it came from. Naming an accessor retroactively changed how an
+    // already-built union parsed.
+    const accepts = (value: unknown) =>
+      typeof value === 'string' && value.startsWith('#');
+    const base = nullable(stringValue());
+    const tagged = Object.assign(
+      (value: unknown) =>
+        accepts(value) ? String(value).toUpperCase() : base.defaultValue,
+      base,
+      {accepts},
+    ) as never;
+    const original = unionValue([tagged, stringValue()], '' as never);
+    expect(original('ordinary')).toBe('ordinary');
+    // Building the copy must not change the schema it was copied from.
+    const named = withAccessors(tagged, {setter: 'setLabel'}) as never;
+    expect(original('ordinary')).toBe('ordinary');
+    // And the copy keeps the predicate, so it declines what the original does
+    // and claims what the original claims.
+    const copy = unionValue([named, stringValue()], '' as never);
+    expect(copy('ordinary')).toBe('ordinary');
+    expect(copy('#tag')).toBe('#TAG');
+  });
+
+  test('and a predicate wider than its metadata is not overruled by it', () => {
+    // The other direction. A schema over `arrayValue` whose parse also reads
+    // the comma-separated spelling an older version wrote claims `'a,b'`, but
+    // the case's own `Array.isArray` decided first and reported no fit — so a
+    // union declined the member that owns the value and fell to its fallback.
+    const items = arrayValue(stringValue());
+    const legacy = Object.assign(
+      (value: unknown) =>
+        typeof value === 'string' ? value.split(',') : items(value),
+      items,
+      {
+        accepts: (value: unknown) =>
+          Array.isArray(value) || typeof value === 'string',
+      },
+    ) as never;
+    expect(
+      unionValue([legacy, numberValue()], 0 as never)('a,b' as never),
+    ).toEqual(['a', 'b']);
+    // The metadata still decides for a value the predicate does not claim.
+    expect(unionValue([legacy, numberValue()], 0 as never)(7 as never)).toBe(7);
+  });
 
   test('an object with a transform field round-trips', () => {
     // The field's `accepts` describes the transform's *input*; the document

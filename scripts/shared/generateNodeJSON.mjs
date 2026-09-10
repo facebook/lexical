@@ -106,6 +106,7 @@ const {
   resolveGetterAccessor,
   resolveSetterAccessor,
 } = await import('lexical/src/LexicalUtils');
+const {declaredAccepts} = await import('lexical/src/LexicalSchema');
 const {HeadingNode, QuoteNode} = await import('@lexical/rich-text');
 const {AutoLinkNode, LinkNode} = await import('@lexical/link');
 const {MarkNode} = await import('@lexical/mark');
@@ -730,6 +731,17 @@ function writeExpression(klass, schema, key) {
     // fine — and would cost the same to any node with a derived property.
     return null;
   }
+  if (declaredAccepts(schema) !== undefined) {
+    // The compiler reads `meta` alone, and a predicate the schema's author
+    // installed describes a domain no metadata records — so what it would emit
+    // is the combinator's parse, not this schema's. `verifyCompiledParse`
+    // samples a fixed corpus and would pass whenever the narrowing rejects
+    // nothing the corpus happens to contain, so this refuses outright rather
+    // than relying on it.
+    throw new NotCompilable(
+      `"${key}" declares a membership predicate of its own, which the metadata does not describe`,
+    );
+  }
   const {expression, tables: parseTables} = compileParse(
     schema.meta,
     schema.defaultValue,
@@ -812,10 +824,14 @@ function writeExpression(klass, schema, key) {
  * generated literal — so what a node carries in state, which is not known when
  * this is generated, never has to be.
  *
+ * Exported for `generateNodeJSON.test.ts`, like {@link emittable}: which
+ * properties take a class out of this form is not visible in the checked-in
+ * output, since a class that loses it silently falls back to the walk.
+ *
  * @param {NodeClass} klass
  * @returns {null | string}
  */
-function generateUpdate(klass) {
+export function generateUpdate(klass) {
   const {fieldsBaseFirst} = getComposedSchema(klass);
   const writes = [];
   for (const [key, schema] of fieldsBaseFirst) {

@@ -392,3 +392,50 @@ describe('a flat NodeState is generated as the JSON that carries it', () => {
     }
   });
 });
+
+describe('a schema that narrows its own domain', () => {
+  // `nodeArbitrary` builds each property's values from its schema's metadata,
+  // which describes what the *combinator* accepts. A schema whose author
+  // installed a membership predicate of its own admits less than that while
+  // still carrying the combinator's metadata, so generating from the metadata
+  // alone produced values the schema declines — and a round-trip property then
+  // failed on values this claimed were in domain.
+  const accepts = (value: unknown) =>
+    typeof value === 'string' && value.startsWith('#');
+  const base = stringValue();
+  const tag = Object.assign(
+    (value: unknown) => (accepts(value) ? String(value) : base.defaultValue),
+    base,
+    {accepts},
+  ) as never;
+
+  class TaggedNode extends ElementNode {
+    __tag: string = '';
+    $config() {
+      return this.config('fast-check-tagged', {
+        extends: ElementNode,
+        json: nodeSchema<TaggedNode>()({
+          tag: withField(tag, {field: '__tag'}),
+        }),
+      });
+    }
+    createDOM(): HTMLElement {
+      return document.createElement('div');
+    }
+    updateDOM(): boolean {
+      return false;
+    }
+  }
+
+  test('generates only what it accepts', () => {
+    const samples = fc.sample(nodeArbitrary(TaggedNode), 50);
+    for (const sample of samples) {
+      const {tag: value} = sample as {tag?: unknown};
+      expect(value === undefined || accepts(value)).toBe(true);
+    }
+    // Not vacuous: the property really is generated, not merely always absent.
+    expect(
+      samples.some(sample => (sample as {tag?: unknown}).tag !== undefined),
+    ).toBe(true);
+  });
+});

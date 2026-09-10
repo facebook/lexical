@@ -12,6 +12,7 @@ import {
   numberValue,
   objectValue,
   optional,
+  stringValue,
   TextNode,
   withField,
 } from 'lexical';
@@ -21,6 +22,7 @@ import {
   claimTableName,
   emittable,
   generateCompactExport,
+  generateUpdate,
   // @ts-expect-error - a .mjs script with JSDoc types, not a typed module
 } from '../../shared/generateNodeJSON.mjs';
 
@@ -167,5 +169,42 @@ describe('a property the compact form cannot compare as source', () => {
     // The siblings keep the comparisons they always had, as source.
     expect(source).toContain('if (style !== undefined && style !== "") {');
     expect(source).toContain('if (text !== undefined && text !== "") {');
+  });
+});
+
+/**
+ * The compiler reads a property's `meta` and nothing else, so a schema whose
+ * author installed a membership predicate of its own describes a domain the
+ * compiler cannot see. `verifyCompiledParse` samples a fixed corpus, so it
+ * passes whenever the narrowing rejects nothing that corpus happens to hold —
+ * which is why this is refused rather than left to the verifier.
+ */
+describe('a property whose schema narrows its own domain', () => {
+  test('takes its class out of the import half rather than compiling', () => {
+    const accepts = (value: unknown) =>
+      typeof value === 'string' && !String(value).startsWith('#');
+    const base = stringValue();
+    const narrowed = Object.assign(
+      (value: unknown) => (accepts(value) ? String(value) : base.defaultValue),
+      base,
+      {accepts},
+    ) as never;
+    class NarrowedNode extends TextNode {
+      __tag: string = '';
+      $config() {
+        return this.config('generate-narrowed-tag', {
+          extends: TextNode,
+          json: nodeSchema<NarrowedNode>()({
+            tag: withField(narrowed, {field: '__tag'}),
+          }),
+        });
+      }
+    }
+    expect(generateUpdate(NarrowedNode)).toBeNull();
+    // The export half is unaffected: reading a property back out asks the
+    // schema nothing about membership.
+    expect(generateCompactExport(NarrowedNode)).toContain(
+      'const tag = node.__tag;',
+    );
   });
 });

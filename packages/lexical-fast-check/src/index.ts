@@ -7,6 +7,7 @@
  */
 
 import type {
+  AnySerializationSchema,
   Klass,
   LexicalNode,
   LexicalSchemaInput,
@@ -15,6 +16,11 @@ import type {
 
 import * as fc from 'fast-check';
 import {getComposedSchemaFields} from 'lexical';
+// `@internal`, and reached through the module that declares it for the same
+// reason the code generator does: which schemas describe a domain their
+// metadata does not is this package's concern and the runtime's, not a public
+// API. See its docblock.
+import {declaredAccepts} from 'lexical/src/LexicalSchema';
 
 /**
  * Derive a fast-check arbitrary for the node-specific properties of `klass`'s
@@ -45,7 +51,7 @@ export function nodeArbitrary<T extends LexicalNode>(
   const fields = getComposedSchemaFields(klass);
   const record: {[key: string]: fc.Arbitrary<unknown>} = {};
   for (const key of Object.keys(fields)) {
-    record[key] = metaArbitrary(fields[key].meta);
+    record[key] = schemaArbitrary(fields[key]);
   }
   // Both sides now read the same `$config` chain — the value through
   // `getComposedSchemaFields`, the type through `LexicalSchemaInput` — so the
@@ -64,6 +70,31 @@ export function nodeArbitrary<T extends LexicalNode>(
   return fc.record(record, {requiredKeys: []}) as fc.Arbitrary<
     LexicalSchemaInput<T>
   >;
+}
+
+/**
+ * The arbitrary for one schema: what its metadata describes, narrowed to what
+ * the schema itself admits.
+ *
+ * The metadata describes what the *combinator* accepts, and a schema whose
+ * author installed a membership predicate of its own admits less than that —
+ * a `nullable(stringValue())` that takes only `#`-prefixed strings still
+ * carries `nullable` metadata, so generating from the metadata alone produced
+ * values it declines. A round-trip property then failed on values this claimed
+ * were in domain, or passed while a sibling union member silently rewrote
+ * them.
+ *
+ * Filtered rather than generated differently, because the predicate is an
+ * opaque function: what it admits can only be discovered by asking it.
+ */
+function schemaArbitrary(
+  schema: AnySerializationSchema,
+): fc.Arbitrary<unknown> {
+  const arbitrary = metaArbitrary(schema.meta);
+  const accepts = declaredAccepts(schema);
+  return accepts === undefined
+    ? arbitrary
+    : arbitrary.filter(value => accepts.call(schema, value));
 }
 
 function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {

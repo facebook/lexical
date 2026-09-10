@@ -1513,7 +1513,7 @@ export type SerializedPartial<T extends SerializedLexicalNode> = {
   ...(T extends {children: Array<infer _C>, ...}
     ? {children?: Array<SerializedPartialNode>}
     : {}),
-  $slots?: {[string]: SerializedPartialNode},
+  $slots?: {[string]: SerializedPartialNode | SerializedLexicalNode},
   ...
 };
 
@@ -1537,7 +1537,7 @@ export type SerializedPartialNode = {
   type: string,
   version?: number,
   $?: {[string]: unknown},
-  $slots?: {[string]: SerializedPartialNode},
+  $slots?: {[string]: SerializedPartialNode | SerializedLexicalNode},
   children?: Array<SerializedPartialNode>,
   [string]: unknown,
   ...

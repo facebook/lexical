@@ -36,7 +36,6 @@ import type {
   EditorState,
   LexicalEditor,
   LexicalExtensionConfig,
-  BaseSelection,
   LexicalExtensionOutput,
   LexicalNode,
   SerializedEditor,
@@ -243,4 +242,3 @@ export function flowExportAndParseCompose(node: TextNode): LexicalNode {
   // And the legacy form, which is what the same walk writes without the flag.
   return $parseSerializedNode($exportNodeJSON(node));
 }
-

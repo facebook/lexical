@@ -859,17 +859,23 @@ function $acceptsWholly(
   if (!$acceptsValue(schema, value)) {
     return false;
   }
-  const meta: SerializationSchemaMeta | undefined = schema.meta;
-  if (meta === undefined) {
-    // A hand-rolled schema — the interface is public and `makeSchema` is not
-    // exported, so this is the only way a consumer adds one. Its `accepts` is
-    // the whole of what it has told us, and reading `meta.kind` off it threw.
+  // Read defensively throughout. A hand-rolled schema is the only way a
+  // consumer adds one — the interface is public and `makeSchema` is not
+  // exported — so `meta`, or the payload a `kind` implies, may be missing or
+  // malformed however the type is declared. Where it is, the schema's own
+  // `accepts` (asked above) is the whole of what it has told us, and that is
+  // the answer; reading through it threw from inside a parse that had worked.
+  const meta: SerializationSchemaMeta | undefined | null = schema.meta;
+  if (meta == null) {
     return true;
   }
   switch (meta.kind) {
     case 'array': {
       if (!Array.isArray(value)) {
         return false;
+      }
+      if (meta.item == null) {
+        return true;
       }
       for (let i = 0; i < value.length; i++) {
         // An absent element is filled from the item's own default, exactly as
@@ -884,6 +890,10 @@ function $acceptsWholly(
       if (!isPlainObject(value)) {
         return false;
       }
+      const fields = meta.fields;
+      if (fields == null) {
+        return true;
+      }
       // Over the *value's* keys, not the schema's. The lenient gate has
       // already run `objectValue`'s own predicate, so every own key here is a
       // declared field and no undeclared one survived — and a compact document
@@ -891,19 +901,30 @@ function $acceptsWholly(
       // schema declares. `Object.entries(meta.fields)` per call also allocated
       // where `objectValue` hoists that array once at build time.
       for (const key of Object.keys(value)) {
-        const field = meta.fields[key];
-        if (field !== undefined && !$acceptsWholly(field, value[key])) {
+        // `hasOwnKey`, not a bare index: the key comes straight out of untrusted
+        // JSON, so `'toString'` would otherwise resolve to Object.prototype's
+        // method and be walked as if it were a field schema.
+        if (
+          hasOwnKey(fields, key) &&
+          !$acceptsWholly(fields[key], value[key])
+        ) {
           return false;
         }
       }
       return true;
     }
     case 'union':
-      return meta.members.some(member => $acceptsWholly(member, value));
+      return (
+        meta.members == null ||
+        meta.members.some(member => $acceptsWholly(member, value))
+      );
     case 'aliased':
       // An alias is an exact spelling, so it is as whole a match as there is.
       return (
-        (typeof value === 'string' && hasOwnKey(meta.aliases, value)) ||
+        meta.inner == null ||
+        (typeof value === 'string' &&
+          meta.aliases != null &&
+          hasOwnKey(meta.aliases, value)) ||
         $acceptsWholly(meta.inner, value)
       );
     // Each wrapper forwards to `inner` except for the nil *it* owns —
@@ -912,17 +933,29 @@ function $acceptsWholly(
     // declared a `null` a whole match for an `optional` without `inner` ever
     // being asked.
     case 'nullable':
-      return value == null || $acceptsWholly(meta.inner, value);
+      return (
+        value == null || meta.inner == null || $acceptsWholly(meta.inner, value)
+      );
     case 'optional':
-      return value === undefined || $acceptsWholly(meta.inner, value);
+      return (
+        value === undefined ||
+        meta.inner == null ||
+        $acceptsWholly(meta.inner, value)
+      );
     case 'transform':
-      return $acceptsWholly(meta.inner, value);
+      return meta.inner == null || $acceptsWholly(meta.inner, value);
     case 'raw':
-      // Validates nothing, so there is nothing it can be wholly right about.
-      // Saying yes made a raw member — which accepts every value — win the
-      // first pass ahead of a typed member that owns the value and would have
-      // coerced it, storing the input unvalidated under a declared type.
-      return false;
+      // Neutral: it validates nothing, so nothing in the value can be out of
+      // its domain and it never contributes a mismatch. Answering `false` here
+      // read as "this part does not fit", and because a container propagates
+      // one field's mismatch, a single `rawValue()` property took its whole
+      // enclosing object out of the first pass — an array of
+      // `{label, note: rawValue()}` was handed to an earlier `arrayValue
+      // (numberValue())` member and coerced to `[0]`. What a bare raw *member*
+      // must not do is win the specific pass against a member that describes
+      // the value; that is a question about the union's own members, and
+      // `$match` asks it there rather than here.
+      return true;
     default:
       // A leaf: the lenient answer above was the whole answer. Not a `never`
       // assertion, because a schema from a newer core can carry a kind this
@@ -1459,6 +1492,15 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
     // default, which keeps nothing.
     for (let i = 0; i < members.length; i++) {
       const member = members[i];
+      // A member that describes nothing describes nothing *wholly* either: a
+      // bare `rawValue()` accepts every value, so it would win this pass over
+      // the member that actually describes the data and hand a caller the
+      // input unvalidated under a declared type. It is a catch-all, so it
+      // belongs to the pass that takes what is left. Read defensively — a
+      // hand-rolled schema may carry no `meta` at all.
+      if (member.meta != null && member.meta.kind === 'raw') {
+        continue;
+      }
       if ($acceptsWholly(member, value)) {
         return {member, parsed: member(value) as T};
       }
@@ -1993,24 +2035,26 @@ export function objectValue<const S extends SerializationSchemaFields>(
     // NodeState, the whole state along with it once it compares equal to the
     // default. What tells one object variant from another is its *keys*, which
     // is what the parse-inference this replaces was reading (through the
-    // comparator, which rejects an undeclared key): a value belongs to this
-    // schema when it carries no field this schema does not declare, and nothing
-    // out of a declared field's own domain.
+    // comparator, which rejects an undeclared key).
+    //
+    // *Structural* only — the keys, not the values behind them — which is the
+    // same answer `arrayValue` gives for the same reason. Asking each field
+    // about its value asked the wrong question twice over: a `transformValue`
+    // field's `accepts` describes the inner *input* while the document holds
+    // its *output*, and a field whose declared default sits outside its own
+    // domain (`numberValue(0, {min: 1})`) declines that default deliberately.
+    // Either way the object declined the very value it had written, and a
+    // union then discarded it with every sibling property. Whether the fields
+    // *fit* is the whole-match question, which `$acceptsWholly` asks for the
+    // union's first pass; this one only says whether the member could parse
+    // the value at all, and an object parse is total — it coerces every field.
     //
     // Presence is deliberately not required. Every field is optional on the way
     // in — a parse fills what is missing from the field's own default — so `{}`
     // is in the domain, and it is a shape this schema really produces: an
     // object whose fields are all `optional({omitDefault})` serializes to `{}`
-    // once they hold their defaults. Requiring one present key rejected that on
-    // reload, and because the check recurses, a nested one took its whole
-    // enclosing object down with it.
-    value =>
-      isPlainObject(value) &&
-      !hasUndeclaredKey(value, fields) &&
-      entries.every(
-        ([key, schema]) =>
-          !hasOwnKey(value, key) || $acceptsValue(schema, value[key]),
-      ),
+    // once they hold their defaults.
+    value => isPlainObject(value) && !hasUndeclaredKey(value, fields),
   );
 }
 

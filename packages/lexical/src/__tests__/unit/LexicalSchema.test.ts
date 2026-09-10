@@ -2820,7 +2820,14 @@ describe('a schema declares the domain it reads, and only that', () => {
       align: undefined,
       id: 'x',
     });
-    expect(union({align: 'sideways', id: 'x'})).toBe('auto');
+    // A value out of the *field's* domain costs that field, not the object:
+    // `align` is coerced to the enum's default and `id` survives. Declining
+    // the whole object here — which is what asking each field its `accepts`
+    // used to do — threw `id` away with it.
+    expect(union({align: 'sideways', id: 'x'})).toEqual({
+      align: undefined,
+      id: 'x',
+    });
   });
 
   test('a constrained member still declines its own out-of-domain default', () => {
@@ -2858,6 +2865,120 @@ describe('a schema declares the domain it reads, and only that', () => {
   });
 });
 
+describe('a catch-all is a last resort, not a mismatch', () => {
+  // `rawValue` validates nothing. That makes it neutral *inside* a container —
+  // nothing in the value can be out of a domain that admits everything — and a
+  // last resort *as a member*, where it would otherwise win the specific pass
+  // against the member that describes the data.
+
+  test('a raw field does not veto its enclosing container', () => {
+    // Answering "not a whole match" for a raw field propagated: one such
+    // property took its whole object out of the first pass, so an array of
+    // them was handed to an earlier `arrayValue(numberValue())` and coerced.
+    expect(
+      unionValue(
+        [
+          arrayValue(numberValue()),
+          arrayValue(
+            objectValue({label: stringValue(), note: rawValue<string>()}),
+          ),
+        ],
+        [] as never,
+      )([{label: 'keep label', note: 'keep note'}] as never),
+    ).toEqual([{label: 'keep label', note: 'keep note'}]);
+
+    // And a raw sibling does not disturb selection between two variants.
+    expect(
+      unionValue(
+        [
+          objectValue({note: rawValue(), tags: arrayValue(numberValue())}),
+          objectValue({note: rawValue(), tags: arrayValue(stringValue())}),
+        ],
+        'x' as never,
+      )({note: 'hi', tags: ['red', 'blue']} as never),
+    ).toEqual({note: 'hi', tags: ['red', 'blue']});
+  });
+
+  test('but a bare raw member still comes last, and still catches', () => {
+    expect(
+      unionValue(
+        [arrayValue(numberValue()), rawValue()],
+        [] as never,
+      )([1, 'x']),
+    ).toEqual([1, 0]);
+    // Last resort, not no resort: a value no typed member owns still lands
+    // here rather than on the union's default.
+    expect(
+      unionValue([numberValue(), rawValue()], 0 as never)({odd: 1} as never),
+    ).toEqual({odd: 1});
+  });
+});
+
+describe('a container schema answers for its shape, not its contents', () => {
+  // `accepts` says whether a member could parse the value at all; whether the
+  // contents *fit* is the whole-match question. Asking one predicate both
+  // questions is what made every previous adjustment trade one loss for
+  // another — an object that inspected its fields declined the very value it
+  // had written, exactly as an array that inspected its elements did.
+
+  test('an object with a transform field round-trips', () => {
+    // The field's `accepts` describes the transform's *input*; the document
+    // holds its *output*, so asking cost the whole object on reload.
+    const shape = objectValue({
+      title: stringValue(),
+      v: transformValue(numberValue(), value => `n${value}`),
+    });
+    expect(
+      unionValue(
+        [shape, enumValue(['LOST'])],
+        'LOST' as never,
+      )({
+        title: 'keep me',
+        v: 'n5',
+      } as never),
+    ).toEqual({title: 'keep me', v: 'n0'});
+  });
+
+  test('and one whose field declines its own default', () => {
+    expect(
+      unionValue(
+        [
+          objectValue({label: stringValue(), n: numberValue(0, {min: 1})}),
+          enumValue(['auto']),
+        ],
+        'auto',
+      )(JSON.parse('{"label":"keep me","n":0}')),
+    ).toEqual({label: 'keep me', n: 0});
+  });
+
+  test('and a nested object that gained a key keeps its siblings', () => {
+    // Forward compatibility: a document written by a newer version, read by an
+    // older one. The unknown key is dropped by the parse, not paid for by the
+    // whole document.
+    expect(
+      unionValue(
+        [
+          objectValue({
+            item: objectValue({id: stringValue()}),
+            title: stringValue(),
+          }),
+          enumValue(['auto']),
+        ],
+        'auto',
+      )({item: {extra: 1, id: 'a'}, title: 'T'} as never),
+    ).toEqual({item: {id: 'a'}, title: 'T'});
+  });
+
+  test('while the strict pass still tells the variants apart', () => {
+    expect(
+      unionValue(
+        [objectValue({x: numberValue()}), objectValue({y: numberValue()})],
+        'none' as never,
+      )({y: 1}),
+    ).toEqual({y: 1});
+  });
+});
+
 describe('a strict match never claims what the schema itself declines', () => {
   // The first pass is a *strengthening* of `accepts`, not a second opinion:
   // it asks the lenient predicate first, so every guard that one carries
@@ -2871,11 +2992,15 @@ describe('a strict match never claims what the schema itself declines', () => {
     const shape = objectValue({title: stringValue(), x: inner});
     const value = {title: 't', x: undefined};
     const outer = unionValue([shape, enumValue(['none'])], 'none' as never);
-    // Whatever the answer, the two halves agree — the strict pass used to be
-    // *more* permissive than the lenient one here, so `accepts` said no while
-    // the parse committed to that member.
-    expect(shape.accepts!(value)).toBe(false);
-    expect(outer(value)).toBe('none');
+    // The invariant, not a particular answer: `accepts` and the parse agree.
+    // The strict pass used to be *more* permissive than the lenient one here,
+    // so `accepts` said no while the parse committed to that member — and a
+    // container asking `accepts` then discarded a value the union owned.
+    const accepted = shape.accepts!(value);
+    expect(outer(value)).toEqual(accepted ? shape(value as never) : 'none');
+    // Which of the two it is may change as the domain rules do; that the two
+    // halves cannot disagree is what this pins.
+    expect(typeof accepted).toBe('boolean');
   });
 
   test('and wrapping a member does not change the union’s answer', () => {
@@ -2910,6 +3035,40 @@ describe('a strict match never claims what the schema itself declines', () => {
     expect(unionValue([handRolled, stringValue()], 'x' as never)('hi')).toBe(
       'hi',
     );
+    // And a `meta` whose payload is missing or malformed however the type is
+    // declared — a hand-rolled schema has opted out of the type, so the walk
+    // reads through it defensively and falls back to what `accepts` said.
+    for (const meta of [
+      undefined,
+      null,
+      {kind: 'object'},
+      {kind: 'union'},
+      {kind: 'array'},
+      {kind: 'nullable'},
+      {kind: 'aliased'},
+      {kind: 'someFutureKind'},
+    ]) {
+      const partial = Object.assign((value: unknown) => value, {
+        accepts: () => true,
+        defaultValue: 0,
+        meta,
+      }) as never;
+      expect(() =>
+        unionValue([partial, stringValue()], 'x' as never)({a: 1} as never),
+      ).not.toThrow();
+    }
+    // A key out of untrusted JSON is not read as a field schema.
+    const permissive = Object.assign((value: unknown) => value, {
+      accepts: () => true,
+      defaultValue: 0,
+      meta: {fields: {a: stringValue()}, kind: 'object'},
+    }) as never;
+    expect(() =>
+      unionValue(
+        [permissive, stringValue()],
+        'x' as never,
+      )(JSON.parse('{"toString":1}')),
+    ).not.toThrow();
   });
 
   test('and a union recognizes the value it defaults to', () => {

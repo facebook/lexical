@@ -833,28 +833,6 @@ function $acceptsValue<T>(
 }
 
 /**
- * Whether `schema` accepts *every* part of `value`, rather than merely enough
- * of it to be worth coercing.
- *
- * The distinction only matters to {@link unionValue}, and only because a
- * container schema has to answer one question with two useful answers. Asking
- * "is every element mine?" makes one malformed element discard the whole array
- * — and through an enclosing object, every sibling property with it. Asking "is
- * any element mine?" lets a member claim an array that mostly belongs to a
- * later one: `unionValue([arrayValue(numberValue()), arrayValue(stringValue())])`
- * read `['red', '42']` as `[0, 42]`, because `'42'` is a number spelled as a
- * string and `'red'` was then coerced away.
- *
- * So the union asks this first, of every member, and only falls back to the
- * lenient `accepts` when no member owns the value outright. A complete match
- * always wins; a partial one is still better than the union's own default,
- * which keeps nothing at all.
- *
- * Walks `meta` rather than adding a second predicate to every schema: the
- * lenient/strict split exists in exactly two combinators, and everything else
- * either forwards or has one answer.
- */
-/**
  * Whether `schema` describes nothing — a `rawValue`, or a wrapper or union that
  * bottoms out at one.
  *
@@ -2014,7 +1992,7 @@ export function arrayValue<T, In = T>(
     // inference has only the input to offer.
     //
     // Just "is an array". Telling one array variant from another is a *whole*
-    // match question, which `$acceptsWholly` answers for the union's first
+    // match question, which `$fitOf` answers for the union's first
     // pass; this one only has to say whether the member could parse the value
     // at all, and an array parse is total — it coerces every element.
     //
@@ -2123,7 +2101,7 @@ export function objectValue<const S extends SerializationSchemaFields>(
     // domain (`numberValue(0, {min: 1})`) declines that default deliberately.
     // Either way the object declined the very value it had written, and a
     // union then discarded it with every sibling property. Whether the fields
-    // *fit* is the whole-match question, which `$acceptsWholly` asks for the
+    // *fit* is the whole-match question, which `$fitOf` ranks for the
     // union's first pass; this one only says whether the member could parse
     // the value at all, and an object parse is total — it coerces every field.
     //

@@ -1986,9 +1986,6 @@ export class LexicalEditor {
    *
    * See {@link LexicalNode.exportJSON}
    *
-   * @returns A JSON-serializable javascript object
-   */
-  /**
    * This editor's serialized state, in whichever form the export around it is
    * writing — which is how a nested editor (an image caption) stays in the
    * same form as the document containing it.
@@ -1996,6 +1993,8 @@ export class LexicalEditor {
    * The form is passed on explicitly rather than picked up by the call below:
    * `EditorState.toJSON()` with no argument always writes the legacy form, so
    * that its return type is true of what it returns.
+   *
+   * @returns A JSON-serializable javascript object
    */
   toJSON(): SerializedEditor {
     return {

@@ -253,6 +253,23 @@ type ComposeSchemaInputs<
   : Acc;
 
 /**
+ * The flat NodeState keys a node accepts, each holding whatever JSON carried
+ * it.
+ *
+ * The keys of {@link CollectStateJSON}, with the values widened to `unknown`.
+ * A `StateConfig`'s `parse` is `(jsonValue: unknown) => V` — a state is read
+ * from unparsed JSON and normalizes it, and nothing records what it accepted on
+ * the way in, so `V` describes what comes *out* of that parse and says nothing
+ * about what may go in. Naming `V` here claimed the two were the same and was
+ * wrong for any state whose parse converts: a `string`-to-`Date` state typed its
+ * input as `Date`, so `nodeArbitrary` handed a caller a string that
+ * `timestamp.getTime()` would compile against and throw on.
+ */
+type CollectStateInput<Tuple extends readonly RequiredNodeStateConfig[]> = {
+  readonly [K in keyof CollectStateJSON<Tuple, true>]?: unknown;
+};
+
+/**
  * Every serialized property `T` accepts, composed across its `$config` chain —
  * its own and the ones it inherits.
  *
@@ -273,23 +290,6 @@ type ComposeSchemaInputs<
  * and reached in the hundreds rather than the sixteen an earlier bound here
  * allowed; the fold itself is tail-recursive and adds none.
  */
-/**
- * The flat NodeState keys a node accepts, each holding whatever JSON carried
- * it.
- *
- * The keys of {@link CollectStateJSON}, with the values widened to `unknown`.
- * A `StateConfig`'s `parse` is `(jsonValue: unknown) => V` — a state is read
- * from unparsed JSON and normalizes it, and nothing records what it accepted on
- * the way in, so `V` describes what comes *out* of that parse and says nothing
- * about what may go in. Naming `V` here claimed the two were the same and was
- * wrong for any state whose parse converts: a `string`-to-`Date` state typed its
- * input as `Date`, so `nodeArbitrary` handed a caller a string that
- * `timestamp.getTime()` would compile against and throw on.
- */
-type CollectStateInput<Tuple extends readonly RequiredNodeStateConfig[]> = {
-  readonly [K in keyof CollectStateJSON<Tuple, true>]?: unknown;
-};
-
 export type LexicalSchemaInput<T extends LexicalNode> =
   GetStaticNodeConfigs<T> extends infer Configs extends readonly unknown[]
     ? Prettify<

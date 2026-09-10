@@ -1442,8 +1442,24 @@ declare export function createRefCountedRegistry<Key, Options = void>(
 // exact under `exact_by_default`, and so satisfied by neither `$slots` nor the
 // node state that `$parseSerializedNodeImpl` actually reads, nor by any of the
 // inexact serialized node types declared in this file.
+// Three forms, one per producer, because Flow subsumes none of them into
+// another: an object property is invariant, so a type missing an optional
+// property another declares is not a subtype of it even in a read-only
+// position, and `$ReadOnly` does not lift that for a type carrying an indexer.
+// TypeScript needs no such list — width subtyping over optional properties
+// makes `SerializedPartialNode` alone accept all three.
+//
+//  - `SerializedPartialNode` — a document written as a literal, and the shape
+//    `@lexical/clipboard` builds.
+//  - `SerializedLexicalNode` — a declared serialized type, the full form a
+//    node's own `exportJSON()` returns.
+//  - `SerializedPartial<SerializedLexicalNode>` — what `$exportNodeJSON`
+//    returns, so that the public export and import helpers compose.
 declare export function $parseSerializedNode(
-  serializedNode: SerializedPartialNode | SerializedLexicalNode,
+  serializedNode:
+    | SerializedPartialNode
+    | SerializedLexicalNode
+    | SerializedPartial<SerializedLexicalNode>,
 ): LexicalNode;
 
 declare export function $applyNodeReplacement<N extends LexicalNode>(

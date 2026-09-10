@@ -36,6 +36,7 @@ import type {
   EditorState,
   LexicalEditor,
   LexicalExtensionConfig,
+  BaseSelection,
   LexicalExtensionOutput,
   LexicalNode,
   SerializedEditor,
@@ -46,6 +47,13 @@ import type {
   SerializedPartialNode,
   TextNode,
 } from 'lexical';
+
+import type {BaseSerializedNode} from '@lexical/clipboard';
+
+import {
+  $generateJSONFromSelectedNodes,
+  $generateNodesFromSerializedNodes,
+} from '@lexical/clipboard';
 
 import {
   $exportNodeJSON,
@@ -228,4 +236,35 @@ export function flowExportNodeJSONIsPartial(node: TextNode): number {
   const json = $withCompactExport(true, () => $exportNodeJSON(node));
   // $FlowExpectedError[incompatible-use] `version` is optional in the compact form
   return json.version.toFixed(0).length;
+}
+
+// The public export and import helpers compose, cast-free: what
+// `$exportNodeJSON` writes is what `$parseSerializedNode` reads. Neither
+// parameter branch accepted it before — the full form requires `version`, which
+// a compact export omits, and Flow compares an object property invariantly, so
+// a type missing an optional property that another declares is not a subtype of
+// it. TypeScript accepts the same composition on one branch.
+export function flowExportAndParseCompose(node: TextNode): LexicalNode {
+  const compact = $withCompactExport(true, () => $exportNodeJSON(node));
+  $parseSerializedNode(compact);
+  // And the legacy form, which is what the same walk writes without the flag.
+  return $parseSerializedNode($exportNodeJSON(node));
+}
+
+// The clipboard round trip: what one helper writes is what the other reads.
+// `BaseSerializedNode` was a private copy of a subset of `SerializedPartialNode`
+// in Flow and an exported alias of it in TypeScript, so the two halves of this
+// composition were typed against different shapes.
+export function flowClipboardRoundTrip(
+  editor: LexicalEditor,
+  selection: BaseSelection | null,
+): LexicalNode[] {
+  // The type argument is explicit because Flow refuses an underconstrained
+  // implicit instantiation; `BaseSerializedNode` is the bound and the shape a
+  // clipboard payload really carries.
+  const {nodes} = $generateJSONFromSelectedNodes<BaseSerializedNode>(
+    editor,
+    selection,
+  );
+  return $generateNodesFromSerializedNodes(nodes);
 }

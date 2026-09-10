@@ -12,6 +12,7 @@ import type {
   LexicalEditor,
   RangeSelection,
   LexicalNode,
+  SerializedPartialNode,
 } from 'lexical';
 
 /*
@@ -67,12 +68,12 @@ declare export function $writeDragSourceToDataTransfer(
   selection: RangeSelection,
 ): void;
 
-interface BaseSerializedNode {
-  children?: BaseSerializedNode[];
-  type: string;
-  // Deprecated: ignored when parsing, and omitted by a compact export.
-  version?: number;
-}
+// An alias of `SerializedPartialNode`, matching TypeScript, rather than a
+// private copy of a subset of it: this described a serialized node of unknown
+// type, which is what that type is for, and the copy named neither `$slots` nor
+// the node state a clipboard payload really carries — nor was it exported,
+// though TypeScript exports it.
+export type BaseSerializedNode = SerializedPartialNode;
 
 declare export function $generateJSONFromSelectedNodes<
   SerializedNode extends BaseSerializedNode,

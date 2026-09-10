@@ -3210,6 +3210,34 @@ describe('a container schema answers for its shape, not its contents', () => {
     });
   });
 
+  test('and so does one carrying wrapper or union metadata', () => {
+    // Not only the containers. Every case of `$fitOf` answers from the
+    // metadata — a wrapper's inner schema, a union's members — which describes
+    // what the *combinator* admits, not what a schema built on top of it
+    // narrowed that to. Fixing the two container cases alone left these
+    // reporting a whole match for a value they had declined, on the strength
+    // of what they were built from.
+    const accepts = (value: unknown) =>
+      typeof value === 'string' && value.startsWith('#');
+    for (const base of [
+      nullable(stringValue()),
+      unionValue([stringValue(), numberValue()], '' as never),
+    ]) {
+      const tagged = Object.assign(
+        (value: unknown) => (accepts(value) ? base(value) : base.defaultValue),
+        base,
+        {accepts},
+      ) as never;
+      expect(unionValue([tagged, stringValue()], '' as never)('ordinary')).toBe(
+        'ordinary',
+      );
+      // Still selected for what it does claim, ahead of the plain string.
+      expect(unionValue([tagged, stringValue()], '' as never)('#tag')).toBe(
+        '#tag',
+      );
+    }
+  });
+
   test('an object with a transform field round-trips', () => {
     // The field's `accepts` describes the transform's *input*; the document
     // holds its *output*, so asking cost the whole object on reload.

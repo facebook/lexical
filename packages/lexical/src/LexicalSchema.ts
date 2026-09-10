@@ -933,20 +933,29 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
   if (meta == null) {
     return $acceptsValue(schema, value) ? FIT_WHOLE : FIT_NONE;
   }
+  // A declared predicate is the schema saying what its domain is, and nothing
+  // below may overrule it. The cases beneath answer from the metadata — an
+  // array's items, an object's fields, a wrapper's inner schema, a union's
+  // members — which describes what the *combinator* admits, not what a schema
+  // built on top of it narrowed that to. For every built-in this decides
+  // nothing, because their predicates are exactly the structural tests below:
+  // `arrayValue`'s is `Array.isArray`, `objectValue`'s is the undeclared-key
+  // test, `rawValue`'s admits everything, and each wrapper's is lifted from
+  // the inner schema this would have asked anyway. It is here for the schema
+  // that says something else — one carrying `nullable` metadata that admits
+  // only strings beginning with `#`, whose inner `stringValue()` reported a
+  // whole match for every string, so a union picked it for `'ordinary'` and
+  // its parser returned `null`.
+  const {accepts} = schema;
+  if (accepts !== undefined && !accepts(value)) {
+    return FIT_NONE;
+  }
   switch (meta.kind) {
     case 'raw':
       // Admits everything, so it always fits — but only ever as a catch-all.
       return FIT_VIA_CATCH_ALL;
     case 'array': {
       if (!Array.isArray(value)) {
-        return FIT_NONE;
-      }
-      // `arrayValue`'s own predicate is that `Array.isArray` and nothing more,
-      // so this costs it a second call and decides nothing. It is here for a
-      // schema that carries array metadata and declares a *narrower* domain:
-      // walking the items structurally answered from the shape alone and
-      // handed such a schema a value it had said it did not accept.
-      if (schema.accepts !== undefined && !schema.accepts(value)) {
         return FIT_NONE;
       }
       if (meta.item == null) {
@@ -975,18 +984,10 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
       if (fields == null) {
         return FIT_WHOLE;
       }
-      // The declared predicate where there is one, which for `objectValue` is
-      // exactly the undeclared-key test below and so decides the same thing.
-      // A schema that carries object metadata and states a narrower domain —
-      // one that admits only `{kind: 'special'}` — had its predicate skipped
-      // entirely, so the fields alone decided, and it won `{kind: 'ordinary',
-      // text: 'keep me'}` ahead of the sibling that matched. Its parse then
-      // returned its default and both fields were gone.
-      if (
-        schema.accepts !== undefined
-          ? !schema.accepts(value)
-          : hasUndeclaredKey(value, fields)
-      ) {
+      // Only where the schema declared no predicate of its own: `objectValue`'s
+      // is this same test, and one that states a narrower domain has already
+      // been asked above and agreed.
+      if (accepts === undefined && hasUndeclaredKey(value, fields)) {
         return FIT_NONE;
       }
       let worst = FIT_WHOLE;

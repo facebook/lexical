@@ -484,6 +484,33 @@ interface SetterObligation<M extends string, A> {
   readonly accepts: A;
 }
 
+/**
+ * One declaration, restated for a value type of `T`.
+ *
+ * A name is a name whatever the schema parses, so a `get:`/`set:`/`field:`/
+ * `when:` tag passes through. An *obligation* names a type, and a wrapper that
+ * changes what the schema parses changes what its accessors are handed — so
+ * `nullable`, `optional` and `transformValue` restate theirs rather than
+ * carrying the inner schema's along. Without that,
+ * `nullable(withAccessors(stringValue(), {setter: 'setLabel'}))` still obliged
+ * `setLabel` to take a `string` while the parser hands it `null` for a
+ * document that omits the property, so a `setLabel` calling `.toUpperCase()`
+ * type-checked and threw. `optional` did the same with `undefined`, and a
+ * transform with a value of another type entirely.
+ *
+ * The match positions are `never` for the getter and `unknown` for the other
+ * two, following each obligation's variance: the getter carries its type in a
+ * parameter position, so only `never` is assignable from every instantiation.
+ */
+type RebindObligation<D, T> =
+  D extends GetterObligation<infer M, never>
+    ? GetterObligation<M, Returnable<T> | undefined>
+    : D extends SetterObligation<infer M, unknown>
+      ? SetterObligation<M, T>
+      : D extends FieldObligation<infer F, unknown>
+        ? FieldObligation<F, T>
+        : D;
+
 /** The obligations `N` satisfies, which is what discharges the ones declared. */
 type ObligationsOf<N> =
   | {
@@ -1444,7 +1471,11 @@ export function enumValue<const T>(
 export function nullable<T, Decls = never, In = T>(
   inner: SerializationSchema<T, Decls, In>,
   options: {readonly defaultAsNull?: boolean} = {},
-): SerializationSchema<T | null, Decls, In | null | undefined> {
+): SerializationSchema<
+  T | null,
+  RebindObligation<Decls, T | null>,
+  In | null | undefined
+> {
   const {defaultAsNull} = options;
   return makeSchema(
     value => {
@@ -1496,7 +1527,11 @@ export function nullable<T, Decls = never, In = T>(
 export function optional<T, Decls = never, In = T>(
   inner: SerializationSchema<T, Decls, In>,
   options: {readonly omitDefault?: boolean} = {},
-): SerializationSchema<T | undefined, Decls, In | undefined> {
+): SerializationSchema<
+  T | undefined,
+  RebindObligation<Decls, T | undefined>,
+  In | undefined
+> {
   const {omitDefault} = options;
   return makeSchema(
     value => {
@@ -1988,8 +2023,8 @@ export function transformValue<Inner, Out, Decls = never, In = Inner>(
   inner: SerializationSchema<Inner, Decls, In>,
   transform: (value: Inner) => Out,
   options: {readonly isEqual?: (a: Out, b: Out) => boolean} = {},
-): SerializationSchema<Out, Decls, In> {
-  const schema = makeSchema<Out, Decls, In>(
+): SerializationSchema<Out, RebindObligation<Decls, Out>, In> {
+  const schema = makeSchema<Out, RebindObligation<Decls, Out>, In>(
     value => transform(inner(value)),
     {inner, kind: 'transform'},
     inner,

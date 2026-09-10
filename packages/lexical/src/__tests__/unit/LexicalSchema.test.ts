@@ -2436,6 +2436,54 @@ describe('a union member knows its own domain', () => {
     });
   });
 
+  test('nodeSchema rejects an accessor a wrapper widened out from under', () => {
+    // A wrapper changes what the schema parses, and so what its accessors are
+    // handed — but it used to carry the inner schema's obligations along
+    // unchanged. `setLabel` was still obliged to take a `string` while the
+    // parser hands it `null` for a document that omits the property, so a
+    // `setLabel` calling `.toUpperCase()` type-checked and threw.
+    class LabelNode extends ElementNode {
+      __label: null | string = '';
+      getLabel(): null | string {
+        return this.getLatest().__label;
+      }
+      setLabel(value: string): this {
+        const self = this.getWritable();
+        self.__label = value.toUpperCase();
+        return self;
+      }
+      setNullableLabel(value: null | string): this {
+        const self = this.getWritable();
+        self.__label = value;
+        return self;
+      }
+    }
+    nodeSchema<LabelNode>()({
+      // @ts-expect-error -- nullable parses an absent property to `null`
+      label: nullable(withAccessors(stringValue(), {setter: 'setLabel'})),
+    });
+    nodeSchema<LabelNode>()({
+      // @ts-expect-error -- optional parses it to `undefined`
+      label: optional(withAccessors(stringValue(), {setter: 'setLabel'})),
+    });
+    nodeSchema<LabelNode>()({
+      // @ts-expect-error -- and a transform, to a type of its own
+      label: transformValue(
+        withAccessors(stringValue(), {setter: 'setLabel'}),
+        value => value.length,
+      ),
+    });
+    // Declared around the wrapper rather than under it, which is the spelling
+    // the docs use, the accessor is obliged to take what the property really
+    // parses to — so this is the same schema, correctly stated.
+    nodeSchema<LabelNode>()({
+      label: withAccessors(nullable(stringValue()), {
+        getter: 'getLabel',
+        setter: 'setNullableLabel',
+      }),
+    });
+  });
+
   test('nodeSchema rejects a type the node member cannot hold', () => {
     // Every name here resolves and is used in the right position. What is
     // wrong is the type behind it, which nothing checked: the parser wrote a

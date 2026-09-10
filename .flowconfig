@@ -1,12 +1,13 @@
 [ignore]
-.*/scripts/.*
-.*/build/.*
-.*/__tests__/.*
-.*/dist/.*
-.*/npm/.*
-.*/.tempUserDataDir/.*
-.*/node_modules/.*
-.*/libdefs/.*
+**/scripts/**
+**/build/**
+**/__tests__/**
+**/__bench__/**
+**/dist/**
+**/npm/**
+**/.tempUserDataDir/**
+**/node_modules/**
+**/libdefs/**
 
 [include]
 ./packages/

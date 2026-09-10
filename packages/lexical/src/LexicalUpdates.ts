@@ -396,14 +396,6 @@ function $applyAllTransforms(
   editor._dirtyElements = dirtyElements;
 }
 
-type InternalSerializedNode = {
-  children?: InternalSerializedNode[];
-  $slots?: Record<string, InternalSerializedNode>;
-  type: string;
-  /** @deprecated Ignored when parsing; see {@link SerializedLexicalNode.version}. */
-  version?: number;
-};
-
 /** Deserializes a SerializedLexicalNode JSON object into its corresponding LexicalNode instance. */
 export function $parseSerializedNode(
   // The node's type is not known here — that is what it reads `type` to
@@ -431,7 +423,7 @@ export function $parseSerializedNode(
     | SerializedLexicalNode
     | ParsableSerializedNode,
 ): LexicalNode {
-  const internalSerializedNode: InternalSerializedNode = serializedNode;
+  const internalSerializedNode: ParsableSerializedNode = serializedNode;
   return $parseSerializedNodeImpl(
     internalSerializedNode,
     getActiveEditor()._nodes,
@@ -439,7 +431,7 @@ export function $parseSerializedNode(
 }
 
 function $parseSerializedNodeImpl<
-  SerializedNode extends InternalSerializedNode,
+  SerializedNode extends ParsableSerializedNode,
 >(
   serializedNode: SerializedNode,
   registeredNodes: RegisteredNodes,

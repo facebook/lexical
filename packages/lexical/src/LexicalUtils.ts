@@ -4053,12 +4053,24 @@ export function $writeJSONGetters(
   json: {[key: string]: unknown},
   compact: boolean,
 ): void {
-  const klass = node.constructor as Klass<LexicalNode>;
-  const record = getNodeClassRecord(klass);
-  const {getters} = getCompiled(record);
+  const record = getNodeClassRecord(node.constructor as Klass<LexicalNode>);
   if (__DEV__) {
     validateOwnFields(record, node);
   }
+  $writeCompiledGetters(node, getCompiled(record).getters, json, compact);
+}
+
+/**
+ * The body of {@link $writeJSONGetters}, over a table the caller has already
+ * resolved — which {@link $exportNodeJSONOnce} has, having just asked the same
+ * record whether the class carries generated code.
+ */
+function $writeCompiledGetters(
+  node: LexicalNode,
+  getters: readonly CompiledGetter[],
+  json: {[key: string]: unknown},
+  compact: boolean,
+): void {
   for (let i = 0; i < getters.length; i++) {
     const entry = getters[i];
     if (compact && entry.derived) {
@@ -4095,12 +4107,7 @@ export function $writeJSONGetters(
       // Generated code hoists a predicate shared by several properties and so
       // calls it once where this calls it per property, which is why it is
       // required to be pure.
-      const {defaultValue, isEqual} = entry;
-      if (
-        value === defaultValue ||
-        (isEqual !== undefined && isEqual(value, defaultValue)) ||
-        !entry.when.call(node)
-      ) {
+      if ($isCompactDefaultFor(entry, value) || !entry.when.call(node)) {
         value = undefined;
       }
     }
@@ -4261,24 +4268,27 @@ function resolveGenerated(
   // The nearest declaration up the chain. A class with no `$config` of its own
   // reads its ancestor's, declaration included, as its own; one whose `$config`
   // names none inherits from the first ancestor that does.
+  // One walk for both questions: the nearest declaration, and the most basal
+  // class naming that same object. The second cannot precede the first, so
+  // the loop records the first it sees and then keeps overwriting the class
+  // for as long as later ancestors name it.
   let declared: undefined | GeneratedJSON;
-  for (const {ownNodeConfig: config} of iterStaticNodeConfigChain(klass)) {
-    if (config && config.generated !== undefined) {
-      declared = config.generated;
-      break;
-    }
-  }
-  if (declared === undefined) {
-    return null;
-  }
   let declaringKlass = klass;
   for (const {
     klass: currentKlass,
     ownNodeConfig: config,
   } of iterStaticNodeConfigChain(klass)) {
-    if (config && config.generated === declared) {
-      declaringKlass = currentKlass;
+    if (config && config.generated !== undefined) {
+      if (declared === undefined) {
+        declared = config.generated;
+        declaringKlass = currentKlass;
+      } else if (config.generated === declared) {
+        declaringKlass = currentKlass;
+      }
     }
+  }
+  if (declared === undefined) {
+    return null;
   }
   if (declaringKlass === klass) {
     return declared;
@@ -4397,13 +4407,26 @@ export function $walkExportJSON(
   node: LexicalNode,
   compact: boolean,
 ): {[key: string]: unknown} {
+  const record = getNodeClassRecord(node.constructor as Klass<LexicalNode>);
+  if (__DEV__) {
+    validateOwnFields(record, node);
+  }
+  return $walkFromCompiled(node, getCompiled(record).getters, compact);
+}
+
+/** {@link $walkExportJSON} over an already-resolved getter table. */
+function $walkFromCompiled(
+  node: LexicalNode,
+  getters: readonly CompiledGetter[],
+  compact: boolean,
+): {[key: string]: unknown} {
   const json: {[key: string]: unknown} = compact ? {type: node.__type} : {};
   if ($isElementNode(node)) {
     // Before the schema's properties, so that an element's JSON reads
     // structure-first.
     json.children = [];
   }
-  $writeJSONGetters(node, json, compact);
+  $writeCompiledGetters(node, getters, json, compact);
   if (!compact) {
     json.type = node.__type;
     // Deprecated and ignored on the way in; written only so the legacy form
@@ -4428,6 +4451,44 @@ export function $walkExportJSON(
  *
  * @internal
  */
+/**
+ * What a node exports in the form asked for: the generated exporter where its
+ * class has one for that form, and the schema-driven walk otherwise.
+ *
+ * One function because both halves start by resolving the class record, and
+ * asking twice — once to find there is no generated code, once to walk —
+ * repeated a WeakMap read and, in DEV, the own-field validation, per node per
+ * export. That is the path every node whose class the generator could not
+ * compile takes, which is most nodes outside the core.
+ *
+ * @internal
+ */
+export function $exportNodeJSONOnce(
+  node: LexicalNode,
+  compact: boolean,
+): {[key: string]: unknown} {
+  const record = getNodeClassRecord(node.constructor as Klass<LexicalNode>);
+  const compiled = getCompiled(record);
+  const {generated, isCompactDefault} = compiled;
+  const exporter =
+    generated === null
+      ? undefined
+      : compact
+        ? generated.exportCompactJSON
+        : generated.exportJSON;
+  if (__DEV__) {
+    validateOwnFields(record, node);
+  }
+  return exporter === undefined
+    ? $walkFromCompiled(node, compiled.getters, compact)
+    : compact
+      ? (exporter as NonNullable<GeneratedJSON['exportCompactJSON']>)(
+          node,
+          isCompactDefault,
+        )
+      : (exporter as GeneratedJSON['exportJSON'])(node);
+}
+
 export function $generatedExportJSON(
   node: LexicalNode,
   compact: boolean,

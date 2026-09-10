@@ -959,6 +959,15 @@ function $acceptsValue<T>(
 }
 
 /**
+ * Memoized because the answer is a property of the schema alone, and `$fitOf`
+ * now asks it while *measuring* a union rather than only when one is choosing:
+ * without this, a value node under N nested unions walks the schema below it
+ * once per level, which is work that grows with the nesting for a question
+ * whose answer was fixed when the schema was built.
+ */
+const CATCH_ALL_CACHE = new WeakMap<AnySerializationSchema, boolean>();
+
+/**
  * Whether `schema` describes nothing — a `rawValue`, or a wrapper or union that
  * bottoms out at one.
  *
@@ -978,15 +987,6 @@ function $acceptsValue<T>(
  * that happens to carry a raw property still describes everything else about
  * the value, which is exactly the case the neutrality above exists for.
  */
-/**
- * Memoized because the answer is a property of the schema alone, and `$fitOf`
- * now asks it while *measuring* a union rather than only when one is choosing:
- * without this, a value node under N nested unions walks the schema below it
- * once per level, which is work that grows with the nesting for a question
- * whose answer was fixed when the schema was built.
- */
-const CATCH_ALL_CACHE = new WeakMap<AnySerializationSchema, boolean>();
-
 function $isCatchAll(schema: AnySerializationSchema): boolean {
   const cached = CATCH_ALL_CACHE.get(schema);
   if (cached !== undefined) {
@@ -1068,54 +1068,58 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
     return $acceptsValue(schema, value) ? FIT_WHOLE : FIT_NONE;
   }
   // A predicate the schema's *author* installed is it saying what its domain
-  // is, and nothing derived from its parts may overrule that: a schema
-  // carrying `nullable` metadata that admits only strings beginning with `#`
-  // was measured through its inner `stringValue()`, which reports a whole
-  // match for every string, so a union picked it for `'ordinary'` and its
-  // parser returned `null`.
+  // is, asked once, before anything below narrows the value: a predicate is
+  // declared over `unknown`, so one that reaches past its metadata — an
+  // `arrayValue` schema that also reads the comma-separated spelling an older
+  // version wrote — is not overruled by a structural test. It must therefore
+  // be total; `value.length` without a guard throws out of `importJSON`.
   //
-  // Only such a predicate, though — `declaredAccepts` skips the one a
-  // combinator derived, which every case below re-derives from the metadata
-  // anyway. Asking those cost a second traversal of the same subtree at every
-  // level, and for `unionValue`, whose predicate excludes `undefined` where
-  // the `union` case ranks its members, it also answered a different question:
-  // a `{width: undefined}` field went from a whole fit to none and took its
+  // Only such a predicate. `declaredAccepts` skips the one a combinator
+  // derived, which every case below re-derives from the metadata anyway.
+  // Asking those cost a second traversal of the same subtree at every level,
+  // and for `unionValue`, whose predicate excludes `undefined` where the
+  // `union` case ranks its members, it also answered a different question: a
+  // `{width: undefined}` field went from a whole fit to none and took its
   // object out of the enclosing union.
-  //
-  // Each case asks its own, before it narrows anything: a predicate is declared
-  // over `unknown` and is asked about whatever the document held, so one that
-  // reaches past its metadata — an `arrayValue` schema that also reads the
-  // comma-separated spelling an older version wrote — is not overruled by the
-  // structural test. It must therefore be total: `value.length` without a
-  // guard throws out of `importJSON` rather than declining.
   const declared = declaredAccepts(schema);
+  const narrowed = declared !== undefined;
+  if (narrowed && !declared.call(schema, value)) {
+    return FIT_NONE;
+  }
+  const fit = $metaFitOf(schema, meta, value, narrowed);
+  // Claimed by its author but not measured by its metadata — the wider case
+  // above. The claim stands, so it is not `FIT_NONE`, but nothing walked the
+  // value, so it ranks below a member that structurally owns it: as
+  // `FIT_WHOLE` a merely permissive predicate tied with an exact match and won
+  // on declaration order, reading `'hello'` as `['hello']`.
+  //
+  // Stated once here rather than per case, which is what let the array and
+  // object cases honor a wider predicate while `union`, `optional` and the
+  // other wrappers still let their metadata overrule one.
+  return narrowed && fit === FIT_NONE ? FIT_COERCIBLE : fit;
+}
+
+/**
+ * How well a schema's *metadata* fits a value — the part of {@link $fitOf}
+ * that reads only what the combinator recorded.
+ *
+ * `narrowed` says whether the schema's author declared a predicate, which
+ * {@link $fitOf} has already asked. It matters to one case: a `rawValue()`
+ * describes nothing and so can only ever be a catch-all, but one narrowed by a
+ * predicate describes what that predicate admits, and fits the way any other
+ * schema that recognizes a value does.
+ */
+function $metaFitOf(
+  schema: AnySerializationSchema,
+  meta: SerializationSchemaMeta,
+  value: unknown,
+  narrowed: boolean,
+): number {
   switch (meta.kind) {
     case 'raw':
-      // Admits everything, so it always fits — but only ever as a catch-all,
-      // since it describes nothing. One narrowed by a declared predicate
-      // *does* describe something, so it fits the way any other schema that
-      // recognizes a value does, and `$isCatchAll` stops calling it one.
-      return declared === undefined
-        ? FIT_VIA_CATCH_ALL
-        : declared.call(schema, value)
-          ? FIT_WHOLE
-          : FIT_NONE;
+      return narrowed ? FIT_WHOLE : FIT_VIA_CATCH_ALL;
     case 'array': {
-      if (declared !== undefined) {
-        if (!declared.call(schema, value)) {
-          return FIT_NONE;
-        }
-        if (!Array.isArray(value)) {
-          // Claimed, but not an array: a value the author's domain reaches and
-          // the metadata does not. The claim stands — a predicate wider than
-          // its metadata used to report no fit for a value the schema really
-          // does parse — but nothing measured it, so it ranks below a member
-          // that structurally owns the value. Answering `FIT_WHOLE` here let a
-          // merely permissive predicate tie with an exact match and win on
-          // declaration order, reading `'hello'` as `['hello']`.
-          return FIT_COERCIBLE;
-        }
-      } else if (!Array.isArray(value)) {
+      if (!Array.isArray(value)) {
         return FIT_NONE;
       }
       if (meta.item == null) {
@@ -1126,9 +1130,9 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
         // An absent element is filled from the item's own default, exactly as
         // `objectValue` fills an absent field, so it is not a mismatch.
         if (value[i] !== undefined) {
-          const fit = $fitOf(meta.item, value[i]);
-          if (fit > worst) {
-            worst = fit;
+          const itemFit = $fitOf(meta.item, value[i]);
+          if (itemFit > worst) {
+            worst = itemFit;
           }
         }
       }
@@ -1138,24 +1142,15 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
     }
     case 'object': {
       const fields = meta.fields;
-      if (declared !== undefined) {
-        if (!declared.call(schema, value)) {
-          return FIT_NONE;
-        }
-        if (!isPlainObject(value)) {
-          // Claimed but not a plain object — the author's domain reaching past
-          // the metadata, ranked as in the `array` case above.
-          return FIT_COERCIBLE;
-        }
-      } else if (!isPlainObject(value)) {
+      if (!isPlainObject(value)) {
         return FIT_NONE;
       }
       if (fields == null) {
         return FIT_WHOLE;
       }
       // The undeclared-key test is `objectValue`'s own predicate, so a schema
-      // that states a narrower domain has answered for this already.
-      if (declared === undefined && hasUndeclaredKey(value, fields)) {
+      // that states a domain of its own has answered for this already.
+      if (!narrowed && hasUndeclaredKey(value, fields)) {
         return FIT_NONE;
       }
       let worst = FIT_WHOLE;
@@ -1164,18 +1159,15 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
         // untrusted JSON, so `'toString'` would otherwise resolve to
         // Object.prototype's method and be walked as if it were a schema.
         if (hasOwnKey(fields, key)) {
-          const fit = $fitOf(fields[key], value[key]);
-          if (fit > worst) {
-            worst = fit;
+          const fieldFit = $fitOf(fields[key], value[key]);
+          if (fieldFit > worst) {
+            worst = fieldFit;
           }
         }
       }
       return worst >= FIT_COERCIBLE ? FIT_COERCIBLE : worst;
     }
     case 'union':
-      if (declared !== undefined && !declared.call(schema, value)) {
-        return FIT_NONE;
-      }
       // Literally the selection, so what a union reports is what it will do.
       // Ranking the members without the catch-all demotion answered for a
       // member the union would not have picked: `union[array[number], raw]`
@@ -1193,9 +1185,6 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
     case 'nullable':
     case 'optional':
     case 'transform': {
-      if (declared !== undefined && !declared.call(schema, value)) {
-        return FIT_NONE;
-      }
       const owned =
         meta.kind === 'aliased'
           ? typeof value === 'string' &&
@@ -1210,17 +1199,11 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
         : $fitOf(meta.inner, value);
     }
     default:
-      // A leaf, or a kind from a newer core: its own domain is the answer,
-      // and there is no metadata here to read it from — so this asks either
-      // the author's predicate or the combinator's, whichever the schema has,
-      // exactly once.
-      return (
-        declared !== undefined
-          ? declared.call(schema, value)
-          : $acceptsValue(schema, value)
-      )
-        ? FIT_WHOLE
-        : FIT_NONE;
+      // A leaf, or a kind from a newer core. Its own domain is the answer and
+      // there is no metadata here to read it from, so a narrowed one was
+      // already answered above and this is the combinator's predicate, or the
+      // parse inference for a schema with none.
+      return narrowed || $acceptsValue(schema, value) ? FIT_WHOLE : FIT_NONE;
   }
 }
 

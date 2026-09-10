@@ -3482,6 +3482,30 @@ describe('a container schema answers for its shape, not its contents', () => {
     expect(unionValue([legacy, numberValue()], 0 as never)(7 as never)).toBe(7);
   });
 
+  test('and that holds for a wrapper or a union, not just a container', () => {
+    // The rule is stated once, above the switch, so every kind gets it. Per
+    // case, only `array` and `object` had it: an `optional` that also reads a
+    // legacy spelling had its metadata overrule the claim, `$fitOf` reported
+    // no fit for a value the schema really does parse, and the union fell to
+    // its fallback rather than handing the value to the member that owns it.
+    const accepts = (value: unknown) =>
+      value === undefined || typeof value === 'number' || value === 'inherit';
+    for (const base of [
+      optional(numberValue()),
+      unionValue([numberValue()], 0 as never),
+    ]) {
+      const width = Object.assign(
+        (value: unknown) => (value === 'inherit' ? 'inherit' : base(value)),
+        base,
+        {accepts},
+      ) as never;
+      const parse = unionValue([width, enumValue(['auto'])], 'auto' as never);
+      expect(parse('inherit')).toBe('inherit');
+      // And a value it does not claim still goes to the sibling.
+      expect(parse('auto')).toBe('auto');
+    }
+  });
+
   test('an object with a transform field round-trips', () => {
     // The field's `accepts` describes the transform's *input*; the document
     // holds its *output*, so asking cost the whole object on reload.

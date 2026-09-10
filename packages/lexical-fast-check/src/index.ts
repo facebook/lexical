@@ -102,9 +102,18 @@ function schemaArbitrary(
   // property responsible. A `rawValue()` narrowed to strings is exactly that:
   // its metadata describes no domain, so `raw` generates `undefined` alone and
   // no draw is ever accepted. Probing first turns the hang into a diagnostic.
-  if (
-    !fc.sample(arbitrary, {numRuns: FILTER_PROBE_RUNS, seed: 0}).some(claims)
-  ) {
+  //
+  // Asked once per schema: the answer cannot change, and this recurses, so a
+  // node with five narrowed properties otherwise burned five thousand
+  // discarded draws every time its arbitrary was built.
+  let satisfiable = SATISFIABLE.get(schema);
+  if (satisfiable === undefined) {
+    satisfiable = fc
+      .sample(arbitrary, {numRuns: FILTER_PROBE_RUNS, seed: 0})
+      .some(claims);
+    SATISFIABLE.set(schema, satisfiable);
+  }
+  if (!satisfiable) {
     throw new Error(
       `nodeArbitrary: a schema of kind ${String(
         schema.meta.kind,
@@ -113,6 +122,13 @@ function schemaArbitrary(
   }
   return arbitrary.filter(claims);
 }
+
+/**
+ * Whether a schema's declared predicate can be satisfied over its metadata's
+ * domain — a property of the schema alone, so it is asked once, the same
+ * reason the core memoizes `$isCatchAll`.
+ */
+const SATISFIABLE = new WeakMap<AnySerializationSchema, boolean>();
 
 /**
  * How many draws {@link schemaArbitrary} tries before calling a declared

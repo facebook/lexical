@@ -64,7 +64,7 @@ import {
 import {
   $applyJSONSetters,
   $cloneWithProperties,
-  $generatedExportJSON,
+  $exportNodeJSONOnce,
   $getCompositionKey,
   $getNodeByKey,
   $hasAncestor,
@@ -74,7 +74,6 @@ import {
   $setCompositionKey,
   $setNodeKey,
   $setSelection,
-  $walkExportJSON,
   errorOnInsertTextNodeOnRoot,
   getRegisteredNode,
   getStaticNodeConfig,
@@ -624,6 +623,12 @@ export type SerializedPartialNode = {
  * The least a value has to be for {@link $parseSerializedNode} to read it: a
  * `type` to look the class up by, and subtrees of the same shape.
  *
+ * A type alias rather than an `interface`, which is what lets it stand in for
+ * the internal shape the parse walks: TypeScript gives an alias an implicit
+ * index signature and an interface none, and the walk's own parameter carries
+ * one. An interface is still assignable *to* it, which is the direction that
+ * matters for a caller like `@lexical/clipboard`'s `BaseSerializedNode`.
+ *
  * `version` is optional because the parser drops it — it is deprecated and
  * nothing reads it — so requiring it described the caller rather than the
  * parameter. That mattered because {@link SerializedPartialNode} carries an
@@ -633,7 +638,7 @@ export type SerializedPartialNode = {
  * `BaseSerializedNode`, matched neither, and the mismatch repeated at every
  * level because `children` and `$slots` recurse.
  */
-export interface ParsableSerializedNode {
+export type ParsableSerializedNode = {
   /** A slot holds a node subtree, so it relaxes exactly as `children` do. */
   $slots?: Record<string, ParsableSerializedNode>;
   /** Present when the node is an element; the same form all the way down. */
@@ -644,7 +649,7 @@ export interface ParsableSerializedNode {
    * @deprecated Dropped when parsing; see {@link SerializedLexicalNode.version}.
    */
   version?: number;
-}
+};
 
 /**
  * The shape {@link LexicalNode.updateFromJSON} accepts for a node whose
@@ -1822,10 +1827,11 @@ export class LexicalNode {
    */
   exportJSON(compact: boolean): SerializedPartial<SerializedLexicalNode>;
   exportJSON(compact = false): SerializedPartial<SerializedLexicalNode> {
-    let json = $generatedExportJSON(this, compact);
-    if (json === undefined) {
-      json = $walkExportJSON(this, compact);
-    }
+    // One resolution of the class record for both: `$generatedExportJSON`
+    // returning `undefined` used to send the walk back to look the same class
+    // up again, a second WeakMap read and a second DEV field validation per
+    // node per export — on the path every node without generated code takes.
+    const json = $exportNodeJSONOnce(this, compact);
     // Neither a generated exporter nor the walk writes NodeState: what a node
     // carries is not known when code is generated, and the walk's table is
     // compiled from the schema alone. Appended here so the two paths cannot

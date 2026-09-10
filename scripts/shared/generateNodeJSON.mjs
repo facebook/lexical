@@ -92,24 +92,43 @@ const REPO = join(import.meta.dirname, '..', '..');
 // Bare specifiers rather than paths to the sources: tsconfig's `paths` maps
 // each to its package's src for both tsx and the type checker, and a specifier
 // ending in `.ts` is a type error under this repo's settings.
-const {isSchemaField, LineBreakNode, ParagraphNode, TabNode, TextNode} =
-  await import('lexical');
+const {
+  ElementNode,
+  isSchemaField,
+  LineBreakNode,
+  ParagraphNode,
+  TabNode,
+  TextNode,
+} = await import('lexical');
 // All three are `@internal` — how a class composes its schema and which accessor a
 // field stands in for are this codegen's concern and the walk's, not a public
 // API to be frozen by the backwards-compatibility rule — so they are reached
 // through the module that declares them rather than the package entry point.
 // `paths` maps `lexical/src/*` the same way it maps `lexical`, so this is the
 // same module instance the editor uses, not a second copy.
-const {
-  getComposedSchema,
-  ownSchemaFields,
-  resolveGetterAccessor,
-  resolveSetterAccessor,
-} = await import('lexical/src/LexicalUtils');
-const {declaredAccepts} = await import('lexical/src/LexicalSchema');
-const {HeadingNode, QuoteNode} = await import('@lexical/rich-text');
-const {AutoLinkNode, LinkNode} = await import('@lexical/link');
-const {MarkNode} = await import('@lexical/mark');
+//
+// Resolved together: `lexical` above is what the rest transitively need
+// registered, and these five do not depend on one another, so awaiting them in
+// series made this preamble cost the sum of five TypeScript transforms rather
+// than the longest.
+const [
+  {
+    getComposedSchema,
+    ownSchemaFields,
+    resolveGetterAccessor,
+    resolveSetterAccessor,
+  },
+  {declaredAccepts},
+  {HeadingNode, QuoteNode},
+  {AutoLinkNode, LinkNode},
+  {MarkNode},
+] = await Promise.all([
+  import('lexical/src/LexicalUtils'),
+  import('lexical/src/LexicalSchema'),
+  import('@lexical/rich-text'),
+  import('@lexical/link'),
+  import('@lexical/mark'),
+]);
 
 /**
  * The classes each generated module serializes, in the order their code is
@@ -685,12 +704,13 @@ ${fields
  * @returns {boolean}
  */
 function isElementish(klass) {
-  for (let proto = klass; proto; proto = Object.getPrototypeOf(proto)) {
-    if (/** @type {{name?: string}} */ (proto).name === 'ElementNode') {
-      return true;
-    }
-  }
-  return false;
+  // `prototype instanceof`, not a walk comparing `name`: a minified or
+  // duplicated class answers to a different name, and any class a user happens
+  // to call `ElementNode` answered to that one.
+  return (
+    klass === ElementNode ||
+    /** @type {{prototype: object}} */ (klass).prototype instanceof ElementNode
+  );
 }
 
 // -- the import direction ----------------------------------------------------
@@ -784,17 +804,22 @@ function writeExpression(klass, schema, key, target) {
       `"${key}" declares a membership predicate of its own, which the metadata does not describe`,
     );
   }
+  // Named through `addTable`, so a table two classes share is emitted once and
+  // both expressions read the same const — TabNode inherits TextNode's
+  // `format` schema, and with the name settled before the compile the module
+  // carried `TEXT_FORMAT_ALIAS` and a byte-identical `TAB_FORMAT_ALIAS`. It is
+  // also what puts these back under `claimTableName`'s guard against two
+  // different tables taking one name.
   const {expression, tables: parseTables} = compileParse(
     schema.meta,
     schema.defaultValue,
-    tableName(klass, key, 'ALIAS'),
+    (table, index) =>
+      addTable(
+        tableName(klass, key, index === 0 ? 'ALIAS' : `ALIAS_${index + 1}`),
+        table,
+      ),
   );
   const nullPrototypeTables = parseTables.map(({name}) => name);
-  for (const {name, table} of parseTables) {
-    // Recorded under the name the compiler already wrote into `expression`,
-    // so these are not shared the way addTable shares a schema's own tables.
-    tables.set(name, table);
-  }
   if (!isSchemaField(setter)) {
     // Applied through a method: call it and follow what it returns, which is
     // the rule $applyJSONSetters uses. A `void` setter has already mutated

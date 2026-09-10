@@ -132,23 +132,6 @@ const TEXT_MODE_ENCODE: {readonly [key: string]: 0 | 1 | 2} =
     token: 1,
   });
 
-// Null-prototype: a key the table does not have must miss rather than
-// resolve to Object.prototype.
-const TAB_FORMAT_ALIAS: {readonly [key: string]: number} =
-  /* @__PURE__ */ Object.assign(Object.create(null), {
-    bold: 1,
-    capitalize: 1024,
-    code: 16,
-    highlight: 128,
-    italic: 2,
-    lowercase: 256,
-    strikethrough: 4,
-    subscript: 32,
-    superscript: 64,
-    underline: 8,
-    uppercase: 512,
-  });
-
 /** Generated from TextNode's serialization schema. Do not edit by hand. */
 function exportTextNode(node: TextNode): {[key: string]: unknown} {
   return {
@@ -387,8 +370,8 @@ function updateTabNode(
   let v: unknown;
   v = json.format;
   node.__format =
-    typeof v === 'string' && v in TAB_FORMAT_ALIAS
-      ? TAB_FORMAT_ALIAS[v]
+    typeof v === 'string' && v in TEXT_FORMAT_ALIAS
+      ? TEXT_FORMAT_ALIAS[v]
       : num(v, 0);
   v = json.style;
   node.__style = typeof v === 'string' ? v : '';

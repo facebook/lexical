@@ -176,22 +176,31 @@ export function literal(value: unknown): string {
  *
  * @param meta the schema's introspectable description
  * @param defaultValue the schema's own default, i.e. `schema(undefined)`
- * @param tableBaseName prefix for any lookup table the expression needs
+ * @param tableBaseName how to name a lookup table the expression needs: a
+ *   prefix, or a callback given the table and its index. The callback is what
+ *   lets a caller share one emitted table between the schemas that use the
+ *   same object — the name has to be settled before it is written into the
+ *   expression, so this cannot be done afterwards.
  */
 export function compileParse(
   meta: SerializationSchemaMeta,
   defaultValue: unknown,
-  tableBaseName: string,
+  tableBaseName: TableNaming,
 ): CompileParseResult {
   const tables: SchemaJsonTable[] = [];
   const expression = compile(meta, defaultValue, tableBaseName, tables);
   return {expression, tables};
 }
 
+/** How {@link compileParse} names the tables an expression reads. */
+export type TableNaming =
+  | string
+  | ((table: {readonly [key: string]: unknown}, index: number) => string);
+
 function compile(
   meta: SerializationSchemaMeta,
   defaultValue: unknown,
-  base: string,
+  base: TableNaming,
   tables: SchemaJsonTable[],
 ): string {
   const fallback = literal(defaultValue);
@@ -224,7 +233,12 @@ function compile(
     }
     case 'aliased': {
       // Suffixed after the first, so nesting cannot collide.
-      const name = tables.length === 0 ? base : `${base}_${tables.length + 1}`;
+      const name =
+        typeof base === 'function'
+          ? base(meta.aliases, tables.length)
+          : tables.length === 0
+            ? base
+            : `${base}_${tables.length + 1}`;
       tables.push({name, table: meta.aliases});
       const inner = compile(meta.inner.meta, defaultValue, base, tables);
       // `in` rather than a bare lookup, and whoever emits this table has to

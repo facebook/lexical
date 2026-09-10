@@ -873,10 +873,16 @@ function $isCatchAll(schema: AnySerializationSchema): boolean {
     case 'raw':
       return true;
     case 'union':
-      // `$acceptsWholly` answers a union with `some`, so one catch-all member
-      // is enough to make the whole union claim every value.
+      // *Every* member, not some. A union that merely contains a catch-all is
+      // not one — it still describes whatever its other members describe, and
+      // calling it a catch-all skipped those members' matches along with the
+      // raw one, so `unionValue([arrayValue(numberValue()), unionValue([
+      // arrayValue(stringValue()), rawValue()])])` passed over the nested union
+      // entirely and let the first member coerce `['red', '42']` to `[0, 42]`.
       return (
-        meta.members != null && meta.members.some(member => $isCatchAll(member))
+        meta.members != null &&
+        meta.members.length > 0 &&
+        meta.members.every(member => $isCatchAll(member))
       );
     case 'nullable':
     case 'optional':
@@ -891,6 +897,24 @@ function $isCatchAll(schema: AnySerializationSchema): boolean {
 function $acceptsWholly(
   schema: AnySerializationSchema,
   value: unknown,
+  /**
+   * Whether `schema` is a union member being *chosen between*, rather than a
+   * part of a value being measured.
+   *
+   * The two ask different things of a catch-all. Choosing: a `rawValue()`
+   * member describes nothing, so letting it claim a complete match puts it
+   * ahead of the member that describes the data — `unionValue([arrayValue(
+   * numberValue()), rawValue()])` claimed `['red', '42']`, and an enclosing
+   * union preferred it over the `arrayValue(stringValue())` that owns it.
+   * Measuring: a `union[stringValue(), rawValue()]` sitting in an object field
+   * really does write `[]` back unchanged, so refusing it there made the
+   * enclosing object under-report its fit and a sibling coerced the value away.
+   *
+   * So it is carried through a union's members and through a wrapper, which
+   * are still candidates, and dropped when descending into an array's items or
+   * an object's fields, which are parts of one.
+   */
+  selecting: boolean,
 ): boolean {
   // Gated on the lenient answer first, which makes this a *strengthening* of
   // `accepts` by construction rather than a second opinion that has to be kept
@@ -924,7 +948,10 @@ function $acceptsWholly(
       for (let i = 0; i < value.length; i++) {
         // An absent element is filled from the item's own default, exactly as
         // `objectValue` fills an absent field, so it is not a mismatch.
-        if (value[i] !== undefined && !$acceptsWholly(meta.item, value[i])) {
+        if (
+          value[i] !== undefined &&
+          !$acceptsWholly(meta.item, value[i], false)
+        ) {
           return false;
         }
       }
@@ -950,7 +977,7 @@ function $acceptsWholly(
         // method and be walked as if it were a field schema.
         if (
           hasOwnKey(fields, key) &&
-          !$acceptsWholly(fields[key], value[key])
+          !$acceptsWholly(fields[key], value[key], false)
         ) {
           return false;
         }
@@ -965,7 +992,9 @@ function $acceptsWholly(
       return (
         meta.members == null ||
         meta.members.some(
-          member => !$isCatchAll(member) && $acceptsWholly(member, value),
+          member =>
+            !(selecting && $isCatchAll(member)) &&
+            $acceptsWholly(member, value, selecting),
         )
       );
     case 'aliased':
@@ -975,7 +1004,7 @@ function $acceptsWholly(
         (typeof value === 'string' &&
           meta.aliases != null &&
           hasOwnKey(meta.aliases, value)) ||
-        $acceptsWholly(meta.inner, value)
+        $acceptsWholly(meta.inner, value, selecting)
       );
     // Each wrapper forwards to `inner` except for the nil *it* owns —
     // `nullable` maps both nils, `optional` only `undefined`, and a transform
@@ -984,16 +1013,18 @@ function $acceptsWholly(
     // being asked.
     case 'nullable':
       return (
-        value == null || meta.inner == null || $acceptsWholly(meta.inner, value)
+        value == null ||
+        meta.inner == null ||
+        $acceptsWholly(meta.inner, value, selecting)
       );
     case 'optional':
       return (
         value === undefined ||
         meta.inner == null ||
-        $acceptsWholly(meta.inner, value)
+        $acceptsWholly(meta.inner, value, selecting)
       );
     case 'transform':
-      return meta.inner == null || $acceptsWholly(meta.inner, value);
+      return meta.inner == null || $acceptsWholly(meta.inner, value, selecting);
     case 'raw':
       // Neutral: it validates nothing, so nothing in the value can be out of
       // its domain and it never contributes a mismatch. Answering `false` here
@@ -1550,7 +1581,7 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
       if ($isCatchAll(member)) {
         continue;
       }
-      if ($acceptsWholly(member, value)) {
+      if ($acceptsWholly(member, value, true)) {
         return {member, parsed: member(value) as T};
       }
     }

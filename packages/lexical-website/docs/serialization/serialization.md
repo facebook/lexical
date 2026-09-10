@@ -867,10 +867,11 @@ are working on Lexical itself, see
 [the generated JSON code](/docs/maintainers-guide#pnpm-run-generate-node-json)
 in the maintainers' guide.
 
-### `exportJSON` serializes the version it is called on
+### `exportJSON` may serialize the instance as-is (breaking change)
 
-One behavior changed when properties became schema declarations, and it affects
-code that calls `exportJSON` directly.
+`exportJSON` no longer promises to resolve the latest version of the node it is
+called on. This is a breaking change, and it affects code that calls
+`exportJSON` directly on a node reference it kept across a mutation.
 
 A property declared with `withField` is read straight off the node. That is the
 optimization the serialization walk is built on — every node the walk reaches
@@ -879,21 +880,25 @@ the walk resolves nothing per node. Previously each property went through its
 accessor, and every accessor resolves `getLatest()`, so a stale node reference
 still exported current values.
 
-It no longer does. If you hold a reference that a `getWritable()` — that is,
-any `set<Property>` call — has since superseded, `exportJSON()` on it writes
-the pre-mutation values:
+It no longer does:
 
 ```ts
 const stale = node;
-node.setStyle('color: red');   // clones; `stale` is now a previous version
-stale.exportJSON();            // ← the old style
+node.setStyle('color: red');    // clones; `stale` is now a previous version
+stale.exportJSON();             // ← may write the old style
 stale.getLatest().exportJSON(); // ← the new one
 ```
 
-Call `getLatest()` first when you hold such a reference. Nothing inside Lexical
-does: the walk, the `@lexical/clipboard` selection export and
-`editorState.toJSON()` all start from the node map. This matters only for a
-node reference you kept across a mutation and then exported by hand.
+Do not reason about which properties resolve. A property whose accessor a
+subclass overrode still goes through that accessor, so a single node can write
+a current `text` beside a stale `style` in the same object. Treat the whole
+result as "whatever version you called it on" and call `getLatest()` yourself
+whenever you hold a reference that may have been superseded.
+
+Nothing inside Lexical needs to: the walk, the `@lexical/clipboard` selection
+export and `editorState.toJSON()` all start from the node map, which only ever
+holds current versions. This matters only for a node reference you kept across
+a mutation and then exported by hand.
 
 ### Versioning & Breaking Changes
 

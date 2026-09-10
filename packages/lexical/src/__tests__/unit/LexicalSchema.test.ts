@@ -2899,6 +2899,59 @@ describe('a catch-all is a last resort, not a mismatch', () => {
     ).toEqual({note: 'hi', tags: ['red', 'blue']});
   });
 
+  test('but a union that merely contains one is not itself a catch-all', () => {
+    // Treating "contains a catch-all" as "is a catch-all" skipped the whole
+    // nested union in the specific pass, discarding the matches of its other
+    // members along with the raw one.
+    expect(
+      unionValue(
+        [
+          arrayValue(numberValue()),
+          unionValue([arrayValue(stringValue()), rawValue()], [] as never),
+        ],
+        [] as never,
+      )(['red', '42']),
+    ).toEqual(['red', '42']);
+    // And the mirror, with the catch-all-bearing union declared first.
+    expect(
+      unionValue(
+        [
+          unionValue([arrayValue(numberValue()), rawValue()], [] as never),
+          arrayValue(stringValue()),
+        ],
+        [] as never,
+      )(['red', '42']),
+    ).toEqual(['red', '42']);
+  });
+
+  test('and a catch-all inside a member is part of what that member fits', () => {
+    // Choosing between members and measuring one are different questions. A
+    // `union[stringValue(), rawValue()]` sitting in a field really does write
+    // `[]` back unchanged, so excluding the raw there made the enclosing object
+    // under-report its fit and the sibling member coerced `b` to `''`.
+    expect(
+      unionValue(
+        [
+          objectValue({a: stringValue(), b: stringValue()}),
+          objectValue({
+            a: stringValue(),
+            b: unionValue([stringValue(), rawValue()], '' as never),
+          }),
+        ],
+        'x' as never,
+      )({a: '', b: []} as never),
+    ).toEqual({a: '', b: []});
+  });
+
+  test('and a member that normalizes still wins by declaration order', () => {
+    // The guide's own reason to put `numberValue` in a union: its domain
+    // contains values it rewrites. Preferring a member that preserves the value
+    // over one that normalizes it would take that away.
+    expect(
+      unionValue([numberValue(), enumValue(['inherit'])], 'inherit')('640'),
+    ).toBe(640);
+  });
+
   test('and a catch-all is one wherever it is reached from', () => {
     // Reading `meta.kind` off the member alone missed every indirect one. A
     // wrapper is transparent, and a union answers with `some`, so one raw

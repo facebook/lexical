@@ -1761,16 +1761,23 @@ export class LexicalNode {
    * that returns `undefined` omits its property. Override this only for output
    * a schema can not describe, and call `super.exportJSON(compact)` when you do.
    *
-   * This serializes **the version it is called on**, not the latest one. A
-   * property declared with {@link withField} is read straight off the node as
-   * an optimization, which the serialization walk relies on — every node it
-   * reaches comes from the EditorState's node map and is already current, so
-   * it resolves nothing per node. Calling this method directly on a reference
-   * that a `getWritable()` (any `set<Prop>`) has since superseded therefore
-   * serializes the pre-mutation values; call `node.getLatest().exportJSON()`
-   * when you hold such a reference. Previously every property went through an
-   * accessor that resolved the latest version on each read, so this is a
-   * behavior change for that case.
+   * **This may serialize the instance as-is, without resolving the latest
+   * version.** A property declared with {@link withField} is read straight off
+   * the node, which is the optimization the serialization walk is built on —
+   * every node the walk reaches comes from the EditorState's node map and is
+   * already current, so it resolves nothing per node.
+   *
+   * So on a reference that a `getWritable()` (any `set<Prop>`) has since
+   * superseded, this writes pre-mutation values. Which properties do is not
+   * something to rely on: a property whose accessor a subclass overrode still
+   * goes through that accessor and resolves the latest, so one node can write
+   * a current `text` beside a stale `style`. Call
+   * `node.getLatest().exportJSON()` whenever you hold such a reference rather
+   * than reasoning about which properties resolve.
+   *
+   * This is a breaking change. Every property previously went through an
+   * accessor, and every accessor resolves `getLatest()`, so a stale reference
+   * exported current values.
    *
    * @param compact Write the compact form: omit a property the parser derives
    *   rather than reads, one whose value is the schema default parsing would

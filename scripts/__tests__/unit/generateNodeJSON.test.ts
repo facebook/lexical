@@ -6,10 +6,23 @@
  *
  */
 
+import {
+  arrayValue,
+  nodeSchema,
+  numberValue,
+  objectValue,
+  optional,
+  TextNode,
+  withField,
+} from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-// @ts-expect-error - a .mjs script with JSDoc types, not a typed module
-import {claimTableName, emittable} from '../../shared/generateNodeJSON.mjs';
+import {
+  claimTableName,
+  emittable,
+  generateCompactExport,
+  // @ts-expect-error - a .mjs script with JSDoc types, not a typed module
+} from '../../shared/generateNodeJSON.mjs';
 
 /**
  * The generator interpolates schema keys, field names, accessor names and
@@ -51,6 +64,24 @@ describe('names interpolated into generated code', () => {
       );
     }
   });
+
+  test('so is a name a sibling schema key already binds', () => {
+    // The compact exporter binds `const <key>` for every property and
+    // `hoistGatedReads` binds `const <predicate>` in the same scope, so a
+    // `when` predicate sharing a sibling's name emitted two `const`s and a
+    // generated module that does not parse — a `SyntaxError` reported against
+    // generated code rather than against the schema that caused it.
+    expect(
+      emittable('shown', 'when predicate', true, new Set(['visible'])),
+    ).toBe('shown');
+    expect(() =>
+      emittable('shown', 'when predicate', true, new Set(['shown', 'visible'])),
+    ).toThrow(/collides with a name the generated code binds/);
+    // Only where the name is bound, as with the reserved words.
+    expect(emittable('shown', 'getter method', false, new Set(['shown']))).toBe(
+      'shown',
+    );
+  });
 });
 
 describe('lookup table names', () => {
@@ -68,5 +99,63 @@ describe('lookup table names', () => {
     expect(() => claimTableName('COLLIDE_DECODE', {b: 2})).toThrow(
       /two different lookup tables both want the name/,
     );
+  });
+});
+
+/**
+ * A class keeps the compact form or falls back to the walk for it, and either
+ * way the checked-in output is valid — the fallback is silent by design. So
+ * these drive the generator over classes the manifest does not contain, which
+ * is the only way a property that should not have cost its class this form,
+ * and one that should, can be told apart.
+ */
+describe('what costs a class its compact export', () => {
+  test('not a default of undefined, whatever equality the schema carries', () => {
+    // `optional` lifts its inner schema's `isEqual`, so this property has one
+    // while its default is `undefined` — and a default of `undefined` has no
+    // literal to compare against, which is what `differsFromDefault` refuses.
+    // The walk skips an undefined value before it ever looks at the default,
+    // and so does the generated form: rendering the comparison first threw
+    // that refusal over a string the test was about to discard, and took the
+    // class out of the compact form for a property that needs no comparison.
+    class OptionalTags extends TextNode {
+      __tags: undefined | number[] = undefined;
+      $config() {
+        return this.config('generate-optional-tags', {
+          extends: TextNode,
+          json: nodeSchema<OptionalTags>()({
+            tags: withField(optional(arrayValue(numberValue())), {
+              field: '__tags',
+            }),
+          }),
+        });
+      }
+    }
+    const source: null | string = generateCompactExport(OptionalTags);
+    expect(source).not.toBeNull();
+    expect(source).toContain('const tags = node.__tags;');
+    // The whole test, with nothing else and'd onto it.
+    expect(source).toContain('if (tags !== undefined) {');
+    // While a sibling that does have a default still compares against it.
+    expect(source).toContain('if (style !== undefined && style !== "") {');
+  });
+
+  test('but a default with no literal to compare against still does', () => {
+    // An object default — here the one `objectValue` composes from its fields'
+    // — is a default `differsFromDefault` cannot state. There *is* a default,
+    // so the comparison is reached, and the class falls back to the walk for
+    // this form. That is the refusal the reordering has to leave intact.
+    class ObjectDefault extends TextNode {
+      __box: {w: number} = {w: 0};
+      $config() {
+        return this.config('generate-object-default', {
+          extends: TextNode,
+          json: nodeSchema<ObjectDefault>()({
+            box: withField(objectValue({w: numberValue()}), {field: '__box'}),
+          }),
+        });
+      }
+    }
+    expect(generateCompactExport(ObjectDefault)).toBeNull();
   });
 });

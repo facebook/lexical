@@ -150,6 +150,20 @@ describe('generated exportJSON', () => {
             // Out of domain on both counts: the emitted bounds and enum test
             // have to fall back exactly where the schemas do.
             $expectSameParse(ParagraphNode, {format: 'nope', indent: -1});
+            // TabNode applies only what it does not derive. The two forms of
+            // `format` both reach the alias table, and `detail`, `mode` and
+            // `text` are declared export-only — a tab's are fixed — so a
+            // serialized document carrying them has to leave the node exactly
+            // where the walk leaves it, which is untouched.
+            $expectSameParse(TabNode, {format: 'bold', style: 'color: red'});
+            $expectSameParse(TabNode, {format: 2});
+            $expectSameParse(TabNode, {
+              detail: 0,
+              mode: 'normal',
+              style: 'color: red',
+              text: 'not a tab',
+            });
+            $expectSameParse(TabNode, {});
           },
           {discrete: true},
         );
@@ -685,10 +699,15 @@ describe('generated updateFromJSON', () => {
     // followed the way the walk follows it.
     expect(GENERATED_TEXT.updateFromJSON).toBeDefined();
     expect(GENERATED_PARAGRAPH.updateFromJSON).toBeDefined();
-    // TabNode declares three of its own properties import-only, so a parser
-    // would have nothing to apply; LineBreakNode declares none at all. The
-    // generator says so rather than emitting one that disagrees with the walk.
-    expect(GENERATED_TAB.updateFromJSON).toBeUndefined();
+    // TabNode declares three of its own properties export-only — the values
+    // are fixed for a tab, so the walk derives them on import rather than
+    // applying them — and inherits `format` and `style`, which it applies the
+    // way TextNode does. A property with nothing to apply is one the parser
+    // omits, not one that costs the class a parser: what the generated one
+    // applies is exactly what the walk would.
+    expect(GENERATED_TAB.updateFromJSON).toBeDefined();
+    // LineBreakNode declares no properties at all, so there is nothing for a
+    // parser to do and the generator emits none rather than an empty one.
     expect(GENERATED_LINEBREAK.updateFromJSON).toBeUndefined();
   });
 

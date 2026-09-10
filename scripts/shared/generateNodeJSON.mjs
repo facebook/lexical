@@ -280,20 +280,37 @@ const EMITTED_LOCALS = new Set([
  * @param {string} what how the name is used, for the message
  * @param {boolean} [binds] whether the emitted form declares a local of this
  *   name, which additionally rules out reserved words and the emitted locals
+ * @param {Set<string>} [alsoBound] further names the generated code binds in
+ *   the same scope — a class's schema keys, for a `when` predicate
  * @returns {string} the name, so this can wrap an interpolation
  */
-export function emittable(name, what, binds = false) {
+export function emittable(name, what, binds = false, alsoBound) {
   if (!IDENTIFIER.test(name)) {
     throw new NotCompilable(
       `${what} ${JSON.stringify(name)} is not a plain identifier`,
     );
   }
-  if (binds && (RESERVED.has(name) || EMITTED_LOCALS.has(name))) {
+  if (
+    binds &&
+    (RESERVED.has(name) ||
+      EMITTED_LOCALS.has(name) ||
+      (alsoBound !== undefined && alsoBound.has(name)))
+  ) {
     throw new NotCompilable(
       `${what} ${JSON.stringify(name)} collides with a name the generated code binds`,
     );
   }
   return name;
+}
+
+/**
+ * Every schema key of `klass`, which the compact exporter binds as a local.
+ *
+ * @param {NodeClass} klass
+ * @returns {Set<string>}
+ */
+function schemaKeysOf(klass) {
+  return new Set(getComposedSchema(klass).fieldsBaseFirst.map(([key]) => key));
 }
 
 /**
@@ -332,7 +349,14 @@ function readExpression(klass, schema, key) {
     // the predicate is hoisted so properties that share one call it once.
     return {
       expression: read,
-      when: emittable(getter.when, 'when predicate', true),
+      // Checked against the schema's own keys as well as the fixed locals: the
+      // compact exporter binds `const <key>` for every property and
+      // `hoistGatedReads` binds `const <predicate>` in the same scope, so a
+      // predicate sharing a sibling's name emits two `const`s and a module
+      // that does not parse — reported against generated code rather than
+      // against the schema that caused it, which is the failure `EMITTED_LOCALS`
+      // and `claimTableName` exist to prevent for the other name spaces.
+      when: emittable(getter.when, 'when predicate', true, schemaKeysOf(klass)),
     };
   }
   return {expression: `node.${emittable(getter, 'getter method')}()`};
@@ -465,10 +489,15 @@ function differsFromDefault(schema, name) {
  * only: the generated module simply has no `exportCompactJSON` for it, and
  * the dispatch falls back to the walk per form.
  *
+ * Exported for `generateNodeJSON.test.ts`, like {@link emittable}: whether a
+ * property costs its class this form is not visible in the checked-in output
+ * — a class that loses it silently falls back to the walk — so the manifest
+ * cannot exercise the refusal or its absence.
+ *
  * @param {NodeClass} klass
  * @returns {null | string}
  */
-function generateCompactExport(klass) {
+export function generateCompactExport(klass) {
   const writes = [];
   const reads = schemaReads(klass);
   // The same hoist the legacy form uses, so the two call a shared predicate
@@ -482,24 +511,30 @@ function generateCompactExport(klass) {
       // not even call the getter to find out what it would have written.
       continue;
     }
-    let differs;
-    try {
-      differs = differsFromDefault(schema, key);
-    } catch (error) {
-      if (!(error instanceof NotCompilable)) {
-        throw error;
-      }
-      process.stdout.write(
-        `${klass.name}: no generated compact export, "${key}" ${error.message}\n`,
-      );
-      return null;
-    }
     // The walk skips an undefined value before it ever looks at the default,
     // and so does this; for a default of `undefined` that is the whole test.
-    const test =
-      schema.defaultValue === undefined
-        ? `${key} !== undefined`
-        : `${key} !== undefined && ${differs}`;
+    // The comparison is therefore only rendered when there is a default to
+    // compare against — computing it first took a class out of the compact
+    // form over a string that was about to be discarded, so a property like
+    // `optional(arrayValue(numberValue()))`, whose default is `undefined` and
+    // whose equality is lifted from its inner schema, cost its class
+    // `exportCompactJSON` entirely.
+    let test = `${key} !== undefined`;
+    if (schema.defaultValue !== undefined) {
+      let differs;
+      try {
+        differs = differsFromDefault(schema, key);
+      } catch (error) {
+        if (!(error instanceof NotCompilable)) {
+          throw error;
+        }
+        process.stdout.write(
+          `${klass.name}: no generated compact export, "${key}" ${error.message}\n`,
+        );
+        return null;
+      }
+      test = `${test} && ${differs}`;
+    }
     writes.push(
       when === undefined
         ? `  const ${key} = ${expression};\n  if (${test}) {\n    json.${key} = ${key};\n  }`
@@ -647,7 +682,8 @@ function isElementish(klass) {
  * @param {NodeClass} klass
  * @param {AnySchema} schema
  * @param {string} key
- * @returns {{key: string, needsSelf: boolean, statements: string}}
+ * @returns {null | {key: string, needsSelf: boolean, statements: string}} `null`
+ *   for a property with nothing to apply, which is what an export-only one has.
  */
 function writeExpression(klass, schema, key) {
   if (key in Object.prototype) {
@@ -661,7 +697,14 @@ function writeExpression(klass, schema, key) {
   emittable(key, 'schema key');
   const setter = resolveSetterAccessor(klass, key, schema);
   if (setter === null) {
-    throw new NotCompilable(`"${key}" is export-only`);
+    // Declared export-only: the value is derived from other properties on the
+    // way in (ListNode's `tag` follows from `listType`). `compileSetters`
+    // skips such a property, so the generated parser has nothing to emit for
+    // it and `null` says so. Throwing `NotCompilable` here said the *class*
+    // could not be compiled, which cost TabNode its parser over `detail`,
+    // `mode` and `text` while the `format` and `style` it inherits compile
+    // fine — and would cost the same to any node with a derived property.
+    return null;
   }
   const {expression, tables: parseTables} = compileParse(
     schema.meta,
@@ -753,7 +796,12 @@ function generateUpdate(klass) {
   const writes = [];
   for (const [key, schema] of fieldsBaseFirst) {
     try {
-      writes.push(writeExpression(klass, schema, key));
+      const write = writeExpression(klass, schema, key);
+      // `null` is "nothing to apply for this property", not "give up on the
+      // class" — see `writeExpression`.
+      if (write !== null) {
+        writes.push(write);
+      }
     } catch (error) {
       if (!(error instanceof NotCompilable)) {
         throw error;

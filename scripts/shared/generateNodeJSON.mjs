@@ -719,10 +719,10 @@ function narrowedSchema(schema) {
     return null;
   }
   const nested = [
-    ...(meta.inner ? [meta.inner] : []),
-    ...(meta.item ? [meta.item] : []),
-    ...(meta.members || []),
-    ...(meta.fields ? Object.values(meta.fields) : []),
+    ...('inner' in meta && meta.inner ? [meta.inner] : []),
+    ...('item' in meta && meta.item ? [meta.item] : []),
+    ...(('members' in meta && meta.members) || []),
+    ...('fields' in meta && meta.fields ? Object.values(meta.fields) : []),
   ];
   for (const inner of nested) {
     const found = narrowedSchema(inner);

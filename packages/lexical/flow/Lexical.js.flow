@@ -1459,7 +1459,7 @@ declare export function createRefCountedRegistry<Key, Options = void>(
 // is optional because the parser drops it, which is what lets an interface
 // with an optional `version` — @lexical/clipboard's BaseSerializedNode — be
 // passed without a cast.
-declare export type ParsableSerializedNode = {
+export type ParsableSerializedNode = {
   $slots?: {[string]: ParsableSerializedNode},
   children?: Array<ParsableSerializedNode>,
   type: string,

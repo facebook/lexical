@@ -852,7 +852,26 @@ function $acceptsValue<T>(
  * that happens to carry a raw property still describes everything else about
  * the value, which is exactly the case the neutrality above exists for.
  */
+/**
+ * Memoized because the answer is a property of the schema alone, and `$fitOf`
+ * now asks it while *measuring* a union rather than only when one is choosing:
+ * without this, a value node under N nested unions walks the schema below it
+ * once per level, which is work that grows with the nesting for a question
+ * whose answer was fixed when the schema was built.
+ */
+const CATCH_ALL_CACHE = new WeakMap<AnySerializationSchema, boolean>();
+
 function $isCatchAll(schema: AnySerializationSchema): boolean {
+  const cached = CATCH_ALL_CACHE.get(schema);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const result = $computeIsCatchAll(schema);
+  CATCH_ALL_CACHE.set(schema, result);
+  return result;
+}
+
+function $computeIsCatchAll(schema: AnySerializationSchema): boolean {
   const meta: SerializationSchemaMeta | undefined | null = schema.meta;
   if (meta == null) {
     return false;
@@ -922,6 +941,14 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
       if (!Array.isArray(value)) {
         return FIT_NONE;
       }
+      // `arrayValue`'s own predicate is that `Array.isArray` and nothing more,
+      // so this costs it a second call and decides nothing. It is here for a
+      // schema that carries array metadata and declares a *narrower* domain:
+      // walking the items structurally answered from the shape alone and
+      // handed such a schema a value it had said it did not accept.
+      if (schema.accepts !== undefined && !schema.accepts(value)) {
+        return FIT_NONE;
+      }
       if (meta.item == null) {
         return FIT_WHOLE;
       }
@@ -948,7 +975,18 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
       if (fields == null) {
         return FIT_WHOLE;
       }
-      if (hasUndeclaredKey(value, fields)) {
+      // The declared predicate where there is one, which for `objectValue` is
+      // exactly the undeclared-key test below and so decides the same thing.
+      // A schema that carries object metadata and states a narrower domain —
+      // one that admits only `{kind: 'special'}` — had its predicate skipped
+      // entirely, so the fields alone decided, and it won `{kind: 'ordinary',
+      // text: 'keep me'}` ahead of the sibling that matched. Its parse then
+      // returned its default and both fields were gone.
+      if (
+        schema.accepts !== undefined
+          ? !schema.accepts(value)
+          : hasUndeclaredKey(value, fields)
+      ) {
         return FIT_NONE;
       }
       let worst = FIT_WHOLE;
@@ -965,24 +1003,17 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
       }
       return worst >= FIT_COERCIBLE ? FIT_COERCIBLE : worst;
     }
-    case 'union': {
-      if (meta.members == null) {
-        return FIT_WHOLE;
-      }
-      // The fit of the member this union would pick. A catch-all is *not*
-      // demoted here: a nested `union[stringValue(), rawValue()]` sitting in a
-      // field really does write `[]` back unchanged, and ranking that as
-      // coercible made the enclosing object under-report its fit. Demotion
-      // belongs to the union doing the choosing — see `$selectUnionMember`.
-      let best = FIT_NONE;
-      for (let i = 0; i < meta.members.length; i++) {
-        const fit = $fitOf(meta.members[i], value);
-        if (fit < best) {
-          best = fit;
-        }
-      }
-      return best;
-    }
+    case 'union':
+      // Literally the selection, so what a union reports is what it will do.
+      // Ranking the members without the catch-all demotion answered for a
+      // member the union would not have picked: `union[array[number], raw]`
+      // reported the raw's 2 while selecting the array, so an object holding
+      // that field claimed a better fit than the sibling whose own `tags`
+      // matched every element, won the enclosing union, and read
+      // `{tags: ['red', '42']}` back as `{tags: [0, 42]}`.
+      return meta.members == null
+        ? FIT_WHOLE
+        : $bestUnionMember(meta.members, value).fit;
     case 'aliased':
       // An alias is an exact spelling, so it is as whole a fit as there is.
       return (typeof value === 'string' &&
@@ -1010,38 +1041,68 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
 }
 
 /**
- * The member a union would parse `value` with, or `undefined` if none would.
+ * The member a union would parse `value` with and how well that member fits.
  *
- * One procedure, used both to choose a member and to answer how well a union
- * fits, so the two cannot disagree — and each member is measured exactly once.
+ * One procedure, called both to choose a member and to answer how well the
+ * union fits, so the two cannot disagree: the rank a union reports is the rank
+ * of the member it will hand the value to. Splitting them is what let a union
+ * advertise a fit it would never deliver — see the `union` case of `$fitOf`.
  *
- * A member that *is* a catch-all is ranked no better than coercible: it
+ * A member that *is* a catch-all is *ranked* no better than coercible: it
  * describes nothing, so letting it win on the strength of admitting everything
  * would put it ahead of the member that describes the data and hand back
- * unvalidated input under a declared type. That demotion applies only to a
- * union's own members, which is why `$fitOf` does not apply it.
+ * unvalidated input under a declared type. The demotion applies to a union's
+ * own members, which is why `$fitOf` reaches it only through here — a
+ * `rawValue()` *field* stays neutral inside its object, as `$isCatchAll`
+ * describes.
+ *
+ * Ranking and reporting are not the same number. The demotion decides *which*
+ * member wins; what the union then reports is that member's own fit, because
+ * that is what the union is about to do with the value. A member reached
+ * through a demotion still fits the way it fits: `union[stringValue(),
+ * rawValue()]` given `[]` really does hand it to the raw and write it back
+ * unchanged, which is a whole fit earned through a catch-all — reporting the
+ * demoted 3 there made an enclosing object under-report and its sibling coerce
+ * the field away. Reporting the *undemoted best* is the opposite error:
+ * `union[arrayValue(numberValue()), rawValue()]` given `['red', '42']` ranks
+ * the array and the raw alike and takes the array by declaration order, so
+ * answering with the raw's 2 advertises a fit the union will not deliver.
+ *
+ * Each member is measured exactly once.
+ */
+function $bestUnionMember(
+  members: readonly AnySerializationSchema[],
+  value: unknown,
+): {fit: number; member: AnySerializationSchema | undefined} {
+  let member: AnySerializationSchema | undefined;
+  // What the winner ranked as, and what it actually fits as.
+  let bestRank = FIT_NONE;
+  let bestFit = FIT_NONE;
+  for (let i = 0; i < members.length; i++) {
+    const candidate = members[i];
+    const fit = $fitOf(candidate, value);
+    const rank =
+      fit < FIT_COERCIBLE && $isCatchAll(candidate) ? FIT_COERCIBLE : fit;
+    if (rank < bestRank) {
+      member = candidate;
+      bestRank = rank;
+      bestFit = fit;
+      if (rank === FIT_WHOLE) {
+        break;
+      }
+    }
+  }
+  return {fit: bestFit, member};
+}
+
+/**
+ * The member a union would parse `value` with, or `undefined` if none would.
  */
 function $selectUnionMember(
   members: readonly AnySerializationSchema[],
   value: unknown,
 ): AnySerializationSchema | undefined {
-  let best: AnySerializationSchema | undefined;
-  let bestFit = FIT_NONE;
-  for (let i = 0; i < members.length; i++) {
-    const member = members[i];
-    let fit = $fitOf(member, value);
-    if ($isCatchAll(member) && fit < FIT_COERCIBLE) {
-      fit = FIT_COERCIBLE;
-    }
-    if (fit < bestFit) {
-      best = member;
-      bestFit = fit;
-      if (fit === FIT_WHOLE) {
-        break;
-      }
-    }
-  }
-  return best;
+  return $bestUnionMember(members, value).member;
 }
 
 /**

@@ -3129,6 +3129,45 @@ describe('a catch-all is a last resort, not a mismatch', () => {
       unionValue([numberValue(), rawValue()], 0 as never)({odd: 1} as never),
     ).toEqual({odd: 1});
   });
+
+  test('and what a union reports is the member it will actually use', () => {
+    // The mirror of the test above it. There, the nested union really does
+    // reach its raw — `stringValue()` declines `[]` — so reporting a fit
+    // earned through a catch-all is honest. Here it does not: the array and
+    // the raw rank alike once the catch-all is demoted, so declaration order
+    // takes the array, and answering with the raw's rank advertised a fit the
+    // union was never going to deliver. The enclosing object then beat the
+    // sibling whose own `tags` matches every element, and the strings were
+    // read back as numbers.
+    const viaFallback = objectValue({
+      note: rawValue(),
+      tags: unionValue([arrayValue(numberValue()), rawValue()], [] as never),
+    });
+    const specific = objectValue({
+      note: rawValue(),
+      tags: arrayValue(stringValue()),
+    });
+    expect(
+      unionValue(
+        [viaFallback, specific],
+        'x' as never,
+      )({
+        note: 'keep me',
+        tags: ['red', '42'],
+      } as never),
+    ).toEqual({note: 'keep me', tags: ['red', '42']});
+    // Declaration order is not what decided it: the specific member wins from
+    // either position.
+    expect(
+      unionValue(
+        [specific, viaFallback],
+        'x' as never,
+      )({
+        note: 'keep me',
+        tags: ['red', '42'],
+      } as never),
+    ).toEqual({note: 'keep me', tags: ['red', '42']});
+  });
 });
 
 describe('a container schema answers for its shape, not its contents', () => {
@@ -3137,6 +3176,39 @@ describe('a container schema answers for its shape, not its contents', () => {
   // questions is what made every previous adjustment trade one loss for
   // another — an object that inspected its fields declined the very value it
   // had written, exactly as an array that inspected its elements did.
+
+  test('but a declared predicate still says which values are its own', () => {
+    // The built-in containers' `accepts` is the structural test and nothing
+    // more, so the walk reproducing it changed no answer — and that is why
+    // dropping the call went unnoticed. A schema that carries container
+    // metadata and states a *narrower* domain had its predicate skipped
+    // entirely: the fields alone decided, and since it declares the same two
+    // fields as the general shape, it won a value it had said was not its own
+    // and its parse replaced both with its default.
+    const fields = {kind: stringValue(), text: stringValue()};
+    const special = Object.assign(
+      (_value: unknown) => ({kind: 'special', text: ''}),
+      {
+        accepts: (value: unknown) =>
+          typeof value === 'object' &&
+          value !== null &&
+          (value as {kind?: unknown}).kind === 'special',
+        defaultValue: {kind: 'special', text: ''},
+        meta: {fields, kind: 'object'},
+      },
+    ) as never;
+    const general = objectValue(fields);
+    const parse = unionValue([special, general], 'x' as never);
+    expect(parse({kind: 'ordinary', text: 'keep me'} as never)).toEqual({
+      kind: 'ordinary',
+      text: 'keep me',
+    });
+    // And it still wins the values it did claim.
+    expect(parse({kind: 'special', text: 'anything'} as never)).toEqual({
+      kind: 'special',
+      text: '',
+    });
+  });
 
   test('an object with a transform field round-trips', () => {
     // The field's `accepts` describes the transform's *input*; the document

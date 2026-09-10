@@ -848,7 +848,24 @@ function $acceptsWholly(
   schema: AnySerializationSchema,
   value: unknown,
 ): boolean {
-  const {meta} = schema;
+  // Gated on the lenient answer first, which makes this a *strengthening* of
+  // `accepts` by construction rather than a second opinion that has to be kept
+  // agreeing with it. Two things follow, both of which went wrong when the
+  // walk answered on its own: a schema that declares "this value is not mine"
+  // is never handed the value regardless of what its `meta` describes, and
+  // every guard the lenient predicate carries — `unionValue` excluding
+  // `undefined`, each wrapper's own notion of a nil — applies here too without
+  // being restated.
+  if (!$acceptsValue(schema, value)) {
+    return false;
+  }
+  const meta: SerializationSchemaMeta | undefined = schema.meta;
+  if (meta === undefined) {
+    // A hand-rolled schema — the interface is public and `makeSchema` is not
+    // exported, so this is the only way a consumer adds one. Its `accepts` is
+    // the whole of what it has told us, and reading `meta.kind` off it threw.
+    return true;
+  }
   switch (meta.kind) {
     case 'array': {
       if (!Array.isArray(value)) {
@@ -864,11 +881,18 @@ function $acceptsWholly(
       return true;
     }
     case 'object': {
-      if (!isPlainObject(value) || hasUndeclaredKey(value, meta.fields)) {
+      if (!isPlainObject(value)) {
         return false;
       }
-      for (const [key, field] of Object.entries(meta.fields)) {
-        if (hasOwnKey(value, key) && !$acceptsWholly(field, value[key])) {
+      // Over the *value's* keys, not the schema's. The lenient gate has
+      // already run `objectValue`'s own predicate, so every own key here is a
+      // declared field and no undeclared one survived — and a compact document
+      // carries only the keys it wrote, which is usually far fewer than the
+      // schema declares. `Object.entries(meta.fields)` per call also allocated
+      // where `objectValue` hoists that array once at build time.
+      for (const key of Object.keys(value)) {
+        const field = meta.fields[key];
+        if (field !== undefined && !$acceptsWholly(field, value[key])) {
           return false;
         }
       }
@@ -882,20 +906,28 @@ function $acceptsWholly(
         (typeof value === 'string' && hasOwnKey(meta.aliases, value)) ||
         $acceptsWholly(meta.inner, value)
       );
+    // Each wrapper forwards to `inner` except for the nil *it* owns —
+    // `nullable` maps both nils, `optional` only `undefined`, and a transform
+    // owns none: it hands everything to `inner`. Treating all three the same
+    // declared a `null` a whole match for an `optional` without `inner` ever
+    // being asked.
     case 'nullable':
+      return value == null || $acceptsWholly(meta.inner, value);
     case 'optional':
+      return value === undefined || $acceptsWholly(meta.inner, value);
     case 'transform':
-      // The wrapper owns whether the value reaches `inner` at all — a nil, or
-      // a domain the transform reads — and `inner` owns how much of it fits.
-      return (
-        $acceptsValue(schema, value) &&
-        (value === null ||
-          value === undefined ||
-          $acceptsWholly(meta.inner, value))
-      );
+      return $acceptsWholly(meta.inner, value);
+    case 'raw':
+      // Validates nothing, so there is nothing it can be wholly right about.
+      // Saying yes made a raw member — which accepts every value — win the
+      // first pass ahead of a typed member that owns the value and would have
+      // coerced it, storing the input unvalidated under a declared type.
+      return false;
     default:
-      // A leaf: nothing inside it to be partly right about.
-      return $acceptsValue(schema, value);
+      // A leaf: the lenient answer above was the whole answer. Not a `never`
+      // assertion, because a schema from a newer core can carry a kind this
+      // build has never heard of, and `accepts` still describes it.
+      return true;
   }
 }
 
@@ -1340,11 +1372,19 @@ function $sameContent(a: unknown, b: unknown): boolean {
  * back to its own default rather than reporting a rejection — so a member is
  * considered to accept `value` when parsing it lands anywhere *other* than that
  * member's default, or when the value is itself that default (the one case a
- * total schema cannot distinguish from a fallback). The first accepting member
- * wins and the union yields what that member parsed, so a member that
- * normalizes its input — {@link numberValue} reading a stringified number —
- * composes here the same way it behaves alone. If no member accepts, the result
- * is `defaultValue` when given, otherwise the first member's default.
+ * total schema cannot distinguish from a fallback).
+ *
+ * Selection is in two passes. The first asks every member whether it accepts
+ * the value *entirely* — every element of an array, every declared field of an
+ * object — and the first such member wins. Only if none does are the members
+ * asked again for a partial match, where the first accepting one wins and the
+ * union yields what it parsed. So a member that normalizes its input
+ * ({@link numberValue} reading a stringified number) composes here the same way
+ * it behaves alone, and a value that belongs entirely to a later member is not
+ * taken by an earlier one that would only partly coerce it — declaration order
+ * decides between members that fit equally well, not between a complete fit and
+ * a partial one. If no member accepts at all, the result is `defaultValue` when
+ * given, otherwise the first member's default.
  *
  * The inference above is only the fallback. A member that declares its own
  * domain — which every combinator here does — is asked directly, and that is
@@ -1481,8 +1521,14 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
     // would then parse the whole subtree, and parse it again once it decided
     // to. The two agree by construction — `$match` takes the first member
     // `$schemaMatch` recognizes, and this is that same test without the parse.
+    //
+    // `undefined` is excluded to match the parse — unless the fallback *is*
+    // `undefined`, in which case the parse returns it and declining would be a
+    // schema refusing the value it produced. That is the same clause
+    // `enumValue` carries, and without it an `objectValue` holding an absent
+    // union-typed field declined its own output and lost every sibling.
     value =>
-      value !== undefined &&
+      (value !== undefined || fallback === undefined) &&
       members.some(member => $acceptsValue(member, value)),
   );
 }
@@ -1847,45 +1893,22 @@ export function arrayValue<T, In = T>(
     // about a raw input — a comparator answers about *values*, and the
     // inference has only the input to offer.
     //
-    // The elements are asked, not just the array-ness, for the reason
-    // `objectValue` asks about its fields: "is an array" is true of every
-    // array, so the first array-typed member of a union would answer for all
-    // of them and coerce the elements into its own item domain —
-    // `unionValue([arrayValue(numberValue()), arrayValue(stringValue())])`
-    // read `['red', 'blue']` as `[0, 0]`, and with object items the payload
-    // went missing entirely.
+    // Just "is an array". Telling one array variant from another is a *whole*
+    // match question, which `$acceptsWholly` answers for the union's first
+    // pass; this one only has to say whether the member could parse the value
+    // at all, and an array parse is total — it coerces every element.
     //
-    // *Some* element, not every. A union selects on this and a decline costs
-    // the whole array — where accepting costs at most one element, coerced to
-    // the item's default, which is what the parse does with a malformed
-    // element regardless. Asking `every` made one bad element discard every
-    // good one: `['a', 1]` fell through to a later member and lost the `'a'`,
-    // `{"label": "keep", "tags": [1, null]}` lost the label along with the
-    // array, and an `arrayValue` over a `transformValue` declined the very
-    // array it had produced, so a document was lost on reload rather than on
-    // import.
-    //
-    // An index loop rather than `some`, and one that passes over an absent
-    // element: a hole (or an explicit `undefined`) is filled from the item's
-    // own default exactly as `objectValue` fills an absent field, so it says
-    // nothing either way — and an array holding nothing else has nothing to
-    // contradict, which is the empty array's answer too.
-    value => {
-      if (!Array.isArray(value)) {
-        return false;
-      }
-      let judged = false;
-      for (let i = 0; i < value.length; i++) {
-        if (value[i] === undefined) {
-          continue;
-        }
-        judged = true;
-        if ($acceptsValue(item, value[i])) {
-          return true;
-        }
-      }
-      return !judged;
-    },
+    // Inspecting elements here cost data instead of saving it, because a
+    // decline propagates: `objectValue` asks each declared field, so an array
+    // no element of which matched took its whole enclosing object out of the
+    // union, and `{"label": "keep me", "tags": ["banana"]}` lost the label.
+    // The same refusal hit an array whose elements each carried one key a
+    // newer version added, and an `arrayValue` over a `transformValue`, whose
+    // elements on disk are transform *outputs* while the item's `accepts`
+    // describes the inner *input* — so it declined the very array it wrote.
+    // Accepting costs at most a coerced element, which is what the parse does
+    // with a malformed element anyway.
+    Array.isArray,
   );
 }
 

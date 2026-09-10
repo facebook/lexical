@@ -2858,6 +2858,78 @@ describe('a schema declares the domain it reads, and only that', () => {
   });
 });
 
+describe('a strict match never claims what the schema itself declines', () => {
+  // The first pass is a *strengthening* of `accepts`, not a second opinion:
+  // it asks the lenient predicate first, so every guard that one carries
+  // applies, and a schema that says "not mine" is never handed the value.
+
+  test('so a union and its own accepts cannot disagree', () => {
+    const inner = unionValue(
+      [optional(numberValue()), enumValue(['auto'])],
+      'auto' as never,
+    );
+    const shape = objectValue({title: stringValue(), x: inner});
+    const value = {title: 't', x: undefined};
+    const outer = unionValue([shape, enumValue(['none'])], 'none' as never);
+    // Whatever the answer, the two halves agree — the strict pass used to be
+    // *more* permissive than the lenient one here, so `accepts` said no while
+    // the parse committed to that member.
+    expect(shape.accepts!(value)).toBe(false);
+    expect(outer(value)).toBe('none');
+  });
+
+  test('and wrapping a member does not change the union’s answer', () => {
+    // `optional` around a non-nil value is a no-op, so it must not decide
+    // membership. Each wrapper now forwards to `inner` except for the nil it
+    // owns; treating all three alike made a `null` a whole match for an
+    // `optional` without `inner` ever being asked.
+    const member = objectValue({
+      note: unionValue([optional(numberValue()), stringValue()], 0 as never),
+      title: stringValue(),
+    });
+    const value = {note: undefined, title: 'keep me'};
+    const answers = [
+      member,
+      optional(member),
+      nullable(member),
+      transformValue(member, x => x),
+    ].map(m =>
+      unionValue([m as never, enumValue(['LOST'])], 'LOST' as never)(value),
+    );
+    expect(new Set(answers.map(a => JSON.stringify(a))).size).toBe(1);
+  });
+
+  test('and a schema carrying no meta is asked, not walked', () => {
+    // The interface is public and `makeSchema` is not exported, so a
+    // hand-rolled schema is how a consumer adds one — and reading `meta.kind`
+    // off it threw where the parse used to work.
+    const handRolled = Object.assign((value: unknown) => value, {
+      accepts: () => false,
+      defaultValue: 0,
+    }) as never;
+    expect(unionValue([handRolled, stringValue()], 'x' as never)('hi')).toBe(
+      'hi',
+    );
+  });
+
+  test('and a union recognizes the value it defaults to', () => {
+    // The clause `enumValue` got and `unionValue` did not: a union whose
+    // fallback is `undefined` parses `undefined` to `undefined`, so declining
+    // it is a schema refusing its own output — and an `objectValue` holding an
+    // absent union-typed field then declined the object it had just produced.
+    const u = unionValue(
+      [optional(stringValue()), numberValue()],
+      undefined as never,
+    );
+    expect(u.accepts!(undefined)).toBe(true);
+    const shape = objectValue({note: u, title: stringValue()});
+    expect(shape.accepts!(shape({title: 'x'} as never))).toBe(true);
+    expect(
+      unionValue([shape, enumValue(['LOST'])], 'LOST' as never)({title: 'x'}),
+    ).toEqual({note: undefined, title: 'x'});
+  });
+});
+
 describe('an array schema keeps what it can rather than falling back', () => {
   test('one malformed element does not discard the good ones', () => {
     // Asking `every` cost the whole array where the parse would have coerced a
@@ -2880,6 +2952,62 @@ describe('an array schema keeps what it can rather than falling back', () => {
         'auto',
       )(JSON.parse('{"label":"keep me","tags":[1,null]}')),
     ).toEqual({label: 'keep me', tags: [1, 0]});
+  });
+
+  test('an array no element of which matches keeps its enclosing object', () => {
+    // The half the `some` form missed: asking the elements at all meant an
+    // array with nothing in the item domain was refused, and because
+    // `objectValue` asks each declared field, the refusal took the whole
+    // object — a legacy document whose array holds the pre-migration element
+    // type lost every sibling property with it.
+    const shape = objectValue({
+      label: stringValue(),
+      tags: arrayValue(numberValue()),
+    });
+    expect(
+      unionValue(
+        [shape, enumValue(['auto'])],
+        'auto',
+      )(JSON.parse('{"label":"keep me","tags":["banana"]}')),
+    ).toEqual({label: 'keep me', tags: [0]});
+
+    // The same refusal hit an element carrying a key a newer version added,
+    // which is the shape schema evolution is supposed to survive.
+    const doc = objectValue({
+      items: arrayValue(objectValue({id: stringValue()})),
+      title: stringValue(),
+    });
+    expect(
+      unionValue(
+        [doc, enumValue(['auto'])],
+        'auto',
+      )({
+        items: [{extra: 1, id: 'a'}],
+        title: 'T',
+      } as never),
+    ).toEqual({items: [{id: 'a'}], title: 'T'});
+
+    // And an array over a transform, whose elements on disk are the
+    // transform's *outputs* while the item's domain is the inner *input* — so
+    // it declined the very array it had written, one reload later.
+    const rows = arrayValue(transformValue(numberValue(), v => `n${v}`));
+    expect(
+      unionValue([rows, enumValue(['none'])], 'none' as never)(['n1', 'n2']),
+    ).toEqual(['n0', 'n0']);
+  });
+
+  test('and a catch-all member never outranks one that owns the value', () => {
+    // `rawValue` validates nothing, so it accepts everything — which made it a
+    // *complete* match for every value and let it win the first pass ahead of
+    // a typed member that would have coerced. The value then reached a setter
+    // declared `number[]` holding a string.
+    expect(
+      unionValue(
+        [arrayValue(numberValue()), rawValue()],
+        [] as never,
+      )([1, 'x']),
+    ).toEqual([1, 0]);
+    expect(rawValue().accepts!('anything')).toBe(true);
   });
 
   test('an absent element says nothing either way', () => {
@@ -2940,9 +3068,17 @@ describe('an array schema keeps what it can rather than falling back', () => {
         [] as never,
       )([{y: 1}]),
     ).toEqual([{y: 1}]);
+    // Through an enclosing object too — the strict pass is what declines here,
+    // not the array's own `accepts`, which stays permissive on purpose.
     expect(
-      objectValue({tags: arrayValue(stringValue())}).accepts!({tags: [1]}),
-    ).toBe(false);
+      unionValue(
+        [
+          objectValue({tags: arrayValue(numberValue())}),
+          objectValue({tags: arrayValue(stringValue())}),
+        ],
+        'none' as never,
+      )({tags: ['red', 'blue']}),
+    ).toEqual({tags: ['red', 'blue']});
   });
 });
 
@@ -3229,14 +3365,24 @@ describe('an array schema answers only for its own element domain', () => {
     expect(objects([{y: 1}] as never)).toEqual([{y: 1}]);
   });
 
-  test('and an enclosing object cannot launder a mismatched array through it', () => {
-    // `accepts` is what a union commits on, so an object whose field schema
-    // said yes to items its own parse would replace made the union pick it.
-    const shape = objectValue({tags: arrayValue(stringValue())});
-    expect(shape.accepts!({tags: ['a']})).toBe(true);
-    expect(shape.accepts!({tags: [1, 2]})).toBe(false);
-    // Which is the answer its own parse gives.
-    expect(shape({tags: [1, 2]})).toEqual({tags: ['', '']});
+  test('and an enclosing object still picks the variant its items fit', () => {
+    // An array schema's own `accepts` is deliberately just "is an array": it
+    // answers "could this member coerce the value at all", and declining
+    // there cost the whole enclosing object rather than one element. Telling
+    // two array variants apart is the *strict* question, which the union asks
+    // first — so the selection this guards still happens, one level up.
+    const strings = objectValue({tags: arrayValue(stringValue())});
+    const numbers = objectValue({tags: arrayValue(numberValue())});
+    expect(strings.accepts!({tags: [1, 2]})).toBe(true);
+    expect(
+      unionValue([numbers, strings], 'none' as never)({tags: ['a', 'b']}),
+    ).toEqual({tags: ['a', 'b']});
+    expect(
+      unionValue([strings, numbers], 'none' as never)({tags: [1, 2]}),
+    ).toEqual({tags: [1, 2]});
+    // And a value neither variant owns outright is still coerced by the first
+    // that can take it, rather than discarded.
+    expect(strings({tags: [1, 2]})).toEqual({tags: ['', '']});
   });
 
   test('an empty array belongs to every array schema', () => {

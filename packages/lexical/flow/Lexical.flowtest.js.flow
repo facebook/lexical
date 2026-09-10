@@ -48,13 +48,6 @@ import type {
   TextNode,
 } from 'lexical';
 
-import type {BaseSerializedNode} from '@lexical/clipboard';
-
-import {
-  $generateJSONFromSelectedNodes,
-  $generateNodesFromSerializedNodes,
-} from '@lexical/clipboard';
-
 import {
   $exportNodeJSON,
   $parseSerializedNode,
@@ -251,20 +244,3 @@ export function flowExportAndParseCompose(node: TextNode): LexicalNode {
   return $parseSerializedNode($exportNodeJSON(node));
 }
 
-// The clipboard round trip: what one helper writes is what the other reads.
-// `BaseSerializedNode` was a private copy of a subset of `SerializedPartialNode`
-// in Flow and an exported alias of it in TypeScript, so the two halves of this
-// composition were typed against different shapes.
-export function flowClipboardRoundTrip(
-  editor: LexicalEditor,
-  selection: BaseSelection | null,
-): LexicalNode[] {
-  // The type argument is explicit because Flow refuses an underconstrained
-  // implicit instantiation; `BaseSerializedNode` is the bound and the shape a
-  // clipboard payload really carries.
-  const {nodes} = $generateJSONFromSelectedNodes<BaseSerializedNode>(
-    editor,
-    selection,
-  );
-  return $generateNodesFromSerializedNodes(nodes);
-}

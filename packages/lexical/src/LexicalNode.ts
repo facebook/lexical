@@ -557,8 +557,14 @@ export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
   SerializedLexicalNode & Partial<T>,
   '$slots' | 'children' | 'version'
 > & {
-  /** Slot values are parsed by the same rules, so they relax the same way. */
-  $slots?: Record<string, SerializedPartialNode>;
+  /**
+   * Slot values are parsed by the same rules, so they relax the same way —
+   * and, like the parse entry point, name the declared form too: naming only
+   * the indexed `SerializedPartialNode` meant a slot could not hold a value
+   * whose type is a declared interface, since TypeScript gives an interface no
+   * implicit index signature.
+   */
+  $slots?: Record<string, SerializedPartialNode | SerializedLexicalNode>;
   /** Omitted by a compact export, like every other restorable property. */
   version?: number;
 } & (T extends {children: readonly SerializedLexicalNode[]}
@@ -607,7 +613,7 @@ export type SerializedPartialNode = {
   /** Node state, parsed by the same rules whatever the node turns out to be. */
   [NODE_STATE_KEY]?: Record<string, unknown>;
   /** A slot holds a node subtree, so it relaxes exactly as `children` do. */
-  $slots?: Record<string, SerializedPartialNode>;
+  $slots?: Record<string, SerializedPartialNode | SerializedLexicalNode>;
   /** Present when the node is an element; the same form all the way down. */
   children?: SerializedPartialNode[];
   /** A node's own properties: there is no type here to name them from. */

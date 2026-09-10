@@ -72,8 +72,8 @@ function exportJSONParameterLists(source: string): string[] {
  * That rule has to hold for *every* declaration, not just the base: a subclass
  * re-declaring `exportJSON` with `boolean` reinstates the promise for its own
  * type, which is where `node.exportJSON(true).text.length` type-checked from.
- * Eight declarations across three packages carry it, so this checks the shape
- * of each one rather than trusting that each one was found.
+ * Every declaration is checked for that shape, and the count is a floor so
+ * that adding a correct one does not fail this guard.
  */
 describe('a Flow exportJSON declaration refuses a compact call', () => {
   const files = glob.sync('packages/*/flow/*.js.flow', {
@@ -104,9 +104,12 @@ describe('a Flow exportJSON declaration refuses a compact call', () => {
         decl => !/exportJSON\((|compact\?: false,?)\)$/.test(decl),
       ),
     ).toEqual([]);
-    // A guard that finds nothing to check is not a guard, and the exact count
-    // is what catches a declaration silently dropped or renamed — the loose
-    // `> 1` floor this replaced would have passed with six of the eight gone.
-    expect(declarations).toHaveLength(8);
+    // A floor, not a census: the shape check above is what catches a widened
+    // declaration, and this only has to catch a scan that stopped finding
+    // them. An exact count made the *correct* action fail — adding an
+    // `exportJSON(compact?: false)` to a package that gains a node, which is
+    // what the docblock above instructs — with a bare number mismatch naming
+    // nothing, and the natural reaction is to bump it until it passes.
+    expect(declarations.length).toBeGreaterThanOrEqual(8);
   });
 });

@@ -194,8 +194,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2
       flow-bin:
-        specifier: ^0.321.0
-        version: 0.321.0
+        specifier: ^0.330.0
+        version: 0.330.0
       flow-typed:
         specifier: ^4.1.1
         version: 4.1.1(supports-color@10.2.2)
@@ -212,14 +212,14 @@ importers:
         specifier: ^7.0.0
         version: 7.0.0
       hermes-estree:
-        specifier: ^0.36.1
-        version: 0.36.1
+        specifier: ^0.37.0
+        version: 0.37.0
       hermes-parser:
-        specifier: ^0.36.1
-        version: 0.36.1
+        specifier: ^0.37.0
+        version: 0.37.0
       hermes-transform:
-        specifier: ^0.36.1
-        version: 0.36.1(prettier-plugin-hermes-parser@0.36.1(prettier@3.8.1))(prettier@3.8.1)
+        specifier: ^0.37.0
+        version: 0.37.0(eslint@10.6.0(jiti@2.7.0)(supports-color@10.2.2))(prettier@3.8.1)
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -8969,8 +8969,8 @@ packages:
   flatted@3.4.2:
     resolution: {integrity: sha512-PjDse7RzhcPkIJwy5t7KPWQSZ9cAbzQXcafsetQoD7sOJRQlGikNbx7yZp2OotDnJyrDcbyRq3Ttb18iYOqkxA==}
 
-  flow-bin@0.321.0:
-    resolution: {integrity: sha512-bIW2JBCfHcEttvMVZLfEHzOpE+M6KqZazkU1hFXIFkoDqi6+2VRr5IGWB75ZVJLtOQ7b3h+rwfQVs1SFGvdjKQ==}
+  flow-bin@0.330.0:
+    resolution: {integrity: sha512-rlGZslBZBOPmMrm7mqtn0r1lZe2jbngmcSThVwThj8c49k4WQ46ZBLAyr98Bx9Smx6TqXPyam6piUKOcBBteKg==}
     engines: {node: '>=0.10.0'}
     hasBin: true
 
@@ -9332,29 +9332,30 @@ packages:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
 
-  hermes-eslint@0.36.1:
-    resolution: {integrity: sha512-aX8LUlLRHLAkELYWdz4IhRnZ/+Sbmmo5TzDEtsDiDuPIplaStzMnX84aTmPufQOyxZir5GjGxAiqdt+y4GcooA==}
+  hermes-eslint@0.37.0:
+    resolution: {integrity: sha512-GOZ2xpOe28u7hN5e4NMBCEVZ9KwmigPtFZDXoSRgUWL6sFlppxB5T7WBiLRO00c+sW5R0YM4cbOmnWtTK+DQcQ==}
+    peerDependencies:
+      eslint: ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
+    peerDependenciesMeta:
+      eslint:
+        optional: true
 
   hermes-estree@0.25.1:
     resolution: {integrity: sha512-0wUoCcLp+5Ev5pDW2OriHC2MJCbwLwuRx+gAqMTOkGKJJiBCLjtrvy4PWUGn6MIVefecRpzoOZ/UV6iGdOr+Cw==}
 
-  hermes-estree@0.36.1:
-    resolution: {integrity: sha512-guv1nQ6IJ7S83NRFPWc3SA7IBZrdNC9kapwOq6uXvF4wP+sDCgjzQbKPCoyYmoyZRzztF/n/c36l/rccCZSiCw==}
+  hermes-estree@0.37.0:
+    resolution: {integrity: sha512-Frp4+A518C4zZgB2+Qo1srlM3y6nbrFbNNzBF3g7tEuQXHXTb2h39V25JQLNHotxclkD+AZTN/JCCpiTFlhIGg==}
 
   hermes-parser@0.25.1:
     resolution: {integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==}
 
-  hermes-parser@0.36.1:
-    resolution: {integrity: sha512-GApNk4zLHi2UWoWZZkx7LNCOSzLSc5lB55pZ/PhK7ycFeg7u5LcF88p/WbpIi1XUDtE0MpHE3uRR3u3KB7TjSQ==}
+  hermes-parser@0.37.0:
+    resolution: {integrity: sha512-8PuWcyaF6VHQHL2dbU+QEIkbtHYQrTX/6+ep4VcBLJ3f/ehevowr5Zj8LQfYXQQGFG2O+df7hIMtt4PkkhfK3Q==}
 
-  hermes-transform@0.36.1:
-    resolution: {integrity: sha512-Sqkm+EqykT6fj6AYgxfhaMU55hQ6Zs0z8myIugWNSTAMeuX+zAR9Ptv/HJvE75kDsj523vxj75DVxNXw9q/JGA==}
+  hermes-transform@0.37.0:
+    resolution: {integrity: sha512-wMf/X3dMz8+/7RJSoydAd5BV/ltYCw1lCX/A7wApEmYpWsxipwLZ5T1SMJl0uWrebZM41ua8Z4gut5dLe5dHlQ==}
     peerDependencies:
       prettier: 3.8.1
-      prettier-plugin-hermes-parser: '*'
-    peerDependenciesMeta:
-      prettier-plugin-hermes-parser:
-        optional: true
 
   history@4.10.1:
     resolution: {integrity: sha512-36nwAD620w12kuzPAsyINPWJqlNbij+hpK1k9XRloDtym8mxzGYl2c17LnV6IAGB2Dmg4tEa7G7DlawS0+qjew==}
@@ -23281,7 +23282,7 @@ snapshots:
 
   flatted@3.4.2: {}
 
-  flow-bin@0.321.0: {}
+  flow-bin@0.330.0: {}
 
   flow-enums-runtime@0.0.6: {}
 
@@ -23758,36 +23759,37 @@ snapshots:
 
   he@1.2.0: {}
 
-  hermes-eslint@0.36.1:
+  hermes-eslint@0.37.0(eslint@10.6.0(jiti@2.7.0)(supports-color@10.2.2)):
     dependencies:
-      esrecurse: 4.3.0
-      hermes-estree: 0.36.1
-      hermes-parser: 0.36.1
+      hermes-estree: 0.37.0
+      hermes-parser: 0.37.0
+    optionalDependencies:
+      eslint: 10.6.0(jiti@2.7.0)(supports-color@10.2.2)
 
   hermes-estree@0.25.1: {}
 
-  hermes-estree@0.36.1: {}
+  hermes-estree@0.37.0: {}
 
   hermes-parser@0.25.1:
     dependencies:
       hermes-estree: 0.25.1
 
-  hermes-parser@0.36.1:
+  hermes-parser@0.37.0:
     dependencies:
-      hermes-estree: 0.36.1
+      hermes-estree: 0.37.0
 
-  hermes-transform@0.36.1(prettier-plugin-hermes-parser@0.36.1(prettier@3.8.1))(prettier@3.8.1):
+  hermes-transform@0.37.0(eslint@10.6.0(jiti@2.7.0)(supports-color@10.2.2))(prettier@3.8.1):
     dependencies:
       '@babel/code-frame': 7.29.7
       esquery: 1.7.0
       flow-enums-runtime: 0.0.6
-      hermes-eslint: 0.36.1
-      hermes-estree: 0.36.1
-      hermes-parser: 0.36.1
+      hermes-eslint: 0.37.0(eslint@10.6.0(jiti@2.7.0)(supports-color@10.2.2))
+      hermes-estree: 0.37.0
+      hermes-parser: 0.37.0
       prettier: 3.8.1
       string-width: 4.2.3
-    optionalDependencies:
-      prettier-plugin-hermes-parser: 0.36.1(prettier@3.8.1)
+    transitivePeerDependencies:
+      - eslint
 
   history@4.10.1:
     dependencies:

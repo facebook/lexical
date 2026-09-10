@@ -6,10 +6,10 @@
  *
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
-import {eventFiles} from '@lexical/rich-text';
-import {calculateZoomLevel} from '@lexical/utils';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { useLexicalEditable } from '@lexical/react/useLexicalEditable';
+import { eventFiles } from '@lexical/rich-text';
+import { calculateZoomLevel } from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
@@ -26,6 +26,7 @@ import {
   getComposedEventTarget,
   getParentElement,
   getRootOwnerDocument,
+  IS_APPLE_WEBKIT,
   IS_FIREFOX,
   isHTMLElement,
   type LexicalEditor,
@@ -42,10 +43,10 @@ import {
   useRef,
   useState,
 } from 'react';
-import {createPortal} from 'react-dom';
+import { createPortal } from 'react-dom';
 
-import {Point} from './shared/point';
-import {Rectangle} from './shared/rect';
+import { Point } from './point';
+import { Rectangle } from './rect';
 
 const SPACE = 4;
 const TARGET_LINE_HALF_HEIGHT = 2;
@@ -77,7 +78,7 @@ function restoreEditorFocus(
   editor: LexicalEditor,
   rootElement: HTMLElement,
 ): void {
-  rootElement.focus({preventScroll: true});
+  rootElement.focus({ preventScroll: true });
   editor.update(() => {
     const selection = $getSelection();
     if (selection !== null && !selection.dirty) {
@@ -97,7 +98,7 @@ function getCollapsedMargins(elem: HTMLElement): {
   ): number =>
     element && view ? parseFloat(view.getComputedStyle(element)[margin]) : 0;
 
-  const {marginTop = '0', marginBottom = '0'} = view
+  const { marginTop = '0', marginBottom = '0' } = view
     ? view.getComputedStyle(elem)
     : {};
   const prevElemSiblingMarginBottom = getMargin(
@@ -117,7 +118,7 @@ function getCollapsedMargins(elem: HTMLElement): {
     nextElemSiblingMarginTop,
   );
 
-  return {marginBottom: collapsedBottomMargin, marginTop: collapsedTopMargin};
+  return { marginBottom: collapsedBottomMargin, marginTop: collapsedTopMargin };
 }
 
 function getBlockElement(
@@ -170,7 +171,7 @@ function getBlockElement(
       const zoom = calculateZoomLevel(elem);
       const point = new Point(event.x / zoom, event.y / zoom);
       const domRect = Rectangle.fromDOM(elem);
-      const {marginTop, marginBottom} = getCollapsedMargins(elem);
+      const { marginTop, marginBottom } = getCollapsedMargins(elem);
       const rect = domRect.generateNewRect({
         bottom: domRect.bottom + marginBottom,
         left: anchorElementRect.left,
@@ -180,7 +181,7 @@ function getBlockElement(
 
       const {
         result,
-        reason: {isOnTopSide, isOnBottomSide},
+        reason: { isOnTopSide, isOnBottomSide },
       } = rect.contains(point);
 
       if (result) {
@@ -238,7 +239,7 @@ function setMenuPosition(
     (targetRect.top +
       (targetCalculateHeight -
         (floatingElemRect.height || targetCalculateHeight)) /
-        2 -
+      2 -
       anchorElementRect.top +
       anchorElem.scrollTop) /
     zoomLevel;
@@ -254,7 +255,7 @@ function setDragImage(
   dataTransfer: DataTransfer,
   draggableBlockElem: HTMLElement,
 ) {
-  const {transform} = draggableBlockElem.style;
+  const { transform } = draggableBlockElem.style;
 
   // Remove dragImage borders
   draggableBlockElem.style.transform = 'translateZ(0)';
@@ -271,11 +272,11 @@ function setTargetLine(
   mouseY: number,
   anchorElem: HTMLElement,
 ) {
-  const {top: targetBlockElemTop, height: targetBlockElemHeight} =
+  const { top: targetBlockElemTop, height: targetBlockElemHeight } =
     targetBlockElem.getBoundingClientRect();
-  const {top: anchorTop, width: anchorWidth} =
+  const { top: anchorTop, width: anchorWidth } =
     anchorElem.getBoundingClientRect();
-  const {marginTop, marginBottom} = getCollapsedMargins(targetBlockElem);
+  const { marginTop, marginBottom } = getCollapsedMargins(targetBlockElem);
   let lineTop = targetBlockElemTop;
   if (mouseY >= targetBlockElemTop) {
     lineTop += targetBlockElemHeight + marginBottom / 2;
@@ -288,9 +289,8 @@ function setTargetLine(
   const left = TEXT_BOX_HORIZONTAL_PADDING - SPACE;
 
   targetLineElem.style.transform = `translate(${left}px, ${top}px)`;
-  targetLineElem.style.width = `${
-    anchorWidth - (TEXT_BOX_HORIZONTAL_PADDING - SPACE) * 2
-  }px`;
+  targetLineElem.style.width = `${anchorWidth - (TEXT_BOX_HORIZONTAL_PADDING - SPACE) * 2
+    }px`;
   targetLineElem.style.opacity = '.4';
 }
 
@@ -317,6 +317,8 @@ function useDraggableBlockMenu(
   const isDraggingBlockRef = useRef<boolean>(false);
   const [draggableBlockElem, setDraggableBlockElemState] =
     useState<HTMLElement | null>(null);
+  const scrollDirectionRef = useRef<number>(0);
+  const scrollIntervalRef = useRef<number | null>(null);
 
   const setDraggableBlockElem = useCallback(
     (elem: HTMLElement | null) => {
@@ -396,6 +398,40 @@ function useDraggableBlockMenu(
         pageY / calculateZoomLevel(target),
         anchorElem,
       );
+
+      // Auto-scroll logic for Mac WebView and other browsers where native drag scroll fails
+      if (IS_APPLE_WEBKIT) {
+        const scrollerElem = getParentElement(anchorElem);
+        if (scrollerElem) {
+          const edgeSize = 50;
+          const rect = scrollerElem.getBoundingClientRect();
+          let scrollDirection = 0;
+
+          if (event.clientY < rect.top + edgeSize || event.clientY < edgeSize) {
+            scrollDirection = -1;
+          } else if (event.clientY > rect.bottom - edgeSize || event.clientY > window.innerHeight - edgeSize) {
+            scrollDirection = 1;
+          }
+
+          scrollDirectionRef.current = scrollDirection;
+
+          if (scrollDirection !== 0 && !scrollIntervalRef.current) {
+            scrollIntervalRef.current = window.setInterval(() => {
+              if (scrollDirectionRef.current === -1) {
+                scrollerElem.scrollBy(0, -10);
+                if (scrollerElem.scrollTop === 0) window.scrollBy(0, -10);
+              } else if (scrollDirectionRef.current === 1) {
+                scrollerElem.scrollBy(0, 10);
+                window.scrollBy(0, 10);
+              }
+            }, 20);
+          } else if (scrollDirection === 0 && scrollIntervalRef.current) {
+            window.clearInterval(scrollIntervalRef.current);
+            scrollIntervalRef.current = null;
+          }
+        }
+      }
+
       // Prevent default event to be able to trigger onDrop events
       event.preventDefault();
       return true;
@@ -405,11 +441,17 @@ function useDraggableBlockMenu(
       if (!isDraggingBlockRef.current) {
         return false;
       }
+
+      if (scrollIntervalRef.current) {
+        window.clearInterval(scrollIntervalRef.current);
+        scrollIntervalRef.current = null;
+      }
+
       const [isFileTransfer] = eventFiles(event);
       if (isFileTransfer) {
         return false;
       }
-      const {dataTransfer, pageY} = event;
+      const { dataTransfer, pageY } = event;
       // Composed target so the zoom level is read from the real element rather
       // than the shadow host when the editor is in a shadow tree.
       const target = getComposedEventTarget(event);
@@ -567,6 +609,11 @@ function useDraggableBlockMenu(
   function onDragEnd(): void {
     isDraggingBlockRef.current = false;
     hideTargetLine(targetLineRef.current);
+
+    if (scrollIntervalRef.current) {
+      window.clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
 
     const rootElement = editor.getRootElement();
     if (rootElement !== null && getActiveElement(rootElement) !== rootElement) {

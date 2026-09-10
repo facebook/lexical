@@ -2396,6 +2396,46 @@ describe('a union member knows its own domain', () => {
     });
   });
 
+  test('nodeSchema rejects a setter that needs more than the parsed value', () => {
+    class BoxNode extends ElementNode {
+      __height = 0;
+      __width = 0;
+      getWidth(): number {
+        return this.getLatest().__width;
+      }
+      setDimensions(width: number, height: number): this {
+        const self = this.getWritable();
+        self.__width = width;
+        self.__height = height;
+        return self;
+      }
+      setWidth(width: number, _options?: {quiet?: boolean}): this {
+        const self = this.getWritable();
+        self.__width = width;
+        return self;
+      }
+    }
+    nodeSchema<BoxNode>()({
+      // @ts-expect-error -- setDimensions needs a second argument, and the walk
+      // calls a setter with the parsed value alone, so `height` arrived
+      // `undefined`. Matching "the first parameter of however many" accepted
+      // it; the obligation is a one-parameter signature.
+      width: withAccessors(numberValue(10), {
+        getter: 'getWidth',
+        setter: 'setDimensions',
+      }),
+    });
+    // A trailing *optional* parameter is still callable with one argument, so
+    // this stays legal — the rule is about what the walk can supply, not about
+    // the arity written down.
+    nodeSchema<BoxNode>()({
+      width: withAccessors(numberValue(10), {
+        getter: 'getWidth',
+        setter: 'setWidth',
+      }),
+    });
+  });
+
   test('nodeSchema rejects a type the node member cannot hold', () => {
     // Every name here resolves and is used in the right position. What is
     // wrong is the type behind it, which nothing checked: the parser wrote a
@@ -2922,6 +2962,27 @@ describe('a catch-all is a last resort, not a mismatch', () => {
         [] as never,
       )(['red', '42']),
     ).toEqual(['red', '42']);
+  });
+
+  test('but only if that member would really reach it', () => {
+    // Measuring a union has to run the union's own selection, not ask whether
+    // any member fits. `unionValue([arrayValue(numberValue()), rawValue()])`
+    // parses `['red', '42']` with `arrayValue(numberValue())` — its first pass
+    // passes over the catch-all and its second lands on the array — so the
+    // enclosing object claimed a complete match through a fallback it never
+    // reaches, and the sibling that owns the value never got it.
+    const viaFallback = objectValue({
+      tags: unionValue([arrayValue(numberValue()), rawValue()], [] as never),
+    });
+    expect(viaFallback({tags: ['red', '42']} as never)).toEqual({
+      tags: [0, 42],
+    });
+    expect(
+      unionValue(
+        [viaFallback, objectValue({tags: arrayValue(stringValue())})],
+        'x' as never,
+      )({tags: ['red', '42']} as never),
+    ).toEqual({tags: ['red', '42']});
   });
 
   test('and a catch-all inside a member is part of what that member fits', () => {

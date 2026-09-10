@@ -500,9 +500,19 @@ type ObligationsOf<N> =
     }[SettersOf<N> & keyof N];
 
 type ReturnOf<M> = M extends (...args: never[]) => infer R ? R : never;
-type FirstParamOf<M> = M extends (value: infer P, ...rest: never[]) => unknown
-  ? P
-  : never;
+/**
+ * The one value a setter is called with — when the method really is callable
+ * with one value and nothing else.
+ *
+ * Matched as a *one-parameter* signature rather than "the first of however
+ * many": a method with a second required parameter is not assignable to it,
+ * which is the point. The walk calls a setter with the parsed value alone, so
+ * `setter: 'setDimensions'` on a `setDimensions(width: number, height: number)`
+ * type-checked and then wrote `undefined` into `__height`. A trailing
+ * *optional* parameter still matches, because such a method genuinely is
+ * callable with one argument.
+ */
+type FirstParamOf<M> = M extends (value: infer P) => unknown ? P : never;
 
 /** `N`'s own fields, which are `__`-prefixed by convention. */
 type FieldsOf<N> = Extract<Extract<keyof N, `__${string}`>, string>;
@@ -894,27 +904,48 @@ function $isCatchAll(schema: AnySerializationSchema): boolean {
   }
 }
 
+/**
+ * The member a union would parse `value` with, or `undefined` if none would.
+ *
+ * One procedure, used both to *choose* a member and to ask whether a union is a
+ * complete match, so those two cannot disagree. They did: measuring a union by
+ * asking whether any member fits counted a `rawValue()` that the union's own
+ * selection then skipped, so an `objectValue({tags: unionValue([arrayValue(
+ * numberValue()), rawValue()])})` claimed `{tags: ['red', '42']}` as a
+ * complete match through a fallback it never reaches — its own passes land on
+ * `arrayValue(numberValue())` and write `[0, 42]` — and a sibling member that
+ * really did own the value never got it.
+ *
+ * The first pass takes the first member that fits `value` entirely, passing
+ * over a catch-all: one describes nothing, so letting it win here would put it
+ * ahead of the member that describes the data and hand back unvalidated input
+ * under a declared type. The second takes the first member that accepts
+ * `value` at all, catch-all included — a value no member owns outright is
+ * better coerced by the closest member, or kept by a catch-all, than replaced
+ * by the union's own default, which keeps nothing.
+ */
+function $selectUnionMember(
+  members: readonly AnySerializationSchema[],
+  value: unknown,
+): AnySerializationSchema | undefined {
+  for (let i = 0; i < members.length; i++) {
+    const member = members[i];
+    if (!$isCatchAll(member) && $acceptsWholly(member, value)) {
+      return member;
+    }
+  }
+  for (let i = 0; i < members.length; i++) {
+    const member = members[i];
+    if ($acceptsValue(member, value)) {
+      return member;
+    }
+  }
+  return undefined;
+}
+
 function $acceptsWholly(
   schema: AnySerializationSchema,
   value: unknown,
-  /**
-   * Whether `schema` is a union member being *chosen between*, rather than a
-   * part of a value being measured.
-   *
-   * The two ask different things of a catch-all. Choosing: a `rawValue()`
-   * member describes nothing, so letting it claim a complete match puts it
-   * ahead of the member that describes the data — `unionValue([arrayValue(
-   * numberValue()), rawValue()])` claimed `['red', '42']`, and an enclosing
-   * union preferred it over the `arrayValue(stringValue())` that owns it.
-   * Measuring: a `union[stringValue(), rawValue()]` sitting in an object field
-   * really does write `[]` back unchanged, so refusing it there made the
-   * enclosing object under-report its fit and a sibling coerced the value away.
-   *
-   * So it is carried through a union's members and through a wrapper, which
-   * are still candidates, and dropped when descending into an array's items or
-   * an object's fields, which are parts of one.
-   */
-  selecting: boolean,
 ): boolean {
   // Gated on the lenient answer first, which makes this a *strengthening* of
   // `accepts` by construction rather than a second opinion that has to be kept
@@ -948,10 +979,7 @@ function $acceptsWholly(
       for (let i = 0; i < value.length; i++) {
         // An absent element is filled from the item's own default, exactly as
         // `objectValue` fills an absent field, so it is not a mismatch.
-        if (
-          value[i] !== undefined &&
-          !$acceptsWholly(meta.item, value[i], false)
-        ) {
+        if (value[i] !== undefined && !$acceptsWholly(meta.item, value[i])) {
           return false;
         }
       }
@@ -977,26 +1005,23 @@ function $acceptsWholly(
         // method and be walked as if it were a field schema.
         if (
           hasOwnKey(fields, key) &&
-          !$acceptsWholly(fields[key], value[key], false)
+          !$acceptsWholly(fields[key], value[key])
         ) {
           return false;
         }
       }
       return true;
     }
-    case 'union':
-      // Catch-all members skipped for the reason `$match`'s first pass skips
-      // them: a union that answered "whole match" on the strength of a
-      // `rawValue()` member would claim every value, and an enclosing union
-      // then preferred it over the member that describes the data.
-      return (
-        meta.members == null ||
-        meta.members.some(
-          member =>
-            !(selecting && $isCatchAll(member)) &&
-            $acceptsWholly(member, value, selecting),
-        )
-      );
+    case 'union': {
+      if (meta.members == null) {
+        return true;
+      }
+      // A union is a complete match when the member it would actually pick is
+      // one — not when any member happens to fit. Asking the members instead
+      // let a union claim a value through a fallback its own selection skips.
+      const selected = $selectUnionMember(meta.members, value);
+      return selected !== undefined && $acceptsWholly(selected, value);
+    }
     case 'aliased':
       // An alias is an exact spelling, so it is as whole a match as there is.
       return (
@@ -1004,7 +1029,7 @@ function $acceptsWholly(
         (typeof value === 'string' &&
           meta.aliases != null &&
           hasOwnKey(meta.aliases, value)) ||
-        $acceptsWholly(meta.inner, value, selecting)
+        $acceptsWholly(meta.inner, value)
       );
     // Each wrapper forwards to `inner` except for the nil *it* owns —
     // `nullable` maps both nils, `optional` only `undefined`, and a transform
@@ -1013,18 +1038,16 @@ function $acceptsWholly(
     // being asked.
     case 'nullable':
       return (
-        value == null ||
-        meta.inner == null ||
-        $acceptsWholly(meta.inner, value, selecting)
+        value == null || meta.inner == null || $acceptsWholly(meta.inner, value)
       );
     case 'optional':
       return (
         value === undefined ||
         meta.inner == null ||
-        $acceptsWholly(meta.inner, value, selecting)
+        $acceptsWholly(meta.inner, value)
       );
     case 'transform':
-      return meta.inner == null || $acceptsWholly(meta.inner, value, selecting);
+      return meta.inner == null || $acceptsWholly(meta.inner, value);
     case 'raw':
       // Neutral: it validates nothing, so nothing in the value can be out of
       // its domain and it never contributes a mismatch. Answering `false` here
@@ -1563,37 +1586,14 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
   const $match = (
     value: unknown,
   ): undefined | {member: AnySerializationSchema; parsed: T} => {
-    // Two passes, because the first member to accept is not always the member
-    // the value belongs to. A container answers "mine" for a value it would
-    // partly coerce, so `['red', '42']` looked like an array of numbers on the
-    // strength of `'42'` alone. Asking every member for a complete match first
-    // gives the value to the member that owns all of it, and keeps the lenient
-    // pass for what it is good at: a value no member owns outright is still
-    // better coerced by the closest member than replaced by the union's own
-    // default, which keeps nothing.
-    for (let i = 0; i < members.length; i++) {
-      const member = members[i];
-      // A member that describes nothing describes nothing *wholly* either: it
-      // accepts every value, so it would win this pass over the member that
-      // actually describes the data and hand a caller the input unvalidated
-      // under a declared type. It is a catch-all, so it belongs to the pass
-      // that takes what is left.
-      if ($isCatchAll(member)) {
-        continue;
-      }
-      if ($acceptsWholly(member, value, true)) {
-        return {member, parsed: member(value) as T};
-      }
-    }
-    for (let i = 0; i < members.length; i++) {
-      const member = members[i];
-      const matched = $schemaMatch(member, value);
-      if (matched !== undefined) {
-        return {member, parsed: matched.parsed as T};
-      }
-    }
-    return undefined;
+    // The member this union parses with, chosen by the same procedure that
+    // answers whether a union is a complete match — see `$selectUnionMember`.
+    const member = $selectUnionMember(members, value);
+    return member === undefined
+      ? undefined
+      : {member, parsed: member(value) as T};
   };
+
   return makeSchema<T, NamesOf<M[number]>, SchemaInput<M[number]>>(
     value => {
       if (value === undefined) {

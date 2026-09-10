@@ -2964,6 +2964,70 @@ describe('a catch-all is a last resort, not a mismatch', () => {
     ).toEqual(['red', '42']);
   });
 
+  test('and a fit earned through a catch-all ranks below a real one', () => {
+    // A union that fits only because its own `rawValue()` covers the value is
+    // not as good a match as a sibling that describes every part of it. Ranking
+    // the two the same let the fallback win: the inner union picked its raw,
+    // and "fits entirely" could not say that was how.
+    expect(
+      unionValue(
+        [
+          unionValue([numberValue(), rawValue()], 0 as never),
+          arrayValue(numberValue()),
+        ],
+        [] as never,
+      )(['42']),
+    ).toEqual([42]);
+    expect(
+      unionValue(
+        [
+          unionValue([enumValue(['auto']), rawValue()], 'auto' as never),
+          numberValue(),
+        ],
+        0 as never,
+      )('640'),
+    ).toBe(640);
+  });
+
+  test('and measuring a union costs one traversal, not two', () => {
+    // Measuring a union used to run its selection and then re-measure the
+    // member it picked, doubling the work at every level of nesting: a leaf
+    // under sixteen nested unions was visited 65,535 times. The existing
+    // parse-count tests miss it, because the duplication is in the membership
+    // walk rather than in the parse.
+    const counts: number[] = [];
+    for (const depth of [4, 8, 12, 16]) {
+      const base = numberValue();
+      let checks = 0;
+      const leaf = Object.assign((value: unknown) => base(value), {
+        accepts: (value: unknown) => {
+          checks++;
+          return base.accepts!(value);
+        },
+        defaultValue: base.defaultValue,
+        isEqual: base.isEqual,
+        meta: base.meta,
+      }) as never;
+      let schema: unknown = leaf;
+      let value: unknown = 1;
+      for (let i = 0; i < depth; i++) {
+        schema = unionValue(
+          [objectValue({value: schema as never}), stringValue()],
+          '' as never,
+        );
+        value = {value};
+      }
+      checks = 0;
+      (schema as (v: unknown) => unknown)(value);
+      counts.push(checks);
+      // Linear in the nesting, with room for a constant factor — the point is
+      // that it does not double per level.
+      expect(checks).toBeLessThanOrEqual(depth * 4);
+    }
+    // And strictly so: doubling would make each step four times the last.
+    expect(counts[3]).toBeLessThan(counts[0] * 8);
+  });
+
   test('but only if that member would really reach it', () => {
     // Measuring a union has to run the union's own selection, not ask whether
     // any member fits. `unionValue([arrayValue(numberValue()), rawValue()])`

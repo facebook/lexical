@@ -905,167 +905,165 @@ function $isCatchAll(schema: AnySerializationSchema): boolean {
 }
 
 /**
+ * How well a schema fits a value, in one traversal.
+ *
+ * `1` fits entirely. `2` fits entirely but only because a catch-all covers
+ * some part of it. `3` is accepted but would be coerced. `4` is not accepted.
+ * Lower wins, and ties go to declaration order.
+ *
+ * One number rather than a pair of predicates, because asking twice is what
+ * kept going wrong. Measuring a union used to run its selection and then
+ * re-measure the member it picked, which doubled the traversal at every level
+ * of nesting — a leaf under sixteen nested unions was visited 65,535 times.
+ * And a boolean "does it fit entirely" could not say *how*, so a union that fit
+ * only through its `rawValue()` outranked a sibling that owned every element:
+ * `unionValue([unionValue([numberValue(), rawValue()]), arrayValue(
+ * numberValue())])` read `['42']` as `['42']` rather than `[42]`.
+ *
+ * Carrying "via a catch-all" as its own rank answers both. It is computed once
+ * per schema node per value node, and nothing recomputes it.
+ */
+const FIT_WHOLE = 1;
+const FIT_VIA_CATCH_ALL = 2;
+const FIT_COERCIBLE = 3;
+const FIT_NONE = 4;
+
+function $fitOf(schema: AnySerializationSchema, value: unknown): number {
+  const meta: SerializationSchemaMeta | undefined | null = schema.meta;
+  // A hand-rolled schema has opted out of the type, so `meta` and the payload
+  // a `kind` implies may be missing however it is declared. Its own `accepts`
+  // is then the whole of what it has told us.
+  if (meta == null) {
+    return $acceptsValue(schema, value) ? FIT_WHOLE : FIT_NONE;
+  }
+  switch (meta.kind) {
+    case 'raw':
+      // Admits everything, so it always fits — but only ever as a catch-all.
+      return FIT_VIA_CATCH_ALL;
+    case 'array': {
+      if (!Array.isArray(value)) {
+        return FIT_NONE;
+      }
+      if (meta.item == null) {
+        return FIT_WHOLE;
+      }
+      let worst = FIT_WHOLE;
+      for (let i = 0; i < value.length; i++) {
+        // An absent element is filled from the item's own default, exactly as
+        // `objectValue` fills an absent field, so it is not a mismatch.
+        if (value[i] !== undefined) {
+          const fit = $fitOf(meta.item, value[i]);
+          if (fit > worst) {
+            worst = fit;
+          }
+        }
+      }
+      // An array parse is total — it coerces every element — so an element
+      // that does not fit costs coercion, not the array.
+      return worst >= FIT_COERCIBLE ? FIT_COERCIBLE : worst;
+    }
+    case 'object': {
+      const fields = meta.fields;
+      if (!isPlainObject(value)) {
+        return FIT_NONE;
+      }
+      if (fields == null) {
+        return FIT_WHOLE;
+      }
+      if (hasUndeclaredKey(value, fields)) {
+        return FIT_NONE;
+      }
+      let worst = FIT_WHOLE;
+      for (const key of Object.keys(value)) {
+        // `hasOwnKey`, not a bare index: the key comes straight out of
+        // untrusted JSON, so `'toString'` would otherwise resolve to
+        // Object.prototype's method and be walked as if it were a schema.
+        if (hasOwnKey(fields, key)) {
+          const fit = $fitOf(fields[key], value[key]);
+          if (fit > worst) {
+            worst = fit;
+          }
+        }
+      }
+      return worst >= FIT_COERCIBLE ? FIT_COERCIBLE : worst;
+    }
+    case 'union': {
+      if (meta.members == null) {
+        return FIT_WHOLE;
+      }
+      // The fit of the member this union would pick. A catch-all is *not*
+      // demoted here: a nested `union[stringValue(), rawValue()]` sitting in a
+      // field really does write `[]` back unchanged, and ranking that as
+      // coercible made the enclosing object under-report its fit. Demotion
+      // belongs to the union doing the choosing — see `$selectUnionMember`.
+      let best = FIT_NONE;
+      for (let i = 0; i < meta.members.length; i++) {
+        const fit = $fitOf(meta.members[i], value);
+        if (fit < best) {
+          best = fit;
+        }
+      }
+      return best;
+    }
+    case 'aliased':
+      // An alias is an exact spelling, so it is as whole a fit as there is.
+      return (typeof value === 'string' &&
+        meta.aliases != null &&
+        hasOwnKey(meta.aliases, value)) ||
+        meta.inner == null
+        ? FIT_WHOLE
+        : $fitOf(meta.inner, value);
+    // Each wrapper owns one nil and forwards everything else; `nullable` maps
+    // both, `optional` only `undefined`, and a transform owns neither.
+    case 'nullable':
+      return value == null || meta.inner == null
+        ? FIT_WHOLE
+        : $fitOf(meta.inner, value);
+    case 'optional':
+      return value === undefined || meta.inner == null
+        ? FIT_WHOLE
+        : $fitOf(meta.inner, value);
+    case 'transform':
+      return meta.inner == null ? FIT_WHOLE : $fitOf(meta.inner, value);
+    default:
+      // A leaf, or a kind from a newer core: its own domain is the answer.
+      return $acceptsValue(schema, value) ? FIT_WHOLE : FIT_NONE;
+  }
+}
+
+/**
  * The member a union would parse `value` with, or `undefined` if none would.
  *
- * One procedure, used both to *choose* a member and to ask whether a union is a
- * complete match, so those two cannot disagree. They did: measuring a union by
- * asking whether any member fits counted a `rawValue()` that the union's own
- * selection then skipped, so an `objectValue({tags: unionValue([arrayValue(
- * numberValue()), rawValue()])})` claimed `{tags: ['red', '42']}` as a
- * complete match through a fallback it never reaches — its own passes land on
- * `arrayValue(numberValue())` and write `[0, 42]` — and a sibling member that
- * really did own the value never got it.
+ * One procedure, used both to choose a member and to answer how well a union
+ * fits, so the two cannot disagree — and each member is measured exactly once.
  *
- * The first pass takes the first member that fits `value` entirely, passing
- * over a catch-all: one describes nothing, so letting it win here would put it
- * ahead of the member that describes the data and hand back unvalidated input
- * under a declared type. The second takes the first member that accepts
- * `value` at all, catch-all included — a value no member owns outright is
- * better coerced by the closest member, or kept by a catch-all, than replaced
- * by the union's own default, which keeps nothing.
+ * A member that *is* a catch-all is ranked no better than coercible: it
+ * describes nothing, so letting it win on the strength of admitting everything
+ * would put it ahead of the member that describes the data and hand back
+ * unvalidated input under a declared type. That demotion applies only to a
+ * union's own members, which is why `$fitOf` does not apply it.
  */
 function $selectUnionMember(
   members: readonly AnySerializationSchema[],
   value: unknown,
 ): AnySerializationSchema | undefined {
+  let best: AnySerializationSchema | undefined;
+  let bestFit = FIT_NONE;
   for (let i = 0; i < members.length; i++) {
     const member = members[i];
-    if (!$isCatchAll(member) && $acceptsWholly(member, value)) {
-      return member;
+    let fit = $fitOf(member, value);
+    if ($isCatchAll(member) && fit < FIT_COERCIBLE) {
+      fit = FIT_COERCIBLE;
+    }
+    if (fit < bestFit) {
+      best = member;
+      bestFit = fit;
+      if (fit === FIT_WHOLE) {
+        break;
+      }
     }
   }
-  for (let i = 0; i < members.length; i++) {
-    const member = members[i];
-    if ($acceptsValue(member, value)) {
-      return member;
-    }
-  }
-  return undefined;
-}
-
-function $acceptsWholly(
-  schema: AnySerializationSchema,
-  value: unknown,
-): boolean {
-  // Gated on the lenient answer first, which makes this a *strengthening* of
-  // `accepts` by construction rather than a second opinion that has to be kept
-  // agreeing with it. Two things follow, both of which went wrong when the
-  // walk answered on its own: a schema that declares "this value is not mine"
-  // is never handed the value regardless of what its `meta` describes, and
-  // every guard the lenient predicate carries — `unionValue` excluding
-  // `undefined`, each wrapper's own notion of a nil — applies here too without
-  // being restated.
-  if (!$acceptsValue(schema, value)) {
-    return false;
-  }
-  // Read defensively throughout. A hand-rolled schema is the only way a
-  // consumer adds one — the interface is public and `makeSchema` is not
-  // exported — so `meta`, or the payload a `kind` implies, may be missing or
-  // malformed however the type is declared. Where it is, the schema's own
-  // `accepts` (asked above) is the whole of what it has told us, and that is
-  // the answer; reading through it threw from inside a parse that had worked.
-  const meta: SerializationSchemaMeta | undefined | null = schema.meta;
-  if (meta == null) {
-    return true;
-  }
-  switch (meta.kind) {
-    case 'array': {
-      if (!Array.isArray(value)) {
-        return false;
-      }
-      if (meta.item == null) {
-        return true;
-      }
-      for (let i = 0; i < value.length; i++) {
-        // An absent element is filled from the item's own default, exactly as
-        // `objectValue` fills an absent field, so it is not a mismatch.
-        if (value[i] !== undefined && !$acceptsWholly(meta.item, value[i])) {
-          return false;
-        }
-      }
-      return true;
-    }
-    case 'object': {
-      if (!isPlainObject(value)) {
-        return false;
-      }
-      const fields = meta.fields;
-      if (fields == null) {
-        return true;
-      }
-      // Over the *value's* keys, not the schema's. The lenient gate has
-      // already run `objectValue`'s own predicate, so every own key here is a
-      // declared field and no undeclared one survived — and a compact document
-      // carries only the keys it wrote, which is usually far fewer than the
-      // schema declares. `Object.entries(meta.fields)` per call also allocated
-      // where `objectValue` hoists that array once at build time.
-      for (const key of Object.keys(value)) {
-        // `hasOwnKey`, not a bare index: the key comes straight out of untrusted
-        // JSON, so `'toString'` would otherwise resolve to Object.prototype's
-        // method and be walked as if it were a field schema.
-        if (
-          hasOwnKey(fields, key) &&
-          !$acceptsWholly(fields[key], value[key])
-        ) {
-          return false;
-        }
-      }
-      return true;
-    }
-    case 'union': {
-      if (meta.members == null) {
-        return true;
-      }
-      // A union is a complete match when the member it would actually pick is
-      // one — not when any member happens to fit. Asking the members instead
-      // let a union claim a value through a fallback its own selection skips.
-      const selected = $selectUnionMember(meta.members, value);
-      return selected !== undefined && $acceptsWholly(selected, value);
-    }
-    case 'aliased':
-      // An alias is an exact spelling, so it is as whole a match as there is.
-      return (
-        meta.inner == null ||
-        (typeof value === 'string' &&
-          meta.aliases != null &&
-          hasOwnKey(meta.aliases, value)) ||
-        $acceptsWholly(meta.inner, value)
-      );
-    // Each wrapper forwards to `inner` except for the nil *it* owns —
-    // `nullable` maps both nils, `optional` only `undefined`, and a transform
-    // owns none: it hands everything to `inner`. Treating all three the same
-    // declared a `null` a whole match for an `optional` without `inner` ever
-    // being asked.
-    case 'nullable':
-      return (
-        value == null || meta.inner == null || $acceptsWholly(meta.inner, value)
-      );
-    case 'optional':
-      return (
-        value === undefined ||
-        meta.inner == null ||
-        $acceptsWholly(meta.inner, value)
-      );
-    case 'transform':
-      return meta.inner == null || $acceptsWholly(meta.inner, value);
-    case 'raw':
-      // Neutral: it validates nothing, so nothing in the value can be out of
-      // its domain and it never contributes a mismatch. Answering `false` here
-      // read as "this part does not fit", and because a container propagates
-      // one field's mismatch, a single `rawValue()` property took its whole
-      // enclosing object out of the first pass — an array of
-      // `{label, note: rawValue()}` was handed to an earlier `arrayValue
-      // (numberValue())` member and coerced to `[0]`. What a bare raw *member*
-      // must not do is win the specific pass against a member that describes
-      // the value; that is a question about the union's own members, and
-      // `$match` asks it there rather than here.
-      return true;
-    default:
-      // A leaf: the lenient answer above was the whole answer. Not a `never`
-      // assertion, because a schema from a newer core can carry a kind this
-      // build has never heard of, and `accepts` still describes it.
-      return true;
-  }
+  return best;
 }
 
 /**

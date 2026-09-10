@@ -621,6 +621,32 @@ export type SerializedPartialNode = {
 };
 
 /**
+ * The least a value has to be for {@link $parseSerializedNode} to read it: a
+ * `type` to look the class up by, and subtrees of the same shape.
+ *
+ * `version` is optional because the parser drops it — it is deprecated and
+ * nothing reads it — so requiring it described the caller rather than the
+ * parameter. That mattered because {@link SerializedPartialNode} carries an
+ * index signature, which an `interface` never satisfies, and
+ * {@link SerializedLexicalNode} requires `version`: a caller holding an
+ * interface with an optional `version`, such as `@lexical/clipboard`'s
+ * `BaseSerializedNode`, matched neither, and the mismatch repeated at every
+ * level because `children` and `$slots` recurse.
+ */
+export interface ParsableSerializedNode {
+  /** A slot holds a node subtree, so it relaxes exactly as `children` do. */
+  $slots?: Record<string, ParsableSerializedNode>;
+  /** Present when the node is an element; the same form all the way down. */
+  children?: ParsableSerializedNode[];
+  /** The one property every node carries and a reader narrows by. */
+  type: string;
+  /**
+   * @deprecated Dropped when parsing; see {@link SerializedLexicalNode.version}.
+   */
+  version?: number;
+}
+
+/**
  * The shape {@link LexicalNode.updateFromJSON} accepts for a node whose
  * serialized type is `S`: every node-specific property optional (a compact
  * export omits a default-valued one, and an older document predates a newer

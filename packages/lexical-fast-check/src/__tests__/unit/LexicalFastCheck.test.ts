@@ -10,6 +10,7 @@ import {nodeArbitrary} from '@lexical/fast-check';
 import * as fc from 'fast-check';
 import {
   aliasedValue,
+  arrayValue,
   createEditor,
   createState,
   ElementNode,
@@ -20,6 +21,7 @@ import {
   type LexicalNode,
   type LexicalSchemaInput,
   nodeSchema,
+  nullable,
   numberValue,
   objectValue,
   ParagraphNode,
@@ -437,5 +439,46 @@ describe('a schema that narrows its own domain', () => {
     expect(
       samples.some(sample => (sample as {tag?: unknown}).tag !== undefined),
     ).toBe(true);
+  });
+
+  // And wherever the narrowed schema sits, not only at the top of a property.
+  // Every container and wrapper derives its own predicate, so a filter applied
+  // to the outermost schema alone is no filter at all for what is inside it —
+  // the arbitrary for the items came straight from the item's metadata.
+  class NestedTaggedNode extends ElementNode {
+    __tags: string[] = [];
+    __maybe: null | string = null;
+    $config() {
+      return this.config('fast-check-nested-tagged', {
+        extends: ElementNode,
+        json: nodeSchema<NestedTaggedNode>()({
+          maybe: withField(nullable(tag), {field: '__maybe'}),
+          tags: withField(arrayValue(tag), {field: '__tags'}),
+        }),
+      });
+    }
+    createDOM(): HTMLElement {
+      return document.createElement('div');
+    }
+    updateDOM(): boolean {
+      return false;
+    }
+  }
+
+  test('generates only what it accepts inside a container or wrapper', () => {
+    const samples = fc.sample(nodeArbitrary(NestedTaggedNode), 50);
+    let items = 0;
+    for (const sample of samples) {
+      const {maybe, tags} = sample as {maybe?: unknown; tags?: unknown};
+      expect(maybe === undefined || maybe === null || accepts(maybe)).toBe(
+        true,
+      );
+      for (const item of Array.isArray(tags) ? tags : []) {
+        items++;
+        expect(accepts(item)).toBe(true);
+      }
+    }
+    // Not vacuous: elements really are generated.
+    expect(items).toBeGreaterThan(0);
   });
 });

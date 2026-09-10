@@ -56,7 +56,6 @@ import {
   type RangeSelection,
   safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-  type SerializedPartialNode,
   shallowMergeConfig,
 } from 'lexical';
 
@@ -669,13 +668,7 @@ export function $generateNodesFromSerializedNodes(
 ): LexicalNode[] {
   const nodes = [];
   for (const serializedNode of serializedNodes) {
-    // `BaseSerializedNode` is this package's own looser spelling of the same
-    // shape — deliberately without an index signature, so that a consumer's
-    // serialized type declared as an `interface` still satisfies the bound
-    // above. That is exactly what makes it unassignable to a type that has
-    // one, so the widening happens here, at the boundary, rather than by
-    // loosening either public signature.
-    nodes.push($parseSerializedNode(serializedNode as SerializedPartialNode));
+    nodes.push($parseSerializedNode(serializedNode));
   }
   return nodes;
 }

@@ -8,6 +8,7 @@
 
 import type {
   LexicalNode,
+  ParsableSerializedNode,
   SerializedLexicalNode,
   SerializedPartialNode,
 } from './LexicalNode';
@@ -419,7 +420,16 @@ export function $parseSerializedNode(
   // writable as a literal, which a closed type took away. A union keeps both:
   // a literal is checked against the indexed member, a declared interface
   // against the structural one.
-  serializedNode: SerializedPartialNode | SerializedLexicalNode,
+  //
+  // `ParsableSerializedNode` is the third for an interface whose `version` is
+  // optional, which is the honest shape here: this drops `version`, so
+  // requiring it described the caller rather than the parameter — and because
+  // `children` and `$slots` recurse, requiring it once rejected the whole
+  // subtree.
+  serializedNode:
+    | SerializedPartialNode
+    | SerializedLexicalNode
+    | ParsableSerializedNode,
 ): LexicalNode {
   const internalSerializedNode: InternalSerializedNode = serializedNode;
   return $parseSerializedNodeImpl(

@@ -1455,11 +1455,23 @@ declare export function createRefCountedRegistry<Key, Options = void>(
 //    node's own `exportJSON()` returns.
 //  - `SerializedPartial<SerializedLexicalNode>` — what `$exportNodeJSON`
 //    returns, so that the public export and import helpers compose.
+// The least a value has to be for $parseSerializedNode to read it. `version`
+// is optional because the parser drops it, which is what lets an interface
+// with an optional `version` — @lexical/clipboard's BaseSerializedNode — be
+// passed without a cast.
+declare export type ParsableSerializedNode = {
+  $slots?: {[string]: ParsableSerializedNode},
+  children?: Array<ParsableSerializedNode>,
+  type: string,
+  version?: number,
+};
+
 declare export function $parseSerializedNode(
   serializedNode:
     | SerializedPartialNode
     | SerializedLexicalNode
-    | SerializedPartial<SerializedLexicalNode>,
+    | SerializedPartial<SerializedLexicalNode>
+    | ParsableSerializedNode,
 ): LexicalNode;
 
 declare export function $applyNodeReplacement<N extends LexicalNode>(

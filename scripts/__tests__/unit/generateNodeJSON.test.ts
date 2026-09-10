@@ -7,6 +7,7 @@
  */
 
 import {
+  aliasedValue,
   arrayValue,
   nodeSchema,
   numberValue,
@@ -201,6 +202,24 @@ describe('a property whose schema narrows its own domain', () => {
       }
     }
     expect(generateUpdate(NarrowedNode)).toBeNull();
+    // And wherever it sits in the schema, not only at the top. `aliasedValue`
+    // derives its own predicate, so asking the outermost schema alone let this
+    // through and compiled the inner *combinator's* parse — which keeps a
+    // `#`-prefixed string the schema itself replaces with its default.
+    class AliasedNarrowedNode extends TextNode {
+      __tag: string = '';
+      $config() {
+        return this.config('generate-aliased-narrowed-tag', {
+          extends: TextNode,
+          json: nodeSchema<AliasedNarrowedNode>()({
+            tag: withField(aliasedValue(narrowed, {legacy: 'modern'}), {
+              field: '__tag',
+            }),
+          }),
+        });
+      }
+    }
+    expect(generateUpdate(AliasedNarrowedNode)).toBeNull();
     // The export half is unaffected: reading a property back out asks the
     // schema nothing about membership.
     expect(generateCompactExport(NarrowedNode)).toContain(

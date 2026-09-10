@@ -1027,9 +1027,12 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
   // a `{width: undefined}` field went from a whole fit to none and took its
   // object out of the enclosing union.
   //
-  // Each case asks at the point where the value is already narrowed enough for
-  // a predicate to look at it, rather than once above the switch: an author's
-  // array predicate is entitled to assume an array, as it could before.
+  // Each case asks its own, before it narrows anything: a predicate is declared
+  // over `unknown` and is asked about whatever the document held, so one that
+  // reaches past its metadata — an `arrayValue` schema that also reads the
+  // comma-separated spelling an older version wrote — is not overruled by the
+  // structural test. It must therefore be total: `value.length` without a
+  // guard throws out of `importJSON` rather than declining.
   const declared = declaredAccepts(schema);
   switch (meta.kind) {
     case 'raw':
@@ -1048,14 +1051,14 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
           return FIT_NONE;
         }
         if (!Array.isArray(value)) {
-          // Claimed, but not an array, so it is a value the author's domain
-          // reaches and the metadata does not — a schema over `arrayValue`
-          // that also reads the comma-separated spelling an older version
-          // wrote. There are no items to walk, and the structural test is not
-          // entitled to overrule the claim: a predicate wider than its
-          // metadata used to report no fit for a value the schema really does
-          // parse, so a union declined the member that owned it.
-          return FIT_WHOLE;
+          // Claimed, but not an array: a value the author's domain reaches and
+          // the metadata does not. The claim stands — a predicate wider than
+          // its metadata used to report no fit for a value the schema really
+          // does parse — but nothing measured it, so it ranks below a member
+          // that structurally owns the value. Answering `FIT_WHOLE` here let a
+          // merely permissive predicate tie with an exact match and win on
+          // declaration order, reading `'hello'` as `['hello']`.
+          return FIT_COERCIBLE;
         }
       } else if (!Array.isArray(value)) {
         return FIT_NONE;
@@ -1086,9 +1089,8 @@ function $fitOf(schema: AnySerializationSchema, value: unknown): number {
         }
         if (!isPlainObject(value)) {
           // Claimed but not a plain object — the author's domain reaching past
-          // the metadata, as in the `array` case above. Nothing to walk, and
-          // the claim stands.
-          return FIT_WHOLE;
+          // the metadata, ranked as in the `array` case above.
+          return FIT_COERCIBLE;
         }
       } else if (!isPlainObject(value)) {
         return FIT_NONE;
@@ -2213,7 +2215,13 @@ export function arrayValue<T, In = T>(
     // describes the inner *input* — so it declined the very array it wrote.
     // Accepting costs at most a coerced element, which is what the parse does
     // with a malformed element anyway.
-    Array.isArray,
+    //
+    // Wrapped rather than passed as the bare `Array.isArray`: `makeSchema`
+    // records the predicate it is given as combinator-derived, keyed by
+    // function identity, so handing it the global would claim that builtin for
+    // the whole process — and an author who then wrote `{accepts: Array.isArray}`
+    // would have their own predicate silently ignored.
+    value => Array.isArray(value),
   );
 }
 

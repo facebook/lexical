@@ -15,12 +15,12 @@ import type {
 } from 'lexical';
 
 import * as fc from 'fast-check';
-import {getComposedSchemaFields} from 'lexical';
-// `@internal`, and reached through the module that declares it for the same
-// reason the code generator does: which schemas describe a domain their
-// metadata does not is this package's concern and the runtime's, not a public
-// API. See its docblock.
-import {declaredAccepts} from 'lexical/src/LexicalSchema';
+// `declaredAccepts` is `@internal`, re-exported from the package entry the way
+// `getComposedSchemaFields` is: a deep `lexical/src/*` import resolves only
+// through this repo's tsconfig paths, so it does not build and would give a
+// consumer a second copy of the module — and a second `DERIVED_ACCEPTS`, which
+// is module-scope state the answer depends on.
+import {declaredAccepts, getComposedSchemaFields} from 'lexical';
 
 /**
  * Derive a fast-check arbitrary for the node-specific properties of `klass`'s
@@ -92,10 +92,35 @@ function schemaArbitrary(
 ): fc.Arbitrary<unknown> {
   const arbitrary = metaArbitrary(schema.meta);
   const accepts = declaredAccepts(schema);
-  return accepts === undefined
-    ? arbitrary
-    : arbitrary.filter(value => accepts.call(schema, value));
+  if (accepts === undefined) {
+    return arbitrary;
+  }
+  const claims = (value: unknown) => accepts.call(schema, value);
+  // `filter` retries without a cap, so a predicate the metadata's domain
+  // cannot satisfy makes generation spin rather than fail — synchronously, so
+  // a test runner's own timeout cannot interrupt it and nothing names the
+  // property responsible. A `rawValue()` narrowed to strings is exactly that:
+  // its metadata describes no domain, so `raw` generates `undefined` alone and
+  // no draw is ever accepted. Probing first turns the hang into a diagnostic.
+  if (
+    !fc.sample(arbitrary, {numRuns: FILTER_PROBE_RUNS, seed: 0}).some(claims)
+  ) {
+    throw new Error(
+      `nodeArbitrary: a schema of kind ${String(
+        schema.meta.kind,
+      )} declares a membership predicate that rejected all ${FILTER_PROBE_RUNS} values its metadata generates, so no example can be drawn for it. Widen the predicate, or describe the narrowed domain in the schema's metadata.`,
+    );
+  }
+  return arbitrary.filter(claims);
 }
+
+/**
+ * How many draws {@link schemaArbitrary} tries before calling a declared
+ * predicate unsatisfiable over its metadata's domain. Large enough that a
+ * predicate accepting a reasonable fraction is never mistaken for one that
+ * accepts nothing, small enough to cost nothing next to a property run.
+ */
+const FILTER_PROBE_RUNS = 1000;
 
 function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
   switch (meta.kind) {
@@ -142,20 +167,18 @@ function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
     case 'enum':
       return fc.constantFrom(...meta.values);
     case 'array':
-      return fc.array(metaArbitrary(meta.item.meta));
+      return fc.array(schemaArbitrary(meta.item));
     case 'nullable':
-      return fc.option(metaArbitrary(meta.inner.meta), {nil: null});
+      return fc.option(schemaArbitrary(meta.inner), {nil: null});
     case 'optional':
-      return fc.option(metaArbitrary(meta.inner.meta), {nil: undefined});
+      return fc.option(schemaArbitrary(meta.inner), {nil: undefined});
     case 'union':
-      return fc.oneof(
-        ...meta.members.map(member => metaArbitrary(member.meta)),
-      );
+      return fc.oneof(...meta.members.map(member => schemaArbitrary(member)));
     case 'aliased': {
       // The aliases are legacy input spellings the schema still accepts, so
       // they belong in the generated domain exactly as much as the inner one
       // does — that is what makes them worth stating as data.
-      const inner = metaArbitrary(meta.inner.meta);
+      const inner = schemaArbitrary(meta.inner);
       const aliases = Object.keys(meta.aliases);
       // `fc.constantFrom()` with nothing to choose from throws, so a schema
       // that declares no alias generates its inner domain alone — which is
@@ -169,7 +192,7 @@ function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
       // only the output, so the domain to draw from is the inner one — the
       // same answer inheriting the inner meta used to give, now reached
       // deliberately rather than by the transform being invisible.
-      return metaArbitrary(meta.inner.meta);
+      return schemaArbitrary(meta.inner);
     case 'raw':
       // The schema deliberately does not describe this value's domain (its
       // owner validates it), so there is nothing to generate from.
@@ -177,7 +200,7 @@ function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
     case 'object': {
       const fields: {[key: string]: fc.Arbitrary<unknown>} = {};
       for (const key of Object.keys(meta.fields)) {
-        fields[key] = metaArbitrary(meta.fields[key].meta);
+        fields[key] = schemaArbitrary(meta.fields[key]);
       }
       return fc.record(fields);
     }

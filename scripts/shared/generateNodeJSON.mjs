@@ -696,6 +696,44 @@ function isElementish(klass) {
 // -- the import direction ----------------------------------------------------
 
 /**
+ * The first schema in `schema`'s tree whose author installed a membership
+ * predicate, or `null` where none does.
+ *
+ * The whole tree, not just the outermost schema: `compileParse` recurses
+ * through the metadata — `aliasedValue` compiles by compiling its inner schema
+ * — and a wrapper derives its own predicate, so asking only the top let
+ * `aliasedValue(narrowed, {...})` through and compiled the inner *combinator's*
+ * parse. The emitted parser then kept a value the schema itself declines, and
+ * `verifyCompiledParse` agreed, because its corpus is derived from the same
+ * metadata that cannot see the narrowing.
+ *
+ * @param {AnySchema} schema
+ * @returns {null | AnySchema}
+ */
+function narrowedSchema(schema) {
+  if (declaredAccepts(schema) !== undefined) {
+    return schema;
+  }
+  const meta = schema.meta;
+  if (meta == null) {
+    return null;
+  }
+  const nested = [
+    ...(meta.inner ? [meta.inner] : []),
+    ...(meta.item ? [meta.item] : []),
+    ...(meta.members || []),
+    ...(meta.fields ? Object.values(meta.fields) : []),
+  ];
+  for (const inner of nested) {
+    const found = narrowedSchema(inner);
+    if (found !== null) {
+      return found;
+    }
+  }
+  return null;
+}
+
+/**
  * Compile one property's parse, then prove it agrees with the schema.
  *
  * The proof runs the compiled expression rather than the emitted statements, so
@@ -731,7 +769,7 @@ function writeExpression(klass, schema, key) {
     // fine — and would cost the same to any node with a derived property.
     return null;
   }
-  if (declaredAccepts(schema) !== undefined) {
+  if (narrowedSchema(schema) !== null) {
     // The compiler reads `meta` alone, and a predicate the schema's author
     // installed describes a domain no metadata records — so what it would emit
     // is the combinator's parse, not this schema's. `verifyCompiledParse`

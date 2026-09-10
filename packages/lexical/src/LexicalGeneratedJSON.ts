@@ -14,6 +14,7 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
 import type {LexicalNode} from './LexicalNode';
+import type {CompactDefaultTest} from './LexicalUtils';
 import type {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import type {ParagraphNode} from './nodes/LexicalParagraphNode';
 import type {TabNode} from './nodes/LexicalTabNode';
@@ -34,7 +35,17 @@ export interface GeneratedJSON {
   // widen the parameter to 'never', which no generated function actually
   // accepts and every call site then has to cast back.
   exportJSON(node: LexicalNode): {[key: string]: unknown};
-  exportCompactJSON?(node: LexicalNode): {[key: string]: unknown};
+  // `isCompactDefault` is the running class's own omission test, supplied by
+  // the dispatch. Generated code states each property's comparison as source
+  // where the default has a literal a value could be `===`; where it does not,
+  // the comparison is this call, so the two forms omit the same properties
+  // without the generated module holding a value import of anything. Most
+  // exporters declare the parameter and never call it, and one generated
+  // before it existed simply declares one parameter.
+  exportCompactJSON?(
+    node: LexicalNode,
+    isCompactDefault: CompactDefaultTest,
+  ): {[key: string]: unknown};
   // Returns the node the properties were applied to, which is the node passed
   // in unless a setter replaced it — the same value `$applyJSONSetters`
   // returns from the walk, for the same reason.

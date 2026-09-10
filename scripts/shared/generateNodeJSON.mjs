@@ -257,11 +257,18 @@ const RESERVED = new Set(
   ),
 );
 
+/**
+ * The parameter a compact exporter takes its run-time comparisons through; see
+ * {@link generateCompactExport}.
+ */
+const COMPACT_DEFAULT_PARAM = 'isCompactDefault';
+
 // The names the emitted functions bind themselves. A property named for one of
 // these would shadow it — `const node = node.__node` — and is refused rather
 // than renamed, so that what the generated code calls a thing is always what
 // the schema called it.
 const EMITTED_LOCALS = new Set([
+  COMPACT_DEFAULT_PARAM,
   'json',
   'n',
   'node',
@@ -488,22 +495,23 @@ function differsFromDefault(schema, name) {
  * Each comparison is the one {@link differsFromDefault} states and verifies
  * for the property's default. A default it cannot state — an object, a
  * non-empty array, a non-finite number, or a literal the schema compares with
- * an equality of its own — leaves that property *written*, always. Omitting is
- * the optimization; writing is the correct thing to do when there is no
- * comparison to justify leaving it out, and it is a bounded cost: one property
- * carries one key it might not have needed.
+ * an equality of its own — gets `isCompactDefault(key, value)` instead, the
+ * running class's own omission test, handed in by the dispatch. So the schema
+ * still decides, at the one point where the schema and this code are both in
+ * hand, and this form omits exactly what the walk omits.
  *
- * That is the whole of what makes this form's output differ from the walk's,
- * and it is a difference in one direction only — every key here is one the
- * walk would have written the same value for, and any extra key holds that
- * property's own default. So the two still parse to the same node, which is
- * what {@link $expectSameJSON} checks. The alternative was to drop the class
- * from this form over a single such property, which cost every *other*
- * property its generated code and read as a silent fallback to the walk.
+ * Passed in rather than reached for, which is the whole reason a schema was
+ * ever thought unavailable here: looking one up would mean importing the node
+ * class, and that is a cycle. Nothing about the schema needs importing when
+ * the caller already holds it.
  *
- * Exported for `generateNodeJSON.test.ts`, like {@link emittable}: which
- * properties this decides to write unconditionally is not visible in the
- * checked-in output, since no manifest class has one.
+ * The alternative was to drop the class from this form over one such property,
+ * which cost every *other* property its generated code and read as a silent
+ * fallback to the walk.
+ *
+ * Exported for `generateNodeJSON.test.ts`, like {@link emittable}: no manifest
+ * class has such a property, so the checked-in output does not show what
+ * happens for one.
  *
  * @param {NodeClass} klass
  * @returns {string}
@@ -534,13 +542,15 @@ export function generateCompactExport(klass) {
         if (!(error instanceof NotCompilable)) {
           throw error;
         }
-        // No comparison to justify omitting it, so it is written whenever it
-        // has a value — see this function's docblock. Reported because the
-        // output does not show it: a property written unconditionally looks
-        // exactly like one whose value always differs from its default.
+        // Not statable as source, so the schema answers at run time instead —
+        // see this function's docblock. Reported because the output alone does
+        // not say which properties took this route.
         process.stdout.write(
-          `${klass.name}: compact export always writes "${key}", which ${error.message}\n`,
+          `${klass.name}: compact export compares "${key}" at run time, which ${error.message}\n`,
         );
+        test = `${test} && !${COMPACT_DEFAULT_PARAM}(${JSON.stringify(
+          key,
+        )}, ${key})`;
       }
     }
     writes.push(
@@ -570,10 +580,16 @@ function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknow
   return ${fixed};
 }`;
   }
+  const body = writes.join('\n');
+  // Declared only where a property compares through it, so an exporter whose
+  // every comparison is source keeps the one-parameter shape it always had.
+  const params = body.includes(`${COMPACT_DEFAULT_PARAM}(`)
+    ? `\n  node: ${klass.name},\n  ${COMPACT_DEFAULT_PARAM}: CompactDefaultTest,\n`
+    : `node: ${klass.name}`;
   return `${header}
-function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
+function exportCompact${klass.name}(${params}): {[key: string]: unknown} {
 ${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  const json: {[key: string]: unknown} = ${fixed};
-${writes.join('\n')}
+${body}
   return json;
 }`;
 }
@@ -935,8 +951,18 @@ function generatePackage(pkg) {
   // way: one line per module, sorted, no blank lines between.
   if (pkg.home) {
     typeImports.set('./LexicalNode', new Set(['LexicalNode']));
+    // Always: this module declares `GeneratedJSON`, whose `exportCompactJSON`
+    // names it, whether or not any exporter here takes one.
+    typeImports.set('./LexicalUtils', new Set(['CompactDefaultTest']));
   } else {
-    typeImports.set('lexical', new Set(['GeneratedJSON']));
+    const names = new Set(['GeneratedJSON']);
+    // Only where an exporter takes it. No built-in node has a property whose
+    // comparison cannot be stated as source, so this appears in none of the
+    // checked-in output.
+    if (generated.some(g => g.compact.includes(`${COMPACT_DEFAULT_PARAM}:`))) {
+      names.add('CompactDefaultTest');
+    }
+    typeImports.set('lexical', names);
   }
   const importLines = [...typeImports]
     .sort(([a], [b]) => (a < b ? -1 : 1))

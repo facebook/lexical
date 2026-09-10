@@ -2139,11 +2139,19 @@ export type CollectStateJSON<
 
 export const PROTOTYPE_CONFIG_METHOD = '$config';
 
+// Whether the compact form omits `value` for the property named `key`. A
+// generated compact exporter is handed its class's own test, and uses it for
+// the properties whose defaults the generator could not state as source.
+export type CompactDefaultTest = (key: string, value: unknown) => boolean;
+
 // The generated JSON implementations for one node class, passed to that
 // class's $config as `generated`.
 export type GeneratedJSON = {
   exportJSON: (node: LexicalNode) => {[key: string]: unknown},
-  exportCompactJSON?: (node: LexicalNode) => {[key: string]: unknown},
+  exportCompactJSON?: (
+    node: LexicalNode,
+    isCompactDefault: CompactDefaultTest,
+  ) => {[key: string]: unknown},
   updateFromJSON?: (
     node: LexicalNode,
     json: {readonly [key: string]: unknown},

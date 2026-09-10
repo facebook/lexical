@@ -394,6 +394,7 @@ export {
   $setFormatFromDOM,
   $setSelection,
   $splitNode,
+  type CompactDefaultTest,
   CONTROL_OR_OTHER_KEY,
   type DOMSelectionBoundaryPoints,
   findAllLexicalElementsDeep,

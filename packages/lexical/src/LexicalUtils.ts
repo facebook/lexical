@@ -3331,7 +3331,31 @@ interface CompiledNodeClass {
    * {@link resolveGenerated}).
    */
   readonly generated: null | GeneratedJSON;
+  /**
+   * The compact form's omission test for one property, by key — the same three
+   * comparisons {@link $writeJSONGetters} makes, from the same table.
+   *
+   * Generated code states each property's comparison as source, which it can
+   * do for a default that has a literal a value could be `===`. For one that
+   * does not — a reference-typed default, or a literal the schema compares
+   * with an `isEqual` of its own — the comparison is this call instead, so the
+   * generated form omits exactly what the walk omits rather than having to
+   * choose between writing the property regardless and giving up the form.
+   *
+   * Handed to the exporter by {@link $generatedExportJSON} rather than reached
+   * for: the generated module holds no value import at all, since importing
+   * the node classes it was generated from would be a cycle.
+   */
+  readonly isCompactDefault: CompactDefaultTest;
 }
+
+/**
+ * Whether the compact form omits `value` for the property named `key` — see
+ * {@link CompiledNodeClass.isCompactDefault}.
+ *
+ * @internal
+ */
+export type CompactDefaultTest = (key: string, value: unknown) => boolean;
 // A WeakMap so dynamically created node classes (tests, HMR reloads) stay
 // collectable — more so now that one record pins a class's composed schema,
 // both compiled tables, and every prototype method they resolved.
@@ -4080,20 +4104,11 @@ export function $writeJSONGetters(
         value = undefined;
       }
     }
-    if (compact) {
+    if (compact && $isCompactDefaultFor(entry, value)) {
       // The compact form omits, because its output is for storage and an
       // object-level consumer (a structured clone into IndexedDB) counts keys
-      // the way stringify counts bytes. Inline rather than
-      // isSchemaDefault(schema, value): this runs per property per node, and
-      // for a primitive domain the whole answer is the comparison.
-      const {defaultValue, isEqual} = entry;
-      if (
-        value === undefined ||
-        value === defaultValue ||
-        (isEqual !== undefined && isEqual(value, defaultValue))
-      ) {
-        continue;
-      }
+      // the way stringify counts bytes.
+      continue;
     }
     // The legacy form writes unconditionally, `undefined` included:
     // JSON.stringify omits an undefined-valued property, so the serialized
@@ -4105,6 +4120,53 @@ export function $writeJSONGetters(
     // less per property.
     json[entry.key] = value;
   }
+}
+
+/**
+ * The compact form's rule for one property: omit it when the value is what
+ * parsing would restore.
+ *
+ * Inline rather than `isSchemaDefault(rule.schema, value)`: this runs per
+ * property per node, and for a primitive domain — nearly every serialized
+ * property — the whole answer is the identity comparison, with the declared
+ * equality reached only for a value that is not already identical.
+ *
+ * The one rule, in one place, because two implementations write this form: the
+ * walk calls it per property, and a generated exporter calls it through
+ * {@link CompiledNodeClass.isCompactDefault} for the properties whose defaults
+ * it could not state as source. A second copy of these three comparisons is
+ * exactly the drift that would make the two forms disagree.
+ */
+function $isCompactDefaultFor(rule: CompactRule, value: unknown): boolean {
+  const {defaultValue, isEqual} = rule;
+  return (
+    value === undefined ||
+    value === defaultValue ||
+    (isEqual !== undefined && isEqual(value, defaultValue))
+  );
+}
+
+/**
+ * {@link CompiledNodeClass.isCompactDefault} for one class's getter table.
+ *
+ * The key index is built on first use rather than with the table: only a
+ * property whose default has no literal the generated code could compare
+ * against ever reaches this, which no built-in node has.
+ */
+function compactDefaultTest(
+  getters: readonly CompiledGetter[],
+): CompactDefaultTest {
+  let byKey: undefined | Map<string, CompiledGetter>;
+  return (key, value) => {
+    if (byKey === undefined) {
+      byKey = new Map(getters.map(entry => [entry.key, entry]));
+    }
+    const entry = byKey.get(key);
+    // A key with no entry is one the generated code and the table disagree
+    // about, which `sameCompiledTables` is what prevents; omitting it would
+    // silently drop a property, so the value is written.
+    return entry !== undefined && $isCompactDefaultFor(entry, value);
+  };
 }
 
 function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
@@ -4371,15 +4433,15 @@ export function $generatedExportJSON(
   compact: boolean,
 ): undefined | {[key: string]: unknown} {
   const record = getNodeClassRecord(node.constructor as Klass<LexicalNode>);
-  const {generated} = getCompiled(record);
+  const {generated, isCompactDefault} = getCompiled(record);
   if (generated === null) {
     return undefined;
   }
   // Each form is generated separately, so this picks a function rather than
   // passing the flag on. The generator emits both forms for every class it can
-  // export at all — a property whose default it cannot compare is written
-  // rather than omitted — but the field stays optional, so a value that
-  // predates that or was written by hand still falls back to the walk here.
+  // export at all — a property whose default it cannot state as source
+  // compares through `isCompactDefault` instead — but the field stays
+  // optional, so a value written by hand still falls back to the walk here.
   const exporter = compact ? generated.exportCompactJSON : generated.exportJSON;
   if (exporter === undefined) {
     return undefined;
@@ -4390,7 +4452,16 @@ export function $generatedExportJSON(
     // of a property here as it is there.
     validateOwnFields(record, node);
   }
-  return exporter(node);
+  // Branched rather than one call on the union: the two forms take different
+  // arities, and the compact one is handed the *running* class's table — not
+  // the declaring class's, which is what a subclass running inherited code
+  // needs. Most generated exporters ignore it.
+  return compact
+    ? (exporter as NonNullable<GeneratedJSON['exportCompactJSON']>)(
+        node,
+        isCompactDefault,
+      )
+    : (exporter as GeneratedJSON['exportJSON'])(node);
 }
 
 /**
@@ -4683,6 +4754,7 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
       flatStates: getComposedSchema(klass).flatStates,
       generated: resolveGenerated(klass, ownNodeConfig, {getters, setters}),
       getters,
+      isCompactDefault: compactDefaultTest(getters),
       setters,
     };
     injectSynthesizedStatics(klass, isAbstract, ownNodeType, ownNodeConfig);

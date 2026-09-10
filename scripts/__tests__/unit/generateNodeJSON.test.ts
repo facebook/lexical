@@ -103,13 +103,13 @@ describe('lookup table names', () => {
 });
 
 /**
- * Omitting a property is the compact form's optimization, and the generator
- * can only make it where the schema states a comparison it can write down.
- * What happens where it cannot is invisible in the checked-in output — no
- * manifest class has such a property — so these drive the generator over
- * classes it does not contain.
+ * The compact form omits a property whose value parsing would restore, and the
+ * generator states that comparison as source where the default has a literal a
+ * value could be `===`. What it does where the default has none is invisible in
+ * the checked-in output — no manifest class has such a property — so these
+ * drive the generator over classes it does not contain.
  */
-describe('a property the compact form cannot compare is written, not dropped', () => {
+describe('a property the compact form cannot compare as source', () => {
   test('a default of undefined needs no comparison at all', () => {
     // `optional` lifts its inner schema's `isEqual`, so this property has one
     // while its default is `undefined` — and comparing against `undefined`
@@ -139,13 +139,13 @@ describe('a property the compact form cannot compare is written, not dropped', (
     expect(source).toContain('if (style !== undefined && style !== "") {');
   });
 
-  test('and a default with no literal keeps the property, not the walk', () => {
+  test('asks the schema at run time, and costs its siblings nothing', () => {
     // An object default — here the one `objectValue` composes from its fields'
-    // — is a default `differsFromDefault` genuinely cannot state, and there is
-    // a default, so the comparison is reached and refused. The property is
-    // then written whenever it has a value. It used to take the whole class
-    // out of this form, which cost `text`, `style` and the rest their
-    // generated code over one property they have nothing to do with.
+    // — genuinely has no literal a value could be `===`, so the comparison
+    // cannot be written down and the schema answers when the node is exported
+    // instead. It used to take the whole class out of this form, which cost
+    // `text`, `style` and the rest their generated code over one property they
+    // have nothing to do with.
     class ObjectDefault extends TextNode {
       __box: {w: number} = {w: 0};
       $config() {
@@ -159,8 +159,12 @@ describe('a property the compact form cannot compare is written, not dropped', (
     }
     const source: string = generateCompactExport(ObjectDefault);
     expect(source).toContain('const box = node.__box;');
-    expect(source).toContain('if (box !== undefined) {');
-    // The siblings keep the comparisons they always had.
+    expect(source).toContain(
+      'if (box !== undefined && !isCompactDefault("box", box)) {',
+    );
+    // Which is what the parameter is declared for, and only then.
+    expect(source).toContain('isCompactDefault: CompactDefaultTest,');
+    // The siblings keep the comparisons they always had, as source.
     expect(source).toContain('if (style !== undefined && style !== "") {');
     expect(source).toContain('if (text !== undefined && text !== "") {');
   });

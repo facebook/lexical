@@ -28,6 +28,8 @@ import {
   LineBreakNode,
   NODE_STATE_KEY,
   nodeSchema,
+  numberValue,
+  objectValue,
   ParagraphNode,
   type SerializedTextNode,
   stringValue,
@@ -43,7 +45,11 @@ import {
   GENERATED_TEXT,
   type GeneratedJSON,
 } from '../../LexicalGeneratedJSON';
-import {getGeneratedJSON, getStaticNodeConfig} from '../../LexicalUtils';
+import {
+  type CompactDefaultTest,
+  getGeneratedJSON,
+  getStaticNodeConfig,
+} from '../../LexicalUtils';
 import {
   $expectSameJSON,
   $expectSameParse,
@@ -426,9 +432,9 @@ describe('the compact form is generated too', () => {
   // picks between two straight-line functions rather than branching inside one.
   test('every class that has a legacy form has one', () => {
     // No property can cost a class this form any more: one whose default the
-    // generator cannot compare is written rather than omitted, so the form is
-    // always generated and this holds for every target rather than for the
-    // one whose properties happen to compare cleanly.
+    // generator cannot state as source compares through `isCompactDefault`
+    // instead, so the form is always generated and this holds for every target
+    // rather than for the one whose properties happen to compare cleanly.
     for (const generated of [
       GENERATED_TEXT,
       GENERATED_PARAGRAPH,
@@ -438,6 +444,90 @@ describe('the compact form is generated too', () => {
       expect(generated.exportCompactJSON).toBeDefined();
       expect(generated.exportCompactJSON).not.toBe(generated.exportJSON);
     }
+  });
+
+  test('a property compared at run time omits exactly what the walk omits', () => {
+    // The generated modules hold no value import — importing the classes they
+    // were generated from would be a cycle — so a property whose default has
+    // no literal to compare against is handed the class's own omission test by
+    // the dispatch. Nothing in the manifest has such a property, so this is
+    // the shape the generator emits for one, written out: `box` compares
+    // through the parameter where `w` compares as source.
+    // LineBreakNode declares no properties of its own, so `box` and `w` are the
+    // whole schema and the hand-written literals below are the whole export.
+    let received: undefined | CompactDefaultTest;
+    class Boxed extends LineBreakNode {
+      __box: {w: number} = {w: 0};
+      __w = 0;
+      $config() {
+        return this.config('run-time-compared-box', {
+          extends: LineBreakNode,
+          generated: {
+            exportCompactJSON: (node, isCompactDefault) => {
+              received = isCompactDefault;
+              const json: {[key: string]: unknown} = {type: node.__type};
+              // `box` has an object default, which has no literal a value
+              // could be `===`, so the schema answers; `w`'s default is `0`,
+              // which the generator would have written as source.
+              const box = (node as Boxed).__box;
+              if (box !== undefined && !isCompactDefault('box', box)) {
+                json.box = box;
+              }
+              const w = (node as Boxed).__w;
+              if (w !== undefined && w !== 0) {
+                json.w = w;
+              }
+              return json;
+            },
+            // Schema order, then type and version, which is what the walk
+            // writes and what `$expectSameJSON` compares key for key.
+            /* eslint-disable sort-keys-fix/sort-keys-fix */
+            exportJSON: node => ({
+              box: (node as Boxed).__box,
+              w: (node as Boxed).__w,
+              type: node.__type,
+              version: 1,
+            }),
+            /* eslint-enable sort-keys-fix/sort-keys-fix */
+          },
+          json: nodeSchema<Boxed>()({
+            box: withField(objectValue({w: numberValue()}), {field: '__box'}),
+            w: withField(numberValue(), {field: '__w'}),
+          }),
+        });
+      }
+    }
+    const editor = createEditor({
+      namespace: '',
+      nodes: [Boxed],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        // A fresh object each time, so identity is never the answer — the
+        // schema's own `isEqual` is what decides, and it compares by content.
+        const atDefault = $create(Boxed);
+        atDefault.__box = {w: 0};
+        expect(atDefault.exportJSON(true)).toEqual({
+          type: 'run-time-compared-box',
+        });
+        expect(received).toBeDefined();
+        // The value the walk would have kept is kept here too.
+        const differs = $create(Boxed);
+        differs.__box = {w: 3};
+        expect(differs.exportJSON(true)).toEqual({
+          box: {w: 3},
+          type: 'run-time-compared-box',
+        });
+        // And both agree with the walk, which is the point of routing through
+        // the schema rather than guessing.
+        $expectSameJSON(atDefault);
+        $expectSameJSON(differs);
+      },
+      {discrete: true},
+    );
   });
 
   initializeUnitTest(testEnv => {

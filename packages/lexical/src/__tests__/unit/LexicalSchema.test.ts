@@ -2899,6 +2899,45 @@ describe('a catch-all is a last resort, not a mismatch', () => {
     ).toEqual({note: 'hi', tags: ['red', 'blue']});
   });
 
+  test('and a catch-all is one wherever it is reached from', () => {
+    // Reading `meta.kind` off the member alone missed every indirect one. A
+    // wrapper is transparent, and a union answers with `some`, so one raw
+    // member makes the whole union claim every value — which an enclosing
+    // union then preferred over the member that describes the data.
+    expect(
+      unionValue(
+        [
+          unionValue([arrayValue(numberValue()), rawValue()], [] as never),
+          arrayValue(stringValue()),
+        ],
+        [] as never,
+      )(['red', '42']),
+    ).toEqual(['red', '42']);
+
+    for (const wrapped of [
+      optional(rawValue()),
+      nullable(rawValue()),
+      unionValue([rawValue()], undefined as never),
+    ]) {
+      expect(
+        unionValue(
+          [objectValue({id: stringValue()}), wrapped as never],
+          'x' as never,
+        )({id: 42} as never),
+      ).toEqual({id: ''});
+      // Still a catch-all, not a no-op: a value no typed member owns lands
+      // here rather than on the union's default.
+      expect(
+        unionValue(
+          [numberValue(), wrapped as never],
+          0 as never,
+        )({
+          odd: 1,
+        } as never),
+      ).toEqual({odd: 1});
+    }
+  });
+
   test('but a bare raw member still comes last, and still catches', () => {
     expect(
       unionValue(

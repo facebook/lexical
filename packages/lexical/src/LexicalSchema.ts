@@ -844,6 +844,50 @@ function $acceptsValue<T>(
  * lenient/strict split exists in exactly two combinators, and everything else
  * either forwards or has one answer.
  */
+/**
+ * Whether `schema` describes nothing — a `rawValue`, or a wrapper or union that
+ * bottoms out at one.
+ *
+ * A raw schema admits every value, so it is *neutral* wherever it is one part
+ * of a larger shape: a `rawValue()` field cannot make its object a worse fit,
+ * and treating it as a mismatch took the whole object out of the union. But
+ * where it is the *whole* answer — a union member — it is a catch-all, and
+ * letting it claim a complete match hands a caller unvalidated input under a
+ * declared type, ahead of the member that describes the value.
+ *
+ * So the two places that must pass over a catch-all ask this rather than
+ * reading `meta.kind` themselves: `optional(rawValue())` and
+ * `unionValue([arrayValue(numberValue()), rawValue()])` are catch-alls too, and
+ * checking the outer kind alone let both win the specific pass.
+ *
+ * It does *not* look inside an array's items or an object's fields: a container
+ * that happens to carry a raw property still describes everything else about
+ * the value, which is exactly the case the neutrality above exists for.
+ */
+function $isCatchAll(schema: AnySerializationSchema): boolean {
+  const meta: SerializationSchemaMeta | undefined | null = schema.meta;
+  if (meta == null) {
+    return false;
+  }
+  switch (meta.kind) {
+    case 'raw':
+      return true;
+    case 'union':
+      // `$acceptsWholly` answers a union with `some`, so one catch-all member
+      // is enough to make the whole union claim every value.
+      return (
+        meta.members != null && meta.members.some(member => $isCatchAll(member))
+      );
+    case 'nullable':
+    case 'optional':
+    case 'transform':
+    case 'aliased':
+      return meta.inner != null && $isCatchAll(meta.inner);
+    default:
+      return false;
+  }
+}
+
 function $acceptsWholly(
   schema: AnySerializationSchema,
   value: unknown,
@@ -914,9 +958,15 @@ function $acceptsWholly(
       return true;
     }
     case 'union':
+      // Catch-all members skipped for the reason `$match`'s first pass skips
+      // them: a union that answered "whole match" on the strength of a
+      // `rawValue()` member would claim every value, and an enclosing union
+      // then preferred it over the member that describes the data.
       return (
         meta.members == null ||
-        meta.members.some(member => $acceptsWholly(member, value))
+        meta.members.some(
+          member => !$isCatchAll(member) && $acceptsWholly(member, value),
+        )
       );
     case 'aliased':
       // An alias is an exact spelling, so it is as whole a match as there is.
@@ -1492,13 +1542,12 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
     // default, which keeps nothing.
     for (let i = 0; i < members.length; i++) {
       const member = members[i];
-      // A member that describes nothing describes nothing *wholly* either: a
-      // bare `rawValue()` accepts every value, so it would win this pass over
-      // the member that actually describes the data and hand a caller the
-      // input unvalidated under a declared type. It is a catch-all, so it
-      // belongs to the pass that takes what is left. Read defensively — a
-      // hand-rolled schema may carry no `meta` at all.
-      if (member.meta != null && member.meta.kind === 'raw') {
+      // A member that describes nothing describes nothing *wholly* either: it
+      // accepts every value, so it would win this pass over the member that
+      // actually describes the data and hand a caller the input unvalidated
+      // under a declared type. It is a catch-all, so it belongs to the pass
+      // that takes what is left.
+      if ($isCatchAll(member)) {
         continue;
       }
       if ($acceptsWholly(member, value)) {

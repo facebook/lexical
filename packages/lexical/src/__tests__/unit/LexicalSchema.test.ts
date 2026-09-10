@@ -3357,6 +3357,63 @@ describe('a catch-all is a last resort, not a mismatch', () => {
   });
 });
 
+describe('a declaration means what it says', () => {
+  test('an explicit undefined default is a default', () => {
+    // `undefined` is in this union's domain — the `optional` member produces
+    // it — so it is a default a caller may mean. Comparing the argument
+    // against `undefined` rather than counting it substituted the first
+    // member's, so the union defaulted to `0` and then declined the value it
+    // had been told to fall back to.
+    const declared = unionValue(
+      [numberValue(), optional(stringValue())],
+      undefined,
+    );
+    expect(declared.defaultValue).toBeUndefined();
+    // And omitting it still falls back to the first member's, as documented.
+    expect(
+      unionValue([numberValue(), optional(stringValue())]).defaultValue,
+    ).toBe(0);
+  });
+
+  test('a member that names no accessor is not overruled by one that names none', () => {
+    // `setter: null` means *derived*, not *unset*, and scanning past the first
+    // member for one that named something let a later member's `null` win over
+    // an earlier member's conventional `set<Prop>` — which `compileSetters`
+    // then skipped entirely, making the whole property unreadable and
+    // unwritable.
+    const conventionalFirst = unionValue([
+      stringValue(),
+      withAccessors(numberValue(), {setter: null}),
+    ]);
+    expect(conventionalFirst.setter).toBeUndefined();
+    // The first member still decides when it is the one that named something.
+    const derivedFirst = unionValue([
+      withAccessors(numberValue(), {setter: null}),
+      stringValue(),
+    ]);
+    expect(derivedFirst.setter).toBeNull();
+  });
+
+  test('a default a caller owns is not frozen', () => {
+    // `transformValue` returns whatever its transform did, possibly a module
+    // constant the caller uses elsewhere — which is why it passes its default
+    // explicitly rather than letting one be derived and frozen. An enclosing
+    // `objectValue` derives *its* default, which holds that same object, and
+    // the recursive freeze reached it.
+    const shared = {cols: 2};
+    objectValue({
+      layout: transformValue(numberValue(), () => shared, {
+        isEqual: (a, b) => a === b,
+      }),
+    });
+    expect(Object.isFrozen(shared)).toBe(false);
+    // What the schema derived for itself is still frozen.
+    expect(Object.isFrozen(objectValue({n: numberValue()}).defaultValue)).toBe(
+      true,
+    );
+  });
+});
+
 describe('a container schema answers for its shape, not its contents', () => {
   // `accepts` says whether a member could parse the value at all; whether the
   // contents *fit* is the whole-match question. Asking one predicate both

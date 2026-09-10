@@ -462,6 +462,14 @@ type TaggedNamesOf<N> =
  * check is contravariant — the same shape, and the same reason, as
  * {@link GetterObligation}.
  */
+/**
+ * `Returnable` for the same reason {@link GetterObligation} uses it: `readonly`
+ * is a property of the reference, not of the JSON, and serializing an array
+ * does not mutate it — so a field declared `readonly number[]` satisfies an
+ * `arrayValue(numberValue())` read, exactly as a method getter returning one
+ * does. Checking the bare `T` rejected the field and accepted the method for
+ * the same schema.
+ */
 interface FieldReadObligation<F extends string, V> {
   readonly reads: F;
   readonly read: (value: V) => void;
@@ -649,7 +657,7 @@ type AccessorName<A, Role extends 'get' | 'set', T> = A extends {
       | (A extends {readonly decode: unknown} | {readonly encode: unknown}
           ? never
           : Role extends 'get'
-            ? FieldReadObligation<F, T>
+            ? FieldReadObligation<F, Returnable<T>>
             : FieldWriteObligation<F, T>)
   : A extends string
     ? `${Role}:${A}` | MethodObligation<Role, A, T>
@@ -701,7 +709,7 @@ type FieldOptionNames<F, T> =
   | (F extends {readonly decode: unknown} | {readonly encode: unknown}
       ? never
       : F extends {readonly field: infer N extends string}
-        ? FieldReadObligation<N, T> | FieldWriteObligation<N, T>
+        ? FieldReadObligation<N, Returnable<T>> | FieldWriteObligation<N, T>
         : never)
   | (F extends {readonly getter?: infer G extends string}
       ? GetterObligation<G, Returnable<T> | undefined>
@@ -860,8 +868,34 @@ export function declaredAccepts(
  * its own exactly as the outer one is — so it is the same hazard one level
  * down. Already-frozen values are skipped, which also terminates a cycle.
  */
+/**
+ * Values a caller handed the schema, which a derived default may contain and
+ * which this must not freeze.
+ *
+ * A `transformValue`'s default is whatever its `transform` returned, possibly a
+ * module constant the caller also uses elsewhere — which is why `transformValue`
+ * passes its default explicitly rather than letting `makeSchema` derive and
+ * freeze one. That is not enough on its own: an `objectValue` *containing* such
+ * a field derives its own default, which holds that same object, and the
+ * recursion below reached it.
+ */
+const CALLER_OWNED = new WeakSet<object>();
+
+/** Records a value as the caller's, and returns it. See {@link CALLER_OWNED}. */
+function markCallerOwned<T>(value: T): T {
+  if (value !== null && typeof value === 'object') {
+    CALLER_OWNED.add(value);
+  }
+  return value;
+}
+
 function deepFreeze(value: unknown): void {
-  if (value === null || typeof value !== 'object' || Object.isFrozen(value)) {
+  if (
+    value === null ||
+    typeof value !== 'object' ||
+    Object.isFrozen(value) ||
+    CALLER_OWNED.has(value)
+  ) {
     return;
   }
   Object.freeze(value);
@@ -1789,13 +1823,24 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
   RebindObligation<NamesOf<M[number]>, SerializationSchemaValue<M[number]>>,
   SchemaInput<M[number]>
 > {
+  // Captured before anything else can shadow it: `undefined` is a value this
+  // union may legitimately default to, so "was an argument passed" is the only
+  // way to tell a declared `undefined` from an omitted one.
+  const hasDefault = arguments.length > 1;
   type T = SerializationSchemaValue<M[number]>;
   invariant(
     members.length > 0,
     'unionValue: at least one member schema is required',
   );
   const fallback =
-    defaultValue !== undefined ? defaultValue : (members[0].defaultValue as T);
+    // `arguments.length`, not `!== undefined`: `undefined` is in this union's
+    // value domain whenever a member produces it (an `optional` one does), so
+    // it is a default a caller may mean. Comparing against it substituted the
+    // first member's — `unionValue([numberValue(), optional(stringValue())],
+    // undefined)` defaulted to `0` — and `accepts(undefined)` then declined
+    // the value the union was told to fall back to. `enumValue` passes its
+    // default explicitly for the same reason.
+    hasDefault ? (defaultValue as T) : (members[0].defaultValue as T);
   /**
    * The member that recognizes `value`, and what it parsed to. The membership
    * rule itself is `$schemaMatch`'s, which the `accepts` below applies through
@@ -1881,19 +1926,15 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
 function unionAccessors(
   members: readonly AnySerializationSchema[],
 ): SchemaAccessors {
-  const accessors: {
-    getter?: SchemaGetterAccessor;
-    setter?: SchemaSetterAccessor;
-  } = {};
-  for (const member of members) {
-    if (accessors.getter === undefined) {
-      accessors.getter = member.getter;
-    }
-    if (accessors.setter === undefined) {
-      accessors.setter = member.setter;
-    }
-  }
-  return accessors;
+  // The first member decides each direction, including when what it decided
+  // was "nothing, so use the conventional accessor". Scanning on past that for
+  // a member that named something let a later member's explicit `setter: null`
+  // — which means *derived*, not *unset* — win over an earlier member's
+  // conventional `set<Prop>`, and `compileSetters` then skipped the property
+  // entirely: one derived member made the whole union-typed property
+  // unreadable and unwritable, with no diagnostic.
+  const [first] = members;
+  return {getter: first.getter, setter: first.setter};
 }
 
 /**
@@ -1954,6 +1995,33 @@ export interface NodeSerializationSchema<
  * The result reports no outstanding names, which is what `$config`'s `json`
  * requires — so a schema that names anything has to come through here, and the
  * check cannot be skipped by declaring the properties some other way.
+ *
+ * ## Declare the schema outside the class
+ *
+ * ```ts
+ * const myNodeSchema = nodeSchema<MyNode>()({
+ *   label: withAccessors(stringValue(), {setter: 'setLabel'}),
+ * });
+ *
+ * class MyNode extends ElementNode {
+ *   $config() {
+ *     return this.config('my-node', {extends: ElementNode, json: myNodeSchema});
+ *   }
+ * }
+ * ```
+ *
+ * Written *inside* `$config()` the same call compiles whatever it is given.
+ * `nodeSchema<MyNode>()` resolves `MyNode`'s members while TypeScript is still
+ * inferring that class — its own method body is part of what it is inferring —
+ * so the member union it checks against is not yet the class's, and every
+ * accessor name and obligation passes. This is a limit of the type system, not
+ * something the declaration can guard: a class cannot describe itself to a
+ * checker running inside it. Declaring the schema at module scope breaks the
+ * cycle, and is the spelling every node in this repo uses.
+ *
+ * A schema declared inline is still applied correctly at run time; what is
+ * lost is only the compile-time check that the accessors it names exist, take
+ * what the schema parses, and hand back something the walk can continue from.
  *
  * @__NO_SIDE_EFFECTS__
  */
@@ -2108,7 +2176,9 @@ export function transformValue<Inner, Out, Decls = never, In = Inner>(
     // is the same value: `transform` is the caller's function, so what it
     // returns is the caller's to keep — possibly a module constant it also uses
     // elsewhere — and a default makeSchema derives is one it freezes.
-    transform(inner.defaultValue),
+    // Recorded as the caller's, so an enclosing schema deriving *its* default
+    // does not reach this object through the recursion either.
+    markCallerOwned(transform(inner.defaultValue)),
     options.isEqual,
     // Membership is about the *input* domain, and the transform maps outputs,
     // so what the inner schema admits is exactly what this admits — asked of

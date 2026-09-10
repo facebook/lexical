@@ -519,6 +519,16 @@ import {
   numberValue,
 } from 'lexical';
 
+// Declared above the class, not inside `$config()`. A class's *type* is in
+// scope before its definition, so this is checked against `CounterNode`'s real
+// members — while the same call written inside `$config()` is checked against a
+// class TypeScript is still inferring, and accepts whatever it is given. See
+// "Declare the schema outside the class" below.
+const counterSchema = nodeSchema<CounterNode>()({
+  count: numberValue(),
+  variant: enumValue(['a', 'b']),
+});
+
 class CounterNode extends ElementNode {
   __count = 0;
   __variant: 'a' | 'b' = 'a';
@@ -543,13 +553,7 @@ class CounterNode extends ElementNode {
   }
 
   $config() {
-    return this.config('counter', {
-      extends: ElementNode,
-      json: nodeSchema<CounterNode>()({
-        count: numberValue(),
-        variant: enumValue(['a', 'b']),
-      }),
-    });
+    return this.config('counter', {extends: ElementNode, json: counterSchema});
   }
 
   setCount(count: number): this {
@@ -669,8 +673,23 @@ and neither shows up in the exported JSON as anything but a missing property.
 `$config`'s `json` requires a schema built this way, so the check cannot be
 skipped by reaching for `objectValue` instead — that one is for a property
 whose *value* is an object, and it does not name a node to check against.
-Declaring the schema above the class it names is fine, and is what every
-built-in node does: a class's *type* is in scope before its definition.
+### Declare the schema outside the class
+
+Declaring the schema above the class it names is not just fine, it is what
+makes the check work — and it is what every built-in node does. A class's
+*type* is in scope before its definition, so `nodeSchema<CounterNode>()` there
+resolves `CounterNode`'s real members.
+
+Written *inside* `$config()`, the same call compiles whatever it is given.
+TypeScript is still inferring the class at that point — the method body is part
+of what it is inferring — so the member union has not been resolved yet and
+every accessor name, obligation and `when` predicate passes. This is a limit of
+the type system rather than something the declaration can guard against: a
+class cannot describe itself to a checker running inside it.
+
+What is lost is only the compile-time check. A schema declared inline is
+applied exactly the same way at run time, and the registration-time checks
+below still catch a name the node does not have.
 
 The check is TypeScript-only. Under Flow, or from JavaScript, the same
 mistakes are caught when the editor registers the node — later, but before any

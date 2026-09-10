@@ -3635,7 +3635,10 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
       invariant(
         json.meta.kind === 'object',
         '%s: $config json must be an objectValue(...), got %s',
-        klass.name,
+        // The class whose `$config` declared it, not the one being composed:
+        // naming the subclass sent a reader to a class that declared nothing
+        // wrong and never named the one they have to edit.
+        currentKlass.name,
         json.meta.kind,
       );
     }
@@ -4176,6 +4179,24 @@ function compactDefaultTest(
   };
 }
 
+/**
+ * The stored form of a compiled property's schema default — what an `encode`
+ * table maps the default to, or the default itself where the table has no
+ * entry for it. {@link verifyTableCoversDomain} is what makes the second case
+ * unreachable for a generated class; the walk runs for classes that were never
+ * generated, so it needs an answer either way.
+ */
+function encodedDefault(entry: {
+  readonly encode?: {readonly [key: string]: unknown};
+  readonly schema: AnySerializationSchema;
+}): unknown {
+  const {encode, schema} = entry;
+  const {defaultValue} = schema;
+  return encode !== undefined && hasOwnKey(encode, defaultValue as string)
+    ? encode[defaultValue as string]
+    : defaultValue;
+}
+
 function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
   // A class instance type has no index signature, so reading a setter by
   // name needs the widening cast.
@@ -4686,7 +4707,14 @@ function $walkSetters<T extends LexicalNode>(
           ? parsed
           : hasOwnKey(entry.encode, parsed as string)
             ? entry.encode[parsed as string]
-            : undefined;
+            : // The stored form of the schema's *default*, not `undefined`: a
+              // miss means the parse landed on a domain member the table has
+              // no stored form for, and writing `undefined` put a value into a
+              // typed field that the field's type does not admit — and then
+              // dropped the property on the next export. The generated parser
+              // falls back to exactly this (`... : 0` for TextNode's `mode`),
+              // so writing anything else made the two disagree.
+              encodedDefault(entry);
     } else {
       const next = entry.setter.call(self, parsed);
       // Lexical setters conventionally return the writable node so calls can

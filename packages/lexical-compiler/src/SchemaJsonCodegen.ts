@@ -232,6 +232,17 @@ function compile(
       return `num(v, ${fallback})`;
     }
     case 'aliased': {
+      // `__proto__` in an object literal sets the prototype instead of
+      // defining a key, and the emitted table is an object literal — so the
+      // alias would be silently absent from the generated parser while the
+      // schema, whose table was built with a computed key, still has it.
+      // Refused rather than emitted, the way `objectValue` refuses the same
+      // name as a field.
+      if (Object.prototype.hasOwnProperty.call(meta.aliases, '__proto__')) {
+        throw new NotCompilable(
+          'declares a "__proto__" alias, which an emitted object literal cannot carry',
+        );
+      }
       // Suffixed after the first, so nesting cannot collide.
       const name =
         typeof base === 'function'
@@ -322,12 +333,27 @@ export function verificationCorpus(meta: SerializationSchemaMeta): unknown[] {
     } else if (m.kind === 'aliased') {
       values.push(...Object.keys(m.aliases), ...Object.values(m.aliases));
       walk(m.inner.meta);
-    } else if (m.kind === 'transform') {
-      // The transform is opaque, but its input domain is not, and a corpus
-      // drawn from it is what gives the verification something to say about a
-      // schema wrapped in one — the fallback of an `optional(transformValue(
-      // enumValue([...]), f))`, say, is still checked over the enum's values.
+    } else if (
+      m.kind === 'transform' ||
+      m.kind === 'nullable' ||
+      m.kind === 'optional'
+    ) {
+      // Every wrapper, not just `transform`: the comment here promised that
+      // `optional(transformValue(enumValue([...]), f))` was still checked over
+      // the enum's values, and it was not — `optional` fell off the end of the
+      // chain and the corpus contained none of them. A transform is opaque but
+      // its input domain is not, and a wrapper's is its inner schema's.
       walk(m.inner.meta);
+    } else if (m.kind === 'array') {
+      walk(m.item.meta);
+    } else if (m.kind === 'union') {
+      for (const member of m.members) {
+        walk(member.meta);
+      }
+    } else if (m.kind === 'object') {
+      for (const field of Object.values(m.fields)) {
+        walk(field.meta);
+      }
     }
   };
   walk(meta);

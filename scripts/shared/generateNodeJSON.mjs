@@ -745,10 +745,14 @@ function narrowedSchema(schema) {
  * @param {NodeClass} klass
  * @param {AnySchema} schema
  * @param {string} key
+ * @param {string} target the variable the statements assign through — `self`
+ *   where a setter may hand back a different node, `node` otherwise. Chosen by
+ *   the caller and emitted here rather than rewritten afterwards; see
+ *   {@link generateUpdate}.
  * @returns {null | {key: string, needsSelf: boolean, statements: string}} `null`
  *   for a property with nothing to apply, which is what an export-only one has.
  */
-function writeExpression(klass, schema, key) {
+function writeExpression(klass, schema, key, target) {
   if (key in Object.prototype) {
     // The walk reads a property with hasOwn because its JSON came from
     // JSON.parse and so inherits Object.prototype; `json.toString` in
@@ -810,7 +814,7 @@ function writeExpression(klass, schema, key) {
     return {
       key,
       needsSelf: true,
-      statements: `  v = json.${key};\n  n = self.${emittable(setter, 'setter method')}(${expression});\n  self = (n || self) as ${klass.name};`,
+      statements: `  v = json.${key};\n  n = ${target}.${emittable(setter, 'setter method')}(${expression});\n  ${target} = (n ?? ${target}) as ${klass.name};`,
     };
   }
   const {encode} = setter;
@@ -818,7 +822,7 @@ function writeExpression(klass, schema, key) {
   // after parsing: folding them together needs an IIFE, and a closure per
   // property per node is most of what generating this was meant to remove.
   const setterField = emittable(setter.field, 'setter field');
-  let statements = `  v = json.${key};\n  self.${setterField} = ${expression};`;
+  let statements = `  v = json.${key};\n  ${target}.${setterField} = ${expression};`;
   if (encode !== undefined) {
     const name = addTable(tableName(klass, key, 'ENCODE'), encode);
     nullPrototypeTables.push(name);
@@ -829,7 +833,7 @@ function writeExpression(klass, schema, key) {
       encode[/** @type {string} */ (schema.defaultValue)],
     );
     const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
-    statements = `  v = json.${key};\n  v = ${expression};\n  self.${setterField} = ${lookup};`;
+    statements = `  v = json.${key};\n  v = ${expression};\n  ${target}.${setterField} = ${lookup};`;
   }
   try {
     verifyCompiledParse({
@@ -874,7 +878,7 @@ export function generateUpdate(klass) {
   const writes = [];
   for (const [key, schema] of fieldsBaseFirst) {
     try {
-      const write = writeExpression(klass, schema, key);
+      const write = writeExpression(klass, schema, key, 'self');
       // `null` is "nothing to apply for this property", not "give up on the
       // class" — see `writeExpression`.
       if (write !== null) {
@@ -893,12 +897,30 @@ export function generateUpdate(klass) {
   if (writes.length === 0) {
     return null;
   }
-  const body = writes.map(({statements}) => statements).join('\n');
   // `self` and `n` only when a property is applied through a method: a setter
   // may return a different node, and the rest of the schema goes to whichever
   // one it returned. An all-fields class writes to `node` throughout and needs
   // neither binding.
+  //
+  // The name is chosen here and the statements are emitted again with it,
+  // rather than emitted against `self` and rewritten to `node` afterwards. A
+  // text rewrite is not lexically aware, so `\bself\.` also matched inside an
+  // emitted string: a `stringValue('self.postMessage("ready")')` default, or
+  // an `enumValue(['self.start'])` member, came out as `node.postMessage(...)`
+  // — and because the rewrite ran after `verifyCompiledParse`, the check that
+  // exists to catch a parser disagreeing with its schema could not see it.
   const needsSelf = writes.some(write => write.needsSelf);
+  const target = needsSelf ? 'self' : 'node';
+  const body = (
+    needsSelf
+      ? writes
+      : fieldsBaseFirst.flatMap(([key, schema]) => {
+          const write = writeExpression(klass, schema, key, target);
+          return write === null ? [] : [write];
+        })
+  )
+    .map(({statements}) => statements)
+    .join('\n');
   const locals = needsSelf
     ? `  let self = node;\n  let n: unknown;\n  let v: unknown;`
     : `  let v: unknown;`;
@@ -908,8 +930,8 @@ function update${klass.name}(
   json: {readonly [key: string]: unknown},
 ): ${klass.name} {
 ${locals}
-${needsSelf ? body : body.replace(/\bself\./g, 'node.')}
-  return ${needsSelf ? 'self' : 'node'};
+${body}
+  return ${target};
 }`;
 }
 

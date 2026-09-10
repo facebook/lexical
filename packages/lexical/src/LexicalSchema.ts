@@ -6,6 +6,8 @@
  *
  */
 
+import type {LexicalNode} from './LexicalNode';
+
 import invariant from '@lexical/internal/invariant';
 
 /**
@@ -454,9 +456,30 @@ type TaggedNamesOf<N> =
  * one: a typo is a string mismatch and reports with the correction suggested,
  * while a type mismatch is an object mismatch and reports the two types.
  */
-interface FieldObligation<F extends string, V> {
-  readonly field: F;
-  readonly value: V;
+/**
+ * Reading a field of `V` for a schema of `T`: safe when the field's type fits
+ * the schema's domain, so the value travels in the parameter position and the
+ * check is contravariant — the same shape, and the same reason, as
+ * {@link GetterObligation}.
+ */
+interface FieldReadObligation<F extends string, V> {
+  readonly reads: F;
+  readonly read: (value: V) => void;
+}
+/**
+ * Writing a field of `V` with a schema of `T`: safe when what the schema
+ * parses fits the field, so the value is covariant, as {@link
+ * SetterObligation} is.
+ *
+ * Split from the read direction because one obligation cannot answer both. It
+ * was covariant only, which let `withField(stringValue(), {field: '__label'})`
+ * discharge against `__label: string | number` — exporting `42` and parsing it
+ * back gave `''` — while rejecting a getter-only `booleanValue()` reading
+ * `__flag: true`, which is sound in the direction that one actually travels.
+ */
+interface FieldWriteObligation<F extends string, V> {
+  readonly writes: F;
+  readonly write: V;
 }
 /**
  * What a getter may return for a schema of `T`.
@@ -478,10 +501,19 @@ interface GetterObligation<M extends string, R> {
    */
   readonly returns: (value: R) => void;
 }
-interface SetterObligation<M extends string, A> {
+interface SetterObligation<M extends string, A, R = unknown> {
   readonly set: M;
   /** Covariant: the parsed value is passed in, so it must fit the parameter. */
   readonly accepts: A;
+  /**
+   * What the setter may return, in the parameter position so the check runs in
+   * the direction the value travels: the walk follows a setter's return as the
+   * node the rest of the schema is applied to, so anything but a node or
+   * nothing is a value it would then treat as one. `setLabel(v: string):
+   * string` satisfied the parameter half and nothing looked at the return, so
+   * `importJSON` handed back the string.
+   */
+  readonly returns: (value: R) => void;
 }
 
 /**
@@ -502,19 +534,28 @@ interface SetterObligation<M extends string, A> {
  * two, following each obligation's variance: the getter carries its type in a
  * parameter position, so only `never` is assignable from every instantiation.
  */
+/**
+ * What a setter may hand back: the node the rest of the schema is applied to,
+ * or nothing when it mutated through `getWritable()` and the walk should keep
+ * the node it has. Anything else the walk would treat as a node.
+ */
+type SetterReturn = LexicalNode | void;
+
 type RebindObligation<D, T> =
   D extends GetterObligation<infer M, never>
     ? GetterObligation<M, Returnable<T> | undefined>
-    : D extends SetterObligation<infer M, unknown>
-      ? SetterObligation<M, T>
-      : D extends FieldObligation<infer F, unknown>
-        ? FieldObligation<F, T>
-        : D;
+    : D extends SetterObligation<infer M, unknown, never>
+      ? SetterObligation<M, T, SetterReturn>
+      : D extends FieldReadObligation<infer F, never>
+        ? FieldReadObligation<F, T>
+        : D extends FieldWriteObligation<infer F, unknown>
+          ? FieldWriteObligation<F, T>
+          : D;
 
 /** The obligations `N` satisfies, which is what discharges the ones declared. */
 type ObligationsOf<N> =
   | {
-      [K in FieldsOf<N> & keyof N]: FieldObligation<K, N[K]>;
+      [K in FieldsOf<N> & keyof N]: FieldReadObligation<K, N[K]>;
     }[FieldsOf<N> & keyof N]
   | {
       [K in ZeroArgMethodsOf<N, unknown> & keyof N]: GetterObligation<
@@ -523,7 +564,14 @@ type ObligationsOf<N> =
       >;
     }[ZeroArgMethodsOf<N, unknown> & keyof N]
   | {
-      [K in SettersOf<N> & keyof N]: SetterObligation<K, FirstParamOf<N[K]>>;
+      [K in FieldsOf<N> & keyof N]: FieldWriteObligation<K, N[K]>;
+    }[FieldsOf<N> & keyof N]
+  | {
+      [K in SettersOf<N> & keyof N]: SetterObligation<
+        K,
+        FirstParamOf<N[K]>,
+        ReturnOf<N[K]>
+      >;
     }[SettersOf<N> & keyof N];
 
 type ReturnOf<M> = M extends (...args: never[]) => infer R ? R : never;
@@ -600,7 +648,9 @@ type AccessorName<A, Role extends 'get' | 'set', T> = A extends {
       // is nothing here to check against T.
       | (A extends {readonly decode: unknown} | {readonly encode: unknown}
           ? never
-          : FieldObligation<F, T>)
+          : Role extends 'get'
+            ? FieldReadObligation<F, T>
+            : FieldWriteObligation<F, T>)
   : A extends string
     ? `${Role}:${A}` | MethodObligation<Role, A, T>
     : never;
@@ -618,7 +668,7 @@ type MethodObligation<
   T,
 > = Role extends 'get'
   ? GetterObligation<M, Returnable<T> | undefined>
-  : SetterObligation<M, T>;
+  : SetterObligation<M, T, SetterReturn>;
 
 /**
  * Both directions of a {@link SchemaAccessors}.
@@ -644,19 +694,20 @@ type FieldOptionNames<F, T> =
   | (F extends {readonly getter?: infer G extends string} ? `get:${G}` : never)
   | (F extends {readonly setter?: infer S extends string} ? `set:${S}` : never)
   | (F extends {readonly when?: infer W extends string} ? `when:${W}` : never)
-  // The obligations behind those names; see {@link FieldObligation}. The
+  // The obligations behind those names; see {@link FieldReadObligation}.
+  // Both directions, because a field declared here is read *and* written. The
   // field's own is withheld when a table declares that the stored and
   // serialized forms differ.
   | (F extends {readonly decode: unknown} | {readonly encode: unknown}
       ? never
       : F extends {readonly field: infer N extends string}
-        ? FieldObligation<N, T>
+        ? FieldReadObligation<N, T> | FieldWriteObligation<N, T>
         : never)
   | (F extends {readonly getter?: infer G extends string}
       ? GetterObligation<G, Returnable<T> | undefined>
       : never)
   | (F extends {readonly setter?: infer S extends string}
-      ? SetterObligation<S, T>
+      ? SetterObligation<S, T, SetterReturn>
       : never);
 
 /** Every name the schemas of an {@link objectValue} shape declare. */
@@ -898,8 +949,12 @@ function $acceptsValue<T>(
   value: unknown,
 ): boolean {
   const {accepts} = schema;
+  // `.call(schema, ...)`, as `$fitOf` and `@lexical/fast-check` both do: the
+  // interface declares `accepts` with method syntax, so a predicate may read
+  // `this.meta`. Calling it destructured left `this` undefined here and bound
+  // there, so one predicate answered on one path and threw on the other.
   return accepts !== undefined
-    ? accepts(value)
+    ? accepts.call(schema, value)
     : $schemaMatch(schema as AnySerializationSchema, value) !== undefined;
 }
 

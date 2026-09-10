@@ -2492,6 +2492,68 @@ describe('a union member knows its own domain', () => {
     });
   });
 
+  test('nodeSchema rejects a setter whose return the walk cannot follow', () => {
+    // The walk applies a property through the setter and continues with what
+    // it returns, so a return that is not a node — or nothing — is a value it
+    // would then treat as one. Only the parameter was checked, so
+    // `setLabel(value: string): string` discharged the obligation and
+    // `importJSON` handed back the string.
+    class ReturnsNode extends ElementNode {
+      __label: string = '';
+      setLabel(value: string): this {
+        const self = this.getWritable();
+        self.__label = value;
+        return self;
+      }
+      setLabelVoid(value: string): void {
+        this.getWritable().__label = value;
+      }
+      setLabelString(value: string): string {
+        this.getWritable().__label = value;
+        return value;
+      }
+    }
+    // A node, and nothing, are both what the walk knows how to continue from.
+    nodeSchema<ReturnsNode>()({
+      label: withAccessors(stringValue(), {setter: 'setLabel'}),
+    });
+    nodeSchema<ReturnsNode>()({
+      label: withAccessors(stringValue(), {setter: 'setLabelVoid'}),
+    });
+    nodeSchema<ReturnsNode>()({
+      // @ts-expect-error -- a string is not a node the walk can continue from
+      label: withAccessors(stringValue(), {setter: 'setLabelString'}),
+    });
+  });
+
+  test('nodeSchema checks a field in the direction it is used', () => {
+    // One covariant obligation answered for both directions, which is wrong
+    // each way: writing a `string` into a `string | number` field passed —
+    // exporting `42` and parsing it back gave `''` — while reading a `true`
+    // field through a `booleanValue()` schema was rejected, though widening on
+    // the way out is exactly what reading allows.
+    class Directional extends ElementNode {
+      __flag = true as const;
+      __label: string | number = '';
+    }
+    nodeSchema<Directional>()({
+      // @ts-expect-error -- withField writes as well as reads, and a `string`
+      // schema cannot promise what a `string | number` field holds
+      label: withField(stringValue(), {field: '__label'}),
+    });
+    // Reading alone is sound: `true` is a boolean, so the export is in domain.
+    nodeSchema<Directional>()({
+      flag: withAccessors(booleanValue(), {
+        getter: {field: '__flag'},
+        setter: null,
+      }),
+    });
+    nodeSchema<Directional>()({
+      // @ts-expect-error -- but writing a `boolean` into a `true` field is not
+      flag: withAccessors(booleanValue(), {setter: {field: '__flag'}}),
+    });
+  });
+
   test('nodeSchema rejects a type the node member cannot hold', () => {
     // Every name here resolves and is used in the right position. What is
     // wrong is the type behind it, which nothing checked: the parser wrote a

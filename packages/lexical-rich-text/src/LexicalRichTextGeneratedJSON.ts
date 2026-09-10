@@ -127,15 +127,15 @@ function updateHeadingNode(
       ? v
       : '',
   );
-  self = (n || self) as HeadingNode;
+  self = (n ?? self) as HeadingNode;
   v = json.indent;
   self.__indent = numC(v, 0, 0, Infinity, true);
   v = json.textFormat;
   n = self.setTextFormat(num(v, 0));
-  self = (n || self) as HeadingNode;
+  self = (n ?? self) as HeadingNode;
   v = json.textStyle;
   n = self.setTextStyle(typeof v === 'string' ? v : '');
-  self = (n || self) as HeadingNode;
+  self = (n ?? self) as HeadingNode;
   v = json.tag;
   self.__tag =
     v === 'h1' ||
@@ -240,15 +240,15 @@ function updateQuoteNode(
       ? v
       : '',
   );
-  self = (n || self) as QuoteNode;
+  self = (n ?? self) as QuoteNode;
   v = json.indent;
   self.__indent = numC(v, 0, 0, Infinity, true);
   v = json.textFormat;
   n = self.setTextFormat(num(v, 0));
-  self = (n || self) as QuoteNode;
+  self = (n ?? self) as QuoteNode;
   v = json.textStyle;
   n = self.setTextStyle(typeof v === 'string' ? v : '');
-  self = (n || self) as QuoteNode;
+  self = (n ?? self) as QuoteNode;
   return self;
 }
 

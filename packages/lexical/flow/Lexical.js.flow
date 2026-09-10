@@ -2130,6 +2130,19 @@ declare export function withAccessors<T>(
   schema: SerializationSchema<T>,
   accessors: SchemaAccessors,
 ): SerializationSchema<T>;
+// The serialized input a node's schemas accept, keyed by property. Flow does
+// not model the composition, so each property is `unknown` — what a state parsed
+// on the way in is not recorded, the same reason StateConfig.parse takes it.
+export type LexicalSchemaInput<out T> = {[string]: unknown};
+
+// The predicate a schema's author installed, or void where it carries only the
+// one its combinator derived. `@lexical/fast-check` and the JSON code
+// generator both read a schema's metadata as a stand-in for the schema, and a
+// declared predicate describes a domain no metadata records.
+declare export function declaredAccepts(
+  schema: AnySerializationSchema,
+): void | ((value: unknown) => boolean);
+
 declare export function getComposedSchemaFields(
   klass: Class<LexicalNode>,
 ): {[key: string]: AnySerializationSchema};

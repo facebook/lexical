@@ -312,15 +312,15 @@ function updateParagraphNode(
       ? v
       : '',
   );
-  self = (n || self) as ParagraphNode;
+  self = (n ?? self) as ParagraphNode;
   v = json.indent;
   self.__indent = numC(v, 0, 0, Infinity, true);
   v = json.textFormat;
   n = self.setTextFormat(num(v, 0));
-  self = (n || self) as ParagraphNode;
+  self = (n ?? self) as ParagraphNode;
   v = json.textStyle;
   n = self.setTextStyle(typeof v === 'string' ? v : '');
-  self = (n || self) as ParagraphNode;
+  self = (n ?? self) as ParagraphNode;
   return self;
 }
 

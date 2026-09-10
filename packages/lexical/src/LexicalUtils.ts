@@ -4639,7 +4639,7 @@ function $walkSetters<T extends LexicalNode>(
       // following it — which will throw on the next setter's `getWritable()` —
       // is a better answer than quietly ignoring it and writing the remaining
       // properties to a node the setter said it had replaced.
-      self = (next || self) as T;
+      self = (next ?? self) as T;
     }
   }
   return self;

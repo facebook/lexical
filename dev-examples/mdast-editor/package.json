@@ -33,13 +33,13 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.2.1",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
-    "@vitejs/plugin-react": "^6.0.2",
-    "tailwindcss": "^4.2.1",
-    "typescript": "^6.0.3",
-    "vite": "^8.0.16"
+    "@vitejs/plugin-react": "^6.1.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.61.0",

@@ -2,6 +2,7 @@
 **/scripts/**
 **/build/**
 **/__tests__/**
+**/__bench__/**
 **/dist/**
 **/npm/**
 **/.tempUserDataDir/**

@@ -26,7 +26,7 @@
     "magic-string": "^0.30.21"
   },
   "devDependencies": {
-    "rollup": "^4.61.0"
+    "rollup": "^4.63.1"
   },
   "sideEffects": false,
   "exports": {

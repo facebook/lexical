@@ -785,6 +785,13 @@ Lexical can also write a *compact* form, which omits:
   such as `ListNode`'s `tag`),
 - the deprecated `version` property.
 
+Omitting is an optimization, not a guarantee: a compact export never drops a
+property whose value parsing would *not* restore, but it may keep one it could
+have dropped. A property whose default has no comparison that can be stated
+ahead of time — a reference-typed default other than an empty array, or one the
+schema compares with an `isEqual` of its own — is written whenever it has a
+value. Only that property is affected; its siblings compact as usual.
+
 A whole document is written in the compact form by asking for it at the call
 site, `editorState.toJSON(true)`, which is also what lets its return type say
 which of the two shapes came back: the compact form omits properties, so it is

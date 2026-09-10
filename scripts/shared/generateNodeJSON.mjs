@@ -29,7 +29,9 @@
  * literal a value could be `===`, so it gets the structural test the schema's
  * own equality reduces to where that can be stated (MarkNode's `ids`, an empty
  * array), verified against that equality the way a parse is verified, and
- * otherwise keeps the walk for that one form.
+ * where it cannot be stated the property is simply written rather than
+ * omitted — the omission is the optimization, and one property that cannot
+ * justify it should not cost its siblings theirs.
  *
  * The import direction is the untrusted-JSON boundary and has to reproduce
  * each property's validation exactly, so every emitted parser is checked here
@@ -485,17 +487,26 @@ function differsFromDefault(schema, name) {
  *
  * Each comparison is the one {@link differsFromDefault} states and verifies
  * for the property's default. A default it cannot state — an object, a
- * non-empty array, a non-finite number — takes the class out of this form
- * only: the generated module simply has no `exportCompactJSON` for it, and
- * the dispatch falls back to the walk per form.
+ * non-empty array, a non-finite number, or a literal the schema compares with
+ * an equality of its own — leaves that property *written*, always. Omitting is
+ * the optimization; writing is the correct thing to do when there is no
+ * comparison to justify leaving it out, and it is a bounded cost: one property
+ * carries one key it might not have needed.
  *
- * Exported for `generateNodeJSON.test.ts`, like {@link emittable}: whether a
- * property costs its class this form is not visible in the checked-in output
- * — a class that loses it silently falls back to the walk — so the manifest
- * cannot exercise the refusal or its absence.
+ * That is the whole of what makes this form's output differ from the walk's,
+ * and it is a difference in one direction only — every key here is one the
+ * walk would have written the same value for, and any extra key holds that
+ * property's own default. So the two still parse to the same node, which is
+ * what {@link $expectSameJSON} checks. The alternative was to drop the class
+ * from this form over a single such property, which cost every *other*
+ * property its generated code and read as a silent fallback to the walk.
+ *
+ * Exported for `generateNodeJSON.test.ts`, like {@link emittable}: which
+ * properties this decides to write unconditionally is not visible in the
+ * checked-in output, since no manifest class has one.
  *
  * @param {NodeClass} klass
- * @returns {null | string}
+ * @returns {string}
  */
 export function generateCompactExport(klass) {
   const writes = [];
@@ -512,28 +523,25 @@ export function generateCompactExport(klass) {
       continue;
     }
     // The walk skips an undefined value before it ever looks at the default,
-    // and so does this; for a default of `undefined` that is the whole test.
-    // The comparison is therefore only rendered when there is a default to
-    // compare against — computing it first took a class out of the compact
-    // form over a string that was about to be discarded, so a property like
-    // `optional(arrayValue(numberValue()))`, whose default is `undefined` and
-    // whose equality is lifted from its inner schema, cost its class
-    // `exportCompactJSON` entirely.
+    // and so does this; for a default of `undefined` that is the whole test,
+    // which is why the comparison is only reached when there is a default to
+    // compare against.
     let test = `${key} !== undefined`;
     if (schema.defaultValue !== undefined) {
-      let differs;
       try {
-        differs = differsFromDefault(schema, key);
+        test = `${test} && ${differsFromDefault(schema, key)}`;
       } catch (error) {
         if (!(error instanceof NotCompilable)) {
           throw error;
         }
+        // No comparison to justify omitting it, so it is written whenever it
+        // has a value — see this function's docblock. Reported because the
+        // output does not show it: a property written unconditionally looks
+        // exactly like one whose value always differs from its default.
         process.stdout.write(
-          `${klass.name}: no generated compact export, "${key}" ${error.message}\n`,
+          `${klass.name}: compact export always writes "${key}", which ${error.message}\n`,
         );
-        return null;
       }
-      test = `${test} && ${differs}`;
     }
     writes.push(
       when === undefined
@@ -946,9 +954,12 @@ function generatePackage(pkg) {
     updateFromJSON,
   } of generated) {
     pieces.push(exportJSON);
-    if (compact !== null) {
-      pieces.push(compact);
-    }
+    // Always: every class that has a legacy form has a compact one, since a
+    // property whose default cannot be compared is written rather than
+    // omitted. `exportCompactJSON` stays optional on `GeneratedJSON` — the
+    // dispatch still has to answer for a hand-written or older value — but
+    // nothing this generates leaves it out.
+    pieces.push(compact);
     if (updateFromJSON !== null) {
       pieces.push(updateFromJSON);
     }
@@ -956,11 +967,7 @@ function generatePackage(pkg) {
       pieces.push(afterCloneFrom);
     }
     pieces.push(
-      `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const ${constName(klass)}: GeneratedJSON = {\n  exportJSON: export${klass.name},${
-        compact === null
-          ? ''
-          : `\n  exportCompactJSON: exportCompact${klass.name},`
-      }${
+      `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const ${constName(klass)}: GeneratedJSON = {\n  exportJSON: export${klass.name},\n  exportCompactJSON: exportCompact${klass.name},${
         updateFromJSON === null
           ? ''
           : `\n  updateFromJSON: update${klass.name},`

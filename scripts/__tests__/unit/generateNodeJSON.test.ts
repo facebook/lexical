@@ -103,21 +103,21 @@ describe('lookup table names', () => {
 });
 
 /**
- * A class keeps the compact form or falls back to the walk for it, and either
- * way the checked-in output is valid — the fallback is silent by design. So
- * these drive the generator over classes the manifest does not contain, which
- * is the only way a property that should not have cost its class this form,
- * and one that should, can be told apart.
+ * Omitting a property is the compact form's optimization, and the generator
+ * can only make it where the schema states a comparison it can write down.
+ * What happens where it cannot is invisible in the checked-in output — no
+ * manifest class has such a property — so these drive the generator over
+ * classes it does not contain.
  */
-describe('what costs a class its compact export', () => {
-  test('not a default of undefined, whatever equality the schema carries', () => {
+describe('a property the compact form cannot compare is written, not dropped', () => {
+  test('a default of undefined needs no comparison at all', () => {
     // `optional` lifts its inner schema's `isEqual`, so this property has one
-    // while its default is `undefined` — and a default of `undefined` has no
-    // literal to compare against, which is what `differsFromDefault` refuses.
+    // while its default is `undefined` — and comparing against `undefined`
+    // with an equality of its own is one of `differsFromDefault`'s refusals.
     // The walk skips an undefined value before it ever looks at the default,
-    // and so does the generated form: rendering the comparison first threw
-    // that refusal over a string the test was about to discard, and took the
-    // class out of the compact form for a property that needs no comparison.
+    // and so does the generated form, so for this property the refusal is
+    // moot: rendering the comparison first threw it over a string the test
+    // was about to discard.
     class OptionalTags extends TextNode {
       __tags: undefined | number[] = undefined;
       $config() {
@@ -131,8 +131,7 @@ describe('what costs a class its compact export', () => {
         });
       }
     }
-    const source: null | string = generateCompactExport(OptionalTags);
-    expect(source).not.toBeNull();
+    const source: string = generateCompactExport(OptionalTags);
     expect(source).toContain('const tags = node.__tags;');
     // The whole test, with nothing else and'd onto it.
     expect(source).toContain('if (tags !== undefined) {');
@@ -140,11 +139,13 @@ describe('what costs a class its compact export', () => {
     expect(source).toContain('if (style !== undefined && style !== "") {');
   });
 
-  test('but a default with no literal to compare against still does', () => {
+  test('and a default with no literal keeps the property, not the walk', () => {
     // An object default — here the one `objectValue` composes from its fields'
-    // — is a default `differsFromDefault` cannot state. There *is* a default,
-    // so the comparison is reached, and the class falls back to the walk for
-    // this form. That is the refusal the reordering has to leave intact.
+    // — is a default `differsFromDefault` genuinely cannot state, and there is
+    // a default, so the comparison is reached and refused. The property is
+    // then written whenever it has a value. It used to take the whole class
+    // out of this form, which cost `text`, `style` and the rest their
+    // generated code over one property they have nothing to do with.
     class ObjectDefault extends TextNode {
       __box: {w: number} = {w: 0};
       $config() {
@@ -156,6 +157,11 @@ describe('what costs a class its compact export', () => {
         });
       }
     }
-    expect(generateCompactExport(ObjectDefault)).toBeNull();
+    const source: string = generateCompactExport(ObjectDefault);
+    expect(source).toContain('const box = node.__box;');
+    expect(source).toContain('if (box !== undefined) {');
+    // The siblings keep the comparisons they always had.
+    expect(source).toContain('if (style !== undefined && style !== "") {');
+    expect(source).toContain('if (text !== undefined && text !== "") {');
   });
 });

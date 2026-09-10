@@ -424,15 +424,20 @@ describe('the compact form is generated too', () => {
   // rule does not: each is a comparison against a default the schema states. So
   // it generates the same way the legacy form does, and the `compact` argument
   // picks between two straight-line functions rather than branching inside one.
-  test('a class that has one gets a second, distinct function', () => {
-    // Not asserted for every target: a class whose default has no faithful
-    // literal keeps the walk for this form, which is a supported outcome
-    // rather than a regression, so pinning all four here would turn adding
-    // such a property into a failure pointing at this line.
-    expect(GENERATED_TEXT.exportCompactJSON).toBeDefined();
-    expect(GENERATED_TEXT.exportCompactJSON).not.toBe(
-      GENERATED_TEXT.exportJSON,
-    );
+  test('every class that has a legacy form has one', () => {
+    // No property can cost a class this form any more: one whose default the
+    // generator cannot compare is written rather than omitted, so the form is
+    // always generated and this holds for every target rather than for the
+    // one whose properties happen to compare cleanly.
+    for (const generated of [
+      GENERATED_TEXT,
+      GENERATED_PARAGRAPH,
+      GENERATED_LINEBREAK,
+      GENERATED_TAB,
+    ]) {
+      expect(generated.exportCompactJSON).toBeDefined();
+      expect(generated.exportCompactJSON).not.toBe(generated.exportJSON);
+    }
   });
 
   initializeUnitTest(testEnv => {

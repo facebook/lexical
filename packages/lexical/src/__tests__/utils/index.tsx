@@ -54,11 +54,13 @@ import {act, createRef, type JSX} from 'react';
 import {createRoot} from 'react-dom/client';
 import {afterEach, assert, beforeEach, expect} from 'vitest';
 
+import {hasOwnKey} from '../../LexicalSchema';
 import {
   $applyJSONSetters,
   $generatedExportJSON,
   $walkExportJSON,
   $walkJSONSetters,
+  getComposedSchemaFields,
   getGeneratedJSON,
 } from '../../LexicalUtils';
 
@@ -623,6 +625,14 @@ export const DECORATOR_BOUNDARY_ANCHOR_HTML =
  * walk writes for it — same values, same key order — in every form the class
  * has generated code for. Not vacuous: the class has to have generated code
  * for at least the legacy form, or there is nothing to compare.
+ *
+ * The compact form has one sanctioned difference, in one direction. Omitting a
+ * property is an optimization the generator can only make where the schema
+ * states a comparison it can write down; where it cannot, it writes the
+ * property rather than dropping the whole class from this form. Such a key is
+ * therefore allowed to be present here and absent from the walk's output — and
+ * only if it holds that property's own default, which is exactly the case the
+ * walk omitted it for. Every other key, its value, and the order must match.
  */
 export function $expectSameJSON(node: LexicalNode): void {
   expect($generatedExportJSON(node, false)).toBeDefined();
@@ -634,6 +644,25 @@ export function $expectSameJSON(node: LexicalNode): void {
       continue;
     }
     const fromWalk = $walkExportJSON(node, compact);
+    const extra = compact
+      ? Object.keys(fromGenerated).filter(key => !(key in fromWalk))
+      : [];
+    if (extra.length > 0) {
+      const fields = getComposedSchemaFields(
+        node.constructor as Klass<LexicalNode>,
+      );
+      for (const key of extra) {
+        // Present here but not there is only ever an omission declined, so the
+        // value has to be the default the walk left out.
+        expect({key, value: fromGenerated[key]}).toEqual({
+          key,
+          value: hasOwnKey(fields, key)
+            ? fields[key].defaultValue
+            : fromWalk[key],
+        });
+        delete fromGenerated[key];
+      }
+    }
     expect({compact, json: fromGenerated}).toEqual({compact, json: fromWalk});
     // Key order too: a document round-tripped through JSON.stringify should
     // not reorder depending on which implementation exported it.

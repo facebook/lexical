@@ -4376,8 +4376,10 @@ export function $generatedExportJSON(
     return undefined;
   }
   // Each form is generated separately, so this picks a function rather than
-  // passing the flag on. A class whose compact form could not be generated —
-  // one with a property that compares by content — keeps the walk for it.
+  // passing the flag on. The generator emits both forms for every class it can
+  // export at all — a property whose default it cannot compare is written
+  // rather than omitted — but the field stays optional, so a value that
+  // predates that or was written by hand still falls back to the walk here.
   const exporter = compact ? generated.exportCompactJSON : generated.exportJSON;
   if (exporter === undefined) {
     return undefined;

@@ -149,7 +149,7 @@
     "@types/semver": "^7.7.1",
     "@vitejs/plugin-react": "^6.0.2",
     "@vitest/browser-playwright": "^4.1.11",
-    "baseline-browser-mapping": "^2.10.33",
+    "baseline-browser-mapping": "^2.11.0",
     "chokidar": "^5.0.0",
     "concurrently": "^10.0.3",
     "confusing-browser-globals": "^1.0.10",

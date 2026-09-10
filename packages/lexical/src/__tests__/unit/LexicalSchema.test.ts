@@ -3028,6 +3028,75 @@ describe('a catch-all is a last resort, not a mismatch', () => {
     expect(counts[3]).toBeLessThan(counts[0] * 8);
   });
 
+  test('and a union field holding undefined is still the fit its members give it', () => {
+    // A union's own `accepts` declines `undefined` outright when it declares a
+    // fallback, mirroring its parse's early return — but its *fit* is what
+    // `$bestUnionMember` picks, and `optional(numberValue())` owns `undefined`
+    // entirely. Answering that field from the predicate instead took the
+    // object holding it from a whole fit to a coerced one, so the sibling with
+    // a `rawValue()` in the same place won and `w` was dropped. Present-with-
+    // undefined is what `objectValue`'s own parse writes for an absent field.
+    const width = unionValue(
+      [optional(numberValue()), enumValue(['inherit'])],
+      'inherit' as never,
+    );
+    const specific = objectValue({label: stringValue(), w: width});
+    const catchAll = objectValue({label: stringValue(), w: rawValue()});
+    expect(
+      unionValue(
+        [specific, catchAll],
+        'x' as never,
+      )({
+        label: 'keep me',
+        w: undefined,
+      } as never),
+    ).toEqual({label: 'keep me', w: 'inherit'});
+    // From either position, so it is the fit deciding and not declaration
+    // order.
+    expect(
+      unionValue(
+        [catchAll, specific],
+        'x' as never,
+      )({
+        label: 'keep me',
+        w: undefined,
+      } as never),
+    ).toEqual({label: 'keep me', w: 'inherit'});
+  });
+
+  test('and nesting unions directly costs no more than that', () => {
+    // The test above puts an `objectValue` between the levels, whose predicate
+    // is structural and answers without descending. With unions nested
+    // directly, a level whose own `accepts` is consulted re-walks everything
+    // beneath it before its members are measured — which is how a membership
+    // check that asked every schema's predicate, built-in ones included, made
+    // this quadratic (4/8/12/16 became 14/44/90/152) while the shape above
+    // stayed inside its bound.
+    const counts: number[] = [];
+    for (const depth of [4, 8, 12, 16]) {
+      const base = numberValue();
+      let checks = 0;
+      const leaf = Object.assign((value: unknown) => base(value), {
+        accepts: (value: unknown) => {
+          checks++;
+          return base.accepts!(value);
+        },
+        defaultValue: base.defaultValue,
+        isEqual: base.isEqual,
+        meta: base.meta,
+      }) as never;
+      let schema: unknown = leaf;
+      for (let i = 0; i < depth; i++) {
+        schema = unionValue([schema as never, stringValue()], '' as never);
+      }
+      checks = 0;
+      (schema as (v: unknown) => unknown)(1);
+      counts.push(checks);
+      expect(checks).toBeLessThanOrEqual(depth * 4);
+    }
+    expect(counts[3]).toBeLessThan(counts[0] * 8);
+  });
+
   test('but only if that member would really reach it', () => {
     // Measuring a union has to run the union's own selection, not ask whether
     // any member fits. `unionValue([arrayValue(numberValue()), rawValue()])`
@@ -3210,33 +3279,40 @@ describe('a container schema answers for its shape, not its contents', () => {
     });
   });
 
-  test('and so does one carrying wrapper or union metadata', () => {
-    // Not only the containers. Every case of `$fitOf` answers from the
-    // metadata — a wrapper's inner schema, a union's members — which describes
-    // what the *combinator* admits, not what a schema built on top of it
-    // narrowed that to. Fixing the two container cases alone left these
-    // reporting a whole match for a value they had declined, on the strength
-    // of what they were built from.
-    const accepts = (value: unknown) =>
-      typeof value === 'string' && value.startsWith('#');
-    for (const base of [
-      nullable(stringValue()),
-      unionValue([stringValue(), numberValue()], '' as never),
-    ]) {
+  // Not only the containers. Every case of `$fitOf` answers from the metadata
+  // — an array's items, an object's fields, a wrapper's inner schema, a
+  // union's members, a raw's nothing-at-all — which describes what the
+  // *combinator* admits, not what a schema built on top of one narrowed that
+  // to. Each of these carries a base's metadata and a predicate admitting only
+  // `#`-prefixed strings, and parses one to upper case so that *which* member
+  // a union picked is visible in the answer: a base that merely forwards its
+  // input returns what the plain `stringValue()` sibling returns, and the
+  // assertion then holds whichever member won.
+  test.each([
+    ['raw', rawValue()],
+    ['nullable', nullable(stringValue())],
+    ['optional', optional(stringValue())],
+    ['transform', transformValue(stringValue(), value => value)],
+    ['aliased', aliasedValue(stringValue(), {'#alias': '#aliased'})],
+    ['union', unionValue([stringValue(), numberValue()], '' as never)],
+  ])(
+    'but a declared predicate still says which values are its own: %s',
+    (_kind, base) => {
+      const accepts = (value: unknown) =>
+        typeof value === 'string' && value.startsWith('#');
       const tagged = Object.assign(
-        (value: unknown) => (accepts(value) ? base(value) : base.defaultValue),
+        (value: unknown) =>
+          accepts(value) ? String(value).toUpperCase() : base.defaultValue,
         base,
         {accepts},
       ) as never;
-      expect(unionValue([tagged, stringValue()], '' as never)('ordinary')).toBe(
-        'ordinary',
-      );
-      // Still selected for what it does claim, ahead of the plain string.
-      expect(unionValue([tagged, stringValue()], '' as never)('#tag')).toBe(
-        '#tag',
-      );
-    }
-  });
+      const parse = unionValue([tagged, stringValue()], '' as never);
+      // Declined, so the sibling that does describe it keeps it verbatim.
+      expect(parse('ordinary')).toBe('ordinary');
+      // Claimed, so its own parse runs — which is what makes this observable.
+      expect(parse('#tag')).toBe('#TAG');
+    },
+  );
 
   test('an object with a transform field round-trips', () => {
     // The field's `accepts` describes the transform's *input*; the document

@@ -10,9 +10,9 @@
 import type {LexicalExtension} from 'lexical';
 import type {NamedSignalsOutput} from '@lexical/extension/namedSignals';
 
-export interface NormalizeInlineElementsConfig {
-  disabled: boolean;
-}
+export type NormalizeInlineElementsConfig = {
+  disabled: boolean,
+};
 
 declare export var NormalizeInlineElementsExtension: LexicalExtension<
   NormalizeInlineElementsConfig,

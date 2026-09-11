@@ -10,12 +10,12 @@
 import type {LexicalExtension} from 'lexical';
 import type {Signal} from '@lexical/extension/signals';
 
-export interface NormalizeTripleClickSelectionConfig {
-  disabled: boolean;
-  thresholdMsec: number;
-  dateNow: () => number;
-  $fixFocusOverselection: () => void;
-}
+export type NormalizeTripleClickSelectionConfig = {
+  disabled: boolean,
+  thresholdMsec: number,
+  dateNow: () => number,
+  $fixFocusOverselection: () => void,
+};
 
 export interface NormalizeTripleClickSelectionOutput {
   disabled: Signal<boolean>;

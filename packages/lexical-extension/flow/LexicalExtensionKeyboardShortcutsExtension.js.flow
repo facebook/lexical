@@ -31,11 +31,11 @@ export type NamedKeyboardShortcuts = Record<
   KeyboardShortcut | ReadonlyArray<KeyboardShortcut> | null,
 >;
 
-export interface KeyboardShortcutsConfig {
-  disabled: boolean;
-  priority: CommandListenerPriority | CommandListenerPriorityBefore;
-  shortcuts: NamedKeyboardShortcuts;
-}
+export type KeyboardShortcutsConfig = {
+  disabled: boolean,
+  priority: CommandListenerPriority | CommandListenerPriorityBefore,
+  shortcuts: NamedKeyboardShortcuts,
+};
 
 declare export var KeyboardShortcutsExtension: LexicalExtension<
   KeyboardShortcutsConfig,

@@ -10,10 +10,10 @@
 import type {LexicalExtension, LexicalEditor} from 'lexical';
 import type {NamedSignalsOutput} from '@lexical/extension/namedSignals';
 
-export interface NestedEditorConfig {
-  $getParentEditor: () => LexicalEditor;
-  inheritEditableFromParent: boolean;
-}
+export type NestedEditorConfig = {
+  $getParentEditor: () => LexicalEditor,
+  inheritEditableFromParent: boolean,
+};
 
 declare export var NestedEditorExtension: LexicalExtension<
   NestedEditorConfig,

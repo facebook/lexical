@@ -20,17 +20,16 @@ import type {
   LexicalExtensionInit,
   LexicalExtensionOutput,
 } from 'lexical';
-import type {signal} from '@lexical/extension/signals';
 
 declare export var ExtensionRepStateIds: {
-  -unmarked: 0,
-  -temporary: 1,
-  -permanent: 2,
-  -configured: 3,
-  -initialized: 4,
-  -built: 5,
-  -registered: 6,
-  -afterRegistration: 7,
+  readonly unmarked: 0,
+  readonly temporary: 1,
+  readonly permanent: 2,
+  readonly configured: 3,
+  readonly initialized: 4,
+  readonly built: 5,
+  readonly registered: 6,
+  readonly afterRegistration: 7,
 };
 
 interface UnmarkedState {

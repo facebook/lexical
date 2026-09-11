@@ -4184,10 +4184,11 @@ function compactDefaultTest(
 
 /**
  * The stored form of a compiled property's schema default — what an `encode`
- * table maps the default to, or the default itself where the table has no
- * entry for it. {@link verifyTableCoversDomain} is what makes the second case
- * unreachable for a generated class; the walk runs for classes that were never
- * generated, so it needs an answer either way.
+ * table maps the default to, or the default itself where there is no table.
+ * A table always has the entry: {@link compileSetters} refuses one without
+ * it when the class is registered, as {@link verifyTableCoversDomain} refuses
+ * it for a generated class, because a default with no stored form left the
+ * raw default — a string, for a numeric field — as what a miss wrote.
  */
 function encodedDefault(entry: {
   readonly encode?: {readonly [key: string]: unknown};
@@ -4195,9 +4196,7 @@ function encodedDefault(entry: {
 }): unknown {
   const {encode, schema} = entry;
   const {defaultValue} = schema;
-  return encode !== undefined && hasOwnKey(encode, defaultValue as string)
-    ? encode[defaultValue as string]
-    : defaultValue;
+  return encode === undefined ? defaultValue : encode[String(defaultValue)];
 }
 
 function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
@@ -4231,6 +4230,29 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
         klass.name,
         key,
       );
+      // A parsed value the table does not map is stored as the encoded
+      // default, so the table has to map every value the schema can produce
+      // — the default first of all, since a default it does not map has no
+      // stored form and the walk would write the raw default into the field.
+      // An enum's members are every value it produces; any other schema is
+      // checked for its default, the one value known here. Every build, like
+      // the setter check below: what it prevents is a value of the wrong type
+      // written into a field on import, silently, in production.
+      if (setter.encode !== undefined) {
+        const {encode} = setter;
+        const {meta} = schema;
+        for (const value of meta.kind === 'enum'
+          ? meta.values
+          : [schema.defaultValue]) {
+          invariant(
+            hasOwnKey(encode, String(value)),
+            '%s: serialization schema field "%s" has no encode entry for %s, which its schema can produce; a parsed value the table does not map is stored as the encoded default, so the table must map every value the schema produces',
+            klass.name,
+            key,
+            JSON.stringify(value),
+          );
+        }
+      }
       fields.set(key, {
         encode: setter.encode,
         field: setterName,

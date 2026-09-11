@@ -534,6 +534,35 @@ interface TableValueMismatch<Table extends string, F extends string, V> {
   readonly maps: V;
 }
 /**
+ * An encode table's coverage: a parsed value the table does not map is stored
+ * as the *encoded default*, so the table has to map every value the schema
+ * can produce, the default first of all — one it does not map has no stored
+ * form, and the walk would write the raw default into the field. A finite
+ * domain (an enum's) is decidable here, compared as the property keys the
+ * lookup uses; a domain the types cannot enumerate (`stringValue`'s) is left
+ * to registration, which checks that the default is mapped. `never` when
+ * every member has an entry, and otherwise a shape no {@link MemberOf}
+ * contains, naming the members that do not.
+ */
+type EncodeMissing<F extends string, E, T> = string extends T
+  ? never
+  : number extends T
+    ? never
+    : [Exclude<`${T & Keyable}`, `${keyof E & Keyable}`>] extends [never]
+      ? never
+      : TableKeyMissing<
+          'encode',
+          F,
+          Exclude<`${T & Keyable}`, `${keyof E & Keyable}`>
+        >;
+/** What a template literal type can spell, which is what a property key is. */
+type Keyable = string | number | bigint | boolean | null | undefined;
+interface TableKeyMissing<Table extends string, F extends string, K> {
+  readonly table: Table;
+  readonly field: F;
+  readonly lacks: K;
+}
+/**
  * What a getter may return for a schema of `T`.
  *
  * `readonly` is a property of the reference, not of the JSON: `MarkNode.getIDs`
@@ -724,7 +753,7 @@ type AccessorName<A, Role extends 'get' | 'set', T> = A extends {
             ? DecodeMismatch<F, D, T>
             : FieldReadObligation<F, Returnable<T>>
           : A extends {readonly encode: infer E}
-            ? FieldWriteObligation<F, E[keyof E]>
+            ? FieldWriteObligation<F, E[keyof E]> | EncodeMissing<F, E, T>
             : FieldWriteObligation<F, T>)
   : A extends string
     ? `${Role}:${A}` | `declared:${Role}` | MethodObligation<Role, A, T>
@@ -786,7 +815,7 @@ type FieldOptionNames<F, T> =
               ? DecodeMismatch<N, D, T>
               : FieldReadObligation<N, Returnable<T>>)
           | (F extends {readonly encode: infer E}
-              ? FieldWriteObligation<N, E[keyof E]>
+              ? FieldWriteObligation<N, E[keyof E]> | EncodeMissing<N, E, T>
               : FieldWriteObligation<N, T>)
       : never)
   | (F extends {readonly getter?: infer G extends string}

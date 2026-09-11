@@ -2247,6 +2247,34 @@ describe('a misconfigured accessor fails at registration', () => {
       expect(build).toThrow('has no setter setLabel()');
     }
   });
+
+  test('an encode table that cannot encode the default is refused', () => {
+    // A parsed value the table does not map is stored as the encoded default,
+    // so a default the table does not map has no stored form: the walk wrote
+    // the raw default — here the string '' — into the numeric field.
+    class CodeNode extends ElementNode {
+      __code = 0;
+      $config() {
+        return this.config('unencodable-default-node', {
+          extends: ElementNode,
+          json: nodeSchema<CodeNode>()({
+            code: withField(stringValue(), {
+              decode: {1: 'a'},
+              encode: {a: 1},
+              field: '__code',
+            }),
+          }),
+        });
+      }
+    }
+    const build = () =>
+      buildEditorFromExtensions(
+        defineExtension({name: '[unencodable-default]', nodes: [CodeNode]}),
+      );
+    for (let i = 0; i < 2; i++) {
+      expect(build).toThrow('has no encode entry for ""');
+    }
+  });
 });
 
 describe('a misspelled field name is caught in both directions', () => {
@@ -2753,6 +2781,39 @@ describe('a union member knows its own domain', () => {
         setter: {encode: {normal: 0, token: 'x'}, field: '__mode'},
       }),
     });
+    // An encode table has to map every value the schema can produce: a parsed
+    // value it does not map falls back to the encoded default, and a default
+    // it does not map has no stored form at all. For a finite domain that is
+    // decidable at compile time.
+    nodeSchema<ModeNode>()({
+      // @ts-expect-error -- 'normal', the default, has no encode entry
+      mode: withField(enumValue(['normal', 'token']), {
+        decode: {0: 'normal', 1: 'token'},
+        encode: {token: 1},
+        field: '__mode',
+      }),
+    });
+    nodeSchema<ModeNode>()({
+      // @ts-expect-error -- the same missing entry, declared per direction
+      mode: withAccessors(enumValue(['normal', 'token']), {
+        getter: {decode: {0: 'normal', 1: 'token'}, field: '__mode'},
+        setter: {encode: {token: 1}, field: '__mode'},
+      }),
+    });
+    // A domain the types cannot enumerate is left to registration, which
+    // checks that the default is mapped.
+    class CodeNode extends ElementNode {
+      __code = 0;
+    }
+    expect(
+      typeof nodeSchema<CodeNode>()({
+        code: withField(stringValue(), {
+          decode: {0: '', 1: 'a'},
+          encode: {'': 0, a: 1},
+          field: '__code',
+        }),
+      }),
+    ).toBe('function');
   });
 
   test('nodeSchema rejects a setter that needs more than the parsed value', () => {

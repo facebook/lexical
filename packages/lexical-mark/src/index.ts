@@ -168,4 +168,4 @@ export const MarkExtension = defineExtension({
   nodes: () => [MarkNode],
 });
 
-export {$createMarkNode, $isMarkNode, MarkNode, SerializedMarkNode};
+export {$createMarkNode, $isMarkNode, MarkNode, type SerializedMarkNode};

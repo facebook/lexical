@@ -56,14 +56,14 @@
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.10.2",
     "@docusaurus/theme-classic": "^3.10.2",
-    "@tailwindcss/postcss": "^4.3.0",
+    "@tailwindcss/postcss": "^4.3.3",
     "buffer": "^6.0.3",
     "cross-env": "^10.1.0",
-    "prettier-plugin-tailwindcss": "^0.8.0",
-    "tailwindcss": "^4.3.0",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "tailwindcss": "^4.3.3",
     "typedoc": "^0.28.20",
     "typescript": "^6.0.3",
-    "webpack": "^5.107.2"
+    "webpack": "^5.110.3"
   },
   "browserslist": {
     "production": [

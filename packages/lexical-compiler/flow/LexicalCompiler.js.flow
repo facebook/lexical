@@ -20,7 +20,7 @@ export type {
   PureAnnotationsResult,
   PureAnnotationsSourceMap,
   TransformPureAnnotationsOptions,
-} from './LexicalCompilerPureAnnotations';
+} from '@lexical/compiler/PureAnnotations';
 
 export {
   INLINE_FACTORY_FORMS,
@@ -29,7 +29,7 @@ export {
   pureAnnotations,
   pureCallNames,
   transformPureAnnotations,
-} from './LexicalCompilerPureAnnotations';
+} from '@lexical/compiler/PureAnnotations';
 
 export type {
   SubpathImportsOptions,

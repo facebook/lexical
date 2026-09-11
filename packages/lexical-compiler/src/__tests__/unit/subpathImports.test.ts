@@ -13,7 +13,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import {runInNewContext} from 'node:vm';
-import {rollup} from 'rollup';
+import {type Plugin, rollup, watch} from 'rollup';
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 
 import {subpathImports} from '../../SubpathImports';
@@ -118,8 +118,77 @@ describe('subpathImports', () => {
       'import {value} from "@lexical/example/small";',
     );
     expect(() => transform(`import value from '@lexical/example';`)).toThrow(
-      'unknown barrel export',
+      'use named subpath imports',
     );
+  });
+
+  it('rewrites dynamic sibling imports inside exported declarations', () => {
+    expect(
+      transform(`export const rel = import('./small');`, 'src/big.ts'),
+    ).toBe('export const rel = import("@lexical/example/small");');
+    const type = `export type Thing = import('@lexical/example').Thing;`;
+    expect(transform(type)).toBe(type);
+  });
+
+  it('narrows default imports when the barrel explicitly exports a default', () => {
+    write('src/index.ts', `export {default} from './small';`);
+    expect(transform(`import value from '@lexical/example';`)).toBe(
+      'import {default as value} from "@lexical/example/small";',
+    );
+  });
+
+  it.each([
+    `export enum Mode {A, B}`,
+    `export const enum Mode {A, B}`,
+    `export namespace Mode { export const A = 0; export const B = 1; }`,
+  ])('preserves runtime TypeScript star exports: %s', async declaration => {
+    write('src/index.ts', `export * from './small';`);
+    write('src/small.ts', `${declaration}; export const label = 'mode';`);
+    const result = await bundle(
+      `import * as all from '@lexical/example'; export {all};`,
+      false,
+    );
+    const exports: {all?: {Mode: {A: number; B: number}; label: string}} = {};
+    runInNewContext(result.code, {exports});
+    expect(Object.keys(exports.all || {}).sort()).toEqual(['Mode', 'label']);
+    expect(exports.all?.Mode.A).toBe(0);
+    expect(exports.all?.Mode.B).toBe(1);
+  });
+
+  it('excludes ambient TypeScript declarations when expanding stars', async () => {
+    write('src/index.ts', `export * from './small';`);
+    write(
+      'src/small.ts',
+      `
+      export declare class AmbientClass {}
+      export declare const ambientValue: number;
+      export declare enum AmbientEnum {A}
+      export declare namespace AmbientNamespace { const x: number; }
+      export namespace Types { export type A = string; }
+      export namespace Empty {}
+      export const label = 'mode';
+    `,
+    );
+    const result = await bundle(
+      `import * as all from '@lexical/example'; export {all};`,
+      false,
+    );
+    const exports: {all?: Record<string, unknown>} = {};
+    runInNewContext(result.code, {exports});
+    expect(Object.keys(exports.all || {})).toEqual(['label']);
+  });
+
+  it.each([
+    `@decorate export class Example {}`,
+    `export @decorate class Example {}`,
+    `export class Example { @decorate accessor value = 1; }`,
+    `export class Example { constructor(@decorate value: unknown) {} }`,
+  ])('parses decorated TypeScript before transpilation: %s', declaration => {
+    const code = `import {publicValue} from '@lexical/example'; ${declaration}`;
+    expect(transform(code)).toContain(
+      'import {value as publicValue} from "@lexical/example/small";',
+    );
+    expect(transform(declaration)).toBe(declaration);
   });
 
   it('does not bypass executable root entry points', () => {
@@ -169,6 +238,12 @@ describe('subpathImports', () => {
     `export * as extension from '@lexical/example';`,
     `const extension = import('@lexical/example');`,
     `const extension = require('@lexical/example');`,
+    `export const extension = require('@lexical/example');`,
+    `export const extension = import('@lexical/example');`,
+    `export function extension() { return require('@lexical/example'); }`,
+    `export class Extension { load() { return import('@lexical/example'); } }`,
+    `import extension from '@lexical/example';`,
+    `import {default as extension} from '@lexical/example';`,
   ])('rejects unsplittable usage in strict mode: %s', code => {
     expect(() => transform(code)).toThrow('use named subpath imports');
     expect(transform(code, 'consumer.ts', false)).toBe(code);
@@ -197,6 +272,47 @@ describe('subpathImports', () => {
     ).toContain('unused as publicValue');
   });
 
+  it('invalidates cached consumer transforms in a real watch rebuild', async () => {
+    write('consumer.ts', `export {publicValue} from '@lexical/example';`);
+    const watcher = watch({
+      input: path.join(dir, 'consumer.ts'),
+      output: {file: path.join(dir, 'output.js'), format: 'cjs'},
+      plugins: [plugin(), fixtureCompiler()],
+      watch: {chokidar: {interval: 20, usePolling: true}, skipWrite: true},
+    });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        let builds = 0;
+        watcher.on('event', async event => {
+          if (event.code === 'ERROR') reject(event.error);
+          if (event.code !== 'BUNDLE_END') return;
+          try {
+            const {output} = await event.result.generate({format: 'cjs'});
+            await event.result.close();
+            const exports: {publicValue?: unknown} = {};
+            runInNewContext(output[0].code, {exports});
+            if (++builds === 1) {
+              expect(exports.publicValue).toEqual({});
+              // Let the file watcher finish registering before changing the barrel.
+              await new Promise(done => setTimeout(done, 100));
+              write(
+                'src/index.ts',
+                `export {unused as publicValue} from './big';`,
+              );
+            } else {
+              expect(exports.publicValue).toBe('unwanted extension');
+              resolve();
+            }
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+    } finally {
+      await watcher.close();
+    }
+  }, 20_000);
+
   it('produces source maps and handles TSX and query-suffixed module IDs', () => {
     const result = plugin().transform(
       `import {publicValue} from '@lexical/example'; export const x = <div>{publicValue}</div>;`,
@@ -207,29 +323,30 @@ describe('subpathImports', () => {
     expect(plugin().transform('not JavaScript', 'styles.css')).toBeNull();
   });
 
+  function fixtureCompiler(): Plugin {
+    return {
+      name: 'fixture-resolution',
+      resolveId(source) {
+        if (source === '@lexical/example')
+          return path.join(dir, 'src/index.ts');
+        if (source.startsWith('@lexical/example/'))
+          return path.join(dir, `src/${source.split('/').pop()}.ts`);
+        return null;
+      },
+      transform(source, id) {
+        return {
+          code: transformSync(source, {loader: 'ts', sourcefile: id}).code,
+          map: null,
+        };
+      },
+    };
+  }
+
   async function bundle(code: string, strict: boolean) {
     write('consumer.ts', code);
     const build = await rollup({
       input: path.join(dir, 'consumer.ts'),
-      plugins: [
-        plugin(strict),
-        {
-          name: 'fixture-resolution',
-          resolveId(source) {
-            if (source === '@lexical/example')
-              return path.join(dir, 'src/index.ts');
-            if (source.startsWith('@lexical/example/'))
-              return path.join(dir, `src/${source.split('/').pop()}.ts`);
-            return null;
-          },
-          transform(source, id) {
-            return {
-              code: transformSync(source, {loader: 'ts', sourcefile: id}).code,
-              map: null,
-            };
-          },
-        },
-      ],
+      plugins: [plugin(strict), fixtureCompiler()],
       treeshake: false,
     });
     try {

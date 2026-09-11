@@ -50,17 +50,8 @@
       "@lexical/extension/DecoratorTextExtension": [
         "./packages/lexical-extension/src/DecoratorTextExtension.ts"
       ],
-      "@lexical/extension/deepThemeMergeInPlace": [
-        "./packages/lexical-extension/src/deepThemeMergeInPlace.ts"
-      ],
       "@lexical/extension/EditorStateExtension": [
         "./packages/lexical-extension/src/EditorStateExtension.ts"
-      ],
-      "@lexical/extension/editorStateFamily": [
-        "./packages/lexical-extension/src/editorStateFamily.ts"
-      ],
-      "@lexical/extension/ExtensionRep": [
-        "./packages/lexical-extension/src/ExtensionRep.ts"
       ],
       "@lexical/extension/getExtensionDependency": [
         "./packages/lexical-extension/src/getExtensionDependency.ts"

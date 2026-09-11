@@ -2235,13 +2235,15 @@ export interface KeyboardShortcut extends KeyboardShortcutMatch {
 declare export var CONTROL_OR_META: KeyboardEventModifierMask;
 declare export var CONTROL_OR_ALT: KeyboardEventModifierMask;
 
-declare export class CompiledKeyboardShortcuts<
+declare class CompiledKeyboardShortcuts<
   S extends KeyboardShortcutMatch = KeyboardShortcut,
 > {
   add(shortcut: S): this;
   matches(event: KeyboardEventModifiers): S[];
   match(event: KeyboardEventModifiers): S | void;
 }
+
+export type {CompiledKeyboardShortcuts};
 
 declare export function compileKeyboardShortcuts<S extends KeyboardShortcutMatch>(
   shortcuts: Iterable<S>,

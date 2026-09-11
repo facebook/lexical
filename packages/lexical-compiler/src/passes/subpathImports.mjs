@@ -21,14 +21,27 @@ const withoutExtension = filename => filename.replace(/\.[cm]?[jt]sx?$/, '');
 
 /** @param {string} code @param {string} filename */
 function parseModule(code, filename) {
-  return parse(code, {
+  const options = {
     createImportExpressions: true,
     plugins: /** @type {import('@babel/parser').ParserPlugin[]} */ ([
+      'decorators',
+      'decoratorAutoAccessors',
       ...(/\.[cm]?tsx?$/.test(filename) ? ['typescript'] : []),
       ...(/\.[jt]sx$/.test(filename) ? ['jsx'] : []),
     ]),
-    sourceType: 'module',
-  });
+    sourceType: /** @type {const} */ ('module'),
+  };
+  try {
+    return parse(code, options);
+  } catch (error) {
+    // Legacy TypeScript parameter decorators are not part of standard
+    // decorators. Both forms must survive this pass before transpilation.
+    if (!code.includes('@')) {
+      throw error;
+    }
+    options.plugins[0] = 'decorators-legacy';
+    return parse(code, options);
+  }
 }
 
 /**
@@ -139,6 +152,32 @@ function readImports(options) {
    * @param {string} name
    */
   const starNames = name => {
+    // A namespace containing only types is erased by the TypeScript compiler.
+    /** @param {any} node @returns {boolean} */
+    const hasRuntimeValue = node => {
+      if (
+        !node ||
+        node.declare ||
+        node.exportKind === 'type' ||
+        node.importKind === 'type'
+      ) {
+        return false;
+      }
+      if (node.type === 'ExportNamedDeclaration') {
+        return hasRuntimeValue(node.declaration);
+      }
+      if (node.type === 'TSModuleDeclaration') {
+        return hasRuntimeValue(node.body);
+      }
+      if (node.type === 'TSModuleBlock') {
+        return node.body.some(hasRuntimeValue);
+      }
+      return (
+        node.type === 'TSEnumDeclaration' ||
+        node.type === 'TSImportEqualsDeclaration' ||
+        (!node.type.startsWith('TS') && node.type !== 'EmptyStatement')
+      );
+    };
     const {body} = read(name);
     const names = new Set();
     const values = new Set();
@@ -171,7 +210,9 @@ function readImports(options) {
             );
           }
           names.add(item.id.name);
-          values.add(item.id.name);
+          if (node.exportKind !== 'type' && !decl.declare) {
+            values.add(item.id.name);
+          }
         }
       } else if (
         decl &&
@@ -181,8 +222,12 @@ function readImports(options) {
       ) {
         names.add(decl.id.name);
         if (
-          decl.type === 'ClassDeclaration' ||
-          decl.type === 'FunctionDeclaration'
+          node.exportKind !== 'type' &&
+          !('declare' in decl && decl.declare) &&
+          (decl.type === 'ClassDeclaration' ||
+            decl.type === 'FunctionDeclaration' ||
+            decl.type === 'TSEnumDeclaration' ||
+            (decl.type === 'TSModuleDeclaration' && hasRuntimeValue(decl)))
         ) {
           values.add(decl.id.name);
         }
@@ -259,7 +304,12 @@ function readImports(options) {
     }
     barrels.set(name, exports);
   }
-  return {barrels, files, resolve, stars};
+  const signature = JSON.stringify([
+    [...modules],
+    [...barrels].map(([name, bindings]) => [name, [...bindings]]),
+    [...stars].map(([name, values]) => [name, [...values]]),
+  ]);
+  return {barrels, files, resolve, signature, stars};
 }
 
 /**
@@ -272,15 +322,23 @@ function readImports(options) {
 export function subpathImports(options = {}) {
   /** @type {ReturnType<typeof readImports> | undefined} */
   let imports;
+  let mappingChanged = true;
   return {
     buildStart() {
+      const previous = imports;
       imports = readImports(options);
+      mappingChanged = !previous || previous.signature !== imports.signature;
       for (const file of imports.files) {
         this.addWatchFile(file);
       }
     },
     enforce: 'pre',
     name: '@lexical/compiler/subpath-imports',
+    shouldTransformCachedModule() {
+      // Watching the barrel triggers a rebuild, but consumers' source text
+      // stays unchanged. Discard their cached rewrites when targets change.
+      return mappingChanged;
+    },
     transform(code, id) {
       const filename = id.replace(/[?#].*$/, '');
       if (!/\.[cm]?[jt]sx?$/.test(filename) || filename.endsWith('.d.ts')) {
@@ -328,20 +386,18 @@ export function subpathImports(options = {}) {
         if (!node || typeof node !== 'object') {
           return;
         }
+        if (node.importKind === 'type' || node.exportKind === 'type') {
+          return;
+        }
         if (
-          node.type === 'ImportDeclaration' ||
-          node.type === 'ExportNamedDeclaration' ||
-          node.type === 'ExportAllDeclaration'
+          node.source &&
+          (node.type === 'ImportDeclaration' ||
+            node.type === 'ExportNamedDeclaration' ||
+            node.type === 'ExportAllDeclaration')
         ) {
-          if (
-            !node.source ||
-            node.importKind === 'type' ||
-            node.exportKind === 'type'
-          ) {
-            return;
-          }
           const source = resolve(node.source.value, filename);
-          if (!barrels.has(source)) {
+          const barrel = barrels.get(source);
+          if (!barrel) {
             // Explicit exports avoid runtime namespace enumeration in
             // consumers and let Rollup enumerate the barrel's own exports.
             const names = stars.get(source);
@@ -366,7 +422,12 @@ export function subpathImports(options = {}) {
             node.type === 'ExportAllDeclaration' ||
             !node.specifiers.length ||
             node.specifiers.some(
-              /** @param {any} spec */ spec => spec.type.includes('Namespace'),
+              /** @param {any} spec */ spec =>
+                spec.type.includes('Namespace') ||
+                (!barrel.has('default') &&
+                  (spec.type === 'ImportDefaultSpecifier' ||
+                    (spec.imported && spec.imported.name === 'default') ||
+                    (spec.local && spec.local.name === 'default'))),
             )
           ) {
             unsupported(source);

@@ -36,7 +36,7 @@ For E2E testing workflow:
 - `pnpm run lint:fix` - Auto-fix lint issues
 - `pnpm run prettier` - Check code formatting
 - `pnpm run prettier:fix` - Auto-fix formatting issues
-- `pnpm run flow` - Run Flow type checker
+- `pnpm run flow` - Run a full foreground Flow check (does not reuse a server)
 - `pnpm run tsc` - Run TypeScript compiler
 - `pnpm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
 
@@ -76,7 +76,9 @@ manually rewrite these source imports to `@lexical/extension/*`: ESLint
 enforces the source convention, and `@lexical/compiler`'s `subpathImports`
 pass rewrites them in all published package builds, including www. Public
 sibling entries stay external so shared modules such as signals retain one
-instance. Downstream users may import either the barrel or public subpaths.
+instance. Helpers with only one owning entry live under `src/internal` and
+are bundled into that entry, without exposing additional public subpaths.
+Downstream users may import either the barrel or public subpaths.
 
 ### Tree-shaking annotations
 

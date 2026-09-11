@@ -16,6 +16,17 @@ import {packagesManager} from '../../shared/packagesManager.mjs';
 const require = createRequire(import.meta.url);
 
 describe('published extension subpaths', () => {
+  it.each(['ExtensionRep', 'deepThemeMergeInPlace', 'editorStateFamily'])(
+    'keeps %s private',
+    name => {
+      for (const suffix of ['', '.js']) {
+        expect(() =>
+          require.resolve(`@lexical/extension/${name}${suffix}`),
+        ).toThrow(/not defined by "exports"/);
+      }
+    },
+  );
+
   it.each(
     ['development', 'production'].flatMap(condition => [
       {

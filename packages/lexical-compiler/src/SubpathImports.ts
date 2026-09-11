@@ -24,6 +24,7 @@ export interface SubpathImportsPlugin {
   name: string;
   enforce: 'pre';
   buildStart(this: {addWatchFile(file: string): void}): void;
+  shouldTransformCachedModule(): boolean;
   transform(
     code: string,
     id: string,

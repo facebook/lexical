@@ -263,7 +263,8 @@ export default {
 ```
 
 Use this Rollup/Vite plugin before dependency resolution. It accepts
-TypeScript, TSX and JavaScript, so it can run before or after TypeScript
+TypeScript, TSX and JavaScript, including standard decorators and legacy
+TypeScript parameter decorators, so it can run before or after TypeScript
 transpilation. Unlike `pureAnnotations`, it also helps builds that do not
 tree-shake: unused extension modules never become dependencies in the first
 place. It does not make an individual subpath smaller than that subpath's
@@ -278,11 +279,17 @@ Options:
   are left intact.
 - `root`: directory from which package names are resolved. Defaults to
   `process.cwd()`. Use absolute package.json paths for an unbuilt checkout.
-- `strict`: defaults to `false`. Set to `true` to reject namespace imports,
-  side-effect imports, star re-exports, dynamic imports and `require` calls
+- `strict`: defaults to `false`. Set to `true` to reject unmappable default
+  imports, namespace imports, side-effect imports, star re-exports, dynamic
+  imports and `require` calls
   targeting a barrel. These forms load the whole namespace and cannot be
   narrowed safely. With the default setting they keep their original
-  behavior. Type-only imports are preserved and erased by TypeScript.
+  behavior. An explicitly re-exported default is narrowed like a named export.
+  Checks include access inside exported declarations. Type-only imports are
+  preserved and erased by TypeScript.
+
+In watch builds, changes to the package export map or barrel bindings invalidate
+cached consumer transforms so imports are resolved against the updated mapping.
 
 Relative imports between public entry points are also converted to package
 subpaths. Lexical's package build keeps those subpaths external, so a shared

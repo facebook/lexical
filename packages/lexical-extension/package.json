@@ -107,22 +107,6 @@
       "production": "./dist/LexicalExtensionEditorStateExtension.prod.js",
       "default": "./dist/LexicalExtensionEditorStateExtension.js"
     },
-    "./ExtensionRep": {
-      "source": "./src/ExtensionRep.ts",
-      "types@<5.2": "./dist/typescript-too-old.d.ts",
-      "types": "./dist/ExtensionRep.d.ts",
-      "development": "./dist/LexicalExtensionExtensionRep.dev.js",
-      "production": "./dist/LexicalExtensionExtensionRep.prod.js",
-      "default": "./dist/LexicalExtensionExtensionRep.js"
-    },
-    "./ExtensionRep.js": {
-      "source": "./src/ExtensionRep.ts",
-      "types@<5.2": "./dist/typescript-too-old.d.ts",
-      "types": "./dist/ExtensionRep.d.ts",
-      "development": "./dist/LexicalExtensionExtensionRep.dev.js",
-      "production": "./dist/LexicalExtensionExtensionRep.prod.js",
-      "default": "./dist/LexicalExtensionExtensionRep.js"
-    },
     "./HMRExtension": {
       "source": "./src/HMRExtension.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",
@@ -410,38 +394,6 @@
       "development": "./dist/LexicalExtensionConfig.dev.js",
       "production": "./dist/LexicalExtensionConfig.prod.js",
       "default": "./dist/LexicalExtensionConfig.js"
-    },
-    "./deepThemeMergeInPlace": {
-      "source": "./src/deepThemeMergeInPlace.ts",
-      "types@<5.2": "./dist/typescript-too-old.d.ts",
-      "types": "./dist/deepThemeMergeInPlace.d.ts",
-      "development": "./dist/LexicalExtensionDeepThemeMergeInPlace.dev.js",
-      "production": "./dist/LexicalExtensionDeepThemeMergeInPlace.prod.js",
-      "default": "./dist/LexicalExtensionDeepThemeMergeInPlace.js"
-    },
-    "./deepThemeMergeInPlace.js": {
-      "source": "./src/deepThemeMergeInPlace.ts",
-      "types@<5.2": "./dist/typescript-too-old.d.ts",
-      "types": "./dist/deepThemeMergeInPlace.d.ts",
-      "development": "./dist/LexicalExtensionDeepThemeMergeInPlace.dev.js",
-      "production": "./dist/LexicalExtensionDeepThemeMergeInPlace.prod.js",
-      "default": "./dist/LexicalExtensionDeepThemeMergeInPlace.js"
-    },
-    "./editorStateFamily": {
-      "source": "./src/editorStateFamily.ts",
-      "types@<5.2": "./dist/typescript-too-old.d.ts",
-      "types": "./dist/editorStateFamily.d.ts",
-      "development": "./dist/LexicalExtensionEditorStateFamily.dev.js",
-      "production": "./dist/LexicalExtensionEditorStateFamily.prod.js",
-      "default": "./dist/LexicalExtensionEditorStateFamily.js"
-    },
-    "./editorStateFamily.js": {
-      "source": "./src/editorStateFamily.ts",
-      "types@<5.2": "./dist/typescript-too-old.d.ts",
-      "types": "./dist/editorStateFamily.d.ts",
-      "development": "./dist/LexicalExtensionEditorStateFamily.dev.js",
-      "production": "./dist/LexicalExtensionEditorStateFamily.prod.js",
-      "default": "./dist/LexicalExtensionEditorStateFamily.js"
     },
     "./getExtensionDependency": {
       "source": "./src/getExtensionDependency.ts",

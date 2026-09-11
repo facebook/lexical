@@ -17,8 +17,13 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type ParagraphNode,
+  TextNode,
 } from '../index';
-import {$writeJSONGetters} from '../LexicalUtils';
+import {
+  $applyJSONSetters,
+  $walkJSONSetters,
+  $writeJSONGetters,
+} from '../LexicalUtils';
 
 // Module-level sink so V8 cannot elide the work being measured.
 let _benchSink: unknown;
@@ -154,5 +159,71 @@ describe('per-node exportJSON, TextNode', () => {
         nodes = buildTextNodes();
       },
     },
+  );
+});
+
+// And what the generated parsers buy, on the same subject. The nodes are
+// constructed once and never attached: TextNode's properties are all fields,
+// so both arms write straight to the node and neither needs a writable clone
+// — the timed region is the parser alone, which is a tenth of a microsecond
+// per node and would otherwise vanish under the microseconds a node's
+// creation and commit cost. Every property is
+// carried so that each one is read; a compact document would measure the
+// fall-through instead. Run inside a `read` for the class records the entry
+// points resolve and the `$` convention they follow.
+describe('per-node updateFromJSON, TextNode', () => {
+  let nodes: TextNode[] = [];
+  let jsons: {[key: string]: unknown}[] = [];
+
+  function buildInputs(): void {
+    benchEditor = buildEditor();
+    const serialized = JSON.stringify({
+      detail: 0,
+      format: 1,
+      mode: 'normal',
+      style: 'color: red',
+      text: 'hello',
+      type: 'text',
+      version: 1,
+    });
+    const count = PARAGRAPHS * TEXTS_PER_PARAGRAPH;
+    // Constructed in an update, which a node's key needs, and never appended:
+    // the commit drops them from the node map, and the objects stay writable.
+    benchEditor.update(
+      () => {
+        nodes = Array.from({length: count}, () => new TextNode(''));
+      },
+      {discrete: true},
+    );
+    // Parsed once per node rather than shared: a parser is handed a distinct
+    // object per node, as it is by parseEditorState.
+    jsons = Array.from(
+      {length: count},
+      () => JSON.parse(serialized) as {[key: string]: unknown},
+    );
+  }
+
+  bench(
+    'schema-driven walk',
+    () => {
+      benchEditor.read(() => {
+        for (let i = 0; i < nodes.length; i++) {
+          _benchSink = $walkJSONSetters(nodes[i], jsons[i]);
+        }
+      });
+    },
+    {setup: buildInputs},
+  );
+
+  bench(
+    'generated literal',
+    () => {
+      benchEditor.read(() => {
+        for (let i = 0; i < nodes.length; i++) {
+          _benchSink = $applyJSONSetters(nodes[i], jsons[i]);
+        }
+      });
+    },
+    {setup: buildInputs},
   );
 });

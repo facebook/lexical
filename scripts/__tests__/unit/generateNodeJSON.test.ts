@@ -61,7 +61,16 @@ describe('names interpolated into generated code', () => {
 
   test('a name the emitted code binds itself is refused', () => {
     // `const node = node.__node` would shadow the parameter it reads from.
-    for (const name of ['json', 'node', 'prevNode', 'self', 'v', 'n']) {
+    for (const name of [
+      'json',
+      'n',
+      'node',
+      'num',
+      'numC',
+      'prevNode',
+      'self',
+      'v',
+    ]) {
       expect(() => emittable(name, 'schema key', true)).toThrow(
         /collides with a name the generated code binds/,
       );

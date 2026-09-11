@@ -274,7 +274,8 @@ turn a node's declarative serialization schema (the `json` property of
   over the corpus.
 - `NUM_HELPER_SOURCE` and `JSON_NUMBER_SOURCE` are the number-parsing helper
   as source text, so an emitted module and the verification share one
-  definition rather than two copies that could drift.
+  definition rather than two copies that could drift; `NUM_RANGE_HELPER_SOURCE`
+  is the constrained-domain variant.
 
 The corpus is fixed rather than sampled, so a generator built on this
 produces byte-reproducible output — which is what lets generated files be

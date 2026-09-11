@@ -170,6 +170,18 @@ describe('generated exportJSON', () => {
               text: 'not a tab',
             });
             $expectSameParse(TabNode, {});
+            // A key the serialized object only *inherits* is absent to the
+            // walk, which reads with `hasOwnKey` — so it has to be absent to
+            // the generated parser too. A bare `json.text` picked it up, which
+            // a polluted `Object.prototype`, or a caller layering a partial
+            // update over a defaults object, is enough to reach.
+            $expectSameParse(
+              TextNode,
+              Object.create({
+                style: 'color: red',
+                text: 'inherited',
+              }) as {readonly [key: string]: unknown},
+            );
           },
           {discrete: true},
         );

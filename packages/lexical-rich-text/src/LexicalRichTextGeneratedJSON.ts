@@ -113,9 +113,13 @@ function updateHeadingNode(
   let self = node;
   let n: unknown;
   let v: unknown;
-  v = json.direction;
+  v = Object.prototype.hasOwnProperty.call(json, 'direction')
+    ? json.direction
+    : undefined;
   self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-  v = json.format;
+  v = Object.prototype.hasOwnProperty.call(json, 'format')
+    ? json.format
+    : undefined;
   n = self.setFormat(
     v === '' ||
       v === 'left' ||
@@ -128,15 +132,21 @@ function updateHeadingNode(
       : '',
   );
   self = (n ?? self) as HeadingNode;
-  v = json.indent;
+  v = Object.prototype.hasOwnProperty.call(json, 'indent')
+    ? json.indent
+    : undefined;
   self.__indent = numC(v, 0, 0, Infinity, true);
-  v = json.textFormat;
+  v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+    ? json.textFormat
+    : undefined;
   n = self.setTextFormat(num(v, 0));
   self = (n ?? self) as HeadingNode;
-  v = json.textStyle;
+  v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+    ? json.textStyle
+    : undefined;
   n = self.setTextStyle(typeof v === 'string' ? v : '');
   self = (n ?? self) as HeadingNode;
-  v = json.tag;
+  v = Object.prototype.hasOwnProperty.call(json, 'tag') ? json.tag : undefined;
   self.__tag =
     v === 'h1' ||
     v === 'h2' ||
@@ -226,9 +236,13 @@ function updateQuoteNode(
   let self = node;
   let n: unknown;
   let v: unknown;
-  v = json.direction;
+  v = Object.prototype.hasOwnProperty.call(json, 'direction')
+    ? json.direction
+    : undefined;
   self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-  v = json.format;
+  v = Object.prototype.hasOwnProperty.call(json, 'format')
+    ? json.format
+    : undefined;
   n = self.setFormat(
     v === '' ||
       v === 'left' ||
@@ -241,12 +255,18 @@ function updateQuoteNode(
       : '',
   );
   self = (n ?? self) as QuoteNode;
-  v = json.indent;
+  v = Object.prototype.hasOwnProperty.call(json, 'indent')
+    ? json.indent
+    : undefined;
   self.__indent = numC(v, 0, 0, Infinity, true);
-  v = json.textFormat;
+  v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+    ? json.textFormat
+    : undefined;
   n = self.setTextFormat(num(v, 0));
   self = (n ?? self) as QuoteNode;
-  v = json.textStyle;
+  v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+    ? json.textStyle
+    : undefined;
   n = self.setTextStyle(typeof v === 'string' ? v : '');
   self = (n ?? self) as QuoteNode;
   return self;

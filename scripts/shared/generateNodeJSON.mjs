@@ -754,6 +754,34 @@ function narrowedSchema(schema) {
 }
 
 /**
+ * The read of one serialized property: the own-key read the schema-driven walk
+ * makes (`hasOwnKey`), so a key the object only *inherits* — a polluted
+ * `Object.prototype`, or a caller layering a partial update over a defaults
+ * object with `Object.create` — is absent to the generated parser too, rather
+ * than a value the walk treats as unset.
+ *
+ * Inline at each site, with the key a literal, rather than through a shared
+ * `own(json, key)` helper. The helper's one `json[key]` served every key of
+ * every node type and so could never stay monomorphic — measured at 5-12x the
+ * cost of the bare read per node (TextNode 17 → 113 ns) — while the same test
+ * written out here keeps each read's own inline cache, which is what this
+ * generator exists to produce.
+ *
+ * @param {string} key
+ * @returns {string} an expression over `json`
+ */
+function ownRead(key) {
+  const keyLiteral = JSON.stringify(key);
+  // Dot access where the key allows it, which is every key today (the compact
+  // exporter binds `const <key>`, so a key that is not an identifier is
+  // refused before this); the element form is only for a key that is not.
+  const access = /^[A-Za-z_$][\w$]*$/.test(key)
+    ? `json.${key}`
+    : `json[${keyLiteral}]`;
+  return `Object.prototype.hasOwnProperty.call(json, ${keyLiteral}) ? ${access} : undefined`;
+}
+
+/**
  * Compile one property's parse, then prove it agrees with the schema.
  *
  * The proof runs the compiled expression rather than the emitted statements, so
@@ -839,7 +867,7 @@ function writeExpression(klass, schema, key, target) {
     return {
       key,
       needsSelf: true,
-      statements: `  v = json.${key};\n  n = ${target}.${emittable(setter, 'setter method')}(${expression});\n  ${target} = (n ?? ${target}) as ${klass.name};`,
+      statements: `  v = ${ownRead(key)};\n  n = ${target}.${emittable(setter, 'setter method')}(${expression});\n  ${target} = (n ?? ${target}) as ${klass.name};`,
     };
   }
   const {encode} = setter;
@@ -847,7 +875,7 @@ function writeExpression(klass, schema, key, target) {
   // after parsing: folding them together needs an IIFE, and a closure per
   // property per node is most of what generating this was meant to remove.
   const setterField = emittable(setter.field, 'setter field');
-  let statements = `  v = json.${key};\n  ${target}.${setterField} = ${expression};`;
+  let statements = `  v = ${ownRead(key)};\n  ${target}.${setterField} = ${expression};`;
   if (encode !== undefined) {
     const name = addTable(tableName(klass, key, 'ENCODE'), encode);
     nullPrototypeTables.push(name);
@@ -858,7 +886,7 @@ function writeExpression(klass, schema, key, target) {
       encode[/** @type {string} */ (schema.defaultValue)],
     );
     const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
-    statements = `  v = json.${key};\n  v = ${expression};\n  ${target}.${setterField} = ${lookup};`;
+    statements = `  v = ${ownRead(key)};\n  v = ${expression};\n  ${target}.${setterField} = ${lookup};`;
   }
   try {
     verifyCompiledParse({
@@ -1027,15 +1055,13 @@ function generatePackage(pkg) {
     )
     .join('\n\n');
 
-  // `numC` calls `num`, so a constrained domain needs both.
-  const needsNumC = generated.some(
-    g => g.updateFromJSON !== null && g.updateFromJSON.includes('numC('),
+  // Which helpers the parsers call, so a module declares only those.
+  const parsers = generated.flatMap(g =>
+    g.updateFromJSON === null ? [] : [g.updateFromJSON],
   );
-  const needsNum =
-    needsNumC ||
-    generated.some(
-      g => g.updateFromJSON !== null && g.updateFromJSON.includes('num('),
-    );
+  // `numC` calls `num`, so a constrained domain needs both.
+  const needsNumC = parsers.some(p => p.includes('numC('));
+  const needsNum = needsNumC || parsers.some(p => p.includes('num('));
 
   /** Class names by the module that declares them. @type {Map<string, Set<string>>} */
   const typeImports = new Map();
@@ -1106,22 +1132,39 @@ function generatePackage(pkg) {
     );
   }
 
+  // The module-scope pieces a package needs, in order, joined once: the
+  // output is prettier-formatted before it is written, so the blank lines
+  // between them are prettier's to place, not this template's.
+  const prelude = [];
+  if (pkg.home) {
+    prelude.push(INTERFACE_SOURCE);
+  }
+  if (needsNum) {
+    prelude.push(NUM_COMMENT + NUM_HELPER_SOURCE);
+  }
+  if (needsNumC) {
+    prelude.push(NUM_RANGE_HELPER_SOURCE);
+  }
+  if (tableSource) {
+    prelude.push(tableSource);
+  }
+
   return `${HEADER}
 ${importLines.join('\n')}
-${pkg.home ? `\n${INTERFACE_SOURCE}\n` : ''}${
-    needsNum
-      ? `
-// The JSON number grammar, anchored, matching numberValue: \`Number()\` alone
+
+${[...prelude, ...pieces].join('\n\n')}
+`;
+}
+
+// What the emitted helpers are for, as the generated module explains it. The
+// helpers' source is `@lexical/compiler`'s, so an emitted module and the
+// verification cannot be different functions; the reason to have one at all
+// is stated here, once, where every generated module reproduces it.
+const NUM_COMMENT = `// The JSON number grammar, anchored, matching numberValue: \`Number()\` alone
 // reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
 // produces. Emitted from the same source the codegen verified against, so the
 // two cannot be different functions.
-${NUM_HELPER_SOURCE}
-${needsNumC ? `\n${NUM_RANGE_HELPER_SOURCE}\n` : ''}`
-      : ''
-  }${tableSource ? `\n${tableSource}\n` : ''}
-${pieces.join('\n\n')}
 `;
-}
 
 /**
  * Generate every module in {@link MANIFEST}, in place under the repo, or —

@@ -177,23 +177,33 @@ function updateTextNode(
   json: {readonly [key: string]: unknown},
 ): TextNode {
   let v: unknown;
-  v = json.detail;
+  v = Object.prototype.hasOwnProperty.call(json, 'detail')
+    ? json.detail
+    : undefined;
   node.__detail =
     typeof v === 'string' && v in TEXT_DETAIL_ALIAS
       ? TEXT_DETAIL_ALIAS[v]
       : num(v, 0);
-  v = json.format;
+  v = Object.prototype.hasOwnProperty.call(json, 'format')
+    ? json.format
+    : undefined;
   node.__format =
     typeof v === 'string' && v in TEXT_FORMAT_ALIAS
       ? TEXT_FORMAT_ALIAS[v]
       : num(v, 0);
-  v = json.mode;
+  v = Object.prototype.hasOwnProperty.call(json, 'mode')
+    ? json.mode
+    : undefined;
   v = v === 'normal' || v === 'token' || v === 'segmented' ? v : 'normal';
   node.__mode =
     (v as string) in TEXT_MODE_ENCODE ? TEXT_MODE_ENCODE[v as string] : 0;
-  v = json.style;
+  v = Object.prototype.hasOwnProperty.call(json, 'style')
+    ? json.style
+    : undefined;
   node.__style = typeof v === 'string' ? v : '';
-  v = json.text;
+  v = Object.prototype.hasOwnProperty.call(json, 'text')
+    ? json.text
+    : undefined;
   node.__text = typeof v === 'string' ? v : '';
   return node;
 }
@@ -281,9 +291,13 @@ function updateParagraphNode(
   let self = node;
   let n: unknown;
   let v: unknown;
-  v = json.direction;
+  v = Object.prototype.hasOwnProperty.call(json, 'direction')
+    ? json.direction
+    : undefined;
   self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-  v = json.format;
+  v = Object.prototype.hasOwnProperty.call(json, 'format')
+    ? json.format
+    : undefined;
   n = self.setFormat(
     v === '' ||
       v === 'left' ||
@@ -296,12 +310,18 @@ function updateParagraphNode(
       : '',
   );
   self = (n ?? self) as ParagraphNode;
-  v = json.indent;
+  v = Object.prototype.hasOwnProperty.call(json, 'indent')
+    ? json.indent
+    : undefined;
   self.__indent = numC(v, 0, 0, Infinity, true);
-  v = json.textFormat;
+  v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+    ? json.textFormat
+    : undefined;
   n = self.setTextFormat(num(v, 0));
   self = (n ?? self) as ParagraphNode;
-  v = json.textStyle;
+  v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+    ? json.textStyle
+    : undefined;
   n = self.setTextStyle(typeof v === 'string' ? v : '');
   self = (n ?? self) as ParagraphNode;
   return self;
@@ -368,12 +388,16 @@ function updateTabNode(
   json: {readonly [key: string]: unknown},
 ): TabNode {
   let v: unknown;
-  v = json.format;
+  v = Object.prototype.hasOwnProperty.call(json, 'format')
+    ? json.format
+    : undefined;
   node.__format =
     typeof v === 'string' && v in TEXT_FORMAT_ALIAS
       ? TEXT_FORMAT_ALIAS[v]
       : num(v, 0);
-  v = json.style;
+  v = Object.prototype.hasOwnProperty.call(json, 'style')
+    ? json.style
+    : undefined;
   node.__style = typeof v === 'string' ? v : '';
   return node;
 }

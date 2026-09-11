@@ -24,6 +24,23 @@ export interface SubpathImportsPlugin {
   name: string;
   enforce: 'pre';
   buildStart(this: {addWatchFile(file: string): void}): void;
+  handleHotUpdate<Module>(context: {
+    file: string;
+    modules: Module[];
+    timestamp: number;
+    server: {
+      watcher: {add(files: string[]): unknown};
+      moduleGraph: {
+        getModuleById(id: string): Module | undefined;
+        invalidateModule(
+          module: Module,
+          seen?: Set<Module>,
+          timestamp?: number,
+          isHmr?: boolean,
+        ): void;
+      };
+    };
+  }): Module[] | void;
   shouldTransformCachedModule(): boolean;
   transform(
     code: string,

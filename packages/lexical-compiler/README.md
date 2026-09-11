@@ -263,8 +263,8 @@ export default {
 ```
 
 Use this Rollup/Vite plugin before dependency resolution. It accepts
-TypeScript, TSX and JavaScript, including standard decorators and legacy
-TypeScript parameter decorators, so it can run before or after TypeScript
+TypeScript, TSX and JavaScript, including CommonJS dependencies, standard
+decorators and legacy TypeScript parameter decorators, so it can run before or after TypeScript
 transpilation. Unlike `pureAnnotations`, it also helps builds that do not
 tree-shake: unused extension modules never become dependencies in the first
 place. It does not make an individual subpath smaller than that subpath's
@@ -281,15 +281,18 @@ Options:
   `process.cwd()`. Use absolute package.json paths for an unbuilt checkout.
 - `strict`: defaults to `false`. Set to `true` to reject unmappable default
   imports, namespace imports, side-effect imports, star re-exports, dynamic
-  imports and `require` calls
+  imports, TypeScript import assignments and `require` calls
   targeting a barrel. These forms load the whole namespace and cannot be
   narrowed safely. With the default setting they keep their original
   behavior. An explicitly re-exported default is narrowed like a named export.
   Checks include access inside exported declarations. Type-only imports are
-  preserved and erased by TypeScript.
+  preserved and erased by TypeScript. String literals and template literals
+  without substitutions are checked; computed module names cannot be narrowed.
 
-In watch builds, changes to the package export map or barrel bindings invalidate
-cached consumer transforms so imports are resolved against the updated mapping.
+In Rollup watch builds and Vite development servers, changes to the package export
+map or barrel bindings refresh the mapping and invalidate cached consumer
+transforms. Vite also includes those consumers in the hot update even when
+rewriting removed the barrel from their dependency graph.
 
 Relative imports between public entry points are also converted to package
 subpaths. Lexical's package build keeps those subpaths external, so a shared

@@ -19,9 +19,21 @@ import * as path from 'node:path';
 /** @param {string} filename */
 const withoutExtension = filename => filename.replace(/\.[cm]?[jt]sx?$/, '');
 
+/** @param {any} node @returns {string} */
+const specifierName = node =>
+  node.type === 'Identifier' ? node.name : node.value;
+
+/** @param {string} name */
+const quotedName = name =>
+  /^[A-Za-z_$][\w$]*$/.test(name) ? name : JSON.stringify(name);
+
 /** @param {string} code @param {string} filename */
 function parseModule(code, filename) {
   const options = {
+    // CommonJS wrappers permit top-level return/new.target, including in .js
+    // dependencies. Leave final syntax validation to the downstream compiler.
+    allowNewTargetOutsideFunction: !/\.m[jt]s$/.test(filename),
+    allowReturnOutsideFunction: !/\.m[jt]s$/.test(filename),
     createImportExpressions: true,
     plugins: /** @type {import('@babel/parser').ParserPlugin[]} */ ([
       'decorators',
@@ -29,18 +41,20 @@ function parseModule(code, filename) {
       ...(/\.[cm]?tsx?$/.test(filename) ? ['typescript'] : []),
       ...(/\.[jt]sx$/.test(filename) ? ['jsx'] : []),
     ]),
-    sourceType: /** @type {const} */ ('module'),
+    sourceType: /** @type {const} */ ('unambiguous'),
   };
   try {
     return parse(code, options);
   } catch (error) {
     // Legacy TypeScript parameter decorators are not part of standard
     // decorators. Both forms must survive this pass before transpilation.
-    if (!code.includes('@')) {
+    options.plugins[0] = 'decorators-legacy';
+    try {
+      return parse(code, options);
+    } catch {
+      // A retry should not replace the original diagnostic for invalid code.
       throw error;
     }
-    options.plugins[0] = 'decorators-legacy';
-    return parse(code, options);
   }
 }
 
@@ -179,6 +193,62 @@ function readImports(options) {
       );
     };
     const {body} = read(name);
+    // A bare `export {Thing}` can refer to an erased local declaration or
+    // type import. Combine merged declarations: a class/interface binding,
+    // for example, still has a runtime value regardless of declaration order.
+    const bindings = new Map();
+    /** @param {any} pattern @param {boolean} runtime */
+    const addBinding = (pattern, runtime) => {
+      if (!pattern) {
+        return;
+      }
+      if (pattern.type === 'Identifier') {
+        bindings.set(
+          pattern.name,
+          runtime || bindings.get(pattern.name) || false,
+        );
+      } else if (pattern.type === 'ObjectPattern') {
+        for (const prop of pattern.properties) {
+          addBinding(
+            prop.type === 'RestElement' ? prop.argument : prop.value,
+            runtime,
+          );
+        }
+      } else if (pattern.type === 'ArrayPattern') {
+        for (const item of pattern.elements) {
+          addBinding(item, runtime);
+        }
+      } else if (pattern.type === 'RestElement') {
+        addBinding(pattern.argument, runtime);
+      } else if (pattern.type === 'AssignmentPattern') {
+        addBinding(pattern.left, runtime);
+      }
+    };
+    for (const statement of body) {
+      const node =
+        statement.type === 'ExportNamedDeclaration' ||
+        statement.type === 'ExportDefaultDeclaration'
+          ? statement.declaration
+          : statement;
+      if (!node) {
+        continue;
+      }
+      if (node.type === 'ImportDeclaration') {
+        for (const spec of node.specifiers) {
+          addBinding(
+            spec.local,
+            node.importKind !== 'type' &&
+              (spec.type !== 'ImportSpecifier' || spec.importKind !== 'type'),
+          );
+        }
+      } else if (node.type === 'VariableDeclaration') {
+        for (const item of node.declarations) {
+          addBinding(item.id, hasRuntimeValue(node));
+        }
+      } else if ('id' in node) {
+        addBinding(node.id, hasRuntimeValue(node));
+      }
+    }
     const names = new Set();
     const values = new Set();
     for (const node of body) {
@@ -189,14 +259,14 @@ function readImports(options) {
         continue;
       }
       for (const spec of node.specifiers) {
-        const exported =
-          spec.exported.type === 'Identifier'
-            ? spec.exported.name
-            : spec.exported.value;
+        const exported = specifierName(spec.exported);
         names.add(exported);
         if (
           node.exportKind !== 'type' &&
-          (spec.type !== 'ExportSpecifier' || spec.exportKind !== 'type')
+          (spec.type !== 'ExportSpecifier' ||
+            (spec.exportKind !== 'type' &&
+              (node.source ||
+                bindings.get(specifierName(spec.local)) !== false)))
         ) {
           values.add(exported);
         }
@@ -290,15 +360,10 @@ function readImports(options) {
               `${name}: use named re-exports instead of namespaces`,
             );
           }
-          exports.set(
-            spec.exported.type === 'Identifier'
-              ? spec.exported.name
-              : spec.exported.value,
-            {
-              imported: spec.local.name,
-              source: target,
-            },
-          );
+          exports.set(specifierName(spec.exported), {
+            imported: specifierName(spec.local),
+            source: target,
+          });
         }
       }
     }
@@ -323,6 +388,7 @@ export function subpathImports(options = {}) {
   /** @type {ReturnType<typeof readImports> | undefined} */
   let imports;
   let mappingChanged = true;
+  const transformedIds = new Set();
   return {
     buildStart() {
       const previous = imports;
@@ -333,6 +399,34 @@ export function subpathImports(options = {}) {
       }
     },
     enforce: 'pre',
+    handleHotUpdate({file, modules, server, timestamp}) {
+      if (!imports || !imports.files.has(path.resolve(file))) {
+        return;
+      }
+      const previous = imports;
+      imports = readImports(options);
+      server.watcher.add([...imports.files]);
+      if (previous.signature === imports.signature) {
+        return;
+      }
+      // Vite serve does not rerun buildStart or shouldTransformCachedModule.
+      // Rewrites have hidden the barrel from its dependency graph, so include
+      // cached consumers in HMR and invalidate their transforms explicitly.
+      const affected = new Set(modules);
+      for (const id of transformedIds) {
+        const module = server.moduleGraph.getModuleById(id);
+        if (module) {
+          server.moduleGraph.invalidateModule(
+            module,
+            undefined,
+            timestamp,
+            true,
+          );
+          affected.add(module);
+        }
+      }
+      return [...affected];
+    },
     name: '@lexical/compiler/subpath-imports',
     shouldTransformCachedModule() {
       // Watching the barrel triggers a rebuild, but consumers' source text
@@ -345,6 +439,7 @@ export function subpathImports(options = {}) {
         return null;
       }
       imports ||= readImports(options);
+      transformedIds.add(id);
       const {barrels, resolve, stars} = imports;
       const ast = parseModule(code, filename);
       const output = new MagicString(code);
@@ -408,7 +503,7 @@ export function subpathImports(options = {}) {
             ) {
               replace(
                 node,
-                `export {${[...names].join(', ')}} from ${JSON.stringify(source)};`,
+                `export {${[...names].map(quotedName).join(', ')}} from ${JSON.stringify(source)};`,
               );
               return;
             }
@@ -426,8 +521,9 @@ export function subpathImports(options = {}) {
                 spec.type.includes('Namespace') ||
                 (!barrel.has('default') &&
                   (spec.type === 'ImportDefaultSpecifier' ||
-                    (spec.imported && spec.imported.name === 'default') ||
-                    (spec.local && spec.local.name === 'default'))),
+                    (spec.imported &&
+                      specifierName(spec.imported) === 'default') ||
+                    (spec.local && specifierName(spec.local) === 'default'))),
             )
           ) {
             unsupported(source);
@@ -442,17 +538,14 @@ export function subpathImports(options = {}) {
               const name =
                 spec.type === 'ImportDefaultSpecifier'
                   ? 'default'
-                  : ((isImport ? spec.imported : spec.local).name ??
-                    (isImport ? spec.imported : spec.local).value);
+                  : specifierName(isImport ? spec.imported : spec.local);
               const target = targetFor(source, name);
               const local = isImport ? spec.local : spec.exported;
               const localName =
                 local.type === 'Identifier'
                   ? local.name
                   : JSON.stringify(local.value);
-              const imported = /^[A-Za-z_$][\w$]*$/.test(target.imported)
-                ? target.imported
-                : JSON.stringify(target.imported);
+              const imported = quotedName(target.imported);
               return `${isImport ? 'import' : 'export'} {${imported}${imported === localName ? '' : ` as ${localName}`}} from ${JSON.stringify(target.source)};`;
             },
           );
@@ -461,17 +554,30 @@ export function subpathImports(options = {}) {
         }
         if (
           node.type === 'ImportExpression' ||
+          (node.type === 'TSImportEqualsDeclaration' &&
+            node.moduleReference.type === 'TSExternalModuleReference') ||
           (node.type === 'CallExpression' &&
             node.callee.type === 'Identifier' &&
             node.callee.name === 'require')
         ) {
           const arg =
-            node.type === 'ImportExpression' ? node.source : node.arguments[0];
-          if (arg && arg.type === 'StringLiteral') {
-            const source = resolve(arg.value, filename);
+            node.type === 'ImportExpression'
+              ? node.source
+              : node.type === 'TSImportEqualsDeclaration'
+                ? node.moduleReference.expression
+                : node.arguments[0];
+          const value =
+            arg &&
+            (arg.type === 'StringLiteral'
+              ? arg.value
+              : arg.type === 'TemplateLiteral' && !arg.expressions.length
+                ? arg.quasis[0].value.cooked
+                : undefined);
+          if (typeof value === 'string') {
+            const source = resolve(value, filename);
             if (barrels.has(source)) {
               unsupported(source);
-            } else if (source !== arg.value) {
+            } else if (source !== value) {
               replace(arg, JSON.stringify(source));
             }
           }

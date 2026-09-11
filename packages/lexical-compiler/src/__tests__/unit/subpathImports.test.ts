@@ -8,12 +8,14 @@
 
 // @vitest-environment node
 
+import commonjs from '@rollup/plugin-commonjs';
 import {transformSync} from 'esbuild';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import {runInNewContext} from 'node:vm';
 import {type Plugin, rollup, watch} from 'rollup';
+import {createServer} from 'vite';
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 
 import {subpathImports} from '../../SubpathImports';
@@ -130,6 +132,57 @@ describe('subpathImports', () => {
     expect(transform(type)).toBe(type);
   });
 
+  it('rewrites static templates and TypeScript import assignments to siblings', () => {
+    for (const code of [
+      'export const rel = import(`./small`);',
+      'export const rel = require(`./small`);',
+      "import rel = require('./small');",
+    ]) {
+      expect(transform(code, 'src/big.ts')).toContain(
+        '("@lexical/example/small")',
+      );
+    }
+    const type = "import type Ext = require('@lexical/example');";
+    expect(transform(type)).toBe(type);
+    const computed = 'export const rel = import(`@lexical/${name}`);';
+    expect(transform(computed)).toBe(computed);
+  });
+
+  it.each(['.cjs', '.js'])(
+    'preserves CommonJS dependency parsing for %s',
+    async extension => {
+      write(
+        `node_modules/dependency/index${extension}`,
+        'if (globalThis.skip) return; module.exports = 42;',
+      );
+      write(
+        'consumer.js',
+        `export {default as value} from './node_modules/dependency/index${extension}';`,
+      );
+      const build = await rollup({
+        input: path.join(dir, 'consumer.js'),
+        plugins: [plugin(), commonjs({extensions: ['.js', '.cjs']})],
+      });
+      try {
+        const {output} = await build.generate({format: 'cjs'});
+        const exports: {value?: number} = {};
+        runInNewContext(output[0].code, {exports});
+        expect(exports.value).toBe(42);
+      } finally {
+        await build.close();
+      }
+    },
+  );
+
+  it('still checks barrel loads in CommonJS files with top-level returns', () => {
+    expect(() =>
+      transform(
+        "if (globalThis.skip) return; module.exports = require('@lexical/example');",
+        'consumer.cjs',
+      ),
+    ).toThrow('use named subpath imports');
+  });
+
   it('narrows default imports when the barrel explicitly exports a default', () => {
     write('src/index.ts', `export {default} from './small';`);
     expect(transform(`import value from '@lexical/example';`)).toBe(
@@ -176,6 +229,59 @@ describe('subpathImports', () => {
     const exports: {all?: Record<string, unknown>} = {};
     runInNewContext(result.code, {exports});
     expect(Object.keys(exports.all || {})).toEqual(['label']);
+  });
+
+  it('resolves local bindings before expanding implicitly exported types', async () => {
+    write('src/index.ts', `export * from './small';`);
+    write(
+      'src/small.ts',
+      `
+      type Thing = {};
+      interface Shape {}
+      declare class Ambient {}
+      namespace Types { export type T = string; }
+      import type {Thing as Imported} from './big';
+      interface Box { extra?: unknown; }
+      class Box {}
+      const value = 42;
+      if (true) { var hoisted = 7; }
+      export {Thing, Shape, Ambient, Types, Imported, Box, hoisted, value as label};
+      `,
+    );
+    const result = await bundle(
+      `import * as all from '@lexical/example'; export {all};`,
+      false,
+    );
+    const exports: {all?: {hoisted: number; label: number}} = {};
+    runInNewContext(result.code, {exports});
+    expect(Object.keys(exports.all || {}).sort()).toEqual([
+      'Box',
+      'hoisted',
+      'label',
+    ]);
+    expect(exports.all?.hoisted).toBe(7);
+    expect(exports.all?.label).toBe(42);
+  });
+
+  it.each([
+    [
+      `export {"x-y" as xy} from './small';`,
+      `export {xy} from '@lexical/example';`,
+      'xy',
+    ],
+    [
+      `export {"x-y"} from './small';`,
+      `export {"x-y" as xy} from '@lexical/example';`,
+      'xy',
+    ],
+    [`export * from './small';`, `export * from '@lexical/example';`, 'x-y'],
+  ])('preserves quoted export names: %s', async (barrel, consumer, name) => {
+    write('src/index.ts', barrel);
+    write('src/small.ts', `const value = 42; export {value as "x-y"};`);
+    const result = await bundle(consumer, false);
+    const exports: Record<string, unknown> = {};
+    runInNewContext(result.code, {exports});
+    expect(exports).toEqual({[name]: 42});
   });
 
   it.each([
@@ -244,6 +350,11 @@ describe('subpathImports', () => {
     `export class Extension { load() { return import('@lexical/example'); } }`,
     `import extension from '@lexical/example';`,
     `import {default as extension} from '@lexical/example';`,
+    `import extension = require('@lexical/example');`,
+    `export import extension = require('@lexical/example');`,
+    'export const extension = import(`@lexical/example`);',
+    'export const extension = require(`@lexical/example`);',
+    'export const extension = import(`@lexical/\\x65xample`);',
   ])('rejects unsplittable usage in strict mode: %s', code => {
     expect(() => transform(code)).toThrow('use named subpath imports');
     expect(transform(code, 'consumer.ts', false)).toBe(code);
@@ -310,6 +421,69 @@ describe('subpathImports', () => {
       });
     } finally {
       await watcher.close();
+    }
+  }, 20_000);
+
+  it('refreshes mappings and invalidates cached consumers in a Vite dev server', async () => {
+    write('consumer.ts', `export {publicValue} from '@lexical/example';`);
+    let updated: ((file: string, ids: (string | null)[]) => void) | undefined;
+    const server = await createServer({
+      configFile: false,
+      logLevel: 'silent',
+      optimizeDeps: {noDiscovery: true},
+      plugins: [
+        plugin(),
+        fixtureCompiler(),
+        {
+          handleHotUpdate({file, modules}) {
+            updated?.(
+              file,
+              modules.map(module => module.id),
+            );
+          },
+          name: 'observe-hot-update',
+        },
+      ],
+      root: dir,
+      server: {middlewareMode: true, watch: {interval: 20, usePolling: true}},
+    });
+    const update = async (file: string, code: string, target: string) => {
+      await expect
+        .poll(
+          () => server.watcher.getWatched()[path.dirname(path.join(dir, file))],
+        )
+        .toContain(path.basename(file));
+      const change = new Promise<(string | null)[]>(resolve => {
+        updated = (changed, ids) => {
+          if (changed === path.join(dir, file)) resolve(ids);
+        };
+      });
+      write(file, code);
+      expect(await change).toContain(path.join(dir, 'consumer.ts'));
+      expect((await server.transformRequest('/consumer.ts'))?.code).toContain(
+        target,
+      );
+    };
+    try {
+      expect((await server.transformRequest('/consumer.ts'))?.code).toContain(
+        '/src/small.ts',
+      );
+      await update(
+        'src/index.ts',
+        `export {unused as publicValue} from './big';`,
+        '/src/big.ts',
+      );
+      write('src/other.ts', `export {value as publicValue} from './small';`);
+      const metadata = JSON.parse(fs.readFileSync(packageJson, 'utf8'));
+      metadata.exports['.'].source = './src/other.ts';
+      await update('package.json', JSON.stringify(metadata), '/src/small.ts');
+      await update(
+        'src/other.ts',
+        `export {unused as publicValue} from './big';`,
+        '/src/big.ts',
+      );
+    } finally {
+      await server.close();
     }
   }, 20_000);
 

@@ -19,6 +19,18 @@ export type SubpathImportsPlugin = {
   name: string,
   enforce: 'pre',
   buildStart(this: {addWatchFile(file: string): void}): void,
+  handleHotUpdate<Module>(context: {
+    file: string,
+    modules: Array<Module>,
+    timestamp: number,
+    server: {
+      watcher: {add(files: Array<string>): unknown},
+      moduleGraph: {
+        getModuleById(id: string): Module | void,
+        invalidateModule(module: Module, seen?: Set<Module>, timestamp?: number, isHmr?: boolean): void,
+      },
+    },
+  }): Array<Module> | void,
   shouldTransformCachedModule(): boolean,
   transform(code: string, id: string): {
     code: string,

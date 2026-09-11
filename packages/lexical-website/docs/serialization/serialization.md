@@ -671,6 +671,7 @@ and neither shows up in the exported JSON as anything but a missing property.
 A schema that names anything has to be built this way, so the check cannot be
 skipped by reaching for `objectValue` instead — that one is for a property
 whose *value* is an object, and its fields name no accessor.
+
 ### Where to write the schema
 
 Above the class as a module-scope `const`, which is what most built-in nodes

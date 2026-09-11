@@ -952,19 +952,29 @@ function makeSchema<T, Decls = never, In = T>(
  */
 const NODE_SCHEMAS = new WeakSet<object>();
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 /**
  * Refuse a schema that names an accessor, for the caller the types do not
  * reach (JavaScript, Flow, a cast): the rule every combinator's inner type
  * states, see {@link withAccessors}.
+ *
+ * A development build only, like every check a combinator runs on the schema
+ * it is given: what it catches is a declaration written wrong, which the
+ * first development run reports, and a production build should not pay for
+ * the check. The parse each schema performs on serialized input is not a
+ * check of this kind and is the same in every build.
  */
 function undeclared(combinator: string, inner: AnySerializationSchema): void {
-  invariant(
-    inner.getter === undefined &&
-      inner.setter === undefined &&
-      !NODE_SCHEMAS.has(inner),
-    '%s: the schema it wraps names an accessor. Accessors are named once, on the outermost schema of a property, both directions in that one call',
-    combinator,
-  );
+  if (__DEV__) {
+    invariant(
+      inner.getter === undefined &&
+        inner.setter === undefined &&
+        !NODE_SCHEMAS.has(inner),
+      '%s: the schema it wraps names an accessor. Accessors are named once, on the outermost schema of a property, both directions in that one call',
+      combinator,
+    );
+  }
 }
 
 /**
@@ -1633,7 +1643,8 @@ export function booleanValue(
  * `values` must be non-empty, which the type states as a tuple: an empty
  * domain admits nothing, so every value — including one the caller believes is
  * in the enum — would parse to a default that came from nowhere. A list built
- * at runtime is checked as well, since a type can be asserted past.
+ * at runtime is checked as well in a development build, since a type can be
+ * asserted past.
  *
  * @example
  * ```ts
@@ -1655,18 +1666,22 @@ export function enumValue<const T, D extends T = T>(
   // `!== 0`, not `=== 1`: a JavaScript caller's stray trailing argument must
   // not turn a declared default back into `values[0]`.
   const defaultValue: T = args.length !== 0 ? args[0] : values[0];
-  invariant(
-    values.length > 0,
-    'enumValue: values must not be empty; an enum with no members admits no value',
-  );
+  if (__DEV__) {
+    invariant(
+      values.length > 0,
+      'enumValue: values must not be empty; an enum with no members admits no value',
+    );
+  }
   const allowed = new Set<unknown>(values);
   // The rule the type states (`V[number]`), for the caller the type does not
   // reach: a default outside the domain is a value every parse could produce
   // and none could ever read back.
-  invariant(
-    allowed.has(defaultValue),
-    'enumValue: the default value is not one of the values',
-  );
+  if (__DEV__) {
+    invariant(
+      allowed.has(defaultValue),
+      'enumValue: the default value is not one of the values',
+    );
+  }
   return makeSchema(
     // `undefined` is checked before membership even when it is one of the
     // values: an absent JSON property parses as `undefined`, so reading it as
@@ -1984,12 +1999,14 @@ export function unionValue<
   SchemaInput<M[number]>
 > {
   type T = SerializationSchemaValue<M[number]>;
-  invariant(
-    members.length > 0,
-    'unionValue: at least one member schema is required',
-  );
-  for (const member of members) {
-    undeclared('unionValue', member);
+  if (__DEV__) {
+    invariant(
+      members.length > 0,
+      'unionValue: at least one member schema is required',
+    );
+    for (const member of members) {
+      undeclared('unionValue', member);
+    }
   }
   const fallback = args.length !== 0 ? args[0] : (members[0].defaultValue as T);
   /**
@@ -2170,14 +2187,16 @@ function nodeSchemaOf(
   fields: SerializationSchemaFields,
 ): AnySerializationSchema {
   const schema = objectSchema('nodeSchema', fields);
-  for (const [key, field] of Object.entries(fields)) {
-    invariant(
-      !NODE_SCHEMAS.has(field),
-      'nodeSchema: field "%s" is itself a node schema; a nested object is an objectValue, whose fields name no accessor',
-      key,
-    );
+  if (__DEV__) {
+    for (const [key, field] of Object.entries(fields)) {
+      invariant(
+        !NODE_SCHEMAS.has(field),
+        'nodeSchema: field "%s" is itself a node schema; a nested object is an objectValue, whose fields name no accessor',
+        key,
+      );
+    }
+    NODE_SCHEMAS.add(schema);
   }
-  NODE_SCHEMAS.add(schema);
   return schema;
 }
 
@@ -2333,12 +2352,15 @@ export function transformValue<Inner, Out, In = Inner>(
   // Checked here because this is the only place a comparator is a caller's to
   // pass: `arrayValue` and `objectValue` derive their own, and every wrapper
   // lifts its inner schema's, which has already been through here.
-  invariant(
-    options.isEqual === undefined ||
-      (schema.defaultValue !== null && typeof schema.defaultValue === 'object'),
-    'transformValue: isEqual compares reference-typed values, but this schema parses to %s. Two primitives that are not === are two different serialized values; declaring them equal loses one of them in the compact form.',
-    typeof schema.defaultValue,
-  );
+  if (__DEV__) {
+    invariant(
+      options.isEqual === undefined ||
+        (schema.defaultValue !== null &&
+          typeof schema.defaultValue === 'object'),
+      'transformValue: isEqual compares reference-typed values, but this schema parses to %s. Two primitives that are not === are two different serialized values; declaring them equal loses one of them in the compact form.',
+      typeof schema.defaultValue,
+    );
+  }
   return schema;
 }
 
@@ -2488,16 +2510,18 @@ export function objectValue<const S extends InnerSerializationSchemaFields>(
   fields: S,
 ): ObjectSchema<S> {
   const schema = objectSchema('objectValue', fields);
-  for (const [key, field] of Object.entries(fields)) {
-    // Its own message rather than `undeclared`'s: the fix here is not to move
-    // the accessor but to build the node's own schema with `nodeSchema`.
-    invariant(
-      field.getter === undefined &&
-        field.setter === undefined &&
-        !NODE_SCHEMAS.has(field),
-      "objectValue: field \"%s\" names an accessor, and an object's field is not a node's property. A node's own schema is nodeSchema<MyNode>()({...})",
-      key,
-    );
+  if (__DEV__) {
+    for (const [key, field] of Object.entries(fields)) {
+      // Its own message rather than `undeclared`'s: the fix here is not to move
+      // the accessor but to build the node's own schema with `nodeSchema`.
+      invariant(
+        field.getter === undefined &&
+          field.setter === undefined &&
+          !NODE_SCHEMAS.has(field),
+        "objectValue: field \"%s\" names an accessor, and an object's field is not a node's property. A node's own schema is nodeSchema<MyNode>()({...})",
+        key,
+      );
+    }
   }
   return schema;
 }
@@ -2683,8 +2707,8 @@ export function withField<T, const F extends FieldOptions, In = T>(
  * direction the first already named, and the walk calls only the outer one —
  * an obligation checked for an accessor that is never called — so both
  * directions are named in one call, and every combinator, this one included,
- * refuses a schema that already names an accessor. The rule holds at run time
- * too, for a caller the types do not reach.
+ * refuses a schema that already names an accessor. A development build holds
+ * the rule at run time too, for a caller the types do not reach.
  *
  * @example
  * ```ts

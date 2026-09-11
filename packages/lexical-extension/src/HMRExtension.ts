@@ -6,6 +6,23 @@
  *
  */
 
+import {EditorStateExtension} from '@lexical/extension/EditorStateExtension';
+import {
+  deserializeEditorStateFamily,
+  isSerializedEditorStateFamily,
+  type SerializedEditorStateFamily,
+  serializeEditorStateFamily,
+} from '@lexical/extension/editorStateFamily';
+import {getPeerDependencyFromEditor} from '@lexical/extension/getPeerDependencyFromEditor';
+import {LexicalBuilder} from '@lexical/extension/LexicalBuilder';
+import {RootElementExtension} from '@lexical/extension/RootElementExtension';
+import {
+  effect,
+  type ReadonlySignal,
+  type Signal,
+  signal,
+} from '@lexical/extension/signals';
+import {WatchEditableExtension} from '@lexical/extension/WatchEditableExtension';
 import {
   defineExtension,
   type EditorState,
@@ -15,19 +32,6 @@ import {
   type LexicalExtension,
   safeCast,
 } from 'lexical';
-
-import {EditorStateExtension} from './EditorStateExtension';
-import {
-  deserializeEditorStateFamily,
-  isSerializedEditorStateFamily,
-  type SerializedEditorStateFamily,
-  serializeEditorStateFamily,
-} from './editorStateFamily';
-import {getPeerDependencyFromEditor} from './getPeerDependencyFromEditor';
-import {LexicalBuilder} from './LexicalBuilder';
-import {RootElementExtension} from './RootElementExtension';
-import {effect, type ReadonlySignal, type Signal, signal} from './signals';
-import {WatchEditableExtension} from './WatchEditableExtension';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
 

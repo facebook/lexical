@@ -9,7 +9,7 @@ import type {ErrorBoundaryType} from './types';
 import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
-import {LexicalBuilder} from '@lexical/extension';
+import {LexicalBuilder} from '@lexical/extension/LexicalBuilder';
 import invariant from '@lexical/internal/invariant';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 

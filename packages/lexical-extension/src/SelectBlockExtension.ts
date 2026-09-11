@@ -6,6 +6,9 @@
  *
  */
 
+import {namedSignals} from '@lexical/extension/namedSignals';
+import {PreventSelectAllExtension} from '@lexical/extension/PreventSelectAllExtension';
+import {effect} from '@lexical/extension/signals';
 import {
   $getRoot,
   $getSelection,
@@ -24,10 +27,6 @@ import {
   safeCast,
   SELECT_ALL_COMMAND,
 } from 'lexical';
-
-import {namedSignals} from './namedSignals';
-import {PreventSelectAllExtension} from './PreventSelectAllExtension';
-import {effect} from './signals';
 
 function $hasCommonTopParent(
   nodes: readonly LexicalNode[],

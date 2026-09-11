@@ -11,10 +11,8 @@ import type {
   OutputComponentExtension,
 } from 'lexical';
 
-import {
-  getExtensionDependencyFromEditor,
-  getPeerDependencyFromEditor,
-} from '@lexical/extension';
+import {getExtensionDependencyFromEditor} from '@lexical/extension/getExtensionDependencyFromEditor';
+import {getPeerDependencyFromEditor} from '@lexical/extension/getPeerDependencyFromEditor';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 /**

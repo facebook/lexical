@@ -6,6 +6,8 @@
  *
  */
 
+import {namedSignals} from '@lexical/extension/namedSignals';
+import {effect} from '@lexical/extension/signals';
 import {
   CONTROL_OR_META,
   defineExtension,
@@ -15,9 +17,6 @@ import {
   safeCast,
   stopLexicalPropagation,
 } from 'lexical';
-
-import {namedSignals} from './namedSignals';
-import {effect} from './signals';
 
 function captureKeydown(e: KeyboardEvent) {
   const target = e.target;

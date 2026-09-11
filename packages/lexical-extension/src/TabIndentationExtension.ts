@@ -6,6 +6,8 @@
  *
  */
 
+import {namedSignals} from '@lexical/extension/namedSignals';
+import {effect, type ReadonlySignal} from '@lexical/extension/signals';
 import {
   $getNearestBlockElementAncestorOrThrow,
   $handleIndentAndOutdent,
@@ -30,9 +32,6 @@ import {
   type RangeSelection,
   safeCast,
 } from 'lexical';
-
-import {namedSignals} from './namedSignals';
-import {effect, type ReadonlySignal} from './signals';
 
 function $indentOverTab(selection: RangeSelection): boolean {
   // const handled = new Set();

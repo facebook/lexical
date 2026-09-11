@@ -6,11 +6,10 @@
  *
  */
 
+import {namedSignals} from '@lexical/extension/namedSignals';
+import {effect} from '@lexical/extension/signals';
 import {selectionAlwaysOnDisplay} from '@lexical/utils';
 import {defineExtension, safeCast} from 'lexical';
-
-import {namedSignals} from './namedSignals';
-import {effect} from './signals';
 
 export interface SelectionAlwaysOnDisplayConfig {
   disabled: boolean;

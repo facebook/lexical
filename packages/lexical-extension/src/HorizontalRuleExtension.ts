@@ -6,6 +6,15 @@
  *
  */
 
+import {EditorStateExtension} from '@lexical/extension/EditorStateExtension';
+import {NodeSelectionExtension} from '@lexical/extension/NodeSelectionExtension';
+import {
+  batch,
+  effect,
+  type ReadonlySignal,
+  type Signal,
+  signal,
+} from '@lexical/extension/signals';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $create,
@@ -35,16 +44,6 @@ import {
   removeClassNamesFromElement,
   type SerializedLexicalNode,
 } from 'lexical';
-
-import {EditorStateExtension} from './EditorStateExtension';
-import {NodeSelectionExtension} from './NodeSelectionExtension';
-import {
-  batch,
-  effect,
-  type ReadonlySignal,
-  type Signal,
-  signal,
-} from './signals';
 
 /**
  * The serialized form of a {@link HorizontalRuleNode}. It has no extra fields

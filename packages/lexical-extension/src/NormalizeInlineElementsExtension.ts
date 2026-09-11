@@ -6,6 +6,8 @@
  *
  */
 
+import {namedSignals} from '@lexical/extension/namedSignals';
+import {effect} from '@lexical/extension/signals';
 import {
   $isElementNode,
   defineExtension,
@@ -13,9 +15,6 @@ import {
   type LexicalNode,
   safeCast,
 } from 'lexical';
-
-import {namedSignals} from './namedSignals';
-import {effect} from './signals';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
 

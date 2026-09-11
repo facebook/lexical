@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {type Signal, signal} from './signals';
+import {type Signal, signal} from '@lexical/extension/signals';
 
 export type NamedSignalsOptions<Defaults> = {
   [K in keyof Defaults]?: Defaults[K];

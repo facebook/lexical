@@ -7,7 +7,7 @@
  */
 
 import {AriaLiveRegionExtension} from '@lexical/a11y';
-import {getExtensionDependencyFromEditor} from '@lexical/extension';
+import {getExtensionDependencyFromEditor} from '@lexical/extension/getExtensionDependencyFromEditor';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useCallback} from 'react';
 

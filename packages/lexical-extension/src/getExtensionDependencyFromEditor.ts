@@ -11,9 +11,8 @@ import type {
   LexicalExtensionDependency,
 } from 'lexical';
 
+import {LexicalBuilder} from '@lexical/extension/LexicalBuilder';
 import invariant from '@lexical/internal/invariant';
-
-import {LexicalBuilder} from './LexicalBuilder';
 
 /**
  * Get the finalized config and output of an Extension that was used to build the editor.

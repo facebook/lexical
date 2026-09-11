@@ -9,7 +9,7 @@
 import {
   type CanIndentPredicate,
   registerTabIndentation,
-} from '@lexical/extension';
+} from '@lexical/extension/TabIndentationExtension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 

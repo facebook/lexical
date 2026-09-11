@@ -11,7 +11,7 @@ import {
   HorizontalRuleNode as BaseHorizontalRuleNode,
   INSERT_HORIZONTAL_RULE_COMMAND,
   type SerializedHorizontalRuleNode,
-} from '@lexical/extension';
+} from '@lexical/extension/HorizontalRuleExtension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {

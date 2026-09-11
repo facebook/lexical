@@ -6,6 +6,8 @@
  *
  */
 
+import {namedSignals} from '@lexical/extension/namedSignals';
+import {effect} from '@lexical/extension/signals';
 import {
   $createParagraphNode,
   $getRoot,
@@ -17,9 +19,6 @@ import {
   type LexicalEditor,
   safeCast,
 } from 'lexical';
-
-import {namedSignals} from './namedSignals';
-import {effect} from './signals';
 
 function $defaultOnClear() {
   const root = $getRoot();

@@ -6,6 +6,8 @@
  *
  */
 
+import {namedSignals} from '@lexical/extension/namedSignals';
+import {effect, type Signal} from '@lexical/extension/signals';
 import {
   $createParagraphNode,
   $getRoot,
@@ -18,9 +20,6 @@ import {
   safeCast,
   stopLexicalPropagation,
 } from 'lexical';
-
-import {namedSignals} from './namedSignals';
-import {effect, type Signal} from './signals';
 
 /**
  * @experimental

@@ -6,7 +6,7 @@
  *
  */
 
-import type {ReadonlySignal} from '@lexical/extension';
+import type {ReadonlySignal} from '@lexical/extension/signals';
 import type {AnyLexicalExtension, LexicalExtensionOutput} from 'lexical';
 
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';

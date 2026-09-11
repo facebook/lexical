@@ -6,6 +6,16 @@
  *
  */
 
+import {getNodeConfig} from '@lexical/extension/config';
+import {deepThemeMergeInPlace} from '@lexical/extension/deepThemeMergeInPlace';
+import {
+  applyPermanentMark,
+  applyTemporaryMark,
+  ExtensionRep,
+  isExactlyPermanentExtensionRepState,
+  isExactlyUnmarkedExtensionRepState,
+} from '@lexical/extension/ExtensionRep';
+import {InitialStateExtension} from '@lexical/extension/InitialStateExtension';
 import invariant from '@lexical/internal/invariant';
 import {LEXICAL_VERSION} from '@lexical/internal/version';
 import {
@@ -24,17 +34,6 @@ import {
   type LexicalNode,
   mergeRegister,
 } from 'lexical';
-
-import {getNodeConfig} from './config';
-import {deepThemeMergeInPlace} from './deepThemeMergeInPlace';
-import {
-  applyPermanentMark,
-  applyTemporaryMark,
-  ExtensionRep,
-  isExactlyPermanentExtensionRepState,
-  isExactlyUnmarkedExtensionRepState,
-} from './ExtensionRep';
-import {InitialStateExtension} from './InitialStateExtension';
 
 /** @internal Use a well-known symbol for dev tools purposes */
 export const builderSymbol = Symbol.for('@lexical/extension/LexicalBuilder');

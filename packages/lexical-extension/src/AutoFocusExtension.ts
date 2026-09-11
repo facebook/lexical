@@ -6,10 +6,9 @@
  *
  */
 
+import {namedSignals} from '@lexical/extension/namedSignals';
+import {effect} from '@lexical/extension/signals';
 import {defineExtension, getActiveElement, safeCast} from 'lexical';
-
-import {namedSignals} from './namedSignals';
-import {effect} from './signals';
 
 export type DefaultSelection = 'rootStart' | 'rootEnd';
 export interface AutoFocusConfig {

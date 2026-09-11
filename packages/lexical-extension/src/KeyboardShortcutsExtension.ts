@@ -6,6 +6,8 @@
  *
  */
 
+import {namedSignals} from '@lexical/extension/namedSignals';
+import {effect} from '@lexical/extension/signals';
 import {
   $getSelection,
   type BaseSelection,
@@ -23,9 +25,6 @@ import {
   safeCast,
   shallowMergeConfig,
 } from 'lexical';
-
-import {namedSignals} from './namedSignals';
-import {effect} from './signals';
 
 export interface FormatKeyboardShortcutOptions {
   /** Override the platform convention (defaults to the runtime platform) */

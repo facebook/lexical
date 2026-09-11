@@ -32,6 +32,102 @@
         "./packages/lexical-eslint-plugin/src/index.ts"
       ],
       "@lexical/extension": ["./packages/lexical-extension/src/index.ts"],
+      "@lexical/extension/AutoFocusExtension": [
+        "./packages/lexical-extension/src/AutoFocusExtension.ts"
+      ],
+      "@lexical/extension/ClearEditorExtension": [
+        "./packages/lexical-extension/src/ClearEditorExtension.ts"
+      ],
+      "@lexical/extension/ClickAfterLastBlockExtension": [
+        "./packages/lexical-extension/src/ClickAfterLastBlockExtension.ts"
+      ],
+      "@lexical/extension/config": [
+        "./packages/lexical-extension/src/config.ts"
+      ],
+      "@lexical/extension/DecoratorTextExtension": [
+        "./packages/lexical-extension/src/DecoratorTextExtension.ts"
+      ],
+      "@lexical/extension/deepThemeMergeInPlace": [
+        "./packages/lexical-extension/src/deepThemeMergeInPlace.ts"
+      ],
+      "@lexical/extension/EditorStateExtension": [
+        "./packages/lexical-extension/src/EditorStateExtension.ts"
+      ],
+      "@lexical/extension/editorStateFamily": [
+        "./packages/lexical-extension/src/editorStateFamily.ts"
+      ],
+      "@lexical/extension/ExtensionRep": [
+        "./packages/lexical-extension/src/ExtensionRep.ts"
+      ],
+      "@lexical/extension/getExtensionDependency": [
+        "./packages/lexical-extension/src/getExtensionDependency.ts"
+      ],
+      "@lexical/extension/getExtensionDependencyFromEditor": [
+        "./packages/lexical-extension/src/getExtensionDependencyFromEditor.ts"
+      ],
+      "@lexical/extension/getPeerDependencyFromEditor": [
+        "./packages/lexical-extension/src/getPeerDependencyFromEditor.ts"
+      ],
+      "@lexical/extension/HMRExtension": [
+        "./packages/lexical-extension/src/HMRExtension.ts"
+      ],
+      "@lexical/extension/HorizontalRuleExtension": [
+        "./packages/lexical-extension/src/HorizontalRuleExtension.ts"
+      ],
+      "@lexical/extension/IMEExtension": [
+        "./packages/lexical-extension/src/IMEExtension.ts"
+      ],
+      "@lexical/extension/InitialStateExtension": [
+        "./packages/lexical-extension/src/InitialStateExtension.ts"
+      ],
+      "@lexical/extension/KeyboardShortcutsExtension": [
+        "./packages/lexical-extension/src/KeyboardShortcutsExtension.ts"
+      ],
+      "@lexical/extension/LexicalBuilder": [
+        "./packages/lexical-extension/src/LexicalBuilder.ts"
+      ],
+      "@lexical/extension/namedSignals": [
+        "./packages/lexical-extension/src/namedSignals.ts"
+      ],
+      "@lexical/extension/NestedEditorExtension": [
+        "./packages/lexical-extension/src/NestedEditorExtension.ts"
+      ],
+      "@lexical/extension/NodeSelectionDataSelectedExtension": [
+        "./packages/lexical-extension/src/NodeSelectionDataSelectedExtension.ts"
+      ],
+      "@lexical/extension/NodeSelectionExtension": [
+        "./packages/lexical-extension/src/NodeSelectionExtension.ts"
+      ],
+      "@lexical/extension/NormalizeInlineElementsExtension": [
+        "./packages/lexical-extension/src/NormalizeInlineElementsExtension.ts"
+      ],
+      "@lexical/extension/NormalizeTripleClickSelectionExtension": [
+        "./packages/lexical-extension/src/NormalizeTripleClickSelectionExtension.ts"
+      ],
+      "@lexical/extension/PreventSelectAllExtension": [
+        "./packages/lexical-extension/src/PreventSelectAllExtension.ts"
+      ],
+      "@lexical/extension/RootElementExtension": [
+        "./packages/lexical-extension/src/RootElementExtension.ts"
+      ],
+      "@lexical/extension/SelectBlockExtension": [
+        "./packages/lexical-extension/src/SelectBlockExtension.ts"
+      ],
+      "@lexical/extension/SelectionAlwaysOnDisplayExtension": [
+        "./packages/lexical-extension/src/SelectionAlwaysOnDisplayExtension.ts"
+      ],
+      "@lexical/extension/signals": [
+        "./packages/lexical-extension/src/signals.ts"
+      ],
+      "@lexical/extension/TabIndentationExtension": [
+        "./packages/lexical-extension/src/TabIndentationExtension.ts"
+      ],
+      "@lexical/extension/WatchEditableExtension": [
+        "./packages/lexical-extension/src/WatchEditableExtension.ts"
+      ],
+      "@lexical/extension/watchedSignal": [
+        "./packages/lexical-extension/src/watchedSignal.ts"
+      ],
       "@lexical/file": ["./packages/lexical-file/src/index.ts"],
       "@lexical/hashtag": ["./packages/lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["./packages/lexical-headless/src/index.ts"],

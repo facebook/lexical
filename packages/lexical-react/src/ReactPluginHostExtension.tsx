@@ -7,12 +7,8 @@
  */
 import type {DecoratorComponentProps} from './shared/types';
 
-import {
-  effect,
-  getExtensionDependencyFromEditor,
-  signal,
-  untracked,
-} from '@lexical/extension';
+import {getExtensionDependencyFromEditor} from '@lexical/extension/getExtensionDependencyFromEditor';
+import {effect, signal, untracked} from '@lexical/extension/signals';
 import invariant from '@lexical/internal/invariant';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';

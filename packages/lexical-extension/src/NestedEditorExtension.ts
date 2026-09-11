@@ -6,16 +6,15 @@
  *
  */
 
+import {LexicalBuilder} from '@lexical/extension/LexicalBuilder';
+import {namedSignals} from '@lexical/extension/namedSignals';
+import {effect} from '@lexical/extension/signals';
 import {
   $getEditor,
   defineExtension,
   type LexicalEditor,
   safeCast,
 } from 'lexical';
-
-import {LexicalBuilder} from './LexicalBuilder';
-import {namedSignals} from './namedSignals';
-import {effect} from './signals';
 
 export interface NestedEditorConfig {
   $getParentEditor: () => LexicalEditor;

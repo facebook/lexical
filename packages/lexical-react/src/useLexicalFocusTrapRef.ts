@@ -7,7 +7,7 @@
  */
 
 import {FocusTrapExtension, type FocusTrapInitialFocus} from '@lexical/a11y';
-import {getExtensionDependencyFromEditor} from '@lexical/extension';
+import {getExtensionDependencyFromEditor} from '@lexical/extension/getExtensionDependencyFromEditor';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {type RefCallback, useCallback, useRef} from 'react';
 

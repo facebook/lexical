@@ -6,7 +6,7 @@
  *
  */
 
-import {namedSignals} from '@lexical/extension/namedSignals';
+import {namedSignals} from '@lexical/extension';
 import {type LinkAttributes, LinkNode, registerLink} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';

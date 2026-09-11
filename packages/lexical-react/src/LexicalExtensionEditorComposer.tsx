@@ -7,7 +7,7 @@
  */
 import type {LexicalEditorWithDispose} from 'lexical';
 
-import {getExtensionDependencyFromEditor} from '@lexical/extension/getExtensionDependencyFromEditor';
+import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 
 /**

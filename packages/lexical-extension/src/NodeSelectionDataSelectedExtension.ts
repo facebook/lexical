@@ -6,7 +6,6 @@
  *
  */
 
-import {getKnownTypesAndNodes} from '@lexical/extension/config';
 import invariant from '@lexical/internal/invariant';
 import {
   $getSelection,
@@ -20,6 +19,8 @@ import {
   safeCast,
   shallowMergeConfig,
 } from 'lexical';
+
+import {getKnownTypesAndNodes} from './config';
 
 export interface NodeSelectionDataSelectedConfig {
   /**

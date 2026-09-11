@@ -6,20 +6,16 @@
  *
  */
 
-import {EditorStateExtension} from '@lexical/extension/EditorStateExtension';
-import {
-  computed,
-  effect,
-  type ReadonlySignal,
-  signal,
-} from '@lexical/extension/signals';
-import {watchedSignal} from '@lexical/extension/watchedSignal';
 import {
   $getNodeByKey,
   $getSelection,
   defineExtension,
   type NodeKey,
 } from 'lexical';
+
+import {EditorStateExtension} from './EditorStateExtension';
+import {computed, effect, type ReadonlySignal, signal} from './signals';
+import {watchedSignal} from './watchedSignal';
 
 const EMPTY_SET = new Set<NodeKey>();
 

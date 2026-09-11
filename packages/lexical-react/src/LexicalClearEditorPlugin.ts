@@ -8,7 +8,7 @@
 
 import type {JSX} from 'react';
 
-import {registerClearEditor} from '@lexical/extension/ClearEditorExtension';
+import {registerClearEditor} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 import useLayoutEffect from './shared/useLayoutEffect';

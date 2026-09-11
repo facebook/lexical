@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {watchedSignal} from '@lexical/extension/watchedSignal';
 import {defineExtension} from 'lexical';
+
+import {watchedSignal} from './watchedSignal';
 
 /**
  * Exposes the editor's editable state as a reactive `Signal<boolean>` that

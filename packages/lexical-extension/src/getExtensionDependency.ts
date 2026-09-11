@@ -6,14 +6,15 @@
  *
  */
 
-import {getExtensionDependencyFromEditor} from '@lexical/extension/getExtensionDependencyFromEditor';
-import {getPeerDependencyFromEditor} from '@lexical/extension/getPeerDependencyFromEditor';
 import {
   $getEditor,
   type AnyLexicalExtension,
   type LexicalExtensionDependency,
   type LexicalExtensionOutput,
 } from 'lexical';
+
+import {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
+import {getPeerDependencyFromEditor} from './getPeerDependencyFromEditor';
 
 /**
  * Get the finalized config and output for `extension` from the editor

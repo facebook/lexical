@@ -68,6 +68,16 @@ with `--rewrite`. Reach for it whenever a change spans many files and must be
 precise — e.g. moving symbols that `@lexical/utils` merely re-exports back to
 a direct `lexical` import.
 
+### Extension source imports
+
+Import from the `@lexical/extension` barrel across package boundaries. Within
+`packages/lexical-extension`, use relative imports and re-exports. Do not
+manually rewrite these source imports to `@lexical/extension/*`: ESLint
+enforces the source convention, and `@lexical/compiler`'s `subpathImports`
+pass rewrites them in all published package builds, including www. Public
+sibling entries stay external so shared modules such as signals retain one
+instance. Downstream users may import either the barrel or public subpaths.
+
 ### Tree-shaking annotations
 
 Module-scope calls to the side-effect-free factories (`defineExtension`,

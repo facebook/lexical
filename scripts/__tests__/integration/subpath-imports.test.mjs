@@ -16,9 +16,29 @@ import {packagesManager} from '../../shared/packagesManager.mjs';
 const require = createRequire(import.meta.url);
 
 describe('published extension subpaths', () => {
-  it.each(['development', 'production'])(
-    'a rich-text editor excludes the barrel without tree-shaking (%s)',
-    async condition => {
+  it.each(
+    ['development', 'production'].flatMap(condition => [
+      {
+        condition,
+        contents: `
+          import {buildEditorFromExtensions} from '@lexical/extension/LexicalBuilder';
+          import {RichTextExtension} from '@lexical/rich-text';
+          export const editor = buildEditorFromExtensions(RichTextExtension);
+        `,
+        name: 'a rich-text editor',
+      },
+      {
+        condition,
+        contents: `
+          export {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
+          export {RichTextExtension} from '@lexical/rich-text';
+        `,
+        name: 'the React composer with rich-text',
+      },
+    ]),
+  )(
+    '$name excludes the barrel without tree-shaking ($condition)',
+    async ({condition, contents}) => {
       const entries = new Map(
         packagesManager
           .getPublicPackages()
@@ -58,11 +78,7 @@ describe('published extension subpaths', () => {
           },
         ],
         stdin: {
-          contents: `
-            import {buildEditorFromExtensions} from '@lexical/extension/LexicalBuilder';
-            import {RichTextExtension} from '@lexical/rich-text';
-            export const editor = buildEditorFromExtensions(RichTextExtension);
-          `,
+          contents,
           resolveDir: process.cwd(),
         },
         treeShaking: false,

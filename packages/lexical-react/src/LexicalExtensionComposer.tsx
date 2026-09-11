@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {getExtensionDependencyFromEditor} from '@lexical/extension/getExtensionDependencyFromEditor';
-import {LexicalBuilder} from '@lexical/extension/LexicalBuilder';
+import {
+  getExtensionDependencyFromEditor,
+  LexicalBuilder,
+} from '@lexical/extension';
 import {type ReactConfig, ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {type AnyLexicalExtensionArgument, configExtension} from 'lexical';

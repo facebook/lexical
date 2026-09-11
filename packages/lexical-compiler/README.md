@@ -294,3 +294,10 @@ Lexical runs this pass in strict mode for all its published package builds,
 including www. Consumers can continue to import the complete barrel API
 without using any compiler plugin. Barrel and subpath exports reference the
 same functions, classes, extensions and signals runtime.
+
+In this repository, source code imports from the `@lexical/extension` barrel
+across package boundaries and uses relative imports within that package,
+including the barrel's own re-exports. ESLint enforces this convention;
+the compiler handles the published subpath layout. Direct subpath imports
+remain supported for downstream consumers, including applications that need
+small bundles without tree-shaking or the compiler plugin.

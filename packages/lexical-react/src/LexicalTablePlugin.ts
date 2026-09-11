@@ -6,7 +6,7 @@
  *
  */
 
-import {type Signal, signal} from '@lexical/extension/signals';
+import {type Signal, signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $isScrollableTablesActive,

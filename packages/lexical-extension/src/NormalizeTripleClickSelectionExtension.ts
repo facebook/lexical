@@ -6,8 +6,6 @@
  *
  */
 
-import {namedSignals} from '@lexical/extension/namedSignals';
-import {effect, type Signal} from '@lexical/extension/signals';
 import {
   $caretRangeFromSelection,
   $getCaretRange,
@@ -37,6 +35,9 @@ import {
   SKIP_SCROLL_INTO_VIEW_TAG,
   SKIP_SELECTION_FOCUS_TAG,
 } from 'lexical';
+
+import {namedSignals} from './namedSignals';
+import {effect, type Signal} from './signals';
 
 export interface NormalizeTripleClickSelectionConfig {
   /** `true` to disable this extension */

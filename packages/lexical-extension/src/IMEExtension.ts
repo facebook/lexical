@@ -6,7 +6,6 @@
  *
  */
 
-import {effect, type Signal, signal} from '@lexical/extension/signals';
 import {
   $getNodeByKey,
   $getSelection,
@@ -22,6 +21,8 @@ import {
   registerEventListener,
   type TextNode,
 } from 'lexical';
+
+import {effect, type Signal, signal} from './signals';
 
 /**
  * Centralizes IME composition state so extensions that react to

@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {watchedSignal} from '@lexical/extension/watchedSignal';
 import {defineExtension} from 'lexical';
+
+import {watchedSignal} from './watchedSignal';
 
 /**
  * An extension to provide the current EditorState as a signal

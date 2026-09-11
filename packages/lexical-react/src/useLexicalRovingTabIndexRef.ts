@@ -10,7 +10,7 @@ import {
   RovingTabIndexExtension,
   type RovingTabIndexOptions,
 } from '@lexical/a11y';
-import {getExtensionDependencyFromEditor} from '@lexical/extension/getExtensionDependencyFromEditor';
+import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {type RefCallback, useCallback, useRef} from 'react';
 

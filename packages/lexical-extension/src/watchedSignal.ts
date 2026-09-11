@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {type Signal, signal} from '@lexical/extension/signals';
+import {type Signal, signal} from './signals';
 
 /**
  * Create a Signal that will subscribe to a value from an external store when watched, similar to

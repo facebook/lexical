@@ -108,20 +108,21 @@ const TEXT_DETAIL_ALIAS: {readonly [key: string]: 1 | 2} =
 
 // Null-prototype: a key the table does not have must miss rather than
 // resolve to Object.prototype.
-const TEXT_FORMAT_ALIAS: {readonly [key: string]: number} =
-  /* @__PURE__ */ Object.assign(Object.create(null), {
-    bold: 1,
-    capitalize: 1024,
-    code: 16,
-    highlight: 128,
-    italic: 2,
-    lowercase: 256,
-    strikethrough: 4,
-    subscript: 32,
-    superscript: 64,
-    underline: 8,
-    uppercase: 512,
-  });
+const TEXT_FORMAT_ALIAS: {
+  readonly [key: string]: 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256 | 512 | 1024;
+} = /* @__PURE__ */ Object.assign(Object.create(null), {
+  bold: 1,
+  capitalize: 1024,
+  code: 16,
+  highlight: 128,
+  italic: 2,
+  lowercase: 256,
+  strikethrough: 4,
+  subscript: 32,
+  superscript: 64,
+  underline: 8,
+  uppercase: 512,
+});
 
 // Null-prototype: a key the table does not have must miss rather than
 // resolve to Object.prototype.

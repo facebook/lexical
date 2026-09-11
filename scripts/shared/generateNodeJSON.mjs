@@ -991,28 +991,31 @@ ${body}
 // -- emit --------------------------------------------------------------------
 
 /**
- * The value type to give a lookup table.
+ * The value type to give a lookup table: the union of its literal values,
+ * however many there are.
  *
- * The union of its literal values when there are few enough to read, because a
- * node field is often narrower than `number` — TextNode's `__mode` is
- * `0 | 1 | 2 | 3` — and a table typed `number` would not be assignable to it.
+ * An encode table's value is assigned to the node's field, and a field is
+ * often narrower than its primitive — TextNode's `__mode` is `0 | 1 | 2 | 3`
+ * — so a table typed `number` is not assignable to it. Widening past a
+ * readable size, as this once did, made the generated parser of a node with
+ * nine modes fail to compile while the node and its schema type-checked; a
+ * long union costs nothing but width in a file nobody edits.
  *
  * @param {{readonly [key: string]: unknown}} table
  * @returns {string}
  */
 function tableValueType(table) {
-  const values = Object.values(table);
-  const distinct = [...new Set(values.map(tableValue))].sort();
-  if (distinct.length <= 8) {
-    return distinct.join(' | ');
-  }
-  // Every kind present, not the first value's: a decode table past the limit
-  // may still map some stored values to `undefined`.
-  return [
-    ...new Set(values.map(v => (v === undefined ? 'undefined' : typeof v))),
-  ]
-    .sort()
-    .join(' | ');
+  const values = [...new Set(Object.values(table))];
+  // Numbers in numeric order, then everything else in text order, so a
+  // bitmask table reads `1 | 2 | 4 | 8` rather than `1 | 16 | 2 | 4`.
+  const numbers = values
+    .filter(v => typeof v === 'number')
+    .sort((a, b) => a - b);
+  const rest = values
+    .filter(v => typeof v !== 'number')
+    .map(tableValue)
+    .sort();
+  return [...numbers.map(tableValue), ...rest].join(' | ');
 }
 
 /**

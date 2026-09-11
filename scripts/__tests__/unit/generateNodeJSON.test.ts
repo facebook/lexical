@@ -134,14 +134,22 @@ describe('a lookup table declaration', () => {
     expect(source).toContain('"1": "special"');
   });
 
-  test('widens to the kinds of value past the readable limit', () => {
+  test('keeps the literal union however many values there are', () => {
+    // An encode table's value is assigned to the field, and a field is often
+    // narrower than its primitive: nine modes stored as `0 | 1 | ... | 8`.
+    // Widening the table to `number` past a readable size made the generated
+    // parser fail to compile for a node whose schema type-checks.
     const table: {[key: string]: unknown} = {};
     for (let i = 0; i < 9; i++) {
-      table[`k${i}`] = i;
+      table[`mode${i}`] = i;
     }
+    expect(emitTable('WIDE_ENCODE', table)).toContain(
+      'const WIDE_ENCODE: {readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}',
+    );
+    // With an omitted entry alongside them, on the decode side.
     table.omitted = undefined;
     expect(emitTable('WIDE_DECODE', table)).toContain(
-      'const WIDE_DECODE: {readonly [key: string]: number | undefined}',
+      'const WIDE_DECODE: {readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | undefined}',
     );
   });
 

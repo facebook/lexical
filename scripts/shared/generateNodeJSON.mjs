@@ -1005,20 +1005,27 @@ ${body}
  */
 function tableValueType(table) {
   const values = [...new Set(Object.values(table))];
-  // Numbers in numeric order, then everything else in text order, so a
-  // bitmask table reads `1 | 2 | 4 | 8` rather than `1 | 16 | 2 | 4`.
-  const numbers = values
-    .filter(v => typeof v === 'number')
-    .sort((a, b) => a - b);
+  // Finite numbers in numeric order, then `number` if any is not finite, then
+  // everything else in text order, so a bitmask table reads `1 | 2 | 4 | 8`
+  // rather than `1 | 16 | 2 | 4`. Deduplicated again as spellings: the values
+  // `-0` and `0` are one type.
+  const finite = values
+    .filter(v => typeof v === 'number' && Number.isFinite(v))
+    .map(Number)
+    .sort((a, b) => a - b)
+    .map(tableType);
+  const wide = values.some(v => typeof v === 'number' && !Number.isFinite(v))
+    ? ['number']
+    : [];
   const rest = values
     .filter(v => typeof v !== 'number')
     .map(tableValue)
     .sort();
-  return [...numbers.map(tableValue), ...rest].join(' | ');
+  return [...new Set([...finite, ...wide, ...rest])].join(' | ');
 }
 
 /**
- * One table value as source, which is also its literal type.
+ * One table value as source.
  *
  * `JSON.stringify` has no spelling for `undefined` — it returns `undefined`
  * rather than a string, which `join` rendered as nothing and left a type
@@ -1029,11 +1036,44 @@ function tableValueType(table) {
  * the table is emitted with the entry rather than without it, and its type
  * says `undefined` where the walk can produce one.
  *
+ * Nor does JSON spell every number: `Infinity`, `-Infinity` and `NaN` come
+ * out as `null` and `-0` as `0`. A stored sentinel need not be a JSON number
+ * — `encode: {unlimited: Infinity}` serializes the string and stores the
+ * sentinel — and the generated parser stored `null` for it where the walk
+ * stored `Infinity`, after a verification that ran against the table object
+ * itself and so could not see it.
+ *
  * @param {unknown} value
  * @returns {string}
  */
 function tableValue(value) {
-  return value === undefined ? 'undefined' : JSON.stringify(value);
+  if (value === undefined) {
+    return 'undefined';
+  }
+  if (typeof value === 'number') {
+    return Object.is(value, -0)
+      ? '-0'
+      : Number.isFinite(value)
+        ? JSON.stringify(value)
+        : String(value);
+  }
+  return JSON.stringify(value);
+}
+
+/**
+ * One table value as a type: its literal, except that a number JSON cannot
+ * spell is no literal type either (`Infinity` is a value, not a type) and is
+ * `number`, and `-0` is the type `0`.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+function tableType(value) {
+  return typeof value === 'number' && !Number.isFinite(value)
+    ? 'number'
+    : typeof value === 'number'
+      ? JSON.stringify(value)
+      : tableValue(value);
 }
 
 /**

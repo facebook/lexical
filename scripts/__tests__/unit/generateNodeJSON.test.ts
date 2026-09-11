@@ -158,6 +158,31 @@ describe('a lookup table declaration', () => {
       'const MODE_ENCODE: {readonly [key: string]: 0 | 1}',
     );
   });
+
+  test('spells a number JSON cannot', () => {
+    // A stored sentinel need not be a JSON number: `encode: {unlimited:
+    // Infinity}` serializes the string and stores the sentinel, and the walk
+    // restores it. `JSON.stringify` spells Infinity, -Infinity and NaN as
+    // `null` and -0 as `0`, so the generated parser stored those instead —
+    // after verification, which ran against the table object itself.
+    const source = emitTable('LIMIT_ENCODE', {
+      minus: -Infinity,
+      nan: NaN,
+      one: 1,
+      unlimited: Infinity,
+      zero: -0,
+    });
+    expect(source).toContain('"unlimited": Infinity');
+    expect(source).toContain('"minus": -Infinity');
+    expect(source).toContain('"nan": NaN');
+    expect(source).toContain('"zero": -0');
+    expect(source).not.toContain(': null');
+    // None of those is a literal type, so the union widens to `number`; -0 is
+    // the literal type 0.
+    expect(source).toContain(
+      'const LIMIT_ENCODE: {readonly [key: string]: 0 | 1 | number}',
+    );
+  });
 });
 
 /**

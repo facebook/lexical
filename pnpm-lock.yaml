@@ -9,7 +9,7 @@ overrides:
   react-dom: 19.2.5
   '@types/node': 25.9.1
   postcss: 8.5.15
-  prettier: 3.8.1
+  prettier: 3.8.5
   yaml@^1: ^1.10.3
   uuid: '>=14.0.0'
   webpack-dev-server: '>=5.2.4'
@@ -75,7 +75,7 @@ importers:
         version: 1.62.1
       '@prettier/sync':
         specifier: ^0.6.1
-        version: 0.6.1(prettier@3.8.1)
+        version: 0.6.1(prettier@3.8.5)
       '@rollup/plugin-alias':
         specifier: ^6.0.0
         version: 6.0.0(rollup@4.63.1)
@@ -219,7 +219,7 @@ importers:
         version: 0.37.0
       hermes-transform:
         specifier: ^0.37.0
-        version: 0.37.0(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))(prettier@3.8.1)
+        version: 0.37.0(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))(prettier@3.8.5)
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -239,17 +239,17 @@ importers:
         specifier: ^1.62.1
         version: 1.62.1
       prettier:
-        specifier: 3.8.1
-        version: 3.8.1
+        specifier: 3.8.5
+        version: 3.8.5
       prettier-plugin-hermes-parser:
         specifier: ^0.37.0
-        version: 0.37.0(prettier@3.8.1)
+        version: 0.37.0(prettier@3.8.5)
       prettier-plugin-organize-attributes:
         specifier: ^1.0.0
-        version: 1.0.0(prettier@3.8.1)
+        version: 1.0.0(prettier@3.8.5)
       prettier-plugin-tailwindcss:
         specifier: ^0.8.1
-        version: 0.8.1(prettier-plugin-organize-attributes@1.0.0(prettier@3.8.1))(prettier@3.8.1)
+        version: 0.8.1(prettier-plugin-organize-attributes@1.0.0(prettier@3.8.5))(prettier@3.8.5)
       proper-lockfile:
         specifier: ^4.1.2
         version: 4.1.2
@@ -1331,8 +1331,8 @@ importers:
         specifier: ^4.18.1
         version: 4.18.1
       prettier:
-        specifier: 3.8.1
-        version: 3.8.1
+        specifier: 3.8.5
+        version: 3.8.5
       react:
         specifier: 19.2.5
         version: 19.2.5
@@ -1357,7 +1357,7 @@ importers:
         version: 8.0.1(@babel/core@8.0.1)
       '@prettier/sync':
         specifier: ^0.6.1
-        version: 0.6.1(prettier@3.8.1)
+        version: 0.6.1(prettier@3.8.5)
       '@rollup/plugin-babel':
         specifier: ^7.1.0
         version: 7.1.0(@babel/core@8.0.1)(@types/babel__core@7.20.5)(rollup@4.63.1)(supports-color@10.2.2)
@@ -1708,7 +1708,7 @@ importers:
         version: 10.1.0
       prettier-plugin-tailwindcss:
         specifier: ^0.8.1
-        version: 0.8.1(prettier-plugin-organize-attributes@1.0.0(prettier@3.8.1))(prettier@3.8.1)
+        version: 0.8.1(prettier-plugin-organize-attributes@1.0.0(prettier@3.8.5))(prettier@3.8.5)
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
@@ -4532,7 +4532,7 @@ packages:
   '@prettier/sync@0.6.1':
     resolution: {integrity: sha512-yF9G8vK/LYUTF3Cijd7VC9La3b20F20/J/fgoR4H0B8JGOWnZVZX6+I6+vODPosjmMcpdlUV+gUqJQZp3kLOcw==}
     peerDependencies:
-      prettier: 3.8.1
+      prettier: 3.8.5
 
   '@protobufjs/aspromise@1.1.2':
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
@@ -8962,7 +8962,7 @@ packages:
   hermes-transform@0.37.0:
     resolution: {integrity: sha512-wMf/X3dMz8+/7RJSoydAd5BV/ltYCw1lCX/A7wApEmYpWsxipwLZ5T1SMJl0uWrebZM41ua8Z4gut5dLe5dHlQ==}
     peerDependencies:
-      prettier: 3.8.1
+      prettier: 3.8.5
 
   history@4.10.1:
     resolution: {integrity: sha512-36nwAD620w12kuzPAsyINPWJqlNbij+hpK1k9XRloDtym8mxzGYl2c17LnV6IAGB2Dmg4tEa7G7DlawS0+qjew==}
@@ -11283,13 +11283,13 @@ packages:
   prettier-plugin-hermes-parser@0.37.0:
     resolution: {integrity: sha512-qVPK/q4Unp9/sGBTiqkg5aPno7tKgHZK7SEvaWFpy8ircHiapeOM9PUPaS0uu2DvNjgPlINoJHGiHtgEEooT3w==}
     peerDependencies:
-      prettier: 3.8.1
+      prettier: 3.8.5
 
   prettier-plugin-organize-attributes@1.0.0:
     resolution: {integrity: sha512-+NmameaLxbCcylEXsKPmawtzla5EE6ECqvGkpfQz4KM847fXDifB1gFnPQEpoADAq6IXg+cMI8Z0ISJEXa6fhg==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
-      prettier: 3.8.1
+      prettier: 3.8.5
 
   prettier-plugin-tailwindcss@0.8.1:
     resolution: {integrity: sha512-iaFMYqDsE4ffdDkn5qup0j5f2aCEBFZrdrZnvu9QKTlWx/iGPeQ4HHu7b7fCPMxeo9nwQBiOAh2nSypdFYWJkw==}
@@ -11302,7 +11302,7 @@ packages:
       '@shopify/prettier-plugin-liquid': '*'
       '@trivago/prettier-plugin-sort-imports': '*'
       '@zackad/prettier-plugin-twig': '*'
-      prettier: 3.8.1
+      prettier: 3.8.5
       prettier-plugin-astro: '*'
       prettier-plugin-css-order: '*'
       prettier-plugin-jsdoc: '*'
@@ -11346,8 +11346,8 @@ packages:
       prettier-plugin-svelte:
         optional: true
 
-  prettier@3.8.1:
-    resolution: {integrity: sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg==}
+  prettier@3.8.5:
+    resolution: {integrity: sha512-zxcTTCedNGJM4R8sj/Cq/F0W/c4iE0afWBcBwMTRtw4WHYP9TWkYjdiH3npPRUYsXQCPR0hTU9yjovOu+E6EQA==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -18167,10 +18167,10 @@ snapshots:
 
   '@preact/signals-core@1.14.1': {}
 
-  '@prettier/sync@0.6.1(prettier@3.8.1)':
+  '@prettier/sync@0.6.1(prettier@3.8.5)':
     dependencies:
       make-synchronized: 0.8.0
-      prettier: 3.8.1
+      prettier: 3.8.5
 
   '@protobufjs/aspromise@1.1.2': {}
 
@@ -22905,7 +22905,7 @@ snapshots:
       md5: 2.3.0
       mkdirp: 1.0.4
       node-stream-zip: 1.15.0
-      prettier: 3.8.1
+      prettier: 3.8.5
       rimraf: 3.0.2
       semver: 7.7.4
       simple-git: 3.36.0(supports-color@10.2.2)
@@ -22922,7 +22922,7 @@ snapshots:
       '@babel/highlight': 7.25.9
       commander: 6.2.1
       lodash: 4.18.1
-      prettier: 3.8.1
+      prettier: 3.8.5
       shelljs: 0.8.5
       typescript: 4.4.4
       typescript-compiler: 1.4.1-2
@@ -23360,7 +23360,7 @@ snapshots:
     dependencies:
       hermes-estree: 0.37.0
 
-  hermes-transform@0.37.0(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))(prettier@3.8.1):
+  hermes-transform@0.37.0(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))(prettier@3.8.5):
     dependencies:
       '@babel/code-frame': 7.29.7
       esquery: 1.7.0
@@ -23368,7 +23368,7 @@ snapshots:
       hermes-eslint: 0.37.0(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))
       hermes-estree: 0.37.0
       hermes-parser: 0.37.0
-      prettier: 3.8.1
+      prettier: 3.8.5
       string-width: 4.2.3
     transitivePeerDependencies:
       - eslint
@@ -26011,21 +26011,21 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-hermes-parser@0.37.0(prettier@3.8.1):
+  prettier-plugin-hermes-parser@0.37.0(prettier@3.8.5):
     dependencies:
-      prettier: 3.8.1
+      prettier: 3.8.5
 
-  prettier-plugin-organize-attributes@1.0.0(prettier@3.8.1):
+  prettier-plugin-organize-attributes@1.0.0(prettier@3.8.5):
     dependencies:
-      prettier: 3.8.1
+      prettier: 3.8.5
 
-  prettier-plugin-tailwindcss@0.8.1(prettier-plugin-organize-attributes@1.0.0(prettier@3.8.1))(prettier@3.8.1):
+  prettier-plugin-tailwindcss@0.8.1(prettier-plugin-organize-attributes@1.0.0(prettier@3.8.5))(prettier@3.8.5):
     dependencies:
-      prettier: 3.8.1
+      prettier: 3.8.5
     optionalDependencies:
-      prettier-plugin-organize-attributes: 1.0.0(prettier@3.8.1)
+      prettier-plugin-organize-attributes: 1.0.0(prettier@3.8.5)
 
-  prettier@3.8.1: {}
+  prettier@3.8.5: {}
 
   pretty-error@4.0.0:
     dependencies:

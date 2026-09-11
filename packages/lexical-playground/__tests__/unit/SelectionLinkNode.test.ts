@@ -10,6 +10,7 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -56,7 +57,12 @@ describe('$getSelectionLinkNode', () => {
     },
   );
 
-  test.each(['plain text', 'another link', 'empty paragraph'] as const)(
+  test.each([
+    'plain text',
+    'another link',
+    'empty paragraph',
+    'line break',
+  ] as const)(
     'does not treat a whole selection containing %s as one link',
     extra => {
       using editor = buildEditorFromExtensions(extension);
@@ -70,13 +76,15 @@ describe('$getSelectionLinkNode', () => {
           const root = $getRoot().clear().append(paragraph);
           if (extra === 'empty paragraph') {
             root.append($createParagraphNode());
+          } else if (extra === 'plain text') {
+            paragraph.append($createTextNode('world'));
+          } else if (extra === 'line break') {
+            paragraph.append($createLineBreakNode());
           } else {
             paragraph.append(
-              extra === 'plain text'
-                ? $createTextNode('world')
-                : $createLinkNode('https://example.com').append(
-                    $createTextNode('world'),
-                  ),
+              $createLinkNode('https://example.com').append(
+                $createTextNode('world'),
+              ),
             );
           }
           expect(

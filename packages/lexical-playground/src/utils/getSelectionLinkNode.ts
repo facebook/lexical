@@ -7,44 +7,64 @@
  */
 import {$isLinkNode, type LinkNode} from '@lexical/link';
 import {
+  $caretRangeFromSelection,
   $findMatchingParent,
-  $isLineBreakNode,
+  type CaretRange,
   type RangeSelection,
 } from 'lexical';
 
 import {$getSelectedNode} from './getSelectedNode';
 
+function $findRangeLinkNode(range: CaretRange): LinkNode | null {
+  for (const {origin} of range) {
+    const link = $findMatchingParent(origin, $isLinkNode);
+    if (link !== null) {
+      return link;
+    }
+  }
+  return null;
+}
+
+/**
+ * Resolve the {@link LinkNode} a selection refers to, or `null` when it does
+ * not refer to exactly one.
+ *
+ * A text selection resolves from its endpoint, which keeps the right-biased
+ * lookup that lets an adjacent single-character link win. A non-collapsed
+ * selection made of element points — how some browsers represent select-all —
+ * additionally resolves a link that the range covers through an ancestor such
+ * as the containing paragraph or the root.
+ */
 export function $getSelectionLinkNode(
   selection: RangeSelection,
 ): LinkNode | null {
   // Preserve the existing endpoint-based behavior for text selections.
   // The link editor separately verifies that the whole range is in one link.
-  const node = $getSelectedNode(selection);
-  const parent = $findMatchingParent(node, $isLinkNode);
-  if ($isLinkNode(parent)) {
+  const parent = $findMatchingParent($getSelectedNode(selection), $isLinkNode);
+  if (parent !== null) {
     return parent;
   }
   if (selection.isCollapsed()) {
     return null;
   }
 
-  // Element points can select a whole link through its containing paragraph
-  // or root. Include those ancestors without treating unrelated content as
-  // part of the link.
-  const nodes = selection.getNodes();
-  for (const selected of nodes) {
-    const link = $findMatchingParent(selected, $isLinkNode);
-    if ($isLinkNode(link)) {
-      return nodes.every(
-        selectedNode =>
-          $isLineBreakNode(selectedNode) ||
-          selectedNode.is(link) ||
-          selectedNode.isParentOf(link) ||
-          link.isParentOf(selectedNode),
-      )
-        ? link
-        : null;
+  // Walk the range once to find the link it enters, then once more to confirm
+  // it covers nothing else: every node the walk visits has to be the link, one
+  // of its ancestors, or one of its descendants. Both walks are lazy and stop
+  // as soon as the answer is known.
+  const range = $caretRangeFromSelection(selection);
+  const link = $findRangeLinkNode(range);
+  if (link === null) {
+    return null;
+  }
+  for (const {origin} of range) {
+    if (
+      !link.is(origin) &&
+      !link.isParentOf(origin) &&
+      !origin.isParentOf(link)
+    ) {
+      return null;
     }
   }
-  return null;
+  return link;
 }

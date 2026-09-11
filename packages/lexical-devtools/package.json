@@ -45,11 +45,11 @@
     "@rollup/plugin-babel": "^7.1.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.2",
+    "@vitejs/plugin-react": "^6.1.1",
     "lexical": "workspace:*",
     "typescript": "^6.0.3",
-    "vite": "^8.0.16",
-    "wxt": "^0.20.26"
+    "vite": "^8.2.2",
+    "wxt": "^0.21.4"
   },
   "sideEffects": false
 }

@@ -5,6 +5,11 @@
   "compilerOptions": {
     "target": "esnext",
     "allowImportingTsExtensions": true,
+    // The paths below type-check the whole monorepo through this project, so
+    // the strictness flags here have to match the root tsconfig.json rather
+    // than the stricter defaults that wxt writes into .wxt/tsconfig.json.
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": false,
     "jsx": "react-jsx",
     "allowJs": true,
     "paths": {

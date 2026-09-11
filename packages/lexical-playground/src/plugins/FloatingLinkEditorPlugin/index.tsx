@@ -60,7 +60,7 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 
-import {getSelectedNode} from '../../utils/getSelectedNode';
+import {$getSelectedNode} from '../../utils/getSelectedNode';
 import {$getSelectionLinkNode} from '../../utils/getSelectionLinkNode';
 import {sanitizeUrl} from '../../utils/url';
 
@@ -318,7 +318,7 @@ function FloatingLinkEditor({
           );
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
-            const parent = getSelectedNode(selection).getParent();
+            const parent = $getSelectedNode(selection).getParent();
             if ($isAutoLinkNode(parent)) {
               const linkNode = $createLinkNode(parent.getURL(), {
                 rel: parent.__rel,
@@ -436,7 +436,7 @@ function useFloatingLinkEditorToolbar(
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
         const focusLinkNode = $getSelectedLinkNode(selection);
-        const focusNode = getSelectedNode(selection);
+        const focusNode = $getSelectedNode(selection);
         const focusAutoLinkNode = $findMatchingParent(
           focusLinkNode || focusNode,
           $isAutoLinkNode,
@@ -510,7 +510,7 @@ function useFloatingLinkEditorToolbar(
         payload => {
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
-            const node = getSelectedNode(selection);
+            const node = $getSelectedNode(selection);
             const linkNode = $findMatchingParent(node, $isLinkNode);
             if ($isLinkNode(linkNode) && (payload.metaKey || payload.ctrlKey)) {
               window.open(linkNode.getURL(), '_blank');

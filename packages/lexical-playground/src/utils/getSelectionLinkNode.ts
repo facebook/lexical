@@ -12,14 +12,14 @@ import {
   type RangeSelection,
 } from 'lexical';
 
-import {getSelectedNode} from './getSelectedNode';
+import {$getSelectedNode} from './getSelectedNode';
 
 export function $getSelectionLinkNode(
   selection: RangeSelection,
 ): LinkNode | null {
   // Preserve the existing endpoint-based behavior for text selections.
   // The link editor separately verifies that the whole range is in one link.
-  const node = getSelectedNode(selection);
+  const node = $getSelectedNode(selection);
   const parent = $findMatchingParent(node, $isLinkNode);
   if ($isLinkNode(parent)) {
     return parent;

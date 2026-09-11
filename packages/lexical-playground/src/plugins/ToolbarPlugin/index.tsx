@@ -79,7 +79,7 @@ import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
 import {isKeyboardInput} from '../../utils/focusUtils';
-import {getSelectedNode} from '../../utils/getSelectedNode';
+import {$getSelectedNode} from '../../utils/getSelectedNode';
 import {$getSelectionLinkNode} from '../../utils/getSelectionLinkNode';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
@@ -670,7 +670,7 @@ export default function ToolbarPlugin({
       updateToolbarState('isRTL', $isParentElementRTL(selection));
 
       // Update links
-      const node = getSelectedNode(selection);
+      const node = $getSelectedNode(selection);
       const parent = node.getParent();
       const isLink = $getSelectionLinkNode(selection) !== null;
       updateToolbarState('isLink', isLink);

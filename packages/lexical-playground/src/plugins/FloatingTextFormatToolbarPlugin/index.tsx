@@ -44,7 +44,7 @@ import {
 import {createPortal} from 'react-dom';
 
 import {getDOMRangeRect} from '../../utils/getDOMRangeRect';
-import {getSelectedNode} from '../../utils/getSelectedNode';
+import {$getSelectedNode} from '../../utils/getSelectedNode';
 import {$getSelectionLinkNode} from '../../utils/getSelectionLinkNode';
 import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
 import {INSERT_INLINE_COMMAND} from '../CommentPlugin';
@@ -396,7 +396,7 @@ function useFloatingTextFormatToolbar(
         return;
       }
 
-      const node = getSelectedNode(selection);
+      const node = $getSelectedNode(selection);
 
       // Update text format
       setIsBold(selection.hasFormat('bold'));

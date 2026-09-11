@@ -7,6 +7,17 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionSelectionAlwaysOnDisplayExtension
- */
+import type {LexicalExtension} from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension/namedSignals';
+
+export interface SelectionAlwaysOnDisplayConfig {
+  disabled: boolean;
+  onReposition: void | ((node: ReadonlyArray<HTMLElement>) => void);
+}
+
+declare export var SelectionAlwaysOnDisplayExtension: LexicalExtension<
+  SelectionAlwaysOnDisplayConfig,
+  '@lexical/utils/SelectionAlwaysOnDisplay',
+  NamedSignalsOutput<SelectionAlwaysOnDisplayConfig>,
+  unknown,
+>;

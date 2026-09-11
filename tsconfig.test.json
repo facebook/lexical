@@ -14,6 +14,9 @@
       "@lexical/compiler/PureAnnotations": [
         "./packages/lexical-compiler/src/PureAnnotations.ts"
       ],
+      "@lexical/compiler/SubpathImports": [
+        "./packages/lexical-compiler/src/SubpathImports.ts"
+      ],
       "@lexical/devtools-core": [
         "./packages/lexical-devtools-core/src/index.ts"
       ],

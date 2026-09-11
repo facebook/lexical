@@ -7,6 +7,17 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionNamedSignals
- */
+import type {Signal} from '@lexical/extension/signals';
+
+export type NamedSignalsOptions<Defaults> = {
+  [K in keyof Defaults]?: Defaults[K],
+};
+
+export type NamedSignalsOutput<Defaults> = {
+  [K in keyof Defaults]: Signal<Defaults[K]>,
+};
+
+declare export function namedSignals<Defaults>(
+  defaults: Defaults,
+  opts?: NamedSignalsOptions<Defaults>,
+): NamedSignalsOutput<Defaults>;

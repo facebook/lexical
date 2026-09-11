@@ -7,6 +7,40 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionHMRExtension
- */
+import type {ReadonlySignal, Signal} from '@lexical/extension/signals';
+import type {EditorState, LexicalEditor, LexicalExtension} from 'lexical';
+
+export type HotContext = {
+  -data: {[string]: unknown},
+};
+
+interface HMRInit {
+  restoreCount: Signal<number>;
+}
+
+export type HMROutput = {
+  restoreCount: ReadonlySignal<number>,
+};
+
+export type HMRConfig = {
+  hot: HotContext | null,
+  id?: string,
+};
+
+export interface HMRHistoryStateEntry {
+  editor: LexicalEditor;
+  editorState: EditorState;
+}
+
+export interface HMRHistoryState {
+  current: null | HMRHistoryStateEntry;
+  redoStack: HMRHistoryStateEntry[];
+  undoStack: HMRHistoryStateEntry[];
+}
+
+declare export var HMRExtension: LexicalExtension<
+  HMRConfig,
+  '@lexical/extension/HMR',
+  HMROutput,
+  {restoreCount: Signal<number>},
+>;

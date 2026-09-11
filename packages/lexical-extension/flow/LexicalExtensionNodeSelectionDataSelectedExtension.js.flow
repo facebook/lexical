@@ -7,6 +7,16 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionNodeSelectionDataSelectedExtension
- */
+import type {LexicalExtension, LexicalNode} from 'lexical';
+
+export type NodeSelectionDataSelectedConfig = {
+  nodes: Class<LexicalNode>[],
+  attribute: string,
+};
+
+declare export var NodeSelectionDataSelectedExtension: LexicalExtension<
+  NodeSelectionDataSelectedConfig,
+  '@lexical/extension/NodeSelectionDataSelected',
+  void,
+  {matchTypes: Set<string>},
+>;

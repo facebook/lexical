@@ -7,6 +7,15 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionGetExtensionDependencyFromEditor
- */
+import type {
+  AnyLexicalExtension,
+  LexicalEditor,
+  LexicalExtensionDependency,
+} from 'lexical';
+
+declare export function getExtensionDependencyFromEditor<
+  Extension extends AnyLexicalExtension,
+>(
+  editor: LexicalEditor,
+  extension: Extension,
+): LexicalExtensionDependency<Extension>;

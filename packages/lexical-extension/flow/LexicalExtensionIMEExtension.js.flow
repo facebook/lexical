@@ -7,6 +7,20 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionIMEExtension
- */
+import type {
+  LexicalExtension,
+  ExtensionConfigBase,
+  NodeKey,
+  TextNode,
+} from 'lexical';
+import type {Signal} from '@lexical/extension/signals';
+
+declare export var IMEExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/extension/IME',
+  {
+    compositionKey: Signal<null | NodeKey>,
+    composingTextNode: Signal<null | TextNode>,
+  },
+  void,
+>;

@@ -7,6 +7,12 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionEditorStateExtension
- */
+import type {LexicalExtension, ExtensionConfigBase, EditorState} from 'lexical';
+import type {Signal} from '@lexical/extension/signals';
+
+declare export var EditorStateExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/extension/EditorState',
+  Signal<EditorState>,
+  void,
+>;

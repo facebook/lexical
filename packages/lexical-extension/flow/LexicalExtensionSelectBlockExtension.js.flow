@@ -7,6 +7,17 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionSelectBlockExtension
- */
+import type {LexicalExtension} from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension/namedSignals';
+
+export interface SelectBlockConfig {
+  disabled: boolean;
+  cascadeSelection: boolean;
+}
+
+declare export var SelectBlockExtension: LexicalExtension<
+  SelectBlockConfig,
+  '@lexical/extension/SelectBlock',
+  NamedSignalsOutput<SelectBlockConfig>,
+  unknown,
+>;

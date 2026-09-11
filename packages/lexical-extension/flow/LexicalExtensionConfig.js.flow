@@ -7,6 +7,17 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionConfig
- */
+import type {CreateEditorArgs, InitialEditorConfig, LexicalNode} from 'lexical';
+
+export type KnownTypesAndNodes = {
+  types: Set<string>,
+  nodes: Set<Class<LexicalNode>>,
+};
+
+declare export function getKnownTypesAndNodes(
+  config: InitialEditorConfig,
+): KnownTypesAndNodes;
+
+declare export function getNodeConfig(
+  config: Pick<InitialEditorConfig, 'nodes'>,
+): NonNullable<CreateEditorArgs['nodes']>;

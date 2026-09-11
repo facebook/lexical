@@ -7,6 +7,4 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionDeepThemeMergeInPlace
- */
+declare export function deepThemeMergeInPlace(a: unknown, b: unknown): unknown;

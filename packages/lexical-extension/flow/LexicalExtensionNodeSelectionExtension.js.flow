@@ -7,6 +7,14 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionNodeSelectionExtension
- */
+import type {LexicalExtension, ExtensionConfigBase, NodeKey} from 'lexical';
+import type {ReadonlySignal} from '@lexical/extension/signals';
+
+declare export var NodeSelectionExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/extension/NodeSelection',
+  {
+    watchNodeKey: (key: NodeKey) => ReadonlySignal<boolean>,
+  },
+  void,
+>;

@@ -7,6 +7,16 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionNormalizeInlineElementsExtension
- */
+import type {LexicalExtension} from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension/namedSignals';
+
+export interface NormalizeInlineElementsConfig {
+  disabled: boolean;
+}
+
+declare export var NormalizeInlineElementsExtension: LexicalExtension<
+  NormalizeInlineElementsConfig,
+  '@lexical/NormalizeInlineElements',
+  NamedSignalsOutput<NormalizeInlineElementsConfig>,
+  unknown,
+>;

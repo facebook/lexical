@@ -7,6 +7,24 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionClickAfterLastBlockExtension
- */
+import type {LexicalExtension, LexicalNode} from 'lexical';
+import type {Signal} from '@lexical/extension/signals';
+
+declare export function $defaultShouldInsertAfter(node: LexicalNode): boolean;
+
+export interface ClickAfterLastBlockConfig {
+  disabled: boolean;
+  $shouldInsertAfter: (node: LexicalNode) => boolean;
+}
+
+export interface ClickAfterLastBlockOutput {
+  disabled: Signal<boolean>;
+  $shouldInsertAfter: Signal<(node: LexicalNode) => boolean>;
+}
+
+declare export var ClickAfterLastBlockExtension: LexicalExtension<
+  ClickAfterLastBlockConfig,
+  '@lexical/ClickAfterLastBlock',
+  ClickAfterLastBlockOutput,
+  unknown,
+>;

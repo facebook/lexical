@@ -7,6 +7,12 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionRootElementExtension
- */
+import type {LexicalExtension, ExtensionConfigBase} from 'lexical';
+import type {Signal} from '@lexical/extension/signals';
+
+declare export var RootElementExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/extension/RootElement',
+  Signal<HTMLElement | null>,
+  void,
+>;

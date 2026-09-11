@@ -7,6 +7,20 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionInitialStateExtension
- */
+import type {
+  LexicalExtension,
+  EditorSetOptions,
+  EditorUpdateOptions,
+} from 'lexical';
+
+export type InitialStateConfig = {
+  updateOptions: EditorUpdateOptions,
+  setOptions: EditorSetOptions,
+};
+
+declare export var InitialStateExtension: LexicalExtension<
+  InitialStateConfig,
+  '@lexical/extension/InitialState',
+  void,
+  void,
+>;

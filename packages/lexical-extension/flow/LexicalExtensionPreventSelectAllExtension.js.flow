@@ -7,6 +7,16 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionPreventSelectAllExtension
- */
+import type {LexicalExtension} from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension/namedSignals';
+
+export interface PreventSelectAllConfig {
+  disabled: boolean;
+}
+
+declare export var PreventSelectAllExtension: LexicalExtension<
+  PreventSelectAllConfig,
+  '@lexical/extension/PreventSelectAll',
+  NamedSignalsOutput<PreventSelectAllConfig>,
+  unknown,
+>;

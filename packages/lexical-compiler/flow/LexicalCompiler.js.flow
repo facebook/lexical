@@ -30,3 +30,9 @@ export {
   pureCallNames,
   transformPureAnnotations,
 } from './LexicalCompilerPureAnnotations';
+
+export type {
+  SubpathImportsOptions,
+  SubpathImportsPlugin,
+} from '@lexical/compiler/SubpathImports';
+export {subpathImports} from '@lexical/compiler/SubpathImports';

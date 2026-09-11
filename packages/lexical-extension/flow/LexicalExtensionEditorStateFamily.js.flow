@@ -7,6 +7,64 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionEditorStateFamily
- */
+import type {
+  EditorState,
+  LexicalEditor,
+  NodeKey,
+  SerializedLexicalNode,
+} from 'lexical';
+
+export interface SerializedEditorStateFamily {
+  nodes: SerializedNodeVersion[];
+  states: SerializedFamilyState[];
+}
+
+interface SerializedNodeVersion {
+  json: SerializedLexicalNode;
+  key: NodeKey;
+  parent: null | NodeKey;
+  prev: null | NodeKey;
+  next: null | NodeKey;
+  first?: null | NodeKey;
+  last?: null | NodeKey;
+  size?: number;
+  slots?: [string, NodeKey][];
+  slotHost?: null | NodeKey;
+}
+
+interface SerializedFamilyPoint {
+  key: NodeKey;
+  offset: number;
+  type: 'element' | 'text';
+}
+
+type SerializedFamilySelection =
+  | {
+      anchor: SerializedFamilyPoint,
+      focus: SerializedFamilyPoint,
+      format: number,
+      style: string,
+      type: 'range',
+    }
+  | {
+      keys: NodeKey[],
+      type: 'node',
+    };
+
+interface SerializedFamilyState {
+  nodes: number[];
+  selection: SerializedFamilySelection | null;
+}
+
+declare export function serializeEditorStateFamily(
+  states: ReadonlyArray<EditorState>,
+): SerializedEditorStateFamily;
+
+declare export function isSerializedEditorStateFamily(
+  raw: unknown,
+): raw is SerializedEditorStateFamily;
+
+declare export function deserializeEditorStateFamily(
+  family: SerializedEditorStateFamily,
+  editor: LexicalEditor,
+): (EditorState | null)[];

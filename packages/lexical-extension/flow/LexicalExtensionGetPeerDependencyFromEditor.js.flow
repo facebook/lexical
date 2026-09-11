@@ -7,6 +7,22 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionGetPeerDependencyFromEditor
- */
+import type {
+  AnyLexicalExtension,
+  LexicalEditor,
+  LexicalExtensionDependency,
+} from 'lexical';
+
+declare export function getPeerDependencyFromEditor<
+  Extension extends AnyLexicalExtension = empty,
+>(
+  editor: LexicalEditor,
+  extensionName: Extension['name'],
+): LexicalExtensionDependency<Extension> | void;
+
+declare export function getPeerDependencyFromEditorOrThrow<
+  Extension extends AnyLexicalExtension = empty,
+>(
+  editor: LexicalEditor,
+  extensionName: Extension['name'],
+): LexicalExtensionDependency<Extension>;

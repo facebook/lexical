@@ -7,6 +7,26 @@
  * @flow strict
  */
 
-/**
- * LexicalExtensionNormalizeTripleClickSelectionExtension
- */
+import type {LexicalExtension} from 'lexical';
+import type {Signal} from '@lexical/extension/signals';
+
+export interface NormalizeTripleClickSelectionConfig {
+  disabled: boolean;
+  thresholdMsec: number;
+  dateNow: () => number;
+  $fixFocusOverselection: () => void;
+}
+
+export interface NormalizeTripleClickSelectionOutput {
+  disabled: Signal<boolean>;
+  thresholdMsec: Signal<number>;
+  dateNow: Signal<() => number>;
+  $fixFocusOverselection: Signal<() => void>;
+}
+
+declare export var NormalizeTripleClickSelectionExtension: LexicalExtension<
+  NormalizeTripleClickSelectionConfig,
+  '@lexical/NormalizeTripleClickSelection',
+  NormalizeTripleClickSelectionOutput,
+  unknown,
+>;

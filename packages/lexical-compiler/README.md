@@ -4,7 +4,7 @@ Lexical's build-time compiler: source-to-source passes over Lexical code,
 delivered as a Vite/Rollup plugin and as plain transform functions for
 builds with no plugin API of their own.
 
-Today it does one thing — **tree-shaking**. It inserts `/* @__PURE__ */`
+The **tree-shaking** pass inserts `/* @__PURE__ */`
 annotations before module-scope calls to the side-effect-free factories
 (`defineExtension`, `createCommand`, `createState`, `safeCast`,
 `defineImportRule`, …) so bundlers can drop the extension, command, and rule
@@ -244,3 +244,53 @@ than failing the build.
 
 The transform is idempotent: a call that already has a `/* @__PURE__ */` (or
 terser's `/* #__PURE__ */`) annotation immediately before it is left alone.
+
+## Subpath imports without tree-shaking
+
+`subpathImports` redirects named imports and re-exports from
+`@lexical/extension` to their public subpaths. For example,
+`import {namedSignals, defineExtension} from '@lexical/extension'` becomes
+imports from `@lexical/extension/namedSignals` and `lexical`. It reads the
+installed version's barrel, including aliases, rather than using a fixed
+list of symbols.
+
+```ts
+import {subpathImports} from '@lexical/compiler/SubpathImports';
+
+export default {
+  plugins: [subpathImports()],
+};
+```
+
+Use this Rollup/Vite plugin before dependency resolution. It accepts
+TypeScript, TSX and JavaScript, so it can run before or after TypeScript
+transpilation. Unlike `pureAnnotations`, it also helps builds that do not
+tree-shake: unused extension modules never become dependencies in the first
+place. It does not make an individual subpath smaller than that subpath's
+own dependency graph.
+
+Options:
+
+- `packages`: package names, or paths to their `package.json` files. Defaults
+  to `['@lexical/extension']`. Each package must publish its source files via
+  the `source` export condition and declare `sideEffects: false`. Only packages
+  with multiple public entries and transparent re-export barrels are narrowed; executable root entries
+  are left intact.
+- `root`: directory from which package names are resolved. Defaults to
+  `process.cwd()`. Use absolute package.json paths for an unbuilt checkout.
+- `strict`: defaults to `false`. Set to `true` to reject namespace imports,
+  side-effect imports, star re-exports, dynamic imports and `require` calls
+  targeting a barrel. These forms load the whole namespace and cannot be
+  narrowed safely. With the default setting they keep their original
+  behavior. Type-only imports are preserved and erased by TypeScript.
+
+Relative imports between public entry points are also converted to package
+subpaths. Lexical's package build keeps those subpaths external, so a shared
+module such as `signals` has one instance across entries. The plugin does
+not change a bundler's external configuration: a downstream application can
+bundle the subpaths together normally.
+
+Lexical runs this pass in strict mode for all its published package builds,
+including www. Consumers can continue to import the complete barrel API
+without using any compiler plugin. Barrel and subpath exports reference the
+same functions, classes, extensions and signals runtime.

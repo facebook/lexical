@@ -58,6 +58,16 @@ updates:
         dependency-type: 'development'
         patterns:
           - '*'
+    ignore:
+      # TypeScript 7 is the native (Go) compiler and no longer ships the
+      # JavaScript compiler API that our tooling builds on: typedoc and
+      # typescript-eslint both refuse to load against it (their peer ranges
+      # stop at 6.0.x), so a TS 7 bump breaks `pnpm run lint` and the website
+      # build. TypeScript 6 is the maintained API-compatible line, so stay on
+      # it until those tools support the 7.x API.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+
     # Examples and integration test fixtures are standalone projects
     # (excluded from the pnpm workspace). Their lockfiles are not tracked
     # in git, so Dependabot does not need to manage them.

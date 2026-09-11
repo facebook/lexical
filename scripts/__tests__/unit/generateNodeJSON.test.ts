@@ -21,6 +21,7 @@ import {describe, expect, test} from 'vitest';
 
 import {
   claimTableName,
+  emitTable,
   emittable,
   generateCompactExport,
   generateUpdate,
@@ -110,6 +111,43 @@ describe('lookup table names', () => {
     claimTableName('COLLIDE_DECODE', {a: 1});
     expect(() => claimTableName('COLLIDE_DECODE', {b: 2})).toThrow(
       /two different lookup tables both want the name/,
+    );
+  });
+});
+
+/**
+ * A decode table may map a stored value to `undefined`: that is how a stored
+ * value whose serialized form is the omitted default is spelled,
+ * `decode: {0: undefined, 1: 'special'}`. No manifest class has one, so the
+ * declaration such a table gets can only be driven through `emitTable`.
+ */
+describe('a lookup table declaration', () => {
+  test('spells an undefined value in its type and in its literal', () => {
+    const source = emitTable('MODE_DECODE', {0: undefined, 1: 'special'});
+    // `JSON.stringify(undefined)` is `undefined`, which `join` renders as an
+    // empty string — a type ending in ` | ` that does not parse — and
+    // `JSON.stringify` of the table dropped the entry outright.
+    expect(source).toContain(
+      'const MODE_DECODE: {readonly [key: string]: "special" | undefined}',
+    );
+    expect(source).toContain('"0": undefined');
+    expect(source).toContain('"1": "special"');
+  });
+
+  test('widens to the kinds of value past the readable limit', () => {
+    const table: {[key: string]: unknown} = {};
+    for (let i = 0; i < 9; i++) {
+      table[`k${i}`] = i;
+    }
+    table.omitted = undefined;
+    expect(emitTable('WIDE_DECODE', table)).toContain(
+      'const WIDE_DECODE: {readonly [key: string]: number | undefined}',
+    );
+  });
+
+  test('a table of literals is declared as their union', () => {
+    expect(emitTable('MODE_ENCODE', {normal: 0, special: 1})).toContain(
+      'const MODE_ENCODE: {readonly [key: string]: 0 | 1}',
     );
   });
 });

@@ -1002,8 +1002,58 @@ ${body}
  */
 function tableValueType(table) {
   const values = Object.values(table);
-  const distinct = [...new Set(values.map(v => JSON.stringify(v)))].sort();
-  return distinct.length <= 8 ? distinct.join(' | ') : typeof values[0];
+  const distinct = [...new Set(values.map(tableValue))].sort();
+  if (distinct.length <= 8) {
+    return distinct.join(' | ');
+  }
+  // Every kind present, not the first value's: a decode table past the limit
+  // may still map some stored values to `undefined`.
+  return [
+    ...new Set(values.map(v => (v === undefined ? 'undefined' : typeof v))),
+  ]
+    .sort()
+    .join(' | ');
+}
+
+/**
+ * One table value as source, which is also its literal type.
+ *
+ * `JSON.stringify` has no spelling for `undefined` — it returns `undefined`
+ * rather than a string, which `join` rendered as nothing and left a type
+ * ending in ` | `, and it drops the entry from an object outright — while a
+ * decode table may map a stored value to it: that is how a stored value whose
+ * serialized form is the omitted default is spelled, `{0: undefined, 1:
+ * 'special'}`. The walk reads such an entry as a genuine miss would read, so
+ * the table is emitted with the entry rather than without it, and its type
+ * says `undefined` where the walk can produce one.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+function tableValue(value) {
+  return value === undefined ? 'undefined' : JSON.stringify(value);
+}
+
+/**
+ * The declaration of one lookup table in a generated module.
+ *
+ * Exported for `generateNodeJSON.test.ts`: which tables the checked-in
+ * modules declare is decided by the manifest classes, so a value shape none
+ * of them uses can only be driven through here.
+ *
+ * @param {string} name
+ * @param {{readonly [key: string]: unknown}} table
+ * @returns {string}
+ */
+export function emitTable(name, table) {
+  const entries = Object.entries(table).map(
+    ([key, value]) => `  ${JSON.stringify(key)}: ${tableValue(value)}`,
+  );
+  return `// Null-prototype: a key the table does not have must miss rather than\n// resolve to Object.prototype.\nconst ${name}: {readonly [key: string]: ${tableValueType(
+    table,
+  )}} =\n  /* @__PURE__ */ Object.assign(Object.create(null), {\n${entries.join(
+    ',\n',
+  )}\n});`;
 }
 
 /**
@@ -1043,16 +1093,7 @@ function generatePackage(pkg) {
   });
 
   const tableSource = [...tables]
-    .map(
-      ([name, table]) =>
-        `// Null-prototype: a key the table does not have must miss rather than\n// resolve to Object.prototype.\nconst ${name}: {readonly [key: string]: ${tableValueType(
-          table,
-        )}} =\n  /* @__PURE__ */ Object.assign(Object.create(null), ${JSON.stringify(
-          table,
-          null,
-          2,
-        )});`,
-    )
+    .map(([name, table]) => emitTable(name, table))
     .join('\n\n');
 
   // Which helpers the parsers call, so a module declares only those.

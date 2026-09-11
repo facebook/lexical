@@ -156,10 +156,15 @@ export interface StaticNodeConfigValue<
   /**
    * An alternative to the static importJSON() method
    * that provides better type inference.
+   *
+   * A method signature rather than a function-typed property, so that the
+   * parameter is checked bivariantly: the JSON handed in may be the compact
+   * form, so a callback may take `SerializedPartial<SerializedLexicalNode>`,
+   * while one written before that form existed takes `SerializedLexicalNode`
+   * (`version` required) and has to stay assignable. A property's parameter
+   * is compared contravariantly and would refuse it.
    */
-  readonly $importJSON?: (
-    serializedNode: SerializedPartial<SerializedLexicalNode>,
-  ) => T;
+  $importJSON?(serializedNode: SerializedPartial<SerializedLexicalNode>): T;
   /**
    * An alternative to the static importDOM() method
    */

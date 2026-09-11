@@ -35,6 +35,7 @@ import {
   type LexicalParseJSON,
   type LexicalSchemaInput,
   type LexicalUpdateJSON,
+  LineBreakNode,
   nodeSchema,
   type NodeSerializationSchema,
   nullable,
@@ -2414,6 +2415,37 @@ describe('the JSON input types', () => {
     expectTypeOf<
       LexicalParseJSON<SerializedColoredNode>['color']
     >().toEqualTypeOf<unknown>();
+  });
+
+  test('a $importJSON callback typed against SerializedLexicalNode still fits', () => {
+    // The callback is handed the untrusted JSON, which may be the compact
+    // form now, so a callback may take `SerializedPartial<SerializedLexicalNode>`.
+    // One written before that form existed takes `SerializedLexicalNode`,
+    // `version` required, and has to stay assignable: it compiled against the
+    // last release, and a node that never asks for the compact form cannot
+    // be made to change its signature for it.
+    class LegacyImportNode extends LineBreakNode {
+      $config(this: LegacyImportNode) {
+        return this.config('legacy-import', {
+          $importJSON: (json: SerializedLexicalNode): LegacyImportNode =>
+            $create(LegacyImportNode).updateFromJSON(json),
+          extends: LineBreakNode,
+        });
+      }
+    }
+    class CompactImportNode extends LineBreakNode {
+      $config(this: CompactImportNode) {
+        return this.config('compact-import', {
+          $importJSON: (
+            json: SerializedPartial<SerializedLexicalNode>,
+          ): CompactImportNode =>
+            $create(CompactImportNode).updateFromJSON(json),
+          extends: LineBreakNode,
+        });
+      }
+    }
+    expect(typeof LegacyImportNode).toBe('function');
+    expect(typeof CompactImportNode).toBe('function');
   });
 });
 

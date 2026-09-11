@@ -509,6 +509,31 @@ interface FieldWriteObligation<F extends string, V> {
   readonly write: V;
 }
 /**
+ * A decode table's check, in place of the field read it stands in for: every
+ * value the table maps a stored value to has to be one the schema serializes,
+ * or `undefined`, which omits the property. Nothing on the node can discharge
+ * it — the field holds the table's keys, not its values — so it is decided
+ * here: `never` when every value fits, and otherwise a shape no
+ * {@link MemberOf} contains, reported at the property with the values that do
+ * not. The import direction needs no counterpart: an encode table's values
+ * are written into the field, which is a {@link FieldWriteObligation} over
+ * those values.
+ */
+type DecodeMismatch<F extends string, D, T> = [
+  Exclude<D[keyof D], Returnable<T> | undefined>,
+] extends [never]
+  ? never
+  : TableValueMismatch<
+      'decode',
+      F,
+      Exclude<D[keyof D], Returnable<T> | undefined>
+    >;
+interface TableValueMismatch<Table extends string, F extends string, V> {
+  readonly table: Table;
+  readonly field: F;
+  readonly maps: V;
+}
+/**
  * What a getter may return for a schema of `T`.
  *
  * `readonly` is a property of the reference, not of the JSON: `MarkNode.getIDs`
@@ -686,13 +711,20 @@ type AccessorName<A, Role extends 'get' | 'set', T> = A extends {
           ? `when:${W}`
           : never)
       // A field whose stored and serialized forms differ says so with a table,
-      // and the table is the declaration of that relationship — so the field
-      // holds the table's keys rather than what this schema parses, and there
-      // is nothing here to check against T.
-      | (A extends {readonly decode: unknown} | {readonly encode: unknown}
-          ? never
-          : Role extends 'get'
-            ? FieldReadObligation<F, Returnable<T>>
+      // and the table is the declaration of that relationship for the one
+      // direction it serves. `decode` maps the stored value on export, so
+      // what has to fit the schema is the table's values, not the field;
+      // `encode` maps the parsed value on import, so what has to fit the
+      // field is the table's values, not what the schema parses. A direction
+      // with no table keeps the field's own check: either table once withheld
+      // both, and a decode table alone let import write the parsed string
+      // into the numeric field it was declared to encode for.
+      | (Role extends 'get'
+          ? A extends {readonly decode: infer D}
+            ? DecodeMismatch<F, D, T>
+            : FieldReadObligation<F, Returnable<T>>
+          : A extends {readonly encode: infer E}
+            ? FieldWriteObligation<F, E[keyof E]>
             : FieldWriteObligation<F, T>)
   : A extends string
     ? `${Role}:${A}` | `declared:${Role}` | MethodObligation<Role, A, T>
@@ -745,14 +777,18 @@ type FieldOptionNames<F, T> =
   | (F extends {readonly setter?: infer S extends string} ? `set:${S}` : never)
   | (F extends {readonly when?: infer W extends string} ? `when:${W}` : never)
   // The obligations behind those names; see {@link FieldReadObligation}.
-  // Both directions, because a field declared here is read *and* written. The
-  // field's own is withheld when a table declares that the stored and
-  // serialized forms differ.
-  | (F extends {readonly decode: unknown} | {readonly encode: unknown}
-      ? never
-      : F extends {readonly field: infer N extends string}
-        ? FieldReadObligation<N, Returnable<T>> | FieldWriteObligation<N, T>
-        : never)
+  // Both directions, because a field declared here is read *and* written,
+  // each replaced by its table's check where a table declares that the stored
+  // and serialized forms differ in that direction; see {@link AccessorName}.
+  | (F extends {readonly field: infer N extends string}
+      ?
+          | (F extends {readonly decode: infer D}
+              ? DecodeMismatch<N, D, T>
+              : FieldReadObligation<N, Returnable<T>>)
+          | (F extends {readonly encode: infer E}
+              ? FieldWriteObligation<N, E[keyof E]>
+              : FieldWriteObligation<N, T>)
+      : never)
   | (F extends {readonly getter?: infer G extends string}
       ? GetterObligation<G, Returnable<T> | undefined>
       : never)

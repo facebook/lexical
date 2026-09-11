@@ -191,9 +191,8 @@ const tables = new Map();
 
 /**
  * The name each table object was first recorded under, so a schema table two
- * classes share (TabNode's `mode` decodes through the same TEXT_TYPE_TO_MODE
- * as TextNode's) is emitted once under the first name rather than once per
- * class.
+ * classes share (the same object handed to both declarations) is emitted
+ * once under the first name rather than once per class.
  *
  * @type {Map<{readonly [key: string]: unknown}, string>}
  */

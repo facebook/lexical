@@ -11,7 +11,7 @@ import type {LexicalNode, NodeKey} from '../LexicalNode';
 
 import invariant from '@lexical/internal/invariant';
 
-import {IS_UNMERGEABLE, TEXT_TYPE_TO_MODE} from '../LexicalConstants';
+import {IS_UNMERGEABLE} from '../LexicalConstants';
 import {GENERATED_TAB} from '../LexicalGeneratedJSON';
 import {
   enumValue,
@@ -54,7 +54,11 @@ export class TabNode extends TextNode {
         }),
         mode: withAccessors(enumValue(['normal']), {
           getter: {
-            decode: TEXT_TYPE_TO_MODE,
+            // Only the mode a tab can hold, rather than TextNode's whole
+            // table: that one also maps the token and segmented bits, which
+            // this schema does not serialize, and a decode table's values are
+            // held to the schema's domain.
+            decode: {0: 'normal'},
             field: '__mode',
           },
           setter: null,

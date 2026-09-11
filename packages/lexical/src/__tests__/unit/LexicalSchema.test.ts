@@ -2674,6 +2674,87 @@ describe('a union member knows its own domain', () => {
     });
   });
 
+  test('a lookup table replaces the field check for its own direction only', () => {
+    // `decode` maps the stored value on export and `encode` the parsed value
+    // on import, so a table stands in for the field check in one direction
+    // and leaves the other as it was. Supplying either used to withhold both:
+    // a decode table alone let `'token'` be written into a numeric field on
+    // import, and an encode table mapping to the wrong type did the same.
+    class ModeNode extends ElementNode {
+      __mode = 0;
+    }
+    class NarrowModeNode extends ElementNode {
+      __mode: 0 | 1 = 0;
+    }
+    // Both tables, each mapping into the type its destination holds.
+    expect(
+      typeof nodeSchema<ModeNode>()({
+        mode: withField(enumValue(['normal', 'token']), {
+          decode: {0: 'normal', 1: 'token'},
+          encode: {normal: 0, token: 1},
+          field: '__mode',
+        }),
+      }),
+    ).toBe('function');
+    expect(
+      typeof nodeSchema<NarrowModeNode>()({
+        mode: withField(enumValue(['normal', 'token']), {
+          // An omitted export is `undefined`, which the decode side admits.
+          decode: {0: undefined, 1: 'token'},
+          encode: {normal: 0, token: 1},
+          field: '__mode',
+        }),
+      }),
+    ).toBe('function');
+    expect(
+      typeof nodeSchema<ModeNode>()({
+        mode: withAccessors(enumValue(['normal', 'token']), {
+          getter: {decode: {0: 'normal', 1: 'token'}, field: '__mode'},
+          setter: {encode: {normal: 0, token: 1}, field: '__mode'},
+        }),
+      }),
+    ).toBe('function');
+
+    nodeSchema<ModeNode>()({
+      // @ts-expect-error -- no encode table: import writes 'normal' | 'token' into a number
+      mode: withField(enumValue(['normal', 'token']), {
+        decode: {0: 'normal', 1: 'token'},
+        field: '__mode',
+      }),
+    });
+    nodeSchema<ModeNode>()({
+      // @ts-expect-error -- the encode table maps 'token' to a string, not a number
+      mode: withField(enumValue(['normal', 'token']), {
+        decode: {0: 'normal', 1: 'token'},
+        encode: {normal: 0, token: 'x'},
+        field: '__mode',
+      }),
+    });
+    nodeSchema<NarrowModeNode>()({
+      // @ts-expect-error -- 2 is outside the field's 0 | 1
+      mode: withField(enumValue(['normal', 'token']), {
+        decode: {0: 'normal', 1: 'token'},
+        encode: {normal: 0, token: 2},
+        field: '__mode',
+      }),
+    });
+    nodeSchema<ModeNode>()({
+      // @ts-expect-error -- the decode table maps 1 to a value the schema does not serialize
+      mode: withField(enumValue(['normal', 'token']), {
+        decode: {0: 'normal', 1: 'bogus'},
+        encode: {normal: 0, token: 1},
+        field: '__mode',
+      }),
+    });
+    nodeSchema<ModeNode>()({
+      // @ts-expect-error -- the same encode mismatch, declared per direction
+      mode: withAccessors(enumValue(['normal', 'token']), {
+        getter: {decode: {0: 'normal', 1: 'token'}, field: '__mode'},
+        setter: {encode: {normal: 0, token: 'x'}, field: '__mode'},
+      }),
+    });
+  });
+
   test('nodeSchema rejects a setter that needs more than the parsed value', () => {
     class BoxNode extends ElementNode {
       __height = 0;

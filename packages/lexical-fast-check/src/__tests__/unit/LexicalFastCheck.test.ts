@@ -405,11 +405,15 @@ describe('a schema that narrows its own domain', () => {
   const accepts = (value: unknown) =>
     typeof value === 'string' && value.startsWith('#');
   const base = stringValue();
+  // Cast to the schema it really is, rather than to `never`: the latter is
+  // assignable to any parameter, so `withField(tag, {field: '__tag'})`
+  // inferred `unknown` for what the property parses to and the field check
+  // then had nothing to check.
   const tag = Object.assign(
     (value: unknown) => (accepts(value) ? String(value) : base.defaultValue),
     base,
     {accepts},
-  ) as never;
+  ) as unknown as typeof base;
 
   class TaggedNode extends ElementNode {
     __tag: string = '';

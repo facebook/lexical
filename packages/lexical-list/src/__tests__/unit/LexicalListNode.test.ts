@@ -20,9 +20,8 @@ import {waitForReact} from '@lexical/react/src/__tests__/utils';
 import {
   $createTextNode,
   $getRoot,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   ParagraphNode,
-  type SerializedPartial,
   TextNode,
 } from 'lexical';
 import {
@@ -85,9 +84,7 @@ describe('LexicalListNode tests', () => {
         // listType (outside the declared ListType), which the constructor has
         // always normalized.
         const legacy = (listType: string) =>
-          ({listType}) as LexicalUpdateJSON<
-            SerializedPartial<SerializedListNode>
-          >;
+          ({listType}) as LexicalParseJSON<SerializedListNode>;
         const bullet = $createListNode().updateFromJSON(legacy('ul'));
         expect(bullet.getListType()).toBe('bullet');
         expect(bullet.getTag()).toBe('ul');

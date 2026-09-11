@@ -313,7 +313,8 @@ declare export class LexicalEditor {
     maybeStringifiedEditorState:
       | string
       | SerializedEditorState
-      | CompactSerializedEditorState,
+      | CompactSerializedEditorState
+      | ParsableSerializedEditorState,
     updateFn?: () => void,
   ): EditorState;
   read<V>(callbackFn: () => V): V;
@@ -1487,11 +1488,19 @@ export type SerializedLexicalNode = {
   ...
 };
 
-// The shape updateFromJSON accepts for a node whose serialized type is S.
-// This is the untrusted-JSON boundary and the parser is total — it validates
-// every property and defaults anything out of domain — so the values are not
-// constrained to what parsing produces. A schema accepts more than it writes
-// wherever it has an alias table or reads a number spelled as a string.
+// Omit the children, type, and version properties from a serialized node type:
+// what a hand-written `updateFromJSON` override reads, each property keeping
+// its declared type.
+export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
+  T,
+  'children' | 'type' | 'version',
+>;
+// The shape a schema-driven parser accepts for a node whose serialized type is
+// S. This is the untrusted-JSON boundary and the parser is total — it
+// validates every property and defaults anything out of domain — so the
+// values are not constrained to what parsing produces. A schema accepts more
+// than it writes wherever it has an alias table or reads a number spelled as
+// a string.
 export type LexicalParseJSON<S extends SerializedLexicalNode> = {
   [K in keyof Omit<SerializedPartial<S>, 'children' | 'type' | 'version'>]?: unknown,
 };
@@ -1604,6 +1613,12 @@ export type SerializedGridCellNode = {
 // parsing restores on its own.
 export interface CompactSerializedEditorState {
   root: SerializedPartial<SerializedRootNode>;
+}
+// A document as a structural subtree, for a caller holding serialized nodes
+// rather than a `SerializedEditorState` — `@lexical/clipboard`'s
+// `BaseSerializedNode[]`; see `$parseSerializedNode`.
+export interface ParsableSerializedEditorState {
+  root: ParsableSerializedNode;
 }
 export interface SerializedEditorState {
   root: SerializedRootNode;
@@ -1980,10 +1995,26 @@ declare export function $withCompactExport<T>(
 // editorState.toJSON(compact) and the clipboard selection export), not by an
 // individual node's exportJSON(compact).
 declare export function $isCompactExport(): boolean;
-export type AnySerializationSchema = SerializationSchema<unknown>;
+// `any`, not `unknown`: Flow compares a `SerializationSchema<T>` invariantly
+// in `T` — `isEqual` takes one — so a bound of `SerializationSchema<unknown>`
+// admitted no concrete schema at all, and neither `unionValue([numberValue(),
+// stringValue()])` nor a node's field record could be written. The same
+// spelling `AnyStateConfig` uses, for the same reason.
+// $FlowFixMe[unclear-type]
+export type AnySerializationSchema = SerializationSchema<any>;
+// A schema that names no accessor — what every combinator takes, and what a
+// schema's `meta` holds in `inner`, `item` and `members`. TypeScript carries
+// that as a phantom type parameter; Flow declares the surface without it, so
+// here it is the same type, used where TypeScript uses it.
+export type InnerSerializationSchema = AnySerializationSchema;
 export type SerializationSchemaFields = {
   readonly [key: string]: AnySerializationSchema,
 };
+// Exported for parity with TypeScript's `objectValue` constraint; Flow's
+// `objectValue` takes `SerializationSchemaShape<T>`, and the phantom that tells
+// a named field from one that names nothing is TypeScript's, so this is the
+// same record.
+export type InnerSerializationSchemaFields = SerializationSchemaFields;
 // The record of per-property schemas for an object type: every key of `T`,
 // each with a schema for that key's type. Spelled out rather than aliased to
 // SerializationSchemaFields so that it checks what its TypeScript counterpart
@@ -1996,10 +2027,10 @@ export type SerializationSchemaMeta = {
   readonly kind: string,
   readonly values?: ReadonlyArray<unknown>,
   readonly aliases?: {readonly [alias: string]: unknown},
-  readonly inner?: AnySerializationSchema,
-  readonly item?: AnySerializationSchema,
+  readonly inner?: InnerSerializationSchema,
+  readonly item?: InnerSerializationSchema,
   readonly fields?: SerializationSchemaFields,
-  readonly members?: ReadonlyArray<AnySerializationSchema>,
+  readonly members?: ReadonlyArray<InnerSerializationSchema>,
   readonly min?: number,
   readonly max?: number,
   readonly integer?: boolean,
@@ -2017,10 +2048,20 @@ declare export function numberValue(
   options?: NumberValueOptions,
 ): SerializationSchema<number>;
 declare export function booleanValue(defaultValue?: boolean): SerializationSchema<boolean>;
+// Two signatures, as in TypeScript: a declared `undefined` default is legal
+// only where `undefined` is one of the values. An optional parameter admitted
+// `enumValue(['a', 'b'], undefined)` as a schema over `'a' | 'b'` whose
+// parse of an absent value returns `undefined`.
 declare export function enumValue<T>(
   values: ReadonlyArray<T>,
-  defaultValue?: T,
 ): SerializationSchema<T>;
+// The default is typed as an element of the values *as inferred from them
+// alone* — Flow, unlike TypeScript, would otherwise infer `T` from both
+// arguments and let the default widen the domain it is meant to belong to.
+declare export function enumValue<V extends ReadonlyArray<unknown>>(
+  values: V,
+  defaultValue: V[number],
+): SerializationSchema<V[number]>;
 declare export function nullable<T>(
   inner: SerializationSchema<T>,
   options?: {readonly defaultAsNull?: boolean},
@@ -2029,12 +2070,21 @@ declare export function optional<T>(
   inner: SerializationSchema<T>,
   options?: {readonly omitDefault?: boolean},
 ): SerializationSchema<T | void>;
-export type SerializationSchemaValue<S> =
-  S extends SerializationSchema<infer T> ? T : empty;
-declare export function unionValue<M extends ReadonlyArray<AnySerializationSchema>>(
-  members: M,
-  defaultValue?: SerializationSchemaValue<M[number]>,
-): SerializationSchema<SerializationSchemaValue<M[number]>>;
+// Inferred through the callable half alone: Flow's `infer` does not see
+// through the `Parse<T> & {...}` intersection, and against the whole type this
+// was `empty` for every schema — a value assignable to anything.
+export type SerializationSchemaValue<S> = S extends Parse<infer T> ? T : empty;
+// The value type is `unknown`, not `SerializationSchemaValue<M[number]>`:
+// Flow's conditional types do not distribute over a union, so for members of
+// different types that evaluated to `empty` — a result assignable to anything
+// — and a default could not be passed at all. TypeScript computes the union.
+declare export function unionValue(
+  members: ReadonlyArray<InnerSerializationSchema>,
+): SerializationSchema<unknown>;
+declare export function unionValue(
+  members: ReadonlyArray<InnerSerializationSchema>,
+  defaultValue: unknown,
+): SerializationSchema<unknown>;
 declare export function transformValue<In, Out>(
   inner: SerializationSchema<In>,
   transform: (value: In) => Out,

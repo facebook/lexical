@@ -10,6 +10,7 @@ import type {LexicalEditor} from './LexicalEditor';
 import type {
   LexicalNode,
   NodeMap,
+  ParsableSerializedNode,
   SerializedLexicalNode,
   SerializedPartial,
 } from './LexicalNode';
@@ -47,6 +48,18 @@ export interface SerializedEditorState {
  */
 export interface CompactSerializedEditorState {
   root: SerializedPartial<SerializedRootNode>;
+}
+
+/**
+ * A document as a structural subtree — what {@link $parseSerializedNode}
+ * accepts at every level — for a caller holding serialized nodes rather than
+ * a `SerializedEditorState`: `@lexical/clipboard`'s `BaseSerializedNode[]`
+ * from `$generateJSONFromSelectedNodes`, whose `version` is optional and whose
+ * interface carries no index signature, matched neither of the two forms
+ * above and could not be handed back to `parseEditorState` without a cast.
+ */
+export interface ParsableSerializedEditorState {
+  root: ParsableSerializedNode;
 }
 
 export function editorStateHasDirtySelection(

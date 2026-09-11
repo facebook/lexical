@@ -339,6 +339,15 @@ export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
 export declare const STATIC_NODE_TYPE: unique symbol;
 
 /**
+ * The brand every {@link LexicalNode} carries in its type and nothing else
+ * does, for a check that has to say "a node" without relating a class to
+ * `LexicalNode` member by member; see `SetterReturn` in LexicalSchema.ts.
+ * Declared only — `instanceof LexicalNode` is what a runtime check uses.
+ * @internal
+ */
+export declare const LEXICAL_NODE_BRAND: unique symbol;
+
+/**
  * @internal
  *
  * Carries a node's own `type` under the {@link STATIC_NODE_TYPE} accessor. This
@@ -508,32 +517,14 @@ export type LexicalExportJSON<T extends LexicalNode> = Prettify<
 /**
  * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
  *
- * Constrained to the *parse* shape rather than {@link SerializedLexicalNode},
- * so a {@link SerializedPartial} — where every node-specific property is
- * optional, as they are in compact JSON — is a valid argument.
- *
- * Each remaining property is widened to `unknown`, because this is the
- * untrusted-JSON boundary and a parser here is *total*: it validates every
- * property against the schema's domain and substitutes a default for anything
- * outside it. Typing a property as what it parses *to* claims the caller has
- * already done that validation, which is both untrue and narrower than what is
- * accepted — a schema reads more than it writes wherever it has an alias table
- * or reads a number spelled as a string, so `format: 'bold'` and
- * `width: '640'` are valid input that the narrower type rejected. The property
- * *names* stay, so a misspelled one is still an excess-property error.
- *
- * NodeState and slots keep their declared shapes: neither is a schema-declared
- * property, and each is read structurally by the code that applies it rather
- * than validated against a domain.
+ * This is the shape a hand-written `updateFromJSON` override reads: each
+ * property keeps its declared type. The parser behind a serialization schema
+ * faces wider input than that — see {@link LexicalParseJSON}.
  */
-export type LexicalUpdateJSON<
-  T extends SerializedPartial<SerializedLexicalNode>,
-> = Pick<T, Extract<keyof T, typeof NODE_STATE_KEY | '$slots'>> & {
-  [K in keyof Omit<
-    T,
-    '$slots' | 'children' | 'type' | typeof NODE_STATE_KEY | 'version'
-  >]?: unknown;
-};
+export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
+  T,
+  'children' | 'type' | 'version'
+>;
 
 /**
  * The serialized form of a node as accepted by the parsing methods
@@ -653,19 +644,28 @@ export type ParsableSerializedNode = {
 
 /**
  * The shape {@link LexicalNode.updateFromJSON} accepts for a node whose
- * serialized type is `S`: every node-specific property optional (a compact
- * export omits a default-valued one, and an older document predates a newer
- * one), with `type`, `version` and `children` dropped.
+ * serialized type is `S`, as a schema-driven parser faces it: every
+ * node-specific property optional (a compact export omits a default-valued
+ * one, and an older document predates a newer one) and `unknown`, with
+ * `type`, `version` and `children` dropped.
+ *
+ * `unknown`, because this is the untrusted-JSON boundary and a parser here is
+ * *total*: it validates every property against the schema's domain and
+ * substitutes a default for anything outside it. Typing a property as what it
+ * parses *to* would claim the caller has already done that validation, which
+ * is both untrue and narrower than what is accepted — a schema reads more than
+ * it writes wherever it has an alias table or reads a number spelled as a
+ * string, so `format: 'bold'` and `width: '640'` are valid input that the
+ * narrower type rejected. The property *names* stay, so a misspelled one is
+ * still an excess-property error. NodeState and slots keep their declared
+ * shapes: neither is a schema-declared property, and each is read structurally
+ * by the code that applies it rather than validated against a domain.
  *
  * A node that declares a serialization schema narrows both JSON methods to its
  * own serialized type by declaration merging, which is the one thing a schema
- * cannot do for it — the members have to be declared on the node's own
- * interface, since inheriting them (from a shared base, or via `extends` on
- * the interface) collides with the ones it gets from its superclass rather
- * than overriding them:
+ * cannot do for it:
  *
  * ```ts
- * // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
  * export interface MarkNode {
  *   exportJSON(compact?: false): SerializedMarkNode;
  *   exportJSON(compact: boolean): SerializedPartial<SerializedMarkNode>;
@@ -673,18 +673,18 @@ export type ParsableSerializedNode = {
  * }
  * ```
  *
- * Export takes two signatures because the two forms have different shapes: the
- * compact one omits every property parsing would restore, so what it returns is
- * the {@link SerializedPartial} rather than the full type. Declaring only
- * `exportJSON(compact?: boolean): SerializedMarkNode` compiles, and is what the
- * compact form makes untrue.
- *
- * All three narrow the *type* only: the runtime implementations are the
- * schema-driven ones on {@link LexicalNode}, which such a node does not
- * override.
+ * A hand-written override that reads its properties typed uses
+ * {@link LexicalUpdateJSON} instead, as it always has.
  */
-export type LexicalParseJSON<S extends SerializedLexicalNode> =
-  LexicalUpdateJSON<SerializedPartial<S>>;
+export type LexicalParseJSON<S extends SerializedLexicalNode> = Pick<
+  SerializedPartial<S>,
+  Extract<keyof SerializedPartial<S>, typeof NODE_STATE_KEY | '$slots'>
+> & {
+  [K in keyof Omit<
+    SerializedPartial<S>,
+    '$slots' | 'children' | 'type' | typeof NODE_STATE_KEY | 'version'
+  >]?: unknown;
+};
 
 /** @internal */
 export interface LexicalPrivateDOM {
@@ -969,6 +969,8 @@ export interface SlotChildNode {
 export class LexicalNode {
   /** @internal Allow us to look up the type including static props */
   declare ['constructor']: KlassConstructor<typeof LexicalNode>;
+  /** @internal See {@link LEXICAL_NODE_BRAND}. */
+  declare readonly [LEXICAL_NODE_BRAND]: true;
   /** @internal */
   // `__type` is assigned once, in the constructor, and is never valid to
   // mutate afterward.
@@ -1897,7 +1899,7 @@ export class LexicalNode {
    * leave out.
    */
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLexicalNode>>,
+    serializedNode: LexicalParseJSON<SerializedLexicalNode>,
   ): this {
     return $applyJSONSetters(
       $updateStateFromJSON(this, serializedNode),

@@ -18,10 +18,12 @@ import {
   $isTextNode,
   type $parseSerializedNode,
   aliasedValue,
+  type AnySerializationSchema,
   arrayValue,
   booleanValue,
   type CompactSerializedEditorState,
   createState,
+  declaredAccepts,
   DecoratorNode,
   ElementNode,
   enumValue,
@@ -42,6 +44,7 @@ import {
   type ParagraphNode,
   rawValue,
   type SchemaInput,
+  type SerializationSchema,
   type SerializationSchemaValue,
   type SerializedElementNode,
   type SerializedLexicalNode,
@@ -49,6 +52,7 @@ import {
   type SerializedPartial,
   type SerializedPartialNode,
   type SerializedTextNode,
+  type Spread,
   stringValue,
   TabNode,
   TextNode,
@@ -211,6 +215,14 @@ describe('LexicalSchema value schemas', () => {
   });
 });
 
+/**
+ * Assert that `build` is refused for wrapping a schema that names an accessor
+ * — the runtime half of the rule every combinator states in its type.
+ */
+function refused(combinator: string, build: () => unknown): void {
+  expect(build).toThrow(`${combinator}: the schema it wraps names an accessor`);
+}
+
 describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
   initializeUnitTest(testEnv => {
     test('TextNode applies defaults when properties are missing', () => {
@@ -238,9 +250,7 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
           style: 42,
           text: 99,
           // deliberately out of domain, so the double cast is required
-        } as unknown as LexicalUpdateJSON<
-          SerializedPartial<SerializedTextNode>
-        >);
+        } as unknown as LexicalParseJSON<SerializedTextNode>);
         expect(node.getTextContent()).toBe('');
         expect(node.getFormat()).toBe(0);
         expect(node.getDetail()).toBe(0);
@@ -308,9 +318,7 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
         node.updateFromJSON({
           detail: 'directionless',
           format: 'bold',
-        } as unknown as LexicalUpdateJSON<
-          SerializedPartial<SerializedTextNode>
-        >);
+        } as unknown as LexicalParseJSON<SerializedTextNode>);
         expect(node.hasFormat('bold')).toBe(true);
         expect(node.isDirectionless()).toBe(true);
       });
@@ -502,10 +510,9 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       // own rather than by wearing the inner schema's. The transform is the
       // one part of a schema that cannot be described structurally, and a
       // consumer that reasons about the *output* has to be told that.
-      const inner = withAccessors(stringValue(), {setter: 'setFoo'});
+      const inner = stringValue();
       const t = transformValue(inner, s => s.length);
       expect(t.meta).toEqual({inner, kind: 'transform'});
-      expect(t.setter).toBe('setFoo');
     });
   });
 
@@ -572,38 +579,45 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
   });
 
   describe('accessor resolution', () => {
-    test('an array field does not inherit its item schema accessors', () => {
-      // The item schema describes an element, so a name recorded on it belongs
-      // to the element, not to the array-valued property.
-      const item = withAccessors(stringValue(), {
-        getter: 'getId',
-        setter: 'setId',
-      });
-      expect(arrayValue(item).getter).toBeUndefined();
-      expect(arrayValue(item).setter).toBeUndefined();
-    });
-
     test('null states that a direction is deliberately unsupported', () => {
       const derived = withAccessors(stringValue(), {setter: null});
       expect(derived.setter).toBeNull();
-      // and it survives further wrapping
-      expect(optional(derived).setter).toBeNull();
-      expect(withAccessors(derived, {getter: 'getFoo'}).setter).toBeNull();
+      // Both directions are named in the one call: a `null` is a declaration
+      // — that the direction is derived — so a second layer is refused like
+      // any other name, at compile time and at run time.
+      expect(
+        withAccessors(stringValue(), {getter: 'getFoo', setter: null}).setter,
+      ).toBeNull();
+      refused('withAccessors', () =>
+        // @ts-expect-error -- `derived` already names its setter
+        withAccessors(derived, {getter: 'getFoo'}),
+      );
+      // Around the wrapper rather than under it, since that is where every
+      // accessor is stated: `optional` describes a wider domain than the
+      // schema it wraps, and the accessors answer for the whole property.
+      expect(
+        withAccessors(optional(stringValue()), {setter: null}).setter,
+      ).toBeNull();
+      // @ts-expect-error -- and under it, a `null` is refused like a name is
+      refused('optional', () => optional(derived));
     });
   });
 
-  describe('withAccessors setter propagation through combinators', () => {
-    test('optional and nullable keep the inner setter name', () => {
-      // A field like `language: optional(nullable(stringValue()))` must apply
-      // through the setter recorded anywhere inside the combinator stack.
-      // arrayValue is deliberately excluded: it wraps an *element*, so the
-      // element's accessors are not the array property's.
-      const inner = withAccessors(stringValue(), {setter: 'setFoo'});
-      expect(optional(inner).setter).toBe('setFoo');
-      expect(nullable(inner).setter).toBe('setFoo');
-      expect(optional(nullable(inner)).setter).toBe('setFoo');
+  describe('withAccessors is the outermost combinator of a property', () => {
+    test('a wrapper names nothing of its own', () => {
+      // A field like `language: optional(nullable(stringValue()))` names its
+      // accessors on the outside, where they are obliged to accept the domain
+      // the wrappers describe. Nothing is carried up from inside, so a name
+      // that ends up under a wrapper is not quietly used for the property —
+      // which is what makes refusing it at the type level worth doing.
+      const inner = stringValue();
+      expect(optional(inner).setter).toBeUndefined();
+      expect(nullable(inner).setter).toBeUndefined();
+      expect(transformValue(inner, s => s.length).setter).toBeUndefined();
+      expect(aliasedValue(inner, {a: 'b'}).setter).toBeUndefined();
+      expect(unionValue([inner, numberValue()]).setter).toBeUndefined();
       expect(
-        withAccessors(optional(stringValue()), {setter: 'setBar'}).setter,
+        withAccessors(optional(nullable(inner)), {setter: 'setBar'}).setter,
       ).toBe('setBar');
     });
 
@@ -614,13 +628,16 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       });
       expect(schema.getter).toBe('getFoo');
       expect(schema.setter).toBe('setFoo');
-      // each direction can also be layered on independently
-      const layered = withAccessors(
-        withAccessors(stringValue(), {setter: 'setA'}),
-        {getter: 'getA'},
+      // and only at once: a second layer would name a direction the first
+      // already named, and the walk calls the outer one only — an obligation
+      // checked for an accessor that is never called.
+      refused('withAccessors', () =>
+        withAccessors(
+          // @ts-expect-error -- the inner layer already names an accessor
+          withAccessors(stringValue(), {setter: 'setA'}),
+          {getter: 'getA'},
+        ),
       );
-      expect(layered.getter).toBe('getA');
-      expect(layered.setter).toBe('setA');
       // withField is a getter that reads the node's own field
       expect(withField(stringValue(), {field: '__foo'}).getter).toEqual({
         field: '__foo',
@@ -666,6 +683,41 @@ describe('defaults and untrusted input', () => {
     expect(
       enumValue([undefined, 'middle', 'bottom'], 'middle').defaultValue,
     ).toBe('middle');
+    // A declared `undefined` is a value like any other, so it is legal only
+    // where a member produces one. An optional parameter would have admitted
+    // it everywhere — `undefined` is in the type of every optional parameter,
+    // whatever it is declared as — and the union then reported `number |
+    // string` for a schema that returns `undefined` from every fall-through.
+    expect(
+      unionValue([optional(numberValue()), stringValue()], undefined)
+        .defaultValue,
+    ).toBeUndefined();
+    // @ts-expect-error -- no member of this union produces `undefined`
+    unionValue([numberValue(), stringValue()], undefined);
+    // The same rule for the other factory whose domain may hold `undefined`:
+    // a default parameter replaced a declared `undefined` with `values[0]`.
+    expect(enumValue(['middle', undefined], undefined).defaultValue).toBe(
+      undefined,
+    );
+    expect(enumValue(['middle', undefined]).defaultValue).toBe('middle');
+    // and the same rule at run time, for the caller the type does not reach
+    expect(() =>
+      // @ts-expect-error -- `undefined` is not a member of this enum
+      enumValue(['middle', 'bottom'], undefined),
+    ).toThrow('enumValue: the default value is not one of the values');
+    // The documented spelling for asserting the values against a known
+    // domain still holds: the domain is the type parameter, and the default
+    // has one of its own bounded by it.
+    type Mode = 'normal' | 'segmented' | 'token';
+    expectTypeOf(enumValue<Mode>(['normal', 'token'])).toEqualTypeOf<
+      SerializationSchema<Mode>
+    >();
+    // @ts-expect-error -- 'bogus' is not a Mode
+    enumValue<Mode>(['normal', 'bogus']);
+    expect(() =>
+      // @ts-expect-error -- 'c' is not one of the values
+      enumValue(['a', 'b'], 'c'),
+    ).toThrow('enumValue: the default value is not one of the values');
   });
 
   test('a union accepts exactly what its members accept', () => {
@@ -675,13 +727,21 @@ describe('defaults and untrusted input', () => {
     expect(schema(NaN)).toBeNaN();
   });
 
-  test('a union carries its members accessor names', () => {
-    const schema = unionValue([
-      withAccessors(numberValue(), {getter: 'getDim', setter: 'setDim'}),
-      enumValue(['inherit']),
-    ]);
+  test('a union names its accessors on the union, not on a member', () => {
+    // A member's names would answer for a domain narrower than the union's:
+    // whichever member won would decide which accessor the whole property
+    // used. Named on the union, they are obliged to accept every member's
+    // value — which is what `getDim`/`setDim` are declared for here.
+    const schema = withAccessors(
+      unionValue([numberValue(), enumValue(['inherit'])]),
+      {getter: 'getDim', setter: 'setDim'},
+    );
     expect(schema.getter).toBe('getDim');
     expect(schema.setter).toBe('setDim');
+    // and the union itself names nothing
+    expect(
+      unionValue([numberValue(), enumValue(['inherit'])]).getter,
+    ).toBeUndefined();
   });
 
   test('a reference-typed default cannot be mutated into every node', () => {
@@ -2011,13 +2071,19 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
     // `composeSchema` resolves a re-declared key to one winning schema, most
     // derived first, so a subclass that widens a domain really does accept the
     // wider one. Intersecting the two would report the ancestor's.
+    //
+    // Widened on the *input* side, with an alias the base does not know: both
+    // schemas parse to what `__tag` holds, which is what the field obligation
+    // asks of each. Widening the parsed domain instead is a contradiction the
+    // check now reports — a field the base declares narrower than it is holds
+    // values the base's own schema declines.
     class TagBase extends ElementNode {
       __tag: 'a' | 'b' | 'c' = 'a';
       $config() {
         return this.config('tag-base', {
           extends: ElementNode,
           json: nodeSchema<TagBase>()({
-            tag: withField(enumValue(['a']), {field: '__tag'}),
+            tag: withField(enumValue(['a', 'b', 'c']), {field: '__tag'}),
           }),
         });
       }
@@ -2027,16 +2093,19 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
         return this.config('tag-sub', {
           extends: TagBase,
           json: nodeSchema<TagSub>()({
-            tag: withField(enumValue(['a', 'b', 'c']), {field: '__tag'}),
+            tag: withField(
+              aliasedValue(enumValue(['a', 'b', 'c']), {third: 'c'}),
+              {field: '__tag'},
+            ),
           }),
         });
       }
     }
-    const widened: LexicalSchemaInput<TagSub>['tag'] = 'c';
-    expect(widened).toBe('c');
+    const widened: LexicalSchemaInput<TagSub>['tag'] = 'third';
+    expect(widened).toBe('third');
     // and the runtime agrees, which is what makes the type worth pinning
-    expect(getComposedSchemaFields(TagSub).tag('c')).toBe('c');
-    expect(getComposedSchemaFields(TagBase).tag('c')).toBe('a');
+    expect(getComposedSchemaFields(TagSub).tag('third')).toBe('c');
+    expect(getComposedSchemaFields(TagBase).tag('third')).toBe('a');
   });
 
   test('a node composes its flat NodeState too', () => {
@@ -2189,11 +2258,12 @@ describe('a misspelled field name is caught in both directions', () => {
         // property is never exported, this declaration produces an ownField
         // entry on the setter table and none on the getter table.
         //
-        // Declared through `objectValue` rather than `nodeSchema` on purpose:
-        // `nodeSchema` would reject the typo at compile time, which is the
-        // point of it — what is under test here is the runtime check that
-        // still has to catch the same mistake for a JavaScript caller.
-        json: objectValue({
+        // Checked against a type that *claims* the field, which is how a
+        // JavaScript caller's schema looks to the runtime: `nodeSchema`
+        // rejects the typo against the real class, which is the point of it —
+        // what is under test here is the runtime check that still has to
+        // catch the same mistake for a caller with no compiler.
+        json: nodeSchema<ImportOnlyFieldNode & {__lable: string}>()({
           label: withAccessors(stringValue(), {
             getter: null,
             setter: {field: '__lable'},
@@ -2244,6 +2314,106 @@ describe('a misspelled field name is caught in both directions', () => {
       },
       {discrete: true},
     );
+  });
+
+  test('an initialized optional field is an own property', () => {
+    // `__caption?: string` with no initializer emits no own property, and the
+    // check below cannot tell that from a misspelling — so the field is
+    // initialized, which is also what keeps a node's shape stable. What must
+    // hold is that an own property holding `undefined` is not reported.
+    class OptionalFieldNode extends ElementNode {
+      __caption: string | undefined = undefined;
+      $config() {
+        return this.config('optional-field-node', {
+          extends: ElementNode,
+          json: nodeSchema<OptionalFieldNode>()({
+            caption: withField(optional(stringValue()), {field: '__caption'}),
+          }),
+        });
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[optional-field]',
+        nodes: [OptionalFieldNode],
+      }),
+    );
+    editor.update(
+      () => {
+        const node = $create(OptionalFieldNode);
+        expect(node.exportJSON()).toMatchObject({
+          caption: undefined,
+          type: 'optional-field-node',
+        });
+        expect(
+          node.updateFromJSON({caption: 'hi'} as never).exportJSON(),
+        ).toMatchObject({caption: 'hi'});
+      },
+      {discrete: true},
+    );
+  });
+
+  test('a misspelled optional field is still a misspelling', () => {
+    // The check was once relaxed for any schema whose default is `undefined`,
+    // on the theory that a field declared without an initializer has no own
+    // property to find. True — and true of a typo, which the check cannot
+    // tell apart, so relaxing it for one relaxed it for the other: every
+    // `optional`, `rawValue` and union-with-an-optional field stopped
+    // reporting a name the node does not have, on both sides.
+    class TypoNode extends ElementNode {
+      __caption: string | undefined = undefined;
+      $config() {
+        return this.config('optional-typo-node', {
+          extends: ElementNode,
+          // The type claims the field, as a JavaScript caller's schema would.
+          json: nodeSchema<TypoNode & {__captoin: string | undefined}>()({
+            caption: withField(optional(stringValue()), {field: '__captoin'}),
+          }) as NodeSerializationSchema,
+        });
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[optional-typo]',
+        nodes: [TypoNode],
+      }),
+    );
+    editor.update(
+      () => {
+        expect(() => $create(TypoNode).exportJSON()).toThrow(
+          'names a node field __captoin that the node does not have. Check the spelling',
+        );
+      },
+      {discrete: true},
+    );
+  });
+});
+
+describe('the JSON input types', () => {
+  test('LexicalUpdateJSON keeps the properties a hand-written override reads', () => {
+    // The helper an override has always taken: every property keeps its
+    // declared type, so `json.color` is a string. The wider input a
+    // schema-driven parser faces — every property optional and `unknown` — is
+    // `LexicalParseJSON`'s, and widening the established helper to it broke
+    // every existing override that read a property.
+    type SerializedColoredNode = Spread<{color: string}, SerializedElementNode>;
+    class ColoredNode extends ElementNode {
+      __color = '';
+      setColor(color: string): this {
+        const self = this.getWritable();
+        self.__color = color;
+        return self;
+      }
+      updateFromJSON(json: LexicalUpdateJSON<SerializedColoredNode>): this {
+        return super.updateFromJSON(json).setColor(json.color);
+      }
+    }
+    expect(typeof ColoredNode).toBe('function');
+    expectTypeOf<
+      LexicalParseJSON<SerializedColoredNode>['color']
+    >().toEqualTypeOf<unknown>();
   });
 });
 
@@ -2310,6 +2480,11 @@ describe('a union member knows its own domain', () => {
       getLabel(): string {
         return this.getLatest().__label;
       }
+      setLabel(label: string): this {
+        const self = this.getWritable();
+        self.__label = label;
+        return self;
+      }
       shouldWrite(): boolean {
         return true;
       }
@@ -2318,6 +2493,9 @@ describe('a union member knows its own domain', () => {
     const ok = nodeSchema<NamedNode>()({
       gated: withAccessors(stringValue(), {
         getter: {field: '__label', method: 'getLabel', when: 'shouldWrite'},
+        // Export-only: with no `setGated` on the node, the conventional setter
+        // would be a name the walk cannot resolve.
+        setter: null,
       }),
       label: withField(stringValue(), {field: '__label'}),
     });
@@ -2341,6 +2519,74 @@ describe('a union member knows its own domain', () => {
       // @ts-expect-error -- withField declares a predicate the same way
       label: withField(stringValue(), {field: '__label', when: 'shouldWrit'}),
     });
+  });
+
+  test('nodeSchema checks a schema the node’s own $config consumes', () => {
+    // The position every real schema is written in, and the one the check was
+    // switched off for. Scanning a class for the member a declaration names
+    // means asking what type each member has, and `$config()`'s is inferred
+    // from the very schema being checked — a cycle TypeScript answers by
+    // dropping the constraint. So every `@ts-expect-error` above passed while
+    // the same mistake on a real node compiled; `ScannableKeys` skips the two
+    // members whose types come from the schema, and the check runs again.
+    class InlineNode extends ElementNode {
+      __label = '';
+      getLabel(): string {
+        return this.getLatest().__label;
+      }
+      setLabel(label: string): this {
+        const self = this.getWritable();
+        self.__label = label;
+        return self;
+      }
+      shouldWrite(): boolean {
+        return true;
+      }
+      $config() {
+        return this.config('schema-inline', {
+          extends: ElementNode,
+          json: nodeSchema<InlineNode>()({
+            // @ts-expect-error -- setLabel takes a string, not a number
+            count: withAccessors(numberValue(), {setter: 'setLabel'}),
+            // @ts-expect-error -- shouldWrit is not a predicate of InlineNode
+            gated: withField(stringValue(), {
+              field: '__label',
+              when: 'shouldWrit',
+            }),
+            // @ts-expect-error -- __lable is not a field of InlineNode
+            label: withField(stringValue(), {field: '__lable'}),
+            // @ts-expect-error -- getLabl is not a method of InlineNode
+            name: withAccessors(stringValue(), {getter: 'getLabl'}),
+            // @ts-expect-error -- nor is setLabl
+            other: withAccessors(stringValue(), {setter: 'setLabl'}),
+            // A `this`-returning setter, named correctly: the obligation it
+            // discharges is stated as the node's own domain rather than by
+            // comparing the class against its base, which is what made a
+            // schema above its class a cycle (see `SetterReturn`).
+            title: withAccessors(stringValue(), {
+              getter: 'getLabel',
+              setter: 'setLabel',
+            }),
+          }),
+        });
+      }
+    }
+    // And when the schema is a binding the class refers to, which is how every
+    // node in the tree spells it.
+    const aboveSchema = nodeSchema<AboveNode>()({
+      // @ts-expect-error -- nor is __lable a field of AboveNode
+      label: withField(stringValue(), {field: '__lable'}),
+    });
+    class AboveNode extends ElementNode {
+      __label = '';
+      $config() {
+        return this.config('schema-above', {
+          extends: ElementNode,
+          json: aboveSchema,
+        });
+      }
+    }
+    expect(typeof InlineNode).toBe('function');
   });
 
   test('nodeSchema rejects a name used in the wrong position', () => {
@@ -2436,10 +2682,13 @@ describe('a union member knows its own domain', () => {
     });
   });
 
-  test('nodeSchema rejects an accessor a wrapper widened out from under', () => {
+  test('a wrapper refuses a schema that already declares accessors', () => {
     // A wrapper changes what the schema parses, and so what its accessors are
-    // handed — but it used to carry the inner schema's obligations along
-    // unchanged. `setLabel` was still obliged to take a `string` while the
+    // handed. Rather than restate every obligation for the new value type —
+    // which is what an earlier version did, and got wrong for `union` and the
+    // wrappers — the wrappers simply do not take a schema that declares any:
+    // an accessor belongs outside the combinator whose domain it must accept.
+    // `setLabel` was otherwise still obliged to take a `string` while the
     // parser hands it `null` for a document that omits the property, so a
     // `setLabel` calling `.toUpperCase()` type-checked and threw.
     class LabelNode extends ElementNode {
@@ -2458,29 +2707,50 @@ describe('a union member knows its own domain', () => {
         return self;
       }
     }
-    nodeSchema<LabelNode>()({
+    // Refused at compile time, and — for the caller the types do not reach —
+    // at run time, by every combinator.
+    refused('nullable', () =>
       // @ts-expect-error -- nullable parses an absent property to `null`
-      label: nullable(withAccessors(stringValue(), {setter: 'setLabel'})),
-    });
-    nodeSchema<LabelNode>()({
+      nullable(withAccessors(stringValue(), {setter: 'setLabel'})),
+    );
+    refused('optional', () =>
       // @ts-expect-error -- optional parses it to `undefined`
-      label: optional(withAccessors(stringValue(), {setter: 'setLabel'})),
-    });
-    nodeSchema<LabelNode>()({
-      // @ts-expect-error -- and a transform, to a type of its own
-      label: transformValue(
+      optional(withAccessors(stringValue(), {setter: 'setLabel'})),
+    );
+    refused('transformValue', () =>
+      transformValue(
+        // @ts-expect-error -- and a transform, to a type of its own
         withAccessors(stringValue(), {setter: 'setLabel'}),
         value => value.length,
       ),
-    });
-    nodeSchema<LabelNode>()({
-      // @ts-expect-error -- a union parses to any member's value, so a setter
-      // named on one member is handed another's whenever that member wins
-      label: unionValue(
-        [withAccessors(stringValue(), {setter: 'setLabel'}), numberValue()],
-        '' as never,
-      ),
-    });
+    );
+    refused('unionValue', () =>
+      unionValue([
+        // @ts-expect-error -- a union parses to any member's value, so a
+        // setter named on one member is handed another's when that one wins
+        withAccessors(stringValue(), {setter: 'setLabel'}),
+        numberValue(),
+      ]),
+    );
+    refused('arrayValue', () =>
+      // @ts-expect-error -- an item names the *element*'s accessor, not the
+      // array-valued property's, so this one was dropped rather than restated
+      arrayValue(withAccessors(stringValue(), {setter: 'setLabel'})),
+    );
+    refused('aliasedValue', () =>
+      // @ts-expect-error -- an alias widens only the input, but the rule is
+      // one rule: every accessor is stated on the outermost schema
+      aliasedValue(withAccessors(stringValue(), {setter: 'setLabel'}), {
+        x: 'y',
+      }),
+    );
+    expect(() =>
+      objectValue({
+        // @ts-expect-error -- a nested object's field is not the node's
+        // property, so a name on one was lifted to the node and never used
+        x: withAccessors(stringValue(), {setter: 'setLabel'}),
+      }),
+    ).toThrow('objectValue: field "x" names an accessor');
     // Declared around the wrapper rather than under it, which is the spelling
     // the docs use, the accessor is obliged to take what the property really
     // parses to — so this is the same schema, correctly stated.
@@ -2489,6 +2759,137 @@ describe('a union member knows its own domain', () => {
         getter: 'getLabel',
         setter: 'setNullableLabel',
       }),
+    });
+    // And stated for the narrower domain, it is the node check that refuses
+    // it — which is the check the whole reordering exists to reach.
+    nodeSchema<LabelNode>()({
+      // @ts-expect-error -- setLabel(value: string) is handed null | string
+      label: withAccessors(nullable(stringValue()), {setter: 'setLabel'}),
+    });
+    // A field read back from a node schema's `meta` may name an accessor —
+    // this one does — so its type says it may, and wrapping it again is
+    // refused where it is written rather than where it runs. A cast to
+    // `InnerSerializationSchemaFields` labelled every such field undeclared,
+    // and `arrayValue(meta.fields.label)` compiled and threw.
+    const {meta} = nodeSchema<LabelNode>()({
+      label: withAccessors(nullable(stringValue()), {
+        getter: 'getLabel',
+        setter: 'setNullableLabel',
+      }),
+    });
+    assert(meta.kind === 'object');
+    expectTypeOf(meta.fields.label).toEqualTypeOf<AnySerializationSchema>();
+    refused('arrayValue', () =>
+      // @ts-expect-error -- a node schema's field may name an accessor
+      arrayValue(meta.fields.label),
+    );
+    // And the node schema itself names them — on its fields, which is where
+    // a nested one's would never be resolved from — so it is not an inner
+    // either, at either level.
+    const inner = nodeSchema<LabelNode>()({
+      label: withAccessors(nullable(stringValue()), {
+        setter: 'setNullableLabel',
+      }),
+    });
+    // @ts-expect-error -- a node schema is declared, on its fields
+    refused('optional', () => optional(inner));
+    // Known exactly rather than by looking: one whose fields leave every
+    // accessor to convention cannot be told from an objectValue by its shape,
+    // and is refused all the same — as is a node schema nested as a field of
+    // another, whose names the walk would never resolve.
+    const conventional = nodeSchema<LabelNode>()({
+      label: withAccessors(nullable(stringValue()), {
+        getter: 'getLabel',
+        setter: 'setNullableLabel',
+      }),
+    });
+    refused('arrayValue', () => arrayValue(conventional as never));
+    expect(() =>
+      nodeSchema<LabelNode>()({inner: conventional as never}),
+    ).toThrow('nodeSchema: field "inner" is itself a node schema');
+  });
+
+  test('nodeSchema refuses a node it cannot check', () => {
+    // `keyof N` is `string | number` for a class with a string index
+    // signature — and for `any` — so there is no member list to check a name
+    // against. Declaring such a node unchecked would be the silent failure the
+    // check exists to remove, so it is refused where the node is named.
+    class IndexedNode extends ElementNode {
+      [key: string]: unknown;
+      __label = '';
+    }
+    // @ts-expect-error -- a string index signature leaves nothing to check
+    nodeSchema<IndexedNode>();
+
+    // @ts-expect-error -- and `any` is not a way around the check
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the escape hatch under test
+    nodeSchema<any>();
+  });
+
+  test('nodeSchema checks the accessors a field leaves to convention', () => {
+    // A field that names no accessor is applied through `set<Prop>` and read
+    // through `get<Prop>`, which the walk resolves by name and the check never
+    // saw: `label: stringValue()` beside a `setLabel(value: string): string`
+    // compiled, and `importJSON` handed back the string.
+    class StringSetterNode extends ElementNode {
+      __label = '';
+      getLabel(): string {
+        return this.getLatest().__label;
+      }
+      setLabel(value: string): string {
+        this.getWritable().__label = value;
+        return value;
+      }
+    }
+    nodeSchema<StringSetterNode>()({
+      // @ts-expect-error -- the conventional setLabel returns a string
+      label: stringValue(),
+    });
+    class ConventionalNode extends ElementNode {
+      __count = 0;
+      __label = '';
+      getCount(): number {
+        return this.getLatest().__count;
+      }
+      setCount(value: number): this {
+        const self = this.getWritable();
+        self.__count = value;
+        return self;
+      }
+      getLabel(): string {
+        return this.getLatest().__label;
+      }
+      setLabel(value: string): this {
+        const self = this.getWritable();
+        self.__label = value;
+        return self;
+      }
+    }
+    // Sound in both directions: nothing to report.
+    expect(
+      typeof nodeSchema<ConventionalNode>()({
+        count: numberValue(),
+        label: stringValue(),
+      }),
+    ).toBe('function');
+    nodeSchema<ConventionalNode>()({
+      // @ts-expect-error -- getCount returns a number, not a string
+      count: stringValue(),
+    });
+    nodeSchema<ConventionalNode>()({
+      // @ts-expect-error -- the node has neither getTitle nor setTitle
+      title: stringValue(),
+    });
+    // A declared direction is checked as declared; the other stays
+    // conventional. `null` declares a direction derived, so nothing is asked
+    // of it.
+    nodeSchema<ConventionalNode>()({
+      label: withAccessors(stringValue(), {setter: null}),
+    });
+    nodeSchema<ConventionalNode>()({
+      // @ts-expect-error -- the getter is declared, and the conventional
+      // setLabel is handed the number this parses to
+      label: withAccessors(numberValue(), {getter: 'getCount'}),
     });
   });
 
@@ -2500,6 +2901,9 @@ describe('a union member knows its own domain', () => {
     // `importJSON` handed back the string.
     class ReturnsNode extends ElementNode {
       __label: string = '';
+      getLabel(): string {
+        return this.getLatest().__label;
+      }
       setLabel(value: string): this {
         const self = this.getWritable();
         self.__label = value;
@@ -2512,10 +2916,26 @@ describe('a union member knows its own domain', () => {
         this.getWritable().__label = value;
         return value;
       }
+      setLabelBase(value: string): ElementNode {
+        return this.setLabel(value);
+      }
+      setLabelMaybe(value: string): this | undefined {
+        return value === '' ? undefined : this.setLabel(value);
+      }
+      setLabelKeyed(value: string): {__key: string} {
+        return {__key: this.setLabel(value).__key};
+      }
     }
-    // A node, and nothing, are both what the walk knows how to continue from.
+    // A node — as `this`, as a base type, or perhaps — and nothing are what
+    // the walk knows how to continue from.
     nodeSchema<ReturnsNode>()({
       label: withAccessors(stringValue(), {setter: 'setLabel'}),
+    });
+    nodeSchema<ReturnsNode>()({
+      label: withAccessors(stringValue(), {setter: 'setLabelBase'}),
+    });
+    nodeSchema<ReturnsNode>()({
+      label: withAccessors(stringValue(), {setter: 'setLabelMaybe'}),
     });
     nodeSchema<ReturnsNode>()({
       label: withAccessors(stringValue(), {setter: 'setLabelVoid'}),
@@ -2523,6 +2943,11 @@ describe('a union member knows its own domain', () => {
     nodeSchema<ReturnsNode>()({
       // @ts-expect-error -- a string is not a node the walk can continue from
       label: withAccessors(stringValue(), {setter: 'setLabelString'}),
+    });
+    nodeSchema<ReturnsNode>()({
+      // @ts-expect-error -- nor is a thing that merely has a key: the node is
+      // stated by the brand every LexicalNode carries, not by its shape
+      label: withAccessors(stringValue(), {setter: 'setLabelKeyed'}),
     });
   });
 
@@ -2580,7 +3005,10 @@ describe('a union member knows its own domain', () => {
         count: withField(numberValue(), {field: '__count'}),
         // `readonly` is a property of the reference, not of the JSON, so a
         // readonly array satisfies an arrayValue property.
-        ids: withAccessors(arrayValue(stringValue()), {getter: 'getIds'}),
+        ids: withAccessors(arrayValue(stringValue()), {
+          getter: 'getIds',
+          setter: null,
+        }),
       }),
     ).toBe('function');
 
@@ -2643,28 +3071,26 @@ describe('a union member knows its own domain', () => {
   });
 
   test('a wrapper carries its inner membership into the union', () => {
-    // Naming an accessor, transforming the output, or admitting a nil says
-    // nothing about which *inputs* the member recognizes, so every wrapper
-    // forwards `accepts` — without that, ImageNode's width-or-'inherit' shape
-    // reads a stringified '0' as 'inherit' the moment the member is wrapped,
-    // because '0' normalizes into numberValue's own default and only
-    // `accepts` can tell that apart from a fallback.
-    const width = unionValue(
-      [
-        withAccessors(numberValue(), {getter: 'getSerializedWidth'}),
-        enumValue(['inherit']),
-      ],
-      'inherit',
+    // Transforming the output or admitting a nil says nothing about which
+    // *inputs* the member recognizes, so every wrapper forwards `accepts` —
+    // without that, ImageNode's width-or-'inherit' shape reads a stringified
+    // '0' as 'inherit' the moment the member is wrapped, because '0'
+    // normalizes into numberValue's own default and only `accepts` can tell
+    // that apart from a fallback.
+    const number = numberValue();
+    // Naming an accessor says nothing about the domain either, but the two
+    // that do it are a property's outermost schema rather than a member, so
+    // what they have to keep is the predicate itself — copied by reference,
+    // which is also how it keeps the provenance `DERIVED_ACCEPTS` records.
+    expect(withAccessors(number, {getter: 'getSerializedWidth'}).accepts).toBe(
+      number.accepts,
     );
+    expect(withField(number, {field: '__width'}).accepts).toBe(number.accepts);
+
+    const width = unionValue([number, enumValue(['inherit'])], 'inherit');
     expect(width('0')).toBe(0);
     expect(width(640)).toBe(640);
     expect(width('banana')).toBe('inherit');
-
-    const field = unionValue(
-      [withField(numberValue(), {field: '__width'}), enumValue(['inherit'])],
-      'inherit',
-    );
-    expect(field('0')).toBe(0);
 
     const transformed = unionValue(
       [transformValue(numberValue(), value => value), enumValue(['inherit'])],
@@ -2962,10 +3388,11 @@ describe('a schema declares the domain it reads, and only that', () => {
     // Listed but not the default: the parse answers `'top'`, so a union that
     // committed here would be handed a value it never asked for.
     expect(enumValue(['top', undefined]).accepts!(undefined)).toBe(false);
-    // And a default outside the listed values stays out of the domain.
-    expect(
-      enumValue(['top', 'middle'], 'unset' as 'top').accepts!('unset'),
-    ).toBe(false);
+    // And a default outside the listed values is not a schema at all: every
+    // parse could produce it and none could read it back.
+    expect(() => enumValue(['top', 'middle'], 'unset' as 'top')).toThrow(
+      'enumValue: the default value is not one of the values',
+    );
 
     const union = unionValue(
       [
@@ -2996,14 +3423,9 @@ describe('a schema declares the domain it reads, and only that', () => {
     expect(
       unionValue([numberValue(0, {min: 1}), enumValue(['auto'])], 'auto')(0),
     ).toBe('auto');
-    // The same for an enum whose default is not one of its values: the later
-    // member owns that value, and answers with its own type.
-    expect(
-      unionValue(
-        [enumValue(['a', 'b'], '42' as 'a'), numberValue()],
-        0 as never,
-      )('42'),
-    ).toBe(42);
+    // `numberValue` is the one factory whose constraints can exclude its own
+    // default; an enum with a default outside its values is refused where it
+    // is written, so there is no such member to fall through.
   });
 
   test('a transform describes what it reads, not what it writes', () => {
@@ -3375,23 +3797,26 @@ describe('a declaration means what it says', () => {
     ).toBe(0);
   });
 
-  test('a member that names no accessor is not overruled by one that names none', () => {
-    // `setter: null` means *derived*, not *unset*, and scanning past the first
-    // member for one that named something let a later member's `null` win over
-    // an earlier member's conventional `set<Prop>` — which `compileSetters`
-    // then skipped entirely, making the whole property unreadable and
-    // unwritable.
-    const conventionalFirst = unionValue([
-      stringValue(),
-      withAccessors(numberValue(), {setter: null}),
-    ]);
-    expect(conventionalFirst.setter).toBeUndefined();
-    // The first member still decides when it is the one that named something.
-    const derivedFirst = unionValue([
-      withAccessors(numberValue(), {setter: null}),
-      stringValue(),
-    ]);
-    expect(derivedFirst.setter).toBeNull();
+  test('a union names nothing, so no member can overrule another', () => {
+    // A union used to carry its first member's accessor names. `setter: null`
+    // means *derived*, not *unset*, and scanning past the first member for one
+    // that named something let a later member's `null` win over an earlier
+    // member's conventional `set<Prop>` — which `compileSetters` then skipped
+    // entirely, making the whole property unreadable and unwritable. Nothing
+    // is carried up now: a member that names one is refused, at compile time
+    // and — for the caller the types do not reach — at run time, and the
+    // accessors belong to the property, which is the schema that wraps the
+    // union.
+    refused('unionValue', () =>
+      unionValue([
+        stringValue(),
+        // @ts-expect-error -- a `null` is a declaration too
+        withAccessors(numberValue(), {setter: null}),
+      ]),
+    );
+    const union = unionValue([stringValue(), numberValue()]);
+    expect(union.setter).toBeUndefined();
+    expect(withAccessors(union, {setter: null}).setter).toBeNull();
   });
 
   test('a default a caller owns is not frozen', () => {
@@ -3508,13 +3933,14 @@ describe('a container schema answers for its shape, not its contents', () => {
     const original = unionValue([tagged, stringValue()], '' as never);
     expect(original('ordinary')).toBe('ordinary');
     // Building the copy must not change the schema it was copied from.
-    const named = withAccessors(tagged, {setter: 'setLabel'}) as never;
+    const named = withAccessors(tagged, {setter: 'setLabel'});
     expect(original('ordinary')).toBe('ordinary');
-    // And the copy keeps the predicate, so it declines what the original does
-    // and claims what the original claims.
-    const copy = unionValue([named, stringValue()], '' as never);
-    expect(copy('ordinary')).toBe('ordinary');
-    expect(copy('#tag')).toBe('#TAG');
+    // And the copy keeps the predicate as the author's: it is the same
+    // function, and still not one a combinator derived — which is what a
+    // container asks through `declaredAccepts` before trusting the metadata.
+    expect(named.accepts).toBe(accepts);
+    expect(declaredAccepts(named)).toBe(accepts);
+    expect(declaredAccepts(tagged)).toBe(accepts);
   });
 
   test('and a predicate wider than its metadata is not overruled by it', () => {

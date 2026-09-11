@@ -86,8 +86,7 @@ const tableCellNodeSchema = nodeSchema<TableCellNode>()({
   }),
   // The domain exportJSON already enforces via isValidVerticalAlign; anything
   // else (including the historical falsy `|| undefined` case) is absent.
-  // `undefined` leads the list so it is the default: passing it explicitly as
-  // enumValue's second argument would instead select values[0].
+  // `undefined` leads the list, so it is the default.
   verticalAlign: withAccessors(enumValue([undefined, 'middle', 'bottom']), {
     getter: 'getSerializedVerticalAlign',
   }),
@@ -281,7 +280,7 @@ export class TableCellNode extends ElementNode {
   }
 
   /** @internal Serialized `verticalAlign`, or undefined to omit it. */
-  getSerializedVerticalAlign(): string | undefined {
+  getSerializedVerticalAlign(): 'bottom' | 'middle' | undefined {
     const verticalAlign = this.getLatest().__verticalAlign;
     return isValidVerticalAlign(verticalAlign) ? verticalAlign : undefined;
   }

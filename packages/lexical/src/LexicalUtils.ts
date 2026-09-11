@@ -81,8 +81,8 @@ import {
   $isLexicalNode,
   $markEphemeral,
   LexicalNode,
+  type LexicalParseJSON,
   type LexicalPrivateDOM,
-  type LexicalUpdateJSON,
   type NodeKey,
   type NodeMap,
   type SerializedLexicalNode,
@@ -3634,7 +3634,7 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
       // node's whole serialization — the one thing declaring `json` is for.
       invariant(
         json.meta.kind === 'object',
-        '%s: $config json must be an objectValue(...), got %s',
+        '%s: $config json must be an object schema — nodeSchema<MyNode>()({...}) — got %s',
         // The class whose `$config` declared it, not the one being composed:
         // naming the subclass sent a reader to a class that declared nothing
         // wrong and never named the one they have to edit.
@@ -3995,9 +3995,8 @@ function ownFieldRecord(node: LexicalNode): Record<string, unknown> {
  * Unlike the method-name checks in {@link compileGetters} / {@link compileSetters},
  * this one is DEV-only. A field exists on a constructed node, not on the
  * prototype, so it cannot be resolved when the class is registered: the check
- * needs an instance, which means it can only run on a serialization path, and
- * it would reject a node that legitimately leaves a declared field unassigned.
- * Registration-time checks have neither cost — they run once, on the class
+ * needs an instance, which means it can only run on a serialization path.
+ * Registration-time checks have no such cost — they run once, on the class
  * alone — which is why those fail in every build and this does not. Running it
  * once per class keeps it off the per-node path in DEV too.
  */
@@ -4011,9 +4010,13 @@ function validateOwnFields(record: NodeClassRecord, node: LexicalNode): void {
   for (const entries of [getters, setters]) {
     for (const entry of entries) {
       if (entry.kind === 'ownField') {
+        // A field declared without an initializer (`__caption?: string`) is
+        // not an own property until something assigns it, and this cannot
+        // tell that from a misspelling — so the message says which fix
+        // applies to which.
         invariant(
           hasOwnKey(fields, entry.field),
-          '%s: serialization schema field "%s" names a node field %s that the node does not have',
+          '%s: serialization schema field "%s" names a node field %s that the node does not have. Check the spelling; a field declared without an initializer is not an own property until the constructor assigns it',
           klass.name,
           entry.key,
           entry.field,
@@ -4569,7 +4572,7 @@ export function $generatedExportJSON(
  */
 export function $applyImportJSON<T extends LexicalNode>(
   node: T,
-  serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLexicalNode>>,
+  serializedNode: LexicalParseJSON<SerializedLexicalNode>,
 ): T {
   if (__DEV__) {
     // The whole point is skipping getWritable(), so assert what it would have

@@ -10,6 +10,7 @@ import {$generateJSONFromSelectedNodes} from '@lexical/clipboard';
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -97,4 +98,42 @@ describe('selection export honors the serialization context', () => {
     const [plain] = selectionJSON(false);
     expect(plain.version).toBe(1);
   });
+});
+
+// What the payload is for: handing it back. `BaseSerializedNode` is an
+// interface whose `version` is optional, so it matched neither of
+// `parseEditorState`'s two document forms — the full one requires `version`,
+// and an interface never satisfies the compact one's index signature — and
+// the nodes the clipboard API produces could not be parsed without a cast.
+test('the serialized nodes parse back as a document without a cast', () => {
+  using editor = buildEditorFromExtensions({
+    dependencies: [extension],
+    name: '[root]',
+    namespace: '',
+    onError: err => {
+      throw err;
+    },
+  });
+  // Typed as the API types them — `BaseSerializedNode[]`, without naming it.
+  let nodes: ReturnType<typeof $generateJSONFromSelectedNodes>['nodes'] = [];
+  editor.update(
+    () => {
+      // The paragraph itself, so the payload is a subtree a root can hold.
+      const selection = $createNodeSelection();
+      selection.add($getRoot().getFirstChildOrThrow().getKey());
+      nodes = $generateJSONFromSelectedNodes(editor, selection).nodes;
+    },
+    {discrete: true},
+  );
+  const state = editor.parseEditorState({
+    root: {
+      children: nodes,
+      direction: null,
+      format: '',
+      indent: 0,
+      type: 'root',
+      version: 1,
+    },
+  });
+  expect(state.read(() => $getRoot().getTextContent())).toBe('plainsecret');
 });

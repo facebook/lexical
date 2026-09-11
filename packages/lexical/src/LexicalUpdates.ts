@@ -36,9 +36,11 @@ import {
 } from './LexicalEditor';
 import {
   cloneEditorState,
+  type CompactSerializedEditorState,
   createEmptyEditorState,
   type EditorState,
   editorStateHasDirtySelection,
+  type ParsableSerializedEditorState,
   type SerializedEditorState,
 } from './LexicalEditorState';
 import {
@@ -486,7 +488,10 @@ function $parseSerializedNodeImpl<
 }
 
 export function parseEditorState(
-  serializedEditorState: SerializedEditorState,
+  serializedEditorState:
+    | SerializedEditorState
+    | CompactSerializedEditorState
+    | ParsableSerializedEditorState,
   editor: LexicalEditor,
   updateFn: void | (() => void),
 ): EditorState {

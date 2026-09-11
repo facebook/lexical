@@ -52,8 +52,15 @@ import {
   $parseSerializedNode,
   $withCompactExport,
   defineExtension,
+  ElementNode,
+  enumValue,
   LineBreakNode,
+  nodeSchema,
+  numberValue,
   ParagraphNode,
+  stringValue,
+  unionValue,
+  withField,
 } from 'lexical';
 
 type SmokeConfig = {greeting: string};
@@ -241,4 +248,33 @@ export function flowExportAndParseCompose(node: TextNode): LexicalNode {
   $parseSerializedNode(compact);
   // And the legacy form, which is what the same walk writes without the flag.
   return $parseSerializedNode($exportNodeJSON(node));
+}
+
+// Ordinary composition over schemas of different types. Flow compares a
+// `SerializationSchema<T>` invariantly in `T` — `isEqual` takes one — so a
+// bound of `SerializationSchema<unknown>` admitted no concrete schema at all:
+// neither a union of two primitives nor a node's field record could be
+// written. TypeScript accepts both.
+class FlowLabelNode extends ElementNode {
+  __label: string = '';
+}
+export function flowComposesSchemas(): unknown {
+  const dimension = unionValue([numberValue(), stringValue()]);
+  const fields = nodeSchema<FlowLabelNode>()({
+    label: withField(stringValue(), {field: '__label'}),
+  });
+  return [dimension, fields];
+}
+
+// A declared `undefined` default is legal only where `undefined` is one of the
+// values, as in TypeScript: with an optional parameter, `enumValue(['a', 'b'],
+// undefined)` was a schema over `'a' | 'b'` whose parse of an absent value
+// returns `undefined`, and a function annotated `string` returned it.
+export function flowEnumDefaultIsChecked(): string {
+  const withUndefined = enumValue(['a', undefined], undefined);
+  const plain = enumValue(['a', 'b']);
+  const declared = enumValue(['a', 'b'], 'b');
+  // $FlowExpectedError[incompatible-type] `undefined` is not one of the values
+  const wrong = enumValue(['a', 'b'], undefined);
+  return [withUndefined('a'), plain('a'), declared('a'), wrong('a')].join(',');
 }

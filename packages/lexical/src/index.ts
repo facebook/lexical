@@ -189,6 +189,7 @@ export type {
   CompactSerializedEditorState,
   EditorState,
   EditorStateReadOptions,
+  ParsableSerializedEditorState,
   SerializedEditorState,
 } from './LexicalEditorState';
 export {$isEditorState} from './LexicalEditorState';
@@ -266,6 +267,8 @@ export {
   declaredAccepts,
   enumValue,
   type FieldOptions,
+  type InnerSerializationSchema,
+  type InnerSerializationSchemaFields,
   isSchemaField,
   type MemberOf,
   type NamesOf,

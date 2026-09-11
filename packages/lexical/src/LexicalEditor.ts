@@ -30,6 +30,7 @@ import {
   type CompactSerializedEditorState,
   createEmptyEditorState,
   type EditorState,
+  type ParsableSerializedEditorState,
   type SerializedEditorState,
 } from './LexicalEditorState';
 import {
@@ -1822,7 +1823,8 @@ export class LexicalEditor {
    * Either form is accepted: parsing restores what a compact document omitted,
    * which is the whole reason it may omit it, so
    * {@link CompactSerializedEditorState} — what `toJSON(true)` returns — goes
-   * back in without a cast.
+   * back in without a cast. So does a document assembled from serialized nodes
+   * ({@link ParsableSerializedEditorState}), such as `@lexical/clipboard`'s.
    * @param maybeStringifiedEditorState
    * @param updateFn
    * @returns
@@ -1831,7 +1833,8 @@ export class LexicalEditor {
     maybeStringifiedEditorState:
       | string
       | SerializedEditorState
-      | CompactSerializedEditorState,
+      | CompactSerializedEditorState
+      | ParsableSerializedEditorState,
     updateFn?: () => void,
   ): EditorState {
     const serializedEditorState =

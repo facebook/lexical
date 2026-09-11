@@ -72,6 +72,12 @@ export class EmojiNode extends TextNode {
     if (inner === null) {
       return true;
     }
+    // The outer span carries the class, which setClassName and the
+    // schema-driven updateFromJSON can change on an existing node; createDOM
+    // set it the same way.
+    if (prevNode.__className !== this.__className) {
+      dom.className = this.__className;
+    }
     // TextNode.updateDOM returns true when the format change needs a different
     // tag, in which case it has not touched the DOM at all and the element has
     // to be recreated. Returning false regardless would promise the reconciler

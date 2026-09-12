@@ -60,7 +60,6 @@
 import {
   compileDiffersFromDefault,
   compileParse,
-  literal,
   NotCompilable,
   NUM_HELPER_SOURCE,
   NUM_RANGE_HELPER_SOURCE,

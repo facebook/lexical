@@ -1063,7 +1063,11 @@ function tableValueType(table) {
     .filter(v => typeof v !== 'number')
     .map(tableType)
     .sort();
-  return [...new Set([...finite, ...wide, ...rest])].join(' | ');
+  const members = [...new Set([...finite, ...wide, ...rest])];
+  // An empty table — `aliasedValue(numberValue(), {})` is a valid schema —
+  // has an empty union, which spelled as nothing left the module no type at
+  // all: `never`, the union of no members, is the type that maps to nothing.
+  return members.length === 0 ? 'never' : members.join(' | ');
 }
 
 /**

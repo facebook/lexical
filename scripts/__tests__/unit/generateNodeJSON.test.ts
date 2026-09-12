@@ -29,6 +29,7 @@ import {
   TextNode,
   withField,
 } from 'lexical';
+import ts from 'typescript';
 import {describe, expect, test} from 'vitest';
 
 import {
@@ -190,6 +191,50 @@ describe('a lookup table declaration', () => {
         zero: -0,
       }),
     ).toContain('{readonly [key: string]: 0 | 1 | number}');
+  });
+
+  test('an empty alias table is declared as mapping to never', () => {
+    // `aliasedValue(numberValue(), {})` is a valid schema — an alias table
+    // with nothing in it — and registers and imports correctly. Its type is
+    // the union of its values, which is empty, and an empty union spelled as
+    // nothing left `{readonly [key: string]: }` in the module: no type at all.
+    expect(tableDeclaration('alias', 'value', {}, 0)).toBe(
+      'aliasTableOf(fields, "value", 0) as {readonly [key: string]: never}',
+    );
+    class ValueNode extends LineBreakNode {
+      __value = 0;
+      $config() {
+        return this.config('generate-empty-alias', {
+          extends: LineBreakNode,
+          json: nodeSchema<ValueNode>()({
+            value: withField(aliasedValue(numberValue(), {}), {
+              field: '__value',
+            }),
+          }),
+        });
+      }
+    }
+    resetTableLocals();
+    const source: string = generateUpdate(ValueNode);
+    // What the module would hold for this class, checked as TypeScript
+    // rather than read: an empty type is a syntax error the type checker
+    // reports against generated code.
+    const module = [
+      NUM_HELPER_SOURCE,
+      ...tableDeclarations().map(
+        ([name, declaration]: [string, string]) =>
+          `const ${name} = ${declaration};`,
+      ),
+      source,
+    ].join('\n');
+    const {diagnostics} = ts.transpileModule(module, {
+      reportDiagnostics: true,
+    });
+    expect(
+      (diagnostics || []).map(d =>
+        ts.flattenDiagnosticMessageText(d.messageText, '\n'),
+      ),
+    ).toEqual([]);
   });
 
   test('a parser falls back to the encoded default for a value the table misses', () => {

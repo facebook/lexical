@@ -2198,3 +2198,53 @@ declare export function $isBlockFullySelected(
   blockNode: ElementNode,
   selectionOrRange: RangeSelection | CaretRange<CaretDirection>,
 ): boolean;
+
+// Keyboard shortcut declarations used by @lexical/extension's subpaths.
+export type KeyboardEventModifiers = Pick<
+  KeyboardEvent,
+  'key' | 'code' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey',
+>;
+
+export type KeyboardEventModifierMask = {
+  altKey?: boolean | void | 'any',
+  ctrlKey?: boolean | void | 'any',
+  metaKey?: boolean | void | 'any',
+  shiftKey?: boolean | void | 'any',
+  ...
+};
+
+export interface KeyboardShortcutMatch {
+  key: string;
+  modifiers?: KeyboardEventModifierMask;
+  unshiftedKey?: string;
+}
+
+export interface KeyboardShortcut extends KeyboardShortcutMatch {
+  command: LexicalCommand<KeyboardEvent>;
+  description?: string;
+  $disabled?: (selection: null | BaseSelection, editor: LexicalEditor) => boolean;
+  $dispatch?: (
+    command: LexicalCommand<KeyboardEvent>,
+    event: KeyboardEvent,
+    $next: () => boolean,
+    editor: LexicalEditor,
+  ) => boolean;
+  bubbleFromNestedEditors?: boolean;
+}
+
+declare export var CONTROL_OR_META: KeyboardEventModifierMask;
+declare export var CONTROL_OR_ALT: KeyboardEventModifierMask;
+
+declare class CompiledKeyboardShortcuts<
+  S extends KeyboardShortcutMatch = KeyboardShortcut,
+> {
+  add(shortcut: S): this;
+  matches(event: KeyboardEventModifiers): S[];
+  match(event: KeyboardEventModifiers): S | void;
+}
+
+export type {CompiledKeyboardShortcuts};
+
+declare export function compileKeyboardShortcuts<S extends KeyboardShortcutMatch>(
+  shortcuts: Iterable<S>,
+): CompiledKeyboardShortcuts<S>;

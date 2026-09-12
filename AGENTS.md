@@ -36,7 +36,7 @@ For E2E testing workflow:
 - `pnpm run lint:fix` - Auto-fix lint issues
 - `pnpm run prettier` - Check code formatting
 - `pnpm run prettier:fix` - Auto-fix formatting issues
-- `pnpm run flow` - Run Flow type checker
+- `pnpm run flow` - Run a full foreground Flow check (does not reuse a server)
 - `pnpm run tsc` - Run TypeScript compiler
 - `pnpm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
 
@@ -67,6 +67,18 @@ Metavariables (`$NAME`, `$$$LIST`) capture nodes for reporting or rewriting
 with `--rewrite`. Reach for it whenever a change spans many files and must be
 precise — e.g. moving symbols that `@lexical/utils` merely re-exports back to
 a direct `lexical` import.
+
+### Extension source imports
+
+Import from the `@lexical/extension` barrel across package boundaries. Within
+`packages/lexical-extension`, use relative imports and re-exports. Do not
+manually rewrite these source imports to `@lexical/extension/*`: ESLint
+enforces the source convention, and `@lexical/compiler`'s `subpathImports`
+pass rewrites them in all published package builds, including www. Public
+sibling entries stay external so shared modules such as signals retain one
+instance. Helpers with only one owning entry live under `src/internal` and
+are bundled into that entry, without exposing additional public subpaths.
+Downstream users may import either the barrel or public subpaths.
 
 ### Tree-shaking annotations
 

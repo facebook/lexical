@@ -23,6 +23,8 @@ import {
   withField,
 } from 'lexical';
 
+import {GENERATED_DECORATORBLOCK} from './shared/LexicalReactGeneratedJSON';
+
 /**
  * The serialized form of a {@link DecoratorBlockNode}: the base serialized node
  * data plus the block's element `format` (alignment).
@@ -85,6 +87,7 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
       // otherwise stop the walk here and drop the property from both
       // directions.
       extends: DecoratorNode,
+      generated: GENERATED_DECORATORBLOCK,
       json: decoratorBlockNodeSchema,
     });
   }

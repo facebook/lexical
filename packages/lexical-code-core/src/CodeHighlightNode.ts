@@ -27,6 +27,7 @@ import {
 } from 'lexical';
 
 import {$createCodeNode} from './CodeNode';
+import {GENERATED_CODEHIGHLIGHT} from './LexicalCodeCoreGeneratedJSON';
 
 type SerializedCodeHighlightNode = Spread<
   {
@@ -68,6 +69,7 @@ export class CodeHighlightNode extends TextNode {
   $config() {
     return this.config('code-highlight', {
       extends: TextNode,
+      generated: GENERATED_CODEHIGHLIGHT,
       json: codeHighlightNodeSchema,
     });
   }

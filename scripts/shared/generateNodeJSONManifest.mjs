@@ -32,6 +32,7 @@
 export const MANIFEST = [
   {
     entries: [
+      'GENERATED_ELEMENT',
       'GENERATED_TEXT',
       'GENERATED_PARAGRAPH',
       'GENERATED_LINEBREAK',
@@ -51,6 +52,22 @@ export const MANIFEST = [
   {
     entries: ['GENERATED_MARK'],
     file: 'packages/lexical-mark/src/LexicalMarkGeneratedJSON.ts',
+  },
+  {
+    entries: ['GENERATED_LIST', 'GENERATED_LISTITEM'],
+    file: 'packages/lexical-list/src/LexicalListGeneratedJSON.ts',
+  },
+  {
+    entries: ['GENERATED_TABLE', 'GENERATED_TABLEROW', 'GENERATED_TABLECELL'],
+    file: 'packages/lexical-table/src/LexicalTableGeneratedJSON.ts',
+  },
+  {
+    entries: ['GENERATED_CODE', 'GENERATED_CODEHIGHLIGHT'],
+    file: 'packages/lexical-code-core/src/LexicalCodeCoreGeneratedJSON.ts',
+  },
+  {
+    entries: ['GENERATED_DECORATORBLOCK'],
+    file: 'packages/lexical-react/src/shared/LexicalReactGeneratedJSON.ts',
   },
 ];
 

@@ -55,6 +55,7 @@ import {
 
 import {$createListNode, $isListNode, type ListNode, type ListType} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
+import {GENERATED_LISTITEM} from './LexicalListGeneratedJSON';
 import {$getNewListStart, $isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
@@ -180,6 +181,7 @@ export class ListItemNode extends ElementNode {
         }
       },
       extends: ElementNode,
+      generated: GENERATED_LISTITEM,
       importDOM: buildImportMap({
         li: () => ({
           conversion: $convertListItemElement,

@@ -50,6 +50,7 @@ import {
   type CodeHighlightNode,
 } from './CodeHighlightNode';
 import {$getFirstCodeNodeOfLine} from './FlatStructureUtils';
+import {GENERATED_CODE} from './LexicalCodeCoreGeneratedJSON';
 
 export type SerializedCodeNode = Spread<
   {
@@ -116,6 +117,7 @@ export class CodeNode extends ElementNode {
   $config() {
     return this.config('code', {
       extends: ElementNode,
+      generated: GENERATED_CODE,
       importDOM: {
         // Typically <pre> is used for code blocks, and <code> for inline code styles
         // but if it's a multi line <code> we'll create a block. Pass through to

@@ -30,6 +30,7 @@ import {
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode} from './LexicalTableCellNode';
+import {GENERATED_TABLEROW} from './LexicalTableGeneratedJSON';
 
 export type SerializedTableRowNode = Spread<
   {
@@ -62,6 +63,7 @@ export class TableRowNode extends ElementNode {
   $config() {
     return this.config('tablerow', {
       extends: ElementNode,
+      generated: GENERATED_TABLEROW,
       importDOM: {
         tr: () => ({
           conversion: $convertTableRowElement,

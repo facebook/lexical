@@ -39,6 +39,7 @@ import {
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
+import {GENERATED_TABLECELL} from './LexicalTableGeneratedJSON';
 
 // Declared as bindings and collected into the exported object, rather than
 // written as literals inside it, so that the schema below can name one without
@@ -137,6 +138,7 @@ export class TableCellNode extends ElementNode {
   $config() {
     return this.config('tablecell', {
       extends: ElementNode,
+      generated: GENERATED_TABLECELL,
       importDOM: {
         td: () => ({
           conversion: $convertTableCellNodeElement,

@@ -12,6 +12,7 @@ import {
   $isElementNode,
   $setDirectionFromDOM,
   addClassNamesToElement,
+  aliasedValue,
   buildImportMap,
   type DOMConversionOutput,
   type DOMExportOutput,
@@ -31,7 +32,6 @@ import {
   type SerializedElementNode,
   type SerializedPartial,
   type Spread,
-  transformValue,
   withAccessors,
   withField,
 } from 'lexical';
@@ -41,6 +41,7 @@ import {
   mergeNextSiblingListIfSameType,
   updateChildrenListItemValue,
 } from './formatList';
+import {GENERATED_LIST} from './LexicalListGeneratedJSON';
 import {$getListDepth} from './utils';
 
 export type SerializedListNode = Spread<
@@ -56,21 +57,23 @@ export type ListType = 'number' | 'bullet' | 'check';
 
 export type ListNodeTagType = 'ul' | 'ol';
 
-const TAG_TO_LIST_TYPE: Record<string, ListType> = {
+// A literal rather than a `Record<string, ListType>` so that the alias table
+// below keeps its keys: they are what the schema reports as the legacy
+// spellings it accepts.
+const TAG_TO_LIST_TYPE = {
   ol: 'number',
   ul: 'bullet',
-};
+} as const satisfies Readonly<Record<string, ListType>>;
 
 const listNodeSchema = nodeSchema<ListNode>()({
   // 'ul'/'ol' are the legacy tag-form listType some older documents carry,
-  // normalized to the modern form.
+  // stated as an alias table rather than a transform: the mapping is data, so
+  // the codegen can compile this property's parse, where an arbitrary
+  // function would have taken the whole class out of the import half.
   // Read straight off the field; applied through setListType, which also
   // maintains the derived __tag, so the setter stays a method.
   listType: withAccessors(
-    transformValue(
-      enumValue(['number', 'bullet', 'check', 'ul', 'ol']),
-      listType => TAG_TO_LIST_TYPE[listType] || listType,
-    ),
+    aliasedValue(enumValue(['number', 'bullet', 'check']), TAG_TO_LIST_TYPE),
     {getter: {field: '__listType'}},
   ),
   start: withField(numberValue(1), {
@@ -109,6 +112,7 @@ export class ListNode extends ElementNode {
         updateChildrenListItemValue(node);
       },
       extends: ElementNode,
+      generated: GENERATED_LIST,
       importDOM: buildImportMap({
         ol: () => ({
           conversion: $convertListNode,
@@ -125,7 +129,11 @@ export class ListNode extends ElementNode {
 
   constructor(listType: ListType = 'number', start: number = 1, key?: NodeKey) {
     super(key);
-    const _listType = TAG_TO_LIST_TYPE[listType] || listType;
+    // Widened for the lookup: the parameter's type excludes the legacy tag
+    // spellings, and this normalizes them for a caller that passes one anyway.
+    const _listType: ListType =
+      (TAG_TO_LIST_TYPE as Readonly<Record<string, ListType>>)[listType] ||
+      listType;
     this.__listType = _listType;
     this.__tag = _listType === 'number' ? 'ol' : 'ul';
     this.__start = start;

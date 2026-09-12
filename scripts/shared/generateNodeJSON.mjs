@@ -97,7 +97,7 @@ const {
   TabNode,
   TextNode,
 } = await import('lexical');
-// All three are `@internal` — how a class composes its schema and which accessor a
+// The first two are `@internal` — how a class composes its schema and which accessor a
 // field stands in for are this codegen's concern and the walk's, not a public
 // API to be frozen by the backwards-compatibility rule — so they are reached
 // through the module that declares them rather than the package entry point.
@@ -105,8 +105,8 @@ const {
 // same module instance the editor uses, not a second copy.
 //
 // Resolved together: `lexical` above is what the rest transitively need
-// registered, and these five do not depend on one another, so awaiting them in
-// series made this preamble cost the sum of five TypeScript transforms rather
+// registered, and these do not depend on one another, so awaiting them in
+// series made this preamble cost the sum of their TypeScript transforms rather
 // than the longest.
 const [
   {
@@ -119,12 +119,20 @@ const [
   {HeadingNode, QuoteNode},
   {AutoLinkNode, LinkNode},
   {MarkNode},
+  {ListItemNode, ListNode},
+  {TableCellNode, TableNode, TableRowNode},
+  {CodeHighlightNode, CodeNode},
+  {DecoratorBlockNode},
 ] = await Promise.all([
   import('lexical/src/LexicalUtils'),
   import('lexical/src/LexicalSchema'),
   import('@lexical/rich-text'),
   import('@lexical/link'),
   import('@lexical/mark'),
+  import('@lexical/list'),
+  import('@lexical/table'),
+  import('@lexical/code-core'),
+  import('@lexical/react/LexicalDecoratorBlockNode'),
 ]);
 
 /**
@@ -147,6 +155,7 @@ const PACKAGES = [
     file: 'packages/lexical/src/LexicalGeneratedJSON.ts',
     home: true,
     targets: [
+      {klass: ElementNode, module: './nodes/LexicalElementNode'},
       {klass: TextNode, module: './nodes/LexicalTextNode'},
       {klass: ParagraphNode, module: './nodes/LexicalParagraphNode'},
       {klass: LineBreakNode, module: './nodes/LexicalLineBreakNode'},
@@ -170,6 +179,34 @@ const PACKAGES = [
   {
     file: 'packages/lexical-mark/src/LexicalMarkGeneratedJSON.ts',
     targets: [{klass: MarkNode, module: './MarkNode'}],
+  },
+  {
+    file: 'packages/lexical-list/src/LexicalListGeneratedJSON.ts',
+    targets: [
+      {klass: ListNode, module: './LexicalListNode'},
+      {klass: ListItemNode, module: './LexicalListItemNode'},
+    ],
+  },
+  {
+    file: 'packages/lexical-table/src/LexicalTableGeneratedJSON.ts',
+    targets: [
+      {klass: TableNode, module: './LexicalTableNode'},
+      {klass: TableRowNode, module: './LexicalTableRowNode'},
+      {klass: TableCellNode, module: './LexicalTableCellNode'},
+    ],
+  },
+  {
+    file: 'packages/lexical-code-core/src/LexicalCodeCoreGeneratedJSON.ts',
+    targets: [
+      {klass: CodeNode, module: './CodeNode'},
+      {klass: CodeHighlightNode, module: './CodeHighlightNode'},
+    ],
+  },
+  {
+    file: 'packages/lexical-react/src/shared/LexicalReactGeneratedJSON.ts',
+    targets: [
+      {klass: DecoratorBlockNode, module: '../LexicalDecoratorBlockNode'},
+    ],
   },
 ];
 
@@ -996,16 +1033,25 @@ export function generateUpdate(klass) {
   )
     .map(({statements}) => statements)
     .join('\n');
+  // `v` is the one local every property's parse reads through, so it is
+  // reassigned once per property — except for a class with a single property,
+  // where assigning it once and never again is a `const`. Declared to match,
+  // or the emitted module trips `prefer-const`.
+  const assignsOnce = (body.match(/^ {2}v = /gm) || []).length === 1;
+  const vLocal = assignsOnce ? '' : `  let v: unknown;\n`;
   const locals = needsSelf
-    ? `  let self = node;\n  let n: unknown;\n  let v: unknown;`
-    : `  let v: unknown;`;
+    ? `  let self = node;\n  let n: unknown;\n${vLocal}`.replace(/\n$/, '')
+    : vLocal.replace(/\n$/, '');
+  const declared = assignsOnce
+    ? body.replace(/^ {2}v = /m, '  const v: unknown = ')
+    : body;
   return `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */
 function update${klass.name}(
   node: ${klass.name},
   json: {readonly [key: string]: unknown},
 ): ${klass.name} {
 ${locals}
-${body}
+${declared}
   return ${target};
 }`;
 }
@@ -1095,13 +1141,21 @@ function generatePackage(pkg) {
       const compact = generateCompactExport(klass);
       const exportJSON = generateExport(klass);
       const updateFromJSON = generateUpdate(klass);
+      // After all four forms, since the parser declares tables of its own —
+      // and only those a form kept: a parser that turned out not to be
+      // compilable declared its tables on the way to being refused, and a
+      // local nothing reads is an unused variable in the emitted module.
+      const emitted = [afterCloneFrom, compact, exportJSON, updateFromJSON]
+        .filter(source => source !== null)
+        .join('\n');
       return {
         afterCloneFrom,
         compact,
         exportJSON,
         klass,
-        // After all four forms, since the parser declares tables of its own.
-        tables: [...tableLocals],
+        tables: tableDeclarations().filter(([name]) =>
+          new RegExp(`\\b${name}\\b`).test(emitted),
+        ),
         updateFromJSON,
       };
     } catch (error) {

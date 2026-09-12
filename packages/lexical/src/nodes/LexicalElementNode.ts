@@ -23,6 +23,7 @@ import {
   TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
 import {ElementDOMSlot} from '../LexicalDOMSlot';
+import {GENERATED_ELEMENT} from '../LexicalGeneratedJSON';
 import {
   $isEphemeral,
   type DOMExportOutput,
@@ -247,6 +248,7 @@ export class ElementNode
        */
       $transform: $normalizeShadowRootChildren,
       extends: LexicalNode,
+      generated: GENERATED_ELEMENT,
       json: elementNodeSchema,
     });
   }

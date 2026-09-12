@@ -47,6 +47,7 @@ import {
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
+import {GENERATED_TABLE} from './LexicalTableGeneratedJSON';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,
@@ -417,6 +418,7 @@ export class TableNode extends ElementNode {
   $config() {
     return this.config('table', {
       extends: ElementNode,
+      generated: GENERATED_TABLE,
       importDOM: {
         table: () => ({
           conversion: $convertTableElement,

@@ -275,7 +275,7 @@ release, we have:
   property as a field says where it is stored, which is exactly what a clone
   has to carry; a property declared through accessor methods names no field, so
   a node with one of those still writes its own `afterCloneFrom`. See
-  [Carrying properties across a clone](/docs/serialization/serialization#carrying-properties-across-a-clone).
+  [Carrying properties across a clone](/docs/serialization/#carrying-properties-across-a-clone).
 - **Performance** - a `@lexical/compiler` code generator is used to produce
   optimized implementations of export, import and clone for performance that is
   indistinguishable (or better) than a hand-written implementation.
@@ -290,7 +290,7 @@ language/platforms, etc.
 The combinators (`stringValue`, `numberValue`, `enumValue`, `nullable`,
 `optional`, `arrayValue`, `unionValue`, `withField`, `withAccessors`, …) and
 the rules for properties that are not plain fields are covered in
-[Serialization & Deserialization](/docs/serialization/serialization#declarative-serialization-schemas-with-config).
+[Serialization & Deserialization](/docs/serialization/#declarative-serialization-schemas-with-config).
 
 For performance reasons, you should prefer serialization schema over NodeState
 when the property is inherent to the node type and not ad-hoc.
@@ -873,7 +873,7 @@ beyond the `extends` you already provide.
 
 ## Legacy: custom nodes without `$config`
 
-This is how custom nodes were written before `$config` (Lexical v0.33.0). It still works, and nothing here is deprecated — but every one of these methods is something `$config` writes for you, so prefer the sections above for new code.
+This is how custom nodes were written before `$config` (Lexical v0.33.0). It still works, but is maintained only for backwards compatibility, and the legacy interface may be removed before Lexical 1.0 — so prefer the sections above for new code. Every one of these methods is something `$config` writes for you.
 
 As mentioned above, Lexical exposes three base nodes that can be extended.
 

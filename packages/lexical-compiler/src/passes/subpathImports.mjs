@@ -12,6 +12,8 @@ import * as fs from 'node:fs';
 import {createRequire} from 'node:module';
 import * as path from 'node:path';
 
+import {parserPluginsFor} from './parserPlugins.mjs';
+
 /** @typedef {{source: string, imported: string}} ImportTarget */
 /** @typedef {import('../SubpathImports').SubpathImportsOptions} Options */
 /** @typedef {import('../SubpathImports').SubpathImportsPlugin} Plugin */
@@ -27,21 +29,17 @@ const specifierName = node =>
 const quotedName = name =>
   /^[A-Za-z_$][\w$]*$/.test(name) ? name : JSON.stringify(name);
 
-/** @param {string} code @param {string} filename */
-function parseModule(code, filename) {
+/** @param {string} code @param {string} filename @param {Options['parserPlugins']} extraPlugins */
+function parseModule(code, filename, extraPlugins) {
   const options = {
     // CommonJS wrappers permit top-level return/new.target, including in .js
     // dependencies. Leave final syntax validation to the downstream compiler.
     allowNewTargetOutsideFunction: !/\.m[jt]s$/.test(filename),
     allowReturnOutsideFunction: !/\.m[jt]s$/.test(filename),
     createImportExpressions: true,
-    plugins: /** @type {import('@babel/parser').ParserPlugin[]} */ ([
+    plugins: parserPluginsFor(filename, extraPlugins, [
       'decorators',
       'decoratorAutoAccessors',
-      ...(/\.[cm]?tsx?$/.test(filename) ? ['typescript'] : []),
-      // JavaScript can contain JSX before transpilation. In plain TypeScript,
-      // angle brackets must remain available for type assertions and generics.
-      ...(!/\.[cm]?ts$/.test(filename) ? ['jsx'] : []),
     ]),
     sourceType: /** @type {const} */ ('unambiguous'),
   };
@@ -157,8 +155,11 @@ function readImports(options) {
     }
     files.add(filename);
     return {
-      body: parseModule(fs.readFileSync(filename, 'utf8'), filename).program
-        .body,
+      body: parseModule(
+        fs.readFileSync(filename, 'utf8'),
+        filename,
+        options.parserPlugins,
+      ).program.body,
       filename,
     };
   };
@@ -445,7 +446,7 @@ export function subpathImports(options = {}) {
       imports ||= readImports(options);
       transformedIds.add(id);
       const {barrels, resolve, stars} = imports;
-      const ast = parseModule(code, filename);
+      const ast = parseModule(code, filename, options.parserPlugins);
       const output = new MagicString(code);
       let changed = false;
       /** @param {string} source @param {string} imported */

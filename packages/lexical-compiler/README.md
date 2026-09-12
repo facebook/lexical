@@ -279,6 +279,11 @@ Options:
   executable root entries are left intact.
 - `root`: directory from which package names are resolved. Defaults to
   `process.cwd()`. Use absolute package.json paths for an unbuilt checkout.
+- `parserPlugins`: extra `@babel/parser` plugins, appended to the defaults
+  for each filename. Accepts plugin names and `[name, options]` tuples, just
+  like `pureAnnotations`. Applies to consumers and package source files read
+  to derive the export mapping. For example, `parserPlugins: ['doExpressions']`
+  enables parsing that syntax; your downstream compiler must still transform it.
 - `strict`: defaults to `false`. Set to `true` to reject unmappable default
   imports, namespace imports, side-effect imports, star re-exports, dynamic
   imports, TypeScript import assignments and `require` calls

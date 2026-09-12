@@ -13,6 +13,8 @@ import * as impl from './passes/subpathImports.mjs';
 export interface SubpathImportsOptions {
   /** Package names or paths to package.json files. Defaults to ['@lexical/extension']. */
   packages?: readonly string[];
+  /** Extra @babel/parser plugins, for syntax the defaults do not cover. */
+  parserPlugins?: readonly unknown[];
   /** Resolve package names from this directory. Defaults to process.cwd(). */
   root?: string;
   /** Reject runtime barrel access that cannot be narrowed (namespace, dynamic, require, side-effect or star imports). Defaults to false. */

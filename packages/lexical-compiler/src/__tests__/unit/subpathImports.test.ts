@@ -68,6 +68,79 @@ beforeEach(() => {
 afterEach(() => fs.rmSync(dir, {force: true, recursive: true}));
 
 describe('subpathImports', () => {
+  it('accepts extra parser plugins without replacing the filename defaults', () => {
+    const code = `import {publicValue} from '@lexical/example';
+      const identity = <T>(value: T) => value;
+      export const result = do { identity(publicValue); };`;
+    expect(() => transform(code)).toThrow('doExpressions');
+    const parserPlugins = Object.freeze(['doExpressions']);
+    const instance = subpathImports({
+      packages: [packageJson],
+      parserPlugins,
+      strict: true,
+    });
+    const output = instance.transform(
+      code,
+      path.join(dir, 'consumer.ts'),
+    )?.code;
+    expect(output).toContain(
+      'import {value as publicValue} from "@lexical/example/small";',
+    );
+    expect(output).toContain('const identity = <T>(value: T) => value;');
+    expect(output).toContain('do { identity(publicValue); }');
+    expect(parserPlugins).toEqual(['doExpressions']);
+  });
+
+  it('preserves parser plugin options through the legacy decorator fallback', () => {
+    const code = `import {publicValue} from '@lexical/example';
+      export class Example { constructor(@decorate value: unknown) {} }
+      export const result = publicValue |> consume;`;
+    const instance = subpathImports({
+      packages: [packageJson],
+      parserPlugins: [['pipelineOperator', {proposal: 'fsharp'}]],
+      strict: true,
+    });
+    const output = instance.transform(
+      code,
+      path.join(dir, 'consumer.ts'),
+    )?.code;
+    expect(output).toContain(
+      'import {value as publicValue} from "@lexical/example/small";',
+    );
+    expect(output).toContain('publicValue |> consume');
+    expect(output).toContain('@decorate value: unknown');
+  });
+
+  it('uses extra parser plugins when reading star-exported sources', () => {
+    const barrel = `export * from './small';`;
+    write('src/index.ts', barrel);
+    write('src/small.ts', `export const value = do { 42; };`);
+    const instance = subpathImports({
+      packages: [packageJson],
+      parserPlugins: ['doExpressions'],
+      strict: true,
+    });
+    instance.buildStart.call({addWatchFile() {}});
+    expect(
+      instance.transform(barrel, path.join(dir, 'src/index.ts'))?.code,
+    ).toBe('export {value} from "@lexical/example/small";');
+  });
+
+  it('uses extra parser plugins when inspecting an executable root entry', () => {
+    write('src/index.ts', `const value = do { 42; }; export {value};`);
+    const instance = subpathImports({
+      packages: [packageJson],
+      parserPlugins: ['doExpressions'],
+      strict: true,
+    });
+    expect(
+      instance.transform(
+        `import {value} from '@lexical/example';`,
+        path.join(dir, 'consumer.ts'),
+      ),
+    ).toBeNull();
+  });
+
   it('derives renamed and default bindings from the installed barrel', () => {
     const output = transform(
       `import {publicValue as local, defaultValue} from '@lexical/example'; console.log(local, defaultValue);`,

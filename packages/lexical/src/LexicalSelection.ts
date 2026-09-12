@@ -1246,7 +1246,14 @@ export class RangeSelection implements BaseSelection {
     // CASE 1: insert inside a code block
     if ($isElementNode(firstBlock) && '__language' in firstBlock) {
       if ('__language' in nodes[0]) {
-        this.insertText(nodes[0].getTextContent());
+        // A DOM import can produce several top-level nodes for one paste
+        // (for example, disjoint <pre> elements separated by a <br>). Keep
+        // every imported block instead of silently discarding everything
+        // after the first CodeNode (#9151).
+        // Normalize the imported run so a standalone separator between block
+        // nodes is represented by the block boundary, not an extra newline.
+        const blocks = $wrapInlineNodes(nodes).getChildren();
+        this.insertText(blocks.map(node => node.getTextContent()).join('\n'));
       } else {
         const [, index] = $removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);

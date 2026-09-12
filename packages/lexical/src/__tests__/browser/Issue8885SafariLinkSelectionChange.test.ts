@@ -20,15 +20,11 @@ import {
   $createTextNode,
   $getRoot,
   COMMAND_PRIORITY_CRITICAL,
+  isDOMTextNode,
   type NodeKey,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {describe, expect, onTestFinished, test, vi} from 'vitest';
-
-const ext = defineExtension({
-  dependencies: [RichTextExtension],
-  name: '[8885-selection-change-browser]',
-});
+import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';
 
 /**
  * Give the browser a beat to deliver any native selectionchange task from focus
@@ -45,7 +41,12 @@ function mountEditor() {
   contentEditable.contentEditable = 'true';
   container.appendChild(contentEditable);
 
-  const editor = buildEditorFromExtensions(ext);
+  const editor = buildEditorFromExtensions(
+    defineExtension({
+      dependencies: [RichTextExtension],
+      name: '[8885-selection-change-browser]',
+    }),
+  );
   editor.setRootElement(contentEditable);
 
   onTestFinished(() => {
@@ -75,13 +76,10 @@ describe('Issue #8885: SELECTION_CHANGE_COMMAND on redundant selectionchange', (
     contentEditable.focus();
     await settle();
 
-    let selectionChangeCount = 0;
+    const onSelectionChange = vi.fn(() => false);
     const unregister = editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
-      () => {
-        selectionChangeCount += 1;
-        return false;
-      },
+      onSelectionChange,
       COMMAND_PRIORITY_CRITICAL,
     );
     onTestFinished(() => {
@@ -91,25 +89,36 @@ describe('Issue #8885: SELECTION_CHANGE_COMMAND on redundant selectionchange', (
     // 1. A redundant selectionchange event where the selection did not change.
     // On unmodified base, onSelectionChange blindly dispatches SELECTION_CHANGE_COMMAND.
     document.dispatchEvent(new Event('selectionchange'));
-    expect(selectionChangeCount).toBe(0);
+    expect(onSelectionChange).not.toHaveBeenCalled();
 
     // 2. Legitimate caret movement within the node must still dispatch.
     const textDOM = editor.getElementByKey(textKey);
-    expect(textDOM).not.toBeNull();
-    const domTextNode = textDOM!.firstChild as Text;
-    document.getSelection()!.setBaseAndExtent(domTextNode, 2, domTextNode, 2);
-    await vi.waitFor(() => expect(selectionChangeCount).toBe(1));
+    const domTextNode = textDOM?.firstChild;
+    assert(isDOMTextNode(domTextNode));
+    let domSelection = document.getSelection();
+    assert(domSelection !== null);
+    domSelection.setBaseAndExtent(domTextNode, 2, domTextNode, 2);
+    await vi.waitFor(() => expect(onSelectionChange).toHaveBeenCalledTimes(1));
 
     // Another redundant selectionchange at the new position must not dispatch.
     document.dispatchEvent(new Event('selectionchange'));
-    expect(selectionChangeCount).toBe(1);
+    expect(onSelectionChange).toHaveBeenCalledTimes(1);
 
     // 3. Legitimate range expansion must still dispatch.
-    document.getSelection()!.setBaseAndExtent(domTextNode, 2, domTextNode, 8);
-    await vi.waitFor(() => expect(selectionChangeCount).toBe(2));
+    domSelection = document.getSelection();
+    assert(domSelection !== null);
+    domSelection.setBaseAndExtent(domTextNode, 2, domTextNode, 8);
+    await vi.waitFor(() => expect(onSelectionChange).toHaveBeenCalledTimes(2));
 
     // Redundant selectionchange with range selection must not dispatch.
     document.dispatchEvent(new Event('selectionchange'));
-    expect(selectionChangeCount).toBe(2);
+    expect(onSelectionChange).toHaveBeenCalledTimes(2);
+
+    // Changing the range on text outside the editor does not trigger SELECTION_CHANGE_COMMAND
+    const outsideText = document.createTextNode('Foo');
+    document.body.appendChild(outsideText);
+    domSelection.setBaseAndExtent(outsideText, 1, outsideText, 1);
+    await settle();
+    expect(onSelectionChange).toHaveBeenCalledTimes(2);
   });
 });

@@ -284,6 +284,9 @@ Options:
   like `pureAnnotations`. Applies to consumers and package source files read
   to derive the export mapping. For example, `parserPlugins: ['doExpressions']`
   enables parsing that syntax; your downstream compiler must still transform it.
+  `flow` and `flowComments` are omitted for TypeScript filenames, so Flow
+  consumers can import TypeScript packages without enabling both languages
+  for the same file. This also applies to `pureAnnotations`.
 - `strict`: defaults to `false`. Set to `true` to reject unmappable default
   imports, namespace imports, side-effect imports, star re-exports, dynamic
   imports, TypeScript import assignments and `require` calls

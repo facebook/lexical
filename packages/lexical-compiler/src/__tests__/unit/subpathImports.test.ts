@@ -68,6 +68,32 @@ beforeEach(() => {
 afterEach(() => fs.rmSync(dir, {force: true, recursive: true}));
 
 describe('subpathImports', () => {
+  it.each([['flow'], [['flow', {all: true}]], ['flow', 'flowComments']])(
+    'parses Flow consumers of TypeScript packages with %j',
+    (...parserPlugins) => {
+      const instance = subpathImports({
+        packages: [packageJson],
+        parserPlugins,
+        strict: true,
+      });
+      const code = `import {publicValue} from '@lexical/example';
+      export const result: mixed = publicValue;`;
+      const output = instance.transform(
+        code,
+        path.join(dir, 'consumer.js'),
+      )?.code;
+      expect(output).toContain(
+        'import {value as publicValue} from "@lexical/example/small";',
+      );
+      expect(output).toContain('export const result: mixed = publicValue;');
+      const typescript = `import {publicValue} from '@lexical/example';
+      const identity = <T>(value: T) => value;`;
+      expect(
+        instance.transform(typescript, path.join(dir, 'consumer.ts'))?.code,
+      ).toContain('const identity = <T>(value: T) => value;');
+    },
+  );
+
   it('accepts extra parser plugins without replacing the filename defaults', () => {
     const code = `import {publicValue} from '@lexical/example';
       const identity = <T>(value: T) => value;

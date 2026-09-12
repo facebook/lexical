@@ -29,5 +29,17 @@ export function parserPluginsFor(
   if (!isTypeScript || /\.[cm]?tsx$/i.test(name)) {
     plugins.push('jsx');
   }
-  return extraPlugins ? plugins.concat(extraPlugins) : plugins;
+  // Language follows the filename: Flow-enabled JavaScript consumers can
+  // depend on TypeScript sources, which Babel cannot parse with Flow enabled.
+  return extraPlugins
+    ? plugins.concat(
+        extraPlugins.filter(plugin => {
+          const pluginName = Array.isArray(plugin) ? plugin[0] : plugin;
+          return (
+            !isTypeScript ||
+            (pluginName !== 'flow' && pluginName !== 'flowComments')
+          );
+        }),
+      )
+    : plugins;
 }

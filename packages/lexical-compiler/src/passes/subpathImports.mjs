@@ -48,7 +48,11 @@ function parseModule(code, filename, extraPlugins) {
   } catch (error) {
     // Legacy TypeScript parameter decorators are not part of standard
     // decorators. Both forms must survive this pass before transpilation.
-    options.plugins[0] = 'decorators-legacy';
+    options.plugins = options.plugins.map(plugin =>
+      (Array.isArray(plugin) ? plugin[0] : plugin) === 'decorators'
+        ? 'decorators-legacy'
+        : plugin,
+    );
     try {
       return parse(code, options);
     } catch {

@@ -21,7 +21,7 @@
   },
   "homepage": "https://lexical.dev/docs/packages/lexical-compiler",
   "dependencies": {
-    "@babel/parser": "^8.0.0",
+    "@babel/parser": "^8.0.4",
     "magic-string": "^0.30.21"
   },
   "devDependencies": {

@@ -8,6 +8,7 @@
 
 // @vitest-environment node
 
+import {transformAsync as babelTransform} from '@babel/core';
 import commonjs from '@rollup/plugin-commonjs';
 import {transformSync} from 'esbuild';
 import * as fs from 'node:fs';
@@ -68,6 +69,55 @@ beforeEach(() => {
 afterEach(() => fs.rmSync(dir, {force: true, recursive: true}));
 
 describe('subpathImports', () => {
+  it.each([
+    `import typeof * as Extension from '@lexical/example'; export type T = Extension;`,
+    `import typeof {publicValue as Factory} from '@lexical/example'; export type T = Factory;`,
+    `import typeof Factory from '@lexical/example'; export type T = Factory;`,
+    `import {typeof publicValue as Factory} from '@lexical/example'; export type T = Factory;`,
+    `import {typeof default as Factory} from '@lexical/example'; export type T = Factory;`,
+  ])('preserves erased Flow imports: %s', async code => {
+    const instance = subpathImports({
+      packages: [packageJson],
+      parserPlugins: ['flow'],
+      strict: true,
+    });
+    const rewritten =
+      instance.transform(code, path.join(dir, 'consumer.js'))?.code ?? code;
+    const strip = (source: string) =>
+      babelTransform(source, {
+        babelrc: false,
+        configFile: false,
+        filename: path.join(dir, 'consumer.js'),
+        presets: ['@babel/preset-flow'],
+      });
+    expect((await strip(code))?.code).toBe('');
+    expect((await strip(rewritten))?.code).toBe('');
+  });
+
+  it('preserves typeof specifiers while narrowing runtime imports', async () => {
+    const instance = subpathImports({
+      packages: [packageJson],
+      parserPlugins: ['flow'],
+      strict: true,
+    });
+    const code = `import {typeof publicValue as Factory, typeof default as DefaultFactory, unused} from '@lexical/example';
+      export type T = Factory; export type D = DefaultFactory; export {unused};`;
+    const rewritten = instance.transform(
+      code,
+      path.join(dir, 'consumer.js'),
+    )?.code;
+    expect(rewritten).toContain('typeof publicValue as Factory');
+    expect(rewritten).toContain('typeof default as DefaultFactory');
+    const stripped = await babelTransform(rewritten!, {
+      babelrc: false,
+      configFile: false,
+      presets: ['@babel/preset-flow'],
+    });
+    expect(stripped?.code).toContain('from "@lexical/example/big"');
+    expect(stripped?.code).not.toContain('@lexical/example/small');
+    expect(stripped?.code).not.toContain('from "@lexical/example"');
+  });
+
   it.each([['flow'], [['flow', {all: true}]], ['flow', 'flowComments']])(
     'parses Flow consumers of TypeScript packages with %j',
     (...parserPlugins) => {

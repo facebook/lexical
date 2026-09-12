@@ -25,6 +25,12 @@ const withoutExtension = filename => filename.replace(/\.[cm]?[jt]sx?$/, '');
 const specifierName = node =>
   node.type === 'Identifier' ? node.name : node.value;
 
+/** @param {any} node */
+const isTypeOnly = node =>
+  node.importKind === 'type' ||
+  node.importKind === 'typeof' ||
+  node.exportKind === 'type';
+
 /** @param {string} name */
 const quotedName = name =>
   /^[A-Za-z_$][\w$]*$/.test(name) ? name : JSON.stringify(name);
@@ -176,12 +182,7 @@ function readImports(options) {
     // A namespace containing only types is erased by the TypeScript compiler.
     /** @param {any} node @returns {boolean} */
     const hasRuntimeValue = node => {
-      if (
-        !node ||
-        node.declare ||
-        node.exportKind === 'type' ||
-        node.importKind === 'type'
-      ) {
+      if (!node || node.declare || isTypeOnly(node)) {
         return false;
       }
       if (node.type === 'ExportNamedDeclaration') {
@@ -242,11 +243,7 @@ function readImports(options) {
       }
       if (node.type === 'ImportDeclaration') {
         for (const spec of node.specifiers) {
-          addBinding(
-            spec.local,
-            node.importKind !== 'type' &&
-              (spec.type !== 'ImportSpecifier' || spec.importKind !== 'type'),
-          );
+          addBinding(spec.local, !isTypeOnly(node) && !isTypeOnly(spec));
         }
       } else if (node.type === 'VariableDeclaration') {
         for (const item of node.declarations) {
@@ -490,7 +487,7 @@ export function subpathImports(options = {}) {
         if (!node || typeof node !== 'object') {
           return;
         }
-        if (node.importKind === 'type' || node.exportKind === 'type') {
+        if (isTypeOnly(node)) {
           return;
         }
         if (
@@ -527,12 +524,14 @@ export function subpathImports(options = {}) {
             !node.specifiers.length ||
             node.specifiers.some(
               /** @param {any} spec */ spec =>
-                spec.type.includes('Namespace') ||
-                (!barrel.has('default') &&
-                  (spec.type === 'ImportDefaultSpecifier' ||
-                    (spec.imported &&
-                      specifierName(spec.imported) === 'default') ||
-                    (spec.local && specifierName(spec.local) === 'default'))),
+                !isTypeOnly(spec) &&
+                (spec.type.includes('Namespace') ||
+                  (!barrel.has('default') &&
+                    (spec.type === 'ImportDefaultSpecifier' ||
+                      (spec.imported &&
+                        specifierName(spec.imported) === 'default') ||
+                      (spec.local &&
+                        specifierName(spec.local) === 'default')))),
             )
           ) {
             unsupported(source);
@@ -541,7 +540,7 @@ export function subpathImports(options = {}) {
           const isImport = node.type === 'ImportDeclaration';
           const statements = node.specifiers.map(
             /** @param {any} spec */ spec => {
-              if (spec.importKind === 'type' || spec.exportKind === 'type') {
+              if (isTypeOnly(spec)) {
                 return `${isImport ? 'import' : 'export'} {${code.slice(spec.start, spec.end)}} from ${JSON.stringify(node.source.value)};`;
               }
               const name =

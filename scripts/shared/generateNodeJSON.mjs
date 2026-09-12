@@ -28,10 +28,9 @@
  * compares each property against its default; a reference-typed default has no
  * literal a value could be `===`, so it gets the structural test the schema's
  * own equality reduces to where that can be stated (MarkNode's `ids`, an empty
- * array), verified against that equality the way a parse is verified, and
- * where it cannot be stated the property is simply written rather than
- * omitted — the omission is the optimization, and one property that cannot
- * justify it should not cost its siblings theirs.
+ * array), and where it cannot be stated the property is simply written rather
+ * than omitted — the omission is the optimization, and one property that
+ * cannot justify it should not cost its siblings theirs.
  *
  * The import direction is the untrusted-JSON boundary and has to reproduce
  * each property's validation exactly, so every emitted parser is checked here
@@ -64,7 +63,6 @@ import {
   NUM_HELPER_SOURCE,
   NUM_RANGE_HELPER_SOURCE,
   verifyCompiledParse,
-  verifyDiffersFromDefault,
   verifyTableCoversDomain,
 } from '@lexical/compiler/SchemaJsonCodegen';
 // The synchronous wrapper rather than `prettier` itself, for the same reason
@@ -458,7 +456,7 @@ function schemaReads(klass) {
  * before calling it, so an element with nothing to persist — every element
  * with a TextNode child — still never reaches it.
  *
- * That comparison is the one {@link differsFromDefault} states and verifies
+ * That comparison is the one `compileDiffersFromDefault` states
  * for the property's default. A gated property whose default it cannot state
  * has no generated form: the compact form can leave such a property to the
  * walk, but the legacy form writes every property, so this refuses rather than
@@ -477,7 +475,7 @@ function hoistGatedReads(reads) {
     if (read.when !== undefined) {
       let differs;
       try {
-        differs = differsFromDefault(read.schema, read.key);
+        differs = compileDiffersFromDefault(read.schema, read.key);
       } catch (error) {
         if (!(error instanceof NotCompilable)) {
           throw error;
@@ -519,22 +517,6 @@ function hoistGatedReads(reads) {
 }
 
 /**
- * The test that a property's value is not its default, as the compact form
- * (and a gated property) needs it: compiled from the schema's default and
- * verified against the schema's own equality, so what is emitted is what the
- * walk decides. Throws {@link NotCompilable} for a default it cannot state.
- *
- * @param {AnySchema} schema
- * @param {string} name the local holding the value
- * @returns {string}
- */
-function differsFromDefault(schema, name) {
-  const expression = compileDiffersFromDefault(schema, name);
-  verifyDiffersFromDefault({expression, name, schema});
-  return expression;
-}
-
-/**
  * The compact form of one class's export.
  *
  * The compact form omits a property whose value is the one parsing would
@@ -545,8 +527,8 @@ function differsFromDefault(schema, name) {
  * the legacy form does, and the `compact` argument picks between two
  * straight-line functions rather than branching inside one.
  *
- * Each comparison is the one {@link differsFromDefault} states and verifies
- * for the property's default. A default it cannot state — an object, a
+ * Each comparison is the one `compileDiffersFromDefault` states for the
+ * property's default. A default it cannot state — an object, a
  * non-empty array, a non-finite number, or a literal the schema compares with
  * an equality of its own — gets `isCompactDefault(key, value)` instead, the
  * running class's own omission test, handed in by the dispatch. So the schema
@@ -590,7 +572,7 @@ export function generateCompactExport(klass) {
     let test = `${key} !== undefined`;
     if (schema.defaultValue !== undefined) {
       try {
-        test = `${test} && ${differsFromDefault(schema, key)}`;
+        test = `${test} && ${compileDiffersFromDefault(schema, key)}`;
       } catch (error) {
         if (!(error instanceof NotCompilable)) {
           throw error;

@@ -105,9 +105,26 @@ export const NUM_BODY = `  if (typeof v === 'number') {
  * exactly as `numberValue` tests its coerced value — and falling back to `d`
  * either way, which is what `numberValue` does when the domain rejects it,
  * including for a default that is itself out of range.
+ *
+ * @internal
  */
-const NUM_RANGE_BODY = `  const n = num(v, d);
+export const NUM_RANGE_BODY = `  const n = num(v, d);
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;`;
+
+/**
+ * The `clamp` mirror of {@link NUM_RANGE_BODY}. With `clamp`, a value outside
+ * the bounds is the nearest bound rather than the default, so the range no
+ * longer decides membership and only the numeric part can fall back — which is
+ * why this coerces against `NaN` and tests that, instead of coercing against
+ * `d` and being unable to tell a rejected value from one that really is `d`.
+ *
+ * @internal
+ */
+export const NUM_CLAMP_BODY = `  const n = num(v, NaN);
+  if (!Number.isFinite(n) || (integer && !Number.isInteger(n))) {
+    return d;
+  }
+  return n < min ? min : n > max ? max : n;`;
 
 /**
  * The `num` helper as TypeScript source, for a module that emits a compiled
@@ -118,6 +135,9 @@ export const NUM_HELPER_SOURCE = numHelperSource();
 
 /** The `numC` helper, emitted alongside `num` when a domain is constrained. */
 export const NUM_RANGE_HELPER_SOURCE = numRangeHelperSource();
+
+/** The `numK` helper, emitted alongside `num` when a domain clamps. */
+export const NUM_CLAMP_HELPER_SOURCE = numClampHelperSource();
 
 /**
  * Assembled in a function rather than written as a module-scope template
@@ -147,6 +167,19 @@ function numRangeHelperSource(): string {
   integer: boolean,
 ): number {
 ${NUM_RANGE_BODY}
+}`;
+}
+
+/** @__NO_SIDE_EFFECTS__ */
+function numClampHelperSource(): string {
+  return `function numK(
+  v: unknown,
+  d: number,
+  min: number,
+  max: number,
+  integer: boolean,
+): number {
+${NUM_CLAMP_BODY}
 }`;
 }
 
@@ -202,23 +235,28 @@ function compile(
   defaultValue: unknown,
   base: TableNaming,
   tables: SchemaJsonTable[],
+  // The expression reads one variable, `v` at the top level. An array's item
+  // parse runs inside a callback over its own binding, so it compiles against
+  // that name instead, and the depth keeps nested ones apart.
+  v = 'v',
+  depth = 0,
 ): string {
   const fallback = literal(defaultValue);
   switch (meta.kind) {
     case 'string':
-      return `typeof v === 'string' ? v : ${fallback}`;
+      return `typeof ${v} === 'string' ? ${v} : ${fallback}`;
     case 'boolean':
-      return `typeof v === 'boolean' ? v : ${fallback}`;
+      return `typeof ${v} === 'boolean' ? ${v} : ${fallback}`;
     case 'enum': {
       // `undefined` is checked before membership by enumValue, so a member
       // spelled undefined can never be matched here — dropping it from the
       // comparisons reproduces that exactly.
       const tests = meta.values
         .filter(value => value !== undefined)
-        .map(value => `v === ${literal(value)}`);
+        .map(value => `${v} === ${literal(value)}`);
       return tests.length === 0
         ? fallback
-        : `${tests.join(' || ')} ? v : ${fallback}`;
+        : `${tests.join(' || ')} ? ${v} : ${fallback}`;
     }
     case 'number': {
       if (meta.min !== undefined || meta.max !== undefined || meta.integer) {
@@ -227,9 +265,10 @@ function compile(
         // exactly ±Infinity, and JSON.stringify cannot say so.
         const min = meta.min === undefined ? '-Infinity' : String(meta.min);
         const max = meta.max === undefined ? 'Infinity' : String(meta.max);
-        return `numC(v, ${fallback}, ${min}, ${max}, ${Boolean(meta.integer)})`;
+        const helper = meta.clamp ? 'numK' : 'numC';
+        return `${helper}(${v}, ${fallback}, ${min}, ${max}, ${Boolean(meta.integer)})`;
       }
-      return `num(v, ${fallback})`;
+      return `num(${v}, ${fallback})`;
     }
     case 'aliased': {
       // `__proto__` in an object literal sets the prototype instead of
@@ -251,13 +290,71 @@ function compile(
             ? base
             : `${base}_${tables.length + 1}`;
       tables.push({name, table: meta.aliases});
-      const inner = compile(meta.inner.meta, defaultValue, base, tables);
+      const inner = compile(
+        meta.inner.meta,
+        defaultValue,
+        base,
+        tables,
+        v,
+        depth,
+      );
       // `in` rather than a bare lookup, and whoever emits this table has to
       // give it a null prototype: the key comes straight out of untrusted
       // JSON, so `'toString'` would otherwise resolve to Object.prototype's
       // method and be stored as this property's value. Naming the table in
       // `nullPrototypeTables` is what makes verifyCompiledParse check it.
-      return `typeof v === 'string' && v in ${name} ? ${name}[v] : ${inner}`;
+      return `typeof ${v} === 'string' && ${v} in ${name} ? ${name}[${v}] : ${inner}`;
+    }
+    case 'nullable':
+    case 'optional': {
+      // The wrapper answers for its own nil and defers the rest to its inner
+      // schema, exactly as the runtime does. `nullable` treats `undefined` as
+      // `null` too, which is why it tests `== null` where `optional` tests
+      // only `undefined`.
+      const nil = meta.kind === 'nullable' ? 'null' : 'undefined';
+      const test =
+        meta.kind === 'nullable' ? `${v} == null` : `${v} === undefined`;
+      const inner = compile(
+        meta.inner.meta,
+        meta.inner.defaultValue,
+        base,
+        tables,
+        v,
+        depth,
+      );
+      const collapses =
+        meta.kind === 'nullable' ? meta.defaultAsNull : meta.omitDefault;
+      if (!collapses) {
+        return `${test} ? ${nil} : ${inner}`;
+      }
+      // With the flag, a parse that lands on the inner default is the nil
+      // instead. The test is the one `compileDiffersFromDefault` states,
+      // negated — so an inner default it cannot state refuses the whole
+      // property — and it is applied to the parsed value, which means naming
+      // the inner expression twice rather than binding it: a binding needs a
+      // statement, and this has to stay an expression to nest.
+      const isDefault = compileDefaultComparison(
+        meta.inner,
+        `(${inner})`,
+        true,
+      );
+      return `${test} || ${isDefault} ? ${nil} : ${inner}`;
+    }
+    case 'array': {
+      // `Array.from` rather than `.map`, which skips holes: the runtime reads
+      // every index, so a hole parses as `undefined` and lands on the item's
+      // default. The callback binds its own name so the item's parse cannot
+      // read the array it came from.
+      const item = `e${depth}`;
+      const inner = compile(
+        meta.item.meta,
+        meta.item.defaultValue,
+        base,
+        tables,
+        item,
+        depth + 1,
+      );
+      return `Array.isArray(${v}) ? Array.from(${v}, ${item} => ${inner}) : []`;
     }
     default:
       throw new NotCompilable(`a ${meta.kind} schema`);
@@ -346,6 +443,13 @@ export function verificationCorpus(meta: SerializationSchemaMeta): unknown[] {
       walk(m.inner.meta);
     } else if (m.kind === 'array') {
       walk(m.item.meta);
+      // The item's whole corpus as one array, so every value the element
+      // parse has to agree about is actually run through it — the scalars
+      // `walk` contributes are only ever seen by the array parse as
+      // *non*-arrays, which it rejects wholesale. Plus a sparse array, where
+      // the runtime's index loop and an emitted `Array.from` both have to read
+      // the hole as `undefined` rather than skip it.
+      values.push(verificationCorpus(m.item.meta), new Array(2));
     } else if (m.kind === 'union') {
       for (const member of m.members) {
         walk(member.meta);
@@ -373,6 +477,33 @@ export function verificationCorpus(meta: SerializationSchemaMeta): unknown[] {
  * generated code actually contains, rather than a closure wrapped around it for
  * the occasion.
  */
+/**
+ * Whether two parses are the same result. `Object.is`, so `NaN` matches `NaN`
+ * and `0` does not match `-0` — except through an array, where every parse
+ * returns a fresh one and identity would report every array schema as broken.
+ * Its own comparison rather than the schema's `isEqual`: a comparator is the
+ * schema's opinion about its domain, and this is checking the schema.
+ */
+function sameParse(want: unknown, got: unknown): boolean {
+  if (Array.isArray(want) || Array.isArray(got)) {
+    if (!Array.isArray(want) || !Array.isArray(got)) {
+      return false;
+    }
+    if (want.length !== got.length) {
+      return false;
+    }
+    // An index loop rather than `every`, which skips holes: a parse that left
+    // one where the other filled it is exactly a disagreement to report.
+    for (let i = 0; i < want.length; i++) {
+      if (!sameParse(want[i], got[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return Object.is(want, got);
+}
+
 export function verifyCompiledParse({
   expression,
   nullPrototypeTables = [],
@@ -391,7 +522,9 @@ export function verifyCompiledParse({
   const compiled = new Function(
     'v',
     'SCOPE',
-    `const {${['num', 'numC', ...names].join(', ')}} = SCOPE; return (${expression});`,
+    `const {${['num', 'numC', 'numK', ...names].join(
+      ', ',
+    )}} = SCOPE; return (${expression});`,
   ) as (v: unknown, scope: {readonly [key: string]: unknown}) => unknown;
   // eslint-disable-next-line no-new-func
   const num = new Function('v', 'd', 'JSON_NUMBER', NUM_BODY) as (
@@ -420,10 +553,29 @@ export function verifyCompiledParse({
     JSON_NUMBER_SOURCE.slice(1, JSON_NUMBER_SOURCE.lastIndexOf('/')),
   );
   const boundNum = (v: unknown, d: number): number => num(v, d, jsonNumber);
+  // eslint-disable-next-line no-new-func
+  const numK = new Function(
+    'v',
+    'd',
+    'min',
+    'max',
+    'integer',
+    'num',
+    NUM_CLAMP_BODY,
+  ) as (
+    value: unknown,
+    fallback: number,
+    min: number,
+    max: number,
+    integer: boolean,
+    parse: (raw: unknown, ifInvalid: number) => number,
+  ) => number;
   const scope: {[key: string]: unknown} = {
     num: boundNum,
     numC: (v: unknown, d: number, min: number, max: number, integer: boolean) =>
       numC(v, d, min, max, integer, boundNum),
+    numK: (v: unknown, d: number, min: number, max: number, integer: boolean) =>
+      numK(v, d, min, max, integer, boundNum),
   };
   for (const {name, table} of tables) {
     scope[name] = nullProto.has(name)
@@ -433,8 +585,7 @@ export function verifyCompiledParse({
   for (const value of verificationCorpus(schema.meta)) {
     const want = schema(value);
     const got = compiled(value, scope);
-    // Object.is, so NaN matches NaN and 0 does not match -0.
-    if (!Object.is(want, got)) {
+    if (!sameParse(want, got)) {
       throw new NotCompilable(
         `disagrees with its schema on ${literal(value)}: schema says ${literal(
           want,
@@ -541,6 +692,21 @@ export function compileDiffersFromDefault(
   schema: AnySerializationSchema,
   name: string,
 ): string {
+  return compileDefaultComparison(schema, name, false);
+}
+
+/**
+ * {@link compileDiffersFromDefault} and its negation, which `nullable`'s
+ * `defaultAsNull` and `optional`'s `omitDefault` want the other way round.
+ * Stated once so the two forms cannot answer differently, and so that neither
+ * is the other wrapped in a `!(…)` — a generated parser reads better, and is
+ * shorter, saying `x === ''` than `!(x !== '')`.
+ */
+function compileDefaultComparison(
+  schema: AnySerializationSchema,
+  name: string,
+  equals: boolean,
+): string {
   const {defaultValue} = schema;
   if (hasFaithfulLiteral(defaultValue)) {
     // `!==` is the whole of the walk's rule only while there is no second
@@ -559,7 +725,7 @@ export function compileDiffersFromDefault(
         )}) with an equality of its own`,
       );
     }
-    return `${name} !== ${literal(defaultValue)}`;
+    return `${name} ${equals ? '===' : '!=='} ${literal(defaultValue)}`;
   }
   if (
     schema.meta.kind === 'array' &&
@@ -567,7 +733,8 @@ export function compileDiffersFromDefault(
     Array.isArray(defaultValue) &&
     defaultValue.length === 0
   ) {
-    return `!(Array.isArray(${name}) && ${name}.length === 0)`;
+    const empty = `Array.isArray(${name}) && ${name}.length === 0`;
+    return equals ? `(${empty})` : `!(${empty})`;
   }
   throw new NotCompilable(
     `has a default with no faithful literal (${literal(defaultValue)})`,

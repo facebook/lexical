@@ -60,6 +60,7 @@ import {
   compileDiffersFromDefault,
   compileParse,
   NotCompilable,
+  NUM_CLAMP_HELPER_SOURCE,
   NUM_HELPER_SOURCE,
   NUM_RANGE_HELPER_SOURCE,
   verifyCompiledParse,
@@ -360,6 +361,7 @@ const EMITTED_LOCALS = new Set([
   'node',
   'num',
   'numC',
+  'numK',
   'prevNode',
   'self',
   'v',
@@ -1174,9 +1176,11 @@ function generatePackage(pkg) {
   const parsers = generated.flatMap(g =>
     g.updateFromJSON === null ? [] : [g.updateFromJSON],
   );
-  // `numC` calls `num`, so a constrained domain needs both.
+  // `numC` and `numK` both call `num`, so either one needs it too.
   const needsNumC = parsers.some(p => p.includes('numC('));
-  const needsNum = needsNumC || parsers.some(p => p.includes('num('));
+  const needsNumK = parsers.some(p => p.includes('numK('));
+  const needsNum =
+    needsNumC || needsNumK || parsers.some(p => p.includes('num('));
 
   /** Class names by the module that declares them. @type {Map<string, Set<string>>} */
   const typeImports = new Map();
@@ -1301,6 +1305,9 @@ function generatePackage(pkg) {
   }
   if (needsNumC) {
     prelude.push(NUM_RANGE_HELPER_SOURCE);
+  }
+  if (needsNumK) {
+    prelude.push(NUM_CLAMP_HELPER_SOURCE);
   }
 
   return `${HEADER}

@@ -2034,6 +2034,7 @@ export type SerializationSchemaMeta = {
   readonly min?: number,
   readonly max?: number,
   readonly integer?: boolean,
+  readonly clamp?: boolean,
   readonly omitDefault?: boolean,
   readonly defaultAsNull?: boolean,
 };
@@ -2041,6 +2042,7 @@ export type NumberValueOptions = {
   readonly min?: number,
   readonly max?: number,
   readonly integer?: boolean,
+  readonly clamp?: boolean,
 };
 declare export function stringValue(defaultValue?: string): SerializationSchema<string>;
 declare export function numberValue(

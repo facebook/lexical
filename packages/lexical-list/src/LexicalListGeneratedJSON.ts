@@ -46,6 +46,20 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
+function numK(
+  v: unknown,
+  d: number,
+  min: number,
+  max: number,
+  integer: boolean,
+): number {
+  const n = num(v, NaN);
+  if (!Number.isFinite(n) || (integer && !Number.isInteger(n))) {
+    return d;
+  }
+  return n < min ? min : n > max ? max : n;
+}
+
 /** ListNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_LIST: GeneratedJSONFactory = fields => {
   const LIST_LISTTYPE_ALIAS = aliasTableOf(fields, 'listType', 0) as {
@@ -268,6 +282,60 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
   }
 
   /** Generated from ListItemNode's serialization schema. Do not edit by hand. */
+  function updateListItemNode(
+    node: ListItemNode,
+    json: {readonly [key: string]: unknown},
+  ): ListItemNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'direction')
+      ? json.direction
+      : undefined;
+    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      v === '' ||
+        v === 'left' ||
+        v === 'start' ||
+        v === 'center' ||
+        v === 'right' ||
+        v === 'end' ||
+        v === 'justify'
+        ? v
+        : '',
+    );
+    self = (n ?? self) as ListItemNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'indent')
+      ? json.indent
+      : undefined;
+    n = self.setIndent(numK(v, 0, 0, 128, true));
+    self = (n ?? self) as ListItemNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+      ? json.textFormat
+      : undefined;
+    n = self.setTextFormat(num(v, 0));
+    self = (n ?? self) as ListItemNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+      ? json.textStyle
+      : undefined;
+    n = self.setTextStyle(typeof v === 'string' ? v : '');
+    self = (n ?? self) as ListItemNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'checked')
+      ? json.checked
+      : undefined;
+    self.__checked =
+      v === undefined ? undefined : typeof v === 'boolean' ? v : false;
+    v = Object.prototype.hasOwnProperty.call(json, 'value')
+      ? json.value
+      : undefined;
+    self.__value = num(v, 1);
+    return self;
+  }
+
+  /** Generated from ListItemNode's serialization schema. Do not edit by hand. */
   function afterCloneListItemNode(
     node: ListItemNode,
     prevNode: ListItemNode,
@@ -279,6 +347,7 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
   return {
     exportJSON: exportListItemNode,
     exportCompactJSON: exportCompactListItemNode,
+    updateFromJSON: updateListItemNode,
     afterCloneFrom: afterCloneListItemNode,
   };
 };

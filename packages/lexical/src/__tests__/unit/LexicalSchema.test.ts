@@ -420,12 +420,46 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       expect(pct(100)).toBe(100);
       expect(pct(101)).toBe(0);
     });
+    test('clamp brings an out-of-range value to the nearest bound', () => {
+      const indent = numberValue(0, {
+        clamp: true,
+        integer: true,
+        max: 128,
+        min: 0,
+      });
+      expect(indent(5)).toBe(5);
+      expect(indent(1e6)).toBe(128);
+      expect(indent(-4)).toBe(0);
+      // The string encoding of a number is read the same way.
+      expect(indent('1e6')).toBe(128);
+      // Only the range stops deciding membership: a value that is not a
+      // finite number, or not an integer where one is required, has no
+      // nearest bound and still falls back to the default.
+      expect(indent(1.5)).toBe(0);
+      expect(indent(Infinity)).toBe(0);
+      expect(indent('banana')).toBe(0);
+      expect(indent(undefined)).toBe(0);
+    });
+    test('clamp widens what the domain accepts', () => {
+      // A value outside the bounds is one this schema reads — it parses to a
+      // bound rather than to the default — so a union must not skip past it.
+      expect(numberValue(0, {clamp: true, max: 10}).accepts!(99)).toBe(true);
+      expect(numberValue(0, {max: 10}).accepts!(99)).toBe(false);
+    });
     test('the domain is recorded on meta', () => {
       expect(numberValue(1, {integer: true, min: 1}).meta).toEqual({
+        clamp: undefined,
         integer: true,
         kind: 'number',
         max: undefined,
         min: 1,
+      });
+      expect(numberValue(0, {clamp: true, max: 8}).meta).toEqual({
+        clamp: true,
+        integer: undefined,
+        kind: 'number',
+        max: 8,
+        min: undefined,
       });
     });
   });

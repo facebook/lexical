@@ -16,6 +16,34 @@
 import type {AutoLinkNode, LinkNode} from './LexicalLinkNode';
 import type {GeneratedJSONFactory} from 'lexical';
 
+// The JSON number grammar, anchored, matching numberValue: `Number()` alone
+// reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
+// produces. Emitted from the same source the codegen verified against, so the
+// two cannot be different functions.
+const JSON_NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+
+function num(v: unknown, d: number): number {
+  if (typeof v === 'number') {
+    return Number.isFinite(v) ? v : d;
+  }
+  if (typeof v !== 'string' || !JSON_NUMBER.test(v)) {
+    return d;
+  }
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+
+function numC(
+  v: unknown,
+  d: number,
+  min: number,
+  max: number,
+  integer: boolean,
+): number {
+  const n = num(v, d);
+  return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
+}
+
 /** LinkNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_LINK: GeneratedJSONFactory = () => {
   /** Generated from LinkNode's serialization schema. Do not edit by hand. */
@@ -97,6 +125,81 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
   }
 
   /** Generated from LinkNode's serialization schema. Do not edit by hand. */
+  function updateLinkNode(
+    node: LinkNode,
+    json: {readonly [key: string]: unknown},
+  ): LinkNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'direction')
+      ? json.direction
+      : undefined;
+    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      v === '' ||
+        v === 'left' ||
+        v === 'start' ||
+        v === 'center' ||
+        v === 'right' ||
+        v === 'end' ||
+        v === 'justify'
+        ? v
+        : '',
+    );
+    self = (n ?? self) as LinkNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'indent')
+      ? json.indent
+      : undefined;
+    self.__indent = numC(v, 0, 0, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+      ? json.textFormat
+      : undefined;
+    n = self.setTextFormat(num(v, 0));
+    self = (n ?? self) as LinkNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+      ? json.textStyle
+      : undefined;
+    n = self.setTextStyle(typeof v === 'string' ? v : '');
+    self = (n ?? self) as LinkNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'rel')
+      ? json.rel
+      : undefined;
+    self.__rel =
+      v == null || (typeof v === 'string' ? v : '') === ''
+        ? null
+        : typeof v === 'string'
+          ? v
+          : '';
+    v = Object.prototype.hasOwnProperty.call(json, 'target')
+      ? json.target
+      : undefined;
+    self.__target =
+      v == null || (typeof v === 'string' ? v : '') === ''
+        ? null
+        : typeof v === 'string'
+          ? v
+          : '';
+    v = Object.prototype.hasOwnProperty.call(json, 'title')
+      ? json.title
+      : undefined;
+    self.__title =
+      v == null || (typeof v === 'string' ? v : '') === ''
+        ? null
+        : typeof v === 'string'
+          ? v
+          : '';
+    v = Object.prototype.hasOwnProperty.call(json, 'url')
+      ? json.url
+      : undefined;
+    self.__url = typeof v === 'string' ? v : '';
+    return self;
+  }
+
+  /** Generated from LinkNode's serialization schema. Do not edit by hand. */
   function afterCloneLinkNode(node: LinkNode, prevNode: LinkNode): void {
     node.__rel = prevNode.__rel;
     node.__target = prevNode.__target;
@@ -107,6 +210,7 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
   return {
     exportJSON: exportLinkNode,
     exportCompactJSON: exportCompactLinkNode,
+    updateFromJSON: updateLinkNode,
     afterCloneFrom: afterCloneLinkNode,
   };
 };
@@ -199,6 +303,85 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
   }
 
   /** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
+  function updateAutoLinkNode(
+    node: AutoLinkNode,
+    json: {readonly [key: string]: unknown},
+  ): AutoLinkNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'direction')
+      ? json.direction
+      : undefined;
+    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      v === '' ||
+        v === 'left' ||
+        v === 'start' ||
+        v === 'center' ||
+        v === 'right' ||
+        v === 'end' ||
+        v === 'justify'
+        ? v
+        : '',
+    );
+    self = (n ?? self) as AutoLinkNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'indent')
+      ? json.indent
+      : undefined;
+    self.__indent = numC(v, 0, 0, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+      ? json.textFormat
+      : undefined;
+    n = self.setTextFormat(num(v, 0));
+    self = (n ?? self) as AutoLinkNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+      ? json.textStyle
+      : undefined;
+    n = self.setTextStyle(typeof v === 'string' ? v : '');
+    self = (n ?? self) as AutoLinkNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'rel')
+      ? json.rel
+      : undefined;
+    self.__rel =
+      v == null || (typeof v === 'string' ? v : '') === ''
+        ? null
+        : typeof v === 'string'
+          ? v
+          : '';
+    v = Object.prototype.hasOwnProperty.call(json, 'target')
+      ? json.target
+      : undefined;
+    self.__target =
+      v == null || (typeof v === 'string' ? v : '') === ''
+        ? null
+        : typeof v === 'string'
+          ? v
+          : '';
+    v = Object.prototype.hasOwnProperty.call(json, 'title')
+      ? json.title
+      : undefined;
+    self.__title =
+      v == null || (typeof v === 'string' ? v : '') === ''
+        ? null
+        : typeof v === 'string'
+          ? v
+          : '';
+    v = Object.prototype.hasOwnProperty.call(json, 'url')
+      ? json.url
+      : undefined;
+    self.__url = typeof v === 'string' ? v : '';
+    v = Object.prototype.hasOwnProperty.call(json, 'isUnlinked')
+      ? json.isUnlinked
+      : undefined;
+    self.__isUnlinked = typeof v === 'boolean' ? v : false;
+    return self;
+  }
+
+  /** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
   function afterCloneAutoLinkNode(
     node: AutoLinkNode,
     prevNode: AutoLinkNode,
@@ -209,6 +392,7 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
   return {
     exportJSON: exportAutoLinkNode,
     exportCompactJSON: exportCompactAutoLinkNode,
+    updateFromJSON: updateAutoLinkNode,
     afterCloneFrom: afterCloneAutoLinkNode,
   };
 };

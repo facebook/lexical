@@ -584,7 +584,7 @@ node boilerplate the schema does not touch.
 Each property's schema is built from composable helpers exported by
 `lexical`:
 
-- [`stringValue(defaultValue = '')`](/docs/api/modules/lexical#stringvalue), [`numberValue(defaultValue = 0, {min, max, integer}?)`](/docs/api/modules/lexical#numbervalue), and [`booleanValue(defaultValue = false)`](/docs/api/modules/lexical#booleanvalue) — primitive values with defaults. `numberValue` also reads a string spelled as a JSON number (`"120"` → `120`), so a document that stringified its numbers keeps them; notations JSON itself can not produce (`"0x10"`, `"+1"`, `"Infinity"`) stay out of domain, and the domain it reports is still `number`
+- [`stringValue(defaultValue = '')`](/docs/api/modules/lexical#stringvalue), [`numberValue(defaultValue = 0, {min, max, integer, clamp}?)`](/docs/api/modules/lexical#numbervalue), and [`booleanValue(defaultValue = false)`](/docs/api/modules/lexical#booleanvalue) — primitive values with defaults. `numberValue` also reads a string spelled as a JSON number (`"120"` → `120`), so a document that stringified its numbers keeps them; notations JSON itself can not produce (`"0x10"`, `"+1"`, `"Infinity"`) stay out of domain, and the domain it reports is still `number`. A value outside `min`/`max` is out of domain and reads as the default; pass `clamp` where the bound exists to cap work rather than to describe the domain, and it reads as the nearest bound instead — `ListItemNode`'s indent is capped that way, since an over-deep item read as `0` would be flattened
 - [`enumValue(values, defaultValue?)`](/docs/api/modules/lexical#enumvalue) — one of a fixed set of values; the default is the first unless one is given, and a given `undefined` is a default of `undefined`, legal only when `undefined` is one of the values
 - [`nullable(inner, {defaultAsNull}?)`](/docs/api/modules/lexical#nullable) — the property may also be `null`
 - [`optional(inner, {omitDefault}?)`](/docs/api/modules/lexical#optional) — the property may be `undefined`
@@ -874,9 +874,9 @@ call site, and a runtime error in every build.
 Because a schema states everything ahead of time — which accessor or field
 each property uses, what its default is, what its domain admits — the
 serialization it drives can be compiled to straight-line code instead of
-interpreted from the schema at runtime. Lexical's most common built-in nodes
-ship such code, generated from their own schemas at build time and producing
-byte-identical JSON to the schema-driven path.
+interpreted from the schema at runtime. Every built-in node class ships such
+code, generated from its own schema at build time and producing byte-identical
+JSON to the schema-driven path.
 
 None of this changes how you write a node: it is the same JSON, faster, and a
 custom node needs nothing for it — the schema-driven path serves them. If you

@@ -16,7 +16,41 @@
 import type {CodeHighlightNode} from './CodeHighlightNode';
 import type {CodeNode} from './CodeNode';
 
-import {decodeTableOf, type GeneratedJSONFactory} from 'lexical';
+import {
+  aliasTableOf,
+  decodeTableOf,
+  encodedDefaultOf,
+  encodeTableOf,
+  type GeneratedJSONFactory,
+} from 'lexical';
+
+// The JSON number grammar, anchored, matching numberValue: `Number()` alone
+// reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
+// produces. Emitted from the same source the codegen verified against, so the
+// two cannot be different functions.
+const JSON_NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+
+function num(v: unknown, d: number): number {
+  if (typeof v === 'number') {
+    return Number.isFinite(v) ? v : d;
+  }
+  if (typeof v !== 'string' || !JSON_NUMBER.test(v)) {
+    return d;
+  }
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+
+function numC(
+  v: unknown,
+  d: number,
+  min: number,
+  max: number,
+  integer: boolean,
+): number {
+  const n = num(v, d);
+  return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
+}
 
 /** CodeNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_CODE: GeneratedJSONFactory = () => {
@@ -89,6 +123,70 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
   }
 
   /** Generated from CodeNode's serialization schema. Do not edit by hand. */
+  function updateCodeNode(
+    node: CodeNode,
+    json: {readonly [key: string]: unknown},
+  ): CodeNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'direction')
+      ? json.direction
+      : undefined;
+    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      v === '' ||
+        v === 'left' ||
+        v === 'start' ||
+        v === 'center' ||
+        v === 'right' ||
+        v === 'end' ||
+        v === 'justify'
+        ? v
+        : '',
+    );
+    self = (n ?? self) as CodeNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'indent')
+      ? json.indent
+      : undefined;
+    self.__indent = numC(v, 0, 0, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+      ? json.textFormat
+      : undefined;
+    n = self.setTextFormat(num(v, 0));
+    self = (n ?? self) as CodeNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+      ? json.textStyle
+      : undefined;
+    n = self.setTextStyle(typeof v === 'string' ? v : '');
+    self = (n ?? self) as CodeNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'language')
+      ? json.language
+      : undefined;
+    n = self.setLanguage(
+      v === undefined
+        ? undefined
+        : v == null
+          ? null
+          : typeof v === 'string'
+            ? v
+            : '',
+    );
+    self = (n ?? self) as CodeNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'theme')
+      ? json.theme
+      : undefined;
+    n = self.setTheme(
+      v === undefined ? undefined : typeof v === 'string' ? v : '',
+    );
+    self = (n ?? self) as CodeNode;
+    return self;
+  }
+
+  /** Generated from CodeNode's serialization schema. Do not edit by hand. */
   function afterCloneCodeNode(node: CodeNode, prevNode: CodeNode): void {
     node.__language = prevNode.__language;
     node.__theme = prevNode.__theme;
@@ -97,6 +195,7 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
   return {
     exportJSON: exportCodeNode,
     exportCompactJSON: exportCompactCodeNode,
+    updateFromJSON: updateCodeNode,
     afterCloneFrom: afterCloneCodeNode,
   };
 };
@@ -106,6 +205,34 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
   const CODEHIGHLIGHT_MODE_DECODE = decodeTableOf(fields, 'mode') as {
     readonly [key: string]: 'normal' | 'segmented' | 'token';
   };
+
+  const CODEHIGHLIGHT_DETAIL_ALIAS = aliasTableOf(fields, 'detail', 0) as {
+    readonly [key: string]: 1 | 2;
+  };
+
+  const CODEHIGHLIGHT_FORMAT_ALIAS = aliasTableOf(fields, 'format', 0) as {
+    readonly [key: string]:
+      | 1
+      | 2
+      | 4
+      | 8
+      | 16
+      | 32
+      | 64
+      | 128
+      | 256
+      | 512
+      | 1024;
+  };
+
+  const CODEHIGHLIGHT_MODE_ENCODE = encodeTableOf(fields, 'mode') as {
+    readonly [key: string]: 0 | 1 | 2;
+  };
+
+  const CODEHIGHLIGHT_MODE_ENCODE_DEFAULT = encodedDefaultOf(fields, 'mode') as
+    | 0
+    | 1
+    | 2;
 
   /** Generated from CodeHighlightNode's serialization schema. Do not edit by hand. */
   function exportCodeHighlightNode(node: CodeHighlightNode): {
@@ -155,8 +282,65 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
     return json;
   }
 
+  /** Generated from CodeHighlightNode's serialization schema. Do not edit by hand. */
+  function updateCodeHighlightNode(
+    node: CodeHighlightNode,
+    json: {readonly [key: string]: unknown},
+  ): CodeHighlightNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'detail')
+      ? json.detail
+      : undefined;
+    self.__detail =
+      typeof v === 'string' && v in CODEHIGHLIGHT_DETAIL_ALIAS
+        ? CODEHIGHLIGHT_DETAIL_ALIAS[v]
+        : num(v, 0);
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      typeof v === 'string' && v in CODEHIGHLIGHT_FORMAT_ALIAS
+        ? CODEHIGHLIGHT_FORMAT_ALIAS[v]
+        : num(v, 0),
+    );
+    self = (n ?? self) as CodeHighlightNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'mode')
+      ? json.mode
+      : undefined;
+    v = v === 'normal' || v === 'token' || v === 'segmented' ? v : 'normal';
+    self.__mode =
+      (v as string) in CODEHIGHLIGHT_MODE_ENCODE
+        ? CODEHIGHLIGHT_MODE_ENCODE[v as string]
+        : CODEHIGHLIGHT_MODE_ENCODE_DEFAULT;
+    v = Object.prototype.hasOwnProperty.call(json, 'style')
+      ? json.style
+      : undefined;
+    self.__style = typeof v === 'string' ? v : '';
+    v = Object.prototype.hasOwnProperty.call(json, 'text')
+      ? json.text
+      : undefined;
+    self.__text = typeof v === 'string' ? v : '';
+    v = Object.prototype.hasOwnProperty.call(json, 'highlightType')
+      ? json.highlightType
+      : undefined;
+    n = self.setHighlightType(
+      v === undefined
+        ? undefined
+        : v == null
+          ? null
+          : typeof v === 'string'
+            ? v
+            : '',
+    );
+    self = (n ?? self) as CodeHighlightNode;
+    return self;
+  }
+
   return {
     exportJSON: exportCodeHighlightNode,
     exportCompactJSON: exportCompactCodeHighlightNode,
+    updateFromJSON: updateCodeHighlightNode,
   };
 };

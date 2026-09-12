@@ -16,6 +16,34 @@
 import type {MarkNode} from './MarkNode';
 import type {GeneratedJSONFactory} from 'lexical';
 
+// The JSON number grammar, anchored, matching numberValue: `Number()` alone
+// reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
+// produces. Emitted from the same source the codegen verified against, so the
+// two cannot be different functions.
+const JSON_NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+
+function num(v: unknown, d: number): number {
+  if (typeof v === 'number') {
+    return Number.isFinite(v) ? v : d;
+  }
+  if (typeof v !== 'string' || !JSON_NUMBER.test(v)) {
+    return d;
+  }
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+
+function numC(
+  v: unknown,
+  d: number,
+  min: number,
+  max: number,
+  integer: boolean,
+): number {
+  const n = num(v, d);
+  return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
+}
+
 /** MarkNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_MARK: GeneratedJSONFactory = () => {
   /** Generated from MarkNode's serialization schema. Do not edit by hand. */
@@ -81,8 +109,62 @@ export const GENERATED_MARK: GeneratedJSONFactory = () => {
     return json;
   }
 
+  /** Generated from MarkNode's serialization schema. Do not edit by hand. */
+  function updateMarkNode(
+    node: MarkNode,
+    json: {readonly [key: string]: unknown},
+  ): MarkNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'direction')
+      ? json.direction
+      : undefined;
+    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      v === '' ||
+        v === 'left' ||
+        v === 'start' ||
+        v === 'center' ||
+        v === 'right' ||
+        v === 'end' ||
+        v === 'justify'
+        ? v
+        : '',
+    );
+    self = (n ?? self) as MarkNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'indent')
+      ? json.indent
+      : undefined;
+    self.__indent = numC(v, 0, 0, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+      ? json.textFormat
+      : undefined;
+    n = self.setTextFormat(num(v, 0));
+    self = (n ?? self) as MarkNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+      ? json.textStyle
+      : undefined;
+    n = self.setTextStyle(typeof v === 'string' ? v : '');
+    self = (n ?? self) as MarkNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'ids')
+      ? json.ids
+      : undefined;
+    n = self.setIDs(
+      Array.isArray(v)
+        ? Array.from(v, e0 => (typeof e0 === 'string' ? e0 : ''))
+        : [],
+    );
+    self = (n ?? self) as MarkNode;
+    return self;
+  }
+
   return {
     exportJSON: exportMarkNode,
     exportCompactJSON: exportCompactMarkNode,
+    updateFromJSON: updateMarkNode,
   };
 };

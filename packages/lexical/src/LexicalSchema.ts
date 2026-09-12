@@ -65,6 +65,8 @@ export type SerializationSchemaMeta =
       readonly max?: number;
       /** Whether the domain is restricted to integers. */
       readonly integer?: boolean;
+      /** Whether a finite value outside the bounds clamps to the nearest. */
+      readonly clamp?: boolean;
     }
   | {readonly kind: 'boolean'}
   | {readonly kind: 'enum'; readonly values: readonly unknown[]}
@@ -119,6 +121,19 @@ export interface NumberValueOptions {
   readonly max?: number;
   /** Reject values that are not integers. */
   readonly integer?: boolean;
+  /**
+   * Bring a value outside `min`/`max` to the nearest bound instead of
+   * rejecting it. Only a finite number is clamped: a value that is not a
+   * number at all, or is not an integer when `integer` is set, still falls
+   * back to the default, because there is no nearest bound for it.
+   *
+   * The distinction matters wherever the bound exists to cap work rather than
+   * to describe the domain. `ListItemNode`'s indent is capped because
+   * applying it nests one list per level, and an over-deep item read as the
+   * default `0` would be flattened, where clamping keeps it as deep as the
+   * cap allows.
+   */
+  readonly clamp?: boolean;
 }
 
 /**
@@ -1777,30 +1792,44 @@ export function numberValue(
   defaultValue = 0,
   options: NumberValueOptions = {},
 ): SerializationSchema<number, never, number | string> {
-  const {min, max, integer} = options;
+  const {min, max, integer, clamp} = options;
   const coerce = (value: unknown): unknown =>
     typeof value === 'string' && JSON_NUMBER.test(value)
       ? Number(value)
       : value;
-  const inDomain = (parsed: unknown): parsed is number =>
+  // Everything the domain asks of a value except where it sits in the range,
+  // which is the part `clamp` answers differently.
+  const isNumeric = (parsed: unknown): parsed is number =>
     typeof parsed === 'number' &&
     Number.isFinite(parsed) &&
-    (min === undefined || parsed >= min) &&
-    (max === undefined || parsed <= max) &&
     (!integer || Number.isInteger(parsed));
+  const inDomain = (parsed: unknown): parsed is number =>
+    isNumeric(parsed) &&
+    (min === undefined || parsed >= min) &&
+    (max === undefined || parsed <= max);
   return makeSchema(
     value => {
       const parsed = coerce(value);
+      if (clamp && isNumeric(parsed)) {
+        return min !== undefined && parsed < min
+          ? min
+          : max !== undefined && parsed > max
+            ? max
+            : parsed;
+      }
       return inDomain(parsed) ? parsed : defaultValue;
     },
-    {integer, kind: 'number', max, min},
+    {clamp, integer, kind: 'number', max, min},
     undefined,
     undefined,
     // Declared because this domain spans two value types: a union member has
     // no other way to tell `'0'` — a stringified number, in domain, which
     // parsing normalizes to the default — from `'banana'`, which is out of
     // domain and lands on the default too.
-    value => inDomain(coerce(value)),
+    // With `clamp` the bounds no longer decide membership: a value outside
+    // them parses to a bound rather than to the default, so it is one this
+    // schema reads.
+    value => (clamp ? isNumeric(coerce(value)) : inDomain(coerce(value))),
   );
 }
 

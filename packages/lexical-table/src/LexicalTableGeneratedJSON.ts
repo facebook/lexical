@@ -18,6 +18,34 @@ import type {TableNode} from './LexicalTableNode';
 import type {TableRowNode} from './LexicalTableRowNode';
 import type {GeneratedJSONFactory} from 'lexical';
 
+// The JSON number grammar, anchored, matching numberValue: `Number()` alone
+// reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
+// produces. Emitted from the same source the codegen verified against, so the
+// two cannot be different functions.
+const JSON_NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+
+function num(v: unknown, d: number): number {
+  if (typeof v === 'number') {
+    return Number.isFinite(v) ? v : d;
+  }
+  if (typeof v !== 'string' || !JSON_NUMBER.test(v)) {
+    return d;
+  }
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+
+function numC(
+  v: unknown,
+  d: number,
+  min: number,
+  max: number,
+  integer: boolean,
+): number {
+  const n = num(v, d);
+  return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
+}
+
 /** TableNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TABLE: GeneratedJSONFactory = () => {
   /** Generated from TableNode's serialization schema. Do not edit by hand. */
@@ -99,6 +127,76 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
   }
 
   /** Generated from TableNode's serialization schema. Do not edit by hand. */
+  function updateTableNode(
+    node: TableNode,
+    json: {readonly [key: string]: unknown},
+  ): TableNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'direction')
+      ? json.direction
+      : undefined;
+    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      v === '' ||
+        v === 'left' ||
+        v === 'start' ||
+        v === 'center' ||
+        v === 'right' ||
+        v === 'end' ||
+        v === 'justify'
+        ? v
+        : '',
+    );
+    self = (n ?? self) as TableNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'indent')
+      ? json.indent
+      : undefined;
+    self.__indent = numC(v, 0, 0, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+      ? json.textFormat
+      : undefined;
+    n = self.setTextFormat(num(v, 0));
+    self = (n ?? self) as TableNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+      ? json.textStyle
+      : undefined;
+    n = self.setTextStyle(typeof v === 'string' ? v : '');
+    self = (n ?? self) as TableNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'colWidths')
+      ? json.colWidths
+      : undefined;
+    n = self.setColWidths(
+      v === undefined
+        ? undefined
+        : Array.isArray(v)
+          ? Array.from(v, e0 => num(e0, 0))
+          : [],
+    );
+    self = (n ?? self) as TableNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'frozenColumnCount')
+      ? json.frozenColumnCount
+      : undefined;
+    n = self.setFrozenColumns(num(v, 0));
+    self = (n ?? self) as TableNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'frozenRowCount')
+      ? json.frozenRowCount
+      : undefined;
+    n = self.setFrozenRows(num(v, 0));
+    self = (n ?? self) as TableNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'rowStriping')
+      ? json.rowStriping
+      : undefined;
+    n = self.setRowStriping(typeof v === 'boolean' ? v : false);
+    self = (n ?? self) as TableNode;
+    return self;
+  }
+
+  /** Generated from TableNode's serialization schema. Do not edit by hand. */
   function afterCloneTableNode(node: TableNode, prevNode: TableNode): void {
     node.__colWidths = prevNode.__colWidths;
   }
@@ -106,6 +204,7 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
   return {
     exportJSON: exportTableNode,
     exportCompactJSON: exportCompactTableNode,
+    updateFromJSON: updateTableNode,
     afterCloneFrom: afterCloneTableNode,
   };
 };
@@ -178,6 +277,54 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
   }
 
   /** Generated from TableRowNode's serialization schema. Do not edit by hand. */
+  function updateTableRowNode(
+    node: TableRowNode,
+    json: {readonly [key: string]: unknown},
+  ): TableRowNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'direction')
+      ? json.direction
+      : undefined;
+    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      v === '' ||
+        v === 'left' ||
+        v === 'start' ||
+        v === 'center' ||
+        v === 'right' ||
+        v === 'end' ||
+        v === 'justify'
+        ? v
+        : '',
+    );
+    self = (n ?? self) as TableRowNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'indent')
+      ? json.indent
+      : undefined;
+    self.__indent = numC(v, 0, 0, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+      ? json.textFormat
+      : undefined;
+    n = self.setTextFormat(num(v, 0));
+    self = (n ?? self) as TableRowNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+      ? json.textStyle
+      : undefined;
+    n = self.setTextStyle(typeof v === 'string' ? v : '');
+    self = (n ?? self) as TableRowNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'height')
+      ? json.height
+      : undefined;
+    self.__height = v === undefined ? undefined : num(v, 0);
+    return self;
+  }
+
+  /** Generated from TableRowNode's serialization schema. Do not edit by hand. */
   function afterCloneTableRowNode(
     node: TableRowNode,
     prevNode: TableRowNode,
@@ -188,6 +335,7 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
   return {
     exportJSON: exportTableRowNode,
     exportCompactJSON: exportCompactTableRowNode,
+    updateFromJSON: updateTableRowNode,
     afterCloneFrom: afterCloneTableRowNode,
   };
 };
@@ -285,6 +433,81 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
   }
 
   /** Generated from TableCellNode's serialization schema. Do not edit by hand. */
+  function updateTableCellNode(
+    node: TableCellNode,
+    json: {readonly [key: string]: unknown},
+  ): TableCellNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'direction')
+      ? json.direction
+      : undefined;
+    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      v === '' ||
+        v === 'left' ||
+        v === 'start' ||
+        v === 'center' ||
+        v === 'right' ||
+        v === 'end' ||
+        v === 'justify'
+        ? v
+        : '',
+    );
+    self = (n ?? self) as TableCellNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'indent')
+      ? json.indent
+      : undefined;
+    self.__indent = numC(v, 0, 0, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+      ? json.textFormat
+      : undefined;
+    n = self.setTextFormat(num(v, 0));
+    self = (n ?? self) as TableCellNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+      ? json.textStyle
+      : undefined;
+    n = self.setTextStyle(typeof v === 'string' ? v : '');
+    self = (n ?? self) as TableCellNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'backgroundColor')
+      ? json.backgroundColor
+      : undefined;
+    self.__backgroundColor =
+      v == null || (typeof v === 'string' ? v : '') === ''
+        ? null
+        : typeof v === 'string'
+          ? v
+          : '';
+    v = Object.prototype.hasOwnProperty.call(json, 'colSpan')
+      ? json.colSpan
+      : undefined;
+    self.__colSpan = numC(v, 1, 1, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'headerState')
+      ? json.headerState
+      : undefined;
+    n = self.setHeaderStyles(num(v, 0));
+    self = (n ?? self) as TableCellNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'rowSpan')
+      ? json.rowSpan
+      : undefined;
+    self.__rowSpan = numC(v, 1, 1, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'verticalAlign')
+      ? json.verticalAlign
+      : undefined;
+    n = self.setVerticalAlign(v === 'middle' || v === 'bottom' ? v : undefined);
+    self = (n ?? self) as TableCellNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'width')
+      ? json.width
+      : undefined;
+    self.__width = v === undefined || num(v, 0) === 0 ? undefined : num(v, 0);
+    return self;
+  }
+
+  /** Generated from TableCellNode's serialization schema. Do not edit by hand. */
   function afterCloneTableCellNode(
     node: TableCellNode,
     prevNode: TableCellNode,
@@ -299,6 +522,7 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
   return {
     exportJSON: exportTableCellNode,
     exportCompactJSON: exportCompactTableCellNode,
+    updateFromJSON: updateTableCellNode,
     afterCloneFrom: afterCloneTableCellNode,
   };
 };

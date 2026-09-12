@@ -48,7 +48,6 @@ import {
   type SerializedPartial,
   setDOMStyleFromCSS,
   type Spread,
-  transformValue,
   withAccessors,
   withField,
 } from 'lexical';
@@ -81,13 +80,16 @@ const listItemNodeSchema = nodeSchema<ListItemNode>()({
   }),
   // Overrides the inherited ElementNode field to bound it. This indent is
   // structural — applying it nests or unwraps one whole list per level — so an
-  // unbounded value out of untrusted JSON would build millions of nodes. Since
-  // a schema falls back to its *default* for an out-of-domain value, clamping
-  // is a transform rather than `numberValue`'s `max`, which would read an
-  // over-deep item as indent 0 instead of as deeply nested.
-  indent: transformValue(numberValue(0, {integer: true, min: 0}), value =>
-    Math.min(value, MAX_LIST_ITEM_INDENT),
-  ),
+  // unbounded value out of untrusted JSON would build millions of nodes.
+  // `clamp`, because the plain bounds fall back to the *default* for a value
+  // outside them, which would read an over-deep item as indent 0 instead of as
+  // deeply nested.
+  indent: numberValue(0, {
+    clamp: true,
+    integer: true,
+    max: MAX_LIST_ITEM_INDENT,
+    min: 0,
+  }),
   value: withField(numberValue(1), {
     field: '__value',
   }),

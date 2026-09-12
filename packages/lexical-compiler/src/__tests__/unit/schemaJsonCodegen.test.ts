@@ -17,6 +17,7 @@ import {
   objectValue,
   optional,
   rawValue,
+  type SerializationSchema,
   stringValue,
   transformValue,
   unionValue,
@@ -29,7 +30,9 @@ import {
   JSON_NUMBER_SOURCE,
   NotCompilable,
   NUM_BODY,
+  NUM_CLAMP_BODY,
   NUM_HELPER_SOURCE,
+  NUM_RANGE_BODY,
   verificationCorpus,
   verifyCompiledParse,
   verifyDiffersFromDefault,
@@ -51,7 +54,9 @@ function compiled(schema: AnySerializationSchema): (value: unknown) => unknown {
   const fn = new Function(
     'v',
     'SCOPE',
-    `const {num, ${['_', ...names].join(', ')}} = SCOPE; return (${expression});`,
+    `const {num, numC, numK, ${['_', ...names].join(
+      ', ',
+    )}} = SCOPE; return (${expression});`,
   );
   // Built from the same source text the generator emits and
   // verifyCompiledParse evaluates. Spelling it out here instead would be a
@@ -59,17 +64,50 @@ function compiled(schema: AnySerializationSchema): (value: unknown) => unknown {
   // while the real helper changed is precisely what this checks against.
   // eslint-disable-next-line no-new-func
   const numFn = new Function('v', 'd', 'JSON_NUMBER', NUM_BODY);
+  // eslint-disable-next-line no-new-func
+  const numCFn = new Function(
+    'v',
+    'd',
+    'min',
+    'max',
+    'integer',
+    'num',
+    NUM_RANGE_BODY,
+  );
+  // eslint-disable-next-line no-new-func
+  const numKFn = new Function(
+    'v',
+    'd',
+    'min',
+    'max',
+    'integer',
+    'num',
+    NUM_CLAMP_BODY,
+  );
   const jsonNumber = new RegExp(
     JSON_NUMBER_SOURCE.slice(1, JSON_NUMBER_SOURCE.lastIndexOf('/')),
   );
+  const num = (v: unknown, d: number) => numFn(v, d, jsonNumber);
   const scope: {[key: string]: unknown} = {
     _: undefined,
-    num: (v: unknown, d: number) => numFn(v, d, jsonNumber),
+    num,
+    numC: (v: unknown, d: number, min: number, max: number, integer: boolean) =>
+      numCFn(v, d, min, max, integer, num),
+    numK: (v: unknown, d: number, min: number, max: number, integer: boolean) =>
+      numKFn(v, d, min, max, integer, num),
   };
   for (const {name, table} of tables) {
     scope[name] = Object.assign(Object.create(null), table);
   }
   return value => fn(value, scope);
+}
+
+/**
+ * A schema no compiler can reproduce: the transform is an opaque closure, so
+ * the meta describes its *input*. What every refusal below is built on.
+ */
+function transformed(): SerializationSchema<string, never, string> {
+  return transformValue(stringValue(), value => value.toUpperCase());
 }
 
 /** Every value the corpus covers has to agree, which is the real contract. */
@@ -157,16 +195,101 @@ describe('compileParse reproduces the schema it compiles', () => {
       expect(run(hostile)).toBe(0);
     }
   });
+
+  test('nullable', () => {
+    expectAgrees(nullable(stringValue()));
+    expectAgrees(nullable(enumValue(['ltr', 'rtl'])));
+    const run = compiled(nullable(stringValue()));
+    expect(run('x')).toBe('x');
+    expect(run(null)).toBe(null);
+    expect(run(undefined)).toBe(null);
+    // A value the inner schema rejects is its default, not the nil: only the
+    // wrapper's own nils collapse.
+    expect(run(7)).toBe('');
+  });
+
+  test('nullable with defaultAsNull', () => {
+    const schema = nullable(stringValue(), {defaultAsNull: true});
+    expectAgrees(schema);
+    const run = compiled(schema);
+    expect(run('noopener')).toBe('noopener');
+    // The historical `serializedNode.rel || null`: an in-band default, and
+    // anything the inner schema coerces to it, is the nil.
+    expect(run('')).toBe(null);
+    expect(run(7)).toBe(null);
+  });
+
+  test('optional', () => {
+    expectAgrees(optional(numberValue()));
+    const run = compiled(optional(numberValue()));
+    expect(run(120)).toBe(120);
+    expect(run(undefined)).toBe(undefined);
+    // `null` is the inner schema's to answer for, unlike nullable's.
+    expect(run(null)).toBe(0);
+  });
+
+  test('optional with omitDefault', () => {
+    const schema = optional(numberValue(), {omitDefault: true});
+    expectAgrees(schema);
+    const run = compiled(schema);
+    expect(run(120)).toBe(120);
+    expect(run(0)).toBe(undefined);
+    expect(run('x')).toBe(undefined);
+  });
+
+  test('arrayValue', () => {
+    expectAgrees(arrayValue(stringValue()));
+    expectAgrees(arrayValue(numberValue(0, {integer: true, min: 0})));
+    const run = compiled(arrayValue(stringValue()));
+    expect(run(['a', 'b'])).toEqual(['a', 'b']);
+    // Every element is coerced, and a non-array is the empty default.
+    expect(run(['a', 7])).toEqual(['a', '']);
+    expect(run('nope')).toEqual([]);
+    // A hole is read as `undefined` rather than skipped, so the result stays
+    // dense — a sparse one would serialize back out as `[null]`.
+    expect(run(new Array(2))).toEqual(['', '']);
+  });
+
+  test('the wrappers nest', () => {
+    expectAgrees(nullable(arrayValue(optional(stringValue()))));
+    const run = compiled(arrayValue(nullable(numberValue())));
+    expect(run([1, null, 'x', '2'])).toEqual([1, null, 0, 2]);
+  });
+
+  test('a clamping numberValue', () => {
+    const schema = numberValue(0, {
+      clamp: true,
+      integer: true,
+      max: 128,
+      min: 0,
+    });
+    expectAgrees(schema);
+    const run = compiled(schema);
+    expect(run(5)).toBe(5);
+    // The point of `clamp`: out of range is the nearest bound, where the
+    // plain bounds would fall back to the default and read a deeply indented
+    // list item as a top-level one.
+    expect(run(1e6)).toBe(128);
+    expect(run(-4)).toBe(0);
+    expect(run('1e6')).toBe(128);
+    // Not a number at all, or not an integer when one is required, still
+    // falls back: there is no nearest bound for either.
+    expect(run(1.5)).toBe(0);
+    expect(run('banana')).toBe(0);
+    expect(run(Infinity)).toBe(0);
+  });
 });
 
 describe('compileParse refuses what it cannot express', () => {
   test.each([
-    ['nullable', () => nullable(stringValue())],
-    ['optional', () => optional(numberValue())],
-    ['arrayValue', () => arrayValue(stringValue())],
     ['unionValue', () => unionValue([numberValue(), stringValue()])],
     ['rawValue', () => rawValue()],
     ['objectValue', () => objectValue({a: stringValue()})],
+    // The wrappers compile, but only over an inner schema that does. A
+    // transform is opaque, so nothing built on one can be reproduced.
+    ['nullable over a transform', () => nullable(transformed())],
+    ['optional over a transform', () => optional(transformed())],
+    ['an array of transforms', () => arrayValue(transformed())],
   ])('%s', (_label, build) => {
     const schema = build() as AnySerializationSchema;
     expect(() => compileParse(schema.meta, schema.defaultValue, 'T')).toThrow(

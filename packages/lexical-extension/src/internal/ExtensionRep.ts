@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalBuilder} from './LexicalBuilder';
+import type {LexicalBuilder} from '../LexicalBuilder';
 
 import invariant from '@lexical/internal/invariant';
 import {

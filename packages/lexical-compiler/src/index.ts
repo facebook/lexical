@@ -11,3 +11,4 @@
 // loading the rest.
 export * from './PureAnnotations';
 export * from './SchemaJsonCodegen';
+export * from './SubpathImports';

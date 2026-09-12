@@ -20,7 +20,7 @@ export type {
   PureAnnotationsResult,
   PureAnnotationsSourceMap,
   TransformPureAnnotationsOptions,
-} from './LexicalCompilerPureAnnotations';
+} from '@lexical/compiler/PureAnnotations';
 
 export {
   INLINE_FACTORY_FORMS,
@@ -29,13 +29,13 @@ export {
   pureAnnotations,
   pureCallNames,
   transformPureAnnotations,
-} from './LexicalCompilerPureAnnotations';
+} from '@lexical/compiler/PureAnnotations';
 
 export type {
   CompileParseResult,
   SchemaJsonTable,
   VerifyCompiledParseOptions,
-} from './LexicalCompilerSchemaJsonCodegen';
+} from '@lexical/compiler/SchemaJsonCodegen';
 
 export {
   compileDiffersFromDefault,
@@ -49,4 +49,10 @@ export {
   verifyCompiledParse,
   verifyDiffersFromDefault,
   verifyTableCoversDomain,
-} from './LexicalCompilerSchemaJsonCodegen';
+} from '@lexical/compiler/SchemaJsonCodegen';
+
+export type {
+  SubpathImportsOptions,
+  SubpathImportsPlugin,
+} from '@lexical/compiler/SubpathImports';
+export {subpathImports} from '@lexical/compiler/SubpathImports';

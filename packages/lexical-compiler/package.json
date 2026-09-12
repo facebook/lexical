@@ -62,6 +62,22 @@
       "production": "./dist/LexicalCompilerSchemaJsonCodegen.prod.js",
       "default": "./dist/LexicalCompilerSchemaJsonCodegen.js"
     },
+    "./SubpathImports": {
+      "source": "./src/SubpathImports.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/SubpathImports.d.ts",
+      "development": "./dist/LexicalCompilerSubpathImports.dev.js",
+      "production": "./dist/LexicalCompilerSubpathImports.prod.js",
+      "default": "./dist/LexicalCompilerSubpathImports.js"
+    },
+    "./SubpathImports.js": {
+      "source": "./src/SubpathImports.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/SubpathImports.d.ts",
+      "development": "./dist/LexicalCompilerSubpathImports.dev.js",
+      "production": "./dist/LexicalCompilerSubpathImports.prod.js",
+      "default": "./dist/LexicalCompilerSubpathImports.js"
+    },
     ".": {
       "source": "./src/index.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",

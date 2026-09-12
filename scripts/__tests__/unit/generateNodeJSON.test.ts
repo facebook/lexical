@@ -7,9 +7,20 @@
  */
 
 import {
+  NUM_HELPER_SOURCE,
+  NUM_RANGE_HELPER_SOURCE,
+} from '@lexical/compiler/SchemaJsonCodegen';
+import {transformSync} from 'esbuild';
+import {
   aliasedValue,
+  aliasTableOf,
   arrayValue,
-  enumValue,
+  createEditor,
+  decodeTableOf,
+  encodedDefaultOf,
+  encodeTableOf,
+  getComposedSchemaFields,
+  LineBreakNode,
   nodeSchema,
   numberValue,
   objectValue,
@@ -25,7 +36,9 @@ import {
   emittable,
   generateCompactExport,
   generateUpdate,
+  resetTableLocals,
   tableDeclaration,
+  tableDeclarations,
   // @ts-expect-error - a .mjs script with JSDoc types, not a typed module
 } from '../../shared/generateNodeJSON.mjs';
 
@@ -179,29 +192,84 @@ describe('a lookup table declaration', () => {
     ).toContain('{readonly [key: string]: 0 | 1 | number}');
   });
 
-  test('a parser reads an encode table bare, with no fallback baked in', () => {
-    // The schema reduces the value to its domain and the table is verified
-    // total over it, so a miss cannot happen and the encoded default has
-    // no business in the module — it was the one table value written into
-    // one, and it was written through `JSON.stringify`.
-    class ModeNode extends TextNode {
-      __kind = 0;
+  test('a parser falls back to the encoded default for a value the table misses', () => {
+    // `verifyTableCoversDomain` proves an enum's table total, but a bounded
+    // numeric domain it samples: `2` is in this one and need not be in the
+    // corpus, and the table does not map it. The walk stores the encoded
+    // default for such a miss, so the generated parser must too — read off
+    // the schema when the code is attached, like the table itself, not
+    // written into the module. Read bare, it stored `undefined`.
+    // A LineBreakNode subclass: the base declares no property of its own, so
+    // the composed schema — and the factory body assembled below — is this
+    // one property and nothing else.
+    class LimitNode extends LineBreakNode {
+      __limit = 0;
       $config() {
-        return this.config('generate-mode-node', {
-          extends: TextNode,
-          json: nodeSchema<ModeNode>()({
-            kind: withField(enumValue(['normal', 'special']), {
-              decode: {0: 'normal', 1: 'special'},
-              encode: {normal: 0, special: 1},
-              field: '__kind',
+        return this.config('generate-limit-miss', {
+          extends: LineBreakNode,
+          json: nodeSchema<LimitNode>()({
+            limit: withField(numberValue(0, {integer: true, max: 2, min: 0}), {
+              decode: {0: 0, 1: 1},
+              encode: {0: 0, 1: 1},
+              field: '__limit',
             }),
           }),
         });
       }
     }
-    const source: string = generateUpdate(ModeNode);
-    expect(source).toContain('node.__kind = MODE_KIND_ENCODE[v as string];');
-    expect(source).not.toContain(' in MODE_KIND_ENCODE');
+    // As `generatePackage` does before each class: the forms bind their
+    // tables into one registry, and the tests above have bound some already.
+    resetTableLocals();
+    const source: string = generateUpdate(LimitNode);
+    // The factory's locals, the parser, and the parser handed back: what the
+    // emitted module does, assembled for one class and run here against the
+    // real helpers and the class's real composed schema.
+    const module = [
+      // The module-scope helpers a bounded numeric domain parses through.
+      NUM_HELPER_SOURCE,
+      NUM_RANGE_HELPER_SOURCE,
+      ...tableDeclarations().map(
+        ([name, declaration]: [string, string]) =>
+          `const ${name} = ${declaration};`,
+      ),
+      source,
+      'return updateLimitNode;',
+    ].join('\n');
+    const {code} = transformSync(module, {loader: 'ts'});
+    const fields = new Map(Object.entries(getComposedSchemaFields(LimitNode)));
+    // The assembled module is source, and running it is the point.
+    // eslint-disable-next-line no-new-func
+    const update = new Function(
+      'fields',
+      'aliasTableOf',
+      'decodeTableOf',
+      'encodeTableOf',
+      'encodedDefaultOf',
+      code,
+    )(fields, aliasTableOf, decodeTableOf, encodeTableOf, encodedDefaultOf) as (
+      node: LimitNode,
+      json: {readonly [key: string]: unknown},
+    ) => LimitNode;
+    const editor = createEditor({
+      namespace: '',
+      nodes: [LimitNode],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        const node = new LimitNode();
+        update(node, {limit: 2});
+        expect(node.__limit).toBe(0);
+        update(node, {limit: 1});
+        expect(node.__limit).toBe(1);
+      },
+      {discrete: true},
+    );
+    expect(source).toContain(
+      '(v as string) in LIMIT_LIMIT_ENCODE ? LIMIT_LIMIT_ENCODE[v as string] : LIMIT_LIMIT_ENCODE_DEFAULT',
+    );
   });
 });
 

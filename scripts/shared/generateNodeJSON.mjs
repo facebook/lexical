@@ -236,6 +236,28 @@ export function declareTable(name, declaration) {
 }
 
 /**
+ * The locals the forms generated since the last class began have bound, as
+ * `[name, declaration]` pairs — what {@link generatePackage} reads after a
+ * class's four forms. Exported for `generateNodeJSON.test.ts`, which
+ * assembles one class's factory body the same way to run its parser.
+ *
+ * @returns {[string, string][]}
+ */
+export function tableDeclarations() {
+  return [...tableLocals];
+}
+
+/**
+ * Begin a class: forget the locals the previous one bound. What
+ * {@link generatePackage} does before each class's four forms; exported for
+ * the test that assembles a factory body by hand, since the forms it calls
+ * bind into the same registry as every class generated before them.
+ */
+export function resetTableLocals() {
+  tableLocals.clear();
+}
+
+/**
  * The declaration that binds one of a property's lookup tables: a read off
  * the composed schema through the `lexical` helper for its kind, asserted to
  * the union of the table's literal values, since the helper can only say
@@ -245,7 +267,12 @@ export function declareTable(name, declaration) {
  * modules bind is decided by the manifest classes, so a value shape none of
  * them uses can only be driven through here.
  *
- * @param {'decode' | 'encode' | 'alias'} kind
+ * `encodedDefault` is the one value read rather than a table: the stored form
+ * of the schema's default, which the parser stores for a key the encode
+ * table does not map, asserted to the same union as the table's values since
+ * it is one of them.
+ *
+ * @param {'decode' | 'encode' | 'alias' | 'encodedDefault'} kind
  * @param {string} key the schema property
  * @param {{readonly [key: string]: unknown}} table
  * @param {number} [index] which alias table, outermost first
@@ -253,9 +280,10 @@ export function declareTable(name, declaration) {
  */
 export function tableDeclaration(kind, key, table, index) {
   const args = [JSON.stringify(key), ...(index === undefined ? [] : [index])];
-  return `${kind}TableOf(fields, ${args.join(', ')}) as {readonly [key: string]: ${tableValueType(
-    table,
-  )}}`;
+  const type = tableValueType(table);
+  return kind === 'encodedDefault'
+    ? `encodedDefaultOf(fields, ${args.join(', ')}) as ${type}`
+    : `${kind}TableOf(fields, ${args.join(', ')}) as {readonly [key: string]: ${type}}`;
 }
 
 /** @param {NodeClass} klass @param {string} key @param {string} suffix */
@@ -885,12 +913,21 @@ function writeExpression(klass, schema, key, target) {
       tableDeclaration('encode', key, encode),
     );
     nullPrototypeTables.push(name);
-    // A bare lookup: the schema already reduced the value to its own domain,
-    // and `verifyTableCoversDomain` below proves the table total over that
-    // domain — the walk refuses a table that is not when the class is
-    // registered — so there is no key to fall back for, and no encoded
-    // default to bake into the module.
-    statements = `  v = ${ownRead(key)};\n  v = ${expression};\n  ${target}.${setterField} = ${name}[v as string];`;
+    // The schema already reduced the value to its own domain, and
+    // `verifyTableCoversDomain` below checks the table against it — but only
+    // an enum's domain is enumerable; a bounded numeric one is sampled, and a
+    // member the corpus did not reach can miss the table at run time. The
+    // walk stores the encoded default for such a miss, so the parser does
+    // too: the stored form of the schema's default, read off the schema when
+    // the code is attached like the table itself, never written into the
+    // module — read bare, the parser stored `undefined` where the walk stored
+    // the default.
+    const fallback = declareTable(
+      tableName(klass, key, 'ENCODE_DEFAULT'),
+      tableDeclaration('encodedDefault', key, encode),
+    );
+    const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
+    statements = `  v = ${ownRead(key)};\n  v = ${expression};\n  ${target}.${setterField} = ${lookup};`;
   }
   try {
     verifyCompiledParse({
@@ -1067,7 +1104,7 @@ function generatePackage(pkg) {
   const generated = pkg.targets.map(({klass}) => {
     // The tables a class reads are bound in its own factory, so each class
     // starts from none and takes what its four forms declared.
-    tableLocals.clear();
+    resetTableLocals();
     try {
       const afterCloneFrom = generateAfterCloneFrom(klass);
       const compact = generateCompactExport(klass);

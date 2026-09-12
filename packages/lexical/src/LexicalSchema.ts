@@ -987,6 +987,38 @@ export function aliasTableOf(
   }
 }
 
+/**
+ * The stored form of the property `key`'s schema default: what its `encode`
+ * table maps the default to, which is what the walk stores for a parsed value
+ * the table does not map. Generated code falls back to it the same way — and
+ * a miss is possible, since coverage is proved only for an enum's domain and
+ * sampled for a bounded numeric one — so it reads the value here, off the
+ * schema when the code is attached, rather than carrying it as a literal. A
+ * table without the entry is refused when the class is registered.
+ *
+ * @internal
+ */
+export function encodedDefaultOf(
+  fields: ComposedSchemaFields,
+  key: string,
+): unknown {
+  const schema = schemaOf(fields, key);
+  const {setter} = schema;
+  invariant(
+    isSchemaField(setter) && setter.encode !== undefined,
+    'encodedDefaultOf: "%s" declares no encode table',
+    key,
+  );
+  const stored = String(schema.defaultValue);
+  invariant(
+    hasOwnKey(setter.encode, stored),
+    'encodedDefaultOf: "%s" has no encode entry for its default %s',
+    key,
+    stored,
+  );
+  return setter.encode[stored];
+}
+
 function nullPrototype(table: {readonly [key: string]: unknown}): {
   readonly [key: string]: unknown;
 } {

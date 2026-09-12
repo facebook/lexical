@@ -2258,6 +2258,10 @@ declare export function aliasTableOf(
   key: string,
   index: number,
 ): {readonly [key: string]: unknown};
+declare export function encodedDefaultOf(
+  fields: ComposedSchemaFields,
+  key: string,
+): unknown;
 
 export interface StaticNodeConfigValue<
   T extends LexicalNode,

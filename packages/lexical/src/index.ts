@@ -268,6 +268,7 @@ export {
   type ComposedSchemaFields,
   declaredAccepts,
   decodeTableOf,
+  encodedDefaultOf,
   encodeTableOf,
   enumValue,
   type FieldOptions,

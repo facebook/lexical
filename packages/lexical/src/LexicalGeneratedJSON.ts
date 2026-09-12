@@ -24,6 +24,7 @@ import {
   aliasTableOf,
   type ComposedSchemaFields,
   decodeTableOf,
+  encodedDefaultOf,
   encodeTableOf,
 } from './LexicalSchema';
 
@@ -137,6 +138,11 @@ export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
     readonly [key: string]: 0 | 1 | 2;
   };
 
+  const TEXT_MODE_ENCODE_DEFAULT = encodedDefaultOf(fields, 'mode') as
+    | 0
+    | 1
+    | 2;
+
   /** Generated from TextNode's serialization schema. Do not edit by hand. */
   function exportTextNode(node: TextNode): {[key: string]: unknown} {
     return {
@@ -200,7 +206,10 @@ export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
       ? json.mode
       : undefined;
     v = v === 'normal' || v === 'token' || v === 'segmented' ? v : 'normal';
-    node.__mode = TEXT_MODE_ENCODE[v as string];
+    node.__mode =
+      (v as string) in TEXT_MODE_ENCODE
+        ? TEXT_MODE_ENCODE[v as string]
+        : TEXT_MODE_ENCODE_DEFAULT;
     v = Object.prototype.hasOwnProperty.call(json, 'style')
       ? json.style
       : undefined;

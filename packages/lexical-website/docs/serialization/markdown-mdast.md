@@ -75,7 +75,7 @@ const markdown = editor.read(() => $convertToMarkdownString());
 ```
 
 Try it live in the
-[mdast-editor dev example](/dev-examples/mdast-editor/), a WYSIWYG
+[mdast-editor dev example](pathname:///dev-examples/mdast-editor/), a WYSIWYG
 Markdown editor with an editable Markdown source pane — typing on
 either side exercises import or export through this package.
 
@@ -167,7 +167,7 @@ lets a DOM rule distinguish Markdown import from HTML paste.
 A complete HTML-encoded construct is one DOM import rule (which then
 also serves HTML paste) plus one `$exportViaDOM` export rule — see
 the [package README](/docs/packages/lexical-mdast) for a template and
-the [mdast-editor dev example](/dev-examples/mdast-editor/) for
+the [mdast-editor dev example](pathname:///dev-examples/mdast-editor/) for
 complete constructs on the block path (`<details><summary>` with a
 named slot) and the inline path (`<kbd>`).
 

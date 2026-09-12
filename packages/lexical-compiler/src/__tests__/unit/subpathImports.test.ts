@@ -183,6 +183,73 @@ describe('subpathImports', () => {
     ).toThrow('use named subpath imports');
   });
 
+  it.each(['.js', '.mjs', '.cjs', '.jsx'])(
+    'accepts JSX in %s before the downstream JSX transform',
+    async extension => {
+      const entry = path.join(dir, `Component${extension}`);
+      for (const withBarrelImport of [false, true]) {
+        write(
+          `Component${extension}`,
+          `${withBarrelImport ? "import {publicValue} from '@lexical/example'; export {publicValue};" : ''}
+          const h = tag => tag;
+          export const value = <span />;`,
+        );
+        const build = await rollup({
+          input: entry,
+          plugins: [
+            plugin(),
+            {
+              name: 'fixture-jsx',
+              transform(source, id) {
+                return id === entry
+                  ? {
+                      code: transformSync(source, {
+                        jsxFactory: 'h',
+                        loader: 'jsx',
+                      }).code,
+                      map: null,
+                    }
+                  : null;
+              },
+            },
+            fixtureCompiler(),
+          ],
+          treeshake: false,
+        });
+        try {
+          const {output} = await build.generate({format: 'cjs'});
+          const exports: {value?: string; publicValue?: unknown} = {};
+          runInNewContext(output[0].code, {exports});
+          expect(exports.value).toBe('span');
+          if (withBarrelImport) {
+            expect(exports.publicValue).toEqual({});
+            expect(Object.keys(output[0].modules)).not.toContain(
+              path.join(dir, 'src/index.ts'),
+            );
+            expect(output[0].code).not.toContain('unwanted extension');
+          }
+        } finally {
+          await build.close();
+        }
+      }
+    },
+  );
+
+  it.each(['.ts', '.mts', '.cts'])(
+    'preserves non-JSX TypeScript parsing in %s',
+    extension => {
+      const declarations = `const identity = <T>(value: T) => value; export const value = identity(<number>42);`;
+      const output = transform(
+        `import {publicValue} from '@lexical/example'; ${declarations}`,
+        `consumer${extension}`,
+      );
+      expect(output).toContain(
+        'import {value as publicValue} from "@lexical/example/small";',
+      );
+      expect(output).toContain(declarations);
+    },
+  );
+
   it('narrows default imports when the barrel explicitly exports a default', () => {
     write('src/index.ts', `export {default} from './small';`);
     expect(transform(`import value from '@lexical/example';`)).toBe(

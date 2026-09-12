@@ -264,19 +264,19 @@ export default {
 
 Use this Rollup/Vite plugin before dependency resolution. It accepts
 TypeScript, TSX and JavaScript, including CommonJS dependencies, standard
-decorators and legacy TypeScript parameter decorators, so it can run before or after TypeScript
-transpilation. Unlike `pureAnnotations`, it also helps builds that do not
-tree-shake: unused extension modules never become dependencies in the first
-place. It does not make an individual subpath smaller than that subpath's
-own dependency graph.
+decorators and legacy TypeScript parameter decorators, so it can run before
+or after TypeScript transpilation. Unlike `pureAnnotations`, it also helps
+builds that do not tree-shake: unused extension modules never become
+dependencies in the first place. It does not make an individual subpath
+smaller than that subpath's own dependency graph.
 
 Options:
 
 - `packages`: package names, or paths to their `package.json` files. Defaults
   to `['@lexical/extension']`. Each package must publish its source files via
   the `source` export condition and declare `sideEffects: false`. Only packages
-  with multiple public entries and transparent re-export barrels are narrowed; executable root entries
-  are left intact.
+  with multiple public entries and transparent re-export barrels are narrowed;
+  executable root entries are left intact.
 - `root`: directory from which package names are resolved. Defaults to
   `process.cwd()`. Use absolute package.json paths for an unbuilt checkout.
 - `strict`: defaults to `false`. Set to `true` to reject unmappable default

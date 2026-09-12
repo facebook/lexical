@@ -39,7 +39,9 @@ function parseModule(code, filename) {
       'decorators',
       'decoratorAutoAccessors',
       ...(/\.[cm]?tsx?$/.test(filename) ? ['typescript'] : []),
-      ...(/\.[jt]sx$/.test(filename) ? ['jsx'] : []),
+      // JavaScript can contain JSX before transpilation. In plain TypeScript,
+      // angle brackets must remain available for type assertions and generics.
+      ...(!/\.[cm]?ts$/.test(filename) ? ['jsx'] : []),
     ]),
     sourceType: /** @type {const} */ ('unambiguous'),
   };
@@ -423,6 +425,8 @@ export function subpathImports(options = {}) {
             true,
           );
           affected.add(module);
+        } else {
+          transformedIds.delete(id);
         }
       }
       return [...affected];

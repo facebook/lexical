@@ -6,7 +6,10 @@
  *
  */
 
-import {$generateJSONFromSelectedNodes} from '@lexical/clipboard';
+import {
+  $generateJSONFromSelectedNodes,
+  type BaseSerializedNode,
+} from '@lexical/clipboard';
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
@@ -114,8 +117,7 @@ test('the serialized nodes parse back as a document without a cast', () => {
       throw err;
     },
   });
-  // Typed as the API types them — `BaseSerializedNode[]`, without naming it.
-  let nodes: ReturnType<typeof $generateJSONFromSelectedNodes>['nodes'] = [];
+  let nodes: BaseSerializedNode[] = [];
   editor.update(
     () => {
       // The paragraph itself, so the payload is a subtree a root can hold.

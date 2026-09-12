@@ -8,7 +8,11 @@
 
 import type {QuoteNode} from '@lexical/rich-text';
 
-import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  defineExtension,
+  type LexicalEditorWithDispose,
+} from '@lexical/extension';
 import {
   $create,
   $createParagraphNode,
@@ -16,7 +20,6 @@ import {
   $getRoot,
   $isTabNode,
   $isTextNode,
-  type $parseSerializedNode,
   aliasedValue,
   type AnySerializationSchema,
   arrayValue,
@@ -43,6 +46,7 @@ import {
   objectValue,
   optional,
   type ParagraphNode,
+  type ParsableSerializedNode,
   rawValue,
   type SchemaInput,
   type SerializationSchema,
@@ -1191,7 +1195,7 @@ describe('a clone carries the fields the schema declares', () => {
    * single-update test would never reach `afterCloneFrom` at all.
    */
   function writeThenRewrite<T extends ElementNode>(
-    editor: ReturnType<typeof buildEditorFromExtensions>,
+    editor: LexicalEditorWithDispose,
     klass: Klass<T>,
     write: (node: T) => void,
   ): T {
@@ -1682,16 +1686,17 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
   // parsed output is wrong about the values that actually reach a parser.
 
   test('a primitive accepts what it parses, except where it reads more', () => {
-    expectTypeOf<
-      SchemaInput<ReturnType<typeof stringValue>>
-    >().toEqualTypeOf<string>();
-    expectTypeOf<
-      SchemaInput<ReturnType<typeof booleanValue>>
-    >().toEqualTypeOf<boolean>();
-    // numberValue also reads a number spelled as a string.
-    expectTypeOf<SchemaInput<ReturnType<typeof numberValue>>>().toEqualTypeOf<
-      number | string
-    >();
+    const text = stringValue();
+    const flag = booleanValue();
+    const count = numberValue();
+    expect(text('x')).toBe('x');
+    expect(flag(true)).toBe(true);
+    // numberValue also reads a number spelled as a string, which is the one
+    // place here where what it accepts is wider than what it parses to.
+    expect(count('2')).toBe(2);
+    expectTypeOf<SchemaInput<typeof text>>().toEqualTypeOf<string>();
+    expectTypeOf<SchemaInput<typeof flag>>().toEqualTypeOf<boolean>();
+    expectTypeOf<SchemaInput<typeof count>>().toEqualTypeOf<number | string>();
   });
 
   test('an alias table widens the accepted input, not the output', () => {
@@ -1709,18 +1714,30 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
 
   test('the wrappers widen their inner the way they widen its output', () => {
     const s = stringValue();
+    const maybe = optional(s);
+    const orNull = nullable(s);
+    const many = arrayValue(numberValue());
     expect(s('x')).toBe('x');
-    expectTypeOf<
-      SchemaInput<ReturnType<typeof optional<string>>>
-    >().toEqualTypeOf<string | undefined>();
+    expect(maybe(undefined)).toBe(undefined);
+    expect(orNull(null)).toBe(null);
+    // The element's wider input really is accepted, not just declared.
+    expect(many(['1', 2])).toEqual([1, 2]);
     expectTypeOf<SchemaInput<typeof s>>().toEqualTypeOf<string>();
-    expectTypeOf<
-      SchemaInput<ReturnType<typeof nullable<string>>>
-    >().toEqualTypeOf<string | null | undefined>();
-    // an array of whatever the item accepts
-    expectTypeOf<
-      SchemaInput<ReturnType<typeof arrayValue<number>>>
-    >().toEqualTypeOf<readonly number[]>();
+    expectTypeOf<SchemaInput<typeof maybe>>().toEqualTypeOf<
+      string | undefined
+    >();
+    expectTypeOf<SchemaInput<typeof orNull>>().toEqualTypeOf<
+      string | null | undefined
+    >();
+    // an array of whatever the item accepts, which for `numberValue` is wider
+    // than what it parses to — the element's input type propagates, so the
+    // array's does too.
+    expectTypeOf<SerializationSchemaValue<typeof many>>().toEqualTypeOf<
+      number[]
+    >();
+    expectTypeOf<SchemaInput<typeof many>>().toEqualTypeOf<
+      readonly (number | string)[]
+    >();
   });
 
   test('a union accepts what any member accepts', () => {
@@ -4715,11 +4732,13 @@ describe('a compact document relaxes at every depth', () => {
       type: 'text',
       version: 1,
     };
-    // Plain assignments, so a regression reads as "not assignable to parameter"
-    // rather than as a failed constraint on a matcher's type argument.
-    const fromInterface: Parameters<typeof $parseSerializedNode>[0] = declared;
+    // Plain assignments to the members the parse entry point names, so a
+    // regression reads as "not assignable" rather than as a failed constraint
+    // on a matcher's type argument — and each form is stated against the
+    // member it is meant to fit rather than against the whole union.
+    const fromInterface: ParsableSerializedNode = declared;
     // And a literal carrying node data still goes through, at any depth.
-    const fromLiteral: Parameters<typeof $parseSerializedNode>[0] = {
+    const fromLiteral: SerializedPartialNode = {
       children: [{text: 'hi', type: 'text'}],
       type: 'paragraph',
     };

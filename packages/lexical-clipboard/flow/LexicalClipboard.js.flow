@@ -68,11 +68,13 @@ declare export function $writeDragSourceToDataTransfer(
 ): void;
 
 // Structurally `SerializedPartialNode` minus its indexer, mirroring the
-// TypeScript declaration in src/clipboard.ts — and unexported, as that one is
-// not re-exported from the package entry point either. Aliasing it to the
-// indexed type broke every consumer whose serialized type is a declared
-// interface, since TypeScript gives an interface no implicit index signature.
-interface BaseSerializedNode {
+// TypeScript declaration in src/clipboard.ts. Aliasing it to the indexed type
+// broke every consumer whose serialized type is a declared interface, since
+// TypeScript gives an interface no implicit index signature. Exported, because
+// it is what `$generateJSONFromSelectedNodes` returns and what
+// `$generateNodesFromSerializedNodes` takes, so a caller holding either has a
+// name for it.
+export interface BaseSerializedNode {
   children?: BaseSerializedNode[];
   $slots?: {[string]: BaseSerializedNode};
   type: string;

@@ -244,7 +244,7 @@ describe('$handleTextDrop', () => {
       });
 
       let handled = true;
-      let preventDefault: ReturnType<typeof vi.fn> | null = null;
+      let preventDefault: Mock | null = null;
       await editor.update(() => {
         const {dataTransfer, event, preventDefault: pd} = createDropEvent();
         dataTransfer.setData('text/plain', 'brave ');
@@ -268,7 +268,7 @@ describe('$handleTextDrop', () => {
       });
 
       let handled = true;
-      let preventDefault: ReturnType<typeof vi.fn> | null = null;
+      let preventDefault: Mock | null = null;
       await editor.update(() => {
         const {event, preventDefault: pd} = createDropEvent();
         preventDefault = pd;

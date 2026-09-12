@@ -9,6 +9,7 @@
 import {
   $generateJSONFromSelectedNodes,
   $generateNodesFromSerializedNodes,
+  type BaseSerializedNode,
 } from '@lexical/clipboard';
 import {
   $defaultShouldInsertAfter,
@@ -80,7 +81,7 @@ describe('CardNode named slots', () => {
   it('round-trips the title slot and body children through clipboard copy -> paste', () => {
     using editor = buildEditorFromExtensions(CardTestExtension);
 
-    let exported: ReturnType<typeof $generateJSONFromSelectedNodes>;
+    let exported: {namespace: string; nodes: BaseSerializedNode[]};
     editor.update(
       () => {
         const card = $createCardWithText();

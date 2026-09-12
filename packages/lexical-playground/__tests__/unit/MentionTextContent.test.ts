@@ -16,6 +16,7 @@ import {
   $getRoot,
   $insertNodes,
   defineExtension,
+  type ParagraphNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
@@ -42,9 +43,7 @@ function $importHtml(html: string): void {
 function $getMention() {
   const paragraph = $getRoot().getFirstChild();
   assert(paragraph !== null, 'expected a first child');
-  const mention = (
-    paragraph as ReturnType<typeof $createParagraphNode>
-  ).getFirstChild();
+  const mention = (paragraph as ParagraphNode).getFirstChild();
   assert($isMentionNode(mention), 'expected a MentionNode');
   return mention;
 }

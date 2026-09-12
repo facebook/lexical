@@ -6,7 +6,10 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  type AnyLexicalExtensionArgument,
+  buildEditorFromExtensions,
+} from '@lexical/extension';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {$isAtEdgeOfElement} from '@lexical/selection';
 import {
@@ -36,7 +39,7 @@ function $pointAt(
 
 function runInEditor(
   fn: () => void,
-  spec: Parameters<typeof buildEditorFromExtensions>[0] = {
+  spec: AnyLexicalExtensionArgument = {
     name: '@isAtEdgeOfElement-test',
   },
 ): void {

@@ -92,6 +92,7 @@ import {
   describe,
   expect,
   it,
+  type Mock,
   vi,
 } from 'vitest';
 
@@ -1218,7 +1219,7 @@ describe('LexicalEditor tests', () => {
   // console.warns in production; embedders can supply their own onWarn to
   // capture guard trips as warn-severity telemetry without an error alarm.
   function runCascade(onWarn?: (error: Error) => void): {
-    errorListener: ReturnType<typeof vi.fn>;
+    errorListener: Mock;
     unregister: () => void;
   } {
     const errorListener = vi.fn();

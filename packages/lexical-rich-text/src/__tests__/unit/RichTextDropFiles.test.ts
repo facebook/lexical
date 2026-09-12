@@ -6,7 +6,10 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  type LexicalEditorWithDispose,
+} from '@lexical/extension';
 import {DRAG_DROP_PASTE, RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -41,7 +44,7 @@ function createDropEventWithFiles(files: File[]): DragEvent {
 }
 
 function dispatchDropAndCaptureFiles(
-  editor: ReturnType<typeof buildEditorFromExtensions>,
+  editor: LexicalEditorWithDispose,
   event: DragEvent,
 ): File[] | null {
   let dispatchedFiles: File[] | null = null;

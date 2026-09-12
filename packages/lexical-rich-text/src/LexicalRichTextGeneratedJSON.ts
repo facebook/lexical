@@ -14,7 +14,7 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
 import type {HeadingNode, QuoteNode} from './index';
-import type {GeneratedJSON} from 'lexical';
+import type {GeneratedJSONFactory} from 'lexical';
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
 // reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
@@ -44,237 +44,252 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
-/** Generated from HeadingNode's serialization schema. Do not edit by hand. */
-function exportHeadingNode(node: HeadingNode): {[key: string]: unknown} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  return {
-    children: [],
-    tag: node.__tag,
-    direction: node.__dir,
-    format: node.getFormatType(),
-    indent: node.__indent,
-    textFormat:
-      textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
-    textStyle:
-      textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: node.__type,
-    version: 1,
-  };
-}
-
-/** Generated from HeadingNode's serialization schema. Do not edit by hand. */
-function exportCompactHeadingNode(node: HeadingNode): {[key: string]: unknown} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {type: node.__type, children: []};
-  const tag = node.__tag;
-  if (tag !== undefined && tag !== 'h1') {
-    json.tag = tag;
-  }
-  const direction = node.__dir;
-  if (direction !== undefined && direction !== null) {
-    json.direction = direction;
-  }
-  const format = node.getFormatType();
-  if (format !== undefined && format !== '') {
-    json.format = format;
-  }
-  const indent = node.__indent;
-  if (indent !== undefined && indent !== 0) {
-    json.indent = indent;
-  }
-  if (
-    textFormat !== undefined &&
-    textFormat !== 0 &&
-    shouldSerializeTextStyles
-  ) {
-    json.textFormat = textFormat;
-  }
-  if (
-    textStyle !== undefined &&
-    textStyle !== '' &&
-    shouldSerializeTextStyles
-  ) {
-    json.textStyle = textStyle;
-  }
-  return json;
-}
-
-/** Generated from HeadingNode's serialization schema. Do not edit by hand. */
-function updateHeadingNode(
-  node: HeadingNode,
-  json: {readonly [key: string]: unknown},
-): HeadingNode {
-  let self = node;
-  let n: unknown;
-  let v: unknown;
-  v = Object.prototype.hasOwnProperty.call(json, 'direction')
-    ? json.direction
-    : undefined;
-  self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-  v = Object.prototype.hasOwnProperty.call(json, 'format')
-    ? json.format
-    : undefined;
-  n = self.setFormat(
-    v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-      ? v
-      : '',
-  );
-  self = (n ?? self) as HeadingNode;
-  v = Object.prototype.hasOwnProperty.call(json, 'indent')
-    ? json.indent
-    : undefined;
-  self.__indent = numC(v, 0, 0, Infinity, true);
-  v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-    ? json.textFormat
-    : undefined;
-  n = self.setTextFormat(num(v, 0));
-  self = (n ?? self) as HeadingNode;
-  v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-    ? json.textStyle
-    : undefined;
-  n = self.setTextStyle(typeof v === 'string' ? v : '');
-  self = (n ?? self) as HeadingNode;
-  v = Object.prototype.hasOwnProperty.call(json, 'tag') ? json.tag : undefined;
-  self.__tag =
-    v === 'h1' ||
-    v === 'h2' ||
-    v === 'h3' ||
-    v === 'h4' ||
-    v === 'h5' ||
-    v === 'h6'
-      ? v
-      : 'h1';
-  return self;
-}
-
-/** Generated from HeadingNode's serialization schema. Do not edit by hand. */
-function afterCloneHeadingNode(node: HeadingNode, prevNode: HeadingNode): void {
-  node.__tag = prevNode.__tag;
-}
-
 /** HeadingNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_HEADING: GeneratedJSON = {
-  exportJSON: exportHeadingNode,
-  exportCompactJSON: exportCompactHeadingNode,
-  updateFromJSON: updateHeadingNode,
-  afterCloneFrom: afterCloneHeadingNode,
+export const GENERATED_HEADING: GeneratedJSONFactory = () => {
+  /** Generated from HeadingNode's serialization schema. Do not edit by hand. */
+  function exportHeadingNode(node: HeadingNode): {[key: string]: unknown} {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    return {
+      children: [],
+      tag: node.__tag,
+      direction: node.__dir,
+      format: node.getFormatType(),
+      indent: node.__indent,
+      textFormat:
+        textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
+      textStyle:
+        textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
+      type: node.__type,
+      version: 1,
+    };
+  }
+
+  /** Generated from HeadingNode's serialization schema. Do not edit by hand. */
+  function exportCompactHeadingNode(node: HeadingNode): {
+    [key: string]: unknown;
+  } {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    const json: {[key: string]: unknown} = {type: node.__type, children: []};
+    const tag = node.__tag;
+    if (tag !== undefined && tag !== 'h1') {
+      json.tag = tag;
+    }
+    const direction = node.__dir;
+    if (direction !== undefined && direction !== null) {
+      json.direction = direction;
+    }
+    const format = node.getFormatType();
+    if (format !== undefined && format !== '') {
+      json.format = format;
+    }
+    const indent = node.__indent;
+    if (indent !== undefined && indent !== 0) {
+      json.indent = indent;
+    }
+    if (
+      textFormat !== undefined &&
+      textFormat !== 0 &&
+      shouldSerializeTextStyles
+    ) {
+      json.textFormat = textFormat;
+    }
+    if (
+      textStyle !== undefined &&
+      textStyle !== '' &&
+      shouldSerializeTextStyles
+    ) {
+      json.textStyle = textStyle;
+    }
+    return json;
+  }
+
+  /** Generated from HeadingNode's serialization schema. Do not edit by hand. */
+  function updateHeadingNode(
+    node: HeadingNode,
+    json: {readonly [key: string]: unknown},
+  ): HeadingNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'direction')
+      ? json.direction
+      : undefined;
+    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      v === '' ||
+        v === 'left' ||
+        v === 'start' ||
+        v === 'center' ||
+        v === 'right' ||
+        v === 'end' ||
+        v === 'justify'
+        ? v
+        : '',
+    );
+    self = (n ?? self) as HeadingNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'indent')
+      ? json.indent
+      : undefined;
+    self.__indent = numC(v, 0, 0, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+      ? json.textFormat
+      : undefined;
+    n = self.setTextFormat(num(v, 0));
+    self = (n ?? self) as HeadingNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+      ? json.textStyle
+      : undefined;
+    n = self.setTextStyle(typeof v === 'string' ? v : '');
+    self = (n ?? self) as HeadingNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'tag')
+      ? json.tag
+      : undefined;
+    self.__tag =
+      v === 'h1' ||
+      v === 'h2' ||
+      v === 'h3' ||
+      v === 'h4' ||
+      v === 'h5' ||
+      v === 'h6'
+        ? v
+        : 'h1';
+    return self;
+  }
+
+  /** Generated from HeadingNode's serialization schema. Do not edit by hand. */
+  function afterCloneHeadingNode(
+    node: HeadingNode,
+    prevNode: HeadingNode,
+  ): void {
+    node.__tag = prevNode.__tag;
+  }
+
+  return {
+    exportJSON: exportHeadingNode,
+    exportCompactJSON: exportCompactHeadingNode,
+    updateFromJSON: updateHeadingNode,
+    afterCloneFrom: afterCloneHeadingNode,
+  };
 };
 
-/** Generated from QuoteNode's serialization schema. Do not edit by hand. */
-function exportQuoteNode(node: QuoteNode): {[key: string]: unknown} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  return {
-    children: [],
-    direction: node.__dir,
-    format: node.getFormatType(),
-    indent: node.__indent,
-    textFormat:
-      textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
-    textStyle:
-      textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: node.__type,
-    version: 1,
-  };
-}
-
-/** Generated from QuoteNode's serialization schema. Do not edit by hand. */
-function exportCompactQuoteNode(node: QuoteNode): {[key: string]: unknown} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {type: node.__type, children: []};
-  const direction = node.__dir;
-  if (direction !== undefined && direction !== null) {
-    json.direction = direction;
-  }
-  const format = node.getFormatType();
-  if (format !== undefined && format !== '') {
-    json.format = format;
-  }
-  const indent = node.__indent;
-  if (indent !== undefined && indent !== 0) {
-    json.indent = indent;
-  }
-  if (
-    textFormat !== undefined &&
-    textFormat !== 0 &&
-    shouldSerializeTextStyles
-  ) {
-    json.textFormat = textFormat;
-  }
-  if (
-    textStyle !== undefined &&
-    textStyle !== '' &&
-    shouldSerializeTextStyles
-  ) {
-    json.textStyle = textStyle;
-  }
-  return json;
-}
-
-/** Generated from QuoteNode's serialization schema. Do not edit by hand. */
-function updateQuoteNode(
-  node: QuoteNode,
-  json: {readonly [key: string]: unknown},
-): QuoteNode {
-  let self = node;
-  let n: unknown;
-  let v: unknown;
-  v = Object.prototype.hasOwnProperty.call(json, 'direction')
-    ? json.direction
-    : undefined;
-  self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-  v = Object.prototype.hasOwnProperty.call(json, 'format')
-    ? json.format
-    : undefined;
-  n = self.setFormat(
-    v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-      ? v
-      : '',
-  );
-  self = (n ?? self) as QuoteNode;
-  v = Object.prototype.hasOwnProperty.call(json, 'indent')
-    ? json.indent
-    : undefined;
-  self.__indent = numC(v, 0, 0, Infinity, true);
-  v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-    ? json.textFormat
-    : undefined;
-  n = self.setTextFormat(num(v, 0));
-  self = (n ?? self) as QuoteNode;
-  v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-    ? json.textStyle
-    : undefined;
-  n = self.setTextStyle(typeof v === 'string' ? v : '');
-  self = (n ?? self) as QuoteNode;
-  return self;
-}
-
 /** QuoteNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_QUOTE: GeneratedJSON = {
-  exportJSON: exportQuoteNode,
-  exportCompactJSON: exportCompactQuoteNode,
-  updateFromJSON: updateQuoteNode,
+export const GENERATED_QUOTE: GeneratedJSONFactory = () => {
+  /** Generated from QuoteNode's serialization schema. Do not edit by hand. */
+  function exportQuoteNode(node: QuoteNode): {[key: string]: unknown} {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    return {
+      children: [],
+      direction: node.__dir,
+      format: node.getFormatType(),
+      indent: node.__indent,
+      textFormat:
+        textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
+      textStyle:
+        textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
+      type: node.__type,
+      version: 1,
+    };
+  }
+
+  /** Generated from QuoteNode's serialization schema. Do not edit by hand. */
+  function exportCompactQuoteNode(node: QuoteNode): {[key: string]: unknown} {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    const json: {[key: string]: unknown} = {type: node.__type, children: []};
+    const direction = node.__dir;
+    if (direction !== undefined && direction !== null) {
+      json.direction = direction;
+    }
+    const format = node.getFormatType();
+    if (format !== undefined && format !== '') {
+      json.format = format;
+    }
+    const indent = node.__indent;
+    if (indent !== undefined && indent !== 0) {
+      json.indent = indent;
+    }
+    if (
+      textFormat !== undefined &&
+      textFormat !== 0 &&
+      shouldSerializeTextStyles
+    ) {
+      json.textFormat = textFormat;
+    }
+    if (
+      textStyle !== undefined &&
+      textStyle !== '' &&
+      shouldSerializeTextStyles
+    ) {
+      json.textStyle = textStyle;
+    }
+    return json;
+  }
+
+  /** Generated from QuoteNode's serialization schema. Do not edit by hand. */
+  function updateQuoteNode(
+    node: QuoteNode,
+    json: {readonly [key: string]: unknown},
+  ): QuoteNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'direction')
+      ? json.direction
+      : undefined;
+    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      v === '' ||
+        v === 'left' ||
+        v === 'start' ||
+        v === 'center' ||
+        v === 'right' ||
+        v === 'end' ||
+        v === 'justify'
+        ? v
+        : '',
+    );
+    self = (n ?? self) as QuoteNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'indent')
+      ? json.indent
+      : undefined;
+    self.__indent = numC(v, 0, 0, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+      ? json.textFormat
+      : undefined;
+    n = self.setTextFormat(num(v, 0));
+    self = (n ?? self) as QuoteNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+      ? json.textStyle
+      : undefined;
+    n = self.setTextStyle(typeof v === 'string' ? v : '');
+    self = (n ?? self) as QuoteNode;
+    return self;
+  }
+
+  return {
+    exportJSON: exportQuoteNode,
+    exportCompactJSON: exportCompactQuoteNode,
+    updateFromJSON: updateQuoteNode,
+  };
 };

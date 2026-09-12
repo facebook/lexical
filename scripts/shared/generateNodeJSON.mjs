@@ -181,76 +181,81 @@ const constName = (/** @type {NodeClass} */ klass) =>
   `GENERATED_${klass.name.replace(/Node$/, '').toUpperCase()}`;
 
 /**
- * Lookup tables the generated module being built needs, by the const name
- * given to each. Reset per package: tables are emitted into the module whose
- * classes need them.
+ * The lookup tables the class being generated reads, by the local name its
+ * code refers to each by, each mapped to the declaration that binds it: a
+ * read off the class's composed schema, which the factory emitted for the
+ * class is handed when its code is attached. Reset per class by
+ * {@link generatePackage}.
  *
- * @type {Map<string, {readonly [key: string]: unknown}>}
- */
-const tables = new Map();
-
-/**
- * The name each table object was first recorded under, so a schema table two
- * classes share (the same object handed to both declarations) is emitted
- * once under the first name rather than once per class.
- *
- * @type {Map<{readonly [key: string]: unknown}, string>}
- */
-const tableNames = new Map();
-
-/**
- * Name and record a lookup table for the generated module.
+ * Nothing about a table's contents is written into the module: the table the
+ * generated code reads is the schema's own object, so the two cannot differ,
+ * and a value JSON has no spelling for — `undefined`, `Infinity` — is no
+ * concern of the generator's. What the module states is the table's *type*,
+ * so the field a value is assigned to is checked as it would be for a
+ * hand-written table.
  *
  * Every table is null-prototype, because every table can be reached by a key
  * it does not have: without it a `'toString'` would resolve to
  * Object.prototype's method rather than missing, and be stored (import) or
- * serialized (export) as the property's value. On the import side the key is
- * the parsed JSON, so it is untrusted outright; on the export side it is the
- * node's own field, which for a schema whose domain is wider than the table's
- * keys holds whatever was put there. Both are what the walk's `hasOwnKey`
- * lookups already guard against, and a miss has to be `undefined` here for the
- * same reason it is there.
+ * serialized (export) as the property's value. The helper each local is
+ * bound through hands back a null-prototype copy of the schema's object, so
+ * the `in` tests the compiled expressions use ask the same question the
+ * walk's `hasOwnKey` asks of the original.
  *
- * @param {string} name
- * @param {{readonly [key: string]: unknown}} table
- * @returns {string}
+ * @type {Map<string, string>}
  */
-function addTable(name, table) {
-  const existing = tableNames.get(table);
-  if (existing !== undefined) {
-    return existing;
-  }
-  claimTableName(name, table);
-  tableNames.set(table, name);
-  return name;
-}
+const tableLocals = new Map();
 
 /**
- * Record a table under a name, refusing to give two different tables the same
- * one.
+ * Bind a lookup table to a local name in the class being generated, refusing
+ * to bind two different declarations to one name.
  *
  * Names are derived by upper-casing the class and property, which is not
- * injective — `textFormat` and `textformat` produce the same name, as do two
- * classes whose stripped names match. Without this the second `set` would
- * replace the first table under a name the first class's emitted code is
- * already reading, which no amount of verification downstream would catch:
- * both classes compile, and one of them silently decodes through the other's
- * table.
+ * injective — `textFormat` and `textformat` produce the same name. Without
+ * this the second binding would replace the first under a name the class's
+ * emitted code is already reading, which no amount of verification downstream
+ * would catch: the class compiles, and one property silently decodes through
+ * the other's table.
  *
  * Exported for `generateNodeJSON.test.ts`, which is the only place the
  * collision can be provoked: the checked-in manifest has none.
  *
  * @param {string} name
- * @param {{readonly [key: string]: unknown}} table
+ * @param {string} declaration the expression the local is bound to
+ * @returns {string} `name`
  */
-export function claimTableName(name, table) {
-  const existing = tables.get(name);
-  if (existing !== undefined && existing !== table) {
+export function declareTable(name, declaration) {
+  const existing = tableLocals.get(name);
+  if (existing !== undefined && existing !== declaration) {
     throw new Error(
       `generate-node-json: two different lookup tables both want the name ${name}; rename one of the properties it was derived from`,
     );
   }
-  tables.set(name, table);
+  tableLocals.set(name, declaration);
+  return name;
+}
+
+/**
+ * The declaration that binds one of a property's lookup tables: a read off
+ * the composed schema through the `lexical` helper for its kind, asserted to
+ * the union of the table's literal values, since the helper can only say
+ * `unknown` and the field the value is assigned to is narrower.
+ *
+ * Exported for `generateNodeJSON.test.ts`: which tables the checked-in
+ * modules bind is decided by the manifest classes, so a value shape none of
+ * them uses can only be driven through here.
+ *
+ * @param {'decode' | 'encode' | 'alias'} kind
+ * @param {string} key the schema property
+ * @param {{readonly [key: string]: unknown}} table
+ * @param {number} [index] which alias table, outermost first
+ * @returns {string}
+ */
+export function tableDeclaration(kind, key, table, index) {
+  const args = [JSON.stringify(key), ...(index === undefined ? [] : [index])];
+  return `${kind}TableOf(fields, ${args.join(', ')}) as {readonly [key: string]: ${tableValueType(
+    table,
+  )}}`;
 }
 
 /** @param {NodeClass} klass @param {string} key @param {string} suffix */
@@ -365,10 +370,12 @@ function readExpression(klass, schema, key) {
     const read =
       getter.decode === undefined
         ? `node.${field}`
-        : // The table is plain data, so it is inlined rather than imported:
-          // keeping this module free of runtime imports is what keeps it out
-          // of the cycle.
-          `${addTable(tableName(klass, key, 'DECODE'), getter.decode)}[node.${field}]`;
+        : // Read through the local the factory binds to the schema's own
+          // table; see `tableLocals`.
+          `${declareTable(
+            tableName(klass, key, 'DECODE'),
+            tableDeclaration('decode', key, getter.decode),
+          )}[node.${field}]`;
     if (getter.when === undefined) {
       return {expression: read};
     }
@@ -831,19 +838,16 @@ function writeExpression(klass, schema, key, target) {
       `"${key}" declares a membership predicate of its own, which the metadata does not describe`,
     );
   }
-  // Named through `addTable`, so a table two classes share is emitted once and
-  // both expressions read the same const — TabNode inherits TextNode's
-  // `format` schema, and with the name settled before the compile the module
-  // carried `TEXT_FORMAT_ALIAS` and a byte-identical `TAB_FORMAT_ALIAS`. It is
-  // also what puts these back under `claimTableName`'s guard against two
-  // different tables taking one name.
+  // Each alias table the parse reads is bound to a local of the class's
+  // factory, numbered outermost first — the order `compileParse` meets them,
+  // which is the order `aliasTableOf` counts.
   const {expression, tables: parseTables} = compileParse(
     schema.meta,
     schema.defaultValue,
     (table, index) =>
-      addTable(
+      declareTable(
         tableName(klass, key, index === 0 ? 'ALIAS' : `ALIAS_${index + 1}`),
-        table,
+        tableDeclaration('alias', key, table, index),
       ),
   );
   const nullPrototypeTables = parseTables.map(({name}) => name);
@@ -876,16 +880,17 @@ function writeExpression(klass, schema, key, target) {
   const setterField = emittable(setter.field, 'setter field');
   let statements = `  v = ${ownRead(key)};\n  ${target}.${setterField} = ${expression};`;
   if (encode !== undefined) {
-    const name = addTable(tableName(klass, key, 'ENCODE'), encode);
-    nullPrototypeTables.push(name);
-    // The schema already reduced the value to its own domain, so the table is
-    // total over what reaches it; the guard is for a domain member with no
-    // stored form, which would otherwise write undefined into the field.
-    const fallback = literal(
-      encode[/** @type {string} */ (schema.defaultValue)],
+    const name = declareTable(
+      tableName(klass, key, 'ENCODE'),
+      tableDeclaration('encode', key, encode),
     );
-    const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
-    statements = `  v = ${ownRead(key)};\n  v = ${expression};\n  ${target}.${setterField} = ${lookup};`;
+    nullPrototypeTables.push(name);
+    // A bare lookup: the schema already reduced the value to its own domain,
+    // and `verifyTableCoversDomain` below proves the table total over that
+    // domain — the walk refuses a table that is not when the class is
+    // registered — so there is no key to fall back for, and no encoded
+    // default to bake into the module.
+    statements = `  v = ${ownRead(key)};\n  v = ${expression};\n  ${target}.${setterField} = ${name}[v as string];`;
   }
   try {
     verifyCompiledParse({
@@ -1019,83 +1024,31 @@ function tableValueType(table) {
     : [];
   const rest = values
     .filter(v => typeof v !== 'number')
-    .map(tableValue)
+    .map(tableType)
     .sort();
   return [...new Set([...finite, ...wide, ...rest])].join(' | ');
 }
 
 /**
- * One table value as source.
- *
- * `JSON.stringify` has no spelling for `undefined` — it returns `undefined`
- * rather than a string, which `join` rendered as nothing and left a type
- * ending in ` | `, and it drops the entry from an object outright — while a
- * decode table may map a stored value to it: that is how a stored value whose
- * serialized form is the omitted default is spelled, `{0: undefined, 1:
- * 'special'}`. The walk reads such an entry as a genuine miss would read, so
- * the table is emitted with the entry rather than without it, and its type
- * says `undefined` where the walk can produce one.
- *
- * Nor does JSON spell every number: `Infinity`, `-Infinity` and `NaN` come
- * out as `null` and `-0` as `0`. A stored sentinel need not be a JSON number
- * — `encode: {unlimited: Infinity}` serializes the string and stores the
- * sentinel — and the generated parser stored `null` for it where the walk
- * stored `Infinity`, after a verification that ran against the table object
- * itself and so could not see it.
- *
- * @param {unknown} value
- * @returns {string}
- */
-function tableValue(value) {
-  if (value === undefined) {
-    return 'undefined';
-  }
-  if (typeof value === 'number') {
-    return Object.is(value, -0)
-      ? '-0'
-      : Number.isFinite(value)
-        ? JSON.stringify(value)
-        : String(value);
-  }
-  return JSON.stringify(value);
-}
-
-/**
- * One table value as a type: its literal, except that a number JSON cannot
- * spell is no literal type either (`Infinity` is a value, not a type) and is
- * `number`, and `-0` is the type `0`.
+ * One table value as a type: its literal, with the two shapes JSON cannot
+ * spell handled as types rather than values. A decode table may map a stored
+ * value to `undefined` — that is how a stored value whose serialized form is
+ * the omitted default is spelled, `{0: undefined, 1: 'special'}` — which is
+ * the type `undefined`; a number JSON cannot spell (`Infinity`, `NaN`) is no
+ * literal type either and is `number`, and `-0` is the type `0`. The values
+ * themselves are never written into a module: the generated code reads the
+ * schema's own table.
  *
  * @param {unknown} value
  * @returns {string}
  */
 function tableType(value) {
+  if (value === undefined) {
+    return 'undefined';
+  }
   return typeof value === 'number' && !Number.isFinite(value)
     ? 'number'
-    : typeof value === 'number'
-      ? JSON.stringify(value)
-      : tableValue(value);
-}
-
-/**
- * The declaration of one lookup table in a generated module.
- *
- * Exported for `generateNodeJSON.test.ts`: which tables the checked-in
- * modules declare is decided by the manifest classes, so a value shape none
- * of them uses can only be driven through here.
- *
- * @param {string} name
- * @param {{readonly [key: string]: unknown}} table
- * @returns {string}
- */
-export function emitTable(name, table) {
-  const entries = Object.entries(table).map(
-    ([key, value]) => `  ${JSON.stringify(key)}: ${tableValue(value)}`,
-  );
-  return `// Null-prototype: a key the table does not have must miss rather than\n// resolve to Object.prototype.\nconst ${name}: {readonly [key: string]: ${tableValueType(
-    table,
-  )}} =\n  /* @__PURE__ */ Object.assign(Object.create(null), {\n${entries.join(
-    ',\n',
-  )}\n});`;
+    : JSON.stringify(value);
 }
 
 /**
@@ -1105,8 +1058,6 @@ export function emitTable(name, table) {
  * @returns {string}
  */
 function generatePackage(pkg) {
-  tables.clear();
-  tableNames.clear();
   // Every class is exportable: the base `exportJSON` writes exactly the
   // schema's properties plus type/version, and NodeState is appended by the
   // dispatch. A class that overrides `exportJSON` for output no schema
@@ -1114,13 +1065,22 @@ function generatePackage(pkg) {
   // still composes, because the override's `super.exportJSON(compact)` is what
   // reaches the generated literal.
   const generated = pkg.targets.map(({klass}) => {
+    // The tables a class reads are bound in its own factory, so each class
+    // starts from none and takes what its four forms declared.
+    tableLocals.clear();
     try {
+      const afterCloneFrom = generateAfterCloneFrom(klass);
+      const compact = generateCompactExport(klass);
+      const exportJSON = generateExport(klass);
+      const updateFromJSON = generateUpdate(klass);
       return {
-        afterCloneFrom: generateAfterCloneFrom(klass),
-        compact: generateCompactExport(klass),
-        exportJSON: generateExport(klass),
+        afterCloneFrom,
+        compact,
+        exportJSON,
         klass,
-        updateFromJSON: generateUpdate(klass),
+        // After all four forms, since the parser declares tables of its own.
+        tables: [...tableLocals],
+        updateFromJSON,
       };
     } catch (error) {
       // The forms that have a fallback catch NotCompilable themselves and
@@ -1133,10 +1093,6 @@ function generatePackage(pkg) {
       throw error;
     }
   });
-
-  const tableSource = [...tables]
-    .map(([name, table]) => emitTable(name, table))
-    .join('\n\n');
 
   // Which helpers the parsers call, so a module declares only those.
   const parsers = generated.flatMap(g =>
@@ -1153,19 +1109,29 @@ function generatePackage(pkg) {
     names.add(klass.name);
     typeImports.set(module, names);
   }
-  // Type-only, so this module has no runtime imports at all. A value import
-  // of the node classes would be a cycle — they import LexicalNode, which
-  // imports this — and would evaluate a class before its base was
-  // initialized. This repo's simple-import-sort config keeps every type
-  // import in one group ordered by specifier, so these are emitted the same
-  // way: one line per module, sorted, no blank lines between.
+  // The node classes are imported as types only: a value import of them
+  // would be a cycle — they import LexicalNode, which imports this — and
+  // would evaluate a class before its base was initialized. The one runtime
+  // import is the table helpers, from the schema module, which imports no
+  // node class. This repo's simple-import-sort config keeps every type
+  // import in one group ordered by specifier and value imports after them,
+  // so these are emitted the same way: one line per module, sorted.
+  //
+  // The helpers each class's factory calls, so a module imports only those.
+  const helpers = new Set(
+    generated.flatMap(g =>
+      g.tables.map(([, declaration]) => declaration.replace(/\(.*$/s, '')),
+    ),
+  );
   if (pkg.home) {
     typeImports.set('./LexicalNode', new Set(['LexicalNode']));
     // Always: this module declares `GeneratedJSON`, whose `exportCompactJSON`
-    // names it, whether or not any exporter here takes one.
+    // names it, and `GeneratedJSONFactory`, which takes a
+    // `ComposedSchemaFields`, whether or not any class here reads a table.
+    typeImports.set('./LexicalSchema', new Set(['ComposedSchemaFields']));
     typeImports.set('./LexicalUtils', new Set(['CompactDefaultTest']));
   } else {
-    const names = new Set(['GeneratedJSON']);
+    const names = new Set(['GeneratedJSONFactory']);
     // Only where an exporter takes it. No built-in node has a property whose
     // comparison cannot be stated as source, so this appears in none of the
     // checked-in output.
@@ -1174,12 +1140,35 @@ function generatePackage(pkg) {
     }
     typeImports.set('lexical', names);
   }
+  const helperModule = pkg.home ? './LexicalSchema' : 'lexical';
+  // A module that reads a table imports the helpers as values, in one
+  // statement with that module's types; one that reads none keeps its
+  // type-only import.
+  if (helpers.size > 0) {
+    const types = typeImports.get(helperModule) || new Set();
+    typeImports.delete(helperModule);
+    for (const type of types) {
+      helpers.add(`type ${type}`);
+    }
+  }
   const importLines = [...typeImports]
     .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(
       ([module, names]) =>
         `import type {${[...names].sort().join(', ')}} from '${module}';`,
     );
+  if (helpers.size > 0) {
+    // Sorted the way simple-import-sort sorts specifiers: by the name, case
+    // ignored, with a `type` modifier ignored.
+    const specifiers = [...helpers].sort((a, b) => {
+      const x = a.replace(/^type /, '').toLowerCase();
+      const y = b.replace(/^type /, '').toLowerCase();
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
+    importLines.push(
+      `\nimport {${specifiers.join(', ')}} from '${helperModule}';`,
+    );
+  }
 
   const pieces = [];
   for (const {
@@ -1187,31 +1176,40 @@ function generatePackage(pkg) {
     compact,
     exportJSON,
     klass,
+    tables,
     updateFromJSON,
   } of generated) {
-    pieces.push(exportJSON);
-    // Always: every class that has a legacy form has a compact one, since a
-    // property whose default cannot be compared is written rather than
-    // omitted. `exportCompactJSON` stays optional on `GeneratedJSON` — the
-    // dispatch still has to answer for a hand-written or older value — but
-    // nothing this generates leaves it out.
-    pieces.push(compact);
-    if (updateFromJSON !== null) {
-      pieces.push(updateFromJSON);
-    }
-    if (afterCloneFrom !== null) {
-      pieces.push(afterCloneFrom);
-    }
-    pieces.push(
-      `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const ${constName(klass)}: GeneratedJSON = {\n  exportJSON: export${klass.name},\n  exportCompactJSON: exportCompact${klass.name},${
+    // One factory per class: registration hands it the class's composed
+    // schema, the tables the class reads are bound from that schema first,
+    // and the four forms close over them. A class that reads no table takes
+    // no parameter.
+    const body = [
+      ...tables.map(
+        ([name, declaration]) => `  const ${name} = ${declaration};`,
+      ),
+      exportJSON,
+      // Always: every class that has a legacy form has a compact one, since a
+      // property whose default cannot be compared is written rather than
+      // omitted. `exportCompactJSON` stays optional on `GeneratedJSON` — the
+      // dispatch still has to answer for a hand-written or older value — but
+      // nothing this generates leaves it out.
+      compact,
+      ...(updateFromJSON === null ? [] : [updateFromJSON]),
+      ...(afterCloneFrom === null ? [] : [afterCloneFrom]),
+      `  return {\n    exportJSON: export${klass.name},\n    exportCompactJSON: exportCompact${klass.name},${
         updateFromJSON === null
           ? ''
-          : `\n  updateFromJSON: update${klass.name},`
+          : `\n    updateFromJSON: update${klass.name},`
       }${
         afterCloneFrom === null
           ? ''
-          : `\n  afterCloneFrom: afterClone${klass.name},`
-      }\n};`,
+          : `\n    afterCloneFrom: afterClone${klass.name},`
+      }\n  };`,
+    ];
+    pieces.push(
+      `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const ${constName(klass)}: GeneratedJSONFactory = ${
+        tables.length === 0 ? '()' : 'fields'
+      } => {\n${body.join('\n\n')}\n};`,
     );
   }
 
@@ -1227,9 +1225,6 @@ function generatePackage(pkg) {
   }
   if (needsNumC) {
     prelude.push(NUM_RANGE_HELPER_SOURCE);
-  }
-  if (tableSource) {
-    prelude.push(tableSource);
   }
 
   return `${HEADER}

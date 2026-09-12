@@ -901,6 +901,111 @@ export function isSchemaField<T extends SchemaFieldBase>(
   return typeof accessor === 'object' && accessor !== null;
 }
 
+/**
+ * A class's composed serialization schema, property by property: what a
+ * generated module is handed when its code is attached to a class, so that
+ * the lookup tables it reads are the schema's own objects rather than copies
+ * written into the module at build time.
+ *
+ * @internal
+ */
+export type ComposedSchemaFields = ReadonlyMap<string, AnySerializationSchema>;
+
+/**
+ * The `decode` table the property `key` exports through, from the schema it
+ * was declared with. For generated code, which was compiled against a schema
+ * that declared one; a schema without it is not the one the code was
+ * generated from.
+ *
+ * A null-prototype copy, taken once when the code is attached: generated
+ * code reaches a table with `in`, which walks the prototype, and the key it
+ * reaches it with comes from the JSON on import and from the node's field on
+ * export — so on a plain object `'toString'` would resolve to
+ * Object.prototype's method and be stored or serialized as the property's
+ * value. The walk reads the schema's own object through `hasOwnKey`, which
+ * asks the same question of the same entries.
+ *
+ * @internal
+ */
+export function decodeTableOf(
+  fields: ComposedSchemaFields,
+  key: string,
+): {readonly [key: string]: unknown} {
+  const getter = schemaOf(fields, key).getter;
+  invariant(
+    isSchemaField(getter) && getter.decode !== undefined,
+    'decodeTableOf: "%s" declares no decode table',
+    key,
+  );
+  return nullPrototype(getter.decode);
+}
+
+/**
+ * The `encode` table the property `key` imports through; see
+ * {@link decodeTableOf}.
+ *
+ * @internal
+ */
+export function encodeTableOf(
+  fields: ComposedSchemaFields,
+  key: string,
+): {readonly [key: string]: unknown} {
+  const setter = schemaOf(fields, key).setter;
+  invariant(
+    isSchemaField(setter) && setter.encode !== undefined,
+    'encodeTableOf: "%s" declares no encode table',
+    key,
+  );
+  return nullPrototype(setter.encode);
+}
+
+/**
+ * The `index`th alias table in the property `key`'s schema, counting from
+ * the outermost: an `aliasedValue` may wrap another, and generated code
+ * numbers the tables in the order it compiled them, which is this one. See
+ * {@link decodeTableOf}.
+ *
+ * @internal
+ */
+export function aliasTableOf(
+  fields: ComposedSchemaFields,
+  key: string,
+  index: number,
+): {readonly [key: string]: unknown} {
+  let {meta} = schemaOf(fields, key);
+  for (let i = 0; ; i++) {
+    invariant(
+      meta.kind === 'aliased',
+      'aliasTableOf: "%s" declares no alias table %s',
+      key,
+      String(index),
+    );
+    if (i === index) {
+      return nullPrototype(meta.aliases);
+    }
+    meta = meta.inner.meta;
+  }
+}
+
+function nullPrototype(table: {readonly [key: string]: unknown}): {
+  readonly [key: string]: unknown;
+} {
+  return Object.assign(Object.create(null), table);
+}
+
+function schemaOf(
+  fields: ComposedSchemaFields,
+  key: string,
+): AnySerializationSchema {
+  const schema = fields.get(key);
+  invariant(
+    schema !== undefined,
+    'the composed schema declares no property "%s"',
+    key,
+  );
+  return schema;
+}
+
 /** A {@link SerializationSchema} for an unknown type, used where the type is not relevant. */
 export type AnySerializationSchema = SerializationSchema<
   unknown,

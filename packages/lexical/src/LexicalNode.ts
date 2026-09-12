@@ -13,7 +13,7 @@ import type {
   KlassConstructor,
   LexicalEditor,
 } from './LexicalEditor';
-import type {GeneratedJSON} from './LexicalGeneratedJSON';
+import type {GeneratedJSONFactory} from './LexicalGeneratedJSON';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -266,8 +266,13 @@ export interface StaticNodeConfigValue<
    * generated code compiled away. Passing the code through the config makes the
    * association the same one the schema itself has — the class whose `$config`
    * named it — so the two cannot come apart.
+   *
+   * A factory rather than the functions themselves: registration calls it
+   * with the class's composed schema, and the generated code reads the lookup
+   * tables it needs off that schema, so a generated module carries no copy of
+   * a table and a subclass that inherits the code runs it over its own.
    */
-  readonly generated?: GeneratedJSON;
+  readonly generated?: GeneratedJSONFactory;
 }
 
 /**

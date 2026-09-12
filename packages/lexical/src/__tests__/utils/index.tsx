@@ -62,6 +62,11 @@ import {
   getGeneratedJSON,
 } from '../../LexicalUtils';
 
+// The generated implementations a class runs, bound to its own schema by its
+// record — what a package's generated-code test asks about, since the module
+// it imports exports the factory, not the functions.
+export {getGeneratedJSON};
+
 const prettierConfig = prettier.resolveConfig(__filename);
 
 type TestEnv = {

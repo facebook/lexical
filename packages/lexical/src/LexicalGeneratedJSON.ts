@@ -20,6 +20,13 @@ import type {ParagraphNode} from './nodes/LexicalParagraphNode';
 import type {TabNode} from './nodes/LexicalTabNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
+import {
+  aliasTableOf,
+  type ComposedSchemaFields,
+  decodeTableOf,
+  encodeTableOf,
+} from './LexicalSchema';
+
 /**
  * The generated implementations for one node class.
  *
@@ -60,6 +67,19 @@ export interface GeneratedJSON {
   afterCloneFrom?(node: LexicalNode, prevNode: LexicalNode): void;
 }
 
+/**
+ * Builds the generated implementations for one class from that class's
+ * composed schema, which the registration hands it: the lookup tables the
+ * code reads are the schema's own objects, read from it here, so a generated
+ * module holds no copy of a table and nothing about one is written into it
+ * at build time.
+ *
+ * @internal
+ */
+export type GeneratedJSONFactory = (
+  fields: ComposedSchemaFields,
+) => GeneratedJSON;
+
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
 // reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
 // produces. Emitted from the same source the codegen verified against, so the
@@ -88,331 +108,334 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
-// Null-prototype: a key the table does not have must miss rather than
-// resolve to Object.prototype.
-const TEXT_MODE_DECODE: {
-  readonly [key: string]: 'normal' | 'segmented' | 'token';
-} = /* @__PURE__ */ Object.assign(Object.create(null), {
-  '0': 'normal',
-  '1': 'token',
-  '2': 'segmented',
-});
-
-// Null-prototype: a key the table does not have must miss rather than
-// resolve to Object.prototype.
-const TEXT_DETAIL_ALIAS: {readonly [key: string]: 1 | 2} =
-  /* @__PURE__ */ Object.assign(Object.create(null), {
-    directionless: 1,
-    unmergeable: 2,
-  });
-
-// Null-prototype: a key the table does not have must miss rather than
-// resolve to Object.prototype.
-const TEXT_FORMAT_ALIAS: {
-  readonly [key: string]: 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256 | 512 | 1024;
-} = /* @__PURE__ */ Object.assign(Object.create(null), {
-  bold: 1,
-  capitalize: 1024,
-  code: 16,
-  highlight: 128,
-  italic: 2,
-  lowercase: 256,
-  strikethrough: 4,
-  subscript: 32,
-  superscript: 64,
-  underline: 8,
-  uppercase: 512,
-});
-
-// Null-prototype: a key the table does not have must miss rather than
-// resolve to Object.prototype.
-const TEXT_MODE_ENCODE: {readonly [key: string]: 0 | 1 | 2} =
-  /* @__PURE__ */ Object.assign(Object.create(null), {
-    normal: 0,
-    segmented: 2,
-    token: 1,
-  });
-
-// Null-prototype: a key the table does not have must miss rather than
-// resolve to Object.prototype.
-const TAB_MODE_DECODE: {readonly [key: string]: 'normal'} =
-  /* @__PURE__ */ Object.assign(Object.create(null), {
-    '0': 'normal',
-  });
-
-/** Generated from TextNode's serialization schema. Do not edit by hand. */
-function exportTextNode(node: TextNode): {[key: string]: unknown} {
-  return {
-    detail: node.__detail,
-    format: node.__format,
-    mode: TEXT_MODE_DECODE[node.__mode],
-    style: node.__style,
-    text: node.__text,
-    type: node.__type,
-    version: 1,
-  };
-}
-
-/** Generated from TextNode's serialization schema. Do not edit by hand. */
-function exportCompactTextNode(node: TextNode): {[key: string]: unknown} {
-  const json: {[key: string]: unknown} = {type: node.__type};
-  const detail = node.__detail;
-  if (detail !== undefined && detail !== 0) {
-    json.detail = detail;
-  }
-  const format = node.__format;
-  if (format !== undefined && format !== 0) {
-    json.format = format;
-  }
-  const mode = TEXT_MODE_DECODE[node.__mode];
-  if (mode !== undefined && mode !== 'normal') {
-    json.mode = mode;
-  }
-  const style = node.__style;
-  if (style !== undefined && style !== '') {
-    json.style = style;
-  }
-  const text = node.__text;
-  if (text !== undefined && text !== '') {
-    json.text = text;
-  }
-  return json;
-}
-
-/** Generated from TextNode's serialization schema. Do not edit by hand. */
-function updateTextNode(
-  node: TextNode,
-  json: {readonly [key: string]: unknown},
-): TextNode {
-  let v: unknown;
-  v = Object.prototype.hasOwnProperty.call(json, 'detail')
-    ? json.detail
-    : undefined;
-  node.__detail =
-    typeof v === 'string' && v in TEXT_DETAIL_ALIAS
-      ? TEXT_DETAIL_ALIAS[v]
-      : num(v, 0);
-  v = Object.prototype.hasOwnProperty.call(json, 'format')
-    ? json.format
-    : undefined;
-  node.__format =
-    typeof v === 'string' && v in TEXT_FORMAT_ALIAS
-      ? TEXT_FORMAT_ALIAS[v]
-      : num(v, 0);
-  v = Object.prototype.hasOwnProperty.call(json, 'mode')
-    ? json.mode
-    : undefined;
-  v = v === 'normal' || v === 'token' || v === 'segmented' ? v : 'normal';
-  node.__mode =
-    (v as string) in TEXT_MODE_ENCODE ? TEXT_MODE_ENCODE[v as string] : 0;
-  v = Object.prototype.hasOwnProperty.call(json, 'style')
-    ? json.style
-    : undefined;
-  node.__style = typeof v === 'string' ? v : '';
-  v = Object.prototype.hasOwnProperty.call(json, 'text')
-    ? json.text
-    : undefined;
-  node.__text = typeof v === 'string' ? v : '';
-  return node;
-}
-
-/** Generated from TextNode's serialization schema. Do not edit by hand. */
-function afterCloneTextNode(node: TextNode, prevNode: TextNode): void {
-  node.__detail = prevNode.__detail;
-  node.__format = prevNode.__format;
-  node.__mode = prevNode.__mode;
-  node.__style = prevNode.__style;
-  node.__text = prevNode.__text;
-}
-
 /** TextNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_TEXT: GeneratedJSON = {
-  exportJSON: exportTextNode,
-  exportCompactJSON: exportCompactTextNode,
-  updateFromJSON: updateTextNode,
-  afterCloneFrom: afterCloneTextNode,
-};
-
-/** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
-function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  return {
-    children: [],
-    direction: node.__dir,
-    format: node.getFormatType(),
-    indent: node.__indent,
-    textFormat:
-      textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
-    textStyle:
-      textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: node.__type,
-    version: 1,
+export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
+  const TEXT_MODE_DECODE = decodeTableOf(fields, 'mode') as {
+    readonly [key: string]: 'normal' | 'segmented' | 'token';
   };
-}
 
-/** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
-function exportCompactParagraphNode(node: ParagraphNode): {
-  [key: string]: unknown;
-} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {type: node.__type, children: []};
-  const direction = node.__dir;
-  if (direction !== undefined && direction !== null) {
-    json.direction = direction;
-  }
-  const format = node.getFormatType();
-  if (format !== undefined && format !== '') {
-    json.format = format;
-  }
-  const indent = node.__indent;
-  if (indent !== undefined && indent !== 0) {
-    json.indent = indent;
-  }
-  if (
-    textFormat !== undefined &&
-    textFormat !== 0 &&
-    shouldSerializeTextStyles
-  ) {
-    json.textFormat = textFormat;
-  }
-  if (
-    textStyle !== undefined &&
-    textStyle !== '' &&
-    shouldSerializeTextStyles
-  ) {
-    json.textStyle = textStyle;
-  }
-  return json;
-}
+  const TEXT_DETAIL_ALIAS = aliasTableOf(fields, 'detail', 0) as {
+    readonly [key: string]: 1 | 2;
+  };
 
-/** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
-function updateParagraphNode(
-  node: ParagraphNode,
-  json: {readonly [key: string]: unknown},
-): ParagraphNode {
-  let self = node;
-  let n: unknown;
-  let v: unknown;
-  v = Object.prototype.hasOwnProperty.call(json, 'direction')
-    ? json.direction
-    : undefined;
-  self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-  v = Object.prototype.hasOwnProperty.call(json, 'format')
-    ? json.format
-    : undefined;
-  n = self.setFormat(
-    v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-      ? v
-      : '',
-  );
-  self = (n ?? self) as ParagraphNode;
-  v = Object.prototype.hasOwnProperty.call(json, 'indent')
-    ? json.indent
-    : undefined;
-  self.__indent = numC(v, 0, 0, Infinity, true);
-  v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-    ? json.textFormat
-    : undefined;
-  n = self.setTextFormat(num(v, 0));
-  self = (n ?? self) as ParagraphNode;
-  v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-    ? json.textStyle
-    : undefined;
-  n = self.setTextStyle(typeof v === 'string' ? v : '');
-  self = (n ?? self) as ParagraphNode;
-  return self;
-}
+  const TEXT_FORMAT_ALIAS = aliasTableOf(fields, 'format', 0) as {
+    readonly [key: string]:
+      | 1
+      | 2
+      | 4
+      | 8
+      | 16
+      | 32
+      | 64
+      | 128
+      | 256
+      | 512
+      | 1024;
+  };
+
+  const TEXT_MODE_ENCODE = encodeTableOf(fields, 'mode') as {
+    readonly [key: string]: 0 | 1 | 2;
+  };
+
+  /** Generated from TextNode's serialization schema. Do not edit by hand. */
+  function exportTextNode(node: TextNode): {[key: string]: unknown} {
+    return {
+      detail: node.__detail,
+      format: node.__format,
+      mode: TEXT_MODE_DECODE[node.__mode],
+      style: node.__style,
+      text: node.__text,
+      type: node.__type,
+      version: 1,
+    };
+  }
+
+  /** Generated from TextNode's serialization schema. Do not edit by hand. */
+  function exportCompactTextNode(node: TextNode): {[key: string]: unknown} {
+    const json: {[key: string]: unknown} = {type: node.__type};
+    const detail = node.__detail;
+    if (detail !== undefined && detail !== 0) {
+      json.detail = detail;
+    }
+    const format = node.__format;
+    if (format !== undefined && format !== 0) {
+      json.format = format;
+    }
+    const mode = TEXT_MODE_DECODE[node.__mode];
+    if (mode !== undefined && mode !== 'normal') {
+      json.mode = mode;
+    }
+    const style = node.__style;
+    if (style !== undefined && style !== '') {
+      json.style = style;
+    }
+    const text = node.__text;
+    if (text !== undefined && text !== '') {
+      json.text = text;
+    }
+    return json;
+  }
+
+  /** Generated from TextNode's serialization schema. Do not edit by hand. */
+  function updateTextNode(
+    node: TextNode,
+    json: {readonly [key: string]: unknown},
+  ): TextNode {
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'detail')
+      ? json.detail
+      : undefined;
+    node.__detail =
+      typeof v === 'string' && v in TEXT_DETAIL_ALIAS
+        ? TEXT_DETAIL_ALIAS[v]
+        : num(v, 0);
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    node.__format =
+      typeof v === 'string' && v in TEXT_FORMAT_ALIAS
+        ? TEXT_FORMAT_ALIAS[v]
+        : num(v, 0);
+    v = Object.prototype.hasOwnProperty.call(json, 'mode')
+      ? json.mode
+      : undefined;
+    v = v === 'normal' || v === 'token' || v === 'segmented' ? v : 'normal';
+    node.__mode = TEXT_MODE_ENCODE[v as string];
+    v = Object.prototype.hasOwnProperty.call(json, 'style')
+      ? json.style
+      : undefined;
+    node.__style = typeof v === 'string' ? v : '';
+    v = Object.prototype.hasOwnProperty.call(json, 'text')
+      ? json.text
+      : undefined;
+    node.__text = typeof v === 'string' ? v : '';
+    return node;
+  }
+
+  /** Generated from TextNode's serialization schema. Do not edit by hand. */
+  function afterCloneTextNode(node: TextNode, prevNode: TextNode): void {
+    node.__detail = prevNode.__detail;
+    node.__format = prevNode.__format;
+    node.__mode = prevNode.__mode;
+    node.__style = prevNode.__style;
+    node.__text = prevNode.__text;
+  }
+
+  return {
+    exportJSON: exportTextNode,
+    exportCompactJSON: exportCompactTextNode,
+    updateFromJSON: updateTextNode,
+    afterCloneFrom: afterCloneTextNode,
+  };
+};
 
 /** ParagraphNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_PARAGRAPH: GeneratedJSON = {
-  exportJSON: exportParagraphNode,
-  exportCompactJSON: exportCompactParagraphNode,
-  updateFromJSON: updateParagraphNode,
-};
+export const GENERATED_PARAGRAPH: GeneratedJSONFactory = () => {
+  /** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
+  function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    return {
+      children: [],
+      direction: node.__dir,
+      format: node.getFormatType(),
+      indent: node.__indent,
+      textFormat:
+        textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
+      textStyle:
+        textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
+      type: node.__type,
+      version: 1,
+    };
+  }
 
-/** Generated from LineBreakNode's serialization schema. Do not edit by hand. */
-function exportLineBreakNode(node: LineBreakNode): {[key: string]: unknown} {
+  /** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
+  function exportCompactParagraphNode(node: ParagraphNode): {
+    [key: string]: unknown;
+  } {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    const json: {[key: string]: unknown} = {type: node.__type, children: []};
+    const direction = node.__dir;
+    if (direction !== undefined && direction !== null) {
+      json.direction = direction;
+    }
+    const format = node.getFormatType();
+    if (format !== undefined && format !== '') {
+      json.format = format;
+    }
+    const indent = node.__indent;
+    if (indent !== undefined && indent !== 0) {
+      json.indent = indent;
+    }
+    if (
+      textFormat !== undefined &&
+      textFormat !== 0 &&
+      shouldSerializeTextStyles
+    ) {
+      json.textFormat = textFormat;
+    }
+    if (
+      textStyle !== undefined &&
+      textStyle !== '' &&
+      shouldSerializeTextStyles
+    ) {
+      json.textStyle = textStyle;
+    }
+    return json;
+  }
+
+  /** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
+  function updateParagraphNode(
+    node: ParagraphNode,
+    json: {readonly [key: string]: unknown},
+  ): ParagraphNode {
+    let self = node;
+    let n: unknown;
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'direction')
+      ? json.direction
+      : undefined;
+    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    n = self.setFormat(
+      v === '' ||
+        v === 'left' ||
+        v === 'start' ||
+        v === 'center' ||
+        v === 'right' ||
+        v === 'end' ||
+        v === 'justify'
+        ? v
+        : '',
+    );
+    self = (n ?? self) as ParagraphNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'indent')
+      ? json.indent
+      : undefined;
+    self.__indent = numC(v, 0, 0, Infinity, true);
+    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
+      ? json.textFormat
+      : undefined;
+    n = self.setTextFormat(num(v, 0));
+    self = (n ?? self) as ParagraphNode;
+    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
+      ? json.textStyle
+      : undefined;
+    n = self.setTextStyle(typeof v === 'string' ? v : '');
+    self = (n ?? self) as ParagraphNode;
+    return self;
+  }
+
   return {
-    type: node.__type,
-    version: 1,
+    exportJSON: exportParagraphNode,
+    exportCompactJSON: exportCompactParagraphNode,
+    updateFromJSON: updateParagraphNode,
   };
-}
-
-/** Generated from LineBreakNode's serialization schema. Do not edit by hand. */
-function exportCompactLineBreakNode(node: LineBreakNode): {
-  [key: string]: unknown;
-} {
-  return {type: node.__type};
-}
+};
 
 /** LineBreakNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_LINEBREAK: GeneratedJSON = {
-  exportJSON: exportLineBreakNode,
-  exportCompactJSON: exportCompactLineBreakNode,
+export const GENERATED_LINEBREAK: GeneratedJSONFactory = () => {
+  /** Generated from LineBreakNode's serialization schema. Do not edit by hand. */
+  function exportLineBreakNode(node: LineBreakNode): {[key: string]: unknown} {
+    return {
+      type: node.__type,
+      version: 1,
+    };
+  }
+
+  /** Generated from LineBreakNode's serialization schema. Do not edit by hand. */
+  function exportCompactLineBreakNode(node: LineBreakNode): {
+    [key: string]: unknown;
+  } {
+    return {type: node.__type};
+  }
+
+  return {
+    exportJSON: exportLineBreakNode,
+    exportCompactJSON: exportCompactLineBreakNode,
+  };
 };
 
-/** Generated from TabNode's serialization schema. Do not edit by hand. */
-function exportTabNode(node: TabNode): {[key: string]: unknown} {
-  return {
-    detail: node.__detail,
-    mode: TAB_MODE_DECODE[node.__mode],
-    text: node.__text,
-    format: node.__format,
-    style: node.__style,
-    type: node.__type,
-    version: 1,
-  };
-}
-
-/** Generated from TabNode's serialization schema. Do not edit by hand. */
-function exportCompactTabNode(node: TabNode): {[key: string]: unknown} {
-  const json: {[key: string]: unknown} = {type: node.__type};
-  const format = node.__format;
-  if (format !== undefined && format !== 0) {
-    json.format = format;
-  }
-  const style = node.__style;
-  if (style !== undefined && style !== '') {
-    json.style = style;
-  }
-  return json;
-}
-
-/** Generated from TabNode's serialization schema. Do not edit by hand. */
-function updateTabNode(
-  node: TabNode,
-  json: {readonly [key: string]: unknown},
-): TabNode {
-  let v: unknown;
-  v = Object.prototype.hasOwnProperty.call(json, 'format')
-    ? json.format
-    : undefined;
-  node.__format =
-    typeof v === 'string' && v in TEXT_FORMAT_ALIAS
-      ? TEXT_FORMAT_ALIAS[v]
-      : num(v, 0);
-  v = Object.prototype.hasOwnProperty.call(json, 'style')
-    ? json.style
-    : undefined;
-  node.__style = typeof v === 'string' ? v : '';
-  return node;
-}
-
 /** TabNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_TAB: GeneratedJSON = {
-  exportJSON: exportTabNode,
-  exportCompactJSON: exportCompactTabNode,
-  updateFromJSON: updateTabNode,
+export const GENERATED_TAB: GeneratedJSONFactory = fields => {
+  const TAB_MODE_DECODE = decodeTableOf(fields, 'mode') as {
+    readonly [key: string]: 'normal';
+  };
+
+  const TAB_FORMAT_ALIAS = aliasTableOf(fields, 'format', 0) as {
+    readonly [key: string]:
+      | 1
+      | 2
+      | 4
+      | 8
+      | 16
+      | 32
+      | 64
+      | 128
+      | 256
+      | 512
+      | 1024;
+  };
+
+  /** Generated from TabNode's serialization schema. Do not edit by hand. */
+  function exportTabNode(node: TabNode): {[key: string]: unknown} {
+    return {
+      detail: node.__detail,
+      mode: TAB_MODE_DECODE[node.__mode],
+      text: node.__text,
+      format: node.__format,
+      style: node.__style,
+      type: node.__type,
+      version: 1,
+    };
+  }
+
+  /** Generated from TabNode's serialization schema. Do not edit by hand. */
+  function exportCompactTabNode(node: TabNode): {[key: string]: unknown} {
+    const json: {[key: string]: unknown} = {type: node.__type};
+    const format = node.__format;
+    if (format !== undefined && format !== 0) {
+      json.format = format;
+    }
+    const style = node.__style;
+    if (style !== undefined && style !== '') {
+      json.style = style;
+    }
+    return json;
+  }
+
+  /** Generated from TabNode's serialization schema. Do not edit by hand. */
+  function updateTabNode(
+    node: TabNode,
+    json: {readonly [key: string]: unknown},
+  ): TabNode {
+    let v: unknown;
+    v = Object.prototype.hasOwnProperty.call(json, 'format')
+      ? json.format
+      : undefined;
+    node.__format =
+      typeof v === 'string' && v in TAB_FORMAT_ALIAS
+        ? TAB_FORMAT_ALIAS[v]
+        : num(v, 0);
+    v = Object.prototype.hasOwnProperty.call(json, 'style')
+      ? json.style
+      : undefined;
+    node.__style = typeof v === 'string' ? v : '';
+    return node;
+  }
+
+  return {
+    exportJSON: exportTabNode,
+    exportCompactJSON: exportCompactTabNode,
+    updateFromJSON: updateTabNode,
+  };
 };

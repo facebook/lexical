@@ -7,7 +7,7 @@
  */
 
 import type {EditorState} from './LexicalEditorState';
-import type {GeneratedJSON} from './LexicalGeneratedJSON';
+import type {GeneratedJSON, GeneratedJSONFactory} from './LexicalGeneratedJSON';
 import type {RootNode} from './nodes/LexicalRootNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -97,6 +97,7 @@ import {
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   type AnySerializationSchema,
+  type ComposedSchemaFields,
   hasOwnKey,
   isSchemaField,
   type SchemaFieldBase,
@@ -3604,10 +3605,17 @@ export interface ComposedSchema {
    * between.
    */
   readonly declaredBy: ReadonlyMap<string, Klass<LexicalNode>>;
+  /**
+   * The same winning schemas by key, which is what a class's generated code
+   * is built from at registration: the lookup tables it reads are these
+   * schemas' own objects, so the generated module holds no copy of any.
+   */
+  readonly fields: ComposedSchemaFields;
 }
 
 const EMPTY_COMPOSED_SCHEMA: ComposedSchema = {
   declaredBy: new Map(),
+  fields: new Map(),
   fieldsBaseFirst: [],
   fieldsDerivedFirst: [],
   flatStates: [],
@@ -3714,6 +3722,7 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
     ? EMPTY_COMPOSED_SCHEMA
     : {
         declaredBy,
+        fields: baseFirst,
         fieldsBaseFirst: [...baseFirst],
         fieldsDerivedFirst: [...derivedFirst],
         flatStates: [...flatStates.values()],
@@ -4310,7 +4319,7 @@ function resolveGenerated(
     | undefined
     | StaticNodeConfigValue<LexicalNode, string | symbol>,
   tables: Pick<CompiledNodeClass, 'getters' | 'setters'>,
-): null | GeneratedJSON {
+): null | GeneratedJSONFactory {
   // The nearest declaration up the chain. A class with no `$config` of its own
   // reads its ancestor's, declaration included, as its own; one whose `$config`
   // names none inherits from the first ancestor that does.
@@ -4318,7 +4327,7 @@ function resolveGenerated(
   // class naming that same object. The second cannot precede the first, so
   // the loop records the first it sees and then keeps overwriting the class
   // for as long as later ancestors name it.
-  let declared: undefined | GeneratedJSON;
+  let declared: undefined | GeneratedJSONFactory;
   let declaringKlass = klass;
   for (const {
     klass: currentKlass,
@@ -4399,9 +4408,13 @@ function sameCompiledTables(
       x.derived !== y.derived ||
       x.isEqual !== y.isEqual ||
       !Object.is(x.defaultValue, y.defaultValue) ||
+      // Whether a table is read, not which: the code reads its tables off the
+      // running class's schema when it is attached, and the schema comparison
+      // above has already settled which schema that is.
       (x.kind === 'ownField' &&
         y.kind === 'ownField' &&
-        (x.field !== y.field || x.decode !== y.decode))
+        (x.field !== y.field ||
+          (x.decode === undefined) !== (y.decode === undefined)))
     ) {
       return false;
     }
@@ -4415,7 +4428,8 @@ function sameCompiledTables(
       x.schema !== y.schema ||
       (x.kind === 'ownField' &&
         y.kind === 'ownField' &&
-        (x.field !== y.field || x.encode !== y.encode))
+        (x.field !== y.field ||
+          (x.encode === undefined) !== (y.encode === undefined)))
     ) {
       return false;
     }
@@ -4861,12 +4875,21 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
   try {
     const setters = compileSetters(klass);
     const getters = compileGetters(klass);
+    const composed = getComposedSchema(klass);
+    // Built here, once per class, from the class's own composed schema: the
+    // generated module reads its lookup tables from these schemas rather
+    // than carrying copies, so a subclass that inherits the code runs it
+    // over its own tables.
+    const generated = resolveGenerated(klass, ownNodeConfig, {
+      getters,
+      setters,
+    });
     record.compiled = {
       // Non-flat states live under NODE_STATE_KEY and are applied by
       // $updateStateFromJSON; these are the ones serialized as top-level
       // properties alongside the schema's.
-      flatStates: getComposedSchema(klass).flatStates,
-      generated: resolveGenerated(klass, ownNodeConfig, {getters, setters}),
+      flatStates: composed.flatStates,
+      generated: generated === null ? null : generated(composed.fields),
       getters,
       isCompactDefault: compactDefaultTest(getters),
       setters,
@@ -5065,10 +5088,16 @@ function injectSynthesizedAfterCloneFrom(klass: Klass<LexicalNode>): void {
     // the export and import directions, for the same reason: the fields are
     // fixed once the schema is written, and a keyed store whose key changes
     // every iteration is what generating the code removes.
+    // The class's own generated code, bound to its own schema by its record
+    // — the record this registration is building when `currentKlass` is the
+    // class being registered, and otherwise the ancestor's, built here if it
+    // has not been.
+    const generated =
+      ownNodeConfig && ownNodeConfig.generated !== undefined
+        ? getCompiled(getNodeClassRecord(currentKlass)).generated
+        : null;
     const copyFields =
-      (ownNodeConfig &&
-        ownNodeConfig.generated &&
-        ownNodeConfig.generated.afterCloneFrom) ||
+      (generated !== null && generated.afterCloneFrom) ||
       ((node: LexicalNode, prevNode: LexicalNode): void => {
         const self = node as unknown as Record<string, unknown>;
         const prev = prevNode as unknown as Record<string, unknown>;

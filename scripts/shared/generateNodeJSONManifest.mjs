@@ -108,7 +108,20 @@ export interface GeneratedJSON {
   // that method's \`super\` call, so this covers one class's own fields and
   // nothing above it.
   afterCloneFrom?(node: LexicalNode, prevNode: LexicalNode): void;
-}`;
+}
+
+/**
+ * Builds the generated implementations for one class from that class's
+ * composed schema, which the registration hands it: the lookup tables the
+ * code reads are the schema's own objects, read from it here, so a generated
+ * module holds no copy of a table and nothing about one is written into it
+ * at build time.
+ *
+ * @internal
+ */
+export type GeneratedJSONFactory = (
+  fields: ComposedSchemaFields,
+) => GeneratedJSON;`;
 
 /**
  * A valid do-nothing module for one output, from the static manifest alone.
@@ -120,14 +133,14 @@ export function stubSource(pkg) {
   const lines = [HEADER];
   if (pkg.home) {
     lines.push(
-      `\nimport type {LexicalNode} from './LexicalNode';\nimport type {CompactDefaultTest} from './LexicalUtils';\n\n${INTERFACE_SOURCE}\n`,
+      `\nimport type {LexicalNode} from './LexicalNode';\nimport type {ComposedSchemaFields} from './LexicalSchema';\nimport type {CompactDefaultTest} from './LexicalUtils';\n\n${INTERFACE_SOURCE}\n`,
     );
   } else {
-    lines.push(`\nimport type {GeneratedJSON} from 'lexical';\n`);
+    lines.push(`\nimport type {GeneratedJSONFactory} from 'lexical';\n`);
   }
   for (const name of pkg.entries) {
     lines.push(
-      `\n/** @internal */\nexport const ${name}: undefined | GeneratedJSON = undefined;\n`,
+      `\n/** @internal */\nexport const ${name}: undefined | GeneratedJSONFactory = undefined;\n`,
     );
   }
   return lines.join('');

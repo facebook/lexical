@@ -14,193 +14,201 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
 import type {AutoLinkNode, LinkNode} from './LexicalLinkNode';
-import type {GeneratedJSON} from 'lexical';
-
-/** Generated from LinkNode's serialization schema. Do not edit by hand. */
-function exportLinkNode(node: LinkNode): {[key: string]: unknown} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  return {
-    children: [],
-    rel: node.__rel,
-    target: node.__target,
-    title: node.__title,
-    url: node.__url,
-    direction: node.__dir,
-    format: node.getFormatType(),
-    indent: node.__indent,
-    textFormat:
-      textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
-    textStyle:
-      textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: node.__type,
-    version: 1,
-  };
-}
-
-/** Generated from LinkNode's serialization schema. Do not edit by hand. */
-function exportCompactLinkNode(node: LinkNode): {[key: string]: unknown} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {type: node.__type, children: []};
-  const rel = node.__rel;
-  if (rel !== undefined && rel !== null) {
-    json.rel = rel;
-  }
-  const target = node.__target;
-  if (target !== undefined && target !== null) {
-    json.target = target;
-  }
-  const title = node.__title;
-  if (title !== undefined && title !== null) {
-    json.title = title;
-  }
-  const url = node.__url;
-  if (url !== undefined && url !== '') {
-    json.url = url;
-  }
-  const direction = node.__dir;
-  if (direction !== undefined && direction !== null) {
-    json.direction = direction;
-  }
-  const format = node.getFormatType();
-  if (format !== undefined && format !== '') {
-    json.format = format;
-  }
-  const indent = node.__indent;
-  if (indent !== undefined && indent !== 0) {
-    json.indent = indent;
-  }
-  if (
-    textFormat !== undefined &&
-    textFormat !== 0 &&
-    shouldSerializeTextStyles
-  ) {
-    json.textFormat = textFormat;
-  }
-  if (
-    textStyle !== undefined &&
-    textStyle !== '' &&
-    shouldSerializeTextStyles
-  ) {
-    json.textStyle = textStyle;
-  }
-  return json;
-}
-
-/** Generated from LinkNode's serialization schema. Do not edit by hand. */
-function afterCloneLinkNode(node: LinkNode, prevNode: LinkNode): void {
-  node.__rel = prevNode.__rel;
-  node.__target = prevNode.__target;
-  node.__title = prevNode.__title;
-  node.__url = prevNode.__url;
-}
+import type {GeneratedJSONFactory} from 'lexical';
 
 /** LinkNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_LINK: GeneratedJSON = {
-  exportJSON: exportLinkNode,
-  exportCompactJSON: exportCompactLinkNode,
-  afterCloneFrom: afterCloneLinkNode,
+export const GENERATED_LINK: GeneratedJSONFactory = () => {
+  /** Generated from LinkNode's serialization schema. Do not edit by hand. */
+  function exportLinkNode(node: LinkNode): {[key: string]: unknown} {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    return {
+      children: [],
+      rel: node.__rel,
+      target: node.__target,
+      title: node.__title,
+      url: node.__url,
+      direction: node.__dir,
+      format: node.getFormatType(),
+      indent: node.__indent,
+      textFormat:
+        textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
+      textStyle:
+        textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
+      type: node.__type,
+      version: 1,
+    };
+  }
+
+  /** Generated from LinkNode's serialization schema. Do not edit by hand. */
+  function exportCompactLinkNode(node: LinkNode): {[key: string]: unknown} {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    const json: {[key: string]: unknown} = {type: node.__type, children: []};
+    const rel = node.__rel;
+    if (rel !== undefined && rel !== null) {
+      json.rel = rel;
+    }
+    const target = node.__target;
+    if (target !== undefined && target !== null) {
+      json.target = target;
+    }
+    const title = node.__title;
+    if (title !== undefined && title !== null) {
+      json.title = title;
+    }
+    const url = node.__url;
+    if (url !== undefined && url !== '') {
+      json.url = url;
+    }
+    const direction = node.__dir;
+    if (direction !== undefined && direction !== null) {
+      json.direction = direction;
+    }
+    const format = node.getFormatType();
+    if (format !== undefined && format !== '') {
+      json.format = format;
+    }
+    const indent = node.__indent;
+    if (indent !== undefined && indent !== 0) {
+      json.indent = indent;
+    }
+    if (
+      textFormat !== undefined &&
+      textFormat !== 0 &&
+      shouldSerializeTextStyles
+    ) {
+      json.textFormat = textFormat;
+    }
+    if (
+      textStyle !== undefined &&
+      textStyle !== '' &&
+      shouldSerializeTextStyles
+    ) {
+      json.textStyle = textStyle;
+    }
+    return json;
+  }
+
+  /** Generated from LinkNode's serialization schema. Do not edit by hand. */
+  function afterCloneLinkNode(node: LinkNode, prevNode: LinkNode): void {
+    node.__rel = prevNode.__rel;
+    node.__target = prevNode.__target;
+    node.__title = prevNode.__title;
+    node.__url = prevNode.__url;
+  }
+
+  return {
+    exportJSON: exportLinkNode,
+    exportCompactJSON: exportCompactLinkNode,
+    afterCloneFrom: afterCloneLinkNode,
+  };
 };
 
-/** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
-function exportAutoLinkNode(node: AutoLinkNode): {[key: string]: unknown} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  return {
-    children: [],
-    isUnlinked: node.__isUnlinked,
-    rel: node.__rel,
-    target: node.__target,
-    title: node.__title,
-    url: node.__url,
-    direction: node.__dir,
-    format: node.getFormatType(),
-    indent: node.__indent,
-    textFormat:
-      textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
-    textStyle:
-      textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: node.__type,
-    version: 1,
-  };
-}
-
-/** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
-function exportCompactAutoLinkNode(node: AutoLinkNode): {
-  [key: string]: unknown;
-} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {type: node.__type, children: []};
-  const isUnlinked = node.__isUnlinked;
-  if (isUnlinked !== undefined && isUnlinked !== false) {
-    json.isUnlinked = isUnlinked;
-  }
-  const rel = node.__rel;
-  if (rel !== undefined && rel !== null) {
-    json.rel = rel;
-  }
-  const target = node.__target;
-  if (target !== undefined && target !== null) {
-    json.target = target;
-  }
-  const title = node.__title;
-  if (title !== undefined && title !== null) {
-    json.title = title;
-  }
-  const url = node.__url;
-  if (url !== undefined && url !== '') {
-    json.url = url;
-  }
-  const direction = node.__dir;
-  if (direction !== undefined && direction !== null) {
-    json.direction = direction;
-  }
-  const format = node.getFormatType();
-  if (format !== undefined && format !== '') {
-    json.format = format;
-  }
-  const indent = node.__indent;
-  if (indent !== undefined && indent !== 0) {
-    json.indent = indent;
-  }
-  if (
-    textFormat !== undefined &&
-    textFormat !== 0 &&
-    shouldSerializeTextStyles
-  ) {
-    json.textFormat = textFormat;
-  }
-  if (
-    textStyle !== undefined &&
-    textStyle !== '' &&
-    shouldSerializeTextStyles
-  ) {
-    json.textStyle = textStyle;
-  }
-  return json;
-}
-
-/** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
-function afterCloneAutoLinkNode(
-  node: AutoLinkNode,
-  prevNode: AutoLinkNode,
-): void {
-  node.__isUnlinked = prevNode.__isUnlinked;
-}
-
 /** AutoLinkNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_AUTOLINK: GeneratedJSON = {
-  exportJSON: exportAutoLinkNode,
-  exportCompactJSON: exportCompactAutoLinkNode,
-  afterCloneFrom: afterCloneAutoLinkNode,
+export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
+  /** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
+  function exportAutoLinkNode(node: AutoLinkNode): {[key: string]: unknown} {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    return {
+      children: [],
+      isUnlinked: node.__isUnlinked,
+      rel: node.__rel,
+      target: node.__target,
+      title: node.__title,
+      url: node.__url,
+      direction: node.__dir,
+      format: node.getFormatType(),
+      indent: node.__indent,
+      textFormat:
+        textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
+      textStyle:
+        textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
+      type: node.__type,
+      version: 1,
+    };
+  }
+
+  /** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
+  function exportCompactAutoLinkNode(node: AutoLinkNode): {
+    [key: string]: unknown;
+  } {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    const json: {[key: string]: unknown} = {type: node.__type, children: []};
+    const isUnlinked = node.__isUnlinked;
+    if (isUnlinked !== undefined && isUnlinked !== false) {
+      json.isUnlinked = isUnlinked;
+    }
+    const rel = node.__rel;
+    if (rel !== undefined && rel !== null) {
+      json.rel = rel;
+    }
+    const target = node.__target;
+    if (target !== undefined && target !== null) {
+      json.target = target;
+    }
+    const title = node.__title;
+    if (title !== undefined && title !== null) {
+      json.title = title;
+    }
+    const url = node.__url;
+    if (url !== undefined && url !== '') {
+      json.url = url;
+    }
+    const direction = node.__dir;
+    if (direction !== undefined && direction !== null) {
+      json.direction = direction;
+    }
+    const format = node.getFormatType();
+    if (format !== undefined && format !== '') {
+      json.format = format;
+    }
+    const indent = node.__indent;
+    if (indent !== undefined && indent !== 0) {
+      json.indent = indent;
+    }
+    if (
+      textFormat !== undefined &&
+      textFormat !== 0 &&
+      shouldSerializeTextStyles
+    ) {
+      json.textFormat = textFormat;
+    }
+    if (
+      textStyle !== undefined &&
+      textStyle !== '' &&
+      shouldSerializeTextStyles
+    ) {
+      json.textStyle = textStyle;
+    }
+    return json;
+  }
+
+  /** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
+  function afterCloneAutoLinkNode(
+    node: AutoLinkNode,
+    prevNode: AutoLinkNode,
+  ): void {
+    node.__isUnlinked = prevNode.__isUnlinked;
+  }
+
+  return {
+    exportJSON: exportAutoLinkNode,
+    exportCompactJSON: exportCompactAutoLinkNode,
+    afterCloneFrom: afterCloneAutoLinkNode,
+  };
 };

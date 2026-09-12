@@ -14,71 +14,75 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
 import type {MarkNode} from './MarkNode';
-import type {GeneratedJSON} from 'lexical';
-
-/** Generated from MarkNode's serialization schema. Do not edit by hand. */
-function exportMarkNode(node: MarkNode): {[key: string]: unknown} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  return {
-    children: [],
-    ids: node.getIDs(),
-    direction: node.__dir,
-    format: node.getFormatType(),
-    indent: node.__indent,
-    textFormat:
-      textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
-    textStyle:
-      textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
-    type: node.__type,
-    version: 1,
-  };
-}
-
-/** Generated from MarkNode's serialization schema. Do not edit by hand. */
-function exportCompactMarkNode(node: MarkNode): {[key: string]: unknown} {
-  const textFormat = node.__textFormat;
-  const textStyle = node.__textStyle;
-  const shouldSerializeTextStyles =
-    (textFormat !== 0 || textStyle !== '') && node.shouldSerializeTextStyles();
-  const json: {[key: string]: unknown} = {type: node.__type, children: []};
-  const ids = node.getIDs();
-  if (ids !== undefined && !(Array.isArray(ids) && ids.length === 0)) {
-    json.ids = ids;
-  }
-  const direction = node.__dir;
-  if (direction !== undefined && direction !== null) {
-    json.direction = direction;
-  }
-  const format = node.getFormatType();
-  if (format !== undefined && format !== '') {
-    json.format = format;
-  }
-  const indent = node.__indent;
-  if (indent !== undefined && indent !== 0) {
-    json.indent = indent;
-  }
-  if (
-    textFormat !== undefined &&
-    textFormat !== 0 &&
-    shouldSerializeTextStyles
-  ) {
-    json.textFormat = textFormat;
-  }
-  if (
-    textStyle !== undefined &&
-    textStyle !== '' &&
-    shouldSerializeTextStyles
-  ) {
-    json.textStyle = textStyle;
-  }
-  return json;
-}
+import type {GeneratedJSONFactory} from 'lexical';
 
 /** MarkNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_MARK: GeneratedJSON = {
-  exportJSON: exportMarkNode,
-  exportCompactJSON: exportCompactMarkNode,
+export const GENERATED_MARK: GeneratedJSONFactory = () => {
+  /** Generated from MarkNode's serialization schema. Do not edit by hand. */
+  function exportMarkNode(node: MarkNode): {[key: string]: unknown} {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    return {
+      children: [],
+      ids: node.getIDs(),
+      direction: node.__dir,
+      format: node.getFormatType(),
+      indent: node.__indent,
+      textFormat:
+        textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
+      textStyle:
+        textStyle !== '' && shouldSerializeTextStyles ? textStyle : undefined,
+      type: node.__type,
+      version: 1,
+    };
+  }
+
+  /** Generated from MarkNode's serialization schema. Do not edit by hand. */
+  function exportCompactMarkNode(node: MarkNode): {[key: string]: unknown} {
+    const textFormat = node.__textFormat;
+    const textStyle = node.__textStyle;
+    const shouldSerializeTextStyles =
+      (textFormat !== 0 || textStyle !== '') &&
+      node.shouldSerializeTextStyles();
+    const json: {[key: string]: unknown} = {type: node.__type, children: []};
+    const ids = node.getIDs();
+    if (ids !== undefined && !(Array.isArray(ids) && ids.length === 0)) {
+      json.ids = ids;
+    }
+    const direction = node.__dir;
+    if (direction !== undefined && direction !== null) {
+      json.direction = direction;
+    }
+    const format = node.getFormatType();
+    if (format !== undefined && format !== '') {
+      json.format = format;
+    }
+    const indent = node.__indent;
+    if (indent !== undefined && indent !== 0) {
+      json.indent = indent;
+    }
+    if (
+      textFormat !== undefined &&
+      textFormat !== 0 &&
+      shouldSerializeTextStyles
+    ) {
+      json.textFormat = textFormat;
+    }
+    if (
+      textStyle !== undefined &&
+      textStyle !== '' &&
+      shouldSerializeTextStyles
+    ) {
+      json.textStyle = textStyle;
+    }
+    return json;
+  }
+
+  return {
+    exportJSON: exportMarkNode,
+    exportCompactJSON: exportCompactMarkNode,
+  };
 };

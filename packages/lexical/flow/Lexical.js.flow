@@ -2234,6 +2234,31 @@ export type GeneratedJSON = {
   afterCloneFrom?: (node: LexicalNode, prevNode: LexicalNode) => void,
 };
 
+// A class's composed serialization schema, property by property: what a
+// generated module is handed when its code is attached to a class.
+export type ComposedSchemaFields = ReadonlyMap<string, AnySerializationSchema>;
+
+// Builds the generated implementations for one class from that class's
+// composed schema, so the lookup tables generated code reads are the schema's
+// own objects; passed to the class's $config as `generated`.
+export type GeneratedJSONFactory = (
+  fields: ComposedSchemaFields,
+) => GeneratedJSON;
+
+declare export function decodeTableOf(
+  fields: ComposedSchemaFields,
+  key: string,
+): {readonly [key: string]: unknown};
+declare export function encodeTableOf(
+  fields: ComposedSchemaFields,
+  key: string,
+): {readonly [key: string]: unknown};
+declare export function aliasTableOf(
+  fields: ComposedSchemaFields,
+  key: string,
+  index: number,
+): {readonly [key: string]: unknown};
+
 export interface StaticNodeConfigValue<
   T extends LexicalNode,
   Type extends string,
@@ -2243,7 +2268,7 @@ export interface StaticNodeConfigValue<
   readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
   readonly importDOM?: DOMConversionMap;
   readonly json?: AnySerializationSchema;
-  readonly generated?: GeneratedJSON;
+  readonly generated?: GeneratedJSONFactory;
   readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
   readonly slots?: ReadonlyArray<string>;
   readonly extends?: Class<LexicalNode>;

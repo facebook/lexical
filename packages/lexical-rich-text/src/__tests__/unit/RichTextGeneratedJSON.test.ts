@@ -10,11 +10,10 @@ import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $expectSameJSON,
   $expectSameParse,
+  getGeneratedJSON,
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
-
-import {GENERATED_QUOTE} from '../../LexicalRichTextGeneratedJSON';
 
 describe('rich-text generated JSON', () => {
   initializeUnitTest(
@@ -65,7 +64,7 @@ describe('rich-text generated JSON', () => {
         // A class that carries flat NodeState still gets a parser: the walk
         // applies the state before handing the node to the generated code,
         // the mirror of how export appends it after the generated literal.
-        expect(GENERATED_QUOTE.updateFromJSON).toBeDefined();
+        expect(getGeneratedJSON(QuoteNode)?.updateFromJSON).toBeDefined();
         testEnv.editor.update(
           () => {
             const node = $expectSameParse(QuoteNode, {

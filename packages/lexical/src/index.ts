@@ -195,7 +195,7 @@ export type {
 export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler, KeyDownShortcut} from './LexicalEvents';
 export {stopLexicalPropagation} from './LexicalEvents';
-export type {GeneratedJSON} from './LexicalGeneratedJSON';
+export type {GeneratedJSON, GeneratedJSONFactory} from './LexicalGeneratedJSON';
 export type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
 export {
   compileKeyboardShortcuts,
@@ -261,10 +261,14 @@ export type {RefCountedRegistry} from './LexicalRefCountedRegistry';
 export {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 export {
   aliasedValue,
+  aliasTableOf,
   type AnySerializationSchema,
   arrayValue,
   booleanValue,
+  type ComposedSchemaFields,
   declaredAccepts,
+  decodeTableOf,
+  encodeTableOf,
   enumValue,
   type FieldOptions,
   type InnerSerializationSchema,

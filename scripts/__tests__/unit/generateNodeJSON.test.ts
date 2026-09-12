@@ -9,6 +9,7 @@
 import {
   aliasedValue,
   arrayValue,
+  enumValue,
   nodeSchema,
   numberValue,
   objectValue,
@@ -20,11 +21,11 @@ import {
 import {describe, expect, test} from 'vitest';
 
 import {
-  claimTableName,
-  emitTable,
+  declareTable,
   emittable,
   generateCompactExport,
   generateUpdate,
+  tableDeclaration,
   // @ts-expect-error - a .mjs script with JSDoc types, not a typed module
 } from '../../shared/generateNodeJSON.mjs';
 
@@ -97,41 +98,54 @@ describe('names interpolated into generated code', () => {
   });
 });
 
-describe('lookup table names', () => {
-  test('the same table may be claimed again under its own name', () => {
-    const table = {a: 1};
-    claimTableName('TEXT_MODE_ENCODE', table);
-    expect(() => claimTableName('TEXT_MODE_ENCODE', table)).not.toThrow();
+describe('lookup table locals', () => {
+  test('the same declaration may be bound again under its own name', () => {
+    const declaration = tableDeclaration('encode', 'mode', {a: 1});
+    declareTable('TEXT_MODE_ENCODE', declaration);
+    expect(() => declareTable('TEXT_MODE_ENCODE', declaration)).not.toThrow();
   });
 
   test('two different tables cannot share a name', () => {
     // Names are derived by upper-casing, which is not injective: `textFormat`
     // and `textformat` produce the same one. Silently replacing the first
-    // table would leave the first class decoding through the second's.
-    claimTableName('COLLIDE_DECODE', {a: 1});
-    expect(() => claimTableName('COLLIDE_DECODE', {b: 2})).toThrow(
-      /two different lookup tables both want the name/,
-    );
+    // binding would leave one property decoding through the other's table.
+    declareTable('COLLIDE_DECODE', tableDeclaration('decode', 'a', {a: 1}));
+    expect(() =>
+      declareTable('COLLIDE_DECODE', tableDeclaration('decode', 'b', {b: 2})),
+    ).toThrow(/two different lookup tables both want the name/);
   });
 });
 
 /**
- * A decode table may map a stored value to `undefined`: that is how a stored
- * value whose serialized form is the omitted default is spelled,
- * `decode: {0: undefined, 1: 'special'}`. No manifest class has one, so the
- * declaration such a table gets can only be driven through `emitTable`.
+ * A generated module binds each table it reads to a local of the class's
+ * factory, read off the composed schema the factory is handed, so the only
+ * thing it states about a table is its type. No manifest class has a table
+ * whose values need every spelling below, so they are driven through
+ * `tableDeclaration`.
  */
 describe('a lookup table declaration', () => {
-  test('spells an undefined value in its type and in its literal', () => {
-    const source = emitTable('MODE_DECODE', {0: undefined, 1: 'special'});
-    // `JSON.stringify(undefined)` is `undefined`, which `join` renders as an
-    // empty string — a type ending in ` | ` that does not parse — and
-    // `JSON.stringify` of the table dropped the entry outright.
-    expect(source).toContain(
-      'const MODE_DECODE: {readonly [key: string]: "special" | undefined}',
+  test('reads the table off the schema and states its type', () => {
+    expect(tableDeclaration('decode', 'mode', {0: 'normal', 1: 'token'})).toBe(
+      'decodeTableOf(fields, "mode") as {readonly [key: string]: "normal" | "token"}',
     );
-    expect(source).toContain('"0": undefined');
-    expect(source).toContain('"1": "special"');
+    expect(tableDeclaration('encode', 'mode', {normal: 0, token: 1})).toBe(
+      'encodeTableOf(fields, "mode") as {readonly [key: string]: 0 | 1}',
+    );
+    expect(tableDeclaration('alias', 'format', {bold: 1}, 0)).toBe(
+      'aliasTableOf(fields, "format", 0) as {readonly [key: string]: 1}',
+    );
+  });
+
+  test('spells an undefined value as the type undefined', () => {
+    // A decode table may map a stored value to `undefined`: that is how a
+    // stored value whose serialized form is the omitted default is spelled.
+    // `JSON.stringify` has no spelling for it, and once left a type ending in
+    // ` | `; the value itself is the schema's to hold now.
+    expect(
+      tableDeclaration('decode', 'mode', {0: undefined, 1: 'special'}),
+    ).toBe(
+      'decodeTableOf(fields, "mode") as {readonly [key: string]: "special" | undefined}',
+    );
   });
 
   test('keeps the literal union however many values there are', () => {
@@ -143,45 +157,51 @@ describe('a lookup table declaration', () => {
     for (let i = 0; i < 9; i++) {
       table[`mode${i}`] = i;
     }
-    expect(emitTable('WIDE_ENCODE', table)).toContain(
-      'const WIDE_ENCODE: {readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}',
-    );
-    // With an omitted entry alongside them, on the decode side.
-    table.omitted = undefined;
-    expect(emitTable('WIDE_DECODE', table)).toContain(
-      'const WIDE_DECODE: {readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | undefined}',
+    expect(tableDeclaration('encode', 'mode', table)).toContain(
+      '{readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}',
     );
   });
 
-  test('a table of literals is declared as their union', () => {
-    expect(emitTable('MODE_ENCODE', {normal: 0, special: 1})).toContain(
-      'const MODE_ENCODE: {readonly [key: string]: 0 | 1}',
-    );
+  test('a number JSON cannot spell is the type number', () => {
+    // `encode: {unlimited: Infinity}` serializes the string and stores the
+    // sentinel. Written through `JSON.stringify` the module once held `null`
+    // where the walk stored `Infinity`; nothing about the value is written
+    // now, and `Infinity` is no literal type, so the type widens to `number`
+    // beside the finite literals. `-0` is the type `0`.
+    expect(
+      tableDeclaration('encode', 'limit', {
+        minus: -Infinity,
+        nan: NaN,
+        one: 1,
+        unlimited: Infinity,
+        zero: -0,
+      }),
+    ).toContain('{readonly [key: string]: 0 | 1 | number}');
   });
 
-  test('spells a number JSON cannot', () => {
-    // A stored sentinel need not be a JSON number: `encode: {unlimited:
-    // Infinity}` serializes the string and stores the sentinel, and the walk
-    // restores it. `JSON.stringify` spells Infinity, -Infinity and NaN as
-    // `null` and -0 as `0`, so the generated parser stored those instead —
-    // after verification, which ran against the table object itself.
-    const source = emitTable('LIMIT_ENCODE', {
-      minus: -Infinity,
-      nan: NaN,
-      one: 1,
-      unlimited: Infinity,
-      zero: -0,
-    });
-    expect(source).toContain('"unlimited": Infinity');
-    expect(source).toContain('"minus": -Infinity');
-    expect(source).toContain('"nan": NaN');
-    expect(source).toContain('"zero": -0');
-    expect(source).not.toContain(': null');
-    // None of those is a literal type, so the union widens to `number`; -0 is
-    // the literal type 0.
-    expect(source).toContain(
-      'const LIMIT_ENCODE: {readonly [key: string]: 0 | 1 | number}',
-    );
+  test('a parser reads an encode table bare, with no fallback baked in', () => {
+    // The schema reduces the value to its domain and the table is verified
+    // total over it, so a miss cannot happen and the encoded default has
+    // no business in the module — it was the one table value written into
+    // one, and it was written through `JSON.stringify`.
+    class ModeNode extends TextNode {
+      __kind = 0;
+      $config() {
+        return this.config('generate-mode-node', {
+          extends: TextNode,
+          json: nodeSchema<ModeNode>()({
+            kind: withField(enumValue(['normal', 'special']), {
+              decode: {0: 'normal', 1: 'special'},
+              encode: {normal: 0, special: 1},
+              field: '__kind',
+            }),
+          }),
+        });
+      }
+    }
+    const source: string = generateUpdate(ModeNode);
+    expect(source).toContain('node.__kind = MODE_KIND_ENCODE[v as string];');
+    expect(source).not.toContain(' in MODE_KIND_ENCODE');
   });
 });
 

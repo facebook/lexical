@@ -280,12 +280,18 @@ It writes one module per package, beside the nodes it serializes:
 
 Each class receives its own generated code through its `$config`'s
 `generated` property, so nothing has to match code to class by type string at
-runtime. A subclass inherits it along with the schema when its compiled
+runtime. What the property holds is a factory: registration calls it with the
+class's composed schema, and the generated code reads the lookup tables it
+needs (`decode`, `encode`, `aliasedValue`'s) off that schema through
+`decodeTableOf`, `encodeTableOf` and `aliasTableOf`, so a generated module
+carries no copy of a table and nothing about a table's contents is written at
+build time — only its type, so the field a value is assigned to is still
+checked. A subclass inherits the code along with the schema when its compiled
 accessor tables are the ones the code was generated from — checked entry for
-entry at registration — while one that overrides an accessor a field stands in
-for, or declares a serialized property of its own, resolves differently and
-takes the schema-driven walk instead. Generated exporters read `type` off the
-node for the same reason.
+entry at registration — and runs it over its own schema, while one that
+overrides an accessor a field stands in for, or declares a serialized property
+of its own, resolves differently and takes the schema-driven walk instead.
+Generated exporters read `type` off the node for the same reason.
 
 Three things are worth knowing before touching it:
 

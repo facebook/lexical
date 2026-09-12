@@ -7,10 +7,12 @@
  */
 
 import {MarkNode} from '@lexical/mark';
-import {$expectSameJSON, initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {
+  $expectSameJSON,
+  getGeneratedJSON,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
-
-import {GENERATED_MARK} from '../../LexicalMarkGeneratedJSON';
 
 describe('mark generated exportJSON', () => {
   initializeUnitTest(
@@ -33,7 +35,7 @@ describe('mark generated exportJSON', () => {
         // equality when it was generated. `getIDs()` also copies, so even the
         // identical-default node never hands back the default by reference;
         // both cases below are decided by content, not by `===`.
-        expect(GENERATED_MARK.exportCompactJSON).toBeDefined();
+        expect(getGeneratedJSON(MarkNode)?.exportCompactJSON).toBeDefined();
         testEnv.editor.update(
           () => {
             expect(new MarkNode().exportJSON(true)).toEqual({

@@ -43,7 +43,7 @@ import {
   GENERATED_PARAGRAPH,
   GENERATED_TAB,
   GENERATED_TEXT,
-  type GeneratedJSON,
+  type GeneratedJSONFactory,
 } from '../../LexicalGeneratedJSON';
 import {
   type CompactDefaultTest,
@@ -253,7 +253,11 @@ describe('generated code is inherited where it still applies', () => {
   ])('%s', (_type, klass, generated) => {
     const {ownNodeConfig} = getStaticNodeConfig(klass);
     expect(ownNodeConfig && ownNodeConfig.generated).toBe(generated);
-    expect(getGeneratedJSON(klass)).toBe(generated);
+    // The factory is called once, when the class's record is built, and the
+    // functions it returned are what the class runs from then on.
+    const bound = getGeneratedJSON(klass);
+    expect(bound).not.toBeNull();
+    expect(getGeneratedJSON(klass)).toBe(bound);
   });
 
   test('a subclass whose tables compile the same way inherits it', () => {
@@ -274,7 +278,9 @@ describe('generated code is inherited where it still applies', () => {
     });
     editor.update(
       () => {
-        expect(getGeneratedJSON(PlainSub)).toBe(GENERATED_TEXT);
+        // TextNode's factory, bound to this class's own composed schema — a
+        // record of its own, so identity says nothing; what it runs does.
+        expect(getGeneratedJSON(PlainSub)).not.toBeNull();
         const node = $create(PlainSub)
           .setTextContent('hi')
           .setStyle('color: red');
@@ -348,9 +354,9 @@ describe('generated code is inherited where it still applies', () => {
     // predicate. What separates them is that re-declaring means a new schema.
     // Stands in for a build-generated bundle, so that inheriting it is
     // observable: the marker is what a class running this code writes.
-    const GENERATED_GATED: GeneratedJSON = {
+    const GENERATED_GATED: GeneratedJSONFactory = () => ({
       exportJSON: node => ({ranGeneratedCode: true, type: node.getType()}),
-    };
+    });
     class GatedBase extends TextNode {
       __label = '';
       $config() {
@@ -394,7 +400,7 @@ describe('generated code is inherited where it still applies', () => {
         throw err;
       },
     });
-    expect(getGeneratedJSON(GatedBase)).toBe(GENERATED_GATED);
+    expect(getGeneratedJSON(GatedBase)).not.toBeNull();
     expect(getGeneratedJSON(GatedSub)).toBeNull();
     editor.update(
       () => {
@@ -447,12 +453,9 @@ describe('the compact form is generated too', () => {
     // generator cannot state as source compares through `isCompactDefault`
     // instead, so the form is always generated and this holds for every target
     // rather than for the one whose properties happen to compare cleanly.
-    for (const generated of [
-      GENERATED_TEXT,
-      GENERATED_PARAGRAPH,
-      GENERATED_LINEBREAK,
-      GENERATED_TAB,
-    ]) {
+    for (const klass of [TextNode, ParagraphNode, LineBreakNode, TabNode]) {
+      const generated = getGeneratedJSON(klass);
+      invariant(generated !== null, 'expected generated code');
       expect(generated.exportCompactJSON).toBeDefined();
       expect(generated.exportCompactJSON).not.toBe(generated.exportJSON);
     }
@@ -474,7 +477,7 @@ describe('the compact form is generated too', () => {
       $config() {
         return this.config('run-time-compared-box', {
           extends: LineBreakNode,
-          generated: {
+          generated: () => ({
             exportCompactJSON: (node, isCompactDefault) => {
               received = isCompactDefault;
               const json: {[key: string]: unknown} = {type: node.__type};
@@ -501,7 +504,7 @@ describe('the compact form is generated too', () => {
               version: 1,
             }),
             /* eslint-enable sort-keys-fix/sort-keys-fix */
-          },
+          }),
           json: nodeSchema<Boxed>()({
             box: withField(objectValue({w: numberValue()}), {field: '__box'}),
             w: withField(numberValue(), {field: '__w'}),
@@ -646,9 +649,9 @@ describe('the synthesized importJSON', () => {
     });
   });
 
-  // A hand-built GeneratedJSON stands in for the generator's output: each class
+  // A hand-built factory stands in for the generator's output: each class
   // declares it in its own $config, which is all the resolution asks.
-  const replacingGenerated: GeneratedJSON = {
+  const replacingGenerated: GeneratedJSONFactory = () => ({
     exportJSON: node => ({text: (node as TextNode).__text}),
     updateFromJSON: (node, json) => {
       // What a schema setter that hands back another node looks like to the
@@ -659,7 +662,7 @@ describe('the synthesized importJSON', () => {
       node.remove();
       return replacement;
     },
-  };
+  });
 
   class ReplacingText extends TextNode {
     $config() {
@@ -700,10 +703,10 @@ describe('the synthesized importJSON', () => {
     parse: v => (typeof v === 'string' ? v : ''),
   });
 
-  const passthroughGenerated: GeneratedJSON = {
+  const passthroughGenerated: GeneratedJSONFactory = () => ({
     exportJSON: node => ({text: (node as TextNode).__text}),
     updateFromJSON: node => node,
-  };
+  });
 
   class ConstructedStateText extends TextNode {
     constructor(text = '', key?: string) {
@@ -753,14 +756,14 @@ describe('the synthesized importJSON', () => {
 
   // A parser that applies only the schema's fields, as every generated parser
   // does: what a node carries in state is not known when code is generated.
-  const fieldsOnlyGenerated: GeneratedJSON = {
+  const fieldsOnlyGenerated: GeneratedJSONFactory = () => ({
     exportJSON: node => ({text: (node as TextNode).__text}),
     updateFromJSON: (node, json) => {
       (node as TextNode).__text =
         typeof json.text === 'string' ? json.text : '';
       return node;
     },
-  };
+  });
 
   class FlatStateText extends TextNode {
     $config() {
@@ -804,25 +807,26 @@ describe('generated updateFromJSON', () => {
     // Every property of TextNode and of ParagraphNode has a domain the
     // compiler can state — a field write, or a set<Prop> whose return is
     // followed the way the walk follows it.
-    expect(GENERATED_TEXT.updateFromJSON).toBeDefined();
-    expect(GENERATED_PARAGRAPH.updateFromJSON).toBeDefined();
+    expect(getGeneratedJSON(TextNode)?.updateFromJSON).toBeDefined();
+    expect(getGeneratedJSON(ParagraphNode)?.updateFromJSON).toBeDefined();
     // TabNode declares three of its own properties export-only — the values
     // are fixed for a tab, so the walk derives them on import rather than
     // applying them — and inherits `format` and `style`, which it applies the
     // way TextNode does. A property with nothing to apply is one the parser
     // omits, not one that costs the class a parser: what the generated one
     // applies is exactly what the walk would.
-    expect(GENERATED_TAB.updateFromJSON).toBeDefined();
+    expect(getGeneratedJSON(TabNode)?.updateFromJSON).toBeDefined();
     // LineBreakNode declares no properties at all, so there is nothing for a
     // parser to do and the generator emits none rather than an empty one.
-    expect(GENERATED_LINEBREAK.updateFromJSON).toBeUndefined();
+    expect(getGeneratedJSON(LineBreakNode)).not.toBeNull();
+    expect(getGeneratedJSON(LineBreakNode)?.updateFromJSON).toBeUndefined();
   });
 
   test('a generated parser returns the node the walk would have', () => {
     // It can now apply a property through a method, and a setter is free to
     // return a different node — so the parser threads the return the way
     // $applyJSONSetters does, and hands back what it ended on.
-    const updateParagraph = GENERATED_PARAGRAPH.updateFromJSON;
+    const updateParagraph = getGeneratedJSON(ParagraphNode)?.updateFromJSON;
     invariant(updateParagraph !== undefined, 'expected a generated parser');
     const editor = createEditor({onError: e => Promise.reject(e)});
     editor.update(

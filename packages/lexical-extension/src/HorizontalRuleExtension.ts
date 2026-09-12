@@ -62,11 +62,6 @@ export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
 
 export class HorizontalRuleNode extends DecoratorNode<unknown> {
   $config() {
-    // `extends` is named rather than left to the runtime default: it is what
-    // puts this config on the record's accessor, which is what lets the
-    // composed serialization types walk past this class. The deprecated
-    // `@lexical/react` HorizontalRuleNode subclasses this one and names its
-    // own, so the two `$config()` overrides still infer matching shapes.
     return this.config('horizontalrule', {
       extends: DecoratorNode,
       importDOM: {

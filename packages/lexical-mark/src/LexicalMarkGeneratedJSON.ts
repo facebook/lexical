@@ -117,13 +117,9 @@ export const GENERATED_MARK: GeneratedJSONFactory = () => {
     let self = node;
     let n: unknown;
     let v: unknown;
-    v = Object.prototype.hasOwnProperty.call(json, 'direction')
-      ? json.direction
-      : undefined;
+    v = json.direction;
     self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = Object.prototype.hasOwnProperty.call(json, 'format')
-      ? json.format
-      : undefined;
+    v = json.format;
     n = self.setFormat(
       v === '' ||
         v === 'left' ||
@@ -136,23 +132,15 @@ export const GENERATED_MARK: GeneratedJSONFactory = () => {
         : '',
     );
     self = (n ?? self) as MarkNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'indent')
-      ? json.indent
-      : undefined;
+    v = json.indent;
     self.__indent = numC(v, 0, 0, Infinity, true);
-    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-      ? json.textFormat
-      : undefined;
+    v = json.textFormat;
     n = self.setTextFormat(num(v, 0));
     self = (n ?? self) as MarkNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-      ? json.textStyle
-      : undefined;
+    v = json.textStyle;
     n = self.setTextStyle(typeof v === 'string' ? v : '');
     self = (n ?? self) as MarkNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'ids')
-      ? json.ids
-      : undefined;
+    v = json.ids;
     n = self.setIDs(
       Array.isArray(v)
         ? Array.from(v, e0 => (typeof e0 === 'string' ? e0 : ''))

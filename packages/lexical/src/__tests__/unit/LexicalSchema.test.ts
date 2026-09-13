@@ -843,14 +843,27 @@ describe('defaults and untrusted input', () => {
     expect(() => schema(['a']).push('b')).not.toThrow();
   });
 
-  test('objectValue reads own properties only', () => {
-    // `source` is parsed JSON, so an inherited member would otherwise be
-    // handed to a node setter for JSON that never carried the key.
-    const schema = objectValue({toString: rawValue<string>()});
-    expect(schema(JSON.parse('{}'))).toEqual({toString: undefined});
-    expect(schema(JSON.parse('{"toString":"mine"}'))).toEqual({
-      toString: 'mine',
-    });
+  test('a field named for an Object.prototype member is refused', () => {
+    // Every read of a serialized property is a bare one, here and in the node
+    // walk and a generated parser: an absent property is `undefined`, which is
+    // the field's default already. A field named for something the object
+    // *inherits* is the single case where that reads a value — the method, for
+    // JSON that never carried the key — so the name is refused where it is
+    // written instead of being guarded against on every read of every field.
+    // `nodeSchema` shares the check, which is why the message names the
+    // combinator it was called through.
+    expect(() => objectValue({toString: rawValue<string>()})).toThrow(
+      /objectValue: "toString" is a member of Object\.prototype/,
+    );
+    // `__proto__` is refused in every build, not only this one: assigning it
+    // would reparent the parsed object rather than write the property.
+    expect(() => objectValue({['__proto__']: rawValue<string>()})).toThrow(
+      /"__proto__" is not a valid field name/,
+    );
+    // A name it does not carry reads straight off parsed JSON.
+    const schema = objectValue({label: rawValue<string>()});
+    expect(schema(JSON.parse('{}'))).toEqual({label: undefined});
+    expect(schema(JSON.parse('{"label":"mine"}'))).toEqual({label: 'mine'});
   });
 });
 

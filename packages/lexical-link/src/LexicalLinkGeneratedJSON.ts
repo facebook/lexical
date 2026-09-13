@@ -132,13 +132,9 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
     let self = node;
     let n: unknown;
     let v: unknown;
-    v = Object.prototype.hasOwnProperty.call(json, 'direction')
-      ? json.direction
-      : undefined;
+    v = json.direction;
     self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = Object.prototype.hasOwnProperty.call(json, 'format')
-      ? json.format
-      : undefined;
+    v = json.format;
     n = self.setFormat(
       v === '' ||
         v === 'left' ||
@@ -151,50 +147,36 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
         : '',
     );
     self = (n ?? self) as LinkNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'indent')
-      ? json.indent
-      : undefined;
+    v = json.indent;
     self.__indent = numC(v, 0, 0, Infinity, true);
-    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-      ? json.textFormat
-      : undefined;
+    v = json.textFormat;
     n = self.setTextFormat(num(v, 0));
     self = (n ?? self) as LinkNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-      ? json.textStyle
-      : undefined;
+    v = json.textStyle;
     n = self.setTextStyle(typeof v === 'string' ? v : '');
     self = (n ?? self) as LinkNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'rel')
-      ? json.rel
-      : undefined;
+    v = json.rel;
     self.__rel =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
-    v = Object.prototype.hasOwnProperty.call(json, 'target')
-      ? json.target
-      : undefined;
+    v = json.target;
     self.__target =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
-    v = Object.prototype.hasOwnProperty.call(json, 'title')
-      ? json.title
-      : undefined;
+    v = json.title;
     self.__title =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
-    v = Object.prototype.hasOwnProperty.call(json, 'url')
-      ? json.url
-      : undefined;
+    v = json.url;
     self.__url = typeof v === 'string' ? v : '';
     return self;
   }
@@ -310,13 +292,9 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
     let self = node;
     let n: unknown;
     let v: unknown;
-    v = Object.prototype.hasOwnProperty.call(json, 'direction')
-      ? json.direction
-      : undefined;
+    v = json.direction;
     self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = Object.prototype.hasOwnProperty.call(json, 'format')
-      ? json.format
-      : undefined;
+    v = json.format;
     n = self.setFormat(
       v === '' ||
         v === 'left' ||
@@ -329,54 +307,38 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
         : '',
     );
     self = (n ?? self) as AutoLinkNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'indent')
-      ? json.indent
-      : undefined;
+    v = json.indent;
     self.__indent = numC(v, 0, 0, Infinity, true);
-    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-      ? json.textFormat
-      : undefined;
+    v = json.textFormat;
     n = self.setTextFormat(num(v, 0));
     self = (n ?? self) as AutoLinkNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-      ? json.textStyle
-      : undefined;
+    v = json.textStyle;
     n = self.setTextStyle(typeof v === 'string' ? v : '');
     self = (n ?? self) as AutoLinkNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'rel')
-      ? json.rel
-      : undefined;
+    v = json.rel;
     self.__rel =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
-    v = Object.prototype.hasOwnProperty.call(json, 'target')
-      ? json.target
-      : undefined;
+    v = json.target;
     self.__target =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
-    v = Object.prototype.hasOwnProperty.call(json, 'title')
-      ? json.title
-      : undefined;
+    v = json.title;
     self.__title =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
-    v = Object.prototype.hasOwnProperty.call(json, 'url')
-      ? json.url
-      : undefined;
+    v = json.url;
     self.__url = typeof v === 'string' ? v : '';
-    v = Object.prototype.hasOwnProperty.call(json, 'isUnlinked')
-      ? json.isUnlinked
-      : undefined;
+    v = json.isUnlinked;
     self.__isUnlinked = typeof v === 'boolean' ? v : false;
     return self;
   }

@@ -134,13 +134,9 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
     let self = node;
     let n: unknown;
     let v: unknown;
-    v = Object.prototype.hasOwnProperty.call(json, 'direction')
-      ? json.direction
-      : undefined;
+    v = json.direction;
     self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = Object.prototype.hasOwnProperty.call(json, 'format')
-      ? json.format
-      : undefined;
+    v = json.format;
     n = self.setFormat(
       v === '' ||
         v === 'left' ||
@@ -153,23 +149,15 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
         : '',
     );
     self = (n ?? self) as TableNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'indent')
-      ? json.indent
-      : undefined;
+    v = json.indent;
     self.__indent = numC(v, 0, 0, Infinity, true);
-    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-      ? json.textFormat
-      : undefined;
+    v = json.textFormat;
     n = self.setTextFormat(num(v, 0));
     self = (n ?? self) as TableNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-      ? json.textStyle
-      : undefined;
+    v = json.textStyle;
     n = self.setTextStyle(typeof v === 'string' ? v : '');
     self = (n ?? self) as TableNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'colWidths')
-      ? json.colWidths
-      : undefined;
+    v = json.colWidths;
     n = self.setColWidths(
       v === undefined
         ? undefined
@@ -178,19 +166,13 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
           : [],
     );
     self = (n ?? self) as TableNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'frozenColumnCount')
-      ? json.frozenColumnCount
-      : undefined;
+    v = json.frozenColumnCount;
     n = self.setFrozenColumns(num(v, 0));
     self = (n ?? self) as TableNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'frozenRowCount')
-      ? json.frozenRowCount
-      : undefined;
+    v = json.frozenRowCount;
     n = self.setFrozenRows(num(v, 0));
     self = (n ?? self) as TableNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'rowStriping')
-      ? json.rowStriping
-      : undefined;
+    v = json.rowStriping;
     n = self.setRowStriping(typeof v === 'boolean' ? v : false);
     self = (n ?? self) as TableNode;
     return self;
@@ -284,13 +266,9 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
     let self = node;
     let n: unknown;
     let v: unknown;
-    v = Object.prototype.hasOwnProperty.call(json, 'direction')
-      ? json.direction
-      : undefined;
+    v = json.direction;
     self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = Object.prototype.hasOwnProperty.call(json, 'format')
-      ? json.format
-      : undefined;
+    v = json.format;
     n = self.setFormat(
       v === '' ||
         v === 'left' ||
@@ -303,23 +281,15 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
         : '',
     );
     self = (n ?? self) as TableRowNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'indent')
-      ? json.indent
-      : undefined;
+    v = json.indent;
     self.__indent = numC(v, 0, 0, Infinity, true);
-    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-      ? json.textFormat
-      : undefined;
+    v = json.textFormat;
     n = self.setTextFormat(num(v, 0));
     self = (n ?? self) as TableRowNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-      ? json.textStyle
-      : undefined;
+    v = json.textStyle;
     n = self.setTextStyle(typeof v === 'string' ? v : '');
     self = (n ?? self) as TableRowNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'height')
-      ? json.height
-      : undefined;
+    v = json.height;
     self.__height = v === undefined ? undefined : num(v, 0);
     return self;
   }
@@ -440,13 +410,9 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
     let self = node;
     let n: unknown;
     let v: unknown;
-    v = Object.prototype.hasOwnProperty.call(json, 'direction')
-      ? json.direction
-      : undefined;
+    v = json.direction;
     self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = Object.prototype.hasOwnProperty.call(json, 'format')
-      ? json.format
-      : undefined;
+    v = json.format;
     n = self.setFormat(
       v === '' ||
         v === 'left' ||
@@ -459,50 +425,32 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
         : '',
     );
     self = (n ?? self) as TableCellNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'indent')
-      ? json.indent
-      : undefined;
+    v = json.indent;
     self.__indent = numC(v, 0, 0, Infinity, true);
-    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-      ? json.textFormat
-      : undefined;
+    v = json.textFormat;
     n = self.setTextFormat(num(v, 0));
     self = (n ?? self) as TableCellNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-      ? json.textStyle
-      : undefined;
+    v = json.textStyle;
     n = self.setTextStyle(typeof v === 'string' ? v : '');
     self = (n ?? self) as TableCellNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'backgroundColor')
-      ? json.backgroundColor
-      : undefined;
+    v = json.backgroundColor;
     self.__backgroundColor =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
-    v = Object.prototype.hasOwnProperty.call(json, 'colSpan')
-      ? json.colSpan
-      : undefined;
+    v = json.colSpan;
     self.__colSpan = numC(v, 1, 1, Infinity, true);
-    v = Object.prototype.hasOwnProperty.call(json, 'headerState')
-      ? json.headerState
-      : undefined;
+    v = json.headerState;
     n = self.setHeaderStyles(num(v, 0));
     self = (n ?? self) as TableCellNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'rowSpan')
-      ? json.rowSpan
-      : undefined;
+    v = json.rowSpan;
     self.__rowSpan = numC(v, 1, 1, Infinity, true);
-    v = Object.prototype.hasOwnProperty.call(json, 'verticalAlign')
-      ? json.verticalAlign
-      : undefined;
+    v = json.verticalAlign;
     n = self.setVerticalAlign(v === 'middle' || v === 'bottom' ? v : undefined);
     self = (n ?? self) as TableCellNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'width')
-      ? json.width
-      : undefined;
+    v = json.width;
     self.__width = v === undefined || num(v, 0) === 0 ? undefined : num(v, 0);
     return self;
   }

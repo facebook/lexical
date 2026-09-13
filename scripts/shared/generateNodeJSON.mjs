@@ -809,31 +809,39 @@ function narrowedSchema(schema) {
 }
 
 /**
- * The read of one serialized property: the own-key read the schema-driven walk
- * makes (`hasOwnKey`), so a key the object only *inherits* — a polluted
- * `Object.prototype`, or a caller layering a partial update over a defaults
- * object with `Object.create` — is absent to the generated parser too, rather
- * than a value the walk treats as unset.
+ * The read of one serialized property: the same bare read the schema-driven
+ * walk makes. An absent property is `undefined`, which is what every schema
+ * maps to the property's default, so the only value an own-key test would
+ * change is one the object *inherits* — and the one prototype a serialized
+ * node has is `Object.prototype`, whose members `nodeSchema` refuses as
+ * property names.
  *
- * Inline at each site, with the key a literal, rather than through a shared
- * `own(json, key)` helper. The helper's one `json[key]` served every key of
+ * It used to be `Object.prototype.hasOwnProperty.call(json, key) ? … :
+ * undefined`. V8 does not inline that in this shape — a hoisted
+ * `hasOwn.call` measures the same, so it is the call, not the lookup — and it
+ * cost ~13 ns per property, about 105 ns for a TextNode against a bare read of
+ * the same eight keys at ~5 ns. That is most of what a generated parser does.
+ * `key in json` is not the cheaper spelling of it: `'k' in json ? json.k :
+ * undefined` and `json.k` differ on nothing, since a key that is nowhere reads
+ * `undefined` already, so the test buys nothing over dropping it and costs 2x
+ * the read.
+ *
+ * Written at each site with the key a literal, rather than through a shared
+ * `own(json, key)` helper: the helper's one `json[key]` served every key of
  * every node type and so could never stay monomorphic — measured at 5-12x the
- * cost of the bare read per node (TextNode 17 → 113 ns) — while the same test
- * written out here keeps each read's own inline cache, which is what this
- * generator exists to produce.
+ * cost of the bare read per node — while the read written out here keeps its
+ * own inline cache, which is what this generator exists to produce.
  *
  * @param {string} key
  * @returns {string} an expression over `json`
  */
 function ownRead(key) {
-  const keyLiteral = JSON.stringify(key);
   // Dot access where the key allows it, which is every key today (the compact
   // exporter binds `const <key>`, so a key that is not an identifier is
   // refused before this); the element form is only for a key that is not.
-  const access = /^[A-Za-z_$][\w$]*$/.test(key)
+  return /^[A-Za-z_$][\w$]*$/.test(key)
     ? `json.${key}`
-    : `json[${keyLiteral}]`;
-  return `Object.prototype.hasOwnProperty.call(json, ${keyLiteral}) ? ${access} : undefined`;
+    : `json[${JSON.stringify(key)}]`;
 }
 
 /**

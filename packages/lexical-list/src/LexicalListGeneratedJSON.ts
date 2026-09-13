@@ -143,13 +143,9 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
     let self = node;
     let n: unknown;
     let v: unknown;
-    v = Object.prototype.hasOwnProperty.call(json, 'direction')
-      ? json.direction
-      : undefined;
+    v = json.direction;
     self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = Object.prototype.hasOwnProperty.call(json, 'format')
-      ? json.format
-      : undefined;
+    v = json.format;
     n = self.setFormat(
       v === '' ||
         v === 'left' ||
@@ -162,23 +158,15 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
         : '',
     );
     self = (n ?? self) as ListNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'indent')
-      ? json.indent
-      : undefined;
+    v = json.indent;
     self.__indent = numC(v, 0, 0, Infinity, true);
-    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-      ? json.textFormat
-      : undefined;
+    v = json.textFormat;
     n = self.setTextFormat(num(v, 0));
     self = (n ?? self) as ListNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-      ? json.textStyle
-      : undefined;
+    v = json.textStyle;
     n = self.setTextStyle(typeof v === 'string' ? v : '');
     self = (n ?? self) as ListNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'listType')
-      ? json.listType
-      : undefined;
+    v = json.listType;
     n = self.setListType(
       typeof v === 'string' && v in LIST_LISTTYPE_ALIAS
         ? LIST_LISTTYPE_ALIAS[v]
@@ -187,9 +175,7 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
           : 'number',
     );
     self = (n ?? self) as ListNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'start')
-      ? json.start
-      : undefined;
+    v = json.start;
     self.__start = num(v, 1);
     return self;
   }
@@ -289,13 +275,9 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
     let self = node;
     let n: unknown;
     let v: unknown;
-    v = Object.prototype.hasOwnProperty.call(json, 'direction')
-      ? json.direction
-      : undefined;
+    v = json.direction;
     self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = Object.prototype.hasOwnProperty.call(json, 'format')
-      ? json.format
-      : undefined;
+    v = json.format;
     n = self.setFormat(
       v === '' ||
         v === 'left' ||
@@ -308,29 +290,19 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
         : '',
     );
     self = (n ?? self) as ListItemNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'indent')
-      ? json.indent
-      : undefined;
+    v = json.indent;
     n = self.setIndent(numK(v, 0, 0, 128, true));
     self = (n ?? self) as ListItemNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-      ? json.textFormat
-      : undefined;
+    v = json.textFormat;
     n = self.setTextFormat(num(v, 0));
     self = (n ?? self) as ListItemNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-      ? json.textStyle
-      : undefined;
+    v = json.textStyle;
     n = self.setTextStyle(typeof v === 'string' ? v : '');
     self = (n ?? self) as ListItemNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'checked')
-      ? json.checked
-      : undefined;
+    v = json.checked;
     self.__checked =
       v === undefined ? undefined : typeof v === 'boolean' ? v : false;
-    v = Object.prototype.hasOwnProperty.call(json, 'value')
-      ? json.value
-      : undefined;
+    v = json.value;
     self.__value = num(v, 1);
     return self;
   }

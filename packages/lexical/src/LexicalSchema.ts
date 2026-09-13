@@ -2838,15 +2838,38 @@ function objectSchema<S extends SerializationSchemaFields>(
       '%s: "__proto__" is not a valid field name',
       combinator,
     );
+    if (__DEV__) {
+      // The rest of Object.prototype's members, for the same reason one step
+      // removed. A serialized object comes from JSON.parse and so inherits
+      // them, and every read of one — here, the walk's, and a generated
+      // parser's — is a bare property read, because an absent property is
+      // `undefined` and that is already the default. A field named for an
+      // inherited member is the one case where that reads something: the
+      // method, for a property the document never carried. Refused where the
+      // schema is written; the code generator refuses the same names, so this
+      // is the diagnostic for the path that has no build step.
+      invariant(
+        !(key in Object.prototype),
+        '%s: "%s" is a member of Object.prototype, which a serialized object inherits, so it cannot be told apart from a property the document never carried',
+        combinator,
+        key,
+      );
+    }
   }
   return makeSchema(
     value => {
-      const source: object =
-        value !== null && typeof value === 'object' ? value : {};
+      // A bare read per field, as the node walk makes: an absent property is
+      // `undefined`, which is what the field's schema maps to its default, and
+      // the names an inherited property could answer for are the ones the
+      // field list refused above.
+      const source: {readonly [key: string]: unknown} =
+        value !== null && typeof value === 'object'
+          ? (value as {readonly [key: string]: unknown})
+          : {};
       const result: {[key: string]: unknown} = {};
       for (let i = 0; i < entries.length; i++) {
         const [key, schema] = entries[i];
-        result[key] = schema(hasOwnKey(source, key) ? source[key] : undefined);
+        result[key] = schema(source[key]);
       }
       return result as {[K in keyof S]: SerializationSchemaValue<S[K]>};
     },

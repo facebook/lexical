@@ -4704,6 +4704,12 @@ function $applyFlatStates<T extends LexicalNode>(
     // `serializedNode` came from JSON.parse, so `in` would find every
     // Object.prototype member and treat a state keyed 'constructor' or
     // 'toString' as present in JSON that never carried it.
+    //
+    // This is the question itself, not a guard on a read — a schema property
+    // reads bare, because absent and default are the same answer there, while
+    // an absent state is one this must leave alone. A state key is the
+    // caller's and goes through no field list, so the check stays. It runs
+    // once per flat state, of which most classes declare none.
     if (hasOwnKey(serializedNode, stateConfig.key)) {
       const parsed = stateConfig.parse(serializedNode[stateConfig.key]);
       // Wrapped in an updater thunk so a parse that returns a function value
@@ -4723,11 +4729,15 @@ function $walkSetters<T extends LexicalNode>(
   let self = node;
   for (let i = 0; i < setters.length; i++) {
     const entry = setters[i];
-    const parsed = entry.schema(
-      hasOwnKey(serializedNode, entry.key)
-        ? serializedNode[entry.key]
-        : undefined,
-    );
+    // A bare read. An absent property is `undefined`, which is exactly what
+    // the schema maps to the property's default, so an own-key test would
+    // only change the answer for a key the object *inherits* — and the one
+    // prototype a serialized node has is `Object.prototype`, whose members
+    // `nodeSchema` refuses as property names. `Object.prototype.hasOwnProperty
+    // .call` is not inlined by V8 in this shape and measured ~13 ns per
+    // property against a whole-node parse of ~17 ns, so it was most of the
+    // cost of the walk it guarded.
+    const parsed = entry.schema(serializedNode[entry.key]);
     if (entry.kind === 'ownField') {
       // `self` is writable already — updateFromJSON starts from getWritable()
       // and every setter that replaces it returns a writable node — so this is

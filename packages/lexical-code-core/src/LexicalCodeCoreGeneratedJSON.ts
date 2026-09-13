@@ -130,13 +130,9 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
     let self = node;
     let n: unknown;
     let v: unknown;
-    v = Object.prototype.hasOwnProperty.call(json, 'direction')
-      ? json.direction
-      : undefined;
+    v = json.direction;
     self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = Object.prototype.hasOwnProperty.call(json, 'format')
-      ? json.format
-      : undefined;
+    v = json.format;
     n = self.setFormat(
       v === '' ||
         v === 'left' ||
@@ -149,23 +145,15 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
         : '',
     );
     self = (n ?? self) as CodeNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'indent')
-      ? json.indent
-      : undefined;
+    v = json.indent;
     self.__indent = numC(v, 0, 0, Infinity, true);
-    v = Object.prototype.hasOwnProperty.call(json, 'textFormat')
-      ? json.textFormat
-      : undefined;
+    v = json.textFormat;
     n = self.setTextFormat(num(v, 0));
     self = (n ?? self) as CodeNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'textStyle')
-      ? json.textStyle
-      : undefined;
+    v = json.textStyle;
     n = self.setTextStyle(typeof v === 'string' ? v : '');
     self = (n ?? self) as CodeNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'language')
-      ? json.language
-      : undefined;
+    v = json.language;
     n = self.setLanguage(
       v === undefined
         ? undefined
@@ -176,9 +164,7 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
             : '',
     );
     self = (n ?? self) as CodeNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'theme')
-      ? json.theme
-      : undefined;
+    v = json.theme;
     n = self.setTheme(
       v === undefined ? undefined : typeof v === 'string' ? v : '',
     );
@@ -290,41 +276,29 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
     let self = node;
     let n: unknown;
     let v: unknown;
-    v = Object.prototype.hasOwnProperty.call(json, 'detail')
-      ? json.detail
-      : undefined;
+    v = json.detail;
     self.__detail =
       typeof v === 'string' && v in CODEHIGHLIGHT_DETAIL_ALIAS
         ? CODEHIGHLIGHT_DETAIL_ALIAS[v]
         : num(v, 0);
-    v = Object.prototype.hasOwnProperty.call(json, 'format')
-      ? json.format
-      : undefined;
+    v = json.format;
     n = self.setFormat(
       typeof v === 'string' && v in CODEHIGHLIGHT_FORMAT_ALIAS
         ? CODEHIGHLIGHT_FORMAT_ALIAS[v]
         : num(v, 0),
     );
     self = (n ?? self) as CodeHighlightNode;
-    v = Object.prototype.hasOwnProperty.call(json, 'mode')
-      ? json.mode
-      : undefined;
+    v = json.mode;
     v = v === 'normal' || v === 'token' || v === 'segmented' ? v : 'normal';
     self.__mode =
       (v as string) in CODEHIGHLIGHT_MODE_ENCODE
         ? CODEHIGHLIGHT_MODE_ENCODE[v as string]
         : CODEHIGHLIGHT_MODE_ENCODE_DEFAULT;
-    v = Object.prototype.hasOwnProperty.call(json, 'style')
-      ? json.style
-      : undefined;
+    v = json.style;
     self.__style = typeof v === 'string' ? v : '';
-    v = Object.prototype.hasOwnProperty.call(json, 'text')
-      ? json.text
-      : undefined;
+    v = json.text;
     self.__text = typeof v === 'string' ? v : '';
-    v = Object.prototype.hasOwnProperty.call(json, 'highlightType')
-      ? json.highlightType
-      : undefined;
+    v = json.highlightType;
     n = self.setHighlightType(
       v === undefined
         ? undefined

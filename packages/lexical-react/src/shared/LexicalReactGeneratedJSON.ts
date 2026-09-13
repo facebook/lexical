@@ -46,9 +46,7 @@ export const GENERATED_DECORATORBLOCK: GeneratedJSONFactory = () => {
     node: DecoratorBlockNode,
     json: {readonly [key: string]: unknown},
   ): DecoratorBlockNode {
-    const v: unknown = Object.prototype.hasOwnProperty.call(json, 'format')
-      ? json.format
-      : undefined;
+    const v: unknown = json.format;
     node.__format =
       v === '' ||
       v === 'left' ||

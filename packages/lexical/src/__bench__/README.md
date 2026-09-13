@@ -43,6 +43,10 @@ benchmark on every revision:
 node scripts/bench-get-writable.mjs <base-ref> [other-refs...] > results.jsonl
 ```
 
+The Vitest writable-node benchmark checks both alternating edits during setup
+and the final document after timing, so a no-op cannot hide behind the parity
+of the last iteration.
+
 The runner also includes the working tree. It verifies each workload before
 timing, rotates revision order across nine samples, and reports median
 microseconds per update plus the individual samples. This reduces timing

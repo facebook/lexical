@@ -703,6 +703,21 @@ export function createSharedNodeState(
         if ('stateConfig' in requiredStateConfig) {
           stateConfig = requiredStateConfig.stateConfig;
           if (requiredStateConfig.flat) {
+            if (__DEV__) {
+              // A flat state serializes at the top level of the node's JSON,
+              // where it is read bare and told from an absent key by being
+              // `undefined`. A serialized node comes from JSON.parse and
+              // inherits Object.prototype, so a key named for one of its
+              // members reads that member for a document that never carried
+              // it. The same rule `objectSchema` applies to a schema property,
+              // for the same reason. A nested state key is unaffected: it is
+              // read out of the `$` blob, which is a record of its own.
+              invariant(
+                !(stateConfig.key in Object.prototype),
+                'createState: flat state key "%s" is a member of Object.prototype, which a serialized node inherits, so it cannot be told apart from a key the document never carried',
+                stateConfig.key,
+              );
+            }
             flatKeys.add(stateConfig.key);
           }
         } else {

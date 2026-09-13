@@ -356,6 +356,33 @@ describe('LexicalNode state', () => {
         });
       });
 
+      test('an absent flat key leaves the nested value alone', () => {
+        // The reason the flat pass tests for presence at all rather than
+        // parsing every key: `$updateStateFromJSON` applies the nested `$`
+        // blob first, and this runs over it. Parsing an absent flat key to
+        // its default would overwrite what the blob supplied, so a document
+        // that spells a flat-capable state the nested way would lose it —
+        // which is what the round-trip above reads back through `nestedJSON`,
+        // stated here as the rule it follows from.
+        const {editor} = testEnv;
+        editor.update(() => {
+          const node = StateNode.importJSON({
+            [NODE_STATE_KEY]: {numberState: 7},
+            type: 'state',
+            version: 1,
+          });
+          expect($getState(node, numberState)).toBe(7);
+          // And a flat key that *is* present wins over the blob's value.
+          const both = StateNode.importJSON({
+            [NODE_STATE_KEY]: {numberState: 7},
+            numberState: 9,
+            type: 'state',
+            version: 1,
+          });
+          expect($getState(both, numberState)).toBe(9);
+        });
+      });
+
       test('default value should not be exported', async () => {
         const {editor} = testEnv;
         editor.update(() => {

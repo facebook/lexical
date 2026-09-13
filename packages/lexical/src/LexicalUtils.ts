@@ -4699,19 +4699,22 @@ function $applyFlatStates<T extends LexicalNode>(
   let self = node;
   for (let i = 0; i < flatStates.length; i++) {
     const stateConfig = flatStates[i];
-    // Only apply a flat state that is actually present so a partial update
-    // doesn't reset it to its default. An own-property check, not `in`:
-    // `serializedNode` came from JSON.parse, so `in` would find every
-    // Object.prototype member and treat a state keyed 'constructor' or
-    // 'toString' as present in JSON that never carried it.
+    // A bare read, as a schema property gets — but a *presence* test rather
+    // than a guard on the read, and the one place in this walk where absent
+    // and default are different answers. A flat state may arrive at the top
+    // level or inside the nested `$` blob, which `$updateStateFromJSON`
+    // applied before this ran: parsing an absent key to its default here
+    // would overwrite the value the blob just supplied, so a document
+    // spelling a state the nested way would lose it. Present at the top
+    // level wins, absent leaves the blob's value alone.
     //
-    // This is the question itself, not a guard on a read — a schema property
-    // reads bare, because absent and default are the same answer there, while
-    // an absent state is one this must leave alone. A state key is the
-    // caller's and goes through no field list, so the check stays. It runs
-    // once per flat state, of which most classes declare none.
-    if (hasOwnKey(serializedNode, stateConfig.key)) {
-      const parsed = stateConfig.parse(serializedNode[stateConfig.key]);
+    // JSON carries no `undefined`, so `!== undefined` is that question for
+    // anything `JSON.parse` produced. The names it cannot tell apart from an
+    // absent key are `Object.prototype`'s, which `createSharedNodeState`
+    // refuses as flat state keys.
+    const raw = serializedNode[stateConfig.key];
+    if (raw !== undefined) {
+      const parsed = stateConfig.parse(raw);
       // Wrapped in an updater thunk so a parse that returns a function value
       // is stored verbatim instead of being invoked as an updater.
       self = $setState(self, stateConfig, () => parsed);

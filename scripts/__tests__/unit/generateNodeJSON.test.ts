@@ -355,6 +355,77 @@ describe('a property the compact form cannot compare as source', () => {
     expect(source).toContain('if (style !== undefined && style !== "") {');
   });
 
+  /**
+   * The generated source as a strict-mode script, which is what an ES module
+   * is. Types are stripped first: a binding illegal in strict mode is a
+   * SyntaxError the emitted TypeScript also has, but `new Function` cannot
+   * parse the annotations to reach it.
+   */
+  function parseAsModule(source: string): void {
+    const {code} = transformSync(source, {loader: 'ts'});
+    // Constructed for the parse alone, which is what throws.
+    // eslint-disable-next-line no-new-func
+    const parsed = new Function(`"use strict";\n${code}`);
+    expect(typeof parsed).toBe('function');
+  }
+
+  test('a strict-mode binding name gets a local it can bind', () => {
+    // `arguments` and `eval` are legal identifiers, legal property names, and
+    // legal member accesses, but cannot be bound in strict mode — which every
+    // emitted module is. `const arguments = node.__args;` is a SyntaxError
+    // that no check of the name's shape would catch, so the local is renamed
+    // and the property keeps its own name.
+    class StrictNames extends TextNode {
+      __args: string = '';
+      __evaluated: string = '';
+      $config() {
+        return this.config('generate-strict-names', {
+          extends: TextNode,
+          json: nodeSchema<StrictNames>()({
+            arguments: withField(stringValue(), {field: '__args'}),
+            eval: withField(stringValue(), {field: '__evaluated'}),
+          }),
+        });
+      }
+    }
+    const source: string = generateCompactExport(StrictNames);
+    expect(source).toContain('const arguments_ = node.__args;');
+    expect(source).toContain('const eval_ = node.__evaluated;');
+    expect(source).toContain(
+      'if (arguments_ !== undefined && arguments_ !== "") {',
+    );
+    // The serialized property is still spelled as the schema declared it.
+    expect(source).toContain('json.arguments = arguments_;');
+    expect(source).toContain('json.eval = eval_;');
+    // And the whole thing is something a module can actually contain, which
+    // is the part a check of the name alone would miss.
+    expect(() => parseAsModule(source)).not.toThrow();
+  });
+
+  test('a renamed local does not collide with a sibling of that name', () => {
+    // The rename is an underscore, so a schema that declares both names needs
+    // the second one to keep going until it is free.
+    class Both extends TextNode {
+      __args: string = '';
+      __underscored: string = '';
+      $config() {
+        return this.config('generate-strict-collision', {
+          extends: TextNode,
+          json: nodeSchema<Both>()({
+            arguments: withField(stringValue(), {field: '__args'}),
+            arguments_: withField(stringValue(), {field: '__underscored'}),
+          }),
+        });
+      }
+    }
+    const source: string = generateCompactExport(Both);
+    expect(source).toContain('const arguments__ = node.__args;');
+    expect(source).toContain('const arguments_ = node.__underscored;');
+    expect(source).toContain('json.arguments = arguments__;');
+    expect(source).toContain('json.arguments_ = arguments_;');
+    expect(() => parseAsModule(source)).not.toThrow();
+  });
+
   test('asks the schema at run time, and costs its siblings nothing', () => {
     // An object default — here the one `objectValue` composes from its fields'
     // — genuinely has no literal a value could be `===`, so the comparison

@@ -365,6 +365,55 @@ const RESERVED = new Set(
   ),
 );
 
+// Legal identifiers, and legal as a property name, but not as a binding in
+// strict mode — which every emitted module is, being an ES module. `const
+// arguments = node.__args;` is a SyntaxError rather than anything a check of
+// the name's *shape* would catch, so a property named for one of these gets a
+// local with a different name instead of losing its generated code. The
+// property keeps its own name: `json.arguments` is a member access, and those
+// are unaffected.
+const STRICT_BINDINGS = new Set(['arguments', 'eval']);
+
+/**
+ * The local a generated form binds for a schema key or predicate.
+ *
+ * The name itself wherever it can be bound, which is every name in the
+ * checked-in output, so nothing about the generated modules changes. For the
+ * two that cannot, an underscore is appended until the result is free among
+ * the names already spoken for in that scope, so the rename cannot collide
+ * with a sibling property that happens to be spelled that way.
+ *
+ * @param {string} name
+ * @param {Set<string>} taken the names bound in the same scope
+ * @returns {string}
+ */
+function localFor(name, taken) {
+  if (!STRICT_BINDINGS.has(name)) {
+    return name;
+  }
+  let local = `${name}_`;
+  while (taken.has(local)) {
+    local = `${local}_`;
+  }
+  return local;
+}
+
+/**
+ * {@link localFor}, bound to the names one class's forms bind: the emitted
+ * locals, every schema key, and every `when` predicate.
+ *
+ * @param {readonly {key: string, when?: string}[]} reads
+ * @returns {(name: string) => string}
+ */
+function localsFor(reads) {
+  const taken = new Set([
+    ...EMITTED_LOCALS,
+    ...reads.map(read => read.key),
+    ...reads.flatMap(read => (read.when === undefined ? [] : [read.when])),
+  ]);
+  return name => localFor(name, taken);
+}
+
 /**
  * The parameter a compact exporter takes its run-time comparisons through; see
  * {@link generateCompactExport}.
@@ -410,6 +459,9 @@ export function emittable(name, what, binds = false, alsoBound) {
   }
   if (
     binds &&
+    // A strict-mode binding name is renamed rather than refused; see
+    // {@link localFor}.
+    !STRICT_BINDINGS.has(name) &&
     (RESERVED.has(name) ||
       EMITTED_LOCALS.has(name) ||
       // The locals `parseBinding` hands out, which a parser binds in the same
@@ -530,7 +582,7 @@ function schemaReads(klass) {
  * @param {{expression: string, key: string, schema: AnySchema, when?: string}[]} reads
  * @returns {{lines: string[], value: (read: {expression: string, key: string, schema: AnySchema, when?: string}) => string}}
  */
-function hoistGatedReads(reads) {
+function hoistGatedReads(reads, localOf = localsFor(reads)) {
   // Built by hand rather than filtered, so `when` is a string in what follows.
   /** @type {{differs: string, expression: string, key: string, when: string}[]} */
   const gated = [];
@@ -538,7 +590,7 @@ function hoistGatedReads(reads) {
     if (read.when !== undefined) {
       let differs;
       try {
-        differs = compileDiffersFromDefault(read.schema, read.key);
+        differs = compileDiffersFromDefault(read.schema, localOf(read.key));
       } catch (error) {
         if (!(error instanceof NotCompilable)) {
           throw error;
@@ -553,7 +605,9 @@ function hoistGatedReads(reads) {
   if (gated.length === 0) {
     return {lines: [], value: read => read.expression};
   }
-  const lines = gated.map(read => `  const ${read.key} = ${read.expression};`);
+  const lines = gated.map(
+    read => `  const ${localOf(read.key)} = ${read.expression};`,
+  );
   /** @type {Map<string, string>} */
   const differsByKey = new Map();
   /** @type {Map<string, string[]>} */
@@ -566,8 +620,10 @@ function hoistGatedReads(reads) {
     ]);
   }
   for (const [predicate, tests] of byPredicate) {
+    // `node.${predicate}` is a member access, which any name may be; the
+    // binding beside it is the one that has to be legal.
     lines.push(
-      `  const ${predicate} =\n    (${tests.join(' || ')}) && node.${predicate}();`,
+      `  const ${localOf(predicate)} =\n    (${tests.join(' || ')}) && node.${predicate}();`,
     );
   }
   return {
@@ -575,7 +631,7 @@ function hoistGatedReads(reads) {
     value: read =>
       read.when === undefined
         ? read.expression
-        : `${differsByKey.get(read.key)} && ${read.when}\n      ? ${read.key}\n      : undefined`,
+        : `${differsByKey.get(read.key)} && ${localOf(read.when)}\n      ? ${localOf(read.key)}\n      : undefined`,
   };
 }
 
@@ -617,10 +673,14 @@ function hoistGatedReads(reads) {
 export function generateCompactExport(klass) {
   const writes = [];
   const reads = schemaReads(klass);
+  // Every local this form binds is named for a schema key or a predicate, and
+  // `localOf` is what makes those legal to bind; see {@link localFor}.
+  const localOf = localsFor(reads);
   // The same hoist the legacy form uses, so the two call a shared predicate
   // exactly once each and stay byte-identical about what they omit.
   const hoist = hoistGatedReads(
     reads.filter(read => read.schema.setter !== null),
+    localOf,
   );
   for (const {expression, key, schema, when} of reads) {
     if (schema.setter === null) {
@@ -632,10 +692,11 @@ export function generateCompactExport(klass) {
     // and so does this; for a default of `undefined` that is the whole test,
     // which is why the comparison is only reached when there is a default to
     // compare against.
-    let test = `${key} !== undefined`;
+    const local = localOf(key);
+    let test = `${local} !== undefined`;
     if (schema.defaultValue !== undefined) {
       try {
-        test = `${test} && ${compileDiffersFromDefault(schema, key)}`;
+        test = `${test} && ${compileDiffersFromDefault(schema, local)}`;
       } catch (error) {
         if (!(error instanceof NotCompilable)) {
           throw error;
@@ -648,18 +709,18 @@ export function generateCompactExport(klass) {
         );
         test = `${test} && !${COMPACT_DEFAULT_PARAM}(${JSON.stringify(
           key,
-        )}, ${key})`;
+        )}, ${local})`;
       }
     }
     writes.push(
       when === undefined
-        ? `  const ${key} = ${expression};\n  if (${test}) {\n    json.${key} = ${key};\n  }`
+        ? `  const ${local} = ${expression};\n  if (${test}) {\n    json.${key} = ${local};\n  }`
         : // `${key}` and the predicate are already hoisted above, so this is
           // the same test the legacy form makes plus the compact form's own
           // `!== undefined`, written as a statement. The legacy form has no
           // need of that one: it writes `undefined` into the literal, which
           // stringify omits, where an omitted key is what compaction means.
-          `  if (${test} && ${when}) {\n    json.${key} = ${key};\n  }`,
+          `  if (${test} && ${localOf(when)}) {\n    json.${key} = ${local};\n  }`,
     );
   }
   const isElement = isElementish(klass);

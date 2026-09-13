@@ -108,6 +108,15 @@ declare export class CodeNode extends ElementNode {
   getLanguage(): string | void;
 }
 
+/**
+ * CodeGutter
+ */
+
+declare export function $updateCodeGutter(
+  node: CodeNode,
+  editor: LexicalEditor,
+): void;
+
 declare export var CodeExtension: LexicalExtension<ExtensionConfigBase, "@lexical/code", unknown, unknown>;
 
 export type CodeIndentConfig = {

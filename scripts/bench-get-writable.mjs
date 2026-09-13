@@ -23,8 +23,10 @@ if (refs.length === 0) {
     'Usage: node scripts/bench-get-writable.mjs <base-ref> [other-refs...]',
   );
 }
+/** @param {string[]} args */
 const git = args =>
   execFileSync('git', args, {cwd: root, encoding: 'utf8'}).trim();
+/** @type {Array<{label: string, sha: string | null}>} */
 const revisions = refs.map(ref => ({
   label: ref,
   sha: git(['rev-parse', '--verify', `${ref}^{commit}`]),
@@ -37,8 +39,13 @@ if (!Number.isSafeInteger(sampleCount) || sampleCount < 1) {
   throw new Error('LEXICAL_BENCH_SAMPLES must be a positive integer');
 }
 const temporary = await mkdtemp(join(tmpdir(), 'lexical-get-writable-'));
+/** @param {number[]} values */
 const median = values =>
   [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+/**
+ * @param {() => void} run
+ * @param {number} milliseconds
+ */
 const measure = (run, milliseconds) => {
   const start = performance.now();
   let count = 0;
@@ -139,6 +146,7 @@ try {
     for (let warmup = 0; warmup < 3; warmup++) {
       for (const workload of cases) measure(workload.run, 250);
     }
+    /** @type {number[][]} */
     const samples = cases.map(() => []);
     for (let round = 0; round < sampleCount; round++) {
       for (let offset = 0; offset < cases.length; offset++) {

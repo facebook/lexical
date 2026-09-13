@@ -74,11 +74,6 @@ export class TableRowNode extends ElementNode {
     });
   }
 
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__height = prevNode.__height;
-  }
-
   // `height` carries an explicit `undefined` default so the constructor reports
   // zero required arguments and `$config` can synthesize the static `clone`.
   constructor(height: number | undefined = undefined, key?: NodeKey) {

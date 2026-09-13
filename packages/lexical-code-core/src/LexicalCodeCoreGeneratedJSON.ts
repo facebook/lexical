@@ -218,7 +218,7 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
     [key: string]: unknown;
   } {
     return {
-      highlightType: node.getHighlightType(),
+      highlightType: node.__highlightType,
       detail: node.__detail,
       format: node.__format,
       mode: CODEHIGHLIGHT_MODE_DECODE[node.__mode],
@@ -234,7 +234,7 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
     [key: string]: unknown;
   } {
     const json: {[key: string]: unknown} = {type: node.__type};
-    const highlightType = node.getHighlightType();
+    const highlightType = node.__highlightType;
     if (highlightType !== undefined) {
       json.highlightType = highlightType;
     }
@@ -305,9 +305,18 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
     return self;
   }
 
+  /** Generated from CodeHighlightNode's serialization schema. Do not edit by hand. */
+  function afterCloneCodeHighlightNode(
+    node: CodeHighlightNode,
+    prevNode: CodeHighlightNode,
+  ): void {
+    node.__highlightType = prevNode.__highlightType;
+  }
+
   return {
     exportJSON: exportCodeHighlightNode,
     exportCompactJSON: exportCompactCodeHighlightNode,
     updateFromJSON: updateCodeHighlightNode,
+    afterCloneFrom: afterCloneCodeHighlightNode,
   };
 };

@@ -60,9 +60,18 @@ export const GENERATED_DECORATORBLOCK: GeneratedJSONFactory = () => {
     return node;
   }
 
+  /** Generated from DecoratorBlockNode's serialization schema. Do not edit by hand. */
+  function afterCloneDecoratorBlockNode(
+    node: DecoratorBlockNode,
+    prevNode: DecoratorBlockNode,
+  ): void {
+    node.__format = prevNode.__format;
+  }
+
   return {
     exportJSON: exportDecoratorBlockNode,
     exportCompactJSON: exportCompactDecoratorBlockNode,
     updateFromJSON: updateDecoratorBlockNode,
+    afterCloneFrom: afterCloneDecoratorBlockNode,
   };
 };

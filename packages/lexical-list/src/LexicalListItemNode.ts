@@ -204,12 +204,6 @@ export class ListItemNode extends ElementNode {
     this.__checked = checked;
   }
 
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__value = prevNode.__value;
-    this.__checked = prevNode.__checked;
-  }
-
   createDOM(config: EditorConfig): HTMLElement {
     const element = $getDocument().createElement('li');
     this.updateListItemDOM(null, element, config);

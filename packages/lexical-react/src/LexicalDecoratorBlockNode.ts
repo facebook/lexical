@@ -73,11 +73,6 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
     this.__format = format || '';
   }
 
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__format = prevNode.__format;
-  }
-
   $config() {
     return this.config(Symbol.for('DecoratorBlockNode'), {
       // Named explicitly, as every abstract config in the tree is: this class

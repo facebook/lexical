@@ -40,9 +40,12 @@ export type SerializedMarkNode = Spread<
 // Single source of truth for parsing the node-specific properties of a
 // SerializedMarkNode (those it adds over a SerializedElementNode).
 const markNodeSchema = nodeSchema<MarkNode>()({
+  // The getter stays a method: getIDs hands out a copy, so the export does not
+  // give a caller the node's own array. The setter is the field it writes,
+  // which is also what tells the clone where `ids` lives.
   ids: withAccessors(arrayValue(stringValue()), {
     getter: 'getIDs',
-    setter: 'setIDs',
+    setter: {field: '__ids'},
   }),
 });
 
@@ -67,11 +70,6 @@ export class MarkNode extends ElementNode {
       generated: GENERATED_MARK,
       json: markNodeSchema,
     });
-  }
-
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__ids = prevNode.__ids;
   }
 
   constructor(ids: readonly string[] = NO_IDS, key?: NodeKey) {

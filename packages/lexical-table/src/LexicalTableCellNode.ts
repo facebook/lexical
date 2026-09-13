@@ -88,8 +88,13 @@ const tableCellNodeSchema = nodeSchema<TableCellNode>()({
   // The domain exportJSON already enforces via isValidVerticalAlign; anything
   // else (including the historical falsy `|| undefined` case) is absent.
   // `undefined` leads the list, so it is the default.
+  // The setter is the field it writes rather than setVerticalAlign, whose
+  // `|| undefined` is a no-op over this enum: every value the parse yields is
+  // already `undefined`, 'middle' or 'bottom'. Naming it is what tells the
+  // clone where `verticalAlign` lives.
   verticalAlign: withAccessors(enumValue([undefined, 'middle', 'bottom']), {
     getter: 'getSerializedVerticalAlign',
+    setter: {field: '__verticalAlign'},
   }),
   // A width of 0 is not a real width, matching the historical
   // `serializedNode.width || undefined`.
@@ -151,16 +156,6 @@ export class TableCellNode extends ElementNode {
       },
       json: tableCellNodeSchema,
     });
-  }
-
-  afterCloneFrom(node: this): void {
-    super.afterCloneFrom(node);
-    this.__rowSpan = node.__rowSpan;
-    this.__backgroundColor = node.__backgroundColor;
-    this.__verticalAlign = node.__verticalAlign;
-    this.__colSpan = node.__colSpan;
-    this.__headerState = node.__headerState;
-    this.__width = node.__width;
   }
 
   constructor(

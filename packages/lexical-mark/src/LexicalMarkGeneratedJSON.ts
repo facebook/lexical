@@ -141,18 +141,21 @@ export const GENERATED_MARK: GeneratedJSONFactory = () => {
     n = self.setTextStyle(typeof v === 'string' ? v : '');
     self = (n ?? self) as MarkNode;
     v = json.ids;
-    n = self.setIDs(
-      Array.isArray(v)
-        ? Array.from(v, e0 => (typeof e0 === 'string' ? e0 : ''))
-        : [],
-    );
-    self = (n ?? self) as MarkNode;
+    self.__ids = Array.isArray(v)
+      ? Array.from(v, e0 => (typeof e0 === 'string' ? e0 : ''))
+      : [];
     return self;
+  }
+
+  /** Generated from MarkNode's serialization schema. Do not edit by hand. */
+  function afterCloneMarkNode(node: MarkNode, prevNode: MarkNode): void {
+    node.__ids = prevNode.__ids;
   }
 
   return {
     exportJSON: exportMarkNode,
     exportCompactJSON: exportCompactMarkNode,
     updateFromJSON: updateMarkNode,
+    afterCloneFrom: afterCloneMarkNode,
   };
 };

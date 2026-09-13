@@ -139,13 +139,6 @@ export class ListNode extends ElementNode {
     this.__start = start;
   }
 
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__listType = prevNode.__listType;
-    this.__tag = prevNode.__tag;
-    this.__start = prevNode.__start;
-  }
-
   getTag(): ListNodeTagType {
     return this.getLatest().__tag;
   }

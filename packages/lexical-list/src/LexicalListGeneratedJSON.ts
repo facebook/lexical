@@ -180,10 +180,18 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
     return self;
   }
 
+  /** Generated from ListNode's serialization schema. Do not edit by hand. */
+  function afterCloneListNode(node: ListNode, prevNode: ListNode): void {
+    node.__listType = prevNode.__listType;
+    node.__start = prevNode.__start;
+    node.__tag = prevNode.__tag;
+  }
+
   return {
     exportJSON: exportListNode,
     exportCompactJSON: exportCompactListNode,
     updateFromJSON: updateListNode,
+    afterCloneFrom: afterCloneListNode,
   };
 };
 
@@ -299,9 +307,19 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
     return self;
   }
 
+  /** Generated from ListItemNode's serialization schema. Do not edit by hand. */
+  function afterCloneListItemNode(
+    node: ListItemNode,
+    prevNode: ListItemNode,
+  ): void {
+    node.__checked = prevNode.__checked;
+    node.__value = prevNode.__value;
+  }
+
   return {
     exportJSON: exportListItemNode,
     exportCompactJSON: exportCompactListItemNode,
     updateFromJSON: updateListItemNode,
+    afterCloneFrom: afterCloneListItemNode,
   };
 };

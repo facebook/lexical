@@ -79,16 +79,23 @@ const tableNodeSchema = nodeSchema<TableNode>()({
   colWidths: withAccessors(optional(arrayValue(numberValue())), {
     getter: {field: '__colWidths'},
   }),
+  // The getters stay methods: each normalizes a falsy value to `undefined`, so
+  // a table with no striping and no frozen rows or columns writes none of
+  // them. The setters are the fields they write — which is all
+  // setFrozenColumns, setFrozenRows and setRowStriping do — and naming them is
+  // also what tells the clone where these live, so the class needs no
+  // `afterCloneFrom` of its own.
   frozenColumnCount: withAccessors(numberValue(), {
     getter: 'getSerializedFrozenColumnCount',
-    setter: 'setFrozenColumns',
+    setter: {field: '__frozenColumnCount'},
   }),
   frozenRowCount: withAccessors(numberValue(), {
     getter: 'getSerializedFrozenRowCount',
-    setter: 'setFrozenRows',
+    setter: {field: '__frozenRowCount'},
   }),
   rowStriping: withAccessors(booleanValue(), {
     getter: 'getSerializedRowStriping',
+    setter: {field: '__rowStriping'},
   }),
 });
 
@@ -455,14 +462,6 @@ export class TableNode extends ElementNode {
     self.__colWidths =
       colWidths !== undefined && __DEV__ ? Object.freeze(colWidths) : colWidths;
     return self;
-  }
-
-  afterCloneFrom(prevNode: this) {
-    super.afterCloneFrom(prevNode);
-    this.__colWidths = prevNode.__colWidths;
-    this.__rowStriping = prevNode.__rowStriping;
-    this.__frozenColumnCount = prevNode.__frozenColumnCount;
-    this.__frozenRowCount = prevNode.__frozenRowCount;
   }
 
   extractWithChild(

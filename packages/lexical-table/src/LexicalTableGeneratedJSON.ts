@@ -167,21 +167,27 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
     );
     self = (n ?? self) as TableNode;
     v = json.frozenColumnCount;
-    n = self.setFrozenColumns(num(v, 0));
-    self = (n ?? self) as TableNode;
+    self.__frozenColumnCount = num(v, 0);
     v = json.frozenRowCount;
-    n = self.setFrozenRows(num(v, 0));
-    self = (n ?? self) as TableNode;
+    self.__frozenRowCount = num(v, 0);
     v = json.rowStriping;
-    n = self.setRowStriping(typeof v === 'boolean' ? v : false);
-    self = (n ?? self) as TableNode;
+    self.__rowStriping = typeof v === 'boolean' ? v : false;
     return self;
+  }
+
+  /** Generated from TableNode's serialization schema. Do not edit by hand. */
+  function afterCloneTableNode(node: TableNode, prevNode: TableNode): void {
+    node.__colWidths = prevNode.__colWidths;
+    node.__frozenColumnCount = prevNode.__frozenColumnCount;
+    node.__frozenRowCount = prevNode.__frozenRowCount;
+    node.__rowStriping = prevNode.__rowStriping;
   }
 
   return {
     exportJSON: exportTableNode,
     exportCompactJSON: exportCompactTableNode,
     updateFromJSON: updateTableNode,
+    afterCloneFrom: afterCloneTableNode,
   };
 };
 
@@ -288,10 +294,19 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
     return self;
   }
 
+  /** Generated from TableRowNode's serialization schema. Do not edit by hand. */
+  function afterCloneTableRowNode(
+    node: TableRowNode,
+    prevNode: TableRowNode,
+  ): void {
+    node.__height = prevNode.__height;
+  }
+
   return {
     exportJSON: exportTableRowNode,
     exportCompactJSON: exportCompactTableRowNode,
     updateFromJSON: updateTableRowNode,
+    afterCloneFrom: afterCloneTableRowNode,
   };
 };
 
@@ -433,16 +448,29 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
     v = json.rowSpan;
     self.__rowSpan = numC(v, 1, 1, Infinity, true);
     v = json.verticalAlign;
-    n = self.setVerticalAlign(v === 'middle' || v === 'bottom' ? v : undefined);
-    self = (n ?? self) as TableCellNode;
+    self.__verticalAlign = v === 'middle' || v === 'bottom' ? v : undefined;
     v = json.width;
     self.__width = v === undefined || num(v, 0) === 0 ? undefined : num(v, 0);
     return self;
+  }
+
+  /** Generated from TableCellNode's serialization schema. Do not edit by hand. */
+  function afterCloneTableCellNode(
+    node: TableCellNode,
+    prevNode: TableCellNode,
+  ): void {
+    node.__backgroundColor = prevNode.__backgroundColor;
+    node.__colSpan = prevNode.__colSpan;
+    node.__headerState = prevNode.__headerState;
+    node.__rowSpan = prevNode.__rowSpan;
+    node.__verticalAlign = prevNode.__verticalAlign;
+    node.__width = prevNode.__width;
   }
 
   return {
     exportJSON: exportTableCellNode,
     exportCompactJSON: exportCompactTableCellNode,
     updateFromJSON: updateTableCellNode,
+    afterCloneFrom: afterCloneTableCellNode,
   };
 };

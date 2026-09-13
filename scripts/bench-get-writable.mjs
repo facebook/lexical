@@ -11,10 +11,12 @@
 // node scripts/bench-get-writable.mjs <base-ref> [other-refs...]
 import {build} from 'esbuild';
 import {execFileSync} from 'node:child_process';
-import {mkdtemp, rm} from 'node:fs/promises';
+import {mkdtemp, rm, writeFile} from 'node:fs/promises';
 import {cpus, tmpdir} from 'node:os';
 import {join, relative, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
+
+import {optimizeBenchmark} from './shared/optimizeBenchmark.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const refs = process.argv.slice(2);
@@ -60,6 +62,7 @@ const measure = (run, milliseconds) => {
 
 try {
   const variants = [];
+  const bundles = [];
   for (let i = 0; i < revisions.length; i++) {
     const {sha} = revisions[i];
     // Include working-tree edits when deciding which files to load from git.
@@ -69,7 +72,7 @@ try {
         : git(['diff', '--name-only', sha, '--', 'packages']).split('\n'),
     );
     const outfile = join(temporary, `${i}.mjs`);
-    await build({
+    const result = await build({
       bundle: true,
       define: {'process.env.NODE_ENV': '"production"'},
       format: 'esm',
@@ -120,7 +123,13 @@ try {
         resolveDir: root,
       },
       tsconfig: join(root, 'tsconfig.test.json'),
+      write: false,
     });
+    const {code, eliminatedDevConstants} = await optimizeBenchmark(
+      result.outputFiles[0].text,
+    );
+    await writeFile(outfile, code);
+    bundles.push({bytes: Buffer.byteLength(code), eliminatedDevConstants});
     const {cases} = await import(pathToFileURL(outfile).href);
     if (cases.length !== 12) {
       throw new Error(`Expected 12 workloads, got ${cases.length}`);
@@ -128,7 +137,14 @@ try {
     variants.push(cases);
   }
   console.log(
-    JSON.stringify({cpu: cpus()[0].model, node: process.version, revisions}),
+    JSON.stringify({
+      bundles,
+      cpu: cpus()[0].model,
+      node: process.version,
+      optimizer: 'terser',
+      revisions,
+      sampleCount,
+    }),
   );
   for (let index = 0; index < variants[0].length; index++) {
     const cases = variants.map(variant => variant[index]);

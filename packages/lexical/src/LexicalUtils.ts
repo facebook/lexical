@@ -3637,12 +3637,12 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
     const json = ownNodeConfig && ownNodeConfig.json;
     groupKlasses.push(currentKlass);
     if (__DEV__ && json) {
-      // `json` is typed as any schema, but only an objectValue names fields.
-      // Anything else contributes nothing, which would silently turn off the
-      // node's whole serialization — the one thing declaring `json` is for.
+      // Only a `nodeSchema` names fields. Anything else contributes nothing,
+      // which would silently turn off the node's whole serialization, the one
+      // thing declaring `json` is for.
       invariant(
-        json.meta.kind === 'object',
-        '%s: $config json must be an object schema — nodeSchema<MyNode>()({...}) — got %s',
+        json.meta.kind === 'node',
+        '%s: $config json must be built with nodeSchema<MyNode>()({...}); got a %s schema',
         // The class whose `$config` declared it, not the one being composed:
         // naming the subclass sent a reader to a class that declared nothing
         // wrong and never named the one they have to edit.
@@ -3651,7 +3651,7 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
       );
     }
     fieldGroups.push(
-      json && json.meta.kind === 'object'
+      json && json.meta.kind === 'node'
         ? (Object.entries(json.meta.fields) as (readonly [
             string,
             AnySerializationSchema,

@@ -2116,7 +2116,16 @@ export type SchemaInput<S> = unknown;
 // The phantom N records which node the names were checked against; Flow has
 // no equivalent of the TypeScript declaration's variance trick, so this stays
 // the unparameterized shape and the binding is enforced by TypeScript alone.
-export type NodeSerializationSchema = AnySerializationSchema;
+// A node schema is not a parser: nothing calls one, and its properties are
+// applied to a node rather than combined into a value. What it carries is the
+// field record, which is all the composition and the walk read.
+export type NodeSchemaMeta = {
+  readonly kind: 'node',
+  readonly fields: SerializationSchemaFields,
+};
+export type NodeSerializationSchema = {
+  readonly meta: NodeSchemaMeta,
+};
 // A node's serialization schema, checked against the node it is for. Under
 // TypeScript a `field`, accessor `method` or `when` predicate the node does
 // not have is a compile error; under Flow it is caught at registration.

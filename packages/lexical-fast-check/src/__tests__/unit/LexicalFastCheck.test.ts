@@ -23,7 +23,6 @@ import {
   nodeSchema,
   nullable,
   numberValue,
-  objectValue,
   ParagraphNode,
   type SerializedElementNode,
   type SerializedLexicalNode,
@@ -41,7 +40,7 @@ type SerializedMergeNode = Spread<
   SerializedElementNode
 >;
 
-const mergeNodeSchema = objectValue({
+const mergeNodeSchema = nodeSchema<MergeNode>()({
   variant: enumValue(['a', 'b', 'c']),
 });
 

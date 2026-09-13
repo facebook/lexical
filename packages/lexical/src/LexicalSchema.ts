@@ -1096,7 +1096,17 @@ export type InnerSerializationSchema = SerializationSchema<
  * its `In` parameter.
  */
 export type SchemaInput<S> =
-  S extends SerializationSchema<unknown, unknown, infer In> ? In : never;
+  S extends SerializationSchema<unknown, unknown, infer In>
+    ? In
+    : // A node schema carries the same phantom without being a parser, since
+      // its properties are applied to a node rather than combined into a
+      // value. `LexicalSchemaInput` is this, composed across a config chain.
+      // `never` for the node, not `unknown`: the phantom that records which
+      // node a schema was checked against is a function *of* it, so the
+      // position is contravariant and only `never` matches every node.
+      S extends NodeSerializationSchema<never, infer In>
+      ? In
+      : never;
 
 /** The value type a {@link SerializationSchema} parses to. */
 export type SerializationSchemaValue<S> =
@@ -1180,12 +1190,27 @@ function makeSchema<T, Decls = never, In = T>(
 }
 
 /**
- * Every schema {@link nodeSchema} built. A node schema names its accessors on
- * its fields rather than on itself, so it cannot be told from an
- * {@link objectValue} by looking at it; it is recorded instead, and refused as
- * an inner exactly as the type refuses it.
+ * Whether `value` is a {@link nodeSchema} rather than a schema for one
+ * property's value.
+ *
+ * Its own `meta` kind answers this. A node schema used to be an object schema
+ * that named its accessors on its fields, indistinguishable from an
+ * {@link objectValue} by looking at it, so every one built had to be recorded
+ * in a `WeakSet` for this question to have an answer. Giving the two separate
+ * representations is what replaced that with a comparison, and it took a
+ * module-scope `new WeakSet()` — a side effect no bundler can drop — out of
+ * this module along with it.
+ *
+ * Written to answer for a value from untyped code as well, since that is the
+ * caller the checks below exist for.
  */
-const NODE_SCHEMAS = new WeakSet<object>();
+function isNodeSchema(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isRecord(value.meta) &&
+    (value.meta as {kind?: unknown}).kind === 'node'
+  );
+}
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
 
@@ -1205,7 +1230,7 @@ function undeclared(combinator: string, inner: AnySerializationSchema): void {
     invariant(
       inner.getter === undefined &&
         inner.setter === undefined &&
-        !NODE_SCHEMAS.has(inner),
+        !isNodeSchema(inner),
       '%s: the schema it wraps names an accessor. Accessors are named once, on the outermost schema of a property, both directions in that one call',
       combinator,
     );
@@ -2378,10 +2403,42 @@ export function unionValue<
  * a subclass, which is the direction that stays true — every member it names
  * is inherited — and not the reverse.
  */
-export interface NodeSerializationSchema<
-  N = unknown,
-  In = unknown,
-> extends SerializationSchema<unknown, 'node', In> {
+/**
+ * What a {@link nodeSchema} carries: the properties a node declares, and a
+ * kind of its own.
+ *
+ * Not a member of {@link SerializationSchemaMeta}, because a node schema is
+ * never nested inside another schema. It describes a *node*, whose properties
+ * are applied one at a time to an object the walk does not own, where an
+ * `objectValue` describes a *value* that one property holds. Giving the two
+ * separate types is what lets a consumer of either be sure which it has.
+ */
+export interface NodeSchemaMeta {
+  readonly kind: 'node';
+  readonly fields: SerializationSchemaFields;
+}
+
+export interface NodeSerializationSchema<N = unknown, In = unknown> {
+  /**
+   * The properties this node declares, and the whole of what a node schema is
+   * at run time.
+   *
+   * A node schema is not a parser. Nothing ever calls one: the composition
+   * reads these fields and the walk applies each one to the node, so the
+   * whole-object machinery an {@link objectValue} carries — a parse that
+   * builds an object, a default object, a field-wise equality, a membership
+   * predicate — would be constructed per node class and never used. Leaving it
+   * out is what keeps it out of an application that declares schemas and never
+   * calls `objectValue` itself.
+   */
+  readonly meta: NodeSchemaMeta;
+  /**
+   * What this schema accepts, carried exactly as {@link SerializationSchema}
+   * carries it: the composed input type a document is checked against.
+   *
+   * @internal
+   */
+  readonly [INPUT]?: In;
   /**
    * Declared as a function of `N` rather than an `N`, so the parameter
    * position gives the assignability its direction: a schema for a base class
@@ -2464,17 +2521,17 @@ export function nodeSchema<N extends Checkable<N>>() {
  */
 function nodeSchemaOf(
   fields: SerializationSchemaFields,
-): AnySerializationSchema {
-  const schema = objectSchema('nodeSchema', fields);
+): NodeSerializationSchema {
+  checkFieldNames('nodeSchema', fields);
+  const schema: NodeSerializationSchema = {meta: {fields, kind: 'node'}};
   if (__DEV__) {
     for (const [key, field] of Object.entries(fields)) {
       invariant(
-        !NODE_SCHEMAS.has(field),
+        !isNodeSchema(field),
         'nodeSchema: field "%s" is itself a node schema; a nested object is an objectValue, whose fields name no accessor',
         key,
       );
     }
-    NODE_SCHEMAS.add(schema);
   }
   return schema;
 }
@@ -2796,7 +2853,7 @@ export function objectValue<const S extends InnerSerializationSchemaFields>(
       invariant(
         field.getter === undefined &&
           field.setter === undefined &&
-          !NODE_SCHEMAS.has(field),
+          !isNodeSchema(field),
         "objectValue: field \"%s\" names an accessor, and an object's field is not a node's property. A node's own schema is nodeSchema<MyNode>()({...})",
         key,
       );
@@ -2813,6 +2870,49 @@ type ObjectSchema<S extends SerializationSchemaFields> = SerializationSchema<
 >;
 
 /**
+ * The names a serialized property may not have, checked where the schema is
+ * written. Shared by {@link objectValue} and {@link nodeSchema}, which read
+ * their fields off objects that came from `JSON.parse`.
+ *
+ * `__proto__` is refused in every build: assigning it on a plain object
+ * invokes `Object.prototype`'s setter and reparents the result instead of
+ * writing a property, so what it prevents is a parse returning an object
+ * missing the property it declared. That is a wrong value rather than a
+ * missing diagnostic. It costs one comparison per field when the schema is
+ * built, which is once at module scope, and nothing per parse.
+ *
+ * The rest of `Object.prototype`'s members are refused in a development build,
+ * for the same reason one step removed. A serialized object inherits them, and
+ * every read of a property is a bare one, because an absent property is
+ * `undefined` and that is already its default. A field named for an inherited
+ * member is the single case where that reads something: the method, for a
+ * property the document never carried. The code generator refuses the same
+ * names, so this is the diagnostic for the path that has no build step.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+function checkFieldNames(
+  combinator: string,
+  fields: SerializationSchemaFields,
+): void {
+  for (const key of Object.keys(fields)) {
+    invariant(
+      key !== '__proto__',
+      '%s: "__proto__" is not a valid field name',
+      combinator,
+    );
+    if (__DEV__) {
+      invariant(
+        !(key in Object.prototype),
+        '%s: "%s" is a member of Object.prototype, which a serialized object inherits, so it cannot be told apart from a property the document never carried',
+        combinator,
+        key,
+      );
+    }
+  }
+}
+
+/**
  * {@link objectValue} without the accessor check, for {@link nodeSchema}: its
  * fields are the one place a name is declared, and the one place it is
  * discharged.
@@ -2823,39 +2923,7 @@ function objectSchema<S extends SerializationSchemaFields>(
   fields: S,
 ): ObjectSchema<S> {
   const entries = Object.entries(fields) as [string, AnySerializationSchema][];
-  for (const [key] of entries) {
-    // `result[key] = ...` on a plain object would invoke Object.prototype's
-    // `__proto__` setter and reparent the result instead of writing a
-    // property, so this name cannot describe a serialized field.
-    //
-    // Every build, not DEV only: what it prevents is a parse that returns an
-    // object missing the property it declared, having reparented itself
-    // instead — a wrong value rather than a missing diagnostic. It costs one
-    // comparison per field when the schema is built, which is once at module
-    // scope, and nothing per parse.
-    invariant(
-      key !== '__proto__',
-      '%s: "__proto__" is not a valid field name',
-      combinator,
-    );
-    if (__DEV__) {
-      // The rest of Object.prototype's members, for the same reason one step
-      // removed. A serialized object comes from JSON.parse and so inherits
-      // them, and every read of one — here, the walk's, and a generated
-      // parser's — is a bare property read, because an absent property is
-      // `undefined` and that is already the default. A field named for an
-      // inherited member is the one case where that reads something: the
-      // method, for a property the document never carried. Refused where the
-      // schema is written; the code generator refuses the same names, so this
-      // is the diagnostic for the path that has no build step.
-      invariant(
-        !(key in Object.prototype),
-        '%s: "%s" is a member of Object.prototype, which a serialized object inherits, so it cannot be told apart from a property the document never carried',
-        combinator,
-        key,
-      );
-    }
-  }
+  checkFieldNames(combinator, fields);
   return makeSchema(
     value => {
       // A bare read per field, as the node walk makes: an absent property is

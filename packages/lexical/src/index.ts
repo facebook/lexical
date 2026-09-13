@@ -278,6 +278,7 @@ export {
   type MemberOf,
   type NamesOf,
   nodeSchema,
+  type NodeSchemaMeta,
   type NodeSerializationSchema,
   nullable,
   numberValue,

@@ -1871,8 +1871,10 @@ describe('a schema tracks what it accepts, not only what it parses to', () => {
       readonly format?: number | string;
       readonly label?: string;
     }>();
-    // and the alias really parses, which is what the type is describing
-    expect(schema({format: 'bold'})).toMatchObject({format: 1});
+    // and the alias really parses, which is what the type is describing. Asked
+    // of the field rather than of the node schema: a node schema is not a
+    // parser, since its properties are applied to a node one at a time.
+    expect(schema.meta.fields.format('bold')).toBe(1);
   });
 
   test('a node composes the input it accepts across its config chain', () => {
@@ -2321,18 +2323,19 @@ describe('a schema is bound to the node it was checked against', () => {
     expect(typeof _refused).toBe('function');
   });
 
-  test('a schema that names nothing installs anywhere', () => {
-    // objectValue names no node member, so it was checked against nothing and
-    // is not bound to anything either.
-    class AnyNode extends Beta {
-      $config() {
-        return this.config('bound-any', {
-          extends: ElementNode,
-          json: objectValue({label: rawValue()}),
-        });
-      }
-    }
-    expect(typeof AnyNode).toBe('function');
+  test('an objectValue is not a node schema', () => {
+    // `objectValue` describes a *value* one property holds, and its fields
+    // name no accessor, so it says nothing about how a node is serialized.
+    // Installing one as `json` used to type-check and compose to nothing.
+    // Declared, never called: the assertion is the compile error below.
+    const _refused = (beta: Beta) =>
+      // @ts-expect-error -- `json` takes a nodeSchema; an objectValue's meta
+      // is a value's, not a node's
+      beta.config('bound-any', {
+        extends: ElementNode,
+        json: objectValue({label: rawValue()}),
+      });
+    expect(typeof _refused).toBe('function');
   });
 });
 
@@ -2341,8 +2344,13 @@ describe('a misconfigured accessor fails at registration', () => {
     $config() {
       return this.config('missing-setter-node', {
         extends: ElementNode,
-        // There is no setLabel() on this class.
-        json: objectValue({label: stringValue()}),
+        // There is no setLabel() on this class. The types refuse this where it
+        // is written, so the cast is what stands in for a caller who has no
+        // type checking at all — Flow, or plain JavaScript — and this is the
+        // diagnostic they get instead.
+        json: nodeSchema<MissingSetterNode>()({
+          label: stringValue(),
+        } as never),
       });
     }
   }
@@ -2673,7 +2681,7 @@ describe('a union member knows its own domain', () => {
       }),
       label: withField(stringValue(), {field: '__label'}),
     });
-    expect(typeof ok).toBe('function');
+    expect(ok).toBeDefined();
 
     nodeSchema<NamedNode>()({
       // @ts-expect-error -- __lable is not a field of NamedNode
@@ -2790,13 +2798,13 @@ describe('a union member knows its own domain', () => {
     }
     // The correct positions still compile.
     expect(
-      typeof nodeSchema<RoleNode>()({
+      nodeSchema<RoleNode>()({
         label: withAccessors(stringValue(), {
           getter: {field: '__label', method: 'getLabel', when: 'shouldWrite'},
           setter: 'setLabel',
         }),
       }),
-    ).toBe('function');
+    ).toBeDefined();
 
     nodeSchema<RoleNode>()({
       // @ts-expect-error -- setLabel needs an argument the walk does not pass
@@ -2830,16 +2838,16 @@ describe('a union member knows its own domain', () => {
     }
     // Both tables, each mapping into the type its destination holds.
     expect(
-      typeof nodeSchema<ModeNode>()({
+      nodeSchema<ModeNode>()({
         mode: withField(enumValue(['normal', 'token']), {
           decode: {0: 'normal', 1: 'token'},
           encode: {normal: 0, token: 1},
           field: '__mode',
         }),
       }),
-    ).toBe('function');
+    ).toBeDefined();
     expect(
-      typeof nodeSchema<NarrowModeNode>()({
+      nodeSchema<NarrowModeNode>()({
         mode: withField(enumValue(['normal', 'token']), {
           // An omitted export is `undefined`, which the decode side admits.
           decode: {0: undefined, 1: 'token'},
@@ -2847,15 +2855,15 @@ describe('a union member knows its own domain', () => {
           field: '__mode',
         }),
       }),
-    ).toBe('function');
+    ).toBeDefined();
     expect(
-      typeof nodeSchema<ModeNode>()({
+      nodeSchema<ModeNode>()({
         mode: withAccessors(enumValue(['normal', 'token']), {
           getter: {decode: {0: 'normal', 1: 'token'}, field: '__mode'},
           setter: {encode: {normal: 0, token: 1}, field: '__mode'},
         }),
       }),
-    ).toBe('function');
+    ).toBeDefined();
 
     nodeSchema<ModeNode>()({
       // @ts-expect-error -- no encode table: import writes 'normal' | 'token' into a number
@@ -2920,14 +2928,14 @@ describe('a union member knows its own domain', () => {
       __code = 0;
     }
     expect(
-      typeof nodeSchema<CodeNode>()({
+      nodeSchema<CodeNode>()({
         code: withField(stringValue(), {
           decode: {0: '', 1: 'a'},
           encode: {'': 0, a: 1},
           field: '__code',
         }),
       }),
-    ).toBe('function');
+    ).toBeDefined();
   });
 
   test('nodeSchema rejects a setter that needs more than the parsed value', () => {
@@ -3065,7 +3073,7 @@ describe('a union member knows its own domain', () => {
         setter: 'setNullableLabel',
       }),
     });
-    assert(meta.kind === 'object');
+    assert(meta.kind === 'node');
     expectTypeOf(meta.fields.label).toEqualTypeOf<AnySerializationSchema>();
     refused('arrayValue', () =>
       // @ts-expect-error -- a node schema's field may name an accessor
@@ -3155,11 +3163,11 @@ describe('a union member knows its own domain', () => {
     }
     // Sound in both directions: nothing to report.
     expect(
-      typeof nodeSchema<ConventionalNode>()({
+      nodeSchema<ConventionalNode>()({
         count: numberValue(),
         label: stringValue(),
       }),
-    ).toBe('function');
+    ).toBeDefined();
     nodeSchema<ConventionalNode>()({
       // @ts-expect-error -- getCount returns a number, not a string
       count: stringValue(),
@@ -3289,7 +3297,7 @@ describe('a union member knows its own domain', () => {
     }
     // The types line up, so this compiles.
     expect(
-      typeof nodeSchema<TypedNode>()({
+      nodeSchema<TypedNode>()({
         count: withField(numberValue(), {field: '__count'}),
         // `readonly` is a property of the reference, not of the JSON, so a
         // readonly array satisfies an arrayValue property.
@@ -3298,7 +3306,7 @@ describe('a union member knows its own domain', () => {
           setter: null,
         }),
       }),
-    ).toBe('function');
+    ).toBeDefined();
 
     nodeSchema<TypedNode>()({
       // @ts-expect-error -- __count holds a number, not a string
@@ -3325,14 +3333,14 @@ describe('a union member knows its own domain', () => {
       __mode: 0 | 1 | 2 = 0;
     }
     expect(
-      typeof nodeSchema<ModeNode>()({
+      nodeSchema<ModeNode>()({
         mode: withField(enumValue(['normal', 'token', 'segmented']), {
           decode: NAMES,
           encode: MODES,
           field: '__mode',
         }),
       }),
-    ).toBe('function');
+    ).toBeDefined();
   });
 
   test('each value table is declared only on the direction that reads it', () => {

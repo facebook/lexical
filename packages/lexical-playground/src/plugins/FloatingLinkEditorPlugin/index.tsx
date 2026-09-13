@@ -60,21 +60,16 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 
-import {getSelectedNode} from '../../utils/getSelectedNode';
+import {$getSelectedNode} from '../../utils/getSelectedNode';
+import {$getSelectionLinkNode} from '../../utils/getSelectionLinkNode';
 import {sanitizeUrl} from '../../utils/url';
 
 function $getSelectedLinkNode(selection: RangeSelection): LinkNode | null {
-  const node = getSelectedNode(selection);
-  // 1. Node itself is a link
-  if ($isLinkNode(node)) {
-    return node;
+  const linkNode = $getSelectionLinkNode(selection);
+  if (linkNode) {
+    return linkNode;
   }
-  // 2. Parent is a link
-  const linkParent = $findMatchingParent(node, $isLinkNode);
-  if ($isLinkNode(linkParent)) {
-    return linkParent;
-  }
-  // 3. Right-biased adjacent link (for single-char links)
+  // Right-biased adjacent link (for single-char links)
   if (selection.isCollapsed()) {
     const anchor = selection.anchor;
     if (anchor.type === 'text') {
@@ -323,7 +318,7 @@ function FloatingLinkEditor({
           );
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
-            const parent = getSelectedNode(selection).getParent();
+            const parent = $getSelectedNode(selection).getParent();
             if ($isAutoLinkNode(parent)) {
               const linkNode = $createLinkNode(parent.getURL(), {
                 rel: parent.__rel,
@@ -441,9 +436,9 @@ function useFloatingLinkEditorToolbar(
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
         const focusLinkNode = $getSelectedLinkNode(selection);
-        const focusNode = getSelectedNode(selection);
+        const focusNode = $getSelectedNode(selection);
         const focusAutoLinkNode = $findMatchingParent(
-          focusNode,
+          focusLinkNode || focusNode,
           $isAutoLinkNode,
         );
         if (!(focusLinkNode || focusAutoLinkNode)) {
@@ -454,6 +449,9 @@ function useFloatingLinkEditorToolbar(
           .getNodes()
           .filter(node => !$isLineBreakNode(node))
           .find(node => {
+            if (focusLinkNode && node.isParentOf(focusLinkNode)) {
+              return false;
+            }
             const linkNode = $findMatchingParent(node, $isLinkNode);
             const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
             return (
@@ -512,7 +510,7 @@ function useFloatingLinkEditorToolbar(
         payload => {
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
-            const node = getSelectedNode(selection);
+            const node = $getSelectedNode(selection);
             const linkNode = $findMatchingParent(node, $isLinkNode);
             if ($isLinkNode(linkNode) && (payload.metaKey || payload.ctrlKey)) {
               window.open(linkNode.getURL(), '_blank');

@@ -23,8 +23,11 @@ import {
   assertHTML,
   assertSelection,
   click,
+  evaluate,
+  expect,
   focus,
   focusEditor,
+  getPageOrFrame,
   html,
   initialize,
   insertSampleImage,
@@ -42,6 +45,62 @@ test.beforeEach(({isPlainText}) => {
 
 test.describe('Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  for (const boundary of ['paragraph', 'root']) {
+    for (const autoLink of [false, true]) {
+      test(`keeps the ${autoLink ? 'autolink' : 'link'} toolbar active for ${boundary} element points (#9137)`, async ({
+        page,
+      }) => {
+        await focusEditor(page);
+        if (autoLink) {
+          await page.keyboard.type('https://lexical.dev ');
+          await deleteBackward(page);
+        } else {
+          await page.keyboard.type('Hello');
+          await selectAll(page);
+          await click(page, '.link');
+          await click(page, '.link-confirm');
+        }
+        await selectAll(page);
+
+        // Preserve element points to cover browsers that represent select-all
+        // this way, instead of normalizing them to the linked text.
+        await evaluate(
+          page,
+          selectedBoundary => {
+            const editor = window.lexicalEditor;
+            return new Promise(resolve => {
+              editor.update(
+                () => {
+                  const root = editor.getEditorState()._nodeMap.get('root');
+                  const element =
+                    selectedBoundary === 'root'
+                      ? root
+                      : root.getFirstChildOrThrow();
+                  element.select(0, element.getChildrenSize());
+                },
+                {onUpdate: resolve, tag: 'skip-dom-selection'},
+              );
+            });
+          },
+          boundary,
+        );
+
+        const frame = getPageOrFrame(page);
+        await expect(
+          frame.locator('.toolbar button[aria-label="Insert link"]'),
+        ).toHaveClass(/active/);
+        await expect(frame.locator('.link-editor .link-edit')).toBeVisible();
+        await expect(
+          frame.locator('.link-editor .link-view a'),
+        ).toHaveAttribute(
+          'href',
+          autoLink ? 'https://lexical.dev' : 'https://',
+        );
+        await expect(frame.locator('.floating-text-format-popup')).toBeHidden();
+      });
+    }
+  }
+
   test(`Can convert a text node into a link`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello');

@@ -98,6 +98,40 @@ describe('writable node reuse', () => {
     });
   });
 
+  test('marks the current parent dirty when writing through a stale reference', () => {
+    const editor = createHeadlessEditor();
+    let original!: TextNode;
+    let oldParentKey!: string;
+    let currentParentKey!: string;
+    editor.update(
+      () => {
+        original = $createTextNode('original');
+        const paragraph = $createParagraphNode().append(original);
+        oldParentKey = paragraph.getKey();
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        currentParentKey = paragraph.getKey();
+        $getRoot().append(paragraph);
+        paragraph.append(original);
+      },
+      {discrete: true},
+    );
+    expect(original.__parent).toBe(oldParentKey);
+    editor.update(
+      () => {
+        original.setTextContent('changed');
+        expect(editor._dirtyElements.has(currentParentKey)).toBe(true);
+        expect(editor._dirtyElements.has(oldParentKey)).toBe(false);
+      },
+      {discrete: true},
+    );
+  });
+
   test('does not reuse a collected subtree in a subsequent batched update', () => {
     const editor = createHeadlessEditor();
     let text!: TextNode;

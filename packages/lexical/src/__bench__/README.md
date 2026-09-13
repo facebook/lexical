@@ -28,12 +28,28 @@ jsdom setup cost.
 | File | Project | Measures |
 | ---- | ------- | -------- |
 | `nodeMap.bench.ts` | `bench` | `Map` vs `GenMap` on clone / typing / paste / iteration / get |
+| `getWritable.bench.ts` | `bench` | headless writes, replacement, and selection formatting at fixed document sizes |
 | `dom/editorCycle.bench.ts` | `bench-dom` | real `editor.update` cycle cost on a jsdom-backed editor |
 | `dom/editorOperations.bench.ts` | `bench-dom` | editor operations: split, format, delete range, paste, select-all |
 
 Helpers shared across files live in `_utils.ts` (microbench) and
 `dom/_utils.ts` (real-editor). Use them when you can; extract new helpers
 there if your bench file grows beyond a single workload.
+
+For writable-node changes, compare production bundles with the same current
+benchmark on every revision:
+
+```sh
+node scripts/bench-get-writable.mjs <base-ref> [other-refs...] > results.jsonl
+```
+
+The runner also includes the working tree. It verifies each workload before
+timing, rotates revision order across nine samples, and reports median
+microseconds per update plus the individual samples. This reduces timing
+drift between separate runs. Measurements cover headless updates without DOM
+reconciliation; small differences still need to be treated as noise.
+Set `LEXICAL_BENCH_FILTER` to a regular expression over the workload name and
+`LEXICAL_BENCH_SAMPLES` to a positive integer for longer, focused comparisons.
 
 ## When to add a bench
 

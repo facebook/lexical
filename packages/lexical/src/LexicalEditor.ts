@@ -1159,8 +1159,7 @@ export class LexicalEditor {
   /** @internal */
   _dirtyType: 0 | 1 | 2;
   /** @internal */
-  // Writable nodes in the pending state, shared across batched updates.
-  _cloneNotNeeded: Map<NodeKey, LexicalNode>;
+  _cloneNotNeeded: Set<NodeKey>;
   /** @internal */
   _dirtyLeaves: Set<NodeKey>;
   /** @internal */
@@ -1251,7 +1250,7 @@ export class LexicalEditor {
     this._pendingDecorators = null;
     // Used to optimize reconciliation
     this._dirtyType = NO_DIRTY_NODES;
-    this._cloneNotNeeded = new Map();
+    this._cloneNotNeeded = new Set();
     this._dirtyLeaves = new Set();
     this._dirtyElements = new Map();
     this._normalizedNodes = new Set();

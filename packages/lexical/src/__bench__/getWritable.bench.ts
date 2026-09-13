@@ -23,6 +23,8 @@ import {
 // Headless updates include cloning, transforms, GC and commit, but exclude DOM
 // reconciliation. Run with NODE_ENV=production to measure production behavior.
 // Keep document size fixed so first-write and reuse costs remain comparable.
+// Retain the returned text nodes: setTextContent can skip writes when its
+// argument matches the old value on a stale node reference.
 for (const size of [100, 1000]) {
   describe(`size=${size} :: writable nodes`, () => {
     for (const workload of [
@@ -63,16 +65,17 @@ for (const size of [100, 1000]) {
                   }
                   break;
                 case 'one text change':
-                  nodes[nodes.length - 1].setTextContent(text);
+                  nodes[nodes.length - 1] =
+                    nodes[nodes.length - 1].setTextContent(text);
                   break;
                 case 'one setter per node':
-                  for (const node of nodes) {
-                    node.setTextContent(text);
+                  for (let i = 0; i < nodes.length; i++) {
+                    nodes[i] = nodes[i].setTextContent(text);
                   }
                   break;
                 case 'five setters per node':
-                  for (const node of nodes) {
-                    node
+                  for (let i = 0; i < nodes.length; i++) {
+                    nodes[i] = nodes[i]
                       .setTextContent(text)
                       .setFormat(format)
                       .setStyle(format ? 'color: red' : '')
@@ -107,7 +110,37 @@ for (const size of [100, 1000]) {
             cycle = 0;
             editor.update($populate, {discrete: true});
           },
+          teardown: () => {
+            editor.read(() => {
+              const texts = $getRoot().getAllTextNodes();
+              if (texts.length !== size) {
+                throw new Error('Unexpected document size');
+              }
+              if (
+                workload === 'one text change' ||
+                workload === 'one setter per node' ||
+                workload === 'five setters per node'
+              ) {
+                const expected = cycle % 2 ? 'changed' : 'original';
+                const changed =
+                  workload === 'one text change' ? texts.slice(-1) : texts;
+                if (changed.some(node => node.getTextContent() !== expected)) {
+                  throw new Error('The measured edit did not change the text');
+                }
+              }
+              if (
+                workload === 'select all and format' &&
+                texts.some(
+                  node => node.hasFormat('bold') !== Boolean(cycle % 2),
+                )
+              ) {
+                throw new Error('The measured edit did not change the format');
+              }
+            });
+          },
           throws: true,
+          time: 1500,
+          warmupTime: 500,
         },
       );
     }

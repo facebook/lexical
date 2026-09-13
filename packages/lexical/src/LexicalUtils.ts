@@ -413,7 +413,7 @@ export function $setNodeKey(
   } else {
     editor._dirtyLeaves.add(key);
   }
-  editor._cloneNotNeeded.set(key, node);
+  editor._cloneNotNeeded.add(key);
   // Don't downgrade FULL_RECONCILE; upgrade only when nothing has been marked yet.
   if (editor._dirtyType === NO_DIRTY_NODES) {
     editor._dirtyType = HAS_DIRTY_NODES;
@@ -576,10 +576,8 @@ export const removeFromParent = $removeFromParent;
 
 // Never use this function directly! It will break
 // the cloning heuristic. Instead use node.getWritable().
-export function internalMarkNodeAsDirty(
-  node: LexicalNode,
-  latest: LexicalNode = node.getLatest(),
-): void {
+// The caller must pass the latest node from the active editor state.
+export function internalMarkNodeAsDirty(node: LexicalNode): void {
   errorOnInfiniteTransforms();
   invariant(
     !$isEphemeral(node),
@@ -592,10 +590,10 @@ export function internalMarkNodeAsDirty(
   // content edit propagates into the host. Non-slot trees keep
   // __slotHost === null, so this is the plain __parent start there.
   const parent =
-    latest.__parent !== null
-      ? latest.__parent
-      : $isSlotChild(latest)
-        ? latest.__slotHost
+    node.__parent !== null
+      ? node.__parent
+      : $isSlotChild(node)
+        ? node.__slotHost
         : null;
   const editorState = getActiveEditorState();
   const editor = getActiveEditor();
@@ -604,7 +602,7 @@ export function internalMarkNodeAsDirty(
   if (parent !== null) {
     internalMarkParentElementsAsDirty(parent, nodeMap, dirtyElements);
   }
-  const key = latest.__key;
+  const key = node.__key;
   // Don't downgrade FULL_RECONCILE; upgrade only when nothing has been marked yet.
   if (editor._dirtyType === NO_DIRTY_NODES) {
     editor._dirtyType = HAS_DIRTY_NODES;

@@ -1414,27 +1414,28 @@ export class LexicalNode {
       return this;
     }
     errorOnReadOnly();
+    const editorState = getActiveEditorState();
     const editor = getActiveEditor();
+    const nodeMap = editorState._nodeMap;
     const key = this.__key;
+    // Ensure we get the latest node from pending state
+    const latestNode = this.getLatest();
     const cloneNotNeeded = editor._cloneNotNeeded;
-    // Cast: each key always refers to the same node class.
-    const writableNode = cloneNotNeeded.get(key) as this | undefined;
     const selection = $getSelection();
     if (selection !== null) {
       selection.setCachedNodes(null);
     }
-    if (writableNode !== undefined) {
+    if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
-      internalMarkNodeAsDirty(writableNode, writableNode);
-      return writableNode;
+      internalMarkNodeAsDirty(latestNode);
+      return latestNode;
     }
-    // Ensure we clone the latest node from pending state.
-    const latestNode = this.getLatest();
     const mutableNode = $cloneWithProperties(latestNode);
-    cloneNotNeeded.set(key, mutableNode);
-    internalMarkNodeAsDirty(mutableNode, latestNode);
+    cloneNotNeeded.add(key);
+    // The clone is not in the node map yet; dirty the current entry.
+    internalMarkNodeAsDirty(latestNode);
     // Update reference in node map
-    getActiveEditorState()._nodeMap.set(key, mutableNode);
+    nodeMap.set(key, mutableNode);
 
     return mutableNode;
   }

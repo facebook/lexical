@@ -19,6 +19,7 @@ import {
   decodeTableOf,
   encodedDefaultOf,
   encodeTableOf,
+  enumValue,
   getComposedSchemaFields,
   LineBreakNode,
   nodeSchema,
@@ -35,10 +36,12 @@ import ts from 'typescript';
 import {describe, expect, test} from 'vitest';
 
 import {
+  checkTableLocals,
   declareTable,
   emittable,
   generateCompactExport,
   generateUpdate,
+  references,
   RESERVED_GLOBALS,
   resetTableLocals,
   tableDeclaration,
@@ -417,6 +420,56 @@ describe('a property the compact form cannot compare as source', () => {
     // And the whole thing is something a module can actually contain, which
     // is the part a check of the name alone would miss.
     expect(() => parseAsModule(source)).not.toThrow();
+  });
+
+  test('a table reference is matched literally, not as a pattern', () => {
+    // A table's name comes from a schema key, so it may contain `$`, which a
+    // pattern reads as an anchor. The unreferenced-table filter used
+    // `new RegExp(`\\b${name}\\b`)`, so `DOLLAR_$MODE_DECODE` matched nothing:
+    // the declaration was dropped while the code reading it was kept, and the
+    // emitted module threw `ReferenceError`.
+    expect(references('T[DOLLAR_$MODE_DECODE]', 'DOLLAR_$MODE_DECODE')).toBe(
+      true,
+    );
+    expect(references('const x = 1;', 'DOLLAR_$MODE_DECODE')).toBe(false);
+    // And a name that is only part of a longer identifier is not a reference,
+    // which is what the word boundaries were there for: `X_Y_ENCODE` is a
+    // prefix of `X_Y_ENCODE_DEFAULT`.
+    expect(references('a = X_Y_ENCODE_DEFAULT;', 'X_Y_ENCODE')).toBe(false);
+    expect(references('a = X_Y_ENCODE;', 'X_Y_ENCODE')).toBe(true);
+    expect(references('a = $X_Y_ENCODE;', 'X_Y_ENCODE')).toBe(false);
+  });
+
+  test('a property named for a lookup table is refused', () => {
+    // The table is bound in the class's factory and the local inside a form it
+    // encloses, so the local shadows it and a read before its own declaration
+    // is a ReferenceError.
+    class NamedTableNode extends TextNode {
+      __m = 0;
+      NAMEDTABLE_MODE_DECODE = '';
+      $config() {
+        return this.config('named-table', {
+          extends: TextNode,
+          json: nodeSchema<NamedTableNode>()({
+            NAMEDTABLE_MODE_DECODE: withField(stringValue(), {
+              field: 'NAMEDTABLE_MODE_DECODE',
+            }),
+            mode: withField(enumValue(['normal', 'token']), {
+              decode: {0: 'normal', 1: 'token'},
+              encode: {normal: 0, token: 1},
+              field: '__m',
+            }),
+          }),
+        });
+      }
+    }
+    expect(() =>
+      checkTableLocals(NamedTableNode, ['NAMEDTABLE_MODE_DECODE']),
+    ).toThrow(/collides with a local the generated code binds/);
+    // A table whose name no property takes is fine.
+    expect(() =>
+      checkTableLocals(NamedTableNode, ['NAMEDTABLE_MODE_ENCODE']),
+    ).not.toThrow();
   });
 
   test('a local never takes the name of a global the code reads', () => {

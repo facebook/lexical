@@ -213,6 +213,37 @@ const PACKAGES = [
   },
 ];
 
+/**
+ * Whether `source` mentions `name` as an identifier of its own, rather than as
+ * part of a longer one.
+ *
+ * A scan rather than a regexp: a table's name is derived from a schema key, so
+ * it may contain `$`, which a pattern would read as an anchor. The name was
+ * interpolated unescaped, and `DOLLAR_$MODE_DECODE` then matched nothing — so
+ * the declaration was dropped as unreferenced while the code that reads it was
+ * kept, and the emitted module threw `ReferenceError`. Nothing here is a
+ * pattern, so nothing in a name can be read as one.
+ *
+ * @param {string} source
+ * @param {string} name
+ * @returns {boolean}
+ */
+export function references(source, name) {
+  const identifier = /[A-Za-z0-9_$]/;
+  for (
+    let at = source.indexOf(name);
+    at !== -1;
+    at = source.indexOf(name, at + 1)
+  ) {
+    const before = at === 0 ? '' : source[at - 1];
+    const after = source[at + name.length] || '';
+    if (!identifier.test(before) && !identifier.test(after)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /** `MarkNode` → `GENERATED_MARK`. */
 const constName = (/** @type {NodeClass} */ klass) =>
   `GENERATED_${klass.name.replace(/Node$/, '').toUpperCase()}`;
@@ -502,6 +533,54 @@ export function emittable(name, what, binds = false, alsoBound) {
     );
   }
   return name;
+}
+
+/**
+ * Refuse a class whose lookup tables and generated locals share a name.
+ *
+ * A table is bound in the class's factory and read from inside the forms it
+ * encloses, so a local named for one shadows it — and a read before that
+ * local's own declaration is a `ReferenceError` rather than a wrong value. It
+ * takes a property whose name is another property's table
+ * (`NAMEDTABLE_MODE_DECODE` beside a `mode` with a decode table), which no
+ * enumeration of possible table names would decide as exactly as the tables
+ * themselves do, so it is checked once both sets of names exist.
+ *
+ * Exported for `generateNodeJSON.test.ts`: no manifest class has such a
+ * property.
+ *
+ * @param {NodeClass} klass
+ * @param {readonly string[]} tableNames
+ */
+export function checkTableLocals(klass, tableNames) {
+  const bound = localNamesOf(klass);
+  for (const name of tableNames) {
+    if (bound.has(name)) {
+      throw new NotCompilable(
+        `lookup table ${name} collides with a local the generated code binds for a property of that name`,
+      );
+    }
+  }
+}
+
+/**
+ * Every local the generated forms bind for `klass`: one per schema key, one
+ * per `when` predicate, each under the name {@link localFor} gives it.
+ *
+ * @param {NodeClass} klass
+ * @returns {Set<string>}
+ */
+function localNamesOf(klass) {
+  const reads = schemaReads(klass);
+  const localOf = localsFor(reads);
+  const names = new Set();
+  for (const read of reads) {
+    names.add(localOf(read.key));
+    if (read.when !== undefined) {
+      names.add(localOf(read.when));
+    }
+  }
+  return names;
 }
 
 /**
@@ -1319,13 +1398,17 @@ function generatePackage(pkg) {
       const emitted = [afterCloneFrom, compact, exportJSON, updateFromJSON]
         .filter(source => source !== null)
         .join('\n');
+      checkTableLocals(
+        klass,
+        tableDeclarations().map(([name]) => name),
+      );
       return {
         afterCloneFrom,
         compact,
         exportJSON,
         klass,
         tables: tableDeclarations().filter(([name]) =>
-          new RegExp(`\\b${name}\\b`).test(emitted),
+          references(emitted, name),
         ),
         updateFromJSON,
       };
@@ -1550,6 +1633,20 @@ export function generateNodeJSON(outDir) {
     if (JSON.stringify(expected) !== JSON.stringify(emitted)) {
       throw new Error(
         `generate-node-json: ${pkg.file} emits [${emitted}] but the manifest stubs [${expected}]; update MANIFEST (and the $config wiring) together`,
+      );
+    }
+    // The copy helpers, the same way: a class only has one where its own
+    // `$config` declares a schema field, which phase one cannot ask because it
+    // cannot import anything — so the manifest states it and this holds the
+    // statement to what was emitted.
+    const expectedClones = [...manifest.afterClone].sort();
+    const emittedClones = pkg.targets
+      .filter(({klass}) => ownSchemaFields(klass).length > 0)
+      .map(({klass}) => `afterClone${klass.name}`)
+      .sort();
+    if (JSON.stringify(expectedClones) !== JSON.stringify(emittedClones)) {
+      throw new Error(
+        `generate-node-json: ${pkg.file} exports clone helpers [${emittedClones}] but the manifest stubs [${expectedClones}]; update MANIFEST together with the schemas`,
       );
     }
     const target = outPath(pkg.file);

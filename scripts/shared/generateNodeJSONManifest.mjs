@@ -23,14 +23,21 @@
  * `home` marks the module that declares the `GeneratedJSON` interface (the
  * others import the type from `lexical`).
  *
+ * `afterClone` names the copy helpers a package exports beside its factories:
+ * one per class whose own `$config` declares a schema field. A class that
+ * writes its own `afterCloneFrom` imports the helper and calls it, so the stub
+ * has to carry the name or nothing importing it can load.
+ *
  * @type {readonly {
  *   file: string,
  *   home?: boolean,
  *   entries: readonly string[],
+ *   afterClone: readonly string[],
  * }[]}
  */
 export const MANIFEST = [
   {
+    afterClone: ['afterCloneElementNode', 'afterCloneTextNode'],
     entries: [
       'GENERATED_ELEMENT',
       'GENERATED_TEXT',
@@ -42,30 +49,41 @@ export const MANIFEST = [
     home: true,
   },
   {
+    afterClone: ['afterCloneHeadingNode'],
     entries: ['GENERATED_HEADING', 'GENERATED_QUOTE'],
     file: 'packages/lexical-rich-text/src/LexicalRichTextGeneratedJSON.ts',
   },
   {
+    afterClone: ['afterCloneLinkNode', 'afterCloneAutoLinkNode'],
     entries: ['GENERATED_LINK', 'GENERATED_AUTOLINK'],
     file: 'packages/lexical-link/src/LexicalLinkGeneratedJSON.ts',
   },
   {
+    afterClone: ['afterCloneMarkNode'],
     entries: ['GENERATED_MARK'],
     file: 'packages/lexical-mark/src/LexicalMarkGeneratedJSON.ts',
   },
   {
+    afterClone: ['afterCloneListNode', 'afterCloneListItemNode'],
     entries: ['GENERATED_LIST', 'GENERATED_LISTITEM'],
     file: 'packages/lexical-list/src/LexicalListGeneratedJSON.ts',
   },
   {
+    afterClone: [
+      'afterCloneTableNode',
+      'afterCloneTableRowNode',
+      'afterCloneTableCellNode',
+    ],
     entries: ['GENERATED_TABLE', 'GENERATED_TABLEROW', 'GENERATED_TABLECELL'],
     file: 'packages/lexical-table/src/LexicalTableGeneratedJSON.ts',
   },
   {
+    afterClone: ['afterCloneCodeNode', 'afterCloneCodeHighlightNode'],
     entries: ['GENERATED_CODE', 'GENERATED_CODEHIGHLIGHT'],
     file: 'packages/lexical-code-core/src/LexicalCodeCoreGeneratedJSON.ts',
   },
   {
+    afterClone: ['afterCloneDecoratorBlockNode'],
     entries: ['GENERATED_DECORATORBLOCK'],
     file: 'packages/lexical-react/src/shared/LexicalReactGeneratedJSON.ts',
   },
@@ -158,6 +176,14 @@ export function stubSource(pkg) {
   for (const name of pkg.entries) {
     lines.push(
       `\n/** @internal */\nexport const ${name}: undefined | GeneratedJSONFactory = undefined;\n`,
+    );
+  }
+  for (const name of pkg.afterClone) {
+    // A no-op with the loosest parameters that accept a node, since the stub
+    // may not name a class: phase one only has to load, and nothing it
+    // produces is what a clone actually runs.
+    lines.push(
+      `\n/** @internal */\nexport function ${name}(_node: unknown, _prevNode: unknown): void {}\n`,
     );
   }
   return lines.join('');

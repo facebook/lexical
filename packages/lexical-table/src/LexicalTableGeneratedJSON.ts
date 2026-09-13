@@ -178,16 +178,10 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
     return self;
   }
 
-  /** Generated from TableNode's serialization schema. Do not edit by hand. */
-  function afterCloneTableNode(node: TableNode, prevNode: TableNode): void {
-    node.__colWidths = prevNode.__colWidths;
-  }
-
   return {
     exportJSON: exportTableNode,
     exportCompactJSON: exportCompactTableNode,
     updateFromJSON: updateTableNode,
-    afterCloneFrom: afterCloneTableNode,
   };
 };
 
@@ -294,19 +288,10 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
     return self;
   }
 
-  /** Generated from TableRowNode's serialization schema. Do not edit by hand. */
-  function afterCloneTableRowNode(
-    node: TableRowNode,
-    prevNode: TableRowNode,
-  ): void {
-    node.__height = prevNode.__height;
-  }
-
   return {
     exportJSON: exportTableRowNode,
     exportCompactJSON: exportCompactTableRowNode,
     updateFromJSON: updateTableRowNode,
-    afterCloneFrom: afterCloneTableRowNode,
   };
 };
 
@@ -455,22 +440,9 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
     return self;
   }
 
-  /** Generated from TableCellNode's serialization schema. Do not edit by hand. */
-  function afterCloneTableCellNode(
-    node: TableCellNode,
-    prevNode: TableCellNode,
-  ): void {
-    node.__backgroundColor = prevNode.__backgroundColor;
-    node.__colSpan = prevNode.__colSpan;
-    node.__headerState = prevNode.__headerState;
-    node.__rowSpan = prevNode.__rowSpan;
-    node.__width = prevNode.__width;
-  }
-
   return {
     exportJSON: exportTableCellNode,
     exportCompactJSON: exportCompactTableCellNode,
     updateFromJSON: updateTableCellNode,
-    afterCloneFrom: afterCloneTableCellNode,
   };
 };

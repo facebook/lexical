@@ -5081,6 +5081,11 @@ function injectSynthesizedAfterCloneFrom(klass: Klass<LexicalNode>): void {
       // Hand-written, or synthesized by an earlier registration.
       continue;
     }
+    // Registration is not idempotent for the question a code generator asks —
+    // "does this class own an `afterCloneFrom`, or would it take a synthesized
+    // one" — because after the first registration every class in the chain
+    // owns one either way. Marking what this installs is what keeps the two
+    // apart; see `declaresOwnAfterCloneFrom`.
     // From this class's own composition rather than the registered subclass's,
     // so what it copies does not depend on which class was registered first: a
     // subclass that re-declares an inherited field owns that field in its own
@@ -5128,7 +5133,42 @@ function injectSynthesizedAfterCloneFrom(klass: Klass<LexicalNode>): void {
       superPrototype.afterCloneFrom.call(this, prevNode);
       copyFields(this, prevNode);
     };
+    (
+      prototype as {afterCloneFrom: {[SYNTHESIZED_AFTER_CLONE_FROM]?: true}}
+    ).afterCloneFrom[SYNTHESIZED_AFTER_CLONE_FROM] = true;
   }
+}
+
+/**
+ * The key marking an `afterCloneFrom` this module synthesized, as opposed to
+ * one the class wrote.
+ *
+ * A string rather than a symbol: a `Symbol()` call at module scope is a side
+ * effect no bundler will drop, and this module is one every editor imports.
+ */
+const SYNTHESIZED_AFTER_CLONE_FROM = '__lexicalSynthesizedAfterCloneFrom';
+
+/**
+ * Whether `klass` wrote its own `afterCloneFrom`, rather than taking the one
+ * its schema implies.
+ *
+ * For a code generator deciding whether to emit the copy half at all: a class
+ * that wrote its own keeps it, so the generated function would be attached,
+ * shipped, and never called. Asked of the class itself rather than of the
+ * prototype, because after one registration every class in a chain has an own
+ * `afterCloneFrom` and only the marker says which kind.
+ *
+ * @internal
+ */
+export function declaresOwnAfterCloneFrom(klass: Klass<LexicalNode>): boolean {
+  const prototype = klass.prototype as unknown as {
+    afterCloneFrom?: {[SYNTHESIZED_AFTER_CLONE_FROM]?: true};
+  };
+  if (!hasOwnKey(prototype, 'afterCloneFrom')) {
+    return false;
+  }
+  const own = prototype.afterCloneFrom;
+  return own === undefined || own[SYNTHESIZED_AFTER_CLONE_FROM] !== true;
 }
 
 /**

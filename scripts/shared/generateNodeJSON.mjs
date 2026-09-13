@@ -112,6 +112,7 @@ const {
 // than the longest.
 const [
   {
+    declaresOwnAfterCloneFrom,
     getComposedSchema,
     ownSchemaFields,
     resolveGetterAccessor,
@@ -754,6 +755,13 @@ ${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  return {
  * @returns {null | string}
  */
 function generateAfterCloneFrom(klass) {
+  // A class that wrote its own keeps it: registration leaves such a prototype
+  // alone, so anything emitted here would be attached to the class's generated
+  // code, shipped, and never called. ElementNode, TableNode, CodeNode,
+  // CodeHighlightNode and DecoratorBlockNode are all in that position.
+  if (declaresOwnAfterCloneFrom(klass)) {
+    return null;
+  }
   // The same list the synthesized method walks, from the same function, so the
   // generated form cannot copy a different set than the fallback would.
   const fields = ownSchemaFields(klass);

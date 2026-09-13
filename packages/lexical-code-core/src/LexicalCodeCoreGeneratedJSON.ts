@@ -172,17 +172,10 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
     return self;
   }
 
-  /** Generated from CodeNode's serialization schema. Do not edit by hand. */
-  function afterCloneCodeNode(node: CodeNode, prevNode: CodeNode): void {
-    node.__language = prevNode.__language;
-    node.__theme = prevNode.__theme;
-  }
-
   return {
     exportJSON: exportCodeNode,
     exportCompactJSON: exportCompactCodeNode,
     updateFromJSON: updateCodeNode,
-    afterCloneFrom: afterCloneCodeNode,
   };
 };
 

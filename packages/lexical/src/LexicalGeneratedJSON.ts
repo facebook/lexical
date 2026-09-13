@@ -206,22 +206,10 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = () => {
     return self;
   }
 
-  /** Generated from ElementNode's serialization schema. Do not edit by hand. */
-  function afterCloneElementNode(
-    node: ElementNode,
-    prevNode: ElementNode,
-  ): void {
-    node.__dir = prevNode.__dir;
-    node.__indent = prevNode.__indent;
-    node.__textFormat = prevNode.__textFormat;
-    node.__textStyle = prevNode.__textStyle;
-  }
-
   return {
     exportJSON: exportElementNode,
     exportCompactJSON: exportCompactElementNode,
     updateFromJSON: updateElementNode,
-    afterCloneFrom: afterCloneElementNode,
   };
 };
 

@@ -196,6 +196,13 @@ export class CodeNode extends ElementNode {
     this.__theme = undefined;
   }
 
+  // Written rather than synthesized from the schema, because
+  // `__isSyntaxHighlightSupported` is not a serialized property and no schema
+  // describes it: the highlighter extensions set it as they run, and a clone
+  // that dropped it would render unhighlighted until the next pass. Declaring
+  // one of these takes the class out of the synthesized `afterCloneFrom`
+  // entirely, so this is also responsible for `__language` and `__theme`,
+  // which the schema does declare.
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__language = prevNode.__language;

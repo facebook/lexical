@@ -29,6 +29,8 @@ import {
   TextNode,
   withField,
 } from 'lexical';
+import {readFileSync} from 'node:fs';
+import {join} from 'node:path';
 import ts from 'typescript';
 import {describe, expect, test} from 'vitest';
 
@@ -37,11 +39,16 @@ import {
   emittable,
   generateCompactExport,
   generateUpdate,
+  RESERVED_GLOBALS,
   resetTableLocals,
   tableDeclaration,
   tableDeclarations,
   // @ts-expect-error - a .mjs script with JSDoc types, not a typed module
 } from '../../shared/generateNodeJSON.mjs';
+import {MANIFEST} from '../../shared/generateNodeJSONManifest.mjs';
+
+/** The repo root, for reading a checked-in generated module. */
+const REPO = join(import.meta.dirname, '..', '..', '..');
 
 /**
  * The generator interpolates schema keys, field names, accessor names and
@@ -410,6 +417,54 @@ describe('a property the compact form cannot compare as source', () => {
     // And the whole thing is something a module can actually contain, which
     // is the part a check of the name alone would miss.
     expect(() => parseAsModule(source)).not.toThrow();
+  });
+
+  test('a local never takes the name of a global the code reads', () => {
+    // `const undefined = node.__label;` is legal, and turns every omission
+    // test into `undefined !== undefined` — false for every value, so the
+    // compact form silently drops the property. `const Array = node.__tags;`
+    // shadows the `Array.isArray` an empty-array default comparison calls.
+    class Globals extends TextNode {
+      __label: string = '';
+      __tags: string[] = [];
+      $config() {
+        return this.config('generate-globals', {
+          extends: TextNode,
+          json: nodeSchema<Globals>()({
+            Array: withField(arrayValue(stringValue()), {field: '__tags'}),
+            undefined: withField(stringValue(), {field: '__label'}),
+          }),
+        });
+      }
+    }
+    const source: string = generateCompactExport(Globals);
+    expect(source).toContain('const undefined_ = node.__label;');
+    expect(source).toContain('const Array_ = node.__tags;');
+    // The omission tests compare against the global, not against themselves.
+    expect(source).toContain('if (undefined_ !== undefined && undefined_');
+    expect(source).toContain('!(Array.isArray(Array_) && Array_.length === 0)');
+    expect(source).toContain('json.undefined = undefined_;');
+    expect(source).toContain('json.Array = Array_;');
+    expect(() => parseAsModule(source)).not.toThrow();
+  });
+
+  test('every global the generated modules read is reserved', () => {
+    // Which scope reads which global is a property of the emit templates, so
+    // the list is held to the output rather than to a reading of them: a
+    // template that starts calling `Object.keys` fails here, where the name is
+    // added, rather than in a node whose property happens to be called
+    // `Object`.
+    const globals =
+      /\b(Array|Boolean|Date|Error|Function|Infinity|JSON|Map|Math|NaN|Number|Object|Promise|Reflect|RegExp|Set|String|Symbol|WeakMap|WeakSet|globalThis|undefined)\b/g;
+    const read = new Set<string>();
+    for (const {file} of MANIFEST) {
+      const source = readFileSync(join(REPO, file), 'utf-8');
+      for (const [name] of source.matchAll(globals)) {
+        read.add(name);
+      }
+    }
+    expect(read.size).toBeGreaterThan(0);
+    expect([...read].filter(name => !RESERVED_GLOBALS.has(name))).toEqual([]);
   });
 
   test('a renamed local does not collide with a sibling of that name', () => {

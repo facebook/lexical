@@ -365,30 +365,56 @@ const RESERVED = new Set(
   ),
 );
 
-// Legal identifiers, and legal as a property name, but not as a binding in
-// strict mode — which every emitted module is, being an ES module. `const
-// arguments = node.__args;` is a SyntaxError rather than anything a check of
-// the name's *shape* would catch, so a property named for one of these gets a
-// local with a different name instead of losing its generated code. The
-// property keeps its own name: `json.arguments` is a member access, and those
-// are unaffected.
-const STRICT_BINDINGS = new Set(['arguments', 'eval']);
+/**
+ * Names a generated local may not take, though a serialized property may be
+ * called any of them and every one passes a check of the name's *shape*.
+ *
+ * Two reasons, and both are silent:
+ *
+ * `arguments` and `eval` cannot be bound in strict mode at all, which every
+ * emitted module is, so `const arguments = node.__args;` is a SyntaxError in a
+ * module that otherwise looks fine.
+ *
+ * The rest are globals the emitted code reads as free variables, so binding
+ * one shadows it. `const undefined = node.__label;` makes the omission test
+ * `undefined !== undefined`, which is false for every value, and the compact
+ * form drops the property it was meant to write. `const Array = node.__tags;`
+ * shadows `Array.isArray`, which the empty-array default comparison calls.
+ *
+ * Every global the generated modules mention is listed, not only the two that
+ * can be reached from a scope binding property names today: which scope reads
+ * which global is a property of the emit templates, and getting that wrong is
+ * exactly the kind of mistake this list exists to make impossible.
+ * `generateNodeJSON.test.ts` checks the output against this list, so a
+ * template that starts reading a new global fails there rather than in
+ * somebody's node.
+ */
+export const RESERVED_GLOBALS = new Set([
+  'arguments',
+  'Array',
+  'eval',
+  'Infinity',
+  'JSON',
+  'NaN',
+  'Number',
+  'undefined',
+]);
 
 /**
  * The local a generated form binds for a schema key or predicate.
  *
  * The name itself wherever it can be bound, which is every name in the
- * checked-in output, so nothing about the generated modules changes. For the
- * two that cannot, an underscore is appended until the result is free among
- * the names already spoken for in that scope, so the rename cannot collide
- * with a sibling property that happens to be spelled that way.
+ * checked-in output, so nothing about the generated modules changes. For one
+ * that cannot, an underscore is appended until the result is free among the
+ * names already spoken for in that scope, so the rename cannot collide with a
+ * sibling property that happens to be spelled that way.
  *
  * @param {string} name
  * @param {Set<string>} taken the names bound in the same scope
  * @returns {string}
  */
 function localFor(name, taken) {
-  if (!STRICT_BINDINGS.has(name)) {
+  if (!RESERVED_GLOBALS.has(name)) {
     return name;
   }
   let local = `${name}_`;
@@ -457,11 +483,11 @@ export function emittable(name, what, binds = false, alsoBound) {
       `${what} ${JSON.stringify(name)} is not a plain identifier`,
     );
   }
-  // A strict-mode binding name is not refused here — {@link localFor} gives it
-  // a local it can bind — and it is in none of these sets, so nothing below
-  // needs to make room for one. What it still has to answer for is colliding
-  // with another name in the same scope: two roles that rename to the same
-  // local declare it twice, which is the collision `alsoBound` is for.
+  // A name {@link localFor} renames is not refused here, and is in none of the
+  // sets below, so nothing here needs to make room for one. What it still has
+  // to answer for is colliding with another name in the same scope: two roles
+  // that rename to the same local declare it twice, which is the collision
+  // `alsoBound` is for.
   if (
     binds &&
     (RESERVED.has(name) ||

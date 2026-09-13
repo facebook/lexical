@@ -87,11 +87,11 @@ const tableNodeSchema = nodeSchema<TableNode>()({
   // `afterCloneFrom` of its own.
   frozenColumnCount: withAccessors(numberValue(), {
     getter: 'getSerializedFrozenColumnCount',
-    setter: {field: '__frozenColumnCount'},
+    setter: {field: '__frozenColumnCount', method: 'setFrozenColumns'},
   }),
   frozenRowCount: withAccessors(numberValue(), {
     getter: 'getSerializedFrozenRowCount',
-    setter: {field: '__frozenRowCount'},
+    setter: {field: '__frozenRowCount', method: 'setFrozenRows'},
   }),
   rowStriping: withAccessors(booleanValue(), {
     getter: 'getSerializedRowStriping',

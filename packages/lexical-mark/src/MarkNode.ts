@@ -45,7 +45,7 @@ const markNodeSchema = nodeSchema<MarkNode>()({
   // which is also what tells the clone where `ids` lives.
   ids: withAccessors(arrayValue(stringValue()), {
     getter: 'getIDs',
-    setter: {field: '__ids'},
+    setter: {field: '__ids', method: 'setIDs'},
   }),
 });
 

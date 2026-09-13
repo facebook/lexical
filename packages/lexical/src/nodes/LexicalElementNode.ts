@@ -268,6 +268,14 @@ export class ElementNode
     this.__slots = null;
   }
 
+  // Written rather than synthesized from the schema: an element's children
+  // and its slot bookkeeping are structure, not serialized properties, so no
+  // schema describes where they live. The key test is the other half of that —
+  // a clone under a *new* key is a copy of the node, not of its place in the
+  // tree, and must not adopt the original's children. Declaring one of these
+  // takes the class out of the synthesized `afterCloneFrom` entirely, so this
+  // is also responsible for the properties the schema does declare, which
+  // `super.afterCloneFrom` carries.
   afterCloneFrom(prevNode: this) {
     super.afterCloneFrom(prevNode);
     if (this.__key === prevNode.__key) {

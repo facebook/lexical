@@ -65,3 +65,53 @@ describe('mark generated exportJSON', () => {
     },
   );
 });
+
+/**
+ * A subclass whose `setIDs` normalizes, to hold the field declaration to the
+ * rule it stands in for.
+ */
+class DedupeMarkNode extends MarkNode {
+  static getType(): string {
+    return 'dedupe-mark';
+  }
+  static clone(node: DedupeMarkNode): DedupeMarkNode {
+    return new DedupeMarkNode(node.__ids, node.__key);
+  }
+  setIDs(ids: readonly string[]): this {
+    return super.setIDs([...new Set(ids)]);
+  }
+}
+
+describe('the field `ids` stands in for', () => {
+  initializeUnitTest(
+    testEnv => {
+      test('a subclass override of setIDs still decides', () => {
+        // `ids` reads and writes `__ids` directly, which is the fast path, but
+        // the field only ever *stands in for* the accessor. The accessor here
+        // is `setIDs`, not the conventional `setIds` a field would assume, so
+        // the declaration names it: without that, importing into a subclass
+        // that normalizes wrote the raw array past its override.
+        testEnv.editor.update(
+          () => {
+            const node = DedupeMarkNode.importJSON({
+              children: [],
+              direction: null,
+              format: '',
+              ids: ['a', 'a', 'b'],
+              indent: 0,
+              type: 'dedupe-mark',
+              version: 1,
+            } as never) as DedupeMarkNode;
+            expect(node.getIDs()).toEqual(['a', 'b']);
+          },
+          {discrete: true},
+        );
+      });
+    },
+    {
+      namespace: 'test',
+      nodes: [MarkNode, DedupeMarkNode],
+      theme: {},
+    },
+  );
+});

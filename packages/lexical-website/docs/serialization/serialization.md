@@ -502,13 +502,12 @@ deprecation period.
 
 Instead of writing `importJSON`, `updateFromJSON` and `exportJSON` by hand, a
 node that uses [`$config`](../concepts/nodes.mdx#creating-custom-nodes-with-config-and-nodestate)
-can declare a schema for its node-specific serialized properties with the
-`json` property, built with `nodeSchema<MyNode>()`. The schema is the single
-source of truth for both directions:
-the base `updateFromJSON` applies it automatically, the base `exportJSON`
-writes from it, `$config` synthesizes `importJSON` when the constructor has no
-required arguments, and every built-in node in Lexical now declares one. Most
-custom nodes need no JSON serialization code at all.
+declares its serialized properties once, as a schema, in the `json` property.
+That declaration is the single source of truth for both directions: the base
+`updateFromJSON` applies it, the base `exportJSON` writes from it, and `$config`
+synthesizes `importJSON` when the constructor has no required arguments. Every
+built-in node declares one, and most custom nodes need no JSON serialization
+code at all.
 
 ```ts
 import {
@@ -520,9 +519,9 @@ import {
   withField,
 } from 'lexical';
 
-// Declared above the class, as most built-in nodes do: a class's *type* is
-// in scope before its definition. Inline in `$config()` is checked the same
-// way; see "Where to write the schema" below.
+// Above the class, as every built-in node does. A class's *type* is in scope
+// before its definition, and writing it inline turns the check into a cycle.
+// See "Where to write the schema" below.
 const counterSchema = nodeSchema<CounterNode>()({
   // `withField` says where the property is stored, which is what lets the
   // export read it, the parse assign it, and a clone carry it across.
@@ -546,8 +545,8 @@ class CounterNode extends ElementNode {
     return false;
   }
 
-  // Accessors for callers. The schema does not need them — it names the
-  // fields — but a node with no way to set its own properties is not much use.
+  // Accessors for callers. The schema names the fields and does not need
+  // these, but a node with no way to set its properties is not much use.
   setCount(count: number): this {
     const self = this.getWritable();
     self.__count = count;
@@ -570,58 +569,80 @@ class CounterNode extends ElementNode {
 }
 ```
 
-That is the whole of `CounterNode`'s serialization: no `exportJSON`, no
-`updateFromJSON`, no `static importJSON`, and no `afterCloneFrom` — declaring
-where a property is stored is what each of those needed to be told. The rest of
-the class is the ordinary node boilerplate the schema does not touch.
+That is the whole of `CounterNode`'s serialization. No `exportJSON`, no
+`updateFromJSON`, no `static importJSON`, no `afterCloneFrom`: saying where a
+property is stored is what each of those needed to be told.
 
 A property may name accessor methods instead of a field, which is the right
-declaration for one the node computes or normalizes rather than stores
-verbatim. That is the one case a class still writes its own `afterCloneFrom`:
-an accessor names no field, so nothing in the schema says what the clone has to
-carry. See [Carrying properties across a
+declaration for one the node computes or normalizes rather than stores. That is
+the one case a class still writes its own `afterCloneFrom`, since an accessor
+names no field for the clone to carry. See [Carrying properties across a
 clone](#carrying-properties-across-a-clone).
 
 Each property's schema is built from composable helpers exported by
 `lexical`:
 
-- [`stringValue(defaultValue = '')`](/docs/api/modules/lexical#stringvalue), [`numberValue(defaultValue = 0, {min, max, integer, clamp}?)`](/docs/api/modules/lexical#numbervalue), and [`booleanValue(defaultValue = false)`](/docs/api/modules/lexical#booleanvalue) — primitive values with defaults. `numberValue` also reads a string spelled as a JSON number (`"120"` → `120`), so a document that stringified its numbers keeps them; notations JSON itself can not produce (`"0x10"`, `"+1"`, `"Infinity"`) stay out of domain, and the domain it reports is still `number`. A value outside `min`/`max` is out of domain and reads as the default; pass `clamp` where the bound exists to cap work rather than to describe the domain, and it reads as the nearest bound instead — `ListItemNode`'s indent is capped that way, since an over-deep item read as `0` would be flattened
-- [`enumValue(values, defaultValue?)`](/docs/api/modules/lexical#enumvalue) — one of a fixed set of values; the default is the first unless one is given, and a given `undefined` is a default of `undefined`, legal only when `undefined` is one of the values
-- [`nullable(inner, {defaultAsNull}?)`](/docs/api/modules/lexical#nullable) — the property may also be `null`
-- [`optional(inner, {omitDefault}?)`](/docs/api/modules/lexical#optional) — the property may be `undefined`
-- [`arrayValue(item)`](/docs/api/modules/lexical#arrayvalue) — an array of `item` values. Like `objectValue`, it compares by content rather than by reference (see `isEqual` below), so an array-valued property equal to its default still compacts away
-- [`unionValue(members, defaultValue)`](/docs/api/modules/lexical#unionvalue) — the member that accepts the value *entirely* wins, and the union yields what it parsed; only if no member does is a member that accepts it partly used, and there the first one wins. So declaration order decides between members that fit equally well, not between a complete fit and a partial one: `unionValue([arrayValue(numberValue()), arrayValue(stringValue())])` reads `['red', '42']` as `['red', '42']` rather than letting the first member coerce `'red'` away. A member that normalizes its input composes here the same way it behaves alone, so `unionValue([numberValue(), enumValue(['inherit'])], 'inherit')` reads `"640"` as `640` and `"inherit"` as `'inherit'`
-- [`transformValue(inner, transform, {isEqual}?)`](/docs/api/modules/lexical#transformvalue) — normalizes what `inner` parsed into the stored domain; introspection still reaches `inner`'s accepted input domain, through a `meta` kind of its own that names the transform. That kind is what tells a consumer reasoning about the *output* to stop: the transform is an opaque function, so a code generator refuses such a property outright rather than emitting `inner`'s parse and hoping a sampled check notices the difference. `inner`'s `isEqual` is not inherited, since the transformed domain may be a different type entirely — pass one when the output domain is reference-typed (though a `unionValue` will not consult it; see below), and only then: `===` already compares a primitive, so a comparator over one can only declare two distinct serialized values equal, and the compact form then omits whichever is not the default and parses it back as the default (a rotation compared modulo 360 writes nothing for `360` and reads back `0`). Normalizing in the `transform` is what makes such a value round-trip. Declaring one anyway is an error where it is written
-- [`aliasedValue(inner, aliases)`](/docs/api/modules/lexical#aliasedvalue) — a lookup-table normalization: a string matching a key of `aliases` yields the value it names, and anything else is `inner`'s to validate, so the domain, the default and the equality all stay `inner`'s. This is `transformValue` narrowed to the case where the normalization is a lookup, and the reason to prefer it is that the lookup is *data*: it is part of the schema's introspectable `meta`, where tooling can see it — example generation produces the legacy spellings, and a code generator can compile the table instead of being unable to see inside a function. `TextNode` declares its legacy `format: 'bold'` and `detail: 'directionless'` shorthands this way
-- [`rawValue()`](/docs/api/modules/lexical#rawvalue) — an escape hatch that passes the value through unparsed
-- [`nodeSchema<MyNode>()(fields)`](/docs/api/modules/lexical#nodeschema) — the record of properties, and what `$config`'s `json` takes. The one type argument names the node, which is what lets every `field`, accessor and `when` predicate be checked against it. It is called in two steps because those cannot be inferred together: naming the node explicitly would stop TypeScript inferring the field types on the same call, and they are what carry each property's accepted input into `SchemaInput`: a name the node does not have is a compile error at the property that declares it, with the correction suggested (`Type '"field:__langauge"' is not assignable to type '... | TaggedNamesOf<CodeNode> | ObligationsOf<CodeNode>'. Did you mean '"field:__language"'?`). Declaring the schema above the class it names is fine — a class's *type* is in scope before its definition — and so is writing it inline in `$config()`; see "Where to write the schema" below. A serialized property may not be named for a member of `Object.prototype` (`toString`, `constructor`, `valueOf`, `__proto__`, …): a serialized object comes from `JSON.parse` and inherits those, and every read of a property is a bare one — an absent property is `undefined`, which is already its default — so such a name would read the inherited method for a document that never carried the key. It is refused where the schema is written.
-- [`objectValue(fields)`](/docs/api/modules/lexical#objectvalue) — the same record without the node check, for a property whose value is itself an object; its fields name no accessor, since an object's field is not a node's property. A node's own schema is a `nodeSchema`: a schema that names anything has to be built with one, and a `$config` refuses an `objectValue` whose fields name an accessor
-- [`withAccessors(schema, {getter, setter})`](/docs/api/modules/lexical#withaccessors) — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose. **`withAccessors` and `withField` go outside every other combinator, exactly once per property.** Each combinator widens what the property holds, so an accessor named *under* one answers for a domain that is not the property's; every combinator refuses a schema that already names an accessor, at compile time and at run time. See the [`withAccessors` API entry](/docs/api/modules/lexical#withaccessors) for the full rule
-- [`withField(schema, {field, getter?, setter?, decode?, encode?, when?})`](/docs/api/modules/lexical#withfield) — declare that the property *is* a node field, rather than a pair of accessor methods. Exporting reads the field and importing assigns it, with no method call on either side and no version resolution in either direction — the node being parsed into is already writable, and the node being exported is one the walk already resolved from the EditorState — so this is the fast path for a property stored verbatim. The field has to be an own property of a fresh node — initialize it, or assign it in the constructor — since that is how a misspelled name is told from a real one when the node is first serialized. Because the schema records the field rather than a bare name, tooling can tell a field from a method without knowing how a node names its fields — enough for a codegen pass to emit a specialized parser for a hot node type. Each direction still *stands in for* an accessor: any class that overrides it between the declaring class and the node's own has said the field and the method are not equivalent, and it wins — the field access is abandoned and the method is called, so migrating a property to a field is not a behavior change for anyone who overrode its accessor. That accessor is the conventional `get<Prop>`/`set<Prop>` unless `getter`/`setter` name a different one, so most declarations need neither: name one only where the accessor is spelled differently, as `TextNode`'s `text` is (`getTextContent`) and `LinkNode`'s `url` is (`getURL`). Naming one widens the guard rather than moving it — the conventional name is still watched, because a spelled accessor is usually a wrapper *over* the conventional one (`ElementNode`'s `textFormat` names `getSerializedTextFormat`, which computes its result from `getTextFormat`) and a subclass overriding the accessor that predates the schema must not be ignored. A node with no such method defers to nothing, which needs no declaring either. `decode`/`encode` are lookup tables between the stored and serialized forms (`TextNode` stores `mode` as a number and serializes it as a name), keeping such a property on the direct-field path without an accessor method in between. The two directions can also be declared separately with `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})`, which reads the field directly but writes through a method that normalizes.
+- [`stringValue(defaultValue = '')`](/docs/api/modules/lexical#stringvalue), [`numberValue(defaultValue = 0, {min, max, integer, clamp}?)`](/docs/api/modules/lexical#numbervalue), and [`booleanValue(defaultValue = false)`](/docs/api/modules/lexical#booleanvalue) are the primitives. `numberValue` also reads a number spelled as a string (`"120"` reads as `120`), so a document that stringified its numbers keeps them; notations JSON cannot produce (`"0x10"`, `"+1"`, `"Infinity"`) stay out of domain, and the domain it reports is still `number`. A value outside `min`/`max` is out of domain and reads as the default. Pass `clamp` where the bound caps work rather than describes the domain and it reads as the nearest bound instead, as `ListItemNode`'s indent does, since an over-deep item read as `0` would be flattened
+- [`enumValue(values, defaultValue?)`](/docs/api/modules/lexical#enumvalue) is one of a fixed set of values. The default is the first unless one is given; a declared `undefined` default is legal only when `undefined` is one of the values
+- [`nullable(inner, {defaultAsNull}?)`](/docs/api/modules/lexical#nullable) lets the property also be `null`
+- [`optional(inner, {omitDefault}?)`](/docs/api/modules/lexical#optional) lets it be `undefined`
+- [`arrayValue(item)`](/docs/api/modules/lexical#arrayvalue) is an array of `item` values. Like `objectValue` it compares by content rather than by reference (see `isEqual` below), so an array equal to its default still compacts away
+- [`unionValue(members, defaultValue)`](/docs/api/modules/lexical#unionvalue) picks the member that accepts the value *entirely*, and yields what that member parsed. Only if none does is a member that accepts it partly used, and there the first wins. Declaration order therefore decides between members that fit equally well, not between a complete fit and a partial one: `unionValue([arrayValue(numberValue()), arrayValue(stringValue())])` reads `['red', '42']` as `['red', '42']` rather than letting the first member coerce `'red'` away. A member that normalizes its input behaves the same inside a union as alone, so `unionValue([numberValue(), enumValue(['inherit'])], 'inherit')` reads `"640"` as `640`
+- [`transformValue(inner, transform, {isEqual}?)`](/docs/api/modules/lexical#transformvalue) normalizes what `inner` parsed into the stored domain. Introspection still reaches `inner`'s input domain, through a `meta` kind that names the transform. That kind tells a consumer reasoning about the *output* to stop, since the transform is an opaque function: a code generator refuses the property outright. `inner`'s `isEqual` is not inherited, since the transformed domain may be a different type. Pass one only when the output domain is reference-typed, and note that a `unionValue` will not consult it (see below). Over a primitive, a comparator can only declare two distinct serialized values equal, and the compact form then omits whichever is not the default and reads it back as the default: a rotation compared modulo 360 writes nothing for `360` and reads back `0`. Normalize in the `transform` instead. Declaring one over a primitive is an error where it is written
+- [`aliasedValue(inner, aliases)`](/docs/api/modules/lexical#aliasedvalue) is a lookup-table normalization. A string matching a key of `aliases` yields the value it names; anything else is `inner`'s to validate, so the domain, the default and the equality stay `inner`'s. This is `transformValue` narrowed to the case where the normalization is a lookup, and it is worth preferring because the lookup is *data*: it goes into the schema's introspectable `meta`, where tooling can read it. Example generation produces the legacy spellings, and a code generator compiles the table instead of being unable to see inside a function. `TextNode` declares its legacy `format: 'bold'` and `detail: 'directionless'` shorthands this way
+- [`rawValue()`](/docs/api/modules/lexical#rawvalue) is an escape hatch that passes the value through unparsed
+- [`nodeSchema<MyNode>()(fields)`](/docs/api/modules/lexical#nodeschema) is the record of properties, and what `$config`'s `json` takes. Its type argument names the node, which is what lets every `field`, accessor and `when` predicate be checked against it. The two-step call is why both can happen: naming the node explicitly on the same call would stop TypeScript inferring the field types, which are what carry each property's accepted input into `SchemaInput`. See "Names are checked against the node" below. Declare it above the class rather than inline in `$config()`; see "Where to write the schema" below. A property may not be named for a member of `Object.prototype` (`toString`, `constructor`, `valueOf`, `__proto__`, …), which is refused where the schema is written: a serialized object comes from `JSON.parse` and inherits those, and every property is read bare, since an absent one is `undefined` and that is already its default
+- [`objectValue(fields)`](/docs/api/modules/lexical#objectvalue) is the same record without the node check, for a property whose value is itself an object. Its fields name no accessor, because an object's field is not a node's property. A node's own schema is always a `nodeSchema`, and a `$config` refuses an `objectValue` whose fields name an accessor
+- [`withAccessors(schema, {getter, setter})`](/docs/api/modules/lexical#withaccessors) names the methods a property is read and applied through, for when they are not the conventional `get<Property>`/`set<Property>`. `text` uses `getTextContent`/`setTextContent`, for example. Pass `null` instead of a name for a direction the property does not have: `{setter: null}` declares a *derived* property, written on export but computed rather than applied on import, as `ListNode`'s `tag` follows from its `listType`; `{getter: null}` declares one parsed but never written. An accessor that cannot be resolved is an error at editor-creation time rather than a silently dropped value, so `null` is how you opt out on purpose. **`withAccessors` and `withField` go outside every other combinator, exactly once per property.** Each combinator widens what the property holds, so an accessor named *under* one answers for a domain that is not the property's. Every combinator refuses a schema that already names an accessor, at compile time and at run time. See the [`withAccessors` API entry](/docs/api/modules/lexical#withaccessors) for the full rule
+- [`withField(schema, {field, getter?, setter?, decode?, encode?, when?})`](/docs/api/modules/lexical#withfield) declares that the property *is* a node field rather than a pair of methods. Exporting reads the field, importing assigns it, with no method call and no version resolution on either side: the node being parsed into is already writable, and the node being exported was already resolved from the EditorState. This is the fast path for a property stored verbatim. The field must be an own property of a fresh node, so initialize it or assign it in the constructor; that is how a misspelled name is told from a real one the first time the node is serialized. Recording the field rather than a bare name is also what lets tooling tell a field from a method, which is enough for a codegen pass to emit a specialized parser.
 
-Each name is checked in the *position* it was written in, not merely for existing: a getter has to be a method taking no arguments, a setter one that takes a value, and a `when` predicate a zero-argument method returning `boolean` — so `getter: 'setStyle'` is a compile error rather than a method the walk calls with nothing. The *type* behind the name is checked too: the field a property is declared as has to hold what the schema parses, a getter has to return it (or `undefined`, which omits the property), and a setter has to accept it. A field whose stored and serialized forms differ says so with `decode`/`encode`, and each table is checked for the one direction it serves: `decode`'s values have to be ones the schema serializes (or `undefined`, which omits the property), `encode`'s values have to fit the field and its keys have to cover what the schema produces (a parsed value the table does not map is stored as the encoded default, so every member of an enum is checked at compile time and the default of any other schema when the node is registered), and a direction with no table keeps the field's own check. The result stays bound to that node: `$config` asks for the schema of the class it is declared on, so one checked against an unrelated class is a compile error there rather than a set of accessors that happen not to resolve at runtime. A schema checked against a base class still installs on a subclass, which is the direction that stays true
+  Each direction still *stands in for* an accessor. A class that overrides one between the declaring class and the node's own has said the field and the method are not equivalent, and it wins: the field access is abandoned and the method is called, so moving a property to a field is not a behavior change for anyone who overrode its accessor. That accessor is the conventional `get<Prop>`/`set<Prop>` unless `getter`/`setter` name a different one, so most declarations need neither. Name one only where the accessor is spelled differently, as `TextNode`'s `text` is (`getTextContent`) and `LinkNode`'s `url` is (`getURL`). Naming one widens the guard rather than moving it: the conventional name is still watched, because a spelled accessor is usually a wrapper *over* it (`ElementNode`'s `textFormat` names `getSerializedTextFormat`, which computes from `getTextFormat`), and a subclass overriding the accessor that predates the schema must not be ignored. A node with no such method defers to nothing and needs no declaration either.
+
+  `decode`/`encode` are lookup tables between the stored and serialized forms, as `TextNode` stores `mode` as a number and serializes it as a name. They keep such a property on the direct-field path with no accessor in between. The two directions can also be declared separately: `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})` reads the field directly but writes through a method that normalizes.
+
+Each name is checked in the *position* it was written in, not merely for
+existing. A getter has to be a method taking no arguments, a setter one that
+takes a value, and a `when` predicate a zero-argument method returning
+`boolean`, so `getter: 'setStyle'` is a compile error rather than a method the
+walk calls with nothing. The *type* behind the name is checked too: the field
+has to hold what the schema parses, a getter has to return it (or `undefined`,
+which omits the property), and a setter has to accept it.
+
+A field whose stored and serialized forms differ says so with `decode`/`encode`,
+and each table is checked for the one direction it serves. `decode`'s values
+have to be ones the schema serializes, or `undefined` to omit the property.
+`encode`'s values have to fit the field, and its keys have to cover everything
+the schema produces, since a parsed value the table does not map is stored as
+the encoded default. That coverage is checked at compile time for an enum and
+at registration for the default of any other schema. A direction with no table
+keeps the field's own check.
+
+The result stays bound to one node: `$config` asks for the schema of the class
+it is declared on, so a schema checked against an unrelated class is a compile
+error there rather than a set of accessors that happen not to resolve at
+runtime. One checked against a base class still installs on a subclass, which
+is the direction that stays true.
 
 :::caution Name your `extends`
 
-A `$config()` must name its superclass — `this.config('my-node', {extends: MyBase, json: …})`. The runtime has always filled it in from the prototype chain, but the type system cannot, and it is what the composed serialization types follow from one config to the next: omit it and the node still contributes its own declarations, but the walk stops there, so every property it inherits goes missing from `LexicalSchemaInput` while the runtime keeps applying it. Where the superclass declares a `$config()` of its own — `TextNode`, `ElementNode` and `LineBreakNode` do — omitting it is now a compile error on the override rather than a silent loss, so a node that used to compile without one needs the single line added.
+A `$config()` must name its superclass: `this.config('my-node', {extends: MyBase, json: …})`. The runtime has always filled it in from the prototype chain, but the type system cannot, and it is what the composed serialization types follow from one config to the next. Omit it and the node still contributes its own declarations, but the walk stops there, so every property it inherits goes missing from `LexicalSchemaInput` while the runtime keeps applying it. Where the superclass declares a `$config()` of its own, as `TextNode`, `ElementNode` and `LineBreakNode` do, omitting it is now a compile error on the override rather than a silent loss, so a node that used to compile without one needs the single line added.
 
 :::
 
 A schema also carries what it *accepts*, which is wider than what it parses to
-wherever it reads more than it writes: `numberValue` reads a number spelled as
-a string, `aliasedValue` reads the legacy spellings a document may still carry,
-`optional` reads an absent property. `SchemaInput<typeof schema>` is that type,
-and `SerializationSchemaValue<typeof schema>` is the parsed one — for
+wherever it reads more than it writes. `numberValue` reads a number spelled as
+a string, `aliasedValue` reads legacy spellings, `optional` reads an absent
+property. `SchemaInput<typeof schema>` is that type and
+`SerializationSchemaValue<typeof schema>` is the parsed one: for
 `aliasedValue(numberValue(), {bold: 1})` they are `number | string | 'bold'`
 and `number`.
 
 That difference is why `updateFromJSON` does not constrain the *values* it is
-handed. It is the untrusted-JSON boundary and the parser there is total — every
-property is validated against the schema's domain and anything outside it
-becomes the default — so `LexicalParseJSON` keeps the property *names* and
-types each value as `unknown`. `node.updateFromJSON({format: 'bold'})` is valid
-input that a narrower type rejected while it worked perfectly at runtime, and a
-misspelled `frmat` is still an error.
+handed. It is the untrusted-JSON boundary and the parser there is total, so
+`LexicalParseJSON` keeps the property *names* and types each value as
+`unknown`. `node.updateFromJSON({format: 'bold'})` is valid input that a
+narrower type rejected while it worked perfectly at runtime, and a misspelled
+`frmat` is still an error.
 
 A property that is only persisted in some states names the predicate that
 decides, with `when`, rather than going through a hand-written getter:
@@ -637,22 +658,22 @@ textFormat: withAccessors(numberValue(), {
 ```
 
 The property is written only when its value differs from the schema default
-*and* the predicate returns true. Testing the default first is what keeps the
-predicate off the common path, so an element with nothing to persist never
-calls it. The predicate must be pure and take no arguments: the walk calls it
-once per property that names it, while generated code hoists a predicate that
-several properties share and calls it once in total. This is how `ElementNode`
-persists `textFormat` and `textStyle` only for an element with no `TextNode`
-child, without either property leaving the direct-field path.
+*and* the predicate returns true. Testing the default first keeps the predicate
+off the common path, so an element with nothing to persist never calls it. The
+predicate must be pure and take no arguments: the walk calls it once per
+property that names it, while generated code hoists one that several properties
+share and calls it once. This is how `ElementNode` persists `textFormat` and
+`textStyle` only for an element with no `TextNode` child, without either
+property leaving the direct-field path.
 
-`withField(schema, {field, when})` declares the same thing for a property that
-is the field in both directions. Either way, the gate belongs to the export
-direction — there is nothing to gate on the way in, since a property that was
-not written is simply absent — so naming `when` on a setter is a compile error,
-like naming the wrong value table. And like the field read itself, the gate is
-what the accessor stands in for: if a subclass overrides that accessor, the
-field and the predicate are both abandoned and the method is called instead,
-because a method that replaces the read replaces the decision to make it.
+`withField(schema, {field, when})` declares the same for a property that is the
+field in both directions. Either way the gate belongs to the export direction,
+since there is nothing to gate on the way in: a property that was not written
+is simply absent. Naming `when` on a setter is a compile error, like naming the
+wrong value table. And like the field read itself, the gate is what the
+accessor stands in for: a subclass that overrides that accessor abandons both
+the field and the predicate, because a method that replaces the read replaces
+the decision to make it.
 
 #### Names are checked against the node
 
@@ -666,34 +687,23 @@ Type '"field:__langauge"' is not assignable to type '... | TaggedNamesOf<CodeNod
   Did you mean '"field:__language"'?
 ```
 
-This matters because the failure it replaces was silent. A misspelled field
-name means the property simply stops round-tripping; a misspelled accessor
-name means the subclass-override guard quietly stops applying. Neither throws,
-and neither shows up in the exported JSON as anything but a missing property.
-
-A schema that names anything has to be built this way, so the check cannot be
-skipped by reaching for `objectValue` instead — that one is for a property
-whose *value* is an object, and its fields name no accessor.
-
 ### Where to write the schema
 
-Above the class as a module-scope `const`, which is what most built-in nodes
-do, or inline in `$config()`, as `TabNode` does — the check is the same in both
-positions. One limit, documented on `nodeSchema`: a node member whose type is
-derived from the node's own `$config()` — an unannotated helper returning
-`this.$config()`, or one annotated `toJSON(): LexicalExportJSON<this>` — makes
-checking that class a cycle, which TypeScript resolves by switching the check
-off for it with no diagnostic. A node whose schema is checked keeps its
-members' types independent of its own `$config`.
+Above the class, as a module-scope `const`, which is what every built-in node
+does. Defining it inline with `$config` makes checking that class a cycle,
+which TypeScript resolves by switching the check off for it with no diagnostic.
+The same is true of a node member whose type is derived from the node's own
+`$config()`: an unannotated helper returning `this.$config()`, or one annotated
+`toJSON(): LexicalExportJSON<this>`.
 
-The check is TypeScript-only. Under Flow, or from JavaScript, the same
-mistakes are caught when the editor registers the node — later, but before any
-document is serialized — so nothing depends on the compile-time check being
+The check is TypeScript-only. Under Flow, or from JavaScript, the same mistakes
+are caught when the editor registers the node. That is later, but still before
+any document is serialized, so nothing depends on the compile-time check being
 the only line of defense.
 
 A schema's default is compared by identity, which is right for the primitive
 domains. `arrayValue` and `objectValue` return a fresh value per parse, so they
-declare an `isEqual` that compares by content — otherwise a property equal to
+declare an `isEqual` that compares by content; otherwise a property equal to
 its default could never be omitted, since no two parses are the same object.
 The same rule drives `optional({omitDefault})` and `nullable({defaultAsNull})`,
 and a schema of your own can declare `isEqual` for a domain with the same
@@ -702,51 +712,52 @@ problem.
 A `unionValue` compares structurally rather than asking a member. It picks a
 member by what each one *accepts*, and `transformValue` accepts one domain and
 produces another, so which member produced a value is not something a union can
-recover — and applying the wrong member's comparator is how two different values
+recover, and applying the wrong member's comparator is how two different values
 get reported as the same one. `arrayValue` and `objectValue` compare
 element-wise and field-wise, which is exactly what a union does, so putting
-either in a union changes nothing. A **custom `isEqual` you pass to
-`transformValue` is not consulted through a union**: two values it would call
-equal are reported as different, so such a property is written out instead of
-compacted away, `optional({omitDefault})` around the union keeps it rather than
-dropping it, and as a `createState` parse its `NodeState.toJSON()` writes the
-value rather than omitting it, `$getStateChange` reports a change, and an
-updater-form `$setState` performs the write. (A plain-value `$setState` never
-compares, so it is unaffected — `isEqual` answers about values already in the
-state's domain, and `$setState` writes that domain verbatim.) The answer is stricter than yours, never looser, so nothing is lost —
-outside a union your comparator is used as declared. A default is also deeply frozen, since it is one value shared by every
-node that has none of its own — including as `createState`'s default, which
-`$getState` hands back directly.
+either in a union changes nothing.
 
-Parsing is total: a missing or out-of-domain value falls back to the
-schema's default instead of throwing, which is the domain importers actually
-face (older documents predate a property; a compact export omits a property
-whose value is its default). Each parsed property is applied through the
-node's setter — `set<Property>`, or the name given with `withAccessors` — so
-subclass overrides of those setters are honored, and a subclass schema field
-with the same serialized property name overrides its ancestor's.
+A **custom `isEqual` you pass to `transformValue` is not consulted through a
+union**: two values it would call equal are reported as different. Such a
+property is written out instead of compacted away, `optional({omitDefault})`
+around the union keeps it rather than dropping it, and as a `createState` parse
+its `NodeState.toJSON()` writes the value, `$getStateChange` reports a change,
+and an updater-form `$setState` performs the write. A plain-value `$setState`
+never compares, so it is unaffected. The answer is stricter than yours and
+never looser, so nothing is lost, and outside a union your comparator is used
+as declared. A default is also deeply frozen, since one value is shared by
+every node that has none of its own, including as `createState`'s default,
+which `$getState` hands back directly.
 
-The same declaration drives the export direction: the base `exportJSON` writes
+Parsing is total: a missing or out-of-domain value falls back to the schema's
+default instead of throwing, which is the domain importers actually face. Older
+documents predate a property, and a compact export omits one whose value is its
+default. Each parsed property is applied through the node's setter, either
+`set<Property>` or the name given with `withAccessors`, so subclass overrides
+are honored, and a subclass schema field with the same serialized property name
+overrides its ancestor's.
+
+The same declaration drives the export direction. The base `exportJSON` writes
 every declared property, reading each through its getter, so a node needs no
 `exportJSON` of its own either. A getter that returns `undefined` omits its
-property — absent and explicitly-`undefined` are indistinguishable once the
-JSON is stringified, so that is how an optional or conditionally-persisted
+property, since absent and explicitly-`undefined` are indistinguishable once
+the JSON is stringified; that is how an optional or conditionally-persisted
 property is expressed. Override `exportJSON` only for output a schema cannot
 describe, and call `super.exportJSON()` when you do.
 
 Because the node itself declares the schema, tooling can introspect it. The
-`@lexical/fast-check` package derives property-based test generators
-directly from a node class (`nodeArbitrary(TextNode)`), so a single
-declaration powers both parsing and example generation in tests.
+`@lexical/fast-check` package derives property-based test generators directly
+from a node class (`nodeArbitrary(TextNode)`), so one declaration powers both
+parsing and example generation in tests.
 
 #### Carrying properties across a clone
 
-A node is cloned on the first write of every update, and a property that the
-clone does not carry reverts to its constructor default there — silently, since
-the field still exists and still holds a valid value. Declaring a property as a
-field says where it is stored, so that is where `afterCloneFrom` comes from
-too: a class that declares only fields needs no `afterCloneFrom` at all, and one
-that declares some gets those carried without writing them out again.
+A node is cloned on the first write of every update, and a property the clone
+does not carry reverts to its constructor default there. Silently, since the
+field still exists and still holds a valid value. Declaring a property as a
+field says where it is stored, which is also where `afterCloneFrom` comes from:
+a class that declares only fields needs none at all, and one that declares some
+gets those carried without writing them out again.
 
 ```ts
 class CalloutNode extends ElementNode {
@@ -766,11 +777,11 @@ class CalloutNode extends ElementNode {
 
 Both directions are read, so a property declared with `withAccessors` in one
 direction and a field in the other is still carried, and so is one whose
-accessor a subclass overrides — where the value is *stored* does not change
-when the way it is serialized does.
+accessor a subclass overrides. Where a value is *stored* does not change when
+the way it is serialized does.
 
-Two cases stay the class's own, and both follow the same rule the synthesized
-`clone` and `importJSON` follow — declare it yourself and you own it:
+Two cases stay the class's own, and both follow the rule the synthesized
+`clone` and `importJSON` follow: declare it yourself and you own it.
 
 - **A property declared through accessor methods on both sides**, like
   `MarkNode`'s `ids` (`getIDs`/`setIDs`). The schema names no field, so there
@@ -812,7 +823,7 @@ Two cases stay the class's own, and both follow the same rule the synthesized
   bookkeeping, none of which any schema describes.
 
 `@lexical/fast-check` is the way to hold a node to this, whichever case it
-falls into — see [Generated tests](/docs/packages/lexical-fast-check). A
+falls into. See [Generated tests](/docs/packages/lexical-fast-check). A
 hand-written fixture tends to leave properties at their defaults, and a dropped
 property compares equal to its default, so the bug is invisible exactly when
 the test looks like it passed.
@@ -820,7 +831,7 @@ the test looks like it passed.
 ### Compact JSON
 
 By default `exportJSON` writes every property, producing the historical
-("legacy") format, and a bare `editorState.toJSON()` does too — existing
+("legacy") format, and a bare `editorState.toJSON()` does too, so existing
 persistence pipelines are unaffected until you opt in. With schemas declared,
 Lexical can also write a *compact* form, which omits:
 
@@ -830,45 +841,43 @@ Lexical can also write a *compact* form, which omits:
 - the deprecated `version` property.
 
 Which properties those are is the schema's decision, and the same one whichever
-implementation writes the document — a property whose default has no comparison
-that can be settled ahead of time (a reference-typed default other than an empty
-array, or one the schema compares with an `isEqual` of its own) is compared
-against the schema when the node is exported rather than costing anything.
+implementation writes the document. A property whose default has no comparison
+that can be settled ahead of time, meaning a reference-typed default other than
+an empty array or one the schema compares with an `isEqual` of its own, is
+compared against the schema when the node is exported.
 
 A whole document is written in the compact form by asking for it at the call
 site, `editorState.toJSON(true)`, which is also what lets its return type say
 which of the two shapes came back: the compact form omits properties, so it is
 typed as `CompactSerializedEditorState` rather than `SerializedEditorState`.
 Calling `toJSON()` with no argument writes the legacy form, whatever
-`$withCompactExport` encloses it — which is what makes that signature true of
+`$withCompactExport` encloses it, which is what makes that signature true of
 what it returns. A nested editor (an image caption) still follows the document
 containing it, because `editor.toJSON()` passes the enclosing form on to the
 nested `editorState.toJSON` explicitly; its `editorState` is typed as the
 compact shape for that reason, since either form may come back.
 
 Anything with a call site of its own should take the form as an argument. The
-exception is a schema getter: the walk calls `get<Prop>()` with no arguments —
-the contract that lets `getTextContent` and `getURL` be ordinary node methods —
+exception is a schema getter. The walk calls `get<Prop>()` with no arguments,
+the contract that lets `getTextContent` and `getURL` be ordinary node methods,
 so a getter whose value depends on the form reads `$isCompactExport()` instead.
 That reports the surrounding **walk**'s form, which `$withCompactExport`
 establishes and `editorState.toJSON(compact)` therefore does too, since it uses
-it internally. It is deliberately not set by a node's own
-`exportJSON(compact)`: that method already takes the form as an argument, and
-having it set the walk's form would report a whole document as compact when a
-single node was asked to be.
+it internally. A node's own `exportJSON(compact)` does not set it, having
+already taken the form as an argument.
 
 Parsing restores each, so both forms describe the same document. The compact
 form leads each node with `type`, where the legacy form ends with `type` and
 `version`; key order is part of neither format, since parsing reads properties
 by name. Compaction happens as the properties are written rather than as a
 pass over the finished object, so a derived property is skipped without even
-calling its getter — and a node with generated serialization code (see below)
+calling its getter, and a node with generated serialization code (see below)
 inlines the same decisions and never consults the schema at runtime.
 
 Know what the smaller form buys you before reaching for it. The raw JSON is
-much smaller — a representative rich document compacts to well under half the
-legacy byte count — which matters to consumers of the *objects*: structured
-clones into IndexedDB, in-memory copies, messages between workers. After
+much smaller, well under half the legacy byte count for a representative rich
+document, which matters to consumers of the *objects*: structured clones into
+IndexedDB, in-memory copies, messages between workers. After
 gzip the two are typically a wash (the omitted properties are exactly the
 most repetitive, most compressible bytes; the same benchmark document came
 out a few percent *larger* compressed), so compact mode is not a wire-size
@@ -876,17 +885,17 @@ optimization for a pipeline that already compresses.
 
 :::caution
 
-The compact form is readable only by a Lexical new enough to parse it — the
-omitted properties are restored from the schema, which older versions do not
-have. Persisted documents outlive the code that wrote them, so keep writing the
-legacy form until every reader is upgraded.
+The compact form is readable only by a Lexical new enough to parse it, since
+the omitted properties are restored from the schema. Persisted documents
+outlive the code that wrote them, so keep writing the legacy form until every
+reader is upgraded.
 
 :::
 
-An export with no `compact` argument of its own — the `@lexical/clipboard`
-selection export inside a copy handler, a serialization walk you wrote, and the
-nested editors either of those serializes — takes its form from an enclosing
-`$withCompactExport`:
+An export with no `compact` argument of its own takes its form from an
+enclosing `$withCompactExport`. That covers the `@lexical/clipboard` selection
+export inside a copy handler, a serialization walk you wrote, and the nested
+editors either of those serializes:
 
 ```ts
 import {$generateJSONFromSelectedNodes} from '@lexical/clipboard';
@@ -904,16 +913,16 @@ call site, and a runtime error in every build.
 
 ### Generated serialization code
 
-Because a schema states everything ahead of time — which accessor or field
-each property uses, what its default is, what its domain admits — the
-serialization it drives can be compiled to straight-line code instead of
-interpreted from the schema at runtime. Every built-in node class ships such
-code, generated from its own schema at build time and producing byte-identical
-JSON to the schema-driven path.
+A schema states everything ahead of time: which accessor or field each
+property uses, what its default is, what its domain admits. The serialization
+it drives can therefore be compiled to straight-line code instead of
+interpreted at runtime. Every built-in node class ships such code, generated
+from its own schema at build time and producing byte-identical JSON to the
+schema-driven path.
 
-None of this changes how you write a node: it is the same JSON, faster, and a
-custom node needs nothing for it — the schema-driven path serves them. If you
-are working on Lexical itself, see
+None of this changes how you write a node. It is the same JSON, faster, and a
+custom node needs nothing for it, since the schema-driven path serves them. If
+you are working on Lexical itself, see
 [the generated JSON code](/docs/maintainers-guide#pnpm-run-generate-node-json)
 in the maintainers' guide.
 
@@ -924,7 +933,7 @@ called on. This is a breaking change, and it affects code that calls
 `exportJSON` directly on a node reference it kept across a mutation.
 
 A property declared with `withField` is read straight off the node. That is the
-optimization the serialization walk is built on — every node the walk reaches
+optimization the serialization walk is built on: every node the walk reaches
 comes from the `EditorState`'s node map and is already the current version, so
 the walk resolves nothing per node. Previously each property went through its
 accessor, and every accessor resolves `getLatest()`, so a stale node reference
@@ -952,7 +961,7 @@ a mutation and then exported by hand.
 
 ### Versioning & Breaking Changes
 
-It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. Lexical's own `version` property is deprecated and no longer the way to do this — nothing reads it, parsing drops it outright, a compact export omits it, and the reason it does not work is explained under [Dangers of a flat version property](#dangers-of-a-flat-version-property). Evolve your serialized type additively instead, and give each new property a default its parser can fall back to. Here's the serialized type definition for Lexical's base `TextNode` class:
+It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. Lexical's own `version` property is deprecated and no longer the way to do this: nothing reads it, parsing drops it outright, and a compact export omits it. [Dangers of a flat version property](#dangers-of-a-flat-version-property) explains why it does not work. Evolve your serialized type additively instead, and give each new property a default its parser can fall back to. Here's the serialized type definition for Lexical's base `TextNode` class:
 
 ```ts
 import type {Spread} from 'lexical';

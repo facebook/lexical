@@ -284,6 +284,24 @@ export function tableDeclarations() {
 }
 
 /**
+ * How many locals the parsers generated since the last class began have bound.
+ * A collapsing wrapper names its parse rather than writing it twice (see
+ * `CompiledExpression.statements`), and every property of a class is applied
+ * in one function, so the numbering runs across the class.
+ */
+let parseBindings = 0;
+
+/**
+ * A fresh local for one compiled parse to bind, which is what
+ * {@link compileParse} is handed.
+ *
+ * @returns {string}
+ */
+function parseBinding() {
+  return `p${parseBindings++}`;
+}
+
+/**
  * Begin a class: forget the locals the previous one bound. What
  * {@link generatePackage} does before each class's four forms; exported for
  * the test that assembles a factory body by hand, since the forms it calls
@@ -291,6 +309,7 @@ export function tableDeclarations() {
  */
 export function resetTableLocals() {
   tableLocals.clear();
+  parseBindings = 0;
 }
 
 /**
@@ -392,6 +411,9 @@ export function emittable(name, what, binds = false, alsoBound) {
     binds &&
     (RESERVED.has(name) ||
       EMITTED_LOCALS.has(name) ||
+      // The locals `parseBinding` hands out, which a parser binds in the same
+      // scope it writes this name into.
+      /^p\d+$/.test(name) ||
       (alsoBound !== undefined && alsoBound.has(name)))
   ) {
     throw new NotCompilable(
@@ -898,7 +920,11 @@ function writeExpression(klass, schema, key, target) {
   // Each alias table the parse reads is bound to a local of the class's
   // factory, numbered outermost first — the order `compileParse` meets them,
   // which is the order `aliasTableOf` counts.
-  const {expression, tables: parseTables} = compileParse(
+  const {
+    expression,
+    statements: bindings,
+    tables: parseTables,
+  } = compileParse(
     schema.meta,
     schema.defaultValue,
     (table, index) =>
@@ -906,7 +932,14 @@ function writeExpression(klass, schema, key, target) {
         tableName(klass, key, index === 0 ? 'ALIAS' : `ALIAS_${index + 1}`),
         tableDeclaration('alias', key, table, index),
       ),
+    // Numbered across the whole class, not per property: every property is
+    // applied in one function, so two that each bind a local would otherwise
+    // both declare `p0`.
+    parseBinding,
   );
+  // Emitted between the read of the property and the write of the parsed
+  // value, which is the scope they were compiled against.
+  const bound = bindings.map(statement => `  ${statement}\n`).join('');
   // The emitted declaration is `aliasTableOf(fields, key, index)`, resolved
   // when the class is registered — so the numbering above is only right if
   // that walk descends the same schemas the compiler did. The two live in
@@ -946,6 +979,7 @@ function writeExpression(klass, schema, key, target) {
         expression,
         nullPrototypeTables,
         schema,
+        statements: bindings,
         tables: parseTables,
       });
     } catch (error) {
@@ -956,7 +990,7 @@ function writeExpression(klass, schema, key, target) {
     return {
       key,
       needsSelf: true,
-      statements: `  v = ${ownRead(key)};\n  n = ${target}.${emittable(setter, 'setter method')}(${expression});\n  ${target} = (n ?? ${target}) as ${klass.name};`,
+      statements: `  v = ${ownRead(key)};\n${bound}  n = ${target}.${emittable(setter, 'setter method')}(${expression});\n  ${target} = (n ?? ${target}) as ${klass.name};`,
     };
   }
   const {encode} = setter;
@@ -964,7 +998,7 @@ function writeExpression(klass, schema, key, target) {
   // after parsing: folding them together needs an IIFE, and a closure per
   // property per node is most of what generating this was meant to remove.
   const setterField = emittable(setter.field, 'setter field');
-  let statements = `  v = ${ownRead(key)};\n  ${target}.${setterField} = ${expression};`;
+  let statements = `  v = ${ownRead(key)};\n${bound}  ${target}.${setterField} = ${expression};`;
   if (encode !== undefined) {
     const name = declareTable(
       tableName(klass, key, 'ENCODE'),
@@ -985,13 +1019,14 @@ function writeExpression(klass, schema, key, target) {
       tableDeclaration('encodedDefault', key, encode),
     );
     const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
-    statements = `  v = ${ownRead(key)};\n  v = ${expression};\n  ${target}.${setterField} = ${lookup};`;
+    statements = `  v = ${ownRead(key)};\n${bound}  v = ${expression};\n  ${target}.${setterField} = ${lookup};`;
   }
   try {
     verifyCompiledParse({
       expression,
       nullPrototypeTables,
       schema,
+      statements: bindings,
       tables: parseTables,
     });
     if (encode !== undefined) {

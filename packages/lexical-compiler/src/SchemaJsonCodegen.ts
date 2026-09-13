@@ -41,9 +41,23 @@ export interface SchemaJsonTable {
   table: {readonly [key: string]: unknown};
 }
 
-export interface CompileParseResult {
+/** An expression, with whatever has to be bound before it is evaluated. */
+export interface CompiledExpression {
   /** A JavaScript expression over `v` that parses exactly as the schema does. */
   expression: string;
+  /**
+   * Statements the caller emits before the expression, in the same scope.
+   *
+   * A collapsing wrapper (`optional({omitDefault})`,
+   * `nullable({defaultAsNull})`) compares the parsed value against the inner
+   * default and then returns it, so it names the parse once here rather than
+   * writing it into the expression twice. Empty for every other kind, which is
+   * why the emitted code is otherwise unchanged.
+   */
+  statements: string[];
+}
+
+export interface CompileParseResult extends CompiledExpression {
   /**
    * The lookup tables the expression refers to. The caller decides where they
    * live; a table an untrusted key reaches must be given a null prototype.
@@ -56,6 +70,13 @@ export interface VerifyCompiledParseOptions {
   schema: AnySerializationSchema;
   /** A compiled expression over `v`, usually from {@link compileParse}. */
   expression: string;
+  /**
+   * The statements that expression was compiled with, which are run before it
+   * here exactly as the generated code runs them. Omitting them where the
+   * compile produced some would evaluate an unbound name, so this is not a
+   * check that can quietly pass against the wrong thing.
+   */
+  statements?: readonly string[];
   /** The tables the expression refers to. */
   tables: readonly SchemaJsonTable[];
   /**
@@ -219,10 +240,18 @@ export function compileParse(
   meta: SerializationSchemaMeta,
   defaultValue: unknown,
   tableBaseName: TableNaming,
+  bindingName?: BindingNaming,
 ): CompileParseResult {
   const tables: SchemaJsonTable[] = [];
-  const expression = compile(meta, defaultValue, tableBaseName, tables);
-  return {expression, tables};
+  let bound = 0;
+  const {expression, statements} = compile(
+    meta,
+    defaultValue,
+    tableBaseName,
+    tables,
+    bindingName ?? (() => `p${bound++}`),
+  );
+  return {expression, statements, tables};
 }
 
 /** How {@link compileParse} names the tables an expression reads. */
@@ -230,23 +259,68 @@ export type TableNaming =
   | string
   | ((table: {readonly [key: string]: unknown}, index: number) => string);
 
+/**
+ * How {@link compileParse} names a local it binds; see
+ * {@link CompiledExpression.statements}.
+ *
+ * A callback rather than a prefix, because the scope these are emitted into is
+ * the caller's: a generated parser applies every property of a class in one
+ * function, so two properties that each bind one need two names, and only the
+ * caller knows how many have gone before. The default numbers them from zero,
+ * which suits a caller compiling one expression on its own.
+ */
+export type BindingNaming = () => string;
+
+/**
+ * Whether evaluating `meta`'s compiled expression a second time costs nothing
+ * worth avoiding, which is what decides between repeating it and binding it to
+ * a local; see the `nullable`/`optional` case below.
+ *
+ * True for the kinds that compile to a test over `v` and nothing else. A
+ * number's helper call is here too: it allocates nothing, and the duplicate
+ * call is one V8 was measured folding away, where the binding is not.
+ *
+ * False for the kinds that allocate (`array`) or read a table (`aliased`), and
+ * for a wrapper over one of those, since the cost is the inner parse's.
+ */
+function repeatable(meta: SerializationSchemaMeta): boolean {
+  switch (meta.kind) {
+    case 'string':
+    case 'boolean':
+    case 'enum':
+    case 'number':
+      return true;
+    case 'nullable':
+    case 'optional':
+      return repeatable(meta.inner.meta);
+    default:
+      return false;
+  }
+}
+
 function compile(
   meta: SerializationSchemaMeta,
   defaultValue: unknown,
   base: TableNaming,
   tables: SchemaJsonTable[],
+  bind: BindingNaming,
   // The expression reads one variable, `v` at the top level. An array's item
   // parse runs inside a callback over its own binding, so it compiles against
   // that name instead, and the depth keeps nested ones apart.
   v = 'v',
   depth = 0,
-): string {
+): CompiledExpression {
   const fallback = literal(defaultValue);
+  /** A kind that needs no binding of its own, which is most of them. */
+  const only = (expression: string): CompiledExpression => ({
+    expression,
+    statements: [],
+  });
   switch (meta.kind) {
     case 'string':
-      return `typeof ${v} === 'string' ? ${v} : ${fallback}`;
+      return only(`typeof ${v} === 'string' ? ${v} : ${fallback}`);
     case 'boolean':
-      return `typeof ${v} === 'boolean' ? ${v} : ${fallback}`;
+      return only(`typeof ${v} === 'boolean' ? ${v} : ${fallback}`);
     case 'enum': {
       // `undefined` is checked before membership by enumValue, so a member
       // spelled undefined can never be matched here — dropping it from the
@@ -254,9 +328,11 @@ function compile(
       const tests = meta.values
         .filter(value => value !== undefined)
         .map(value => `${v} === ${literal(value)}`);
-      return tests.length === 0
-        ? fallback
-        : `${tests.join(' || ')} ? ${v} : ${fallback}`;
+      return only(
+        tests.length === 0
+          ? fallback
+          : `${tests.join(' || ')} ? ${v} : ${fallback}`,
+      );
     }
     case 'number': {
       if (meta.min !== undefined || meta.max !== undefined || meta.integer) {
@@ -266,9 +342,11 @@ function compile(
         const min = meta.min === undefined ? '-Infinity' : String(meta.min);
         const max = meta.max === undefined ? 'Infinity' : String(meta.max);
         const helper = meta.clamp ? 'numK' : 'numC';
-        return `${helper}(${v}, ${fallback}, ${min}, ${max}, ${Boolean(meta.integer)})`;
+        return only(
+          `${helper}(${v}, ${fallback}, ${min}, ${max}, ${Boolean(meta.integer)})`,
+        );
       }
-      return `num(${v}, ${fallback})`;
+      return only(`num(${v}, ${fallback})`);
     }
     case 'aliased': {
       // `__proto__` in an object literal sets the prototype instead of
@@ -295,6 +373,7 @@ function compile(
         defaultValue,
         base,
         tables,
+        bind,
         v,
         depth,
       );
@@ -303,7 +382,10 @@ function compile(
       // JSON, so `'toString'` would otherwise resolve to Object.prototype's
       // method and be stored as this property's value. Naming the table in
       // `nullPrototypeTables` is what makes verifyCompiledParse check it.
-      return `typeof ${v} === 'string' && ${v} in ${name} ? ${name}[${v}] : ${inner}`;
+      return {
+        expression: `typeof ${v} === 'string' && ${v} in ${name} ? ${name}[${v}] : ${inner.expression}`,
+        statements: inner.statements,
+      };
     }
     case 'nullable':
     case 'optional': {
@@ -319,26 +401,57 @@ function compile(
         meta.inner.defaultValue,
         base,
         tables,
+        bind,
         v,
         depth,
       );
       const collapses =
         meta.kind === 'nullable' ? meta.defaultAsNull : meta.omitDefault;
       if (!collapses) {
-        return `${test} ? ${nil} : ${inner}`;
+        return {
+          expression: `${test} ? ${nil} : ${inner.expression}`,
+          statements: inner.statements,
+        };
       }
       // With the flag, a parse that lands on the inner default is the nil
       // instead. The test is the one `compileDiffersFromDefault` states,
-      // negated — so an inner default it cannot state refuses the whole
-      // property — and it is applied to the parsed value, which means naming
-      // the inner expression twice rather than binding it: a binding needs a
-      // statement, and this has to stay an expression to nest.
-      const isDefault = compileDefaultComparison(
-        meta.inner,
-        `(${inner})`,
-        true,
-      );
-      return `${test} || ${isDefault} ? ${nil} : ${inner}`;
+      // negated, so an inner default it cannot state refuses the whole
+      // property. It is applied to the *parsed* value, which the wrapper then
+      // also returns, so the parse appears twice: once compared, once
+      // returned.
+      //
+      // Which of the two spellings is better depends on what the inner parse
+      // costs, and both directions were measured. Binding it to a local is
+      // 3x faster for an array, whose expression allocates on every
+      // evaluation and whose default comparison names it twice more
+      // (1790 -> 596 ns per property over 1000 nodes), and ~40% faster for an
+      // aliased value, which reads a table (41 -> 25 ns). For an inline test
+      // over `v` it is *slower* — a string's `typeof v === 'string' ? v : ''`
+      // costs about 2 ns per property more bound than repeated, since
+      // re-evaluating it is free and the binding is not — so those are still
+      // written twice.
+      if (!repeatable(meta.inner.meta)) {
+        const name = bind();
+        return {
+          expression: `${test} || ${compileDefaultComparison(
+            meta.inner,
+            name,
+            true,
+          )} ? ${nil} : ${name}`,
+          statements: [
+            ...inner.statements,
+            `const ${name} = ${inner.expression};`,
+          ],
+        };
+      }
+      return {
+        expression: `${test} || ${compileDefaultComparison(
+          meta.inner,
+          `(${inner.expression})`,
+          true,
+        )} ? ${nil} : ${inner.expression}`,
+        statements: inner.statements,
+      };
     }
     case 'array': {
       // `Array.from` rather than `.map`, which skips holes: the runtime reads
@@ -351,10 +464,20 @@ function compile(
         meta.item.defaultValue,
         base,
         tables,
+        bind,
         item,
         depth + 1,
       );
-      return `Array.isArray(${v}) ? Array.from(${v}, ${item} => ${inner}) : []`;
+      // A concise arrow unless the item's parse needs statements of its own,
+      // which belong inside the callback: they read the element, which exists
+      // nowhere else.
+      const body =
+        inner.statements.length === 0
+          ? inner.expression
+          : `{ ${inner.statements.join(' ')} return ${inner.expression}; }`;
+      return only(
+        `Array.isArray(${v}) ? Array.from(${v}, ${item} => ${body}) : []`,
+      );
     }
     default:
       throw new NotCompilable(`a ${meta.kind} schema`);
@@ -508,6 +631,7 @@ export function verifyCompiledParse({
   expression,
   nullPrototypeTables = [],
   schema,
+  statements = [],
   tables,
 }: VerifyCompiledParseOptions): void {
   const names = tables.map(({name}) => name);
@@ -524,7 +648,7 @@ export function verifyCompiledParse({
     'SCOPE',
     `const {${['num', 'numC', 'numK', ...names].join(
       ', ',
-    )}} = SCOPE; return (${expression});`,
+    )}} = SCOPE; ${statements.join(' ')} return (${expression});`,
   ) as (v: unknown, scope: {readonly [key: string]: unknown}) => unknown;
   // eslint-disable-next-line no-new-func
   const num = new Function('v', 'd', 'JSON_NUMBER', NUM_BODY) as (

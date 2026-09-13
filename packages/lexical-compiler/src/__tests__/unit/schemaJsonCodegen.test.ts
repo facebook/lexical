@@ -19,6 +19,7 @@ import {
   optional,
   rawValue,
   type SerializationSchema,
+  type SerializationSchemaMeta,
   stringValue,
   transformValue,
   unionValue,
@@ -45,19 +46,21 @@ import {
  * test asserts on behavior rather than on the expression text.
  */
 function compiled(schema: AnySerializationSchema): (value: unknown) => unknown {
-  const {expression, tables} = compileParse(
+  const {expression, statements, tables} = compileParse(
     schema.meta,
     schema.defaultValue,
     'T',
   );
   const names = tables.map(({name}) => name);
+  // The statements run before the expression here exactly as the generated
+  // code runs them, which is what keeps this a test of what ships.
   // eslint-disable-next-line no-new-func
   const fn = new Function(
     'v',
     'SCOPE',
     `const {num, numC, numK, ${['_', ...names].join(
       ', ',
-    )}} = SCOPE; return (${expression});`,
+    )}} = SCOPE; ${statements.join(' ')} return (${expression});`,
   );
   // Built from the same source text the generator emits and
   // verifyCompiledParse evaluates. Spelling it out here instead would be a
@@ -109,6 +112,13 @@ function compiled(schema: AnySerializationSchema): (value: unknown) => unknown {
  */
 function transformed(): SerializationSchema<string, never, string> {
   return transformValue(stringValue(), value => value.toUpperCase());
+}
+
+/** `compileParse`'s arguments for one schema, since three tests need them. */
+function schemaArgs(
+  schema: AnySerializationSchema,
+): [SerializationSchemaMeta, unknown, string] {
+  return [schema.meta, schema.defaultValue, 'T'];
 }
 
 /** Every value the corpus covers has to agree, which is the real contract. */
@@ -255,6 +265,40 @@ describe('compileParse reproduces the schema it compiles', () => {
     expectAgrees(nullable(arrayValue(optional(stringValue()))));
     const run = compiled(arrayValue(nullable(numberValue())));
     expect(run([1, null, 'x', '2'])).toEqual([1, null, 0, 2]);
+  });
+
+  test('a collapsing wrapper binds a parse that costs something to repeat', () => {
+    // The wrapper compares the parsed value against the inner default and
+    // then returns it. An array's parse allocates and its default comparison
+    // names the value twice more, so it is bound to a local once; a string's
+    // is an inline test over `v`, cheaper repeated than bound.
+    const bound = compileParse(
+      ...schemaArgs(nullable(arrayValue(stringValue()), {defaultAsNull: true})),
+    );
+    expect(bound.statements).toEqual([
+      'const p0 = Array.isArray(v) ? Array.from(v, e0 => typeof e0 === \'string\' ? e0 : "") : [];',
+    ]);
+    expect(bound.expression).toBe(
+      'v == null || (Array.isArray(p0) && p0.length === 0) ? null : p0',
+    );
+    const repeated = compileParse(
+      ...schemaArgs(nullable(stringValue(), {defaultAsNull: true})),
+    );
+    expect(repeated.statements).toEqual([]);
+
+    // Both still agree with the schema they came from, which is the contract
+    // the shape is in service of.
+    expectAgrees(nullable(arrayValue(stringValue()), {defaultAsNull: true}));
+    expectAgrees(optional(arrayValue(numberValue()), {omitDefault: true}));
+    expectAgrees(
+      nullable(aliasedValue(numberValue(), {bold: 1}), {defaultAsNull: true}),
+    );
+    const run = compiled(
+      nullable(arrayValue(stringValue()), {defaultAsNull: true}),
+    );
+    expect(run(['a'])).toEqual(['a']);
+    expect(run([])).toBe(null);
+    expect(run('nope')).toBe(null);
   });
 
   test('a clamping numberValue', () => {

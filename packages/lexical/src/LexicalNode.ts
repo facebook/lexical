@@ -1432,10 +1432,8 @@ export class LexicalNode {
     }
     const mutableNode = $cloneWithProperties(latestNode);
     cloneNotNeeded.add(key);
-    // The clone is not in the node map yet; dirty the current entry.
-    internalMarkNodeAsDirty(latestNode);
-    // Update reference in node map
     nodeMap.set(key, mutableNode);
+    internalMarkNodeAsDirty(mutableNode);
 
     return mutableNode;
   }

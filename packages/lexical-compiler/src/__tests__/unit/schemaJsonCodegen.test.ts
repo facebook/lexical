@@ -8,6 +8,7 @@
 
 import {
   aliasedValue,
+  aliasTableOf,
   type AnySerializationSchema,
   arrayValue,
   booleanValue,
@@ -295,6 +296,68 @@ describe('compileParse refuses what it cannot express', () => {
     expect(() => compileParse(schema.meta, schema.defaultValue, 'T')).toThrow(
       NotCompilable,
     );
+  });
+});
+
+describe('aliasTableOf resolves the tables compileParse numbered', () => {
+  // A generated module holds no copy of a table: the declaration it emits is
+  // `aliasTableOf(fields, key, index)`, resolved off the schema when the class
+  // is registered. So the walk there has to descend exactly the schemas the
+  // compiler descends, or registration hands the code a table it did not
+  // compile against — or throws. The compiler is in this package and the walk
+  // is in `lexical`, so this is where the two meet.
+  const table = {one: 1, two: 2};
+  const other = {three: 3};
+  const both = {all: [3, 3]};
+  test.each([
+    ['a bare aliasedValue', () => aliasedValue(numberValue(), table), [table]],
+    [
+      'consecutive aliases',
+      () => aliasedValue(aliasedValue(numberValue(), other), table),
+      [table, other],
+    ],
+    [
+      'an alias under an array',
+      () => arrayValue(aliasedValue(numberValue(), table)),
+      [table],
+    ],
+    [
+      'an alias under optional',
+      () => optional(aliasedValue(numberValue(), table)),
+      [table],
+    ],
+    [
+      'an alias under nullable',
+      () => nullable(aliasedValue(numberValue(), table)),
+      [table],
+    ],
+    [
+      // The outer table's values are the array the inner schema parses to, so
+      // this is also the case where the two tables have different shapes and
+      // picking the wrong one is a type error rather than a silent swap.
+      'aliases on both sides of a wrapper',
+      () => aliasedValue(arrayValue(aliasedValue(numberValue(), other)), both),
+      [both, other],
+    ],
+  ])('%s', (_label, build, expected) => {
+    const schema = build() as AnySerializationSchema;
+    const {tables} = compileParse(schema.meta, schema.defaultValue, 'T');
+    expect(tables.map(({table: t}) => ({...t}))).toEqual(
+      expected.map(t => ({...t})),
+    );
+    const fields = new Map([['p', schema]]);
+    for (let i = 0; i < tables.length; i++) {
+      expect({...aliasTableOf(fields, 'p', i)}).toEqual({...tables[i].table});
+    }
+    // One past the end is the miss, not a table from somewhere else.
+    expect(() => aliasTableOf(fields, 'p', tables.length)).toThrow();
+  });
+
+  test('a schema with no alias at all resolves nothing', () => {
+    const fields = new Map([
+      ['p', arrayValue(numberValue()) as AnySerializationSchema],
+    ]);
+    expect(() => aliasTableOf(fields, 'p', 0)).toThrow();
   });
 });
 

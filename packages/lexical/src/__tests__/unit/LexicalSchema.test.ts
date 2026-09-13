@@ -440,6 +440,56 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       expect(indent('banana')).toBe(0);
       expect(indent(undefined)).toBe(0);
     });
+    test('an integer domain rounds its bounds inward', () => {
+      // The clamped result has to be a member, or a reload parses what the
+      // last one wrote back to the default and the property changes on every
+      // round trip.
+      const parse = numberValue(1, {
+        clamp: true,
+        integer: true,
+        max: 2.5,
+        min: 0.5,
+      });
+      expect(parse(0)).toBe(1);
+      expect(parse(3)).toBe(2);
+      expect(parse(parse(0))).toBe(parse(0));
+      expect(parse(parse(3))).toBe(parse(3));
+      // The same rounding, reported: `>= 0.5` and `>= 1` admit the same
+      // integers, so this is the domain either way — now stated where a
+      // generator can read it.
+      expect(parse.meta).toEqual({
+        clamp: true,
+        integer: true,
+        kind: 'number',
+        max: 2,
+        min: 1,
+      });
+      // Without `clamp` nothing about the domain changed.
+      const strict = numberValue(1, {integer: true, max: 2.5, min: 0.5});
+      expect(strict(0)).toBe(1);
+      expect(strict(1)).toBe(1);
+      expect(strict(2)).toBe(2);
+      expect(strict(3)).toBe(1);
+    });
+    test('a fractional domain keeps its bounds', () => {
+      expect(numberValue(1, {max: 2.5, min: 0.5}).meta).toEqual({
+        clamp: undefined,
+        integer: undefined,
+        kind: 'number',
+        max: 2.5,
+        min: 0.5,
+      });
+      expect(numberValue(1, {clamp: true, max: 2.5, min: 0.5})(3)).toBe(2.5);
+    });
+    test('an empty domain is refused where it is declared', () => {
+      expect(() => numberValue(0, {max: 1, min: 2})).toThrow(
+        /the domain is empty; min 2 is above max 1/,
+      );
+      // Empty only after the inward rounding, which is worth saying.
+      expect(() => numberValue(0, {integer: true, max: 0.7, min: 0.5})).toThrow(
+        /rounded inward from 0.5\.\.0\.7/,
+      );
+    });
     test('clamp widens what the domain accepts', () => {
       // A value outside the bounds is one this schema reads — it parses to a
       // bound rather than to the default — so a union must not skip past it.

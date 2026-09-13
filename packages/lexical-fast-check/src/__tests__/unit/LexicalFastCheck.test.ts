@@ -308,10 +308,12 @@ describe('an arbitrary covers the whole domain a schema declares', () => {
     // Rounded inward, so both bounds land on the integers the domain admits.
     ['a fractional interval', {integer: true, max: 2.5, min: 0.5} as const, 1],
     // Above the safe integers, where fc.integer cannot generate and the
-    // integers are no longer adjacent (1e16 + 1 === 1e16).
+    // integers are no longer adjacent (1e16 + 1 === 1e16). This is also the
+    // empty-interval branch: the safe-integer clamp leaves a minimum above the
+    // maximum. An interval that is empty on its own terms — `{integer: true,
+    // min: 0.5, max: 0.7}` — cannot be tested here, because `numberValue`
+    // refuses to build one.
     ['a domain past 2^53', {integer: true, min: 1e16} as const, 1e16],
-    // No integer in the interval at all.
-    ['an empty interval', {integer: true, max: 0.7, min: 0.5} as const, 0],
   ])('%s generates instead of throwing', (_label, options, dflt) => {
     class OddNode extends ElementNode {
       __v = dflt;

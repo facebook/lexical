@@ -115,9 +115,13 @@ export type SerializationSchemaMeta =
 
 /** Domain constraints for {@link numberValue}. */
 export interface NumberValueOptions {
-  /** Reject values below this bound (inclusive). */
+  /**
+   * Reject values below this bound (inclusive). With `integer`, the bound is
+   * rounded up to the integer it admits — the same domain, stated so that
+   * `clamp` and anything reading the schema's `meta` see a member.
+   */
   readonly min?: number;
-  /** Reject values above this bound (inclusive). */
+  /** Reject values above this bound (inclusive); see {@link NumberValueOptions.min}. */
   readonly max?: number;
   /** Reject values that are not integers. */
   readonly integer?: boolean;
@@ -975,9 +979,15 @@ export function encodeTableOf(
 }
 
 /**
- * The `index`th alias table in the property `key`'s schema, counting from
- * the outermost: an `aliasedValue` may wrap another, and generated code
- * numbers the tables in the order it compiled them, which is this one. See
+ * The `index`th alias table in the property `key`'s schema, counting from the
+ * outermost. Generated code numbers the tables in the order the compiler met
+ * them, so this has to descend exactly the schemas the compiler descends, in
+ * the same order: `aliasedValue` (which is also the one that has a table),
+ * `nullable`, `optional` and `arrayValue` — each of which wraps a single inner
+ * schema, so the walk is a chain. Every other kind is one the compiler refuses,
+ * which means it emitted no code for this property and nothing calls this.
+ * Descending one the compiler does not would find a table it never numbered and
+ * hand back the wrong one, so anything else ends the walk. See
  * {@link decodeTableOf}.
  *
  * @internal
@@ -988,17 +998,25 @@ export function aliasTableOf(
   index: number,
 ): {readonly [key: string]: unknown} {
   let {meta} = schemaOf(fields, key);
-  for (let i = 0; ; i++) {
-    invariant(
-      meta.kind === 'aliased',
-      'aliasTableOf: "%s" declares no alias table %s',
-      key,
-      String(index),
-    );
-    if (i === index) {
-      return nullPrototype(meta.aliases);
+  for (let seen = 0; ; ) {
+    if (meta.kind === 'aliased') {
+      if (seen === index) {
+        return nullPrototype(meta.aliases);
+      }
+      seen++;
+      meta = meta.inner.meta;
+    } else if (meta.kind === 'nullable' || meta.kind === 'optional') {
+      meta = meta.inner.meta;
+    } else if (meta.kind === 'array') {
+      meta = meta.item.meta;
+    } else {
+      invariant(
+        false,
+        'aliasTableOf: "%s" declares no alias table %s',
+        key,
+        String(index),
+      );
     }
-    meta = meta.inner.meta;
   }
 }
 
@@ -1792,7 +1810,37 @@ export function numberValue(
   defaultValue = 0,
   options: NumberValueOptions = {},
 ): SerializationSchema<number, never, number | string> {
-  const {min, max, integer, clamp} = options;
+  const {integer, clamp} = options;
+  // An integer domain's real bounds are the integers inside the declared ones,
+  // so they are rounded inward here rather than compared against as given.
+  // For the plain bounds that is the same domain — an integer is `>= 0.5`
+  // exactly when it is `>= 1` — but `clamp` returns a bound, and returning
+  // `0.5` from a domain of integers stores a value the same schema rejects on
+  // the way back in, so the property changed every time the document was
+  // reloaded. Rounded, every clamped result is a member.
+  const min =
+    integer && options.min !== undefined ? Math.ceil(options.min) : options.min;
+  const max =
+    integer && options.max !== undefined
+      ? Math.floor(options.max)
+      : options.max;
+  if (__DEV__) {
+    // Empty either way it got that way — `{max: 1, min: 2}`, or bounds with no
+    // integer between them — and an empty domain admits nothing, so every
+    // value parses to a default that came from nowhere. The same reason
+    // `enumValue` refuses an empty list.
+    invariant(
+      min === undefined || max === undefined || min <= max,
+      'numberValue: the domain is empty; min %s is above max %s%s',
+      String(min),
+      String(max),
+      integer && (min !== options.min || max !== options.max)
+        ? ` (rounded inward from ${String(options.min)}..${String(
+            options.max,
+          )} because the domain is integers)`
+        : '',
+    );
+  }
   const coerce = (value: unknown): unknown =>
     typeof value === 'string' && JSON_NUMBER.test(value)
       ? Number(value)

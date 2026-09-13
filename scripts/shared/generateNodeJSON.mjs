@@ -91,6 +91,7 @@ const REPO = join(import.meta.dirname, '..', '..');
 // each to its package's src for both tsx and the type checker, and a specifier
 // ending in `.ts` is a type error under this repo's settings.
 const {
+  aliasTableOf,
   ElementNode,
   isSchemaField,
   LineBreakNode,
@@ -898,6 +899,35 @@ function writeExpression(klass, schema, key, target) {
         tableDeclaration('alias', key, table, index),
       ),
   );
+  // The emitted declaration is `aliasTableOf(fields, key, index)`, resolved
+  // when the class is registered — so the numbering above is only right if
+  // that walk descends the same schemas the compiler did. The two live in
+  // different packages and are edited apart, and the failure is a registration
+  // that throws in an application rather than anything a test of either side
+  // alone would see, so it is checked here against the schema itself: same
+  // index, same object.
+  parseTables.forEach(({table}, index) => {
+    let resolved;
+    try {
+      resolved = aliasTableOf(new Map([[key, schema]]), key, index);
+    } catch (error) {
+      throw new NotCompilable(
+        `"${key}" compiles to an alias table ${index} that aliasTableOf cannot resolve: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+    for (const name of new Set([
+      ...Object.keys(table),
+      ...Object.keys(resolved),
+    ])) {
+      if (!Object.is(table[name], resolved[name])) {
+        throw new NotCompilable(
+          `"${key}" compiles to an alias table ${index} that aliasTableOf resolves to a different table`,
+        );
+      }
+    }
+  });
   const nullPrototypeTables = parseTables.map(({name}) => name);
   if (!isSchemaField(setter)) {
     // Applied through a method: call it and follow what it returns, which is

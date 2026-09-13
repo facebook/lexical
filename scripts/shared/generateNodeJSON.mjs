@@ -457,11 +457,13 @@ export function emittable(name, what, binds = false, alsoBound) {
       `${what} ${JSON.stringify(name)} is not a plain identifier`,
     );
   }
+  // A strict-mode binding name is not refused here — {@link localFor} gives it
+  // a local it can bind — and it is in none of these sets, so nothing below
+  // needs to make room for one. What it still has to answer for is colliding
+  // with another name in the same scope: two roles that rename to the same
+  // local declare it twice, which is the collision `alsoBound` is for.
   if (
     binds &&
-    // A strict-mode binding name is renamed rather than refused; see
-    // {@link localFor}.
-    !STRICT_BINDINGS.has(name) &&
     (RESERVED.has(name) ||
       EMITTED_LOCALS.has(name) ||
       // The locals `parseBinding` hands out, which a parser binds in the same

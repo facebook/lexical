@@ -105,6 +105,16 @@ describe('names interpolated into generated code', () => {
     expect(() =>
       emittable('shown', 'when predicate', true, new Set(['shown', 'visible'])),
     ).toThrow(/collides with a name the generated code binds/);
+    // A renamed name is held to the same rule, and for the same reason: two
+    // roles that rename to the same local declare it twice. `arguments` as
+    // both a property and the predicate gating it emitted `const arguments_`
+    // twice, which is the collision and not the strict-mode one.
+    expect(
+      emittable('arguments', 'when predicate', true, new Set(['label'])),
+    ).toBe('arguments');
+    expect(() =>
+      emittable('arguments', 'when predicate', true, new Set(['arguments'])),
+    ).toThrow(/collides with a name the generated code binds/);
     // Only where the name is bound, as with the reserved words.
     expect(emittable('shown', 'getter method', false, new Set(['shown']))).toBe(
       'shown',

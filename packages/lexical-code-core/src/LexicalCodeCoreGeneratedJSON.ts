@@ -52,6 +52,12 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
+/** CodeNode's schema-declared fields, for a clone. @internal */
+export function afterCloneCodeNode(node: CodeNode, prevNode: CodeNode): void {
+  node.__language = prevNode.__language;
+  node.__theme = prevNode.__theme;
+}
+
 /** CodeNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_CODE: GeneratedJSONFactory = () => {
   /** Generated from CodeNode's serialization schema. Do not edit by hand. */
@@ -179,6 +185,14 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
   };
 };
 
+/** CodeHighlightNode's schema-declared fields, for a clone. @internal */
+export function afterCloneCodeHighlightNode(
+  node: CodeHighlightNode,
+  prevNode: CodeHighlightNode,
+): void {
+  node.__highlightType = prevNode.__highlightType;
+}
+
 /** CodeHighlightNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
   const CODEHIGHLIGHT_MODE_DECODE = decodeTableOf(fields, 'mode') as {
@@ -303,14 +317,6 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
     );
     self = (n ?? self) as CodeHighlightNode;
     return self;
-  }
-
-  /** Generated from CodeHighlightNode's serialization schema. Do not edit by hand. */
-  function afterCloneCodeHighlightNode(
-    node: CodeHighlightNode,
-    prevNode: CodeHighlightNode,
-  ): void {
-    node.__highlightType = prevNode.__highlightType;
   }
 
   return {

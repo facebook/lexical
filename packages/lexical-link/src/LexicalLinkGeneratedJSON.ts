@@ -44,6 +44,14 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
+/** LinkNode's schema-declared fields, for a clone. @internal */
+export function afterCloneLinkNode(node: LinkNode, prevNode: LinkNode): void {
+  node.__rel = prevNode.__rel;
+  node.__target = prevNode.__target;
+  node.__title = prevNode.__title;
+  node.__url = prevNode.__url;
+}
+
 /** LinkNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_LINK: GeneratedJSONFactory = () => {
   /** Generated from LinkNode's serialization schema. Do not edit by hand. */
@@ -181,14 +189,6 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
     return self;
   }
 
-  /** Generated from LinkNode's serialization schema. Do not edit by hand. */
-  function afterCloneLinkNode(node: LinkNode, prevNode: LinkNode): void {
-    node.__rel = prevNode.__rel;
-    node.__target = prevNode.__target;
-    node.__title = prevNode.__title;
-    node.__url = prevNode.__url;
-  }
-
   return {
     exportJSON: exportLinkNode,
     exportCompactJSON: exportCompactLinkNode,
@@ -196,6 +196,14 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
     afterCloneFrom: afterCloneLinkNode,
   };
 };
+
+/** AutoLinkNode's schema-declared fields, for a clone. @internal */
+export function afterCloneAutoLinkNode(
+  node: AutoLinkNode,
+  prevNode: AutoLinkNode,
+): void {
+  node.__isUnlinked = prevNode.__isUnlinked;
+}
 
 /** AutoLinkNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
@@ -341,14 +349,6 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
     v = json.isUnlinked;
     self.__isUnlinked = typeof v === 'boolean' ? v : false;
     return self;
-  }
-
-  /** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
-  function afterCloneAutoLinkNode(
-    node: AutoLinkNode,
-    prevNode: AutoLinkNode,
-  ): void {
-    node.__isUnlinked = prevNode.__isUnlinked;
   }
 
   return {

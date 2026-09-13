@@ -23,7 +23,10 @@ import {
   TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
 import {ElementDOMSlot} from '../LexicalDOMSlot';
-import {GENERATED_ELEMENT} from '../LexicalGeneratedJSON';
+import {
+  afterCloneElementNode,
+  GENERATED_ELEMENT,
+} from '../LexicalGeneratedJSON';
 import {
   $isEphemeral,
   type DOMExportOutput,
@@ -272,10 +275,13 @@ export class ElementNode
   // and its slot bookkeeping are structure, not serialized properties, so no
   // schema describes where they live. The key test is the other half of that —
   // a clone under a *new* key is a copy of the node, not of its place in the
-  // tree, and must not adopt the original's children. Declaring one of these
-  // takes the class out of the synthesized `afterCloneFrom` entirely, so this
-  // is also responsible for the properties the schema does declare, which
-  // `super.afterCloneFrom` carries.
+  // tree, and must not adopt the original's children.
+  //
+  // Declaring one of these takes the class out of the synthesized
+  // `afterCloneFrom` entirely, so the schema's own fields are this method's
+  // responsibility too — but not its boilerplate: `afterCloneElementNode` is
+  // generated from the same declaration, so adding a property to the schema
+  // needs no line here.
   afterCloneFrom(prevNode: this) {
     super.afterCloneFrom(prevNode);
     if (this.__key === prevNode.__key) {
@@ -295,12 +301,15 @@ export class ElementNode
       // host cloned for any non-slot change pays no per-version Map copy.
       this.__slots = prevNode.__slots;
     }
-    this.__indent = prevNode.__indent;
+    // Neither of these is a field the schema names. `format` is declared
+    // through accessors, because the serialized value is the ElementFormatType
+    // string rather than the number `__format` stores, and `__style` is not
+    // serialized at all.
     this.__format = prevNode.__format;
     this.__style = prevNode.__style;
-    this.__dir = prevNode.__dir;
-    this.__textFormat = prevNode.__textFormat;
-    this.__textStyle = prevNode.__textStyle;
+    // The four the schema does name: `__dir`, `__indent`, `__textFormat` and
+    // `__textStyle`.
+    afterCloneElementNode(this, prevNode);
   }
 
   getFormat(): number {

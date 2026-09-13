@@ -110,6 +110,17 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
+/** ElementNode's schema-declared fields, for a clone. @internal */
+export function afterCloneElementNode(
+  node: ElementNode,
+  prevNode: ElementNode,
+): void {
+  node.__dir = prevNode.__dir;
+  node.__indent = prevNode.__indent;
+  node.__textFormat = prevNode.__textFormat;
+  node.__textStyle = prevNode.__textStyle;
+}
+
 /** ElementNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_ELEMENT: GeneratedJSONFactory = () => {
   /** Generated from ElementNode's serialization schema. Do not edit by hand. */
@@ -213,6 +224,15 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = () => {
   };
 };
 
+/** TextNode's schema-declared fields, for a clone. @internal */
+export function afterCloneTextNode(node: TextNode, prevNode: TextNode): void {
+  node.__detail = prevNode.__detail;
+  node.__format = prevNode.__format;
+  node.__mode = prevNode.__mode;
+  node.__style = prevNode.__style;
+  node.__text = prevNode.__text;
+}
+
 /** TextNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
   const TEXT_MODE_DECODE = decodeTableOf(fields, 'mode') as {
@@ -313,15 +333,6 @@ export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
     v = json.text;
     node.__text = typeof v === 'string' ? v : '';
     return node;
-  }
-
-  /** Generated from TextNode's serialization schema. Do not edit by hand. */
-  function afterCloneTextNode(node: TextNode, prevNode: TextNode): void {
-    node.__detail = prevNode.__detail;
-    node.__format = prevNode.__format;
-    node.__mode = prevNode.__mode;
-    node.__style = prevNode.__style;
-    node.__text = prevNode.__text;
   }
 
   return {

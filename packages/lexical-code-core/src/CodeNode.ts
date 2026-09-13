@@ -50,7 +50,10 @@ import {
   type CodeHighlightNode,
 } from './CodeHighlightNode';
 import {$getFirstCodeNodeOfLine} from './FlatStructureUtils';
-import {GENERATED_CODE} from './LexicalCodeCoreGeneratedJSON';
+import {
+  afterCloneCodeNode,
+  GENERATED_CODE,
+} from './LexicalCodeCoreGeneratedJSON';
 
 export type SerializedCodeNode = Spread<
   {
@@ -199,14 +202,16 @@ export class CodeNode extends ElementNode {
   // Written rather than synthesized from the schema, because
   // `__isSyntaxHighlightSupported` is not a serialized property and no schema
   // describes it: the highlighter extensions set it as they run, and a clone
-  // that dropped it would render unhighlighted until the next pass. Declaring
-  // one of these takes the class out of the synthesized `afterCloneFrom`
-  // entirely, so this is also responsible for `__language` and `__theme`,
-  // which the schema does declare.
+  // that dropped it would render unhighlighted until the next pass.
+  //
+  // Declaring one of these takes the class out of the synthesized
+  // `afterCloneFrom` entirely, so the schema's own fields are this method's
+  // responsibility too — but not its boilerplate: `afterCloneCodeNode` is
+  // generated from the same declaration, so adding a property to the schema
+  // needs no line here.
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
-    this.__language = prevNode.__language;
-    this.__theme = prevNode.__theme;
+    afterCloneCodeNode(this, prevNode);
     this.__isSyntaxHighlightSupported = prevNode.__isSyntaxHighlightSupported;
   }
 

@@ -44,6 +44,14 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
+/** HeadingNode's schema-declared fields, for a clone. @internal */
+export function afterCloneHeadingNode(
+  node: HeadingNode,
+  prevNode: HeadingNode,
+): void {
+  node.__tag = prevNode.__tag;
+}
+
 /** HeadingNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_HEADING: GeneratedJSONFactory = () => {
   /** Generated from HeadingNode's serialization schema. Do not edit by hand. */
@@ -153,14 +161,6 @@ export const GENERATED_HEADING: GeneratedJSONFactory = () => {
         ? v
         : 'h1';
     return self;
-  }
-
-  /** Generated from HeadingNode's serialization schema. Do not edit by hand. */
-  function afterCloneHeadingNode(
-    node: HeadingNode,
-    prevNode: HeadingNode,
-  ): void {
-    node.__tag = prevNode.__tag;
   }
 
   return {

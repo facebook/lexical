@@ -844,21 +844,20 @@ ${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  return {
  * @returns {null | string}
  */
 function generateAfterCloneFrom(klass) {
-  // A class that wrote its own keeps it: registration leaves such a prototype
-  // alone, so anything emitted here would be attached to the class's generated
-  // code, shipped, and never called. ElementNode, TableNode, CodeNode,
-  // CodeHighlightNode and DecoratorBlockNode are all in that position.
-  if (declaresOwnAfterCloneFrom(klass)) {
-    return null;
-  }
   // The same list the synthesized method walks, from the same function, so the
   // generated form cannot copy a different set than the fallback would.
   const fields = ownSchemaFields(klass);
   if (fields.length === 0) {
     return null;
   }
-  return `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */
-function afterClone${klass.name}(node: ${klass.name}, prevNode: ${klass.name}): void {
+  // Emitted at module scope and exported, rather than inside the class's
+  // factory, because it needs nothing the factory holds: a clone copies
+  // storage, so this is field assignments and no table reads. A class that
+  // wrote its own `afterCloneFrom` is skipped by registration and so never
+  // receives this through `$config` — it imports and calls it instead, and
+  // writes only the part no schema describes. ElementNode and CodeNode both do.
+  return `/** ${klass.name}'s schema-declared fields, for a clone. @internal */
+export function afterClone${klass.name}(node: ${klass.name}, prevNode: ${klass.name}): void {
 ${fields
   .map(field => {
     const name = emittable(field, 'schema field');
@@ -1433,6 +1432,11 @@ function generatePackage(pkg) {
     // schema, the tables the class reads are bound from that schema first,
     // and the four forms close over them. A class that reads no table takes
     // no parameter.
+    // `afterCloneFrom` is module scope, not part of this body: it closes over
+    // nothing the factory holds, and a class that wrote its own imports and
+    // calls it.
+    const installsClone =
+      afterCloneFrom !== null && !declaresOwnAfterCloneFrom(klass);
     const body = [
       ...tables.map(
         ([name, declaration]) => `  const ${name} = ${declaration};`,
@@ -1445,17 +1449,17 @@ function generatePackage(pkg) {
       // nothing this generates leaves it out.
       compact,
       ...(updateFromJSON === null ? [] : [updateFromJSON]),
-      ...(afterCloneFrom === null ? [] : [afterCloneFrom]),
       `  return {\n    exportJSON: export${klass.name},\n    exportCompactJSON: exportCompact${klass.name},${
         updateFromJSON === null
           ? ''
           : `\n    updateFromJSON: update${klass.name},`
       }${
-        afterCloneFrom === null
-          ? ''
-          : `\n    afterCloneFrom: afterClone${klass.name},`
+        installsClone ? `\n    afterCloneFrom: afterClone${klass.name},` : ''
       }\n  };`,
     ];
+    if (afterCloneFrom !== null) {
+      pieces.push(afterCloneFrom);
+    }
     pieces.push(
       `/** ${klass.name}'s generated implementations, for its \`$config\`. @internal */\nexport const ${constName(klass)}: GeneratedJSONFactory = ${
         tables.length === 0 ? '()' : 'fields'

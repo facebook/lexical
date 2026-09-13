@@ -16,6 +16,14 @@
 import type {DecoratorBlockNode} from '../LexicalDecoratorBlockNode';
 import type {GeneratedJSONFactory} from 'lexical';
 
+/** DecoratorBlockNode's schema-declared fields, for a clone. @internal */
+export function afterCloneDecoratorBlockNode(
+  node: DecoratorBlockNode,
+  prevNode: DecoratorBlockNode,
+): void {
+  node.__format = prevNode.__format;
+}
+
 /** DecoratorBlockNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_DECORATORBLOCK: GeneratedJSONFactory = () => {
   /** Generated from DecoratorBlockNode's serialization schema. Do not edit by hand. */
@@ -58,14 +66,6 @@ export const GENERATED_DECORATORBLOCK: GeneratedJSONFactory = () => {
         ? v
         : '';
     return node;
-  }
-
-  /** Generated from DecoratorBlockNode's serialization schema. Do not edit by hand. */
-  function afterCloneDecoratorBlockNode(
-    node: DecoratorBlockNode,
-    prevNode: DecoratorBlockNode,
-  ): void {
-    node.__format = prevNode.__format;
   }
 
   return {

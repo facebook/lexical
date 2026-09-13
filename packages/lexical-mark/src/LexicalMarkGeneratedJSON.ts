@@ -44,6 +44,11 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
+/** MarkNode's schema-declared fields, for a clone. @internal */
+export function afterCloneMarkNode(node: MarkNode, prevNode: MarkNode): void {
+  node.__ids = prevNode.__ids;
+}
+
 /** MarkNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_MARK: GeneratedJSONFactory = () => {
   /** Generated from MarkNode's serialization schema. Do not edit by hand. */
@@ -145,11 +150,6 @@ export const GENERATED_MARK: GeneratedJSONFactory = () => {
       ? Array.from(v, e0 => (typeof e0 === 'string' ? e0 : ''))
       : [];
     return self;
-  }
-
-  /** Generated from MarkNode's serialization schema. Do not edit by hand. */
-  function afterCloneMarkNode(node: MarkNode, prevNode: MarkNode): void {
-    node.__ids = prevNode.__ids;
   }
 
   return {

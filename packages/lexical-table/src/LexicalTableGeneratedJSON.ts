@@ -46,6 +46,17 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
+/** TableNode's schema-declared fields, for a clone. @internal */
+export function afterCloneTableNode(
+  node: TableNode,
+  prevNode: TableNode,
+): void {
+  node.__colWidths = prevNode.__colWidths;
+  node.__frozenColumnCount = prevNode.__frozenColumnCount;
+  node.__frozenRowCount = prevNode.__frozenRowCount;
+  node.__rowStriping = prevNode.__rowStriping;
+}
+
 /** TableNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TABLE: GeneratedJSONFactory = () => {
   /** Generated from TableNode's serialization schema. Do not edit by hand. */
@@ -175,14 +186,6 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
     return self;
   }
 
-  /** Generated from TableNode's serialization schema. Do not edit by hand. */
-  function afterCloneTableNode(node: TableNode, prevNode: TableNode): void {
-    node.__colWidths = prevNode.__colWidths;
-    node.__frozenColumnCount = prevNode.__frozenColumnCount;
-    node.__frozenRowCount = prevNode.__frozenRowCount;
-    node.__rowStriping = prevNode.__rowStriping;
-  }
-
   return {
     exportJSON: exportTableNode,
     exportCompactJSON: exportCompactTableNode,
@@ -190,6 +193,14 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
     afterCloneFrom: afterCloneTableNode,
   };
 };
+
+/** TableRowNode's schema-declared fields, for a clone. @internal */
+export function afterCloneTableRowNode(
+  node: TableRowNode,
+  prevNode: TableRowNode,
+): void {
+  node.__height = prevNode.__height;
+}
 
 /** TableRowNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
@@ -294,14 +305,6 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
     return self;
   }
 
-  /** Generated from TableRowNode's serialization schema. Do not edit by hand. */
-  function afterCloneTableRowNode(
-    node: TableRowNode,
-    prevNode: TableRowNode,
-  ): void {
-    node.__height = prevNode.__height;
-  }
-
   return {
     exportJSON: exportTableRowNode,
     exportCompactJSON: exportCompactTableRowNode,
@@ -309,6 +312,19 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
     afterCloneFrom: afterCloneTableRowNode,
   };
 };
+
+/** TableCellNode's schema-declared fields, for a clone. @internal */
+export function afterCloneTableCellNode(
+  node: TableCellNode,
+  prevNode: TableCellNode,
+): void {
+  node.__backgroundColor = prevNode.__backgroundColor;
+  node.__colSpan = prevNode.__colSpan;
+  node.__headerState = prevNode.__headerState;
+  node.__rowSpan = prevNode.__rowSpan;
+  node.__verticalAlign = prevNode.__verticalAlign;
+  node.__width = prevNode.__width;
+}
 
 /** TableCellNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
@@ -452,19 +468,6 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
     v = json.width;
     self.__width = v === undefined || num(v, 0) === 0 ? undefined : num(v, 0);
     return self;
-  }
-
-  /** Generated from TableCellNode's serialization schema. Do not edit by hand. */
-  function afterCloneTableCellNode(
-    node: TableCellNode,
-    prevNode: TableCellNode,
-  ): void {
-    node.__backgroundColor = prevNode.__backgroundColor;
-    node.__colSpan = prevNode.__colSpan;
-    node.__headerState = prevNode.__headerState;
-    node.__rowSpan = prevNode.__rowSpan;
-    node.__verticalAlign = prevNode.__verticalAlign;
-    node.__width = prevNode.__width;
   }
 
   return {

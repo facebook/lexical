@@ -60,6 +60,13 @@ function numK(
   return n < min ? min : n > max ? max : n;
 }
 
+/** ListNode's schema-declared fields, for a clone. @internal */
+export function afterCloneListNode(node: ListNode, prevNode: ListNode): void {
+  node.__listType = prevNode.__listType;
+  node.__start = prevNode.__start;
+  node.__tag = prevNode.__tag;
+}
+
 /** ListNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_LIST: GeneratedJSONFactory = fields => {
   const LIST_LISTTYPE_ALIAS = aliasTableOf(fields, 'listType', 0) as {
@@ -180,13 +187,6 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
     return self;
   }
 
-  /** Generated from ListNode's serialization schema. Do not edit by hand. */
-  function afterCloneListNode(node: ListNode, prevNode: ListNode): void {
-    node.__listType = prevNode.__listType;
-    node.__start = prevNode.__start;
-    node.__tag = prevNode.__tag;
-  }
-
   return {
     exportJSON: exportListNode,
     exportCompactJSON: exportCompactListNode,
@@ -194,6 +194,15 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
     afterCloneFrom: afterCloneListNode,
   };
 };
+
+/** ListItemNode's schema-declared fields, for a clone. @internal */
+export function afterCloneListItemNode(
+  node: ListItemNode,
+  prevNode: ListItemNode,
+): void {
+  node.__checked = prevNode.__checked;
+  node.__value = prevNode.__value;
+}
 
 /** ListItemNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
@@ -305,15 +314,6 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
     v = json.value;
     self.__value = num(v, 1);
     return self;
-  }
-
-  /** Generated from ListItemNode's serialization schema. Do not edit by hand. */
-  function afterCloneListItemNode(
-    node: ListItemNode,
-    prevNode: ListItemNode,
-  ): void {
-    node.__checked = prevNode.__checked;
-    node.__value = prevNode.__value;
   }
 
   return {

@@ -517,29 +517,25 @@ import {
   enumValue,
   nodeSchema,
   numberValue,
+  withField,
 } from 'lexical';
 
 // Declared above the class, as most built-in nodes do: a class's *type* is
 // in scope before its definition. Inline in `$config()` is checked the same
 // way; see "Where to write the schema" below.
 const counterSchema = nodeSchema<CounterNode>()({
-  count: numberValue(),
-  variant: enumValue(['a', 'b']),
+  // `withField` says where the property is stored, which is what lets the
+  // export read it, the parse assign it, and a clone carry it across.
+  count: withField(numberValue(), {field: '__count'}),
+  variant: withField(enumValue(['a', 'b']), {field: '__variant'}),
 });
 
 class CounterNode extends ElementNode {
   __count = 0;
   __variant: 'a' | 'b' = 'a';
 
-  // Node properties live on the node, so a clone has to carry them across.
-  // These two are declared through accessor methods, which name no field for
-  // the schema to copy, so the class carries them itself; a property declared
-  // with `withField` needs none of this. See "Carrying properties across a
-  // clone" below.
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__count = prevNode.__count;
-    this.__variant = prevNode.__variant;
+  $config() {
+    return this.config('counter', {extends: ElementNode, json: counterSchema});
   }
 
   createDOM(): HTMLElement {
@@ -550,10 +546,8 @@ class CounterNode extends ElementNode {
     return false;
   }
 
-  $config() {
-    return this.config('counter', {extends: ElementNode, json: counterSchema});
-  }
-
+  // Accessors for callers. The schema does not need them — it names the
+  // fields — but a node with no way to set its own properties is not much use.
   setCount(count: number): this {
     const self = this.getWritable();
     self.__count = count;
@@ -576,10 +570,17 @@ class CounterNode extends ElementNode {
 }
 ```
 
-`count` and `variant` are parsed through `setCount` and `setVariant` and
-written through `getCount` and `getVariant`, so neither `updateFromJSON` nor
-`exportJSON` has to be written at all — the rest of the class is the ordinary
-node boilerplate the schema does not touch.
+That is the whole of `CounterNode`'s serialization: no `exportJSON`, no
+`updateFromJSON`, no `static importJSON`, and no `afterCloneFrom` — declaring
+where a property is stored is what each of those needed to be told. The rest of
+the class is the ordinary node boilerplate the schema does not touch.
+
+A property may name accessor methods instead of a field, which is the right
+declaration for one the node computes or normalizes rather than stores
+verbatim. That is the one case a class still writes its own `afterCloneFrom`:
+an accessor names no field, so nothing in the schema says what the clone has to
+carry. See [Carrying properties across a
+clone](#carrying-properties-across-a-clone).
 
 Each property's schema is built from composable helpers exported by
 `lexical`:
@@ -594,15 +595,17 @@ Each property's schema is built from composable helpers exported by
 - [`aliasedValue(inner, aliases)`](/docs/api/modules/lexical#aliasedvalue) — a lookup-table normalization: a string matching a key of `aliases` yields the value it names, and anything else is `inner`'s to validate, so the domain, the default and the equality all stay `inner`'s. This is `transformValue` narrowed to the case where the normalization is a lookup, and the reason to prefer it is that the lookup is *data*: it is part of the schema's introspectable `meta`, where tooling can see it — example generation produces the legacy spellings, and a code generator can compile the table instead of being unable to see inside a function. `TextNode` declares its legacy `format: 'bold'` and `detail: 'directionless'` shorthands this way
 - [`rawValue()`](/docs/api/modules/lexical#rawvalue) — an escape hatch that passes the value through unparsed
 - [`nodeSchema<MyNode>()(fields)`](/docs/api/modules/lexical#nodeschema) — the record of properties, and what `$config`'s `json` takes. The one type argument names the node, which is what lets every `field`, accessor and `when` predicate be checked against it. It is called in two steps because those cannot be inferred together: naming the node explicitly would stop TypeScript inferring the field types on the same call, and they are what carry each property's accepted input into `SchemaInput`: a name the node does not have is a compile error at the property that declares it, with the correction suggested (`Type '"field:__langauge"' is not assignable to type '... | TaggedNamesOf<CodeNode> | ObligationsOf<CodeNode>'. Did you mean '"field:__language"'?`). Declaring the schema above the class it names is fine — a class's *type* is in scope before its definition — and so is writing it inline in `$config()`; see "Where to write the schema" below. A serialized property may not be named for a member of `Object.prototype` (`toString`, `constructor`, `valueOf`, `__proto__`, …): a serialized object comes from `JSON.parse` and inherits those, and every read of a property is a bare one — an absent property is `undefined`, which is already its default — so such a name would read the inherited method for a document that never carried the key. It is refused where the schema is written.
+- [`objectValue(fields)`](/docs/api/modules/lexical#objectvalue) — the same record without the node check, for a property whose value is itself an object; its fields name no accessor, since an object's field is not a node's property. A node's own schema is a `nodeSchema`: a schema that names anything has to be built with one, and a `$config` refuses an `objectValue` whose fields name an accessor
+- [`withAccessors(schema, {getter, setter})`](/docs/api/modules/lexical#withaccessors) — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose. **`withAccessors` and `withField` go outside every other combinator, exactly once per property.** Each combinator widens what the property holds, so an accessor named *under* one answers for a domain that is not the property's; every combinator refuses a schema that already names an accessor, at compile time and at run time. See the [`withAccessors` API entry](/docs/api/modules/lexical#withaccessors) for the full rule
+- [`withField(schema, {field, getter?, setter?, decode?, encode?, when?})`](/docs/api/modules/lexical#withfield) — declare that the property *is* a node field, rather than a pair of accessor methods. Exporting reads the field and importing assigns it, with no method call on either side and no version resolution in either direction — the node being parsed into is already writable, and the node being exported is one the walk already resolved from the EditorState — so this is the fast path for a property stored verbatim. The field has to be an own property of a fresh node — initialize it, or assign it in the constructor — since that is how a misspelled name is told from a real one when the node is first serialized. Because the schema records the field rather than a bare name, tooling can tell a field from a method without knowing how a node names its fields — enough for a codegen pass to emit a specialized parser for a hot node type. Each direction still *stands in for* an accessor: any class that overrides it between the declaring class and the node's own has said the field and the method are not equivalent, and it wins — the field access is abandoned and the method is called, so migrating a property to a field is not a behavior change for anyone who overrode its accessor. That accessor is the conventional `get<Prop>`/`set<Prop>` unless `getter`/`setter` name a different one, so most declarations need neither: name one only where the accessor is spelled differently, as `TextNode`'s `text` is (`getTextContent`) and `LinkNode`'s `url` is (`getURL`). Naming one widens the guard rather than moving it — the conventional name is still watched, because a spelled accessor is usually a wrapper *over* the conventional one (`ElementNode`'s `textFormat` names `getSerializedTextFormat`, which computes its result from `getTextFormat`) and a subclass overriding the accessor that predates the schema must not be ignored. A node with no such method defers to nothing, which needs no declaring either. `decode`/`encode` are lookup tables between the stored and serialized forms (`TextNode` stores `mode` as a number and serializes it as a name), keeping such a property on the direct-field path without an accessor method in between. The two directions can also be declared separately with `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})`, which reads the field directly but writes through a method that normalizes.
+
+Each name is checked in the *position* it was written in, not merely for existing: a getter has to be a method taking no arguments, a setter one that takes a value, and a `when` predicate a zero-argument method returning `boolean` — so `getter: 'setStyle'` is a compile error rather than a method the walk calls with nothing. The *type* behind the name is checked too: the field a property is declared as has to hold what the schema parses, a getter has to return it (or `undefined`, which omits the property), and a setter has to accept it. A field whose stored and serialized forms differ says so with `decode`/`encode`, and each table is checked for the one direction it serves: `decode`'s values have to be ones the schema serializes (or `undefined`, which omits the property), `encode`'s values have to fit the field and its keys have to cover what the schema produces (a parsed value the table does not map is stored as the encoded default, so every member of an enum is checked at compile time and the default of any other schema when the node is registered), and a direction with no table keeps the field's own check. The result stays bound to that node: `$config` asks for the schema of the class it is declared on, so one checked against an unrelated class is a compile error there rather than a set of accessors that happen not to resolve at runtime. A schema checked against a base class still installs on a subclass, which is the direction that stays true
 
 :::caution Name your `extends`
 
 A `$config()` must name its superclass — `this.config('my-node', {extends: MyBase, json: …})`. The runtime has always filled it in from the prototype chain, but the type system cannot, and it is what the composed serialization types follow from one config to the next: omit it and the node still contributes its own declarations, but the walk stops there, so every property it inherits goes missing from `LexicalSchemaInput` while the runtime keeps applying it. Where the superclass declares a `$config()` of its own — `TextNode`, `ElementNode` and `LineBreakNode` do — omitting it is now a compile error on the override rather than a silent loss, so a node that used to compile without one needs the single line added.
 
-::: Each name is checked in the *position* it was written in, not merely for existing: a getter has to be a method taking no arguments, a setter one that takes a value, and a `when` predicate a zero-argument method returning `boolean` — so `getter: 'setStyle'` is a compile error rather than a method the walk calls with nothing. The *type* behind the name is checked too: the field a property is declared as has to hold what the schema parses, a getter has to return it (or `undefined`, which omits the property), and a setter has to accept it. A field whose stored and serialized forms differ says so with `decode`/`encode`, and each table is checked for the one direction it serves: `decode`'s values have to be ones the schema serializes (or `undefined`, which omits the property), `encode`'s values have to fit the field and its keys have to cover what the schema produces (a parsed value the table does not map is stored as the encoded default, so every member of an enum is checked at compile time and the default of any other schema when the node is registered), and a direction with no table keeps the field's own check. The result stays bound to that node: `$config` asks for the schema of the class it is declared on, so one checked against an unrelated class is a compile error there rather than a set of accessors that happen not to resolve at runtime. A schema checked against a base class still installs on a subclass, which is the direction that stays true
-- [`objectValue(fields)`](/docs/api/modules/lexical#objectvalue) — the same record without the node check, for a property whose value is itself an object; its fields name no accessor, since an object's field is not a node's property. A node's own schema is a `nodeSchema`: a schema that names anything has to be built with one, and a `$config` refuses an `objectValue` whose fields name an accessor
-- [`withAccessors(schema, {getter, setter})`](/docs/api/modules/lexical#withaccessors) — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose. **`withAccessors` and `withField` go outside every other combinator, exactly once per property.** Each combinator widens what the property holds, so an accessor named *under* one answers for a domain that is not the property's; every combinator refuses a schema that already names an accessor, at compile time and at run time. See the [`withAccessors` API entry](/docs/api/modules/lexical#withaccessors) for the full rule
-- [`withField(schema, {field, getter?, setter?, decode?, encode?, when?})`](/docs/api/modules/lexical#withfield) — declare that the property *is* a node field, rather than a pair of accessor methods. Exporting reads the field and importing assigns it, with no method call on either side and no version resolution in either direction — the node being parsed into is already writable, and the node being exported is one the walk already resolved from the EditorState — so this is the fast path for a property stored verbatim. The field has to be an own property of a fresh node — initialize it, or assign it in the constructor — since that is how a misspelled name is told from a real one when the node is first serialized. Because the schema records the field rather than a bare name, tooling can tell a field from a method without knowing how a node names its fields — enough for a codegen pass to emit a specialized parser for a hot node type. Each direction still *stands in for* an accessor: any class that overrides it between the declaring class and the node's own has said the field and the method are not equivalent, and it wins — the field access is abandoned and the method is called, so migrating a property to a field is not a behavior change for anyone who overrode its accessor. That accessor is the conventional `get<Prop>`/`set<Prop>` unless `getter`/`setter` name a different one, so most declarations need neither: name one only where the accessor is spelled differently, as `TextNode`'s `text` is (`getTextContent`) and `LinkNode`'s `url` is (`getURL`). Naming one widens the guard rather than moving it — the conventional name is still watched, because a spelled accessor is usually a wrapper *over* the conventional one (`ElementNode`'s `textFormat` names `getSerializedTextFormat`, which computes its result from `getTextFormat`) and a subclass overriding the accessor that predates the schema must not be ignored. A node with no such method defers to nothing, which needs no declaring either. `decode`/`encode` are lookup tables between the stored and serialized forms (`TextNode` stores `mode` as a number and serializes it as a name), keeping such a property on the direct-field path without an accessor method in between. The two directions can also be declared separately with `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})`, which reads the field directly but writes through a method that normalizes.
+:::
 
 A schema also carries what it *accepts*, which is wider than what it parses to
 wherever it reads more than it writes: `numberValue` reads a number spelled as
@@ -770,9 +773,39 @@ Two cases stay the class's own, and both follow the same rule the synthesized
 `clone` and `importJSON` follow — declare it yourself and you own it:
 
 - **A property declared through accessor methods on both sides**, like
-  `MarkNode`'s `ids` (`getIDs`/`setIDs`) or `CounterNode`'s above. The schema
-  names no field, so there is nothing to copy, and the class writes an
-  `afterCloneFrom` for it.
+  `MarkNode`'s `ids` (`getIDs`/`setIDs`). The schema names no field, so there
+  is nothing to copy, and the class writes an `afterCloneFrom` for it:
+
+  ```ts
+  class TallyNode extends ElementNode {
+    __count = 0;
+
+    // `count` names no field, so this is the one piece of boilerplate a
+    // schema-declared node can still owe.
+    afterCloneFrom(prevNode: this): void {
+      super.afterCloneFrom(prevNode);
+      this.__count = prevNode.__count;
+    }
+
+    $config() {
+      return this.config('tally', {
+        extends: ElementNode,
+        // Parsed through setCount, written through getCount.
+        json: nodeSchema<TallyNode>()({count: numberValue()}),
+      });
+    }
+
+    setCount(count: number): this {
+      const self = this.getWritable();
+      self.__count = Math.max(0, count);
+      return self;
+    }
+
+    getCount(): number {
+      return this.getLatest().__count;
+    }
+  }
+  ```
 - **A class that defines its own `afterCloneFrom`**, which is left alone and is
   then responsible for all of its own properties. `ElementNode` is one: its
   clone also has to carry `__first`, `__last`, `__size` and its slot

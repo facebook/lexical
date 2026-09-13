@@ -7,10 +7,8 @@
  */
 
 import type {
-  BaseStaticNodeConfig,
   KlassConstructor,
   LexicalEditor,
-  LexicalUpdateJSON,
   Spread,
   TextFormatType,
 } from 'lexical';
@@ -25,15 +23,26 @@ import {
   TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
 import {ElementDOMSlot} from '../LexicalDOMSlot';
+import {GENERATED_ELEMENT} from '../LexicalGeneratedJSON';
 import {
   $isEphemeral,
   type DOMExportOutput,
   LexicalNode,
+  type LexicalParseJSON,
   type NodeKey,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type SlotChildNode,
   type SlotHostNode,
 } from '../LexicalNode';
+import {
+  enumValue,
+  nodeSchema,
+  numberValue,
+  stringValue,
+  withAccessors,
+  withField,
+} from '../LexicalSchema';
 import {
   $getSelection,
   $internalMakeRangeSelection,
@@ -60,11 +69,15 @@ import {
   toggleTextFormatType,
 } from '../LexicalUtils';
 
-export type SerializedElementNode<
-  T extends SerializedLexicalNode = SerializedLexicalNode,
-> = Spread<
+/**
+ * No type parameter for the children: a node cannot declare what kind of
+ * children it accepts, so any node may appear under any element and
+ * `SerializedLexicalNode` is the only type this can honestly give them. The
+ * parameter that used to be here promised a narrowing nothing enforces.
+ */
+export type SerializedElementNode = Spread<
   {
-    children: T[];
+    children: SerializedLexicalNode[];
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;
@@ -73,6 +86,64 @@ export type SerializedElementNode<
   },
   SerializedLexicalNode
 >;
+
+// Single source of truth for parsing the node-specific properties of a
+// SerializedElementNode (those it adds over a SerializedLexicalNode), applied
+// by the base LexicalNode.updateFromJSON.
+const elementNodeSchema = nodeSchema<ElementNode>()({
+  // `direction` and `indent` *are* these fields in both directions —
+  // get/setDirection and get/setIndent do nothing else — so they are declared
+  // as the fields they are. Each still stands in for the conventional
+  // accessor, so a subclass that overrides one reclaims its property (see
+  // SchemaFieldBase.method).
+  direction: withField(enumValue([null, 'ltr', 'rtl']), {
+    field: '__dir',
+  }),
+  // The serialized `format` is the ElementFormatType string, not the numeric
+  // format getFormat() returns.
+  format: withAccessors(
+    enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
+    {getter: 'getFormatType'},
+  ),
+  // A whole, non-negative number. That is the domain an indent has always
+  // had — every writer of one is an indent/outdent step — but nothing used to
+  // check it: `ElementNode.setIndent` is a bare field write, so a fractional
+  // or negative value in a document was stored verbatim rather than rejected.
+  // Stating the domain is what makes such a value parse to 0 instead.
+  // Deliberately not capped —
+  // `numberValue` falls back to its default rather than clamping, so a maximum
+  // here would silently flatten a legitimately deep document to indent 0. The
+  // unbounded walk that motivated a cap is ListItemNode.setIndent's, and it is
+  // bounded there.
+  indent: withField(numberValue(0, {integer: true, min: 0}), {
+    field: '__indent',
+  }),
+  // Persisted only for an element with no TextNode child (see #7968), which
+  // `shouldSerializeTextStyles` decides. Declaring that as the field it is
+  // plus the predicate that gates it — rather than reading through
+  // `getSerializedTextFormat`/`getSerializedTextStyle` — keeps both on the
+  // direct-field path, and lets generated code call the shared predicate once
+  // instead of once per property.
+  //
+  // Naming the wrapper keeps a subclass in charge of its own property: an
+  // override of it, or of the `getTextFormat`/`getTextStyle` it computes from
+  // — the accessors `exportJSON` read before this schema existed, and the ones
+  // a subclass would reach for — abandons the field and calls the wrapper.
+  textFormat: withAccessors(numberValue(), {
+    getter: {
+      field: '__textFormat',
+      method: 'getSerializedTextFormat',
+      when: 'shouldSerializeTextStyles',
+    },
+  }),
+  textStyle: withAccessors(stringValue(), {
+    getter: {
+      field: '__textStyle',
+      method: 'getSerializedTextStyle',
+      when: 'shouldSerializeTextStyles',
+    },
+  }),
+});
 
 export type ElementFormatType =
   | 'left'
@@ -112,6 +183,14 @@ function $normalizeShadowRootChildren(node: ElementNode): void {
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ElementNode {
+  exportJSON(compact?: false): SerializedElementNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedElementNode>;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedElementNode>): this;
+  // Both JSON methods are narrowed here rather than overridden: the base
+  // implementations already do the right thing for an element — they read
+  // elementNodeSchema above, and the base export leads with `children` for
+  // anything that passes $isElementNode — so all a real override would
+  // contribute is this return type.
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
 }
@@ -147,10 +226,12 @@ export class ElementNode
   /** @internal */
   __slots: null | Map<string, NodeKey>;
 
-  // Specific type information is discarded for backwards compatibility,
-  // there is nothing meaninful to gain from requiring `{extends: ElementNode}`
-  // with the current shape here (just a `$transform`)
-  $config(): BaseStaticNodeConfig {
+  // Left to inference rather than annotated `: BaseStaticNodeConfig`. The
+  // annotation discarded the record, and with it every element's schema — what
+  // `LexicalSchemaInput` walks to compose the properties a node accepts. The
+  // cost is that a subclass overriding `$config()` has to name its `extends`,
+  // which is the convention every config in the tree already follows.
+  $config() {
     return this.config(Symbol.for('ElementNode'), {
       /*
        * Built-in normalize for shadow-root ElementNodes: wraps any direct child
@@ -167,6 +248,8 @@ export class ElementNode
        */
       $transform: $normalizeShadowRootChildren,
       extends: LexicalNode,
+      generated: GENERATED_ELEMENT,
+      json: elementNodeSchema,
     });
   }
 
@@ -642,12 +725,12 @@ export class ElementNode
   setFormat(type: ElementFormatType): this {
     const self = this.getWritable();
     self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] || 0 : 0;
-    return this;
+    return self;
   }
   setStyle(style: string): this {
     const self = this.getWritable();
     self.__style = style || '';
-    return this;
+    return self;
   }
   setTextFormat(type: number): this {
     const self = this.getWritable();
@@ -662,7 +745,7 @@ export class ElementNode
   setIndent(indentLevel: number): this {
     const self = this.getWritable();
     self.__indent = indentLevel;
-    return this;
+    return self;
   }
   splice(
     start: number,
@@ -852,46 +935,48 @@ export class ElementNode
     return {element};
   }
   // JSON serialization
-  exportJSON(): SerializedElementNode {
-    const json: SerializedElementNode = {
-      children: [],
-      direction: this.getDirection(),
-      format: this.getFormatType(),
-      indent: this.getIndent(),
-      // As an exception here we invoke super at the end for historical reasons.
-      // Namely, to preserve the order of the properties and not to break the tests
-      // that use the serialized string representation.
-      ...super.exportJSON(),
-    };
-    const textFormat = this.getTextFormat();
-    const textStyle = this.getTextStyle();
-    // Only persist for cases when there are no TextNode children from which
-    // these would be set on reconcile (#7968)
-    if (
-      (textFormat !== 0 || textStyle !== '') &&
-      !$isRootOrShadowRoot(this) &&
-      !this.getChildren().some($isTextNode)
+  /**
+   * Whether `textFormat`/`textStyle` are persisted at all: only when there are
+   * no TextNode children from which they would be set on reconcile (#7968).
+   *
+   * @internal
+   */
+  shouldSerializeTextStyles(): boolean {
+    if ($isRootOrShadowRoot(this)) {
+      return false;
+    }
+    // Walked rather than materialized with getChildren(), and it exits at the
+    // first TextNode. Both callers below test their own value first, so an
+    // element with a default textFormat/textStyle — every element that has
+    // many non-text children in practice — never reaches this at all.
+    for (
+      let child = this.getFirstChild();
+      child !== null;
+      child = child.getNextSibling()
     ) {
-      if (textFormat !== 0) {
-        json.textFormat = textFormat;
-      }
-      if (textStyle !== '') {
-        json.textStyle = textStyle;
+      if ($isTextNode(child)) {
+        return false;
       }
     }
-    return json;
+    return true;
   }
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedElementNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setFormat(serializedNode.format)
-      .setIndent(serializedNode.indent)
-      .setDirection(serializedNode.direction)
-      .setTextFormat(serializedNode.textFormat || 0)
-      .setTextStyle(serializedNode.textStyle || '');
+
+  /** @internal Serialized `textFormat`, or undefined to omit it. */
+  getSerializedTextFormat(): number | undefined {
+    const textFormat = this.getTextFormat();
+    return textFormat !== 0 && this.shouldSerializeTextStyles()
+      ? textFormat
+      : undefined;
   }
+
+  /** @internal Serialized `textStyle`, or undefined to omit it. */
+  getSerializedTextStyle(): string | undefined {
+    const textStyle = this.getTextStyle();
+    return textStyle !== '' && this.shouldSerializeTextStyles()
+      ? textStyle
+      : undefined;
+  }
+
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(
     selection: RangeSelection,

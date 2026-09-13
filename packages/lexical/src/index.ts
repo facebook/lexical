@@ -186,13 +186,16 @@ export {
   getTransformSetFromKlass,
 } from './LexicalEditor';
 export type {
+  CompactSerializedEditorState,
   EditorState,
   EditorStateReadOptions,
+  ParsableSerializedEditorState,
   SerializedEditorState,
 } from './LexicalEditorState';
 export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler, KeyDownShortcut} from './LexicalEvents';
 export {stopLexicalPropagation} from './LexicalEvents';
+export type {GeneratedJSON, GeneratedJSONFactory} from './LexicalGeneratedJSON';
 export type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
 export {
   compileKeyboardShortcuts,
@@ -216,10 +219,14 @@ export type {
   DOMExportOutputMap,
   LexicalExportJSON,
   LexicalNode,
+  LexicalParseJSON,
   LexicalUpdateJSON,
   NodeKey,
   NodeMap,
+  ParsableSerializedNode,
   SerializedLexicalNode,
+  SerializedPartial,
+  SerializedPartialNode,
   SlotChildNode,
   SlotHostNode,
   StaticNodeConfig,
@@ -237,6 +244,7 @@ export {
   type AnyStateConfig,
   createSharedNodeState,
   createState,
+  type LexicalSchemaInput,
   NODE_STATE_DIRECT,
   NODE_STATE_LATEST,
   type NodeStateJSON,
@@ -251,6 +259,53 @@ export {
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export type {RefCountedRegistry} from './LexicalRefCountedRegistry';
 export {createRefCountedRegistry} from './LexicalRefCountedRegistry';
+export {
+  aliasedValue,
+  aliasTableOf,
+  type AnySerializationSchema,
+  arrayValue,
+  booleanValue,
+  type ComposedSchemaFields,
+  declaredAccepts,
+  decodeTableOf,
+  encodedDefaultOf,
+  encodeTableOf,
+  enumValue,
+  type FieldOptions,
+  type InnerSerializationSchema,
+  type InnerSerializationSchemaFields,
+  isSchemaField,
+  type MemberOf,
+  type NamesOf,
+  nodeSchema,
+  type NodeSerializationSchema,
+  nullable,
+  numberValue,
+  type NumberValueOptions,
+  objectValue,
+  optional,
+  type Parse,
+  rawValue,
+  type SchemaAccessor,
+  type SchemaAccessors,
+  type SchemaField,
+  type SchemaFieldBase,
+  type SchemaGetterAccessor,
+  type SchemaGetterField,
+  type SchemaInput,
+  type SchemaSetterAccessor,
+  type SchemaSetterField,
+  type SerializationSchema,
+  type SerializationSchemaFields,
+  type SerializationSchemaMeta,
+  type SerializationSchemaShape,
+  type SerializationSchemaValue,
+  stringValue,
+  transformValue,
+  unionValue,
+  withAccessors,
+  withField,
+} from './LexicalSchema';
 export type {
   BaseSelection,
   ElementPointType as ElementPoint,
@@ -281,6 +336,11 @@ export {
   type RawTextVisitor,
   tokenizeRawText,
 } from './LexicalSelection';
+export {
+  $exportNodeJSON,
+  $isCompactExport,
+  $withCompactExport,
+} from './LexicalSerializedExport';
 export type {SlotName} from './LexicalSlot';
 export {
   $getSelectionSlotFrame,
@@ -344,12 +404,14 @@ export {
   $setFormatFromDOM,
   $setSelection,
   $splitNode,
+  type CompactDefaultTest,
   CONTROL_OR_OTHER_KEY,
   type DOMSelectionBoundaryPoints,
   findAllLexicalElementsDeep,
   getActiveElement,
   getActiveElementDeep,
   getComposedEventTarget,
+  getComposedSchemaFields,
   getComposedStaticRange,
   getDOMOwnerDocument,
   getDOMSelection,

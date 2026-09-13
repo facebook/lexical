@@ -32,6 +32,26 @@ export {
 } from '@lexical/compiler/PureAnnotations';
 
 export type {
+  CompileParseResult,
+  SchemaJsonTable,
+  VerifyCompiledParseOptions,
+} from '@lexical/compiler/SchemaJsonCodegen';
+
+export {
+  compileDiffersFromDefault,
+  compileParse,
+  JSON_NUMBER_SOURCE,
+  literal,
+  NotCompilable,
+  NUM_HELPER_SOURCE,
+  NUM_RANGE_HELPER_SOURCE,
+  verificationCorpus,
+  verifyCompiledParse,
+  verifyDiffersFromDefault,
+  verifyTableCoversDomain,
+} from '@lexical/compiler/SchemaJsonCodegen';
+
+export type {
   SubpathImportsOptions,
   SubpathImportsPlugin,
 } from '@lexical/compiler/SubpathImports';

@@ -24,6 +24,7 @@ import {
   $setFormatFromDOM,
   addClassNamesToElement,
   type BaseSelection,
+  booleanValue,
   buildImportMap,
   type DOMConversionOutput,
   type DOMExportOutput,
@@ -34,19 +35,26 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
   normalizeClassNames,
+  numberValue,
+  optional,
   type ParagraphNode,
   type RangeSelection,
   removeClassNamesFromElement,
   type SerializedElementNode,
+  type SerializedPartial,
   setDOMStyleFromCSS,
   type Spread,
+  withAccessors,
+  withField,
 } from 'lexical';
 
 import {$createListNode, $isListNode, type ListNode, type ListType} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
+import {GENERATED_LISTITEM} from './LexicalListGeneratedJSON';
 import {$getNewListStart, $isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
@@ -56,6 +64,36 @@ export type SerializedListItemNode = Spread<
   },
   SerializedElementNode
 >;
+
+/**
+ * The deepest list nesting `setIndent` will walk to. Each level it steps
+ * through nests or unwraps a whole list, so this bounds work an untrusted
+ * `indent` could otherwise make unbounded.
+ */
+const MAX_LIST_ITEM_INDENT = 128;
+
+const listItemNodeSchema = nodeSchema<ListItemNode>()({
+  // getChecked computes from the parent list's type, so the getter stays a
+  // method; setChecked is a bare field write.
+  checked: withAccessors(optional(booleanValue()), {
+    setter: {field: '__checked'},
+  }),
+  // Overrides the inherited ElementNode field to bound it. This indent is
+  // structural — applying it nests or unwraps one whole list per level — so an
+  // unbounded value out of untrusted JSON would build millions of nodes.
+  // `clamp`, because the plain bounds fall back to the *default* for a value
+  // outside them, which would read an over-deep item as indent 0 instead of as
+  // deeply nested.
+  indent: numberValue(0, {
+    clamp: true,
+    integer: true,
+    max: MAX_LIST_ITEM_INDENT,
+    min: 0,
+  }),
+  value: withField(numberValue(1), {
+    field: '__value',
+  }),
+});
 
 function applyMarkerStyles(
   dom: HTMLElement,
@@ -83,7 +121,17 @@ function applyMarkerStyles(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface ListItemNode {
+  exportJSON(compact?: false): SerializedListItemNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedListItemNode>;
+  updateFromJSON(
+    serializedNode: LexicalParseJSON<SerializedListItemNode>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ListItemNode extends ElementNode {
   /** @internal */
   __value: number;
@@ -135,12 +183,14 @@ export class ListItemNode extends ElementNode {
         }
       },
       extends: ElementNode,
+      generated: GENERATED_LISTITEM,
       importDOM: buildImportMap({
         li: () => ({
           conversion: $convertListItemElement,
           priority: 0,
         }),
       }),
+      json: listItemNodeSchema,
     });
   }
 
@@ -196,15 +246,6 @@ export class ListItemNode extends ElementNode {
     return false;
   }
 
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedListItemNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setValue(serializedNode.value)
-      .setChecked(serializedNode.checked);
-  }
-
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config);
 
@@ -238,14 +279,6 @@ export class ListItemNode extends ElementNode {
 
     return {
       element,
-    };
-  }
-
-  exportJSON(): SerializedListItemNode {
-    return {
-      ...super.exportJSON(),
-      checked: this.getChecked(),
-      value: this.getValue(),
     };
   }
 
@@ -500,9 +533,15 @@ export class ListItemNode extends ElementNode {
     invariant(typeof indent === 'number', 'Invalid indent value.');
     indent = Math.floor(indent);
     invariant(indent >= 0, 'Indent value must be non-negative.');
+    // Deliberately not clamped here: the bound belongs on the parse path (see
+    // listItemNodeSchema), because clamping the target of a walk that starts
+    // from the node's *current* indent would outdent an item that is already
+    // nested deeper than the bound — making `item.setIndent(item.getIndent())`
+    // destroy structure rather than do nothing.
+    const target = indent;
     let currentIndent = this.getIndent();
-    while (currentIndent !== indent) {
-      if (currentIndent < indent) {
+    while (currentIndent !== target) {
+      if (currentIndent < target) {
         $handleIndent(this);
         currentIndent++;
       } else {

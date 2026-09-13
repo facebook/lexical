@@ -28,14 +28,20 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
+  nullable,
+  optional,
   type ParagraphNode,
   type RangeSelection,
   type SerializedElementNode,
+  type SerializedPartial,
   setDOMStyleFromCSS,
   type Spread,
+  stringValue,
   type TabNode,
+  withAccessors,
 } from 'lexical';
 
 import {
@@ -44,6 +50,7 @@ import {
   type CodeHighlightNode,
 } from './CodeHighlightNode';
 import {$getFirstCodeNodeOfLine} from './FlatStructureUtils';
+import {GENERATED_CODE} from './LexicalCodeCoreGeneratedJSON';
 
 export type SerializedCodeNode = Spread<
   {
@@ -52,6 +59,19 @@ export type SerializedCodeNode = Spread<
   },
   SerializedElementNode
 >;
+
+// Single source of truth for parsing the node-specific properties of a
+// SerializedCodeNode (those it adds over a SerializedElementNode).
+const codeNodeSchema = nodeSchema<CodeNode>()({
+  // Read straight off the fields; applied through the setters, which
+  // normalize a falsy value to undefined.
+  language: withAccessors(optional(nullable(stringValue())), {
+    getter: {field: '__language'},
+  }),
+  theme: withAccessors(optional(stringValue()), {
+    getter: {field: '__theme'},
+  }),
+});
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
 /** @internal Configurable through the extensions. */
@@ -77,7 +97,15 @@ const noExtensionDeprecation = warnOnlyOnce(
   'Using CodeNode without CodeExtension is deprecated',
 );
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface CodeNode {
+  exportJSON(compact?: false): SerializedCodeNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedCodeNode>;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedCodeNode>): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class CodeNode extends ElementNode {
   /** @internal */
   __language: string | null | undefined;
@@ -89,6 +117,7 @@ export class CodeNode extends ElementNode {
   $config() {
     return this.config('code', {
       extends: ElementNode,
+      generated: GENERATED_CODE,
       importDOM: {
         // Typically <pre> is used for code blocks, and <code> for inline code styles
         // but if it's a multi line <code> we'll create a block. Pass through to
@@ -153,6 +182,7 @@ export class CodeNode extends ElementNode {
           return null;
         },
       },
+      json: codeNodeSchema,
     });
   }
 
@@ -268,21 +298,6 @@ export class CodeNode extends ElementNode {
       setDOMStyleFromCSS(element.style, style);
     }
     return {element};
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedCodeNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setLanguage(serializedNode.language)
-      .setTheme(serializedNode.theme);
-  }
-
-  exportJSON(): SerializedCodeNode {
-    return {
-      ...super.exportJSON(),
-      language: this.getLanguage(),
-      theme: this.getTheme(),
-    };
   }
 
   // Mutation

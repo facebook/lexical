@@ -6,7 +6,12 @@
  *
  */
 
-import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
+import type {
+  LexicalNode,
+  ParsableSerializedNode,
+  SerializedLexicalNode,
+  SerializedPartialNode,
+} from './LexicalNode';
 
 import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
@@ -31,9 +36,11 @@ import {
 } from './LexicalEditor';
 import {
   cloneEditorState,
+  type CompactSerializedEditorState,
   createEmptyEditorState,
   type EditorState,
   editorStateHasDirtySelection,
+  type ParsableSerializedEditorState,
   type SerializedEditorState,
 } from './LexicalEditorState';
 import {
@@ -391,18 +398,34 @@ function $applyAllTransforms(
   editor._dirtyElements = dirtyElements;
 }
 
-type InternalSerializedNode = {
-  children?: InternalSerializedNode[];
-  $slots?: Record<string, InternalSerializedNode>;
-  type: string;
-  version: number;
-};
-
 /** Deserializes a SerializedLexicalNode JSON object into its corresponding LexicalNode instance. */
 export function $parseSerializedNode(
-  serializedNode: SerializedLexicalNode,
+  // The node's type is not known here — that is what it reads `type` to
+  // discover — so this is `SerializedPartialNode`, which carries children and
+  // leaves the node-specific properties `unknown`. Naming
+  // `SerializedPartial<SerializedLexicalNode>` rejected any element subtree
+  // written as a literal, since that type has no `children` at all.
+  //
+  // `SerializedLexicalNode` is in the union for the callers that hold a real
+  // serialized type rather than a literal. An *interface* gets no implicit
+  // index signature in TypeScript, so `interface SerializedCustomText extends
+  // SerializedTextNode` was not assignable to `SerializedPartialNode` alone —
+  // and the whole point of the index signature is that a document stays
+  // writable as a literal, which a closed type took away. A union keeps both:
+  // a literal is checked against the indexed member, a declared interface
+  // against the structural one.
+  //
+  // `ParsableSerializedNode` is the third for an interface whose `version` is
+  // optional, which is the honest shape here: this drops `version`, so
+  // requiring it described the caller rather than the parameter — and because
+  // `children` and `$slots` recurse, requiring it once rejected the whole
+  // subtree.
+  serializedNode:
+    | SerializedPartialNode
+    | SerializedLexicalNode
+    | ParsableSerializedNode,
 ): LexicalNode {
-  const internalSerializedNode: InternalSerializedNode = serializedNode;
+  const internalSerializedNode: ParsableSerializedNode = serializedNode;
   return $parseSerializedNodeImpl(
     internalSerializedNode,
     getActiveEditor()._nodes,
@@ -410,7 +433,7 @@ export function $parseSerializedNode(
 }
 
 function $parseSerializedNodeImpl<
-  SerializedNode extends InternalSerializedNode,
+  SerializedNode extends ParsableSerializedNode,
 >(
   serializedNode: SerializedNode,
   registeredNodes: RegisteredNodes,
@@ -465,7 +488,10 @@ function $parseSerializedNodeImpl<
 }
 
 export function parseEditorState(
-  serializedEditorState: SerializedEditorState,
+  serializedEditorState:
+    | SerializedEditorState
+    | CompactSerializedEditorState
+    | ParsableSerializedEditorState,
   editor: LexicalEditor,
   updateFn: void | (() => void),
 ): EditorState {

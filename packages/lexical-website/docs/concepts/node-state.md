@@ -34,7 +34,7 @@ updateFromJSON, and exportJSON.
 
 [createState](/docs/api/modules/lexical#createstate)
 creates a
-[StateConfig](/docs/api/classes/lexical.StateConfig)
+[StateConfig](/docs/api/modules/lexical#stateconfig)
 which defines the key and configuration for your NodeState value.
 
 The key must be locally unique, two distinct StateConfig must not have the
@@ -134,7 +134,7 @@ which is equal to `'$'`.
 By default, it is assumed that your parsed values are JSON serializable,
 but for advanced use cases you may use values such as Date, Map, or Set
 that need to be transformed before JSON serialization. See the
-[StateValueConfig](/docs/api/interfaces/lexical.StateValueConfig)
+[StateValueConfig](/docs/api/modules/lexical#statevalueconfig)
 API documentation.
 
 :::

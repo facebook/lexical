@@ -19,7 +19,9 @@ import {
   $getNearestNodeFromDOMNode,
   $setDirectionFromDOM,
   addClassNamesToElement,
+  arrayValue,
   type BaseSelection,
+  booleanValue,
   type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
@@ -29,17 +31,23 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
+  type LexicalParseJSON,
   type NodeKey,
+  nodeSchema,
+  numberValue,
+  optional,
   removeClassNamesFromElement,
   type SerializedElementNode,
+  type SerializedPartial,
   setDOMStyleFromCSS,
   setDOMUnmanaged,
   type Spread,
+  withAccessors,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
+import {GENERATED_TABLE} from './LexicalTableGeneratedJSON';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,
@@ -64,6 +72,25 @@ export type SerializedTableNode = Spread<
   },
   SerializedElementNode
 >;
+
+const tableNodeSchema = nodeSchema<TableNode>()({
+  // Read straight off the field; applied through setColWidths, which freezes
+  // the stored array in DEV.
+  colWidths: withAccessors(optional(arrayValue(numberValue())), {
+    getter: {field: '__colWidths'},
+  }),
+  frozenColumnCount: withAccessors(numberValue(), {
+    getter: 'getSerializedFrozenColumnCount',
+    setter: 'setFrozenColumns',
+  }),
+  frozenRowCount: withAccessors(numberValue(), {
+    getter: 'getSerializedFrozenRowCount',
+    setter: 'setFrozenRows',
+  }),
+  rowStriping: withAccessors(booleanValue(), {
+    getter: 'getSerializedRowStriping',
+  }),
+});
 
 function $updateColgroup(
   dom: HTMLTableElement,
@@ -368,7 +395,15 @@ export function setScrollableTablesActive(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface TableNode {
+  exportJSON(compact?: false): SerializedTableNode;
+  exportJSON(compact: boolean): SerializedPartial<SerializedTableNode>;
+  updateFromJSON(serializedNode: LexicalParseJSON<SerializedTableNode>): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean = false;
@@ -383,13 +418,30 @@ export class TableNode extends ElementNode {
   $config() {
     return this.config('table', {
       extends: ElementNode,
+      generated: GENERATED_TABLE,
       importDOM: {
         table: () => ({
           conversion: $convertTableElement,
           priority: 1,
         }),
       },
+      json: tableNodeSchema,
     });
+  }
+
+  /** @internal These three are omitted from the JSON when falsy. */
+  getSerializedFrozenColumnCount(): number | undefined {
+    return this.getLatest().__frozenColumnCount || undefined;
+  }
+
+  /** @internal */
+  getSerializedFrozenRowCount(): number | undefined {
+    return this.getLatest().__frozenRowCount || undefined;
+  }
+
+  /** @internal */
+  getSerializedRowStriping(): boolean | undefined {
+    return this.getLatest().__rowStriping || undefined;
   }
 
   getColWidths(): readonly number[] | undefined {
@@ -411,27 +463,6 @@ export class TableNode extends ElementNode {
     this.__rowStriping = prevNode.__rowStriping;
     this.__frozenColumnCount = prevNode.__frozenColumnCount;
     this.__frozenRowCount = prevNode.__frozenRowCount;
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTableNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setRowStriping(serializedNode.rowStriping || false)
-      .setFrozenColumns(serializedNode.frozenColumnCount || 0)
-      .setFrozenRows(serializedNode.frozenRowCount || 0)
-      .setColWidths(serializedNode.colWidths);
-  }
-
-  exportJSON(): SerializedTableNode {
-    return {
-      ...super.exportJSON(),
-      colWidths: this.getColWidths(),
-      frozenColumnCount: this.__frozenColumnCount
-        ? this.__frozenColumnCount
-        : undefined,
-      frozenRowCount: this.__frozenRowCount ? this.__frozenRowCount : undefined,
-      rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
-    };
   }
 
   extractWithChild(

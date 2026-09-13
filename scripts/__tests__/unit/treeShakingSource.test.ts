@@ -8,6 +8,7 @@
 
 import type {Plugin} from 'esbuild';
 
+import {glob} from 'glob';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {describe, expect, test} from 'vitest';
@@ -17,15 +18,27 @@ import {bareImportResidue} from '../../shared/bareImportResidue.mjs';
 import {packagesManager} from '../../shared/packagesManager.mjs';
 
 /**
- * Entries whose bare import is expected to retain code, with the reason. An
- * entry belongs here only when the retained code is the module's purpose —
- * not when a definition happens to be written in a way a bundler cannot see
- * through, which is what the test exists to catch.
+ * Modules whose bare import is expected to retain code, by repo-relative path,
+ * with the reason. A module belongs here only when the retained code is its
+ * purpose — not when a definition happens to be written in a way a bundler
+ * cannot see through, which is what the test exists to catch.
+ *
+ * Keyed by module rather than by package so that an exception covers the file
+ * that earns it: `@lexical/code-prism` is one package, but the side effect
+ * lives in one of its modules and reaches the other two by import.
  */
 const KNOWN_SIDE_EFFECTS = new Map([
   [
-    '@lexical/code-prism',
+    'packages/lexical-code-prism/src/FacadePrism.ts',
     'registers its language grammars on the global Prism object when imported',
+  ],
+  [
+    'packages/lexical-code-prism/src/CodeHighlighterPrism.ts',
+    'imports FacadePrism, whose Prism registration is the package side effect',
+  ],
+  [
+    'packages/lexical-code-prism/src/index.ts',
+    'imports FacadePrism, whose Prism registration is the package side effect',
   ],
 ]);
 
@@ -56,17 +69,37 @@ const lexicalCompiler: Plugin = {
 };
 
 /**
- * The npm module names of every published package with the source file that
- * its `source` export condition resolves to.
+ * Every source module of every published package, with the npm name of the
+ * package it belongs to.
+ *
+ * Each module rather than each `source` export entry, because
+ * {@link bareImportResidue} overrides `sideEffects: false` for the entry alone:
+ * for a package whose entry is a barrel — which is most of them — the modules
+ * it re-exports keep that declaration and esbuild drops them wholesale, leaving
+ * a file with no statements of its own to measure. `@lexical/table`'s barrel
+ * reported nothing while `LexicalTableCellNode.ts` retained its whole
+ * serialization schema, and only the built bundle, where the two are one file,
+ * showed it.
+ *
+ * Asking the question per module is the same question the published bundle
+ * asks, just earlier, and it names the file rather than the package.
  */
-function sourceEntries(): [string, string][] {
+function sourceModules(): [string, string][] {
   const entries: [string, string][] = [];
   for (const pkg of packagesManager.getPublicPackages()) {
-    for (const [name, exports] of pkg.getNormalizedNpmModuleExportEntries()) {
-      const source = (exports as {source?: unknown}).source;
-      if (typeof source === 'string' && /\.[cm]?[jt]sx?$/.test(source)) {
-        entries.push([name, pkg.resolve(source)]);
-      }
+    const root = pkg.resolve('src');
+    // ESM only. No package here declares `"type": "module"`, so a `.js` (or
+    // `.cjs`) is CommonJS, and CommonJS has no tree-shaking story to measure:
+    // the module is one opaque unit and what a bundler retains is its own
+    // interop preamble rather than anything written here. `@lexical/compiler`'s
+    // `.mjs` pass is real ESM and stays covered.
+    for (const file of glob.sync('**/*.{ts,tsx,mjs}', {
+      cwd: root,
+      // Neither ships, and a benchmark is written to run, not to be imported.
+      ignore: ['**/__tests__/**', '**/__bench__/**', '**/*.d.ts'],
+      windowsPathsNoEscape: true,
+    })) {
+      entries.push([pkg.getNpmName(), path.join(root, file)]);
     }
   }
   return entries;
@@ -84,10 +117,11 @@ function sourceEntries(): [string, string][] {
 // mutation, or a computed class member). Move the work into a function
 // declared `@__NO_SIDE_EFFECTS__` so the build annotates the call, or
 // annotate a call to a builtin by hand; see AGENTS.md.
-describe('a bare import of a package source entry retains nothing', () => {
-  for (const [name, file] of sourceEntries()) {
-    const reason = KNOWN_SIDE_EFFECTS.get(name);
-    test(`${name} (${path.relative(process.cwd(), file)})`, async () => {
+describe('a bare import of a package source module retains nothing', () => {
+  for (const [name, file] of sourceModules()) {
+    const relative = path.relative(process.cwd(), file);
+    const reason = KNOWN_SIDE_EFFECTS.get(relative);
+    test(`${name} (${relative})`, async () => {
       const residue = await bareImportResidue(file, {
         plugins: [lexicalCompiler],
       });

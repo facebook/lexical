@@ -28,6 +28,7 @@ import {
   setterTableOf,
   stringValue,
   TextNode,
+  withAccessors,
   withField,
 } from 'lexical';
 import {readFileSync} from 'node:fs';
@@ -86,17 +87,22 @@ function expectTypeChecks(module: string): void {
     target: ts.ScriptTarget.ES2019,
   };
   const host = ts.createCompilerHost(options);
-  const readFile = host.getSourceFile.bind(host);
+  const getSourceFile = host.getSourceFile.bind(host);
   host.getSourceFile = (name, ...rest) =>
     name === fileName
       ? ts.createSourceFile(name, module, ts.ScriptTarget.ES2019, true)
-      : readFile(name, ...rest);
-  host.writeFile = () => {};
+      : getSourceFile(name, ...rest);
   const program = ts.createProgram([fileName], options, host);
+  // That the module was compiled at all, before what the checker said about
+  // it. A diagnostic about the program rather than about a file — a lib that
+  // did not resolve, a root file that was not found — carries no `file`, so
+  // reporting only the ones inside the module would let "nothing was checked"
+  // read exactly like "nothing was wrong".
+  expect(program.getSourceFile(fileName)).toBeDefined();
   expect(
     ts
       .getPreEmitDiagnostics(program)
-      .filter(d => d.file !== undefined && d.file.fileName === fileName)
+      .filter(d => d.file === undefined || d.file.fileName === fileName)
       .map(d => ts.flattenDiagnosticMessageText(d.messageText, '\n')),
   ).toEqual([]);
 }
@@ -105,18 +111,27 @@ function expectTypeChecks(module: string): void {
  * One generated form as a module {@link expectTypeChecks} can compile on its
  * own: `lexical` does not resolve from a virtual file, so what the real module
  * imports is declared here instead, and the class the form was generated from
- * is declared as the shape it reads. Neither changes the types under test —
- * every table's type is the one the generated `as` clause states.
+ * is declared as the shape it reads.
+ *
+ * The declared return types are the real ones (`LexicalSchema.ts`), not
+ * `unknown`: an assertion off `unknown` is unconditionally legal, where one
+ * off a concrete type goes through comparability — which is the check a
+ * generated lookup has to pass.
  *
  * Call it with the table declarations of the same {@link resetTableLocals}
  * run that produced `source`.
  */
 function checkableModule(shape: string, source: string): string {
   return [
+    // The helpers a bounded numeric domain parses through, as the module that
+    // would hold this form declares them.
+    NUM_HELPER_SOURCE,
+    NUM_RANGE_HELPER_SOURCE,
     'declare const fields: unknown;',
-    'declare function aliasTableOf(f: unknown, k: string, i: number): unknown;',
-    'declare function getterTableOf(f: unknown, k: string): unknown;',
-    'declare function setterTableOf(f: unknown, k: string): unknown;',
+    'type Table = {readonly [key: string]: unknown};',
+    'declare function aliasTableOf(f: unknown, k: string, i: number): Table;',
+    'declare function getterTableOf(f: unknown, k: string): Table;',
+    'declare function setterTableOf(f: unknown, k: string): Table;',
     'declare function setterDefaultOf(f: unknown, k: string): unknown;',
     shape,
     ...tableDeclarations().map(
@@ -608,6 +623,36 @@ describe('names the generated forms have to bind', () => {
     ).not.toThrow();
   });
 
+  test('even when the property is one the exporter never reads', () => {
+    // The parser binds a local for an import-only property too, so it shadows
+    // a table exactly as a readable one does — and this said nothing about it,
+    // because it asked what the *exporter's* reads bind. What shipped was a
+    // parser reading its lookup table out of the serialized JSON.
+    class ImportOnlyTableNode extends TextNode {
+      __m = 0;
+      __shadow = '';
+      $config() {
+        return this.config('named-table-import-only', {
+          extends: TextNode,
+          json: nodeSchema<ImportOnlyTableNode>()({
+            IMPORTONLYTABLE_MODE_SETTER: withAccessors(stringValue(), {
+              getter: null,
+              setter: {field: '__shadow'},
+            }),
+            mode: withField(enumValue(['normal', 'token']), {
+              field: '__m',
+              getterTable: {0: 'normal', 1: 'token'},
+              setterTable: {normal: 0, token: 1},
+            }),
+          }),
+        });
+      }
+    }
+    expect(() =>
+      checkTableLocals(ImportOnlyTableNode, ['IMPORTONLYTABLE_MODE_SETTER']),
+    ).toThrow(/collides with a local the generated code binds/);
+  });
+
   test('a local never takes the name of a global the code reads', () => {
     // `const undefined = node.__label;` is legal, and turns every omission
     // test into `undefined !== undefined` — false for every value, so the
@@ -718,6 +763,49 @@ describe('names the generated forms have to bind', () => {
     expect(source).toContain('const modeParsed = json.modeParsed;');
     expect(source).toContain('const modeParsed_: unknown =');
     expect(source).toContain('node.__note = ');
+    expect(() => parseAsModule(source)).not.toThrow();
+  });
+
+  test('including a sibling the exporter never reads', () => {
+    // The parser binds a local for every property in the composed schema, and
+    // an import-only one is a property like any other — but it has no read, so
+    // a name set derived from the exporter's reads does not mention it. Both
+    // allocators were, and both landed straight on top of one.
+    class ImportOnly extends LineBreakNode {
+      __mode: 0 | 1 = 0;
+      __note: string = '';
+      __tail: string = '';
+      $config() {
+        return this.config('generate-import-only-collision', {
+          extends: LineBreakNode,
+          json: nodeSchema<ImportOnly>()({
+            default: withField(stringValue(), {field: '__tail'}),
+            // Spelled as the rename of `default`, which cannot be bound.
+            default_: withAccessors(stringValue(), {
+              getter: null,
+              setter: {field: '__note'},
+            }),
+            mode: withField(enumValue([0, 1] as const), {
+              field: '__mode',
+              getterTable: {0: 0, 1: 1},
+              setterTable: {0: 0, 1: 1},
+            }),
+            modeParsed: withAccessors(stringValue(), {
+              getter: null,
+              setter: {field: '__note'},
+            }),
+          }),
+        });
+      }
+    }
+    resetTableLocals();
+    const source: string = generateUpdate(ImportOnly);
+    // The derived local moves past the import-only sibling,
+    expect(source).toContain('const modeParsed = json.modeParsed;');
+    expect(source).toContain('const modeParsed_: unknown =');
+    // and so does the rename of a name that cannot be bound.
+    expect(source).toContain('const default__ = json.default;');
+    expect(source).toContain('const default_ = json.default_;');
     expect(() => parseAsModule(source)).not.toThrow();
   });
 

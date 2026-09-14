@@ -53,14 +53,18 @@ function compiled(schema: AnySerializationSchema): (value: unknown) => unknown {
   );
   const names = tables.map(({name}) => name);
   // The statements run before the expression here exactly as the generated
-  // code runs them, which is what keeps this a test of what ships.
+  // code runs them, which is what keeps this a test of what ships. `SCOPE_`
+  // rather than `SCOPE` for the same reason `verifyCompiledParse` allocates
+  // its own: the compiled expression may read a local of any name, and a
+  // parameter this helper chooses must not be one of them. Nothing here
+  // compiles against `SCOPE_`, so it is simply the name that is free.
   // eslint-disable-next-line no-new-func
   const fn = new Function(
     'v',
-    'SCOPE',
+    'SCOPE_',
     `const {num, numC, numK, ${['_', ...names].join(
       ', ',
-    )}} = SCOPE; ${statements.join(' ')} return (${expression});`,
+    )}} = SCOPE_; ${statements.join(' ')} return (${expression});`,
   );
   // Built from the same source text the generator emits and
   // verifyCompiledParse evaluates. Spelling it out here instead would be a
@@ -535,6 +539,61 @@ describe('verifyCompiledParse is what catches a plausible-but-wrong parse', () =
         tables,
       }),
     ).toThrow(/disagrees with its schema on "toString"/);
+  });
+
+  test('a value named for the verifier’s own scope is still verified', () => {
+    // The helpers reach the compiled expression under a second parameter. That
+    // parameter used to be spelled `SCOPE` outright, so an expression compiled
+    // against a value of that name — a schema property really called `SCOPE` —
+    // was shadowed by it: two parameters of one name is legal in a body that
+    // is not strict, and the second wins. The parse then read the bag of
+    // helpers and disagreed with its schema about every input, refusing a
+    // schema that is perfectly well formed.
+    const schema = stringValue('x');
+    const {expression, statements, tables} = compileParse(
+      schema.meta,
+      schema.defaultValue,
+      'T',
+      undefined,
+      'SCOPE',
+    );
+    expect(expression).toContain('SCOPE');
+    expect(() =>
+      verifyCompiledParse({
+        expression,
+        schema,
+        statements,
+        tables,
+        valueName: 'SCOPE',
+      }),
+    ).not.toThrow();
+  });
+
+  test('a value named for a helper the expression calls is refused', () => {
+    // The same body binds `num`, `numC`, `numK` and every table as `const`s,
+    // and a `const` redeclaring a parameter is an unconditional SyntaxError —
+    // so unlike the shadowing above there is nothing to rename around. It is
+    // not compilable in a generated module either, where the helpers are
+    // module scope and a local of that name shadows them, so this says so as
+    // a NotCompilable rather than letting a raw SyntaxError take down a build
+    // that would otherwise have named the property and fallen back.
+    const schema = numberValue(0);
+    const {expression, statements, tables} = compileParse(
+      schema.meta,
+      schema.defaultValue,
+      'T',
+      undefined,
+      'num',
+    );
+    expect(() =>
+      verifyCompiledParse({
+        expression,
+        schema,
+        statements,
+        tables,
+        valueName: 'num',
+      }),
+    ).toThrow(NotCompilable);
   });
 });
 

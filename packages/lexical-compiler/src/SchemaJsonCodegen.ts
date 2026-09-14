@@ -776,22 +776,38 @@ export function verifyCompiledParse({
   // fixed corpus, with nothing untrusted in scope. A `Function` built from
   // source has no static type, hence the casts to what each body takes.
   //
-  // The helpers arrive under a second parameter, which is not spelled `SCOPE`
-  // outright: a property of that name compiles to an expression reading
-  // `SCOPE`, and two parameters of one name is legal in a body that is not
-  // strict — the second simply wins. The expression then read the bag of
-  // helpers instead of the value and disagreed with its schema about every
-  // input, so a class lost its generated parser over what one property was
-  // called.
+  // The body binds the helpers and the tables beside the value, so `valueName`
+  // has to be free of all of them. A name that is not is refused here rather
+  // than left to `new Function`: a `const` redeclaring a parameter is a
+  // SyntaxError, which is not a NotCompilable, so a caller that re-throws
+  // anything else — which both of this repo's do — loses the build over a name
+  // instead of naming the property. It is genuinely not compilable either way:
+  // in a generated module the helpers are module scope and the tables are the
+  // factory's, so a local of one of these names shadows what the expression
+  // reads, which is what the generator's own `EMITTED_LOCALS` and
+  // `checkTableLocals` refuse on its side.
+  const bound = ['num', 'numC', 'numK', ...names];
+  if (bound.includes(valueName)) {
+    throw new NotCompilable(
+      `compiles against a value named ${valueName}, which is also a helper or lookup table the expression reads`,
+    );
+  }
+  // The scope parameter is the one name this chooses, so it is allocated past
+  // all of them rather than spelled `SCOPE` outright. A property named `SCOPE`
+  // compiles to an expression reading `SCOPE`, and two parameters of one name
+  // is legal in a body that is not strict — the second simply wins, so the
+  // expression read the bag of helpers instead of the value and disagreed with
+  // its schema about every input.
+  const taken = new Set([valueName, ...bound]);
   let scopeName = 'SCOPE';
-  while (scopeName === valueName) {
+  while (taken.has(scopeName)) {
     scopeName += '_';
   }
   // eslint-disable-next-line no-new-func
   const compiled = new Function(
     valueName,
     scopeName,
-    `const {${['num', 'numC', 'numK', ...names].join(
+    `const {${bound.join(
       ', ',
     )}} = ${scopeName}; ${statements.join(' ')} return (${expression});`,
   ) as (v: unknown, scope: {readonly [key: string]: unknown}) => unknown;

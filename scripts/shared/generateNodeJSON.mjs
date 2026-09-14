@@ -608,13 +608,21 @@ function boundElsewhere(name) {
  * {@link localFor}, bound to the names one class's forms bind: the emitted
  * locals, every schema key, and every `when` predicate.
  *
- * @param {readonly {key: string, when?: string}[]} reads
+ * Every schema key, not only the ones `reads` mentions. A property declared
+ * import-only (`getter: null`) has no read, so the exporter never names it —
+ * but the parser binds a local for it like any other, and a rename that could
+ * not see it landed straight on top of one: `default` beside a sibling really
+ * called `default_` bound that name twice.
+ *
+ * @param {NodeClass} klass
+ * @param {readonly {when?: string}[]} reads for the predicate names, which
+ *   only a property the exporter reads has
  * @returns {(name: string) => string}
  */
-function localsFor(reads) {
+function localsFor(klass, reads) {
   const taken = new Set([
     ...EMITTED_LOCALS,
-    ...reads.map(read => read.key),
+    ...schemaKeysOf(klass),
     ...reads.flatMap(read => (read.when === undefined ? [] : [read.when])),
   ]);
   return name => localFor(name, taken);
@@ -706,15 +714,22 @@ export function checkTableLocals(klass, tableNames) {
  * Every local the generated forms bind for `klass`: one per schema key, one
  * per `when` predicate, each under the name {@link localFor} gives it.
  *
+ * Over every schema key rather than every read, for the reason {@link
+ * localsFor} states: the parser binds a local for an import-only property
+ * that the exporter never reads, and a caller asking what is bound has to be
+ * told about it.
+ *
  * @param {NodeClass} klass
  * @returns {Set<string>}
  */
 function localNamesOf(klass) {
   const reads = schemaReads(klass);
-  const localOf = localsFor(reads);
+  const localOf = localsFor(klass, reads);
   const names = new Set();
+  for (const key of schemaKeysOf(klass)) {
+    names.add(localOf(key));
+  }
   for (const read of reads) {
-    names.add(localOf(read.key));
     if (read.when !== undefined) {
       names.add(localOf(read.when));
     }
@@ -930,7 +945,7 @@ export function generateCompactExport(klass, strict = false) {
   const reads = schemaReads(klass);
   // Every local this form binds is named for a schema key or a predicate, and
   // `localOf` is what makes those legal to bind; see {@link localFor}.
-  const localOf = localsFor(reads);
+  const localOf = localsFor(klass, reads);
   // The same hoist the legacy form uses, so the two call a shared predicate
   // exactly once each and stay byte-identical about what they omit.
   const hoist = hoistGatedReads(
@@ -1042,7 +1057,7 @@ function generateExport(klass) {
   // An element's JSON leads with `children`, which is structural rather than
   // schema-declared: the key order below is byte-identical to the walk's.
   const isElement = isElementish(klass);
-  const hoist = hoistGatedReads(reads, localsFor(reads));
+  const hoist = hoistGatedReads(reads, localsFor(klass, reads));
   // `type` is read off the node rather than baked in as the literal the class
   // registered under: the same code serves a subclass whose accessor tables
   // compile the same way, and its type is not this one's.
@@ -1375,24 +1390,28 @@ function writeExpression(klass, schema, key, value, fresh) {
       tableName(klass, key, 'SETTER_DEFAULT'),
       tableDeclaration('setterDefault', key, setterTable),
     );
-    // Through the allocator, not `${value}Parsed` spelled directly: a sibling
-    // property really called `modeParsed` binds that name too, and two
-    // `const`s of one name is a module that does not parse.
-    const parsed = fresh(`${value}Parsed`);
-    // `unknown`, so the key assertion below is a widening of something that
-    // has no type rather than a conversion of one that does. An enum over
-    // numbers parses to `0 | 1`, which `as string` is a `TS2352` about — the
-    // lookup is right either way, since a numeric key and its decimal string
-    // are the same property, but the annotation is what lets it be spelled.
-    const lookup = `(${parsed} as string) in ${name} ? ${name}[${parsed} as string] : ${fallback}`;
-    statements = `  const ${value} = ${ownRead(key)};\n${bound}  const ${parsed}: unknown = ${expression};\n  node.${setterField} = ${lookup};`;
     if (tableDecidesMembership(schema, setterTable, key)) {
       // The parse and the lookup ask the same question, so the lookup is the
       // whole of it: a member is a key of the table and everything else falls
       // back to the stored default, which is what parsing to the schema's
       // default and looking *that* up produces. `ElementNode`'s `format` was
       // seven string comparisons and then a hash lookup that could only hit.
+      // Nothing holds the parsed value, so this branch asks for no local of
+      // its own — every manifest class takes it, which is why none of the
+      // checked-in modules has one.
       statements = `  const ${value} = ${ownRead(key)};\n  node.${setterField} = typeof ${value} === 'string' && ${value} in ${name} ? ${name}[${value}] : ${fallback};`;
+    } else {
+      // Through the allocator, not `${value}Parsed` spelled directly: a
+      // sibling property really called `modeParsed` binds that name too, and
+      // two `const`s of one name is a module that does not parse.
+      const parsed = fresh(`${value}Parsed`);
+      // `unknown`, so the key assertion below is a widening of something that
+      // has no type rather than a conversion of one that does. An enum over
+      // numbers parses to `0 | 1`, which `as string` is a `TS2352` about — the
+      // lookup is right either way, since a numeric key and its decimal string
+      // are the same property, but the annotation is what lets it be spelled.
+      const lookup = `(${parsed} as string) in ${name} ? ${name}[${parsed} as string] : ${fallback}`;
+      statements = `  const ${value} = ${ownRead(key)};\n${bound}  const ${parsed}: unknown = ${expression};\n  node.${setterField} = ${lookup};`;
     }
   }
   try {
@@ -1509,10 +1528,12 @@ export function generateUpdate(klass, strict = false) {
   // called one thing in both directions and a name that cannot be bound is
   // renamed once. A parse binds `<local>` for the serialized value and, where
   // a lookup table follows, `<local>Parsed` for what the schema made of it.
-  const localOf = localsFor(schemaReads(klass));
-  // Every name the parser binds: one per property, plus any derived name a
-  // property asks `fresh` for, so the second cannot land on the first.
-  const taken = localNamesOf(klass);
+  const localOf = localsFor(klass, schemaReads(klass));
+  // Every name the parser binds: one per property in the composed schema —
+  // which is the list below, so an import-only property counts exactly as
+  // much as one the exporter also reads — plus any derived name a property
+  // asks `fresh` for, so the second cannot land on the first.
+  const taken = new Set(fieldsBaseFirst.map(([key]) => localOf(key)));
   /**
    * A local no other name in this parser takes.
    *
@@ -1552,10 +1573,6 @@ export function generateUpdate(klass, strict = false) {
   if (writes.length === 0) {
     return null;
   }
-  // Nothing is declared up front: each property that needs to hold its
-  // serialized value binds a `const` named for itself, the way the exporter
-  // names the locals it reads through, and one that reads the value once
-  // binds nothing at all.
   const body = writes.map(({statements}) => statements).join('\n');
   return `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */
 function update${klass.name}(

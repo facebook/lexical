@@ -1376,9 +1376,12 @@ function tableDecidesMembership(schema, table, key) {
   if (keys.length !== members.size || !keys.every(k => members.has(k))) {
     return false;
   }
-  const storedDefault = table[schema.defaultValue];
+  // The schema's own values index the table, which is keyed by them — that is
+  // what `verifyTableCoversDomain` establishes — but only at run time, so the
+  // key is spelled for the checker here.
+  const storedDefault = table[/** @type {string} */ (schema.defaultValue)];
   for (const value of verificationCorpus(meta)) {
-    const viaParse = table[schema(value)];
+    const viaParse = table[/** @type {string} */ (schema(value))];
     const direct =
       typeof value === 'string' && hasOwn(table, value)
         ? table[value]
@@ -1394,7 +1397,13 @@ function tableDecidesMembership(schema, table, key) {
   return true;
 }
 
-/** `Object.prototype.hasOwnProperty.call`, for a table an untrusted key reaches. */
+/**
+ * `Object.prototype.hasOwnProperty.call`, for a table an untrusted key reaches.
+ *
+ * @param {{readonly [key: string]: unknown}} table
+ * @param {string} key
+ * @returns {boolean}
+ */
 function hasOwn(table, key) {
   return Object.prototype.hasOwnProperty.call(table, key);
 }

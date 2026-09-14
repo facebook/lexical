@@ -954,7 +954,7 @@ export function getterTableOf(
   const getter = schemaOf(fields, key).getter;
   invariant(
     isSchemaField(getter) && getter.getterTable !== undefined,
-    'getterTableOf: "%s" declares no `getterTable`',
+    'getterTableOf: "%s" declares no getterTable',
     key,
   );
   return nullPrototype(getter.getterTable);
@@ -973,7 +973,7 @@ export function setterTableOf(
   const setter = schemaOf(fields, key).setter;
   invariant(
     isSchemaField(setter) && setter.setterTable !== undefined,
-    'setterTableOf: "%s" declares no `setterTable`',
+    'setterTableOf: "%s" declares no setterTable',
     key,
   );
   return nullPrototype(setter.setterTable);
@@ -1040,7 +1040,7 @@ export function setterDefaultOf(
   const {setter} = schema;
   invariant(
     isSchemaField(setter) && setter.setterTable !== undefined,
-    'setterDefaultOf: "%s" declares no `setterTable`',
+    'setterDefaultOf: "%s" declares no setterTable',
     key,
   );
   const stored = String(schema.defaultValue);
@@ -1970,10 +1970,10 @@ export function booleanValue(
  * asserted past.
  *
  * @example
- * ``ts
+ * ```ts
  * const parseMode = enumValue(['normal', 'token', 'segmented']);
  * //    ^? SerializationSchema<'normal' | 'token' | 'segmented'>, default 'normal'
- * ``
+ * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function enumValue<const T, D extends T = T>(
@@ -2059,14 +2059,14 @@ export function enumValue<const T, D extends T = T>(
  * reads an explicitly empty array as `null`.
  *
  * @example
- * ``ts
+ * ```ts
  * const parseRel = nullable(stringValue(), {defaultAsNull: true});
  * //    ^? SerializationSchema<string | null>
  * parseRel('noopener'); // 'noopener'
  * parseRel('');         // null ('' is stringValue's default)
  * parseRel(null);       // null
  * parseRel(undefined);  // null (the recoverable default)
- * ``
+ * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function nullable<T, In = T>(
@@ -2109,7 +2109,7 @@ export function nullable<T, In = T>(
  * an explicitly empty array rather than persisting it.
  *
  * @example
- * ``ts
+ * ```ts
  * const parseWidth = optional(numberValue());
  * //    ^? SerializationSchema<number | undefined>
  * parseWidth(120);       // 120
@@ -2118,7 +2118,7 @@ export function nullable<T, In = T>(
  * const parseCellWidth = optional(numberValue(), {omitDefault: true});
  * parseCellWidth(0);     // undefined (0 is not a real width)
  * parseCellWidth('x');   // undefined (coerced to the default, then omitted)
- * ``
+ * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function optional<T, In = T>(
@@ -2292,14 +2292,14 @@ function $sameContent(a: unknown, b: unknown): boolean {
  * difference. Outside a union the comparator is used as declared.
  *
  * @example
- * ``ts
+ * ```ts
  * const parseDimension = unionValue([numberValue(), enumValue(['inherit'])], 'inherit');
  * //    ^? SerializationSchema<number | 'inherit'>
  * parseDimension(640);       // 640
  * parseDimension('640');     // 640 (numberValue reads a stringified number)
  * parseDimension('inherit'); // 'inherit'
  * parseDimension('banana');  // 'inherit' (no member accepts it)
- * ``
+ * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function unionValue<
@@ -2491,7 +2491,7 @@ export interface NodeSerializationSchema<N = unknown, In = unknown> {
  * predicate be verified to exist. A name the node does not have is a compile
  * error at the property that declares it, with the correction suggested:
  *
- * ``ts
+ * ```ts
  * const codeNodeSchema = nodeSchema<CodeNode>()({
  *   language: withField(optional(nullable(stringValue())), {
  *     field: '__langauge',
@@ -2500,7 +2500,7 @@ export interface NodeSerializationSchema<N = unknown, In = unknown> {
  * //          ~~~~~~~~~~~~
  * // Type '"field:__langauge"' is not assignable to type '... | TaggedNamesOf<CodeNode> | ObligationsOf<CodeNode>'.
  * //   Did you mean '"field:__language"'?
- * ``
+ * ```
  *
  * Where the schema is written does not change what is checked: a module-scope
  * `const` above the class — a class's *type* is in scope before its
@@ -2583,14 +2583,14 @@ function nodeSchemaOf(
  * parse that stores the alias where the schema stores what it names.
  *
  * @example
- * ``ts
+ * ```ts
  * const parseFormat = aliasedValue(numberValue(), TEXT_TYPE_TO_FORMAT);
  * //    ^? SerializationSchema<number>
  * parseFormat(1);      // 1
  * parseFormat('bold'); // IS_BOLD
  * parseFormat('42');   // 42 (not an alias, so numberValue reads it)
  * parseFormat('junk'); // 0  (numberValue falls back to its default)
- * ``
+ * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function aliasedValue<
@@ -2666,7 +2666,7 @@ export function aliasedValue<
  * instead, where the value that reaches storage is the one that round-trips.
  *
  * @example
- * ``ts
+ * ```ts
  * const parseFormat = transformValue(
  *   unionValue(
  *     [numberValue(), enumValue(['bold', 'italic', 'underline'])],
@@ -2678,7 +2678,7 @@ export function aliasedValue<
  * parseFormat(1);      // 1
  * parseFormat('bold'); // IS_BOLD
  * parseFormat('junk'); // 0 (inner falls back to its default)
- * ``
+ * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function transformValue<Inner, Out, In = Inner>(
@@ -2775,12 +2775,12 @@ export function rawValue<T>(): SerializationSchema<
  * recoverable default.
  *
  * @example
- * ``ts
+ * ```ts
  * const parseIds = arrayValue(stringValue());
  * //    ^? SerializationSchema<string[]>
  * parseIds(['a', 'b']); // ['a', 'b']
  * parseIds('nope');     // []
- * ``
+ * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function arrayValue<T, In = T>(
@@ -2863,14 +2863,14 @@ export function arrayValue<T, In = T>(
  * {@link nodeSchema} — the same record, checked against a node — is for.
  *
  * @example
- * ``ts
+ * ```ts
  * // A property whose value is an object of its own; a node's own schema is
  * // nodeSchema<MyNode>()({...}), whose fields may name accessors.
  * const dimensions = objectValue({
  *   height: numberValue(),
  *   width: numberValue(),
  * });
- * ``
+ * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function objectValue<const S extends InnerSerializationSchemaFields>(
@@ -3051,7 +3051,7 @@ function objectSchema<S extends SerializationSchemaFields>(
  * ({@link SchemaGetterField.when}).
  *
  * @example
- * ``ts
+ * ```ts
  * nodeSchema<TextNode>()({
  *   // TextNode's own field in both directions, deferring to getStyle/setStyle
  *   // for a subclass that overrides either — neither is spelled here, since
@@ -3065,7 +3065,7 @@ function objectSchema<S extends SerializationSchemaFields>(
  *     setter: 'setURL',
  *   }),
  * });
- * ``
+ * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function withField<T, const F extends FieldOptions, In = T>(
@@ -3116,14 +3116,14 @@ export function withField<T, const F extends FieldOptions, In = T>(
  * the rule at run time too, for a caller the types do not reach.
  *
  * @example
- * ``ts
+ * ```ts
  * nodeSchema<TextNode>()({
  *   text: withAccessors(stringValue(), {
  *     getter: 'getTextContent',
  *     setter: 'setTextContent',
  *   }),
  * });
- * ``
+ * ```
  * @__NO_SIDE_EFFECTS__
  */
 export function withAccessors<T, const A extends SchemaAccessors, In = T>(

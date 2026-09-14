@@ -78,9 +78,9 @@ to create the `lexical-eslint-plugin`, which will be published to npm as
 
 ### Create the workspace
 
-``bash
+```bash
 mkdir -p packages/lexical-eslint-plugin
-``
+```
 
 Create the initial `package.json` file (you can base it on an existing package
 or use the template below):
@@ -90,7 +90,7 @@ or use the template below):
 `packages/lexical-eslint-plugin/package.json`
 </summary>
 
-``json
+```json
 {
   "name": "@lexical/eslint-plugin",
   "description": "",
@@ -112,7 +112,7 @@ or use the template below):
   },
   "homepage": "https://github.com/facebook/lexical#readme"
 }
-``
+```
 </details>
 
 Some next steps for this package.json before moving on:
@@ -122,10 +122,10 @@ Some next steps for this package.json before moving on:
 
 ### Create the initial source file
 
-``
+```
 mkdir -p packages/lexical-eslint-plugin/src
 code packages/lexical-eslint-plugin/src/index.ts
-``
+```
 
 Here are some minimal examples of those files that you might start out with.
 I've elided the license header, the eslint header/header fixer will help you
@@ -136,7 +136,7 @@ with that!
 `packages/lexical-eslint-plugin/src/index.ts`
 </summary>
 
-``typescript
+```typescript
 import {name, version} from '../package.json';
 
 const plugin = {
@@ -145,14 +145,14 @@ const plugin = {
 };
 
 export default plugin;
-``
+```
 </details>
 
 ### Run update-packages to generate boilerplate docs & config
 
-``
+```
 pnpm run update-packages
-``
+```
 
 This will set up the tsconfig, flow, etc. configuration to recognize your
 new module. It will also create an initial README.md using only the
@@ -161,10 +161,10 @@ description from the package.json.
 
 ### Create an initial unit test
 
-``
+```
 mkdir -p packages/lexical-eslint-plugin/src/__tests__/unit
 code packages/lexical-eslint-plugin/src/__tests__/unit/LexicalEslintPlugin.test.ts
-``
+```
 
 
 <details><summary>
@@ -172,7 +172,7 @@ code packages/lexical-eslint-plugin/src/__tests__/unit/LexicalEslintPlugin.test.
 `packages/lexical-eslint-plugin/src/__tests__/unit/LexicalEslintPlugin.test.ts`
 </summary>
 
-``typescript
+```typescript
 import plugin from '@lexical/eslint-plugin';
 
 describe('LexicalEslintPlugin', () => {
@@ -180,7 +180,7 @@ describe('LexicalEslintPlugin', () => {
     expect(Object.keys(plugin).sort()).toMatchObject(['meta', 'rules']);
   });
 });
-``
+```
 </details>
 
 
@@ -422,9 +422,9 @@ Re-run it whenever a new public package is added.
 
 Run in check-only mode first:
 
-``bash
+```bash
 pnpm run setup-trusted-publishing
-``
+```
 
 For each public package in the monorepo, it queries
 `https://registry.npmjs.org` and reports whether the name is already
@@ -433,10 +433,10 @@ can re-run with `--bootstrap` to publish a deprecated
 `0.0.0-bootstrap.0` placeholder under the `bootstrap` dist-tag so the
 name can be claimed:
 
-``bash
+```bash
 npm login --registry https://registry.npmjs.org
 pnpm run setup-trusted-publishing --bootstrap
-``
+```
 
 Once a package exists on the registry, you can configure trusted
 publishing for it programmatically by adding `--setup-trust`. This
@@ -446,10 +446,10 @@ account), and is idempotent — the script reads the existing trust
 configuration for each package via a read-only registry call (no OTP)
 and skips packages whose config already matches:
 
-``bash
+```bash
 npm login --registry https://registry.npmjs.org
 pnpm run setup-trusted-publishing --setup-trust
-``
+```
 
 `npm trust github` is a write operation, so each package that *does*
 need configuring will trigger a one-time-password / web-auth prompt.
@@ -461,9 +461,9 @@ calls to stay under the registry's `E429` rate limit.
 
 For full first-time setup of a brand-new monorepo, combine both flags:
 
-``bash
+```bash
 pnpm run setup-trusted-publishing --bootstrap --setup-trust
-``
+```
 
 When adding a **single** new package to an existing monorepo — the common
 case going forward — pass its name so the run only touches that package
@@ -472,10 +472,10 @@ wall of `CONFLICT` lines). The name can be the full npm name or the unscoped
 short name, and `--package` / positional args are interchangeable and
 repeatable:
 
-``bash
+```bash
 pnpm run setup-trusted-publishing --bootstrap --setup-trust @lexical/a11y
 # equivalently: --package a11y
-``
+```
 
 Useful flags:
 
@@ -517,17 +517,17 @@ branch on origin, and publishes the monorepo under the `dev` dist-tag
 via OIDC. The `latest` tag is untouched, so default `npm install`
 users are unaffected. After it succeeds:
 
-``bash
+```bash
 npm view lexical@dev version     # → the just-published prerelease
 npm view lexical@latest version  # → unchanged
-``
+```
 
 Cleanup (the prerelease itself can't be reused, but the git refs
 should go):
 
-``bash
+```bash
 git push --delete origin v0.46.0-dev.0 dev__release 0.46.0-dev.0__release
-``
+```
 
 The `increment-version=true + channel=latest` combination is refused
 by the workflow's guard job — real `latest` releases must go through
@@ -565,9 +565,9 @@ the script to acknowledge emeriti and historically important distinguished contr
 
 To update the team page data:
 
-``bash
+```bash
 pnpm run update-team-data
-``
+```
 
 This fetches the latest contributor data from GitHub and categorizes team members
 based on recent activity (last 12 months). See `packages/lexical-website/src/data/README.md`

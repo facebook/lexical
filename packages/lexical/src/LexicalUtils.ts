@@ -5350,11 +5350,11 @@ export function getRegisteredSubtypeMap(
  * to wrap that.
  *
  * @example
- * ``ts
+ * ```ts
  * function $createTokenText(text: string): TextNode {
  *   return $create(TextNode).setTextContent(text).setMode('token');
  * }
- * ``
+ * ```
  */
 export function $create<T extends LexicalNode>(klass: Klass<T>): T {
   const editor = $getEditor();

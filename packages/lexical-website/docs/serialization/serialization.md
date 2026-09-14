@@ -11,11 +11,11 @@ Currently, HTML serialization is primarily used to transfer data between Lexical
 
 ### Lexical -> HTML
 When generating HTML from an editor you can pass in a selection object to narrow it down to a certain section or pass in null to convert the whole editor.
-```js
+``js
 import {$generateHtmlFromNodes} from '@lexical/html';
 
 const htmlString = $generateHtmlFromNodes(editor, selection | null);
-```
+``
 
 :::tip
 
@@ -33,20 +33,20 @@ export, so you don't have to maintain two parallel code paths.
 #### `LexicalNode.exportDOM()`
 You can control how a `LexicalNode` is represented as HTML by adding an `exportDOM()` method.
 
-```js
+``js
 exportDOM(editor: LexicalEditor): DOMExportOutput
-```
+``
 
 When transforming an editor state into HTML, we simply traverse the current editor state (or the selected subset thereof) and call the `exportDOM` method for each Node in order to convert it to an `HTMLElement`.
 
 Sometimes, it's necessary or useful to do some post-processing after a node has been converted to HTML. For this, we expose the "after" API on `DOMExportOutput`, which allows `exportDOM` to specify a function that should be run after the conversion to an `HTMLElement` has happened.
 
-```js
+``js
 export type DOMExportOutput = {
   after?: (generatedElement: ?HTMLElement) => ?HTMLElement,
   element?: HTMLElement | null,
 };
-```
+``
 
 If the element property is null in the return value of exportDOM, that Node will not be represented in the serialized output.
 
@@ -70,7 +70,7 @@ to route pastes through the new pipeline.
 
 :::
 
-```js
+``js
 import {$generateNodesFromDOM} from '@lexical/html';
 
 editor.update(() => {
@@ -87,11 +87,11 @@ editor.update(() => {
   // Insert them at a selection.
   $insertNodes(nodes);
 });
-```
+``
 
 If you are running in headless mode, you can do it this way using JSDOM:
 
-```js
+``js
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateNodesFromDOM} from '@lexical/html';
 
@@ -113,7 +113,7 @@ editor.update(() => {
   const selection = $getSelection();
   selection.insertNodes(nodes);
 });
-```
+``
 
 :::tip
 
@@ -124,12 +124,12 @@ Remember that state updates are asynchronous, so executing `editor.getEditorStat
 #### `LexicalNode.importDOM()`
 You can control how an `HTMLElement` is represented in `Lexical` by adding an `importDOM()` method to your `LexicalNode`.
 
-```js
+``js
 static importDOM(): DOMConversionMap | null;
-```
+``
 The return value of `importDOM` is a map of the lower case (DOM) [Node.nodeName](https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeName) property to an object that specifies a conversion function and a priority for that conversion. This allows `LexicalNodes` to specify which type of DOM nodes they can convert and what the relative priority of their conversion should be. This is useful in cases where a DOM Node with specific attributes should be interpreted as one type of `LexicalNode`, and otherwise it should be represented as another type of `LexicalNode`.
 
-```ts
+``ts
 type DOMConversionMap = Record<
   string,
   (node: HTMLElement) => DOMConversion | null
@@ -152,11 +152,11 @@ type DOMChildConversion = (
   lexicalNode: LexicalNode,
   parentLexicalNode: LexicalNode | null | undefined,
 ) => LexicalNode | null | undefined;
-```
+``
 
-@lexical/code provides a good example of the usefulness of this design. GitHub uses HTML ```<table>``` elements to represent the structure of copied code in HTML. If we interpreted all HTML ```<table>``` elements as literal tables, then code pasted from GitHub would appear in Lexical as a Lexical TableNode. Instead, CodeNode specifies that it can handle ```<table>``` elements too:
+@lexical/code provides a good example of the usefulness of this design. GitHub uses HTML ``<table>`` elements to represent the structure of copied code in HTML. If we interpreted all HTML ``<table>`` elements as literal tables, then code pasted from GitHub would appear in Lexical as a Lexical TableNode. Instead, CodeNode specifies that it can handle ``<table>`` elements too:
 
-```js
+``js
 class CodeNode extends ElementNode {
 ...
 static importDOM(): DOMConversionMap | null {
@@ -176,11 +176,11 @@ static importDOM(): DOMConversionMap | null {
 }
 ...
 }
-```
+``
 
-If the imported ```<table>``` doesn't align with the expected GitHub code HTML, then we return null and allow the node to be handled by lower priority conversions.
+If the imported ``<table>`` doesn't align with the expected GitHub code HTML, then we return null and allow the node to be handled by lower priority conversions.
 
-Much like `exportDOM`, `importDOM` exposes APIs to allow for post-processing of converted Nodes. The conversion function returns a `DOMConversionOutput` which can specify a function to run for each converted child (forChild) or on all the child nodes after the conversion is complete (after). The key difference here is that ```forChild``` runs for every deeply nested child node of the current node, whereas ```after``` will run only once after the transformation of the node and all its children is complete. 
+Much like `exportDOM`, `importDOM` exposes APIs to allow for post-processing of converted Nodes. The conversion function returns a `DOMConversionOutput` which can specify a function to run for each converted child (forChild) or on all the child nodes after the conversion is complete (after). The key difference here is that ``forChild`` runs for every deeply nested child node of the current node, whereas ``after`` will run only once after the transformation of the node and all its children is complete. 
 
 ### `html` Property for Import and Export Configuration
 
@@ -199,12 +199,12 @@ While `importDOM` and `exportDOM` allow for highly customized, node-specific con
 
 #### Type Definitions
 
-```typescript
+``typescript
 type HTMLConfig = {
   export?: DOMExportOutputMap;  // Optional map defining how nodes are exported to HTML.
   import?: DOMConversionMap;     // Optional record defining how HTML is converted into nodes.
 };
-```
+``
 
 #### Example of a use case for the `html` Property for Import and Export Configuration:
 
@@ -216,7 +216,7 @@ Since the TextNode is foundational to all Lexical packages, including the plain 
 
 You need to override the base TextNode:
 
-```js
+``js
 const initialConfig: InitialConfigType = {
     namespace: 'editor',
     theme: editorThemeClasses,
@@ -232,11 +232,11 @@ const initialConfig: InitialConfigType = {
       ListItemNode,
     ]
   };
-```
+``
 
 and create a new Extended Text Node plugin
 
-```js
+``js
 import {
   $applyNodeReplacement,
   $isTextNode,
@@ -358,7 +358,7 @@ function patchStyleConversion(
     };
   };
 }
-```
+``
 
 ## JSON
 
@@ -379,36 +379,36 @@ parsing of its node-specific properties is generated too.
 ### Lexical -> JSON
 To generate a JSON snapshot from an `EditorState`, you can call the `toJSON()` method on the `EditorState` object.
 
-```js
+``js
 const editorState = editor.getEditorState();
 const json = editorState.toJSON();
-```
+``
 
 Alternatively, if you are trying to generate a stringified version of the `EditorState`, you can simply using `JSON.stringify` directly:
 
-```js
+``js
 const editorState = editor.getEditorState();
 const jsonString = JSON.stringify(editorState);
-```
+``
 
 #### `LexicalNode.exportJSON()`
 
 You can control how a `LexicalNode` is represented as JSON by adding an `exportJSON()` method. It's important that you extend the serialization of the superclass by invoking `super`: e.g. `{ ...super.exportJSON(), /* your other properties */ }`.
 
-```js
+``js
 export type SerializedLexicalNode = {
   type: string;
   version: number;
 };
 
 exportJSON(): SerializedLexicalNode
-```
+``
 
 When transforming an editor state into JSON, we simply traverse the current editor state and call the `exportJSON` method for each Node in order to convert it to a `SerializedLexicalNode` object that represents the JSON object for the given node. The built-in nodes from Lexical already have a JSON representation defined, but you'll need to define ones for your own custom nodes.
 
 Here's an example of `exportJSON` for the `HeadingNode`:
 
-```js
+``js
 export type SerializedHeadingNode = Spread<
   {
     tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
@@ -422,20 +422,20 @@ exportJSON(): SerializedHeadingNode {
     tag: this.getTag(),
   };
 }
-```
+``
 
 #### `LexicalNode.importJSON()`
 
 You can control how a `LexicalNode` is deserialized back into a node from JSON by adding an `importJSON()` method.
 
-```js
+``js
 export type SerializedLexicalNode = {
   type: string;
   version: number;
 };
 
 importJSON(jsonNode: SerializedLexicalNode): LexicalNode
-```
+``
 
 This method works in the opposite way to how `exportJSON` works. Lexical uses the `type` field on the JSON object to determine what Lexical node class it needs to map to, so keeping the `type` field consistent with the `getType()` of the LexicalNode is essential.
 
@@ -443,7 +443,7 @@ You should use the `updateFromJSON` method in your `importJSON` to simplify the 
 
 Here's an example of `importJSON` for the `HeadingNode`:
 
-```ts
+``ts
 static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
   return $createHeadingNode().updateFromJSON(serializedNode);
 }
@@ -453,7 +453,7 @@ updateFromJSON(
 ): this {
   return super.updateFromJSON(serializedNode).setTag(serializedNode.tag);
 }
-```
+``
 
 #### `LexicalNode.updateFromJSON()`
 
@@ -463,30 +463,30 @@ updateFromJSON(
 
 The input type used in this method is not sound in the general case, but it is safe if subclasses only add optional properties to the JSON. Even though it is not sound, the usage in this library is safe as long as your `importJSON` method does not upcast the node before calling `updateFromJSON`.
 
-```ts
+``ts
 export type SerializedExtendedTextNode = Spread<
   // UNSAFE. This property is not optional
   { newProperty: string },
   SerializedTextNode
 >;
-```
+``
 
-```ts
+``ts
 export type SerializedExtendedTextNode = Spread<
   // SAFE. This property is not optional
   { newProperty?: string },
   SerializedTextNode
 >;
-```
+``
 
 This is because it's possible to cast to a more general type, e.g.
 
-```ts
+``ts
 const serializedNode: SerializedTextNode = { /* ... */ };
 const newNode: TextNode = $createExtendedTextNode();
 // This passes the type check, but would fail at runtime if the updateFromJSON method required newProperty
 newNode.updateFromJSON(serializedNode);
-```
+``
 
 :::
 
@@ -509,7 +509,7 @@ synthesizes `importJSON` when the constructor has no required arguments. Every
 built-in node declares one, and most custom nodes need no JSON serialization
 code at all.
 
-```ts
+``ts
 import {
   $getDocument,
   ElementNode,
@@ -567,7 +567,7 @@ class CounterNode extends ElementNode {
     return this.getLatest().__variant;
   }
 }
-```
+``
 
 That is the whole of `CounterNode`'s serialization. No `exportJSON`, no
 `updateFromJSON`, no `static importJSON`, no `afterCloneFrom`: saying where a
@@ -594,11 +594,11 @@ Each property's schema is built from composable helpers exported by
 - [`nodeSchema<MyNode>()(fields)`](/docs/api/modules/lexical#nodeschema) is the record of properties, and what `$config`'s `json` takes. Its type argument names the node, which is what lets every `field`, accessor and `when` predicate be checked against it. The two-step call is why both can happen: naming the node explicitly on the same call would stop TypeScript inferring the field types, which are what carry each property's accepted input into `SchemaInput`. See "Names are checked against the node" below. Declare it above the class rather than inline in `$config()`; see "Where to write the schema" below. A property may not be named for a member of `Object.prototype` (`toString`, `constructor`, `valueOf`, `__proto__`, …), which is refused where the schema is written: a serialized object comes from `JSON.parse` and inherits those, and every property is read bare, since an absent one is `undefined` and that is already its default
 - [`objectValue(fields)`](/docs/api/modules/lexical#objectvalue) is the same record without the node check, for a property whose value is itself an object. Its fields name no accessor, because an object's field is not a node's property. A node's own schema is always a `nodeSchema`, which is a different type carrying a different `meta`, so `$config`'s `json` refuses an `objectValue` outright rather than composing it to nothing
 - [`withAccessors(schema, {getter, setter})`](/docs/api/modules/lexical#withaccessors) names the methods a property is read and applied through, for when they are not the conventional `get<Property>`/`set<Property>`. `text` uses `getTextContent`/`setTextContent`, for example. Pass `null` instead of a name for a direction the property does not have: `{setter: null}` declares a *derived* property, written on export but computed rather than applied on import, as `ListNode`'s `tag` follows from its `listType`; `{getter: null}` declares one parsed but never written. An accessor that cannot be resolved is an error at editor-creation time rather than a silently dropped value, so `null` is how you opt out on purpose. **`withAccessors` and `withField` go outside every other combinator, exactly once per property.** Each combinator widens what the property holds, so an accessor named *under* one answers for a domain that is not the property's. Every combinator refuses a schema that already names an accessor, at compile time and at run time. See the [`withAccessors` API entry](/docs/api/modules/lexical#withaccessors) for the full rule
-- [`withField(schema, {field, getter?, setter?, decode?, encode?, when?})`](/docs/api/modules/lexical#withfield) declares that the property *is* a node field rather than a pair of methods. Exporting reads the field, importing assigns it, with no method call and no version resolution on either side: the node being parsed into is already writable, and the node being exported was already resolved from the EditorState. This is the fast path for a property stored verbatim. The field must be an own property of a fresh node, so initialize it or assign it in the constructor; that is how a misspelled name is told from a real one the first time the node is serialized. Recording the field rather than a bare name is also what lets tooling tell a field from a method, which is enough for a codegen pass to emit a specialized parser.
+- [`withField(schema, {field, getter?, setter?, getterTable?, setterTable?, when?})`](/docs/api/modules/lexical#withfield) declares that the property *is* a node field rather than a pair of methods. Exporting reads the field, importing assigns it, with no method call and no version resolution on either side: the node being parsed into is already writable, and the node being exported was already resolved from the EditorState. This is the fast path for a property stored verbatim. The field must be an own property of a fresh node, so initialize it or assign it in the constructor; that is how a misspelled name is told from a real one the first time the node is serialized. Recording the field rather than a bare name is also what lets tooling tell a field from a method, which is enough for a codegen pass to emit a specialized parser.
 
   Each direction still *stands in for* an accessor. A class that overrides one between the declaring class and the node's own has said the field and the method are not equivalent, and it wins: the field access is abandoned and the method is called, so moving a property to a field is not a behavior change for anyone who overrode its accessor. That accessor is the conventional `get<Prop>`/`set<Prop>` unless `getter`/`setter` name a different one, so most declarations need neither. Name one only where the accessor is spelled differently, as `TextNode`'s `text` is (`getTextContent`) and `LinkNode`'s `url` is (`getURL`). Naming one widens the guard rather than moving it: the conventional name is still watched, because a spelled accessor is usually a wrapper *over* it (`ElementNode`'s `textFormat` names `getSerializedTextFormat`, which computes from `getTextFormat`), and a subclass overriding the accessor that predates the schema must not be ignored. A node with no such method defers to nothing and needs no declaration either.
 
-  `decode`/`encode` are lookup tables between the stored and serialized forms, as `TextNode` stores `mode` as a number and serializes it as a name. They keep such a property on the direct-field path with no accessor in between. The two directions can also be declared separately: `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})` reads the field directly but writes through a method that normalizes.
+  `getterTable`/`setterTable` are lookup tables between the stored and serialized forms, as `TextNode` stores `mode` as a number and serializes it as a name. They keep such a property on the direct-field path with no accessor in between. The two directions can also be declared separately: `withAccessors(schema, {getter: {field: '__x'}, setter: 'setX'})` reads the field directly but writes through a method that normalizes.
 
 Each name is checked in the *position* it was written in, not merely for
 existing. A getter has to be a method taking no arguments, a setter one that
@@ -608,10 +608,10 @@ walk calls with nothing. The *type* behind the name is checked too: the field
 has to hold what the schema parses, a getter has to return it (or `undefined`,
 which omits the property), and a setter has to accept it.
 
-A field whose stored and serialized forms differ says so with `decode`/`encode`,
-and each table is checked for the one direction it serves. `decode`'s values
+A field whose stored and serialized forms differ says so with `getterTable`/`setterTable`,
+and each table is checked for the one direction it serves. `getterTable`'s values
 have to be ones the schema serializes, or `undefined` to omit the property.
-`encode`'s values have to fit the field, and its keys have to cover everything
+`setterTable`'s values have to fit the field, and its keys have to cover everything
 the schema produces, since a parsed value the table does not map is stored as
 the encoded default. That coverage is checked at compile time for an enum and
 at registration for the default of any other schema. A direction with no table
@@ -647,7 +647,7 @@ narrower type rejected while it worked perfectly at runtime, and a misspelled
 A property that is only persisted in some states names the predicate that
 decides, with `when`, rather than going through a hand-written getter:
 
-```ts
+``ts
 textFormat: withAccessors(numberValue(), {
   getter: {
     field: '__textFormat',
@@ -655,7 +655,7 @@ textFormat: withAccessors(numberValue(), {
     when: 'shouldSerializeTextStyles',
   },
 }),
-```
+``
 
 The property is written only when its value differs from the schema default
 *and* the predicate returns true. Testing the default first keeps the predicate
@@ -682,10 +682,10 @@ what lets every `field`, accessor `method` and `when` predicate be verified to
 exist. A name the node does not have is a compile error at the property that
 declares it, with the correction suggested:
 
-```
+``
 Type '"field:__langauge"' is not assignable to type '... | TaggedNamesOf<CodeNode> | ObligationsOf<CodeNode>'.
   Did you mean '"field:__language"'?
-```
+``
 
 ### Where to write the schema
 
@@ -759,7 +759,7 @@ field says where it is stored, which is also where `afterCloneFrom` comes from:
 a class that declares only fields needs none at all, and one that declares some
 gets those carried without writing them out again.
 
-```ts
+``ts
 class CalloutNode extends ElementNode {
   __label: string = '';
 
@@ -773,7 +773,7 @@ class CalloutNode extends ElementNode {
     });
   }
 }
-```
+``
 
 Both directions are read, so a property declared with `withAccessors` in one
 direction and a field in the other is still carried, and so is one whose
@@ -790,7 +790,7 @@ Two cases stay the class's own, and both follow the rule the synthesized
   (`setter: {field: '__ids', method: 'setIDs'}`, which is how `MarkNode`
   declares `ids`); this is for one whose value does not:
 
-  ```ts
+  ``ts
   class TallyNode extends ElementNode {
     __count = 0;
 
@@ -819,7 +819,7 @@ Two cases stay the class's own, and both follow the rule the synthesized
       return this.getLatest().__count;
     }
   }
-  ```
+  ``
 - **A class that defines its own `afterCloneFrom`**, which is left alone and is
   then responsible for all of its own properties. `ElementNode` is one: its
   clone also has to carry `__first`, `__last`, `__size` and its slot
@@ -900,14 +900,14 @@ enclosing `$withCompactExport`. That covers the `@lexical/clipboard` selection
 export inside a copy handler, a serialization walk you wrote, and the nested
 editors either of those serializes:
 
-```ts
+``ts
 import {$generateJSONFromSelectedNodes} from '@lexical/clipboard';
 import {$getSelection, $withCompactExport} from 'lexical';
 
 const selectionJSON = $withCompactExport(true, () =>
   $generateJSONFromSelectedNodes(editor, $getSelection()),
 );
-```
+``
 
 The callback must be synchronous. The form is restored as soon as it returns,
 so an `async` callback would give the form up at its first `await` and export
@@ -944,12 +944,12 @@ still exported current values.
 
 It no longer does:
 
-```ts
+``ts
 const stale = node;
 node.setStyle('color: red');    // clones; `stale` is now a previous version
 stale.exportJSON();             // ← may write the old style
 stale.getLatest().exportJSON(); // ← the new one
-```
+``
 
 Do not reason about which properties resolve. A property whose accessor a
 subclass overrode still goes through that accessor, so a single node can write
@@ -966,7 +966,7 @@ a mutation and then exported by hand.
 
 It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. Lexical's own `version` property is deprecated and no longer the way to do this: nothing reads it, parsing drops it outright, and a compact export omits it. [Dangers of a flat version property](#dangers-of-a-flat-version-property) explains why it does not work. Evolve your serialized type additively instead, and give each new property a default its parser can fall back to. Here's the serialized type definition for Lexical's base `TextNode` class:
 
-```ts
+``ts
 import type {Spread} from 'lexical';
 
 // Spread is a Typescript utility that allows us to spread the properties
@@ -981,11 +981,11 @@ export type SerializedTextNode = Spread<
   },
   SerializedLexicalNode
 >;
-```
+``
 
 If we wanted to make changes to the above `TextNode`, we should be sure to not remove or change an existing property, as this can cause data corruption. Instead, opt to add the functionality as a new optional property field instead.
 
-```ts
+``ts
 export type SerializedTextNode = Spread<
   {
     detail: number;
@@ -998,7 +998,7 @@ export type SerializedTextNode = Spread<
   },
   SerializedLexicalNode
 >;
-```
+``
 
 ### Dangers of a flat version property
 
@@ -1006,7 +1006,7 @@ The `updateFromJSON` method should ignore `type` and `version`, to support subcl
 
 The reason that `version` is no longer recommended is that it does not compose with subclasses. Consider this hierarchy:
 
-```ts
+``ts
 class TextNode {
   exportJSON() {
     return { /* ... */, version: 1 };
@@ -1017,11 +1017,11 @@ class ExtendedTextNode extends TextNode {
     return { ...super.exportJSON() };
   }
 }
-```
+``
 
 If `TextNode` is updated to `version: 2` then this version and new serialization will propagate to `ExtendedTextNode` via the `super.exportJSON()` call, but this leaves nowhere to store a version for `ExtendedTextNode` or vice versa. If the `ExtendedTextNode` explicitly specified a `version`, then the version of the base class will be ignored even though the representation of the JSON from the base class may change:
 
-```ts
+``ts
 class TextNode {
   exportJSON() {
     return { /* ... */, version: 2 };
@@ -1033,7 +1033,7 @@ class ExtendedTextNode extends TextNode {
     return { ...super.exportJSON(), version: 1 };
   }
 }
-```
+``
 
 So then you have a situation where there are possibly two JSON layouts for `ExtendedTextNode` with the same version, because the base class version changed due to a package upgrade.
 

@@ -107,17 +107,17 @@ export type SerializedElementNode = Spread<
  *
  * @__NO_SIDE_EFFECTS__
  */
-function formatDecodeTable(): Record<number, ElementFormatType> {
+function formatGetterTable(): Record<number, ElementFormatType> {
   return {...ELEMENT_FORMAT_TO_TYPE, 0: ''};
 }
 
 /** @__NO_SIDE_EFFECTS__ */
-function formatEncodeTable(): Record<ElementFormatType, number> {
+function formatSetterTable(): Record<ElementFormatType, number> {
   return {...ELEMENT_TYPE_TO_FORMAT, '': 0};
 }
 
-const FORMAT_DECODE = formatDecodeTable();
-const FORMAT_ENCODE = formatEncodeTable();
+const FORMAT_GETTER_TABLE = formatGetterTable();
+const FORMAT_SETTER_TABLE = formatSetterTable();
 
 // by the base LexicalNode.updateFromJSON.
 const elementNodeSchema = nodeSchema<ElementNode>()({
@@ -138,11 +138,11 @@ const elementNodeSchema = nodeSchema<ElementNode>()({
   format: withField(
     enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
     {
-      decode: FORMAT_DECODE,
-      encode: FORMAT_ENCODE,
       field: '__format',
       getter: 'getFormatType',
+      getterTable: FORMAT_GETTER_TABLE,
       setter: 'setFormat',
+      setterTable: FORMAT_SETTER_TABLE,
     },
   ),
   // A whole, non-negative number. That is the domain an indent has always

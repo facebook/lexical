@@ -3450,7 +3450,7 @@ type CompiledSetter =
       readonly schema: AnySerializationSchema;
       readonly field: string;
       /** Maps the parsed value to the stored one; see {@link SchemaField}. */
-      readonly encode?: {readonly [key: string]: unknown};
+      readonly setterTable?: {readonly [key: string]: unknown};
     };
 
 const EMPTY_SETTERS: readonly CompiledSetter[] = [];
@@ -3826,7 +3826,7 @@ type CompiledGetter = CompactRule &
         readonly key: string;
         readonly field: string;
         /** Maps the stored value to the serialized one; see {@link SchemaField}. */
-        readonly decode?: {readonly [key: string]: unknown};
+        readonly getterTable?: {readonly [key: string]: unknown};
         /**
          * Resolved once at compile time, like the method getter: the predicate
          * named by {@link SchemaGetterField.when}, which gates writing this
@@ -3943,10 +3943,10 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
         when = predicate as (this: LexicalNode) => boolean;
       }
       fields.set(key, {
-        decode: getter.decode,
         defaultValue: schema.defaultValue,
         derived: schema.setter === null,
         field: getterName,
+        getterTable: getter.getterTable,
         isEqual: schema.isEqual,
         key,
         kind: 'ownField',
@@ -4103,10 +4103,10 @@ function $writeCompiledGetters(
       // yields `undefined`, exactly as the bare lookup did, which is also what
       // the generated exporters emit for one.
       value =
-        entry.decode === undefined
+        entry.getterTable === undefined
           ? stored
-          : hasOwnKey(entry.decode, stored as string)
-            ? entry.decode[stored as string]
+          : hasOwnKey(entry.getterTable, stored as string)
+            ? entry.getterTable[stored as string]
             : undefined;
     } else {
       value = entry.getter.call(node);
@@ -4192,20 +4192,22 @@ function compactDefaultTest(
 }
 
 /**
- * The stored form of a compiled property's schema default — what an `encode`
+ * The stored form of a compiled property's schema default — what an `setterTable`
  * table maps the default to, or the default itself where there is no table.
  * A table always has the entry: {@link compileSetters} refuses one without
  * it when the class is registered, as {@link verifyTableCoversDomain} refuses
  * it for a generated class, because a default with no stored form left the
  * raw default — a string, for a numeric field — as what a miss wrote.
  */
-function encodedDefault(entry: {
-  readonly encode?: {readonly [key: string]: unknown};
+function setterDefault(entry: {
+  readonly setterTable?: {readonly [key: string]: unknown};
   readonly schema: AnySerializationSchema;
 }): unknown {
-  const {encode, schema} = entry;
+  const {setterTable, schema} = entry;
   const {defaultValue} = schema;
-  return encode === undefined ? defaultValue : encode[String(defaultValue)];
+  return setterTable === undefined
+    ? defaultValue
+    : setterTable[String(defaultValue)];
 }
 
 function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
@@ -4247,15 +4249,15 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
       // checked for its default, the one value known here. Every build, like
       // the setter check below: what it prevents is a value of the wrong type
       // written into a field on import, silently, in production.
-      if (setter.encode !== undefined) {
-        const {encode} = setter;
+      if (setter.setterTable !== undefined) {
+        const {setterTable} = setter;
         const {meta} = schema;
         for (const value of meta.kind === 'enum'
           ? meta.values
           : [schema.defaultValue]) {
           invariant(
-            hasOwnKey(encode, String(value)),
-            '%s: serialization schema field "%s" has no encode entry for %s, which its schema can produce; a parsed value the table does not map is stored as the encoded default, so the table must map every value the schema produces',
+            hasOwnKey(setterTable, String(value)),
+            '%s: serialization schema field "%s" has no setterTable entry for %s, which its schema can produce; a parsed value the table does not map is stored as the encoded default, so the table must map every value the schema produces',
             klass.name,
             key,
             JSON.stringify(value),
@@ -4263,11 +4265,11 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
         }
       }
       fields.set(key, {
-        encode: setter.encode,
         field: setterName,
         key,
         kind: 'ownField',
         schema,
+        setterTable: setter.setterTable,
       });
       continue;
     }
@@ -4414,7 +4416,7 @@ function sameCompiledTables(
       (x.kind === 'ownField' &&
         y.kind === 'ownField' &&
         (x.field !== y.field ||
-          (x.decode === undefined) !== (y.decode === undefined)))
+          (x.getterTable === undefined) !== (y.getterTable === undefined)))
     ) {
       return false;
     }
@@ -4429,7 +4431,7 @@ function sameCompiledTables(
       (x.kind === 'ownField' &&
         y.kind === 'ownField' &&
         (x.field !== y.field ||
-          (x.encode === undefined) !== (y.encode === undefined)))
+          (x.setterTable === undefined) !== (y.setterTable === undefined)))
     ) {
       return false;
     }
@@ -4749,15 +4751,15 @@ function $walkSetters<T extends LexicalNode>(
       // is (`v in TABLE ? TABLE[v] : <default>` over a null-prototype table).
       // The schema has already reduced the value to its own domain, but that
       // domain can be wider than the table's keys — `withField(stringValue(),
-      // {encode})` admits any string — and a bare lookup would then resolve
+      // {setterTable})` admits any string — and a bare lookup would then resolve
       // `'toString'` to Object.prototype's method and store *that* in the
       // field. A genuine miss still yields `undefined`, exactly as the bare
       // lookup did.
       ownFieldRecord(node)[entry.field] =
-        entry.encode === undefined
+        entry.setterTable === undefined
           ? parsed
-          : hasOwnKey(entry.encode, parsed as string)
-            ? entry.encode[parsed as string]
+          : hasOwnKey(entry.setterTable, parsed as string)
+            ? entry.setterTable[parsed as string]
             : // The stored form of the schema's *default*, not `undefined`: a
               // miss means the parse landed on a domain member the table has
               // no stored form for, and writing `undefined` put a value into a
@@ -4765,7 +4767,7 @@ function $walkSetters<T extends LexicalNode>(
               // dropped the property on the next export. The generated parser
               // falls back to exactly this (`... : 0` for TextNode's `mode`),
               // so writing anything else made the two disagree.
-              encodedDefault(entry);
+              setterDefault(entry);
     } else {
       // The return is not read. A setter's own `getWritable()` hands back the
       // node it was called on, since that node is already writable, so
@@ -5348,11 +5350,11 @@ export function getRegisteredSubtypeMap(
  * to wrap that.
  *
  * @example
- * ```ts
+ * ``ts
  * function $createTokenText(text: string): TextNode {
  *   return $create(TextNode).setTextContent(text).setMode('token');
  * }
- * ```
+ * ``
  */
 export function $create<T extends LexicalNode>(klass: Klass<T>): T {
   const editor = $getEditor();

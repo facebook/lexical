@@ -321,7 +321,7 @@ export interface SchemaGetterField extends SchemaFieldBase {
    * `never` rejects it by assignability instead, which inference cannot
    * launder away.
    */
-  readonly encode?: never;
+  readonly setterTable?: never;
   /**
    * The name of a node predicate that decides whether this property is written
    * at all. Naming it keeps the property on the direct-field path: without it,
@@ -355,31 +355,31 @@ export interface SchemaGetterField extends SchemaFieldBase {
    * property on the direct-read path: the table is a plain object of
    * primitives, so it is as inlinable by a code generator as the field read is.
    *
-   * The export direction's table; {@link SchemaSetterField.encode} is its
+   * The export direction's table; {@link SchemaSetterField.setterTable} is its
    * import mirror. Each is declared only on the direction that reads it, so
    * naming the wrong one is a type error rather than a silently ignored
    * property.
    */
-  readonly decode?: {readonly [key: string]: unknown};
+  readonly getterTable?: {readonly [key: string]: unknown};
 }
 
 /** A node field written directly on import. */
 export interface SchemaSetterField extends SchemaFieldBase {
-  /** @see {@link SchemaGetterField.encode} for why this is `never`. */
-  readonly decode?: never;
+  /** @see {@link SchemaGetterField.setterTable} for why this is `never`. */
+  readonly getterTable?: never;
   /**
    * A predicate gates the export direction only, so naming one here is the
    * same mistake as naming the wrong table; see
-   * {@link SchemaGetterField.encode}.
+   * {@link SchemaGetterField.setterTable}.
    */
   readonly when?: never;
   /**
    * A lookup table from the serialized value to the stored one — the inverse of
-   * {@link SchemaGetterField.decode}, for the import direction. The parsed
+   * {@link SchemaGetterField.getterTable}, for the import direction. The parsed
    * value is the key, so the schema still owns the domain: only a value the
    * schema admitted is ever looked up.
    */
-  readonly encode?: {readonly [key: string]: unknown};
+  readonly setterTable?: {readonly [key: string]: unknown};
 }
 
 /**
@@ -409,17 +409,17 @@ export type SchemaSetterAccessor = string | SchemaSetterField | null;
  */
 export interface FieldOptions {
   readonly field: string;
-  /** @see {@link SchemaGetterField.decode} */
-  readonly decode?: {readonly [key: string]: unknown};
-  /** @see {@link SchemaSetterField.encode} */
-  readonly encode?: {readonly [key: string]: unknown};
+  /** @see {@link SchemaGetterField.getterTable} */
+  readonly getterTable?: {readonly [key: string]: unknown};
+  /** @see {@link SchemaSetterField.setterTable} */
+  readonly setterTable?: {readonly [key: string]: unknown};
   /** The getter this field read stands in for; see {@link SchemaFieldBase.method}. */
   readonly getter?: string;
   /** The setter this field write stands in for; see {@link SchemaFieldBase.method}. */
   readonly setter?: string;
   /**
    * The predicate gating the export direction; see
-   * {@link SchemaGetterField.when}. Like `decode`, it belongs to one direction
+   * {@link SchemaGetterField.when}. Like `getterTable`, it belongs to one direction
    * only — the import direction has nothing to gate, since a property that was
    * not written is simply absent.
    */
@@ -528,22 +528,22 @@ interface FieldWriteObligation<F extends string, V> {
   readonly write: V;
 }
 /**
- * A decode table's check, in place of the field read it stands in for: every
+ * A `getterTable`'s check, in place of the field read it stands in for: every
  * value the table maps a stored value to has to be one the schema serializes,
  * or `undefined`, which omits the property. Nothing on the node can discharge
  * it — the field holds the table's keys, not its values — so it is decided
  * here: `never` when every value fits, and otherwise a shape no
  * {@link MemberOf} contains, reported at the property with the values that do
- * not. The import direction needs no counterpart: an encode table's values
+ * not. The import direction needs no counterpart: a `setterTable`'s values
  * are written into the field, which is a {@link FieldWriteObligation} over
  * those values.
  */
-type DecodeMismatch<F extends string, D, T> = [
+type GetterTableMismatch<F extends string, D, T> = [
   Exclude<D[keyof D], Returnable<T> | undefined>,
 ] extends [never]
   ? never
   : TableValueMismatch<
-      'decode',
+      'getterTable',
       F,
       Exclude<D[keyof D], Returnable<T> | undefined>
     >;
@@ -553,7 +553,7 @@ interface TableValueMismatch<Table extends string, F extends string, V> {
   readonly maps: V;
 }
 /**
- * An encode table's coverage: a parsed value the table does not map is stored
+ * A `setterTable`'s coverage: a parsed value the table does not map is stored
  * as the *encoded default*, so the table has to map every value the schema
  * can produce, the default first of all — one it does not map has no stored
  * form, and the walk would write the raw default into the field. A finite
@@ -563,14 +563,14 @@ interface TableValueMismatch<Table extends string, F extends string, V> {
  * every member has an entry, and otherwise a shape no {@link MemberOf}
  * contains, naming the members that do not.
  */
-type EncodeMissing<F extends string, E, T> = string extends T
+type SetterTableMissing<F extends string, E, T> = string extends T
   ? never
   : number extends T
     ? never
     : [Exclude<`${T & Keyable}`, `${keyof E & Keyable}`>] extends [never]
       ? never
       : TableKeyMissing<
-          'encode',
+          'setterTable',
           F,
           Exclude<`${T & Keyable}`, `${keyof E & Keyable}`>
         >;
@@ -759,19 +759,19 @@ type AccessorName<A, Role extends 'get' | 'set', T> = A extends {
           : never)
       // A field whose stored and serialized forms differ says so with a table,
       // and the table is the declaration of that relationship for the one
-      // direction it serves. `decode` maps the stored value on export, so
+      // direction it serves. `getterTable` maps the stored value on export, so
       // what has to fit the schema is the table's values, not the field;
-      // `encode` maps the parsed value on import, so what has to fit the
+      // `setterTable` maps the parsed value on import, so what has to fit the
       // field is the table's values, not what the schema parses. A direction
       // with no table keeps the field's own check: either table once withheld
-      // both, and a decode table alone let import write the parsed string
-      // into the numeric field it was declared to encode for.
+      // both, and a `getterTable` alone let import write the parsed string
+      // into the numeric field it was its `setterTable` was declared for.
       | (Role extends 'get'
-          ? A extends {readonly decode: infer D}
-            ? DecodeMismatch<F, D, T>
+          ? A extends {readonly getterTable: infer D}
+            ? GetterTableMismatch<F, D, T>
             : FieldReadObligation<F, Returnable<T>>
-          : A extends {readonly encode: infer E}
-            ? FieldWriteObligation<F, E[keyof E]> | EncodeMissing<F, E, T>
+          : A extends {readonly setterTable: infer E}
+            ? FieldWriteObligation<F, E[keyof E]> | SetterTableMissing<F, E, T>
             : FieldWriteObligation<F, T>)
   : A extends string
     ? `${Role}:${A}` | `declared:${Role}` | MethodObligation<Role, A, T>
@@ -829,11 +829,13 @@ type FieldOptionNames<F, T> =
   // and serialized forms differ in that direction; see {@link AccessorName}.
   | (F extends {readonly field: infer N extends string}
       ?
-          | (F extends {readonly decode: infer D}
-              ? DecodeMismatch<N, D, T>
+          | (F extends {readonly getterTable: infer D}
+              ? GetterTableMismatch<N, D, T>
               : FieldReadObligation<N, Returnable<T>>)
-          | (F extends {readonly encode: infer E}
-              ? FieldWriteObligation<N, E[keyof E]> | EncodeMissing<N, E, T>
+          | (F extends {readonly setterTable: infer E}
+              ?
+                  | FieldWriteObligation<N, E[keyof E]>
+                  | SetterTableMissing<N, E, T>
               : FieldWriteObligation<N, T>)
       : never)
   | (F extends {readonly getter?: infer G extends string}
@@ -911,7 +913,7 @@ interface ConventionalMissing<M extends string> {
  *
  * Generic in the field type so it narrows to the direction it was handed:
  * given a {@link SchemaGetterAccessor} it yields a {@link SchemaGetterField},
- * whose `decode` is then the only table in scope.
+ * whose `getterTable` is then the only table in scope.
  */
 export function isSchemaField<T extends SchemaFieldBase>(
   accessor: string | T | null | undefined,
@@ -930,7 +932,7 @@ export function isSchemaField<T extends SchemaFieldBase>(
 export type ComposedSchemaFields = ReadonlyMap<string, AnySerializationSchema>;
 
 /**
- * The `decode` table the property `key` exports through, from the schema it
+ * The `getterTable` table the property `key` exports through, from the schema it
  * was declared with. For generated code, which was compiled against a schema
  * that declared one; a schema without it is not the one the code was
  * generated from.
@@ -945,36 +947,36 @@ export type ComposedSchemaFields = ReadonlyMap<string, AnySerializationSchema>;
  *
  * @internal
  */
-export function decodeTableOf(
+export function getterTableOf(
   fields: ComposedSchemaFields,
   key: string,
 ): {readonly [key: string]: unknown} {
   const getter = schemaOf(fields, key).getter;
   invariant(
-    isSchemaField(getter) && getter.decode !== undefined,
-    'decodeTableOf: "%s" declares no decode table',
+    isSchemaField(getter) && getter.getterTable !== undefined,
+    'getterTableOf: "%s" declares no `getterTable`',
     key,
   );
-  return nullPrototype(getter.decode);
+  return nullPrototype(getter.getterTable);
 }
 
 /**
- * The `encode` table the property `key` imports through; see
- * {@link decodeTableOf}.
+ * The `setterTable` table the property `key` imports through; see
+ * {@link getterTableOf}.
  *
  * @internal
  */
-export function encodeTableOf(
+export function setterTableOf(
   fields: ComposedSchemaFields,
   key: string,
 ): {readonly [key: string]: unknown} {
   const setter = schemaOf(fields, key).setter;
   invariant(
-    isSchemaField(setter) && setter.encode !== undefined,
-    'encodeTableOf: "%s" declares no encode table',
+    isSchemaField(setter) && setter.setterTable !== undefined,
+    'setterTableOf: "%s" declares no `setterTable`',
     key,
   );
-  return nullPrototype(setter.encode);
+  return nullPrototype(setter.setterTable);
 }
 
 /**
@@ -987,7 +989,7 @@ export function encodeTableOf(
  * which means it emitted no code for this property and nothing calls this.
  * Descending one the compiler does not would find a table it never numbered and
  * hand back the wrong one, so anything else ends the walk. See
- * {@link decodeTableOf}.
+ * {@link getterTableOf}.
  *
  * @internal
  */
@@ -1020,7 +1022,7 @@ export function aliasTableOf(
 }
 
 /**
- * The stored form of the property `key`'s schema default: what its `encode`
+ * The stored form of the property `key`'s schema default: what its `setterTable`
  * table maps the default to, which is what the walk stores for a parsed value
  * the table does not map. Generated code falls back to it the same way — and
  * a miss is possible, since coverage is proved only for an enum's domain and
@@ -1030,25 +1032,25 @@ export function aliasTableOf(
  *
  * @internal
  */
-export function encodedDefaultOf(
+export function setterDefaultOf(
   fields: ComposedSchemaFields,
   key: string,
 ): unknown {
   const schema = schemaOf(fields, key);
   const {setter} = schema;
   invariant(
-    isSchemaField(setter) && setter.encode !== undefined,
-    'encodedDefaultOf: "%s" declares no encode table',
+    isSchemaField(setter) && setter.setterTable !== undefined,
+    'setterDefaultOf: "%s" declares no `setterTable`',
     key,
   );
   const stored = String(schema.defaultValue);
   invariant(
-    hasOwnKey(setter.encode, stored),
-    'encodedDefaultOf: "%s" has no encode entry for its default %s',
+    hasOwnKey(setter.setterTable, stored),
+    'setterDefaultOf: "%s" has no setterTable entry for its default %s',
     key,
     stored,
   );
-  return setter.encode[stored];
+  return setter.setterTable[stored];
 }
 
 function nullPrototype(table: {readonly [key: string]: unknown}): {
@@ -1968,10 +1970,10 @@ export function booleanValue(
  * asserted past.
  *
  * @example
- * ```ts
+ * ``ts
  * const parseMode = enumValue(['normal', 'token', 'segmented']);
  * //    ^? SerializationSchema<'normal' | 'token' | 'segmented'>, default 'normal'
- * ```
+ * ``
  * @__NO_SIDE_EFFECTS__
  */
 export function enumValue<const T, D extends T = T>(
@@ -2057,14 +2059,14 @@ export function enumValue<const T, D extends T = T>(
  * reads an explicitly empty array as `null`.
  *
  * @example
- * ```ts
+ * ``ts
  * const parseRel = nullable(stringValue(), {defaultAsNull: true});
  * //    ^? SerializationSchema<string | null>
  * parseRel('noopener'); // 'noopener'
  * parseRel('');         // null ('' is stringValue's default)
  * parseRel(null);       // null
  * parseRel(undefined);  // null (the recoverable default)
- * ```
+ * ``
  * @__NO_SIDE_EFFECTS__
  */
 export function nullable<T, In = T>(
@@ -2107,7 +2109,7 @@ export function nullable<T, In = T>(
  * an explicitly empty array rather than persisting it.
  *
  * @example
- * ```ts
+ * ``ts
  * const parseWidth = optional(numberValue());
  * //    ^? SerializationSchema<number | undefined>
  * parseWidth(120);       // 120
@@ -2116,7 +2118,7 @@ export function nullable<T, In = T>(
  * const parseCellWidth = optional(numberValue(), {omitDefault: true});
  * parseCellWidth(0);     // undefined (0 is not a real width)
  * parseCellWidth('x');   // undefined (coerced to the default, then omitted)
- * ```
+ * ``
  * @__NO_SIDE_EFFECTS__
  */
 export function optional<T, In = T>(
@@ -2290,14 +2292,14 @@ function $sameContent(a: unknown, b: unknown): boolean {
  * difference. Outside a union the comparator is used as declared.
  *
  * @example
- * ```ts
+ * ``ts
  * const parseDimension = unionValue([numberValue(), enumValue(['inherit'])], 'inherit');
  * //    ^? SerializationSchema<number | 'inherit'>
  * parseDimension(640);       // 640
  * parseDimension('640');     // 640 (numberValue reads a stringified number)
  * parseDimension('inherit'); // 'inherit'
  * parseDimension('banana');  // 'inherit' (no member accepts it)
- * ```
+ * ``
  * @__NO_SIDE_EFFECTS__
  */
 export function unionValue<
@@ -2489,7 +2491,7 @@ export interface NodeSerializationSchema<N = unknown, In = unknown> {
  * predicate be verified to exist. A name the node does not have is a compile
  * error at the property that declares it, with the correction suggested:
  *
- * ```ts
+ * ``ts
  * const codeNodeSchema = nodeSchema<CodeNode>()({
  *   language: withField(optional(nullable(stringValue())), {
  *     field: '__langauge',
@@ -2498,7 +2500,7 @@ export interface NodeSerializationSchema<N = unknown, In = unknown> {
  * //          ~~~~~~~~~~~~
  * // Type '"field:__langauge"' is not assignable to type '... | TaggedNamesOf<CodeNode> | ObligationsOf<CodeNode>'.
  * //   Did you mean '"field:__language"'?
- * ```
+ * ``
  *
  * Where the schema is written does not change what is checked: a module-scope
  * `const` above the class — a class's *type* is in scope before its
@@ -2581,14 +2583,14 @@ function nodeSchemaOf(
  * parse that stores the alias where the schema stores what it names.
  *
  * @example
- * ```ts
+ * ``ts
  * const parseFormat = aliasedValue(numberValue(), TEXT_TYPE_TO_FORMAT);
  * //    ^? SerializationSchema<number>
  * parseFormat(1);      // 1
  * parseFormat('bold'); // IS_BOLD
  * parseFormat('42');   // 42 (not an alias, so numberValue reads it)
  * parseFormat('junk'); // 0  (numberValue falls back to its default)
- * ```
+ * ``
  * @__NO_SIDE_EFFECTS__
  */
 export function aliasedValue<
@@ -2664,7 +2666,7 @@ export function aliasedValue<
  * instead, where the value that reaches storage is the one that round-trips.
  *
  * @example
- * ```ts
+ * ``ts
  * const parseFormat = transformValue(
  *   unionValue(
  *     [numberValue(), enumValue(['bold', 'italic', 'underline'])],
@@ -2676,7 +2678,7 @@ export function aliasedValue<
  * parseFormat(1);      // 1
  * parseFormat('bold'); // IS_BOLD
  * parseFormat('junk'); // 0 (inner falls back to its default)
- * ```
+ * ``
  * @__NO_SIDE_EFFECTS__
  */
 export function transformValue<Inner, Out, In = Inner>(
@@ -2773,12 +2775,12 @@ export function rawValue<T>(): SerializationSchema<
  * recoverable default.
  *
  * @example
- * ```ts
+ * ``ts
  * const parseIds = arrayValue(stringValue());
  * //    ^? SerializationSchema<string[]>
  * parseIds(['a', 'b']); // ['a', 'b']
  * parseIds('nope');     // []
- * ```
+ * ``
  * @__NO_SIDE_EFFECTS__
  */
 export function arrayValue<T, In = T>(
@@ -2861,14 +2863,14 @@ export function arrayValue<T, In = T>(
  * {@link nodeSchema} — the same record, checked against a node — is for.
  *
  * @example
- * ```ts
+ * ``ts
  * // A property whose value is an object of its own; a node's own schema is
  * // nodeSchema<MyNode>()({...}), whose fields may name accessors.
  * const dimensions = objectValue({
  *   height: numberValue(),
  *   width: numberValue(),
  * });
- * ```
+ * ``
  * @__NO_SIDE_EFFECTS__
  */
 export function objectValue<const S extends InnerSerializationSchemaFields>(
@@ -3043,13 +3045,13 @@ function objectSchema<S extends SerializationSchemaFields>(
  * accessor is spelled differently, as TextNode's `text` is (`getTextContent`).
  * A node with no such method defers to nothing, which needs no declaring.
  *
- * `decode`/`encode` declare a property whose stored and serialized forms
- * differ ({@link SchemaGetterField.decode} / {@link SchemaSetterField.encode}),
+ * `getterTable`/`setterTable` declare a property whose stored and serialized forms
+ * differ ({@link SchemaGetterField.getterTable} / {@link SchemaSetterField.setterTable}),
  * and `when` names the predicate gating the export direction
  * ({@link SchemaGetterField.when}).
  *
  * @example
- * ```ts
+ * ``ts
  * nodeSchema<TextNode>()({
  *   // TextNode's own field in both directions, deferring to getStyle/setStyle
  *   // for a subclass that overrides either — neither is spelled here, since
@@ -3063,14 +3065,14 @@ function objectSchema<S extends SerializationSchemaFields>(
  *     setter: 'setURL',
  *   }),
  * });
- * ```
+ * ``
  * @__NO_SIDE_EFFECTS__
  */
 export function withField<T, const F extends FieldOptions, In = T>(
   schema: SerializationSchema<T, never, In>,
   field: F,
 ): SerializationSchema<T, FieldOptionNames<F, T>, In> {
-  // `decode`/`encode`, `when` and the two method names each belong to one
+  // `getterTable`/`setterTable`, `when` and the two method names each belong to one
   // direction, so the single options object is split into the two accessors
   // here rather than making every caller write both out.
   // The two accessor objects are built here rather than written by the
@@ -3078,12 +3080,16 @@ export function withField<T, const F extends FieldOptions, In = T>(
   // type does. The runtime value is exactly what withAccessors produced.
   return named('withField', schema, {
     getter: {
-      decode: field.decode,
       field: field.field,
+      getterTable: field.getterTable,
       method: field.getter,
       when: field.when,
     },
-    setter: {encode: field.encode, field: field.field, method: field.setter},
+    setter: {
+      field: field.field,
+      method: field.setter,
+      setterTable: field.setterTable,
+    },
   });
 }
 
@@ -3110,14 +3116,14 @@ export function withField<T, const F extends FieldOptions, In = T>(
  * the rule at run time too, for a caller the types do not reach.
  *
  * @example
- * ```ts
+ * ``ts
  * nodeSchema<TextNode>()({
  *   text: withAccessors(stringValue(), {
  *     getter: 'getTextContent',
  *     setter: 'setTextContent',
  *   }),
  * });
- * ```
+ * ``
  * @__NO_SIDE_EFFECTS__
  */
 export function withAccessors<T, const A extends SchemaAccessors, In = T>(

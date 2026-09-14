@@ -2137,8 +2137,8 @@ declare export function nodeSchema<N>(): (fields: {
 }) => NodeSerializationSchema;
 // A node field, read or written directly rather than through a method. The
 // lookup table for a property whose stored and serialized forms differ is
-// declared only on the direction that reads it — `decode` on the getter,
-// `encode` on the setter — so naming the wrong one is an error rather than a
+// declared only on the direction that reads it — `getterTable` on the getter,
+// `setterTable` on the setter — so naming the wrong one is an error rather than a
 // silently ignored property, and `when` (the predicate that decides whether
 // the property is written at all) is the getter's for the same reason.
 // `method` names the accessor the field access stands in for, so a subclass
@@ -2149,26 +2149,26 @@ export type SchemaFieldBase = {
 };
 export type SchemaGetterField = {
   ...SchemaFieldBase,
-  readonly decode?: {readonly [key: string]: unknown},
-  readonly encode?: empty,
+  readonly getterTable?: {readonly [key: string]: unknown},
+  readonly setterTable?: empty,
   readonly when?: string,
 };
 export type SchemaSetterField = {
   ...SchemaFieldBase,
-  readonly decode?: empty,
-  readonly encode?: {readonly [key: string]: unknown},
+  readonly getterTable?: empty,
+  readonly setterTable?: {readonly [key: string]: unknown},
   readonly when?: empty,
 };
 export type SchemaField = SchemaGetterField | SchemaSetterField;
 export type SchemaGetterAccessor = string | SchemaGetterField | null;
 export type SchemaSetterAccessor = string | SchemaSetterField | null;
 // Both directions of a property that *is* a node field, as withField takes
-// them. `decode`, `encode` and `when` each belong to the one direction that
+// them. `getterTable`, `setterTable` and `when` each belong to the one direction that
 // reads them, and are split onto it.
 export type FieldOptions = {
   readonly field: string,
-  readonly decode?: {readonly [key: string]: unknown},
-  readonly encode?: {readonly [key: string]: unknown},
+  readonly getterTable?: {readonly [key: string]: unknown},
+  readonly setterTable?: {readonly [key: string]: unknown},
   readonly getter?: string,
   readonly setter?: string,
   readonly when?: string,
@@ -2256,11 +2256,11 @@ export type GeneratedJSONFactory = (
   fields: ComposedSchemaFields,
 ) => GeneratedJSON;
 
-declare export function decodeTableOf(
+declare export function getterTableOf(
   fields: ComposedSchemaFields,
   key: string,
 ): {readonly [key: string]: unknown};
-declare export function encodeTableOf(
+declare export function setterTableOf(
   fields: ComposedSchemaFields,
   key: string,
 ): {readonly [key: string]: unknown};
@@ -2269,7 +2269,7 @@ declare export function aliasTableOf(
   key: string,
   index: number,
 ): {readonly [key: string]: unknown};
-declare export function encodedDefaultOf(
+declare export function setterDefaultOf(
   fields: ComposedSchemaFields,
   key: string,
 ): unknown;

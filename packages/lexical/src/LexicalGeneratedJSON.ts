@@ -24,9 +24,9 @@ import type {TextNode} from './nodes/LexicalTextNode';
 import {
   aliasTableOf,
   type ComposedSchemaFields,
-  decodeTableOf,
-  encodedDefaultOf,
-  encodeTableOf,
+  getterTableOf,
+  setterDefaultOf,
+  setterTableOf,
 } from './LexicalSchema';
 
 /**
@@ -130,7 +130,7 @@ export function afterCloneElementNode(
 
 /** ElementNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_ELEMENT: GeneratedJSONFactory = fields => {
-  const ELEMENT_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+  const ELEMENT_FORMAT_GETTER = getterTableOf(fields, 'format') as {
     readonly [key: string]:
       | ''
       | 'center'
@@ -141,11 +141,11 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = fields => {
       | 'start';
   };
 
-  const ELEMENT_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+  const ELEMENT_FORMAT_SETTER = setterTableOf(fields, 'format') as {
     readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   };
 
-  const ELEMENT_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+  const ELEMENT_FORMAT_SETTER_DEFAULT = setterDefaultOf(fields, 'format') as
     | 0
     | 1
     | 2
@@ -164,7 +164,7 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = fields => {
     return {
       children: [],
       direction: node.__dir,
-      format: ELEMENT_FORMAT_DECODE[node.__format],
+      format: ELEMENT_FORMAT_GETTER[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -189,7 +189,7 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = fields => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = ELEMENT_FORMAT_DECODE[node.__format];
+    const format = ELEMENT_FORMAT_GETTER[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -223,20 +223,10 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = fields => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    v =
-      v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-        ? v
-        : '';
     node.__format =
-      (v as string) in ELEMENT_FORMAT_ENCODE
-        ? ELEMENT_FORMAT_ENCODE[v as string]
-        : ELEMENT_FORMAT_ENCODE_DEFAULT;
+      typeof v === 'string' && v in ELEMENT_FORMAT_SETTER
+        ? ELEMENT_FORMAT_SETTER[v]
+        : ELEMENT_FORMAT_SETTER_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -269,7 +259,7 @@ export function afterCloneTextNode(node: TextNode, prevNode: TextNode): void {
 
 /** TextNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
-  const TEXT_MODE_DECODE = decodeTableOf(fields, 'mode') as {
+  const TEXT_MODE_GETTER = getterTableOf(fields, 'mode') as {
     readonly [key: string]: 'normal' | 'segmented' | 'token';
   };
 
@@ -292,21 +282,18 @@ export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
       | 1024;
   };
 
-  const TEXT_MODE_ENCODE = encodeTableOf(fields, 'mode') as {
+  const TEXT_MODE_SETTER = setterTableOf(fields, 'mode') as {
     readonly [key: string]: 0 | 1 | 2;
   };
 
-  const TEXT_MODE_ENCODE_DEFAULT = encodedDefaultOf(fields, 'mode') as
-    | 0
-    | 1
-    | 2;
+  const TEXT_MODE_SETTER_DEFAULT = setterDefaultOf(fields, 'mode') as 0 | 1 | 2;
 
   /** Generated from TextNode's serialization schema. Do not edit by hand. */
   function exportTextNode(node: TextNode): {[key: string]: unknown} {
     return {
       detail: node.__detail,
       format: node.__format,
-      mode: TEXT_MODE_DECODE[node.__mode],
+      mode: TEXT_MODE_GETTER[node.__mode],
       style: node.__style,
       text: node.__text,
       type: node.__type,
@@ -325,7 +312,7 @@ export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
     if (format !== undefined && format !== 0) {
       json.format = format;
     }
-    const mode = TEXT_MODE_DECODE[node.__mode];
+    const mode = TEXT_MODE_GETTER[node.__mode];
     if (mode !== undefined && mode !== 'normal') {
       json.mode = mode;
     }
@@ -357,11 +344,10 @@ export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
         ? TEXT_FORMAT_ALIAS[v]
         : num(v, 0);
     v = json.mode;
-    v = v === 'normal' || v === 'token' || v === 'segmented' ? v : 'normal';
     node.__mode =
-      (v as string) in TEXT_MODE_ENCODE
-        ? TEXT_MODE_ENCODE[v as string]
-        : TEXT_MODE_ENCODE_DEFAULT;
+      typeof v === 'string' && v in TEXT_MODE_SETTER
+        ? TEXT_MODE_SETTER[v]
+        : TEXT_MODE_SETTER_DEFAULT;
     v = json.style;
     node.__style = typeof v === 'string' ? v : '';
     v = json.text;
@@ -379,7 +365,7 @@ export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
 
 /** ParagraphNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_PARAGRAPH: GeneratedJSONFactory = fields => {
-  const PARAGRAPH_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+  const PARAGRAPH_FORMAT_GETTER = getterTableOf(fields, 'format') as {
     readonly [key: string]:
       | ''
       | 'center'
@@ -390,11 +376,11 @@ export const GENERATED_PARAGRAPH: GeneratedJSONFactory = fields => {
       | 'start';
   };
 
-  const PARAGRAPH_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+  const PARAGRAPH_FORMAT_SETTER = setterTableOf(fields, 'format') as {
     readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   };
 
-  const PARAGRAPH_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+  const PARAGRAPH_FORMAT_SETTER_DEFAULT = setterDefaultOf(fields, 'format') as
     | 0
     | 1
     | 2
@@ -413,7 +399,7 @@ export const GENERATED_PARAGRAPH: GeneratedJSONFactory = fields => {
     return {
       children: [],
       direction: node.__dir,
-      format: PARAGRAPH_FORMAT_DECODE[node.__format],
+      format: PARAGRAPH_FORMAT_GETTER[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -438,7 +424,7 @@ export const GENERATED_PARAGRAPH: GeneratedJSONFactory = fields => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = PARAGRAPH_FORMAT_DECODE[node.__format];
+    const format = PARAGRAPH_FORMAT_GETTER[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -472,20 +458,10 @@ export const GENERATED_PARAGRAPH: GeneratedJSONFactory = fields => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    v =
-      v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-        ? v
-        : '';
     node.__format =
-      (v as string) in PARAGRAPH_FORMAT_ENCODE
-        ? PARAGRAPH_FORMAT_ENCODE[v as string]
-        : PARAGRAPH_FORMAT_ENCODE_DEFAULT;
+      typeof v === 'string' && v in PARAGRAPH_FORMAT_SETTER
+        ? PARAGRAPH_FORMAT_SETTER[v]
+        : PARAGRAPH_FORMAT_SETTER_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -527,7 +503,7 @@ export const GENERATED_LINEBREAK: GeneratedJSONFactory = () => {
 
 /** TabNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TAB: GeneratedJSONFactory = fields => {
-  const TAB_MODE_DECODE = decodeTableOf(fields, 'mode') as {
+  const TAB_MODE_GETTER = getterTableOf(fields, 'mode') as {
     readonly [key: string]: 'normal';
   };
 
@@ -550,7 +526,7 @@ export const GENERATED_TAB: GeneratedJSONFactory = fields => {
   function exportTabNode(node: TabNode): {[key: string]: unknown} {
     return {
       detail: node.__detail,
-      mode: TAB_MODE_DECODE[node.__mode],
+      mode: TAB_MODE_GETTER[node.__mode],
       text: node.__text,
       format: node.__format,
       style: node.__style,

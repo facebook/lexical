@@ -739,23 +739,23 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       // does not take it must not end up carrying it: a `when` on the setter
       // has nothing to gate, and each table is read by one side only.
       const schema = withField(numberValue(), {
-        decode: {1: 'one'},
-        encode: {one: 1},
         field: '__count',
         getter: 'getCount',
+        getterTable: {1: 'one'},
         setter: 'setCount',
+        setterTable: {one: 1},
         when: 'shouldWriteCount',
       });
       expect(schema.getter).toEqual({
-        decode: {1: 'one'},
         field: '__count',
+        getterTable: {1: 'one'},
         method: 'getCount',
         when: 'shouldWriteCount',
       });
       expect(schema.setter).toEqual({
-        encode: {one: 1},
         field: '__count',
         method: 'setCount',
+        setterTable: {one: 1},
       });
     });
   });
@@ -1256,7 +1256,7 @@ describe('a field stands in for its accessor only while nobody overrides it', ()
     );
   });
 
-  test('encode and decode carry a property whose two forms differ', () => {
+  test('setterTable and getterTable carry a property whose two forms differ', () => {
     // TextNode stores `mode` as a bitmask and serializes it as a name, so it
     // stays off getMode()/setMode() only because both tables are declared.
     withEditor(() => {
@@ -2458,7 +2458,7 @@ describe('a misconfigured accessor fails at registration', () => {
     }
   });
 
-  test('an encode table that cannot encode the default is refused', () => {
+  test('a `setterTable` that cannot setterTable the default is refused', () => {
     // A parsed value the table does not map is stored as the encoded default,
     // so a default the table does not map has no stored form: the walk wrote
     // the raw default — here the string '' — into the numeric field.
@@ -2469,9 +2469,9 @@ describe('a misconfigured accessor fails at registration', () => {
           extends: ElementNode,
           json: nodeSchema<CodeNode>()({
             code: withField(stringValue(), {
-              decode: {1: 'a'},
-              encode: {a: 1},
               field: '__code',
+              getterTable: {1: 'a'},
+              setterTable: {a: 1},
             }),
           }),
         });
@@ -2482,7 +2482,7 @@ describe('a misconfigured accessor fails at registration', () => {
         defineExtension({name: '[unencodable-default]', nodes: [CodeNode]}),
       );
     for (let i = 0; i < 2; i++) {
-      expect(build).toThrow('has no encode entry for ""');
+      expect(build).toThrow('has no setterTable entry for ""');
     }
   });
 });
@@ -2913,11 +2913,11 @@ describe('a union member knows its own domain', () => {
   });
 
   test('a lookup table replaces the field check for its own direction only', () => {
-    // `decode` maps the stored value on export and `encode` the parsed value
+    // `getterTable` maps the stored value on export and `setterTable` the parsed value
     // on import, so a table stands in for the field check in one direction
     // and leaves the other as it was. Supplying either used to withhold both:
-    // a decode table alone let `'token'` be written into a numeric field on
-    // import, and an encode table mapping to the wrong type did the same.
+    // a `getterTable` alone let `'token'` be written into a numeric field on
+    // import, and a `setterTable` mapping to the wrong type did the same.
     class ModeNode extends ElementNode {
       __mode = 0;
     }
@@ -2928,86 +2928,86 @@ describe('a union member knows its own domain', () => {
     expect(
       nodeSchema<ModeNode>()({
         mode: withField(enumValue(['normal', 'token']), {
-          decode: {0: 'normal', 1: 'token'},
-          encode: {normal: 0, token: 1},
           field: '__mode',
+          getterTable: {0: 'normal', 1: 'token'},
+          setterTable: {normal: 0, token: 1},
         }),
       }),
     ).toBeDefined();
     expect(
       nodeSchema<NarrowModeNode>()({
         mode: withField(enumValue(['normal', 'token']), {
-          // An omitted export is `undefined`, which the decode side admits.
-          decode: {0: undefined, 1: 'token'},
-          encode: {normal: 0, token: 1},
           field: '__mode',
+          // An omitted export is `undefined`, which the getterTable side admits.
+          getterTable: {0: undefined, 1: 'token'},
+          setterTable: {normal: 0, token: 1},
         }),
       }),
     ).toBeDefined();
     expect(
       nodeSchema<ModeNode>()({
         mode: withAccessors(enumValue(['normal', 'token']), {
-          getter: {decode: {0: 'normal', 1: 'token'}, field: '__mode'},
-          setter: {encode: {normal: 0, token: 1}, field: '__mode'},
+          getter: {field: '__mode', getterTable: {0: 'normal', 1: 'token'}},
+          setter: {field: '__mode', setterTable: {normal: 0, token: 1}},
         }),
       }),
     ).toBeDefined();
 
     nodeSchema<ModeNode>()({
-      // @ts-expect-error -- no encode table: import writes 'normal' | 'token' into a number
+      // @ts-expect-error -- no `setterTable`: import writes 'normal' | 'token' into a number
       mode: withField(enumValue(['normal', 'token']), {
-        decode: {0: 'normal', 1: 'token'},
         field: '__mode',
+        getterTable: {0: 'normal', 1: 'token'},
       }),
     });
     nodeSchema<ModeNode>()({
-      // @ts-expect-error -- the encode table maps 'token' to a string, not a number
+      // @ts-expect-error -- the `setterTable` maps 'token' to a string, not a number
       mode: withField(enumValue(['normal', 'token']), {
-        decode: {0: 'normal', 1: 'token'},
-        encode: {normal: 0, token: 'x'},
         field: '__mode',
+        getterTable: {0: 'normal', 1: 'token'},
+        setterTable: {normal: 0, token: 'x'},
       }),
     });
     nodeSchema<NarrowModeNode>()({
       // @ts-expect-error -- 2 is outside the field's 0 | 1
       mode: withField(enumValue(['normal', 'token']), {
-        decode: {0: 'normal', 1: 'token'},
-        encode: {normal: 0, token: 2},
         field: '__mode',
+        getterTable: {0: 'normal', 1: 'token'},
+        setterTable: {normal: 0, token: 2},
       }),
     });
     nodeSchema<ModeNode>()({
-      // @ts-expect-error -- the decode table maps 1 to a value the schema does not serialize
+      // @ts-expect-error -- the `getterTable` maps 1 to a value the schema does not serialize
       mode: withField(enumValue(['normal', 'token']), {
-        decode: {0: 'normal', 1: 'bogus'},
-        encode: {normal: 0, token: 1},
         field: '__mode',
+        getterTable: {0: 'normal', 1: 'bogus'},
+        setterTable: {normal: 0, token: 1},
       }),
     });
     nodeSchema<ModeNode>()({
-      // @ts-expect-error -- the same encode mismatch, declared per direction
+      // @ts-expect-error -- the same setterTable mismatch, declared per direction
       mode: withAccessors(enumValue(['normal', 'token']), {
-        getter: {decode: {0: 'normal', 1: 'token'}, field: '__mode'},
-        setter: {encode: {normal: 0, token: 'x'}, field: '__mode'},
+        getter: {field: '__mode', getterTable: {0: 'normal', 1: 'token'}},
+        setter: {field: '__mode', setterTable: {normal: 0, token: 'x'}},
       }),
     });
-    // An encode table has to map every value the schema can produce: a parsed
+    // A `setterTable` has to map every value the schema can produce: a parsed
     // value it does not map falls back to the encoded default, and a default
     // it does not map has no stored form at all. For a finite domain that is
     // decidable at compile time.
     nodeSchema<ModeNode>()({
-      // @ts-expect-error -- 'normal', the default, has no encode entry
+      // @ts-expect-error -- 'normal', the default, has no setterTable entry
       mode: withField(enumValue(['normal', 'token']), {
-        decode: {0: 'normal', 1: 'token'},
-        encode: {token: 1},
         field: '__mode',
+        getterTable: {0: 'normal', 1: 'token'},
+        setterTable: {token: 1},
       }),
     });
     nodeSchema<ModeNode>()({
       // @ts-expect-error -- the same missing entry, declared per direction
       mode: withAccessors(enumValue(['normal', 'token']), {
-        getter: {decode: {0: 'normal', 1: 'token'}, field: '__mode'},
-        setter: {encode: {token: 1}, field: '__mode'},
+        getter: {field: '__mode', getterTable: {0: 'normal', 1: 'token'}},
+        setter: {field: '__mode', setterTable: {token: 1}},
       }),
     });
     // A domain the types cannot enumerate is left to registration, which
@@ -3018,9 +3018,9 @@ describe('a union member knows its own domain', () => {
     expect(
       nodeSchema<CodeNode>()({
         code: withField(stringValue(), {
-          decode: {0: '', 1: 'a'},
-          encode: {'': 0, a: 1},
           field: '__code',
+          getterTable: {0: '', 1: 'a'},
+          setterTable: {'': 0, a: 1},
         }),
       }),
     ).toBeDefined();
@@ -3424,22 +3424,22 @@ describe('a union member knows its own domain', () => {
     expect(
       nodeSchema<ModeNode>()({
         mode: withField(enumValue(['normal', 'token', 'segmented']), {
-          decode: NAMES,
-          encode: MODES,
           field: '__mode',
+          getterTable: NAMES,
+          setterTable: MODES,
         }),
       }),
     ).toBeDefined();
   });
 
   test('each value table is declared only on the direction that reads it', () => {
-    // `decode` is applied on export and `encode` on import, so naming either
+    // `getterTable` is applied on export and `setterTable` on import, so naming either
     // on the other side used to type-check and then be silently ignored. They
     // are declared on the direction-specific field types now, which makes the
     // wrong pairing a compile error rather than a property that does nothing.
     const schema = withAccessors(stringValue(), {
-      getter: {decode: {stored: 'serialized'}, field: '__x'},
-      setter: {encode: {serialized: 'stored'}, field: '__x'},
+      getter: {field: '__x', getterTable: {stored: 'serialized'}},
+      setter: {field: '__x', setterTable: {serialized: 'stored'}},
     });
     expect(isSchemaField(schema.getter)).toBe(true);
     expect(isSchemaField(schema.setter)).toBe(true);
@@ -3447,12 +3447,12 @@ describe('a union member knows its own domain', () => {
     assert(isSchemaField(schema.setter));
     // isSchemaField narrows to the direction it was handed, so each side sees
     // only its own table.
-    expectTypeOf(schema.getter).toHaveProperty('decode');
-    expectTypeOf(schema.setter).toHaveProperty('encode');
-    // @ts-expect-error -- `encode` is the import direction's table
-    withAccessors(stringValue(), {getter: {encode: {a: 1}, field: '__x'}});
-    // @ts-expect-error -- `decode` is the export direction's table
-    withAccessors(stringValue(), {setter: {decode: {a: 1}, field: '__x'}});
+    expectTypeOf(schema.getter).toHaveProperty('getterTable');
+    expectTypeOf(schema.setter).toHaveProperty('setterTable');
+    // @ts-expect-error -- `setterTable` is the import direction's table
+    withAccessors(stringValue(), {getter: {field: '__x', setterTable: {a: 1}}});
+    // @ts-expect-error -- `getterTable` is the export direction's table
+    withAccessors(stringValue(), {setter: {field: '__x', getterTable: {a: 1}}});
   });
 
   test('a wrapper carries its inner membership into the union', () => {

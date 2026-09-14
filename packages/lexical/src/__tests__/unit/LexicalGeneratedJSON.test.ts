@@ -348,7 +348,7 @@ describe('generated code is inherited where it still applies', () => {
   test('a subclass that re-declares a property with a different predicate takes the walk', () => {
     // The case a field-by-field comparison misses: everything the compiled
     // entry records is identical — same kind, key, field, default, equality,
-    // no decode table — and only the `when` predicate differs, which the entry
+    // no `getterTable` — and only the `when` predicate differs, which the entry
     // holds as a resolved function rather than the name the generated code
     // emits. Inheriting here would run code that calls the ancestor's
     // predicate. What separates them is that re-declaring means a new schema.
@@ -851,7 +851,7 @@ describe('generated updateFromJSON', () => {
 
   initializeUnitTest(testEnv => {
     test('a hostile key cannot reach Object.prototype through a table', () => {
-      // The alias and encode tables are indexed with a value straight out of
+      // The alias and `setterTable`s are indexed with a value straight out of
       // the JSON, so a plain object literal would resolve 'toString' to a
       // function and store it as the node's format.
       testEnv.editor.update(

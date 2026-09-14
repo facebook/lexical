@@ -37,7 +37,7 @@ export type SerializedTabNode = SerializedTextNode;
 // or foreign `{detail: 0}` / `{mode: 'token'}` from reaching a setter that
 // throws, and lets the compact form omit them.
 const tabNodeSchema = nodeSchema<TabNode>()({
-  // Read straight off the inherited fields — mode through the decode table,
+  // Read straight off the inherited fields — mode through the `getterTable`,
   // since it is stored as a bitmask. All three are export-only: the values are
   // fixed for a tab, so they are derived on import rather than applied.
   detail: withAccessors(numberValue(IS_UNMERGEABLE), {
@@ -46,11 +46,11 @@ const tabNodeSchema = nodeSchema<TabNode>()({
   }),
   mode: withAccessors(enumValue(['normal']), {
     getter: {
+      field: '__mode',
       // Only the mode a tab can hold, rather than TextNode's whole table: that
       // one also maps the token and segmented bits, which this schema does not
-      // serialize, and a decode table's values are held to the schema's domain.
-      decode: {0: 'normal'},
-      field: '__mode',
+      // serialize, and a `getterTable`'s values are held to the schema's domain.
+      getterTable: {0: 'normal'},
     },
     setter: null,
   }),

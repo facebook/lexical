@@ -16,10 +16,10 @@
 import type {MarkNode} from './MarkNode';
 
 import {
-  decodeTableOf,
-  encodedDefaultOf,
-  encodeTableOf,
   type GeneratedJSONFactory,
+  getterTableOf,
+  setterDefaultOf,
+  setterTableOf,
 } from 'lexical';
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
@@ -62,7 +62,7 @@ export function afterCloneMarkNode(node: MarkNode, prevNode: MarkNode): void {
 
 /** MarkNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_MARK: GeneratedJSONFactory = fields => {
-  const MARK_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+  const MARK_FORMAT_GETTER = getterTableOf(fields, 'format') as {
     readonly [key: string]:
       | ''
       | 'center'
@@ -73,11 +73,11 @@ export const GENERATED_MARK: GeneratedJSONFactory = fields => {
       | 'start';
   };
 
-  const MARK_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+  const MARK_FORMAT_SETTER = setterTableOf(fields, 'format') as {
     readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   };
 
-  const MARK_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+  const MARK_FORMAT_SETTER_DEFAULT = setterDefaultOf(fields, 'format') as
     | 0
     | 1
     | 2
@@ -97,7 +97,7 @@ export const GENERATED_MARK: GeneratedJSONFactory = fields => {
       children: [],
       ids: node.getIDs(),
       direction: node.__dir,
-      format: MARK_FORMAT_DECODE[node.__format],
+      format: MARK_FORMAT_GETTER[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -124,7 +124,7 @@ export const GENERATED_MARK: GeneratedJSONFactory = fields => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = MARK_FORMAT_DECODE[node.__format];
+    const format = MARK_FORMAT_GETTER[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -158,20 +158,10 @@ export const GENERATED_MARK: GeneratedJSONFactory = fields => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    v =
-      v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-        ? v
-        : '';
     node.__format =
-      (v as string) in MARK_FORMAT_ENCODE
-        ? MARK_FORMAT_ENCODE[v as string]
-        : MARK_FORMAT_ENCODE_DEFAULT;
+      typeof v === 'string' && v in MARK_FORMAT_SETTER
+        ? MARK_FORMAT_SETTER[v]
+        : MARK_FORMAT_SETTER_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;

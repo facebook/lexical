@@ -16,16 +16,16 @@ import {
   aliasTableOf,
   arrayValue,
   createEditor,
-  decodeTableOf,
-  encodedDefaultOf,
-  encodeTableOf,
   enumValue,
   getComposedSchemaFields,
+  getterTableOf,
   LineBreakNode,
   nodeSchema,
   numberValue,
   objectValue,
   optional,
+  setterDefaultOf,
+  setterTableOf,
   stringValue,
   TextNode,
   withField,
@@ -126,18 +126,18 @@ describe('names interpolated into generated code', () => {
 
 describe('lookup table locals', () => {
   test('the same declaration may be bound again under its own name', () => {
-    const declaration = tableDeclaration('encode', 'mode', {a: 1});
-    declareTable('TEXT_MODE_ENCODE', declaration);
-    expect(() => declareTable('TEXT_MODE_ENCODE', declaration)).not.toThrow();
+    const declaration = tableDeclaration('setter', 'mode', {a: 1});
+    declareTable('TEXT_MODE_SETTER', declaration);
+    expect(() => declareTable('TEXT_MODE_SETTER', declaration)).not.toThrow();
   });
 
   test('two different tables cannot share a name', () => {
     // Names are derived by upper-casing, which is not injective: `textFormat`
     // and `textformat` produce the same one. Silently replacing the first
     // binding would leave one property decoding through the other's table.
-    declareTable('COLLIDE_DECODE', tableDeclaration('decode', 'a', {a: 1}));
+    declareTable('COLLIDE_GETTER', tableDeclaration('getter', 'a', {a: 1}));
     expect(() =>
-      declareTable('COLLIDE_DECODE', tableDeclaration('decode', 'b', {b: 2})),
+      declareTable('COLLIDE_GETTER', tableDeclaration('getter', 'b', {b: 2})),
     ).toThrow(/two different lookup tables both want the name/);
   });
 });
@@ -151,11 +151,11 @@ describe('lookup table locals', () => {
  */
 describe('a lookup table declaration', () => {
   test('reads the table off the schema and states its type', () => {
-    expect(tableDeclaration('decode', 'mode', {0: 'normal', 1: 'token'})).toBe(
-      'decodeTableOf(fields, "mode") as {readonly [key: string]: "normal" | "token"}',
+    expect(tableDeclaration('getter', 'mode', {0: 'normal', 1: 'token'})).toBe(
+      'getterTableOf(fields, "mode") as {readonly [key: string]: "normal" | "token"}',
     );
-    expect(tableDeclaration('encode', 'mode', {normal: 0, token: 1})).toBe(
-      'encodeTableOf(fields, "mode") as {readonly [key: string]: 0 | 1}',
+    expect(tableDeclaration('setter', 'mode', {normal: 0, token: 1})).toBe(
+      'setterTableOf(fields, "mode") as {readonly [key: string]: 0 | 1}',
     );
     expect(tableDeclaration('alias', 'format', {bold: 1}, 0)).toBe(
       'aliasTableOf(fields, "format", 0) as {readonly [key: string]: 1}',
@@ -163,19 +163,19 @@ describe('a lookup table declaration', () => {
   });
 
   test('spells an undefined value as the type undefined', () => {
-    // A decode table may map a stored value to `undefined`: that is how a
+    // A `getterTable` may map a stored value to `undefined`: that is how a
     // stored value whose serialized form is the omitted default is spelled.
     // `JSON.stringify` has no spelling for it, and once left a type ending in
     // ` | `; the value itself is the schema's to hold now.
     expect(
-      tableDeclaration('decode', 'mode', {0: undefined, 1: 'special'}),
+      tableDeclaration('getter', 'mode', {0: undefined, 1: 'special'}),
     ).toBe(
-      'decodeTableOf(fields, "mode") as {readonly [key: string]: "special" | undefined}',
+      'getterTableOf(fields, "mode") as {readonly [key: string]: "special" | undefined}',
     );
   });
 
   test('keeps the literal union however many values there are', () => {
-    // An encode table's value is assigned to the field, and a field is often
+    // A `setterTable`'s value is assigned to the field, and a field is often
     // narrower than its primitive: nine modes stored as `0 | 1 | ... | 8`.
     // Widening the table to `number` past a readable size made the generated
     // parser fail to compile for a node whose schema type-checks.
@@ -183,19 +183,19 @@ describe('a lookup table declaration', () => {
     for (let i = 0; i < 9; i++) {
       table[`mode${i}`] = i;
     }
-    expect(tableDeclaration('encode', 'mode', table)).toContain(
+    expect(tableDeclaration('setter', 'mode', table)).toContain(
       '{readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}',
     );
   });
 
   test('a number JSON cannot spell is the type number', () => {
-    // `encode: {unlimited: Infinity}` serializes the string and stores the
+    // `setterTable: {unlimited: Infinity}` serializes the string and stores the
     // sentinel. Written through `JSON.stringify` the module once held `null`
     // where the walk stored `Infinity`; nothing about the value is written
     // now, and `Infinity` is no literal type, so the type widens to `number`
     // beside the finite literals. `-0` is the type `0`.
     expect(
-      tableDeclaration('encode', 'limit', {
+      tableDeclaration('setter', 'limit', {
         minus: -Infinity,
         nan: NaN,
         one: 1,
@@ -266,9 +266,9 @@ describe('a lookup table declaration', () => {
           extends: LineBreakNode,
           json: nodeSchema<LimitNode>()({
             limit: withField(numberValue(0, {integer: true, max: 2, min: 0}), {
-              decode: {0: 0, 1: 1},
-              encode: {0: 0, 1: 1},
               field: '__limit',
+              getterTable: {0: 0, 1: 1},
+              setterTable: {0: 0, 1: 1},
             }),
           }),
         });
@@ -299,11 +299,11 @@ describe('a lookup table declaration', () => {
     const update = new Function(
       'fields',
       'aliasTableOf',
-      'decodeTableOf',
-      'encodeTableOf',
-      'encodedDefaultOf',
+      'getterTableOf',
+      'setterTableOf',
+      'setterDefaultOf',
       code,
-    )(fields, aliasTableOf, decodeTableOf, encodeTableOf, encodedDefaultOf) as (
+    )(fields, aliasTableOf, getterTableOf, setterTableOf, setterDefaultOf) as (
       node: LimitNode,
       json: {readonly [key: string]: unknown},
     ) => LimitNode;
@@ -325,7 +325,7 @@ describe('a lookup table declaration', () => {
       {discrete: true},
     );
     expect(source).toContain(
-      '(v as string) in LIMIT_LIMIT_ENCODE ? LIMIT_LIMIT_ENCODE[v as string] : LIMIT_LIMIT_ENCODE_DEFAULT',
+      '(v as string) in LIMIT_LIMIT_SETTER ? LIMIT_LIMIT_SETTER[v as string] : LIMIT_LIMIT_SETTER_DEFAULT',
     );
   });
 });
@@ -403,19 +403,19 @@ describe('a property the compact form cannot compare as source', () => {
   test('a table reference is matched literally, not as a pattern', () => {
     // A table's name comes from a schema key, so it may contain `$`, which a
     // pattern reads as an anchor. The unreferenced-table filter used
-    // `new RegExp(`\\b${name}\\b`)`, so `DOLLAR_$MODE_DECODE` matched nothing:
+    // `new RegExp(`\\b${name}\\b`)`, so `DOLLAR_$MODE_GETTER` matched nothing:
     // the declaration was dropped while the code reading it was kept, and the
     // emitted module threw `ReferenceError`.
-    expect(references('T[DOLLAR_$MODE_DECODE]', 'DOLLAR_$MODE_DECODE')).toBe(
+    expect(references('T[DOLLAR_$MODE_GETTER]', 'DOLLAR_$MODE_GETTER')).toBe(
       true,
     );
-    expect(references('const x = 1;', 'DOLLAR_$MODE_DECODE')).toBe(false);
+    expect(references('const x = 1;', 'DOLLAR_$MODE_GETTER')).toBe(false);
     // And a name that is only part of a longer identifier is not a reference,
-    // which is what the word boundaries were there for: `X_Y_ENCODE` is a
-    // prefix of `X_Y_ENCODE_DEFAULT`.
-    expect(references('a = X_Y_ENCODE_DEFAULT;', 'X_Y_ENCODE')).toBe(false);
-    expect(references('a = X_Y_ENCODE;', 'X_Y_ENCODE')).toBe(true);
-    expect(references('a = $X_Y_ENCODE;', 'X_Y_ENCODE')).toBe(false);
+    // which is what the word boundaries were there for: `X_Y_SETTER` is a
+    // prefix of `X_Y_SETTER_DEFAULT`.
+    expect(references('a = X_Y_SETTER_DEFAULT;', 'X_Y_SETTER')).toBe(false);
+    expect(references('a = X_Y_SETTER;', 'X_Y_SETTER')).toBe(true);
+    expect(references('a = $X_Y_SETTER;', 'X_Y_SETTER')).toBe(false);
   });
 
   test('and inside a string literal it is not a reference at all', () => {
@@ -423,20 +423,20 @@ describe('a property the compact form cannot compare as source', () => {
     // that appears in one was written by the schema, not called by the code.
     // Declaring for it emits something nothing uses, which `noUnusedLocals`
     // rejects — the build failing over what a property's default was spelled.
-    expect(references('v = "X_Y_ENCODE";', 'X_Y_ENCODE')).toBe(false);
+    expect(references('v = "X_Y_SETTER";', 'X_Y_SETTER')).toBe(false);
     expect(references('v = "numC(";', 'numC')).toBe(false);
     // Still found where the code does use it, beside a literal that does not.
     expect(references('v = c ? "numC(" : numC(v, 0);', 'numC')).toBe(true);
     // An escaped quote does not end the literal, and an escaped backslash does
     // not escape the quote after it.
-    expect(references('v = "a\\"X_Y_ENCODE\\"b";', 'X_Y_ENCODE')).toBe(false);
-    expect(references('v = "a\\\\"; X_Y_ENCODE;', 'X_Y_ENCODE')).toBe(true);
+    expect(references('v = "a\\"X_Y_SETTER\\"b";', 'X_Y_SETTER')).toBe(false);
+    expect(references('v = "a\\\\"; X_Y_SETTER;', 'X_Y_SETTER')).toBe(true);
     // Apostrophes in the generated docblocks are prose, not quotes: masking
     // from one would swallow the code after it.
     expect(
       references(
-        "/** ListNode's schema. */\nfunction f() {\n  return X_Y_ENCODE;\n}",
-        'X_Y_ENCODE',
+        "/** ListNode's schema. */\nfunction f() {\n  return X_Y_SETTER;\n}",
+        'X_Y_SETTER',
       ),
     ).toBe(true);
   });
@@ -447,29 +447,29 @@ describe('a property the compact form cannot compare as source', () => {
     // is a ReferenceError.
     class NamedTableNode extends TextNode {
       __m = 0;
-      NAMEDTABLE_MODE_DECODE = '';
+      NAMEDTABLE_MODE_GETTER = '';
       $config() {
         return this.config('named-table', {
           extends: TextNode,
           json: nodeSchema<NamedTableNode>()({
-            NAMEDTABLE_MODE_DECODE: withField(stringValue(), {
-              field: 'NAMEDTABLE_MODE_DECODE',
+            NAMEDTABLE_MODE_GETTER: withField(stringValue(), {
+              field: 'NAMEDTABLE_MODE_GETTER',
             }),
             mode: withField(enumValue(['normal', 'token']), {
-              decode: {0: 'normal', 1: 'token'},
-              encode: {normal: 0, token: 1},
               field: '__m',
+              getterTable: {0: 'normal', 1: 'token'},
+              setterTable: {normal: 0, token: 1},
             }),
           }),
         });
       }
     }
     expect(() =>
-      checkTableLocals(NamedTableNode, ['NAMEDTABLE_MODE_DECODE']),
+      checkTableLocals(NamedTableNode, ['NAMEDTABLE_MODE_GETTER']),
     ).toThrow(/collides with a local the generated code binds/);
     // A table whose name no property takes is fine.
     expect(() =>
-      checkTableLocals(NamedTableNode, ['NAMEDTABLE_MODE_ENCODE']),
+      checkTableLocals(NamedTableNode, ['NAMEDTABLE_MODE_SETTER']),
     ).not.toThrow();
   });
 

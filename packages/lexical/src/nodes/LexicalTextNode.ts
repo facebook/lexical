@@ -129,7 +129,7 @@ export type TextMarks = TextMark[];
 //
 // Nothing here is a transformValue, which is what lets the codegen emit a
 // specialized parser for this class: every domain is stated as data the
-// generator can compile — the alias tables below, and mode's encode/decode.
+// generator can compile — the alias tables below, and mode's setterTable/getterTable.
 const textNodeSchema = nodeSchema<TextNode>()({
   // `format` and `detail` also accept the legacy string names that
   // hand-authored and older documents carry (e.g. `format: 'bold'`),
@@ -144,9 +144,9 @@ const textNodeSchema = nodeSchema<TextNode>()({
   // Stored as a bitmask, serialized as the name, so this one needs both
   // tables to stay off the accessors.
   mode: withField(enumValue(['normal', 'token', 'segmented']), {
-    decode: TEXT_TYPE_TO_MODE,
-    encode: TEXT_MODE_TO_TYPE,
     field: '__mode',
+    getterTable: TEXT_TYPE_TO_MODE,
+    setterTable: TEXT_MODE_TO_TYPE,
   }),
   style: withField(stringValue(), {
     field: '__style',

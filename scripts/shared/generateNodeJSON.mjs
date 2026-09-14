@@ -63,6 +63,7 @@ import {
   NUM_CLAMP_HELPER_SOURCE,
   NUM_HELPER_SOURCE,
   NUM_RANGE_HELPER_SOURCE,
+  verificationCorpus,
   verifyCompiledParse,
   verifyTableCoversDomain,
 } from '@lexical/compiler/SchemaJsonCodegen';
@@ -225,7 +226,7 @@ const PACKAGES = [
  *
  * A scan rather than a regexp: a table's name is derived from a schema key, so
  * it may contain `$`, which a pattern would read as an anchor. The name was
- * interpolated unescaped, and `DOLLAR_$MODE_DECODE` then matched nothing — so
+ * interpolated unescaped, and `DOLLAR_$MODE_GETTER` then matched nothing — so
  * the declaration was dropped as unreferenced while the code that reads it was
  * kept. Nothing here is a pattern, so nothing in a name can be read as one.
  *
@@ -438,12 +439,12 @@ export function resetTableLocals() {
  * modules bind is decided by the manifest classes, so a value shape none of
  * them uses can only be driven through here.
  *
- * `encodedDefault` is the one value read rather than a table: the stored form
- * of the schema's default, which the parser stores for a key the encode
+ * `setterDefault` is the one value read rather than a table: the stored form
+ * of the schema's default, which the parser stores for a key the setterTable
  * table does not map, asserted to the same union as the table's values since
  * it is one of them.
  *
- * @param {'decode' | 'encode' | 'alias' | 'encodedDefault'} kind
+ * @param {'getter' | 'setter' | 'alias' | 'setterDefault'} kind
  * @param {string} key the schema property
  * @param {{readonly [key: string]: unknown}} table
  * @param {number} [index] which alias table, outermost first
@@ -452,8 +453,8 @@ export function resetTableLocals() {
 export function tableDeclaration(kind, key, table, index) {
   const args = [JSON.stringify(key), ...(index === undefined ? [] : [index])];
   const type = tableValueType(table);
-  return kind === 'encodedDefault'
-    ? `encodedDefaultOf(fields, ${args.join(', ')}) as ${type}`
+  return kind === 'setterDefault'
+    ? `setterDefaultOf(fields, ${args.join(', ')}) as ${type}`
     : `${kind}TableOf(fields, ${args.join(', ')}) as {readonly [key: string]: ${type}}`;
 }
 
@@ -635,7 +636,7 @@ export function emittable(name, what, alsoBound) {
  * encloses, so a local named for one shadows it — and a read before that
  * local's own declaration is a `ReferenceError` rather than a wrong value. It
  * takes a property whose name is another property's table
- * (`NAMEDTABLE_MODE_DECODE` beside a `mode` with a decode table), which no
+ * (`NAMEDTABLE_MODE_GETTER` beside a `mode` with a `getterTable`), which no
  * enumeration of possible table names would decide as exactly as the tables
  * themselves do, so it is checked once both sets of names exist.
  *
@@ -708,13 +709,13 @@ function readExpression(klass, schema, key) {
   if (isSchemaField(getter)) {
     const field = emittable(getter.field, 'getter field');
     const read =
-      getter.decode === undefined
+      getter.getterTable === undefined
         ? `node.${field}`
         : // Read through the local the factory binds to the schema's own
           // table; see `tableLocals`.
           `${declareTable(
-            tableName(klass, key, 'DECODE'),
-            tableDeclaration('decode', key, getter.decode),
+            tableName(klass, key, 'GETTER'),
+            tableDeclaration('getter', key, getter.getterTable),
           )}[node.${field}]`;
     if (getter.when === undefined) {
       return {expression: read};
@@ -1165,7 +1166,7 @@ function ownRead(key) {
  * Compile one property's parse, then prove it agrees with the schema.
  *
  * The proof runs the compiled expression rather than the emitted statements, so
- * what is verified is the expression the statements assign. The `encode` table
+ * what is verified is the expression the statements assign. The `setterTable` table
  * a property may end with is applied to the schema's own result instead, which
  * is what makes the two comparable without wrapping the expression in a closure
  * that the emitted code does not have.
@@ -1287,16 +1288,16 @@ function writeExpression(klass, schema, key) {
       statements: `  v = ${ownRead(key)};\n${bound}  node.${emittable(setter, 'setter method')}(${expression});`,
     };
   }
-  const {encode} = setter;
+  const {setterTable} = setter;
   // Two statements rather than one expression when a table has to be applied
   // after parsing: folding them together needs an IIFE, and a closure per
   // property per node is most of what generating this was meant to remove.
   const setterField = emittable(setter.field, 'setter field');
   let statements = `  v = ${ownRead(key)};\n${bound}  node.${setterField} = ${expression};`;
-  if (encode !== undefined) {
+  if (setterTable !== undefined) {
     const name = declareTable(
-      tableName(klass, key, 'ENCODE'),
-      tableDeclaration('encode', key, encode),
+      tableName(klass, key, 'SETTER'),
+      tableDeclaration('setter', key, setterTable),
     );
     nullPrototypeTables.push(name);
     // The schema already reduced the value to its own domain, and
@@ -1309,11 +1310,19 @@ function writeExpression(klass, schema, key) {
     // module — read bare, the parser stored `undefined` where the walk stored
     // the default.
     const fallback = declareTable(
-      tableName(klass, key, 'ENCODE_DEFAULT'),
-      tableDeclaration('encodedDefault', key, encode),
+      tableName(klass, key, 'SETTER_DEFAULT'),
+      tableDeclaration('setterDefault', key, setterTable),
     );
     const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
     statements = `  v = ${ownRead(key)};\n${bound}  v = ${expression};\n  node.${setterField} = ${lookup};`;
+    if (tableDecidesMembership(schema, setterTable, key)) {
+      // The parse and the lookup ask the same question, so the lookup is the
+      // whole of it: a member is a key of the table and everything else falls
+      // back to the stored default, which is what parsing to the schema's
+      // default and looking *that* up produces. `ElementNode`'s `format` was
+      // seven string comparisons and then a hash lookup that could only hit.
+      statements = `  v = ${ownRead(key)};\n  node.${setterField} = typeof v === 'string' && v in ${name} ? ${name}[v] : ${fallback};`;
+    }
   }
   try {
     verifyCompiledParse({
@@ -1323,11 +1332,11 @@ function writeExpression(klass, schema, key) {
       statements: bindings,
       tables: parseTables,
     });
-    if (encode !== undefined) {
+    if (setterTable !== undefined) {
       // The lookup above falls back for a key that is missing, so the table has
       // to have none: proving it total is what makes that fallback dead code
       // rather than a silent remapping.
-      verifyTableCoversDomain({schema, table: encode});
+      verifyTableCoversDomain({schema, table: setterTable});
     }
   } catch (error) {
     throw error instanceof NotCompilable
@@ -1335,6 +1344,59 @@ function writeExpression(klass, schema, key) {
       : error;
   }
   return {key, statements};
+}
+
+/**
+ * Whether the lookup a parsed value ends in decides membership by itself, so
+ * that the parse in front of it is redundant.
+ *
+ * True for an enum of strings whose members are exactly the table's keys. The
+ * emitted test is then `typeof v === 'string' && v in TABLE`, which agrees
+ * with the parse on every input rather than only on JSON: a non-string reaches
+ * the fallback, where the parse would have reached the schema's default and
+ * looked *that* up to the same thing, and `typeof` is what keeps an object
+ * that stringifies to a member from being read as one.
+ *
+ * Sampled over the same corpus the rest of the verification uses, against the
+ * claim itself — the table applied to `schema(v)`, for every `v` — rather than
+ * argued from the shape alone.
+ *
+ * @param {AnySchema} schema
+ * @param {{readonly [key: string]: unknown}} table
+ * @param {string} key the property, for the message
+ * @returns {boolean}
+ */
+function tableDecidesMembership(schema, table, key) {
+  const {meta} = schema;
+  if (meta.kind !== 'enum' || !meta.values.every(v => typeof v === 'string')) {
+    return false;
+  }
+  const keys = Object.keys(table);
+  const members = new Set(meta.values);
+  if (keys.length !== members.size || !keys.every(k => members.has(k))) {
+    return false;
+  }
+  const storedDefault = table[schema.defaultValue];
+  for (const value of verificationCorpus(meta)) {
+    const viaParse = table[schema(value)];
+    const direct =
+      typeof value === 'string' && hasOwn(table, value)
+        ? table[value]
+        : storedDefault;
+    if (!Object.is(viaParse, direct)) {
+      throw new NotCompilable(
+        `"${key}" would store ${JSON.stringify(direct)} for ${JSON.stringify(
+          value,
+        )} through its table where its schema stores ${JSON.stringify(viaParse)}`,
+      );
+    }
+  }
+  return true;
+}
+
+/** `Object.prototype.hasOwnProperty.call`, for a table an untrusted key reaches. */
+function hasOwn(table, key) {
+  return Object.prototype.hasOwnProperty.call(table, key);
 }
 
 /**
@@ -1413,7 +1475,7 @@ ${locals}${declared}
  * The value type to give a lookup table: the union of its literal values,
  * however many there are.
  *
- * An encode table's value is assigned to the node's field, and a field is
+ * A `setterTable`'s value is assigned to the node's field, and a field is
  * often narrower than its primitive — TextNode's `__mode` is `0 | 1 | 2 | 3`
  * — so a table typed `number` is not assignable to it. Widening past a
  * readable size, as this once did, made the generated parser of a node with
@@ -1450,7 +1512,7 @@ function tableValueType(table) {
 
 /**
  * One table value as a type: its literal, with the two shapes JSON cannot
- * spell handled as types rather than values. A decode table may map a stored
+ * spell handled as types rather than values. A `getterTable` may map a stored
  * value to `undefined` — that is how a stored value whose serialized form is
  * the omitted default is spelled, `{0: undefined, 1: 'special'}` — which is
  * the type `undefined`; a number JSON cannot spell (`Infinity`, `NaN`) is no

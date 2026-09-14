@@ -18,10 +18,10 @@ import type {CodeNode} from './CodeNode';
 
 import {
   aliasTableOf,
-  decodeTableOf,
-  encodedDefaultOf,
-  encodeTableOf,
   type GeneratedJSONFactory,
+  getterTableOf,
+  setterDefaultOf,
+  setterTableOf,
 } from 'lexical';
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
@@ -65,7 +65,7 @@ export function afterCloneCodeNode(node: CodeNode, prevNode: CodeNode): void {
 
 /** CodeNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_CODE: GeneratedJSONFactory = fields => {
-  const CODE_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+  const CODE_FORMAT_GETTER = getterTableOf(fields, 'format') as {
     readonly [key: string]:
       | ''
       | 'center'
@@ -76,11 +76,11 @@ export const GENERATED_CODE: GeneratedJSONFactory = fields => {
       | 'start';
   };
 
-  const CODE_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+  const CODE_FORMAT_SETTER = setterTableOf(fields, 'format') as {
     readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   };
 
-  const CODE_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+  const CODE_FORMAT_SETTER_DEFAULT = setterDefaultOf(fields, 'format') as
     | 0
     | 1
     | 2
@@ -101,7 +101,7 @@ export const GENERATED_CODE: GeneratedJSONFactory = fields => {
       language: node.__language,
       theme: node.__theme,
       direction: node.__dir,
-      format: CODE_FORMAT_DECODE[node.__format],
+      format: CODE_FORMAT_GETTER[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -132,7 +132,7 @@ export const GENERATED_CODE: GeneratedJSONFactory = fields => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = CODE_FORMAT_DECODE[node.__format];
+    const format = CODE_FORMAT_GETTER[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -166,20 +166,10 @@ export const GENERATED_CODE: GeneratedJSONFactory = fields => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    v =
-      v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-        ? v
-        : '';
     node.__format =
-      (v as string) in CODE_FORMAT_ENCODE
-        ? CODE_FORMAT_ENCODE[v as string]
-        : CODE_FORMAT_ENCODE_DEFAULT;
+      typeof v === 'string' && v in CODE_FORMAT_SETTER
+        ? CODE_FORMAT_SETTER[v]
+        : CODE_FORMAT_SETTER_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -215,7 +205,7 @@ export function afterCloneCodeHighlightNode(
 
 /** CodeHighlightNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
-  const CODEHIGHLIGHT_MODE_DECODE = decodeTableOf(fields, 'mode') as {
+  const CODEHIGHLIGHT_MODE_GETTER = getterTableOf(fields, 'mode') as {
     readonly [key: string]: 'normal' | 'segmented' | 'token';
   };
 
@@ -238,11 +228,11 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
       | 1024;
   };
 
-  const CODEHIGHLIGHT_MODE_ENCODE = encodeTableOf(fields, 'mode') as {
+  const CODEHIGHLIGHT_MODE_SETTER = setterTableOf(fields, 'mode') as {
     readonly [key: string]: 0 | 1 | 2;
   };
 
-  const CODEHIGHLIGHT_MODE_ENCODE_DEFAULT = encodedDefaultOf(fields, 'mode') as
+  const CODEHIGHLIGHT_MODE_SETTER_DEFAULT = setterDefaultOf(fields, 'mode') as
     | 0
     | 1
     | 2;
@@ -255,7 +245,7 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
       highlightType: node.__highlightType,
       detail: node.__detail,
       format: node.__format,
-      mode: CODEHIGHLIGHT_MODE_DECODE[node.__mode],
+      mode: CODEHIGHLIGHT_MODE_GETTER[node.__mode],
       style: node.__style,
       text: node.__text,
       type: node.__type,
@@ -280,7 +270,7 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
     if (format !== undefined && format !== 0) {
       json.format = format;
     }
-    const mode = CODEHIGHLIGHT_MODE_DECODE[node.__mode];
+    const mode = CODEHIGHLIGHT_MODE_GETTER[node.__mode];
     if (mode !== undefined && mode !== 'normal') {
       json.mode = mode;
     }
@@ -313,11 +303,10 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
         : num(v, 0),
     );
     v = json.mode;
-    v = v === 'normal' || v === 'token' || v === 'segmented' ? v : 'normal';
     node.__mode =
-      (v as string) in CODEHIGHLIGHT_MODE_ENCODE
-        ? CODEHIGHLIGHT_MODE_ENCODE[v as string]
-        : CODEHIGHLIGHT_MODE_ENCODE_DEFAULT;
+      typeof v === 'string' && v in CODEHIGHLIGHT_MODE_SETTER
+        ? CODEHIGHLIGHT_MODE_SETTER[v]
+        : CODEHIGHLIGHT_MODE_SETTER_DEFAULT;
     v = json.style;
     node.__style = typeof v === 'string' ? v : '';
     v = json.text;

@@ -18,10 +18,10 @@ import type {TableNode} from './LexicalTableNode';
 import type {TableRowNode} from './LexicalTableRowNode';
 
 import {
-  decodeTableOf,
-  encodedDefaultOf,
-  encodeTableOf,
   type GeneratedJSONFactory,
+  getterTableOf,
+  setterDefaultOf,
+  setterTableOf,
 } from 'lexical';
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
@@ -70,7 +70,7 @@ export function afterCloneTableNode(
 
 /** TableNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TABLE: GeneratedJSONFactory = fields => {
-  const TABLE_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+  const TABLE_FORMAT_GETTER = getterTableOf(fields, 'format') as {
     readonly [key: string]:
       | ''
       | 'center'
@@ -81,11 +81,11 @@ export const GENERATED_TABLE: GeneratedJSONFactory = fields => {
       | 'start';
   };
 
-  const TABLE_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+  const TABLE_FORMAT_SETTER = setterTableOf(fields, 'format') as {
     readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   };
 
-  const TABLE_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+  const TABLE_FORMAT_SETTER_DEFAULT = setterDefaultOf(fields, 'format') as
     | 0
     | 1
     | 2
@@ -108,7 +108,7 @@ export const GENERATED_TABLE: GeneratedJSONFactory = fields => {
       frozenRowCount: node.getSerializedFrozenRowCount(),
       rowStriping: node.getSerializedRowStriping(),
       direction: node.__dir,
-      format: TABLE_FORMAT_DECODE[node.__format],
+      format: TABLE_FORMAT_GETTER[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -147,7 +147,7 @@ export const GENERATED_TABLE: GeneratedJSONFactory = fields => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = TABLE_FORMAT_DECODE[node.__format];
+    const format = TABLE_FORMAT_GETTER[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -181,20 +181,10 @@ export const GENERATED_TABLE: GeneratedJSONFactory = fields => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    v =
-      v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-        ? v
-        : '';
     node.__format =
-      (v as string) in TABLE_FORMAT_ENCODE
-        ? TABLE_FORMAT_ENCODE[v as string]
-        : TABLE_FORMAT_ENCODE_DEFAULT;
+      typeof v === 'string' && v in TABLE_FORMAT_SETTER
+        ? TABLE_FORMAT_SETTER[v]
+        : TABLE_FORMAT_SETTER_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -241,7 +231,7 @@ export function afterCloneTableRowNode(
 
 /** TableRowNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TABLEROW: GeneratedJSONFactory = fields => {
-  const TABLEROW_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+  const TABLEROW_FORMAT_GETTER = getterTableOf(fields, 'format') as {
     readonly [key: string]:
       | ''
       | 'center'
@@ -252,11 +242,11 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = fields => {
       | 'start';
   };
 
-  const TABLEROW_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+  const TABLEROW_FORMAT_SETTER = setterTableOf(fields, 'format') as {
     readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   };
 
-  const TABLEROW_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+  const TABLEROW_FORMAT_SETTER_DEFAULT = setterDefaultOf(fields, 'format') as
     | 0
     | 1
     | 2
@@ -276,7 +266,7 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = fields => {
       children: [],
       height: node.__height,
       direction: node.__dir,
-      format: TABLEROW_FORMAT_DECODE[node.__format],
+      format: TABLEROW_FORMAT_GETTER[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -305,7 +295,7 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = fields => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = TABLEROW_FORMAT_DECODE[node.__format];
+    const format = TABLEROW_FORMAT_GETTER[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -339,20 +329,10 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = fields => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    v =
-      v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-        ? v
-        : '';
     node.__format =
-      (v as string) in TABLEROW_FORMAT_ENCODE
-        ? TABLEROW_FORMAT_ENCODE[v as string]
-        : TABLEROW_FORMAT_ENCODE_DEFAULT;
+      typeof v === 'string' && v in TABLEROW_FORMAT_SETTER
+        ? TABLEROW_FORMAT_SETTER[v]
+        : TABLEROW_FORMAT_SETTER_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -392,7 +372,7 @@ export function afterCloneTableCellNode(
 
 /** TableCellNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_TABLECELL: GeneratedJSONFactory = fields => {
-  const TABLECELL_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+  const TABLECELL_FORMAT_GETTER = getterTableOf(fields, 'format') as {
     readonly [key: string]:
       | ''
       | 'center'
@@ -403,11 +383,11 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = fields => {
       | 'start';
   };
 
-  const TABLECELL_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+  const TABLECELL_FORMAT_SETTER = setterTableOf(fields, 'format') as {
     readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   };
 
-  const TABLECELL_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+  const TABLECELL_FORMAT_SETTER_DEFAULT = setterDefaultOf(fields, 'format') as
     | 0
     | 1
     | 2
@@ -432,7 +412,7 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = fields => {
       verticalAlign: node.getSerializedVerticalAlign(),
       width: node.__width,
       direction: node.__dir,
-      format: TABLECELL_FORMAT_DECODE[node.__format],
+      format: TABLECELL_FORMAT_GETTER[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -481,7 +461,7 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = fields => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = TABLECELL_FORMAT_DECODE[node.__format];
+    const format = TABLECELL_FORMAT_GETTER[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -515,20 +495,10 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = fields => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    v =
-      v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-        ? v
-        : '';
     node.__format =
-      (v as string) in TABLECELL_FORMAT_ENCODE
-        ? TABLECELL_FORMAT_ENCODE[v as string]
-        : TABLECELL_FORMAT_ENCODE_DEFAULT;
+      typeof v === 'string' && v in TABLECELL_FORMAT_SETTER
+        ? TABLECELL_FORMAT_SETTER[v]
+        : TABLECELL_FORMAT_SETTER_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;

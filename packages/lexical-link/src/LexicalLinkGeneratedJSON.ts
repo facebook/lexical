@@ -16,10 +16,10 @@
 import type {AutoLinkNode, LinkNode} from './LexicalLinkNode';
 
 import {
-  decodeTableOf,
-  encodedDefaultOf,
-  encodeTableOf,
   type GeneratedJSONFactory,
+  getterTableOf,
+  setterDefaultOf,
+  setterTableOf,
 } from 'lexical';
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
@@ -65,7 +65,7 @@ export function afterCloneLinkNode(node: LinkNode, prevNode: LinkNode): void {
 
 /** LinkNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_LINK: GeneratedJSONFactory = fields => {
-  const LINK_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+  const LINK_FORMAT_GETTER = getterTableOf(fields, 'format') as {
     readonly [key: string]:
       | ''
       | 'center'
@@ -76,11 +76,11 @@ export const GENERATED_LINK: GeneratedJSONFactory = fields => {
       | 'start';
   };
 
-  const LINK_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+  const LINK_FORMAT_SETTER = setterTableOf(fields, 'format') as {
     readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   };
 
-  const LINK_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+  const LINK_FORMAT_SETTER_DEFAULT = setterDefaultOf(fields, 'format') as
     | 0
     | 1
     | 2
@@ -103,7 +103,7 @@ export const GENERATED_LINK: GeneratedJSONFactory = fields => {
       title: node.__title,
       url: node.__url,
       direction: node.__dir,
-      format: LINK_FORMAT_DECODE[node.__format],
+      format: LINK_FORMAT_GETTER[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -142,7 +142,7 @@ export const GENERATED_LINK: GeneratedJSONFactory = fields => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = LINK_FORMAT_DECODE[node.__format];
+    const format = LINK_FORMAT_GETTER[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -176,20 +176,10 @@ export const GENERATED_LINK: GeneratedJSONFactory = fields => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    v =
-      v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-        ? v
-        : '';
     node.__format =
-      (v as string) in LINK_FORMAT_ENCODE
-        ? LINK_FORMAT_ENCODE[v as string]
-        : LINK_FORMAT_ENCODE_DEFAULT;
+      typeof v === 'string' && v in LINK_FORMAT_SETTER
+        ? LINK_FORMAT_SETTER[v]
+        : LINK_FORMAT_SETTER_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -245,7 +235,7 @@ export function afterCloneAutoLinkNode(
 
 /** AutoLinkNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_AUTOLINK: GeneratedJSONFactory = fields => {
-  const AUTOLINK_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+  const AUTOLINK_FORMAT_GETTER = getterTableOf(fields, 'format') as {
     readonly [key: string]:
       | ''
       | 'center'
@@ -256,11 +246,11 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = fields => {
       | 'start';
   };
 
-  const AUTOLINK_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+  const AUTOLINK_FORMAT_SETTER = setterTableOf(fields, 'format') as {
     readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   };
 
-  const AUTOLINK_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+  const AUTOLINK_FORMAT_SETTER_DEFAULT = setterDefaultOf(fields, 'format') as
     | 0
     | 1
     | 2
@@ -284,7 +274,7 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = fields => {
       title: node.__title,
       url: node.__url,
       direction: node.__dir,
-      format: AUTOLINK_FORMAT_DECODE[node.__format],
+      format: AUTOLINK_FORMAT_GETTER[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -329,7 +319,7 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = fields => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = AUTOLINK_FORMAT_DECODE[node.__format];
+    const format = AUTOLINK_FORMAT_GETTER[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -363,20 +353,10 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = fields => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    v =
-      v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-        ? v
-        : '';
     node.__format =
-      (v as string) in AUTOLINK_FORMAT_ENCODE
-        ? AUTOLINK_FORMAT_ENCODE[v as string]
-        : AUTOLINK_FORMAT_ENCODE_DEFAULT;
+      typeof v === 'string' && v in AUTOLINK_FORMAT_SETTER
+        ? AUTOLINK_FORMAT_SETTER[v]
+        : AUTOLINK_FORMAT_SETTER_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;

@@ -50,6 +50,9 @@ const compiled: CompileParseResult = compileParse(
   () => `p${bound++}`,
 );
 
+// The helpers the expression calls, which the caller emits the definitions of.
+const prelude: string = compiled.helpers.join('\n');
+
 // The statements are emitted before the expression, in the same scope.
 const emitted: string = [
   ...compiled.statements,
@@ -80,4 +83,4 @@ verifyCompiledParse({
   tables: compiled.tables,
 });
 
-export const generated: string = emitted + inner.expression;
+export const generated: string = prelude + emitted + inner.expression;

@@ -430,6 +430,45 @@ describe('a constrained numberValue compiles to its bounds', () => {
   });
 });
 
+describe('compileParse reports the helpers its expression calls', () => {
+  // The caller emits their definitions, so it has to know which ones the
+  // expression uses — and it cannot find out by reading the result back: a
+  // schema key named `num` puts `json.num` in the parser and `num:` in the
+  // exporter beside it, and neither is a call. Reported here instead, by the
+  // compile that wrote the call.
+  test.each([
+    ['unbounded', () => numberValue(0), ['num']],
+    ['bounded', () => numberValue(0, {min: 1}), ['numC']],
+    ['clamped', () => numberValue(0, {clamp: true, min: 1}), ['numK']],
+    ['not a number at all', () => stringValue(), []],
+  ])('%s', (_label, build, expected) => {
+    const schema = build() as AnySerializationSchema;
+    const {expression, helpers} = compileParse(
+      schema.meta,
+      schema.defaultValue,
+      'T',
+    );
+    expect(helpers).toEqual(expected);
+    // What was reported is what the expression calls, which is the claim.
+    for (const helper of ['num', 'numC', 'numK']) {
+      expect(expression.includes(`${helper}(`)).toBe(
+        (expected as string[]).includes(helper),
+      );
+    }
+  });
+
+  test('including one a wrapper or an array hides', () => {
+    // The recursion collects into one set, so a helper the outermost kind does
+    // not call is still reported when something inside it does.
+    const wrapped = optional(
+      arrayValue(numberValue(0, {min: 1})),
+    ) as AnySerializationSchema;
+    expect(
+      compileParse(wrapped.meta, wrapped.defaultValue, 'T').helpers,
+    ).toEqual(['numC']);
+  });
+});
+
 describe('verifyCompiledParse is what catches a plausible-but-wrong parse', () => {
   test('a transformValue is refused rather than sampled', () => {
     // A transform is an opaque closure, so the corpus cannot be trusted to

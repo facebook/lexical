@@ -753,4 +753,27 @@ describe('what a generated module declares at its top level', () => {
     expect(stringy).not.toContain('function numC(');
     expect(stringy).not.toContain('function num(');
   });
+
+  test('nor where it is the name of a property', () => {
+    // A schema key is a property everywhere it appears — `json.num` in the
+    // parser, `num:` in the exporter beside it — and none of those is a call.
+    // No scan of the emitted text can tell the difference, which is why the
+    // compile reports what it needs instead of the result being read back.
+    class NumberedNode extends LineBreakNode {
+      __text: string = '';
+      $config() {
+        return this.config('declares-numbered', {
+          extends: LineBreakNode,
+          json: nodeSchema<NumberedNode>()({
+            num: withField(stringValue(), {field: '__text'}),
+          }),
+        });
+      }
+    }
+    const numbered: string = moduleFor(NumberedNode);
+    expect(numbered).toContain('const v: unknown = json.num;');
+    expect(numbered).toContain('num: node.__text');
+    expect(numbered).not.toContain('function num(');
+    expect(numbered).not.toContain('function numC(');
+  });
 });

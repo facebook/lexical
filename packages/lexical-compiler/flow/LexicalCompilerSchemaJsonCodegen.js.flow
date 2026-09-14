@@ -33,6 +33,7 @@ export type CompiledExpression = {
 export type CompileParseResult = {
   ...CompiledExpression,
   tables: Array<SchemaJsonTable>,
+  helpers: Array<string>,
 };
 
 export type VerifyCompiledParseOptions = {

@@ -63,6 +63,20 @@ export interface CompileParseResult extends CompiledExpression {
    * live; a table an untrusted key reaches must be given a null prototype.
    */
   tables: SchemaJsonTable[];
+  /**
+   * The numeric helpers the expression calls, by name, sorted — a subset of
+   * `num`, `numC` and `numK`, whose sources are {@link NUM_HELPER_SOURCE},
+   * {@link NUM_RANGE_HELPER_SOURCE} and {@link NUM_CLAMP_HELPER_SOURCE}. The
+   * caller emits their definitions, so it has to know which ones to emit, and
+   * only what compiled the expression knows for certain: reading the answer
+   * back off the emitted text cannot tell a call from a property named `num`
+   * (`json.num`, or `{num: ...}` in the exporter beside it).
+   *
+   * `numC` and `numK` call `num`, which is a fact about the sources rather
+   * than about this expression: what is listed here is what the expression
+   * itself calls.
+   */
+  helpers: string[];
 }
 
 export interface VerifyCompiledParseOptions {
@@ -243,6 +257,7 @@ export function compileParse(
   bindingName?: BindingNaming,
 ): CompileParseResult {
   const tables: SchemaJsonTable[] = [];
+  const helpers = new Set<string>();
   let bound = 0;
   const {expression, statements} = compile(
     meta,
@@ -250,8 +265,9 @@ export function compileParse(
     tableBaseName,
     tables,
     bindingName ?? (() => `p${bound++}`),
+    helpers,
   );
-  return {expression, statements, tables};
+  return {expression, helpers: [...helpers].sort(), statements, tables};
 }
 
 /** How {@link compileParse} names the tables an expression reads. */
@@ -304,6 +320,9 @@ function compile(
   base: TableNaming,
   tables: SchemaJsonTable[],
   bind: BindingNaming,
+  // Collected the way `tables` is: what the expression needs, reported by
+  // whatever compiled it rather than read back off the result.
+  helpers: Set<string>,
   // The expression reads one variable, `v` at the top level. An array's item
   // parse runs inside a callback over its own binding, so it compiles against
   // that name instead, and the depth keeps nested ones apart.
@@ -342,10 +361,12 @@ function compile(
         const min = meta.min === undefined ? '-Infinity' : String(meta.min);
         const max = meta.max === undefined ? 'Infinity' : String(meta.max);
         const helper = meta.clamp ? 'numK' : 'numC';
+        helpers.add(helper);
         return only(
           `${helper}(${v}, ${fallback}, ${min}, ${max}, ${Boolean(meta.integer)})`,
         );
       }
+      helpers.add('num');
       return only(`num(${v}, ${fallback})`);
     }
     case 'aliased': {
@@ -374,6 +395,7 @@ function compile(
         base,
         tables,
         bind,
+        helpers,
         v,
         depth,
       );
@@ -402,6 +424,7 @@ function compile(
         base,
         tables,
         bind,
+        helpers,
         v,
         depth,
       );
@@ -465,6 +488,7 @@ function compile(
         base,
         tables,
         bind,
+        helpers,
         item,
         depth + 1,
       );

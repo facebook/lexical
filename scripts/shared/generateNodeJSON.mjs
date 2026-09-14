@@ -381,6 +381,32 @@ export function tableDeclarations() {
 let parseBindings = 0;
 
 /**
+ * The numeric helpers the parses compiled since the last class began call, as
+ * `compileParse` reported them. Recorded rather than read back off the
+ * emitted text: a scan cannot tell a call from a property of that name, and a
+ * schema may name one (`json.num` for a property called `num`, and `num:` in
+ * the exporter beside it) — which declared a helper nothing called, and
+ * `noUnusedLocals` then failed the build over what a property was called.
+ *
+ * @type {Set<string>}
+ */
+const parseHelpers = new Set();
+
+/**
+ * The helpers {@link parseHelpers} has collected for the class in progress.
+ *
+ * Read by {@link generatePackage} after a class's forms, and only kept when
+ * that class ends up with a parser: a class that turned out not to be
+ * compilable reported its helpers on the way to being refused, exactly as it
+ * declared its tables.
+ *
+ * @returns {string[]}
+ */
+function parseHelpersUsed() {
+  return [...parseHelpers];
+}
+
+/**
  * A fresh local for one compiled parse to bind, which is what
  * {@link compileParse} is handed.
  *
@@ -398,6 +424,7 @@ function parseBinding() {
  */
 export function resetTableLocals() {
   tableLocals.clear();
+  parseHelpers.clear();
   parseBindings = 0;
 }
 
@@ -1178,6 +1205,7 @@ function writeExpression(klass, schema, key) {
   // which is the order `aliasTableOf` counts.
   const {
     expression,
+    helpers,
     statements: bindings,
     tables: parseTables,
   } = compileParse(
@@ -1193,6 +1221,9 @@ function writeExpression(klass, schema, key) {
     // both declare `p0`.
     parseBinding,
   );
+  for (const helper of helpers) {
+    parseHelpers.add(helper);
+  }
   // Emitted between the read of the property and the write of the parsed
   // value, which is the scope they were compiled against.
   const bound = bindings.map(statement => `  ${statement}\n`).join('');
@@ -1472,6 +1503,10 @@ export function generatePackage(pkg) {
         afterCloneFrom,
         compact,
         exportJSON,
+        // Only what the parser this class kept calls. A refused one reported
+        // its helpers on the way to being refused, the way it declared its
+        // tables, and a helper nothing calls is an unused declaration.
+        helpers: updateFromJSON === null ? [] : parseHelpersUsed(),
         klass,
         tables,
         updateFromJSON,
@@ -1488,18 +1523,15 @@ export function generatePackage(pkg) {
     }
   });
 
-  // Which helpers the parsers call, so a module declares only those.
-  const parsers = generated.flatMap(g =>
-    g.updateFromJSON === null ? [] : [g.updateFromJSON],
-  );
-  // Through the same scan the lookup tables go through, rather than
-  // `includes('numC(')`: a substring test counts a schema's own string values,
-  // and it cannot tell `num(` from the `num` inside `numC(` without one.
-  // `numC` and `numK` both call `num`, so either one needs it too.
-  const needsNumC = parsers.some(p => references(p, 'numC'));
-  const needsNumK = parsers.some(p => references(p, 'numK'));
-  const needsNum =
-    needsNumC || needsNumK || parsers.some(p => references(p, 'num'));
+  // Which helpers the parsers call, so a module declares only those: what
+  // compiling each parse reported, not what a scan of the result can see.
+  const called = new Set(generated.flatMap(g => g.helpers));
+  // `numC` and `numK` call `num`, which is a fact about the helper sources
+  // rather than about any expression, so it is applied here where they are
+  // emitted rather than reported by the compiler.
+  const needsNumC = called.has('numC');
+  const needsNumK = called.has('numK');
+  const needsNum = needsNumC || needsNumK || called.has('num');
 
   /** Class names by the module that declares them. @type {Map<string, Set<string>>} */
   const typeImports = new Map();

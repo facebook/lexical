@@ -156,19 +156,11 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    node.setTextFormat(num(v, 0));
+    node.__textFormat = num(v, 0);
     v = json.textStyle;
-    node.setTextStyle(typeof v === 'string' ? v : '');
+    node.__textStyle = typeof v === 'string' ? v : '';
     v = json.language;
-    node.setLanguage(
-      v === undefined
-        ? undefined
-        : v == null
-          ? null
-          : typeof v === 'string'
-            ? v
-            : '',
-    );
+    node.setLanguage(v == null ? v : typeof v === 'string' ? v : '');
     v = json.theme;
     node.setTheme(v === undefined ? undefined : typeof v === 'string' ? v : '');
     return node;
@@ -304,15 +296,7 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
     v = json.text;
     node.__text = typeof v === 'string' ? v : '';
     v = json.highlightType;
-    node.setHighlightType(
-      v === undefined
-        ? undefined
-        : v == null
-          ? null
-          : typeof v === 'string'
-            ? v
-            : '',
-    );
+    node.setHighlightType(v == null ? v : typeof v === 'string' ? v : '');
     return node;
   }
 

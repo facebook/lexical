@@ -6,8 +6,8 @@
  *
  */
 
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {TableCellNode, TableNode} from '@lexical/table';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
 /**
@@ -62,72 +62,66 @@ class AlignCellNode extends TableCellNode {
   }
 }
 
-describe('the accessors the table field declarations stand in for', () => {
-  initializeUnitTest(
-    testEnv => {
-      test('a subclass override of a named setter still decides', () => {
-        testEnv.editor.update(
-          () => {
-            const node = CappedTableNode.importJSON({
-              children: [],
-              direction: null,
-              format: '',
-              frozenColumnCount: 9,
-              frozenRowCount: 9,
-              indent: 0,
-              type: 'capped-table',
-              version: 1,
-            } as never) as CappedTableNode;
-            expect(node.getFrozenColumns()).toBe(2);
-            expect(node.getFrozenRows()).toBe(3);
-          },
-          {discrete: true},
-        );
-      });
-
-      test('and one of a setter named only by convention', () => {
-        testEnv.editor.update(
-          () => {
-            const node = CappedTableNode.importJSON({
-              children: [],
-              direction: null,
-              format: '',
-              indent: 0,
-              rowStriping: true,
-              type: 'capped-table',
-              version: 1,
-            } as never) as CappedTableNode;
-            expect(node.getRowStriping()).toBe(false);
-          },
-          {discrete: true},
-        );
-      });
-
-      test('including a cell whose vertical alignment is overridden', () => {
-        testEnv.editor.update(
-          () => {
-            const node = AlignCellNode.importJSON({
-              children: [],
-              colSpan: 1,
-              direction: null,
-              format: '',
-              headerState: 0,
-              indent: 0,
-              rowSpan: 1,
-              type: 'align-cell',
-              version: 1,
-              verticalAlign: 'middle',
-            } as never) as AlignCellNode;
-            expect(node.getVerticalAlign()).toBe('bottom');
-          },
-          {discrete: true},
-        );
-      });
-    },
-    {
-      namespace: 'test',
+/** An editor that knows the two subclasses and their bases, and nothing else. */
+function $withEditor(fn: () => void): void {
+  using editor = buildEditorFromExtensions(
+    defineExtension({
+      $initialEditorState: null,
+      name: '[table-field-accessors]',
       nodes: [TableNode, CappedTableNode, TableCellNode, AlignCellNode],
-      theme: {},
-    },
+    }),
   );
+  editor.update(fn, {discrete: true});
+}
+
+describe('the accessors the table field declarations stand in for', () => {
+  test('a subclass override of a named setter still decides', () => {
+    $withEditor(() => {
+      const node = CappedTableNode.importJSON({
+        children: [],
+        direction: null,
+        format: '',
+        frozenColumnCount: 9,
+        frozenRowCount: 9,
+        indent: 0,
+        type: 'capped-table',
+        version: 1,
+      } as never) as CappedTableNode;
+      expect(node.getFrozenColumns()).toBe(2);
+      expect(node.getFrozenRows()).toBe(3);
+    });
+  });
+
+  test('and one of a setter named only by convention', () => {
+    $withEditor(() => {
+      const node = CappedTableNode.importJSON({
+        children: [],
+        direction: null,
+        format: '',
+        indent: 0,
+        rowStriping: true,
+        type: 'capped-table',
+        version: 1,
+      } as never) as CappedTableNode;
+      expect(node.getRowStriping()).toBe(false);
+    });
+  });
+
+  test('including a cell whose vertical alignment is overridden', () => {
+    $withEditor(() => {
+      const node = AlignCellNode.importJSON({
+        children: [],
+        colSpan: 1,
+        direction: null,
+        format: '',
+        headerState: 0,
+        indent: 0,
+        rowSpan: 1,
+        type: 'align-cell',
+        version: 1,
+        verticalAlign: 'middle',
+      } as never) as AlignCellNode;
+      expect(node.getVerticalAlign()).toBe('bottom');
+    });
+  });
 });

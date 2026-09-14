@@ -1130,9 +1130,21 @@ export type InnerSerializationSchemaFields = {
   readonly [key: string]: InnerSerializationSchema;
 };
 
-/** Maps an object type `T` to the record of per-property {@link SerializationSchema}s. */
+/**
+ * Maps an object type `T` to the record of per-property
+ * {@link SerializationSchema}s.
+ *
+ * The input domain is left open. A schema's `In` is what it *accepts*, which
+ * is wider than what it produces wherever a schema reads more than it writes —
+ * `numberValue()` is a `SerializationSchema<number, never, number | string>`,
+ * since a stringified number is a value it reads. Pinning `In` to `T[K]` made
+ * this type reject the combinator for the very type it names: a
+ * `SerializationSchemaShape<{count: number}>` would not accept
+ * `{count: numberValue()}`. What the shape is for is saying what each property
+ * parses *to*, which is the `T[K]` above.
+ */
 export type SerializationSchemaShape<T> = {
-  readonly [K in keyof T]-?: SerializationSchema<T[K]>;
+  readonly [K in keyof T]-?: SerializationSchema<T[K], never, unknown>;
 };
 
 function makeSchema<T, Decls = never, In = T>(
@@ -1292,6 +1304,12 @@ export function declaredAccepts(
  * freeze one. That is not enough on its own: an `objectValue` *containing* such
  * a field derives its own default, which holds that same object, and the
  * recursion below reached it.
+ *
+ * Every combinator that takes a default from its caller is in the same
+ * position, which is the whole of the rule: `unionValue(members, shared)` and
+ * `enumValue(members)` hand back a value the caller still holds, and an
+ * enclosing schema deriving its own default reached straight through it and
+ * froze the caller's object.
  */
 const CALLER_OWNED = new WeakSet<object>();
 
@@ -1968,7 +1986,13 @@ export function enumValue<const T, D extends T = T>(
 ): SerializationSchema<T> {
   // `!== 0`, not `=== 1`: a JavaScript caller's stray trailing argument must
   // not turn a declared default back into `values[0]`.
-  const defaultValue: T = args.length !== 0 ? args[0] : values[0];
+  //
+  // Marked as the caller's either way: both the declared default and the
+  // members it is chosen from are values this schema was handed, not ones it
+  // derived. See {@link CALLER_OWNED}.
+  const defaultValue: T = markCallerOwned(
+    args.length !== 0 ? args[0] : values[0],
+  );
   if (__DEV__) {
     invariant(
       values.length > 0,
@@ -2311,7 +2335,13 @@ export function unionValue<
       undeclared('unionValue', member);
     }
   }
-  const fallback = args.length !== 0 ? args[0] : (members[0].defaultValue as T);
+  // A declared default is the caller's value; the one taken from a member is
+  // that member's, and already answered for by whatever built it. See
+  // {@link CALLER_OWNED}.
+  const fallback =
+    args.length !== 0
+      ? markCallerOwned(args[0])
+      : (members[0].defaultValue as T);
   /**
    * The member that recognizes `value`, and what it parsed to. The membership
    * rule itself is `$schemaMatch`'s, which the `accepts` below applies through

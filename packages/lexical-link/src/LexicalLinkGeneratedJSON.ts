@@ -160,9 +160,9 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    node.setTextFormat(num(v, 0));
+    node.__textFormat = num(v, 0);
     v = json.textStyle;
-    node.setTextStyle(typeof v === 'string' ? v : '');
+    node.__textStyle = typeof v === 'string' ? v : '';
     v = json.rel;
     node.__rel =
       v == null || (typeof v === 'string' ? v : '') === ''
@@ -320,9 +320,9 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    node.setTextFormat(num(v, 0));
+    node.__textFormat = num(v, 0);
     v = json.textStyle;
-    node.setTextStyle(typeof v === 'string' ? v : '');
+    node.__textStyle = typeof v === 'string' ? v : '';
     v = json.rel;
     node.__rel =
       v == null || (typeof v === 'string' ? v : '') === ''

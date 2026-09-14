@@ -170,9 +170,9 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    node.setTextFormat(num(v, 0));
+    node.__textFormat = num(v, 0);
     v = json.textStyle;
-    node.setTextStyle(typeof v === 'string' ? v : '');
+    node.__textStyle = typeof v === 'string' ? v : '';
     v = json.listType;
     node.setListType(
       typeof v === 'string' && v in LIST_LISTTYPE_ALIAS
@@ -303,9 +303,9 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
     v = json.indent;
     node.setIndent(numK(v, 0, 0, 128, true));
     v = json.textFormat;
-    node.setTextFormat(num(v, 0));
+    node.__textFormat = num(v, 0);
     v = json.textStyle;
-    node.setTextStyle(typeof v === 'string' ? v : '');
+    node.__textStyle = typeof v === 'string' ? v : '';
     v = json.checked;
     node.__checked =
       v === undefined ? undefined : typeof v === 'boolean' ? v : false;

@@ -132,12 +132,18 @@ const elementNodeSchema = nodeSchema<ElementNode>()({
   // override of it, or of the `getTextFormat`/`getTextStyle` it computes from
   // — the accessors `exportJSON` read before this schema existed, and the ones
   // a subclass would reach for — abandons the field and calls the wrapper.
+  //
+  // The write is the field too. `setTextFormat`/`setTextStyle` are bare field
+  // writes, so naming them is naming the field; each still stands in for its
+  // conventional setter, so a subclass that overrides one reclaims the
+  // property on the way in as it does on the way out.
   textFormat: withAccessors(numberValue(), {
     getter: {
       field: '__textFormat',
       method: 'getSerializedTextFormat',
       when: 'shouldSerializeTextStyles',
     },
+    setter: {field: '__textFormat'},
   }),
   textStyle: withAccessors(stringValue(), {
     getter: {
@@ -145,6 +151,7 @@ const elementNodeSchema = nodeSchema<ElementNode>()({
       method: 'getSerializedTextStyle',
       when: 'shouldSerializeTextStyles',
     },
+    setter: {field: '__textStyle'},
   }),
 });
 

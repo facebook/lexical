@@ -415,6 +415,36 @@ function compile(
       // schema, exactly as the runtime does. `nullable` treats `undefined` as
       // `null` too, which is why it tests `== null` where `optional` tests
       // only `undefined`.
+      // `optional(nullable(x))` asks for each nil separately and returns the
+      // one it found — but by the time the inner wrapper asks, the outer one
+      // has ruled `undefined` out, so both branches return the value that was
+      // tested for. That is what `v == null ? v : …` says in one comparison.
+      // Only where neither wrapper collapses a default into its nil: that adds
+      // a second clause to the test, and the two are then not the same
+      // question.
+      const folds =
+        meta.kind === 'optional' &&
+        !meta.omitDefault &&
+        meta.inner.meta.kind === 'nullable' &&
+        !meta.inner.meta.defaultAsNull
+          ? meta.inner.meta.inner
+          : undefined;
+      if (folds !== undefined) {
+        const folded = compile(
+          folds.meta,
+          folds.defaultValue,
+          base,
+          tables,
+          bind,
+          helpers,
+          v,
+          depth,
+        );
+        return {
+          expression: `${v} == null ? ${v} : ${folded.expression}`,
+          statements: folded.statements,
+        };
+      }
       const nil = meta.kind === 'nullable' ? 'null' : 'undefined';
       const test =
         meta.kind === 'nullable' ? `${v} == null` : `${v} === undefined`;

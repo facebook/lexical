@@ -50,6 +50,7 @@ import {
   rawValue,
   type SchemaInput,
   type SerializationSchema,
+  type SerializationSchemaShape,
   type SerializationSchemaValue,
   type SerializedElementNode,
   type SerializedLexicalNode,
@@ -807,6 +808,29 @@ describe('defaults and untrusted input', () => {
       // @ts-expect-error -- 'c' is not one of the values
       enumValue(['a', 'b'], 'c'),
     ).toThrow('enumValue: the default value is not one of the values');
+  });
+
+  test('a schema shape describes what a property parses to, not what it reads', () => {
+    // The record of per-property schemas for a known object type. Pinning each
+    // field's *input* to the property type rejected the combinator for the very
+    // type the shape names: `numberValue()` reads a stringified number, so it
+    // is a `SerializationSchema<number, never, number | string>`, and a shape
+    // of `{count: number}` would not accept it.
+    const fields: SerializationSchemaShape<{count: number; label: string}> = {
+      count: numberValue(),
+      label: stringValue(),
+    };
+    expect(objectValue(fields).defaultValue).toEqual({count: 0, label: ''});
+    // What each property parses to is still checked, which is the point of
+    // naming the type at all.
+    expectTypeOf<
+      SerializationSchemaShape<{count: number}>['count']['defaultValue']
+    >().toEqualTypeOf<number>();
+    const wrong: SerializationSchemaShape<{count: number}> = {
+      // @ts-expect-error -- a string schema does not describe a number
+      count: stringValue(),
+    };
+    expect(wrong).toBeDefined();
   });
 
   test('a union accepts exactly what its members accept', () => {
@@ -1761,6 +1785,32 @@ describe('a default is metadata, so nothing hands out a mutable one', () => {
     const shared = {a: 1};
     transformValue(stringValue(), () => shared);
     expect(Object.isFrozen(shared)).toBe(false);
+  });
+
+  test('nor does an enclosing schema deriving its own default', () => {
+    // Leaving the caller's value out of *this* schema's freeze is only half of
+    // it: an enclosing schema derives its own default by parsing `undefined`,
+    // which hands back that same object, and the recursive freeze reached
+    // straight through it. Declaring a default and then finding your own
+    // object read-only is the failure, and it happened in every build.
+    const shared = {columns: 2};
+    const layout = unionValue([objectValue({columns: numberValue()})], shared);
+    objectValue({layout});
+    expect(Object.isFrozen(shared)).toBe(false);
+    shared.columns = 3;
+    expect(shared.columns).toBe(3);
+
+    // An enum's members are the caller's on the same terms: the default is one
+    // of them, declared or not.
+    const member = {tag: 'a'};
+    objectValue({tag: enumValue([member])});
+    expect(Object.isFrozen(member)).toBe(false);
+
+    // The schema's own derived defaults are still frozen — that is the hazard
+    // this is carved out of, not a retreat from it.
+    const derived = objectValue({items: arrayValue(stringValue())});
+    expect(Object.isFrozen(derived.defaultValue)).toBe(true);
+    expect(Object.isFrozen(derived.defaultValue.items)).toBe(true);
   });
 });
 

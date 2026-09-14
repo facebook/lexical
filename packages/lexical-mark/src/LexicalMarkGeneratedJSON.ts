@@ -142,9 +142,9 @@ export const GENERATED_MARK: GeneratedJSONFactory = () => {
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    node.setTextFormat(num(v, 0));
+    node.__textFormat = num(v, 0);
     v = json.textStyle;
-    node.setTextStyle(typeof v === 'string' ? v : '');
+    node.__textStyle = typeof v === 'string' ? v : '';
     v = json.ids;
     node.__ids = Array.isArray(v)
       ? Array.from(v, e0 => (typeof e0 === 'string' ? e0 : ''))

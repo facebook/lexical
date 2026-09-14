@@ -318,7 +318,9 @@ function onSelectionChange(
     focusOffset,
   } = getDOMSelectionPoints(domSelection, editor._rootElement);
   const inputState = editor._inputState;
-  if (inputState.isSelectionChangeFromDOMUpdate) {
+  const isSelectionChangeFromDOMUpdate =
+    inputState.isSelectionChangeFromDOMUpdate;
+  if (isSelectionChangeFromDOMUpdate) {
     inputState.isSelectionChangeFromDOMUpdate = false;
     const appliedPoints = inputState.selectionChangeFromDOMUpdatePoints;
     inputState.selectionChangeFromDOMUpdatePoints = null;
@@ -488,7 +490,18 @@ function onSelectionChange(
       }
     }
 
-    dispatchCommand(editor, SELECTION_CHANGE_COMMAND);
+    const previousSelection = $getPreviousSelection();
+    const hasSelectionChanged =
+      isSelectionChangeFromDOMUpdate ||
+      (selection !== null
+        ? selection.dirty ||
+          !$isRangeSelection(selection) ||
+          !selection.is(previousSelection)
+        : previousSelection !== null);
+
+    if (hasSelectionChanged) {
+      dispatchCommand(editor, SELECTION_CHANGE_COMMAND);
+    }
   });
 }
 

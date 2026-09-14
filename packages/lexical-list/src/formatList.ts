@@ -432,7 +432,12 @@ export function $handleIndent(listItemNode: ListItemNode): void {
       innerList.append(listItemNode);
       const nextInnerList = nextSibling.getFirstChild();
 
-      if ($isListNode(nextInnerList)) {
+      if (
+        $isListNode(nextInnerList) &&
+        // Only pull in the following sublist when it is the same kind of
+        // list, otherwise it loses its listType.
+        innerList.getListType() === nextInnerList.getListType()
+      ) {
         const children = nextInnerList.getChildren();
         append(innerList, children);
         nextSibling.remove();

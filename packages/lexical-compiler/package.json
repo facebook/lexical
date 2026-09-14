@@ -25,7 +25,7 @@
     "magic-string": "^0.30.21"
   },
   "devDependencies": {
-    "rollup": "^4.61.0"
+    "rollup": "^4.63.1"
   },
   "sideEffects": false,
   "exports": {
@@ -44,6 +44,22 @@
       "development": "./dist/LexicalCompilerPureAnnotations.dev.js",
       "production": "./dist/LexicalCompilerPureAnnotations.prod.js",
       "default": "./dist/LexicalCompilerPureAnnotations.js"
+    },
+    "./SubpathImports": {
+      "source": "./src/SubpathImports.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/SubpathImports.d.ts",
+      "development": "./dist/LexicalCompilerSubpathImports.dev.js",
+      "production": "./dist/LexicalCompilerSubpathImports.prod.js",
+      "default": "./dist/LexicalCompilerSubpathImports.js"
+    },
+    "./SubpathImports.js": {
+      "source": "./src/SubpathImports.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/SubpathImports.d.ts",
+      "development": "./dist/LexicalCompilerSubpathImports.dev.js",
+      "production": "./dist/LexicalCompilerSubpathImports.prod.js",
+      "default": "./dist/LexicalCompilerSubpathImports.js"
     },
     ".": {
       "source": "./src/index.ts",

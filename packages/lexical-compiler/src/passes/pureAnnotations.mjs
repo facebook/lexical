@@ -28,6 +28,8 @@ import MagicString from 'magic-string';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+import {parserPluginsFor} from './parserPlugins.mjs';
+
 /**
  * The Lexical factories that are annotated with `__NO_SIDE_EFFECTS__` at
  * their definition. That annotation is only honored by esbuild for calls in
@@ -284,28 +286,6 @@ const SKIPPED_KEYS = new Set([
   'loc',
   'trailingComments',
 ]);
-
-/**
- * @param {undefined | string} filename
- * @param {undefined | ReadonlyArray<any>} extraPlugins
- * @returns {Array<any>} the Babel parser plugins to parse this file with
- */
-function parserPluginsFor(filename, extraPlugins) {
-  const name = typeof filename === 'string' ? filename : '';
-  const isTypeScript = /\.[cm]?tsx?$/i.test(name);
-  /** @type {Array<any>} */
-  const plugins = ['explicitResourceManagement'];
-  if (isTypeScript) {
-    plugins.push('typescript');
-  }
-  // `<T>(value: T) => value` in a .ts file is a generic arrow function, not
-  // an opening JSX element, so the jsx plugin must stay off there. Any other
-  // extension (including an unknown one) is parsed with jsx enabled.
-  if (!isTypeScript || /\.[cm]?tsx$/i.test(name)) {
-    plugins.push('jsx');
-  }
-  return extraPlugins ? plugins.concat(extraPlugins) : plugins;
-}
 
 /**
  * Find the block comment that ends immediately before `offset` (ignoring

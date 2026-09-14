@@ -26,15 +26,15 @@ import {
 } from 'lexical';
 
 import {getNodeConfig} from './config';
-import {deepThemeMergeInPlace} from './deepThemeMergeInPlace';
+import {InitialStateExtension} from './InitialStateExtension';
+import {deepThemeMergeInPlace} from './internal/deepThemeMergeInPlace';
 import {
   applyPermanentMark,
   applyTemporaryMark,
   ExtensionRep,
   isExactlyPermanentExtensionRepState,
   isExactlyUnmarkedExtensionRepState,
-} from './ExtensionRep';
-import {InitialStateExtension} from './InitialStateExtension';
+} from './internal/ExtensionRep';
 
 /** @internal Use a well-known symbol for dev tools purposes */
 export const builderSymbol = Symbol.for('@lexical/extension/LexicalBuilder');

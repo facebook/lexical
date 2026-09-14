@@ -482,6 +482,26 @@ export default [
     },
   },
 
+  // Keep extension source imports independent of the published bundle layout.
+  // The package build rewrites barrels and relative siblings to subpaths.
+  {
+    files: ['packages/**/src/**', 'examples/**', 'dev-examples/**'],
+    rules: {
+      'no-restricted-imports': [
+        ERROR,
+        {
+          patterns: [
+            {
+              group: ['@lexical/extension/*'],
+              message:
+                'Import from @lexical/extension in consumers, or use a relative import within that package. The build rewrites source imports to public subpaths.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Override: Tests - allow imports from self
   {
     files: ['packages/**/__tests__/**'],

@@ -21,6 +21,7 @@ import path from 'path';
 import {rollup} from 'rollup';
 
 import {pureAnnotations} from '../packages/lexical-compiler/src/passes/pureAnnotations.mjs';
+import {subpathImports} from '../packages/lexical-compiler/src/passes/subpathImports.mjs';
 import transformErrorMessages from './error-codes/transform-error-messages.mjs';
 import {exec} from './shared/childProcess.mjs';
 import {packagesManager} from './shared/packagesManager.mjs';
@@ -355,6 +356,15 @@ async function build(
           '@babel/plugin-transform-optional-catch-binding',
         ],
         presets: ['@babel/preset-typescript'],
+      }),
+      // Redirect all package consumers before Rollup resolves dependencies.
+      // Keeping public siblings external also avoids duplicated singleton state.
+      subpathImports({
+        packages: packagesManager
+          .getPublicPackages()
+          .filter(p => !INLINED_PACKAGES.has(p.getNpmName()))
+          .map(p => p.resolve('package.json')),
+        strict: true,
       }),
       // Runs on the JavaScript babel emits so that every module-scope call
       // to a side-effect-free factory (defineExtension, createCommand, ...)

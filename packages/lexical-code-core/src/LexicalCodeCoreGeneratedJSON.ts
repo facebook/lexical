@@ -52,7 +52,12 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
-/** CodeNode's schema-declared fields, for a clone. @internal */
+/**
+ * CodeNode's schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterCloneCodeNode(node: CodeNode, prevNode: CodeNode): void {
   node.__language = prevNode.__language;
   node.__theme = prevNode.__theme;
@@ -176,7 +181,12 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
   };
 };
 
-/** CodeHighlightNode's schema-declared fields, for a clone. @internal */
+/**
+ * CodeHighlightNode's schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterCloneCodeHighlightNode(
   node: CodeHighlightNode,
   prevNode: CodeHighlightNode,

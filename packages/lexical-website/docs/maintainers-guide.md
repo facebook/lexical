@@ -348,10 +348,13 @@ serialized, not where it lives. A class that writes its own `afterCloneFrom` is
 left alone and owns all of its properties, which is how `ElementNode` keeps
 carrying `__first`/`__last`/`__size` and its slot bookkeeping; so is a property
 declared through accessor methods on both sides, which names no field for
-anything to copy — `MarkNode`'s `ids` is the one in-tree example, and the reason
-`MarkNode` still has a hand-written method. `ownSchemaFields` in
-`LexicalUtils.ts` is the single definition of that field list, called by both
-the generator and the synthesized fallback.
+anything to copy. No in-tree node is in that second position — a property held
+in a field says so with `setter: {field, method}` and stays derived, as
+`MarkNode`'s `ids` does — so the boilerplate that remains is `ElementNode`'s
+and `CodeNode`'s, and each of those calls the generated `afterClone<Class>`
+for its schema half and writes only the fields no schema describes.
+`ownSchemaFields` in `LexicalUtils.ts` is the single definition of that field
+list, called by both the generator and the synthesized fallback.
 
 The schema-to-JavaScript compiler itself lives in `@lexical/compiler`'s
 `SchemaJsonCodegen` entry point, so it is testable independently of the

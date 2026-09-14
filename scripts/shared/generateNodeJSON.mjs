@@ -702,9 +702,15 @@ function schemaReads(klass) {
  * round trip.
  *
  * @param {{expression: string, key: string, schema: AnySchema, when?: string}[]} reads
+ *   the gated properties to hoist, which may be fewer than the class has
+ * @param {(name: string) => string} localOf names the locals, built from *all*
+ *   of the class's reads rather than from `reads`: both exporters have to name
+ *   a given property the same local, and a name is only renamed far enough to
+ *   clear the ones bound beside it, so a shorter list can rename it
+ *   differently. Passed in rather than defaulted for that reason.
  * @returns {{lines: string[], value: (read: {expression: string, key: string, schema: AnySchema, when?: string}) => string}}
  */
-function hoistGatedReads(reads, localOf = localsFor(reads)) {
+function hoistGatedReads(reads, localOf) {
   // Built by hand rather than filtered, so `when` is a string in what follows.
   /** @type {{differs: string, expression: string, key: string, when: string}[]} */
   const gated = [];
@@ -904,7 +910,7 @@ function generateExport(klass) {
   // An element's JSON leads with `children`, which is structural rather than
   // schema-declared: the key order below is byte-identical to the walk's.
   const isElement = isElementish(klass);
-  const hoist = hoistGatedReads(reads);
+  const hoist = hoistGatedReads(reads, localsFor(reads));
   // `type` is read off the node rather than baked in as the literal the class
   // registered under: the same code serves a subclass whose accessor tables
   // compile the same way, and its type is not this one's.
@@ -938,8 +944,9 @@ ${hoist.lines.length === 0 ? '' : `${hoist.lines.join('\n')}\n`}  return {
  * rather than serializing it, so an override that sends the export through a
  * method changes nothing about where the value lives, and a property declared
  * through accessor methods on both sides names no storage at all and is left
- * to the class — which is why MarkNode, whose `ids` is `getIDs`/`setIDs`,
- * still writes its own.
+ * to the class. No node in the tree is in that position: a value held in a
+ * field says so with `setter: {field, method}` and stays derived, which is how
+ * MarkNode declares the `ids` it serializes through `getIDs`/`setIDs`.
  *
  * @param {NodeClass} klass
  * @returns {null | string}
@@ -957,7 +964,12 @@ function generateAfterCloneFrom(klass) {
   // wrote its own `afterCloneFrom` is skipped by registration and so never
   // receives this through `$config` — it imports and calls it instead, and
   // writes only the part no schema describes. ElementNode and CodeNode both do.
-  return `/** ${klass.name}'s schema-declared fields, for a clone. @internal */
+  return `/**
+ * ${klass.name}'s schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterClone${klass.name}(node: ${klass.name}, prevNode: ${klass.name}): void {
 ${fields
   .map(field => {

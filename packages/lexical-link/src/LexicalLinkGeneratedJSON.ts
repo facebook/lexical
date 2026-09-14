@@ -44,7 +44,12 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
-/** LinkNode's schema-declared fields, for a clone. @internal */
+/**
+ * LinkNode's schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterCloneLinkNode(node: LinkNode, prevNode: LinkNode): void {
   node.__rel = prevNode.__rel;
   node.__target = prevNode.__target;
@@ -192,7 +197,12 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
   };
 };
 
-/** AutoLinkNode's schema-declared fields, for a clone. @internal */
+/**
+ * AutoLinkNode's schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterCloneAutoLinkNode(
   node: AutoLinkNode,
   prevNode: AutoLinkNode,

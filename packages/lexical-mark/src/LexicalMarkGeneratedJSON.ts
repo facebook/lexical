@@ -44,7 +44,12 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
-/** MarkNode's schema-declared fields, for a clone. @internal */
+/**
+ * MarkNode's schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterCloneMarkNode(node: MarkNode, prevNode: MarkNode): void {
   node.__ids = prevNode.__ids;
 }

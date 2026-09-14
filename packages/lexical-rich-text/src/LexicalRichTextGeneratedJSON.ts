@@ -44,7 +44,12 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
-/** HeadingNode's schema-declared fields, for a clone. @internal */
+/**
+ * HeadingNode's schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterCloneHeadingNode(
   node: HeadingNode,
   prevNode: HeadingNode,

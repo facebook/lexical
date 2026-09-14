@@ -16,7 +16,12 @@
 import type {DecoratorBlockNode} from '../LexicalDecoratorBlockNode';
 import type {GeneratedJSONFactory} from 'lexical';
 
-/** DecoratorBlockNode's schema-declared fields, for a clone. @internal */
+/**
+ * DecoratorBlockNode's schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterCloneDecoratorBlockNode(
   node: DecoratorBlockNode,
   prevNode: DecoratorBlockNode,

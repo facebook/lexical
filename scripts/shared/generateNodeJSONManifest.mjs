@@ -180,11 +180,17 @@ export function stubSource(pkg) {
     );
   }
   for (const name of pkg.afterClone) {
-    // A no-op with the loosest parameters that accept a node, since the stub
-    // may not name a class: phase one only has to load, and nothing it
-    // produces is what a clone actually runs.
+    // Throws rather than doing nothing. The loosest parameters that accept a
+    // node, since the stub may not name a class, and a body that cannot be
+    // mistaken for the real one: phase one writes these *in place*, so a run
+    // whose phase two fails leaves them in the tree, and a class calls its
+    // helper unconditionally from `afterCloneFrom`. A no-op there is silent
+    // — the fields keep the constructor's defaults and every node loses them
+    // on its next getWritable() — where this says what happened. Nothing
+    // between the two phases clones a node, so it is never reached on the
+    // path that replaces it.
     lines.push(
-      `\n/** @internal */\nexport function ${name}(_node: unknown, _prevNode: unknown): void {}\n`,
+      `\n/** @internal */\nexport function ${name}(_node: unknown, _prevNode: unknown): void {\n  throw new Error(\n    '${name}: this module is the do-nothing stub \`pnpm run generate-node-json\` writes before it generates the real one. Its second phase did not finish; run it again.',\n  );\n}\n`,
     );
   }
   return lines.join('');

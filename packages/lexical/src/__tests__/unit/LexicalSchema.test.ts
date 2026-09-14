@@ -1194,6 +1194,44 @@ describe('a field stands in for its accessor only while nobody overrides it', ()
     ).toEqual({field: '__style'});
   });
 
+  test('a spelled accessor is guarded alongside the one it wraps', () => {
+    // The case the conventional name is checked for, which every other
+    // declaration in the tree spells the same as its conventional name and so
+    // cannot reach. ElementNode's `textFormat` names `getSerializedTextFormat`,
+    // which computes its result from `getTextFormat` — the accessor exportJSON
+    // read before this schema existed, and the one a subclass reaches for.
+    // Guarding only the wrapper kept the direct field read for such a subclass
+    // and exported the stored field instead of what the node says it is.
+    //
+    // Straight off ElementNode rather than ParagraphNode, whose hand-written
+    // exportJSON backfills `textFormat` from `getTextFormat()` for #7971 and
+    // would answer for the override whatever the schema resolved.
+    class WrappedElementNode extends ElementNode {
+      $config() {
+        return this.config('wrapped-element', {extends: ElementNode});
+      }
+      getTextFormat(): number {
+        return super.getTextFormat() | 1;
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[wrapped-textformat]',
+        nodes: [WrappedElementNode],
+      }),
+    );
+    editor.update(
+      () => {
+        // No TextNode child, so `shouldSerializeTextStyles` is true and the
+        // property is written at all.
+        const node = $create(WrappedElementNode).setTextFormat(2);
+        expect(node.exportJSON().textFormat).toBe(3);
+      },
+      {discrete: true},
+    );
+  });
+
   test('encode and decode carry a property whose two forms differ', () => {
     // TextNode stores `mode` as a bitmask and serializes it as a name, so it
     // stays off getMode()/setMode() only because both tables are declared.
@@ -1402,8 +1440,8 @@ describe('a clone carries the fields the schema declares', () => {
 
   test('a hand-written afterCloneFrom is left alone', () => {
     // A property declared through accessor methods names no field, so nothing
-    // is derived for it and the class stays responsible — as MarkNode's `ids`
-    // is. The counter proves the class's own method is what ran.
+    // is derived for it and the class stays responsible. The counter proves
+    // the class's own method is what ran.
     let calls = 0;
     class AccessorNode extends ElementNode {
       __ids: readonly string[] = [];

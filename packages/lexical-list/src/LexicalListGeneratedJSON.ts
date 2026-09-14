@@ -60,7 +60,12 @@ function numK(
   return n < min ? min : n > max ? max : n;
 }
 
-/** ListNode's schema-declared fields, for a clone. @internal */
+/**
+ * ListNode's schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterCloneListNode(node: ListNode, prevNode: ListNode): void {
   node.__listType = prevNode.__listType;
   node.__start = prevNode.__start;
@@ -189,7 +194,12 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
   };
 };
 
-/** ListItemNode's schema-declared fields, for a clone. @internal */
+/**
+ * ListItemNode's schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterCloneListItemNode(
   node: ListItemNode,
   prevNode: ListItemNode,

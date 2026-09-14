@@ -111,7 +111,12 @@ function numC(
   return n >= min && n <= max && (!integer || Number.isInteger(n)) ? n : d;
 }
 
-/** ElementNode's schema-declared fields, for a clone. @internal */
+/**
+ * ElementNode's schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterCloneElementNode(
   node: ElementNode,
   prevNode: ElementNode,
@@ -220,7 +225,12 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = () => {
   };
 };
 
-/** TextNode's schema-declared fields, for a clone. @internal */
+/**
+ * TextNode's schema-declared fields, for a clone. Generated from that
+ * schema; do not edit by hand.
+ *
+ * @internal
+ */
 export function afterCloneTextNode(node: TextNode, prevNode: TextNode): void {
   node.__detail = prevNode.__detail;
   node.__format = prevNode.__format;

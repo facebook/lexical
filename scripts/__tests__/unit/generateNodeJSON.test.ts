@@ -30,6 +30,8 @@ import {
   TextNode,
   withField,
 } from 'lexical';
+import {readFileSync} from 'node:fs';
+import {join} from 'node:path';
 import ts from 'typescript';
 import {describe, expect, test} from 'vitest';
 
@@ -45,6 +47,26 @@ import {
   tableDeclarations,
   // @ts-expect-error - a .mjs script with JSDoc types, not a typed module
 } from '../../shared/generateNodeJSON.mjs';
+import {
+  MANIFEST,
+  stubSource,
+  // @ts-expect-error - a .mjs script with JSDoc types, not a typed module
+} from '../../shared/generateNodeJSONManifest.mjs';
+
+/**
+ * A generated source as a strict-mode script, which is what an ES module is.
+ * Types are stripped first — a binding illegal in strict mode is a SyntaxError
+ * the emitted TypeScript also has, but `new Function` cannot parse the
+ * annotations to reach it — and the module form is lowered with it, so a whole
+ * emitted module goes through here as readily as one function does.
+ */
+function parseAsModule(source: string): void {
+  const {code} = transformSync(source, {format: 'cjs', loader: 'ts'});
+  // Constructed for the parse alone, which is what throws.
+  // eslint-disable-next-line no-new-func
+  const parsed = new Function(`"use strict";\n${code}`);
+  expect(typeof parsed).toBe('function');
+}
 
 /**
  * The generator interpolates schema keys, field names, accessor names and
@@ -344,20 +366,6 @@ describe('a property the compact form cannot compare as source', () => {
     expect(source).toContain('if (style !== undefined && style !== "") {');
   });
 
-  /**
-   * The generated source as a strict-mode script, which is what an ES module
-   * is. Types are stripped first: a binding illegal in strict mode is a
-   * SyntaxError the emitted TypeScript also has, but `new Function` cannot
-   * parse the annotations to reach it.
-   */
-  function parseAsModule(source: string): void {
-    const {code} = transformSync(source, {loader: 'ts'});
-    // Constructed for the parse alone, which is what throws.
-    // eslint-disable-next-line no-new-func
-    const parsed = new Function(`"use strict";\n${code}`);
-    expect(typeof parsed).toBe('function');
-  }
-
   test('a strict-mode binding name gets a local it can bind', () => {
     // `arguments` and `eval` are legal identifiers, legal property names, and
     // legal member accesses, but cannot be bound in strict mode — which every
@@ -605,5 +613,56 @@ describe('a property whose schema narrows its own domain', () => {
     expect(generateCompactExport(NarrowedNode)).toContain(
       'const tag = node.__tag;',
     );
+  });
+});
+
+describe('generated clone helpers', () => {
+  test('the phase-one stub throws rather than dropping fields', () => {
+    // Phase one writes the stubs *in place*, so a run whose second phase
+    // fails leaves them in the tree — and `ElementNode` and `CodeNode` call
+    // their helper unconditionally from `afterCloneFrom`. The stub used to be
+    // a no-op, which is the silent version of the very bug the helpers exist
+    // to prevent: `{"indent": 2}` came back as `{"indent": 0}` after one
+    // getWritable(), with nothing anywhere saying why.
+    for (const pkg of MANIFEST) {
+      const source: string = stubSource(pkg);
+      expect(() => parseAsModule(source)).not.toThrow();
+      for (const name of pkg.afterClone) {
+        expect(source).toContain(`export function ${name}(`);
+        expect(source).toContain('did not finish; run it again.');
+      }
+    }
+  });
+
+  test('every one of them has an end-to-end clone test', () => {
+    // A class whose own `$config` names a field gets its `afterCloneFrom`
+    // derived from the schema rather than written by hand, so nothing in the
+    // class says which fields a clone carries and nothing fails when the
+    // derivation stops covering one — the field keeps the constructor's
+    // default and the node loses the value on its next getWritable().
+    //
+    // `CloneCarriesSchemaFields.test.ts` is what catches that, one case per
+    // class, and its coverage was silently partial: seven classes lost their
+    // hand-written method with nothing put in its place. This holds the file
+    // to the manifest, so adding a class to one means adding it to the other.
+    const covered = readFileSync(
+      join(
+        import.meta.dirname,
+        '..',
+        '..',
+        '..',
+        'packages',
+        'lexical-fast-check',
+        'src',
+        '__tests__',
+        'unit',
+        'CloneCarriesSchemaFields.test.ts',
+      ),
+      'utf-8',
+    );
+    const missing = MANIFEST.flatMap(pkg => pkg.afterClone).filter(
+      name => !references(covered, name.replace(/^afterClone/, '')),
+    );
+    expect(missing).toEqual([]);
   });
 });

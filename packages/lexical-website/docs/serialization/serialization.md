@@ -783,9 +783,12 @@ the way it is serialized does.
 Two cases stay the class's own, and both follow the rule the synthesized
 `clone` and `importJSON` follow: declare it yourself and you own it.
 
-- **A property declared through accessor methods on both sides**, like
-  `MarkNode`'s `ids` (`getIDs`/`setIDs`). The schema names no field, so there
-  is nothing to copy, and the class writes an `afterCloneFrom` for it:
+- **A property declared through accessor methods on both sides.** The schema
+  names no field, so there is nothing to copy, and the class writes an
+  `afterCloneFrom` for it. A property whose value does live in one field of the
+  node can say so and stay derived, naming the accessor the field stands in for
+  (`setter: {field: '__ids', method: 'setIDs'}`, which is how `MarkNode`
+  declares `ids`); this is for one whose value does not:
 
   ```ts
   class TallyNode extends ElementNode {

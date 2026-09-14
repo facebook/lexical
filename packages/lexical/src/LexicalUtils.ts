@@ -5145,10 +5145,13 @@ const SYNTHESIZED_AFTER_CLONE_FROM = '__lexicalSynthesizedAfterCloneFrom';
  * Whether `klass` wrote its own `afterCloneFrom`, rather than taking the one
  * its schema implies.
  *
- * For a code generator deciding whether to emit the copy half at all: a class
- * that wrote its own keeps it, so the generated function would be attached,
- * shipped, and never called. Asked of the class itself rather than of the
- * prototype, because after one registration every class in a chain has an own
+ * For a code generator deciding whether to *attach* the copy half: a class that
+ * wrote its own keeps it, so a generated function handed to it through
+ * `$config` would be shipped and never called. The function is still worth
+ * generating — `ElementNode` and `CodeNode` import and call it, so what they
+ * write by hand is only the fields no schema describes — it is the attachment
+ * that is pointless. Asked of the class itself rather than of the prototype,
+ * because after one registration every class in a chain has an own
  * `afterCloneFrom` and only the marker says which kind.
  *
  * @internal

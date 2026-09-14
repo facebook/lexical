@@ -6,10 +6,25 @@
  *
  */
 
+import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {nodeArbitrary} from '@lexical/fast-check';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {MarkNode} from '@lexical/mark';
+import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {HeadingNode} from '@lexical/rich-text';
+import {
+  $createTableNode,
+  $createTableRowNode,
+  TableCellNode,
+  TableNode,
+  TableRowNode,
+} from '@lexical/table';
 import * as fc from 'fast-check';
 import {
   $create,
@@ -51,10 +66,21 @@ import {describe, expect, test} from 'vitest';
 function expectCloneCarriesSchemaFields<T extends LexicalNode>(
   klass: Klass<T>,
   props: LexicalParseJSON<LexicalExportJSON<T>>,
+  options: {
+    /** Further classes the editor has to know about to hold the node. */
+    readonly nodes?: readonly Klass<LexicalNode>[];
+    /**
+     * Put the node somewhere the tree accepts it, for a class whose parent is
+     * part of what it is: a `ListItemNode` resolves its `indent` by counting
+     * list ancestors, so an unparented one cannot even be given the property
+     * under test.
+     */
+    readonly place?: (node: T) => void;
+  } = {},
 ): void {
   const editor = createEditor({
     namespace: 'clone-property',
-    nodes: [klass],
+    nodes: [klass, ...(options.nodes || [])],
     onError(error) {
       throw error;
     },
@@ -69,9 +95,10 @@ function expectCloneCarriesSchemaFields<T extends LexicalNode>(
   editor.update(
     () => {
       const node = $create(klass);
-      node.updateFromJSON(props);
       const root = $getRoot().clear();
-      if ($isElementNode(node)) {
+      if (options.place) {
+        options.place(node);
+      } else if ($isElementNode(node)) {
         // Kept alive the way the TextNode case is: an empty element is removed
         // between the two updates, and an inline one has to sit in a block.
         node.append($createTextNode('x'));
@@ -81,15 +108,27 @@ function expectCloneCarriesSchemaFields<T extends LexicalNode>(
       } else {
         root.append($createParagraphNode().append(node));
       }
+      // After placement, not before: a property read off the node's position
+      // in the tree cannot be applied to a node that has none.
+      node.updateFromJSON(props);
       key = node.getKey();
       original = node;
-      // An element's exportJSON always writes `children: []` — the tree is
-      // serialized by the traversal around it — so the child above does not
-      // enter the comparison.
-      before = node.exportJSON();
     },
     {discrete: true},
   );
+
+  // Read once the update has settled, so the comparison is against the values
+  // the node actually ended up with: a `$transform` may legitimately change
+  // one (`ListItemNode` renumbers `value` from its position in the list), and
+  // reading inside the update above compared the clone against a value that
+  // was already stale before anything was cloned.
+  //
+  // An element's exportJSON always writes `children: []` — the tree is
+  // serialized by the traversal around it — so the child added above does not
+  // enter the comparison.
+  editor.read(() => {
+    before = $getNodeByKey(key)!.exportJSON();
+  });
 
   editor.update(
     () => {
@@ -102,6 +141,31 @@ function expectCloneCarriesSchemaFields<T extends LexicalNode>(
   );
 }
 
+/**
+ * A concrete `DecoratorBlockNode`, which the base class is not: it declares its
+ * schema under `Symbol.for('DecoratorBlockNode')` for subclasses to compose.
+ * Nothing renders here — no root element is attached — so `decorate` is never
+ * reached.
+ */
+class TestDecoratorBlockNode extends DecoratorBlockNode {
+  $config() {
+    return this.config('test-decorator-block', {extends: DecoratorBlockNode});
+  }
+
+  decorate(): never {
+    throw new Error('TestDecoratorBlockNode is never rendered');
+  }
+}
+
+/**
+ * One case per class the generator writes a clone helper for, which
+ * `generateNodeJSON.test.ts` holds this file to.
+ *
+ * `ElementNode` is the one without a case of its own: it is abstract, so its
+ * `direction`, `indent`, `textFormat` and `textStyle` are reached through
+ * every element below — `HeadingNode`, `ListNode`, `TableCellNode` and the
+ * rest all fail if its half of the copy stops happening.
+ */
 describe('a clone carries every serialization schema property', () => {
   test('TextNode', () => {
     fc.assert(
@@ -139,13 +203,119 @@ describe('a clone carries every serialization schema property', () => {
     );
   });
 
-  // `ids` is declared through getIDs/setIDs, so no field name is derivable and
-  // MarkNode carries it in an afterCloneFrom of its own. This is the case the
-  // derivation deliberately does not cover.
   test('MarkNode', () => {
     fc.assert(
       fc.property(nodeArbitrary(MarkNode), props => {
         expectCloneCarriesSchemaFields(MarkNode, props);
+      }),
+    );
+  });
+
+  // CodeNode writes its own afterCloneFrom for the one field its schema does
+  // not name (`__isSyntaxHighlightSupported`) and calls the generated half for
+  // the rest. Deleting that call is exactly the mistake this notices.
+  test('CodeNode', () => {
+    fc.assert(
+      fc.property(nodeArbitrary(CodeNode), props => {
+        expectCloneCarriesSchemaFields(CodeNode, props);
+      }),
+    );
+  });
+
+  test('CodeHighlightNode', () => {
+    fc.assert(
+      fc.property(nodeArbitrary(CodeHighlightNode), props => {
+        expectCloneCarriesSchemaFields(CodeHighlightNode, {
+          ...props,
+          text: 'x',
+        });
+      }),
+    );
+  });
+
+  test('ListNode', () => {
+    fc.assert(
+      fc.property(nodeArbitrary(ListNode), props => {
+        expectCloneCarriesSchemaFields(ListNode, props, {
+          nodes: [ListItemNode],
+          // A list's children are items, and an empty list does not survive to
+          // the second update.
+          place: list => {
+            $getRoot().append(list.append($createListItemNode()));
+          },
+        });
+      }),
+    );
+  });
+
+  // `indent` is resolved by counting the item's list ancestors rather than
+  // from a field, so this is the one class that has to be in a tree before the
+  // properties under test can be applied at all.
+  test('ListItemNode', () => {
+    fc.assert(
+      fc.property(nodeArbitrary(ListItemNode), props => {
+        expectCloneCarriesSchemaFields(ListItemNode, props, {
+          nodes: [ListNode],
+          place: item => {
+            $getRoot().append($createListNode('bullet').append(item));
+          },
+        });
+      }),
+    );
+  });
+
+  test('TableNode', () => {
+    fc.assert(
+      fc.property(nodeArbitrary(TableNode), props => {
+        expectCloneCarriesSchemaFields(TableNode, props, {
+          nodes: [TableRowNode, TableCellNode],
+          place: table => {
+            $getRoot().append(table.append($createTableRowNode()));
+          },
+        });
+      }),
+    );
+  });
+
+  test('TableRowNode', () => {
+    fc.assert(
+      fc.property(nodeArbitrary(TableRowNode), props => {
+        expectCloneCarriesSchemaFields(TableRowNode, props, {
+          nodes: [TableNode, TableCellNode],
+          place: row => {
+            $getRoot().append($createTableNode().append(row));
+          },
+        });
+      }),
+    );
+  });
+
+  // DecoratorBlockNode has no concrete node type of its own, so the clone that
+  // carries its `format` is reached through a subclass, which is how every
+  // application meets it.
+  test('DecoratorBlockNode', () => {
+    fc.assert(
+      fc.property(nodeArbitrary(TestDecoratorBlockNode), props => {
+        expectCloneCarriesSchemaFields(TestDecoratorBlockNode, props);
+      }),
+    );
+  });
+
+  test('TableCellNode', () => {
+    fc.assert(
+      fc.property(nodeArbitrary(TableCellNode), props => {
+        expectCloneCarriesSchemaFields(TableCellNode, props, {
+          nodes: [TableNode, TableRowNode],
+          place: cell => {
+            $getRoot().append(
+              $createTableNode().append(
+                $createTableRowNode().append(
+                  cell.append($createParagraphNode()),
+                ),
+              ),
+            );
+          },
+        });
       }),
     );
   });

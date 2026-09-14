@@ -4654,8 +4654,8 @@ export function $applyJSONSetters<T extends LexicalNode>(
   const self = $applyFlatStates(node, serializedNode, flatStates);
   if (generated !== null && generated.updateFromJSON !== undefined) {
     // The generated parser applies the same properties in the same order and
-    // follows a setter's return the same way, so what it hands back is what
-    // the walk would have: the node passed in, unless a setter replaced it.
+    // ignores a setter's return the same way, so what it hands back is what
+    // the walk would have: the node passed in.
     return generated.updateFromJSON(self, serializedNode) as T;
   }
   return $walkSetters(self, serializedNode, setters);
@@ -4729,7 +4729,6 @@ function $walkSetters<T extends LexicalNode>(
   serializedNode: {readonly [key: string]: unknown},
   setters: readonly CompiledSetter[],
 ): T {
-  let self = node;
   for (let i = 0; i < setters.length; i++) {
     const entry = setters[i];
     // A bare read. An absent property is `undefined`, which is exactly what
@@ -4742,9 +4741,9 @@ function $walkSetters<T extends LexicalNode>(
     // cost of the walk it guarded.
     const parsed = entry.schema(serializedNode[entry.key]);
     if (entry.kind === 'ownField') {
-      // `self` is writable already — updateFromJSON starts from getWritable()
-      // and every setter that replaces it returns a writable node — so this is
-      // the whole of applying the property.
+      // `node` is writable already — the walk is only ever reached from
+      // getWritable() or from a node this update constructed — so this is the
+      // whole of applying the property.
       //
       // The table is reached with hasOwnKey, as the codegen's emitted lookup
       // is (`v in TABLE ? TABLE[v] : <default>` over a null-prototype table).
@@ -4754,7 +4753,7 @@ function $walkSetters<T extends LexicalNode>(
       // `'toString'` to Object.prototype's method and store *that* in the
       // field. A genuine miss still yields `undefined`, exactly as the bare
       // lookup did.
-      ownFieldRecord(self)[entry.field] =
+      ownFieldRecord(node)[entry.field] =
         entry.encode === undefined
           ? parsed
           : hasOwnKey(entry.encode, parsed as string)
@@ -4768,22 +4767,16 @@ function $walkSetters<T extends LexicalNode>(
               // so writing anything else made the two disagree.
               encodedDefault(entry);
     } else {
-      const next = entry.setter.call(self, parsed);
-      // Lexical setters conventionally return the writable node so calls can
-      // be chained, but a `void` setter is perfectly valid — it has already
-      // mutated the node through getWritable() — so a nullish return means
-      // "unchanged" rather than stranding the rest of the schema on
-      // `undefined`.
-      //
-      // Anything else is followed as given. A setter is declared to return
-      // `this`; one that returns some other value is a contract violation, and
-      // following it — which will throw on the next setter's `getWritable()` —
-      // is a better answer than quietly ignoring it and writing the remaining
-      // properties to a node the setter said it had replaced.
-      self = (next ?? self) as T;
+      // The return is not read. A setter's own `getWritable()` hands back the
+      // node it was called on, since that node is already writable, so
+      // following the return only ever reassigned the node to itself — and a
+      // `void` setter had to be given a meaning ("unchanged") it never
+      // needed. The `ownField` branch above has always assumed exactly this,
+      // writing the field with no getWritable() of its own.
+      entry.setter.call(node, parsed);
     }
   }
-  return self;
+  return node;
 }
 
 /** @internal */

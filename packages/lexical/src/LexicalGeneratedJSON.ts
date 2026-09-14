@@ -56,8 +56,9 @@ export interface GeneratedJSON {
     isCompactDefault: CompactDefaultTest,
   ): {[key: string]: unknown};
   // Returns the node the properties were applied to, which is the node passed
-  // in unless a setter replaced it — the same value `$applyJSONSetters`
-  // returns from the walk, for the same reason.
+  // in: it is writable by construction and every setter writes it in place.
+  // The return is kept so a caller reads the applied node from one place,
+  // whether or not the class has a generated parser.
   updateFromJSON?(
     node: LexicalNode,
     json: {readonly [key: string]: unknown},
@@ -188,13 +189,11 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = () => {
     node: ElementNode,
     json: {readonly [key: string]: unknown},
   ): ElementNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -205,16 +204,13 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = () => {
         ? v
         : '',
     );
-    self = (n ?? self) as ElementNode;
     v = json.indent;
-    self.__indent = numC(v, 0, 0, Infinity, true);
+    node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as ElementNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as ElementNode;
-    return self;
+    node.setTextStyle(typeof v === 'string' ? v : '');
+    return node;
   }
 
   return {
@@ -410,13 +406,11 @@ export const GENERATED_PARAGRAPH: GeneratedJSONFactory = () => {
     node: ParagraphNode,
     json: {readonly [key: string]: unknown},
   ): ParagraphNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -427,16 +421,13 @@ export const GENERATED_PARAGRAPH: GeneratedJSONFactory = () => {
         ? v
         : '',
     );
-    self = (n ?? self) as ParagraphNode;
     v = json.indent;
-    self.__indent = numC(v, 0, 0, Infinity, true);
+    node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as ParagraphNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as ParagraphNode;
-    return self;
+    node.setTextStyle(typeof v === 'string' ? v : '');
+    return node;
   }
 
   return {

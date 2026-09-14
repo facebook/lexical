@@ -137,13 +137,11 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
     node: LinkNode,
     json: {readonly [key: string]: unknown},
   ): LinkNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -154,39 +152,36 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
         ? v
         : '',
     );
-    self = (n ?? self) as LinkNode;
     v = json.indent;
-    self.__indent = numC(v, 0, 0, Infinity, true);
+    node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as LinkNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as LinkNode;
+    node.setTextStyle(typeof v === 'string' ? v : '');
     v = json.rel;
-    self.__rel =
+    node.__rel =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
     v = json.target;
-    self.__target =
+    node.__target =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
     v = json.title;
-    self.__title =
+    node.__title =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
     v = json.url;
-    self.__url = typeof v === 'string' ? v : '';
-    return self;
+    node.__url = typeof v === 'string' ? v : '';
+    return node;
   }
 
   return {
@@ -297,13 +292,11 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
     node: AutoLinkNode,
     json: {readonly [key: string]: unknown},
   ): AutoLinkNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -314,41 +307,38 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
         ? v
         : '',
     );
-    self = (n ?? self) as AutoLinkNode;
     v = json.indent;
-    self.__indent = numC(v, 0, 0, Infinity, true);
+    node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as AutoLinkNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as AutoLinkNode;
+    node.setTextStyle(typeof v === 'string' ? v : '');
     v = json.rel;
-    self.__rel =
+    node.__rel =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
     v = json.target;
-    self.__target =
+    node.__target =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
     v = json.title;
-    self.__title =
+    node.__title =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
     v = json.url;
-    self.__url = typeof v === 'string' ? v : '';
+    node.__url = typeof v === 'string' ? v : '';
     v = json.isUnlinked;
-    self.__isUnlinked = typeof v === 'boolean' ? v : false;
-    return self;
+    node.__isUnlinked = typeof v === 'boolean' ? v : false;
+    return node;
   }
 
   return {

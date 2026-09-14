@@ -607,19 +607,18 @@ interface SetterObligation<M extends string, A, R> {
   readonly accepts: A;
   /**
    * What the setter may return, in the parameter position so the check runs in
-   * the direction the value travels: the walk follows a setter's return as the
-   * node the rest of the schema is applied to, so anything but a node or
-   * nothing is a value it would then treat as one. `setLabel(v: string):
-   * string` satisfied the parameter half and nothing looked at the return, so
-   * `importJSON` handed back the string.
+   * the direction a value would travel. Nothing reads a setter's return — the
+   * walk and the generated parsers both keep the node they already hold — but
+   * a method that hands back something which is neither the node nor nothing
+   * is not a setter, and naming one in this position is the mistake this
+   * catches. `setLabel(v: string): string` type-checked before this existed.
    */
   readonly returns: (value: R) => void;
 }
 
 /**
- * What a setter may hand back: a `LexicalNode` — the node the rest of the
- * schema is applied to — or nothing, for which the walk keeps the node it
- * has. Anything else the walk would treat as a node.
+ * What a setter may hand back: a `LexicalNode` — conventionally `this`, the
+ * writable node it wrote — or nothing, for a setter that only mutates.
  *
  * The node is stated by the brand every `LexicalNode` carries rather than as
  * `LexicalNode`, because relating a class to `LexicalNode` compares every

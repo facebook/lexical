@@ -124,13 +124,11 @@ export const GENERATED_HEADING: GeneratedJSONFactory = () => {
     node: HeadingNode,
     json: {readonly [key: string]: unknown},
   ): HeadingNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -141,17 +139,14 @@ export const GENERATED_HEADING: GeneratedJSONFactory = () => {
         ? v
         : '',
     );
-    self = (n ?? self) as HeadingNode;
     v = json.indent;
-    self.__indent = numC(v, 0, 0, Infinity, true);
+    node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as HeadingNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as HeadingNode;
+    node.setTextStyle(typeof v === 'string' ? v : '');
     v = json.tag;
-    self.__tag =
+    node.__tag =
       v === 'h1' ||
       v === 'h2' ||
       v === 'h3' ||
@@ -160,7 +155,7 @@ export const GENERATED_HEADING: GeneratedJSONFactory = () => {
       v === 'h6'
         ? v
         : 'h1';
-    return self;
+    return node;
   }
 
   return {
@@ -236,13 +231,11 @@ export const GENERATED_QUOTE: GeneratedJSONFactory = () => {
     node: QuoteNode,
     json: {readonly [key: string]: unknown},
   ): QuoteNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -253,16 +246,13 @@ export const GENERATED_QUOTE: GeneratedJSONFactory = () => {
         ? v
         : '',
     );
-    self = (n ?? self) as QuoteNode;
     v = json.indent;
-    self.__indent = numC(v, 0, 0, Infinity, true);
+    node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as QuoteNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as QuoteNode;
-    return self;
+    node.setTextStyle(typeof v === 'string' ? v : '');
+    return node;
   }
 
   return {

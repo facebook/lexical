@@ -484,13 +484,11 @@ const COMPACT_DEFAULT_PARAM = 'isCompactDefault';
 const EMITTED_LOCALS = new Set([
   COMPACT_DEFAULT_PARAM,
   'json',
-  'n',
   'node',
   'num',
   'numC',
   'numK',
   'prevNode',
-  'self',
   'v',
 ]);
 
@@ -1053,14 +1051,10 @@ function ownRead(key) {
  * @param {NodeClass} klass
  * @param {AnySchema} schema
  * @param {string} key
- * @param {string} target the variable the statements assign through — `self`
- *   where a setter may hand back a different node, `node` otherwise. Chosen by
- *   the caller and emitted here rather than rewritten afterwards; see
- *   {@link generateUpdate}.
- * @returns {null | {key: string, needsSelf: boolean, statements: string}} `null`
- *   for a property with nothing to apply, which is what an export-only one has.
+ * @returns {null | {key: string, statements: string}} `null` for a property
+ *   with nothing to apply, which is what an export-only one has.
  */
-function writeExpression(klass, schema, key, target) {
+function writeExpression(klass, schema, key) {
   if (key in Object.prototype) {
     // The walk reads a property with hasOwn because its JSON came from
     // JSON.parse and so inherits Object.prototype; `json.toString` in
@@ -1146,9 +1140,9 @@ function writeExpression(klass, schema, key, target) {
   });
   const nullPrototypeTables = parseTables.map(({name}) => name);
   if (!isSchemaField(setter)) {
-    // Applied through a method: call it and follow what it returns, which is
-    // the rule $applyJSONSetters uses. A `void` setter has already mutated
-    // through getWritable(), so a nullish return means unchanged.
+    // Applied through a method, and the return is dropped — the rule
+    // $applyJSONSetters uses. The node this parser is handed is writable, so a
+    // setter's own getWritable() hands back that same node.
     try {
       verifyCompiledParse({
         expression,
@@ -1164,8 +1158,7 @@ function writeExpression(klass, schema, key, target) {
     }
     return {
       key,
-      needsSelf: true,
-      statements: `  v = ${ownRead(key)};\n${bound}  n = ${target}.${emittable(setter, 'setter method')}(${expression});\n  ${target} = (n ?? ${target}) as ${klass.name};`,
+      statements: `  v = ${ownRead(key)};\n${bound}  node.${emittable(setter, 'setter method')}(${expression});`,
     };
   }
   const {encode} = setter;
@@ -1173,7 +1166,7 @@ function writeExpression(klass, schema, key, target) {
   // after parsing: folding them together needs an IIFE, and a closure per
   // property per node is most of what generating this was meant to remove.
   const setterField = emittable(setter.field, 'setter field');
-  let statements = `  v = ${ownRead(key)};\n${bound}  ${target}.${setterField} = ${expression};`;
+  let statements = `  v = ${ownRead(key)};\n${bound}  node.${setterField} = ${expression};`;
   if (encode !== undefined) {
     const name = declareTable(
       tableName(klass, key, 'ENCODE'),
@@ -1194,7 +1187,7 @@ function writeExpression(klass, schema, key, target) {
       tableDeclaration('encodedDefault', key, encode),
     );
     const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
-    statements = `  v = ${ownRead(key)};\n${bound}  v = ${expression};\n  ${target}.${setterField} = ${lookup};`;
+    statements = `  v = ${ownRead(key)};\n${bound}  v = ${expression};\n  node.${setterField} = ${lookup};`;
   }
   try {
     verifyCompiledParse({
@@ -1215,7 +1208,7 @@ function writeExpression(klass, schema, key, target) {
       ? new NotCompilable(`"${key}" ${error.message}`)
       : error;
   }
-  return {key, needsSelf: false, statements};
+  return {key, statements};
 }
 
 /**
@@ -1240,7 +1233,7 @@ export function generateUpdate(klass) {
   const writes = [];
   for (const [key, schema] of fieldsBaseFirst) {
     try {
-      const write = writeExpression(klass, schema, key, 'self');
+      const write = writeExpression(klass, schema, key);
       // `null` is "nothing to apply for this property", not "give up on the
       // class" — see `writeExpression`.
       if (write !== null) {
@@ -1259,39 +1252,13 @@ export function generateUpdate(klass) {
   if (writes.length === 0) {
     return null;
   }
-  // `self` and `n` only when a property is applied through a method: a setter
-  // may return a different node, and the rest of the schema goes to whichever
-  // one it returned. An all-fields class writes to `node` throughout and needs
-  // neither binding.
-  //
-  // The name is chosen here and the statements are emitted again with it,
-  // rather than emitted against `self` and rewritten to `node` afterwards. A
-  // text rewrite is not lexically aware, so `\bself\.` also matched inside an
-  // emitted string: a `stringValue('self.postMessage("ready")')` default, or
-  // an `enumValue(['self.start'])` member, came out as `node.postMessage(...)`
-  // — and because the rewrite ran after `verifyCompiledParse`, the check that
-  // exists to catch a parser disagreeing with its schema could not see it.
-  const needsSelf = writes.some(write => write.needsSelf);
-  const target = needsSelf ? 'self' : 'node';
-  const body = (
-    needsSelf
-      ? writes
-      : fieldsBaseFirst.flatMap(([key, schema]) => {
-          const write = writeExpression(klass, schema, key, target);
-          return write === null ? [] : [write];
-        })
-  )
-    .map(({statements}) => statements)
-    .join('\n');
+  const body = writes.map(({statements}) => statements).join('\n');
   // `v` is the one local every property's parse reads through, so it is
   // reassigned once per property — except for a class with a single property,
   // where assigning it once and never again is a `const`. Declared to match,
   // or the emitted module trips `prefer-const`.
   const assignsOnce = (body.match(/^ {2}v = /gm) || []).length === 1;
-  const vLocal = assignsOnce ? '' : `  let v: unknown;\n`;
-  const locals = needsSelf
-    ? `  let self = node;\n  let n: unknown;\n${vLocal}`.replace(/\n$/, '')
-    : vLocal.replace(/\n$/, '');
+  const locals = assignsOnce ? '' : `  let v: unknown;\n`;
   const declared = assignsOnce
     ? body.replace(/^ {2}v = /m, '  const v: unknown = ')
     : body;
@@ -1300,9 +1267,8 @@ function update${klass.name}(
   node: ${klass.name},
   json: {readonly [key: string]: unknown},
 ): ${klass.name} {
-${locals}
-${declared}
-  return ${target};
+${locals}${declared}
+  return node;
 }`;
 }
 

@@ -133,13 +133,11 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
     node: CodeNode,
     json: {readonly [key: string]: unknown},
   ): CodeNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -150,17 +148,14 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
         ? v
         : '',
     );
-    self = (n ?? self) as CodeNode;
     v = json.indent;
-    self.__indent = numC(v, 0, 0, Infinity, true);
+    node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as CodeNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as CodeNode;
+    node.setTextStyle(typeof v === 'string' ? v : '');
     v = json.language;
-    n = self.setLanguage(
+    node.setLanguage(
       v === undefined
         ? undefined
         : v == null
@@ -169,13 +164,9 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
             ? v
             : '',
     );
-    self = (n ?? self) as CodeNode;
     v = json.theme;
-    n = self.setTheme(
-      v === undefined ? undefined : typeof v === 'string' ? v : '',
-    );
-    self = (n ?? self) as CodeNode;
-    return self;
+    node.setTheme(v === undefined ? undefined : typeof v === 'string' ? v : '');
+    return node;
   }
 
   return {
@@ -280,33 +271,30 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
     node: CodeHighlightNode,
     json: {readonly [key: string]: unknown},
   ): CodeHighlightNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.detail;
-    self.__detail =
+    node.__detail =
       typeof v === 'string' && v in CODEHIGHLIGHT_DETAIL_ALIAS
         ? CODEHIGHLIGHT_DETAIL_ALIAS[v]
         : num(v, 0);
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       typeof v === 'string' && v in CODEHIGHLIGHT_FORMAT_ALIAS
         ? CODEHIGHLIGHT_FORMAT_ALIAS[v]
         : num(v, 0),
     );
-    self = (n ?? self) as CodeHighlightNode;
     v = json.mode;
     v = v === 'normal' || v === 'token' || v === 'segmented' ? v : 'normal';
-    self.__mode =
+    node.__mode =
       (v as string) in CODEHIGHLIGHT_MODE_ENCODE
         ? CODEHIGHLIGHT_MODE_ENCODE[v as string]
         : CODEHIGHLIGHT_MODE_ENCODE_DEFAULT;
     v = json.style;
-    self.__style = typeof v === 'string' ? v : '';
+    node.__style = typeof v === 'string' ? v : '';
     v = json.text;
-    self.__text = typeof v === 'string' ? v : '';
+    node.__text = typeof v === 'string' ? v : '';
     v = json.highlightType;
-    n = self.setHighlightType(
+    node.setHighlightType(
       v === undefined
         ? undefined
         : v == null
@@ -315,8 +303,7 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
             ? v
             : '',
     );
-    self = (n ?? self) as CodeHighlightNode;
-    return self;
+    return node;
   }
 
   return {

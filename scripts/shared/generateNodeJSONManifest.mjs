@@ -132,8 +132,9 @@ export interface GeneratedJSON {
     isCompactDefault: CompactDefaultTest,
   ): {[key: string]: unknown};
   // Returns the node the properties were applied to, which is the node passed
-  // in unless a setter replaced it — the same value \`$applyJSONSetters\`
-  // returns from the walk, for the same reason.
+  // in: it is writable by construction and every setter writes it in place.
+  // The return is kept so a caller reads the applied node from one place,
+  // whether or not the class has a generated parser.
   updateFromJSON?(
     node: LexicalNode,
     json: {readonly [key: string]: unknown},

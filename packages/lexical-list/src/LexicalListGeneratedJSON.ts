@@ -147,13 +147,11 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
     node: ListNode,
     json: {readonly [key: string]: unknown},
   ): ListNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -164,27 +162,23 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
         ? v
         : '',
     );
-    self = (n ?? self) as ListNode;
     v = json.indent;
-    self.__indent = numC(v, 0, 0, Infinity, true);
+    node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as ListNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as ListNode;
+    node.setTextStyle(typeof v === 'string' ? v : '');
     v = json.listType;
-    n = self.setListType(
+    node.setListType(
       typeof v === 'string' && v in LIST_LISTTYPE_ALIAS
         ? LIST_LISTTYPE_ALIAS[v]
         : v === 'number' || v === 'bullet' || v === 'check'
           ? v
           : 'number',
     );
-    self = (n ?? self) as ListNode;
     v = json.start;
-    self.__start = num(v, 1);
-    return self;
+    node.__start = num(v, 1);
+    return node;
   }
 
   return {
@@ -281,13 +275,11 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
     node: ListItemNode,
     json: {readonly [key: string]: unknown},
   ): ListItemNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -298,22 +290,18 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
         ? v
         : '',
     );
-    self = (n ?? self) as ListItemNode;
     v = json.indent;
-    n = self.setIndent(numK(v, 0, 0, 128, true));
-    self = (n ?? self) as ListItemNode;
+    node.setIndent(numK(v, 0, 0, 128, true));
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as ListItemNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as ListItemNode;
+    node.setTextStyle(typeof v === 'string' ? v : '');
     v = json.checked;
-    self.__checked =
+    node.__checked =
       v === undefined ? undefined : typeof v === 'boolean' ? v : false;
     v = json.value;
-    self.__value = num(v, 1);
-    return self;
+    node.__value = num(v, 1);
+    return node;
   }
 
   return {

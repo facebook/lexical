@@ -3222,8 +3222,9 @@ describe('a union member knows its own domain', () => {
         return {__key: this.setLabel(value).__key};
       }
     }
-    // A node — as `this`, as a base type, or perhaps — and nothing are what
-    // the walk knows how to continue from.
+    // A node — as `this`, as a base type, or perhaps — and nothing are what a
+    // setter may hand back. Nothing reads it; what this rules out is a method
+    // that is not a setter at all being named as one.
     nodeSchema<ReturnsNode>()({
       label: withAccessors(stringValue(), {setter: 'setLabel'}),
     });

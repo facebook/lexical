@@ -142,13 +142,11 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
     node: TableNode,
     json: {readonly [key: string]: unknown},
   ): TableNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -159,31 +157,27 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
         ? v
         : '',
     );
-    self = (n ?? self) as TableNode;
     v = json.indent;
-    self.__indent = numC(v, 0, 0, Infinity, true);
+    node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as TableNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as TableNode;
+    node.setTextStyle(typeof v === 'string' ? v : '');
     v = json.colWidths;
-    n = self.setColWidths(
+    node.setColWidths(
       v === undefined
         ? undefined
         : Array.isArray(v)
           ? Array.from(v, e0 => num(e0, 0))
           : [],
     );
-    self = (n ?? self) as TableNode;
     v = json.frozenColumnCount;
-    self.__frozenColumnCount = num(v, 0);
+    node.__frozenColumnCount = num(v, 0);
     v = json.frozenRowCount;
-    self.__frozenRowCount = num(v, 0);
+    node.__frozenRowCount = num(v, 0);
     v = json.rowStriping;
-    self.__rowStriping = typeof v === 'boolean' ? v : false;
-    return self;
+    node.__rowStriping = typeof v === 'boolean' ? v : false;
+    return node;
   }
 
   return {
@@ -274,13 +268,11 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
     node: TableRowNode,
     json: {readonly [key: string]: unknown},
   ): TableRowNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -291,18 +283,15 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
         ? v
         : '',
     );
-    self = (n ?? self) as TableRowNode;
     v = json.indent;
-    self.__indent = numC(v, 0, 0, Infinity, true);
+    node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as TableRowNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as TableRowNode;
+    node.setTextStyle(typeof v === 'string' ? v : '');
     v = json.height;
-    self.__height = v === undefined ? undefined : num(v, 0);
-    return self;
+    node.__height = v === undefined ? undefined : num(v, 0);
+    return node;
   }
 
   return {
@@ -423,13 +412,11 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
     node: TableCellNode,
     json: {readonly [key: string]: unknown},
   ): TableCellNode {
-    let self = node;
-    let n: unknown;
     let v: unknown;
     v = json.direction;
-    self.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
+    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    n = self.setFormat(
+    node.setFormat(
       v === '' ||
         v === 'left' ||
         v === 'start' ||
@@ -440,34 +427,30 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
         ? v
         : '',
     );
-    self = (n ?? self) as TableCellNode;
     v = json.indent;
-    self.__indent = numC(v, 0, 0, Infinity, true);
+    node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
-    n = self.setTextFormat(num(v, 0));
-    self = (n ?? self) as TableCellNode;
+    node.setTextFormat(num(v, 0));
     v = json.textStyle;
-    n = self.setTextStyle(typeof v === 'string' ? v : '');
-    self = (n ?? self) as TableCellNode;
+    node.setTextStyle(typeof v === 'string' ? v : '');
     v = json.backgroundColor;
-    self.__backgroundColor =
+    node.__backgroundColor =
       v == null || (typeof v === 'string' ? v : '') === ''
         ? null
         : typeof v === 'string'
           ? v
           : '';
     v = json.colSpan;
-    self.__colSpan = numC(v, 1, 1, Infinity, true);
+    node.__colSpan = numC(v, 1, 1, Infinity, true);
     v = json.headerState;
-    n = self.setHeaderStyles(num(v, 0));
-    self = (n ?? self) as TableCellNode;
+    node.setHeaderStyles(num(v, 0));
     v = json.rowSpan;
-    self.__rowSpan = numC(v, 1, 1, Infinity, true);
+    node.__rowSpan = numC(v, 1, 1, Infinity, true);
     v = json.verticalAlign;
-    self.__verticalAlign = v === 'middle' || v === 'bottom' ? v : undefined;
+    node.__verticalAlign = v === 'middle' || v === 'bottom' ? v : undefined;
     v = json.width;
-    self.__width = v === undefined || num(v, 0) === 0 ? undefined : num(v, 0);
-    return self;
+    node.__width = v === undefined || num(v, 0) === 0 ? undefined : num(v, 0);
+    return node;
   }
 
   return {

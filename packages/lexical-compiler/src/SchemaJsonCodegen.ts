@@ -775,13 +775,25 @@ export function verifyCompiledParse({
   // than a parser that silently stores the wrong value. Build-time only, over a
   // fixed corpus, with nothing untrusted in scope. A `Function` built from
   // source has no static type, hence the casts to what each body takes.
+  //
+  // The helpers arrive under a second parameter, which is not spelled `SCOPE`
+  // outright: a property of that name compiles to an expression reading
+  // `SCOPE`, and two parameters of one name is legal in a body that is not
+  // strict — the second simply wins. The expression then read the bag of
+  // helpers instead of the value and disagreed with its schema about every
+  // input, so a class lost its generated parser over what one property was
+  // called.
+  let scopeName = 'SCOPE';
+  while (scopeName === valueName) {
+    scopeName += '_';
+  }
   // eslint-disable-next-line no-new-func
   const compiled = new Function(
     valueName,
-    'SCOPE',
+    scopeName,
     `const {${['num', 'numC', 'numK', ...names].join(
       ', ',
-    )}} = SCOPE; ${statements.join(' ')} return (${expression});`,
+    )}} = ${scopeName}; ${statements.join(' ')} return (${expression});`,
   ) as (v: unknown, scope: {readonly [key: string]: unknown}) => unknown;
   // eslint-disable-next-line no-new-func
   const num = new Function('v', 'd', 'JSON_NUMBER', NUM_BODY) as (

@@ -70,6 +70,64 @@ function parseAsModule(source: string): void {
 }
 
 /**
+ * A generated module type-checked for real, not just transpiled.
+ *
+ * `ts.transpileModule` reports syntax alone, so an assertion the checker
+ * rejects — `(x as string)` over a value it knows is a number — goes straight
+ * through it. A schema whose node type-checks must not produce a module that
+ * does not.
+ */
+function expectTypeChecks(module: string): void {
+  const fileName = '/generated.ts';
+  const options: ts.CompilerOptions = {
+    noEmit: true,
+    skipLibCheck: true,
+    strict: true,
+    target: ts.ScriptTarget.ES2019,
+  };
+  const host = ts.createCompilerHost(options);
+  const readFile = host.getSourceFile.bind(host);
+  host.getSourceFile = (name, ...rest) =>
+    name === fileName
+      ? ts.createSourceFile(name, module, ts.ScriptTarget.ES2019, true)
+      : readFile(name, ...rest);
+  host.writeFile = () => {};
+  const program = ts.createProgram([fileName], options, host);
+  expect(
+    ts
+      .getPreEmitDiagnostics(program)
+      .filter(d => d.file !== undefined && d.file.fileName === fileName)
+      .map(d => ts.flattenDiagnosticMessageText(d.messageText, '\n')),
+  ).toEqual([]);
+}
+
+/**
+ * One generated form as a module {@link expectTypeChecks} can compile on its
+ * own: `lexical` does not resolve from a virtual file, so what the real module
+ * imports is declared here instead, and the class the form was generated from
+ * is declared as the shape it reads. Neither changes the types under test —
+ * every table's type is the one the generated `as` clause states.
+ *
+ * Call it with the table declarations of the same {@link resetTableLocals}
+ * run that produced `source`.
+ */
+function checkableModule(shape: string, source: string): string {
+  return [
+    'declare const fields: unknown;',
+    'declare function aliasTableOf(f: unknown, k: string, i: number): unknown;',
+    'declare function getterTableOf(f: unknown, k: string): unknown;',
+    'declare function setterTableOf(f: unknown, k: string): unknown;',
+    'declare function setterDefaultOf(f: unknown, k: string): unknown;',
+    shape,
+    ...tableDeclarations().map(
+      ([name, declaration]: [string, string]) =>
+        `const ${name} = ${declaration};`,
+    ),
+    source,
+  ].join('\n');
+}
+
+/**
  * The generator interpolates schema keys, field names, accessor names and
  * predicate names straight into the JavaScript it writes. Every name in the
  * checked-in manifest is an ordinary identifier, so these refusals have no
@@ -328,6 +386,37 @@ describe('a lookup table declaration', () => {
       '(limitParsed as string) in LIMIT_LIMIT_SETTER ? LIMIT_LIMIT_SETTER[limitParsed as string] : LIMIT_LIMIT_SETTER_DEFAULT',
     );
   });
+
+  test('a table whose keys are numbers is indexed without a refused cast', () => {
+    // The lookup spells its key `as string`, since that is what indexing an
+    // object takes. Over a numeric domain the parsed value is `0 | 1`, which
+    // does not overlap `string` at all, and TypeScript refuses the assertion
+    // outright: `TS2352`, reported against generated code, for a node and a
+    // schema that both type-check. The lookup itself is right either way — a
+    // numeric key and its decimal string are the same property — so what the
+    // parsed local needs is a type with nothing to say about it.
+    class ModeNode extends LineBreakNode {
+      __mode: 0 | 1 = 0;
+      $config() {
+        return this.config('generate-numeric-table', {
+          extends: LineBreakNode,
+          json: nodeSchema<ModeNode>()({
+            mode: withField(enumValue([0, 1] as const), {
+              field: '__mode',
+              getterTable: {0: 0, 1: 1},
+              setterTable: {0: 0, 1: 1},
+            }),
+          }),
+        });
+      }
+    }
+    resetTableLocals();
+    const source: string = generateUpdate(ModeNode);
+    expect(source).toContain('const modeParsed: unknown =');
+    expectTypeChecks(
+      checkableModule('interface ModeNode {\n  __mode: 0 | 1;\n}', source),
+    );
+  });
 });
 
 /**
@@ -367,6 +456,52 @@ describe('a property the compact form cannot compare as source', () => {
     expect(source).toContain('if (style !== undefined && style !== "") {');
   });
 
+  test('asks the schema at run time, and costs its siblings nothing', () => {
+    // An object default — here the one `objectValue` composes from its fields'
+    // — genuinely has no literal a value could be `===`, so the comparison
+    // cannot be written down and the schema answers when the node is exported
+    // instead. It used to take the whole class out of this form, which cost
+    // `text`, `style` and the rest their generated code over one property they
+    // have nothing to do with.
+    class ObjectDefault extends TextNode {
+      __box: {w: number} = {w: 0};
+      $config() {
+        return this.config('generate-object-default', {
+          extends: TextNode,
+          json: nodeSchema<ObjectDefault>()({
+            box: withField(objectValue({w: numberValue()}), {field: '__box'}),
+          }),
+        });
+      }
+    }
+    const source: string = generateCompactExport(ObjectDefault);
+    // Same rule as the parser's: a published node whose omission test is a
+    // call back into the schema is one we meant to state as source.
+    expect(() => generateCompactExport(ObjectDefault, true)).toThrow(
+      /compact export compares "box" at run time/,
+    );
+    expect(source).toContain('const box = node.__box;');
+    expect(source).toContain(
+      'if (box !== undefined && !isCompactDefault("box", box)) {',
+    );
+    // Which is what the parameter is declared for, and only then.
+    expect(source).toContain('isCompactDefault: CompactDefaultTest,');
+    // The siblings keep the comparisons they always had, as source.
+    expect(source).toContain('if (style !== undefined && style !== "") {');
+    expect(source).toContain('if (text !== undefined && text !== "") {');
+  });
+});
+
+/**
+ * A schema key, a `when` predicate and a lookup table all reach the generated
+ * code as identifiers, and the generated forms bind locals of their own beside
+ * them. Nothing in the checked-in output exercises a name that collides with
+ * one — every manifest property is called something ordinary — so these drive
+ * the generator over classes it does not contain, for the two failures a bad
+ * name produces: a module that does not parse, and one that parses and reads
+ * something other than what was declared.
+ */
+describe('names the generated forms have to bind', () => {
   test('a strict-mode binding name gets a local it can bind', () => {
     // `arguments` and `eval` are legal identifiers, legal property names, and
     // legal member accesses, but cannot be bound in strict mode — which every
@@ -554,39 +689,64 @@ describe('a property the compact form cannot compare as source', () => {
     expect(() => parseAsModule(source)).not.toThrow();
   });
 
-  test('asks the schema at run time, and costs its siblings nothing', () => {
-    // An object default — here the one `objectValue` composes from its fields'
-    // — genuinely has no literal a value could be `===`, so the comparison
-    // cannot be written down and the schema answers when the node is exported
-    // instead. It used to take the whole class out of this form, which cost
-    // `text`, `style` and the rest their generated code over one property they
-    // have nothing to do with.
-    class ObjectDefault extends TextNode {
-      __box: {w: number} = {w: 0};
+  test('nor with a sibling spelled like a local derived from a name', () => {
+    // A property whose parse ends in a lookup binds a second local for what
+    // the parse made of the value, named `<local>Parsed` — and a sibling
+    // property may be called exactly that. Two `const`s of one name in one
+    // function body is a SyntaxError, so the derived name goes through the
+    // same allocator the property names do rather than being spelled out.
+    class Sibling extends LineBreakNode {
+      __mode: 0 | 1 = 0;
+      __note: string = '';
       $config() {
-        return this.config('generate-object-default', {
-          extends: TextNode,
-          json: nodeSchema<ObjectDefault>()({
-            box: withField(objectValue({w: numberValue()}), {field: '__box'}),
+        return this.config('generate-parsed-collision', {
+          extends: LineBreakNode,
+          json: nodeSchema<Sibling>()({
+            mode: withField(enumValue([0, 1] as const), {
+              field: '__mode',
+              getterTable: {0: 0, 1: 1},
+              setterTable: {0: 0, 1: 1},
+            }),
+            modeParsed: withField(stringValue(), {field: '__note'}),
           }),
         });
       }
     }
-    const source: string = generateCompactExport(ObjectDefault);
-    // Same rule as the parser's: a published node whose omission test is a
-    // call back into the schema is one we meant to state as source.
-    expect(() => generateCompactExport(ObjectDefault, true)).toThrow(
-      /compact export compares "box" at run time/,
-    );
-    expect(source).toContain('const box = node.__box;');
+    resetTableLocals();
+    const source: string = generateUpdate(Sibling);
+    // The property keeps its name; the derived local is the one that moves.
+    expect(source).toContain('const modeParsed = json.modeParsed;');
+    expect(source).toContain('const modeParsed_: unknown =');
+    expect(source).toContain('node.__note = ');
+    expect(() => parseAsModule(source)).not.toThrow();
+  });
+
+  test('a property named for the verifier’s own scope still compiles', () => {
+    // A compiled parse is checked by running it against the same corpus the
+    // schema is run against, in a function that takes the value under one
+    // parameter and the helpers it calls under another. Spelling the second
+    // `SCOPE` outright made a property of that name shadow the value, so the
+    // parse read the bag of helpers and disagreed with its schema about every
+    // input — a refusal, and a class that silently fell back to the walk,
+    // over what one property happened to be called.
+    class Scoped extends LineBreakNode {
+      __scope: string = '';
+      $config() {
+        return this.config('generate-scope-name', {
+          extends: LineBreakNode,
+          json: nodeSchema<Scoped>()({
+            SCOPE: withField(stringValue(), {field: '__scope'}),
+          }),
+        });
+      }
+    }
+    resetTableLocals();
+    const source: string = generateUpdate(Scoped);
+    expect(source).toContain('const SCOPE = json.SCOPE;');
     expect(source).toContain(
-      'if (box !== undefined && !isCompactDefault("box", box)) {',
+      'node.__scope = typeof SCOPE === \'string\' ? SCOPE : "";',
     );
-    // Which is what the parameter is declared for, and only then.
-    expect(source).toContain('isCompactDefault: CompactDefaultTest,');
-    // The siblings keep the comparisons they always had, as source.
-    expect(source).toContain('if (style !== undefined && style !== "") {');
-    expect(source).toContain('if (text !== undefined && text !== "") {');
+    expect(() => parseAsModule(source)).not.toThrow();
   });
 });
 

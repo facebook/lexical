@@ -1221,10 +1221,12 @@ function ownRead(key) {
  * @param {string} key
  * @param {string} value the local the parse reads the serialized value from,
  *   named for the property as the exporter's locals are
+ * @param {(base: string) => string} fresh names a further local this property
+ *   needs, avoiding every name the class's forms already bind
  * @returns {null | {key: string, statements: string}} `null` for a property
  *   with nothing to apply, which is what an export-only one has.
  */
-function writeExpression(klass, schema, key, value) {
+function writeExpression(klass, schema, key, value, fresh) {
   if (key in Object.prototype) {
     // The walk reads a property with hasOwn because its JSON came from
     // JSON.parse and so inherits Object.prototype; `json.toString` in
@@ -1373,9 +1375,17 @@ function writeExpression(klass, schema, key, value) {
       tableName(klass, key, 'SETTER_DEFAULT'),
       tableDeclaration('setterDefault', key, setterTable),
     );
-    const parsed = `${value}Parsed`;
+    // Through the allocator, not `${value}Parsed` spelled directly: a sibling
+    // property really called `modeParsed` binds that name too, and two
+    // `const`s of one name is a module that does not parse.
+    const parsed = fresh(`${value}Parsed`);
+    // `unknown`, so the key assertion below is a widening of something that
+    // has no type rather than a conversion of one that does. An enum over
+    // numbers parses to `0 | 1`, which `as string` is a `TS2352` about — the
+    // lookup is right either way, since a numeric key and its decimal string
+    // are the same property, but the annotation is what lets it be spelled.
     const lookup = `(${parsed} as string) in ${name} ? ${name}[${parsed} as string] : ${fallback}`;
-    statements = `  const ${value} = ${ownRead(key)};\n${bound}  const ${parsed} = ${expression};\n  node.${setterField} = ${lookup};`;
+    statements = `  const ${value} = ${ownRead(key)};\n${bound}  const ${parsed}: unknown = ${expression};\n  node.${setterField} = ${lookup};`;
     if (tableDecidesMembership(schema, setterTable, key)) {
       // The parse and the lookup ask the same question, so the lookup is the
       // whole of it: a member is a key of the table and everything else falls
@@ -1500,10 +1510,27 @@ export function generateUpdate(klass, strict = false) {
   // renamed once. A parse binds `<local>` for the serialized value and, where
   // a lookup table follows, `<local>Parsed` for what the schema made of it.
   const localOf = localsFor(schemaReads(klass));
+  // Every name the parser binds: one per property, plus any derived name a
+  // property asks `fresh` for, so the second cannot land on the first.
+  const taken = localNamesOf(klass);
+  /**
+   * A local no other name in this parser takes.
+   *
+   * @param {string} base
+   * @returns {string}
+   */
+  const fresh = base => {
+    let name = base;
+    while (taken.has(name) || boundElsewhere(name)) {
+      name = `${name}_`;
+    }
+    taken.add(name);
+    return name;
+  };
   const writes = [];
   for (const [key, schema] of fieldsBaseFirst) {
     try {
-      const write = writeExpression(klass, schema, key, localOf(key));
+      const write = writeExpression(klass, schema, key, localOf(key), fresh);
       // `null` is "nothing to apply for this property", not "give up on the
       // class" — see `writeExpression`.
       if (write !== null) {
@@ -1525,23 +1552,17 @@ export function generateUpdate(klass, strict = false) {
   if (writes.length === 0) {
     return null;
   }
-  const body = writes.map(({statements}) => statements).join('\n');
-  // `v` is the one local every property's parse reads through, so it is
-  // reassigned once per property — except for a class with a single property,
-  // where assigning it once and never again is a `const`. Declared to match,
-  // or the emitted module trips `prefer-const`.
-  // Nothing to declare up front: each property that needs to hold its
+  // Nothing is declared up front: each property that needs to hold its
   // serialized value binds a `const` named for itself, the way the exporter
   // names the locals it reads through, and one that reads the value once
   // binds nothing at all.
-  const locals = '';
-  const declared = body;
+  const body = writes.map(({statements}) => statements).join('\n');
   return `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */
 function update${klass.name}(
   node: ${klass.name},
   json: {readonly [key: string]: unknown},
 ): ${klass.name} {
-${locals}${declared}
+${body}
   return node;
 }`;
 }

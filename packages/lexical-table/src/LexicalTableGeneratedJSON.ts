@@ -109,7 +109,7 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
       json.rowStriping = rowStriping;
     }
     const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
+    if (direction != null) {
       json.direction = direction;
     }
     const format = node.getFormatType();
@@ -235,7 +235,7 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
       json.height = height;
     }
     const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
+    if (direction != null) {
       json.direction = direction;
     }
     const format = node.getFormatType();
@@ -355,7 +355,7 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
       node.shouldSerializeTextStyles();
     const json: {[key: string]: unknown} = {type: node.__type, children: []};
     const backgroundColor = node.__backgroundColor;
-    if (backgroundColor !== undefined && backgroundColor !== null) {
+    if (backgroundColor != null) {
       json.backgroundColor = backgroundColor;
     }
     const colSpan = node.__colSpan;
@@ -379,7 +379,7 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
       json.width = width;
     }
     const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
+    if (direction != null) {
       json.direction = direction;
     }
     const format = node.getFormatType();

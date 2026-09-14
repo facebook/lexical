@@ -156,7 +156,7 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = () => {
       node.shouldSerializeTextStyles();
     const json: {[key: string]: unknown} = {type: node.__type, children: []};
     const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
+    if (direction != null) {
       json.direction = direction;
     }
     const format = node.getFormatType();
@@ -373,7 +373,7 @@ export const GENERATED_PARAGRAPH: GeneratedJSONFactory = () => {
       node.shouldSerializeTextStyles();
     const json: {[key: string]: unknown} = {type: node.__type, children: []};
     const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
+    if (direction != null) {
       json.direction = direction;
     }
     const format = node.getFormatType();

@@ -30,8 +30,6 @@ import {
   TextNode,
   withField,
 } from 'lexical';
-import {readFileSync} from 'node:fs';
-import {join} from 'node:path';
 import ts from 'typescript';
 import {describe, expect, test} from 'vitest';
 
@@ -42,16 +40,11 @@ import {
   generateCompactExport,
   generateUpdate,
   references,
-  RESERVED_GLOBALS,
   resetTableLocals,
   tableDeclaration,
   tableDeclarations,
   // @ts-expect-error - a .mjs script with JSDoc types, not a typed module
 } from '../../shared/generateNodeJSON.mjs';
-import {MANIFEST} from '../../shared/generateNodeJSONManifest.mjs';
-
-/** The repo root, for reading a checked-in generated module. */
-const REPO = join(import.meta.dirname, '..', '..', '..');
 
 /**
  * The generator interpolates schema keys, field names, accessor names and
@@ -66,7 +59,12 @@ describe('names interpolated into generated code', () => {
   test('a plain identifier is returned unchanged', () => {
     expect(emittable('textFormat', 'schema key')).toBe('textFormat');
     expect(emittable('__style', 'getter field')).toBe('__style');
-    expect(emittable('$weird', 'schema key', true)).toBe('$weird');
+    expect(emittable('$weird', 'schema key')).toBe('$weird');
+    // The shape is all this decides. A name that cannot be *bound* is not
+    // refused here — it keeps its name in every property position and gets a
+    // renamed local; see the rename tests below.
+    expect(emittable('class', 'schema key')).toBe('class');
+    expect(emittable('node', 'schema key')).toBe('node');
   });
 
   test('anything that is not an identifier is refused', () => {
@@ -77,49 +75,29 @@ describe('names interpolated into generated code', () => {
     }
   });
 
-  test('a reserved word is refused only where a local is bound', () => {
-    // `node.class` is legal to read; `const class = ...` is not.
-    expect(emittable('class', 'getter method')).toBe('class');
-    expect(() => emittable('class', 'schema key', true)).toThrow(
-      /collides with a name the generated code binds/,
-    );
-  });
-
-  test('a name the emitted code binds itself is refused', () => {
-    // `const node = node.__node` would shadow the parameter it reads from.
-    for (const name of ['json', 'node', 'num', 'numC', 'prevNode', 'v']) {
-      expect(() => emittable(name, 'schema key', true)).toThrow(
-        /collides with a name the generated code binds/,
-      );
-    }
-  });
-
-  test('so is a name a sibling schema key already binds', () => {
+  test('a name a sibling schema key already binds is refused', () => {
     // The compact exporter binds `const <key>` for every property and
     // `hoistGatedReads` binds `const <predicate>` in the same scope, so a
     // `when` predicate sharing a sibling's name emitted two `const`s and a
     // generated module that does not parse — a `SyntaxError` reported against
-    // generated code rather than against the schema that caused it.
-    expect(
-      emittable('shown', 'when predicate', true, new Set(['visible'])),
-    ).toBe('shown');
-    expect(() =>
-      emittable('shown', 'when predicate', true, new Set(['shown', 'visible'])),
-    ).toThrow(/collides with a name the generated code binds/);
-    // A renamed name is held to the same rule, and for the same reason: two
-    // roles that rename to the same local declare it twice. `arguments` as
-    // both a property and the predicate gating it emitted `const arguments_`
-    // twice, which is the collision and not the strict-mode one.
-    expect(
-      emittable('arguments', 'when predicate', true, new Set(['label'])),
-    ).toBe('arguments');
-    expect(() =>
-      emittable('arguments', 'when predicate', true, new Set(['arguments'])),
-    ).toThrow(/collides with a name the generated code binds/);
-    // Only where the name is bound, as with the reserved words.
-    expect(emittable('shown', 'getter method', false, new Set(['shown']))).toBe(
+    // generated code rather than against the schema that caused it. The
+    // rename gives two *different* names two different locals, but it cannot
+    // invent a difference between a name and itself, which is why this one
+    // collision is still a refusal.
+    expect(emittable('shown', 'when predicate', new Set(['visible']))).toBe(
       'shown',
     );
+    expect(() =>
+      emittable('shown', 'when predicate', new Set(['shown', 'visible'])),
+    ).toThrow(/collides with a name the generated code binds/);
+    // A renamed name is held to the same rule: `arguments` as both a property
+    // and the predicate gating it emitted `const arguments_` twice.
+    expect(emittable('arguments', 'when predicate', new Set(['label']))).toBe(
+      'arguments',
+    );
+    expect(() =>
+      emittable('arguments', 'when predicate', new Set(['arguments'])),
+    ).toThrow(/collides with a name the generated code binds/);
   });
 });
 
@@ -492,23 +470,32 @@ describe('a property the compact form cannot compare as source', () => {
     expect(() => parseAsModule(source)).not.toThrow();
   });
 
-  test('every global the generated modules read is reserved', () => {
-    // Which scope reads which global is a property of the emit templates, so
-    // the list is held to the output rather than to a reading of them: a
-    // template that starts calling `Object.keys` fails here, where the name is
-    // added, rather than in a node whose property happens to be called
-    // `Object`.
-    const globals =
-      /\b(Array|Boolean|Date|Error|Function|Infinity|JSON|Map|Math|NaN|Number|Object|Promise|Reflect|RegExp|Set|String|Symbol|WeakMap|WeakSet|globalThis|undefined)\b/g;
-    const read = new Set<string>();
-    for (const {file} of MANIFEST) {
-      const source = readFileSync(join(REPO, file), 'utf-8');
-      for (const [name] of source.matchAll(globals)) {
-        read.add(name);
+  test('a reserved word or an emitted local is renamed, not refused', () => {
+    // `const default = node.__fallback;` is a SyntaxError and `const node =
+    // node.__owner;` shadows the parameter it reads from, so neither name can
+    // be bound — but both are perfectly good serialized property names, and
+    // refusing them cost the class its generated code over what the property
+    // was called.
+    class Awkward extends TextNode {
+      __fallback: string = '';
+      __owner: string = '';
+      $config() {
+        return this.config('generate-awkward', {
+          extends: TextNode,
+          json: nodeSchema<Awkward>()({
+            default: withField(stringValue(), {field: '__fallback'}),
+            node: withField(stringValue(), {field: '__owner'}),
+          }),
+        });
       }
     }
-    expect(read.size).toBeGreaterThan(0);
-    expect([...read].filter(name => !RESERVED_GLOBALS.has(name))).toEqual([]);
+    const source: string = generateCompactExport(Awkward);
+    expect(source).toContain('const default_ = node.__fallback;');
+    expect(source).toContain('const node_ = node.__owner;');
+    // The property keeps the name the schema gave it everywhere it is one.
+    expect(source).toContain('json.default = default_;');
+    expect(source).toContain('json.node = node_;');
+    expect(() => parseAsModule(source)).not.toThrow();
   });
 
   test('a renamed local does not collide with a sibling of that name', () => {

@@ -86,7 +86,7 @@ export const GENERATED_MARK: GeneratedJSONFactory = () => {
       json.ids = ids;
     }
     const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
+    if (direction != null) {
       json.direction = direction;
     }
     const format = node.getFormatType();

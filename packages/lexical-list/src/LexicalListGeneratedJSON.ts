@@ -114,7 +114,7 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
       json.start = start;
     }
     const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
+    if (direction != null) {
       json.direction = direction;
     }
     const format = node.getFormatType();
@@ -246,7 +246,7 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
       json.value = value;
     }
     const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
+    if (direction != null) {
       json.direction = direction;
     }
     const format = node.getFormatType();

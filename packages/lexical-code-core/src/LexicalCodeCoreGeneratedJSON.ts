@@ -100,7 +100,7 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
       json.theme = theme;
     }
     const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
+    if (direction != null) {
       json.direction = direction;
     }
     const format = node.getFormatType();

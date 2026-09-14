@@ -229,6 +229,12 @@ const PACKAGES = [
  * @returns {boolean}
  */
 export function references(source, name) {
+  if (name === '') {
+    // No name is empty — every one is a table name built from a class and a
+    // schema key — and the scan below would not terminate for one, since
+    // `indexOf('', n)` never runs off the end.
+    return false;
+  }
   const identifier = /[A-Za-z0-9_$]/;
   for (
     let at = source.indexOf(name);
@@ -385,51 +391,51 @@ function tableName(klass, key, suffix) {
 // happens to parse — code that reads something other than what was declared.
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
-// Reserved words cannot be bound, so a property named for one breaks only the
-// forms that declare a local. Kept separate from IDENTIFIER for that reason.
-const RESERVED = new Set(
+/**
+ * Names a generated local may not take, though a serialized property may be
+ * called any of them and every one passes a check of the name's *shape*. A
+ * property named for one of these keeps its name everywhere it is a property
+ * (`json.default`, `node.__default`) and is bound under a renamed local; see
+ * {@link localFor}.
+ *
+ * Three groups, and every one of them is silent:
+ *
+ * A reserved word cannot be bound at all, so `const default = json.default;`
+ * is a SyntaxError in a module that otherwise looks fine — as are `arguments`
+ * and `eval`, which strict mode rules out and every emitted module is strict.
+ *
+ * The globals the ECMAScript grammar puts on the global object, which the
+ * emitted code reads as free variables, so binding one shadows it.
+ * `const undefined = node.__label;` makes the omission test
+ * `undefined !== undefined`, which is false for every value, and the compact
+ * form drops the property it was meant to write. `const Array = node.__tags;`
+ * shadows the `Array.isArray` an empty-array default compares through.
+ *
+ * The whole set is listed rather than the handful the templates read today.
+ * Which scope reads which global is a property of the emit templates and
+ * changes when they do, so a list of "the ones we use" is one a template can
+ * silently outgrow; the language's own set is closed, and a name in it is
+ * never a name generated code should bind whether or not anything reads it
+ * yet. Runtime globals are deliberately not consulted (`name in globalThis`
+ * would make the output depend on the Node version that produced it).
+ */
+const RESERVED_NAMES = new Set(
   `await break case catch class const continue debugger default delete do else
    enum export extends false finally for function if implements import in
    instanceof interface let new null package private protected public return
-   static super switch this throw true try typeof var void while with yield`.split(
-    /\s+/,
-  ),
-);
+   static super switch this throw true try typeof var void while with yield
+   arguments eval
 
-/**
- * Names a generated local may not take, though a serialized property may be
- * called any of them and every one passes a check of the name's *shape*.
- *
- * Two reasons, and both are silent:
- *
- * `arguments` and `eval` cannot be bound in strict mode at all, which every
- * emitted module is, so `const arguments = node.__args;` is a SyntaxError in a
- * module that otherwise looks fine.
- *
- * The rest are globals the emitted code reads as free variables, so binding
- * one shadows it. `const undefined = node.__label;` makes the omission test
- * `undefined !== undefined`, which is false for every value, and the compact
- * form drops the property it was meant to write. `const Array = node.__tags;`
- * shadows `Array.isArray`, which the empty-array default comparison calls.
- *
- * Every global the generated modules mention is listed, not only the two that
- * can be reached from a scope binding property names today: which scope reads
- * which global is a property of the emit templates, and getting that wrong is
- * exactly the kind of mistake this list exists to make impossible.
- * `generateNodeJSON.test.ts` checks the output against this list, so a
- * template that starts reading a new global fails there rather than in
- * somebody's node.
- */
-export const RESERVED_GLOBALS = new Set([
-  'arguments',
-  'Array',
-  'eval',
-  'Infinity',
-  'JSON',
-  'NaN',
-  'Number',
-  'undefined',
-]);
+   globalThis Infinity NaN undefined isFinite isNaN parseFloat parseInt
+   decodeURI decodeURIComponent encodeURI encodeURIComponent AggregateError
+   Array ArrayBuffer Atomics BigInt BigInt64Array BigUint64Array Boolean
+   DataView Date Error EvalError FinalizationRegistry Float16Array Float32Array
+   Float64Array Function Int8Array Int16Array Int32Array Intl JSON Map Math
+   Number Object Promise Proxy RangeError ReferenceError Reflect RegExp Set
+   SharedArrayBuffer String Symbol SyntaxError TypeError Uint8Array
+   Uint8ClampedArray Uint16Array Uint32Array URIError WeakMap WeakRef
+   WeakSet`.split(/\s+/),
+);
 
 /**
  * The local a generated form binds for a schema key or predicate.
@@ -445,14 +451,33 @@ export const RESERVED_GLOBALS = new Set([
  * @returns {string}
  */
 function localFor(name, taken) {
-  if (!RESERVED_GLOBALS.has(name)) {
+  if (!boundElsewhere(name)) {
     return name;
   }
   let local = `${name}_`;
-  while (taken.has(local)) {
+  while (taken.has(local) || boundElsewhere(local)) {
     local = `${local}_`;
   }
   return local;
+}
+
+/**
+ * Whether `name` is spoken for wherever a generated form binds a local, and so
+ * has to be renamed to be bound at all.
+ *
+ * Distinct names never rename to the same local: the rename only ever appends
+ * underscores, and it appends past a name already `taken` in the scope.
+ *
+ * @param {string} name
+ * @returns {boolean}
+ */
+function boundElsewhere(name) {
+  return (
+    RESERVED_NAMES.has(name) ||
+    EMITTED_LOCALS.has(name) ||
+    // The locals `parseBinding` hands out for a nested parse.
+    /^p\d+$/.test(name)
+  );
 }
 
 /**
@@ -477,10 +502,9 @@ function localsFor(reads) {
  */
 const COMPACT_DEFAULT_PARAM = 'isCompactDefault';
 
-// The names the emitted functions bind themselves. A property named for one of
-// these would shadow it — `const node = node.__node` — and is refused rather
-// than renamed, so that what the generated code calls a thing is always what
-// the schema called it.
+// The names the emitted functions bind themselves — parameters and the two
+// scratch locals. A property named for one of these is bound under a renamed
+// local, like a reserved word or a global; see {@link localFor}.
 const EMITTED_LOCALS = new Set([
   COMPACT_DEFAULT_PARAM,
   'json',
@@ -495,37 +519,30 @@ const EMITTED_LOCALS = new Set([
 /**
  * Check a name before it is interpolated into the output as an identifier.
  *
+ * The *shape* is all this can decide for a name in a property position
+ * (`json.<key>`, `node.<field>`), which is most of them; a name that also gets
+ * a local is renamed rather than refused, so nothing here has to know what
+ * generated code binds. The one thing left to refuse is two names in the same
+ * scope that are the same name — a `when` predicate spelled like a schema key
+ * — since the rename gives distinct names distinct locals but cannot invent a
+ * difference between a name and itself.
+ *
  * Exported for `generateNodeJSON.test.ts`: every name in the checked-in
  * manifest passes, so the refusals have no other way to be exercised.
  *
  * @param {string} name
  * @param {string} what how the name is used, for the message
- * @param {boolean} [binds] whether the emitted form declares a local of this
- *   name, which additionally rules out reserved words and the emitted locals
  * @param {Set<string>} [alsoBound] further names the generated code binds in
  *   the same scope — a class's schema keys, for a `when` predicate
  * @returns {string} the name, so this can wrap an interpolation
  */
-export function emittable(name, what, binds = false, alsoBound) {
+export function emittable(name, what, alsoBound) {
   if (!IDENTIFIER.test(name)) {
     throw new NotCompilable(
       `${what} ${JSON.stringify(name)} is not a plain identifier`,
     );
   }
-  // A name {@link localFor} renames is not refused here, and is in none of the
-  // sets below, so nothing here needs to make room for one. What it still has
-  // to answer for is colliding with another name in the same scope: two roles
-  // that rename to the same local declare it twice, which is the collision
-  // `alsoBound` is for.
-  if (
-    binds &&
-    (RESERVED.has(name) ||
-      EMITTED_LOCALS.has(name) ||
-      // The locals `parseBinding` hands out, which a parser binds in the same
-      // scope it writes this name into.
-      /^p\d+$/.test(name) ||
-      (alsoBound !== undefined && alsoBound.has(name)))
-  ) {
+  if (alsoBound !== undefined && alsoBound.has(name)) {
     throw new NotCompilable(
       `${what} ${JSON.stringify(name)} collides with a name the generated code binds`,
     );
@@ -609,7 +626,7 @@ function readExpression(klass, schema, key) {
   }
   // The key names a local in the compact form and an object key in the legacy
   // one, so it has to survive both.
-  emittable(key, 'schema key', true);
+  emittable(key, 'schema key');
   if (isSchemaField(getter)) {
     const field = emittable(getter.field, 'getter field');
     const read =
@@ -636,7 +653,7 @@ function readExpression(klass, schema, key) {
       // that does not parse — reported against generated code rather than
       // against the schema that caused it, which is the failure `EMITTED_LOCALS`
       // and `claimTableName` exist to prevent for the other name spaces.
-      when: emittable(getter.when, 'when predicate', true, schemaKeysOf(klass)),
+      when: emittable(getter.when, 'when predicate', schemaKeysOf(klass)),
     };
   }
   return {expression: `node.${emittable(getter, 'getter method')}()`};
@@ -798,10 +815,12 @@ export function generateCompactExport(klass) {
     // which is why the comparison is only reached when there is a default to
     // compare against.
     const local = localOf(key);
-    let test = `${local} !== undefined`;
+    const defined = `${local} !== undefined`;
+    let test = defined;
     if (schema.defaultValue !== undefined) {
+      let differs;
       try {
-        test = `${test} && ${compileDiffersFromDefault(schema, local)}`;
+        differs = compileDiffersFromDefault(schema, local);
       } catch (error) {
         if (!(error instanceof NotCompilable)) {
           throw error;
@@ -812,10 +831,15 @@ export function generateCompactExport(klass) {
         process.stdout.write(
           `${klass.name}: compact export compares "${key}" at run time, which ${error.message}\n`,
         );
-        test = `${test} && !${COMPACT_DEFAULT_PARAM}(${JSON.stringify(
-          key,
-        )}, ${local})`;
+        differs = `!${COMPACT_DEFAULT_PARAM}(${JSON.stringify(key)}, ${local})`;
       }
+      // A default of `null` is the one comparison the definedness test folds
+      // into: `x !== undefined && x !== null` is what `x != null` means, and
+      // `direction` gives every element node one of these.
+      test =
+        differs === `${local} !== null`
+          ? `${local} != null`
+          : `${defined} && ${differs}`;
     }
     writes.push(
       when === undefined
@@ -1357,25 +1381,31 @@ function generatePackage(pkg) {
       const compact = generateCompactExport(klass);
       const exportJSON = generateExport(klass);
       const updateFromJSON = generateUpdate(klass);
-      // After all four forms, since the parser declares tables of its own —
-      // and only those a form kept: a parser that turned out not to be
-      // compilable declared its tables on the way to being refused, and a
-      // local nothing reads is an unused variable in the emitted module.
-      const emitted = [afterCloneFrom, compact, exportJSON, updateFromJSON]
+      // After all three forms the factory encloses, since the parser declares
+      // tables of its own — and only those a form kept: a parser that turned
+      // out not to be compilable declared its tables on the way to being
+      // refused, and a local nothing reads is an unused variable in the
+      // emitted module. `afterCloneFrom` is not among them; it is emitted at
+      // module scope, where a factory-scope table is not in scope to read.
+      const emitted = [compact, exportJSON, updateFromJSON]
         .filter(source => source !== null)
         .join('\n');
+      const tables = tableDeclarations().filter(([name]) =>
+        references(emitted, name),
+      );
+      // Only the tables that survived that filter: one the output does not
+      // declare cannot be shadowed by anything, so refusing the class over it
+      // would be refusing it for a name nothing binds.
       checkTableLocals(
         klass,
-        tableDeclarations().map(([name]) => name),
+        tables.map(([name]) => name),
       );
       return {
         afterCloneFrom,
         compact,
         exportJSON,
         klass,
-        tables: tableDeclarations().filter(([name]) =>
-          references(emitted, name),
-        ),
+        tables,
         updateFromJSON,
       };
     } catch (error) {

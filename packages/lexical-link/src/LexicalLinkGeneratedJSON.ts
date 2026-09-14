@@ -88,15 +88,15 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
       node.shouldSerializeTextStyles();
     const json: {[key: string]: unknown} = {type: node.__type, children: []};
     const rel = node.__rel;
-    if (rel !== undefined && rel !== null) {
+    if (rel != null) {
       json.rel = rel;
     }
     const target = node.__target;
-    if (target !== undefined && target !== null) {
+    if (target != null) {
       json.target = target;
     }
     const title = node.__title;
-    if (title !== undefined && title !== null) {
+    if (title != null) {
       json.title = title;
     }
     const url = node.__url;
@@ -104,7 +104,7 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
       json.url = url;
     }
     const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
+    if (direction != null) {
       json.direction = direction;
     }
     const format = node.getFormatType();
@@ -243,15 +243,15 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
       json.isUnlinked = isUnlinked;
     }
     const rel = node.__rel;
-    if (rel !== undefined && rel !== null) {
+    if (rel != null) {
       json.rel = rel;
     }
     const target = node.__target;
-    if (target !== undefined && target !== null) {
+    if (target != null) {
       json.target = target;
     }
     const title = node.__title;
-    if (title !== undefined && title !== null) {
+    if (title != null) {
       json.title = title;
     }
     const url = node.__url;
@@ -259,7 +259,7 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
       json.url = url;
     }
     const direction = node.__dir;
-    if (direction !== undefined && direction !== null) {
+    if (direction != null) {
       json.direction = direction;
     }
     const format = node.getFormatType();

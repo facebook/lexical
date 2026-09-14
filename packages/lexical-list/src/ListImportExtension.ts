@@ -17,7 +17,9 @@ import {
 } from '@lexical/html';
 import {
   $createLineBreakNode,
+  $isBlockElementNode,
   $isElementNode,
+  $isLineBreakNode,
   $isParagraphNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -44,9 +46,25 @@ function isDomChecklist(domNode: HTMLElement): boolean {
 }
 
 /**
+ * True for a block that its children cannot leave — a `TableNode`, say.
+ * Unwrapping it the way {@link $flattenListItemBlocks} unwraps a paragraph
+ * would orphan them, so it is hoisted out of the list instead.
+ */
+function $isStructuralBlock(node: LexicalNode): boolean {
+  return $isBlockElementNode(node) && node.isShadowRoot();
+}
+
+/** `hoisted` nodes are emitted by the caller as siblings of the list. */
+interface NormalizedListChildren {
+  hoisted: LexicalNode[];
+  items: ListItemNode[];
+}
+
+/**
  * Lift nested `ListNode`s out of `ListItemNode`s into sibling
  * `ListItemNode`s (the legacy `$normalizeChildren` shape). Also wraps any
- * non-`ListItemNode` children in a new `ListItemNode`.
+ * non-`ListItemNode` children in a new `ListItemNode`, and hoists
+ * {@link $isStructuralBlock} children out of the list entirely.
  *
  * The wrapper items come from `listNode.createListItemNode()` — the same
  * subclass hook the legacy `$normalizeChildren` uses — so a `ListNode`
@@ -55,24 +73,41 @@ function isDomChecklist(domNode: HTMLElement): boolean {
 function $normalizeListChildren(
   children: LexicalNode[],
   listNode: ListNode,
-): ListItemNode[] {
-  const out: ListItemNode[] = [];
+): NormalizedListChildren {
+  const items: ListItemNode[] = [];
+  const hoisted: LexicalNode[] = [];
   for (const child of children) {
     if ($isListItemNode(child)) {
-      out.push(child);
       const innerChildren = child.getChildren();
+      for (const inner of innerChildren) {
+        if ($isStructuralBlock(inner)) {
+          // The line break $flattenListItemBlocks put before it.
+          const separator = inner.getPreviousSibling();
+          if ($isLineBreakNode(separator)) {
+            separator.remove();
+          }
+          inner.remove();
+          hoisted.push(inner);
+        }
+      }
+      // An emptied item would render as a stray bullet.
+      if (child.getChildrenSize() > 0) {
+        items.push(child);
+      }
       if (innerChildren.length > 1) {
         for (const inner of innerChildren) {
           if ($isListNode(inner)) {
-            out.push(listNode.createListItemNode().append(inner));
+            items.push(listNode.createListItemNode().append(inner));
           }
         }
       }
+    } else if ($isStructuralBlock(child)) {
+      hoisted.push(child);
     } else {
-      out.push(listNode.createListItemNode().append(child));
+      items.push(listNode.createListItemNode().append(child));
     }
   }
-  return out;
+  return {hoisted, items};
 }
 
 const ListRule = defineImportRule({
@@ -91,15 +126,13 @@ const ListRule = defineImportRule({
     // `<ul style="text-align: left"><li>…</li></ul>` ends up with the
     // alignment on the list items where the reconciler renders it as
     // `style="text-align: left"`.
+    const {items, hoisted} = $normalizeListChildren(
+      ctx.$importChildren(el),
+      node,
+    );
     return [
-      node.splice(
-        0,
-        0,
-        $propagateTextAlignToBlockChildren(
-          $normalizeListChildren(ctx.$importChildren(el), node),
-          el,
-        ),
-      ),
+      node.splice(0, 0, $propagateTextAlignToBlockChildren(items, el)),
+      ...hoisted,
     ];
   },
   match: sel.tag('ol', 'ul'),
@@ -147,7 +180,8 @@ function $liftFormatFromSingleParagraph(
  * much a block boundary and must not be silently spliced into the list item
  * as-is. A nested `ListNode` is the one deliberate exception — it is a valid
  * list-item child that {@link $normalizeListChildren} lifts into a sibling,
- * so it is preserved here rather than unwrapped.
+ * so it is preserved here rather than unwrapped, as is a
+ * {@link $isStructuralBlock}.
  */
 function $flattenListItemBlocks(children: LexicalNode[]): LexicalNode[] {
   const $isBoundary = (node: LexicalNode): boolean =>
@@ -168,9 +202,13 @@ function $flattenListItemBlocks(children: LexicalNode[]): LexicalNode[] {
   for (const child of children) {
     if ($isBoundary(child)) {
       flushInlineRun();
-      // Unwrap a block ElementNode to its inline content; a childless block
-      // DecoratorNode stands on its own line.
-      segments.push($isElementNode(child) ? child.getChildren() : [child]);
+      // Unwrap a block ElementNode to its inline content; a childless
+      // block DecoratorNode or structural block stands on its own line.
+      segments.push(
+        $isElementNode(child) && !$isStructuralBlock(child)
+          ? child.getChildren()
+          : [child],
+      );
     } else {
       inlineRun.push(child);
     }

@@ -21,6 +21,7 @@ import {
   ListNode,
   WordListImportExtension,
 } from '@lexical/list';
+import {$isTableNode, TableExtension} from '@lexical/table';
 import {JSDOM} from 'jsdom';
 import {
   $getEditor,
@@ -431,6 +432,67 @@ describe('ListItemNode block flattening', () => {
         'linebreak',
         'text',
       ]);
+    });
+  });
+
+  test('hoists a table out of the list instead of unwrapping it', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [ListExtension, TableExtension],
+        name: 'list-table-host',
+      }),
+    );
+    importInto(
+      editor,
+      '<ol><li>fee<table><tbody><tr><td>unit</td></tr></tbody></table></li></ol>',
+    );
+    editor.read(() => {
+      // Unwrapping the <table> would splice its rows into the list item,
+      // where the table transforms drop them and the cell text with them.
+      const children = $getRoot().getChildren();
+      expect(children.map(c => c.getType())).toEqual(['list', 'table']);
+      assert($isTableNode(children[1]), 'expected a TableNode');
+      expect($getRoot().getTextContent()).toContain('unit');
+      expect($getRoot().getTextContent()).toContain('fee');
+    });
+  });
+
+  test('keeps the surrounding lines apart when a table is hoisted out', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [ListExtension, TableExtension],
+        name: 'list-table-split-host',
+      }),
+    );
+    importInto(
+      editor,
+      '<ul><li>a<table><tbody><tr><td>t</td></tr></tbody></table>b</li></ul>',
+    );
+    editor.read(() => {
+      // The table stood on its own line inside the item; hoisting it must
+      // not glue `a` and `b` together, nor leave the separator behind.
+      expect($liChildTypes()).toEqual(['text:a', 'linebreak:\n', 'text:b']);
+    });
+  });
+
+  test('drops a list item that held nothing but a hoisted table', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [ListExtension, TableExtension],
+        name: 'list-table-only-host',
+      }),
+    );
+    importInto(
+      editor,
+      '<ul><li><table><tbody><tr><td>a</td></tr></tbody></table></li><li>b</li></ul>',
+    );
+    editor.read(() => {
+      const list = $getRoot().getFirstChild();
+      assert($isListNode(list), 'expected a ListNode');
+      // The emptied item would otherwise render as a stray bullet.
+      expect(list.getChildrenSize()).toBe(1);
+      expect(list.getTextContent()).toBe('b');
+      expect($getRoot().getTextContent()).toContain('a');
     });
   });
 

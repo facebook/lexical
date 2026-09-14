@@ -874,9 +874,12 @@ function hoistGatedReads(reads, localOf) {
  * happens for one.
  *
  * @param {NodeClass} klass
+ * @param {boolean} [strict] fail rather than fall back, for the same reason
+ *   {@link generateUpdate} takes it: a published node whose omission test is a
+ *   call into the schema is one we meant to state as source and did not.
  * @returns {string}
  */
-export function generateCompactExport(klass) {
+export function generateCompactExport(klass, strict = false) {
   const writes = [];
   const reads = schemaReads(klass);
   // Every local this form binds is named for a schema key or a predicate, and
@@ -908,6 +911,11 @@ export function generateCompactExport(klass) {
       } catch (error) {
         if (!(error instanceof NotCompilable)) {
           throw error;
+        }
+        if (strict) {
+          throw new NotCompilable(
+            `compact export compares "${key}" at run time, which ${error.message}`,
+          );
         }
         // Not statable as source, so the schema answers at run time instead —
         // see this function's docblock. Reported because the output alone does
@@ -1344,9 +1352,15 @@ function writeExpression(klass, schema, key) {
  * output, since a class that loses it silently falls back to the walk.
  *
  * @param {NodeClass} klass
+ * @param {boolean} [strict] fail rather than fall back. Every class in the
+ *   manifest is a class this repo publishes, and a published node that quietly
+ *   takes the walk is a node whose parser we meant to ship and did not — so
+ *   {@link generatePackage} passes this, and a schema that stops compiling
+ *   fails the build that would have shipped it. The test calls this without
+ *   it, since what a refusal *does* is the thing being tested.
  * @returns {null | string}
  */
-export function generateUpdate(klass) {
+export function generateUpdate(klass, strict = false) {
   const {fieldsBaseFirst} = getComposedSchema(klass);
   const writes = [];
   for (const [key, schema] of fieldsBaseFirst) {
@@ -1360,6 +1374,9 @@ export function generateUpdate(klass) {
     } catch (error) {
       if (!(error instanceof NotCompilable)) {
         throw error;
+      }
+      if (strict) {
+        throw new NotCompilable(`no generated parser, ${error.message}`);
       }
       process.stdout.write(
         `${klass.name}: no generated parser, ${error.message}\n`,
@@ -1477,9 +1494,9 @@ export function generatePackage(pkg) {
     resetTableLocals();
     try {
       const afterCloneFrom = generateAfterCloneFrom(klass);
-      const compact = generateCompactExport(klass);
+      const compact = generateCompactExport(klass, true);
       const exportJSON = generateExport(klass);
-      const updateFromJSON = generateUpdate(klass);
+      const updateFromJSON = generateUpdate(klass, true);
       // After all three forms the factory encloses, since the parser declares
       // tables of its own — and only those a form kept: a parser that turned
       // out not to be compilable declared its tables on the way to being

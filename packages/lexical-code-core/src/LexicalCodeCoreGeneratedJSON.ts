@@ -64,7 +64,31 @@ export function afterCloneCodeNode(node: CodeNode, prevNode: CodeNode): void {
 }
 
 /** CodeNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_CODE: GeneratedJSONFactory = () => {
+export const GENERATED_CODE: GeneratedJSONFactory = fields => {
+  const CODE_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const CODE_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const CODE_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   /** Generated from CodeNode's serialization schema. Do not edit by hand. */
   function exportCodeNode(node: CodeNode): {[key: string]: unknown} {
     const textFormat = node.__textFormat;
@@ -77,7 +101,7 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
       language: node.__language,
       theme: node.__theme,
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: CODE_FORMAT_DECODE[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -108,7 +132,7 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = CODE_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -142,17 +166,20 @@ export const GENERATED_CODE: GeneratedJSONFactory = () => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in CODE_FORMAT_ENCODE
+        ? CODE_FORMAT_ENCODE[v as string]
+        : CODE_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;

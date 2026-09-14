@@ -573,6 +573,11 @@ describe('a property the compact form cannot compare as source', () => {
       }
     }
     const source: string = generateCompactExport(ObjectDefault);
+    // Same rule as the parser's: a published node whose omission test is a
+    // call back into the schema is one we meant to state as source.
+    expect(() => generateCompactExport(ObjectDefault, true)).toThrow(
+      /compact export compares "box" at run time/,
+    );
     expect(source).toContain('const box = node.__box;');
     expect(source).toContain(
       'if (box !== undefined && !isCompactDefault("box", box)) {',
@@ -614,6 +619,12 @@ describe('a property whose schema narrows its own domain', () => {
       }
     }
     expect(generateUpdate(NarrowedNode)).toBeNull();
+    // Falling back to the walk is the right answer for a class outside this
+    // repo. For one inside it, a parser we meant to ship and did not is a
+    // build failure, which is what `generatePackage` asks for.
+    expect(() => generateUpdate(NarrowedNode, true)).toThrow(
+      /no generated parser, "tag" declares a membership predicate/,
+    );
     // And wherever it sits in the schema, not only at the top. `aliasedValue`
     // derives its own predicate, so asking the outermost schema alone let this
     // through and compiled the inner *combinator's* parse — which keeps a

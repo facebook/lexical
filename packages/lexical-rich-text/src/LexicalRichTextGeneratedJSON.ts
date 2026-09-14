@@ -14,7 +14,13 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
 import type {HeadingNode, QuoteNode} from './index';
-import type {GeneratedJSONFactory} from 'lexical';
+
+import {
+  decodeTableOf,
+  encodedDefaultOf,
+  encodeTableOf,
+  type GeneratedJSONFactory,
+} from 'lexical';
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
 // reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
@@ -58,7 +64,31 @@ export function afterCloneHeadingNode(
 }
 
 /** HeadingNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_HEADING: GeneratedJSONFactory = () => {
+export const GENERATED_HEADING: GeneratedJSONFactory = fields => {
+  const HEADING_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const HEADING_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const HEADING_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   /** Generated from HeadingNode's serialization schema. Do not edit by hand. */
   function exportHeadingNode(node: HeadingNode): {[key: string]: unknown} {
     const textFormat = node.__textFormat;
@@ -70,7 +100,7 @@ export const GENERATED_HEADING: GeneratedJSONFactory = () => {
       children: [],
       tag: node.__tag,
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: HEADING_FORMAT_DECODE[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -99,7 +129,7 @@ export const GENERATED_HEADING: GeneratedJSONFactory = () => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = HEADING_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -133,17 +163,20 @@ export const GENERATED_HEADING: GeneratedJSONFactory = () => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in HEADING_FORMAT_ENCODE
+        ? HEADING_FORMAT_ENCODE[v as string]
+        : HEADING_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -172,7 +205,31 @@ export const GENERATED_HEADING: GeneratedJSONFactory = () => {
 };
 
 /** QuoteNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_QUOTE: GeneratedJSONFactory = () => {
+export const GENERATED_QUOTE: GeneratedJSONFactory = fields => {
+  const QUOTE_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const QUOTE_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const QUOTE_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   /** Generated from QuoteNode's serialization schema. Do not edit by hand. */
   function exportQuoteNode(node: QuoteNode): {[key: string]: unknown} {
     const textFormat = node.__textFormat;
@@ -183,7 +240,7 @@ export const GENERATED_QUOTE: GeneratedJSONFactory = () => {
     return {
       children: [],
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: QUOTE_FORMAT_DECODE[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -206,7 +263,7 @@ export const GENERATED_QUOTE: GeneratedJSONFactory = () => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = QUOTE_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -240,17 +297,20 @@ export const GENERATED_QUOTE: GeneratedJSONFactory = () => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in QUOTE_FORMAT_ENCODE
+        ? QUOTE_FORMAT_ENCODE[v as string]
+        : QUOTE_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;

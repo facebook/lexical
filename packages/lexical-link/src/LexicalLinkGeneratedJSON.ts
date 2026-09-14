@@ -14,7 +14,13 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
 import type {AutoLinkNode, LinkNode} from './LexicalLinkNode';
-import type {GeneratedJSONFactory} from 'lexical';
+
+import {
+  decodeTableOf,
+  encodedDefaultOf,
+  encodeTableOf,
+  type GeneratedJSONFactory,
+} from 'lexical';
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
 // reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
@@ -58,7 +64,31 @@ export function afterCloneLinkNode(node: LinkNode, prevNode: LinkNode): void {
 }
 
 /** LinkNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_LINK: GeneratedJSONFactory = () => {
+export const GENERATED_LINK: GeneratedJSONFactory = fields => {
+  const LINK_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const LINK_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const LINK_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   /** Generated from LinkNode's serialization schema. Do not edit by hand. */
   function exportLinkNode(node: LinkNode): {[key: string]: unknown} {
     const textFormat = node.__textFormat;
@@ -73,7 +103,7 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
       title: node.__title,
       url: node.__url,
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: LINK_FORMAT_DECODE[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -112,7 +142,7 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = LINK_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -146,17 +176,20 @@ export const GENERATED_LINK: GeneratedJSONFactory = () => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in LINK_FORMAT_ENCODE
+        ? LINK_FORMAT_ENCODE[v as string]
+        : LINK_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -211,7 +244,31 @@ export function afterCloneAutoLinkNode(
 }
 
 /** AutoLinkNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
+export const GENERATED_AUTOLINK: GeneratedJSONFactory = fields => {
+  const AUTOLINK_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const AUTOLINK_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const AUTOLINK_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   /** Generated from AutoLinkNode's serialization schema. Do not edit by hand. */
   function exportAutoLinkNode(node: AutoLinkNode): {[key: string]: unknown} {
     const textFormat = node.__textFormat;
@@ -227,7 +284,7 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
       title: node.__title,
       url: node.__url,
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: AUTOLINK_FORMAT_DECODE[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -272,7 +329,7 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = AUTOLINK_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -306,17 +363,20 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = () => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in AUTOLINK_FORMAT_ENCODE
+        ? AUTOLINK_FORMAT_ENCODE[v as string]
+        : AUTOLINK_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;

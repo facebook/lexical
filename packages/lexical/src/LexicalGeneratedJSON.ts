@@ -122,13 +122,38 @@ export function afterCloneElementNode(
   prevNode: ElementNode,
 ): void {
   node.__dir = prevNode.__dir;
+  node.__format = prevNode.__format;
   node.__indent = prevNode.__indent;
   node.__textFormat = prevNode.__textFormat;
   node.__textStyle = prevNode.__textStyle;
 }
 
 /** ElementNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_ELEMENT: GeneratedJSONFactory = () => {
+export const GENERATED_ELEMENT: GeneratedJSONFactory = fields => {
+  const ELEMENT_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const ELEMENT_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const ELEMENT_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   /** Generated from ElementNode's serialization schema. Do not edit by hand. */
   function exportElementNode(node: ElementNode): {[key: string]: unknown} {
     const textFormat = node.__textFormat;
@@ -139,7 +164,7 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = () => {
     return {
       children: [],
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: ELEMENT_FORMAT_DECODE[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -164,7 +189,7 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = () => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = ELEMENT_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -198,17 +223,20 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = () => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in ELEMENT_FORMAT_ENCODE
+        ? ELEMENT_FORMAT_ENCODE[v as string]
+        : ELEMENT_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -350,7 +378,31 @@ export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
 };
 
 /** ParagraphNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_PARAGRAPH: GeneratedJSONFactory = () => {
+export const GENERATED_PARAGRAPH: GeneratedJSONFactory = fields => {
+  const PARAGRAPH_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const PARAGRAPH_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const PARAGRAPH_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   /** Generated from ParagraphNode's serialization schema. Do not edit by hand. */
   function exportParagraphNode(node: ParagraphNode): {[key: string]: unknown} {
     const textFormat = node.__textFormat;
@@ -361,7 +413,7 @@ export const GENERATED_PARAGRAPH: GeneratedJSONFactory = () => {
     return {
       children: [],
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: PARAGRAPH_FORMAT_DECODE[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -386,7 +438,7 @@ export const GENERATED_PARAGRAPH: GeneratedJSONFactory = () => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = PARAGRAPH_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -420,17 +472,20 @@ export const GENERATED_PARAGRAPH: GeneratedJSONFactory = () => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in PARAGRAPH_FORMAT_ENCODE
+        ? PARAGRAPH_FORMAT_ENCODE[v as string]
+        : PARAGRAPH_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;

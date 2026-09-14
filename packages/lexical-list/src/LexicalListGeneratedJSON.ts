@@ -16,7 +16,13 @@
 import type {ListItemNode} from './LexicalListItemNode';
 import type {ListNode} from './LexicalListNode';
 
-import {aliasTableOf, type GeneratedJSONFactory} from 'lexical';
+import {
+  aliasTableOf,
+  decodeTableOf,
+  encodedDefaultOf,
+  encodeTableOf,
+  type GeneratedJSONFactory,
+} from 'lexical';
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
 // reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
@@ -74,6 +80,30 @@ export function afterCloneListNode(node: ListNode, prevNode: ListNode): void {
 
 /** ListNode's generated implementations, for its `$config`. @internal */
 export const GENERATED_LIST: GeneratedJSONFactory = fields => {
+  const LIST_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const LIST_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const LIST_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   const LIST_LISTTYPE_ALIAS = aliasTableOf(fields, 'listType', 0) as {
     readonly [key: string]: 'bullet' | 'number';
   };
@@ -91,7 +121,7 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
       start: node.__start,
       tag: node.__tag,
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: LIST_FORMAT_DECODE[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -122,7 +152,7 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = LIST_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -156,17 +186,20 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in LIST_FORMAT_ENCODE
+        ? LIST_FORMAT_ENCODE[v as string]
+        : LIST_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -209,7 +242,31 @@ export function afterCloneListItemNode(
 }
 
 /** ListItemNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
+export const GENERATED_LISTITEM: GeneratedJSONFactory = fields => {
+  const LISTITEM_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const LISTITEM_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const LISTITEM_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   /** Generated from ListItemNode's serialization schema. Do not edit by hand. */
   function exportListItemNode(node: ListItemNode): {[key: string]: unknown} {
     const textFormat = node.__textFormat;
@@ -223,7 +280,7 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
       indent: node.getIndent(),
       value: node.__value,
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: LISTITEM_FORMAT_DECODE[node.__format],
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
       textStyle:
@@ -259,7 +316,7 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = LISTITEM_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -289,17 +346,20 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = () => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in LISTITEM_FORMAT_ENCODE
+        ? LISTITEM_FORMAT_ENCODE[v as string]
+        : LISTITEM_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.setIndent(numK(v, 0, 0, 128, true));
     v = json.textFormat;

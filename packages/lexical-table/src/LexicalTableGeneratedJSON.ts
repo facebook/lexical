@@ -16,7 +16,13 @@
 import type {TableCellNode} from './LexicalTableCellNode';
 import type {TableNode} from './LexicalTableNode';
 import type {TableRowNode} from './LexicalTableRowNode';
-import type {GeneratedJSONFactory} from 'lexical';
+
+import {
+  decodeTableOf,
+  encodedDefaultOf,
+  encodeTableOf,
+  type GeneratedJSONFactory,
+} from 'lexical';
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
 // reads '0x10' as 16 and '' as 0, and neither is a shape a JSON encoder
@@ -63,7 +69,31 @@ export function afterCloneTableNode(
 }
 
 /** TableNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_TABLE: GeneratedJSONFactory = () => {
+export const GENERATED_TABLE: GeneratedJSONFactory = fields => {
+  const TABLE_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const TABLE_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const TABLE_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   /** Generated from TableNode's serialization schema. Do not edit by hand. */
   function exportTableNode(node: TableNode): {[key: string]: unknown} {
     const textFormat = node.__textFormat;
@@ -78,7 +108,7 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
       frozenRowCount: node.getSerializedFrozenRowCount(),
       rowStriping: node.getSerializedRowStriping(),
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: TABLE_FORMAT_DECODE[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -117,7 +147,7 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = TABLE_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -151,17 +181,20 @@ export const GENERATED_TABLE: GeneratedJSONFactory = () => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in TABLE_FORMAT_ENCODE
+        ? TABLE_FORMAT_ENCODE[v as string]
+        : TABLE_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -207,7 +240,31 @@ export function afterCloneTableRowNode(
 }
 
 /** TableRowNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
+export const GENERATED_TABLEROW: GeneratedJSONFactory = fields => {
+  const TABLEROW_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const TABLEROW_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const TABLEROW_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   /** Generated from TableRowNode's serialization schema. Do not edit by hand. */
   function exportTableRowNode(node: TableRowNode): {[key: string]: unknown} {
     const textFormat = node.__textFormat;
@@ -219,7 +276,7 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
       children: [],
       height: node.__height,
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: TABLEROW_FORMAT_DECODE[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -248,7 +305,7 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = TABLEROW_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -282,17 +339,20 @@ export const GENERATED_TABLEROW: GeneratedJSONFactory = () => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in TABLEROW_FORMAT_ENCODE
+        ? TABLEROW_FORMAT_ENCODE[v as string]
+        : TABLEROW_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;
@@ -331,7 +391,31 @@ export function afterCloneTableCellNode(
 }
 
 /** TableCellNode's generated implementations, for its `$config`. @internal */
-export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
+export const GENERATED_TABLECELL: GeneratedJSONFactory = fields => {
+  const TABLECELL_FORMAT_DECODE = decodeTableOf(fields, 'format') as {
+    readonly [key: string]:
+      | ''
+      | 'center'
+      | 'end'
+      | 'justify'
+      | 'left'
+      | 'right'
+      | 'start';
+  };
+
+  const TABLECELL_FORMAT_ENCODE = encodeTableOf(fields, 'format') as {
+    readonly [key: string]: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  };
+
+  const TABLECELL_FORMAT_ENCODE_DEFAULT = encodedDefaultOf(fields, 'format') as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6;
+
   /** Generated from TableCellNode's serialization schema. Do not edit by hand. */
   function exportTableCellNode(node: TableCellNode): {[key: string]: unknown} {
     const textFormat = node.__textFormat;
@@ -348,7 +432,7 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
       verticalAlign: node.getSerializedVerticalAlign(),
       width: node.__width,
       direction: node.__dir,
-      format: node.getFormatType(),
+      format: TABLECELL_FORMAT_DECODE[node.__format],
       indent: node.__indent,
       textFormat:
         textFormat !== 0 && shouldSerializeTextStyles ? textFormat : undefined,
@@ -397,7 +481,7 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
     if (direction != null) {
       json.direction = direction;
     }
-    const format = node.getFormatType();
+    const format = TABLECELL_FORMAT_DECODE[node.__format];
     if (format !== undefined && format !== '') {
       json.format = format;
     }
@@ -431,17 +515,20 @@ export const GENERATED_TABLECELL: GeneratedJSONFactory = () => {
     v = json.direction;
     node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
     v = json.format;
-    node.setFormat(
+    v =
       v === '' ||
-        v === 'left' ||
-        v === 'start' ||
-        v === 'center' ||
-        v === 'right' ||
-        v === 'end' ||
-        v === 'justify'
+      v === 'left' ||
+      v === 'start' ||
+      v === 'center' ||
+      v === 'right' ||
+      v === 'end' ||
+      v === 'justify'
         ? v
-        : '',
-    );
+        : '';
+    node.__format =
+      (v as string) in TABLECELL_FORMAT_ENCODE
+        ? TABLECELL_FORMAT_ENCODE[v as string]
+        : TABLECELL_FORMAT_ENCODE_DEFAULT;
     v = json.indent;
     node.__indent = numC(v, 0, 0, Infinity, true);
     v = json.textFormat;

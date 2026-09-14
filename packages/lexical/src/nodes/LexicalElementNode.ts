@@ -92,6 +92,33 @@ export type SerializedElementNode = Spread<
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedElementNode (those it adds over a SerializedLexicalNode), applied
+/**
+ * The serialized `format` and the flag it is stored as, in both directions.
+ *
+ * `''` is the absence of an alignment, stored as 0, and neither constant
+ * carries that pair: `getFormatType` spells it as `|| ''` and `setFormat` as
+ * `type !== '' ? … : 0`. A lookup table has no fallback to spell it with, so
+ * it is an entry here — and having it as an entry is what lets the schema
+ * reach the field instead of the accessors.
+ *
+ * One function per table, each assigned to a plain `const`: a destructuring
+ * pattern is not something a bundler will drop, however pure the call feeding
+ * it is, so the pair came back in every bundle that imported this module.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+function formatDecodeTable(): Record<number, ElementFormatType> {
+  return {...ELEMENT_FORMAT_TO_TYPE, 0: ''};
+}
+
+/** @__NO_SIDE_EFFECTS__ */
+function formatEncodeTable(): Record<ElementFormatType, number> {
+  return {...ELEMENT_TYPE_TO_FORMAT, '': 0};
+}
+
+const FORMAT_DECODE = formatDecodeTable();
+const FORMAT_ENCODE = formatEncodeTable();
+
 // by the base LexicalNode.updateFromJSON.
 const elementNodeSchema = nodeSchema<ElementNode>()({
   // `direction` and `indent` *are* these fields in both directions —
@@ -103,10 +130,20 @@ const elementNodeSchema = nodeSchema<ElementNode>()({
     field: '__dir',
   }),
   // The serialized `format` is the ElementFormatType string, not the numeric
-  // format getFormat() returns.
-  format: withAccessors(
+  // format getFormat() returns — which is the whole of what `getFormatType`
+  // and `setFormat` do, so the schema does it instead and reads and writes
+  // `__format` directly. Both accessors are still named: the conventional
+  // `getFormat` a field would otherwise stand in for returns the flag, not the
+  // string, so the read has to say which accessor it means.
+  format: withField(
     enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
-    {getter: 'getFormatType'},
+    {
+      decode: FORMAT_DECODE,
+      encode: FORMAT_ENCODE,
+      field: '__format',
+      getter: 'getFormatType',
+      setter: 'setFormat',
+    },
   ),
   // A whole, non-negative number. That is the domain an indent has always
   // had — every writer of one is an indent/outdent step — but nothing used to
@@ -308,14 +345,10 @@ export class ElementNode
       // host cloned for any non-slot change pays no per-version Map copy.
       this.__slots = prevNode.__slots;
     }
-    // Neither of these is a field the schema names. `format` is declared
-    // through accessors, because the serialized value is the ElementFormatType
-    // string rather than the number `__format` stores, and `__style` is not
-    // serialized at all.
-    this.__format = prevNode.__format;
+    // `__style` is not serialized at all, so no schema names it.
     this.__style = prevNode.__style;
-    // The four the schema does name: `__dir`, `__indent`, `__textFormat` and
-    // `__textStyle`.
+    // The five the schema does name: `__dir`, `__format`, `__indent`,
+    // `__textFormat` and `__textStyle`.
     afterCloneElementNode(this, prevNode);
   }
 

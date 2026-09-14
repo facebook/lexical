@@ -214,15 +214,24 @@ const PACKAGES = [
 ];
 
 /**
- * Whether `source` mentions `name` as an identifier of its own, rather than as
- * part of a longer one.
+ * Whether `source` *code* mentions `name` as an identifier of its own, rather
+ * than as part of a longer one or inside a string.
+ *
+ * This decides what a generated module declares at its top level — which
+ * lookup tables, which numeric helpers — so both ways of being wrong about it
+ * break the build. Claiming a reference that is not one declares something
+ * nothing uses, which `noUnusedLocals` rejects; missing one drops a
+ * declaration the code below still reads, which is a `ReferenceError`.
  *
  * A scan rather than a regexp: a table's name is derived from a schema key, so
  * it may contain `$`, which a pattern would read as an anchor. The name was
  * interpolated unescaped, and `DOLLAR_$MODE_DECODE` then matched nothing — so
  * the declaration was dropped as unreferenced while the code that reads it was
- * kept, and the emitted module threw `ReferenceError`. Nothing here is a
- * pattern, so nothing in a name can be read as one.
+ * kept. Nothing here is a pattern, so nothing in a name can be read as one.
+ *
+ * String literals are not code, and a schema's values reach the output as
+ * string literals: a `stringValue('numC(')` default put `numC(` in the module
+ * without calling anything. They are masked out before the scan.
  *
  * @param {string} source
  * @param {string} name
@@ -230,24 +239,66 @@ const PACKAGES = [
  */
 export function references(source, name) {
   if (name === '') {
-    // No name is empty — every one is a table name built from a class and a
-    // schema key — and the scan below would not terminate for one, since
-    // `indexOf('', n)` never runs off the end.
+    // No name is empty — every one is a table name or a helper name — and the
+    // scan below would not terminate for one, since `indexOf('', n)` never
+    // runs off the end.
     return false;
   }
+  const code = maskStringLiterals(source);
   const identifier = /[A-Za-z0-9_$]/;
   for (
-    let at = source.indexOf(name);
+    let at = code.indexOf(name);
     at !== -1;
-    at = source.indexOf(name, at + 1)
+    at = code.indexOf(name, at + 1)
   ) {
-    const before = at === 0 ? '' : source[at - 1];
-    const after = source[at + name.length] || '';
+    const before = at === 0 ? '' : code[at - 1];
+    const after = code[at + name.length] || '';
     if (!identifier.test(before) && !identifier.test(after)) {
       return true;
     }
   }
   return false;
+}
+
+/**
+ * `source` with the contents of every string literal replaced by spaces, so a
+ * scan over it finds only code and still reports the offsets `source` has.
+ *
+ * Double quotes alone, which is every string the generator writes: the values
+ * go through `JSON.stringify`, and the emitted names and keys are quoted the
+ * same way. Prettier rewrites them to single quotes, but that runs on the
+ * finished module, after everything this answers for. A `'` in the output is
+ * therefore prose — `"ListNode's serialization schema"` — and masking from one
+ * would swallow the rest of the module.
+ *
+ * @param {string} source
+ * @returns {string}
+ */
+function maskStringLiterals(source) {
+  let masked = '';
+  let at = 0;
+  while (at < source.length) {
+    const open = source.indexOf('"', at);
+    if (open === -1) {
+      return masked + source.slice(at);
+    }
+    masked += source.slice(at, open + 1);
+    let end = open + 1;
+    while (end < source.length && source[end] !== '"') {
+      // A backslash escapes whatever follows it, including a quote and
+      // including another backslash — so `"a\\"` ends at the third quote and
+      // `"a\""` does not end at the second.
+      end += source[end] === '\\' ? 2 : 1;
+    }
+    // An unterminated literal would mean the generator emitted something that
+    // does not parse, which `parseAsModule` is what catches; masking to the
+    // end is the reading that cannot invent a reference.
+    const close = Math.min(end, source.length);
+    masked += ' '.repeat(close - open - 1);
+    masked += close < source.length ? '"' : '';
+    at = close + 1;
+  }
+  return masked;
 }
 
 /** `MarkNode` → `GENERATED_MARK`. */
@@ -1374,10 +1425,15 @@ function tableType(value) {
 /**
  * One package's generated module.
  *
+ * Exported for `generateNodeJSON.test.ts`: what a module declares at its top
+ * level — the numeric helpers, the lookup tables — is decided here from what
+ * the emitted code turned out to reference, and no manifest class exercises
+ * the cases where that decision is hard.
+ *
  * @param {(typeof PACKAGES)[number]} pkg
  * @returns {string}
  */
-function generatePackage(pkg) {
+export function generatePackage(pkg) {
   // Every class is exportable: the base `exportJSON` writes exactly the
   // schema's properties plus type/version, and NodeState is appended by the
   // dispatch. A class that overrides `exportJSON` for output no schema
@@ -1436,11 +1492,14 @@ function generatePackage(pkg) {
   const parsers = generated.flatMap(g =>
     g.updateFromJSON === null ? [] : [g.updateFromJSON],
   );
+  // Through the same scan the lookup tables go through, rather than
+  // `includes('numC(')`: a substring test counts a schema's own string values,
+  // and it cannot tell `num(` from the `num` inside `numC(` without one.
   // `numC` and `numK` both call `num`, so either one needs it too.
-  const needsNumC = parsers.some(p => p.includes('numC('));
-  const needsNumK = parsers.some(p => p.includes('numK('));
+  const needsNumC = parsers.some(p => references(p, 'numC'));
+  const needsNumK = parsers.some(p => references(p, 'numK'));
   const needsNum =
-    needsNumC || needsNumK || parsers.some(p => p.includes('num('));
+    needsNumC || needsNumK || parsers.some(p => references(p, 'num'));
 
   /** Class names by the module that declares them. @type {Map<string, Set<string>>} */
   const typeImports = new Map();

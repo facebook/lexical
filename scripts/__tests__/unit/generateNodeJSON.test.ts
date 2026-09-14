@@ -40,6 +40,7 @@ import {
   declareTable,
   emittable,
   generateCompactExport,
+  generatePackage,
   generateUpdate,
   references,
   resetTableLocals,
@@ -417,6 +418,29 @@ describe('a property the compact form cannot compare as source', () => {
     expect(references('a = $X_Y_ENCODE;', 'X_Y_ENCODE')).toBe(false);
   });
 
+  test('and inside a string literal it is not a reference at all', () => {
+    // A schema's own values reach the output as string literals, so a name
+    // that appears in one was written by the schema, not called by the code.
+    // Declaring for it emits something nothing uses, which `noUnusedLocals`
+    // rejects — the build failing over what a property's default was spelled.
+    expect(references('v = "X_Y_ENCODE";', 'X_Y_ENCODE')).toBe(false);
+    expect(references('v = "numC(";', 'numC')).toBe(false);
+    // Still found where the code does use it, beside a literal that does not.
+    expect(references('v = c ? "numC(" : numC(v, 0);', 'numC')).toBe(true);
+    // An escaped quote does not end the literal, and an escaped backslash does
+    // not escape the quote after it.
+    expect(references('v = "a\\"X_Y_ENCODE\\"b";', 'X_Y_ENCODE')).toBe(false);
+    expect(references('v = "a\\\\"; X_Y_ENCODE;', 'X_Y_ENCODE')).toBe(true);
+    // Apostrophes in the generated docblocks are prose, not quotes: masking
+    // from one would swallow the code after it.
+    expect(
+      references(
+        "/** ListNode's schema. */\nfunction f() {\n  return X_Y_ENCODE;\n}",
+        'X_Y_ENCODE',
+      ),
+    ).toBe(true);
+  });
+
   test('a property named for a lookup table is refused', () => {
     // The table is bound in the class's factory and the local inside a form it
     // encloses, so the local shadows it and a read before its own declaration
@@ -664,5 +688,69 @@ describe('generated clone helpers', () => {
       name => !references(covered, name.replace(/^afterClone/, '')),
     );
     expect(missing).toEqual([]);
+  });
+});
+
+describe('what a generated module declares at its top level', () => {
+  /**
+   * One package around one class, as the manifest would describe it.
+   *
+   * `home` is false, so the module imports its interface from `lexical`
+   * rather than declaring it, which keeps the assertions below about the
+   * helpers and tables alone.
+   */
+  function moduleFor(klass: Klass<LexicalNode>): string {
+    resetTableLocals();
+    return generatePackage({
+      afterClone: [],
+      entries: ['GENERATED_PROBE'],
+      file: 'packages/probe/src/Probe.ts',
+      targets: [{klass, module: './Probe'}],
+    });
+  }
+
+  test('a numeric helper is declared only where one is called', () => {
+    class BoundedNode extends TextNode {
+      __n: number = 0;
+      $config() {
+        return this.config('declares-bounded', {
+          extends: TextNode,
+          json: nodeSchema<BoundedNode>()({
+            n: withField(numberValue(0, {integer: true, min: 0}), {
+              field: '__n',
+            }),
+          }),
+        });
+      }
+    }
+    const bounded: string = moduleFor(BoundedNode);
+    expect(bounded).toContain('function num(');
+    expect(bounded).toContain('function numC(');
+    expect(bounded).toContain('numC(v, 0, 0, Infinity, true)');
+  });
+
+  test('and not where the name only appears inside a string', () => {
+    // The helpers were chosen with `source.includes('numC(')`, which a string
+    // default spelled that way satisfies without calling anything: the module
+    // declared a helper nothing used, and `noUnusedLocals` failed the build
+    // for a schema that is perfectly well formed.
+    // Off LineBreakNode, whose schema has no numeric property: a TextNode
+    // subclass inherits `detail` and `format`, so `num` would be declared for
+    // those however this answered.
+    class StringyNode extends LineBreakNode {
+      __tag: string = '';
+      $config() {
+        return this.config('declares-stringy', {
+          extends: LineBreakNode,
+          json: nodeSchema<StringyNode>()({
+            tag: withField(stringValue('numC('), {field: '__tag'}),
+          }),
+        });
+      }
+    }
+    const stringy: string = moduleFor(StringyNode);
+    expect(stringy).toContain('"numC("');
+    expect(stringy).not.toContain('function numC(');
+    expect(stringy).not.toContain('function num(');
   });
 });

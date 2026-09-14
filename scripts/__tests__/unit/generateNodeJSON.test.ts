@@ -81,16 +81,20 @@ function parseAsModule(source: string): void {
 function expectTypeChecks(module: string): void {
   const fileName = '/generated.ts';
   const options: ts.CompilerOptions = {
+    // The repo's own lib set (`tsconfig.json`), so a generated form is held to
+    // what `pnpm run tsc` holds it to. The default for a target is narrower,
+    // which would reject something the real build accepts.
+    lib: ['lib.esnext.d.ts', 'lib.dom.d.ts', 'lib.dom.iterable.d.ts'],
     noEmit: true,
     skipLibCheck: true,
     strict: true,
-    target: ts.ScriptTarget.ES2019,
+    target: ts.ScriptTarget.ESNext,
   };
   const host = ts.createCompilerHost(options);
   const getSourceFile = host.getSourceFile.bind(host);
   host.getSourceFile = (name, ...rest) =>
     name === fileName
-      ? ts.createSourceFile(name, module, ts.ScriptTarget.ES2019, true)
+      ? ts.createSourceFile(name, module, ts.ScriptTarget.ESNext, true)
       : getSourceFile(name, ...rest);
   const program = ts.createProgram([fileName], options, host);
   // That the module was compiled at all, before what the checker said about
@@ -123,6 +127,11 @@ function expectTypeChecks(module: string): void {
  */
 function checkableModule(shape: string, source: string): string {
   return [
+    // An ES module, as the real one is. Without this the file is a script and
+    // everything in it is global, where a `shape` named for a lib.dom
+    // interface would *merge* with that interface rather than replace it —
+    // `interface Text {...}` would quietly inherit every member of the DOM's.
+    'export {};',
     // The helpers a bounded numeric domain parses through, as the module that
     // would hold this form declares them.
     NUM_HELPER_SOURCE,
@@ -134,10 +143,15 @@ function checkableModule(shape: string, source: string): string {
     'declare function setterTableOf(f: unknown, k: string): Table;',
     'declare function setterDefaultOf(f: unknown, k: string): unknown;',
     shape,
-    ...tableDeclarations().map(
-      ([name, declaration]: [string, string]) =>
-        `const ${name} = ${declaration};`,
-    ),
+    // Only the tables this form reads, which is the filter `generatePackage`
+    // applies before it writes a module: naming a class's locals registers its
+    // getter tables too, and a parser reads none of them.
+    ...tableDeclarations()
+      .filter(([name]: [string, string]) => references(source, name))
+      .map(
+        ([name, declaration]: [string, string]) =>
+          `const ${name} = ${declaration};`,
+      ),
     source,
   ].join('\n');
 }
@@ -426,8 +440,9 @@ describe('a lookup table declaration', () => {
       }
     }
     resetTableLocals();
-    const source: string = generateUpdate(ModeNode);
+    const source: string = generateUpdate(ModeNode, true);
     expect(source).toContain('const modeParsed: unknown =');
+    expect(() => parseAsModule(source)).not.toThrow();
     expectTypeChecks(
       checkableModule('interface ModeNode {\n  __mode: 0 | 1;\n}', source),
     );
@@ -504,6 +519,31 @@ describe('a property the compact form cannot compare as source', () => {
     // The siblings keep the comparisons they always had, as source.
     expect(source).toContain('if (style !== undefined && style !== "") {');
     expect(source).toContain('if (text !== undefined && text !== "") {');
+  });
+
+  test('and a default spelled like that call is not one', () => {
+    // The parameter was declared where the body *contained* the call's text,
+    // which a string default spelled that way puts there without calling
+    // anything: the exporter grew a second parameter nothing used. What
+    // compiled the comparison says whether it needs one, the way the numeric
+    // helpers report themselves.
+    class Spelled extends TextNode {
+      __label: string = 'isCompactDefault(';
+      $config() {
+        return this.config('generate-spelled-default', {
+          extends: TextNode,
+          json: nodeSchema<Spelled>()({
+            label: withField(stringValue('isCompactDefault('), {
+              field: '__label',
+            }),
+          }),
+        });
+      }
+    }
+    const source: string = generateCompactExport(Spelled, true);
+    expect(source).toContain('"isCompactDefault("');
+    expect(source).not.toContain('isCompactDefault: CompactDefaultTest,');
+    expect(source).toContain(`function exportCompactSpelled(node: Spelled)`);
   });
 });
 
@@ -758,12 +798,20 @@ describe('names the generated forms have to bind', () => {
       }
     }
     resetTableLocals();
-    const source: string = generateUpdate(Sibling);
+    const source: string = generateUpdate(Sibling, true);
     // The property keeps its name; the derived local is the one that moves.
     expect(source).toContain('const modeParsed = json.modeParsed;');
     expect(source).toContain('const modeParsed_: unknown =');
     expect(source).toContain('node.__note = ');
     expect(() => parseAsModule(source)).not.toThrow();
+    // The renamed local is still a lookup key the checker accepts, which is a
+    // separate claim from the module parsing and has its own way to regress.
+    expectTypeChecks(
+      checkableModule(
+        'interface Sibling {\n  __mode: 0 | 1;\n  __note: string;\n}',
+        source,
+      ),
+    );
   });
 
   test('including a sibling the exporter never reads', () => {
@@ -799,7 +847,7 @@ describe('names the generated forms have to bind', () => {
       }
     }
     resetTableLocals();
-    const source: string = generateUpdate(ImportOnly);
+    const source: string = generateUpdate(ImportOnly, true);
     // The derived local moves past the import-only sibling,
     expect(source).toContain('const modeParsed = json.modeParsed;');
     expect(source).toContain('const modeParsed_: unknown =');
@@ -829,7 +877,10 @@ describe('names the generated forms have to bind', () => {
       }
     }
     resetTableLocals();
-    const source: string = generateUpdate(Scoped);
+    // Strict, so a regression is the refusal it really is: without it the
+    // class silently loses its parser and the assertion below reports only
+    // that `null` is not a string.
+    const source: string = generateUpdate(Scoped, true);
     expect(source).toContain('const SCOPE = json.SCOPE;');
     expect(source).toContain(
       'node.__scope = typeof SCOPE === \'string\' ? SCOPE : "";',

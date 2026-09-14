@@ -955,6 +955,12 @@ function hoistGatedReads(reads, localOf) {
  */
 export function generateCompactExport(klass, strict = false) {
   const writes = [];
+  // Whether any property ended up comparing through the parameter, recorded
+  // where that is decided rather than read back off the emitted text: a schema
+  // whose string default is spelled `isCompactDefault(` puts that text in the
+  // body without calling anything, and the exporter grew a parameter nothing
+  // used. Same lesson as the numeric helpers, which report themselves.
+  let comparesAtRunTime = false;
   const reads = schemaReads(klass);
   // Every local this form binds is named for a schema key or a predicate, and
   // `localOf` is what makes those legal to bind; see {@link localFor}.
@@ -997,6 +1003,7 @@ export function generateCompactExport(klass, strict = false) {
         process.stdout.write(
           `${klass.name}: compact export compares "${key}" at run time, which ${error.message}\n`,
         );
+        comparesAtRunTime = true;
         differs = `!${COMPACT_DEFAULT_PARAM}(${JSON.stringify(key)}, ${local})`;
       }
       // A default of `null` is the one comparison the definedness test folds
@@ -1037,7 +1044,7 @@ function exportCompact${klass.name}(node: ${klass.name}): {[key: string]: unknow
   const body = writes.join('\n');
   // Declared only where a property compares through it, so an exporter whose
   // every comparison is source keeps the one-parameter shape it always had.
-  const params = body.includes(`${COMPACT_DEFAULT_PARAM}(`)
+  const params = comparesAtRunTime
     ? `\n  node: ${klass.name},\n  ${COMPACT_DEFAULT_PARAM}: CompactDefaultTest,\n`
     : `node: ${klass.name}`;
   return `${header}
@@ -1378,18 +1385,27 @@ function writeExpression(klass, schema, key, value, fresh) {
   // after parsing: folding them together needs an IIFE, and a closure per
   // property per node is most of what generating this was meant to remove.
   const setterField = emittable(setter.field, 'setter field');
-  const inlined =
-    bound === '' ? inlineSingleUse(expression, ownRead(key), value) : null;
-  let statements =
-    inlined === null
-      ? `  const ${value} = ${ownRead(key)};\n${bound}  node.${setterField} = ${expression};`
-      : `  node.${setterField} = ${inlined};`;
-  if (setterTable !== undefined) {
+  let statements;
+  if (setterTable === undefined) {
+    const inlined =
+      bound === '' ? inlineSingleUse(expression, ownRead(key), value) : null;
+    statements =
+      inlined === null
+        ? `  const ${value} = ${ownRead(key)};\n${bound}  node.${setterField} = ${expression};`
+        : `  node.${setterField} = ${inlined};`;
+  } else {
     const name = declareTable(
       tableName(klass, key, 'SETTER'),
       tableDeclaration('setter', key, setterTable),
     );
-    nullPrototypeTables.push(name);
+    // Not added to `nullPrototypeTables`: that list is the alias tables the
+    // compiled *expression* reads, checked by running the expression over the
+    // corpus, and this table is applied after it rather than inside it. The
+    // collapsed branch below does index it with a raw serialized value, so a
+    // hostile key does reach it — its null prototype comes from
+    // `setterTableOf`, which wraps every setter table in one at attach time,
+    // rather than from anything decided here.
+    //
     // The schema already reduced the value to its own domain, and
     // `verifyTableCoversDomain` below checks the table against it — but only
     // an enum's domain is enumerable; a bounded numeric one is sampled, and a

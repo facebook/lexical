@@ -12,9 +12,11 @@ import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getRoot,
   defineExtension,
+  type LexicalNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -59,6 +61,7 @@ describe('$getSelectionLinkNode', () => {
 
   test.each([
     'plain text',
+    'text before the link',
     'another link',
     'empty paragraph',
     'line break',
@@ -78,6 +81,8 @@ describe('$getSelectionLinkNode', () => {
             root.append($createParagraphNode());
           } else if (extra === 'plain text') {
             paragraph.append($createTextNode('world'));
+          } else if (extra === 'text before the link') {
+            paragraph.splice(0, 0, [$createTextNode('world')]);
           } else if (extra === 'line break') {
             paragraph.append($createLineBreakNode());
           } else {
@@ -127,6 +132,115 @@ describe('$getSelectionLinkNode', () => {
         expect($getSelectionLinkNode(paragraph.select(0, 0))).toBe(null);
       },
       {discrete: true},
+    );
+  });
+  describe('text point selections around a link', () => {
+    function $setup() {
+      const before = $createTextNode('pre');
+      const inside = $createTextNode('hello');
+      const link = $createLinkNode('https://lexical.dev').append(inside);
+      const after = $createTextNode('tail');
+      $getRoot()
+        .clear()
+        .append($createParagraphNode().append(before, link, after));
+      return {after, before, inside, link};
+    }
+
+    function $selectText(
+      anchorNode: LexicalNode,
+      anchorOffset: number,
+      focusNode: LexicalNode,
+      focusOffset: number,
+    ) {
+      const selection = $createRangeSelection();
+      selection.anchor.set(anchorNode.getKey(), anchorOffset, 'text');
+      selection.focus.set(focusNode.getKey(), focusOffset, 'text');
+      return selection;
+    }
+
+    test.each([
+      [
+        'from the start of the link into the following text',
+        'inside',
+        0,
+        'after',
+        2,
+      ],
+      [
+        'from the end of the link into the following text',
+        'inside',
+        5,
+        'after',
+        2,
+      ],
+      ['from the preceding text into the link', 'before', 1, 'inside', 3],
+      [
+        'backward from the following text into the link',
+        'after',
+        2,
+        'inside',
+        3,
+      ],
+    ] as const)(
+      'does not resolve a link for a selection %s',
+      (_label, anchorKey, anchorOffset, focusKey, focusOffset) => {
+        using editor = buildEditorFromExtensions(extension);
+        editor.update(
+          () => {
+            const nodes = $setup();
+            expect(
+              $getSelectionLinkNode(
+                $selectText(
+                  nodes[anchorKey],
+                  anchorOffset,
+                  nodes[focusKey],
+                  focusOffset,
+                ),
+              ),
+            ).toBe(null);
+          },
+          {discrete: true},
+        );
+      },
+    );
+
+    test.each([
+      ['whole link text', 'inside', 0, 'inside', 5],
+      [
+        'from the end of the preceding text to the start of the following text',
+        'before',
+        3,
+        'after',
+        0,
+      ],
+      [
+        'backward from the start of the following text to the end of the preceding text',
+        'after',
+        0,
+        'before',
+        3,
+      ],
+    ] as const)(
+      'resolves the link for a selection covering exactly the %s',
+      (_label, anchorKey, anchorOffset, focusKey, focusOffset) => {
+        using editor = buildEditorFromExtensions(extension);
+        editor.update(
+          () => {
+            const nodes = $setup();
+            expect(
+              $getSelectionLinkNode(
+                $selectText(
+                  nodes[anchorKey],
+                  anchorOffset,
+                  nodes[focusKey],
+                  focusOffset,
+                ),
+              ),
+            ).toBe(nodes.link);
+          },
+          {discrete: true},
+        );
+      },
     );
   });
 });

@@ -575,14 +575,27 @@ const RESERVED_NAMES = new Set(
  * @returns {string}
  */
 function localFor(name, taken) {
-  if (!boundElsewhere(name)) {
-    return name;
+  return boundElsewhere(name) ? freeName(`${name}_`, taken) : name;
+}
+
+/**
+ * `candidate`, or the first name after it that nothing in the same scope
+ * binds, by appending underscores.
+ *
+ * The one place the escape is spelled, because the two callers have to agree
+ * on it: a local renamed one way and a derived local renamed another collide
+ * again, which is the whole failure this exists to prevent.
+ *
+ * @param {string} candidate
+ * @param {Set<string>} taken the names bound in the same scope
+ * @returns {string}
+ */
+function freeName(candidate, taken) {
+  let name = candidate;
+  while (taken.has(name) || boundElsewhere(name)) {
+    name = `${name}_`;
   }
-  let local = `${name}_`;
-  while (taken.has(local) || boundElsewhere(local)) {
-    local = `${local}_`;
-  }
-  return local;
+  return name;
 }
 
 /**
@@ -1541,10 +1554,7 @@ export function generateUpdate(klass, strict = false) {
    * @returns {string}
    */
   const fresh = base => {
-    let name = base;
-    while (taken.has(name) || boundElsewhere(name)) {
-      name = `${name}_`;
-    }
+    const name = freeName(base, taken);
     taken.add(name);
     return name;
   };

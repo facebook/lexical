@@ -6,6 +6,12 @@
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
     "noEmit": true,
+    // A Vite config is loaded by Node, not bundled, so its relative imports
+    // need the extension of the file that is actually there — `.ts`. Permitted
+    // rather than required: nothing else in the repo writes one, and
+    // `tsconfig.build.json` still emits declarations for the published
+    // packages, where a `.ts` specifier would be caught.
+    "allowImportingTsExtensions": true,
     "strict": true,
     "typeRoots": ["node_modules/@types"],
     "skipLibCheck": true,

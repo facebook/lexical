@@ -154,23 +154,23 @@ export const GENERATED_MARK: GeneratedJSONFactory = fields => {
     node: MarkNode,
     json: {readonly [key: string]: unknown},
   ): MarkNode {
-    let v: unknown;
-    v = json.direction;
-    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = json.format;
+    const direction = json.direction;
+    node.__dir =
+      direction === null || direction === 'ltr' || direction === 'rtl'
+        ? direction
+        : null;
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in MARK_FORMAT_SETTER
-        ? MARK_FORMAT_SETTER[v]
+      typeof format === 'string' && format in MARK_FORMAT_SETTER
+        ? MARK_FORMAT_SETTER[format]
         : MARK_FORMAT_SETTER_DEFAULT;
-    v = json.indent;
-    node.__indent = numC(v, 0, 0, Infinity, true);
-    v = json.textFormat;
-    node.__textFormat = num(v, 0);
-    v = json.textStyle;
-    node.__textStyle = typeof v === 'string' ? v : '';
-    v = json.ids;
-    node.__ids = Array.isArray(v)
-      ? Array.from(v, e0 => (typeof e0 === 'string' ? e0 : ''))
+    node.__indent = numC(json.indent, 0, 0, Infinity, true);
+    node.__textFormat = num(json.textFormat, 0);
+    const textStyle = json.textStyle;
+    node.__textStyle = typeof textStyle === 'string' ? textStyle : '';
+    const ids = json.ids;
+    node.__ids = Array.isArray(ids)
+      ? Array.from(ids, e0 => (typeof e0 === 'string' ? e0 : ''))
       : [];
     return node;
   }

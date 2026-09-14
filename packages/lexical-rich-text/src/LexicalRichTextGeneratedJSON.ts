@@ -159,29 +159,29 @@ export const GENERATED_HEADING: GeneratedJSONFactory = fields => {
     node: HeadingNode,
     json: {readonly [key: string]: unknown},
   ): HeadingNode {
-    let v: unknown;
-    v = json.direction;
-    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = json.format;
+    const direction = json.direction;
+    node.__dir =
+      direction === null || direction === 'ltr' || direction === 'rtl'
+        ? direction
+        : null;
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in HEADING_FORMAT_SETTER
-        ? HEADING_FORMAT_SETTER[v]
+      typeof format === 'string' && format in HEADING_FORMAT_SETTER
+        ? HEADING_FORMAT_SETTER[format]
         : HEADING_FORMAT_SETTER_DEFAULT;
-    v = json.indent;
-    node.__indent = numC(v, 0, 0, Infinity, true);
-    v = json.textFormat;
-    node.__textFormat = num(v, 0);
-    v = json.textStyle;
-    node.__textStyle = typeof v === 'string' ? v : '';
-    v = json.tag;
+    node.__indent = numC(json.indent, 0, 0, Infinity, true);
+    node.__textFormat = num(json.textFormat, 0);
+    const textStyle = json.textStyle;
+    node.__textStyle = typeof textStyle === 'string' ? textStyle : '';
+    const tag = json.tag;
     node.__tag =
-      v === 'h1' ||
-      v === 'h2' ||
-      v === 'h3' ||
-      v === 'h4' ||
-      v === 'h5' ||
-      v === 'h6'
-        ? v
+      tag === 'h1' ||
+      tag === 'h2' ||
+      tag === 'h3' ||
+      tag === 'h4' ||
+      tag === 'h5' ||
+      tag === 'h6'
+        ? tag
         : 'h1';
     return node;
   }
@@ -283,20 +283,20 @@ export const GENERATED_QUOTE: GeneratedJSONFactory = fields => {
     node: QuoteNode,
     json: {readonly [key: string]: unknown},
   ): QuoteNode {
-    let v: unknown;
-    v = json.direction;
-    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = json.format;
+    const direction = json.direction;
+    node.__dir =
+      direction === null || direction === 'ltr' || direction === 'rtl'
+        ? direction
+        : null;
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in QUOTE_FORMAT_SETTER
-        ? QUOTE_FORMAT_SETTER[v]
+      typeof format === 'string' && format in QUOTE_FORMAT_SETTER
+        ? QUOTE_FORMAT_SETTER[format]
         : QUOTE_FORMAT_SETTER_DEFAULT;
-    v = json.indent;
-    node.__indent = numC(v, 0, 0, Infinity, true);
-    v = json.textFormat;
-    node.__textFormat = num(v, 0);
-    v = json.textStyle;
-    node.__textStyle = typeof v === 'string' ? v : '';
+    node.__indent = numC(json.indent, 0, 0, Infinity, true);
+    node.__textFormat = num(json.textFormat, 0);
+    const textStyle = json.textStyle;
+    node.__textStyle = typeof textStyle === 'string' ? textStyle : '';
     return node;
   }
 

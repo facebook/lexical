@@ -1779,6 +1779,30 @@ describe('a default is metadata, so nothing hands out a mutable one', () => {
     expect(schema([])).not.toBe(schema([]));
   });
 
+  test('a comparator is called with no receiver, and its type says so', () => {
+    // Every caller reads `isEqual` off the schema and calls it on its own —
+    // NodeState equality, `optional({omitDefault})`, the compact export — so
+    // a comparator that reaches for `this` throws. Method syntax implied a
+    // receiver it is never given; `this: void` is that fact in the type.
+    type Comparator = NonNullable<SerializationSchema<string>['isEqual']>;
+    const plain: Comparator = (a, b) => a === b;
+    expect(plain('x', 'x')).toBe(true);
+    const wantsReceiver = function (
+      this: {meta: unknown},
+      a: string,
+      b: string,
+    ): boolean {
+      return this.meta !== undefined && a === b;
+    };
+    // @ts-expect-error -- there is no receiver to read
+    const assigned: Comparator = wantsReceiver;
+    expect(assigned).toBeDefined();
+    // And the bivariance the method syntax is for is unchanged: a `this`
+    // parameter is not a parameter for that purpose.
+    const erased: AnySerializationSchema = stringValue();
+    expect(erased.meta.kind).toBe('string');
+  });
+
   test('transformValue does not freeze the value its transform returned', () => {
     // The transform is the caller's function, so what it produces is theirs —
     // possibly a module constant they also use elsewhere.

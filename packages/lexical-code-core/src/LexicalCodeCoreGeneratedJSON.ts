@@ -162,24 +162,32 @@ export const GENERATED_CODE: GeneratedJSONFactory = fields => {
     node: CodeNode,
     json: {readonly [key: string]: unknown},
   ): CodeNode {
-    let v: unknown;
-    v = json.direction;
-    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = json.format;
+    const direction = json.direction;
+    node.__dir =
+      direction === null || direction === 'ltr' || direction === 'rtl'
+        ? direction
+        : null;
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in CODE_FORMAT_SETTER
-        ? CODE_FORMAT_SETTER[v]
+      typeof format === 'string' && format in CODE_FORMAT_SETTER
+        ? CODE_FORMAT_SETTER[format]
         : CODE_FORMAT_SETTER_DEFAULT;
-    v = json.indent;
-    node.__indent = numC(v, 0, 0, Infinity, true);
-    v = json.textFormat;
-    node.__textFormat = num(v, 0);
-    v = json.textStyle;
-    node.__textStyle = typeof v === 'string' ? v : '';
-    v = json.language;
-    node.setLanguage(v == null ? v : typeof v === 'string' ? v : '');
-    v = json.theme;
-    node.setTheme(v === undefined ? undefined : typeof v === 'string' ? v : '');
+    node.__indent = numC(json.indent, 0, 0, Infinity, true);
+    node.__textFormat = num(json.textFormat, 0);
+    const textStyle = json.textStyle;
+    node.__textStyle = typeof textStyle === 'string' ? textStyle : '';
+    const language = json.language;
+    node.setLanguage(
+      language == null
+        ? language
+        : typeof language === 'string'
+          ? language
+          : '',
+    );
+    const theme = json.theme;
+    node.setTheme(
+      theme === undefined ? undefined : typeof theme === 'string' ? theme : '',
+    );
     return node;
   }
 
@@ -290,29 +298,34 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
     node: CodeHighlightNode,
     json: {readonly [key: string]: unknown},
   ): CodeHighlightNode {
-    let v: unknown;
-    v = json.detail;
+    const detail = json.detail;
     node.__detail =
-      typeof v === 'string' && v in CODEHIGHLIGHT_DETAIL_ALIAS
-        ? CODEHIGHLIGHT_DETAIL_ALIAS[v]
-        : num(v, 0);
-    v = json.format;
+      typeof detail === 'string' && detail in CODEHIGHLIGHT_DETAIL_ALIAS
+        ? CODEHIGHLIGHT_DETAIL_ALIAS[detail]
+        : num(detail, 0);
+    const format = json.format;
     node.setFormat(
-      typeof v === 'string' && v in CODEHIGHLIGHT_FORMAT_ALIAS
-        ? CODEHIGHLIGHT_FORMAT_ALIAS[v]
-        : num(v, 0),
+      typeof format === 'string' && format in CODEHIGHLIGHT_FORMAT_ALIAS
+        ? CODEHIGHLIGHT_FORMAT_ALIAS[format]
+        : num(format, 0),
     );
-    v = json.mode;
+    const mode = json.mode;
     node.__mode =
-      typeof v === 'string' && v in CODEHIGHLIGHT_MODE_SETTER
-        ? CODEHIGHLIGHT_MODE_SETTER[v]
+      typeof mode === 'string' && mode in CODEHIGHLIGHT_MODE_SETTER
+        ? CODEHIGHLIGHT_MODE_SETTER[mode]
         : CODEHIGHLIGHT_MODE_SETTER_DEFAULT;
-    v = json.style;
-    node.__style = typeof v === 'string' ? v : '';
-    v = json.text;
-    node.__text = typeof v === 'string' ? v : '';
-    v = json.highlightType;
-    node.setHighlightType(v == null ? v : typeof v === 'string' ? v : '');
+    const style = json.style;
+    node.__style = typeof style === 'string' ? style : '';
+    const text = json.text;
+    node.__text = typeof text === 'string' ? text : '';
+    const highlightType = json.highlightType;
+    node.setHighlightType(
+      highlightType == null
+        ? highlightType
+        : typeof highlightType === 'string'
+          ? highlightType
+          : '',
+    );
     return node;
   }
 

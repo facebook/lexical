@@ -325,7 +325,7 @@ describe('a lookup table declaration', () => {
       {discrete: true},
     );
     expect(source).toContain(
-      '(v as string) in LIMIT_LIMIT_SETTER ? LIMIT_LIMIT_SETTER[v as string] : LIMIT_LIMIT_SETTER_DEFAULT',
+      '(limitParsed as string) in LIMIT_LIMIT_SETTER ? LIMIT_LIMIT_SETTER[limitParsed as string] : LIMIT_LIMIT_SETTER_DEFAULT',
     );
   });
 });
@@ -737,7 +737,8 @@ describe('what a generated module declares at its top level', () => {
     const bounded: string = moduleFor(BoundedNode);
     expect(bounded).toContain('function num(');
     expect(bounded).toContain('function numC(');
-    expect(bounded).toContain('numC(v, 0, 0, Infinity, true)');
+    // Read once, so the read is the argument and the property binds nothing.
+    expect(bounded).toContain('node.__n = numC(json.n, 0, 0, Infinity, true)');
   });
 
   test('and not where the name only appears inside a string', () => {
@@ -782,7 +783,9 @@ describe('what a generated module declares at its top level', () => {
       }
     }
     const numbered: string = moduleFor(NumberedNode);
-    expect(numbered).toContain('const v: unknown = json.num;');
+    // The local is named for the property, and renamed only where the name
+    // cannot be bound — `num` is a helper the module may declare, so it is.
+    expect(numbered).toContain('const num_ = json.num;');
     expect(numbered).toContain('num: node.__text');
     expect(numbered).not.toContain('function num(');
     expect(numbered).not.toContain('function numC(');

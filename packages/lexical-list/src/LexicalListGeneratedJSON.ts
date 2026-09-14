@@ -182,30 +182,29 @@ export const GENERATED_LIST: GeneratedJSONFactory = fields => {
     node: ListNode,
     json: {readonly [key: string]: unknown},
   ): ListNode {
-    let v: unknown;
-    v = json.direction;
-    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = json.format;
+    const direction = json.direction;
+    node.__dir =
+      direction === null || direction === 'ltr' || direction === 'rtl'
+        ? direction
+        : null;
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in LIST_FORMAT_SETTER
-        ? LIST_FORMAT_SETTER[v]
+      typeof format === 'string' && format in LIST_FORMAT_SETTER
+        ? LIST_FORMAT_SETTER[format]
         : LIST_FORMAT_SETTER_DEFAULT;
-    v = json.indent;
-    node.__indent = numC(v, 0, 0, Infinity, true);
-    v = json.textFormat;
-    node.__textFormat = num(v, 0);
-    v = json.textStyle;
-    node.__textStyle = typeof v === 'string' ? v : '';
-    v = json.listType;
+    node.__indent = numC(json.indent, 0, 0, Infinity, true);
+    node.__textFormat = num(json.textFormat, 0);
+    const textStyle = json.textStyle;
+    node.__textStyle = typeof textStyle === 'string' ? textStyle : '';
+    const listType = json.listType;
     node.setListType(
-      typeof v === 'string' && v in LIST_LISTTYPE_ALIAS
-        ? LIST_LISTTYPE_ALIAS[v]
-        : v === 'number' || v === 'bullet' || v === 'check'
-          ? v
+      typeof listType === 'string' && listType in LIST_LISTTYPE_ALIAS
+        ? LIST_LISTTYPE_ALIAS[listType]
+        : listType === 'number' || listType === 'bullet' || listType === 'check'
+          ? listType
           : 'number',
     );
-    v = json.start;
-    node.__start = num(v, 1);
+    node.__start = num(json.start, 1);
     return node;
   }
 
@@ -332,25 +331,28 @@ export const GENERATED_LISTITEM: GeneratedJSONFactory = fields => {
     node: ListItemNode,
     json: {readonly [key: string]: unknown},
   ): ListItemNode {
-    let v: unknown;
-    v = json.direction;
-    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = json.format;
+    const direction = json.direction;
+    node.__dir =
+      direction === null || direction === 'ltr' || direction === 'rtl'
+        ? direction
+        : null;
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in LISTITEM_FORMAT_SETTER
-        ? LISTITEM_FORMAT_SETTER[v]
+      typeof format === 'string' && format in LISTITEM_FORMAT_SETTER
+        ? LISTITEM_FORMAT_SETTER[format]
         : LISTITEM_FORMAT_SETTER_DEFAULT;
-    v = json.indent;
-    node.setIndent(numK(v, 0, 0, 128, true));
-    v = json.textFormat;
-    node.__textFormat = num(v, 0);
-    v = json.textStyle;
-    node.__textStyle = typeof v === 'string' ? v : '';
-    v = json.checked;
+    node.setIndent(numK(json.indent, 0, 0, 128, true));
+    node.__textFormat = num(json.textFormat, 0);
+    const textStyle = json.textStyle;
+    node.__textStyle = typeof textStyle === 'string' ? textStyle : '';
+    const checked = json.checked;
     node.__checked =
-      v === undefined ? undefined : typeof v === 'boolean' ? v : false;
-    v = json.value;
-    node.__value = num(v, 1);
+      checked === undefined
+        ? undefined
+        : typeof checked === 'boolean'
+          ? checked
+          : false;
+    node.__value = num(json.value, 1);
     return node;
   }
 

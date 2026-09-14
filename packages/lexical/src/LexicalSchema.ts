@@ -231,8 +231,16 @@ export interface SerializationSchema<T, Decls = never, In = T> {
    * parameters bivariantly, which keeps `SerializationSchema<T>` assignable to
    * {@link AnySerializationSchema}. A property would make the type invariant
    * in `T` and every `AnySerializationSchema` position would reject it.
+   *
+   * `this: void` because method syntax otherwise implies a receiver this never
+   * has: every caller reads the comparator off the schema and calls it on its
+   * own — NodeState equality, `optional({omitDefault})` and the compact export
+   * all do — so a comparator written to read `this.meta` type-checked and then
+   * threw. Declaring the receiver away says so, and costs nothing: the `this`
+   * parameter is not a parameter for bivariance's purposes, so the
+   * assignability above is unchanged.
    */
-  isEqual?(a: T, b: T): boolean;
+  isEqual?(this: void, a: T, b: T): boolean;
   /**
    * Whether `value` is in this schema's domain, for {@link unionValue} deciding
    * which member a value belongs to.

@@ -219,20 +219,20 @@ export const GENERATED_ELEMENT: GeneratedJSONFactory = fields => {
     node: ElementNode,
     json: {readonly [key: string]: unknown},
   ): ElementNode {
-    let v: unknown;
-    v = json.direction;
-    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = json.format;
+    const direction = json.direction;
+    node.__dir =
+      direction === null || direction === 'ltr' || direction === 'rtl'
+        ? direction
+        : null;
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in ELEMENT_FORMAT_SETTER
-        ? ELEMENT_FORMAT_SETTER[v]
+      typeof format === 'string' && format in ELEMENT_FORMAT_SETTER
+        ? ELEMENT_FORMAT_SETTER[format]
         : ELEMENT_FORMAT_SETTER_DEFAULT;
-    v = json.indent;
-    node.__indent = numC(v, 0, 0, Infinity, true);
-    v = json.textFormat;
-    node.__textFormat = num(v, 0);
-    v = json.textStyle;
-    node.__textStyle = typeof v === 'string' ? v : '';
+    node.__indent = numC(json.indent, 0, 0, Infinity, true);
+    node.__textFormat = num(json.textFormat, 0);
+    const textStyle = json.textStyle;
+    node.__textStyle = typeof textStyle === 'string' ? textStyle : '';
     return node;
   }
 
@@ -332,26 +332,25 @@ export const GENERATED_TEXT: GeneratedJSONFactory = fields => {
     node: TextNode,
     json: {readonly [key: string]: unknown},
   ): TextNode {
-    let v: unknown;
-    v = json.detail;
+    const detail = json.detail;
     node.__detail =
-      typeof v === 'string' && v in TEXT_DETAIL_ALIAS
-        ? TEXT_DETAIL_ALIAS[v]
-        : num(v, 0);
-    v = json.format;
+      typeof detail === 'string' && detail in TEXT_DETAIL_ALIAS
+        ? TEXT_DETAIL_ALIAS[detail]
+        : num(detail, 0);
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in TEXT_FORMAT_ALIAS
-        ? TEXT_FORMAT_ALIAS[v]
-        : num(v, 0);
-    v = json.mode;
+      typeof format === 'string' && format in TEXT_FORMAT_ALIAS
+        ? TEXT_FORMAT_ALIAS[format]
+        : num(format, 0);
+    const mode = json.mode;
     node.__mode =
-      typeof v === 'string' && v in TEXT_MODE_SETTER
-        ? TEXT_MODE_SETTER[v]
+      typeof mode === 'string' && mode in TEXT_MODE_SETTER
+        ? TEXT_MODE_SETTER[mode]
         : TEXT_MODE_SETTER_DEFAULT;
-    v = json.style;
-    node.__style = typeof v === 'string' ? v : '';
-    v = json.text;
-    node.__text = typeof v === 'string' ? v : '';
+    const style = json.style;
+    node.__style = typeof style === 'string' ? style : '';
+    const text = json.text;
+    node.__text = typeof text === 'string' ? text : '';
     return node;
   }
 
@@ -454,20 +453,20 @@ export const GENERATED_PARAGRAPH: GeneratedJSONFactory = fields => {
     node: ParagraphNode,
     json: {readonly [key: string]: unknown},
   ): ParagraphNode {
-    let v: unknown;
-    v = json.direction;
-    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = json.format;
+    const direction = json.direction;
+    node.__dir =
+      direction === null || direction === 'ltr' || direction === 'rtl'
+        ? direction
+        : null;
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in PARAGRAPH_FORMAT_SETTER
-        ? PARAGRAPH_FORMAT_SETTER[v]
+      typeof format === 'string' && format in PARAGRAPH_FORMAT_SETTER
+        ? PARAGRAPH_FORMAT_SETTER[format]
         : PARAGRAPH_FORMAT_SETTER_DEFAULT;
-    v = json.indent;
-    node.__indent = numC(v, 0, 0, Infinity, true);
-    v = json.textFormat;
-    node.__textFormat = num(v, 0);
-    v = json.textStyle;
-    node.__textStyle = typeof v === 'string' ? v : '';
+    node.__indent = numC(json.indent, 0, 0, Infinity, true);
+    node.__textFormat = num(json.textFormat, 0);
+    const textStyle = json.textStyle;
+    node.__textStyle = typeof textStyle === 'string' ? textStyle : '';
     return node;
   }
 
@@ -554,14 +553,13 @@ export const GENERATED_TAB: GeneratedJSONFactory = fields => {
     node: TabNode,
     json: {readonly [key: string]: unknown},
   ): TabNode {
-    let v: unknown;
-    v = json.format;
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in TAB_FORMAT_ALIAS
-        ? TAB_FORMAT_ALIAS[v]
-        : num(v, 0);
-    v = json.style;
-    node.__style = typeof v === 'string' ? v : '';
+      typeof format === 'string' && format in TAB_FORMAT_ALIAS
+        ? TAB_FORMAT_ALIAS[format]
+        : num(format, 0);
+    const style = json.style;
+    node.__style = typeof style === 'string' ? style : '';
     return node;
   }
 

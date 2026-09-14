@@ -302,6 +302,51 @@ function maskStringLiterals(source) {
   return masked;
 }
 
+/**
+ * `expression` with its one mention of `v` replaced by the property's read, or
+ * `null` where `v` is mentioned any other number of times.
+ *
+ * A parse that reads the property once needs no variable to hold it:
+ * `num(json.indent, 0)` says what `v = json.indent; num(v, 0)` said. One that
+ * reads it twice — every `typeof v === 'string' ? v : ''` — still binds, or
+ * the read would happen twice.
+ *
+ * The read is a member expression, so it binds tighter than anything it can be
+ * substituted into and needs no parentheses. String literals are masked for
+ * the scan, as everywhere else here: a `stringValue('v')` default is not a
+ * mention of the variable.
+ *
+ * @param {string} expression
+ * @param {string} read
+ * @param {string} name the local the expression reads the value from
+ * @returns {null | string}
+ */
+function inlineSingleUse(expression, read, name) {
+  const code = maskStringLiterals(expression);
+  const identifier = /[A-Za-z0-9_$.]/;
+  /** @type {number[]} */
+  const at = [];
+  for (
+    let i = code.indexOf(name);
+    i !== -1;
+    i = code.indexOf(name, i + name.length)
+  ) {
+    // `.` counts as part of a name here so a property called `v` — `json.v`,
+    // which is what `ownRead` emits for a key of that name — is not read as
+    // the variable.
+    const before = i === 0 ? '' : code[i - 1];
+    const after = code[i + name.length] || '';
+    if (!identifier.test(before) && !identifier.test(after)) {
+      at.push(i);
+    }
+  }
+  return at.length === 1
+    ? `${expression.slice(0, at[0])}${read}${expression.slice(
+        at[0] + name.length,
+      )}`
+    : null;
+}
+
 /** `MarkNode` → `GENERATED_MARK`. */
 const constName = (/** @type {NodeClass} */ klass) =>
   `GENERATED_${klass.name.replace(/Node$/, '').toUpperCase()}`;
@@ -1174,10 +1219,12 @@ function ownRead(key) {
  * @param {NodeClass} klass
  * @param {AnySchema} schema
  * @param {string} key
+ * @param {string} value the local the parse reads the serialized value from,
+ *   named for the property as the exporter's locals are
  * @returns {null | {key: string, statements: string}} `null` for a property
  *   with nothing to apply, which is what an export-only one has.
  */
-function writeExpression(klass, schema, key) {
+function writeExpression(klass, schema, key, value) {
   if (key in Object.prototype) {
     // The walk reads a property with hasOwn because its JSON came from
     // JSON.parse and so inherits Object.prototype; `json.toString` in
@@ -1229,6 +1276,7 @@ function writeExpression(klass, schema, key) {
     // applied in one function, so two that each bind a local would otherwise
     // both declare `p0`.
     parseBinding,
+    value,
   );
   for (const helper of helpers) {
     parseHelpers.add(helper);
@@ -1277,15 +1325,22 @@ function writeExpression(klass, schema, key) {
         schema,
         statements: bindings,
         tables: parseTables,
+        valueName: value,
       });
     } catch (error) {
       throw error instanceof NotCompilable
         ? new NotCompilable(`"${key}" ${error.message}`)
         : error;
     }
+    const call = `node.${emittable(setter, 'setter method')}`;
+    const once =
+      bound === '' ? inlineSingleUse(expression, ownRead(key), value) : null;
     return {
       key,
-      statements: `  v = ${ownRead(key)};\n${bound}  node.${emittable(setter, 'setter method')}(${expression});`,
+      statements:
+        once === null
+          ? `  const ${value} = ${ownRead(key)};\n${bound}  ${call}(${expression});`
+          : `  ${call}(${once});`,
     };
   }
   const {setterTable} = setter;
@@ -1293,7 +1348,12 @@ function writeExpression(klass, schema, key) {
   // after parsing: folding them together needs an IIFE, and a closure per
   // property per node is most of what generating this was meant to remove.
   const setterField = emittable(setter.field, 'setter field');
-  let statements = `  v = ${ownRead(key)};\n${bound}  node.${setterField} = ${expression};`;
+  const inlined =
+    bound === '' ? inlineSingleUse(expression, ownRead(key), value) : null;
+  let statements =
+    inlined === null
+      ? `  const ${value} = ${ownRead(key)};\n${bound}  node.${setterField} = ${expression};`
+      : `  node.${setterField} = ${inlined};`;
   if (setterTable !== undefined) {
     const name = declareTable(
       tableName(klass, key, 'SETTER'),
@@ -1313,15 +1373,16 @@ function writeExpression(klass, schema, key) {
       tableName(klass, key, 'SETTER_DEFAULT'),
       tableDeclaration('setterDefault', key, setterTable),
     );
-    const lookup = `(v as string) in ${name} ? ${name}[v as string] : ${fallback}`;
-    statements = `  v = ${ownRead(key)};\n${bound}  v = ${expression};\n  node.${setterField} = ${lookup};`;
+    const parsed = `${value}Parsed`;
+    const lookup = `(${parsed} as string) in ${name} ? ${name}[${parsed} as string] : ${fallback}`;
+    statements = `  const ${value} = ${ownRead(key)};\n${bound}  const ${parsed} = ${expression};\n  node.${setterField} = ${lookup};`;
     if (tableDecidesMembership(schema, setterTable, key)) {
       // The parse and the lookup ask the same question, so the lookup is the
       // whole of it: a member is a key of the table and everything else falls
       // back to the stored default, which is what parsing to the schema's
       // default and looking *that* up produces. `ElementNode`'s `format` was
       // seven string comparisons and then a hash lookup that could only hit.
-      statements = `  v = ${ownRead(key)};\n  node.${setterField} = typeof v === 'string' && v in ${name} ? ${name}[v] : ${fallback};`;
+      statements = `  const ${value} = ${ownRead(key)};\n  node.${setterField} = typeof ${value} === 'string' && ${value} in ${name} ? ${name}[${value}] : ${fallback};`;
     }
   }
   try {
@@ -1331,6 +1392,7 @@ function writeExpression(klass, schema, key) {
       schema,
       statements: bindings,
       tables: parseTables,
+      valueName: value,
     });
     if (setterTable !== undefined) {
       // The lookup above falls back for a key that is missing, so the table has
@@ -1433,10 +1495,15 @@ function hasOwn(table, key) {
  */
 export function generateUpdate(klass, strict = false) {
   const {fieldsBaseFirst} = getComposedSchema(klass);
+  // The same names the exporter binds, from the same place, so a property is
+  // called one thing in both directions and a name that cannot be bound is
+  // renamed once. A parse binds `<local>` for the serialized value and, where
+  // a lookup table follows, `<local>Parsed` for what the schema made of it.
+  const localOf = localsFor(schemaReads(klass));
   const writes = [];
   for (const [key, schema] of fieldsBaseFirst) {
     try {
-      const write = writeExpression(klass, schema, key);
+      const write = writeExpression(klass, schema, key, localOf(key));
       // `null` is "nothing to apply for this property", not "give up on the
       // class" — see `writeExpression`.
       if (write !== null) {
@@ -1463,11 +1530,12 @@ export function generateUpdate(klass, strict = false) {
   // reassigned once per property — except for a class with a single property,
   // where assigning it once and never again is a `const`. Declared to match,
   // or the emitted module trips `prefer-const`.
-  const assignsOnce = (body.match(/^ {2}v = /gm) || []).length === 1;
-  const locals = assignsOnce ? '' : `  let v: unknown;\n`;
-  const declared = assignsOnce
-    ? body.replace(/^ {2}v = /m, '  const v: unknown = ')
-    : body;
+  // Nothing to declare up front: each property that needs to hold its
+  // serialized value binds a `const` named for itself, the way the exporter
+  // names the locals it reads through, and one that reads the value once
+  // binds nothing at all.
+  const locals = '';
+  const declared = body;
   return `/** Generated from ${klass.name}'s serialization schema. Do not edit by hand. */
 function update${klass.name}(
   node: ${klass.name},

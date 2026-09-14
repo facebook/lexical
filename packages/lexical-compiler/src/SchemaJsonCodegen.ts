@@ -99,6 +99,13 @@ export interface VerifyCompiledParseOptions {
    * {@link verificationCorpus} through the expression.
    */
   nullPrototypeTables?: readonly string[];
+  /**
+   * The variable the expression reads the serialized value from — whatever was
+   * passed to {@link compileParse} as `valueName`, `v` by default. It is the
+   * parameter the expression is evaluated with here, so an expression compiled
+   * against another name reads an unbound one without it.
+   */
+  valueName?: string;
 }
 
 /**
@@ -249,12 +256,19 @@ export function literal(value: unknown): string {
  *   lets a caller share one emitted table between the schemas that use the
  *   same object — the name has to be settled before it is written into the
  *   expression, so this cannot be done afterwards.
+ * @param bindingName how to name a local the expression binds; see
+ *   {@link BindingNaming}.
+ * @param valueName the variable the expression reads the serialized value
+ *   from, `v` by default. A caller emitting one parse per property of a node
+ *   names it for the property, so the emitted code reads like the exporter
+ *   beside it rather than reassigning one scratch variable per property.
  */
 export function compileParse(
   meta: SerializationSchemaMeta,
   defaultValue: unknown,
   tableBaseName: TableNaming,
   bindingName?: BindingNaming,
+  valueName = 'v',
 ): CompileParseResult {
   const tables: SchemaJsonTable[] = [];
   const helpers = new Set<string>();
@@ -266,6 +280,7 @@ export function compileParse(
     tables,
     bindingName ?? (() => `p${bound++}`),
     helpers,
+    valueName,
   );
   return {expression, helpers: [...helpers].sort(), statements, tables};
 }
@@ -311,6 +326,44 @@ function repeatable(meta: SerializationSchemaMeta): boolean {
       return repeatable(meta.inner.meta);
     default:
       return false;
+  }
+}
+
+/**
+ * The domain test of a kind whose parse is exactly `<test> ? v : <default>`,
+ * or `null` for one that is anything else.
+ *
+ * Three kinds are that shape, and knowing it is what lets a collapsing
+ * `nullable`/`optional` ask one question instead of parsing twice: where the
+ * test holds the parse *is* `v`, so "the parse equals the default" is
+ * "`v` is out of domain, or it is the default".
+ *
+ * Derived from the metadata rather than read back off the compiled string,
+ * which cannot be done safely — an `aliased` string ends in the same
+ * `? v : ""` its inner does, and taking that suffix apart would split the
+ * wrong ternary. Drift between this and the cases below is caught by
+ * {@link verifyCompiledParse}, which runs what is emitted against the schema.
+ */
+function domainTest(meta: SerializationSchemaMeta, v: string): string | null {
+  switch (meta.kind) {
+    case 'string':
+      return `typeof ${v} === 'string'`;
+    case 'boolean':
+      return `typeof ${v} === 'boolean'`;
+    case 'enum': {
+      // The same comparisons the case below emits, and `undefined` dropped
+      // for the same reason.
+      const tests = meta.values
+        .filter(value => value !== undefined)
+        .map(value => `${v} === ${literal(value)}`);
+      return tests.length === 0
+        ? null
+        : tests.length === 1
+          ? tests[0]
+          : `(${tests.join(' || ')})`;
+    }
+    default:
+      return null;
   }
 }
 
@@ -483,6 +536,31 @@ function compile(
       // costs about 2 ns per property more bound than repeated, since
       // re-evaluating it is free and the binding is not — so those are still
       // written twice.
+      // A kind whose parse is `<test> ? v : <default>` answers both questions
+      // at once: where the test holds the parse is `v` itself, so it collapses
+      // exactly when `v` is out of domain or equal to the default. That is one
+      // test and one comparison, in place of the parse written twice —
+      // `nullable(stringValue(), {defaultAsNull: true})` was
+      // `v == null || (typeof v === 'string' ? v : '') === '' ? null :
+      // typeof v === 'string' ? v : ''`, and is now
+      // `typeof v === 'string' && v !== '' ? v : null`. The wrapper's own nil
+      // test drops out with it: a nil is out of the inner domain, so it
+      // reaches the same branch.
+      const domain = domainTest(meta.inner.meta, v);
+      if (domain !== null) {
+        let differs;
+        try {
+          differs = compileDefaultComparison(meta.inner, v, false);
+        } catch (error) {
+          if (!(error instanceof NotCompilable)) {
+            throw error;
+          }
+          differs = null;
+        }
+        if (differs !== null) {
+          return only(`${domain} && ${differs} ? ${v} : ${nil}`);
+        }
+      }
       if (!repeatable(meta.inner.meta)) {
         const name = bind();
         return {
@@ -687,6 +765,7 @@ export function verifyCompiledParse({
   schema,
   statements = [],
   tables,
+  valueName = 'v',
 }: VerifyCompiledParseOptions): void {
   const names = tables.map(({name}) => name);
   const nullProto = new Set(nullPrototypeTables);
@@ -698,7 +777,7 @@ export function verifyCompiledParse({
   // source has no static type, hence the casts to what each body takes.
   // eslint-disable-next-line no-new-func
   const compiled = new Function(
-    'v',
+    valueName,
     'SCOPE',
     `const {${['num', 'numC', 'numK', ...names].join(
       ', ',

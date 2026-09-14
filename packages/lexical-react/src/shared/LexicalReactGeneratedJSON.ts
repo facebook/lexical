@@ -59,16 +59,16 @@ export const GENERATED_DECORATORBLOCK: GeneratedJSONFactory = () => {
     node: DecoratorBlockNode,
     json: {readonly [key: string]: unknown},
   ): DecoratorBlockNode {
-    const v: unknown = json.format;
+    const format = json.format;
     node.__format =
-      v === '' ||
-      v === 'left' ||
-      v === 'start' ||
-      v === 'center' ||
-      v === 'right' ||
-      v === 'end' ||
-      v === 'justify'
-        ? v
+      format === '' ||
+      format === 'left' ||
+      format === 'start' ||
+      format === 'center' ||
+      format === 'right' ||
+      format === 'end' ||
+      format === 'justify'
+        ? format
         : '';
     return node;
   }

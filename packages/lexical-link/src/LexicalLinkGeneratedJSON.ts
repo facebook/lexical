@@ -172,43 +172,28 @@ export const GENERATED_LINK: GeneratedJSONFactory = fields => {
     node: LinkNode,
     json: {readonly [key: string]: unknown},
   ): LinkNode {
-    let v: unknown;
-    v = json.direction;
-    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = json.format;
+    const direction = json.direction;
+    node.__dir =
+      direction === null || direction === 'ltr' || direction === 'rtl'
+        ? direction
+        : null;
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in LINK_FORMAT_SETTER
-        ? LINK_FORMAT_SETTER[v]
+      typeof format === 'string' && format in LINK_FORMAT_SETTER
+        ? LINK_FORMAT_SETTER[format]
         : LINK_FORMAT_SETTER_DEFAULT;
-    v = json.indent;
-    node.__indent = numC(v, 0, 0, Infinity, true);
-    v = json.textFormat;
-    node.__textFormat = num(v, 0);
-    v = json.textStyle;
-    node.__textStyle = typeof v === 'string' ? v : '';
-    v = json.rel;
-    node.__rel =
-      v == null || (typeof v === 'string' ? v : '') === ''
-        ? null
-        : typeof v === 'string'
-          ? v
-          : '';
-    v = json.target;
-    node.__target =
-      v == null || (typeof v === 'string' ? v : '') === ''
-        ? null
-        : typeof v === 'string'
-          ? v
-          : '';
-    v = json.title;
-    node.__title =
-      v == null || (typeof v === 'string' ? v : '') === ''
-        ? null
-        : typeof v === 'string'
-          ? v
-          : '';
-    v = json.url;
-    node.__url = typeof v === 'string' ? v : '';
+    node.__indent = numC(json.indent, 0, 0, Infinity, true);
+    node.__textFormat = num(json.textFormat, 0);
+    const textStyle = json.textStyle;
+    node.__textStyle = typeof textStyle === 'string' ? textStyle : '';
+    const rel = json.rel;
+    node.__rel = typeof rel === 'string' && rel !== '' ? rel : null;
+    const target = json.target;
+    node.__target = typeof target === 'string' && target !== '' ? target : null;
+    const title = json.title;
+    node.__title = typeof title === 'string' && title !== '' ? title : null;
+    const url = json.url;
+    node.__url = typeof url === 'string' ? url : '';
     return node;
   }
 
@@ -349,45 +334,30 @@ export const GENERATED_AUTOLINK: GeneratedJSONFactory = fields => {
     node: AutoLinkNode,
     json: {readonly [key: string]: unknown},
   ): AutoLinkNode {
-    let v: unknown;
-    v = json.direction;
-    node.__dir = v === null || v === 'ltr' || v === 'rtl' ? v : null;
-    v = json.format;
+    const direction = json.direction;
+    node.__dir =
+      direction === null || direction === 'ltr' || direction === 'rtl'
+        ? direction
+        : null;
+    const format = json.format;
     node.__format =
-      typeof v === 'string' && v in AUTOLINK_FORMAT_SETTER
-        ? AUTOLINK_FORMAT_SETTER[v]
+      typeof format === 'string' && format in AUTOLINK_FORMAT_SETTER
+        ? AUTOLINK_FORMAT_SETTER[format]
         : AUTOLINK_FORMAT_SETTER_DEFAULT;
-    v = json.indent;
-    node.__indent = numC(v, 0, 0, Infinity, true);
-    v = json.textFormat;
-    node.__textFormat = num(v, 0);
-    v = json.textStyle;
-    node.__textStyle = typeof v === 'string' ? v : '';
-    v = json.rel;
-    node.__rel =
-      v == null || (typeof v === 'string' ? v : '') === ''
-        ? null
-        : typeof v === 'string'
-          ? v
-          : '';
-    v = json.target;
-    node.__target =
-      v == null || (typeof v === 'string' ? v : '') === ''
-        ? null
-        : typeof v === 'string'
-          ? v
-          : '';
-    v = json.title;
-    node.__title =
-      v == null || (typeof v === 'string' ? v : '') === ''
-        ? null
-        : typeof v === 'string'
-          ? v
-          : '';
-    v = json.url;
-    node.__url = typeof v === 'string' ? v : '';
-    v = json.isUnlinked;
-    node.__isUnlinked = typeof v === 'boolean' ? v : false;
+    node.__indent = numC(json.indent, 0, 0, Infinity, true);
+    node.__textFormat = num(json.textFormat, 0);
+    const textStyle = json.textStyle;
+    node.__textStyle = typeof textStyle === 'string' ? textStyle : '';
+    const rel = json.rel;
+    node.__rel = typeof rel === 'string' && rel !== '' ? rel : null;
+    const target = json.target;
+    node.__target = typeof target === 'string' && target !== '' ? target : null;
+    const title = json.title;
+    node.__title = typeof title === 'string' && title !== '' ? title : null;
+    const url = json.url;
+    node.__url = typeof url === 'string' ? url : '';
+    const isUnlinked = json.isUnlinked;
+    node.__isUnlinked = typeof isUnlinked === 'boolean' ? isUnlinked : false;
     return node;
   }
 

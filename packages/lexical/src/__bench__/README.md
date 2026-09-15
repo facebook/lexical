@@ -47,6 +47,16 @@ The Vitest writable-node benchmark checks both alternating edits during setup
 and the final document after timing, so a no-op cannot hide behind the parity
 of the last iteration.
 
+The runner applies the shared package-build Babel options (including the
+repository's Browserslist targets and production error transform) before
+esbuild bundles JavaScript with `target: 'esnext'`. Native class fields are
+preserved. The shared Terser settings use ES2021 and two compression passes;
+the runner additionally verifies that all development constants are eliminated
+before importing the bundle. Every revision uses the same current build options,
+so the comparison measures source changes under that configuration, not the
+isolated effect of changing build settings. This is a headless source bundle,
+not the published package layout or the compiler annotation pipeline.
+
 The runner also includes the working tree. It verifies each workload before
 timing, rotates revision order across nine samples, and reports median
 microseconds per update plus the individual samples. This reduces timing

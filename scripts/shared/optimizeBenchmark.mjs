@@ -10,6 +10,8 @@ import terser from '@rollup/plugin-terser';
 import {rollup} from 'rollup';
 import ts from 'typescript';
 
+import {productionTerserOptions} from './buildOptions.mjs';
+
 /**
  * Optimize an esbuild benchmark bundle before importing or timing it.
  * @param {string} source
@@ -77,9 +79,8 @@ export async function optimizeBenchmark(source) {
         resolveId: id => (id === 'benchmark' ? id : null),
       },
       terser({
-        compress: {global_defs: constants, keep_infinity: true},
-        ecma: 2019,
-        format: {ascii_only: true, preserve_annotations: true},
+        ...productionTerserOptions,
+        compress: {...productionTerserOptions.compress, global_defs: constants},
         // Reserve these names so mangling cannot hide a failed elimination.
         mangle: {reserved: Object.keys(constants)},
         module: true,

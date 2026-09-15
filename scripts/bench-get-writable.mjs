@@ -9,13 +9,15 @@
 // Compare production bundles in one process, rotating measurement order to
 // reduce drift between revisions. Uses the current benchmark for every ref.
 // node scripts/bench-get-writable.mjs <base-ref> [other-refs...]
+import {transformAsync} from '@babel/core';
 import {build} from 'esbuild';
 import {execFileSync} from 'node:child_process';
-import {mkdtemp, rm, writeFile} from 'node:fs/promises';
+import {mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import {cpus, tmpdir} from 'node:os';
 import {join, relative, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 
+import {getBuildBabelOptions} from './shared/buildOptions.mjs';
 import {optimizeBenchmark} from './shared/optimizeBenchmark.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -101,18 +103,20 @@ try {
         `,
               loader: 'js',
             }));
-            bundler.onLoad({filter: /\.(ts|tsx|mjs|js)$/}, args => {
+            bundler.onLoad({filter: /\.(ts|tsx|mjs|js)$/}, async args => {
+              if (args.path.includes('/node_modules/')) return;
               const path = relative(root, args.path);
-              if (changed.has(path) && !path.includes('/__bench__/')) {
-                return {
-                  contents: git(['show', `${sha}:${path}`]),
-                  loader: path.endsWith('.tsx')
-                    ? 'tsx'
-                    : path.endsWith('.ts')
-                      ? 'ts'
-                      : 'js',
-                };
-              }
+              const source =
+                changed.has(path) && !path.includes('/__bench__/')
+                  ? git(['show', `${sha}:${path}`])
+                  : await readFile(args.path, 'utf8');
+              const transformed = await transformAsync(source, {
+                ...getBuildBabelOptions(true),
+                filename: args.path,
+              });
+              if (transformed === null || !transformed.code)
+                throw new Error(`No Babel output for ${path}`);
+              return {contents: transformed.code, loader: 'js'};
             });
           },
         },
@@ -122,6 +126,7 @@ try {
         loader: 'js',
         resolveDir: root,
       },
+      target: 'esnext',
       tsconfig: join(root, 'tsconfig.test.json'),
       write: false,
     });
@@ -141,7 +146,7 @@ try {
       bundles,
       cpu: cpus()[0].model,
       node: process.version,
-      optimizer: 'terser',
+      optimizer: 'babel-preset-env + terser (ecma 2021, passes 2)',
       revisions,
       sampleCount,
     }),

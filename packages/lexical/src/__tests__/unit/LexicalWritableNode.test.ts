@@ -6,7 +6,7 @@
  *
  */
 
-import {describe, expect, test} from 'vitest';
+import {describe, expect, test, vi} from 'vitest';
 
 import {
   $createParagraphNode,
@@ -28,6 +28,29 @@ function createHeadlessEditor() {
 }
 
 describe('writable node reuse', () => {
+  test('returns cached writable nodes without looking them up in the node map', () => {
+    const editor = createHeadlessEditor();
+    editor.update(
+      () => {
+        const text = $createTextNode('text');
+        $getRoot().append($createParagraphNode().append(text));
+        const writable = text.getWritable();
+        const pendingState = editor._pendingEditorState;
+        if (pendingState === null) {
+          throw new Error('Expected a pending editor state');
+        }
+        const get = vi.spyOn(pendingState._nodeMap, 'get');
+        try {
+          expect(text.getWritable()).toBe(writable);
+          expect(get).not.toHaveBeenCalledWith(text.getKey());
+        } finally {
+          get.mockRestore();
+        }
+      },
+      {discrete: true},
+    );
+  });
+
   test('reuses new nodes and clones committed nodes once per update', () => {
     const editor = createHeadlessEditor();
     let original!: TextNode;

@@ -413,7 +413,7 @@ export function $setNodeKey(
   } else {
     editor._dirtyLeaves.add(key);
   }
-  editor._cloneNotNeeded.add(key);
+  editor._cloneNotNeeded.set(key, node);
   // Don't downgrade FULL_RECONCILE; upgrade only when nothing has been marked yet.
   if (editor._dirtyType === NO_DIRTY_NODES) {
     editor._dirtyType = HAS_DIRTY_NODES;

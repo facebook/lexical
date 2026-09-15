@@ -529,7 +529,8 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
    * @returns true if the node is simple text, false otherwise.
    */
   isSimpleText(): boolean {
-    return this.__type === 'text' && this.__mode === 0;
+    const self = this.getLatest();
+    return self.__type === 'text' && self.__mode === 0;
   }
 
   /**
@@ -829,7 +830,7 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
    */
   setMode(type: TextModeType): this {
     const mode = TEXT_MODE_TO_TYPE[type];
-    if (this.__mode === mode) {
+    if (this.getLatest().__mode === mode) {
       return this;
     }
     const self = this.getWritable();
@@ -845,7 +846,7 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
    * @returns this TextNode.
    */
   setTextContent(text: string): this {
-    if (this.__text === text) {
+    if (this.getLatest().__text === text) {
       return this;
     }
     const self = this.getWritable();

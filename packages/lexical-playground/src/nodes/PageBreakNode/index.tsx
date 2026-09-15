@@ -11,6 +11,7 @@ import './index.css';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {
+  $getDocument,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   DecoratorNode,
@@ -62,20 +63,12 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
 }
 
 export class PageBreakNode extends DecoratorNode<JSX.Element> {
-  static getType(): string {
-    return 'page-break';
-  }
-
-  static clone(node: PageBreakNode): PageBreakNode {
-    return new PageBreakNode(node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedPageBreakNode): PageBreakNode {
-    return $createPageBreakNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('page-break', {extends: DecoratorNode});
   }
 
   createDOM(): HTMLElement {
-    const el = document.createElement('hr');
+    const el = $getDocument().createElement('hr');
     el.style.pageBreakAfter = 'always';
     el.setAttribute('data-lexical-page-break', 'true');
     return el;

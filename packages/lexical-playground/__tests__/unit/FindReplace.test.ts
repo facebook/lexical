@@ -749,18 +749,18 @@ describe('FindReplaceExtension — command dispatch integration', () => {
     using editor = buildEditorFromExtensions(FindReplaceExtension);
     const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
     expect(dep.output.isOpen.peek()).toBe(false);
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     expect(dep.output.isOpen.peek()).toBe(true);
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     expect(dep.output.isOpen.peek()).toBe(false);
   });
 
   test('CLOSE_FIND_REPLACE_COMMAND sets isOpen to false', () => {
     using editor = buildEditorFromExtensions(FindReplaceExtension);
     const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     expect(dep.output.isOpen.peek()).toBe(true);
-    editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND);
     expect(dep.output.isOpen.peek()).toBe(false);
   });
 
@@ -777,7 +777,7 @@ describe('FindReplaceExtension — command dispatch integration', () => {
       },
       {discrete: true},
     );
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     dep.output.searchTerm.value = 'hello';
     expect(dep.output.matches.peek()).toHaveLength(2);
     expect(dep.output.matches.peek()[0]).toMatchObject({
@@ -797,35 +797,35 @@ describe('FindReplaceExtension — command dispatch integration', () => {
       },
       {discrete: true},
     );
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     dep.output.searchTerm.value = 'a';
     expect(dep.output.matches.peek()).toHaveLength(3);
     expect(dep.output.currentIndex.peek()).toBe(0);
 
-    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    editor.dispatchCommand(FIND_NEXT_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(1);
 
-    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    editor.dispatchCommand(FIND_NEXT_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(2);
 
     // wrap around
-    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    editor.dispatchCommand(FIND_NEXT_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(0);
 
     // backward wrap
-    editor.dispatchCommand(FIND_PREV_COMMAND, undefined);
+    editor.dispatchCommand(FIND_PREV_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(2);
   });
 
   test('FIND_NEXT_COMMAND with zero matches is a no-op', () => {
     using editor = buildEditorFromExtensions(FindReplaceExtension);
     const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     dep.output.searchTerm.value = 'nonexistent';
     expect(dep.output.matches.peek()).toHaveLength(0);
-    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    editor.dispatchCommand(FIND_NEXT_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(0);
-    editor.dispatchCommand(FIND_PREV_COMMAND, undefined);
+    editor.dispatchCommand(FIND_PREV_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(0);
   });
 
@@ -843,7 +843,7 @@ describe('FindReplaceExtension — command dispatch integration', () => {
     dep.output.searchTerm.value = 'hello';
     expect(dep.output.isOpen.peek()).toBe(false);
     expect(dep.output.matches.peek()).toEqual([]);
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     expect(dep.output.matches.peek()).toHaveLength(1);
   });
 
@@ -858,11 +858,11 @@ describe('FindReplaceExtension — command dispatch integration', () => {
       },
       {discrete: true},
     );
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     dep.output.searchTerm.value = 'a';
     expect(dep.output.matches.peek()).toHaveLength(3);
-    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
-    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    editor.dispatchCommand(FIND_NEXT_COMMAND);
+    editor.dispatchCommand(FIND_NEXT_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(2);
     dep.output.searchTerm.value = 'a b';
     expect(dep.output.matches.peek()).toHaveLength(2);
@@ -872,7 +872,7 @@ describe('FindReplaceExtension — command dispatch integration', () => {
   test('regexError computed returns true for invalid regex', () => {
     using editor = buildEditorFromExtensions(FindReplaceExtension);
     const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     dep.output.isRegex.value = true;
     dep.output.searchTerm.value = '[invalid';
     expect(dep.output.regexError.peek()).toBe(true);
@@ -891,10 +891,10 @@ describe('FindReplaceExtension — command dispatch integration', () => {
       },
       {discrete: true},
     );
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     dep.output.searchTerm.value = 'a';
-    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
-    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    editor.dispatchCommand(FIND_NEXT_COMMAND);
+    editor.dispatchCommand(FIND_NEXT_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(2);
     editor.dispatchCommand(SET_SEARCH_TERM_COMMAND, 'b');
     expect(dep.output.currentIndex.peek()).toBe(0);
@@ -912,17 +912,17 @@ describe('FindReplaceExtension — command dispatch integration', () => {
       },
       {discrete: true},
     );
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     dep.output.searchTerm.value = 'a';
-    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    editor.dispatchCommand(FIND_NEXT_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(1);
-    editor.dispatchCommand(TOGGLE_CASE_SENSITIVE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_CASE_SENSITIVE_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(0);
     expect(dep.output.caseSensitive.peek()).toBe(true);
 
-    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    editor.dispatchCommand(FIND_NEXT_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(1);
-    editor.dispatchCommand(TOGGLE_REGEX_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_REGEX_COMMAND);
     expect(dep.output.currentIndex.peek()).toBe(0);
     expect(dep.output.isRegex.peek()).toBe(true);
   });
@@ -940,11 +940,11 @@ describe('FindReplaceExtension — command dispatch integration', () => {
       },
       {discrete: true},
     );
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     dep.output.searchTerm.value = 'foo';
     dep.output.replaceTerm.value = 'baz';
     expect(dep.output.matches.peek()).toHaveLength(2);
-    editor.dispatchCommand(REPLACE_CURRENT_COMMAND, undefined);
+    editor.dispatchCommand(REPLACE_CURRENT_COMMAND);
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('baz bar foo');
     });
@@ -963,11 +963,11 @@ describe('FindReplaceExtension — command dispatch integration', () => {
       },
       {discrete: true},
     );
-    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
     dep.output.searchTerm.value = 'foo';
     dep.output.replaceTerm.value = 'qux';
     expect(dep.output.matches.peek()).toHaveLength(2);
-    editor.dispatchCommand(REPLACE_ALL_COMMAND, undefined);
+    editor.dispatchCommand(REPLACE_ALL_COMMAND);
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('qux bar qux');
     });

@@ -39,6 +39,7 @@ import {
   type StateValueOrUpdater,
 } from 'lexical';
 import {
+  DECORATOR_BOUNDARY_ANCHOR_HTML,
   expectHtmlToBeEqual,
   html,
   invariant,
@@ -178,6 +179,7 @@ describe('LexicalExtensionEditorComposer', () => {
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
           </div>
+          ${DECORATOR_BOUNDARY_ANCHOR_HTML}
         </div>
       `,
     );
@@ -284,5 +286,12 @@ describe('LexicalExtensionEditorComposer', () => {
       );
     });
     expect(container?.textContent).toBe('updated');
+
+    // Unmount before `using` disposes the editor so the disposal does not
+    // update the still-mounted EditorComponent outside of act().
+    await act(async () => {
+      reactRoot.render(null);
+      await Promise.resolve();
+    });
   });
 });

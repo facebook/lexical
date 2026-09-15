@@ -488,10 +488,7 @@ describe('CollaborationSnapshot', () => {
       });
 
       await waitForReact(() =>
-        editor1.dispatchCommand(
-          CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
-          undefined,
-        ),
+        editor1.dispatchCommand(CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL),
       );
 
       await new Promise(resolve => setTimeout(resolve, 100));

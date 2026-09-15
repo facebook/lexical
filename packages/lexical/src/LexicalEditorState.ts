@@ -159,7 +159,11 @@ export class EditorState {
   }
 
   isEmpty(): boolean {
-    return this._nodeMap.size === 1 && this._selection === null;
+    // `<= 1` rather than `=== 1`: a state whose node map is empty has not even
+    // got a root, which is emptier still, and every caller treats an empty
+    // state as one not to use — `setEditorState` refuses it with an invariant
+    // rather than committing an editor with no root for `$getRoot` to find.
+    return this._nodeMap.size <= 1 && this._selection === null;
   }
 
   read<V>(callbackFn: () => V, options?: EditorStateReadOptions): V {
@@ -177,6 +181,12 @@ export class EditorState {
       this._slotsUsed,
     );
     editorState._readOnly = true;
+    // A clone describes the same content as this state, so it is still
+    // "parsed without running transforms" if this one was. Dropping the flag
+    // made `setEditorState(parsedState.clone(null))` — the documented way to
+    // apply a state without focusing the editor — skip the dirty-marking that
+    // lets transforms and hydrate-time normalization run.
+    editorState._parsed = this._parsed;
 
     return editorState;
   }

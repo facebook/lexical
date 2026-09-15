@@ -18,10 +18,8 @@ import type {
 import {TextNode} from 'lexical';
 
 declare export class HashtagNode extends TextNode {
-  static getType(): string;
-  static clone(node: HashtagNode): HashtagNode;
   static importJSON(serializedNode: SerializedTextNode): HashtagNode;
-  constructor(text: string, key?: NodeKey): void;
+  constructor(text?: string, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   canInsertTextBefore(): boolean;
   isTextEntity(): true;

@@ -233,16 +233,21 @@ export default function DropDown({
           }
         }
       };
-      return registerEventListener(document, 'click', handle);
+      const doc = button.ownerDocument;
+      return registerEventListener(doc, 'click', handle);
     }
   }, [dropDownRef, buttonRef, showDropDown, stopCloseOnClickSelf]);
 
   useEffect(() => {
+    const button = buttonRef.current;
+    if (button === null) {
+      return;
+    }
+
     const handleButtonPositionUpdate = () => {
       if (showDropDown) {
-        const button = buttonRef.current;
         const dropDown = dropDownRef.current;
-        if (button !== null && dropDown !== null) {
+        if (dropDown !== null) {
           const {top} = button.getBoundingClientRect();
           const newPosition = top + button.offsetHeight + dropDownPadding;
           if (newPosition !== dropDown.getBoundingClientRect().top) {
@@ -253,7 +258,7 @@ export default function DropDown({
     };
 
     return registerEventListener(
-      document,
+      button.ownerDocument,
       'scroll',
       handleButtonPositionUpdate,
     );
@@ -288,7 +293,7 @@ export default function DropDown({
             autofocus={shouldAutofocus}>
             {children}
           </DropDownItems>,
-          document.body,
+          buttonRef.current?.ownerDocument?.body ?? document.body,
         )}
     </>
   );

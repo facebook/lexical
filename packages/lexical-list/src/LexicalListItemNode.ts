@@ -47,7 +47,7 @@ import {
 
 import {$createListNode, $isListNode, type ListNode, type ListType} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
-import {isNestedListNode} from './utils';
+import {$getNewListStart, $isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
   {
@@ -218,7 +218,7 @@ export class ListItemNode extends ElementNode {
       element.dir = direction;
     }
 
-    if (isNestedListNode(this)) {
+    if ($isNestedListNode(this)) {
       return {
         after(containerElement) {
           if (isHTMLElement(containerElement)) {
@@ -354,6 +354,17 @@ export class ListItemNode extends ElementNode {
 
     if (siblings.length !== 0) {
       const newListNode = $copyNode(listNode);
+      // $copyNode carries the original list's start, which would restart the
+      // numbering at the split. The items moving into the new list keep the
+      // numbers they were already rendered with, so the new list has to start
+      // from the first of them (see issue #7032).
+      const firstSibling = siblings[0];
+      if (
+        newListNode.getListType() === 'number' &&
+        $isListItemNode(firstSibling)
+      ) {
+        newListNode.setStart($getNewListStart(listNode, firstSibling));
+      }
 
       siblings.forEach(sibling => newListNode.append(sibling));
 
@@ -371,8 +382,12 @@ export class ListItemNode extends ElementNode {
     if (
       prevSibling &&
       nextSibling &&
-      isNestedListNode(prevSibling) &&
-      isNestedListNode(nextSibling)
+      $isNestedListNode(prevSibling) &&
+      $isNestedListNode(nextSibling) &&
+      // Only join the surrounding sublists when they are the same kind of
+      // list, otherwise the second one loses its listType.
+      prevSibling.getFirstChild().getListType() ===
+        nextSibling.getFirstChild().getListType()
     ) {
       mergeLists(prevSibling.getFirstChild(), nextSibling.getFirstChild());
       nextSibling.remove();
@@ -397,41 +412,33 @@ export class ListItemNode extends ElementNode {
     return newElement;
   }
 
-  collapseAtStart(selection: RangeSelection): true {
-    const paragraph = $createParagraphNode();
-    const children = this.getChildren();
-    children.forEach(child => paragraph.append(child));
+  collapseAtStart(selection: RangeSelection): boolean {
+    if ($isNestedListNode(this)) {
+      return false;
+    }
+
     const listNode = this.getParentOrThrow();
     const listNodeParent = listNode.getParentOrThrow();
-    const isIndented = $isListItemNode(listNodeParent);
 
-    if (listNode.getChildrenSize() === 1) {
-      if (isIndented) {
-        // if the list node is nested, we just want to remove it,
-        // effectively unindenting it.
-        listNode.remove();
-        listNodeParent.select();
-      } else {
-        listNode.insertBefore(paragraph);
-        listNode.remove();
-        // If we have selection on the list item, we'll need to move it
-        // to the paragraph
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-        const key = paragraph.getKey();
-
-        if (anchor.type === 'element' && anchor.getNode().is(this)) {
-          anchor.set(key, anchor.offset, 'element');
-        }
-
-        if (focus.type === 'element' && focus.getNode().is(this)) {
-          focus.set(key, focus.offset, 'element');
-        }
-      }
-    } else {
-      listNode.insertBefore(paragraph);
-      this.remove();
+    if ($isListItemNode(listNodeParent)) {
+      $handleOutdent(this);
+      return true;
     }
+
+    const paragraph = $createParagraphNode().append(...this.getChildren());
+
+    const nextSiblings = this.getNextSiblings();
+    if (nextSiblings.length > 0) {
+      const newList = $copyNode(listNode);
+      newList.append(...nextSiblings);
+      listNode.insertAfter(newList);
+    }
+    listNode.insertAfter(paragraph);
+    this.remove();
+    if (listNode.getChildrenSize() === 0) {
+      listNode.remove();
+    }
+    paragraph.selectStart();
 
     return true;
   }

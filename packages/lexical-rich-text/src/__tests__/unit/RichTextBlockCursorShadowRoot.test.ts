@@ -30,7 +30,7 @@ import {
   TestDecoratorNode,
   TestShadowRootNode,
 } from 'lexical/src/__tests__/utils';
-import {assert, describe, expect, test} from 'vitest';
+import {afterEach, assert, beforeEach, describe, expect, test} from 'vitest';
 
 function makeArrowEvent(key: string): KeyboardEvent {
   return new KeyboardEvent('keydown', {
@@ -565,5 +565,87 @@ describe('full round-trip: decorator → block cursor → shadow root → block 
       expect(s.anchor.key).toBe($getRoot().getKey());
       expect(s.anchor.offset).toBe(2);
     });
+  });
+});
+
+describe('$updateDOMBlockCursorElement — block cursor beside decorator with editable sibling', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    container.tabIndex = 0;
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+    // @ts-ignore
+    container = null;
+  });
+
+  function createBlockCursorEditor() {
+    const editor = buildEditorFromExtensions({
+      dependencies: [RichTextExtension],
+      name: 'test-block-cursor',
+      nodes: [TestDecoratorNode],
+    });
+    editor.setRootElement(container);
+    container.focus();
+    return editor;
+  }
+
+  test('shows block cursor before a block decorator even when preceded by an editable paragraph', () => {
+    using editor = createBlockCursorEditor();
+
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode().append(
+          $createTextNode('before'),
+        );
+        const decorator = $createTestDecoratorNode().setIsInline(false);
+        $getRoot().clear().append(paragraph, decorator);
+        $getRoot().select(1, 1);
+      },
+      {discrete: true},
+    );
+
+    const cursor = container.querySelector('[data-lexical-cursor]');
+    expect(cursor).not.toBe(null);
+  });
+
+  test('shows block cursor before a block decorator when preceded by another block decorator', () => {
+    using editor = createBlockCursorEditor();
+
+    editor.update(
+      () => {
+        const decorator1 = $createTestDecoratorNode().setIsInline(false);
+        const decorator2 = $createTestDecoratorNode().setIsInline(false);
+        $getRoot().clear().append(decorator1, decorator2);
+        $getRoot().select(1, 1);
+      },
+      {discrete: true},
+    );
+
+    const cursor = container.querySelector('[data-lexical-cursor]');
+    expect(cursor).not.toBe(null);
+  });
+
+  test('shows block cursor before a block decorator when it is the first child', () => {
+    using editor = createBlockCursorEditor();
+
+    editor.update(
+      () => {
+        const decorator = $createTestDecoratorNode().setIsInline(false);
+        const paragraph = $createParagraphNode().append(
+          $createTextNode('after'),
+        );
+        $getRoot().clear().append(decorator, paragraph);
+        $getRoot().select(0, 0);
+      },
+      {discrete: true},
+    );
+
+    const cursor = container.querySelector('[data-lexical-cursor]');
+    expect(cursor).not.toBe(null);
   });
 });

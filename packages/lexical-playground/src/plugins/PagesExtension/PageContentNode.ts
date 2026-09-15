@@ -9,6 +9,7 @@
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {
   $create,
+  $getDocument,
   $getEditor,
   addClassNamesToElement,
   ElementNode,
@@ -26,7 +27,7 @@ export class PageContentNode extends ElementNode {
   }
 
   createDOM(): HTMLElement {
-    const dom = document.createElement('div');
+    const dom = $getDocument().createElement('div');
     addClassNamesToElement(
       dom,
       getExtensionDependencyFromEditor($getEditor(), PagesExtension).config

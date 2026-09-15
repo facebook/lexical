@@ -9,11 +9,12 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
+  $computeTableCellRectBoundary,
+  $computeTableMap,
   $deleteTableColumnAtSelection,
   $deleteTableRowAtSelection,
   $getNodeTriplet,
   $getTableCellNodeFromLexicalNode,
-  $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
   $insertTableColumnAtSelection,
@@ -64,14 +65,29 @@ import useModal from '../../hooks/useModal';
 import ColorPicker from '../../ui/ColorPicker';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 
-function computeSelectionCount(selection: TableSelection): {
+function $computeSelectionCounts(selection: TableSelection): {
   columns: number;
   rows: number;
 } {
-  const selectionShape = selection.getShape();
+  const anchorCell = selection.anchor.getNode();
+  const focusCell = selection.focus.getNode();
+  if (!$isTableCellNode(anchorCell) || !$isTableCellNode(focusCell)) {
+    return {columns: 1, rows: 1};
+  }
+  const tableNode = $getTableNodeFromLexicalNodeOrThrow(anchorCell);
+  const [map, cellAMap, cellBMap] = $computeTableMap(
+    tableNode,
+    anchorCell,
+    focusCell,
+  );
+  const {minColumn, maxColumn, minRow, maxRow} = $computeTableCellRectBoundary(
+    map,
+    cellAMap,
+    cellBMap,
+  );
   return {
-    columns: selectionShape.toX - selectionShape.fromX + 1,
-    rows: selectionShape.toY - selectionShape.fromY + 1,
+    columns: maxColumn - minColumn + 1,
+    rows: maxRow - minRow + 1,
   };
 }
 
@@ -168,8 +184,8 @@ function TableActionMenu({
       const selection = $getSelection();
       // Merge cells
       if ($isTableSelection(selection)) {
-        const currentSelectionCounts = computeSelectionCount(selection);
-        updateSelectionCounts(computeSelectionCount(selection));
+        const currentSelectionCounts = $computeSelectionCounts(selection);
+        updateSelectionCounts($computeSelectionCounts(selection));
         const isCollapsedTableSelection = selection.anchor.is(selection.focus);
         setCanMergeCells(
           !isCollapsedTableSelection &&
@@ -347,7 +363,16 @@ function TableActionMenu({
   const toggleTableColumnIsHeader = useCallback(() => {
     editor.update(() => {
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-      const columnIndex = $getTableColumnIndexFromTableCellNode(tableCellNode);
+      // $setTableColumnIsHeader indexes the table grid, so the cell's position
+      // has to come from the table map rather than from its index among its
+      // row's children — the two diverge once an earlier cell in the row spans
+      // more than one column.
+      const [, cellMap] = $computeTableMap(
+        tableNode,
+        tableCellNode,
+        tableCellNode,
+      );
+      const columnIndex = cellMap.startColumn;
       const isHeader = !tableCellNode.hasHeaderState(
         TableCellHeaderStates.COLUMN,
       );
@@ -651,7 +676,7 @@ function TableActionMenu({
         </span>
       </button>
     </div>,
-    document.body,
+    editor.getRootElement()?.ownerDocument?.body ?? document.body,
   );
 }
 

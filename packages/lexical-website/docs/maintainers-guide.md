@@ -200,14 +200,29 @@ of these scripts you might as well run them all.
 ### pnpm run prepare-release
 
 This runs `build-release` to produce all of the artifacts each public
-package needs (the `dev`/`prod`/`node` ESM and CJS variants plus their
-fork modules, `.d.ts` declarations, and `.flow` stubs under
+package needs (the `dev`/`prod` ESM variants plus their fork modules,
+`.d.ts` declarations, and `.js.flow` stubs under
 `packages/<name>/dist/`), then runs the publish-time guard in
 `scripts/npm/prepare-release.mjs` to confirm every path the package's
 `exports`/`main`/`module`/`types` fields reference actually exists on
 disk. The guard fails the build if e.g. you ran `pnpm run build` (dev
-only) and then tried to publish — the `.prod.{js,mjs}` files would be
+only) and then tried to publish — the `.prod.js` files would be
 missing.
+
+Only ESM is published to npm. Every public package is a
+`"type": "module"` package (`update-version` adds the field), so its
+build is plain `.js`. A CommonJS consumer gets the same files through
+Node's `require(esm)` (Node.js 20.19+), which is why the fork module that
+the exports map's `default` condition resolves to has no top-level await.
+The CommonJS variants are only built for www (`pnpm run build-www`).
+
+Because a `.d.ts` in a `"type": "module"` package is an ES module
+declaration, the build gives the relative imports tsc emits an explicit
+`.js` extension (`from './LexicalEditor.js'`): TypeScript's `nodenext`
+resolution does not resolve extensionless relative imports in ESM, and a
+consumer with `skipLibCheck` would silently get `any` for everything.
+`scripts/__tests__/integration/declaration-resolution.test.mjs` checks
+that a `nodenext` consumer of every entry point still sees the types.
 
 Each package is its own publish root: `packages/<name>/` IS the
 publishable npm package after `build-release`. `pnpm publish` is run
@@ -299,7 +314,7 @@ Re-run it whenever a new public package is added.
 #### Prerequisites
 
 - Node.js — whatever the repo's root `package.json#engines.node` says (currently `>=20.19.0`). Running with Node 24+ is recommended because that's what CI uses for publishes.
-- pnpm — pinned by `package.json#packageManager` (currently `pnpm@10.34.1`). Activate with [corepack](https://nodejs.org/api/corepack.html) or install directly.
+- pnpm — pinned by `package.json#packageManager` (currently `pnpm@11.24.0`). Activate with [corepack](https://nodejs.org/api/corepack.html) or install directly.
 - npm CLI — **`npm ≥ 11.10`** (`npm i -g npm@latest`). The `npm trust` subcommand was added in npm 11; older versions will fail the preflight check.
 - An authenticated npm session (`npm login --registry https://registry.npmjs.org`) on a publisher account that has **account-level 2FA enabled** and write access to every `@lexical/*` package.
 

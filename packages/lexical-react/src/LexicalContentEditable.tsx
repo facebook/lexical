@@ -9,13 +9,14 @@
 import type {LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {forwardRef, type JSX, type Ref, useLayoutEffect, useState} from 'react';
+import {forwardRef, type JSX, type Ref, useState} from 'react';
 
 import {
   ContentEditableElement,
   type ContentEditableElementProps,
 } from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
+import useLayoutEffect from './shared/useLayoutEffect';
 
 export {ContentEditableElement, type ContentEditableElementProps};
 
@@ -46,7 +47,10 @@ export type ContentEditableProps = Omit<ContentEditableElementProps, 'editor'> &
  * {@link PlainTextPlugin}. An optional `placeholder` is shown while the editor
  * is empty. The `ref` is forwarded to the underlying `<div>`.
  */
-export const ContentEditable = forwardRef(ContentEditableImpl);
+// Annotated by hand: React's forwardRef is not a Lexical factory, so the build
+// does not annotate it, and an unannotated module-scope call pins the module
+// into every bundle that imports it.
+export const ContentEditable = /* @__PURE__ */ forwardRef(ContentEditableImpl);
 
 function ContentEditableImpl(
   props: ContentEditableProps,
@@ -76,7 +80,6 @@ function Placeholder({
 
   const [isEditable, setEditable] = useState(editor.isEditable());
   useLayoutEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEditable(editor.isEditable());
     return editor.registerEditableListener(currentIsEditable => {
       setEditable(currentIsEditable);

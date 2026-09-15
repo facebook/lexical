@@ -424,7 +424,7 @@ describe('LexicalCodeNode tests', () => {
         selection.focus.set(lastCodeText.getKey(), 3, 'text');
         $setSelection(selection);
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(INDENT_CONTENT_COMMAND);
       expect(testEnv.innerHTML)
         .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2"><br><span data-lexical-text="true">\t</span><span data-lexical-text="true">hello</span></code>`);

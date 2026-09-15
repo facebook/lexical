@@ -26,10 +26,10 @@ import {
   $getSelection,
   $isLineBreakNode,
   $setSelectionFromCaretRange,
+  type AnyLexicalCommand,
   configExtension,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
-  type LexicalCommand,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {
@@ -210,7 +210,7 @@ describe('LexicalCodeNode tests', () => {
               // selectionTarget.getBoundingClientRect is not a function Error
               editor.dispatchCommand(
                 ...(getDispatchArgs(scenario[2]) as [
-                  LexicalCommand<unknown>,
+                  AnyLexicalCommand,
                   unknown,
                 ]),
               );

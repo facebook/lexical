@@ -39,10 +39,20 @@ export type MdastImportContext = {
   ): {url: string, title?: string | null} | void,
 };
 
+// mdast content types re-exported for handler signatures; opaque to Flow.
+export type Blockquote = unknown;
+export type BlockContent = unknown;
+export type FootnoteDefinition = unknown;
+export type FootnoteReference = unknown;
+export type Html = unknown;
+export type Paragraph = unknown;
+export type PhrasingContent = unknown;
+export type RootContent = unknown;
+
 export type MdastExportContext = {
-  exportChildren(node: ElementNode): MdastNode[],
-  exportInline(node: ElementNode): MdastNode[],
-  exportBlocks(node: ElementNode): MdastNode[],
+  exportChildren(source: ElementNode | ReadonlyArray<LexicalNode>): MdastNode[],
+  exportInline(source: ElementNode | ReadonlyArray<LexicalNode>): MdastNode[],
+  exportBlocks(source: ElementNode | ReadonlyArray<LexicalNode>): MdastNode[],
   isIncluded(node: LexicalNode): boolean,
 };
 
@@ -220,6 +230,27 @@ declare export var MdastGfmExtension: LexicalExtension<
   void,
   void,
 >;
+declare export var MdastHtmlExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/Html',
+  void,
+  void,
+>;
+// Parts are raw HTML strings or mdast content (unknown to Flow, see
+// MdastNode above); the result is an mdast node.
+export type RawHtmlBlockPart =
+  | string
+  | Array<unknown>
+  | {flow: Array<unknown>};
+declare export function rawHtmlBlock(
+  ...parts: Array<RawHtmlBlockPart>
+): MdastNode;
+declare export var $exportViaDOM: MdastExportHandler;
+// Context state handles for @lexical/html's $getRenderContextValue /
+// import ctx.get; opaque to Flow consumers.
+declare export var ImportContextMarkdown: unknown;
+declare export var RenderContextMarkdownExport: unknown;
+declare export var RenderContextMarkdownSelection: unknown;
 declare export var MdastShortcutsExtension: LexicalExtension<
   MdastShortcutsConfig,
   '@lexical/mdast/Shortcuts',

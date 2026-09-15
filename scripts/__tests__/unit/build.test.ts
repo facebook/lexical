@@ -6,6 +6,8 @@
  *
  */
 
+import type {NpmModuleExports} from '../../shared/PackageMetadata.mjs';
+
 import * as fs from 'fs-extra';
 import * as glob from 'glob';
 import * as path from 'node:path';
@@ -27,6 +29,29 @@ const monorepoPackageJson = (
 const publicNpmNames = new Set(
   packagesManager.getPublicPackages().map(pkg => pkg.getNpmName()),
 );
+
+describe('standalone projects are their own pnpm workspace root', () => {
+  // Examples and integration fixtures live inside the monorepo tree but are
+  // not workspace members. Each needs its own pnpm-workspace.yaml: it is what
+  // stops a `pnpm install` there from climbing into the monorepo and picking
+  // up its settings, and it is the only place pnpm reads that project's
+  // `overrides` and build-script decisions from (`package.json#pnpm` is
+  // ignored). Without one, `pnpm install` in the project fails with
+  // ERR_PNPM_IGNORED_BUILDS as soon as a dependency has a build script.
+  for (const packageJsonPath of [
+    'examples',
+    'scripts/__tests__/integration/fixtures',
+  ].flatMap(dir =>
+    glob.sync(`${dir}/*/package.json`, {windowsPathsNoEscape: true}),
+  )) {
+    const projectDir = path.dirname(packageJsonPath);
+    it(projectDir, () => {
+      expect(
+        fs.existsSync(path.resolve(projectDir, 'pnpm-workspace.yaml')),
+      ).toBe(true);
+    });
+  }
+});
 
 describe('public package.json audits (`pnpm run update-packages` to fix most issues)', () => {
   packagesManager.getPublicPackages().forEach(pkg => {
@@ -100,15 +125,12 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
           );
         });
         const exportsEntries = Object.entries(
-          packageJson.exports as Record<
-            string,
-            Record<string, Record<string, string>>
-          >,
+          packageJson.exports as Record<string, NpmModuleExports>,
         );
         test.each(exportsEntries)(
           'exports["%s"] redirects sub-minimum TypeScript before the "types" condition',
           (_subpath, entry) => {
-            for (const group of [entry.import, entry.require]) {
+            for (const group of [entry, entry.browser]) {
               if (!group) {
                 continue;
               }
@@ -129,6 +151,39 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
           expect(packageJson.peerDependenciesMeta?.typescript).toEqual({
             optional: true,
           });
+        });
+      });
+      describe('publishes ESM only (CommonJS is built for www alone)', () => {
+        // Every file a consumer can resolve is the package's ESM build, a
+        // .d.ts, or the TypeScript source: no `require` condition and no
+        // CommonJS build. A CommonJS consumer gets the ESM through
+        // require(esm), so the fork module those conditions resolve to must
+        // not use top-level await (scripts/build.mjs keeps it that way).
+        it('is an ES module package', () => {
+          expect(packageJson.type).toBe('module');
+        });
+        const referenced: [string, string][] = [];
+        for (const field of ['main', 'module'] as const) {
+          if (typeof packageJson[field] === 'string') {
+            referenced.push([field, packageJson[field]]);
+          }
+        }
+        for (const [subpath, entry] of Object.entries(
+          packageJson.exports as Record<string, NpmModuleExports>,
+        )) {
+          for (const [condition, target] of Object.entries(entry)) {
+            if (typeof target === 'string') {
+              referenced.push([`exports["${subpath}"].${condition}`, target]);
+            } else {
+              for (const [k, v] of Object.entries(target)) {
+                referenced.push([`exports["${subpath}"].${condition}.${k}`, v]);
+              }
+            }
+          }
+        }
+        test.each(referenced)('%s -> %s', (location, target) => {
+          expect(location).not.toMatch(/\b(import|require|node)\b/);
+          expect(target).toMatch(/\.(js|d\.ts|tsx?)$/);
         });
       });
       if (!sourceFiles.includes('index')) {

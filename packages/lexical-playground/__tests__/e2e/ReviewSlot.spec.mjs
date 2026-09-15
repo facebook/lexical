@@ -80,6 +80,17 @@ async function reviewCount(page) {
   );
 }
 
+async function placeholderBefore(page, selector) {
+  return evaluate(
+    page,
+    sel => {
+      const p = document.querySelector(`${sel} p`);
+      return p && window.getComputedStyle(p, '::before').content;
+    },
+    selector,
+  );
+}
+
 // Reset the document to a single empty paragraph via the editor API. A
 // document-wide range Backspace leaves a first-block shadow-root host (the
 // Review, which now starts the document since insertion seeds no leading
@@ -448,5 +459,75 @@ test.describe('Review React-chromed ElementNode', () => {
         ).map(c => c.tagName.toLowerCase()),
       ),
     ).toEqual(['p']);
+  });
+});
+
+test.describe('Review empty-field placeholders', () => {
+  test.beforeEach(({isCollab, isPlainText, page}) => {
+    test.skip(isPlainText);
+    return initialize({isCollab, page});
+  });
+
+  test('pasting text into the empty author slot clears its placeholder immediately (#9126)', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertReview(page);
+    await waitForSelector(page, '.lexical-review-chrome');
+
+    await click(page, `${AUTHOR} p`);
+    await pasteFromClipboard(page, {'text/plain': 'Jane Doe'});
+    await sleep(120);
+
+    expect(await regionText(page, AUTHOR)).toBe('Jane Doe');
+    const before = await placeholderBefore(page, AUTHOR);
+    expect(before === 'none' || before === '').toBe(true);
+  });
+
+  test('pasting text into the empty body clears its placeholder immediately (#9126)', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertReview(page);
+    await waitForSelector(page, '.lexical-review-chrome');
+
+    await click(page, `${BODY} p`);
+    await pasteFromClipboard(page, {'text/plain': 'Loved it'});
+    await sleep(120);
+
+    expect(await regionText(page, BODY)).toBe('Loved it');
+    const before = await placeholderBefore(page, BODY);
+    expect(before === 'none' || before === '').toBe(true);
+  });
+
+  test('a soft line break inside non-empty author/body does not resurrect the placeholder', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertReview(page);
+    await waitForSelector(page, '.lexical-review-chrome');
+
+    await click(page, `${AUTHOR} p`);
+    await page.keyboard.type('Jane');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('Enter');
+    await page.keyboard.up('Shift');
+    await page.keyboard.type('Doe');
+    await sleep(120);
+
+    expect(await regionText(page, AUTHOR)).toBe('JaneDoe');
+    const authorBefore = await placeholderBefore(page, AUTHOR);
+    expect(authorBefore === 'none' || authorBefore === '').toBe(true);
+
+    await click(page, `${BODY} p`);
+    await page.keyboard.type('Loved');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('Enter');
+    await page.keyboard.up('Shift');
+    await page.keyboard.type('it');
+    await sleep(120);
+
+    const bodyBefore = await placeholderBefore(page, BODY);
+    expect(bodyBefore === 'none' || bodyBefore === '').toBe(true);
   });
 });

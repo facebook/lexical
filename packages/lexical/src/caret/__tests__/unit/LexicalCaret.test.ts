@@ -13,6 +13,7 @@ import {
   type ListItemNode,
   type ListNode,
 } from '@lexical/list';
+import {$createMarkNode} from '@lexical/mark';
 import {$createHeadingNode, $isHeadingNode} from '@lexical/rich-text';
 import {
   $createTableCellNode,
@@ -22,16 +23,20 @@ import {
 import {
   $caretRangeFromSelection,
   $comparePointCaretNext,
+  $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $extendCaretToRange,
   $getCaretRange,
   $getChildCaret,
+  $getChildCaretAtIndex,
   $getCommonAncestor,
   $getRoot,
   $getSelection,
   $getSiblingCaret,
   $getTextPointCaret,
+  $isLineBreakNode,
   $isParagraphNode,
   $isSiblingCaret,
   $isTextNode,
@@ -58,8 +63,10 @@ import {beforeEach, describe, expect, test} from 'vitest';
 import {
   $assertRangeSelection,
   $createTestDecoratorNode,
+  $createTestElementNode,
   initializeUnitTest,
   invariant,
+  TestElementNode,
 } from '../../../__tests__/utils';
 
 const DIRECTIONS = ['next', 'previous'] as const;
@@ -1692,6 +1699,87 @@ describe('LexicalCaret', () => {
         });
       });
     });
+    describe('$extendCaretToRange', () => {
+      test('next direction: focus can be flipped and used to delete to end of document (regression for #8927)', () => {
+        testEnv.editor.update(
+          () => {
+            const t1 = $createTextNode('hello');
+            const t2 = $createTextNode('world');
+            const p1 = $createParagraphNode().append(t1);
+            const p2 = $createParagraphNode().append(t2);
+            $getRoot().clear().append(p1, p2);
+            const range = $extendCaretToRange(
+              $getTextPointCaret(t1, 'next', 2),
+            );
+            expect(range.focus).toEqual($getSiblingCaret(p2, 'next'));
+            expect(range.focus.getFlipped()).toEqual(
+              $getChildCaret($getRoot(), 'previous'),
+            );
+            expect(range.focus.getFlipped().getFlipped()).toEqual(range.focus);
+            $removeTextFromCaretRange(range);
+            expect($getRoot().getChildren()).toEqual([p1]);
+            expect($getRoot().getAllTextNodes()).toEqual([t1]);
+            expect($getRoot().getTextContent()).toBe('he');
+          },
+          {discrete: true},
+        );
+      });
+
+      test('previous direction: focus can be flipped and used to delete to start of document', () => {
+        testEnv.editor.update(
+          () => {
+            const t1 = $createTextNode('hello');
+            const t2 = $createTextNode('world');
+            const p1 = $createParagraphNode().append(t1);
+            const p2 = $createParagraphNode().append(t2);
+            $getRoot().clear().append(p1, p2);
+
+            const range = $extendCaretToRange(
+              $getTextPointCaret(t2, 'previous', 2),
+            );
+            expect(range.focus).toEqual($getSiblingCaret(p1, 'previous'));
+            expect(range.focus.getFlipped()).toEqual(
+              $getChildCaret($getRoot(), 'next'),
+            );
+            expect(range.focus.getFlipped().getFlipped()).toEqual(range.focus);
+            $removeTextFromCaretRange(range);
+            expect($getRoot().getChildren()).toEqual([p2]);
+            expect($getRoot().getAllTextNodes()).toEqual([t2]);
+            expect($getRoot().getTextContent()).toBe('rld');
+          },
+          {discrete: true},
+        );
+      });
+
+      test("doesn't change which nodes plain iteration visits", () => {
+        testEnv.editor.update(() => {
+          const t1 = $createTextNode('hello');
+          const t2 = $createTextNode('world');
+          const p1 = $createParagraphNode().append(t1);
+          const p2 = $createParagraphNode().append(t2);
+          $getRoot().clear().append(p1, p2);
+          const visited = [
+            ...$extendCaretToRange($getTextPointCaret(t1, 'next', 2)),
+          ];
+          // Same sequence a plain for...of produced before this fix — the fix
+          // only changes whether the focus can be flipped, not what iteration visits.
+          expect(visited).toEqual([
+            $getSiblingCaret(p1, 'next'),
+            $getChildCaret(p2, 'next'),
+            $getSiblingCaret(t2, 'next'),
+            $getSiblingCaret(p2, 'next'),
+          ]);
+        });
+      });
+
+      test('empty document: focus can still be flipped without throwing', () => {
+        testEnv.editor.update(() => {
+          $getRoot().clear();
+          const range = $extendCaretToRange($getChildCaret($getRoot(), 'next'));
+          expect(() => range.focus.getFlipped()).not.toThrow();
+        });
+      });
+    });
     describe('Ordering', () => {
       let rootNode: RootNode;
       let paragraphNode: ParagraphNode;
@@ -1987,6 +2075,332 @@ describe('LexicalSelectionHelpers', () => {
         expect(testEnv.innerHTML).toBe(
           '<p dir="auto"><a href="https://"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
         );
+      });
+    });
+
+    describe('canBeEmpty()=false parent cleanup', () => {
+      test('MarkNode is removed when all children are deleted via element-type range', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const before = $createTextNode('before ');
+            const mark = $createMarkNode(['test-id']);
+            const markText1 = $createTextNode('aaa');
+            const markText2 = $createTextNode('bbb');
+            const after = $createTextNode(' after');
+            mark.append(markText1, markText2);
+            p.append(before, mark, after);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(mark, 0, 'next'),
+              $getChildCaretAtIndex(mark, 2, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(mark.isAttached()).toBe(false);
+            expect(before.isAttached()).toBe(true);
+            expect(after.isAttached()).toBe(true);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('LinkNode is removed when all children are deleted via element-type range', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const before = $createTextNode('before ');
+            const link = $createLinkNode('https://lexical.dev');
+            const linkText = $createTextNode('click');
+            const after = $createTextNode(' after');
+            link.append(linkText);
+            p.append(before, link, after);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(link, 0, 'next'),
+              $getChildCaretAtIndex(link, 1, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(link.isAttached()).toBe(false);
+            expect(before.isAttached()).toBe(true);
+            expect(after.isAttached()).toBe(true);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('canBeEmpty()=false parent survives when only some children are removed', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const mark = $createMarkNode(['test-id']);
+            const t1 = $createTextNode('aaa');
+            const t2 = $createTextNode('bbb');
+            const t3 = $createTextNode('ccc');
+            mark.append(t1, t2, t3);
+            p.append(mark);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(mark, 0, 'next'),
+              $getSiblingCaret(t2, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(mark.isAttached()).toBe(true);
+            expect(mark.getChildrenSize()).toBeGreaterThan(0);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('multiple canBeEmpty()=false parents in same range are cleaned up', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const mark1 = $createMarkNode(['id1']);
+            const mark2 = $createMarkNode(['id2']);
+            const t1 = $createTextNode('aaa');
+            const t2 = $createTextNode('bbb');
+            const spacer = $createTextNode(' ');
+            mark1.append(t1);
+            mark2.append(t2);
+            p.append(mark1, spacer, mark2);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(p, 0, 'next'),
+              $getChildCaretAtIndex(p, 3, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(mark1.isAttached()).toBe(false);
+            expect(mark2.isAttached()).toBe(false);
+          },
+          {discrete: true},
+        );
+      });
+    });
+
+    // The cases above remove inline wrappers around a range. These cover the
+    // empty ancestor walk that runs after the last block of the document is
+    // emptied, where the ancestor is the root's only remaining child.
+    describe("the root's last child after select all delete", () => {
+      test('a list is replaced with an empty paragraph', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const list = $createListNode('bullet');
+            list.append($createListItemNode().append($createTextNode('item')));
+            root.append($createTestDecoratorNode().setIsInline(false), list);
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.update(
+          () => {
+            $selectAll().removeText();
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(1);
+          expect($isParagraphNode(root.getFirstChild())).toBe(true);
+          expect(root.getTextContent()).toBe('');
+        });
+      });
+
+      // The leftover list is not merely untidy: it has no block ancestor, so
+      // the next inline insert raises an uncaught invariant.
+      test('an inline insert after the list deletion does not throw', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const list = $createListNode('bullet');
+            list.append($createListItemNode().append($createTextNode('item')));
+            root.append($createTestDecoratorNode().setIsInline(false), list);
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.update(
+          () => {
+            $selectAll().removeText();
+          },
+          {discrete: true},
+        );
+
+        expect(() => {
+          testEnv.editor.update(
+            () => {
+              $assertRangeSelection($getSelection()).insertNodes([
+                $createLineBreakNode(),
+              ]);
+            },
+            {discrete: true},
+          );
+        }).not.toThrow();
+
+        testEnv.editor.read(() => {
+          const paragraph = $getRoot().getFirstChild();
+          invariant($isParagraphNode(paragraph), 'Expected a ParagraphNode');
+          expect($isLineBreakNode(paragraph.getFirstChild())).toBe(true);
+        });
+      });
+
+      test('a table is replaced with an empty paragraph', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const cell = $createTableCellNode();
+            cell.append($createParagraphNode().append($createTextNode('cell')));
+            const table = $createTableNode();
+            table.append($createTableRowNode().append(cell));
+            root.append($createTestDecoratorNode().setIsInline(false), table);
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.update(
+          () => {
+            $selectAll().removeText();
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(1);
+          expect($isParagraphNode(root.getFirstChild())).toBe(true);
+          expect(root.getTextContent()).toBe('');
+        });
+      });
+
+      // A leftover table does not throw on the next insert, because an element
+      // point on a shadow root takes an earlier branch of insertNodes. It
+      // silently takes the inline content as a child instead, which a table
+      // that holds only rows cannot render.
+      test('an inline insert after the table deletion does not land in a table', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const cell = $createTableCellNode();
+            cell.append($createParagraphNode().append($createTextNode('cell')));
+            const table = $createTableNode();
+            table.append($createTableRowNode().append(cell));
+            root.append($createTestDecoratorNode().setIsInline(false), table);
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.update(
+          () => {
+            $selectAll().removeText();
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.update(
+          () => {
+            $assertRangeSelection($getSelection()).insertNodes([
+              $createLineBreakNode(),
+            ]);
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(1);
+          const paragraph = root.getFirstChild();
+          invariant($isParagraphNode(paragraph), 'Expected a ParagraphNode');
+          expect($isLineBreakNode(paragraph.getFirstChild())).toBe(true);
+        });
+      });
+
+      // Control for the other side of the break condition. This container is
+      // reached by the same walk at the same depth as the list and the table,
+      // but it may be empty, so it is kept rather than replaced.
+      test('a container that may be empty is kept', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const container = $createTestElementNode();
+            container.append(
+              $createParagraphNode().append($createTextNode('inner')),
+            );
+            root.append(
+              $createTestDecoratorNode().setIsInline(false),
+              container,
+            );
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.update(
+          () => {
+            $selectAll().removeText();
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(1);
+          const container = root.getFirstChild();
+          expect(container).toBeInstanceOf(TestElementNode);
+          expect($isParagraphNode(container)).toBe(false);
+        });
+      });
+
+      // The ordinary document this path has always handled correctly. The walk
+      // is never entered here, since the emptied block's parent is the root.
+      test('a paragraph is kept', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const paragraph = $createParagraphNode();
+            paragraph.append($createTextNode('text'));
+            root.append(
+              $createTestDecoratorNode().setIsInline(false),
+              paragraph,
+            );
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.update(
+          () => {
+            $selectAll().removeText();
+          },
+          {discrete: true},
+        );
+
+        testEnv.editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(1);
+          expect($isParagraphNode(root.getFirstChild())).toBe(true);
+          expect(root.getTextContent()).toBe('');
+        });
       });
     });
   });

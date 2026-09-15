@@ -9,8 +9,9 @@
 import './ColorPicker.css';
 
 import {calculateZoomLevel} from '@lexical/utils';
+import {registerEventListeners} from 'lexical';
 import * as React from 'react';
-import {type JSX, useMemo, useRef, useState} from 'react';
+import {type JSX, useEffect, useMemo, useRef, useState} from 'react';
 
 import {isKeyboardInput} from '../utils/focusUtils';
 import TextInput from './TextInput';
@@ -182,6 +183,8 @@ interface MoveWrapperProps {
 function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
   const divRef = useRef<HTMLDivElement>(null);
   const draggedRef = useRef(false);
+  const dragCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => dragCleanupRef.current?.(), []);
 
   const move = (e: React.MouseEvent | MouseEvent): void => {
     if (divRef.current) {
@@ -202,26 +205,37 @@ function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
 
     move(e);
 
+    const div = divRef.current;
+    if (div === null) {
+      return;
+    }
+
     const onMouseMove = (_e: MouseEvent): void => {
       draggedRef.current = true;
       skipAddingToHistoryStack = true;
       move(_e);
     };
 
+    const doc = div.ownerDocument;
+
     const onMouseUp = (_e: MouseEvent): void => {
       if (draggedRef.current) {
         skipAddingToHistoryStack = false;
       }
 
-      document.removeEventListener('mousemove', onMouseMove, false);
-      document.removeEventListener('mouseup', onMouseUp, false);
+      dragCleanupRef.current?.();
+      dragCleanupRef.current = null;
 
       move(_e);
       draggedRef.current = false;
     };
 
-    document.addEventListener('mousemove', onMouseMove, false);
-    document.addEventListener('mouseup', onMouseUp, false);
+    dragCleanupRef.current?.();
+    dragCleanupRef.current = registerEventListeners(
+      doc,
+      {mousemove: onMouseMove, mouseup: onMouseUp},
+      false,
+    );
   };
 
   return (

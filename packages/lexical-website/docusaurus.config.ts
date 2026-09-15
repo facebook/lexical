@@ -52,10 +52,8 @@ function buildLexicalWebpackAliases() {
       moduleExports,
     ] of pkg.getNormalizedNpmModuleExportEntries()) {
       const candidates = [
-        moduleExports.import.development,
-        moduleExports.import.default,
-        moduleExports.require.development,
-        moduleExports.require.default,
+        moduleExports.development,
+        moduleExports.default,
       ].flatMap(fn => {
         if (!fn) {
           return [];
@@ -468,6 +466,7 @@ const config: Config = {
         hideable: true,
       },
     },
+    image: 'img/opengraph-image.png',
     navbar: {
       items: [
         {

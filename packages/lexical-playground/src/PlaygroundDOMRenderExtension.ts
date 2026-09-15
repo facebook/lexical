@@ -8,6 +8,7 @@
 
 import {domOverride, DOMRenderExtension} from '@lexical/html';
 import {
+  $getDocument,
   configExtension,
   defineExtension,
   isBlockDomNode,
@@ -21,11 +22,11 @@ import {
  * `<p>` for a `<div role="paragraph">` (carrying over all attributes) so
  * the resulting HTML stays well-formed.
  */
-export const PlaygroundDOMRenderExtension = /* @__PURE__ */ defineExtension({
+export const PlaygroundDOMRenderExtension = defineExtension({
   dependencies: [
-    /* @__PURE__ */ configExtension(DOMRenderExtension, {
+    configExtension(DOMRenderExtension, {
       overrides: [
-        /* @__PURE__ */ domOverride([ParagraphNode], {
+        domOverride([ParagraphNode], {
           $exportDOM: (node, $next, editor) => {
             const output = $next();
             if (
@@ -49,7 +50,7 @@ export const PlaygroundDOMRenderExtension = /* @__PURE__ */ defineExtension({
                 }
                 for (const childNode of generatedElement.childNodes) {
                   if (isBlockDomNode(childNode)) {
-                    const div = document.createElement('div');
+                    const div = $getDocument().createElement('div');
                     div.setAttribute('role', 'paragraph');
                     for (const attr of generatedElement.attributes) {
                       div.setAttribute(attr.name, attr.value);

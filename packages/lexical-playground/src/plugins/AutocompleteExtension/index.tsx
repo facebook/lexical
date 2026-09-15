@@ -279,7 +279,7 @@ function syncGhost(
   if (!dom) {
     return;
   }
-  const ghost = document.createElement('span');
+  const ghost = dom.ownerDocument.createElement('span');
   ghost.setAttribute(AUTOCOMPLETE_GHOST_ATTR, 'true');
   ghost.setAttribute('contenteditable', 'false');
   ghost.className = 'PlaygroundEditorTheme__autocomplete';
@@ -337,9 +337,9 @@ function mergeAutocompleteConfig(
   return merged;
 }
 
-export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
+export const AutocompleteExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<AutocompleteConfig>({
+  config: safeCast<AutocompleteConfig>({
     compositionIdleDebounceMs: DEFAULT_COMPOSITION_IDLE_DEBOUNCE_MS,
     detectLanguage: defaultDetectLanguage,
     dictionaries: defaultDictionaries,

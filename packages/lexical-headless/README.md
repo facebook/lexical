@@ -13,7 +13,7 @@ npm install --save @lexical/headless
 ```
 
 ```js
-const { createHeadlessEditor } = require('@lexical/headless');
+import { createHeadlessEditor } from '@lexical/headless';
 
 const editor = createHeadlessEditor({
   nodes: [],
@@ -29,11 +29,17 @@ editor.update(() => {
 });
 ```
 
+Lexical packages are published as ES modules. A CommonJS project can load them
+with `require()` on Node.js 20.19 or later, but any dependency it shares with
+Lexical (such as `yjs`) has to be loaded as an ES module as well, or the
+project ends up with two copies of it; see
+[Which module formats are published?](https://lexical.dev/docs/faq#which-module-formats-are-published-esm-commonjs-nodejs-react-native).
+
 Any plugins that do not rely on DOM could also be used. Here's an example of how
 you can convert lexical editor state to markdown on server:
 ```js
-const { createHeadlessEditor } = require('@lexical/headless');
-const { $convertToMarkdownString, TRANSFORMERS } = require('@lexical/markdown');
+import { createHeadlessEditor } from '@lexical/headless';
+import { $convertToMarkdownString, TRANSFORMERS } from '@lexical/markdown';
 
 app.get('article/:id/markdown', async (req, res) => {
   const editor = createHeadlessEditor({

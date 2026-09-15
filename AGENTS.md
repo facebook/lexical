@@ -36,9 +36,13 @@ For E2E testing workflow:
 - `pnpm run lint:fix` - Auto-fix lint issues
 - `pnpm run prettier` - Check code formatting
 - `pnpm run prettier:fix` - Auto-fix formatting issues
-- `pnpm run flow` - Run Flow type checker
+- `pnpm run flow` - Run a full foreground Flow check (does not reuse a server)
 - `pnpm run tsc` - Run TypeScript compiler
 - `pnpm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
+
+**Never commit changes to `scripts/error-codes/codes.json`.**
+That edit is not yours to make — revert it to the state of
+`main` before staging, and never `git add` the file.
 
 ### Searching and refactoring
 
@@ -64,19 +68,85 @@ with `--rewrite`. Reach for it whenever a change spans many files and must be
 precise — e.g. moving symbols that `@lexical/utils` merely re-exports back to
 a direct `lexical` import.
 
+### Extension source imports
+
+Import from the `@lexical/extension` barrel across package boundaries. Within
+`packages/lexical-extension`, use relative imports and re-exports. Do not
+manually rewrite these source imports to `@lexical/extension/*`: ESLint
+enforces the source convention, and `@lexical/compiler`'s `subpathImports`
+pass rewrites them in all published package builds, including www. Public
+sibling entries stay external so shared modules such as signals retain one
+instance. Helpers with only one owning entry live under `src/internal` and
+are bundled into that entry, without exposing additional public subpaths.
+Downstream users may import either the barrel or public subpaths.
+
 ### Tree-shaking annotations
 
 Module-scope calls to the side-effect-free factories (`defineExtension`,
 `configExtension`, `safeCast`, `createCommand`, `createState`,
-`defineImportRule`, etc.) must be annotated with `/* @__PURE__ */` so
-bundlers can drop unused definitions from application bundles. This is
-enforced (with an autofixer) by the
-`@lexical/internal/require-pure-annotation` ESLint rule — run
-`pnpm run lint:fix` (also run by the pre-commit hook) to insert the
-annotations automatically. When adding a new factory of this kind,
-annotate its definition with `@__NO_SIDE_EFFECTS__` and add its name to
-the rule's default list in
-`packages/lexical-eslint-plugin-internal/src/rules/require-pure-annotation.js`.
+`defineImportRule`, etc.) need a `/* @__PURE__ */` annotation so bundlers
+can drop unused definitions from application bundles. **Do not write those
+annotations by hand** — they are injected at build time by
+`@lexical/compiler` (`packages/lexical-compiler`), which
+runs as a Rollup plugin in `scripts/build.mjs` for the published bundles
+and as a Vite plugin in `scripts/vite/lexicalMonorepoPlugin.ts` for
+everything the monorepo builds from source. The published package is also
+what consumers add to their own build when they compile Lexical from its
+`source` export condition rather than from `dist`.
+
+A hand-written annotation on one of these calls is a lint error
+(`@lexical/internal/no-pure-annotation`), and the rule is autofixable, so a
+branch written before the transform existed migrates with
+`pnpm run lint:fix`. Annotations on anything else — a third-party factory, or
+a call inside a function body, where the build never injects one — are left
+alone.
+
+When adding a new factory of this kind, annotate its definition with
+`@__NO_SIDE_EFFECTS__`. That alone is enough for calls in the same package to
+be annotated; add its name to `PURE_FACTORY_FUNCTIONS` in
+`packages/lexical-compiler/src/LexicalCompiler.mjs` so that
+calls in code that imports it by package name are too. An object whose
+methods build values and touch nothing else (like `@lexical/html`'s `sel`) is
+marked `@lexical-pure-namespace` instead, so that `sel.tag('p')` is annotated
+the way a factory call is.
+
+The build runs with `strict`, which fails on a call inside one of these
+definitions that nothing has established is side-effect free — such a call
+pins the definition into every bundle that imports the module, however well
+annotated the definition itself is. If it stops you, either make the call
+lazy (a `nodes: () => [...]` callback is not evaluated at module scope), or
+declare the function side-effect free so its calls are annotated too. A
+third-party factory that cannot be declared is annotated by hand at the call
+site, which is what the remaining hand-written annotations in the tree are.
+
+Factory calls are not the only module-scope statements that pin a module.
+esbuild and webpack keep, as a side effect, any property read at module scope
+(`navigator.userAgent`, `Date.now`, `SomeExtension.name`), any call or `new`
+they were not told is pure (`new RegExp(...)`, `Object.freeze(...)`,
+`[...].join(',')`), an array or object spread, an `in` test, a `try`
+statement, a mutation (`table.push(...)`, `Klass.static = ...`), a class with
+a computed member (`[SOME_SYMBOL]?: number` — write `declare` on it), and an
+IIFE — together with everything the statement references. One
+`LexicalEditor.version = ...` after the class kept nearly all of `lexical` in
+a bundle that imported only `createCommand` (#9120). Move such work into a
+function declared `@__NO_SIDE_EFFECTS__` and call it at module scope, so the
+build annotates the call; annotate a call to a builtin or to a third-party
+function (`/* @__PURE__ */ forwardRef(...)`) by hand. Two tests enforce this
+by bundling a bare `import 'pkg'` of every entry with esbuild and requiring
+that nothing is retained: `scripts/__tests__/unit/treeShakingSource.test.ts`
+on the sources (runs with `pnpm run test-unit`) and
+`scripts/__tests__/integration/tree-shaking.test.mjs` on the published
+builds. A failure prints the retained code; its first statement is usually
+the culprit.
+
+A factory whose body is a trivial expression over its own arguments (like
+`safeCast`, `defineExtension`, or `configExtension`) is additionally marked
+`@lexical-inline <form>` and listed in that file's `INLINE_FACTORIES`: the
+build replaces calls to it with the expression it would have returned, which
+needs no annotation at all. **The body of a marked function is reproduced by
+the build**, so keep it trivial — `packages/lexical-compiler`'s unit
+tests compare what the transform emits against what the real function returns
+and will fail if the two drift apart.
 
 ## High-Level Architecture
 
@@ -211,6 +281,36 @@ When adding/modifying APIs, types must be maintained for both systems.
 - If an API genuinely must change, deprecate the old one first (keep it working, document the replacement) rather than removing it outright.
 - When in doubt, assume external code depends on the current behavior and keep it intact.
 
+## Dependencies: Lexical is a singleton within one app
+
+An application must resolve exactly one copy of `lexical`, and one copy of each
+`@lexical/*` package it uses. The active editor and editor state are
+module-scope variables in `LexicalUpdates.ts`, node registration and
+`instanceof LexicalNode` compare class references, and commands are object
+identities from `createCommand()` — none of which survive a second copy of the
+module. Two copies also mean two versions, which is API drift inside one editor.
+
+The boundary is the app, not the page: several self-contained apps, each with
+its own bundled Lexical, can coexist on one page (`isLexicalEditor` is an
+`instanceof` check precisely to support that). They just cannot interoperate —
+nodes, editors, `EditorState`s, selections and commands must never be passed
+across such a boundary, only serialized data.
+
+- Inside this monorepo, packages depend on siblings with `"lexical":
+  "workspace:*"`; `pnpm publish` rewrites that to the exact published version,
+  so every `@lexical/*` release pins the matching `lexical`. Keep that pattern
+  when adding a package — do not hand-write a version range.
+- A **library** published on top of Lexical (anything outside this repo that
+  imports `lexical` or `@lexical/*`) declares those packages in
+  `peerDependencies`, plus `devDependencies` for its own build and tests, never
+  in `dependencies`. Apps bring their own Lexical and own the version.
+- Code under `examples/` and `packages/lexical-playground` are applications, so
+  they depend on Lexical directly — that is correct and should stay.
+
+The user-facing version of this rule lives in
+`packages/lexical-website/docs/concepts/one-lexical-per-app.md`; keep the two in
+sync when either changes.
+
 ## Important Development Notes
 
 ### Reconciliation and Updates
@@ -286,14 +386,27 @@ For full details on the browser platform APIs involved, see
 [Shadow DOM and iframes](packages/lexical-website/docs/concepts/shadow-dom.md).
 
 ### Commits and Pull Requests
-- Write every commit message to match `.github/pull_request_template.md` so it can seed a PR directly: a `[Affected Packages] PR Type: title` subject line, then the `## Description` and `## Test plan` (Before/After) sections.
+Every commit message — not just PR bodies — must be written to the shape of
+`.github/pull_request_template.md`, so any commit can seed a PR directly
+without being rewritten. This applies to every commit you author, including
+one-line fixes; do not wait to be asked. Read the template rather than working
+from memory, and fill in its sections:
 
-### Build System
-- Uses Rollup for bundling
-- Build script: `scripts/build.mjs`
-- Supports multiple build modes: development, production, www (Meta internal)
-- TypeScript source → compiled to CommonJS and ESM
-- Package manager logic in `scripts/shared/packagesManager.mjs`
+- **Subject line**: `[Affected Packages] PR Type: title`, where the packages are
+  the directory names under `packages/` that the diff touches and the type is
+  one of Breaking change / Refactor / Feature / Bug Fix / Documentation Update /
+  Chore. Test-only and tooling changes are `Chore`.
+- **`## Description`**: what the current behavior is and what this change makes
+  it do. Add `Closes #<issue>` only when there is a real issue number; drop the
+  line otherwise rather than leaving the template's placeholder behind.
+- **`## Test plan`** with `### Before` and `### After` subsections: the command
+  you ran, plus the actual failing output before and passing output after.
+  Paste real output — do not describe it. If a platform or browser in the
+  matrix could not be exercised, say so explicitly under `### After`.
+
+Drop any template section that does not apply to the diff instead of carrying
+an empty heading, and treat the template's HTML comments as instructions to
+follow, not text to copy into the message.
 
 ### Commit and PR Hygiene for Agents
 This is an open source project: never include agent-session URLs or other
@@ -304,3 +417,13 @@ everyone else. Co-authorship attribution (e.g. `Co-Authored-By:`) is fine.
 For Claude Code this is enforced mechanically via `attribution.sessionUrl:
 false` in the checked-in `.claude/settings.json`; agents from other vendors
 should follow this rule as written.
+
+### Build System
+- Uses Rollup for bundling
+- Build script: `scripts/build.mjs`
+- Supports multiple build modes: development, production, www (Meta internal)
+- TypeScript source → compiled to ESM for npm (`dist/*.js` in the
+  `"type": "module"` packages; CommonJS consumers load it through
+  `require(esm)`, so the fork modules must stay free of top-level await) and
+  to CommonJS for www only (`--www`)
+- Package manager logic in `scripts/shared/packagesManager.mjs`

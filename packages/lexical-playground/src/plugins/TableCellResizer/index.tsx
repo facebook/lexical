@@ -66,6 +66,8 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   const [hasTable, setHasTable] = useState(false);
 
   const pointerStartPosRef = useRef<PointerPosition | null>(null);
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => resizeCleanupRef.current?.(), []);
   const [pointerCurrentPos, updatePointerCurrentPos] =
     useState<PointerPosition | null>(null);
 
@@ -351,7 +353,8 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           }
 
           resetState();
-          document.removeEventListener('pointerup', handler);
+          resizeCleanupRef.current?.();
+          resizeCleanupRef.current = null;
         }
       };
       return handler;
@@ -378,7 +381,12 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
         updatePointerCurrentPos(pointerStartPosRef.current);
         updateDraggingDirection(direction);
 
-        document.addEventListener('pointerup', pointerUpHandler(direction));
+        resizeCleanupRef.current?.();
+        resizeCleanupRef.current = registerEventListener(
+          activeCell.elem.ownerDocument,
+          'pointerup',
+          pointerUpHandler(direction),
+        );
       },
     [activeCell, pointerUpHandler],
   );
@@ -502,11 +510,14 @@ export default function TableCellResizerPlugin(): null | ReactPortal {
   const [editor] = useLexicalComposerContext();
   const isEditable = useLexicalEditable();
 
+  const portalTarget =
+    editor.getRootElement()?.ownerDocument?.body ?? document.body;
+
   return useMemo(
     () =>
       isEditable
-        ? createPortal(<TableCellResizer editor={editor} />, document.body)
+        ? createPortal(<TableCellResizer editor={editor} />, portalTarget)
         : null,
-    [editor, isEditable],
+    [editor, isEditable, portalTarget],
   );
 }

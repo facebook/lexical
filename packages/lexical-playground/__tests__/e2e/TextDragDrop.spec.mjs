@@ -14,6 +14,7 @@ import {
 import {
   assertHTML,
   evaluate,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -61,9 +62,10 @@ async function dragSelectionToOffset(page, sourceText, clientTextOffset) {
         dataTransfer,
       });
       editable.dispatchEvent(dragoverEvent);
-      if (!dragoverEvent.defaultPrevented) {
+      if (dragoverEvent.defaultPrevented) {
         throw new Error(
-          'dragover was not prevented; drop will not fire in Firefox',
+          'dragover over text must not be prevented; canceling it suppresses ' +
+            'the native editable drop handling that external text drops rely on',
         );
       }
       editable.dispatchEvent(
@@ -188,5 +190,58 @@ test.describe('Text drag and drop', () => {
         </p>
       `,
     );
+  });
+
+  test('native drop of text from a non-Lexical drag source inserts it', async ({
+    page,
+    browserName,
+    isCollab,
+  }) => {
+    // The other tests dispatch synthetic drag events, which never run the
+    // browser's default actions and so can't detect a handler that breaks
+    // native drop handling (e.g. an unconditional preventDefault() on
+    // dragover tells the browser the page owns the drop, suppressing the
+    // native editable insertFromDrop that external text drops rely on).
+    // Playwright's mouse API composes a real drag through the browser's
+    // drag controller, but only Chromium supports that interception.
+    test.skip(browserName !== 'chromium');
+    test.skip(!!isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('hello world');
+
+    // Inject a draggable element that is not part of any Lexical editor.
+    await evaluate(page, () => {
+      const source = document.createElement('div');
+      source.id = 'external-drag-source';
+      source.textContent = 'DRAG ME';
+      source.draggable = true;
+      source.style.cssText =
+        'position:fixed;top:4px;left:4px;z-index:99999;padding:8px;';
+      source.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', 'EXTERNAL');
+      });
+      document.body.appendChild(source);
+    });
+
+    const source = await page.locator('#external-drag-source').boundingBox();
+    const target = await page
+      .locator('div[contenteditable="true"]')
+      .first()
+      .boundingBox();
+
+    await page.mouse.move(
+      source.x + source.width / 2,
+      source.y + source.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(source.x + 40, source.y + 40, {steps: 5});
+    await page.mouse.move(target.x + target.width / 2, target.y + 20, {
+      steps: 15,
+    });
+    await page.mouse.up();
+
+    await expect(
+      page.locator('div[contenteditable="true"]').first(),
+    ).toContainText('EXTERNAL');
   });
 });

@@ -61,7 +61,10 @@ import {
   $isTabNode,
   $isTextNode,
   $setState,
-  TEXT_TYPE_TO_FORMAT,
+  IS_BOLD,
+  IS_CODE,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
 } from 'lexical';
 
 import {
@@ -123,13 +126,26 @@ function inlineMarker(
   return ctx.source[node.position.start.offset];
 }
 
-const FORMAT_BOLD = TEXT_TYPE_TO_FORMAT.bold;
-const FORMAT_ITALIC = TEXT_TYPE_TO_FORMAT.italic;
-const FORMAT_STRIKETHROUGH = TEXT_TYPE_TO_FORMAT.strikethrough;
-const FORMAT_CODE = TEXT_TYPE_TO_FORMAT.code;
+// The format bit constants rather than `TEXT_TYPE_TO_FORMAT.bold` etc.: a
+// module-scope property read is a side effect to bundlers, which would pin
+// these (and everything below that uses them) into every bundle.
+const FORMAT_BOLD = IS_BOLD;
+const FORMAT_ITALIC = IS_ITALIC;
+const FORMAT_STRIKETHROUGH = IS_STRIKETHROUGH;
+const FORMAT_CODE = IS_CODE;
 
-export const TEXT_FORMAT_MASK =
-  FORMAT_BOLD | FORMAT_ITALIC | FORMAT_STRIKETHROUGH | FORMAT_CODE;
+/**
+ * A function declared side-effect free (so the build annotates the call
+ * below): a bitwise operation on imported values is a side effect to bundlers
+ * (it may invoke `valueOf`), which would pin this module into every bundle.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+function textFormatMask(): number {
+  return FORMAT_BOLD | FORMAT_ITALIC | FORMAT_STRIKETHROUGH | FORMAT_CODE;
+}
+
+export const TEXT_FORMAT_MASK = textFormatMask();
 
 /* -------------------------------------------------------------------------- *
  * Import handlers: mdast node -> Lexical node(s)                              *

@@ -285,10 +285,14 @@ export class ElementNode
     // never leak into selection placement. A slot value is always a non-inline
     // element or decorator (setSlot enforces this), so only element slots
     // contribute text nodes.
+    // Concatenated with a loop rather than push(...spread): one argument per
+    // text node overflows the call stack on a document with enough of them.
     for (const name of $getSlotNames(this)) {
       const slot = $getSlot(this, name);
       if ($isElementNode(slot)) {
-        textNodes.push(...slot.getAllTextNodes());
+        for (const textNode of slot.getAllTextNodes()) {
+          textNodes.push(textNode);
+        }
       }
     }
     let child: LexicalNode | null = this.getFirstChild();
@@ -297,8 +301,9 @@ export class ElementNode
         textNodes.push(child);
       }
       if ($isElementNode(child)) {
-        const subChildrenNodes = child.getAllTextNodes();
-        textNodes.push(...subChildrenNodes);
+        for (const textNode of child.getAllTextNodes()) {
+          textNodes.push(textNode);
+        }
       }
       child = child.getNextSibling();
     }
@@ -687,7 +692,7 @@ export class ElementNode
     const writableSelfKey = writableSelf.__key;
     const nodesToInsertKeys = [];
     const nodesToRemoveKeys = [];
-    const nodeAfterRange = this.getChildAtIndex(start + deleteCount);
+    let nodeAfterRange = this.getChildAtIndex(start + deleteCount);
     let nodeBeforeRange = null;
     let newSize = oldSize - deleteCount + nodesToInsert.length;
 
@@ -725,6 +730,9 @@ export class ElementNode
       if (prevNode !== null && nodeToInsert.is(prevNode)) {
         nodeBeforeRange = prevNode = prevNode.getPreviousSibling();
       }
+      if (nodeAfterRange !== null && nodeToInsert.is(nodeAfterRange)) {
+        nodeAfterRange = nodeAfterRange.getNextSibling();
+      }
       const writableNodeToInsert = nodeToInsert.getWritable();
       if (writableNodeToInsert.__parent === writableSelfKey) {
         newSize--;
@@ -748,13 +756,13 @@ export class ElementNode
       prevNode = nodeToInsert;
     }
 
-    if (start + deleteCount === oldSize) {
+    if (nodeAfterRange === null) {
       if (prevNode !== null) {
         const writablePrevNode = prevNode.getWritable();
         writablePrevNode.__next = null;
         writableSelf.__last = prevNode.__key;
       }
-    } else if (nodeAfterRange !== null) {
+    } else {
       const writableNodeAfterRange = nodeAfterRange.getWritable();
       if (prevNode !== null) {
         const writablePrevNode = prevNode.getWritable();
@@ -999,6 +1007,7 @@ export class ElementNode
   }
 }
 
+/** Returns true if the given node is an ElementNode. */
 export function $isElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode {

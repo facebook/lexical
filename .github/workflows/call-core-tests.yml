@@ -18,10 +18,17 @@ jobs:
       - uses: ./.github/actions/setup-pnpm
         with:
           node-version: ${{ matrix.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ matrix.node-version }}
       - run: pnpm run ci-check
       - run: pnpm run build
       - run: pnpm run build-www
       - run: pnpm run --filter @lexical/website build
+      # Loads the built homepage in a browser and fails if an embedded example
+      # throws at runtime (a green `build` alone does not catch this — see
+      # #8860).
+      - run: pnpm run --filter @lexical/website test-examples
       - run: pnpm run --filter lexical-playground build-vercel
 
   unit:

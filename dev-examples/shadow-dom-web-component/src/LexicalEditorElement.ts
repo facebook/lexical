@@ -631,8 +631,8 @@ export class LexicalEditorElement extends HTMLElement {
         ),
       );
     }
-    addButton('↺', () => editor.dispatchCommand(UNDO_COMMAND, undefined));
-    addButton('↻', () => editor.dispatchCommand(REDO_COMMAND, undefined));
+    addButton('↺', () => editor.dispatchCommand(UNDO_COMMAND));
+    addButton('↻', () => editor.dispatchCommand(REDO_COMMAND));
     toolbar.appendChild(toolbarSpacer);
     toolbar.appendChild(toolbarSlot);
 

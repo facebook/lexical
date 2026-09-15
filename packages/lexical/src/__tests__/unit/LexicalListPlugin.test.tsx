@@ -88,7 +88,7 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
       });
     });
 
@@ -113,7 +113,7 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
+        editor.dispatchCommand(REMOVE_LIST_COMMAND);
       });
     });
 
@@ -143,7 +143,7 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
       });
     });
 
@@ -168,7 +168,7 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+        editor.dispatchCommand(INDENT_CONTENT_COMMAND);
       });
     });
 
@@ -195,7 +195,7 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+        editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
       });
     });
 
@@ -226,10 +226,10 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
         $insertNodes([$createTextNode('First item')]);
         editor.dispatchCommand(KEY_ENTER_COMMAND, null);
-        editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+        editor.dispatchCommand(INDENT_CONTENT_COMMAND);
         $insertNodes([$createTextNode('Nested item')]);
         editor.dispatchCommand(KEY_ENTER_COMMAND, null);
         $setBlocksType($getSelection(), $createParagraphNode);

@@ -12,6 +12,7 @@ import {
   type EditorThemeClasses,
 } from 'lexical';
 
+/** @__NO_SIDE_EFFECTS__ */
 function join(...args: string[]) {
   return args.join(' ');
 }
@@ -108,13 +109,15 @@ const theme: EditorThemeClasses = {
     nested: {
       listitem: join('list-none', 'before:hidden', 'after:hidden'),
     },
+    // Spelled out rather than mapped: a method call at module scope is a side
+    // effect to bundlers, which would pin the whole theme into every bundle.
     olDepth: [
-      'list-decimal',
-      'list-[upper-alpha]',
-      'list-[lower-alpha]',
-      'list-[upper-roman]',
-      'list-[lower-roman]',
-    ].map(cls => join(listCommonClasses, cls)),
+      join(listCommonClasses, 'list-decimal'),
+      join(listCommonClasses, 'list-[upper-alpha]'),
+      join(listCommonClasses, 'list-[lower-alpha]'),
+      join(listCommonClasses, 'list-[upper-roman]'),
+      join(listCommonClasses, 'list-[lower-roman]'),
+    ],
     ul: join(listCommonClasses, 'list-disc'),
   },
   // mark: 'PlaygroundEditorTheme__mark',
@@ -170,10 +173,10 @@ const theme: EditorThemeClasses = {
 /**
  * Configures the lexical theme ({@link EditorThemeClasses}) with tailwind defaults
  */
-export const TailwindExtension = /* @__PURE__ */ defineExtension({
+export const TailwindExtension = defineExtension({
   name: '@lexical/tailwind',
   peerDependencies: [
-    /* @__PURE__ */ declarePeerDependency('@lexical/react/TreeView', {
+    declarePeerDependency('@lexical/react/TreeView', {
       timeTravelButtonClassName:
         'absolute top-[10px] right-[15px] border-0 p-0 text-xs bg-transparent text-white hover:underline cursor-pointer',
       timeTravelPanelButtonClassName:

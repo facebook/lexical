@@ -59,7 +59,7 @@ export function BlockWithAlignableContents({
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand<ElementFormatType>(
+      editor.registerCommand(
         FORMAT_ELEMENT_COMMAND,
         formatType => {
           if (isSelected) {
@@ -91,7 +91,7 @@ export function BlockWithAlignableContents({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand<MouseEvent>(
+      editor.registerCommand(
         CLICK_COMMAND,
         event => {
           if (getComposedEventTarget(event) === ref.current) {

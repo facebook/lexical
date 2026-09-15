@@ -244,6 +244,39 @@ describe('ContentEditableElement tests', () => {
     expect(results).toHaveNoViolations();
   });
 
+  it('renders tabindex="-1" when not editable', async () => {
+    editor.setEditable(false);
+    await act(async () => {
+      reactRoot.render(
+        <ContentEditableElement editor={editor} role="textbox" />,
+      );
+    });
+    const element = container!.querySelector('[role="textbox"]')!;
+    expect(element.getAttribute('tabindex')).toBe('-1');
+    expect(element.getAttribute('contenteditable')).toBe('false');
+  });
+
+  it('does not render tabindex when editable', async () => {
+    await act(async () => {
+      reactRoot.render(
+        <ContentEditableElement editor={editor} role="textbox" />,
+      );
+    });
+    const element = container!.querySelector('[role="textbox"]')!;
+    expect(element.getAttribute('tabindex')).toBeNull();
+  });
+
+  it('allows custom tabIndex to override default when not editable', async () => {
+    editor.setEditable(false);
+    await act(async () => {
+      reactRoot.render(
+        <ContentEditableElement editor={editor} role="textbox" tabIndex={0} />,
+      );
+    });
+    const element = container!.querySelector('[role="textbox"]')!;
+    expect(element.getAttribute('tabindex')).toBe('0');
+  });
+
   it('should have no accessibility violations when not editable', async () => {
     expect.extend(toHaveNoViolations);
     editor.setEditable(false);

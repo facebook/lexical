@@ -21,6 +21,7 @@
 //   `$getExtensionOutput(MdastExportExtension)`, or via the
 //   `$convert*` shorthands.
 
+export {RenderContextMarkdownSelection} from './MdastExport';
 export type {MdastExportExtensionOutput} from './MdastExportExtension';
 export {
   $convertSelectionToMarkdownString,
@@ -30,6 +31,14 @@ export {
 } from './MdastExportExtension';
 export {MdastExtension} from './MdastExtension';
 export {MdastGfmExtension} from './MdastGfmExtension';
+export {
+  $exportViaDOM,
+  MdastHtmlExtension,
+  rawHtmlBlock,
+  type RawHtmlBlockPart,
+  RenderContextMarkdownExport,
+} from './MdastHtmlExtension';
+export {ImportContextMarkdown} from './MdastImport';
 export type {
   MdastConfig,
   MdastImportExtensionOutput,
@@ -67,3 +76,17 @@ export type {
   MdastNode,
   MdastParent,
 } from './types';
+// Re-exported so consumers writing import/export handlers (whose
+// signatures traffic in these mdast content types, e.g.
+// {@link RawHtmlBlockPart}) don't need their own dependency on the
+// `mdast` type declarations.
+export type {
+  BlockContent,
+  Blockquote,
+  FootnoteDefinition,
+  FootnoteReference,
+  Html,
+  Paragraph,
+  PhrasingContent,
+  RootContent,
+} from 'mdast';

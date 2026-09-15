@@ -5,12 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $createListItemNode,
   $createListNode,
   $insertList,
   $isListItemNode,
   $isListNode,
+  ListExtension,
   ListItemNode,
   ListNode,
   type ListType,
@@ -43,6 +45,7 @@ import {
   $assertNodeType,
   $createTestDecoratorNode,
   initializeUnitTest,
+  invariant,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
@@ -74,6 +77,29 @@ function $createExtendedTestListItemNode(): ExtendedTestListItemNode {
 
 function $isExtendedTestListItemNode(node?: LexicalNode | null) {
   return node instanceof ExtendedTestListItemNode;
+}
+
+/**
+ * Builds a ListItemNode that holds a nested list of the given type, one child
+ * per text.
+ */
+function $createNestedListItem(
+  listType: ListType,
+  ...texts: string[]
+): ListItemNode {
+  return $createListItemNode().append(
+    $createListNode(listType).append(
+      ...texts.map(text => $createListItemNode().append($createTextNode(text))),
+    ),
+  );
+}
+
+/** Returns the nested list held by a ListItemNode. */
+function $getNestedList(node: LexicalNode): ListNode {
+  return $assertNodeType(
+    $assertNodeType(node, $isListItemNode).getFirstChild(),
+    $isListNode,
+  );
 }
 
 const initOptions = {
@@ -246,7 +272,7 @@ describe('$handleListInsertParagraph', () => {
         listNode.append(listItemWithContent, listItemEmpty);
         $getRoot().append(listNode);
         listItemEmpty.select();
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       });
 
       editor.read(() => {
@@ -275,7 +301,7 @@ describe('$handleListInsertParagraph', () => {
         listNode.append(listItemWithContent, listItemWhitespace);
         $getRoot().append(listNode);
         whitespaceTextNode.select();
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       });
 
       editor.read(() => {
@@ -303,7 +329,7 @@ describe('$handleListInsertParagraph', () => {
         listNode.append(listItem1, listItem2);
         $getRoot().append(listNode);
         textNode.selectEnd();
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       });
 
       editor.read(() => {
@@ -329,7 +355,7 @@ describe('$handleListInsertParagraph', () => {
         listNode.append(listItem1, listItem2);
         $getRoot().append(listNode);
         listItem2.select();
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       });
 
       editor.read(() => {
@@ -360,7 +386,7 @@ describe('$handleListInsertParagraph', () => {
         );
         $getRoot().append(listNode);
         listItemEmpty.select();
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       });
 
       editor.read(() => {
@@ -414,6 +440,166 @@ describe('$handleIndent', () => {
           expect(nestedList.getChildren()[0].is(listItem2)).toBe(true);
         });
       });
+
+      test('merges the surrounding sublists when they are the same type', async () => {
+        const {editor} = testEnv;
+        let middleItem: ListItemNode;
+
+        await editor.update(() => {
+          middleItem = $createListItemNode().append($createTextNode('middle'));
+          $getRoot().append(
+            $createListNode('bullet').append(
+              $createNestedListItem('bullet', 'first child'),
+              middleItem,
+              $createNestedListItem('bullet', 'second child'),
+            ),
+          );
+        });
+
+        await editor.update(() => {
+          $handleIndent(middleItem);
+        });
+
+        editor.read(() => {
+          const listNode = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isListNode,
+          );
+          const children = listNode.getChildren();
+          expect(children.length).toBe(1);
+
+          const sublist = $getNestedList(children[0]);
+          expect(sublist.getListType()).toBe('bullet');
+          expect(
+            sublist.getChildren().map(item => item.getTextContent()),
+          ).toEqual(['first child', 'middle', 'second child']);
+        });
+      });
+
+      test('does not merge the surrounding sublists of a different listType', async () => {
+        const {editor} = testEnv;
+        let middleItem: ListItemNode;
+
+        await editor.update(() => {
+          middleItem = $createListItemNode().append($createTextNode('middle'));
+          $getRoot().append(
+            $createListNode('bullet').append(
+              $createNestedListItem('bullet', 'bullet child'),
+              middleItem,
+              $createNestedListItem('number', 'number one', 'number two'),
+            ),
+          );
+        });
+
+        await editor.update(() => {
+          $handleIndent(middleItem);
+        });
+
+        editor.read(() => {
+          const listNode = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isListNode,
+          );
+          const children = listNode.getChildren();
+          // the numbered sublist survives with its type and its children
+          const numberSublist = $getNestedList(children[children.length - 1]);
+          expect(numberSublist.getListType()).toBe('number');
+          expect(
+            numberSublist.getChildren().map(item => item.getTextContent()),
+          ).toEqual(['number one', 'number two']);
+          expect(children.length).toBe(2);
+
+          // the item is still indented into the preceding sublist
+          const bulletSublist = $getNestedList(children[0]);
+          expect(bulletSublist.getListType()).toBe('bullet');
+          expect(
+            bulletSublist.getChildren().map(item => item.getTextContent()),
+          ).toEqual(['bullet child', 'middle']);
+        });
+      });
+
+      test('does not merge the surrounding sublists of a different listType, the other way round', async () => {
+        const {editor} = testEnv;
+        let middleItem: ListItemNode;
+
+        await editor.update(() => {
+          middleItem = $createListItemNode().append($createTextNode('middle'));
+          $getRoot().append(
+            $createListNode('number').append(
+              $createNestedListItem('number', 'number one'),
+              middleItem,
+              $createNestedListItem('bullet', 'bullet one', 'bullet two'),
+            ),
+          );
+        });
+
+        await editor.update(() => {
+          $handleIndent(middleItem);
+        });
+
+        editor.read(() => {
+          const listNode = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isListNode,
+          );
+          const children = listNode.getChildren();
+          const bulletSublist = $getNestedList(children[children.length - 1]);
+          expect(bulletSublist.getListType()).toBe('bullet');
+          expect(
+            bulletSublist.getChildren().map(item => item.getTextContent()),
+          ).toEqual(['bullet one', 'bullet two']);
+          expect(children.length).toBe(2);
+
+          const numberSublist = $getNestedList(children[0]);
+          expect(numberSublist.getListType()).toBe('number');
+          expect(
+            numberSublist.getChildren().map(item => item.getTextContent()),
+          ).toEqual(['number one', 'middle']);
+        });
+      });
+
+      test('keeps the checked state of a following check sublist', async () => {
+        const {editor} = testEnv;
+        let middleItem: ListItemNode;
+
+        await editor.update(() => {
+          middleItem = $createListItemNode().append($createTextNode('middle'));
+          const checkItem = $createListItemNode();
+          checkItem.setChecked(true);
+          checkItem.append($createTextNode('done'));
+          $getRoot().append(
+            $createListNode('bullet').append(
+              $createNestedListItem('bullet', 'bullet child'),
+              middleItem,
+              $createListItemNode().append(
+                $createListNode('check').append(checkItem),
+              ),
+            ),
+          );
+        });
+
+        await editor.update(() => {
+          $handleIndent(middleItem);
+        });
+
+        editor.read(() => {
+          const listNode = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isListNode,
+          );
+          const children = listNode.getChildren();
+          // a bullet list swallowing this one would strip checked, because
+          // updateChildrenListItemValue clears it outside a check list
+          const checkSublist = $getNestedList(children[children.length - 1]);
+          expect(checkSublist.getListType()).toBe('check');
+          const checkItem = $assertNodeType(
+            checkSublist.getFirstChild(),
+            $isListItemNode,
+          );
+          expect(checkItem.getChecked()).toBe(true);
+          expect(children.length).toBe(2);
+        });
+      });
     },
     {nodes: [ExtendedTestListNode, ExtendedTestListItemNode]},
   );
@@ -449,4 +635,360 @@ describe('$handleOutdent', () => {
       });
     });
   }, initOptions);
+});
+
+const collapseTestExtension = defineExtension({
+  dependencies: [ListExtension],
+  name: '[root]',
+});
+
+describe('ListItemNode.collapseAtStart', () => {
+  test('top-level single item converts to paragraph', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const listItem = $createListItemNode().append($createTextNode('hello'));
+        const listNode = $createListNode('bullet').append(listItem);
+        root.append(listNode);
+        const selection = listItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        listItem.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isParagraphNode(children[0]), 'Expected ParagraphNode');
+      expect(children[0].getTextContent()).toBe('hello');
+    });
+  });
+
+  test('top-level first item extracts as paragraph, keeps remaining list', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const firstItem = $createListItemNode().append(
+          $createTextNode('first'),
+        );
+        const listNode = $createListNode('bullet').append(
+          firstItem,
+          $createListItemNode().append($createTextNode('second')),
+        );
+        root.append(listNode);
+        const selection = firstItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        firstItem.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      invariant($isParagraphNode(children[0]), 'Expected ParagraphNode');
+      expect(children[0].getTextContent()).toBe('first');
+      invariant($isListNode(children[1]), 'Expected ListNode');
+      expect(children[1].getChildrenSize()).toBe(1);
+    });
+  });
+
+  test('indented item outdents instead of converting to paragraph', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    let indentedItemKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const indentedItem = $createListItemNode().append(
+          $createTextNode('child'),
+        );
+        indentedItemKey = indentedItem.getKey();
+        const nestedWrapper = $createListItemNode().append(
+          $createListNode('bullet').append(indentedItem),
+        );
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('parent')),
+          nestedWrapper,
+        );
+        root.append(listNode);
+        const selection = indentedItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        indentedItem.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      expect(children[0].getChildrenSize()).toBe(2);
+      const outdentedItem = $getNodeByKey(indentedItemKey);
+      invariant($isListItemNode(outdentedItem), 'Expected ListItemNode');
+      expect(outdentedItem.getTextContent()).toBe('child');
+    });
+  });
+
+  test('indented item with siblings outdents without breaking list', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    let firstIndentedKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const indentedItem1 = $createListItemNode().append(
+          $createTextNode('child1'),
+        );
+        firstIndentedKey = indentedItem1.getKey();
+        const nestedWrapper = $createListItemNode().append(
+          $createListNode('bullet').append(
+            indentedItem1,
+            $createListItemNode().append($createTextNode('child2')),
+          ),
+        );
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('parent')),
+          nestedWrapper,
+        );
+        root.append(listNode);
+        const selection = indentedItem1.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        indentedItem1.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      const outdentedItem = $getNodeByKey(firstIndentedKey);
+      invariant($isListItemNode(outdentedItem), 'Expected ListItemNode');
+      expect(outdentedItem.getTextContent()).toBe('child1');
+      expect(
+        children[0]
+          .getChildren()
+          .some(
+            item =>
+              $isListItemNode(item) && item.getTextContent().includes('child2'),
+          ),
+      ).toBe(true);
+    });
+  });
+
+  test('middle item converts to paragraph and splits list', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const item2 = $createListItemNode().append($createTextNode('second'));
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('first')),
+          item2,
+          $createListItemNode().append($createTextNode('third')),
+        );
+        root.append(listNode);
+        const selection = item2.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        item2.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(3);
+      invariant($isListNode(children[0]), 'Expected first ListNode');
+      expect(children[0].getChildrenSize()).toBe(1);
+      expect(children[0].getTextContent()).toBe('first');
+      invariant($isParagraphNode(children[1]), 'Expected ParagraphNode');
+      expect(children[1].getTextContent()).toBe('second');
+      invariant($isListNode(children[2]), 'Expected second ListNode');
+      expect(children[2].getChildrenSize()).toBe(1);
+      expect(children[2].getTextContent()).toBe('third');
+    });
+  });
+
+  test('split preserves list type', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const item2 = $createListItemNode().append($createTextNode('second'));
+        const listNode = $createListNode('number').append(
+          $createListItemNode().append($createTextNode('first')),
+          item2,
+          $createListItemNode().append($createTextNode('third')),
+        );
+        root.append(listNode);
+        const selection = item2.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        item2.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(3);
+      invariant($isListNode(children[0]), 'Expected first ListNode');
+      expect(children[0].getListType()).toBe('number');
+      invariant($isListNode(children[2]), 'Expected second ListNode');
+      expect(children[2].getListType()).toBe('number');
+    });
+  });
+
+  test('last item converts to paragraph without splitting', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const item2 = $createListItemNode().append($createTextNode('second'));
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('first')),
+          item2,
+        );
+        root.append(listNode);
+        const selection = item2.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        item2.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      expect(children[0].getChildrenSize()).toBe(1);
+      expect(children[0].getTextContent()).toBe('first');
+      invariant($isParagraphNode(children[1]), 'Expected ParagraphNode');
+      expect(children[1].getTextContent()).toBe('second');
+    });
+  });
+
+  test('empty middle item converts to empty paragraph and splits list', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const emptyItem = $createListItemNode();
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('first')),
+          emptyItem,
+          $createListItemNode().append($createTextNode('third')),
+        );
+        root.append(listNode);
+        const selection = emptyItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        emptyItem.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(3);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      expect(children[0].getChildrenSize()).toBe(1);
+      expect(children[0].getFirstChildOrThrow().getTextContent()).toBe('first');
+      invariant($isParagraphNode(children[1]), 'Expected ParagraphNode');
+      expect(children[1].getTextContent()).toBe('');
+      invariant($isListNode(children[2]), 'Expected ListNode');
+      expect(children[2].getChildrenSize()).toBe(1);
+      expect(children[2].getFirstChildOrThrow().getTextContent()).toBe('third');
+
+      const selection = $getSelection();
+      invariant($isRangeSelection(selection), 'Expected RangeSelection');
+      expect(selection.isCollapsed()).toBe(true);
+    });
+  });
+
+  test('empty indented item outdents', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    let emptyItemKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const emptyItem = $createListItemNode();
+        emptyItemKey = emptyItem.getKey();
+        const nestedWrapper = $createListItemNode().append(
+          $createListNode('bullet').append(emptyItem),
+        );
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('parent')),
+          nestedWrapper,
+        );
+        root.append(listNode);
+        const selection = emptyItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        emptyItem.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      const outdentedItem = $getNodeByKey(emptyItemKey);
+      invariant($isListItemNode(outdentedItem), 'Expected ListItemNode');
+      expect(outdentedItem.getIndent()).toBe(0);
+    });
+  });
+});
+
+describe('mergeNextSiblingListIfSameType', () => {
+  initializeUnitTest(testEnv => {
+    test('does not merge nested sublists of a different listType', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(
+        () => {
+          const list1 = $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode('a')),
+            $createNestedListItem('number', 'one'),
+          );
+          const list2 = $createListNode('bullet').append(
+            $createNestedListItem('bullet', 'two'),
+            $createListItemNode().append($createTextNode('b')),
+          );
+          $getRoot().clear().append(list1, list2);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const [list] = $getRoot().getChildren();
+        invariant($isListNode(list), 'Expected ListNode');
+        // The two bullet lists merge, but their sublists stay separate.
+        const sublistTypes = list
+          .getChildren()
+          .map(child => ($isListItemNode(child) ? child.getFirstChild() : null))
+          .filter($isListNode)
+          .map(sublist => sublist.getListType());
+        expect(sublistTypes).toEqual(['number', 'bullet']);
+      });
+    });
+  });
 });

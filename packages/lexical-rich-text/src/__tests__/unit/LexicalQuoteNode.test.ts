@@ -55,7 +55,11 @@ describe('LexicalQuoteNode tests', () => {
           '<blockquote class="my-quote-class"></blockquote>',
         );
         const newQuoteNode = $createQuoteNode();
-        const result = newQuoteNode.updateDOM(quoteNode, domElement);
+        const result = newQuoteNode.updateDOM(
+          quoteNode,
+          domElement,
+          editorConfig,
+        );
         expect(result).toBe(false);
         expect(domElement.outerHTML).toBe(
           '<blockquote class="my-quote-class"></blockquote>',

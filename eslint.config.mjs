@@ -75,6 +75,12 @@ export default [
       '**/node_modules/',
       '.ts-temp/',
       '**/.docusaurus/',
+      // Build output that only the package's own .gitignore names, which
+      // ESLint does not read: next build writes .next/, wxt writes .output/.
+      // Linting a bundle is meaningless and the rules that walk its AST can
+      // fail outright on generated code.
+      '**/.next/',
+      '**/.output/',
       'playwright-report/',
       'test-results/',
       'examples/*svelte*/',
@@ -82,6 +88,7 @@ export default [
       '**/.wxt/',
       '**/*.www.cjs',
       '**/typedoc-sidebar.cjs',
+      '**/.next/',
     ],
   },
 
@@ -292,6 +299,18 @@ export default [
     },
   },
 
+  // Override: the www stubs at each package root (`packages/*/Lexical*.js`,
+  // written by scripts/create-www-stubs.mjs) are CommonJS and stay that
+  // way: www does not read package.json, so the packages' `"type":
+  // "module"` does not apply to them, and neither should the ESM default
+  // for `.js` here.
+  {
+    files: ['packages/*/*.js'],
+    languageOptions: {
+      sourceType: 'commonjs',
+    },
+  },
+
   // Override: Package source files (module sourceType)
   {
     files: [
@@ -353,7 +372,7 @@ export default [
             'createBinding',
           ],
           isLexicalProvider: ['updateEditor', 'updateEditorSync'],
-          isSafeDollarFunction: '$createRootNode',
+          isSafeDollarFunction: ['$createRootNode', '$createCollabElementNode'],
         }),
       ],
       '@typescript-eslint/array-type': [ERROR, {default: 'array'}],
@@ -449,16 +468,37 @@ export default [
     },
   },
 
-  // Override: Package sources - require /* @__PURE__ */ annotations on
-  // module-scope calls to the side-effect-free lexical factories
-  // (defineExtension, createCommand, defineImportRule, ...) so bundlers
-  // can tree-shake unused definitions. The pre-commit `eslint --fix`
-  // inserts them automatically. Not applied to tests (never bundled).
+  // Override: the /* @__PURE__ */ annotations on module-scope calls to the
+  // side-effect-free lexical factories are injected at build time by
+  // @lexical/compiler, so they do not belong in the sources. The
+  // rule is autofixable, which is how a branch written before the transform
+  // existed migrates: `pnpm run lint:fix`. Annotations on anything else
+  // (a third-party factory, a call inside a function body) are untouched.
   {
-    files: ['packages/**/src/**'],
-    ignores: ['packages/**/src/__tests__/**'],
+    files: ['packages/**', 'examples/**', 'dev-examples/**'],
+    ignores: ['packages/lexical-compiler/**'],
     rules: {
-      '@lexical/internal/require-pure-annotation': ERROR,
+      '@lexical/internal/no-pure-annotation': ERROR,
+    },
+  },
+
+  // Keep extension source imports independent of the published bundle layout.
+  // The package build rewrites barrels and relative siblings to subpaths.
+  {
+    files: ['packages/**/src/**', 'examples/**', 'dev-examples/**'],
+    rules: {
+      'no-restricted-imports': [
+        ERROR,
+        {
+          patterns: [
+            {
+              group: ['@lexical/extension/*'],
+              message:
+                'Import from @lexical/extension in consumers, or use a relative import within that package. The build rewrites source imports to public subpaths.',
+            },
+          ],
+        },
+      ],
     },
   },
 

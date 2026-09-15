@@ -44,9 +44,9 @@ describe('HistoryAnnounceExtension', () => {
       }),
     );
     mountRoot(editor);
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
     expect(readLiveRegion()).toBe('Undone');
-    editor.dispatchCommand(REDO_COMMAND, undefined);
+    editor.dispatchCommand(REDO_COMMAND);
     expect(readLiveRegion()).toBe('Redone');
   });
 
@@ -64,9 +64,9 @@ describe('HistoryAnnounceExtension', () => {
       }),
     );
     mountRoot(editor);
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
     expect(readLiveRegion()).toBe('Custom undo');
-    editor.dispatchCommand(REDO_COMMAND, undefined);
+    editor.dispatchCommand(REDO_COMMAND);
     expect(readLiveRegion()).toBe('Custom redo');
   });
 
@@ -84,9 +84,9 @@ describe('HistoryAnnounceExtension', () => {
     ).output;
     undone.value = 'Reverted';
     redone.value = 'Restored';
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
     expect(readLiveRegion()).toBe('Reverted');
-    editor.dispatchCommand(REDO_COMMAND, undefined);
+    editor.dispatchCommand(REDO_COMMAND);
     expect(readLiveRegion()).toBe('Restored');
   });
 
@@ -104,11 +104,11 @@ describe('HistoryAnnounceExtension', () => {
     ).output;
 
     disabled.value = true;
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
     expect(readLiveRegion()).toBe('');
 
     disabled.value = false;
-    editor.dispatchCommand(REDO_COMMAND, undefined);
+    editor.dispatchCommand(REDO_COMMAND);
     expect(readLiveRegion()).toBe('Redone');
   });
 
@@ -131,7 +131,7 @@ describe('HistoryAnnounceExtension', () => {
       },
       1,
     );
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
     expect(reached).toBe(true);
   });
 });

@@ -121,7 +121,7 @@ export function Toolbar({children}: ToolbarProps) {
       <button
         type="button"
         disabled={!canUndo}
-        onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
+        onClick={() => editor.dispatchCommand(UNDO_COMMAND)}
         className="toolbar-item spaced"
         aria-label="Undo">
         ↶
@@ -129,7 +129,7 @@ export function Toolbar({children}: ToolbarProps) {
       <button
         type="button"
         disabled={!canRedo}
-        onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
+        onClick={() => editor.dispatchCommand(REDO_COMMAND)}
         className="toolbar-item spaced"
         aria-label="Redo">
         ↷
@@ -168,27 +168,21 @@ export function Toolbar({children}: ToolbarProps) {
       <Divider />
       <button
         type="button"
-        onClick={() =>
-          editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)
-        }
+        onClick={() => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND)}
         className="toolbar-item spaced"
         aria-label="Bullet list">
         •
       </button>
       <button
         type="button"
-        onClick={() =>
-          editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)
-        }
+        onClick={() => editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND)}
         className="toolbar-item spaced"
         aria-label="Numbered list">
         1.
       </button>
       <button
         type="button"
-        onClick={() =>
-          editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined)
-        }
+        onClick={() => editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND)}
         className="toolbar-item spaced"
         aria-label="Check list">
         ☑

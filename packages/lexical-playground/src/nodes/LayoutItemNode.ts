@@ -7,6 +7,7 @@
  */
 
 import {
+  $getDocument,
   $isParagraphNode,
   addClassNamesToElement,
   type EditorConfig,
@@ -26,16 +27,12 @@ export function $isEmptyLayoutItemNode(node: LexicalNode): boolean {
 }
 
 export class LayoutItemNode extends ElementNode {
-  static getType(): string {
-    return 'layout-item';
-  }
-
-  static clone(node: LayoutItemNode): LayoutItemNode {
-    return new LayoutItemNode(node.__key);
+  $config() {
+    return this.config('layout-item', {extends: ElementNode});
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('div');
+    const dom = $getDocument().createElement('div');
     dom.setAttribute('data-lexical-layout-item', 'true');
     if (typeof config.theme.layoutItem === 'string') {
       addClassNamesToElement(dom, config.theme.layoutItem);
@@ -57,10 +54,6 @@ export class LayoutItemNode extends ElementNode {
       return true;
     }
     return false;
-  }
-
-  static importJSON(serializedNode: SerializedLayoutItemNode): LayoutItemNode {
-    return $createLayoutItemNode().updateFromJSON(serializedNode);
   }
 
   isShadowRoot(): boolean {

@@ -7,6 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {eventFiles} from '@lexical/rich-text';
 import {calculateZoomLevel} from '@lexical/utils';
 import {
@@ -70,6 +71,19 @@ function getCurrentIndex(keysLength: number): number {
 
 function getTopLevelNodeKeys(editor: LexicalEditor): string[] {
   return editor.read('latest', () => $getRoot().getChildrenKeys());
+}
+
+function restoreEditorFocus(
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+): void {
+  rootElement.focus({preventScroll: true});
+  editor.update(() => {
+    const selection = $getSelection();
+    if (selection !== null && !selection.dirty) {
+      selection.dirty = true;
+    }
+  });
 }
 
 function getCollapsedMargins(elem: HTMLElement): {
@@ -477,14 +491,7 @@ function useDraggableBlockMenu(
             // Blur is caused by clicking on drag handle - restore focus immediately
             // to prevent cursor from disappearing. This must be synchronous to work.
             if (rootElement) {
-              rootElement.focus({preventScroll: true});
-              // Force selection update to ensure cursor is visible
-              editor.update(() => {
-                const selection = $getSelection();
-                if (selection !== null && !selection.dirty) {
-                  selection.dirty = true;
-                }
-              });
+              restoreEditorFocus(editor, rootElement);
             }
             // Prevent the event from propagating to LexicalEvents handler
             event.stopImmediatePropagation();
@@ -512,13 +519,7 @@ function useDraggableBlockMenu(
             isOnMenu(activeElement)
           ) {
             // Focus is on menu - restore to root and prevent blur command
-            rootElement.focus({preventScroll: true});
-            editor.update(() => {
-              const selection = $getSelection();
-              if (selection !== null && !selection.dirty) {
-                selection.dirty = true;
-              }
-            });
+            restoreEditorFocus(editor, rootElement);
             return true; // Prevent command from propagating
           }
           return false;
@@ -558,14 +559,7 @@ function useDraggableBlockMenu(
       ) {
         // Restore focus synchronously - don't use requestAnimationFrame as blur already happened
         // and we need immediate focus restoration to maintain cursor visibility
-        rootElement.focus({preventScroll: true});
-        // Force selection update to ensure cursor is visible
-        editor.update(() => {
-          const selection = $getSelection();
-          if (selection !== null && !selection.dirty) {
-            selection.dirty = true;
-          }
-        });
+        restoreEditorFocus(editor, rootElement);
       }
     }
   }
@@ -574,11 +568,9 @@ function useDraggableBlockMenu(
     isDraggingBlockRef.current = false;
     hideTargetLine(targetLineRef.current);
 
-    // Firefox-specific fix: Use editor.focus() to properly restore both focus and
-    // selection after drag ends. This ensures cursor visibility immediately.
-    if (IS_FIREFOX) {
-      // editor.focus() handles both focus restoration and selection update properly
-      editor.focus();
+    const rootElement = editor.getRootElement();
+    if (rootElement !== null && getActiveElement(rootElement) !== rootElement) {
+      restoreEditorFocus(editor, rootElement);
     }
   }
   return createPortal(
@@ -621,12 +613,16 @@ export function DraggableBlockPlugin_EXPERIMENTAL({
   onElementChanged?: (element: HTMLElement | null) => void;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
+  // Subscribed rather than read off the editor, so that setEditable() actually
+  // re-renders the handle. useLexicalEditable also handles StrictMode and
+  // concurrent rendering correctly.
+  const isEditable = useLexicalEditable();
   return useDraggableBlockMenu(
     editor,
     anchorElem,
     menuRef,
     targetLineRef,
-    editor._editable,
+    isEditable,
     menuComponent,
     targetLineComponent,
     isOnMenu,

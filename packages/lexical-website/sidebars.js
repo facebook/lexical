@@ -41,6 +41,7 @@ const sidebars = {
       items: [
         'concepts/editor-state',
         'concepts/nodes',
+        'concepts/decorators',
         'concepts/node-replacement',
         'concepts/node-state',
         'concepts/named-slots',
@@ -57,6 +58,7 @@ const sidebars = {
         'concepts/shadow-dom',
         'concepts/traversals',
         'concepts/updates',
+        'concepts/one-lexical-per-app',
       ],
       label: 'Concepts',
       type: 'category',

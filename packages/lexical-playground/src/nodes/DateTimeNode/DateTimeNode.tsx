@@ -14,6 +14,7 @@ import {
   type SerializedDecoratorTextNode,
 } from '@lexical/extension';
 import {
+  $getDocument,
   $getState,
   $setState,
   createState,
@@ -58,7 +59,7 @@ export type SerializedDateTimeNode = Spread<
   SerializedDecoratorTextNode
 >;
 
-const dateTimeState = /* @__PURE__ */ createState('dateTime', {
+const dateTimeState = createState('dateTime', {
   parse: v => new Date(v as string),
   unparse: v => v.toISOString(),
 });
@@ -85,8 +86,8 @@ export class DateTimeNode extends DecoratorTextNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('span');
-    const textDom: HTMLElement | Text = document.createTextNode(
+    const element = $getDocument().createElement('span');
+    const textDom: HTMLElement | Text = $getDocument().createTextNode(
       getDateTimeText(this.getDateTime()),
     );
     element.setAttribute(
@@ -99,7 +100,7 @@ export class DateTimeNode extends DecoratorTextNode {
   }
 
   createDOM(): HTMLElement {
-    const element = document.createElement('span');
+    const element = $getDocument().createElement('span');
     element.setAttribute(
       'data-lexical-datetime',
       this.getDateTime()?.toString() || '',

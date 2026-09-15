@@ -17,7 +17,7 @@ import {
   test,
 } from '../utils/index.mjs';
 
-const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0] : [];
+const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0, 0] : [];
 
 test.describe('Regression test #6870', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

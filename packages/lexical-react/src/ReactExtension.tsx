@@ -72,7 +72,7 @@ const initialConfig: ReactConfig = {
  * location-dependent (e.g. floating UI that does not need to be mounted in
  * some specific location, or effects that return null).
  */
-export const ReactExtension = /* @__PURE__ */ defineExtension({
+export const ReactExtension = defineExtension({
   build(editor, config, state) {
     const providerPeer = state.getPeer<typeof ReactProviderExtension>(
       ReactProviderExtension.name,
@@ -104,10 +104,12 @@ export const ReactExtension = /* @__PURE__ */ defineExtension({
   },
   name: '@lexical/react/React',
   peerDependencies: [
-    // We are not trying to avoid the import, just the direct dependency,
-    // so using the extension directly is fine.
-    /* @__PURE__ */ declarePeerDependency<typeof ReactProviderExtension>(
-      ReactProviderExtension.name,
+    // We are not trying to avoid the import, just the direct dependency. The
+    // name is a literal rather than `ReactProviderExtension.name` because a
+    // module-scope property read is a side effect to bundlers, which would pin
+    // this extension into every bundle that imports the module.
+    declarePeerDependency<typeof ReactProviderExtension>(
+      '@lexical/react/ReactProvider',
     ),
   ],
 });

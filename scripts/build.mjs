@@ -20,6 +20,8 @@ import minimist from 'minimist';
 import path from 'path';
 import {rollup} from 'rollup';
 
+import {pureAnnotations} from '../packages/lexical-compiler/src/passes/pureAnnotations.mjs';
+import {subpathImports} from '../packages/lexical-compiler/src/passes/subpathImports.mjs';
 import transformErrorMessages from './error-codes/transform-error-messages.mjs';
 import {exec} from './shared/childProcess.mjs';
 import {packagesManager} from './shared/packagesManager.mjs';
@@ -139,6 +141,12 @@ function resolveExternalEsm(id) {
  */
 const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
 const thirdPartyExternals = [
+  // @lexical/compiler is a build-time tool: it wraps @babel/parser
+  // and magic-string (declared dependencies that must not be inlined into
+  // its published bundle) and reads relatively imported modules from disk.
+  '@babel/parser',
+  'magic-string',
+  'node:[a-z_]+',
   'react',
   'react-dom',
   'yjs',
@@ -155,6 +163,13 @@ const thirdPartyExternals = [
     ? [':server-only-hack:.*']
     : [
         '@floating-ui/react',
+        // @lexical/extension re-exports @preact/signals-core (a declared
+        // dependency). Keep it external in the npm build: its package declares
+        // `sideEffects: false`, so a consumer's bundler drops it when unused,
+        // whereas inlined its prototype patching is a module-scope side effect
+        // that pins the whole signals runtime into any bundle importing
+        // anything from @lexical/extension.
+        '@preact/signals-core',
         // @lexical/mdast delegates parsing/serialization to the
         // micromark/mdast ecosystem. Keep those (declared) dependencies
         // external in the npm build so consumer bundlers resolve them with
@@ -187,14 +202,6 @@ const strictWWWMappings = {};
 Object.entries(wwwMappings).forEach(([mapping, target]) => {
   strictWWWMappings[`'${mapping}'`] = `'${target}'`;
 });
-
-/**
- * @param {'esm'|'cjs'} format
- * @returns {'.mjs'|'.js'} the correct file extension for this export format
- */
-function getExtension(format) {
-  return `.${format === 'esm' ? 'm' : ''}js`;
-}
 
 /**
  *
@@ -323,21 +330,58 @@ async function build(
         configFile: false,
         exclude: '**/node_modules/**',
         extensions,
+        // JSX only parses in .jsx/.tsx files. Applying preset-react
+        // unconditionally would enable the jsx syntax plugin for plain .ts
+        // too, where `<T>` in a generic arrow function (`<T>(x: T) => ...`)
+        // is ambiguous with an opening JSX element and fails to parse.
+        overrides: [
+          {
+            presets: [
+              // Pin development:false so the automatic runtime always emits the
+              // production `jsx`/`jsxs` helpers, never `jsxDEV`. Babel 8 flipped the
+              // default to infer development mode from the environment, which made
+              // the dev builds import `react/jsx-dev-runtime`; consumers that bundle
+              // those dev builds (e.g. the Docusaurus website SSG) then crash with
+              // "jsxDEV is not a function".
+              [
+                '@babel/preset-react',
+                {development: false, runtime: 'automatic'},
+              ],
+            ],
+            test: /\.[jt]sx$/,
+          },
+        ],
         plugins: [
           [transformErrorMessages, {extractCodes, noMinify: !isProd}],
           '@babel/plugin-transform-optional-catch-binding',
         ],
-        presets: [
-          '@babel/preset-typescript',
-          // Pin development:false so the automatic runtime always emits the
-          // production `jsx`/`jsxs` helpers, never `jsxDEV`. Babel 8 flipped the
-          // default to infer development mode from the environment, which made
-          // the dev builds import `react/jsx-dev-runtime`; consumers that bundle
-          // those dev builds (e.g. the Docusaurus website SSG) then crash with
-          // "jsxDEV is not a function".
-          ['@babel/preset-react', {development: false, runtime: 'automatic'}],
-        ],
+        presets: ['@babel/preset-typescript'],
       }),
+      // Redirect all package consumers before Rollup resolves dependencies.
+      // Keeping public siblings external also avoids duplicated singleton state.
+      subpathImports({
+        packages: packagesManager
+          .getPublicPackages()
+          .filter(p => !INLINED_PACKAGES.has(p.getNpmName()))
+          .map(p => p.resolve('package.json')),
+        strict: true,
+      }),
+      // Runs on the JavaScript babel emits so that every module-scope call
+      // to a side-effect-free factory (defineExtension, createCommand, ...)
+      // carries a /* @__PURE__ */ annotation. The sources do not carry them:
+      // they are injected here (and by the same plugin for consumers that
+      // build from the `source` export condition) so that both this build
+      // and downstream bundlers can drop unused definitions.
+      //
+      // `inline` additionally replaces the calls whose result is a trivial
+      // expression over their arguments with that expression. It is off by
+      // default in the published plugin because it reproduces those bodies,
+      // but here the Lexical being built is this one.
+      //
+      // `strict` fails the build on a call inside one of those definitions
+      // that nothing has established is side-effect free, because such a
+      // call pins the definition into every bundle that imports the module.
+      pureAnnotations({inline: true, strict: true}),
       commonjs(),
       json(),
       replace(
@@ -363,6 +407,10 @@ async function build(
       // been updated since Aug 2021
       isProd &&
         terser({
+          // terser prints Infinity as `1/0`, a division that esbuild and
+          // webpack have to keep as a side effect (see #9120), pinning the
+          // module-scope declaration it initializes into consumer bundles.
+          compress: {keep_infinity: true},
           ecma: 2019,
           // Keep /* @__PURE__ */ and @__NO_SIDE_EFFECTS__ annotations in the
           // prod output so downstream bundlers can tree-shake unused
@@ -403,11 +451,11 @@ async function build(
   /** @type {import('rollup').OutputOptions} */
   const outputOptions = {
     esModule: false,
-    exports:
-      // Special case for lexical-eslint-plugin which is written in cjs and
-      // requires a default export. Default exports in all other modules are
-      // deprecated.
-      name === 'Lexical Eslint Plugin' ? 'auto' : 'named',
+    // Only the www CommonJS build reads this. @lexical/eslint-plugin has a
+    // default export (deprecated everywhere else) next to the named `rules`,
+    // `configs`, and `meta`, so its CommonJS output is `exports.default`
+    // plus those names, which ESLint accepts as a plugin.
+    exports: 'named',
     externalLiveBindings: false,
     file: outputFile,
     format, // change between es and cjs modules
@@ -454,15 +502,16 @@ function getComment() {
 /**
  * @param {string} fileName
  * @param {boolean} isProd
- * @param {'esm' | 'cjs'} format
  * @returns {string}
  */
-function getFileName(fileName, isProd, format) {
-  // Both www and npm builds use the `.dev`/`.prod` suffix. The bare
-  // `Foo.mjs`/`Foo.js` names are reserved for the fork module emitted by
-  // buildForkModules so the published exports map can resolve cleanly
-  // regardless of which variants were built.
-  return `${fileName}.${isProd ? 'prod' : 'dev'}${getExtension(format)}`;
+function getFileName(fileName, isProd) {
+  // Both www and npm builds use the `.dev`/`.prod` suffix (the npm build is
+  // ESM, the www build CommonJS; every public package is a `"type":
+  // "module"` package, so both are `.js`). The bare `Foo.js` name is
+  // reserved for the fork module emitted by buildForkModule so the
+  // published exports map can resolve cleanly regardless of which variants
+  // were built (www consolidates its files itself).
+  return `${fileName}.${isProd ? 'prod' : 'dev'}.js`;
 }
 
 async function buildTSDeclarationFiles() {
@@ -470,12 +519,52 @@ async function buildTSDeclarationFiles() {
 }
 
 /**
+ * Copy the package's emitted declaration files into the build output and
+ * give their relative imports explicit extensions.
+ *
+ * tsc emits the sources' extensionless relative specifiers
+ * (`from './LexicalEditor'`, `import('./LexicalNode')`) as they are. In a
+ * `"type": "module"` package a `.d.ts` is an ES module declaration, and
+ * TypeScript's node16/nodenext resolution does not resolve extensionless
+ * relative ESM imports at all: a consumer with `skipLibCheck` would see no
+ * error and silently get `any` for everything. `./X.js` resolves to `X.d.ts`
+ * under every resolution mode, so that is what gets written. A bare
+ * specifier gets the same treatment as in the JavaScript build
+ * (resolveExternalEsm): prismjs has no exports map, so its components are
+ * file paths that need their extension too.
  *
  * @param {string} packageName
  * @param {string} outputPath
  */
 function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
   fs.copySync(`./.ts-temp/packages/${packageName}/src`, outputPath);
+  for (const fn of glob.sync(path.resolve(outputPath, '**/*.d.ts'), {
+    windowsPathsNoEscape: true,
+  })) {
+    const dir = path.dirname(fn);
+    const source = fs.readFileSync(fn, 'utf8');
+    const rewritten = source.replace(
+      /(\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(['"])([^'"]+)\2/g,
+      (match, lead, quote, specifier) => {
+        if (/\.(?:[cm]?js|json|d\.ts)$/.test(specifier)) {
+          return match;
+        }
+        if (!/^\.{1,2}(\/|$)/.test(specifier)) {
+          return `${lead}${quote}${resolveExternalEsm(specifier)}${quote}`;
+        }
+        if (fs.existsSync(path.resolve(dir, `${specifier}.d.ts`))) {
+          return `${lead}${quote}${specifier}.js${quote}`;
+        }
+        if (fs.existsSync(path.resolve(dir, specifier, 'index.d.ts'))) {
+          return `${lead}${quote}${specifier}/index.js${quote}`;
+        }
+        return match;
+      },
+    );
+    if (rewritten !== source) {
+      fs.writeFileSync(fn, rewritten);
+    }
+  }
 }
 
 /**
@@ -483,97 +572,69 @@ function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
  * @property {string} devFileName
  * @property {Array<string>} exports
  * @property {'dev'|'prod'|'both'} mode which variants this build produced
- * @property {string} outputFileName
  * @property {string} prodFileName
  */
 
 /**
+ * The fork module that the exports map's `default` condition resolves to.
+ * It imports both variants and picks one at runtime, so a consumer with no
+ * `development`/`production` condition (Node.js, unless run with
+ * `--conditions`) evaluates both. It is deliberately free of top-level
+ * await: Node.js can only require() an ESM graph that has none, and since
+ * no CommonJS build is published this file, reached through the other
+ * packages' static imports as much as directly, is how every CommonJS
+ * consumer loads these packages.
  *
  * @param {ForkModuleContentOptions} opts
- * @param {'cjs'|'esm'|'node'} target
  * @returns {string}
  */
-function forkModuleContent(
-  {devFileName, exports, mode, outputFileName, prodFileName},
-  target,
-) {
+function forkModuleContent({devFileName, exports, mode, prodFileName}) {
   const lines = [getComment()];
-  if (target === 'cjs') {
-    lines.push(`'use strict'`);
-    if (mode === 'both') {
-      lines.push(
-        `const ${outputFileName} = process.env.NODE_ENV !== 'production' ? require('${devFileName}') : require('${prodFileName}');`,
-      );
-    } else if (mode === 'dev') {
-      lines.push(`const ${outputFileName} = require('${devFileName}');`);
-    } else {
-      lines.push(`const ${outputFileName} = require('${prodFileName}');`);
-    }
-    lines.push(`module.exports = ${outputFileName};`);
+  if (mode === 'both') {
+    lines.push(
+      `import * as modDev from '${devFileName}';`,
+      `import * as modProd from '${prodFileName}';`,
+      `const mod = process.env.NODE_ENV !== 'production' ? modDev : modProd;`,
+    );
+  } else if (mode === 'dev') {
+    lines.push(`import * as mod from '${devFileName}';`);
   } else {
-    if (target === 'esm') {
-      if (mode === 'both') {
-        lines.push(
-          `import * as modDev from '${devFileName}';`,
-          `import * as modProd from '${prodFileName}';`,
-          `const mod = process.env.NODE_ENV !== 'production' ? modDev : modProd;`,
-        );
-      } else if (mode === 'dev') {
-        lines.push(`import * as mod from '${devFileName}';`);
-      } else {
-        lines.push(`import * as mod from '${prodFileName}';`);
-      }
-    } else if (target === 'node') {
-      if (mode === 'both') {
-        lines.push(
-          `const mod = await (process.env.NODE_ENV !== 'production' ? import('${devFileName}') : import('${prodFileName}'));`,
-        );
-      } else if (mode === 'dev') {
-        lines.push(`const mod = await import('${devFileName}');`);
-      } else {
-        lines.push(`const mod = await import('${prodFileName}');`);
-      }
-    }
-    for (const name of exports) {
-      lines.push(
-        name === 'default'
-          ? `export default mod.default;`
-          : `export const ${name} = mod.${name};`,
-      );
-    }
+    lines.push(`import * as mod from '${prodFileName}';`);
+  }
+  for (const name of exports) {
+    lines.push(
+      name === 'default'
+        ? `export default mod.default;`
+        : `export const ${name} = mod.${name};`,
+    );
   }
   return lines.join('\n');
 }
 
 /**
+ * Write the `<Name>.js` fork module for an ESM build.
  *
  * @param {string} outputPath
  * @param {string} outputFileName
- * @param {'cjs'|'esm'} format
  * @param {Array<string>} exports
  * @param {'dev'|'prod'|'both'} mode
  */
-function buildForkModules(outputPath, outputFileName, format, exports, mode) {
-  const extension = getExtension(format);
-  const devFileName = `./${outputFileName}.dev${extension}`;
-  const prodFileName = `./${outputFileName}.prod${extension}`;
-  const opts = {devFileName, exports, mode, outputFileName, prodFileName};
+function buildForkModule(outputPath, outputFileName, exports, mode) {
   fs.outputFileSync(
-    path.resolve(outputPath, `${outputFileName}${extension}`),
-    forkModuleContent(opts, format),
+    path.resolve(outputPath, `${outputFileName}.js`),
+    forkModuleContent({
+      devFileName: `./${outputFileName}.dev.js`,
+      exports,
+      mode,
+      prodFileName: `./${outputFileName}.prod.js`,
+    }),
   );
-  if (format === 'esm') {
-    fs.outputFileSync(
-      path.resolve(outputPath, `${outputFileName}.node${extension}`),
-      forkModuleContent(opts, 'node'),
-    );
-  }
 }
 
 /**
  * Copy the package's hand-written Flow stubs from `flow/` into the build
  * output directory so Flow consumers find `<Name>.js.flow` next to the
- * matching `<Name>.js` shipped in the published package.
+ * matching `<Name>.js` that `main` points at in the published package.
  *
  * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
  * @param {string} outputPath
@@ -584,7 +645,7 @@ function copyFlowStubsIntoDist(pkg, outputPath) {
     return;
   }
   for (const fn of fs.readdirSync(flowDir)) {
-    if (fn.endsWith('.flow')) {
+    if (fn.endsWith('.js.flow')) {
       fs.copySync(path.resolve(flowDir, fn), path.resolve(outputPath, fn));
     }
   }
@@ -613,8 +674,13 @@ async function buildAll() {
     await buildTSDeclarationFiles();
   }
 
+  // The npm packages ship ESM only: a CommonJS consumer on any supported
+  // Node.js (>= 20.19) loads the same ESM files through require(esm),
+  // reached through the exports map's `default` condition (see exportEntry
+  // in scripts/updateVersion.mjs). www has no ESM pipeline, so it still gets
+  // the CommonJS variants (consolidated by prepare-www).
   /** @type {Array<'cjs' | 'esm'>} */
-  const formats = isWWW ? ['cjs'] : ['cjs', 'esm'];
+  const formats = isWWW ? ['cjs'] : ['esm'];
   for (const pkg of packagesManager.getPublicPackages()) {
     const {name, sourcePath, outputPath, packageName, modules} =
       pkg.getPackageBuildDefinition({consolidateBrowserSource: isWWW});
@@ -637,10 +703,7 @@ async function buildAll() {
           name,
           inputFile,
           outputPath,
-          path.resolve(
-            outputPath,
-            getFileName(outputFileName, isProduction, format),
-          ),
+          path.resolve(outputPath, getFileName(outputFileName, isProduction)),
           isProduction,
           format,
           version,
@@ -657,7 +720,7 @@ async function buildAll() {
             outputPath,
             path.resolve(
               outputPath,
-              getFileName(outputFileName, !isProduction, format),
+              getFileName(outputFileName, !isProduction),
             ),
             !isProduction,
             format,
@@ -668,12 +731,11 @@ async function buildAll() {
 
         // www has its own consolidation step (prepare-www) and does not use
         // the npm-style fork modules.
-        if (!isWWW) {
+        if (format === 'esm') {
           const mode = isRelease ? 'both' : isProduction ? 'prod' : 'dev';
-          buildForkModules(
+          buildForkModule(
             outputPath,
             outputFileName,
-            format,
             primaryExports.length > 0
               ? primaryExports
               : (secondaryExports ?? []),

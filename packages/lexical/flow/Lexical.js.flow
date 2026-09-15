@@ -10,8 +10,16 @@
 /**
  * LexicalCommands
  */
+export opaque type LexicalCommand<P> = Readonly<{type?: string}>;
 
-export type LexicalCommand<P> = Readonly<{type?: string}>;
+// $FlowFixMe[unclear-type]
+export type AnyLexicalCommand = LexicalCommand<any>;
+
+export type CommandPayloadType<TCommand> =
+  TCommand extends LexicalCommand<infer P> ? P : empty;
+
+export type CommandPayloadArgs<P> =
+  [P extends void ? true : empty] extends [empty] ? [payload: P] : [payload?: P];
 
 declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<void>;
 declare export var CLICK_COMMAND: LexicalCommand<MouseEvent>;
@@ -287,7 +295,7 @@ declare export class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand<P>(command: LexicalCommand<P>, payload: P): boolean;
+  dispatchCommand<P>(command: LexicalCommand<P>, ...args: CommandPayloadArgs<P>): boolean;
   hasNode(node: Class<LexicalNode>): boolean;
   hasNodes(nodes: Class<LexicalNode>[]): boolean;
   getKey(): string;
@@ -487,6 +495,7 @@ declare export class LexicalNode {
   static getType(): string;
   static clone(data: $FlowFixMe): LexicalNode;
   static importDOM(): DOMConversionMap | null;
+  static importJSON(serializedNode: $FlowFixMe): LexicalNode;
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   exportJSON(): SerializedLexicalNode;
@@ -782,9 +791,7 @@ declare export class TextNode extends LexicalNode {
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
-  static getType(): string;
-  static clone(node: $FlowFixMe): TextNode;
-  constructor(text: string, key?: NodeKey): void;
+  constructor(text?: string, key?: NodeKey): void;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
   getFormat(): number;
@@ -858,10 +865,7 @@ declare export function $isTabNode(
 ): node is TabNode;
 
 declare export class TabNode extends TextNode {
-  static getType(): string;
-  static clone(node: TabNode): TabNode;
   constructor(key?: NodeKey): void;
-  static importDOM(): DOMConversionMap | null;
   static importJSON(serializedTabNode: SerializedTabNode): TabNode;
   exportJSON(): SerializedTabNode;
 }
@@ -871,8 +875,6 @@ declare export class TabNode extends TextNode {
  */
 
 declare export class LineBreakNode extends LexicalNode {
-  static getType(): string;
-  static clone(node: LineBreakNode): LineBreakNode;
   constructor(key?: NodeKey): void;
   getTextContent(): '\n';
   createDOM(): HTMLElement;
@@ -894,8 +896,7 @@ declare export function $isLineBreakNode(
 
 declare export class RootNode extends ElementNode {
   __cachedText: null | string;
-  static getType(): string;
-  static clone(): RootNode;
+  static importJSON(serializedNode: SerializedRootNode): RootNode;
   constructor(): void;
   getTextContent(): string;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
@@ -1125,8 +1126,6 @@ declare export function $isLexicalNode(
  * LexicalParagraphNode
  */
 declare export class ParagraphNode extends ElementNode {
-  static getType(): string;
-  static clone(node: ParagraphNode): ParagraphNode;
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   insertNewAfter(
@@ -1283,6 +1282,9 @@ declare export function $getSlotHost(
 ): ElementNode | DecoratorNode<unknown> | null;
 declare export function $getSlotFrame(
   node: LexicalNode,
+): LexicalNode | null;
+declare export function $getSelectionSlotFrame(
+  selection: null | BaseSelection,
 ): LexicalNode | null;
 declare export function getDeclaredSlots(
   klass: Class<LexicalNode>,
@@ -1971,10 +1973,15 @@ declare export function declarePeerDependency<
   config?: Partial<LexicalExtensionConfig<Extension>>,
 ): NormalizedPeerDependency<Extension>;
 declare export function defineExtension<
-  Config extends ExtensionConfigBase,
-  Name extends string,
-  Output,
-  Init,
+  Config extends ExtensionConfigBase = ExtensionConfigBase,
+  Name extends string = string,
+  // `Config`, `Output` and `Init` are only reachable through the optional
+  // `config`, `build` and `init` members, so an extension that declares none
+  // of them leaves the parameters unconstrained. TypeScript silently infers
+  // there; Flow reports `underconstrained-implicit-instantiation` unless a
+  // default is supplied.
+  Output = void,
+  Init = void,
 >(
   extension: LexicalExtension<Config, Name, Output, Init>,
 ): LexicalExtension<Config, Name, Output, Init>;
@@ -2074,7 +2081,7 @@ export type LexicalExtensionArgument<
   | LexicalExtension<Config, Name, Output, Init>
   | NormalizedLexicalExtensionArgument<Config, Name, Output, Init>;
 export type LexicalExtensionConfig<out Extension extends AnyLexicalExtension> =
-  NonNullable<Extension[typeof configTypeSymbol]>;
+  NonNullable<Extension['__configType']>;
 export interface LexicalExtensionDependency<
   out Dependency extends AnyLexicalExtension,
 > {
@@ -2082,22 +2089,42 @@ export interface LexicalExtensionDependency<
   readonly output: LexicalExtensionOutput<Dependency>;
 }
 export type LexicalExtensionInit<Extension extends AnyLexicalExtension> =
-  NonNullable<Extension[typeof initTypeSymbol]>;
+  NonNullable<Extension['__initType']>;
+/**
+ * The phantom brand properties that carry an extension's Config, Output and
+ * Init types.
+ *
+ * The TypeScript source keys these off `unique symbol`s
+ * (`configTypeSymbol`, `outputTypeSymbol`, `initTypeSymbol`), which Flow has
+ * no equivalent for: a computed key whose type is `symbol` is parsed as an
+ * *indexer* over all symbol keys, not as a single named property. That makes
+ * every other property of an extension (`name`, `nodes`, `config`, ...) have
+ * to conform to the indexer's value type, so no object literal can satisfy
+ * `LexicalExtension` and `defineExtension` cannot be called at all. Declaring
+ * all three at once additionally trips Flow's "Multiple indexers are not
+ * supported".
+ *
+ * Named optional read-only properties reproduce the TypeScript semantics that
+ * matter here — the three types are carried, the properties are never
+ * supplied by callers, and the `LexicalExtension{Config,Output,Init}` helpers
+ * still extract them. The symbols above remain exported to match the
+ * generated `.d.ts` surface.
+ */
 export interface LexicalExtensionInternal<Config, Output, Init> extends LexicalExtensionInternalConfig<Config>, LexicalExtensionInternalOutput<Output> {
-  [typeof initTypeSymbol]: Init;
+  readonly __initType?: Init;
 }
 interface LexicalExtensionInternalConfig<Config> {
-  [typeof configTypeSymbol]: Config;
+  readonly __configType?: Config;
 }
 interface LexicalExtensionInternalOutput<Output> {
-  [typeof outputTypeSymbol]: Output;
+  readonly __outputType?: Output;
 }
 
 export type LexicalExtensionName<Extension extends AnyLexicalExtension> =
   Extension['name'];
 
 export type LexicalExtensionOutput<out Extension extends AnyLexicalExtension> =
-  NonNullable<Extension[typeof outputTypeSymbol]>;
+  NonNullable<Extension['__outputType']>;
 declare export const peerDependencySymbol: symbol;
 export type NormalizedLexicalExtensionArgument<
   Config extends ExtensionConfigBase,
@@ -2106,8 +2133,8 @@ export type NormalizedLexicalExtensionArgument<
   Init,
 > = [LexicalExtension<Config, Name, Output, Init>, ...Partial<Config>[]];
 export type NormalizedPeerDependency<Extension extends AnyLexicalExtension> = [
-  Extension['name'],
-  Partial<LexicalExtensionConfig<Extension>> | void,
+  name: Extension['name'],
+  config?: Partial<LexicalExtensionConfig<Extension>>,
 ] & {readonly [typeof peerDependencySymbol]: Extension};
 export type OutputComponentExtension<ComponentType> =
   // $FlowFixMe[unclear-type]
@@ -2166,3 +2193,58 @@ declare export var IS_CHROME: boolean;
 declare export var IS_FIREFOX: boolean;
 declare export var IS_IOS: boolean;
 declare export var IS_SAFARI: boolean;
+
+declare export function $isBlockFullySelected(
+  blockNode: ElementNode,
+  selectionOrRange: RangeSelection | CaretRange<CaretDirection>,
+): boolean;
+
+// Keyboard shortcut declarations used by @lexical/extension's subpaths.
+export type KeyboardEventModifiers = Pick<
+  KeyboardEvent,
+  'key' | 'code' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey',
+>;
+
+export type KeyboardEventModifierMask = {
+  altKey?: boolean | void | 'any',
+  ctrlKey?: boolean | void | 'any',
+  metaKey?: boolean | void | 'any',
+  shiftKey?: boolean | void | 'any',
+  ...
+};
+
+export interface KeyboardShortcutMatch {
+  key: string;
+  modifiers?: KeyboardEventModifierMask;
+  unshiftedKey?: string;
+}
+
+export interface KeyboardShortcut extends KeyboardShortcutMatch {
+  command: LexicalCommand<KeyboardEvent>;
+  description?: string;
+  $disabled?: (selection: null | BaseSelection, editor: LexicalEditor) => boolean;
+  $dispatch?: (
+    command: LexicalCommand<KeyboardEvent>,
+    event: KeyboardEvent,
+    $next: () => boolean,
+    editor: LexicalEditor,
+  ) => boolean;
+  bubbleFromNestedEditors?: boolean;
+}
+
+declare export var CONTROL_OR_META: KeyboardEventModifierMask;
+declare export var CONTROL_OR_ALT: KeyboardEventModifierMask;
+
+declare class CompiledKeyboardShortcuts<
+  S extends KeyboardShortcutMatch = KeyboardShortcut,
+> {
+  add(shortcut: S): this;
+  matches(event: KeyboardEventModifiers): S[];
+  match(event: KeyboardEventModifiers): S | void;
+}
+
+export type {CompiledKeyboardShortcuts};
+
+declare export function compileKeyboardShortcuts<S extends KeyboardShortcutMatch>(
+  shortcuts: Iterable<S>,
+): CompiledKeyboardShortcuts<S>;

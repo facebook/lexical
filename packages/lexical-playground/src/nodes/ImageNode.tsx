@@ -24,6 +24,7 @@ import {
   $createRangeSelection,
   $extendCaretToRange,
   $getChildCaret,
+  $getDocument,
   $getRoot,
   $isElementNode,
   $isParagraphNode,
@@ -51,7 +52,7 @@ import {KeywordsExtension} from './KeywordNode';
 
 const ImageComponent = React.lazy(() => import('./ImageComponent'));
 
-const CaptionEditorExtension = /* @__PURE__ */ defineExtension({
+const CaptionEditorExtension = defineExtension({
   // Skip the default empty-paragraph initializer. In collab mode
   // CollaborationPlugin's bootstrap only runs `initializeEditor` when
   // the Lexical root is empty, so a pre-seeded paragraph would prevent
@@ -70,7 +71,7 @@ const CaptionEditorExtension = /* @__PURE__ */ defineExtension({
     LinkExtension,
     KeywordsExtension,
     EmojisExtension,
-    /* @__PURE__ */ configExtension(ReactExtension, {
+    configExtension(ReactExtension, {
       contentEditable: (
         <ContentEditable
           placeholder="Enter a caption..."
@@ -135,8 +136,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   // Captions cannot yet be used within editor cells
   __captionsEnabled: boolean;
 
-  static getType(): string {
-    return 'image';
+  $config() {
+    return this.config('image', {extends: DecoratorNode});
   }
 
   static clone(node: ImageNode): ImageNode {
@@ -178,7 +179,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(): DOMExportOutput {
-    const imgElement = document.createElement('img');
+    const imgElement = $getDocument().createElement('img');
     imgElement.setAttribute('src', this.__src);
     imgElement.setAttribute('alt', this.__altText);
     imgElement.setAttribute('width', this.__width.toString());
@@ -208,8 +209,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
         return $generateHtmlFromNodes(captionEditor, selection);
       });
       if (captionHtml) {
-        const figureElement = document.createElement('figure');
-        const figcaptionElement = document.createElement('figcaption');
+        const figureElement = $getDocument().createElement('figure');
+        const figcaptionElement = $getDocument().createElement('figcaption');
         figcaptionElement.innerHTML = captionHtml;
 
         figureElement.appendChild(imgElement);
@@ -277,7 +278,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
-    const span = document.createElement('span');
+    const span = $getDocument().createElement('span');
     const theme = config.theme;
     const className = theme.image;
     if (className !== undefined) {

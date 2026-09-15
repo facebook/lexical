@@ -177,9 +177,10 @@ export function $garbageCollectDetachedNodes(
   }
 
   const editor = getActiveEditor();
+  const cloneNotNeeded = editor._cloneNotNeeded;
   for (const nodeKey of nodeMapDelete) {
     nodeMap.delete(nodeKey);
-    editor._cloneNotNeeded.delete(nodeKey);
+    cloneNotNeeded.delete(nodeKey);
   }
 
   // Clear the composition key if it points at a node that just got collected.

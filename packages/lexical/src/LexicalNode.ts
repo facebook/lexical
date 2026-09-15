@@ -1414,12 +1414,13 @@ export class LexicalNode {
       return this;
     }
     errorOnReadOnly();
+    const editorState = getActiveEditorState();
     const editor = getActiveEditor();
     const key = this.__key;
     const cloneNotNeeded = editor._cloneNotNeeded;
     // Cast: a key always identifies the same node class.
     const writableNode = cloneNotNeeded.get(key) as this | undefined;
-    const selection = $getSelection();
+    const selection = editorState._selection;
     if (selection !== null) {
       selection.setCachedNodes(null);
     }
@@ -1428,10 +1429,16 @@ export class LexicalNode {
       internalMarkNodeAsDirty(writableNode);
       return writableNode;
     }
-    const latestNode = this.getLatest();
+    const nodeMap = editorState._nodeMap;
+    // Cast: the nodeMap entry for this key is always the same node class.
+    const latestNode = nodeMap.get(key) as this | undefined;
+    invariant(
+      latestNode !== undefined,
+      'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
+    );
     const mutableNode = $cloneWithProperties(latestNode);
     cloneNotNeeded.set(key, mutableNode);
-    getActiveEditorState()._nodeMap.set(key, mutableNode);
+    nodeMap.set(key, mutableNode);
     internalMarkNodeAsDirty(mutableNode);
 
     return mutableNode;

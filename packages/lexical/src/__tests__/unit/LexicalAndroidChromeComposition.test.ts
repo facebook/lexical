@@ -25,7 +25,10 @@ import {
   $createTextNode,
   $getRoot,
   COMMAND_PRIORITY_CRITICAL,
+  COMPOSITION_END_TAG,
   CONTROLLED_TEXT_INSERTION_COMMAND,
+  SKIP_SCROLL_INTO_VIEW_TAG,
+  SKIP_SELECTION_FOCUS_TAG,
 } from 'lexical';
 import {describe, expect, onTestFinished, test, vi} from 'vitest';
 
@@ -109,5 +112,39 @@ describe('Android Chrome composition — format mismatch ZWSP skip', () => {
     await Promise.resolve();
 
     expect(insertionPayloads.length).toBe(1);
+  });
+});
+
+describe('Android Chrome composition — forced-commit heuristic stays out', () => {
+  // A compositionend with no recent keydown normally reads as a commit the
+  // browser forced on focus leaving, and is tagged to skip the focus grab and
+  // the scroll-into-view. Android Chrome can't make that inference —
+  // lastKeyDownTimeStamp is zeroed while composing (see $handleInput), so no
+  // keydown can ever attest a typed commit and every commit would look forced.
+  // Guards the carve-out that keeps Android on its existing behavior.
+  test('a commit with no keydown on record is not treated as browser-forced', async () => {
+    const {container, editor} = mountEditor(() => {
+      const textNode = $createTextNode('안녕');
+      $getRoot().append($createParagraphNode().append(textNode));
+      textNode.selectEnd();
+    });
+
+    const updates: Set<string>[] = [];
+    editor.registerUpdateListener(({tags}) => {
+      updates.push(new Set(tags));
+    });
+
+    container.dispatchEvent(
+      new CompositionEvent('compositionstart', {bubbles: true, data: ''}),
+    );
+    container.dispatchEvent(
+      new CompositionEvent('compositionend', {bubbles: true, data: 'ㅁ'}),
+    );
+    await Promise.resolve();
+
+    const commit = updates.find(tags => tags.has(COMPOSITION_END_TAG));
+    expect(commit).toBeDefined();
+    expect(commit!.has(SKIP_SELECTION_FOCUS_TAG)).toBe(false);
+    expect(commit!.has(SKIP_SCROLL_INTO_VIEW_TAG)).toBe(false);
   });
 });

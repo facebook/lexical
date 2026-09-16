@@ -779,8 +779,8 @@ i.page-break,
 
 i.page-setup,
 .icon.page-setup {
-  -webkit-mask-image: url(images/icons/file-earmark-text.svg);
-  mask-image: url(images/icons/file-earmark-text.svg);
+  -webkit-mask-image: url(images/icons/page-setup.svg);
+  mask-image: url(images/icons/page-setup.svg);
 }
 
 i.page-number,

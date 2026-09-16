@@ -9,6 +9,7 @@ import type {PageSetup} from '../../plugins/PagesExtension/types';
 
 import {describe, expect, it} from 'vitest';
 
+import {DEFAULT_PAGE_SETUP} from '../../plugins/PagesExtension/constants';
 import {
   computeGeometry,
   computePageBreakMarginBottom,
@@ -19,6 +20,7 @@ import {
 } from '../../plugins/PagesExtension/layoutMath';
 
 const setup: PageSetup = {
+  ...DEFAULT_PAGE_SETUP,
   margins: {bottom: 0.5, left: 0.5, right: 0.5, top: 0.5},
   orientation: 'portrait',
   pageSize: 'Letter',

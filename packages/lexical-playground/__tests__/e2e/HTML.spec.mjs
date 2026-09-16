@@ -233,9 +233,10 @@ test.describe('HTML', () => {
     await page.keyboard.type('Hello world');
 
     await click(page, '.page-setup');
-    const btn = page.getByRole('button', {name: /^Statement /});
-    await expect(btn).toBeVisible();
-    await btn.click();
+    const pageSizeSelect = page.locator('select[data-test-id="page-size"]');
+    await expect(pageSizeSelect).toBeVisible();
+    await pageSizeSelect.selectOption('Statement');
+    await click(page, '.Modal__closeButton');
     // Ensure we're in page mode: the page layer is rendered next to the
     // root while the document itself stays flat.
     await page.waitForSelector('.Pages__host > .Pages__layer');

@@ -20,15 +20,28 @@ export type PageSize =
 
 export type Orientation = 'portrait' | 'landscape';
 
+/** Settings of one header or footer band. */
+export interface PageSlotSetup {
+  /** Render the band on every page. */
+  enabled: boolean;
+  /** Give page 1 its own content. */
+  differentFirstPage: boolean;
+  /** Give even page numbers (2, 4, ...) their own content. */
+  differentEvenPages: boolean;
+}
+
 export interface PageSetup {
   pageSize: PageSize;
   orientation: Orientation;
+  /** Margins in inches. */
   margins: {
     top: number;
     right: number;
     bottom: number;
     left: number;
   };
+  header: PageSlotSetup;
+  footer: PageSlotSetup;
 }
 
 export type PageSlotKind = 'header' | 'footer';

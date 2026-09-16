@@ -25,6 +25,7 @@ import {$createPageBreakNode} from '../../nodes/PageBreakNode';
 import {
   $setPageSetup,
   computeGeometry,
+  DEFAULT_PAGE_SETUP,
   pageContentTop,
   type PageSetup,
   PagesExtension,
@@ -32,6 +33,7 @@ import {
 
 const LINE_HEIGHT = 20;
 const PAGE_SETUP: PageSetup = {
+  ...DEFAULT_PAGE_SETUP,
   margins: {bottom: 0.4, left: 0.4, right: 0.4, top: 0.4},
   orientation: 'portrait',
   pageSize: 'Statement',

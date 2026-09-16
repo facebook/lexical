@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {Orientation, PageSetup, PageSize} from './types';
+import type {Orientation, PageSetup, PageSize, PageSlotSetup} from './types';
 
 import {
   $getRoot,
@@ -16,7 +16,7 @@ import {
   type StateValueOrUpdater,
 } from 'lexical';
 
-import {DEFAULT_PAGE_SETUP, PAGE_SIZES} from './constants';
+import {DEFAULT_PAGE_SETUP, DEFAULT_SLOT_SETUP, PAGE_SIZES} from './constants';
 
 export function marginsIsEqual(
   a: PageSetup['margins'],
@@ -28,6 +28,31 @@ export function marginsIsEqual(
     a.right === b.right &&
     a.top === b.top
   );
+}
+
+export function slotSetupIsEqual(a: PageSlotSetup, b: PageSlotSetup) {
+  return (
+    a === b ||
+    (a.enabled === b.enabled &&
+      a.differentFirstPage === b.differentFirstPage &&
+      a.differentEvenPages === b.differentEvenPages)
+  );
+}
+
+/**
+ * Documents written before headers and footers existed have no `header` or
+ * `footer` key; they load with both disabled.
+ */
+function parseSlotSetup(v: unknown): PageSlotSetup {
+  if (v && typeof v === 'object' && !Array.isArray(v)) {
+    const o = v as Record<string, unknown>;
+    return {
+      differentEvenPages: o.differentEvenPages === true,
+      differentFirstPage: o.differentFirstPage === true,
+      enabled: o.enabled === true,
+    };
+  }
+  return DEFAULT_SLOT_SETUP;
 }
 
 function parsePageSize(v: unknown): PageSize {
@@ -62,11 +87,15 @@ export const pageSetupState = createState('pageSetup', {
       b != null &&
       a.orientation === b.orientation &&
       a.pageSize === b.pageSize &&
-      (a.margins === b.margins || marginsIsEqual(a.margins, b.margins))),
+      (a.margins === b.margins || marginsIsEqual(a.margins, b.margins)) &&
+      slotSetupIsEqual(a.header, b.header) &&
+      slotSetupIsEqual(a.footer, b.footer)),
   parse: v => {
     if (v && typeof v === 'object' && !Array.isArray(v)) {
       const obj: {[k in string]?: unknown} = v;
       return {
+        footer: parseSlotSetup(obj.footer),
+        header: parseSlotSetup(obj.header),
         margins: parseMargins(obj.margins),
         orientation: parseOrientation(obj.orientation),
         pageSize: parsePageSize(obj.pageSize),

@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-export {DEFAULT_PAGE_SETUP, PAGE_GAP, PAGE_SIZES} from './constants';
+export {
+  DEFAULT_PAGE_SETUP,
+  DEFAULT_SLOT_SETUP,
+  PAGE_GAP,
+  PAGE_SIZES,
+} from './constants';
 export {
   computeGeometry,
   computePageBreakMarginBottom,
@@ -23,7 +28,13 @@ export {
   PageNode,
   registerLegacyPageUnwrap,
 } from './legacy';
-export {$getPageSetup, $setPageSetup, pageSetupState} from './pageSetup';
+export {
+  $getPageSetup,
+  $setPageSetup,
+  marginsIsEqual,
+  pageSetupState,
+  slotSetupIsEqual,
+} from './pageSetup';
 export {type PagesConfig, PagesExtension} from './PagesExtension';
 export {
   PagesLayout,
@@ -36,4 +47,5 @@ export type {
   PageSetup,
   PageSize,
   PageSlotKind,
+  PageSlotSetup,
 } from './types';

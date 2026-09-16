@@ -9,15 +9,21 @@ import {ReactExtension} from '@lexical/react/ReactExtension';
 import {defineExtension} from 'lexical';
 
 import {PagesExtension} from '../PagesExtension';
-import {PageSetupDropdownComponent} from './PageSetupDropdown';
+import {PageSetupComponent} from './PageSetupComponent';
 
 export {
-  PageSetupDropdownComponent,
-  type PageSetupDropdownProps,
-} from './PageSetupDropdown';
+  PageSetupComponent,
+  type PageSetupComponentProps,
+  /** @deprecated Use {@link PageSetupComponentProps}. */
+  type PageSetupComponentProps as PageSetupDropdownProps,
+} from './PageSetupComponent';
+export {PAGE_SIZE_ORDER, PageSetupDialog} from './PageSetupDialog';
+
+/** @deprecated The dropdown became a dialog; use {@link PageSetupComponent}. */
+export const PageSetupDropdownComponent = PageSetupComponent;
 
 export const PagesReactExtension = defineExtension({
-  build: () => ({Component: PageSetupDropdownComponent}),
+  build: () => ({Component: PageSetupComponent}),
   dependencies: [ReactExtension, PagesExtension],
   name: '@lexical/playground/PagesReact',
 });

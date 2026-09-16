@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {PageSetup, PageSize} from './types';
+import type {PageSetup, PageSize, PageSlotSetup} from './types';
 
 export const PAGE_SIZES: Record<
   PageSize,
@@ -24,7 +24,15 @@ export const PAGE_SIZES: Record<
   Tabloid: {height: 1632, label: 'Tabloid (11" x 17")', width: 1056},
 };
 
+export const DEFAULT_SLOT_SETUP: PageSlotSetup = {
+  differentEvenPages: false,
+  differentFirstPage: false,
+  enabled: false,
+};
+
 export const DEFAULT_PAGE_SETUP: PageSetup = {
+  footer: DEFAULT_SLOT_SETUP,
+  header: DEFAULT_SLOT_SETUP,
   margins: {
     bottom: 0.4,
     left: 0.4,

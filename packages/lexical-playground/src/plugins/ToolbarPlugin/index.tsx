@@ -985,7 +985,9 @@ export default function ToolbarPlugin({
       </button>
       <Divider />
       {toolbarState.blockType in blockTypeToBlockName &&
-        activeEditor === editor && (
+        // Nested rich-text editors (page headers and footers) take block
+        // formats too; only image captions stay inline-only.
+        !toolbarState.isImageCaption && (
           <>
             <BlockFormatDropDown
               disabled={!isEditable}

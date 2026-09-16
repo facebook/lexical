@@ -17,7 +17,11 @@ import type {
 import './PageSetupDialog.css';
 
 import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
-import {type LexicalEditor} from 'lexical';
+import {
+  $addUpdateTag,
+  type LexicalEditor,
+  SKIP_DOM_SELECTION_TAG,
+} from 'lexical';
 import * as React from 'react';
 import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
 
@@ -230,9 +234,12 @@ export function PageSetupDialog({
   const paged = pageSetup !== null;
   const shown = pageSetup ?? lastPagedSetup.current;
 
+  // The dialog's controls keep focus: without the tag, reconciliation would
+  // re-apply the editor's DOM selection and pull focus out of the modal.
   const applyUpdate = useCallback(
     (patch: null | Partial<PageSetup>) => {
       editor.update(() => {
+        $addUpdateTag(SKIP_DOM_SELECTION_TAG);
         $setPageSetup(
           patch === null
             ? null
@@ -252,6 +259,7 @@ export function PageSetupDialog({
   const updateSlot = useCallback(
     (kind: PageSlotKind, patch: Partial<PageSlotSetup>) => {
       editor.update(() => {
+        $addUpdateTag(SKIP_DOM_SELECTION_TAG);
         $setPageSetup(prev => {
           const base = prev ?? lastPagedSetup.current;
           return {...base, [kind]: {...base[kind], ...patch}};

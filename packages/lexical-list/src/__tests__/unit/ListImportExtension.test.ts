@@ -457,7 +457,7 @@ describe('ListItemNode block flattening', () => {
     });
   });
 
-  test('keeps the surrounding lines apart when a table is hoisted out', () => {
+  test('splits the item in place around a hoisted table', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [ListExtension, TableExtension],
@@ -469,13 +469,15 @@ describe('ListItemNode block flattening', () => {
       '<ul><li>a<table><tbody><tr><td>t</td></tr></tbody></table>b</li></ul>',
     );
     editor.read(() => {
-      // The table stood on its own line inside the item; hoisting it must
-      // not glue `a` and `b` together, nor leave the separator behind.
-      expect($liChildTypes()).toEqual(['text:a', 'linebreak:\n', 'text:b']);
+      // The table stood between `a` and `b`; hoisting it must not move `b`
+      // above it, nor leave the separating line breaks behind.
+      const children = $getRoot().getChildren();
+      expect(children.map(c => c.getType())).toEqual(['list', 'table', 'list']);
+      expect(children.map(c => c.getTextContent())).toEqual(['a', 't', 'b']);
     });
   });
 
-  test('drops a list item that held nothing but a hoisted table', () => {
+  test('splits the list in place around a hoisted table', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [ListExtension, TableExtension],
@@ -487,12 +489,59 @@ describe('ListItemNode block flattening', () => {
       '<ul><li><table><tbody><tr><td>a</td></tr></tbody></table></li><li>b</li></ul>',
     );
     editor.read(() => {
-      const list = $getRoot().getFirstChild();
+      const children = $getRoot().getChildren();
+      // The item held nothing else, so it leaves no stray bullet behind, and
+      // the table keeps its place ahead of `b`.
+      expect(children.map(c => c.getType())).toEqual(['table', 'list']);
+      const list = children[1];
       assert($isListNode(list), 'expected a ListNode');
-      // The emptied item would otherwise render as a stray bullet.
       expect(list.getChildrenSize()).toBe(1);
       expect(list.getTextContent()).toBe('b');
-      expect($getRoot().getTextContent()).toContain('a');
+    });
+  });
+
+  test('keeps a nested list ahead of a table that followed it', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [ListExtension, TableExtension],
+        name: 'list-table-nested-host',
+      }),
+    );
+    importInto(
+      editor,
+      '<ul><li>a<ul><li>n</li></ul><table><tbody><tr><td>t</td></tr></tbody></table></li></ul>',
+    );
+    editor.read(() => {
+      // The nested list is lifted into a sibling item, which must stay in the
+      // fragment it came from rather than land after the table.
+      const children = $getRoot().getChildren();
+      expect(children.map(c => c.getType())).toEqual(['list', 'table']);
+      expect(children[0].getTextContent()).toBe('a\n\nn');
+    });
+  });
+
+  test('continues the numbering of an ordered list split by a table', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [ListExtension, TableExtension],
+        name: 'list-table-ol-host',
+      }),
+    );
+    importInto(
+      editor,
+      '<ol start="3"><li>a</li><li>b<table><tbody><tr><td>t</td></tr></tbody></table></li><li>c</li></ol>',
+    );
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children.map(c => c.getType())).toEqual(['list', 'table', 'list']);
+      const [first, , second] = children;
+      assert($isListNode(first) && $isListNode(second), 'expected ListNodes');
+      expect(first.getStart()).toBe(3);
+      expect(first.getTextContent()).toBe('a\n\nb');
+      // `a` and `b` took 3 and 4, so the tail list resumes at 5 instead of
+      // restarting at 1.
+      expect(second.getStart()).toBe(5);
+      expect(second.getTextContent()).toBe('c');
     });
   });
 

@@ -16,6 +16,7 @@ import {
   sel,
 } from '@lexical/html';
 import {
+  $copyNode,
   $createLineBreakNode,
   $isBlockElementNode,
   $isElementNode,
@@ -50,21 +51,49 @@ function isDomChecklist(domNode: HTMLElement): boolean {
  * Unwrapping it the way {@link $flattenListItemBlocks} unwraps a paragraph
  * would orphan them, so it is hoisted out of the list instead.
  */
-function $isStructuralBlock(node: LexicalNode): boolean {
+function $isStructuralBlock(node: LexicalNode | null | undefined): boolean {
   return $isBlockElementNode(node) && node.isShadowRoot();
 }
 
-/** `hoisted` nodes are emitted by the caller as siblings of the list. */
-interface NormalizedListChildren {
-  hoisted: LexicalNode[];
-  items: ListItemNode[];
+/**
+ * Split an item around the {@link $isStructuralBlock} children that cannot
+ * stay in a list, so the caller can emit them between the fragments:
+ * `<li>a<table/>b</li>` becomes an item `a`, the table, then an item `b`.
+ */
+function $splitListItemAtStructuralBlocks(item: ListItemNode): LexicalNode[] {
+  const children = item.getChildren();
+  if (!children.some($isStructuralBlock)) {
+    return [item];
+  }
+  const $isBlockSeparator = (child: LexicalNode, index: number): boolean =>
+    $isLineBreakNode(child) &&
+    ($isStructuralBlock(children[index - 1]) ||
+      $isStructuralBlock(children[index + 1]));
+
+  const withoutSeparators = children.filter(
+    (child, index) => !$isBlockSeparator(child, index),
+  );
+
+  const out: LexicalNode[] = [];
+  for (const child of withoutSeparators) {
+    const openFragment = out[out.length - 1];
+    if ($isStructuralBlock(child)) {
+      out.push(child);
+    } else if ($isListItemNode(openFragment)) {
+      openFragment.append(child);
+    } else {
+      out.push($copyNode(item).append(child));
+    }
+  }
+  return out;
 }
 
 /**
  * Lift nested `ListNode`s out of `ListItemNode`s into sibling
  * `ListItemNode`s (the legacy `$normalizeChildren` shape). Also wraps any
- * non-`ListItemNode` children in a new `ListItemNode`, and hoists
- * {@link $isStructuralBlock} children out of the list entirely.
+ * non-`ListItemNode` children in a new `ListItemNode`, and emits
+ * {@link $isStructuralBlock} children in place, between the items that
+ * surround them, for the caller to split the list around.
  *
  * The wrapper items come from `listNode.createListItemNode()` — the same
  * subclass hook the legacy `$normalizeChildren` uses — so a `ListNode`
@@ -73,67 +102,67 @@ interface NormalizedListChildren {
 function $normalizeListChildren(
   children: LexicalNode[],
   listNode: ListNode,
-): NormalizedListChildren {
-  const items: ListItemNode[] = [];
-  const hoisted: LexicalNode[] = [];
-  for (const child of children) {
-    if ($isListItemNode(child)) {
-      const innerChildren = child.getChildren();
-      for (const inner of innerChildren) {
-        if ($isStructuralBlock(inner)) {
-          // The line break $flattenListItemBlocks put before it.
-          const separator = inner.getPreviousSibling();
-          if ($isLineBreakNode(separator)) {
-            separator.remove();
-          }
-          inner.remove();
-          hoisted.push(inner);
-        }
-      }
-      // An emptied item would render as a stray bullet.
-      if (child.getChildrenSize() > 0) {
-        items.push(child);
-      }
-      if (innerChildren.length > 1) {
-        for (const inner of innerChildren) {
-          if ($isListNode(inner)) {
-            items.push(listNode.createListItemNode().append(inner));
-          }
-        }
-      }
-    } else if ($isStructuralBlock(child)) {
-      hoisted.push(child);
-    } else {
-      items.push(listNode.createListItemNode().append(child));
+): LexicalNode[] {
+  const $liftNestedLists = (node: LexicalNode): LexicalNode[] => {
+    const innerChildren = $isListItemNode(node) ? node.getChildren() : [];
+    if (innerChildren.length < 2) {
+      return [node];
     }
-  }
-  return {hoisted, items};
+    return [
+      node,
+      ...innerChildren
+        .filter($isListNode)
+        .map(inner => listNode.createListItemNode().append(inner)),
+    ];
+  };
+  return children.flatMap(child => {
+    if ($isListItemNode(child)) {
+      return $splitListItemAtStructuralBlocks(child).flatMap($liftNestedLists);
+    }
+    if ($isStructuralBlock(child)) {
+      return [child];
+    }
+    return [listNode.createListItemNode().append(child)];
+  });
 }
 
 const ListRule = defineImportRule({
   $import: (ctx, el) => {
-    let node;
-    if (isElementOfTag(el, 'ol')) {
-      node = $createListNode('number', el.start);
-    } else if (isDomChecklist(el)) {
-      node = $createListNode('check');
-    } else {
-      node = $createListNode('bullet');
+    const isOrdered = isElementOfTag(el, 'ol');
+    const $createList = (start: number): ListNode => {
+      const list = isOrdered
+        ? $createListNode('number', start)
+        : $createListNode(isDomChecklist(el) ? 'check' : 'bullet');
+      $setDirectionFromDOM(list, el);
+      return list;
+    };
+    const firstStart = isOrdered ? el.start : 1;
+    const firstList = $createList(firstStart);
+    const children = $normalizeListChildren(ctx.$importChildren(el), firstList);
+
+    $propagateTextAlignToBlockChildren(children.filter($isListItemNode), el);
+
+    const out: LexicalNode[] = [];
+    let numbered = 0;
+    for (const child of children) {
+      const openList = out[out.length - 1];
+      if (!$isListItemNode(child)) {
+        out.push(child);
+        continue;
+      }
+      if ($isListNode(openList)) {
+        openList.append(child);
+      } else {
+        const list = out.some($isListNode)
+          ? $createList(firstStart + numbered)
+          : firstList;
+        out.push(list.append(child));
+      }
+      if (!$isListNode(child.getFirstChild())) {
+        numbered++;
+      }
     }
-    $setDirectionFromDOM(node, el);
-    // Propagate the list's `text-align` onto each `ListItemNode` child
-    // (legacy `wrapContinuousInlines` did the same), so pasting
-    // `<ul style="text-align: left"><li>…</li></ul>` ends up with the
-    // alignment on the list items where the reconciler renders it as
-    // `style="text-align: left"`.
-    const {items, hoisted} = $normalizeListChildren(
-      ctx.$importChildren(el),
-      node,
-    );
-    return [
-      node.splice(0, 0, $propagateTextAlignToBlockChildren(items, el)),
-      ...hoisted,
-    ];
+    return out;
   },
   match: sel.tag('ol', 'ul'),
   name: '@lexical/list/list',

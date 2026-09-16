@@ -38,9 +38,11 @@ export function PageSetupComponent({
         aria-label="Page setup: size, orientation, margins, headers and footers"
         title="Page setup"
         onClick={() =>
-          showModal('Page setup', onClose => (
-            <PageSetupDialog editor={editor} onClose={onClose} />
-          ))
+          showModal(
+            'Page setup',
+            onClose => <PageSetupDialog editor={editor} onClose={onClose} />,
+            true,
+          )
         }>
         <i className="format page-setup" />
       </button>

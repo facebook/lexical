@@ -236,7 +236,6 @@ const PlaygroundRichTextExtension = defineExtension({
     }),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,
-    PageBreakExtension,
     PagesReactExtension,
     PollExtension,
     EquationsExtension,

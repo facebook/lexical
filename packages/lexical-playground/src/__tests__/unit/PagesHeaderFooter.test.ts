@@ -20,12 +20,14 @@ import {describe, expect, it} from 'vitest';
 import {
   $isPageCountNode,
   $isPageNumberNode,
+  $writeCountersIntoEditor,
   DEFAULT_SLOT_SETUP,
   INSERT_PAGE_COUNT_COMMAND,
   INSERT_PAGE_NUMBER_COMMAND,
   PageCounterNodesExtension,
   pageHeaderState,
   resolveSlotVariant,
+  writeCountersIntoDOM,
 } from '../../plugins/PagesExtension';
 
 const STATE: SerializedEditorState = {
@@ -108,7 +110,7 @@ describe('page counter nodes', () => {
     return editor;
   }
 
-  it('inserts inline placeholders with a textual stand-in', () => {
+  it('inserts token text nodes that format like text', () => {
     const editor = buildEditor();
     editor.dispatchCommand(INSERT_PAGE_NUMBER_COMMAND, undefined);
     editor.update(
@@ -121,14 +123,50 @@ describe('page counter nodes', () => {
     editor.dispatchCommand(INSERT_PAGE_COUNT_COMMAND, undefined);
     editor.read(() => {
       const nodes = $getRoot().getAllTextNodes();
-      expect(nodes.map(n => n.getTextContent()).join('')).toBe('Page  of ');
+      expect(nodes.map(n => n.getTextContent()).join('')).toBe('Page # of ##');
       const children = $getRoot()
         .getFirstChildOrThrow<ElementNode>()
         .getChildren();
-      expect(children.some($isPageNumberNode)).toBe(true);
+      const pageNumber = children.find($isPageNumberNode)!;
+      expect(pageNumber.isToken()).toBe(true);
       expect(children.some($isPageCountNode)).toBe(true);
       expect($getRoot().getTextContent()).toBe('Page # of ##');
     });
+    editor.update(
+      () => {
+        const pageNumber = $getRoot()
+          .getFirstChildOrThrow<ElementNode>()
+          .getChildren()
+          .find($isPageNumberNode)!;
+        pageNumber.toggleFormat('bold');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const pageNumber = $getRoot()
+        .getFirstChildOrThrow<ElementNode>()
+        .getChildren()
+        .find($isPageNumberNode)!;
+      expect(pageNumber.hasFormat('bold')).toBe(true);
+    });
+    editor.setRootElement(null);
+  });
+
+  it('writes real numbers into the editor and into rendered DOM', () => {
+    const editor = buildEditor();
+    editor.dispatchCommand(INSERT_PAGE_NUMBER_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_PAGE_COUNT_COMMAND, undefined);
+    editor.update(() => $writeCountersIntoEditor(3, 7), {discrete: true});
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('Page 37');
+    });
+    const dom = document.createElement('div');
+    dom.innerHTML =
+      '<p><span data-lexical-page-number="true"><strong>#</strong></span>' +
+      ' of <span data-lexical-page-count="true">##</span></p>';
+    writeCountersIntoDOM(dom, 2, 9);
+    expect(dom.textContent).toBe('2 of 9');
+    expect(dom.querySelector('strong')!.textContent).toBe('2');
     editor.setRootElement(null);
   });
 

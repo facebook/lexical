@@ -89,7 +89,6 @@
 }
 .Pages__breakHeader {
   height: calc(var(--page-margin-top) + var(--page-header-height));
-  counter-increment: lexical-page;
   break-inside: avoid;
 }
 .Pages__breakHeader > .Pages__header {
@@ -162,22 +161,6 @@
   font-size: 12px;
   color: #999;
   pointer-events: none;
-}
-.Pages__pageNumber,
-.Pages__pageCount {
-  border-radius: 2px;
-  background: rgba(71, 102, 203, 0.1);
-  padding: 0 2px;
-}
-
-/* Page numbering: the layer resets `lexical-page` to 1 and `lexical-pages`
-   to the page count (inline, from PagesLayout); each in-break header
-   increments `lexical-page`. */
-[data-lexical-page-number]::before {
-  content: counter(lexical-page);
-}
-[data-lexical-page-count]::before {
-  content: counter(lexical-pages);
 }
 
 /* The editor root inside a paged host. It must stay a plain block

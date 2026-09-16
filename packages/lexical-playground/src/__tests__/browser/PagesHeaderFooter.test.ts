@@ -352,7 +352,7 @@ describe('Pages headers and footers', () => {
     expect(parentUpdates).toBe(1);
   });
 
-  test('numbers pages with CSS counters and keeps layout update-free', async () => {
+  test('numbers pages in every clone and keeps layout update-free', async () => {
     const {editor, host} = mount();
     editor.update(
       () => {
@@ -364,23 +364,27 @@ describe('Pages headers and footers', () => {
     );
     await expect.poll(() => headerTexts(host).length).toBe(3);
     await nextFrames(4);
-    const layer = host.querySelector<HTMLElement>('.Pages__layer')!;
-    expect(layer.style.counterReset).toBe('lexical-page 1 lexical-pages 3');
-    const slots = headerSlots(host);
-    expect(
-      slots.every(
-        slot => slot.querySelector('[data-lexical-page-number]') !== null,
-      ),
-    ).toBe(true);
-    const inBreakHeaders = slots.filter(slot =>
-      slot.parentElement!.classList.contains('Pages__breakHeader'),
-    );
-    expect(inBreakHeaders.length).toBe(2);
-    for (const slot of inBreakHeaders) {
-      expect(getComputedStyle(slot.parentElement!).counterIncrement).toBe(
-        'lexical-page 1',
-      );
-    }
+    await expect
+      .poll(() =>
+        headerSlots(host).map(
+          slot => `${slot.dataset.pageIndex}:${slot.textContent}`,
+        ),
+      )
+      .toEqual(['0:Page 1', '1:Page 2', '2:Page 3']);
+
+    // The live editor shows the number of the page it is opened on.
+    const {activeSlotEditor} = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+    editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+      kind: 'header',
+      pageIndex: 2,
+    });
+    activeSlotEditor.value!.read(() => {
+      expect($getRoot().getTextContent()).toBe('Page 3');
+    });
+    editor.dispatchCommand(CLOSE_PAGE_SLOT_COMMAND, undefined);
 
     let updates = 0;
     onTestFinished(editor.registerUpdateListener(() => updates++));

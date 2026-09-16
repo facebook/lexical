@@ -54,11 +54,15 @@ export {
   $createPageNumberNode,
   $isPageCountNode,
   $isPageNumberNode,
+  $writeCountersIntoEditor,
   INSERT_PAGE_COUNT_COMMAND,
   INSERT_PAGE_NUMBER_COMMAND,
+  PAGE_COUNT_ATTRIBUTE,
+  PAGE_NUMBER_ATTRIBUTE,
   PageCounterNodesExtension,
   PageCountNode,
   PageNumberNode,
+  writeCountersIntoDOM,
 } from './PageCounterNodes';
 export {
   $getPageSetup,

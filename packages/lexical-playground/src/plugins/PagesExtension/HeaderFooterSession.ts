@@ -45,6 +45,10 @@ import {
   resolveSlotVariant,
   slotStateFor,
 } from './headerFooter';
+import {
+  $writeCountersIntoEditor,
+  writeCountersIntoDOM,
+} from './PageCounterNodes';
 
 const SLOT_KINDS: readonly PageSlotKind[] = ['header', 'footer'];
 const CLONE_ATTRIBUTES_TO_STRIP = [
@@ -253,6 +257,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
         active.slotEditor.kind === kind
       ) {
         active.pageIndex = pageIndex;
+        this.syncLiveCounters(active);
         return;
       }
       this.close(true);
@@ -271,11 +276,22 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     slot.dataset.pageVariant = variant;
     slot.dataset.empty = String(slotEditor.empty);
     const clone = this.cloneFor(slotEditor);
+    writeCountersIntoDOM(clone, pageIndex + 1, this.layout.getPageCount());
     if (content) {
       content.replaceWith(clone);
     } else {
       slot.appendChild(clone);
     }
+  }
+
+  /** Show the real page number / count in the editor of the live slot. */
+  private syncLiveCounters(active: ActiveSession): void {
+    const pageNumber = active.pageIndex + 1;
+    const pageCount = this.layout.getPageCount();
+    active.slotEditor.editor.update(
+      () => $writeCountersIntoEditor(pageNumber, pageCount),
+      {tag: HISTORY_MERGE_TAG},
+    );
   }
 
   // ---- live editing -----------------------------------------------------
@@ -322,6 +338,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       variant: slotEditor.variant,
     };
     this.options.activeSlotEditor.value = slotEditor.editor;
+    this.syncLiveCounters(this.active);
     this.placeCaret(slotEditor, point);
     slotEditor.editor.focus(undefined, {defaultSelection: 'rootEnd'});
     return true;

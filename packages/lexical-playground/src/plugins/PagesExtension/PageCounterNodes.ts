@@ -7,88 +7,74 @@
  */
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {
-  $getDocument,
   $insertNodes,
+  $nodesOfType,
   COMMAND_PRIORITY_EDITOR,
   configExtension,
   createCommand,
-  DecoratorNode,
   defineExtension,
+  type EditorConfig,
   type LexicalCommand,
+  type LexicalEditor,
   type LexicalNode,
   mergeRegister,
+  type NodeKey,
+  TextNode,
 } from 'lexical';
 
+export const PAGE_NUMBER_ATTRIBUTE = 'data-lexical-page-number';
+export const PAGE_COUNT_ATTRIBUTE = 'data-lexical-page-count';
+
 /**
- * Inline placeholder for the number of the page a header/footer is drawn
- * on. It renders nothing itself: the CSS rule
- * `[data-lexical-page-number]::before { content: counter(lexical-page) }`
- * fills it in, so the header can be cloned onto every page with no
- * per-page JavaScript.
+ * The number of the page a header/footer is drawn on, as a token text node:
+ * it formats like any other text (bold, size, color) and cannot be edited
+ * character by character. Its text is the placeholder `#` until
+ * `HeaderFooterSession` writes the real number: into the live editor for
+ * the page being edited, and into every page's static clone.
  */
-export class PageNumberNode extends DecoratorNode<null> {
+export class PageNumberNode extends TextNode {
   $config() {
-    return this.config('page-number', {extends: DecoratorNode});
+    return this.config('page-number', {extends: TextNode});
   }
 
-  createDOM(): HTMLElement {
-    const span = $getDocument().createElement('span');
-    span.setAttribute('data-lexical-page-number', 'true');
-    span.className = 'Pages__pageNumber';
-    span.title = 'Page number';
-    return span;
+  constructor(text: string = '#', key?: NodeKey) {
+    super(text, key);
   }
 
-  updateDOM(): boolean {
-    return false;
+  createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
+    const dom = super.createDOM(config, editor);
+    dom.setAttribute(PAGE_NUMBER_ATTRIBUTE, 'true');
+    return dom;
   }
 
-  decorate(): null {
-    return null;
-  }
-
-  isInline(): true {
+  isTextEntity(): true {
     return true;
-  }
-
-  getTextContent(): string {
-    return '#';
   }
 }
 
-/** Inline placeholder for the total number of pages, see {@link PageNumberNode}. */
-export class PageCountNode extends DecoratorNode<null> {
+/** The total number of pages, see {@link PageNumberNode}. */
+export class PageCountNode extends TextNode {
   $config() {
-    return this.config('page-count', {extends: DecoratorNode});
+    return this.config('page-count', {extends: TextNode});
   }
 
-  createDOM(): HTMLElement {
-    const span = $getDocument().createElement('span');
-    span.setAttribute('data-lexical-page-count', 'true');
-    span.className = 'Pages__pageCount';
-    span.title = 'Page count';
-    return span;
+  constructor(text: string = '##', key?: NodeKey) {
+    super(text, key);
   }
 
-  updateDOM(): boolean {
-    return false;
+  createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
+    const dom = super.createDOM(config, editor);
+    dom.setAttribute(PAGE_COUNT_ATTRIBUTE, 'true');
+    return dom;
   }
 
-  decorate(): null {
-    return null;
-  }
-
-  isInline(): true {
+  isTextEntity(): true {
     return true;
-  }
-
-  getTextContent(): string {
-    return '##';
   }
 }
 
 export function $createPageNumberNode(): PageNumberNode {
-  return new PageNumberNode();
+  return new PageNumberNode().setMode('token');
 }
 
 export function $isPageNumberNode(
@@ -98,7 +84,7 @@ export function $isPageNumberNode(
 }
 
 export function $createPageCountNode(): PageCountNode {
-  return new PageCountNode();
+  return new PageCountNode().setMode('token');
 }
 
 export function $isPageCountNode(
@@ -114,12 +100,12 @@ export const INSERT_PAGE_COUNT_COMMAND: LexicalCommand<undefined> =
 
 const PageNumberImportRule = defineImportRule({
   $import: () => [$createPageNumberNode()],
-  match: sel.tag('span').attr('data-lexical-page-number', true),
+  match: sel.tag('span').attr(PAGE_NUMBER_ATTRIBUTE, true),
   name: '@lexical/playground/page-number',
 });
 const PageCountImportRule = defineImportRule({
   $import: () => [$createPageCountNode()],
-  match: sel.tag('span').attr('data-lexical-page-count', true),
+  match: sel.tag('span').attr(PAGE_COUNT_ATTRIBUTE, true),
   name: '@lexical/playground/page-count',
 });
 
@@ -152,3 +138,50 @@ export const PageCounterNodesExtension = defineExtension({
       ),
     ),
 });
+
+/**
+ * Write the page number and page count into the rendered DOM of a header or
+ * footer (a static clone, outside any editor). The nodes' text sits inside
+ * whatever format wrappers the text node rendered, so the number keeps the
+ * text's formatting.
+ */
+export function writeCountersIntoDOM(
+  root: ParentNode,
+  pageNumber: number,
+  pageCount: number,
+): void {
+  const write = (selector: string, value: string) => {
+    for (const el of root.querySelectorAll(selector)) {
+      const walker = el.ownerDocument.createTreeWalker(
+        el,
+        NodeFilter.SHOW_TEXT,
+      );
+      const text = walker.nextNode();
+      if (text !== null && text.nodeValue !== value) {
+        text.nodeValue = value;
+      }
+    }
+  };
+  write(`[${PAGE_NUMBER_ATTRIBUTE}]`, String(pageNumber));
+  write(`[${PAGE_COUNT_ATTRIBUTE}]`, String(pageCount));
+}
+
+/**
+ * Set the counter nodes of a nested editor to the values of the page it is
+ * being edited on, so the author sees real numbers while editing.
+ */
+export function $writeCountersIntoEditor(
+  pageNumber: number,
+  pageCount: number,
+): void {
+  for (const node of $nodesOfType(PageNumberNode)) {
+    if (node.getTextContent() !== String(pageNumber)) {
+      node.setTextContent(String(pageNumber));
+    }
+  }
+  for (const node of $nodesOfType(PageCountNode)) {
+    if (node.getTextContent() !== String(pageCount)) {
+      node.setTextContent(String(pageCount));
+    }
+  }
+}

@@ -448,7 +448,6 @@ export class PagesLayout {
     style.setProperty('--page-first-top', px(geom.firstTop));
     style.setProperty('--page-count', String(this.pageCount));
     style.setProperty('--page-zoom', String(this.zoom));
-    this.layer.style.counterReset = `lexical-page 1 lexical-pages ${this.pageCount}`;
     // Width and zoom changed, so re-derive the fit on the next frame.
     this.measureRafIds.push(requestAnimationFrame(() => this.measureZoom()));
   }
@@ -503,9 +502,11 @@ export class PagesLayout {
     }
     this.pageCount = count;
     this.host.style.setProperty('--page-count', String(count));
-    this.layer.style.counterReset = `lexical-page 1 lexical-pages ${count}`;
     this.lastFooter.dataset.pageIndex = String(count - 1);
-    this.fillSlot(this.lastFooter, 'footer', count - 1);
+    // Every slot may show the page count, so refill them all.
+    this.forEachSlot((slot, kind, pageIndex) =>
+      this.fillSlot(slot, kind, pageIndex),
+    );
     this.options.onPageCountChange?.(count);
   }
 

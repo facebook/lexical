@@ -179,6 +179,21 @@
   border-top: 2px solid var(--editor-color-primary, #4766cb);
 }
 
+/* An empty block renders as `<p><br></p>`; a line box with no width fits
+   beside a full-width float, so the browser would leave it at the top of
+   the break band (caret at the right edge of the previous page) instead of
+   on the next page. While empty, give the block its own formatting context
+   so the float pushes it whole; once it has text the rule stops matching. */
+.Pages__host
+  .ContentEditable__root
+  :is(p, h1, h2, h3, h4, h5, h6, blockquote):has(> br:only-child) {
+  display: flow-root;
+  /* A formatting context may be narrowed to fit beside a float; refuse,
+     so the only option left is the next page. */
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Blocks that must never be split by a page break: make them formatting
    contexts so the floats push them whole. */
 .Pages__host .ContentEditable__root > li[role='checkbox'],

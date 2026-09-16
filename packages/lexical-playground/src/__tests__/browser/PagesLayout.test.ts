@@ -147,6 +147,38 @@ describe('PagesLayout', () => {
     await expect.poll(() => breaks(host).length).toBe(0);
   });
 
+  test('puts an empty paragraph after a full page on the next page', async () => {
+    const {editor, host, root} = mount();
+    editor.update(
+      () => {
+        $fillLines(LINES_PER_PAGE);
+        $setPageSetup(PAGE_SETUP);
+      },
+      {discrete: true},
+    );
+    await expect.poll(() => breaks(host).length).toBe(0);
+    await settled(host);
+
+    // Enter at the end of a full page: the new empty paragraph must start
+    // the next page, not sit beside the break band.
+    editor.update(() => $getRoot().append($createParagraphNode()), {
+      discrete: true,
+    });
+    await expect.poll(() => breaks(host).length).toBe(1);
+    await settled(host);
+    const empty = root.lastElementChild as HTMLElement;
+    expect(empty.querySelector('br')).not.toBeNull();
+    expect(root.offsetTop + empty.offsetTop).toBeGreaterThanOrEqual(
+      pageContentTop(1, GEOM) - 0.5,
+    );
+
+    // Removing it again drops the page.
+    editor.update(() => $getRoot().getLastChild()!.remove(), {
+      discrete: true,
+    });
+    await expect.poll(() => breaks(host).length).toBe(0);
+  });
+
   test('positions breaks exactly one content height apart', async () => {
     const {editor, host} = mount();
     editor.update(

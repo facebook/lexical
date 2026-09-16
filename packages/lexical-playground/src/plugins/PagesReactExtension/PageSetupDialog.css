@@ -24,6 +24,25 @@
   flex-direction: column;
   gap: 6px;
 }
+/* The paged controls are one fieldset, so `disabled` on it reaches every
+   select, input, switch and button while the document is pageless. */
+.PageSetupDialog__paged {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.PageSetupDialog__paged:disabled {
+  opacity: 0.5;
+}
+.PageSetupDialog__paged:disabled .switch button,
+.PageSetupDialog__paged:disabled select,
+.PageSetupDialog__paged:disabled input {
+  cursor: not-allowed;
+}
 .PageSetupDialog__section--sub {
   margin-left: 12px;
   padding-left: 12px;

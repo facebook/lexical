@@ -234,7 +234,10 @@ test.describe('HTML', () => {
 
     await click(page, '.page-setup');
     const pageSizeSelect = page.locator('select[data-test-id="page-size"]');
-    await expect(pageSizeSelect).toBeVisible();
+    // While pageless the page controls are disabled; turn "Paged" on first.
+    await expect(pageSizeSelect).toBeDisabled();
+    await click(page, '#paged-toggle button[role="switch"]');
+    await expect(pageSizeSelect).toBeEnabled();
     await pageSizeSelect.selectOption('Statement');
     await click(page, '.Modal__closeButton');
     // Ensure we're in page mode: the page layer is rendered next to the

@@ -229,8 +229,8 @@ export function PageSetupDialog({
   if (pageSetup !== null) {
     lastPagedSetup.current = pageSetup;
   }
-  // While pageless the controls show the last paged setup; changing any of
-  // them turns paged mode back on with that change applied.
+  // While pageless the other controls are disabled and show the last paged
+  // setup, so turning "Paged" back on restores what the user had.
   const paged = pageSetup !== null;
   const shown = pageSetup ?? lastPagedSetup.current;
 
@@ -281,74 +281,81 @@ export function PageSetupDialog({
           />
         </div>
         <p className="PageSetupDialog__hint">
-          Document uses pages with defined size and margins
+          {paged
+            ? 'Document uses pages with defined size and margins'
+            : 'Document is pageless and flows continuously'}
         </p>
       </div>
 
-      <div className="PageSetupDialog__section PageSetupDialog__section--paged">
-        <Select
-          label="Page Size"
-          id="page-size"
-          data-test-id="page-size"
-          value={shown.pageSize}
-          onChange={e => applyUpdate({pageSize: e.target.value as PageSize})}>
-          {PAGE_SIZE_ORDER.map(size => (
-            <option key={size} value={size}>
-              {PAGE_SIZES[size].label}
-            </option>
-          ))}
-        </Select>
-      </div>
-
-      <div className="PageSetupDialog__section PageSetupDialog__section--paged">
-        <Select
-          label="Orientation"
-          id="page-orientation"
-          data-test-id="page-orientation"
-          value={shown.orientation}
-          onChange={e =>
-            applyUpdate({orientation: e.target.value as Orientation})
-          }>
-          <option value="portrait">Portrait</option>
-          <option value="landscape">Landscape</option>
-        </Select>
-      </div>
-
-      <div className="PageSetupDialog__section PageSetupDialog__section--paged">
-        <label className="PageSetupDialog__label">Margins (inches)</label>
-        <div className="PageSetupDialog__grid">
-          {MARGIN_SIDES.map(({label, side}) => (
-            <MarginInput
-              key={side}
-              side={side}
-              label={label}
-              value={shown.margins[side]}
-              onChange={value =>
-                applyUpdate({margins: {...shown.margins, [side]: value}})
-              }
-            />
-          ))}
+      <fieldset
+        className="PageSetupDialog__paged"
+        disabled={!paged}
+        aria-label="Page settings">
+        <div className="PageSetupDialog__section PageSetupDialog__section--paged">
+          <Select
+            label="Page Size"
+            id="page-size"
+            data-test-id="page-size"
+            value={shown.pageSize}
+            onChange={e => applyUpdate({pageSize: e.target.value as PageSize})}>
+            {PAGE_SIZE_ORDER.map(size => (
+              <option key={size} value={size}>
+                {PAGE_SIZES[size].label}
+              </option>
+            ))}
+          </Select>
         </div>
-      </div>
 
-      <div className="PageSetupDialog__section--paged">
-        <SlotSection
-          kind="header"
-          setup={shown.header}
-          onChange={patch => updateSlot('header', patch)}
-          onEdit={variant => editSlot('header', variant)}
-          pageCount={pageCount}
-        />
-      </div>
-      <div className="PageSetupDialog__section--paged">
-        <SlotSection
-          kind="footer"
-          setup={shown.footer}
-          onChange={patch => updateSlot('footer', patch)}
-          onEdit={variant => editSlot('footer', variant)}
-          pageCount={pageCount}
-        />
-      </div>
+        <div className="PageSetupDialog__section PageSetupDialog__section--paged">
+          <Select
+            label="Orientation"
+            id="page-orientation"
+            data-test-id="page-orientation"
+            value={shown.orientation}
+            onChange={e =>
+              applyUpdate({orientation: e.target.value as Orientation})
+            }>
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </Select>
+        </div>
+
+        <div className="PageSetupDialog__section PageSetupDialog__section--paged">
+          <label className="PageSetupDialog__label">Margins (inches)</label>
+          <div className="PageSetupDialog__grid">
+            {MARGIN_SIDES.map(({label, side}) => (
+              <MarginInput
+                key={side}
+                side={side}
+                label={label}
+                value={shown.margins[side]}
+                onChange={value =>
+                  applyUpdate({margins: {...shown.margins, [side]: value}})
+                }
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="PageSetupDialog__section--paged">
+          <SlotSection
+            kind="header"
+            setup={shown.header}
+            onChange={patch => updateSlot('header', patch)}
+            onEdit={variant => editSlot('header', variant)}
+            pageCount={pageCount}
+          />
+        </div>
+        <div className="PageSetupDialog__section--paged">
+          <SlotSection
+            kind="footer"
+            setup={shown.footer}
+            onChange={patch => updateSlot('footer', patch)}
+            onEdit={variant => editSlot('footer', variant)}
+            pageCount={pageCount}
+          />
+        </div>
+      </fieldset>
     </div>
   );
 }

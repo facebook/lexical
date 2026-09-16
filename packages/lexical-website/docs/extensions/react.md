@@ -67,7 +67,7 @@ After:
 
 This is a minimal migration, in most cases you can migrate plug-in usage to
 extension dependencies. For example, by using
-[RichTextExtension](/docs/api/modules/lexical_rich_text#richtextextension) instead of
+[RichTextExtension](/docs/api/modules/lexical_rich-text#richtextextension) instead of
 `RichTextPlugin`:
 
 ```tsx
@@ -200,7 +200,7 @@ export const CheckListExtension = defineExtension({
 
 ## Using React extensions and plug-ins without JSX
 
-[ReactPluginHostExtension](/docs/api/modules/lexical_react_reactpluginhostextension#reactpluginhostextension)
+[ReactPluginHostExtension](/docs/api/modules/lexical_react_ReactPluginHostExtension#reactpluginhostextension)
 is an extension that allows you to mount the a React root at a
 specific DOM element in your app so that applications that are
 not natively React can still take advantage of existing legacy

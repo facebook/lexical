@@ -323,8 +323,7 @@ const config: Config = {
   },
 
   onBrokenAnchors: 'throw',
-  // These are false positives when linking from API docs
-  onBrokenLinks: 'ignore',
+  onBrokenLinks: 'throw',
   organizationName: 'facebook',
   plugins: [
     process.env.FB_INTERNAL

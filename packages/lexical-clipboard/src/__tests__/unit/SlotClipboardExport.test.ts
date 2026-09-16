@@ -10,6 +10,7 @@ import {
   $generateJSONFromSelectedNodes,
   $generateNodesFromSerializedNodes,
   $insertGeneratedNodes,
+  type BaseSerializedNode,
 } from '@lexical/clipboard';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {$generateHtmlFromNodes} from '@lexical/html';
@@ -192,7 +193,7 @@ describe('slot clipboard export', () => {
     );
 
     // Copy: null selection → whole tree.
-    let serialized: ReturnType<typeof $generateJSONFromSelectedNodes>;
+    let serialized: {namespace: string; nodes: BaseSerializedNode[]};
     editor.read(() => {
       serialized = $generateJSONFromSelectedNodes(editor, null);
     });

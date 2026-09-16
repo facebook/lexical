@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalNode, SerializedLexicalNode} from '../LexicalNode';
+import type {LexicalNode, SerializedPartial} from '../LexicalNode';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -20,9 +20,7 @@ import {
   type SerializedElementNode,
 } from './LexicalElementNode';
 
-export type SerializedRootNode<
-  T extends SerializedLexicalNode = SerializedLexicalNode,
-> = SerializedElementNode<T>;
+export type SerializedRootNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class RootNode extends ElementNode {
@@ -91,7 +89,9 @@ export class RootNode extends ElementNode {
     return super.splice(start, deleteCount, nodesToInsert);
   }
 
-  static importJSON(serializedNode: SerializedRootNode): RootNode {
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedRootNode>,
+  ): RootNode {
     // We don't create a root, and instead use the existing root.
     return $getRoot().updateFromJSON(serializedNode);
   }

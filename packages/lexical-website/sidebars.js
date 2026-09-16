@@ -121,6 +121,7 @@ const sidebars = {
     },
     'testing',
     'faq',
+    'maintainers-guide',
   ],
 };
 

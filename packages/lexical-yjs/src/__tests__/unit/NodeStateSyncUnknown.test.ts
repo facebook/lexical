@@ -11,7 +11,7 @@ import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
-import {createBinding, type Provider} from '@lexical/yjs';
+import {type Binding, createBinding, type Provider} from '@lexical/yjs';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -62,10 +62,7 @@ describe('collab-v1 node state: unknown keys', () => {
     return {binding, doc, editor};
   }
 
-  function serialize(
-    editor: LexicalEditor,
-    binding: ReturnType<typeof createBinding>,
-  ) {
+  function serialize(editor: LexicalEditor, binding: Binding) {
     editor.read(() => {
       binding.doc.transact(() => {
         binding.root.syncChildrenFromLexical(
@@ -79,7 +76,7 @@ describe('collab-v1 node state: unknown keys', () => {
     });
   }
 
-  function paragraphStateMap(binding: ReturnType<typeof createBinding>) {
+  function paragraphStateMap(binding: Binding) {
     const collab = binding.root._children[0];
     assert('_xmlText' in collab);
     const xmlText = collab._xmlText as XmlText;

@@ -40,7 +40,15 @@ import * as React from 'react';
 import {act} from 'react';
 import ReactDOM from 'react-dom';
 import {createRoot, type Root} from 'react-dom/client';
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from 'vitest';
 
 const YOUTUBE_URL = 'https://www.youtube.com/watch?v=jNQXAC9IVRw';
 const SHORT_YOUTUBE_URL = 'youtu.be/jNQXAC9IVRw';
@@ -77,7 +85,7 @@ describe('LexicalAutoEmbedPlugin', () => {
   let container: HTMLDivElement;
   let reactRoot: Root;
   let editor: LexicalEditor;
-  let onError: ReturnType<typeof vi.fn<(error: Error) => void>>;
+  let onError: Mock<(error: Error) => void>;
   let parseUrl: ReturnType<
     typeof vi.fn<(url: string) => EmbedMatchResult | null>
   >;

@@ -37,6 +37,7 @@ import {
   $selectAll,
   DecoratorNode,
   type LexicalEditor,
+  type RangeSelection,
 } from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
@@ -259,7 +260,7 @@ describe('Issue #8922: select-all with a boundary block decorator', () => {
       const selection = $getSelection();
       expect($isRangeSelection(selection)).toBe(true);
       expect(
-        (selection as ReturnType<typeof $selectAll>)
+        (selection as RangeSelection)
           .getNodes()
           .filter(node => node.getParent() === $getRoot()),
       ).toEqual($getRoot().getChildren());
@@ -307,7 +308,7 @@ describe('Issue #8922: select-all with a boundary block decorator', () => {
       const selection = $getSelection();
       expect($isRangeSelection(selection)).toBe(true);
       expect(
-        (selection as ReturnType<typeof $selectAll>)
+        (selection as RangeSelection)
           .getNodes()
           .filter(node => node.getParent() === $getRoot()),
       ).toEqual($getRoot().getChildren());

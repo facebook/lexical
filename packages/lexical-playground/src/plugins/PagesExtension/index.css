@@ -156,7 +156,9 @@
 .Pages__host > .ContentEditable__root {
   padding: 0 var(--page-margin-right) 0 var(--page-margin-left);
 }
-.Pages__host > .ContentEditable__placeholder {
+/* The React ContentEditable wraps its placeholder in an aria-hidden div,
+   so the placeholder is a grandchild of the host, not a child. */
+.Pages__host .ContentEditable__placeholder {
   top: var(--page-first-top);
   left: var(--page-margin-left);
   right: var(--page-margin-right);

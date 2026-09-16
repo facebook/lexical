@@ -169,7 +169,12 @@ export const CLOSE_PAGE_SLOT_COMMAND: LexicalCommand<undefined> = createCommand(
   'CLOSE_PAGE_SLOT_COMMAND',
 );
 
-/** What a header or footer can contain. */
+/**
+ * The default header/footer editor: rich text, links and the page number /
+ * page count nodes. The playground replaces it through the `buildSlotEditor`
+ * config of `PagesExtension` with an editor that has its whole feature set
+ * (see `PlaygroundExtensions.ts`).
+ */
 export const HeaderFooterEditorExtension = defineExtension({
   dependencies: [
     RichTextExtension,
@@ -180,6 +185,11 @@ export const HeaderFooterEditorExtension = defineExtension({
   name: '@lexical/playground/PageHeaderFooter',
   namespace: 'Playground/PageHeaderFooter',
 });
+
+/** Builds one nested header/footer editor for `parent`. */
+export type SlotEditorBuilder = (
+  parent: LexicalEditor,
+) => LexicalEditorWithDispose;
 
 /**
  * Build a nested editor for one header/footer variant. It shares the parent

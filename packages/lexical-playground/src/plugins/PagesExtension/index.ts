@@ -26,6 +26,7 @@ export {
   pageFooterState,
   pageHeaderState,
   resolveSlotVariant,
+  type SlotEditorBuilder,
   slotStateFor,
 } from './headerFooter';
 export {

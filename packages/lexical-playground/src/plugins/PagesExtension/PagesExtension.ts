@@ -27,6 +27,7 @@ import {
 
 import {PageBreakExtension} from '../PageBreakExtension';
 import {PAGE_GAP} from './constants';
+import {buildHeaderFooterEditor, type SlotEditorBuilder} from './headerFooter';
 import {HeaderFooterSession} from './HeaderFooterSession';
 import {PageContentNode, PageNode, registerLegacyPageUnwrap} from './legacy';
 import {$getPageSetup} from './pageSetup';
@@ -34,6 +35,12 @@ import {PagesLayout} from './PagesLayout';
 import {registerPrintHandlers} from './print';
 
 export interface PagesConfig {
+  /**
+   * Builds the nested editor behind each header/footer variant. The default
+   * supports rich text, links and page numbers; the playground passes a
+   * builder with its full feature set.
+   */
+  buildSlotEditor: SlotEditorBuilder;
   /** Hide the page layer without touching the document or the page setup. */
   disabled: boolean;
   /** Visual gap between pages, in CSS px. */
@@ -76,6 +83,7 @@ export const PagesExtension = defineExtension({
     };
   },
   config: safeCast<PagesConfig>({
+    buildSlotEditor: buildHeaderFooterEditor,
     disabled: false,
     gap: PAGE_GAP,
     pageClass: 'PlaygroundEditorTheme__page',
@@ -104,6 +112,7 @@ export const PagesExtension = defineExtension({
         const session = new HeaderFooterSession(editor, layout, {
           activeSlot: output.activeSlot,
           activeSlotEditor: output.activeSlotEditor,
+          buildSlotEditor: config.buildSlotEditor,
         });
         output.hostElement.value = layout.host;
         return mergeRegister(

@@ -6,8 +6,9 @@
  *
  */
 import {ReactExtension} from '@lexical/react/ReactExtension';
-import {defineExtension} from 'lexical';
+import {configExtension, defineExtension} from 'lexical';
 
+import {buildPlaygroundHeaderFooterEditor} from '../../PlaygroundExtensions';
 import {PagesExtension} from '../PagesExtension';
 import {PageSetupComponent} from './PageSetupComponent';
 
@@ -24,6 +25,12 @@ export const PageSetupDropdownComponent = PageSetupComponent;
 
 export const PagesReactExtension = defineExtension({
   build: () => ({Component: PageSetupComponent}),
-  dependencies: [ReactExtension, PagesExtension],
+  dependencies: [
+    ReactExtension,
+    // Headers and footers get the playground's full feature set.
+    configExtension(PagesExtension, {
+      buildSlotEditor: buildPlaygroundHeaderFooterEditor,
+    }),
+  ],
   name: '@lexical/playground/PagesReact',
 });

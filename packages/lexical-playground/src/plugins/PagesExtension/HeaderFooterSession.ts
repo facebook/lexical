@@ -14,7 +14,15 @@ import type {
   SlotHeights,
 } from './types';
 
-import {type LexicalEditorWithDispose, type Signal} from '@lexical/extension';
+import {
+  getPeerDependencyFromEditor,
+  type LexicalEditorWithDispose,
+  type Signal,
+} from '@lexical/extension';
+import {
+  mountReactPluginHost,
+  ReactPluginHostExtension,
+} from '@lexical/react/ReactPluginHostExtension';
 import {
   $addUpdateTag,
   $createParagraphNode,
@@ -40,10 +48,10 @@ import {HEADER_FOOTER_COMMIT_TAG, SLOT_WRITE_BACK_DELAY_MS} from './constants';
 import {
   $getPageSlotContent,
   $setPageSlotContent,
-  buildHeaderFooterEditor,
   CLOSE_PAGE_SLOT_COMMAND,
   EDIT_PAGE_SLOT_COMMAND,
   resolveSlotVariant,
+  type SlotEditorBuilder,
   slotStateFor,
 } from './headerFooter';
 import {
@@ -101,6 +109,9 @@ interface SlotEditor {
   root: HTMLElement;
   /** Cached static render, recreated after every nested update. */
   clone: HTMLElement | null;
+  /** Hosts the React root that renders the editor's decorators and plugins. */
+  reactHost: HTMLElement;
+  refreshRafId: number | null;
   empty: boolean;
   cleanup: () => void;
 }
@@ -116,6 +127,7 @@ interface ActiveSession {
 export interface HeaderFooterSessionOptions {
   activeSlot: Signal<ActivePageSlot | null>;
   activeSlotEditor: Signal<LexicalEditor | null>;
+  buildSlotEditor: SlotEditorBuilder;
 }
 
 /**
@@ -240,6 +252,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       slotEditor.cleanup();
       slotEditor.editor.dispose();
       slotEditor.root.remove();
+      slotEditor.reactHost.remove();
     }
     this.editors.clear();
   }
@@ -487,27 +500,61 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     if (slotEditor) {
       return slotEditor;
     }
-    const editor = buildHeaderFooterEditor(this.parent);
-    const root = this.layout.layer.ownerDocument.createElement('div');
+    const editor = this.options.buildSlotEditor(this.parent);
+    const doc = this.layout.layer.ownerDocument;
+    const root = doc.createElement('div');
     root.className = `Pages__slotContent ${LIVE_CONTENT_CLASS}`;
     root.dataset.pageSlotEditor = key;
     this.layout.parking.appendChild(root);
+    const reactHost = doc.createElement('div');
+    reactHost.className = 'Pages__reactHost';
+    this.layout.parking.appendChild(reactHost);
     editor.setRootElement(root);
     editor.setEditable(false);
     root.contentEditable = 'false';
+    // Editors built with ReactPluginHostExtension render their React
+    // decorators (images, polls, ...) and plugins from this host.
+    if (
+      getPeerDependencyFromEditor<typeof ReactPluginHostExtension>(
+        editor,
+        ReactPluginHostExtension.name,
+      ) !== undefined
+    ) {
+      mountReactPluginHost(editor, reactHost);
+    }
     slotEditor = {
       cleanup: () => {},
       clone: null,
       editor,
       empty: true,
       kind,
+      reactHost,
+      refreshRafId: null,
       root,
       variant,
     };
     this.editors.set(key, slotEditor);
+    // React renders decorators (images, polls, ...) into the root after the
+    // Lexical update that created them, so the clones also follow the DOM.
+    const domObserver =
+      typeof MutationObserver !== 'undefined'
+        ? new MutationObserver(() => this.scheduleCloneRefresh(slotEditor!))
+        : null;
+    domObserver?.observe(root, {
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
     // Listen before loading so the initial content refreshes `empty` and
     // the clones like any later change.
     slotEditor.cleanup = mergeRegister(
+      () => {
+        domObserver?.disconnect();
+        if (slotEditor!.refreshRafId !== null) {
+          cancelAnimationFrame(slotEditor!.refreshRafId);
+        }
+      },
       editor.registerUpdateListener(({dirtyElements, dirtyLeaves}) => {
         if (dirtyElements.size > 0 || dirtyLeaves.size > 0) {
           this.onNestedUpdate(slotEditor!);
@@ -556,6 +603,20 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       },
       {discrete: true},
     );
+  }
+
+  /** Coalesce DOM-driven clone refreshes to one per frame. */
+  private scheduleCloneRefresh(slotEditor: SlotEditor): void {
+    if (this.disposed || slotEditor.refreshRafId !== null) {
+      return;
+    }
+    slotEditor.refreshRafId = requestAnimationFrame(() => {
+      slotEditor.refreshRafId = null;
+      if (!this.disposed) {
+        slotEditor.clone = null;
+        this.layout.refreshSlots(slotEditor.kind);
+      }
+    });
   }
 
   private onNestedUpdate(slotEditor: SlotEditor): void {

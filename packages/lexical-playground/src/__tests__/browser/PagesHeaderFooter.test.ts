@@ -145,6 +145,12 @@ describe('Pages headers and footers', () => {
     await expect
       .poll(() => headerTexts(host))
       .toEqual(['Hello', 'Hello', 'Hello']);
+    // Content loaded from state counts as non-empty from the first fill.
+    expect(headerSlots(host).map(slot => slot.dataset.empty)).toEqual([
+      'false',
+      'false',
+      'false',
+    ]);
     await expect
       .poll(() =>
         parseFloat(host.style.getPropertyValue('--page-header-height')),

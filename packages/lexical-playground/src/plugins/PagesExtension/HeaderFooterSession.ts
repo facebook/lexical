@@ -504,11 +504,8 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       variant,
     };
     this.editors.set(key, slotEditor);
-    this.load(
-      slotEditor,
-      this.parent.read('latest', () => $getPageSlotContent(kind))?.[variant] ??
-        null,
-    );
+    // Listen before loading so the initial content refreshes `empty` and
+    // the clones like any later change.
     slotEditor.cleanup = mergeRegister(
       editor.registerUpdateListener(({dirtyElements, dirtyLeaves}) => {
         if (dirtyElements.size > 0 || dirtyLeaves.size > 0) {
@@ -527,6 +524,11 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
         },
         COMMAND_PRIORITY_HIGH,
       ),
+    );
+    this.load(
+      slotEditor,
+      this.parent.read('latest', () => $getPageSlotContent(kind))?.[variant] ??
+        null,
     );
     this.heightObserver?.observe(root);
     return slotEditor;

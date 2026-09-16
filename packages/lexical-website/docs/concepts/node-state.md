@@ -339,6 +339,80 @@ Future:
   you can not store a Y.Map as a NodeState value
   (see [#7293](https://github.com/facebook/lexical/issues/7293))
 
+## Persistent application identity
+
+Applications can use NodeState IDs for external document references, database
+mappings, annotations, or diff/edit workflows. Lexical's `NodeKey` is internal,
+ephemeral identity; an application NodeState ID can survive JSON save/load.
+These are separate responsibilities.
+
+The [application identity example](/dev-examples/node-state-identity/) implements
+one explicit application policy using existing public APIs. Its
+[policy module](https://github.com/facebook/lexical/blob/main/dev-examples/node-state-identity/src/identity.ts)
+and colocated tests demonstrate:
+
+| Operation | Application ID |
+| --- | --- |
+| Create and attach an addressable node | Assign if missing |
+| Normal edit or JSON save/load | Preserve |
+| `$copyNode` and attach | Reset, then assign fresh identity |
+| Clipboard insertion after copy **or cut** | Clear inherited identity; assign fresh IDs to new addressable nodes |
+| Undo/redo | Restore recorded IDs without reallocating |
+
+The application-owned `$isAddressable` predicate selects non-root ElementNodes,
+including paragraphs, headings, inline elements, custom elements and slot roots.
+TextNodes, DecoratorNodes and other leaf nodes receive no new ID. This supports
+structural addressing without inhibiting ordinary text merging. Adapt the
+predicate for a narrower set or specific custom nodes; text-level addressing
+requires an explicit split/merge policy because differing NodeState can prevent
+implicit TextNode merges.
+
+The example defines an `externalId` StateConfig with an empty-string default
+and `resetOnCopyNode: true`. A RootNode transform assigns missing IDs before
+the update commits, using an application-supplied allocator. The demo uses
+random 128-bit IDs from `crypto.getRandomValues()`; the allocator must produce
+nonempty IDs unique across the application's identity domain, including saved content.
+
+Structured clipboard serialization intentionally preserves NodeState, just as
+normal JSON persistence does. `resetOnCopyNode` applies specifically to
+`$copyNode`; it does not define clipboard policy. The example registers a
+high-priority `SELECTION_INSERT_CLIPBOARD_NODES_COMMAND` listener, clears only
+its own identity state on imported nodes and their descendants, and returns
+`false` so normal insertion continues. It clears IDs even on ineligible nodes
+from a source with a broader addressing policy. The transform assigns missing
+IDs only to addressable nodes in the resulting document, in the same update.
+Pasting text into an existing paragraph preserves that paragraph's identity.
+Ordinary state, such as a
+`color` value of `"red"`, and unknown third-party state remain untouched.
+
+Use the example's `loadApplicationDocument` helper for saved JSON. It reads
+the ad hoc identity StateConfig in `parseEditorState`'s callback, preserving
+the value while making its reset policy known before an immediate `$copyNode`.
+Custom nodes can also declare StateConfigs in `$config`.
+Save/load preserves existing IDs even on ineligible nodes: changing the
+predicate is not a migration of previously saved state.
+
+### Policy boundaries
+
+- Every newly inserted addressable node gets fresh identity, including after cut/paste. This is an application
+  policy, not a distinction encoded in the structured clipboard payload.
+- The receiver controls cross-editor behavior. Structured transfer requires
+  compatible namespaces and node types; an editor without this policy can
+  preserve source IDs.
+- The application must know its identity StateConfigs. Unknown third-party
+  state is not inferred to be identity. Custom import paths bypassing the
+  insertion command require equivalent handling.
+- The example covers children and named slots using public, **experimental**
+  `$dfsWithSlots`. Stable children-only `$dfs` cannot cover slots. Embedded
+  independent editors and references need application-specific handling.
+- The RootNode transform scans the document in O(N) after dirty updates,
+  including ordinary text edits. Per-class transforms can reduce that work
+  when an application knows every relevant node class; they do not inherit
+  automatically to arbitrary custom nodes.
+- Applications must choose their addressing granularity and split/merge policy;
+  this example does not repair existing collisions or provide collaborative
+  identity reconciliation.
+
 ## Node State Style Example
 
 This example demonstrates an advanced use case of storing a style object on TextNode using NodeState.

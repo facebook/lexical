@@ -525,6 +525,34 @@ importers:
         specifier: 4.63.1
         version: 4.63.1
 
+  dev-examples/node-state-identity:
+    dependencies:
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../../packages/lexical-extension
+      '@lexical/history':
+        specifier: workspace:*
+        version: link:../../packages/lexical-history
+      '@lexical/rich-text':
+        specifier: workspace:*
+        version: link:../../packages/lexical-rich-text
+      '@lexical/utils':
+        specifier: workspace:*
+        version: link:../../packages/lexical-utils
+      lexical:
+        specifier: workspace:*
+        version: link:../../packages/lexical
+    devDependencies:
+      '@lexical/clipboard':
+        specifier: workspace:*
+        version: link:../../packages/lexical-clipboard
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.2.2
+        version: 8.2.2(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.0)
+
   dev-examples/shadow-dom:
     dependencies:
       '@lexical/extension':

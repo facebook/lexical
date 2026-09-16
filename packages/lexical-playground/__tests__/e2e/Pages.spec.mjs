@@ -17,6 +17,7 @@ import {
   expect,
   focusEditor,
   initialize,
+  selectFromInsertDropdown,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -204,5 +205,33 @@ test.describe('Pages', () => {
       focusOffset: 5,
       focusPath: [0, 0, 0],
     });
+  });
+
+  test('Typing continues after an inserted page count', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body');
+    await enablePaged(page);
+    await enableHeader(page);
+    await openPageSetup(page);
+    await click(page, '[data-test-id="page-header-edit-default"]');
+    await waitForSelector(page, LIVE_SLOT);
+
+    await page.keyboard.type('Page ');
+    await selectFromInsertDropdown(page, '.page-number');
+    await page.keyboard.type(' of ');
+    await selectFromInsertDropdown(page, '.page-count');
+    await page.keyboard.type('!');
+
+    await expect(page.locator(LIVE_CONTENT)).toHaveText('Page 1 of 1!');
+    await page.keyboard.press('Escape');
+    await waitForSelector(page, LIVE_SLOT, {state: 'detached'});
+    await expect(
+      page.locator('[data-page-slot="header"][data-page-index="0"]'),
+    ).toHaveText('Page 1 of 1!');
   });
 });

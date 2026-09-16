@@ -7,7 +7,9 @@
  */
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {
+  $getSelection,
   $insertNodes,
+  $isRangeSelection,
   $nodesOfType,
   COMMAND_PRIORITY_EDITOR,
   configExtension,
@@ -167,6 +169,33 @@ export function writeCountersIntoDOM(
 }
 
 /**
+ * Replace a counter's text. `setTextContent` leaves the selection alone, so
+ * a caret that sat at the end of the old text (right after inserting the
+ * `##` placeholder, say) would point past the end of a shorter value and
+ * strand the next keystroke; keep such a caret at the end of the new text.
+ */
+function $setCounterText(node: TextNode, value: string): void {
+  if (node.getTextContent() === value) {
+    return;
+  }
+  node.setTextContent(value);
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return;
+  }
+  const key = node.getKey();
+  for (const point of [selection.anchor, selection.focus]) {
+    if (
+      point.type === 'text' &&
+      point.key === key &&
+      point.offset > value.length
+    ) {
+      point.set(key, value.length, 'text');
+    }
+  }
+}
+
+/**
  * Set the counter nodes of a nested editor to the values of the page it is
  * being edited on, so the author sees real numbers while editing.
  */
@@ -175,13 +204,9 @@ export function $writeCountersIntoEditor(
   pageCount: number,
 ): void {
   for (const node of $nodesOfType(PageNumberNode)) {
-    if (node.getTextContent() !== String(pageNumber)) {
-      node.setTextContent(String(pageNumber));
-    }
+    $setCounterText(node, String(pageNumber));
   }
   for (const node of $nodesOfType(PageCountNode)) {
-    if (node.getTextContent() !== String(pageCount)) {
-      node.setTextContent(String(pageCount));
-    }
+    $setCounterText(node, String(pageCount));
   }
 }

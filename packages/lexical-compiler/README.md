@@ -319,3 +319,39 @@ including the barrel's own re-exports. ESLint enforces this convention;
 the compiler handles the published subpath layout. Direct subpath imports
 remain supported for downstream consumers, including applications that need
 small bundles without tree-shaking or the compiler plugin.
+
+## SchemaJsonCodegen
+
+The package's second entry point, `@lexical/compiler/SchemaJsonCodegen`, is
+not part of the plugin pipeline: it is the library a code generator uses to
+turn a node's declarative serialization schema (the `json` property of
+`$config`) into straight-line JavaScript. Lexical's own
+`scripts/generate-node-json.mjs` uses it to generate the specialized
+`exportJSON`/`updateFromJSON` implementations the built-in nodes ship with.
+
+- `compileParse(meta, defaultValue, tableBaseName)` compiles a schema's
+  introspectable `meta` into a JavaScript expression over `v` that parses
+  exactly as the schema does, plus any lookup tables the expression refers
+  to. Only the kinds whose meta fully determines the parse are compiled
+  (strings, numbers, booleans, enums, and `aliasedValue` tables); the rest
+  throw `NotCompilable` rather than emit a guess.
+- Compiling is not trusting: `verifyCompiledParse` runs the compiled
+  expression against the real schema over `verificationCorpus(meta)` — every
+  value the schema names plus a fixed set of hostile inputs,
+  `Object.prototype` member names included — and throws naming the first
+  value they disagree on. `verifyTableCoversDomain` proves an emitted lookup
+  table total over a schema's domain, so its miss-fallback is dead code.
+- The compact form's comparisons are compiled the same way.
+  `compileDiffersFromDefault(schema, name)` states the test that a value is
+  not the schema's default — a literal for a primitive default, and the
+  length test `arrayValue`'s equality reduces to for an empty-array default —
+  and `verifyDiffersFromDefault` runs it against the schema's own `isEqual`
+  over the corpus.
+- `NUM_HELPER_SOURCE` and `JSON_NUMBER_SOURCE` are the number-parsing helper
+  as source text, so an emitted module and the verification share one
+  definition rather than two copies that could drift; `NUM_RANGE_HELPER_SOURCE`
+  is the constrained-domain variant.
+
+The corpus is fixed rather than sampled, so a generator built on this
+produces byte-reproducible output — which is what lets generated files be
+checked in and drift-tested against regeneration.

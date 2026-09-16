@@ -6,6 +6,12 @@
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
     "noEmit": true,
+    // A Vite config is loaded by Node, not bundled, so its relative imports
+    // need the extension of the file that is actually there — `.ts`. Permitted
+    // rather than required: nothing else in the repo writes one, and
+    // `tsconfig.build.json` still emits declarations for the published
+    // packages, where a `.ts` specifier would be caught.
+    "allowImportingTsExtensions": true,
     "strict": true,
     "typeRoots": ["node_modules/@types"],
     "skipLibCheck": true,
@@ -23,6 +29,9 @@
       "@lexical/compiler": ["./packages/lexical-compiler/src/index.ts"],
       "@lexical/compiler/PureAnnotations": [
         "./packages/lexical-compiler/src/PureAnnotations.ts"
+      ],
+      "@lexical/compiler/SchemaJsonCodegen": [
+        "./packages/lexical-compiler/src/SchemaJsonCodegen.ts"
       ],
       "@lexical/compiler/SubpathImports": [
         "./packages/lexical-compiler/src/SubpathImports.ts"
@@ -122,6 +131,7 @@
       "@lexical/extension/watchedSignal": [
         "./packages/lexical-extension/src/watchedSignal.ts"
       ],
+      "@lexical/fast-check": ["./packages/lexical-fast-check/src/index.ts"],
       "@lexical/file": ["./packages/lexical-file/src/index.ts"],
       "@lexical/hashtag": ["./packages/lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["./packages/lexical-headless/src/index.ts"],
@@ -378,6 +388,8 @@
       ],
       "@lexical/extension/src": ["./packages/lexical-extension/src"],
       "@lexical/extension/src/*": ["./packages/lexical-extension/src/*"],
+      "@lexical/fast-check/src": ["./packages/lexical-fast-check/src"],
+      "@lexical/fast-check/src/*": ["./packages/lexical-fast-check/src/*"],
       "@lexical/file/src": ["./packages/lexical-file/src"],
       "@lexical/file/src/*": ["./packages/lexical-file/src/*"],
       "@lexical/hashtag/src": ["./packages/lexical-hashtag/src"],

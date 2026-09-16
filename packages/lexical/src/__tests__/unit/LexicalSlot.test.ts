@@ -48,6 +48,7 @@ import {
   getDOMSelection,
   mountSlotContainer,
   type ParagraphNode,
+  type RangeSelection,
   type SlotName,
   type TextNode,
   unmountSlotContainer,
@@ -2503,7 +2504,7 @@ describe('named-slots: selection resolution onto a slotted decorator', () => {
     domSelection!.removeAllRanges();
     domSelection!.addRange(range);
 
-    let result: ReturnType<typeof $internalCreateRangeSelection> | undefined;
+    let result: RangeSelection | null | undefined;
     editor.update(
       () => {
         result = $internalCreateRangeSelection(

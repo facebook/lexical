@@ -7,7 +7,7 @@
  */
 import {defineConfig} from 'vite';
 
-import lexicalMonorepoPlugin from '../../scripts/vite/lexicalMonorepoPlugin';
+import lexicalMonorepoPlugin from '../../scripts/vite/lexicalMonorepoPlugin.ts';
 
 export default defineConfig({
   plugins: [lexicalMonorepoPlugin()],

@@ -56,7 +56,7 @@ import {
   scheduleMicroTask,
   scrollIntoViewIfNeeded,
 } from '../../LexicalUtils';
-import {$assertNodeType, initializeUnitTest} from '../utils';
+import {$assertNodeType, createTestEditor, initializeUnitTest} from '../utils';
 
 describe('LexicalUtils tests', () => {
   initializeUnitTest(testEnv => {
@@ -1208,6 +1208,62 @@ describe('getParentElement', () => {
     });
   });
   describe('iterStaticNodeConfigChain', () => {
+    test('a subclass that declares no $config contributes nothing, and does not hide its parent', () => {
+      // `getStaticNodeConfig` resolves such a class to its *ancestor's* config,
+      // reached through the inherited method. Yielding that as the subclass's
+      // own would both attribute the ancestor's declarations to it and present
+      // them twice — and following the `extends` inside it would skip the
+      // ancestor, which is where they are actually declared.
+      class ChainBase extends ElementNode {
+        $config() {
+          return this.config('chain-base', {extends: ElementNode});
+        }
+      }
+      class ChainSub extends ChainBase {}
+      expect(
+        Array.from(iterStaticNodeConfigChain(ChainSub)).map(config => [
+          config.klass.name,
+          config.ownNodeConfig === undefined,
+        ]),
+      ).toEqual([
+        ['ChainSub', true],
+        ['ChainBase', false],
+        ['ElementNode', false],
+        ['LexicalNode', true],
+      ]);
+    });
+
+    test('an inline $transform is registered once for a subclass that declares no $config', () => {
+      // A `$transform` written inline is a fresh closure on every `$config()`
+      // call, so the Set that collects transforms cannot tell two copies of it
+      // apart: yielding the ancestor's config for the subclass as well ran the
+      // transform twice per node.
+      const calls: string[] = [];
+      class TransformBase extends ElementNode {
+        $config() {
+          return this.config('chain-transform-base', {
+            $transform: (node: TransformBase) => {
+              calls.push(node.getKey());
+            },
+            extends: ElementNode,
+          });
+        }
+      }
+      class TransformSub extends TransformBase {}
+      const editor = createTestEditor({
+        nodes: [TransformBase, TransformSub],
+      });
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(new TransformSub().append($createTextNode('x')));
+        },
+        {discrete: true},
+      );
+      expect(calls).toHaveLength(1);
+    });
+
     test('handles a loose transform', () => {
       // These are from babel's loose class transform without the setPrototypeOf for the static chain
       // https://github.com/babel/babel/blob/main/packages/babel-helpers/src/helpers/inheritsLoose.ts

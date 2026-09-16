@@ -11,9 +11,11 @@
   flex-direction: column;
   gap: 14px;
   box-sizing: border-box;
-  width: 320px;
+  width: 328px;
   max-width: 100%;
-  overflow-x: hidden;
+  /* The modal content is a scroll container that clips at its edges; keep
+     room for the controls' focus outlines. */
+  padding: 4px;
   font-size: 14px;
   color: #444;
 }

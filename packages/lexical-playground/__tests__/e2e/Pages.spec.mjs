@@ -405,4 +405,54 @@ test.describe('Pages', () => {
     );
     expect(containing).toBeDefined();
   });
+
+  test('Empty headers do not invite clicks while read-only', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body');
+    await enablePaged(page);
+    await enableHeader(page);
+    const header = page.locator(
+      '[data-page-slot="header"][data-page-index="0"]',
+    );
+    const hint = () =>
+      evaluate(page, () => {
+        const el = document.querySelector(
+          '[data-page-slot="header"][data-page-index="0"]',
+        );
+        const style = getComputedStyle(el, '::after');
+        return {
+          content: style.content,
+          cursor: getComputedStyle(el).cursor,
+          display: style.display,
+        };
+      });
+    // Firefox reports the unresolved `attr()` form of the content.
+    const editable = await hint();
+    expect(editable.content).toContain('Click to add a');
+    expect(editable.cursor).toBe('text');
+    expect(editable.display).toBe('block');
+
+    await click(page, '.action-button .lock');
+    await expect(page.locator('.ContentEditable__root')).toHaveAttribute(
+      'contenteditable',
+      'false',
+    );
+    const readOnly = await hint();
+    expect(readOnly.cursor).not.toBe('text');
+    expect(readOnly.content === 'none' || readOnly.display === 'none').toBe(
+      true,
+    );
+    // The slot no longer takes pointer events, so Playwright must be told
+    // to click through it.
+    await header.click({force: true});
+    await expect(page.locator(LIVE_SLOT)).toHaveCount(0);
+
+    await click(page, '.action-button .unlock');
+    expect((await hint()).content).toContain('Click to add a');
+  });
 });

@@ -221,9 +221,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
           this.onRootMutation(prevEditorState, updateTags),
       ),
       parent.registerEditableListener(editable => {
-        if (!editable) {
-          this.close(true);
-        }
+        this.setEditable(editable);
       }),
       parent.registerUpdateListener(({editorState}) => {
         const selection = editorState.read($getSelection);
@@ -233,6 +231,19 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       }),
     );
     layout.setSlotProvider(this);
+    this.setEditable(parent.isEditable());
+  }
+
+  /**
+   * Mirror the document's editable state onto the layer, so the stylesheet
+   * can drop the "Click to add a header" hint and text cursor while the
+   * document is read-only, and close whatever is open.
+   */
+  private setEditable(editable: boolean): void {
+    this.layout.layer.dataset.pageEditable = String(editable);
+    if (!editable) {
+      this.close(true);
+    }
   }
 
   setPageSetup(pageSetup: PageSetup): void {
@@ -349,7 +360,12 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
    */
   open(kind: PageSlotKind, pageIndex: number, point?: Point): boolean {
     const setup = this.pageSetup?.[kind];
-    if (this.disposed || !setup || !setup.enabled) {
+    if (
+      this.disposed ||
+      !this.parent.isEditable() ||
+      !setup ||
+      !setup.enabled
+    ) {
       return false;
     }
     const slot = this.layout.getSlot(kind, pageIndex);

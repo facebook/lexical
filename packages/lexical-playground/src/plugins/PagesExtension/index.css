@@ -122,7 +122,9 @@
 .Pages__layer [data-page-slot][data-page-slot-enabled='true'] {
   cursor: text;
 }
-.Pages__layer [data-page-slot][data-page-slot-enabled='false'] {
+.Pages__layer [data-page-slot][data-page-slot-enabled='false'],
+.Pages__layer[data-page-editable='false'] [data-page-slot] {
+  cursor: default;
   pointer-events: none;
 }
 .Pages__slot--live {
@@ -134,7 +136,7 @@
 .Pages__slotContent--live {
   min-height: 1.2em;
 }
-.Pages__layer
+.Pages__layer:not([data-page-editable='false'])
   [data-page-slot][data-page-slot-enabled='true'][data-empty='true']:not(
     .Pages__slot--live
   )::after {

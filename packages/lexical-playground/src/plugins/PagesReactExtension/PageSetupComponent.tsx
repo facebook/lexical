@@ -6,12 +6,10 @@
  *
  */
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import * as React from 'react';
 import {type JSX} from 'react';
 
 import useModal from '../../hooks/useModal';
-import {CLOSE_PAGE_SLOT_COMMAND, PagesExtension} from '../PagesExtension';
 import {PageSetupDialog} from './PageSetupDialog';
 
 export type PageSetupComponentProps = {
@@ -20,8 +18,9 @@ export type PageSetupComponentProps = {
 
 /**
  * Toolbar entry point for {@link PagesExtension}: a button that opens the
- * {@link PageSetupDialog}, plus a "Done" item while a header or footer is
- * being edited (page number / page count live in the Insert menu). Render via
+ * {@link PageSetupDialog}. Page number / page count live in the Insert menu;
+ * a header or footer being edited closes on Escape or a click into the
+ * body. Render via
  * {@link @lexical/react/ExtensionComponent | ExtensionComponent} or
  * {@link @lexical/react/useExtensionComponent | useExtensionComponent}.
  */
@@ -30,7 +29,6 @@ export function PageSetupComponent({
 }: PageSetupComponentProps): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [modal, showModal] = useModal();
-  const activeSlot = useExtensionSignalValue(PagesExtension, 'activeSlot');
   return (
     <>
       <button
@@ -46,20 +44,6 @@ export function PageSetupComponent({
         }>
         <i className="format page-setup" />
       </button>
-      {activeSlot !== null ? (
-        <>
-          <button
-            type="button"
-            className="toolbar-item spaced"
-            title={`Finish editing the ${activeSlot.kind}`}
-            aria-label={`Finish editing the ${activeSlot.kind}`}
-            onClick={() =>
-              editor.dispatchCommand(CLOSE_PAGE_SLOT_COMMAND, undefined)
-            }>
-            <span className="text">Done</span>
-          </button>
-        </>
-      ) : null}
       {modal}
     </>
   );

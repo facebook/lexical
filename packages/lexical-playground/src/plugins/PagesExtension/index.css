@@ -202,9 +202,11 @@
 }
 
 /* Print: the on-screen layout is printed as-is, one screen page per
-   printed page (see print.ts: the gap is zeroed and @page margins are 0). */
+   printed page. Only the gap between pages collapses (every gap-dependent
+   value derives from --page-gap); print.ts zeroes the @page margins. */
 @media print {
   .Pages__host {
+    --page-gap: 0px !important;
     zoom: 1 !important;
     margin: 0;
     box-shadow: none;

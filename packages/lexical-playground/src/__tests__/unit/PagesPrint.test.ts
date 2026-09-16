@@ -59,15 +59,20 @@ describe('registerPrintHandlers', () => {
     return {host, layout};
   }
 
-  it('prints one screen page per printed page', () => {
+  it('prints one screen page per printed page without touching the screen layout', () => {
     const {host, layout} = mountLayout();
+    // Gap-dependent values derive from --page-gap so print CSS can zero it.
     expect(host.style.getPropertyValue('--page-gap')).toBe('24px');
+    // 0.4in margins round to 38px each: 38 + 38 (no header/footer).
+    expect(host.style.getPropertyValue('--page-band-height')).toBe('76px');
+    expect(host.style.getPropertyValue('--page-break-height')).toBe(
+      'calc(var(--page-band-height) + var(--page-gap))',
+    );
     cleanups.push(registerPrintHandlers(layout));
 
     window.dispatchEvent(new Event('beforeprint'));
-    expect(host.style.getPropertyValue('--page-gap')).toBe('0px');
-    // Whole-pixel geometry: 0.4in = 38.4px rounds to 38px per margin.
-    expect(host.style.getPropertyValue('--page-break-height')).toBe('76px');
+    // The host is left alone; only :root gets the page size for @page.
+    expect(host.style.getPropertyValue('--page-gap')).toBe('24px');
     expect(host.style.getPropertyValue('--page-content-height')).toBe(
       `${1056 - 76}px`,
     );
@@ -77,10 +82,6 @@ describe('registerPrintHandlers', () => {
     expect(rootStyle.getPropertyValue('--page-margin-left')).toBe('0px');
 
     window.dispatchEvent(new Event('afterprint'));
-    expect(host.style.getPropertyValue('--page-gap')).toBe('24px');
-    expect(host.style.getPropertyValue('--page-break-height')).toBe(
-      `${38.4 * 2 + 24}px`,
-    );
     expect(rootStyle.getPropertyValue('--page-width')).toBe('');
     expect(rootStyle.getPropertyValue('--page-margin-top')).toBe('');
   });

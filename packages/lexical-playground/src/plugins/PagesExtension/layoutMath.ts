@@ -39,28 +39,25 @@ export function inchesToPixels(inches: number): number {
  * Derive the page geometry for a page setup and the measured header/footer
  * heights. All values are CSS px in the host's coordinate space.
  *
- * With `snapToPixels` the vertical values are whole pixels, so that top
- * margin + header + content + footer + bottom margin is exactly the (whole)
- * page height. Browsers lay out in 1/64 px units, and when printing, a band
- * that overshoots the page boundary by one such unit is pushed to the next
- * page; integers keep every boundary exact.
+ * Vertical values are whole pixels, so that top margin + header + content +
+ * footer + bottom margin is exactly the (whole) page height. The same
+ * geometry is printed with the gap collapsed to zero, and browsers lay out
+ * in 1/64 px units: a band that overshoots a printed page boundary by one
+ * such unit is pushed to the next page, so every boundary must be exact.
  */
 export function computeGeometry(
   pageSetup: PageSetup,
   headerHeight: number = 0,
   footerHeight: number = 0,
   gap: number = PAGE_GAP,
-  snapToPixels: boolean = false,
 ): PageGeometry {
   const {width: pageWidth, height: pageHeight} = pageSizeInPixels(pageSetup);
-  const snapV = snapToPixels ? Math.round : (n: number) => n;
-  const snapUp = snapToPixels ? Math.ceil : (n: number) => n;
-  const marginTop = snapV(inchesToPixels(pageSetup.margins.top));
+  const marginTop = Math.round(inchesToPixels(pageSetup.margins.top));
   const marginRight = inchesToPixels(pageSetup.margins.right);
-  const marginBottom = snapV(inchesToPixels(pageSetup.margins.bottom));
+  const marginBottom = Math.round(inchesToPixels(pageSetup.margins.bottom));
   const marginLeft = inchesToPixels(pageSetup.margins.left);
-  headerHeight = snapUp(headerHeight);
-  footerHeight = snapUp(footerHeight);
+  headerHeight = Math.ceil(headerHeight);
+  footerHeight = Math.ceil(footerHeight);
   const contentHeight = Math.max(
     MIN_CONTENT_HEIGHT,
     pageHeight - marginTop - marginBottom - headerHeight - footerHeight,

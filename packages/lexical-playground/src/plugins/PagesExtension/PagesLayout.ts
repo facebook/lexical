@@ -60,6 +60,7 @@ const CSS = {
 } as const;
 
 const HOST_VARS = [
+  '--page-band-height',
   '--page-width',
   '--page-height',
   '--page-margin-top',
@@ -122,7 +123,6 @@ export class PagesLayout {
   private geom: PageGeometry | null = null;
   private pageSetup: PageSetup | null = null;
   private gap: number;
-  private printMode = false;
   private headerHeight = 0;
   private footerHeight = 0;
   private pageCount = 1;
@@ -240,20 +240,6 @@ export class PagesLayout {
   }
 
   /**
-   * Print mode collapses the gap between pages (pages are physical sheets)
-   * and snaps the vertical geometry to whole pixels so every page boundary
-   * falls exactly between two floats. See `computeGeometry`.
-   */
-  setPrintMode(on: boolean): void {
-    if (on === this.printMode) {
-      return;
-    }
-    this.printMode = on;
-    this.resetGuard();
-    this.recomputeGeometry();
-  }
-
-  /**
    * Apply pending writes now and measure synchronously until stable. Only
    * for moments when the next frame is too late, such as `beforeprint`.
    */
@@ -329,6 +315,7 @@ export class PagesLayout {
       const el = this.editor.getElementByKey(key);
       if (el) {
         el.style.removeProperty('margin-bottom');
+        delete el.dataset.pageBreakMargin;
       }
     }
     this.layer.remove();
@@ -366,11 +353,14 @@ export class PagesLayout {
       if (!el) {
         continue;
       }
-      const current = parseFloat(el.style.marginBottom) || 0;
+      const current = parseFloat(el.dataset.pageBreakMargin ?? '') || 0;
       if (getParentElement(el) !== root) {
         // Only top-level page breaks are stretched.
         if (current !== 0) {
-          writes.push(() => el.style.removeProperty('margin-bottom'));
+          writes.push(() => {
+            el.style.removeProperty('margin-bottom');
+            delete el.dataset.pageBreakMargin;
+          });
         }
         continue;
       }
@@ -381,8 +371,11 @@ export class PagesLayout {
       );
       if (Math.abs(marginBottom - current) > MARGIN_EPSILON) {
         writes.push(() => {
+          el.dataset.pageBreakMargin = String(marginBottom);
           if (marginBottom > 0) {
-            el.style.marginBottom = `${marginBottom}px`;
+            // The next page top is one gap closer when the gap collapses
+            // for print, so express the margin relative to the gap.
+            el.style.marginBottom = `calc(${marginBottom - geom.gap}px + var(--page-gap))`;
           } else {
             el.style.removeProperty('margin-bottom');
           }
@@ -421,8 +414,7 @@ export class PagesLayout {
       this.pageSetup,
       this.headerHeight,
       this.footerHeight,
-      this.printMode ? 0 : this.gap,
-      this.printMode,
+      this.gap,
     );
     this.scheduleWrites([() => this.writeGeometry()]);
   }
@@ -444,7 +436,13 @@ export class PagesLayout {
     style.setProperty('--page-footer-height', px(geom.footerHeight));
     style.setProperty('--page-gap', px(geom.gap));
     style.setProperty('--page-content-height', px(geom.contentHeight));
-    style.setProperty('--page-break-height', px(geom.breakHeight));
+    // Everything that depends on the gap goes through the variable, so the
+    // print stylesheet can collapse the gap without any JavaScript.
+    style.setProperty('--page-band-height', px(geom.breakHeight - geom.gap));
+    style.setProperty(
+      '--page-break-height',
+      'calc(var(--page-band-height) + var(--page-gap))',
+    );
     style.setProperty('--page-first-top', px(geom.firstTop));
     style.setProperty('--page-count', String(this.pageCount));
     style.setProperty('--page-zoom', String(this.zoom));

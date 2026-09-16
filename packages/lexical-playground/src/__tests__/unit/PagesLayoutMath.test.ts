@@ -44,12 +44,12 @@ describe('computeGeometry', () => {
     expect(geom.firstTop).toBe(48 + 30);
   });
 
-  it('snaps vertical geometry to whole pixels for print', () => {
+  it('snaps vertical geometry to whole pixels', () => {
     const fractional: PageSetup = {
       ...setup,
       margins: {bottom: 0.4, left: 0.4, right: 0.4, top: 0.4},
     };
-    const geom = computeGeometry(fractional, 35.2, 20.7, 0, true);
+    const geom = computeGeometry(fractional, 35.2, 20.7, 0);
     expect(geom.marginTop).toBe(38);
     expect(geom.marginBottom).toBe(38);
     expect(geom.headerHeight).toBe(36);

@@ -22,13 +22,12 @@ const ROOT_PROPS = [
  * Print the page layer as it is on screen: each on-screen page becomes one
  * printed page, headers, footers and page numbers included.
  *
- * Before printing the layout switches to print mode (zero gap, whole-pixel
- * geometry) and is flushed synchronously, so the host is exactly
- * `pageCount` page heights tall and the browser's own pagination falls on
- * the same boundaries as the on-screen breaks. `@page` cannot read custom properties from arbitrary
- * elements, so the page size is copied onto `:root` and the `@page` margins
- * are zeroed (the layout already draws the margins). Everything is undone
- * after printing.
+ * The on-screen layout is not touched (so nothing shifts behind the print
+ * dialog): the geometry is whole-pixel already and everything that depends
+ * on the gap between pages goes through `--page-gap`, which the print
+ * stylesheet sets to zero. `@page` cannot read custom properties from
+ * arbitrary elements, so the page size is copied onto `:root` and the
+ * `@page` margins are zeroed (the layout already draws the margins).
  */
 export function registerPrintHandlers(layout: PagesLayout): () => void {
   const {host} = layout;
@@ -40,15 +39,11 @@ export function registerPrintHandlers(layout: PagesLayout): () => void {
   const rootStyle = doc.documentElement.style;
   return registerEventListeners(win, {
     afterprint: () => {
-      layout.setPrintMode(false);
-      layout.flush();
       for (const prop of ROOT_PROPS) {
         rootStyle.removeProperty(prop);
       }
     },
     beforeprint: () => {
-      layout.setPrintMode(true);
-      layout.flush();
       const width = host.style.getPropertyValue('--page-width');
       const height = host.style.getPropertyValue('--page-height');
       if (!width || !height) {

@@ -99,6 +99,28 @@ function table(rows, columns) {
   };
 }
 
+function codeBlock(lines) {
+  const children = [];
+  for (let i = 0; i < lines; i++) {
+    if (i > 0) {
+      children.push({type: 'linebreak', version: 1});
+    }
+    children.push({
+      ...textNode(`const line${i} = ${i};`),
+      type: 'code-highlight',
+    });
+  }
+  return {
+    children,
+    direction: null,
+    format: '',
+    indent: 0,
+    language: 'js',
+    type: 'code',
+    version: 1,
+  };
+}
+
 /** Replace the document with `children` (top-level nodes, as JSON). */
 async function loadDocument(page, children) {
   await evaluate(
@@ -355,6 +377,29 @@ test.describe('Pages', () => {
       rootBox.left + rootBox.width + 1,
     );
     // And entirely inside one page's content area.
+    const containing = areas.find(
+      area => box.top >= area.top - 1 && box.bottom <= area.bottom + 1,
+    );
+    expect(containing).toBeDefined();
+  });
+
+  test('A block taller than a page does not run the page count away', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await loadDocument(page, [
+      ...paragraphs(3),
+      codeBlock(80),
+      ...paragraphs(3, 'Trailing'),
+    ]);
+    await enablePaged(page);
+    const count = await waitForStablePageCount(page);
+    expect(count).toBeLessThanOrEqual(3);
+
+    const areas = await contentAreas(page);
+    const box = await hostRelativeBox(page, '.PlaygroundEditorTheme__code');
     const containing = areas.find(
       area => box.top >= area.top - 1 && box.bottom <= area.bottom + 1,
     );

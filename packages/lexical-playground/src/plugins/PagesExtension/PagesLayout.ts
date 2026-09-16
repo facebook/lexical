@@ -192,12 +192,16 @@ export class PagesLayout {
         this.scheduleMeasure();
       }),
       editor.registerUpdateListener(({dirtyElements, dirtyLeaves}) => {
+        if (dirtyElements.size === 0 && dirtyLeaves.size === 0) {
+          return;
+        }
+        // An edit is a new situation for the settle guard: a page count
+        // pinned (or given up on) for the previous content must not
+        // outlive the content that caused it.
+        this.resetGuard();
         // A manual page break can move without the root changing height
         // (text edited above it), which the ResizeObserver cannot see.
-        if (
-          this.pageBreakKeys.size > 0 &&
-          (dirtyElements.size > 0 || dirtyLeaves.size > 0)
-        ) {
+        if (this.pageBreakKeys.size > 0) {
           this.scheduleMeasure();
         }
       }),

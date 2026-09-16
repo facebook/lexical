@@ -219,6 +219,31 @@
   box-sizing: border-box;
 }
 
+/* Whatever cannot be split must fit on one page. A block taller than the
+   content area fits nowhere: the browser pushes it past every break, the
+   page count grows, and the new breaks push it further, without end. Cap
+   such blocks below the content height (minus their own margins) and let
+   them scroll or clip instead. */
+.Pages__host .ContentEditable__root .PlaygroundEditorTheme__code {
+  max-height: calc(var(--page-content-height) - 16px);
+}
+.Pages__host
+  .ContentEditable__root
+  .PlaygroundEditorTheme__tableScrollableWrapper {
+  max-height: calc(var(--page-content-height) - 5px);
+}
+.Pages__host .ContentEditable__root > [data-lexical-decorator] {
+  max-height: calc(var(--page-content-height) - 32px);
+  overflow-y: clip;
+}
+/* Inline decorators (images) sit in a line box, which cannot be split
+   either; a line box taller than the page is pushed the same way. */
+.Pages__host .ContentEditable__root img,
+.Pages__host .ContentEditable__root iframe {
+  max-height: calc(var(--page-content-height) - 48px);
+  object-fit: contain;
+}
+
 /* Print: the on-screen layout is printed as-is, one screen page per
    printed page. Only the gap between pages collapses (every gap-dependent
    value derives from --page-gap); print.ts zeroes the @page margins. */

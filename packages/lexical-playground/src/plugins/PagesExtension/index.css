@@ -203,6 +203,22 @@
   display: flow-root;
 }
 
+/* A formatting context is placed in the first space beside the floats that
+   is at least as wide as its min-content width. A scroll container without
+   horizontal padding (the table wrapper, a code block) has a min-content
+   width of zero, so instead of being pushed below a full-width break float
+   it is squeezed to zero width beside it and vanishes. Refuse to be
+   narrowed, so the only place left is the next page. */
+.Pages__host
+  .ContentEditable__root
+  :is(
+    .PlaygroundEditorTheme__tableScrollableWrapper,
+    .PlaygroundEditorTheme__code
+  ) {
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Print: the on-screen layout is printed as-is, one screen page per
    printed page. Only the gap between pages collapses (every gap-dependent
    value derives from --page-gap); print.ts zeroes the @page margins. */

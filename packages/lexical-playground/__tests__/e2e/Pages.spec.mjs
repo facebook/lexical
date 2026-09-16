@@ -30,6 +30,98 @@ const LIVE_SLOT = '.Pages__slot--live';
 
 const LIVE_CONTENT = '.Pages__slotContent--live';
 
+/** Two lines of body text at the default A4 page width. */
+const LONG_LINE =
+  'The quick brown fox jumps over the lazy dog. ' +
+  'The quick brown fox jumps over the lazy dog. ' +
+  'The quick brown fox jumps over the lazy dog.';
+
+function textNode(value) {
+  return {
+    detail: 0,
+    format: 0,
+    mode: 'normal',
+    style: '',
+    text: value,
+    type: 'text',
+    version: 1,
+  };
+}
+
+function paragraph(value) {
+  return {
+    children: value === '' ? [] : [textNode(value)],
+    direction: null,
+    format: '',
+    indent: 0,
+    textFormat: 0,
+    textStyle: '',
+    type: 'paragraph',
+    version: 1,
+  };
+}
+
+function paragraphs(count, prefix = 'Paragraph') {
+  return Array.from({length: count}, (_, i) =>
+    paragraph(`${prefix} ${i + 1}: ${LONG_LINE}`),
+  );
+}
+
+function table(rows, columns) {
+  const cell = value => ({
+    backgroundColor: null,
+    children: [paragraph(value)],
+    colSpan: 1,
+    direction: null,
+    format: '',
+    headerState: 0,
+    indent: 0,
+    rowSpan: 1,
+    type: 'tablecell',
+    version: 1,
+  });
+  return {
+    children: Array.from({length: rows}, (_row, r) => ({
+      children: Array.from({length: columns}, (_column, c) =>
+        cell(`R${r + 1}C${c + 1}`),
+      ),
+      direction: null,
+      format: '',
+      indent: 0,
+      type: 'tablerow',
+      version: 1,
+    })),
+    direction: null,
+    format: '',
+    indent: 0,
+    type: 'table',
+    version: 1,
+  };
+}
+
+/** Replace the document with `children` (top-level nodes, as JSON). */
+async function loadDocument(page, children) {
+  await evaluate(
+    page,
+    serializedChildren => {
+      const editor = window.lexicalEditor;
+      editor.setEditorState(
+        editor.parseEditorState({
+          root: {
+            children: serializedChildren,
+            direction: null,
+            format: '',
+            indent: 0,
+            type: 'root',
+            version: 1,
+          },
+        }),
+      );
+    },
+    children,
+  );
+}
+
 async function openPageSetup(page) {
   await click(page, '.page-setup');
   await waitForSelector(page, '.PageSetupDialog');
@@ -233,5 +325,39 @@ test.describe('Pages', () => {
     await expect(
       page.locator('[data-page-slot="header"][data-page-index="0"]'),
     ).toHaveText('Page 1 of 1!');
+  });
+
+  test('A table that crosses a page boundary moves whole to the next page', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await loadDocument(page, [
+      ...paragraphs(12),
+      table(12, 3),
+      ...paragraphs(12, 'Trailing'),
+    ]);
+    await enablePaged(page);
+    const count = await waitForStablePageCount(page);
+    expect(count).toBeGreaterThanOrEqual(2);
+
+    const areas = await contentAreas(page);
+    const rootBox = await hostRelativeBox(page, '.ContentEditable__root');
+    const box = await hostRelativeBox(
+      page,
+      '.PlaygroundEditorTheme__tableScrollableWrapper',
+    );
+    // Full width, inside the page.
+    expect(box.width).toBeGreaterThan(rootBox.width / 2);
+    expect(box.left).toBeGreaterThanOrEqual(rootBox.left);
+    expect(box.left + box.width).toBeLessThanOrEqual(
+      rootBox.left + rootBox.width + 1,
+    );
+    // And entirely inside one page's content area.
+    const containing = areas.find(
+      area => box.top >= area.top - 1 && box.bottom <= area.bottom + 1,
+    );
+    expect(containing).toBeDefined();
   });
 });

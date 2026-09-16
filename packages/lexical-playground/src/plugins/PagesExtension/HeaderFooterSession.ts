@@ -27,8 +27,12 @@ import {
   $addUpdateTag,
   $createParagraphNode,
   $createRangeSelectionFromDom,
+  $getNodeByKey,
   $getRoot,
+  $getSelection,
   $getStateChange,
+  $isElementNode,
+  $isRangeSelection,
   $setSelection,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
@@ -39,6 +43,8 @@ import {
   KEY_ESCAPE_COMMAND,
   type LexicalEditor,
   mergeRegister,
+  type PointType,
+  type RangeSelection,
   registerEventListeners,
   RootNode,
   type SerializedEditorState,
@@ -76,6 +82,21 @@ type SlotKey = `${PageSlotKind}:${PageSlotVariant}`;
 interface Point {
   x: number;
   y: number;
+}
+
+/**
+ * Whether a selection point saved from an earlier editor state still refers
+ * to a node and offset that exist in the active one.
+ */
+function $isPointValid(point: PointType): boolean {
+  const node = $getNodeByKey(point.key);
+  if (node === null) {
+    return false;
+  }
+  const size = $isElementNode(node)
+    ? node.getChildrenSize()
+    : node.getTextContentSize();
+  return point.offset <= size;
 }
 
 /** The caret position under a client point, using whichever API exists. */
@@ -149,6 +170,12 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
   private pageSetup: PageSetup | null = null;
   private active: ActiveSession | null = null;
   private writeBackTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * The document's last non-null selection. Focusing a nested editor sets
+   * the parent's selection to null, so this is where the caret goes back to
+   * when a header or footer is closed from the keyboard.
+   */
+  private parentSelection: RangeSelection | null = null;
   private disposed = false;
 
   constructor(
@@ -196,6 +223,12 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       parent.registerEditableListener(editable => {
         if (!editable) {
           this.close(true);
+        }
+      }),
+      parent.registerUpdateListener(({editorState}) => {
+        const selection = editorState.read($getSelection);
+        if ($isRangeSelection(selection)) {
+          this.parentSelection = selection.clone();
         }
       }),
     );
@@ -412,6 +445,27 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     this.options.activeSlotEditor.value = null;
   }
 
+  /**
+   * Close the live slot and put the caret back where it was in the document
+   * before the slot opened (the parent's selection was cleared when the
+   * nested editor took focus), rather than at the end of the document.
+   */
+  private closeAndFocusParent(): void {
+    this.close(true);
+    const saved = this.parentSelection;
+    this.parent.update(() => {
+      if (
+        $getSelection() === null &&
+        saved !== null &&
+        $isPointValid(saved.anchor) &&
+        $isPointValid(saved.focus)
+      ) {
+        $setSelection(saved.clone());
+      }
+    });
+    this.parent.focus();
+  }
+
   private onClick(event: MouseEvent): void {
     const target = getComposedEventTarget(event);
     if (!(target instanceof Element)) {
@@ -564,8 +618,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
         KEY_ESCAPE_COMMAND,
         () => {
           if (this.active && this.active.slotEditor === slotEditor) {
-            this.close(true);
-            this.parent.focus();
+            this.closeAndFocusParent();
             return true;
           }
           return false;

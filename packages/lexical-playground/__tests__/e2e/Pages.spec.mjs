@@ -7,9 +7,15 @@
  */
 
 import {
+  moveToEditorBeginning,
+  moveToLineEnd,
+} from '../keyboardShortcuts/index.mjs';
+import {
+  assertSelection,
   click,
   evaluate,
   expect,
+  focusEditor,
   initialize,
   test,
   waitForSelector,
@@ -18,6 +24,10 @@ import {
 const HOST = '.Pages__host';
 
 const LAYER = '.Pages__host > .Pages__layer';
+
+const LIVE_SLOT = '.Pages__slot--live';
+
+const LIVE_CONTENT = '.Pages__slotContent--live';
 
 async function openPageSetup(page) {
   await click(page, '.page-setup');
@@ -38,6 +48,12 @@ async function enablePaged(page) {
   await togglePageSetupSwitch(page, 'paged-toggle');
   await closePageSetup(page);
   await waitForSelector(page, LAYER);
+}
+
+async function enableHeader(page) {
+  await openPageSetup(page);
+  await togglePageSetupSwitch(page, 'page-header-toggle');
+  await closePageSetup(page);
 }
 
 function pageCount(page) {
@@ -150,5 +166,43 @@ test.describe('Pages', () => {
       return hit !== null && hit.closest('.Pages__layer') !== null;
     });
     expect(covered).toBe(false);
+  });
+
+  test('Escape from a header returns the caret to where it was in the body', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('First');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Second');
+    await moveToEditorBeginning(page);
+    await moveToLineEnd(page);
+    await assertSelection(page, {
+      anchorOffset: 5,
+      anchorPath: [0, 0, 0],
+      focusOffset: 5,
+      focusPath: [0, 0, 0],
+    });
+
+    await enablePaged(page);
+    await enableHeader(page);
+    await openPageSetup(page);
+    await click(page, '[data-test-id="page-header-edit-default"]');
+    await waitForSelector(page, LIVE_SLOT);
+    await page.keyboard.type('Header');
+    await expect(page.locator(LIVE_CONTENT)).toHaveText('Header');
+
+    await page.keyboard.press('Escape');
+    await waitForSelector(page, LIVE_SLOT, {state: 'detached'});
+    await expect(page.locator('.ContentEditable__root')).toBeFocused();
+    await assertSelection(page, {
+      anchorOffset: 5,
+      anchorPath: [0, 0, 0],
+      focusOffset: 5,
+      focusPath: [0, 0, 0],
+    });
   });
 });

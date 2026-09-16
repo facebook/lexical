@@ -35,7 +35,6 @@ export interface PagesLayoutSlotProvider {
 export interface PagesLayoutOptions {
   gap: number;
   onPageCountChange?: (pageCount: number) => void;
-  slotProvider?: PagesLayoutSlotProvider;
 }
 
 /** Writes per settle window before the layout stops chasing itself. */
@@ -108,6 +107,7 @@ export class PagesLayout {
   private readonly breaks: PageBreakElements[] = [];
   private readonly pageBreakKeys = new Set<NodeKey>();
   private readonly cleanup: () => void;
+  private slotProvider: PagesLayoutSlotProvider | null = null;
   private geom: PageGeometry | null = null;
   private pageSetup: PageSetup | null = null;
   private headerHeight = 0;
@@ -125,7 +125,7 @@ export class PagesLayout {
 
   constructor(
     private readonly editor: LexicalEditor,
-    private readonly rootElement: HTMLElement,
+    readonly rootElement: HTMLElement,
     private readonly options: PagesLayoutOptions,
   ) {
     const host = getParentElement(rootElement);
@@ -156,10 +156,7 @@ export class PagesLayout {
     if (typeof ResizeObserver !== 'undefined') {
       const rootObserver = new ResizeObserver(() => this.measure());
       rootObserver.observe(rootElement);
-      const slotObserver = new ResizeObserver(() => this.measureSlots());
-      slotObserver.observe(this.slotContent(this.firstHeader));
-      slotObserver.observe(this.slotContent(this.lastFooter));
-      observers.push(rootObserver, slotObserver);
+      observers.push(rootObserver);
       const viewport = getParentElement(host);
       if (viewport instanceof HTMLElement) {
         const viewportObserver = new ResizeObserver(() => this.measureZoom());
@@ -206,6 +203,43 @@ export class PagesLayout {
     this.pageSetup = pageSetup;
     this.resetGuard();
     this.recomputeGeometry();
+  }
+
+  /**
+   * Heights of the header and footer bands (measured by whoever renders
+   * their content). Clamped so a runaway header cannot eat the page.
+   */
+  setSlotHeights(headerHeight: number, footerHeight: number): void {
+    const max =
+      this.geom !== null
+        ? this.geom.pageHeight * MAX_SLOT_HEIGHT_RATIO
+        : Number.POSITIVE_INFINITY;
+    const header = Math.min(max, Math.max(0, headerHeight));
+    const footer = Math.min(max, Math.max(0, footerHeight));
+    if (header === this.headerHeight && footer === this.footerHeight) {
+      return;
+    }
+    this.headerHeight = header;
+    this.footerHeight = footer;
+    this.resetGuard();
+    this.recomputeGeometry();
+  }
+
+  /** Install the object that renders slot content, then fill every slot. */
+  setSlotProvider(provider: PagesLayoutSlotProvider | null): void {
+    this.slotProvider = provider;
+    this.refreshSlots();
+  }
+
+  /** The header/footer slot element of a page, if that page exists. */
+  getSlot(kind: PageSlotKind, pageIndex: number): HTMLElement | null {
+    let found: HTMLElement | null = null;
+    this.forEachSlot((slot, slotKind, slotPageIndex) => {
+      if (slotKind === kind && slotPageIndex === pageIndex) {
+        found = slot;
+      }
+    });
+    return found;
   }
 
   /** Re-fill every header/footer slot (after slot content changed). */
@@ -306,30 +340,6 @@ export class PagesLayout {
     }
     if (writes.length > 0) {
       this.scheduleWrites(writes);
-    }
-  }
-
-  private measureSlots(): void {
-    if (this.disposed || this.geom === null) {
-      return;
-    }
-    const max = this.geom.pageHeight * MAX_SLOT_HEIGHT_RATIO;
-    const headerHeight = Math.min(
-      max,
-      this.slotContent(this.firstHeader).offsetHeight,
-    );
-    const footerHeight = Math.min(
-      max,
-      this.slotContent(this.lastFooter).offsetHeight,
-    );
-    if (
-      headerHeight !== this.headerHeight ||
-      footerHeight !== this.footerHeight
-    ) {
-      this.headerHeight = headerHeight;
-      this.footerHeight = footerHeight;
-      this.resetGuard();
-      this.recomputeGeometry();
     }
   }
 
@@ -525,10 +535,6 @@ export class PagesLayout {
     pageIndex: number,
   ): void {
     slot.dataset.pageIndex = String(pageIndex);
-    this.options.slotProvider?.fillSlot(slot, kind, pageIndex);
-  }
-
-  private slotContent(slot: HTMLElement): HTMLElement {
-    return slot.firstElementChild as HTMLElement;
+    this.slotProvider?.fillSlot(slot, kind, pageIndex);
   }
 }

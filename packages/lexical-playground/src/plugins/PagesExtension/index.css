@@ -96,17 +96,72 @@
   min-height: calc(var(--page-footer-height) + var(--page-margin-bottom));
   padding-bottom: var(--page-margin-bottom);
 }
-/* Parked nested editors keep layout so their heights can be observed. */
+/* Parked nested editors keep layout (same width as a slot's content) so
+   their heights can be observed while they are not on a page. */
 .Pages__parking {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
+  box-sizing: border-box;
+  padding: 0 var(--page-margin-right) 0 var(--page-margin-left);
   visibility: hidden;
   pointer-events: none;
 }
 .Pages__slotContent {
   min-height: 0;
+  outline: 0;
+}
+/* Breathing room between a band and the body. Part of the slot content so
+   the measured heights (and therefore the geometry) include it. */
+.Pages__header[data-page-slot-enabled='true'] .Pages__slotContent,
+.Pages__parking [data-page-slot-editor^='header'] {
+  padding-bottom: 8px;
+}
+.Pages__footer[data-page-slot-enabled='true'] .Pages__slotContent,
+.Pages__parking [data-page-slot-editor^='footer'] {
+  padding-top: 8px;
+}
+.Pages__layer [data-page-slot][data-page-slot-enabled='true'] {
+  cursor: text;
+}
+.Pages__layer [data-page-slot][data-page-slot-enabled='false'] {
+  pointer-events: none;
+}
+.Pages__slot--live {
+  user-select: text;
+  -webkit-user-select: text;
+  outline: 1px dashed var(--editor-color-primary, #4766cb);
+  outline-offset: -1px;
+}
+.Pages__slotContent--live {
+  min-height: 1.2em;
+}
+.Pages__layer
+  [data-page-slot][data-page-slot-enabled='true'][data-empty='true']:not(
+    .Pages__slot--live
+  ) {
+  position: relative;
+}
+.Pages__layer
+  [data-page-slot][data-page-slot-enabled='true'][data-empty='true']:not(
+    .Pages__slot--live
+  ):hover::after {
+  content: 'Double-click to edit';
+  position: absolute;
+  left: var(--page-margin-left);
+  right: var(--page-margin-right);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #999;
+  pointer-events: none;
+}
+.Pages__pageNumber,
+.Pages__pageCount {
+  border-radius: 2px;
+  background: rgba(71, 102, 203, 0.1);
+  padding: 0 2px;
 }
 
 /* Page numbering: the layer resets `lexical-page` to 1 and `lexical-pages`

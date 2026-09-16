@@ -55,3 +55,11 @@ export const PAGE_GAP = 24;
 export const MIN_CONTENT_HEIGHT = 48;
 /** A header or footer may take at most this fraction of the page height. */
 export const MAX_SLOT_HEIGHT_RATIO = 0.4;
+/**
+ * Update tag on the parent editor updates that write header/footer content
+ * back from the nested editors, so the write-back is not mistaken for an
+ * external change (undo, collaboration) that must reload those editors.
+ */
+export const HEADER_FOOTER_COMMIT_TAG = 'pages-header-footer-commit';
+/** Debounce for writing nested header/footer edits back to the root. */
+export const SLOT_WRITE_BACK_DELAY_MS = 300;

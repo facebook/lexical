@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {SerializedEditorState} from 'lexical';
+
 export type PageSize =
   | 'Letter'
   | 'Tabloid'
@@ -45,6 +47,25 @@ export interface PageSetup {
 }
 
 export type PageSlotKind = 'header' | 'footer';
+
+/**
+ * Which header/footer content a page shows: `first` on page 1 when
+ * `differentFirstPage` is on, `even` on even page numbers when
+ * `differentEvenPages` is on, otherwise `default`.
+ */
+export type PageSlotVariant = 'default' | 'first' | 'even';
+
+/** Serialized nested-editor states per variant, stored on the RootNode. */
+export type PageSlotContent = Partial<
+  Record<PageSlotVariant, SerializedEditorState | null>
+>;
+
+/** The header or footer slot currently open for editing. */
+export interface ActivePageSlot {
+  kind: PageSlotKind;
+  variant: PageSlotVariant;
+  pageIndex: number;
+}
 
 /**
  * Resolved page geometry in CSS px (in the page host's own coordinate space,

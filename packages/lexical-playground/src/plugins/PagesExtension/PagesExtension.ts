@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {ActivePageSlot} from './types';
+
 import './index.css';
 
 import {
@@ -15,10 +17,17 @@ import {
   signal,
   watchedSignal,
 } from '@lexical/extension';
-import {defineExtension, mergeRegister, RootNode, safeCast} from 'lexical';
+import {
+  defineExtension,
+  type LexicalEditor,
+  mergeRegister,
+  RootNode,
+  safeCast,
+} from 'lexical';
 
 import {PageBreakExtension} from '../PageBreakExtension';
 import {PAGE_GAP} from './constants';
+import {HeaderFooterSession} from './HeaderFooterSession';
 import {PageContentNode, PageNode, registerLegacyPageUnwrap} from './legacy';
 import {$getPageSetup} from './pageSetup';
 import {PagesLayout} from './PagesLayout';
@@ -43,13 +52,18 @@ export interface PagesConfig {
  * {@link PagesLayout} as non-editable DOM next to the editor root. Nothing in
  * this extension mutates the document to lay out pages, so typing in paged
  * mode costs the same as pageless mode and collaborators, undo history and
- * serialized documents never see pages.
+ * serialized documents never see pages. Header and footer content is stored
+ * on the root as well and rendered by {@link HeaderFooterSession}.
  */
 export const PagesExtension = defineExtension({
   build: (editor, config) => {
     const getPageSetup = () => editor.read('latest', $getPageSetup);
     return {
       ...namedSignals({disabled: config.disabled}),
+      /** The header/footer slot open for editing, if any. */
+      activeSlot: signal<ActivePageSlot | null>(null),
+      /** The nested editor of the open header/footer slot, if any. */
+      activeSlotEditor: signal<LexicalEditor | null>(null),
       /** The element hosting the page layer while paged, else null. */
       hostElement: signal<HTMLElement | null>(null),
       /** Number of pages currently rendered (1 while pageless). */
@@ -87,6 +101,10 @@ export const PagesExtension = defineExtension({
             output.pageCount.value = pageCount;
           },
         });
+        const session = new HeaderFooterSession(editor, layout, {
+          activeSlot: output.activeSlot,
+          activeSlotEditor: output.activeSlotEditor,
+        });
         output.hostElement.value = layout.host;
         return mergeRegister(
           // Innermost first: mergeRegister tears down in reverse order.
@@ -94,11 +112,13 @@ export const PagesExtension = defineExtension({
             output.hostElement.value = null;
           },
           () => layout.dispose(),
+          () => session.dispose(),
           registerPrintHandlers(layout.host),
           effect(() => {
             const pageSetup = output.pageSetup.value;
             if (pageSetup !== null) {
               layout.setPageSetup(pageSetup);
+              session.setPageSetup(pageSetup);
             }
           }),
         );

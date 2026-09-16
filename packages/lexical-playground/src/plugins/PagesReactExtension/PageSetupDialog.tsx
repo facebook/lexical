@@ -20,9 +20,11 @@ import {type LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
 
+import Button from '../../ui/Button';
 import Select from '../../ui/Select';
 import Switch from '../../ui/Switch';
 import {DEFAULT_PAGE_SETUP, PAGE_SIZES} from '../PagesExtension/constants';
+import {EDIT_PAGE_SLOT_COMMAND} from '../PagesExtension/headerFooter';
 import {$setPageSetup} from '../PagesExtension/pageSetup';
 import {PagesExtension} from '../PagesExtension/PagesExtension';
 
@@ -92,10 +94,12 @@ function MarginInput({
 function SlotSection({
   kind,
   onChange,
+  onEdit,
   setup,
 }: {
   kind: PageSlotKind;
   onChange: (patch: Partial<PageSlotSetup>) => void;
+  onEdit: () => void;
   setup: PageSlotSetup;
 }): JSX.Element {
   const title = kind === 'header' ? 'Headers' : 'Footers';
@@ -139,6 +143,14 @@ function SlotSection({
           <p className="PageSetupDialog__hint">
             Use a different {noun} on even pages.
           </p>
+          <div>
+            <Button
+              small={true}
+              data-test-id={`page-${kind}-edit`}
+              onClick={onEdit}>
+              Edit {noun}
+            </Button>
+          </div>
         </div>
       ) : null}
     </div>
@@ -147,6 +159,8 @@ function SlotSection({
 
 export type PageSetupDialogProps = {
   editor: LexicalEditor;
+  /** Called when the dialog wants to close itself (after "Edit header"). */
+  onClose?: () => void;
 };
 
 /**
@@ -154,7 +168,10 @@ export type PageSetupDialogProps = {
  * {@link $setPageSetup}; the values shown come from the extension's
  * `pageSetup` signal, so undo and collaboration changes are reflected live.
  */
-export function PageSetupDialog({editor}: PageSetupDialogProps): JSX.Element {
+export function PageSetupDialog({
+  editor,
+  onClose,
+}: PageSetupDialogProps): JSX.Element {
   const pageSetup = useExtensionSignalValue(PagesExtension, 'pageSetup');
   // The last paged setup, so turning "Paged" off and on restores it.
   const lastPagedSetup = useRef<PageSetup>(pageSetup ?? DEFAULT_PAGE_SETUP);
@@ -177,6 +194,13 @@ export function PageSetupDialog({editor}: PageSetupDialogProps): JSX.Element {
       });
     },
     [editor],
+  );
+  const editSlot = useCallback(
+    (kind: PageSlotKind) => {
+      onClose?.();
+      editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {kind, pageIndex: 0});
+    },
+    [editor, onClose],
   );
   const updateSlot = useCallback(
     (kind: PageSlotKind, patch: Partial<PageSlotSetup>) => {
@@ -257,6 +281,7 @@ export function PageSetupDialog({editor}: PageSetupDialogProps): JSX.Element {
           kind="header"
           setup={shown.header}
           onChange={patch => updateSlot('header', patch)}
+          onEdit={() => editSlot('header')}
         />
       </div>
       <div className="PageSetupDialog__section--paged">
@@ -264,6 +289,7 @@ export function PageSetupDialog({editor}: PageSetupDialogProps): JSX.Element {
           kind="footer"
           setup={shown.footer}
           onChange={patch => updateSlot('footer', patch)}
+          onEdit={() => editSlot('footer')}
         />
       </div>
     </div>

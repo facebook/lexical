@@ -12,6 +12,27 @@ export {
   PAGE_SIZES,
 } from './constants';
 export {
+  $getPageFooter,
+  $getPageHeader,
+  $getPageSlotContent,
+  $setPageFooter,
+  $setPageHeader,
+  $setPageSlotContent,
+  buildHeaderFooterEditor,
+  CLOSE_PAGE_SLOT_COMMAND,
+  EDIT_PAGE_SLOT_COMMAND,
+  HeaderFooterEditorExtension,
+  PAGE_SLOT_VARIANTS,
+  pageFooterState,
+  pageHeaderState,
+  resolveSlotVariant,
+  slotStateFor,
+} from './headerFooter';
+export {
+  HeaderFooterSession,
+  type HeaderFooterSessionOptions,
+} from './HeaderFooterSession';
+export {
   computeGeometry,
   computePageBreakMarginBottom,
   computePageCount,
@@ -29,6 +50,17 @@ export {
   registerLegacyPageUnwrap,
 } from './legacy';
 export {
+  $createPageCountNode,
+  $createPageNumberNode,
+  $isPageCountNode,
+  $isPageNumberNode,
+  INSERT_PAGE_COUNT_COMMAND,
+  INSERT_PAGE_NUMBER_COMMAND,
+  PageCounterNodesExtension,
+  PageCountNode,
+  PageNumberNode,
+} from './PageCounterNodes';
+export {
   $getPageSetup,
   $setPageSetup,
   marginsIsEqual,
@@ -42,10 +74,13 @@ export {
   type PagesLayoutSlotProvider,
 } from './PagesLayout';
 export type {
+  ActivePageSlot,
   Orientation,
   PageGeometry,
   PageSetup,
   PageSize,
+  PageSlotContent,
   PageSlotKind,
   PageSlotSetup,
+  PageSlotVariant,
 } from './types';

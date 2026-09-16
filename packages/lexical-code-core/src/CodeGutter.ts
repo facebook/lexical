@@ -8,7 +8,7 @@
 
 import type {CodeNode} from './CodeNode';
 
-import {$isLineBreakNode, type LexicalEditor} from 'lexical';
+import {$getEditor, $isLineBreakNode} from 'lexical';
 
 /**
  * @internal
@@ -22,10 +22,9 @@ import {$isLineBreakNode, type LexicalEditor} from 'lexical';
  * CodeNode mutation listener.
  *
  * @param node The CodeNode whose gutter should be updated.
- * @param editor The editor that rendered the node.
  */
-export function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
-  const codeElement = editor.getElementByKey(node.getKey());
+export function $updateCodeGutter(node: CodeNode): void {
+  const codeElement = $getEditor().getElementByKey(node.getKey());
   if (codeElement === null) {
     return;
   }

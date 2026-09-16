@@ -366,7 +366,7 @@ export function registerHighlightingOnly(
               if (type !== 'destroyed') {
                 const node = $getNodeByKey(key);
                 if (node !== null) {
-                  $updateCodeGutter(node as CodeNode, editor);
+                  $updateCodeGutter(node as CodeNode);
                 }
               }
             }

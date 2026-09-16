@@ -112,10 +112,7 @@ declare export class CodeNode extends ElementNode {
  * CodeGutter
  */
 
-declare export function $updateCodeGutter(
-  node: CodeNode,
-  editor: LexicalEditor,
-): void;
+declare export function $updateCodeGutter(node: CodeNode): void;
 
 declare export var CodeExtension: LexicalExtension<ExtensionConfigBase, "@lexical/code", unknown, unknown>;
 

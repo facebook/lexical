@@ -34,7 +34,7 @@ function registerCodeGutter(editor: LexicalEditor): () => void {
           if (type !== 'destroyed') {
             const node = $getNodeByKey(key);
             if (node !== null) {
-              $updateCodeGutter(node as CodeNode, editor);
+              $updateCodeGutter(node as CodeNode);
             }
           }
         }
@@ -158,7 +158,7 @@ describe('$updateCodeGutter', () => {
       editor.read(() => {
         const codeNode = $getNodeByKey(key);
         assert($isCodeNode(codeNode), 'expected a CodeNode');
-        $updateCodeGutter(codeNode, editor);
+        $updateCodeGutter(codeNode);
       });
       expect(getGutter(editor, key)).toBe('unchanged');
 

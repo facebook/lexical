@@ -15,8 +15,10 @@ import {
   computePageBreakMarginBottom,
   computePageCount,
   computeZoom,
+  pageContentHeight,
   pageContentTop,
   pageIndexAtY,
+  slotHeight,
 } from '../../plugins/PagesExtension/layoutMath';
 
 const setup: PageSetup = {
@@ -136,6 +138,45 @@ describe('pageIndexAtY / computePageBreakMarginBottom', () => {
       pageContentTop(2, geom) - (H0 + C + Bk + 15),
     );
     expect(computePageBreakMarginBottom(0, 10_000, geom)).toBe(0);
+  });
+});
+
+describe('per-page slot heights', () => {
+  const withVariants: PageSetup = {
+    ...setup,
+    header: {differentEvenPages: true, differentFirstPage: true, enabled: true},
+  };
+  const geom = computeGeometry(withVariants, 0, 0, 24, {
+    footer: {},
+    header: {default: 20, even: 30, first: 80},
+  });
+
+  it('gives each page the band of the variant it shows', () => {
+    expect(slotHeight(geom, 'header', 0)).toBe(80);
+    expect(slotHeight(geom, 'header', 1)).toBe(30);
+    expect(slotHeight(geom, 'header', 2)).toBe(20);
+    expect(geom.firstTop).toBe(geom.marginTop + 80);
+    expect(pageContentHeight(geom, 0)).toBe(1056 - 96 - 80);
+    expect(pageContentHeight(geom, 2)).toBe(1056 - 96 - 20);
+  });
+
+  it('accumulates page tops from the actual band heights', () => {
+    const top1 =
+      geom.firstTop + pageContentHeight(geom, 0) + 0 + 48 + 24 + 48 + 30;
+    expect(pageContentTop(1, geom)).toBe(top1);
+    expect(pageIndexAtY(top1 - 1, geom)).toBe(0);
+    expect(pageIndexAtY(top1, geom)).toBe(1);
+    expect(computePageCount(top1 + 10, geom)).toBe(2);
+    expect(computePageCount(pageContentTop(2, geom) + 1, geom)).toBe(3);
+  });
+
+  it('falls back to the default height for variants without content', () => {
+    const partial = computeGeometry(withVariants, 0, 0, 24, {
+      footer: {},
+      header: {default: 20},
+    });
+    expect(slotHeight(partial, 'header', 0)).toBe(20);
+    expect(slotHeight(partial, 'header', 1)).toBe(20);
   });
 });
 

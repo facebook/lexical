@@ -22,10 +22,8 @@
   zoom: var(--page-zoom, 1);
   background: #fff;
   box-shadow: 0 0 0 1px #ddd;
-  min-height: calc(
-    var(--page-count) * var(--page-height) + (var(--page-count) - 1) *
-      var(--page-gap)
-  );
+  /* min-height, and every spacer/band height, are set inline per page by
+     PagesLayout (pages showing different header/footer variants differ). */
 }
 .Pages__layer {
   position: relative;
@@ -50,9 +48,8 @@
 }
 .Pages__header--first {
   padding-top: var(--page-margin-top);
-  /* Fixed, not min-height: the geometry (and the printed page boundaries)
-     assume exactly this height. */
-  height: calc(var(--page-margin-top) + var(--page-header-height));
+  /* height set inline (fixed, not min-height: the geometry and the printed
+     page boundaries assume exactly that height). */
 }
 /* Zero-width float: occupies a page's content height without shortening
    any line box, so the following break lands exactly one page lower. */
@@ -60,7 +57,6 @@
   float: left;
   clear: both;
   width: 0;
-  height: var(--page-content-height);
 }
 /* A page boundary is three stacked full-width floats: footer band, gap,
    header band. Kept separate so none of them straddles a printed page. */
@@ -71,9 +67,6 @@
   clear: both;
   box-sizing: border-box;
   width: 100%;
-}
-.Pages__break {
-  height: calc(var(--page-footer-height) + var(--page-margin-bottom));
 }
 .Pages__break > .Pages__footer {
   height: 100%;
@@ -88,7 +81,6 @@
   border-bottom: 1px solid #ddd;
 }
 .Pages__breakHeader {
-  height: calc(var(--page-margin-top) + var(--page-header-height));
   break-inside: avoid;
 }
 .Pages__breakHeader > .Pages__header {
@@ -99,12 +91,6 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(
-    var(--page-first-top) + (var(--page-count) - 1) *
-      (var(--page-content-height) + var(--page-break-height)) +
-      var(--page-content-height)
-  );
-  min-height: calc(var(--page-footer-height) + var(--page-margin-bottom));
   padding-bottom: var(--page-margin-bottom);
 }
 /* Parked nested editors keep layout (same width as a slot's content) so
@@ -169,7 +155,6 @@
    stop lines from flowing around page breaks. */
 .Pages__host > .ContentEditable__root {
   padding: 0 var(--page-margin-right) 0 var(--page-margin-left);
-  min-height: var(--page-content-height);
 }
 .Pages__host > .ContentEditable__placeholder {
   top: var(--page-first-top);

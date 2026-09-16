@@ -72,6 +72,12 @@ export interface ActivePageSlot {
  * unaffected by zoom). Every value is derived from a {@link PageSetup} plus
  * the measured header/footer heights, see `computeGeometry`.
  */
+/** Measured heights of header/footer content, per variant, in CSS px. */
+export interface SlotHeights {
+  header: Partial<Record<PageSlotVariant, number>>;
+  footer: Partial<Record<PageSlotVariant, number>>;
+}
+
 export interface PageGeometry {
   pageWidth: number;
   pageHeight: number;
@@ -79,14 +85,23 @@ export interface PageGeometry {
   marginRight: number;
   marginBottom: number;
   marginLeft: number;
+  /** Header/footer band heights of the `default` variant. */
   headerHeight: number;
   footerHeight: number;
+  /** Band heights per variant (a missing variant falls back to `default`). */
+  slotHeights: SlotHeights;
+  headerSetup: PageSlotSetup;
+  footerSetup: PageSlotSetup;
   gap: number;
-  /** Height of the editable area of one page (`C`). */
+  /**
+   * Height of the editable area of a page showing the `default` header and
+   * footer (`C`). Pages showing another variant may differ, see
+   * `pageContentHeight`.
+   */
   contentHeight: number;
   /**
-   * Height of the non-editable band between two pages (`Bk`): footer, bottom
-   * margin, gap, top margin and header of the next page.
+   * Height of the non-editable band between two `default` pages (`Bk`):
+   * footer, bottom margin, gap, top margin and header of the next page.
    */
   breakHeight: number;
   /** Distance from the host's top to the first page's content (`H0`). */

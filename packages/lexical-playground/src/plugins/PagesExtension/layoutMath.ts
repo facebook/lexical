@@ -5,7 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {PageGeometry, PageSetup} from './types';
+import type {
+  PageGeometry,
+  PageSetup,
+  PageSlotKind,
+  PageSlotVariant,
+  SlotHeights,
+} from './types';
 
 import {
   MIN_CONTENT_HEIGHT,
@@ -13,6 +19,7 @@ import {
   PAGE_SIZES,
   PX_PER_INCH,
 } from './constants';
+import {resolveSlotVariant} from './headerFooter';
 
 /**
  * Tolerance, in CSS px, applied when deciding whether content that ends
@@ -50,40 +57,111 @@ export function computeGeometry(
   headerHeight: number = 0,
   footerHeight: number = 0,
   gap: number = PAGE_GAP,
+  slotHeights?: SlotHeights,
 ): PageGeometry {
   const {width: pageWidth, height: pageHeight} = pageSizeInPixels(pageSetup);
   const marginTop = Math.round(inchesToPixels(pageSetup.margins.top));
   const marginRight = inchesToPixels(pageSetup.margins.right);
   const marginBottom = Math.round(inchesToPixels(pageSetup.margins.bottom));
   const marginLeft = inchesToPixels(pageSetup.margins.left);
-  headerHeight = Math.ceil(headerHeight);
-  footerHeight = Math.ceil(footerHeight);
+  const snapped = (heights: Partial<Record<PageSlotVariant, number>>) => {
+    const out: Partial<Record<PageSlotVariant, number>> = {};
+    for (const [variant, height] of Object.entries(heights)) {
+      if (typeof height === 'number') {
+        out[variant as PageSlotVariant] = Math.ceil(Math.max(0, height));
+      }
+    }
+    return out;
+  };
+  const heights: SlotHeights = {
+    footer: snapped(slotHeights?.footer ?? {default: footerHeight}),
+    header: snapped(slotHeights?.header ?? {default: headerHeight}),
+  };
+  headerHeight = heights.header.default ?? 0;
+  footerHeight = heights.footer.default ?? 0;
   const contentHeight = Math.max(
     MIN_CONTENT_HEIGHT,
     pageHeight - marginTop - marginBottom - headerHeight - footerHeight,
   );
   const breakHeight =
     footerHeight + marginBottom + gap + marginTop + headerHeight;
-  return {
+  const geom: PageGeometry = {
     breakHeight,
     contentHeight,
-    firstTop: marginTop + headerHeight,
+    firstTop: 0,
     footerHeight,
+    footerSetup: pageSetup.footer,
     gap,
     headerHeight,
+    headerSetup: pageSetup.header,
     marginBottom,
     marginLeft,
     marginRight,
     marginTop,
     pageHeight,
     pageWidth,
+    slotHeights: heights,
   };
+  geom.firstTop = marginTop + slotHeight(geom, 'header', 0);
+  return geom;
+}
+
+/** Band height of `kind` on the page at `pageIndex` (its variant's height). */
+export function slotHeight(
+  geom: PageGeometry,
+  kind: PageSlotKind,
+  pageIndex: number,
+): number {
+  const setup = kind === 'header' ? geom.headerSetup : geom.footerSetup;
+  const heights = geom.slotHeights[kind];
+  if (!setup.enabled) {
+    return heights.default ?? 0;
+  }
+  const variant = resolveSlotVariant(setup, pageIndex);
+  return heights[variant] ?? heights.default ?? 0;
+}
+
+/** Height of the editable area of the page at `pageIndex`. */
+export function pageContentHeight(
+  geom: PageGeometry,
+  pageIndex: number,
+): number {
+  return Math.max(
+    MIN_CONTENT_HEIGHT,
+    geom.pageHeight -
+      geom.marginTop -
+      geom.marginBottom -
+      slotHeight(geom, 'header', pageIndex) -
+      slotHeight(geom, 'footer', pageIndex),
+  );
+}
+
+/**
+ * Height of the band between the page at `pageIndex` and the next one:
+ * that page's footer, bottom margin, gap, top margin and the next page's
+ * header.
+ */
+export function pageBreakHeight(geom: PageGeometry, pageIndex: number): number {
+  return (
+    slotHeight(geom, 'footer', pageIndex) +
+    geom.marginBottom +
+    geom.gap +
+    geom.marginTop +
+    slotHeight(geom, 'header', pageIndex + 1)
+  );
 }
 
 /** Host-relative top of the content area of the page at `pageIndex` (0-based). */
 export function pageContentTop(pageIndex: number, geom: PageGeometry): number {
-  return geom.firstTop + pageIndex * (geom.contentHeight + geom.breakHeight);
+  let top = geom.firstTop;
+  for (let i = 0; i < pageIndex; i++) {
+    top += pageContentHeight(geom, i) + pageBreakHeight(geom, i);
+  }
+  return top;
 }
+
+/** Guards the page walks against a runaway `contentBottom`. */
+const MAX_PAGES = 10_000;
 
 /**
  * Number of pages needed so that the content area of the last page reaches
@@ -95,22 +173,32 @@ export function computePageCount(
   contentBottom: number,
   geom: PageGeometry,
 ): number {
-  const stride = geom.contentHeight + geom.breakHeight;
-  return Math.max(
-    1,
-    Math.ceil(
-      (contentBottom - geom.firstTop + geom.breakHeight - BOUNDARY_EPSILON) /
-        stride,
-    ),
-  );
+  let top = geom.firstTop;
+  for (let index = 0; index < MAX_PAGES; index++) {
+    const bottom = top + pageContentHeight(geom, index);
+    if (bottom + BOUNDARY_EPSILON >= contentBottom) {
+      return index + 1;
+    }
+    top = bottom + pageBreakHeight(geom, index);
+  }
+  return MAX_PAGES;
 }
 
-/** Index of the page whose stride contains the host-relative `y`. */
+/**
+ * Index of the page whose stride (content area plus the band below it)
+ * contains the host-relative `y`.
+ */
 export function pageIndexAtY(y: number, geom: PageGeometry): number {
-  return Math.max(
-    0,
-    Math.floor((y - geom.firstTop) / (geom.contentHeight + geom.breakHeight)),
-  );
+  let top = geom.firstTop;
+  for (let index = 0; index < MAX_PAGES; index++) {
+    const nextTop =
+      top + pageContentHeight(geom, index) + pageBreakHeight(geom, index);
+    if (y < nextTop) {
+      return index;
+    }
+    top = nextTop;
+  }
+  return MAX_PAGES;
 }
 
 /**

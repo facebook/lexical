@@ -37,8 +37,11 @@ export {
   computePageBreakMarginBottom,
   computePageCount,
   computeZoom,
+  pageBreakHeight,
+  pageContentHeight,
   pageContentTop,
   pageIndexAtY,
+  slotHeight,
 } from './layoutMath';
 export {
   $createPageContentNode,
@@ -88,4 +91,5 @@ export type {
   PageSlotKind,
   PageSlotSetup,
   PageSlotVariant,
+  SlotHeights,
 } from './types';

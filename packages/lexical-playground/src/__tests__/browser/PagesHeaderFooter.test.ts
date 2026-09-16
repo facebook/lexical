@@ -246,6 +246,28 @@ describe('Pages headers and footers', () => {
         variant: 'even',
       }),
     ).toBe(false);
+
+    // Each page's header band is as tall as the variant it shows: a
+    // two-line first-page header must not stretch the other pages' bands.
+    editor.update(
+      () =>
+        $setPageSlotContent(
+          'header',
+          'first',
+          slotState(editor, 'First line one\nline two'),
+        ),
+      {discrete: true},
+    );
+    const bandHeight = (index: string) =>
+      host
+        .querySelector<HTMLElement>(
+          `[data-page-slot="header"][data-page-index="${index}"]`,
+        )!
+        .getBoundingClientRect().height;
+    await expect
+      .poll(() => bandHeight('0') - bandHeight('2'))
+      .toBeGreaterThanOrEqual(LINE_HEIGHT - 1);
+    expect(bandHeight('1')).toBe(bandHeight('2'));
   });
 
   test('edits one live header and mirrors it into the clones', async () => {

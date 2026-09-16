@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {PageGeometry, PageSetup, PageSlotKind} from './types';
+import type {PageGeometry, PageSetup, PageSlotKind, SlotHeights} from './types';
 
 import {
   getParentElement,
@@ -21,6 +21,9 @@ import {
   computePageBreakMarginBottom,
   computePageCount,
   computeZoom,
+  pageContentHeight,
+  pageContentTop,
+  slotHeight,
 } from './layoutMath';
 
 /**
@@ -60,7 +63,6 @@ const CSS = {
 } as const;
 
 const HOST_VARS = [
-  '--page-band-height',
   '--page-width',
   '--page-height',
   '--page-margin-top',
@@ -71,7 +73,6 @@ const HOST_VARS = [
   '--page-footer-height',
   '--page-gap',
   '--page-content-height',
-  '--page-break-height',
   '--page-first-top',
   '--page-count',
   '--page-zoom',
@@ -123,8 +124,7 @@ export class PagesLayout {
   private geom: PageGeometry | null = null;
   private pageSetup: PageSetup | null = null;
   private gap: number;
-  private headerHeight = 0;
-  private footerHeight = 0;
+  private slotHeights: SlotHeights = {footer: {}, header: {}};
   private pageCount = 1;
   private zoom = 1;
   private pendingWrites: (() => void)[] = [];
@@ -220,21 +220,30 @@ export class PagesLayout {
   }
 
   /**
-   * Heights of the header and footer bands (measured by whoever renders
-   * their content). Clamped so a runaway header cannot eat the page.
+   * Heights of the header and footer content per variant (measured by
+   * whoever renders it). Each page's bands take the height of the variant
+   * that page shows. Clamped so a runaway header cannot eat the page.
    */
-  setSlotHeights(headerHeight: number, footerHeight: number): void {
+  setSlotHeights(heights: SlotHeights): void {
     const max =
       this.geom !== null
         ? this.geom.pageHeight * MAX_SLOT_HEIGHT_RATIO
         : Number.POSITIVE_INFINITY;
-    const header = Math.min(max, Math.max(0, headerHeight));
-    const footer = Math.min(max, Math.max(0, footerHeight));
-    if (header === this.headerHeight && footer === this.footerHeight) {
+    const clamp = (values: SlotHeights['header']) =>
+      Object.fromEntries(
+        Object.entries(values).map(([variant, height]) => [
+          variant,
+          Math.min(max, Math.max(0, height ?? 0)),
+        ]),
+      ) as SlotHeights['header'];
+    const next: SlotHeights = {
+      footer: clamp(heights.footer),
+      header: clamp(heights.header),
+    };
+    if (JSON.stringify(next) === JSON.stringify(this.slotHeights)) {
       return;
     }
-    this.headerHeight = header;
-    this.footerHeight = footer;
+    this.slotHeights = next;
     this.resetGuard();
     this.recomputeGeometry();
   }
@@ -320,6 +329,8 @@ export class PagesLayout {
     }
     this.layer.remove();
     this.host.classList.remove(CSS.host);
+    this.host.style.removeProperty('min-height');
+    this.rootElement.style.removeProperty('min-height');
     for (const prop of HOST_VARS) {
       this.host.style.removeProperty(prop);
     }
@@ -412,9 +423,10 @@ export class PagesLayout {
     }
     this.geom = computeGeometry(
       this.pageSetup,
-      this.headerHeight,
-      this.footerHeight,
+      0,
+      0,
       this.gap,
+      this.slotHeights,
     );
     this.scheduleWrites([() => this.writeGeometry()]);
   }
@@ -436,16 +448,11 @@ export class PagesLayout {
     style.setProperty('--page-footer-height', px(geom.footerHeight));
     style.setProperty('--page-gap', px(geom.gap));
     style.setProperty('--page-content-height', px(geom.contentHeight));
-    // Everything that depends on the gap goes through the variable, so the
-    // print stylesheet can collapse the gap without any JavaScript.
-    style.setProperty('--page-band-height', px(geom.breakHeight - geom.gap));
-    style.setProperty(
-      '--page-break-height',
-      'calc(var(--page-band-height) + var(--page-gap))',
-    );
+
     style.setProperty('--page-first-top', px(geom.firstTop));
     style.setProperty('--page-count', String(this.pageCount));
     style.setProperty('--page-zoom', String(this.zoom));
+    this.applyPageSizes();
     // Width and zoom changed, so re-derive the fit on the next frame.
     this.measureRafIds.push(requestAnimationFrame(() => this.measureZoom()));
   }
@@ -501,11 +508,55 @@ export class PagesLayout {
     this.pageCount = count;
     this.host.style.setProperty('--page-count', String(count));
     this.lastFooter.dataset.pageIndex = String(count - 1);
+    this.applyPageSizes();
     // Every slot may show the page count, so refill them all.
     this.forEachSlot((slot, kind, pageIndex) =>
       this.fillSlot(slot, kind, pageIndex),
     );
     this.options.onPageCountChange?.(count);
+  }
+
+  /**
+   * Size every spacer and band for the page it belongs to. Pages showing
+   * different header/footer variants have different band heights, so these
+   * are inline per element rather than shared custom properties. Anything
+   * that spans gaps is written relative to `--page-gap`, so the print
+   * stylesheet can collapse the gaps without JavaScript.
+   */
+  private applyPageSizes(): void {
+    const geom = this.geom;
+    if (geom === null) {
+      return;
+    }
+    const px = (n: number) => `${n}px`;
+    const withGaps = (value: number, gaps: number) =>
+      gaps > 0
+        ? `calc(${value - gaps * geom.gap}px + ${gaps} * var(--page-gap))`
+        : px(value);
+    this.firstHeader.style.height = px(
+      geom.marginTop + slotHeight(geom, 'header', 0),
+    );
+    this.breaks.forEach(({spacer, footerBand, headerBand}, i) => {
+      spacer.style.height = px(pageContentHeight(geom, i));
+      footerBand.style.height = px(
+        slotHeight(geom, 'footer', i) + geom.marginBottom,
+      );
+      headerBand.style.height = px(
+        geom.marginTop + slotHeight(geom, 'header', i + 1),
+      );
+    });
+    const last = this.pageCount - 1;
+    const lastContentTop = pageContentTop(last, geom);
+    const lastContentBottom = lastContentTop + pageContentHeight(geom, last);
+    this.lastFooter.style.top = withGaps(lastContentBottom, last);
+    this.lastFooter.style.height = px(
+      slotHeight(geom, 'footer', last) + geom.marginBottom,
+    );
+    this.host.style.minHeight = withGaps(
+      lastContentBottom + slotHeight(geom, 'footer', last) + geom.marginBottom,
+      last,
+    );
+    this.rootElement.style.minHeight = px(pageContentHeight(geom, 0));
   }
 
   private scheduleWrites(writes: (() => void)[]): void {

@@ -63,11 +63,8 @@ describe('registerPrintHandlers', () => {
     const {host, layout} = mountLayout();
     // Gap-dependent values derive from --page-gap so print CSS can zero it.
     expect(host.style.getPropertyValue('--page-gap')).toBe('24px');
-    // 0.4in margins round to 38px each: 38 + 38 (no header/footer).
-    expect(host.style.getPropertyValue('--page-band-height')).toBe('76px');
-    expect(host.style.getPropertyValue('--page-break-height')).toBe(
-      'calc(var(--page-band-height) + var(--page-gap))',
-    );
+    // One page: the host is exactly one page tall (sizes are inline).
+    expect(host.style.minHeight).toBe('1056px');
     cleanups.push(registerPrintHandlers(layout));
 
     window.dispatchEvent(new Event('beforeprint'));

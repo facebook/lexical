@@ -11,6 +11,7 @@ import type {
   PageSetup,
   PageSlotKind,
   PageSlotVariant,
+  SlotHeights,
 } from './types';
 
 import {type LexicalEditorWithDispose, type Signal} from '@lexical/extension';
@@ -587,26 +588,16 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     if (this.disposed || this.pageSetup === null) {
       return;
     }
-    const heights = {footer: 0, header: 0};
+    const heights: SlotHeights = {footer: {}, header: {}};
     for (const slotEditor of this.editors.values()) {
-      const setup = this.pageSetup[slotEditor.kind];
-      if (!setup.enabled) {
+      if (!this.pageSetup[slotEditor.kind].enabled) {
         continue;
       }
-      if (
-        slotEditor.variant !== 'default' &&
-        !(slotEditor.variant === 'first'
-          ? setup.differentFirstPage
-          : setup.differentEvenPages)
-      ) {
-        continue;
-      }
-      heights[slotEditor.kind] = Math.max(
-        heights[slotEditor.kind],
-        this.measureHeight(slotEditor.root),
+      heights[slotEditor.kind][slotEditor.variant] = this.measureHeight(
+        slotEditor.root,
       );
     }
-    this.layout.setSlotHeights(heights.header, heights.footer);
+    this.layout.setSlotHeights(heights);
   }
 
   /**

@@ -7,7 +7,7 @@
  */
 
 export {CodeExtension, CodeImportExtension} from './CodeExtension';
-export {$updateCodeGutter} from './CodeGutter';
+export {registerCodeGutter} from './CodeGutter';
 export {
   $createCodeHighlightNode,
   $isCodeHighlightNode,

@@ -6,24 +6,25 @@
  *
  */
 
-import type {CodeNode} from './CodeNode';
+import {
+  $getEditor,
+  $getNodeByKey,
+  $isLineBreakNode,
+  type LexicalEditor,
+} from 'lexical';
 
-import {$getEditor, $isLineBreakNode} from 'lexical';
+import {CodeNode} from './CodeNode';
 
 /**
- * @internal
  * Write the line numbers of a {@link CodeNode} to the `data-gutter`
  * attribute of its DOM element as a newline separated list (`"1\n2\n3"`),
  * so a theme can render them with `content: attr(data-gutter)`. There is
  * one line per `LineBreakNode` child plus one. The attribute is only
  * rewritten when the number of children has changed since the last call.
  *
- * Both `@lexical/code-prism` and `@lexical/code-shiki` call this from their
- * CodeNode mutation listener.
- *
  * @param node The CodeNode whose gutter should be updated.
  */
-export function $updateCodeGutter(node: CodeNode): void {
+function $updateCodeGutter(node: CodeNode): void {
   const codeElement = $getEditor().getElementByKey(node.getKey());
   if (codeElement === null) {
     return;
@@ -45,4 +46,38 @@ export function $updateCodeGutter(node: CodeNode): void {
     }
   }
   codeElement.setAttribute('data-gutter', gutter);
+}
+
+/**
+ * Keep the `data-gutter` attribute of every {@link CodeNode} in sync with its
+ * line count, so a theme can render line numbers with
+ * `content: attr(data-gutter)`.
+ *
+ * Both `@lexical/code-prism` and `@lexical/code-shiki` register this. In
+ * headless mode there is no DOM to write to, so registration is skipped and
+ * the returned teardown does nothing.
+ *
+ * @param editor The editor whose code blocks should carry a gutter.
+ * @returns A teardown that removes the listener.
+ */
+export function registerCodeGutter(editor: LexicalEditor): () => void {
+  if (editor._headless === true) {
+    return () => {};
+  }
+  return editor.registerMutationListener(
+    CodeNode,
+    mutations => {
+      editor.read('latest', () => {
+        for (const [key, type] of mutations) {
+          if (type !== 'destroyed') {
+            const node = $getNodeByKey(key);
+            if (node !== null) {
+              $updateCodeGutter(node as CodeNode);
+            }
+          }
+        }
+      });
+    },
+    {skipInitialization: false},
+  );
 }

@@ -10,12 +10,12 @@ import {
   $isCodeHighlightNode,
   $isCodeNode,
   $plainifyCodeContent,
-  $updateCodeGutter,
   CodeExtension,
   CodeHighlightNode,
   CodeIndentExtension,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
+  registerCodeGutter,
   registerCodeIndentation,
 } from '@lexical/code-core';
 import {effect, namedSignals} from '@lexical/extension';
@@ -355,27 +355,7 @@ export function registerHighlightingOnly(
 ): () => void {
   const registrations = [];
 
-  // Only register the mutation listener if not in headless mode
-  if (editor._headless !== true) {
-    registrations.push(
-      editor.registerMutationListener(
-        CodeNode,
-        mutations => {
-          editor.read('latest', () => {
-            for (const [key, type] of mutations) {
-              if (type !== 'destroyed') {
-                const node = $getNodeByKey(key);
-                if (node !== null) {
-                  $updateCodeGutter(node as CodeNode);
-                }
-              }
-            }
-          });
-        },
-        {skipInitialization: false},
-      ),
-    );
-  }
+  registrations.push(registerCodeGutter(editor));
 
   const transformState: TransformState = {
     didTransform: false,

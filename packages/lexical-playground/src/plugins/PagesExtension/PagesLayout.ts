@@ -46,6 +46,7 @@ const MARGIN_EPSILON = 0.5;
 
 const CSS = {
   break: 'Pages__break',
+  breakHeader: 'Pages__breakHeader',
   footer: 'Pages__footer',
   footerLast: 'Pages__footer--last',
   gap: 'Pages__gap',
@@ -75,9 +76,18 @@ const HOST_VARS = [
   '--page-zoom',
 ];
 
+/**
+ * One page boundary: a zero-width spacer as tall as the content area, then
+ * three full-width floats. Keeping footer band, gap and header band as
+ * separate floats means no float ever crosses a printed page boundary
+ * (the gap is zero in print), so the browser never has to fragment or
+ * push one.
+ */
 interface PageBreakElements {
   spacer: HTMLElement;
-  brk: HTMLElement;
+  footerBand: HTMLElement;
+  gap: HTMLElement;
+  headerBand: HTMLElement;
 }
 
 /**
@@ -86,8 +96,9 @@ interface PageBreakElements {
  * The editor root's parent becomes the "host" (a block formatting context).
  * A `Pages__layer` is inserted before the root holding, for every page
  * boundary, a zero-width `Pages__spacer` float as tall as a page's content
- * area followed by a full-width `Pages__break` float (footer, gap, header of
- * the next page). Because the layer is not a formatting context of its own,
+ * area followed by three full-width floats: the `Pages__break` footer band,
+ * the `Pages__gap` and the `Pages__breakHeader` band of the next page.
+ * Because the layer is not a formatting context of its own,
  * the floats intrude into the root's line boxes: lines that would straddle a
  * page boundary flow around the break, and blocks that establish their own
  * formatting context are pushed below it whole. Page positions are pure CSS
@@ -110,6 +121,8 @@ export class PagesLayout {
   private slotProvider: PagesLayoutSlotProvider | null = null;
   private geom: PageGeometry | null = null;
   private pageSetup: PageSetup | null = null;
+  private gap: number;
+  private printMode = false;
   private headerHeight = 0;
   private footerHeight = 0;
   private pageCount = 1;
@@ -135,6 +148,7 @@ export class PagesLayout {
       );
     }
     this.host = host;
+    this.gap = options.gap;
     const doc = rootElement.ownerDocument;
     const createDiv = (className: string) => {
       const el = doc.createElement('div');
@@ -225,6 +239,44 @@ export class PagesLayout {
     this.recomputeGeometry();
   }
 
+  /**
+   * Print mode collapses the gap between pages (pages are physical sheets)
+   * and snaps the vertical geometry to whole pixels so every page boundary
+   * falls exactly between two floats. See `computeGeometry`.
+   */
+  setPrintMode(on: boolean): void {
+    if (on === this.printMode) {
+      return;
+    }
+    this.printMode = on;
+    this.resetGuard();
+    this.recomputeGeometry();
+  }
+
+  /**
+   * Apply pending writes now and measure synchronously until stable. Only
+   * for moments when the next frame is too late, such as `beforeprint`.
+   */
+  flush(): void {
+    for (let pass = 0; pass < 4 && !this.disposed; pass++) {
+      if (this.writeRafId !== null) {
+        cancelAnimationFrame(this.writeRafId);
+        this.writeRafId = null;
+      }
+      this.measureRafIds.forEach(id => cancelAnimationFrame(id));
+      this.measureRafIds = [];
+      const queued = this.pendingWrites;
+      this.pendingWrites = [];
+      for (const write of queued) {
+        write();
+      }
+      this.measure();
+      if (this.pendingWrites.length === 0) {
+        break;
+      }
+    }
+  }
+
   /** Install the object that renders slot content, then fill every slot. */
   setSlotProvider(provider: PagesLayoutSlotProvider | null): void {
     this.slotProvider = provider;
@@ -256,10 +308,9 @@ export class PagesLayout {
     fn: (slot: HTMLElement, kind: PageSlotKind, pageIndex: number) => void,
   ): void {
     fn(this.firstHeader, 'header', 0);
-    this.breaks.forEach(({brk}, i) => {
-      const [footer, , header] = brk.children as unknown as HTMLElement[];
-      fn(footer, 'footer', i);
-      fn(header, 'header', i + 1);
+    this.breaks.forEach(({footerBand, headerBand}, i) => {
+      fn(footerBand.firstElementChild as HTMLElement, 'footer', i);
+      fn(headerBand.firstElementChild as HTMLElement, 'header', i + 1);
     });
     fn(this.lastFooter, 'footer', this.pageCount - 1);
   }
@@ -370,7 +421,8 @@ export class PagesLayout {
       this.pageSetup,
       this.headerHeight,
       this.footerHeight,
-      this.options.gap,
+      this.printMode ? 0 : this.gap,
+      this.printMode,
     );
     this.scheduleWrites([() => this.writeGeometry()]);
   }
@@ -424,28 +476,30 @@ export class PagesLayout {
         );
       }
     }
+    const doc = this.rootElement.ownerDocument;
     while (this.breaks.length < count - 1) {
       const pageIndex = this.breaks.length + 1;
-      const spacer = this.rootElement.ownerDocument.createElement('div');
+      const spacer = doc.createElement('div');
       spacer.className = CSS.spacer;
-      const brk = this.rootElement.ownerDocument.createElement('div');
-      brk.className = CSS.break;
-      brk.dataset.pageIndex = String(pageIndex);
-      const gap = this.rootElement.ownerDocument.createElement('div');
+      const footerBand = doc.createElement('div');
+      footerBand.className = CSS.break;
+      footerBand.dataset.pageIndex = String(pageIndex);
+      footerBand.appendChild(this.createSlot('footer', pageIndex - 1));
+      const gap = doc.createElement('div');
       gap.className = CSS.gap;
-      brk.append(
-        this.createSlot('footer', pageIndex - 1),
-        gap,
-        this.createSlot('header', pageIndex),
-      );
-      this.layer.insertBefore(spacer, this.lastFooter);
-      this.layer.insertBefore(brk, this.lastFooter);
-      this.breaks.push({brk, spacer});
+      const headerBand = doc.createElement('div');
+      headerBand.className = CSS.breakHeader;
+      headerBand.appendChild(this.createSlot('header', pageIndex));
+      for (const el of [spacer, footerBand, gap, headerBand]) {
+        this.layer.insertBefore(el, this.lastFooter);
+      }
+      this.breaks.push({footerBand, gap, headerBand, spacer});
     }
     while (this.breaks.length > Math.max(0, count - 1)) {
-      const {brk, spacer} = this.breaks.pop()!;
-      brk.remove();
-      spacer.remove();
+      const {footerBand, gap, headerBand, spacer} = this.breaks.pop()!;
+      for (const el of [spacer, footerBand, gap, headerBand]) {
+        el.remove();
+      }
     }
     this.pageCount = count;
     this.host.style.setProperty('--page-count', String(count));

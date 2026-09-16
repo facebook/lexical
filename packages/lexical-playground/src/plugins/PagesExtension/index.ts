@@ -73,6 +73,7 @@ export {
   type PagesLayoutOptions,
   type PagesLayoutSlotProvider,
 } from './PagesLayout';
+export {registerPrintHandlers} from './print';
 export type {
   ActivePageSlot,
   Orientation,

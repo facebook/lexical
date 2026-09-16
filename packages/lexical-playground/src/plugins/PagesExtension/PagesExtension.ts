@@ -113,7 +113,7 @@ export const PagesExtension = defineExtension({
           },
           () => layout.dispose(),
           () => session.dispose(),
-          registerPrintHandlers(layout.host),
+          registerPrintHandlers(layout),
           effect(() => {
             const pageSetup = output.pageSetup.value;
             if (pageSetup !== null) {

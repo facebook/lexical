@@ -155,7 +155,9 @@ header h1 {
     *:not(
       [data-lexical-editor],
       [data-lexical-editor] *,
-      :has([data-lexical-editor])
+      :has([data-lexical-editor]),
+      .Pages__layer,
+      .Pages__layer *
     ) {
     display: none !important;
   }

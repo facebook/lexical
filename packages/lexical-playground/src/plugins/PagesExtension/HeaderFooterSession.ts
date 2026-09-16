@@ -17,12 +17,15 @@ import {type LexicalEditorWithDispose, type Signal} from '@lexical/extension';
 import {
   $addUpdateTag,
   $createParagraphNode,
+  $createRangeSelectionFromDom,
   $getRoot,
   $getStateChange,
+  $setSelection,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
   type EditorState,
   getComposedEventTarget,
+  getDOMSelection,
   HISTORY_MERGE_TAG,
   KEY_ESCAPE_COMMAND,
   type LexicalEditor,
@@ -56,6 +59,34 @@ const LIVE_CONTENT_CLASS = 'Pages__slotContent--live';
 const LIVE_SLOT_CLASS = 'Pages__slot--live';
 
 type SlotKey = `${PageSlotKind}:${PageSlotVariant}`;
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+/** The caret position under a client point, using whichever API exists. */
+function caretRangeAt(doc: Document, point: Point): Range | null {
+  const withPosition = doc as Document & {
+    caretPositionFromPoint?: (
+      x: number,
+      y: number,
+    ) => {offsetNode: Node; offset: number} | null;
+  };
+  if (typeof withPosition.caretPositionFromPoint === 'function') {
+    const position = withPosition.caretPositionFromPoint(point.x, point.y);
+    if (position) {
+      const range = doc.createRange();
+      range.setStart(position.offsetNode, position.offset);
+      range.collapse(true);
+      return range;
+    }
+    return null;
+  }
+  return doc.caretRangeFromPoint
+    ? doc.caretRangeFromPoint(point.x, point.y)
+    : null;
+}
 
 interface SlotEditor {
   kind: PageSlotKind;
@@ -249,7 +280,11 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
 
   // ---- live editing -----------------------------------------------------
 
-  open(kind: PageSlotKind, pageIndex: number): boolean {
+  /**
+   * Open a slot for editing. With `point` (the click's client coordinates)
+   * the caret lands where the user clicked; otherwise at the end.
+   */
+  open(kind: PageSlotKind, pageIndex: number, point?: Point): boolean {
     const setup = this.pageSetup?.[kind];
     if (this.disposed || !setup || !setup.enabled) {
       return false;
@@ -287,8 +322,38 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       variant: slotEditor.variant,
     };
     this.options.activeSlotEditor.value = slotEditor.editor;
+    this.placeCaret(slotEditor, point);
     slotEditor.editor.focus(undefined, {defaultSelection: 'rootEnd'});
     return true;
+  }
+
+  /**
+   * The live root replaced a clone with the same layout, so the caret
+   * position under the click resolves against the live editor's DOM.
+   */
+  private placeCaret(slotEditor: SlotEditor, point: Point | undefined): void {
+    const {editor, root} = slotEditor;
+    const doc = root.ownerDocument;
+    const win = doc.defaultView;
+    const range = point ? caretRangeAt(doc, point) : null;
+    if (!win || range === null || !root.contains(range.startContainer)) {
+      return;
+    }
+    const domSelection = getDOMSelection(win);
+    if (domSelection === null) {
+      return;
+    }
+    domSelection.removeAllRanges();
+    domSelection.addRange(range);
+    editor.update(
+      () => {
+        const selection = $createRangeSelectionFromDom(domSelection, editor);
+        if (selection !== null) {
+          $setSelection(selection);
+        }
+      },
+      {discrete: true},
+    );
   }
 
   close(commit: boolean): void {
@@ -309,6 +374,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     slotEditor.root.contentEditable = 'false';
     slot.classList.remove(LIVE_SLOT_CLASS);
     slotEditor.root.replaceWith(this.cloneFor(slotEditor));
+    slot.dataset.empty = String(slotEditor.empty);
     this.layout.parking.appendChild(slotEditor.root);
     this.layout.layer.setAttribute('aria-hidden', 'true');
     this.options.activeSlot.value = null;
@@ -332,7 +398,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     const pageIndex = Number(slot.dataset.pageIndex);
     if (Number.isInteger(pageIndex)) {
       event.preventDefault();
-      this.open(kind, pageIndex);
+      this.open(kind, pageIndex, {x: event.clientX, y: event.clientY});
     }
   }
 
@@ -518,9 +584,20 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       }
       heights[slotEditor.kind] = Math.max(
         heights[slotEditor.kind],
-        slotEditor.root.offsetHeight,
+        this.measureHeight(slotEditor.root),
       );
     }
     this.layout.setSlotHeights(heights.header, heights.footer);
+  }
+
+  /**
+   * Fractional height in the host's own CSS px. `offsetHeight` rounds to
+   * whole pixels, and a band whose real height is a fraction taller than
+   * the geometry assumes would end past a printed page boundary.
+   */
+  private measureHeight(element: HTMLElement): number {
+    const zoom =
+      parseFloat(this.layout.host.style.getPropertyValue('--page-zoom')) || 1;
+    return element.getBoundingClientRect().height / zoom;
   }
 }

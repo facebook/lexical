@@ -44,6 +44,26 @@ describe('computeGeometry', () => {
     expect(geom.firstTop).toBe(48 + 30);
   });
 
+  it('snaps vertical geometry to whole pixels for print', () => {
+    const fractional: PageSetup = {
+      ...setup,
+      margins: {bottom: 0.4, left: 0.4, right: 0.4, top: 0.4},
+    };
+    const geom = computeGeometry(fractional, 35.2, 20.7, 0, true);
+    expect(geom.marginTop).toBe(38);
+    expect(geom.marginBottom).toBe(38);
+    expect(geom.headerHeight).toBe(36);
+    expect(geom.footerHeight).toBe(21);
+    expect(
+      geom.marginTop +
+        geom.headerHeight +
+        geom.contentHeight +
+        geom.footerHeight +
+        geom.marginBottom,
+    ).toBe(geom.pageHeight);
+    expect(Number.isInteger(geom.breakHeight)).toBe(true);
+  });
+
   it('swaps width and height in landscape', () => {
     const geom = computeGeometry({...setup, orientation: 'landscape'});
     expect(geom.pageWidth).toBe(1056);

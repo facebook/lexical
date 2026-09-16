@@ -15,9 +15,12 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $isParagraphNode,
+  $isRangeSelection,
   defineExtension,
   type LexicalEditor,
+  type RangeSelection,
   type SerializedEditorState,
 } from 'lexical';
 import {describe, expect, onTestFinished, test} from 'vitest';
@@ -305,13 +308,35 @@ describe('Pages headers and footers', () => {
     expect(activeSlotEditor.value).toBeNull();
     expect(slot1.querySelector('[contenteditable="true"]')).toBeNull();
 
-    // A single click on a slot opens it too (no double-click required).
+    // The slot that was live no longer advertises itself as empty.
+    expect(slot1.dataset.empty).toBe('false');
+
+    // A single click on a slot opens it too (no double-click required), and
+    // the caret lands where the click was: between "Hel" and "lo".
     const slot2 = host.querySelector<HTMLElement>(
       '[data-page-slot="header"][data-page-index="2"]',
     )!;
-    slot2.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+    // caretPositionFromPoint only resolves points inside the viewport.
+    slot2.scrollIntoView({block: 'center'});
+    const textNode = slot2.querySelector('span')!.firstChild!;
+    const probe = document.createRange();
+    probe.setStart(textNode, 3);
+    probe.setEnd(textNode, 3);
+    const rect = probe.getBoundingClientRect();
+    slot2.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        clientX: rect.left,
+        clientY: rect.top + rect.height / 2,
+      }),
+    );
     expect(activeSlot.value?.pageIndex).toBe(2);
     expect(slot2.querySelector('[contenteditable="true"]')).not.toBeNull();
+    activeSlotEditor.value!.read(() => {
+      const selection = $getSelection();
+      expect($isRangeSelection(selection)).toBe(true);
+      expect(($getSelection() as RangeSelection).anchor.offset).toBe(3);
+    });
     editor.dispatchCommand(CLOSE_PAGE_SLOT_COMMAND, undefined);
     expect(headerTexts(host)).toEqual([
       'Hello world',
@@ -348,11 +373,13 @@ describe('Pages headers and footers', () => {
       ),
     ).toBe(true);
     const inBreakHeaders = slots.filter(slot =>
-      slot.parentElement!.classList.contains('Pages__break'),
+      slot.parentElement!.classList.contains('Pages__breakHeader'),
     );
     expect(inBreakHeaders.length).toBe(2);
     for (const slot of inBreakHeaders) {
-      expect(getComputedStyle(slot).counterIncrement).toBe('lexical-page 1');
+      expect(getComputedStyle(slot.parentElement!).counterIncrement).toBe(
+        'lexical-page 1',
+      );
     }
 
     let updates = 0;

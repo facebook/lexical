@@ -39,15 +39,20 @@
 }
 .Pages__header,
 .Pages__footer {
+  position: relative; /* anchors the empty-slot hint */
   box-sizing: border-box;
-  overflow: hidden;
+  /* clip, not hidden: a scroll container is monolithic for print
+     fragmentation and would be pushed whole to the next page */
+  overflow: clip;
   background: #fff;
   padding-left: var(--page-margin-left);
   padding-right: var(--page-margin-right);
 }
 .Pages__header--first {
   padding-top: var(--page-margin-top);
-  min-height: calc(var(--page-margin-top) + var(--page-header-height));
+  /* Fixed, not min-height: the geometry (and the printed page boundaries)
+     assume exactly this height. */
+  height: calc(var(--page-margin-top) + var(--page-header-height));
 }
 /* Zero-width float: occupies a page's content height without shortening
    any line box, so the following break lands exactly one page lower. */
@@ -57,21 +62,24 @@
   width: 0;
   height: var(--page-content-height);
 }
-.Pages__break {
+/* A page boundary is three stacked full-width floats: footer band, gap,
+   header band. Kept separate so none of them straddles a printed page. */
+.Pages__break,
+.Pages__gap,
+.Pages__breakHeader {
   float: left;
   clear: both;
   box-sizing: border-box;
   width: 100%;
-  height: var(--page-break-height);
-  display: flex;
-  flex-direction: column;
+}
+.Pages__break {
+  height: calc(var(--page-footer-height) + var(--page-margin-bottom));
 }
 .Pages__break > .Pages__footer {
-  height: calc(var(--page-footer-height) + var(--page-margin-bottom));
+  height: 100%;
   padding-bottom: var(--page-margin-bottom);
 }
 .Pages__gap {
-  box-sizing: border-box;
   height: var(--page-gap);
   width: calc(100% + 2px);
   margin-left: -1px;
@@ -79,10 +87,14 @@
   border-top: 1px solid #ddd;
   border-bottom: 1px solid #ddd;
 }
-.Pages__break > .Pages__header {
+.Pages__breakHeader {
   height: calc(var(--page-margin-top) + var(--page-header-height));
-  padding-top: var(--page-margin-top);
   counter-increment: lexical-page;
+  break-inside: avoid;
+}
+.Pages__breakHeader > .Pages__header {
+  height: 100%;
+  padding-top: var(--page-margin-top);
 }
 .Pages__footer--last {
   position: absolute;
@@ -136,12 +148,6 @@
 }
 .Pages__slotContent--live {
   min-height: 1.2em;
-}
-.Pages__layer
-  [data-page-slot][data-page-slot-enabled='true'][data-empty='true']:not(
-    .Pages__slot--live
-  ) {
-  position: relative;
 }
 .Pages__layer
   [data-page-slot][data-page-slot-enabled='true'][data-empty='true']:not(
@@ -212,21 +218,42 @@
   display: flow-root;
 }
 
+/* Print: the on-screen layout is printed as-is, one screen page per
+   printed page (see print.ts: the gap is zeroed and @page margins are 0). */
 @media print {
-  .Pages__layer {
-    display: none;
-  }
   .Pages__host {
     zoom: 1 !important;
-    width: auto;
-    min-height: 0;
+    margin: 0;
     box-shadow: none;
+    overflow: clip; /* sub-pixel overflow must not add a blank page */
   }
+  /* The global print rules force the root to width: 100% with no padding;
+     restore the margins and keep the box inside the host so line boxes
+     still sit between the page-break floats. */
   .Pages__host > .ContentEditable__root {
-    padding: 0;
+    box-sizing: border-box;
+    width: auto !important;
+    padding: 0 var(--page-margin-right) 0 var(--page-margin-left) !important;
   }
-  hr[data-lexical-page-break] {
-    margin-bottom: 0 !important;
+  .Pages__gap {
+    border: 0;
+    background: transparent;
+  }
+  .Pages__header,
+  .Pages__footer {
+    background: transparent;
+  }
+  .Pages__slot--live {
+    outline: none;
+  }
+  .Pages__layer [data-page-slot][data-empty='true']::after {
+    display: none;
+  }
+  /* The stretched bottom margin already lands the next block on the next
+     page; the node's own forced break would add an empty page. */
+  .Pages__host hr[data-lexical-page-break] {
+    break-after: auto !important;
+    page-break-after: auto !important;
   }
 }
 @page {

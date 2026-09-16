@@ -339,55 +339,13 @@ Future:
   you can not store a Y.Map as a NodeState value
   (see [#7293](https://github.com/facebook/lexical/issues/7293))
 
-## Persistent application identity
+## Application identity
 
-Applications can use NodeState IDs for external document references, database
-mappings, annotations, or diff/edit workflows. Lexical's `NodeKey` is internal,
-ephemeral identity; an application NodeState ID can survive JSON save/load.
-These are separate responsibilities.
-
-The [application identity example](/dev-examples/node-state-identity/) implements
-one explicit application policy using existing public APIs. Its
-[policy module](https://github.com/facebook/lexical/blob/main/dev-examples/node-state-identity/src/identity.ts)
-and colocated tests demonstrate:
-
-| Operation | Application ID |
-| --- | --- |
-| Create and attach an addressable node | Assign if missing |
-| Normal edit or JSON save/load | Preserve |
-| `$copyNode` and attach | Reset, then assign fresh identity |
-| Clipboard insertion after copy **or cut** | Clear inherited identity; assign fresh IDs to new addressable nodes |
-| Undo/redo | Restore recorded IDs without reallocating |
-
-The application-owned `$isAddressable` predicate selects non-root ElementNodes,
-including paragraphs, headings, inline elements, custom elements and slot roots.
-TextNodes, DecoratorNodes and other leaf nodes receive no new ID. This supports
-structural addressing without inhibiting ordinary text merging. Adapt the
-predicate for a narrower set or specific custom nodes; text-level addressing
-requires an explicit split/merge policy because differing NodeState can prevent
-implicit TextNode merges.
-
-The example defines an `externalId` StateConfig with an empty-string default
-and `resetOnCopyNode: true`. A RootNode transform assigns missing IDs before
-the update commits, using an application-supplied allocator. The demo uses
-random 128-bit IDs from `crypto.getRandomValues()`; the allocator must produce
-nonempty IDs unique across the application's identity domain, including saved content.
-
-Structured clipboard serialization intentionally preserves NodeState, just as
-normal JSON persistence does. `resetOnCopyNode` applies specifically to
-`$copyNode`; it does not define clipboard policy. The example registers a
-high-priority `SELECTION_INSERT_CLIPBOARD_NODES_COMMAND` listener, clears only
-its own identity state on imported nodes and their descendants, and returns
-`false` so normal insertion continues. It clears IDs even on ineligible nodes
-from a source with a broader addressing policy. The transform assigns missing
-IDs only to addressable nodes in the resulting document, in the same update.
-Pasting text into an existing paragraph preserves that paragraph's identity.
-Ordinary state, such as a
-`color` value of `"red"`, and unknown third-party state remain untouched.
-
-Use the example's `loadApplicationDocument` helper for saved JSON. It reads
-the ad hoc identity StateConfig in `parseEditorState`'s callback, preserving
-the value while making its reset policy known before an immediate `$copyNode`.
+NodeState can hold application-owned values such as external document IDs while
+Lexical's internal `NodeKey` remains ephemeral. The exact persistence,
+duplication, and clipboard policy is application-specific. See the
+[application node identity example](https://github.com/facebook/lexical/tree/main/examples/node-state-identity)
+for one executable policy built with released Lexical APIs.
 Custom nodes can also declare StateConfigs in `$config`.
 Save/load preserves existing IDs even on ineligible nodes: changing the
 predicate is not a migration of previously saved state.

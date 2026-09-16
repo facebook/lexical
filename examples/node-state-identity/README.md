@@ -1,21 +1,25 @@
 # Application node identity
 
-An executable application policy using NodeState and public Lexical APIs.
-Run from the repository root after `pnpm install`:
+This example demonstrates one application-owned policy for persistent external
+node IDs using NodeState and released Lexical APIs. It is not a built-in Lexical
+identity feature or a general recommendation for application addressing.
 
-```sh
-pnpm run start:dev-example node-state-identity
+Run from this directory after `pnpm install`:
+
+```bash
+pnpm install
+pnpm run dev
 ```
 
 Open the printed URL. Edit, save/load, duplicate the first paragraph, or use
 the browser's copy/cut/paste commands and inspect the serialized IDs.
 Saving keeps a snapshot in memory, not across browser reloads.
 
-[`src/identity.ts`](src/identity.ts) is the policy; `src/main.ts` supplies
+[`src/identity.ts`](src/identity.ts) contains the policy; `src/main.ts` supplies
 the editor and a random 128-bit ID allocator using `crypto.getRandomValues()`.
-Integrating applications must allocate nonempty IDs unique across their identity domain, including
-saved documents. Register the policy before creating content and use
-`loadApplicationDocument` when restoring it.
+Integrating applications must allocate nonempty IDs unique across their identity
+domain, including saved documents. Register the policy before creating content
+and use `loadApplicationDocument` when restoring it.
 
 The application-owned `$isAddressable` predicate selects non-root ElementNodes,
 including custom elements and slots. TextNodes remain mergeable. Adapt that
@@ -24,9 +28,8 @@ Save/load preserves IDs; new addressable nodes created by `$copyNode` or paste
 receive fresh IDs, including after cut. Only `externalId` is cleared on paste.
 
 The policy uses an O(N) RootNode scan and public, experimental `$dfsWithSlots`.
-See the [NodeState identity guide](../../packages/lexical-website/docs/concepts/node-state.md#persistent-application-identity)
-for load-time registration, ordinary state preservation, and application
-boundaries (including cross-editor paste, imports and reference handling).
+This example intentionally leaves allocator uniqueness, addressing granularity,
+imports, and reference handling to the integrating application.
 
 Run the focused tests from the repository root:
 

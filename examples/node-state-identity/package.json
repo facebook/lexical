@@ -9,14 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/extension": "workspace:*",
-    "@lexical/history": "workspace:*",
-    "@lexical/rich-text": "workspace:*",
-    "@lexical/utils": "workspace:*",
-    "lexical": "workspace:*"
+    "@lexical/extension": "0.50.0",
+    "@lexical/history": "0.50.0",
+    "@lexical/rich-text": "0.50.0",
+    "@lexical/utils": "0.50.0",
+    "lexical": "0.50.0"
   },
   "devDependencies": {
-    "@lexical/clipboard": "workspace:*",
+    "@lexical/clipboard": "0.50.0",
     "typescript": "^6.0.3",
     "vite": "^8.2.2"
   }

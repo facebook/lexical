@@ -9,14 +9,17 @@
 import {
   moveToEditorBeginning,
   moveToLineEnd,
+  selectAll,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertSelection,
   click,
+  copyToClipboard,
   evaluate,
   expect,
   focusEditor,
   initialize,
+  pasteFromClipboard,
   selectFromInsertDropdown,
   test,
   waitForSelector,
@@ -454,5 +457,205 @@ test.describe('Pages', () => {
 
     await click(page, '.action-button .unlock');
     expect((await hint()).content).toContain('Click to add a');
+  });
+
+  test('Enter at the end of a page starts the next page and keeps typing there', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await loadDocument(page, paragraphs(30));
+    await enablePaged(page);
+    const count = await waitForStablePageCount(page);
+    expect(count).toBeGreaterThanOrEqual(2);
+
+    // The last paragraph that ends on page 1.
+    const [firstPage] = await contentAreas(page);
+    const index = await evaluate(
+      page,
+      ({host, bottom}) => {
+        const hostTop = document
+          .querySelector(host)
+          .getBoundingClientRect().top;
+        const blocks = [
+          ...document.querySelectorAll('.ContentEditable__root > p'),
+        ];
+        let last = -1;
+        blocks.forEach((p, i) => {
+          if (p.getBoundingClientRect().bottom - hostTop <= bottom + 1) {
+            last = i;
+          }
+        });
+        return last;
+      },
+      {bottom: firstPage.bottom, host: HOST},
+    );
+    expect(index).toBeGreaterThan(0);
+    const block = page.locator('.ContentEditable__root > p').nth(index);
+    await block.scrollIntoViewIfNeeded();
+    const box = await block.boundingBox();
+    await page.mouse.click(box.x + box.width - 5, box.y + box.height - 8);
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('New paragraph');
+    await page.keyboard.type(' continues');
+
+    await expect(
+      page.locator('.ContentEditable__root > p').nth(index + 1),
+    ).toHaveText('New paragraph continues');
+    await expect(
+      page.locator('.ContentEditable__root > p').nth(index + 2),
+    ).toHaveText(`Paragraph ${index + 2}: ${LONG_LINE}`);
+
+    // The new paragraph starts on page 2.
+    const areas = await contentAreas(page);
+    const newBox = await evaluate(
+      page,
+      ({host, i}) => {
+        const hostTop = document
+          .querySelector(host)
+          .getBoundingClientRect().top;
+        const span = document
+          .querySelectorAll('.ContentEditable__root > p')
+          [i].querySelector('span');
+        const r = span.getBoundingClientRect();
+        return {bottom: r.bottom - hostTop, top: r.top - hostTop};
+      },
+      {host: HOST, i: index + 1},
+    );
+    expect(newBox.top).toBeGreaterThanOrEqual(areas[1].top - 1);
+    expect(newBox.bottom).toBeLessThanOrEqual(areas[1].bottom + 1);
+  });
+
+  test('Arrow keys move the caret across a page boundary', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await loadDocument(page, paragraphs(30));
+    await enablePaged(page);
+    const count = await waitForStablePageCount(page);
+    expect(count).toBeGreaterThanOrEqual(2);
+
+    const [firstPage] = await contentAreas(page);
+    const index = await evaluate(
+      page,
+      ({host, bottom}) => {
+        const hostTop = document
+          .querySelector(host)
+          .getBoundingClientRect().top;
+        const blocks = [
+          ...document.querySelectorAll('.ContentEditable__root > p'),
+        ];
+        let last = -1;
+        blocks.forEach((p, i) => {
+          if (p.getBoundingClientRect().bottom - hostTop <= bottom + 1) {
+            last = i;
+          }
+        });
+        return last;
+      },
+      {bottom: firstPage.bottom, host: HOST},
+    );
+    const block = page.locator('.ContentEditable__root > p').nth(index);
+    await block.scrollIntoViewIfNeeded();
+    const box = await block.boundingBox();
+    // Caret in the last line of the last paragraph on page 1.
+    await page.mouse.click(box.x + 40, box.y + box.height - 8);
+    const before = await evaluate(page, () => {
+      const s = window.lexicalEditor.getEditorState()._selection;
+      return s.anchor.key;
+    });
+
+    await page.keyboard.press('ArrowDown');
+    const after = await evaluate(page, () => {
+      const s = window.lexicalEditor.getEditorState()._selection;
+      return s.anchor.key;
+    });
+    expect(after).not.toBe(before);
+    const anchorIndex = await evaluate(page, () => {
+      const s = window.lexicalEditor.getEditorState()._selection;
+      const el = window.lexicalEditor.getElementByKey(s.anchor.key);
+      return [
+        ...document.querySelectorAll('.ContentEditable__root > p'),
+      ].indexOf(el.closest('p'));
+    });
+    expect(anchorIndex).toBe(index + 1);
+
+    await page.keyboard.press('ArrowUp');
+    const back = await evaluate(page, () => {
+      const s = window.lexicalEditor.getEditorState()._selection;
+      return s.anchor.key;
+    });
+    expect(back).toBe(before);
+  });
+
+  test('Deleting the whole document keeps the header and returns to one page', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await loadDocument(page, paragraphs(30));
+    await enablePaged(page);
+    await enableHeader(page);
+    await openPageSetup(page);
+    await click(page, '[data-test-id="page-header-edit-default"]');
+    await waitForSelector(page, LIVE_SLOT);
+    await page.keyboard.type('Kept header');
+    await page.keyboard.press('Escape');
+    await waitForSelector(page, LIVE_SLOT, {state: 'detached'});
+    expect(await waitForStablePageCount(page)).toBeGreaterThanOrEqual(2);
+
+    await focusEditor(page);
+    await selectAll(page);
+    await page.keyboard.press('Backspace');
+    await expect(page.locator('.ContentEditable__root > p')).toHaveCount(1);
+    expect(await waitForStablePageCount(page)).toBe(1);
+    await expect(page.locator('.Pages__break')).toHaveCount(0);
+    await expect(
+      page.locator('[data-page-slot="header"][data-page-index="0"]'),
+    ).toHaveText('Kept header');
+    await expect(page.locator('.ContentEditable__placeholder')).toBeVisible();
+  });
+
+  test('Pasting a header with a page number into the body inserts plain text', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body');
+    await enablePaged(page);
+    await enableHeader(page);
+    await openPageSetup(page);
+    await click(page, '[data-test-id="page-header-edit-default"]');
+    await waitForSelector(page, LIVE_SLOT);
+    await page.keyboard.type('No. ');
+    await selectFromInsertDropdown(page, '.page-number');
+    await page.keyboard.type(' end');
+    await expect(page.locator(LIVE_CONTENT)).toHaveText('No. 1 end');
+    // The live header is the first editable root in the document, so the
+    // copy helper reads from it.
+    await selectAll(page);
+    const clipboard = await copyToClipboard(page);
+    expect(clipboard['application/x-lexical-editor']).toContain(
+      '"type":"page-number"',
+    );
+
+    await page.keyboard.press('Escape');
+    await waitForSelector(page, LIVE_SLOT, {state: 'detached'});
+    await page.keyboard.press('End');
+    await pasteFromClipboard(page, clipboard);
+    // The body editor has no page number node; the token pastes as text.
+    await expect(page.locator('.ContentEditable__root > p').first()).toHaveText(
+      'BodyNo. 1 end',
+    );
+    await expect(
+      page.locator('.ContentEditable__root [data-lexical-page-number]'),
+    ).toHaveCount(0);
   });
 });

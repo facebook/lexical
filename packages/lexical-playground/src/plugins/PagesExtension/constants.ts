@@ -34,3 +34,16 @@ export const DEFAULT_PAGE_SETUP: PageSetup = {
   orientation: 'portrait',
   pageSize: 'A4',
 };
+
+/** Pixels per CSS inch; margins are stored in inches. */
+export const PX_PER_INCH = 96;
+/** Visual gap between two pages on screen, in CSS px. */
+export const PAGE_GAP = 24;
+/**
+ * Smallest content area a page may have, in CSS px. Guards the page-count
+ * math against a page setup whose margins (plus header/footer) exceed the
+ * page height, which would otherwise produce an unbounded page count.
+ */
+export const MIN_CONTENT_HEIGHT = 48;
+/** A header or footer may take at most this fraction of the page height. */
+export const MAX_SLOT_HEIGHT_RATIO = 0.4;

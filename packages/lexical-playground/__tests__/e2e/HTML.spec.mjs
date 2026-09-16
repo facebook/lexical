@@ -236,11 +236,15 @@ test.describe('HTML', () => {
     const btn = page.getByRole('button', {name: /^Statement /});
     await expect(btn).toBeVisible();
     await btn.click();
-    // Ensure we're in page mode
+    // Ensure we're in page mode: the page layer is rendered next to the
+    // root while the document itself stays flat.
+    await page.waitForSelector('.Pages__host > .Pages__layer');
     await page.waitForSelector(
-      '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
+      '.Pages__host > .ContentEditable__root > .PlaygroundEditorTheme__paragraph',
     );
     await click(page, '.action-button .html');
+    // Pages are hidden while in HTML mode
+    await page.waitForSelector('.Pages__layer', {state: 'detached'});
 
     const expectedPrettyHtml = [
       '<h1><span>Foo</span></h1>',
@@ -257,9 +261,7 @@ test.describe('HTML', () => {
     }).toPass({intervals: [100, 250, 500], timeout: 5000});
 
     await click(page, '.action-button .html');
-    // Ensure we're in page mode
-    await page.waitForSelector(
-      '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
-    );
+    // Ensure we're back in page mode
+    await page.waitForSelector('.Pages__host > .Pages__layer');
   });
 });

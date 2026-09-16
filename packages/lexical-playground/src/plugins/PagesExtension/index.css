@@ -1,0 +1,183 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+/*
+ * Page layer. See PagesLayout.ts for the model: the host is a block
+ * formatting context, the layer is not, so the layer's floats intrude into
+ * the editor root's line boxes. `--page-*` custom properties are written on
+ * the host by PagesLayout.
+ */
+.Pages__host {
+  display: flow-root;
+  position: relative;
+  box-sizing: border-box;
+  width: var(--page-width);
+  max-width: none;
+  margin: 0 auto;
+  zoom: var(--page-zoom, 1);
+  background: #fff;
+  box-shadow: 0 0 0 1px #ddd;
+  min-height: calc(
+    var(--page-count) * var(--page-height) + (var(--page-count) - 1) *
+      var(--page-gap)
+  );
+}
+.Pages__layer {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.Pages__layer [data-page-slot] {
+  pointer-events: auto;
+}
+.Pages__header,
+.Pages__footer {
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #fff;
+  padding-left: var(--page-margin-left);
+  padding-right: var(--page-margin-right);
+}
+.Pages__header--first {
+  padding-top: var(--page-margin-top);
+  min-height: calc(var(--page-margin-top) + var(--page-header-height));
+}
+/* Zero-width float: occupies a page's content height without shortening
+   any line box, so the following break lands exactly one page lower. */
+.Pages__spacer {
+  float: left;
+  clear: both;
+  width: 0;
+  height: var(--page-content-height);
+}
+.Pages__break {
+  float: left;
+  clear: both;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--page-break-height);
+  display: flex;
+  flex-direction: column;
+}
+.Pages__break > .Pages__footer {
+  height: calc(var(--page-footer-height) + var(--page-margin-bottom));
+  padding-bottom: var(--page-margin-bottom);
+}
+.Pages__gap {
+  box-sizing: border-box;
+  height: var(--page-gap);
+  width: calc(100% + 2px);
+  margin-left: -1px;
+  background: #eee;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+}
+.Pages__break > .Pages__header {
+  height: calc(var(--page-margin-top) + var(--page-header-height));
+  padding-top: var(--page-margin-top);
+  counter-increment: lexical-page;
+}
+.Pages__footer--last {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(
+    var(--page-first-top) + (var(--page-count) - 1) *
+      (var(--page-content-height) + var(--page-break-height)) +
+      var(--page-content-height)
+  );
+  min-height: calc(var(--page-footer-height) + var(--page-margin-bottom));
+  padding-bottom: var(--page-margin-bottom);
+}
+/* Parked nested editors keep layout so their heights can be observed. */
+.Pages__parking {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.Pages__slotContent {
+  min-height: 0;
+}
+
+/* Page numbering: the layer resets `lexical-page` to 1 and `lexical-pages`
+   to the page count (inline, from PagesLayout); each in-break header
+   increments `lexical-page`. */
+[data-lexical-page-number]::before {
+  content: counter(lexical-page);
+}
+[data-lexical-page-count]::before {
+  content: counter(lexical-pages);
+}
+
+/* The editor root inside a paged host. It must stay a plain block
+   (`position: relative` only): any `overflow`, `display: flow-root`,
+   `contain` or flex/grid display would make it a formatting context and
+   stop lines from flowing around page breaks. */
+.Pages__host > .ContentEditable__root {
+  padding: 0 var(--page-margin-right) 0 var(--page-margin-left);
+  min-height: var(--page-content-height);
+}
+.Pages__host > .ContentEditable__placeholder {
+  top: var(--page-first-top);
+  left: var(--page-margin-left);
+  right: var(--page-margin-right);
+}
+
+/* Manual page breaks: PagesLayout stretches their bottom margin to the next
+   page, so hide the pageless chrome and keep only a selection affordance. */
+.Pages__host hr[data-lexical-page-break] {
+  width: 100%;
+  height: 0;
+  margin: 0;
+  border-color: transparent;
+  background: transparent;
+}
+.Pages__host hr[data-lexical-page-break]::before,
+.Pages__host hr[data-lexical-page-break]::after {
+  display: none;
+}
+.Pages__host hr[data-lexical-page-break].selected {
+  border-top: 2px solid var(--editor-color-primary, #4766cb);
+}
+
+/* Blocks that must never be split by a page break: make them formatting
+   contexts so the floats push them whole. */
+.Pages__host .ContentEditable__root > li[role='checkbox'],
+.Pages__host .ContentEditable__root > [data-lexical-decorator] {
+  display: flow-root;
+}
+
+@media print {
+  .Pages__layer {
+    display: none;
+  }
+  .Pages__host {
+    zoom: 1 !important;
+    width: auto;
+    min-height: 0;
+    box-shadow: none;
+  }
+  .Pages__host > .ContentEditable__root {
+    padding: 0;
+  }
+  hr[data-lexical-page-break] {
+    margin-bottom: 0 !important;
+  }
+}
+@page {
+  size: var(--page-width) var(--page-height);
+  margin-top: var(--page-margin-top, 0.4in);
+  margin-right: var(--page-margin-right, 0.4in);
+  margin-bottom: var(--page-margin-bottom, 0.4in);
+  margin-left: var(--page-margin-left, 0.4in);
+}

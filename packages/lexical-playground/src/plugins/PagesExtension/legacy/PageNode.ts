@@ -16,13 +16,18 @@ import {
   type LexicalNode,
 } from 'lexical';
 
+import {PagesExtension} from '../PagesExtension';
 import {
   $createPageContentNode,
   $isPageContentNode,
   type PageContentNode,
 } from './PageContentNode';
-import {PagesExtension} from './PagesExtension';
 
+/**
+ * @deprecated Pages are no longer represented in the document. This node is
+ * only registered so that documents serialized by older playground versions
+ * still parse; `registerLegacyPageUnwrap` flattens it into the root on load.
+ */
 export class PageNode extends ElementNode {
   $config() {
     return this.config('page', {

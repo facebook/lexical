@@ -5,13 +5,35 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-export {DEFAULT_PAGE_SETUP, PAGE_SIZES} from './constants';
+export {DEFAULT_PAGE_SETUP, PAGE_GAP, PAGE_SIZES} from './constants';
+export {
+  computeGeometry,
+  computePageBreakMarginBottom,
+  computePageCount,
+  computeZoom,
+  pageContentTop,
+  pageIndexAtY,
+} from './layoutMath';
 export {
   $createPageContentNode,
+  $createPageNode,
   $isPageContentNode,
+  $isPageNode,
   PageContentNode,
-} from './PageContentNode';
-export {$createPageNode, $isPageNode, PageNode} from './PageNode';
+  PageNode,
+  registerLegacyPageUnwrap,
+} from './legacy';
 export {$getPageSetup, $setPageSetup, pageSetupState} from './pageSetup';
 export {type PagesConfig, PagesExtension} from './PagesExtension';
-export type {Orientation, PageSetup, PageSize} from './types';
+export {
+  PagesLayout,
+  type PagesLayoutOptions,
+  type PagesLayoutSlotProvider,
+} from './PagesLayout';
+export type {
+  Orientation,
+  PageGeometry,
+  PageSetup,
+  PageSize,
+  PageSlotKind,
+} from './types';

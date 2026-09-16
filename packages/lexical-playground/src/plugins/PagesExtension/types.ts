@@ -30,3 +30,31 @@ export interface PageSetup {
     left: number;
   };
 }
+
+export type PageSlotKind = 'header' | 'footer';
+
+/**
+ * Resolved page geometry in CSS px (in the page host's own coordinate space,
+ * unaffected by zoom). Every value is derived from a {@link PageSetup} plus
+ * the measured header/footer heights, see `computeGeometry`.
+ */
+export interface PageGeometry {
+  pageWidth: number;
+  pageHeight: number;
+  marginTop: number;
+  marginRight: number;
+  marginBottom: number;
+  marginLeft: number;
+  headerHeight: number;
+  footerHeight: number;
+  gap: number;
+  /** Height of the editable area of one page (`C`). */
+  contentHeight: number;
+  /**
+   * Height of the non-editable band between two pages (`Bk`): footer, bottom
+   * margin, gap, top margin and header of the next page.
+   */
+  breakHeight: number;
+  /** Distance from the host's top to the first page's content (`H0`). */
+  firstTop: number;
+}

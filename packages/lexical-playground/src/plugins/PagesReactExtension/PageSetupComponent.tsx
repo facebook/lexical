@@ -11,12 +11,7 @@ import * as React from 'react';
 import {type JSX} from 'react';
 
 import useModal from '../../hooks/useModal';
-import {
-  CLOSE_PAGE_SLOT_COMMAND,
-  INSERT_PAGE_COUNT_COMMAND,
-  INSERT_PAGE_NUMBER_COMMAND,
-  PagesExtension,
-} from '../PagesExtension';
+import {CLOSE_PAGE_SLOT_COMMAND, PagesExtension} from '../PagesExtension';
 import {PageSetupDialog} from './PageSetupDialog';
 
 export type PageSetupComponentProps = {
@@ -25,8 +20,8 @@ export type PageSetupComponentProps = {
 
 /**
  * Toolbar entry point for {@link PagesExtension}: a button that opens the
- * {@link PageSetupDialog}, plus "Page number", "Page count" and "Done"
- * items while a header or footer is being edited. Render via
+ * {@link PageSetupDialog}, plus a "Done" item while a header or footer is
+ * being edited (page number / page count live in the Insert menu). Render via
  * {@link @lexical/react/ExtensionComponent | ExtensionComponent} or
  * {@link @lexical/react/useExtensionComponent | useExtensionComponent}.
  */
@@ -36,10 +31,6 @@ export function PageSetupComponent({
   const [editor] = useLexicalComposerContext();
   const [modal, showModal] = useModal();
   const activeSlot = useExtensionSignalValue(PagesExtension, 'activeSlot');
-  const activeSlotEditor = useExtensionSignalValue(
-    PagesExtension,
-    'activeSlotEditor',
-  );
   return (
     <>
       <button
@@ -53,36 +44,10 @@ export function PageSetupComponent({
             <PageSetupDialog editor={editor} onClose={onClose} />
           ))
         }>
-        <span className="icon page-setup" />
+        <i className="format page-setup" />
       </button>
-      {activeSlot !== null && activeSlotEditor !== null ? (
+      {activeSlot !== null ? (
         <>
-          <button
-            type="button"
-            className="toolbar-item spaced"
-            title="Insert page number"
-            aria-label="Insert page number"
-            onClick={() =>
-              activeSlotEditor.dispatchCommand(
-                INSERT_PAGE_NUMBER_COMMAND,
-                undefined,
-              )
-            }>
-            <span className="text">Page number</span>
-          </button>
-          <button
-            type="button"
-            className="toolbar-item spaced"
-            title="Insert page count"
-            aria-label="Insert page count"
-            onClick={() =>
-              activeSlotEditor.dispatchCommand(
-                INSERT_PAGE_COUNT_COMMAND,
-                undefined,
-              )
-            }>
-            <span className="text">Page count</span>
-          </button>
           <button
             type="button"
             className="toolbar-item spaced"

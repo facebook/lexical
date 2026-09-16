@@ -89,8 +89,8 @@ export interface HeaderFooterSessionOptions {
  * `pageFooterState`), one serialized editor state per variant. Each
  * `(kind, variant)` that a page needs gets a nested editor, created lazily
  * and parked in the layer; every slot on every page shows a static DOM
- * clone of that editor's root, so pages cost no JavaScript. Double-clicking
- * a slot (or `EDIT_PAGE_SLOT_COMMAND`) moves the nested editor's root into
+ * clone of that editor's root, so pages cost no JavaScript. Clicking a slot
+ * (or `EDIT_PAGE_SLOT_COMMAND`) moves the nested editor's root into
  * that slot and makes it editable; edits refresh the clones live and are
  * written back to the root, debounced, as one undo step per session.
  */
@@ -114,7 +114,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
         : null;
     this.cleanup = mergeRegister(
       registerEventListeners(layout.layer, {
-        dblclick: event => this.onDoubleClick(event),
+        click: event => this.onClick(event),
       }),
       // The user clicked back into the document.
       registerEventListeners(layout.rootElement, {
@@ -122,7 +122,13 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       }),
       parent.registerCommand(
         EDIT_PAGE_SLOT_COMMAND,
-        ({kind, pageIndex = 0}) => this.open(kind, pageIndex),
+        ({kind, pageIndex, variant}) => {
+          const index =
+            variant !== undefined
+              ? this.findPageForVariant(kind, variant)
+              : (pageIndex ?? 0);
+          return index !== null && this.open(kind, index);
+        },
         COMMAND_PRIORITY_EDITOR,
       ),
       parent.registerCommand(
@@ -167,6 +173,23 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
 
   getActive(): ActivePageSlot | null {
     return this.options.activeSlot.peek();
+  }
+
+  /** The first rendered page whose `kind` slot shows `variant`, if any. */
+  findPageForVariant(
+    kind: PageSlotKind,
+    variant: PageSlotVariant,
+  ): number | null {
+    const setup = this.pageSetup?.[kind];
+    if (!setup || !setup.enabled) {
+      return null;
+    }
+    for (let i = 0; i < this.layout.getPageCount(); i++) {
+      if (resolveSlotVariant(setup, i) === variant) {
+        return i;
+      }
+    }
+    return null;
   }
 
   dispose(): void {
@@ -292,7 +315,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     this.options.activeSlotEditor.value = null;
   }
 
-  private onDoubleClick(event: MouseEvent): void {
+  private onClick(event: MouseEvent): void {
     const target = getComposedEventTarget(event);
     if (!(target instanceof Element)) {
       return;

@@ -12,6 +12,8 @@ import {
   $createTextNode,
   $getRoot,
   defineExtension,
+  type ElementNode,
+  type SerializedEditorState,
 } from 'lexical';
 import {describe, expect, it} from 'vitest';
 
@@ -26,7 +28,7 @@ import {
   resolveSlotVariant,
 } from '../../plugins/PagesExtension';
 
-const STATE = {
+const STATE: SerializedEditorState = {
   root: {
     children: [],
     direction: null,
@@ -120,8 +122,9 @@ describe('page counter nodes', () => {
     editor.read(() => {
       const nodes = $getRoot().getAllTextNodes();
       expect(nodes.map(n => n.getTextContent()).join('')).toBe('Page  of ');
-      const paragraph = $getRoot().getFirstChild();
-      const children = paragraph!.getChildren();
+      const children = $getRoot()
+        .getFirstChildOrThrow<ElementNode>()
+        .getChildren();
       expect(children.some($isPageNumberNode)).toBe(true);
       expect(children.some($isPageCountNode)).toBe(true);
       expect($getRoot().getTextContent()).toBe('Page # of ##');

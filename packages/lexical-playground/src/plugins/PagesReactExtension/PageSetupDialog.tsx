@@ -11,6 +11,7 @@ import type {
   PageSize,
   PageSlotKind,
   PageSlotSetup,
+  PageSlotVariant,
 } from '../PagesExtension/types';
 
 import './PageSetupDialog.css';
@@ -24,7 +25,10 @@ import Button from '../../ui/Button';
 import Select from '../../ui/Select';
 import Switch from '../../ui/Switch';
 import {DEFAULT_PAGE_SETUP, PAGE_SIZES} from '../PagesExtension/constants';
-import {EDIT_PAGE_SLOT_COMMAND} from '../PagesExtension/headerFooter';
+import {
+  EDIT_PAGE_SLOT_COMMAND,
+  resolveSlotVariant,
+} from '../PagesExtension/headerFooter';
 import {$setPageSetup} from '../PagesExtension/pageSetup';
 import {PagesExtension} from '../PagesExtension/PagesExtension';
 
@@ -91,19 +95,48 @@ function MarginInput({
   );
 }
 
+const VARIANT_LABELS: Record<PageSlotVariant, string> = {
+  default: '',
+  even: 'even pages ',
+  first: 'first page ',
+};
+
+/** A page currently showing `variant` must exist for it to be editable. */
+function hasPageForVariant(
+  setup: PageSlotSetup,
+  variant: PageSlotVariant,
+  pageCount: number,
+): boolean {
+  for (let i = 0; i < pageCount; i++) {
+    if (resolveSlotVariant(setup, i) === variant) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function SlotSection({
   kind,
   onChange,
   onEdit,
+  pageCount,
   setup,
 }: {
   kind: PageSlotKind;
   onChange: (patch: Partial<PageSlotSetup>) => void;
-  onEdit: () => void;
+  onEdit: (variant: PageSlotVariant) => void;
+  pageCount: number;
   setup: PageSlotSetup;
 }): JSX.Element {
   const title = kind === 'header' ? 'Headers' : 'Footers';
   const noun = kind === 'header' ? 'header' : 'footer';
+  const variants: PageSlotVariant[] = ['default'];
+  if (setup.differentFirstPage) {
+    variants.push('first');
+  }
+  if (setup.differentEvenPages) {
+    variants.push('even');
+  }
   return (
     <div className="PageSetupDialog__section">
       <div className="PageSetupDialog__toggle">
@@ -143,13 +176,26 @@ function SlotSection({
           <p className="PageSetupDialog__hint">
             Use a different {noun} on even pages.
           </p>
-          <div>
-            <Button
-              small={true}
-              data-test-id={`page-${kind}-edit`}
-              onClick={onEdit}>
-              Edit {noun}
-            </Button>
+          <div className="PageSetupDialog__actions">
+            {variants.map(variant => {
+              const available = hasPageForVariant(setup, variant, pageCount);
+              return (
+                <Button
+                  key={variant}
+                  small={true}
+                  disabled={!available}
+                  title={
+                    available
+                      ? undefined
+                      : `The document has no page that shows the ${VARIANT_LABELS[variant]}${noun} yet`
+                  }
+                  data-test-id={`page-${kind}-edit-${variant}`}
+                  onClick={() => onEdit(variant)}>
+                  Edit {VARIANT_LABELS[variant]}
+                  {noun}
+                </Button>
+              );
+            })}
           </div>
         </div>
       ) : null}
@@ -173,6 +219,7 @@ export function PageSetupDialog({
   onClose,
 }: PageSetupDialogProps): JSX.Element {
   const pageSetup = useExtensionSignalValue(PagesExtension, 'pageSetup');
+  const pageCount = useExtensionSignalValue(PagesExtension, 'pageCount');
   // The last paged setup, so turning "Paged" off and on restores it.
   const lastPagedSetup = useRef<PageSetup>(pageSetup ?? DEFAULT_PAGE_SETUP);
   if (pageSetup !== null) {
@@ -196,9 +243,9 @@ export function PageSetupDialog({
     [editor],
   );
   const editSlot = useCallback(
-    (kind: PageSlotKind) => {
+    (kind: PageSlotKind, variant: PageSlotVariant) => {
       onClose?.();
-      editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {kind, pageIndex: 0});
+      editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {kind, variant});
     },
     [editor, onClose],
   );
@@ -281,7 +328,8 @@ export function PageSetupDialog({
           kind="header"
           setup={shown.header}
           onChange={patch => updateSlot('header', patch)}
-          onEdit={() => editSlot('header')}
+          onEdit={variant => editSlot('header', variant)}
+          pageCount={pageCount}
         />
       </div>
       <div className="PageSetupDialog__section--paged">
@@ -289,7 +337,8 @@ export function PageSetupDialog({
           kind="footer"
           setup={shown.footer}
           onChange={patch => updateSlot('footer', patch)}
-          onEdit={() => editSlot('footer')}
+          onEdit={variant => editSlot('footer', variant)}
+          pageCount={pageCount}
         />
       </div>
     </div>

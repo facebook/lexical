@@ -154,10 +154,14 @@ export function resolveSlotVariant(
   return 'default';
 }
 
-/** Open the header/footer of a page for editing (page 0 when omitted). */
+/**
+ * Open a header/footer for editing: either the one on `pageIndex`, or the
+ * first page that shows `variant`. Defaults to page 0.
+ */
 export const EDIT_PAGE_SLOT_COMMAND: LexicalCommand<{
   kind: PageSlotKind;
   pageIndex?: number;
+  variant?: PageSlotVariant;
 }> = createCommand('EDIT_PAGE_SLOT_COMMAND');
 
 /** Commit and close the header/footer editor if one is open. */

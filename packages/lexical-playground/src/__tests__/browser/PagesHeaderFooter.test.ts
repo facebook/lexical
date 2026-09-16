@@ -198,6 +198,24 @@ describe('Pages headers and footers', () => {
     expect(byIndex()['2']).toBe('Default');
     expect(byIndex()['3']).toBe('Even');
 
+    // Editing "by variant" opens the first page that shows it.
+    const {activeSlot} = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+    expect(
+      editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+        kind: 'header',
+        variant: 'even',
+      }),
+    ).toBe(true);
+    expect(activeSlot.value).toEqual({
+      kind: 'header',
+      pageIndex: 1,
+      variant: 'even',
+    });
+    editor.dispatchCommand(CLOSE_PAGE_SLOT_COMMAND, undefined);
+
     editor.update(
       () =>
         $setPageSetup({
@@ -212,6 +230,13 @@ describe('Pages headers and footers', () => {
     );
     await expect.poll(() => byIndex()['1']).toBe('Default');
     expect(byIndex()['0']).toBe('First');
+    // No page shows the even variant any more.
+    expect(
+      editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+        kind: 'header',
+        variant: 'even',
+      }),
+    ).toBe(false);
   });
 
   test('edits one live header and mirrors it into the clones', async () => {
@@ -279,6 +304,15 @@ describe('Pages headers and footers', () => {
     expect(activeSlot.value).toBeNull();
     expect(activeSlotEditor.value).toBeNull();
     expect(slot1.querySelector('[contenteditable="true"]')).toBeNull();
+
+    // A single click on a slot opens it too (no double-click required).
+    const slot2 = host.querySelector<HTMLElement>(
+      '[data-page-slot="header"][data-page-index="2"]',
+    )!;
+    slot2.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+    expect(activeSlot.value?.pageIndex).toBe(2);
+    expect(slot2.querySelector('[contenteditable="true"]')).not.toBeNull();
+    editor.dispatchCommand(CLOSE_PAGE_SLOT_COMMAND, undefined);
     expect(headerTexts(host)).toEqual([
       'Hello world',
       'Hello world',

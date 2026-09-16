@@ -108,3 +108,8 @@
   font-size: 14px;
   min-width: 0;
 }
+.PageSetupDialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

@@ -22,6 +22,7 @@ import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
+import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {useLexicalFocusManagerRef} from '@lexical/react/useLexicalFocusManagerRef';
 import {useLexicalRovingTabIndexRef} from '@lexical/react/useLexicalRovingTabIndexRef';
 import {$isHeadingNode} from '@lexical/rich-text';
@@ -93,6 +94,11 @@ import {
 } from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutExtension/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
+import {
+  INSERT_PAGE_COUNT_COMMAND,
+  INSERT_PAGE_NUMBER_COMMAND,
+  PagesExtension,
+} from '../PagesExtension';
 import {PagesReactExtension} from '../PagesReactExtension';
 import {InsertPollDialog} from '../PollExtension';
 import {$isRubyNode, $toggleRuby} from '../RubyExtension/RubyNode';
@@ -584,6 +590,12 @@ export default function ToolbarPlugin({
   const focusManagerRef = useLexicalFocusManagerRef();
   const toolbarRef = useMergeRefs([rovingRef, focusManagerRef]);
 
+  // The nested editor of the header/footer being edited, if any; page
+  // number and page count placeholders only make sense there.
+  const activeSlotEditor = useExtensionSignalValue(
+    PagesExtension,
+    'activeSlotEditor',
+  );
   const dispatchToolbarCommand = <T extends AnyLexicalCommand>(
     command: T,
     payload: CommandPayloadType<T> | undefined = undefined,
@@ -1337,6 +1349,32 @@ export default function ToolbarPlugin({
                   <i className="icon page-break" />
                   <span className="text">Page Break</span>
                 </DropDownItem>
+                {activeSlotEditor !== null ? (
+                  <>
+                    <DropDownItem
+                      onClick={() =>
+                        activeSlotEditor.dispatchCommand(
+                          INSERT_PAGE_NUMBER_COMMAND,
+                          undefined,
+                        )
+                      }
+                      className="item">
+                      <i className="icon page-number" />
+                      <span className="text">Page Number</span>
+                    </DropDownItem>
+                    <DropDownItem
+                      onClick={() =>
+                        activeSlotEditor.dispatchCommand(
+                          INSERT_PAGE_COUNT_COMMAND,
+                          undefined,
+                        )
+                      }
+                      className="item">
+                      <i className="icon page-count" />
+                      <span className="text">Page Count</span>
+                    </DropDownItem>
+                  </>
+                ) : null}
                 <DropDownItem
                   onClick={() => {
                     showModal('Insert Image', onClose => (

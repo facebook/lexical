@@ -146,8 +146,8 @@
 .Pages__layer
   [data-page-slot][data-page-slot-enabled='true'][data-empty='true']:not(
     .Pages__slot--live
-  ):hover::after {
-  content: 'Double-click to edit';
+  )::after {
+  content: 'Click to add a ' attr(data-page-slot);
   position: absolute;
   left: var(--page-margin-left);
   right: var(--page-margin-right);

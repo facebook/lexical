@@ -26,7 +26,7 @@ import {HistoryExtension} from '@lexical/history';
 import {ClickableLinkExtension, LinkExtension} from '@lexical/link';
 import {CheckListExtension, ListExtension} from '@lexical/list';
 import {ReactExtension} from '@lexical/react/ReactExtension';
-import {ReactPluginHostExtension} from '@lexical/react/ReactPluginHostExtension';
+import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {TableExtension} from '@lexical/table';
 import {configExtension, defineExtension, type LexicalEditor} from 'lexical';
@@ -161,11 +161,13 @@ export const PlaygroundRichTextContentExtension = defineExtension({
 /**
  * What a page header or footer can contain: everything the main editor
  * can, minus pages, page breaks, sticky notes and document-level tools,
- * plus the page number / page count nodes. `ReactPluginHostExtension`
- * lets the React-rendered nodes (images, polls, equations, ...) render in
- * an editor created outside React; the pages extension mounts its host,
- * and {@link NestedEditorPlugins} brings the document's React plugins
- * (component picker, floating toolbar, table menus, ...) along.
+ * plus the page number / page count nodes. The editor is created outside
+ * React by the pages extension, which sets its root element itself (so no
+ * content editable is rendered); `PagesReactExtension` renders a composer
+ * for it inside the application's tree, where the React-rendered nodes
+ * (images, polls, equations, ...) and {@link NestedEditorPlugins} (the
+ * document's component picker, floating toolbar, table menus, ...) find
+ * the application's contexts.
  */
 export const PlaygroundHeaderFooterEditorExtension = defineExtension({
   dependencies: [
@@ -176,8 +178,9 @@ export const PlaygroundHeaderFooterEditorExtension = defineExtension({
     // The floating text format toolbar registers itself as a roving
     // tabindex container.
     RovingTabIndexExtension,
-    ReactPluginHostExtension,
+    ReactProviderExtension,
     configExtension(ReactExtension, {
+      contentEditable: null,
       decorators: [NestedEditorPluginsDecorator],
     }),
   ],

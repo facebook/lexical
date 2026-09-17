@@ -792,4 +792,30 @@ test.describe('Pages', () => {
     await expect(page.locator(`${LIVE_CONTENT} strong`)).toHaveText('Bold me');
     await expect(page.locator(`${LIVE_CONTENT} > h1`)).toHaveText('Title');
   });
+  test('Inserting a GIF into a header renders the image there', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body');
+    await enablePaged(page);
+    await enableHeader(page);
+    await editHeader(page);
+    await page.keyboard.type('Logo ');
+    // The image is a React-rendered node that needs the application's
+    // providers; when the header editor's React tree sat outside them, the
+    // component threw during render and no image was ever rendered.
+    await selectFromInsertDropdown(page, '.gif');
+    await expect(page.locator(`${LIVE_CONTENT} img`)).toHaveCount(1);
+    await expect(page.locator('.ContentEditable__root img')).toHaveCount(0);
+
+    // The static copies on other pages carry the image as well.
+    await page.keyboard.press('Escape');
+    await waitForSelector(page, LIVE_SLOT, {state: 'detached'});
+    await expect(
+      page.locator('[data-page-slot="header"][data-page-index="0"] img'),
+    ).toHaveCount(1);
+  });
 });

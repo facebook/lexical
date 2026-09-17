@@ -14,15 +14,7 @@ import type {
   SlotHeights,
 } from './types';
 
-import {
-  getPeerDependencyFromEditor,
-  type LexicalEditorWithDispose,
-  type Signal,
-} from '@lexical/extension';
-import {
-  mountReactPluginHost,
-  ReactPluginHostExtension,
-} from '@lexical/react/ReactPluginHostExtension';
+import {type LexicalEditorWithDispose, type Signal} from '@lexical/extension';
 import {
   $addUpdateTag,
   $createParagraphNode,
@@ -132,7 +124,6 @@ interface SlotEditor {
   /** Cached static render, recreated after every nested update. */
   clone: HTMLElement | null;
   /** Hosts the React root that renders the editor's decorators and plugins. */
-  reactHost: HTMLElement;
   refreshRafId: number | null;
   empty: boolean;
   cleanup: () => void;
@@ -150,6 +141,12 @@ export interface HeaderFooterSessionOptions {
   activeSlot: Signal<ActivePageSlot | null>;
   activeSlotEditor: Signal<LexicalEditor | null>;
   buildSlotEditor: SlotEditorBuilder;
+  /**
+   * Every nested editor created so far. A React host renders each one's
+   * decorators and plugins inside the application's own tree, where the
+   * application's contexts are available.
+   */
+  slotEditors: Signal<readonly LexicalEditorWithDispose[]>;
 }
 
 /**
@@ -297,9 +294,9 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       slotEditor.cleanup();
       slotEditor.editor.dispose();
       slotEditor.root.remove();
-      slotEditor.reactHost.remove();
     }
     this.editors.clear();
+    this.options.slotEditors.value = [];
   }
 
   // ---- PagesLayoutSlotProvider ------------------------------------------
@@ -584,34 +581,24 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     root.className = `Pages__slotContent ${LIVE_CONTENT_CLASS}`;
     root.dataset.pageSlotEditor = key;
     this.layout.parking.appendChild(root);
-    const reactHost = doc.createElement('div');
-    reactHost.className = 'Pages__reactHost';
-    this.layout.parking.appendChild(reactHost);
     editor.setRootElement(root);
     editor.setEditable(false);
     root.contentEditable = 'false';
-    // Editors built with ReactPluginHostExtension render their React
-    // decorators (images, polls, ...) and plugins from this host.
-    if (
-      getPeerDependencyFromEditor<typeof ReactPluginHostExtension>(
-        editor,
-        ReactPluginHostExtension.name,
-      ) !== undefined
-    ) {
-      mountReactPluginHost(editor, reactHost);
-    }
     slotEditor = {
       cleanup: () => {},
       clone: null,
       editor,
       empty: true,
       kind,
-      reactHost,
       refreshRafId: null,
       root,
       variant,
     };
     this.editors.set(key, slotEditor);
+    this.options.slotEditors.value = [
+      ...this.options.slotEditors.value,
+      editor,
+    ];
     // React renders decorators (images, polls, ...) into the root after the
     // Lexical update that created them, so the clones also follow the DOM.
     const domObserver =

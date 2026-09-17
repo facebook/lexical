@@ -20,6 +20,7 @@ import {
 import {
   defineExtension,
   type LexicalEditor,
+  type LexicalEditorWithDispose,
   mergeRegister,
   RootNode,
   safeCast,
@@ -70,11 +71,17 @@ export const PagesExtension = defineExtension({
       hostElement: signal<HTMLElement | null>(null),
       /** Number of pages currently rendered (1 while pageless). */
       pageCount: signal(1),
+
       pageSetup: watchedSignal(getPageSetup, pageSetupSignal =>
         editor.registerMutationListener(RootNode, () => {
           pageSetupSignal.value = getPageSetup();
         }),
       ),
+      /**
+       * The nested header/footer editors created so far, for a React host
+       * to render their decorators and plugins.
+       */
+      slotEditors: signal<readonly LexicalEditorWithDispose[]>([]),
     };
   },
   config: safeCast<PagesConfig>({
@@ -103,6 +110,7 @@ export const PagesExtension = defineExtension({
         activeSlot: output.activeSlot,
         activeSlotEditor: output.activeSlotEditor,
         buildSlotEditor: config.buildSlotEditor,
+        slotEditors: output.slotEditors,
       });
       output.hostElement.value = layout.host;
       return mergeRegister(

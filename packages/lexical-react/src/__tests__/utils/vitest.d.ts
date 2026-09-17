@@ -6,12 +6,15 @@
  *
  */
 
+import type {toHaveNoViolations} from 'jest-axe';
+
 import 'vitest';
 
 // @types/jest-axe augments Jest's matchers, which Vitest 5 no longer inherits.
-// Match the return type for both direct and resolves/rejects assertions.
+// Reuse its matcher signatures, including their assertion return type.
 declare module 'vitest' {
-  interface Matchers<R extends void | Promise<void>> {
-    toHaveNoViolations(): R;
-  }
+  interface Matchers<R extends void | Promise<void>> extends Pick<
+    jest.Matchers<R>,
+    keyof typeof toHaveNoViolations
+  > {}
 }

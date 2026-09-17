@@ -1,3 +1,43 @@
+## v0.51.0 (2026-09-17)
+
+- build(deps-dev) bump the vitest group across 1 directory with 2 updates (#9157) dependabotbot
+- build(deps) bump immutable from 4.3.8 to 4.3.9 (#9175) dependabotbot
+- build(deps) bump babelparser from 8.0.0 to 8.0.4 (#9160) dependabotbot
+- lexical Feature node JSON serialization schemas, with compact export (#8602) Bob Ippolito
+- build(deps) bump date-fns from 4.1.0 to 4.4.0 (#9159) dependabotbot
+- build(deps-dev) bump eslint from 10.9.1 to 10.10.0 in the dev-dependencies group across 1 directory (#9158) dependabotbot
+- lexical-react Chore Deprecate LexicalComposer in favor of LexicalExtensionComposer (#9168) Sherry
+- lexical Bug Fix TextNode setMode, setTextContent and isSimpleText read the latest state (#9162) Leo Camus
+- lexical Bug Fix Avoid redundant selection change command (#9163) Sergey Gorbachev
+- lexical-extension Refactor publish lexicalextension as subpath exports with compilerlint enforcement (#9161) Bob Ippolito
+- build(deps-dev) bump flow-bin from 0.330.0 to 0.331.0 in the flow-and-hermes group (#9156) dependabotbot
+- build(deps-dev) bump the dev-dependencies group across 1 directory with 26 updates (#9150) dependabotbot
+-  Bug Fix Keep modern Flow variance keywords in the www Flow stubs (#9154) Sherry
+- lexical-list Bug Fix indenting between two nested lists no longer converts the second lists type (#9118) om singhal
+- build(deps) bump the rollup group across 1 directory with 5 updates (#9144) dependabotbot
+- build(deps) bump the shikijs group with 6 updates (#9145) dependabotbot
+- build(deps-dev) bump baseline-browser-mapping from 2.10.33 to 2.11.0 (#9139) dependabotbot
+- build(deps-dev) bump the flow-and-hermes group with 4 updates (#9143) dependabotbot
+- build(deps) bump the docusaurus-and-typedoc group with 13 updates (#9142) dependabotbot
+- build(deps-dev) bump vitest from 4.1.8 to 4.1.11 (#9140) dependabotbot
+- lexical-code Breaking change drop the deprecated prism re-exports and the lexicalcode-prism dependency (#9141) Bob Ippolito
+-  Breaking change Publish ESM only to npm and keep the CommonJS build for www (#9127) Bob Ippolito
+- lexical-text Bug Fix a text entity keeps the style and detail of the text it replaces (#9130) om singhal
+- lexical-extension Fix use Array.from over iterable spread so extension editors build under loose-mode transpilation (#9134) Sherry
+- lexical-playground Bug Fix avoid node selection on CardNode drag release (#9135) KAVYANSH KUMAR
+- lexical Bug Fix removeTextFromCaretRange no longer leaves a childless list or table as the roots only child (#9116) om singhal
+- lexical-utils Bug Fix notify when selection overlay rectangles are removed (#9117) Mehul Jariwala
+- lexical-table Bug Fix mergeCells no longer keeps the empty paragraph of the target cell (#9122) om singhal
+- build(deps-dev) bump esbuild from 0.27.7 to 0.28.1 (#9123) dependabotbot
+- lexical Fix make the extension Flow types usable (defineExtension was uncallable) (#9132) Sherry
+- lexical-markdown Bug Fix text left outside a markdown link keeps its format (#9131) om singhal
+- lexical-website Documentation Update document that Lexical is a singleton per app and libraries must declare it as a peer dependency (#9125) Sherry
+- lexical-playground Bug Fix clear CardReview CSS placeholders reliably on paste in Safari (#9129) sahir
+-  Bug Fix Remove the remaining module-scope side effects that defeat tree-shaking (#9124) Bob Ippolito
+- lexicallexical-compiler Bug Fix Let esbuild drop the editor from a createCommand-only production import (#9121) Gerard Rovira
+- v0.50.0 (#9110) Bob Ippolito
+- v0.50.0 Lexical GitHub Actions Bot
+
 ## v0.50.0 (2026-09-02)
 
 - lexical-extensionlexical-react Feature HMR support for extensions (#8959) mayrang

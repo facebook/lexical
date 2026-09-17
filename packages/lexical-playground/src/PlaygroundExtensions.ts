@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {RovingTabIndexExtension} from '@lexical/a11y';
 import {$isCodeNode} from '@lexical/code';
 import {
   buildEditorFromExtensions,
@@ -24,6 +25,7 @@ import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
 import {ClickableLinkExtension, LinkExtension} from '@lexical/link';
 import {CheckListExtension, ListExtension} from '@lexical/list';
+import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactPluginHostExtension} from '@lexical/react/ReactPluginHostExtension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {TableExtension} from '@lexical/table';
@@ -48,6 +50,7 @@ import {ImagesExtension} from './plugins/ImagesExtension';
 import {LayoutExtension} from './plugins/LayoutExtension/LayoutExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {MentionsExtension} from './plugins/MentionsExtension';
+import {NestedEditorPluginsDecorator} from './plugins/NestedEditorPlugins';
 import {PageCounterNodesExtension} from './plugins/PagesExtension/PageCounterNodes';
 import {PollExtension} from './plugins/PollExtension';
 import {PullQuoteExtension} from './plugins/PullQuoteExtension';
@@ -157,10 +160,12 @@ export const PlaygroundRichTextContentExtension = defineExtension({
 
 /**
  * What a page header or footer can contain: everything the main editor
- * can, minus pages, page breaks and toolbar-only behaviour, plus the page
- * number / page count nodes. `ReactPluginHostExtension` lets the
- * React-rendered nodes (images, polls, equations, ...) render in an editor
- * created outside React; the pages extension mounts its host.
+ * can, minus pages, page breaks, sticky notes and document-level tools,
+ * plus the page number / page count nodes. `ReactPluginHostExtension`
+ * lets the React-rendered nodes (images, polls, equations, ...) render in
+ * an editor created outside React; the pages extension mounts its host,
+ * and {@link NestedEditorPlugins} brings the document's React plugins
+ * (component picker, floating toolbar, table menus, ...) along.
  */
 export const PlaygroundHeaderFooterEditorExtension = defineExtension({
   dependencies: [
@@ -168,7 +173,13 @@ export const PlaygroundHeaderFooterEditorExtension = defineExtension({
     PlaygroundRichTextContentExtension,
     HistoryExtension,
     PageCounterNodesExtension,
+    // The floating text format toolbar registers itself as a roving
+    // tabindex container.
+    RovingTabIndexExtension,
     ReactPluginHostExtension,
+    configExtension(ReactExtension, {
+      decorators: [NestedEditorPluginsDecorator],
+    }),
   ],
   name: '@lexical/playground/HeaderFooterEditor',
   namespace: 'Playground/HeaderFooter',

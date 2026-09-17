@@ -63,6 +63,7 @@ import {PageBreakExtension} from './plugins/PageBreakExtension';
 import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {ShortcutsExtension} from './plugins/ShortcutsExtension';
+import {StickyExtension} from './plugins/StickyExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import {VersionsPlugin} from './plugins/VersionsPlugin';
@@ -166,6 +167,7 @@ const PlaygroundRichTextExtension = defineExtension({
     PagesReactExtension,
     ReactFindReplaceExtension,
     ShortcutsExtension,
+    StickyExtension,
   ],
   name: '@lexical/playground/RichText',
 });

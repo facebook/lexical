@@ -47,6 +47,7 @@ import {
   type RangeSelection,
   registerEventListeners,
   RootNode,
+  SELECTION_CHANGE_COMMAND,
   type SerializedEditorState,
 } from 'lexical';
 
@@ -404,6 +405,11 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     this.syncLiveCounters(this.active);
     this.placeCaret(slotEditor, point);
     slotEditor.editor.focus(undefined, {defaultSelection: 'rootEnd'});
+    // The toolbar and the floating editors follow SELECTION_CHANGE_COMMAND
+    // to learn which editor is active. Lexical skips the DOM selectionchange
+    // that its own reconciler caused when the caret sits inside a text node,
+    // so a click into header text would leave them pointed at the document.
+    slotEditor.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
     return true;
   }
 
@@ -480,6 +486,8 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       }
     });
     this.parent.focus();
+    // See open(): hand the toolbar back to the document explicitly.
+    this.parent.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
   }
 
   private onClick(event: MouseEvent): void {

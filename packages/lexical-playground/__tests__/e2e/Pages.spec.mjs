@@ -7,6 +7,7 @@
  */
 
 import {
+  applyHeading,
   moveToEditorBeginning,
   moveToLineEnd,
   selectAll,
@@ -172,6 +173,24 @@ async function enableHeader(page) {
   await openPageSetup(page);
   await togglePageSetupSwitch(page, 'page-header-toggle');
   await closePageSetup(page);
+}
+
+/** Open the default header for editing from the page setup dialog. */
+async function editHeader(page) {
+  await openPageSetup(page);
+  await click(page, '[data-test-id="page-header-edit-default"]');
+  await waitForSelector(page, LIVE_SLOT);
+}
+
+const INSERT_MENU_BUTTON = '[aria-label="Insert specialized editor node"]';
+
+async function insertMenuItems(page) {
+  await click(page, INSERT_MENU_BUTTON);
+  await waitForSelector(page, '.dropdown .item');
+  const items = await page.locator('.dropdown .item .text').allTextContents();
+  await page.keyboard.press('Escape');
+  await waitForSelector(page, '.dropdown', {state: 'detached'});
+  return items;
 }
 
 function pageCount(page) {
@@ -657,5 +676,120 @@ test.describe('Pages', () => {
     await expect(
       page.locator('.ContentEditable__root [data-lexical-page-number]'),
     ).toHaveCount(0);
+  });
+  test('Formats the block type right after a click into header text', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body text');
+    await enablePaged(page);
+    await enableHeader(page);
+    await editHeader(page);
+    await page.keyboard.type('Hi there');
+    await page.keyboard.press('Escape');
+    await waitForSelector(page, LIVE_SLOT, {state: 'detached'});
+
+    // A click into the middle of the text: the caret lands inside a text
+    // node, which is the case where the toolbar used to keep pointing at
+    // the document until the next selection change.
+    const text = page.locator(
+      '[data-page-slot="header"][data-page-index="0"] [data-lexical-text]',
+    );
+    const box = await text.boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await waitForSelector(page, LIVE_SLOT);
+    await click(page, '[aria-label="Formatting options for text style"]');
+    await click(page, '.dropdown .item:has-text("Quote")');
+    await expect(page.locator(`${LIVE_CONTENT} > blockquote`)).toHaveText(
+      'Hi there',
+    );
+    await expect(page.locator('.ContentEditable__root > p')).toHaveText(
+      'Body text',
+    );
+  });
+
+  test('The Insert menu offers only what the active editor supports', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body');
+    await enablePaged(page);
+    await enableHeader(page);
+
+    const documentItems = await insertMenuItems(page);
+    expect(documentItems).toContain('Page Break');
+    expect(documentItems).toContain('Sticky Note');
+    expect(documentItems).not.toContain('Page Number');
+
+    await editHeader(page);
+    const headerItems = await insertMenuItems(page);
+    expect(headerItems).toContain('Horizontal Rule');
+    expect(headerItems).toContain('Page Number');
+    expect(headerItems).toContain('Page Count');
+    expect(headerItems).not.toContain('Page Break');
+    expect(headerItems).not.toContain('Sticky Note');
+
+    // And what it offers goes into the header, not the document.
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await expect(page.locator(`${LIVE_CONTENT} hr`)).toHaveCount(1);
+    await expect(page.locator('.ContentEditable__root hr')).toHaveCount(0);
+
+    await page.keyboard.press('Escape');
+    await waitForSelector(page, LIVE_SLOT, {state: 'detached'});
+    expect(await insertMenuItems(page)).toContain('Page Break');
+  });
+
+  test('Shortcuts, the component picker and the floating toolbar work in a header', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body');
+    await enablePaged(page);
+    await enableHeader(page);
+    await editHeader(page);
+
+    await page.keyboard.type('Title');
+    await applyHeading(page, 1);
+    await expect(page.locator(`${LIVE_CONTENT} > h1`)).toHaveText('Title');
+    await expect(page.locator('.ContentEditable__root > p')).toHaveText('Body');
+
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('/');
+    await waitForSelector(page, '.typeahead-popover');
+    const options = await page
+      .locator('.typeahead-popover .item .text')
+      .allTextContents();
+    expect(options).toContain('Divider');
+    expect(options).toContain('Page Number');
+    expect(options).not.toContain('Page Break');
+    await page.keyboard.type('divider');
+    await expect(
+      page.locator('.typeahead-popover .item .text').first(),
+    ).toHaveText('Divider');
+    await page.keyboard.press('Enter');
+    await expect(page.locator(`${LIVE_CONTENT} hr`)).toHaveCount(1);
+    await expect(page.locator('.ContentEditable__root hr')).toHaveCount(0);
+
+    await page.keyboard.type('Bold me');
+    for (let i = 0; i < 'Bold me'.length; i++) {
+      await page.keyboard.press('Shift+ArrowLeft');
+    }
+    await waitForSelector(page, '.floating-text-format-popup');
+    await click(
+      page,
+      '.floating-text-format-popup [aria-label="Format text as bold"]',
+    );
+    await expect(page.locator(`${LIVE_CONTENT} strong`)).toHaveText('Bold me');
+    await expect(page.locator(`${LIVE_CONTENT} > h1`)).toHaveText('Title');
   });
 });

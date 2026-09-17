@@ -49,6 +49,7 @@ function $updateCodeGutter(node: CodeNode): void {
 }
 
 /**
+ * @internal
  * Keep the `data-gutter` attribute of every {@link CodeNode} in sync with its
  * line count, so a theme can render line numbers with
  * `content: attr(data-gutter)`.

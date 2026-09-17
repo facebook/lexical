@@ -807,15 +807,23 @@ test.describe('Pages', () => {
     // The image is a React-rendered node that needs the application's
     // providers; when the header editor's React tree sat outside them, the
     // component threw during render and no image was ever rendered.
+    // (`.editor-image img`, not any `img`: WebKit gets a managed
+    // line-break image after a trailing decorator from Lexical itself.)
     await selectFromInsertDropdown(page, '.gif');
-    await expect(page.locator(`${LIVE_CONTENT} img`)).toHaveCount(1);
-    await expect(page.locator('.ContentEditable__root img')).toHaveCount(0);
+    await expect(page.locator(`${LIVE_CONTENT} .editor-image img`)).toHaveCount(
+      1,
+    );
+    await expect(
+      page.locator('.ContentEditable__root .editor-image img'),
+    ).toHaveCount(0);
 
     // The static copies on other pages carry the image as well.
     await page.keyboard.press('Escape');
     await waitForSelector(page, LIVE_SLOT, {state: 'detached'});
     await expect(
-      page.locator('[data-page-slot="header"][data-page-index="0"] img'),
+      page.locator(
+        '[data-page-slot="header"][data-page-index="0"] .editor-image img',
+      ),
     ).toHaveCount(1);
   });
 });

@@ -29,7 +29,6 @@ import {PageBreakExtension} from '../PageBreakExtension';
 import {PAGE_GAP} from './constants';
 import {buildHeaderFooterEditor, type SlotEditorBuilder} from './headerFooter';
 import {HeaderFooterSession} from './HeaderFooterSession';
-import {PageContentNode, PageNode, registerLegacyPageUnwrap} from './legacy';
 import {$getPageSetup} from './pageSetup';
 import {PagesLayout} from './PagesLayout';
 import {registerPrintHandlers} from './print';
@@ -45,10 +44,6 @@ export interface PagesConfig {
   disabled: boolean;
   /** Visual gap between pages, in CSS px. */
   gap: number;
-  /** @deprecated Class of the legacy PageNode, kept for old documents. */
-  pageClass: string;
-  /** @deprecated Class of the legacy PageContentNode, kept for old documents. */
-  pageContentClass: string;
 }
 
 /**
@@ -86,52 +81,46 @@ export const PagesExtension = defineExtension({
     buildSlotEditor: buildHeaderFooterEditor,
     disabled: false,
     gap: PAGE_GAP,
-    pageClass: 'PlaygroundEditorTheme__page',
-    pageContentClass: 'PlaygroundEditorTheme__pageContent',
   }),
   dependencies: [PageBreakExtension, RootElementExtension],
   name: '@lexical/playground/Pages',
-  nodes: () => [PageNode, PageContentNode],
   register: (editor, config, state) => {
     const output = state.getOutput();
     const rootElement = state.getDependency(RootElementExtension).output;
     const paged = computed(() => output.pageSetup.value !== null);
-    return mergeRegister(
-      registerLegacyPageUnwrap(editor),
-      effect(() => {
-        const root = rootElement.value;
-        if (root === null || output.disabled.value || !paged.value) {
-          return;
-        }
-        const layout = new PagesLayout(editor, root, {
-          gap: config.gap,
-          onPageCountChange: pageCount => {
-            output.pageCount.value = pageCount;
-          },
-        });
-        const session = new HeaderFooterSession(editor, layout, {
-          activeSlot: output.activeSlot,
-          activeSlotEditor: output.activeSlotEditor,
-          buildSlotEditor: config.buildSlotEditor,
-        });
-        output.hostElement.value = layout.host;
-        return mergeRegister(
-          // Innermost first: mergeRegister tears down in reverse order.
-          () => {
-            output.hostElement.value = null;
-          },
-          () => layout.dispose(),
-          () => session.dispose(),
-          registerPrintHandlers(layout),
-          effect(() => {
-            const pageSetup = output.pageSetup.value;
-            if (pageSetup !== null) {
-              layout.setPageSetup(pageSetup);
-              session.setPageSetup(pageSetup);
-            }
-          }),
-        );
-      }),
-    );
+    return effect(() => {
+      const root = rootElement.value;
+      if (root === null || output.disabled.value || !paged.value) {
+        return;
+      }
+      const layout = new PagesLayout(editor, root, {
+        gap: config.gap,
+        onPageCountChange: pageCount => {
+          output.pageCount.value = pageCount;
+        },
+      });
+      const session = new HeaderFooterSession(editor, layout, {
+        activeSlot: output.activeSlot,
+        activeSlotEditor: output.activeSlotEditor,
+        buildSlotEditor: config.buildSlotEditor,
+      });
+      output.hostElement.value = layout.host;
+      return mergeRegister(
+        // Innermost first: mergeRegister tears down in reverse order.
+        () => {
+          output.hostElement.value = null;
+        },
+        () => layout.dispose(),
+        () => session.dispose(),
+        registerPrintHandlers(layout),
+        effect(() => {
+          const pageSetup = output.pageSetup.value;
+          if (pageSetup !== null) {
+            layout.setPageSetup(pageSetup);
+            session.setPageSetup(pageSetup);
+          }
+        }),
+      );
+    });
   },
 });

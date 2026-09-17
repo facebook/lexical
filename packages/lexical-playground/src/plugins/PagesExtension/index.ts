@@ -45,15 +45,6 @@ export {
   slotHeight,
 } from './layoutMath';
 export {
-  $createPageContentNode,
-  $createPageNode,
-  $isPageContentNode,
-  $isPageNode,
-  PageContentNode,
-  PageNode,
-  registerLegacyPageUnwrap,
-} from './legacy';
-export {
   $createPageCountNode,
   $createPageNumberNode,
   $isPageCountNode,

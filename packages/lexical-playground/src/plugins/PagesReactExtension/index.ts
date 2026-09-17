@@ -15,13 +15,8 @@ import {PageSetupComponent} from './PageSetupComponent';
 export {
   PageSetupComponent,
   type PageSetupComponentProps,
-  /** @deprecated Use {@link PageSetupComponentProps}. */
-  type PageSetupComponentProps as PageSetupDropdownProps,
 } from './PageSetupComponent';
 export {PAGE_SIZE_ORDER, PageSetupDialog} from './PageSetupDialog';
-
-/** @deprecated The dropdown became a dialog; use {@link PageSetupComponent}. */
-export const PageSetupDropdownComponent = PageSetupComponent;
 
 export const PagesReactExtension = defineExtension({
   build: () => ({Component: PageSetupComponent}),

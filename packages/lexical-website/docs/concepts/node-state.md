@@ -346,30 +346,6 @@ Lexical's internal `NodeKey` remains ephemeral. The exact persistence,
 duplication, and clipboard policy is application-specific. See the
 [application node identity example](https://github.com/facebook/lexical/tree/main/examples/node-state-identity)
 for one executable policy built with released Lexical APIs.
-Custom nodes can also declare StateConfigs in `$config`.
-Save/load preserves existing IDs even on ineligible nodes: changing the
-predicate is not a migration of previously saved state.
-
-### Policy boundaries
-
-- Every newly inserted addressable node gets fresh identity, including after cut/paste. This is an application
-  policy, not a distinction encoded in the structured clipboard payload.
-- The receiver controls cross-editor behavior. Structured transfer requires
-  compatible namespaces and node types; an editor without this policy can
-  preserve source IDs.
-- The application must know its identity StateConfigs. Unknown third-party
-  state is not inferred to be identity. Custom import paths bypassing the
-  insertion command require equivalent handling.
-- The example covers children and named slots using public, **experimental**
-  `$dfsWithSlots`. Stable children-only `$dfs` cannot cover slots. Embedded
-  independent editors and references need application-specific handling.
-- The RootNode transform scans the document in O(N) after dirty updates,
-  including ordinary text edits. Per-class transforms can reduce that work
-  when an application knows every relevant node class; they do not inherit
-  automatically to arbitrary custom nodes.
-- Applications must choose their addressing granularity and split/merge policy;
-  this example does not repair existing collisions or provide collaborative
-  identity reconciliation.
 
 ## Node State Style Example
 

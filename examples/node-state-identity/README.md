@@ -28,11 +28,31 @@ Save/load preserves IDs; new addressable nodes created by `$copyNode` or paste
 receive fresh IDs, including after cut. Only `externalId` is cleared on paste.
 
 The policy uses an O(N) RootNode scan and public, experimental `$dfsWithSlots`.
-This example intentionally leaves allocator uniqueness, addressing granularity,
-imports, and reference handling to the integrating application.
+The exact application boundaries are described below.
+
+## Policy boundaries
+
+- Every newly inserted addressable node gets fresh identity, including after cut/paste. This is an application
+	policy, not a distinction encoded in the structured clipboard payload.
+- The receiver controls cross-editor behavior. Structured transfer requires
+	compatible namespaces and node types; an editor without this policy can
+	preserve source IDs.
+- The application must know its identity StateConfigs. Unknown third-party
+	state is not inferred to be identity. Custom import paths bypassing the
+	insertion command require equivalent handling.
+- This example covers children and named slots using public, **experimental**
+	`$dfsWithSlots`. Stable children-only `$dfs` cannot cover slots. Embedded
+	independent editors and references need application-specific handling.
+- The RootNode transform scans the document in O(N) after dirty updates,
+	including ordinary text edits. Per-class transforms can reduce that work
+	when an application knows every relevant node class; they do not inherit
+	automatically to arbitrary custom nodes.
+- Applications must choose their addressing granularity and split/merge policy;
+	this example does not repair existing collisions or provide collaborative
+	identity reconciliation.
 
 Run the focused tests from the repository root:
 
 ```sh
-pnpm run test-unit dev-examples/node-state-identity/src/__tests__/unit/identity.test.ts
+pnpm run test-unit examples/node-state-identity/src/__tests__/unit/identity.test.ts
 ```

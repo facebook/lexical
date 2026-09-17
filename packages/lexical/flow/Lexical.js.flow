@@ -2517,7 +2517,7 @@ export interface LexicalEditorWithDispose extends LexicalEditor, Disposable {
 }
 export interface LexicalExtension<
   Config extends ExtensionConfigBase,
-  Name extends string,
+  out Name extends string,
   Output,
   Init,
 > extends InitialEditorConfig,
@@ -2608,7 +2608,9 @@ export type NormalizedLexicalExtensionArgument<
   Name extends string,
   Output,
   Init,
-> = [LexicalExtension<Config, Name, Output, Init>, ...Partial<Config>[]];
+> =
+  | [LexicalExtension<Config, Name, Output, Init>]
+  | [LexicalExtension<Config, Name, Output, Init>, Partial<Config>];
 export type NormalizedPeerDependency<Extension extends AnyLexicalExtension> = [
   name: Extension['name'],
   config?: Partial<LexicalExtensionConfig<Extension>>,

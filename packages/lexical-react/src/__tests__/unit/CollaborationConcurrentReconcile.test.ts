@@ -23,6 +23,7 @@
  */
 
 import {
+  type Binding,
   createBinding,
   createUndoManager,
   type Provider,
@@ -93,7 +94,7 @@ const makeProvider = (a: Awareness): Provider =>
 type Peer = {
   doc: Y.Doc;
   editor: LexicalEditor;
-  binding: ReturnType<typeof createBinding>;
+  binding: Binding;
   awareness: Awareness;
 };
 function makePeer(name: string, clientID: number): Peer {

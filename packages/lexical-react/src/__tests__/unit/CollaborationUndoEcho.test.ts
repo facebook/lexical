@@ -30,6 +30,7 @@
  */
 
 import {
+  type Binding,
   createBinding,
   createUndoManager,
   type Provider,
@@ -105,7 +106,7 @@ type Peer = {
   name: string;
   doc: Y.Doc;
   editor: LexicalEditor;
-  binding: ReturnType<typeof createBinding>;
+  binding: Binding;
   awareness: Awareness;
 };
 

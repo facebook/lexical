@@ -92,6 +92,7 @@ import {
   describe,
   expect,
   it,
+  type Mock,
   vi,
 } from 'vitest';
 
@@ -1218,7 +1219,7 @@ describe('LexicalEditor tests', () => {
   // console.warns in production; embedders can supply their own onWarn to
   // capture guard trips as warn-severity telemetry without an error alarm.
   function runCascade(onWarn?: (error: Error) => void): {
-    errorListener: ReturnType<typeof vi.fn>;
+    errorListener: Mock;
     unregister: () => void;
   } {
     const errorListener = vi.fn();
@@ -1683,7 +1684,7 @@ describe('LexicalEditor tests', () => {
       editable ? 'editable' : 'non-editable'
     })`, async () => {
       const JSON_EDITOR_STATE =
-        '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"123","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
+        '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"123","type":"text","version":1}],"direction":null,"format":"","indent":0,"textFormat":0,"textStyle":"","type":"paragraph","version":1}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
       init();
       const contentEditable = editor.getRootElement();
       editor.setEditable(editable);
@@ -1700,8 +1701,11 @@ describe('LexicalEditor tests', () => {
         //
       });
       editor.setRootElement(contentEditable);
-      expect(JSON.stringify(editor.getEditorState().toJSON())).toBe(
-        JSON_EDITOR_STATE,
+      // Compared as a structure rather than as bytes: what this test is about
+      // is that setEditorState round-trips the document, and key order is not
+      // part of the serialization format.
+      expect(editor.getEditorState().toJSON()).toEqual(
+        JSON.parse(JSON_EDITOR_STATE),
       );
     });
   }

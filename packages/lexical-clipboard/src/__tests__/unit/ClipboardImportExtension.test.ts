@@ -15,6 +15,7 @@ import {
   buildEditorFromExtensions,
   configExtension,
   defineExtension,
+  type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {
   $generateNodesFromDOMViaExtension,
@@ -50,10 +51,7 @@ function dataTransferWithPlainText(text: string): DataTransfer {
   return dt as unknown as DataTransfer;
 }
 
-function $pasteHtml(
-  editor: ReturnType<typeof buildEditorFromExtensions>,
-  html: string,
-) {
+function $pasteHtml(editor: LexicalEditorWithDispose, html: string) {
   editor.update(
     () => {
       const selection = $getSelection();
@@ -299,7 +297,7 @@ describe('$insertDataTransferForRichText selection argument (#6278)', () => {
   }
 
   function $insertOverFirstParagraph(
-    editor: ReturnType<typeof buildEditorFromExtensions>,
+    editor: LexicalEditorWithDispose,
     dataTransfer: DataTransfer,
   ) {
     editor.update(
@@ -314,9 +312,7 @@ describe('$insertDataTransferForRichText selection argument (#6278)', () => {
     );
   }
 
-  function paragraphTexts(
-    editor: ReturnType<typeof buildEditorFromExtensions>,
-  ): string[] {
+  function paragraphTexts(editor: LexicalEditorWithDispose): string[] {
     return editor.read(() =>
       $getRoot()
         .getChildren()

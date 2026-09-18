@@ -62,7 +62,7 @@ function $updateCodeGutter(node: CodeNode): void {
  * @returns A teardown that removes the listener.
  */
 export function registerCodeGutter(editor: LexicalEditor): () => void {
-  if (editor._headless === true) {
+  if (editor._headless) {
     return () => {};
   }
   return editor.registerMutationListener(

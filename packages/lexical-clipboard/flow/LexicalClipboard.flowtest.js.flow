@@ -1,0 +1,34 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {LexicalDropTargetResolver} from '@lexical/clipboard';
+import type {LexicalEditor} from 'lexical';
+
+import {$handlePlainTextDrop} from '@lexical/clipboard';
+
+const synchronous: LexicalDropTargetResolver = caret => ({
+  caret,
+  $beforeInsert: selection => { selection.insertRawText('\n'); },
+});
+
+// $FlowExpectedError[incompatible-type] Promise<void> is not Flow void.
+const asynchronous: LexicalDropTargetResolver = caret => ({
+  caret,
+  $beforeInsert: async selection => { selection.insertRawText('\n'); },
+});
+
+// $FlowExpectedError[incompatible-type] Flow void accepts only undefined.
+const returnsValue: LexicalDropTargetResolver = caret => ({
+  caret,
+  $beforeInsert: () => 1,
+});
+
+export function checkDropTypes(event: DragEvent, editor: LexicalEditor): boolean {
+  return $handlePlainTextDrop(event, editor, synchronous);
+}

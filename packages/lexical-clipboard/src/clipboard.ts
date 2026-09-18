@@ -25,6 +25,7 @@ import {
   $getCollapsedCaretRange,
   $getEditor,
   $getNearestNodeFromDOMNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $getSelectionSlotFrame,
@@ -37,6 +38,8 @@ import {
   $isTextNode,
   $isTextPointCaret,
   $parseSerializedNode,
+  $removeTextFromCaretRange,
+  $setSelection,
   $setSelectionFromCaretRange,
   $splitAtPointCaretNext,
   type BaseSelection,
@@ -61,6 +64,19 @@ import {
 
 import {caretFromPoint} from './caretFromPoint';
 import {$getImportOutput} from './ClipboardImportExtension';
+
+/**
+ * Resolve a plain-text drop synchronously in read-only pending state; null
+ * consumes it. Preparation must leave a valid collapsed selection outside the
+ * source. Neither callback may edit source/unrelated nodes or defer updates.
+ * See the package README for selection, cancellation, and failure semantics.
+ */
+export type LexicalDropTargetResolver = (
+  dropCaret: PointCaret<'next'>,
+) => null | {
+  caret: PointCaret<'next'>;
+  $beforeInsert?: (selection: RangeSelection) => undefined;
+};
 
 export interface LexicalClipboardData {
   'text/html'?: string | undefined;
@@ -267,6 +283,26 @@ function $resolveDropPointCaret(
   return $getChildCaretAtIndex(parent, node.getIndexWithinParent() + 1, 'next');
 }
 
+// Compare text edges at their adjacent node boundaries without crossing blocks.
+// Empty source text spans both sides for drop comparison, not caret identity.
+function $getDropComparisonCaret(
+  caret: PointCaret<'next'>,
+  sourceEnd = false,
+): PointCaret<'next'> {
+  if ($isTextPointCaret(caret)) {
+    if (
+      caret.offset === 0 &&
+      !(sourceEnd && caret.origin.getTextContentSize() === 0)
+    ) {
+      return caret.getFlipped().getSiblingCaret().getFlipped();
+    }
+    if (caret.offset === caret.origin.getTextContentSize()) {
+      return caret.getSiblingCaret();
+    }
+  }
+  return caret;
+}
+
 function $isDropCaretInsideSelection(
   dropCaret: PointCaret<'next'>,
   selection: RangeSelection,
@@ -275,20 +311,164 @@ function $isDropCaretInsideSelection(
     $caretRangeFromSelection(selection),
     'next',
   );
+  const point = $getDropComparisonCaret(dropCaret);
   return (
-    $comparePointCaretNext(start, dropCaret) < 0 &&
-    $comparePointCaretNext(dropCaret, end) < 0
+    $comparePointCaretNext($getDropComparisonCaret(start), point) <= 0 &&
+    $comparePointCaretNext(point, $getDropComparisonCaret(end, true)) <= 0
   );
+}
+
+function $isValidDropCaret(
+  caret: null | PointCaret<'next'>,
+): caret is PointCaret<'next'> {
+  if (
+    caret == null ||
+    caret.direction !== 'next' ||
+    !caret.origin.isAttached()
+  ) {
+    return false;
+  }
+  if ($isTextPointCaret(caret)) {
+    return (
+      Number.isInteger(caret.offset) &&
+      caret.offset >= 0 &&
+      caret.offset <= caret.origin.getTextContentSize()
+    );
+  }
+  return caret.getParentAtCaret() !== null;
+}
+
+function $isValidDropSelection(
+  selection: BaseSelection | null,
+): selection is RangeSelection {
+  if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+    return false;
+  }
+  const point = selection.anchor;
+  const node = $getNodeByKey(point.key);
+  return (
+    node !== null &&
+    node.isAttached() &&
+    Number.isInteger(point.offset) &&
+    point.offset >= 0 &&
+    (point.type === 'text' && $isTextNode(node)
+      ? point.offset <= node.getTextContentSize()
+      : point.type === 'element' &&
+        $isElementNode(node) &&
+        point.offset <= node.getChildrenSize())
+  );
+}
+
+function $getDropSourceCarets(selection: RangeSelection): {
+  start: PointCaret<'previous'>;
+  end: PointCaret<'next'>;
+} {
+  const {anchor, focus} = $getCaretRangeInDirection(
+    $caretRangeFromSelection(selection),
+    'next',
+  );
+  // Face into nonempty source text so neighbor edits cannot invalidate offsets.
+  // Keep empty text endpoints as slices for the original removal semantics.
+  return {
+    end:
+      $isTextPointCaret(focus) &&
+      focus.offset === 0 &&
+      focus.origin.getTextContentSize() > 0
+        ? focus.getFlipped().getSiblingCaret().getFlipped()
+        : focus,
+    start: ($isTextPointCaret(anchor) &&
+    anchor.origin.getTextContentSize() > 0 &&
+    anchor.offset === anchor.origin.getTextContentSize()
+      ? anchor.getSiblingCaret()
+      : anchor
+    ).getFlipped(),
+  };
+}
+
+function $stabilizePlainTextDropTarget(caret: PointCaret<'next'>) {
+  const stable = $isTextPointCaret(caret)
+    ? $splitAtPointCaretNext(caret)
+    : caret;
+  invariant(
+    stable !== null,
+    '$handlePlainTextDrop: unable to stabilize target',
+  );
+  return stable;
+}
+
+function $insertPlainTextDrop(
+  text: string,
+  target: NonNullable<ReturnType<LexicalDropTargetResolver>>,
+  source: RangeSelection | null,
+): void {
+  if (source) {
+    $setSelection(source);
+  }
+  // Split only the target, with the source active so its points follow the split.
+  const stableTarget = $stabilizePlainTextDropTarget(target.caret);
+  let sourceCarets = source && $getDropSourceCarets(source);
+  const dropSelection = $setSelectionFromCaretRange(
+    $getCollapsedCaretRange(stableTarget),
+  );
+  const result = target.$beforeInsert
+    ? target.$beforeInsert(dropSelection)
+    : undefined;
+  invariant(
+    result === undefined,
+    '$handlePlainTextDrop: $beforeInsert must be synchronous and return undefined',
+  );
+  let selection = $getSelection();
+  invariant(
+    $isValidDropSelection(selection),
+    '$handlePlainTextDrop: preparation must leave a collapsed, attached selection',
+  );
+  if (sourceCarets) {
+    const {start, end} = sourceCarets;
+    const point = $caretFromPoint(selection.anchor, 'next');
+    const comparisonPoint = $getDropComparisonCaret(point);
+    invariant(
+      $comparePointCaretNext(
+        comparisonPoint,
+        $getDropComparisonCaret(start.getFlipped()),
+      ) < 0 ||
+        $comparePointCaretNext(
+          $getDropComparisonCaret(end, true),
+          comparisonPoint,
+        ) < 0,
+      '$handlePlainTextDrop: preparation must leave the target outside the source',
+    );
+    // Preparation may replace the target or shift element offsets. Reconstruct
+    // from source-facing carets, then let the active source follow the final split.
+    const activeSource = $setSelectionFromCaretRange(
+      $getCaretRange(start.getFlipped(), end),
+    );
+    const preparedTarget = $stabilizePlainTextDropTarget(point);
+    sourceCarets = $getDropSourceCarets(activeSource);
+    selection = $setSelectionFromCaretRange(
+      $getCollapsedCaretRange(preparedTarget),
+    );
+  }
+  selection.insertRawText(text);
+  const inserted = $getSelection();
+  invariant(
+    $isValidDropSelection(inserted),
+    '$handlePlainTextDrop: insertion must leave a collapsed, attached selection',
+  );
+  const caret = $caretFromPoint(inserted.anchor, 'next');
+  // Only remove the source once preparation and insertion have returned. This
+  // preserves it even when onError rethrows before Lexical's rollback cleanup.
+  if (sourceCarets) {
+    const {start, end} = sourceCarets;
+    $removeTextFromCaretRange($getCaretRange(start.getFlipped(), end));
+    $setSelectionFromCaretRange($getCollapsedCaretRange(caret));
+  }
 }
 
 function $doDrop(
   event: DragEvent,
   editor: LexicalEditor,
-  $insertDataTransfer: (
-    dataTransfer: DataTransfer,
-    selection: BaseSelection,
-    targetEditor: LexicalEditor,
-  ) => void,
+  plainText = false,
+  resolveDropTarget?: LexicalDropTargetResolver,
 ): boolean {
   const dataTransfer = event.dataTransfer;
   if (dataTransfer === null) {
@@ -309,47 +489,79 @@ function $doDrop(
     return false;
   }
 
-  // Split at the drop caret so we have a stable NodeCaret boundary that
-  // survives text-content mutations in its siblings.
-  const stableDropCaret = $splitAtPointCaretNext(dropCaret);
-  if (stableDropCaret === null) {
+  const isSameEditorDrag = marker.editorKey === editor.getKey();
+  const currentSelection = $getSelection();
+  const sourceSelection = $isRangeSelection(currentSelection)
+    ? currentSelection.clone()
+    : null;
+  if (
+    isSameEditorDrag &&
+    (sourceSelection === null || sourceSelection.isCollapsed())
+  ) {
     return false;
   }
 
-  const isSameEditorDrag = marker.editorKey === editor.getKey();
-  const currentSelection = $getSelection();
-
-  if (isSameEditorDrag) {
-    // Same-editor drag: the destination's $getSelection() is the still-
-    // selected dragged range, so Lexical's beforeinput handler would skip
-    // applyDOMRange and route the insert to the source's location instead
-    // of the drop point. Remove the dragged range ourselves, then insert
-    // at the stable drop caret.
-    if (
-      !$isRangeSelection(currentSelection) ||
-      currentSelection.isCollapsed()
-    ) {
-      return false;
-    }
-    if ($isDropCaretInsideSelection(dropCaret, currentSelection)) {
-      event.preventDefault();
-      return true;
-    }
-    currentSelection.removeText();
-  }
-
-  // If the drop caret's origin was swept away by the source removal, abort —
-  // this can happen on a same-editor drag whose range covered the entire
-  // text node we tried to split at.
-  if (!stableDropCaret.origin.isAttached()) {
-    event.preventDefault();
+  // Claim the native drop before calling application code: rollback alone does
+  // not prevent the browser's default insertion or drag-source deletion.
+  event.preventDefault();
+  const text = plainText
+    ? dataTransfer.getData('text/plain') ||
+      dataTransfer.getData('text/uri-list')
+    : '';
+  if (plainText && !text) {
     return true;
   }
-
-  const dropSelection = $setSelectionFromCaretRange(
-    $getCollapsedCaretRange(stableDropCaret),
+  const target = resolveDropTarget
+    ? editor.read('pending', () => resolveDropTarget(dropCaret))
+    : {caret: dropCaret};
+  invariant(
+    !target || !('then' in target),
+    '$handlePlainTextDrop: resolver must be synchronous',
   );
-  $insertDataTransfer(dataTransfer, dropSelection, editor);
+  if (target == null || !$isValidDropCaret(target.caret)) {
+    return true;
+  }
+  const targetCaret = target.caret;
+  if (isSameEditorDrag && sourceSelection !== null) {
+    if ($isDropCaretInsideSelection(targetCaret, sourceSelection)) {
+      return true;
+    }
+  }
+
+  if (plainText) {
+    $insertPlainTextDrop(
+      text,
+      target,
+      isSameEditorDrag ? sourceSelection : null,
+    );
+  } else {
+    if (isSameEditorDrag) {
+      $setSelection(sourceSelection);
+    }
+    // Split text with the source active so its points follow the split. Keep
+    // node carets intact to preserve destinations inside empty custom elements.
+    // The default text-only split always returns a NodeCaret.
+    const stableDropCaret = $isTextPointCaret(targetCaret)
+      ? $splitAtPointCaretNext(targetCaret)
+      : targetCaret;
+    invariant(
+      stableDropCaret !== null,
+      '$handleRichTextDrop: unable to stabilize target',
+    );
+    if (isSameEditorDrag) {
+      invariant(sourceSelection !== null, 'Expected source RangeSelection');
+      sourceSelection.removeText();
+    }
+    invariant(
+      stableDropCaret.origin.isAttached(),
+      '$handleRichTextDrop: source removal detached the target',
+    );
+
+    const dropSelection = $setSelectionFromCaretRange(
+      $getCollapsedCaretRange(stableDropCaret),
+    );
+    $insertDataTransferForRichText(dataTransfer, dropSelection, editor);
+  }
 
   if (!isSameEditorDrag) {
     // Cross-editor drag. The native drag-out deletion that the browser
@@ -373,7 +585,6 @@ function $doDrop(
     }
   }
 
-  event.preventDefault();
   return true;
 }
 
@@ -389,7 +600,7 @@ export function $handleRichTextDrop(
   event: DragEvent,
   editor: LexicalEditor,
 ): boolean {
-  return $doDrop(event, editor, $insertDataTransferForRichText);
+  return $doDrop(event, editor);
 }
 
 /**
@@ -400,10 +611,9 @@ export function $handleRichTextDrop(
 export function $handlePlainTextDrop(
   event: DragEvent,
   editor: LexicalEditor,
+  resolveDropTarget?: LexicalDropTargetResolver,
 ): boolean {
-  return $doDrop(event, editor, (dataTransfer, selection) =>
-    $insertDataTransferForPlainText(dataTransfer, selection),
-  );
+  return $doDrop(event, editor, true, resolveDropTarget);
 }
 
 /**

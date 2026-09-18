@@ -10,9 +10,18 @@
 import type {
   BaseSelection,
   LexicalEditor,
+  PointCaret,
   RangeSelection,
   LexicalNode,
 } from 'lexical';
+
+export type LexicalDropTargetResolver = (
+  dropCaret: PointCaret<'next'>,
+) => null | {
+  caret: PointCaret<'next'>,
+  // Flow void is the undefined-only return type, unlike TypeScript void.
+  $beforeInsert?: (selection: RangeSelection) => void,
+};
 
 /*
  * Rich Text
@@ -59,6 +68,7 @@ declare export function $handleRichTextDrop(
 declare export function $handlePlainTextDrop(
   event: DragEvent,
   editor: LexicalEditor,
+  resolveDropTarget?: LexicalDropTargetResolver,
 ): boolean;
 
 declare export function $writeDragSourceToDataTransfer(

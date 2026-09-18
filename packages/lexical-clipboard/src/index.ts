@@ -27,6 +27,7 @@ export {
   type GetClipboardDataConfig,
   GetClipboardDataExtension,
   type LexicalClipboardData,
+  type LexicalDropTargetResolver,
   setLexicalClipboardDataTransfer,
 } from './clipboard';
 export {

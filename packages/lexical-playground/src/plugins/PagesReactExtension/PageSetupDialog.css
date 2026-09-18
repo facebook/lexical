@@ -1,0 +1,136 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+.PageSetupDialog {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  width: 328px;
+  max-width: 100%;
+  /* The modal content is a scroll container that clips at its edges; keep
+     room for the controls' focus outlines. */
+  padding: 4px;
+  font-size: 14px;
+  color: #444;
+}
+.PageSetupDialog__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* The paged controls are one fieldset, so `disabled` on it reaches every
+   select, input, switch and button while the document is pageless. */
+.PageSetupDialog__paged {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.PageSetupDialog__paged:disabled {
+  opacity: 0.5;
+}
+.PageSetupDialog__paged:disabled .switch button,
+.PageSetupDialog__paged:disabled select,
+.PageSetupDialog__paged:disabled input {
+  cursor: not-allowed;
+}
+.PageSetupDialog__section--sub {
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 2px solid #eee;
+}
+.PageSetupDialog__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.PageSetupDialog__toggle .switch {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0;
+  background: none;
+}
+.PageSetupDialog__toggle .switch label {
+  width: auto;
+  margin: 0;
+  font-size: 14px;
+  line-height: 18px;
+  color: #222;
+  font-weight: 500;
+}
+.PageSetupDialog__toggle--sub .switch label {
+  font-size: 13px;
+  font-weight: 500;
+}
+.PageSetupDialog__hint {
+  margin: 0;
+  font-size: 12px;
+  color: #777;
+}
+.PageSetupDialog label.PageSetupDialog__label {
+  font-weight: 500;
+  color: #222;
+}
+.PageSetupDialog .Input__wrapper {
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0;
+  gap: 6px;
+}
+.PageSetupDialog .Input__wrapper .Input__label {
+  margin: 0 !important;
+  color: #222;
+  font-weight: 500;
+}
+.PageSetupDialog select.select {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #999;
+  border-radius: 5px;
+  font-size: 14px;
+  background: #fff;
+}
+.PageSetupDialog__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.PageSetupDialog__margin {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.PageSetupDialog__margin label {
+  font-size: 12px;
+  color: #444;
+}
+.PageSetupDialog__margin input {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #999;
+  border-radius: 5px;
+  padding: 6px 10px;
+  font-size: 14px;
+  min-width: 0;
+}
+.PageSetupDialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

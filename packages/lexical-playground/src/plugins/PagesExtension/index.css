@@ -1,0 +1,295 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+/*
+ * Page layer. See PagesLayout.ts for the model: the host is a block
+ * formatting context, the layer is not, so the layer's floats intrude into
+ * the editor root's line boxes. `--page-*` custom properties are written on
+ * the host by PagesLayout.
+ */
+.Pages__host {
+  display: flow-root;
+  position: relative;
+  box-sizing: border-box;
+  width: var(--page-width);
+  max-width: none;
+  margin: 0 auto;
+  zoom: var(--page-zoom, 1);
+  background: #fff;
+  box-shadow: 0 0 0 1px #ddd;
+  /* min-height, and every spacer/band height, are set inline per page by
+     PagesLayout (pages showing different header/footer variants differ). */
+}
+.Pages__layer {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.Pages__layer [data-page-slot] {
+  pointer-events: auto;
+}
+.Pages__header,
+.Pages__footer {
+  position: relative; /* anchors the empty-slot hint */
+  box-sizing: border-box;
+  /* clip, not hidden: a scroll container is monolithic for print
+     fragmentation and would be pushed whole to the next page */
+  overflow: clip;
+  background: #fff;
+  padding-left: var(--page-margin-left);
+  padding-right: var(--page-margin-right);
+}
+.Pages__header--first {
+  padding-top: var(--page-margin-top);
+  /* height set inline (fixed, not min-height: the geometry and the printed
+     page boundaries assume exactly that height). */
+}
+/* Zero-width float: occupies a page's content height without shortening
+   any line box, so the following break lands exactly one page lower. */
+.Pages__spacer {
+  float: left;
+  clear: both;
+  width: 0;
+}
+/* A page boundary is three stacked full-width floats: footer band, gap,
+   header band. Kept separate so none of them straddles a printed page. */
+.Pages__break,
+.Pages__gap,
+.Pages__breakHeader {
+  float: left;
+  clear: both;
+  box-sizing: border-box;
+  width: 100%;
+}
+.Pages__break > .Pages__footer {
+  height: 100%;
+  padding-bottom: var(--page-margin-bottom);
+}
+.Pages__gap {
+  height: var(--page-gap);
+  width: calc(100% + 2px);
+  margin-left: -1px;
+  background: #eee;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+}
+.Pages__breakHeader {
+  break-inside: avoid;
+}
+.Pages__breakHeader > .Pages__header {
+  height: 100%;
+  padding-top: var(--page-margin-top);
+}
+.Pages__footer--last {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding-bottom: var(--page-margin-bottom);
+}
+/* Parked nested editors keep layout (same width as a slot's content) so
+   their heights can be observed while they are not on a page. */
+.Pages__parking {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+  padding: 0 var(--page-margin-right) 0 var(--page-margin-left);
+  visibility: hidden;
+  pointer-events: none;
+}
+.Pages__slotContent {
+  min-height: 0;
+  outline: 0;
+}
+/* Breathing room between a band and the body. Part of the slot content so
+   the measured heights (and therefore the geometry) include it. */
+.Pages__header[data-page-slot-enabled='true'] .Pages__slotContent,
+.Pages__parking [data-page-slot-editor^='header'] {
+  padding-bottom: 8px;
+}
+.Pages__footer[data-page-slot-enabled='true'] .Pages__slotContent,
+.Pages__parking [data-page-slot-editor^='footer'] {
+  padding-top: 8px;
+}
+.Pages__layer [data-page-slot][data-page-slot-enabled='true'] {
+  cursor: text;
+}
+.Pages__layer [data-page-slot][data-page-slot-enabled='false'],
+.Pages__layer[data-page-editable='false'] [data-page-slot] {
+  cursor: default;
+  pointer-events: none;
+}
+.Pages__slot--live {
+  user-select: text;
+  -webkit-user-select: text;
+  outline: 1px dashed var(--editor-color-primary, #4766cb);
+  outline-offset: -1px;
+}
+.Pages__slotContent--live {
+  min-height: 1.2em;
+}
+.Pages__layer:not([data-page-editable='false'])
+  [data-page-slot][data-page-slot-enabled='true'][data-empty='true']:not(
+    .Pages__slot--live
+  )::after {
+  content: 'Click to add a ' attr(data-page-slot);
+  position: absolute;
+  left: var(--page-margin-left);
+  right: var(--page-margin-right);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #999;
+  pointer-events: none;
+}
+
+/* The editor root inside a paged host. It must stay a plain block
+   (`position: relative` only): any `overflow`, `display: flow-root`,
+   `contain` or flex/grid display would make it a formatting context and
+   stop lines from flowing around page breaks. */
+.Pages__host > .ContentEditable__root {
+  padding: 0 var(--page-margin-right) 0 var(--page-margin-left);
+}
+/* The React ContentEditable wraps its placeholder in an aria-hidden div,
+   so the placeholder is a grandchild of the host, not a child. */
+.Pages__host .ContentEditable__placeholder {
+  top: var(--page-first-top);
+  left: var(--page-margin-left);
+  right: var(--page-margin-right);
+}
+
+/* Manual page breaks: PagesLayout stretches their bottom margin to the next
+   page, so hide the pageless chrome and keep only a selection affordance. */
+.Pages__host hr[data-lexical-page-break] {
+  width: 100%;
+  height: 0;
+  margin: 0;
+  border-color: transparent;
+  background: transparent;
+}
+.Pages__host hr[data-lexical-page-break]::before,
+.Pages__host hr[data-lexical-page-break]::after {
+  display: none;
+}
+.Pages__host hr[data-lexical-page-break].selected {
+  border-top: 2px solid var(--editor-color-primary, #4766cb);
+}
+
+/* An empty block renders as `<p><br></p>`; a line box with no width fits
+   beside a full-width float, so the browser would leave it at the top of
+   the break band (caret at the right edge of the previous page) instead of
+   on the next page. While empty, give the block its own formatting context
+   so the float pushes it whole; once it has text the rule stops matching. */
+.Pages__host
+  .ContentEditable__root
+  :is(p, h1, h2, h3, h4, h5, h6, blockquote):has(> br:only-child) {
+  display: flow-root;
+  /* A formatting context may be narrowed to fit beside a float; refuse,
+     so the only option left is the next page. */
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Blocks that must never be split by a page break: make them formatting
+   contexts so the floats push them whole. */
+.Pages__host .ContentEditable__root > li[role='checkbox'],
+.Pages__host .ContentEditable__root > [data-lexical-decorator] {
+  display: flow-root;
+}
+
+/* A formatting context is placed in the first space beside the floats that
+   is at least as wide as its min-content width. A scroll container without
+   horizontal padding (the table wrapper, a code block) has a min-content
+   width of zero, so instead of being pushed below a full-width break float
+   it is squeezed to zero width beside it and vanishes. Refuse to be
+   narrowed, so the only place left is the next page. */
+.Pages__host
+  .ContentEditable__root
+  :is(
+    .PlaygroundEditorTheme__tableScrollableWrapper,
+    .PlaygroundEditorTheme__code
+  ) {
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Whatever cannot be split must fit on one page. A block taller than the
+   content area fits nowhere: the browser pushes it past every break, the
+   page count grows, and the new breaks push it further, without end. Cap
+   such blocks below the content height (minus their own margins) and let
+   them scroll or clip instead. */
+.Pages__host .ContentEditable__root .PlaygroundEditorTheme__code {
+  max-height: calc(var(--page-content-height) - 16px);
+}
+.Pages__host
+  .ContentEditable__root
+  .PlaygroundEditorTheme__tableScrollableWrapper {
+  max-height: calc(var(--page-content-height) - 5px);
+}
+.Pages__host .ContentEditable__root > [data-lexical-decorator] {
+  max-height: calc(var(--page-content-height) - 32px);
+  overflow-y: clip;
+}
+/* Inline decorators (images) sit in a line box, which cannot be split
+   either; a line box taller than the page is pushed the same way. */
+.Pages__host .ContentEditable__root img,
+.Pages__host .ContentEditable__root iframe {
+  max-height: calc(var(--page-content-height) - 48px);
+  object-fit: contain;
+}
+
+/* Print: the on-screen layout is printed as-is, one screen page per
+   printed page. Only the gap between pages collapses (every gap-dependent
+   value derives from --page-gap); print.ts zeroes the @page margins. */
+@media print {
+  .Pages__host {
+    --page-gap: 0px !important;
+    zoom: 1 !important;
+    margin: 0;
+    box-shadow: none;
+    overflow: clip; /* sub-pixel overflow must not add a blank page */
+  }
+  /* The global print rules force the root to width: 100% with no padding;
+     restore the margins and keep the box inside the host so line boxes
+     still sit between the page-break floats. */
+  .Pages__host > .ContentEditable__root {
+    box-sizing: border-box;
+    width: auto !important;
+    padding: 0 var(--page-margin-right) 0 var(--page-margin-left) !important;
+  }
+  .Pages__gap {
+    border: 0;
+    background: transparent;
+  }
+  .Pages__header,
+  .Pages__footer {
+    background: transparent;
+  }
+  .Pages__slot--live {
+    outline: none;
+  }
+  .Pages__layer [data-page-slot][data-empty='true']::after {
+    display: none;
+  }
+  /* The stretched bottom margin already lands the next block on the next
+     page; the node's own forced break would add an empty page. */
+  .Pages__host hr[data-lexical-page-break] {
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+}
+@page {
+  size: var(--page-width) var(--page-height);
+  margin-top: var(--page-margin-top, 0.4in);
+  margin-right: var(--page-margin-right, 0.4in);
+  margin-bottom: var(--page-margin-bottom, 0.4in);
+  margin-left: var(--page-margin-left, 0.4in);
+}

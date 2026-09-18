@@ -6,14 +6,17 @@
  *
  */
 
+import {CodeNode} from '@lexical/code';
 import {
+  type KeyboardShortcut,
   KeyboardShortcutsExtension,
   type NamedKeyboardShortcuts,
   signal,
 } from '@lexical/extension';
-import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
+import {$isLinkNode, LinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
-import {$isHeadingNode} from '@lexical/rich-text';
+import {MarkNode} from '@lexical/mark';
+import {$isHeadingNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$getSelectionStyleValueForProperty} from '@lexical/selection';
 import {
   $findMatchingParent,
@@ -31,6 +34,7 @@ import {
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
+  type Klass,
   type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
@@ -77,12 +81,48 @@ const SHORTCUT_COMMANDS: Record<
   ]),
 ) as Record<ShortcutName, LexicalCommand<KeyboardEvent>>;
 
+/**
+ * Shortcuts that create a block type only apply in editors that register
+ * its node: a page header has headings and lists, an image caption has
+ * neither. Comments belong to the document itself.
+ */
+const SHORTCUT_REQUIRED_NODES: Partial<
+  Record<ShortcutName, Klass<LexicalNode>[]>
+> = {
+  ADD_COMMENT: [MarkNode],
+  BULLET_LIST: [ListNode],
+  CHECK_LIST: [ListNode],
+  CODE_BLOCK: [CodeNode],
+  HEADING1: [HeadingNode],
+  HEADING2: [HeadingNode],
+  HEADING3: [HeadingNode],
+  INSERT_LINK: [LinkNode],
+  NUMBERED_LIST: [ListNode],
+  QUOTE: [QuoteNode],
+};
+
+/** Shortcuts that act on the document as a whole, never on a nested editor. */
+const DOCUMENT_ONLY_SHORTCUTS: ReadonlySet<ShortcutName> =
+  new Set<ShortcutName>(['ADD_COMMENT']);
+
 function buildShortcuts(): NamedKeyboardShortcuts {
   return Object.fromEntries(
-    SHORTCUT_NAMES.map(name => [
-      name,
-      {...SHORTCUT_BINDINGS[name], command: SHORTCUT_COMMANDS[name]},
-    ]),
+    SHORTCUT_NAMES.map(name => {
+      const nodes = SHORTCUT_REQUIRED_NODES[name];
+      const shortcut: KeyboardShortcut = {
+        ...SHORTCUT_BINDINGS[name],
+        // Keystrokes in a nested editor (a page header, an image caption)
+        // reach the document's listener; the action then runs against the
+        // editor that received the key.
+        bubbleFromNestedEditors: !DOCUMENT_ONLY_SHORTCUTS.has(name),
+        command: SHORTCUT_COMMANDS[name],
+      };
+      if (nodes !== undefined) {
+        shortcut.$disabled = (_selection, fromEditor) =>
+          !fromEditor.hasNodes(nodes);
+      }
+      return [name, shortcut];
+    }),
   );
 }
 
@@ -158,7 +198,15 @@ export const ShortcutsExtension = defineExtension({
       editor.registerCommand(
         SHORTCUT_COMMANDS[name],
         (event, fromEditor) => {
-          $onShortcut(fromEditor);
+          if (fromEditor === editor) {
+            $onShortcut(fromEditor);
+          } else {
+            // A shortcut that bubbled from a nested editor (a page header,
+            // an image caption) runs here in the document's update context,
+            // whose selection is null while the nested editor has focus.
+            // Run the action in the editor that received the key instead.
+            fromEditor.update(() => $onShortcut(fromEditor));
+          }
           event.preventDefault();
           return true;
         },

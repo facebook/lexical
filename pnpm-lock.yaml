@@ -5,6 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  '@rollup/plugin-terser>terser': 5.51.2
   react: 19.2.5
   react-dom: 19.2.5
   '@types/node': 26.4.1
@@ -4144,9 +4145,6 @@ packages:
   '@jridgewell/source-map@0.3.11':
     resolution: {integrity: sha512-ZMp1V8ZFcPG5dIWnQLr3NSI1MiCU7UETdS/A0G8V/XWHvJv3ZsFqutJn1Y5RPmAPX6F3BiE397OqveU/9NCuIA==}
 
-  '@jridgewell/source-map@0.3.5':
-    resolution: {integrity: sha512-UTYAUj/wviwdsMfzoSJspJxbkH5o1snzwX0//0ENX1u/55kkZZkcTZP6u9bwKGkv+dkk9at4m1Cpt0uY80kcpQ==}
-
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
@@ -6882,11 +6880,6 @@ packages:
 
   acorn@7.4.1:
     resolution: {integrity: sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==}
-    engines: {node: '>=0.4.0'}
-    hasBin: true
-
-  acorn@8.16.0:
-    resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -12464,16 +12457,6 @@ packages:
       uglify-js:
         optional: true
 
-  terser@5.44.0:
-    resolution: {integrity: sha512-nIVck8DK+GM/0Frwd+nIhZ84pR/BX7rmXMfYwyg+Sri5oGVE99/E3KvXqpC2xHFxyqXyGHTKBSioxxplrO4I4w==}
-    engines: {node: '>=10'}
-    hasBin: true
-
-  terser@5.49.2:
-    resolution: {integrity: sha512-rGbJiKeQ4WDe3EXlDAIaQcwftVfv2Q8o1awFNfvXolJYKkb1AuZY1RTOmqx4LJXZENbWZA7eIsYGHuEzHsi1nQ==}
-    engines: {node: '>=10'}
-    hasBin: true
-
   terser@5.51.2:
     resolution: {integrity: sha512-bWnjSNscmuI+GJze6ZupnHP8G/cTcsJF+bXCeQknk2SHQsgbNJnLrqiH9jZ2W4STPVXH2mDKKRX3iwPhc9Cn/Q==}
     engines: {node: '>=10'}
@@ -17799,11 +17782,6 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
 
-  '@jridgewell/source-map@0.3.5':
-    dependencies:
-      '@jridgewell/gen-mapping': 0.3.13
-      '@jridgewell/trace-mapping': 0.3.31
-
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
   '@jridgewell/trace-mapping@0.3.31':
@@ -18833,7 +18811,7 @@ snapshots:
     dependencies:
       serialize-javascript: 7.0.7
       smob: 1.4.1
-      terser: 5.44.0
+      terser: 5.51.2
     optionalDependencies:
       rollup: 4.63.1
 
@@ -20822,8 +20800,6 @@ snapshots:
       acorn: 8.18.0
 
   acorn@7.4.1: {}
-
-  acorn@8.16.0: {}
 
   acorn@8.18.0: {}
 
@@ -23574,7 +23550,7 @@ snapshots:
       he: 1.2.0
       param-case: 3.0.4
       relateurl: 0.2.7
-      terser: 5.49.2
+      terser: 5.51.2
 
   html-minifier-terser@7.2.0:
     dependencies:
@@ -27483,20 +27459,6 @@ snapshots:
       esbuild: 0.28.2
       html-minifier-terser: 7.2.0
       postcss: 8.5.15
-
-  terser@5.44.0:
-    dependencies:
-      '@jridgewell/source-map': 0.3.5
-      acorn: 8.16.0
-      commander: 2.20.3
-      source-map-support: 0.5.21
-
-  terser@5.49.2:
-    dependencies:
-      '@jridgewell/source-map': 0.3.11
-      acorn: 8.18.0
-      commander: 2.20.3
-      source-map-support: 0.5.21
 
   terser@5.51.2:
     dependencies:

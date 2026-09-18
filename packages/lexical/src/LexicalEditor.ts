@@ -1168,7 +1168,7 @@ export class LexicalEditor {
   /** @internal */
   _dirtyType: 0 | 1 | 2;
   /** @internal */
-  _cloneNotNeeded: Set<NodeKey>;
+  _cloneNotNeeded: Map<NodeKey, LexicalNode>;
   /** @internal */
   _dirtyLeaves: Set<NodeKey>;
   /** @internal */
@@ -1259,7 +1259,7 @@ export class LexicalEditor {
     this._pendingDecorators = null;
     // Used to optimize reconciliation
     this._dirtyType = NO_DIRTY_NODES;
-    this._cloneNotNeeded = new Set();
+    this._cloneNotNeeded = new Map();
     this._dirtyLeaves = new Set();
     this._dirtyElements = new Map();
     this._normalizedNodes = new Set();

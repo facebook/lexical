@@ -266,7 +266,7 @@ declare export class LexicalEditor {
   _createEditorArgs?: CreateEditorArgs;
   _config: EditorConfig;
   _dirtyType: 0 | 1 | 2;
-  _cloneNotNeeded: Set<NodeKey>;
+  _cloneNotNeeded: Map<NodeKey, LexicalNode>;
   _dirtyLeaves: Set<NodeKey>;
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
   _normalizedNodes: Set<NodeKey>;

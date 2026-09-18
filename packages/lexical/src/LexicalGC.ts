@@ -176,8 +176,11 @@ export function $garbageCollectDetachedNodes(
     }
   }
 
+  const editor = getActiveEditor();
+  const cloneNotNeeded = editor._cloneNotNeeded;
   for (const nodeKey of nodeMapDelete) {
     nodeMap.delete(nodeKey);
+    cloneNotNeeded.delete(nodeKey);
   }
 
   // Clear the composition key if it points at a node that just got collected.
@@ -185,7 +188,6 @@ export function $garbageCollectDetachedNodes(
   // update (or any host removal) drops the composing TextNode — most often
   // observable when the composing node sits inside a slot subtree that gets
   // collected wholesale via the dual-channel slot GC above.
-  const editor = getActiveEditor();
   const compositionKey = editor._compositionKey;
   if (compositionKey !== null && !nodeMap.has(compositionKey)) {
     editor._compositionKey = null;

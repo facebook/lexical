@@ -73,6 +73,33 @@ Use [PlainTextExtension](/docs/api/modules/lexical_plain-text#plaintextextension
 
 :::
 
+### Configuring an error boundary with `PlainTextExtension`
+
+The `ErrorBoundary` prop on `PlainTextPlugin` is configured through
+`ReactExtension` when using `PlainTextExtension`. Add a configured
+`ReactExtension` to the root extension's dependencies:
+
+```tsx
+import {configExtension, defineExtension} from 'lexical';
+import {PlainTextExtension} from '@lexical/plain-text';
+import {ReactExtension} from '@lexical/react/ReactExtension';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+
+const editorExtension = defineExtension({
+  name: 'MyEditor',
+  dependencies: [
+    PlainTextExtension,
+    configExtension(ReactExtension, {
+      ErrorBoundary: LexicalErrorBoundary,
+    }),
+  ],
+});
+```
+
+If you do not provide `ErrorBoundary`, `ReactExtension` uses its default error
+boundary. Replace `LexicalErrorBoundary` above with your own error boundary
+component when you need custom error handling.
+
 ### `LexicalRichTextPlugin`
 
 React wrapper for `@lexical/rich-text` that adds major features for rich text editing, including typing, deletion, copy/pasting, indent/outdent and bold/italic/underline/strikethrough text formatting.

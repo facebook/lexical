@@ -128,7 +128,13 @@ export function $buildOffsetMap(): OffsetEntry[] {
 
   for (const {node, depth} of $dfsWithSlotsIterator()) {
     if ($isElementNode(node) && !node.isInline() && depth > 0) {
-      if (prevNonInlineDepth !== null && depth <= prevNonInlineDepth) {
+      const prevSib = node.getPreviousSibling();
+      if (
+        prevNonInlineDepth !== null &&
+        depth <= prevNonInlineDepth &&
+        $isElementNode(prevSib) &&
+        !prevSib.isInline()
+      ) {
         offset += 2;
       }
       prevNonInlineDepth = depth;

@@ -3013,6 +3013,65 @@ describe('LexicalEditor tests', () => {
     ]);
   });
 
+  // A root with no children is not a usable document, but it is a shape that
+  // reaches `setEditorState` from outside the editor: content persisted while
+  // the editor was empty serializes to `{"root":{"children":[]}}` and comes
+  // back through `parseEditorState` on rehydrate.
+  const emptySerializedEditorState = JSON.stringify({
+    root: {
+      children: [],
+      direction: null,
+      format: '',
+      indent: 0,
+      type: 'root',
+      version: 1,
+    },
+  });
+
+  it('setEditorState recovers an empty editor state and reports it to onWarn', () => {
+    const onWarn = vi.fn();
+    init(undefined, undefined, onWarn);
+
+    editor.setEditorState(editor.parseEditorState(emptySerializedEditorState));
+
+    expect(onWarn).toHaveBeenCalledTimes(1);
+    expect(onWarn.mock.calls[0][0].message).toContain(
+      'the editor state is empty',
+    );
+    // Recovered to the canonical empty document rather than left childless.
+    editor.read(() => {
+      const root = $getRoot();
+
+      expect(root.getChildrenSize()).toBe(1);
+      expect($isParagraphNode(root.getFirstChild())).toBe(true);
+      expect(root.getTextContent()).toBe('');
+    });
+    // The recovered document renders a block to place a caret in; a childless
+    // root reconciles to an empty contenteditable.
+    expect(editor.getRootElement()!.innerHTML).toContain('<p');
+    // And the recovered paragraph is a real block to type into.
+    editor.update(
+      () => {
+        $getRoot().selectEnd().insertText('typed');
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('typed');
+  });
+
+  it('setEditorState throws on an empty editor state with the default onWarn in dev', () => {
+    init();
+
+    const emptyEditorState = editor.parseEditorState(
+      emptySerializedEditorState,
+    );
+
+    expect(() => editor.setEditorState(emptyEditorState)).toThrow(
+      'the editor state is empty',
+    );
+  });
+
   it('mutation listeners does not trigger when other node types are mutated', async () => {
     init();
 

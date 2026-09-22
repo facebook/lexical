@@ -3013,10 +3013,11 @@ describe('LexicalEditor tests', () => {
     ]);
   });
 
-  // A root with no children is not a usable document, but it is a shape that
-  // reaches `setEditorState` from outside the editor: content persisted while
-  // the editor was empty serializes to `{"root":{"children":[]}}` and comes
-  // back through `parseEditorState` on rehydrate.
+  // A root with no children is not the canonical empty document, but it is a
+  // shape that reaches `setEditorState` from outside the editor: content
+  // persisted while the editor was empty serializes to
+  // `{"root":{"children":[]}}` and comes back through `parseEditorState` on
+  // rehydrate.
   const emptySerializedEditorState = JSON.stringify({
     root: {
       children: [],
@@ -3028,48 +3029,29 @@ describe('LexicalEditor tests', () => {
     },
   });
 
-  it('setEditorState recovers an empty editor state and reports it to onWarn', () => {
-    const onWarn = vi.fn();
-    init(undefined, undefined, onWarn);
-
-    editor.setEditorState(editor.parseEditorState(emptySerializedEditorState));
-
-    expect(onWarn).toHaveBeenCalledTimes(1);
-    expect(onWarn.mock.calls[0][0].message).toContain(
-      'the editor state is empty',
-    );
-    // Recovered to the canonical empty document rather than left childless.
-    editor.read(() => {
-      const root = $getRoot();
-
-      expect(root.getChildrenSize()).toBe(1);
-      expect($isParagraphNode(root.getFirstChild())).toBe(true);
-      expect(root.getTextContent()).toBe('');
-    });
-    // The recovered document renders a block to place a caret in; a childless
-    // root reconciles to an empty contenteditable.
-    expect(editor.getRootElement()!.innerHTML).toContain('<p');
-    // And the recovered paragraph is a real block to type into.
+  it('setEditorState reports an empty editor state outside production', () => {
+    const onError = vi.fn();
+    init(onError);
     editor.update(
       () => {
-        $getRoot().selectEnd().insertText('typed');
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('before'));
+        $getRoot().append(paragraph);
       },
       {discrete: true},
     );
 
-    expect(editor.read(() => $getRoot().getTextContent())).toBe('typed');
-  });
+    editor.setEditorState(editor.parseEditorState(emptySerializedEditorState));
 
-  it('setEditorState throws on an empty editor state with the default onWarn in dev', () => {
-    init();
-
-    const emptyEditorState = editor.parseEditorState(
-      emptySerializedEditorState,
-    );
-
-    expect(() => editor.setEditorState(emptyEditorState)).toThrow(
+    // `devInvariant` throws outside production, so the empty state is reported
+    // through the editor's error handling and the update is rolled back —
+    // leaving the content that was already there. In production it only warns,
+    // and the recovery covered by LexicalEditorEmptyState.test.ts applies.
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError.mock.calls[0][0].message).toContain(
       'the editor state is empty',
     );
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('before');
   });
 
   it('mutation listeners does not trigger when other node types are mutated', async () => {

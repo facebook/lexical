@@ -11,6 +11,7 @@ import type {KeyDownShortcut} from './LexicalEvents';
 import type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
+import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
 import {LEXICAL_VERSION} from '@lexical/internal/version';
 
@@ -1739,40 +1740,11 @@ export class LexicalEditor {
 
   /**
    * Imperatively set the EditorState. Triggers reconciliation like an update.
-   *
-   * An empty EditorState (a root with no children) is not the canonical empty
-   * document: it reconciles to a contenteditable with no block element in it
-   * at all, so there is nowhere to place a caret. It is reported through
-   * {@link CreateEditorArgs.onWarn} — which throws in development and only
-   * `console.warn`s in production — and recovered to a root with one empty
-   * paragraph, so that rehydrating content that was persisted while empty
-   * cannot crash the host application.
-   *
    * @param editorState - the state to set the editor
    * @param options - options for the update.
    */
   setEditorState(editorState: EditorState, options?: EditorSetOptions): void {
-    // A childless root is not a usable document: it renders an empty
-    // contenteditable with no `<p><br></p>` to click into, and everything
-    // downstream that assumes `root.getFirstChild()` exists has to
-    // special-case it. It nevertheless arrives from outside the editor —
-    // content persisted while the editor was empty round-trips to
-    // `{"root":{"children":[]}}` and comes back through `parseEditorState()`
-    // on rehydrate — where a hard failure takes down the host application, so
-    // warn and recover instead of throwing.
     const isEmptyEditorState = editorState.isEmpty();
-    if (isEmptyEditorState) {
-      // Must be a direct `_onWarn` call rather than an `invariant` /
-      // `$devInvariant` helper: `transform-error-messages` rewrites those call
-      // sites to a bare `formatProd*Message(code, ...)` in the compiled
-      // bundle, dropping the editor reference, so the warning would never
-      // reach `_onWarn` in a built artifact.
-      this._onWarn(
-        new Error(
-          "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty. Recovered by appending an empty paragraph to the root.",
-        ),
-      );
-    }
 
     // Ensure that we have a writable EditorState so that transforms can run
     // during a historic operation
@@ -1816,9 +1788,17 @@ export class LexicalEditor {
           this._updateTags.add(tag);
         }
         if (isEmptyEditorState) {
-          // Recover to the canonical empty document. Done here, inside the
-          // update, so the paragraph goes through the normal writable-node
-          // and reconciliation path.
+          // A root with no children is not the canonical empty document: it
+          // reconciles to a contenteditable with no block element to place a
+          // caret in. It still arrives from outside the editor, because
+          // content persisted while the editor was empty round-trips to
+          // `{"root":{"children":[]}}`, so recover rather than leave the
+          // editor unusable. Reusing the wording of the invariant this
+          // replaces keeps the existing error code.
+          devInvariant(
+            false,
+            "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty.",
+          );
           $getRoot().append($createParagraphNode());
         }
         if (editorState._parsed) {

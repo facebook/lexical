@@ -19,6 +19,7 @@ import {
 } from '@lexical/list';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $create,
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
@@ -52,11 +53,8 @@ import {
 } from '../../src/plugins/FindReplaceExtension';
 
 class TestDecoratorNode extends DecoratorNode<null> {
-  static getType(): string {
-    return 'test-decorator';
-  }
-  static clone(node: TestDecoratorNode): TestDecoratorNode {
-    return new TestDecoratorNode(node.__key);
+  $config() {
+    return this.config('test-decorator', {extends: DecoratorNode});
   }
   createDOM(): HTMLElement {
     return document.createElement('div');
@@ -70,20 +68,15 @@ class TestDecoratorNode extends DecoratorNode<null> {
   getTextContent(): string {
     return 'URL';
   }
-  decorate(): null {
-    return null;
-  }
 }
+
 function $createTestDecoratorNode(): TestDecoratorNode {
-  return new TestDecoratorNode();
+  return $create(TestDecoratorNode);
 }
 
 class SlotDecoratorNode extends DecoratorNode<null> {
-  static getType(): string {
-    return 'slot-decorator';
-  }
-  static clone(node: SlotDecoratorNode): SlotDecoratorNode {
-    return new SlotDecoratorNode(node.__key);
+  $config() {
+    return this.config('slot-decorator', {extends: DecoratorNode});
   }
   createDOM(): HTMLElement {
     return document.createElement('div');
@@ -94,12 +87,9 @@ class SlotDecoratorNode extends DecoratorNode<null> {
   isInline(): false {
     return false;
   }
-  decorate(): null {
-    return null;
-  }
 }
 function $createSlotDecoratorNode(): SlotDecoratorNode {
-  return new SlotDecoratorNode();
+  return $create(SlotDecoratorNode);
 }
 
 const TestExtension = defineExtension({

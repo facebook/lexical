@@ -19,11 +19,11 @@ import {
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
+import {$dfsWithSlotsIterator} from '@lexical/utils';
 import {
   $getNodeByKeyOrThrow,
   $getRoot,
-  $getSlot,
-  $getSlotNames,
+  $isBlockElementNode,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
@@ -39,7 +39,6 @@ import {
   KEY_DOWN_COMMAND,
   type LexicalCommand,
   type LexicalEditor,
-  type LexicalNode,
   mergeRegister,
   type NodeKey,
 } from 'lexical';
@@ -129,7 +128,11 @@ export function $buildOffsetMap(): OffsetEntry[] {
   const entries: OffsetEntry[] = [];
   let offset = 0;
 
-  function traverse(node: LexicalNode) {
+  for (const {node} of $dfsWithSlotsIterator()) {
+    // Handle a preceding non-inline ElementNode's '\n\n'
+    if ($isBlockElementNode(node.getPreviousSibling())) {
+      offset += 2;
+    }
     if ($isTextNode(node)) {
       const len = node.getTextContentSize();
       entries.push({
@@ -141,32 +144,9 @@ export function $buildOffsetMap(): OffsetEntry[] {
     } else if ($isLineBreakNode(node)) {
       offset += 1;
     } else if ($isElementNode(node)) {
-      for (const name of $getSlotNames(node)) {
-        const slot = $getSlot(node, name);
-        if (slot !== null) {
-          traverse(slot);
-        }
-      }
-      const children = node.getChildren();
-      const childrenLength = children.length;
-      for (let i = 0; i < childrenLength; i++) {
-        const child = children[i];
-        traverse(child);
-        if (
-          $isElementNode(child) &&
-          !child.isInline() &&
-          i !== childrenLength - 1
-        ) {
-          offset += 2;
-        }
-      }
+      // An override of ElementNode.getTextContent() is ignored here, and would
+      // require a specific handler for the same reasons as DecoratorNode below
     } else if ($isDecoratorNode(node)) {
-      for (const name of $getSlotNames(node)) {
-        const slot = $getSlot(node, name);
-        if (slot !== null) {
-          traverse(slot);
-        }
-      }
       // The default implementation of DecoratorNode.getTextContent()
       // only returns the contents of the slots, which are traversed
       // after this node. We skip calling getTextContentSize for nodes
@@ -185,8 +165,6 @@ export function $buildOffsetMap(): OffsetEntry[] {
           : node.getTextContentSize();
     }
   }
-
-  traverse($getRoot());
   return entries;
 }
 

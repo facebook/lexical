@@ -96,8 +96,11 @@ const editorStateRef = useRef(undefined);
 <LexicalComposer initialConfig={{
   editorState: initialEditorState
 }}>
-  <LexicalRichTextPlugin />
-  <LexicalOnChangePlugin onChange={(editorState) => {
+  <RichTextPlugin
+    contentEditable={<ContentEditable />}
+    ErrorBoundary={LexicalErrorBoundary}
+  />
+  <OnChangePlugin onChange={(editorState) => {
     editorStateRef.current = editorState;
   }} />
   <Button label="Save" onPress={() => {

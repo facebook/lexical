@@ -23,6 +23,9 @@ import {$dfsWithSlotsIterator} from '@lexical/utils';
 import {
   $getNodeByKeyOrThrow,
   $getRoot,
+  $getSlot,
+  $getSlotNames,
+  $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
@@ -124,20 +127,11 @@ export function expandReplacement(
 export function $buildOffsetMap(): OffsetEntry[] {
   const entries: OffsetEntry[] = [];
   let offset = 0;
-  let prevNonInlineDepth: number | null = null;
 
-  for (const {node, depth} of $dfsWithSlotsIterator()) {
-    if ($isElementNode(node) && !node.isInline() && depth > 0) {
-      const prevSib = node.getPreviousSibling();
-      if (
-        prevNonInlineDepth !== null &&
-        depth <= prevNonInlineDepth &&
-        $isElementNode(prevSib) &&
-        !prevSib.isInline()
-      ) {
-        offset += 2;
-      }
-      prevNonInlineDepth = depth;
+  for (const {node} of $dfsWithSlotsIterator()) {
+    const prevSib = node.getPreviousSibling();
+    if (prevSib !== null && $isElementNode(prevSib) && !prevSib.isInline()) {
+      offset += 2;
     }
 
     if ($isLineBreakNode(node)) {
@@ -150,6 +144,15 @@ export function $buildOffsetMap(): OffsetEntry[] {
         key: node.__key,
       });
       offset += len;
+    } else if ($isDecoratorNode(node)) {
+      let slotsSize = 0;
+      for (const name of $getSlotNames(node)) {
+        const slot = $getSlot(node, name);
+        if (slot !== null) {
+          slotsSize += slot.getTextContentSize();
+        }
+      }
+      offset += node.getTextContentSize() - slotsSize;
     }
   }
 

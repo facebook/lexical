@@ -26,6 +26,7 @@ import {
   $isElementNode,
   $isTextNode,
   $setSlot,
+  DecoratorNode,
   defineExtension,
   IS_BOLD,
 } from 'lexical';
@@ -50,9 +51,37 @@ import {
   TOGGLE_REGEX_COMMAND,
 } from '../../src/plugins/FindReplaceExtension';
 
+class TestDecoratorNode extends DecoratorNode<null> {
+  static getType(): string {
+    return 'test-decorator';
+  }
+  static clone(node: TestDecoratorNode): TestDecoratorNode {
+    return new TestDecoratorNode(node.__key);
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  isInline(): false {
+    return false;
+  }
+  getTextContent(): string {
+    return 'URL';
+  }
+  decorate(): null {
+    return null;
+  }
+}
+function $createTestDecoratorNode(): TestDecoratorNode {
+  return new TestDecoratorNode();
+}
+
 const TestExtension = defineExtension({
   dependencies: [RichTextExtension, ListExtension, LinkExtension],
   name: '[test-find-replace]',
+  nodes: [TestDecoratorNode],
 });
 
 describe('findMatches', () => {
@@ -388,6 +417,57 @@ describe('$buildOffsetMap', () => {
     expect(result.map[0]).toMatchObject({globalEnd: 4, globalStart: 0});
     expect(result.map[1]).toMatchObject({globalEnd: 9, globalStart: 4});
     expect(result.text).toBe('slotchild');
+  });
+  test('maps across DecoratorNode without extra offset loss', () => {
+    using editor = buildEditorFromExtensions(TestExtension);
+    editor.update(
+      () => {
+        const p1 = $createParagraphNode();
+        p1.append($createTextNode('A'));
+        const dec = $createTestDecoratorNode();
+        const p2 = $createParagraphNode();
+        p2.append($createTextNode('B'));
+        $getRoot().clear().append(p1, dec, p2);
+      },
+      {discrete: true},
+    );
+    const result = editor.read(() => {
+      const map = $buildOffsetMap();
+      const text = $getRoot().getTextContent();
+      return {map, text};
+    });
+    expect(result.map).toHaveLength(2);
+    expect(result.map[0]).toMatchObject({globalEnd: 1, globalStart: 0});
+    expect(result.map[1]).toMatchObject({globalEnd: 7, globalStart: 6});
+    expect(result.text).toBe('A\n\nURLB');
+  });
+
+  test('maps across DecoratorNode with block slot content without extra offset loss', () => {
+    using editor = buildEditorFromExtensions(TestExtension);
+    editor.update(
+      () => {
+        const p1 = $createParagraphNode();
+        p1.append($createTextNode('A'));
+        const dec = $createTestDecoratorNode();
+        const slotP = $createParagraphNode();
+        slotP.append($createTextNode('S'));
+        $setSlot(dec, 'mySlot', slotP);
+        const p2 = $createParagraphNode();
+        p2.append($createTextNode('B'));
+        $getRoot().clear().append(p1, dec, p2);
+      },
+      {discrete: true},
+    );
+    const result = editor.read(() => {
+      const map = $buildOffsetMap();
+      const text = $getRoot().getTextContent();
+      return {map, text};
+    });
+    expect(result.map).toHaveLength(3);
+    expect(result.map[0]).toMatchObject({globalEnd: 1, globalStart: 0});
+    expect(result.map[1]).toMatchObject({globalEnd: 6, globalStart: 5}); // S
+    expect(result.map[2]).toMatchObject({globalEnd: 7, globalStart: 6}); // B
+    expect(result.text).toBe('A\n\nURLB');
   });
 
   test('handles empty editor', () => {

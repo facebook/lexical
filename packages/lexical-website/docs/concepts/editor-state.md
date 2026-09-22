@@ -77,7 +77,8 @@ const loadContent = async () => {
 
 const initialEditorState = await loadContent();
 const editor = createEditor(...);
-registerRichText(editor, initialEditorState);
+registerRichText(editor);
+editor.setEditorState(editor.parseEditorState(initialEditorState));
 
 ...
 

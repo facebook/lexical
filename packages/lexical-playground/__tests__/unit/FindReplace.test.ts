@@ -102,10 +102,37 @@ function $createSlotDecoratorNode(): SlotDecoratorNode {
   return new SlotDecoratorNode();
 }
 
+class CustomSlotDecoratorNode extends DecoratorNode<null> {
+  static getType(): string {
+    return 'custom-slot-decorator';
+  }
+  static clone(node: CustomSlotDecoratorNode): CustomSlotDecoratorNode {
+    return new CustomSlotDecoratorNode(node.__key);
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  isInline(): false {
+    return false;
+  }
+  getTextContent(): string {
+    return 'SURL';
+  }
+  decorate(): null {
+    return null;
+  }
+}
+function $createCustomSlotDecoratorNode(): CustomSlotDecoratorNode {
+  return new CustomSlotDecoratorNode();
+}
+
 const TestExtension = defineExtension({
   dependencies: [RichTextExtension, ListExtension, LinkExtension],
   name: '[test-find-replace]',
-  nodes: [TestDecoratorNode, SlotDecoratorNode],
+  nodes: [TestDecoratorNode, SlotDecoratorNode, CustomSlotDecoratorNode],
 });
 
 describe('findMatches', () => {
@@ -492,6 +519,34 @@ describe('$buildOffsetMap', () => {
     expect(result.map[1]).toMatchObject({globalEnd: 4, globalStart: 3}); // S
     expect(result.map[2]).toMatchObject({globalEnd: 5, globalStart: 4}); // B
     expect(result.text).toBe('A\n\nSB');
+  });
+
+  test('maps across DecoratorNode with custom text and block slot content without extra offset loss', () => {
+    using editor = buildEditorFromExtensions(TestExtension);
+    editor.update(
+      () => {
+        const p1 = $createParagraphNode();
+        p1.append($createTextNode('A'));
+        const dec = $createCustomSlotDecoratorNode();
+        const slotP = $createParagraphNode();
+        slotP.append($createTextNode('S'));
+        $setSlot(dec, 'mySlot', slotP);
+        const p2 = $createParagraphNode();
+        p2.append($createTextNode('B'));
+        $getRoot().clear().append(p1, dec, p2);
+      },
+      {discrete: true},
+    );
+    const result = editor.read(() => {
+      const map = $buildOffsetMap();
+      const text = $getRoot().getTextContent();
+      return {map, text};
+    });
+    expect(result.map).toHaveLength(3);
+    expect(result.map[0]).toMatchObject({globalEnd: 1, globalStart: 0});
+    expect(result.map[1]).toMatchObject({globalEnd: 4, globalStart: 3}); // S
+    expect(result.map[2]).toMatchObject({globalEnd: 8, globalStart: 7}); // B
+    expect(result.text).toBe('A\n\nSURLB');
   });
 
   test('handles empty editor', () => {

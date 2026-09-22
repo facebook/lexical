@@ -7,20 +7,7 @@
  */
 
 import type {DecoratorComponentProps} from '@lexical/react/ReactPluginHostExtension';
-
-import './FindReplace.css';
-
-import {
-  computed,
-  effect,
-  namedSignals,
-  watchedSignal,
-} from '@lexical/extension';
-import {ReactExtension} from '@lexical/react/ReactExtension';
-import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
-import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
-import {$dfsWithSlotsIterator} from '@lexical/utils';
-import {
+import type {
   $getNodeByKeyOrThrow,
   $getRoot,
   $getSlot,
@@ -39,9 +26,22 @@ import {
   KEY_DOWN_COMMAND,
   type LexicalCommand,
   type LexicalEditor,
+  LexicalNode,
   mergeRegister,
   type NodeKey,
 } from 'lexical';
+
+import './FindReplace.css';
+
+import {
+  computed,
+  effect,
+  namedSignals,
+  watchedSignal,
+} from '@lexical/extension';
+import {ReactExtension} from '@lexical/react/ReactExtension';
+import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
+import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {type JSX, useRef} from 'react';
 import {createPortal} from 'react-dom';
 
@@ -128,15 +128,8 @@ export function $buildOffsetMap(): OffsetEntry[] {
   const entries: OffsetEntry[] = [];
   let offset = 0;
 
-  for (const {node} of $dfsWithSlotsIterator()) {
-    const prevSib = node.getPreviousSibling();
-    if (prevSib !== null && $isElementNode(prevSib) && !prevSib.isInline()) {
-      offset += 2;
-    }
-
-    if ($isLineBreakNode(node)) {
-      offset += 1;
-    } else if ($isTextNode(node)) {
+  function traverse(node: LexicalNode) {
+    if ($isTextNode(node)) {
       const len = node.getTextContentSize();
       entries.push({
         globalEnd: offset + len,
@@ -144,18 +137,42 @@ export function $buildOffsetMap(): OffsetEntry[] {
         key: node.__key,
       });
       offset += len;
-    } else if ($isDecoratorNode(node)) {
-      let slotsSize = 0;
+    } else if ($isLineBreakNode(node)) {
+      offset += 1;
+    } else if ($isElementNode(node)) {
       for (const name of $getSlotNames(node)) {
         const slot = $getSlot(node, name);
         if (slot !== null) {
-          slotsSize += slot.getTextContentSize();
+          traverse(slot);
         }
       }
+      const children = node.getChildren();
+      const childrenLength = children.length;
+      for (let i = 0; i < childrenLength; i++) {
+        const child = children[i];
+        traverse(child);
+        if (
+          $isElementNode(child) &&
+          !child.isInline() &&
+          i !== childrenLength - 1
+        ) {
+          offset += 2;
+        }
+      }
+    } else if ($isDecoratorNode(node)) {
+      const offsetBefore = offset;
+      for (const name of $getSlotNames(node)) {
+        const slot = $getSlot(node, name);
+        if (slot !== null) {
+          traverse(slot);
+        }
+      }
+      const slotsSize = offset - offsetBefore;
       offset += node.getTextContentSize() - slotsSize;
     }
   }
 
+  traverse($getRoot());
   return entries;
 }
 

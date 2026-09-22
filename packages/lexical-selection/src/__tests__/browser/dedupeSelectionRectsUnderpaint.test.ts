@@ -62,8 +62,31 @@ function selectAll(root: HTMLElement): Range {
   return r;
 }
 
-describe('dedupeSelectionRects under-paints real content for overlapping inline boxes', () => {
-  it('drops the wider rect that uniquely covers part of the selection', () => {
+describe('selection rectangle filtering and deduplication', () => {
+  it('keeps disjoint mixed-size fragments when their top edges sort out of text order', () => {
+    const root = setupRoot();
+    onTestFinished(() => root.remove());
+
+    root.style.font = '16px/20px Arial';
+    root.innerHTML =
+      '<p style="margin:0"><strong style="font-size:8px">small bold</strong><span> normal text</span></p>';
+    void root.offsetHeight;
+
+    const range = selectAll(root);
+    const rootRect = root.getBoundingClientRect();
+    const sourceFragments = Array.from(range.getClientRects()).filter(
+      rect => rect.width < rootRect.width,
+    );
+    const selectionRects = createRectsFromDOMRange(
+      {getRootElement: () => root},
+      range,
+    );
+
+    expect(sourceFragments).toHaveLength(2);
+    expect(selectionRects).toEqual(expect.arrayContaining(sourceFragments));
+  });
+
+  it('drops the wider rect that uniquely covers part of the selection for overlapping inline boxes', () => {
     const root = setupRoot();
     onTestFinished(() => root.remove());
 

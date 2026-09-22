@@ -158,12 +158,15 @@ export function createRectsFromDOMRange(
   let prevRect;
   for (let i = 0; i < selectionRectsLength; i++) {
     const selectionRect = selectionRects[i];
-    // Exclude rects that overlap preceding Rects in the sorted list.
+    // Exclude rects that overlap preceding rects in both axes. Rects from
+    // differently-sized inline content can sort out of their text order, so
+    // comparing only the preceding right edge would drop adjacent fragments.
     const isOverlappingRect =
       prevRect &&
       prevRect.top <= selectionRect.top &&
       prevRect.top + prevRect.height > selectionRect.top &&
-      prevRect.left + prevRect.width > selectionRect.left;
+      prevRect.left < selectionRect.right &&
+      prevRect.right > selectionRect.left;
     // Exclude selections that span the entire element
     const selectionSpansElement =
       selectionRect.width + rootPadding === rootRect.width;

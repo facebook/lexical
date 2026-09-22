@@ -78,10 +78,34 @@ function $createTestDecoratorNode(): TestDecoratorNode {
   return new TestDecoratorNode();
 }
 
+class SlotDecoratorNode extends DecoratorNode<null> {
+  static getType(): string {
+    return 'slot-decorator';
+  }
+  static clone(node: SlotDecoratorNode): SlotDecoratorNode {
+    return new SlotDecoratorNode(node.__key);
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  isInline(): false {
+    return false;
+  }
+  decorate(): null {
+    return null;
+  }
+}
+function $createSlotDecoratorNode(): SlotDecoratorNode {
+  return new SlotDecoratorNode();
+}
+
 const TestExtension = defineExtension({
   dependencies: [RichTextExtension, ListExtension, LinkExtension],
   name: '[test-find-replace]',
-  nodes: [TestDecoratorNode],
+  nodes: [TestDecoratorNode, SlotDecoratorNode],
 });
 
 describe('findMatches', () => {
@@ -448,7 +472,7 @@ describe('$buildOffsetMap', () => {
       () => {
         const p1 = $createParagraphNode();
         p1.append($createTextNode('A'));
-        const dec = $createTestDecoratorNode();
+        const dec = $createSlotDecoratorNode();
         const slotP = $createParagraphNode();
         slotP.append($createTextNode('S'));
         $setSlot(dec, 'mySlot', slotP);
@@ -465,9 +489,9 @@ describe('$buildOffsetMap', () => {
     });
     expect(result.map).toHaveLength(3);
     expect(result.map[0]).toMatchObject({globalEnd: 1, globalStart: 0});
-    expect(result.map[1]).toMatchObject({globalEnd: 6, globalStart: 5}); // S
-    expect(result.map[2]).toMatchObject({globalEnd: 7, globalStart: 6}); // B
-    expect(result.text).toBe('A\n\nURLB');
+    expect(result.map[1]).toMatchObject({globalEnd: 4, globalStart: 3}); // S
+    expect(result.map[2]).toMatchObject({globalEnd: 5, globalStart: 4}); // B
+    expect(result.text).toBe('A\n\nSB');
   });
 
   test('handles empty editor', () => {

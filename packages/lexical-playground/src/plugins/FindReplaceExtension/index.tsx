@@ -7,29 +7,6 @@
  */
 
 import type {DecoratorComponentProps} from '@lexical/react/ReactPluginHostExtension';
-import type {
-  $getNodeByKeyOrThrow,
-  $getRoot,
-  $getSlot,
-  $getSlotNames,
-  $isDecoratorNode,
-  $isElementNode,
-  $isLineBreakNode,
-  $isTextNode,
-  COMMAND_PRIORITY_LOW,
-  configExtension,
-  CONTROL_OR_META,
-  createCommand,
-  defineExtension,
-  IS_APPLE,
-  isExactShortcutMatch,
-  KEY_DOWN_COMMAND,
-  type LexicalCommand,
-  type LexicalEditor,
-  LexicalNode,
-  mergeRegister,
-  type NodeKey,
-} from 'lexical';
 
 import './FindReplace.css';
 
@@ -42,6 +19,30 @@ import {
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
+import {
+  $getNodeByKeyOrThrow,
+  $getRoot,
+  $getSlot,
+  $getSlotNames,
+  $isDecoratorNode,
+  $isElementNode,
+  $isLineBreakNode,
+  $isTextNode,
+  COMMAND_PRIORITY_LOW,
+  configExtension,
+  CONTROL_OR_META,
+  createCommand,
+  DecoratorNode,
+  defineExtension,
+  IS_APPLE,
+  isExactShortcutMatch,
+  KEY_DOWN_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
+  type NodeKey,
+} from 'lexical';
 import {type JSX, useRef} from 'react';
 import {createPortal} from 'react-dom';
 
@@ -160,15 +161,28 @@ export function $buildOffsetMap(): OffsetEntry[] {
         }
       }
     } else if ($isDecoratorNode(node)) {
-      const offsetBefore = offset;
       for (const name of $getSlotNames(node)) {
         const slot = $getSlot(node, name);
         if (slot !== null) {
           traverse(slot);
         }
       }
-      const slotsSize = offset - offsetBefore;
-      offset += node.getTextContentSize() - slotsSize;
+      // The default implementation of DecoratorNode.getTextContent()
+      // only returns the contents of the slots, which are traversed
+      // after this node. We skip calling getTextContentSize for nodes
+      // that use it to avoid double-counting slot text.
+      //
+      // This algorithm would be incorrect for a DecoratorNode that overrides
+      // getTextContentSize and has slots, but the API provides no way for
+      // us to know where the customized text was inserted relative to the
+      // slot text (or if the slot text is represented at all). There are no
+      // DecoratorNodes in the playground that override getTextContent and
+      // have slots, but if you are adapting this to an application that
+      // does you will need to address it accordingly.
+      offset +=
+        node.getTextContent === DecoratorNode.prototype.getTextContent
+          ? 0
+          : node.getTextContentSize();
     }
   }
 

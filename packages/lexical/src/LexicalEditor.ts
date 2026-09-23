@@ -11,10 +11,12 @@ import type {KeyDownShortcut} from './LexicalEvents';
 import type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
+import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
 import {LEXICAL_VERSION} from '@lexical/internal/version';
 
 import {
+  $createParagraphNode,
   $getRoot,
   $getSelection,
   $isElementNode,
@@ -1742,12 +1744,7 @@ export class LexicalEditor {
    * @param options - options for the update.
    */
   setEditorState(editorState: EditorState, options?: EditorSetOptions): void {
-    if (editorState.isEmpty()) {
-      invariant(
-        false,
-        "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty.",
-      );
-    }
+    const isEmptyEditorState = editorState.isEmpty();
 
     // Ensure that we have a writable EditorState so that transforms can run
     // during a historic operation
@@ -1789,6 +1786,20 @@ export class LexicalEditor {
       () => {
         if (tag) {
           this._updateTags.add(tag);
+        }
+        if (isEmptyEditorState) {
+          // A root with no children is not the canonical empty document: it
+          // reconciles to a contenteditable with no block element to place a
+          // caret in. It still arrives from outside the editor, because
+          // content persisted while the editor was empty round-trips to
+          // `{"root":{"children":[]}}`, so recover rather than leave the
+          // editor unusable. Reusing the wording of the invariant this
+          // replaces keeps the existing error code.
+          devInvariant(
+            false,
+            "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty.",
+          );
+          $getRoot().append($createParagraphNode());
         }
         if (editorState._parsed) {
           for (const [key, node] of writableEditorState._nodeMap.entries()) {

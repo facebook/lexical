@@ -53,7 +53,9 @@ function tsconfigTestAliases(): {find: RegExp; replacement: string}[] {
 const browserInstances = (process.env.VITEST_BROWSER || 'chromium')
   .split(',')
   .map(name => name.trim())
-  .filter(Boolean)
+  .filter(
+    name => name === 'webkit' || name === 'chromium' || name === 'firefox',
+  )
   .map(browser => ({browser}));
 
 export default defineConfig({
@@ -111,6 +113,7 @@ export default defineConfig({
         },
         plugins: [react()],
         test: {
+          api: {port: 8315},
           browser: {
             // Vitest's default browser server port (63315) is in the
             // ephemeral range, and Windows reserves randomized blocks of
@@ -119,7 +122,6 @@ export default defineConfig({
             // (vitest-dev/vitest#9035). Pin a port below the ephemeral
             // range instead; if it happens to be busy, Vite falls back to
             // the next free port rather than failing.
-            api: {port: 8315},
             enabled: true,
             // Headless everywhere by default so the suite runs the same way in
             // CI and in headless dev containers. Pass `--browser.headless=false`

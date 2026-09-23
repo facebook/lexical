@@ -58,7 +58,7 @@ function $createTextNodes(value: string, format: number): LexicalNode[] {
   const out: LexicalNode[] = [];
   tokenizeRawText(value, {
     linebreak: () => out.push($createLineBreakNode()),
-    tab: () => out.push($createTabNode()),
+    tab: () => out.push($createTabNode().setFormat(format)),
     text: segment => {
       const textNode = $createTextNode(segment);
       if (format) {

@@ -37,8 +37,9 @@ import {
 } from '../../index';
 
 describe('@lexical/mdast extensions', () => {
-  it('keeps MdastImportExtension as an alias of MdastExtension', () => {
+  it('keeps both deprecated extensions as aliases of MdastExtension', () => {
     expect(MdastImportExtension).toBe(MdastExtension);
+    expect(MdastExportExtension).toBe(MdastExtension);
   });
 
   it('configures import and export through MdastExtension', () => {

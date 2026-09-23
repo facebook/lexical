@@ -7,11 +7,28 @@
  */
 
 import type {MdastConfig} from './MdastExtension';
-import type {CompiledMdast} from './types';
+import type {CompiledMdast, MdastExportRule} from './types';
 import type {LexicalEditor} from 'lexical';
 
 import invariant from '@lexical/internal/invariant';
 import {getStaticNodeConfig, iterStaticNodeConfigChain} from 'lexical';
+
+function getExportRuleType(klass: MdastExportRule['type']): string {
+  if (typeof klass === 'string') {
+    return klass;
+  }
+  const {ownNodeType, ownNodeConfig, declaresOwnConfig} =
+    getStaticNodeConfig(klass);
+  // Without an own $config(), a resolved config belongs to an ancestor.
+  // A legacy static getType() can declare a distinct type with no config.
+  // Checking metadata also works after Lexical synthesizes a getType().
+  invariant(
+    ownNodeType !== undefined &&
+      (declaresOwnConfig || ownNodeConfig === undefined),
+    'MdastExtension: export rule node classes must have their own type.',
+  );
+  return ownNodeType;
+}
 
 /**
  * Compiles the raw contribution arrays held in {@link MdastConfig} into the
@@ -37,14 +54,7 @@ export function compileMdast(
   const exportRules: CompiledMdast['exportHandlers'] = new Map();
   for (const rule of config.exportRules) {
     // Class and string rules for the same type share contribution priority.
-    const type =
-      typeof rule.type === 'string'
-        ? rule.type
-        : getStaticNodeConfig(rule.type).ownNodeType;
-    invariant(
-      type !== undefined,
-      'MdastExtension: export rule node classes must have their own type.',
-    );
+    const type = getExportRuleType(rule.type);
     if (!exportRules.has(type)) {
       exportRules.set(type, rule.$export);
       exportHandlers.set(type, rule.$export);

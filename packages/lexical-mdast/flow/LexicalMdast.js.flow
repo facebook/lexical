@@ -90,25 +90,22 @@ export type MdastShortcutsConfig = {
   readonly disabled: boolean,
 };
 
-/** @deprecated Use MdastExtensionOutput instead. */
-export type MdastImportExtensionOutput = {
+export type MdastExtensionOutput = {
   $convertFromMarkdownString(markdown: string, node?: ElementNode): void,
   $convertFromMdast(tree: unknown, node?: ElementNode): void,
   $generateNodesFromMarkdownString(markdown: string): LexicalNode[],
   $generateNodesFromMdast(tree: unknown): LexicalNode[],
-  readonly registry: CompiledMdast,
-};
-
-export type MdastExportExtensionOutput = {
   $convertToMarkdownString(node?: ElementNode): string,
   $convertToMdast(node?: ElementNode): unknown,
   $convertSelectionToMarkdownString(selection?: BaseSelection | null): string,
+  readonly registry: CompiledMdast,
 };
 
-export type MdastExtensionOutput = {
-  ...MdastImportExtensionOutput,
-  ...MdastExportExtensionOutput,
-};
+/** @deprecated Use MdastExtensionOutput instead. */
+export type MdastImportExtensionOutput = MdastExtensionOutput;
+
+/** @deprecated Use MdastExtensionOutput instead. */
+export type MdastExportExtensionOutput = MdastExtensionOutput;
 
 declare export function $convertFromMarkdownString(
   markdown: string,
@@ -190,12 +187,8 @@ declare export var MdastAutolinkLiteralExtension: LexicalExtension<
   void,
   void,
 >;
-declare export var MdastExportExtension: LexicalExtension<
-  ExtensionConfigBase,
-  '@lexical/mdast/Export',
-  MdastExportExtensionOutput,
-  void,
->;
+/** @deprecated Use MdastExtension instead. */
+declare export var MdastExportExtension: typeof MdastExtension;
 declare export var MdastStrikethroughExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/mdast/Strikethrough',

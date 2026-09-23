@@ -86,9 +86,15 @@ npm run size          # in this directory
 It builds functionally-equivalent headless bundles — editor + markdown
 node set + typing shortcuts + import/export — one per implementation, from
 the production dist artifacts, and prints their sizes. All include the
-lexical core, so the deltas are the markdown machinery itself.
+lexical core, so the deltas are the markdown machinery itself. Snapshot at
+the time of writing:
+
+| bundle                     | minified  | min+gzip |
+| -------------------------- | --------- | -------- |
+| legacy `@lexical/markdown` | 287.3 kB  | 77.3 kB  |
+| `@lexical/mdast`           | 408.6 kB  | 103.6 kB |
+| delta (full vs legacy)     | +121.4 kB | +26.3 kB |
 
 The dist build keeps the micromark/mdast dependencies external, so the app
 bundler resolves them with browser export conditions and tree-shakes what's
-unused. `MdastExtension` exposes both import and export, so the import-only
-probe also includes the serializer.
+unused.

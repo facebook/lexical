@@ -26,7 +26,6 @@ import {
 import {
   type FootnoteDefinition,
   type FootnoteReference,
-  MdastExportExtension,
   type MdastExportHandler,
   MdastExtension,
   type MdastImportHandler,
@@ -845,7 +844,7 @@ const footnotesRootHandler = {
     root: (node, parent, state, info) => {
       const footnotes = $getSlot($getRoot(), FOOTNOTES_SLOT);
       if ($isFootnotesNode(footnotes) && !footnotes.isEmpty()) {
-        const {$convertToMdast} = $getExtensionOutput(MdastExportExtension);
+        const {$convertToMdast} = $getExtensionOutput(MdastExtension);
         // On a whole-document export ALL definitions ride along, in section
         // order — an editor preserves content, unlike a renderer, so
         // unreferenced definitions survive the round trip too. A selection

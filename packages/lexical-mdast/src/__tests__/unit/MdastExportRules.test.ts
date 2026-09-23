@@ -17,6 +17,7 @@ import {
   DecoratorNode,
   defineExtension,
   ElementNode,
+  getStaticNodeConfig,
   TabNode,
   TextNode,
 } from 'lexical';
@@ -44,6 +45,18 @@ class DerivedTextNode extends CustomTextNode {
 
 class AbstractElementNode extends ElementNode {}
 
+class UntypedTextNode extends TextNode {}
+
+class UntypedCustomTextNode extends CustomTextNode {}
+
+class LegacyTextNode extends TextNode {
+  static getType(): string {
+    return 'legacy-text';
+  }
+}
+
+class UntypedLegacyTextNode extends LegacyTextNode {}
+
 function createEditor(exportRules: readonly MdastExportRule[]) {
   return buildEditorFromExtensions(
     defineExtension({
@@ -54,7 +67,7 @@ function createEditor(exportRules: readonly MdastExportRule[]) {
       ],
       name: '[root]',
       // The intermediate CustomTextNode deliberately is not registered.
-      nodes: [DerivedTextNode],
+      nodes: [DerivedTextNode, LegacyTextNode],
     }),
   );
 }
@@ -175,6 +188,48 @@ describe('mdast export rule inheritance', () => {
     }).toThrow(
       'MdastExtension: export rule node classes must have their own type.',
     );
+  });
+
+  it.each([
+    {name: 'UntypedTextNode', type: UntypedTextNode},
+    {name: 'UntypedCustomTextNode', type: UntypedCustomTextNode},
+    {name: 'UntypedLegacyTextNode', type: UntypedLegacyTextNode},
+  ])(
+    'rejects $name when its type is inherited, including cached metadata',
+    ({type}) => {
+      // Computing metadata can synthesize an own getType method. That must not
+      // make an inherited type count as a declaration on the subclass.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (attempt > 0) {
+          getStaticNodeConfig(type);
+        }
+        expect(() => {
+          using _editor = createEditor([
+            {$export: () => ({type: 'text', value: 'custom'}), type},
+          ]);
+        }).toThrow(
+          'MdastExtension: export rule node classes must have their own type.',
+        );
+      }
+    },
+  );
+
+  it('accepts a type declared with a legacy static getType', () => {
+    using editor = createEditor([
+      {$export: () => ({type: 'text', value: 'legacy'}), type: LegacyTextNode},
+    ]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $create(LegacyTextNode).setTextContent('text'),
+            ),
+          ),
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe('legacy');
   });
 
   it('uses inherited rules for partially selected custom text', () => {

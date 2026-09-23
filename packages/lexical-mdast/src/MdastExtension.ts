@@ -6,7 +6,6 @@
  *
  */
 
-import type {MdastExportExtensionOutput} from './MdastExportExtension';
 import type {
   CompiledMdast,
   FromMarkdownExtension,
@@ -17,7 +16,7 @@ import type {
   MicromarkExtension,
   ToMarkdownExtension,
 } from './types';
-import type {ElementNode, LexicalNode} from 'lexical';
+import type {BaseSelection, ElementNode, LexicalNode} from 'lexical';
 import type {Root, ThematicBreak} from 'mdast';
 
 import {CodeNode} from '@lexical/code-core';
@@ -135,14 +134,7 @@ export interface MdastConfig {
  * shorthands.
  * @experimental
  */
-export interface MdastExtensionOutput
-  extends MdastImportExtensionOutput, MdastExportExtensionOutput {}
-
-/**
- * The Markdown import API.
- * @deprecated Use {@link MdastExtensionOutput} instead.
- */
-export interface MdastImportExtensionOutput {
+export interface MdastExtensionOutput {
   /**
    * Parses `markdown` with micromark/mdast and replaces the contents of the
    * editor root (or `node`). Must be called inside an `editor.update()`.
@@ -172,12 +164,43 @@ export interface MdastImportExtensionOutput {
    */
   $generateNodesFromMdast(tree: Root): LexicalNode[];
   /**
+   * Serializes the editor root (or `node`) to a Markdown string. Must be
+   * called inside an `editor.read()` or `editor.update()`.
+   */
+  $convertToMarkdownString(node?: ElementNode): string;
+  /**
+   * Exports the editor root (or `node`) to an mdast `Root` tree without
+   * serializing it, for interop with the unified/remark ecosystem (remark
+   * plugins, `remark-rehype`, tree diffing, ...). Must be called inside an
+   * `editor.read()` or `editor.update()`. Syntax preserved from import
+   * rides along as `data` fields on the nodes, mdast's sanctioned
+   * extension point.
+   */
+  $convertToMdast(node?: ElementNode): Root;
+  /**
+   * Serializes only the selected content (defaulting to the current
+   * selection) to a Markdown string: leaves outside the selection are
+   * skipped, partially selected text nodes are sliced to the selected
+   * range, and elements are kept when they or any descendant are selected.
+   * Returns `''` for a null or collapsed selection. Must be called inside
+   * an `editor.read()` or `editor.update()`. The export runs under
+   * {@link RenderContextMarkdownSelection} carrying the selection, so
+   * contributed export rules and to-markdown handlers can scope their
+   * output to a selection export.
+   */
+  $convertSelectionToMarkdownString(selection?: BaseSelection | null): string;
+  /**
    * The compiled registry assembled from every contributing extension.
    *
    * @internal consumed by {@link MdastShortcutsExtension}.
    */
   readonly registry: CompiledMdast;
 }
+
+/**
+ * @deprecated Use {@link MdastExtensionOutput} instead.
+ */
+export type MdastImportExtensionOutput = MdastExtensionOutput;
 
 // The baseline rules that need no node packages: paragraphs and inline text
 // formatting (CommonMark handles these without any micromark extension).

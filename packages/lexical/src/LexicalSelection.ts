@@ -97,6 +97,7 @@ import {
   doesContainSurrogatePair,
   getActiveElement,
   getActiveElementDeep,
+  getCaretRect,
   getComposedStaticRange,
   getDOMSelection,
   getDOMSelectionPoints,
@@ -4351,10 +4352,17 @@ export function $updateDOMSelection(
         const range = selectionTarget.ownerDocument.createRange();
         range.selectNode(selectionTarget);
         selectionRect = range.getBoundingClientRect();
-      } else {
+      } else if (isHTMLElement(selectionTarget)) {
         selectionRect = selectionTarget.getBoundingClientRect();
+      } else {
+        selectionRect = getCaretRect(selectionTarget);
       }
-      scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
+      scrollIntoViewIfNeeded(
+        editor,
+        selectionRect,
+        rootElement,
+        nextAnchorNode,
+      );
     }
   }
 

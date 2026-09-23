@@ -1653,10 +1653,172 @@ export function getDOMOwnerDocument(
       : null;
 }
 
+/**
+ * Computed scroll-padding keeps percentages, which resolve against the
+ * scrollport width. 'auto' parses as NaN and counts as 0.
+ */
+function parseScrollPadding(value: string, clientWidth: number): number {
+  const length = parseFloat(value);
+  if (!isFinite(length)) {
+    return 0;
+  }
+  return value.endsWith('%') ? (length * clientWidth) / 100 : length;
+}
+
+/**
+ * When `element` is a horizontal scroll container (overflow-x auto or
+ * scroll) with something to scroll, scrolls it sideways so the caret rect
+ * [left, right] is inside its scrollport, less its scroll-padding. Returns
+ * how far it actually scrolled, in viewport px.
+ */
+function scrollIntoViewHorizontally(
+  view: Window,
+  element: HTMLElement,
+  left: number,
+  right: number,
+  top: number,
+  bottom: number,
+): number {
+  // Cheap check first. Layout is already clean because the caret rect was
+  // just measured.
+  const clientWidth = element.clientWidth;
+  const maxScroll = element.scrollWidth - clientWidth;
+  if (maxScroll <= 0) {
+    return 0;
+  }
+  // Only overflow-x auto or scroll counts, the same test as the table's sticky
+  // scrollbar. Hidden and clip are left alone, like a table wrapper with a
+  // frozen row.
+  const style = view.getComputedStyle(element);
+  if (style.overflowX !== 'auto' && style.overflowX !== 'scroll') {
+    return 0;
+  }
+  const rect = element.getBoundingClientRect();
+  // Only a caret level with the container is revealed sideways. A caret above
+  // or below it is left to the vertical pass, so a container that scrolls both
+  // ways with the caret out of view vertically is only scrolled vertically.
+  if (bottom <= rect.top || top >= rect.bottom) {
+    return 0;
+  }
+  // The rects are in viewport px, but clientLeft, clientWidth, scroll-padding
+  // and scrollLeft are in the element's own px. They differ under CSS zoom or
+  // a transform: scale. offsetWidth is rounded, so a difference of 1px or less
+  // is not a scale.
+  const offsetWidth = element.offsetWidth;
+  const scale =
+    offsetWidth > 0 && Math.abs(rect.width - offsetWidth) > 1
+      ? rect.width / offsetWidth
+      : 1;
+  const isRTL = style.direction === 'rtl';
+  // Scrollport, not border box: clientLeft covers the border and a left
+  // scrollbar.
+  const scrollportLeft = rect.left + element.clientLeft * scale;
+  const viewLeft =
+    scrollportLeft +
+    parseScrollPadding(style.scrollPaddingLeft, clientWidth) * scale;
+  const viewRight =
+    scrollportLeft +
+    (clientWidth - parseScrollPadding(style.scrollPaddingRight, clientWidth)) *
+      scale;
+  // A collapsed caret rect has no width, but the caret is painted about 1px
+  // wide. Without this, End can stop with the caret clipped at the edge.
+  let caretLeft = left;
+  let caretRight = Math.max(right, left + 1);
+  if (caretRight - caretLeft > viewRight - viewLeft) {
+    // Wider than the view: an element point measured on the whole node
+    // after it (a token or a line break wrapper). The caret is at its
+    // inline start.
+    if (isRTL) {
+      caretLeft = caretRight - 1;
+    } else {
+      caretRight = caretLeft + 1;
+    }
+  }
+  let diff = 0;
+  if (caretLeft < viewLeft) {
+    diff = caretLeft - viewLeft;
+  } else if (caretRight > viewRight) {
+    diff = caretRight - viewRight;
+  }
+  if (diff === 0) {
+    return 0;
+  }
+  const scrollLeft = element.scrollLeft;
+  // Browsers round the scroll position they are given, which can leave the
+  // caret a fraction of a pixel outside the view. So round it the way the
+  // element scrolls, which takes the caret a little further in instead.
+  const unrounded = scrollLeft + diff / scale;
+  const targetScrollLeft =
+    diff > 0 ? Math.ceil(unrounded) : Math.floor(unrounded);
+  // Standard scrollLeft is 0 at the inline start and negative in RTL.
+  let nextScrollLeft = isRTL
+    ? Math.min(0, Math.max(-maxScroll, targetScrollLeft))
+    : Math.max(0, Math.min(maxScroll, targetScrollLeft));
+  // When scrolling back toward the start, and the caret would also fit with
+  // the element scrolled all the way back, go all the way back. The caret's
+  // position at scrollLeft 0 is its position now plus scrollLeft, in viewport
+  // px, in both directions. This shows the whole start of the line,
+  // including the indentation that smart Home and Enter leave the caret
+  // after, whatever the width of the theme's gutter.
+  const startOffset = scrollLeft * scale;
+  if (
+    Math.abs(nextScrollLeft) < Math.abs(scrollLeft) &&
+    caretLeft + startOffset >= viewLeft &&
+    caretRight + startOffset <= viewRight
+  ) {
+    nextScrollLeft = 0;
+  }
+  if (nextScrollLeft === scrollLeft) {
+    return 0;
+  }
+  element.scrollLeft = nextScrollLeft;
+  // Read back, like scrollTop below. An element that doesn't really scroll
+  // (a <table>) reports 0, so outer scrollers stay correct.
+  return (element.scrollLeft - scrollLeft) * scale;
+}
+
+/**
+ * The rect to scroll into view for a caret, which is a collapsed range.
+ * WebKit gives a collapsed range at the logical end of right to left text no
+ * rect at all. Then this measures the character next to the caret instead,
+ * and the caret is at one of its edges.
+ */
+export function getCaretRect(range: Range): DOMRect {
+  const rect = range.getBoundingClientRect();
+  const {startContainer, startOffset} = range;
+  if (
+    !range.collapsed ||
+    rect.width !== 0 ||
+    rect.height !== 0 ||
+    !isDOMTextNode(startContainer) ||
+    startContainer.length === 0
+  ) {
+    return rect;
+  }
+  const characterRange = range.cloneRange();
+  if (startOffset > 0) {
+    characterRange.setStart(startContainer, startOffset - 1);
+  } else {
+    characterRange.setEnd(startContainer, 1);
+  }
+  return characterRange.getBoundingClientRect();
+}
+
+/**
+ * Scrolls the caret into view. First it scrolls sideways, in the horizontal
+ * scroll containers from the caret up to and including the editor root (for
+ * example a code block with a long line, or a table's scroll wrapper). Then
+ * it scrolls vertically, in the root and its ancestors up to the window.
+ *
+ * @param selectionNode The caret's DOM node: the anchor's Text node, or its
+ * $getDOMSlot element for an element point. The horizontal pass starts
+ * there. Without it only the vertical pass runs.
+ */
 export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
   selectionRect: DOMRect,
   rootElement: HTMLElement,
+  selectionNode: Node | null = null,
 ): void {
   const doc = getDOMOwnerDocument(rootElement);
   const defaultView = getDefaultView(doc);
@@ -1675,6 +1837,33 @@ export function scrollIntoViewIfNeeded(
   const rootRect = rootElement.getBoundingClientRect();
   if (selectionRect.bottom < rootRect.top) {
     return;
+  }
+  // Horizontal scroll containers inside the editor, like a code block with a
+  // long line, and the root itself are scrolled sideways to reveal the caret.
+  // The page and the editor's ancestors are never scrolled horizontally. The
+  // vertical walk below still starts at the root, because scrolling every
+  // element on the way up would also move overflow: hidden elements inside
+  // the editor.
+  if (selectionNode !== null && selectionRect.height > 0) {
+    let {left: currentLeft, right: currentRight} = selectionRect;
+    let scroller: HTMLElement | null = isHTMLElement(selectionNode)
+      ? selectionNode
+      : getParentElement(selectionNode);
+    // contains() also stops a walk that getParentElement took out of the
+    // editor through a slot assignment.
+    while (scroller !== null && rootElement.contains(scroller)) {
+      const xOffset = scrollIntoViewHorizontally(
+        defaultView,
+        scroller,
+        currentLeft,
+        currentRight,
+        selectionRect.top,
+        selectionRect.bottom,
+      );
+      currentLeft -= xOffset;
+      currentRight -= xOffset;
+      scroller = scroller === rootElement ? null : getParentElement(scroller);
+    }
   }
   let {top: currentTop, bottom: currentBottom} = selectionRect;
   let targetTop = 0;
@@ -1726,7 +1915,7 @@ export function scrollIntoViewIfNeeded(
 
     if (diff !== 0) {
       if (isBodyElement) {
-        // Only handles scrolling of Y axis
+        // Only the Y axis: horizontal scrolling stays inside the editor (above)
         defaultView.scrollBy(0, diff);
       } else {
         const scrollTop = element.scrollTop;

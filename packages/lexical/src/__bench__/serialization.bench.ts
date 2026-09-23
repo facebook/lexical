@@ -7,7 +7,7 @@
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
-import {bench, describe} from 'vitest';
+import {describe, test} from 'vitest';
 
 import {
   $createParagraphNode,
@@ -59,43 +59,49 @@ describe('EditorState.toJSON', () => {
   let editorState: EditorState;
   let json: string;
 
-  bench(
-    `${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
-    () => {
+  test(`${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`, async ({
+    bench,
+  }) => {
+    await bench(`${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`, () => {
       _benchSink = editorState.toJSON();
-    },
-    {
+    }).run({
       setup: () => {
         editorState = buildEditor().getEditorState();
       },
-    },
-  );
+    });
+  });
 
-  bench(
-    `compact, ${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
-    () => {
-      _benchSink = editorState.toJSON(true);
-    },
-    {
+  test(`compact, ${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`, async ({
+    bench,
+  }) => {
+    await bench(
+      `compact, ${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
+      () => {
+        _benchSink = editorState.toJSON(true);
+      },
+    ).run({
       setup: () => {
         editorState = buildEditor().getEditorState();
       },
-    },
-  );
+    });
+  });
 
-  bench(
-    `parseEditorState, ${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
-    () => {
-      _benchSink = parseTarget.parseEditorState(json);
-    },
-    {
+  test(`parseEditorState, ${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`, async ({
+    bench,
+  }) => {
+    await bench(
+      `parseEditorState, ${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
+      () => {
+        _benchSink = parseTarget.parseEditorState(json);
+      },
+    ).run({
       setup: () => {
         const editor = buildEditor();
         json = JSON.stringify(editor.getEditorState().toJSON());
         parseTarget = editor;
       },
-    },
-  );
+    });
+  });
 
   let parseTarget: LexicalEditor;
 });
@@ -124,9 +130,8 @@ function buildTextNodes(): LexicalNode[] {
 describe('per-node exportJSON, TextNode', () => {
   let nodes: LexicalNode[] = [];
 
-  bench(
-    'schema-driven walk',
-    () => {
+  test('schema-driven walk', async ({bench}) => {
+    await bench('schema-driven walk', () => {
       benchEditor.read(() => {
         for (let i = 0; i < nodes.length; i++) {
           const node = nodes[i];
@@ -137,29 +142,26 @@ describe('per-node exportJSON, TextNode', () => {
           _benchSink = json;
         }
       });
-    },
-    {
+    }).run({
       setup: () => {
         nodes = buildTextNodes();
       },
-    },
-  );
+    });
+  });
 
-  bench(
-    'generated literal',
-    () => {
+  test('generated literal', async ({bench}) => {
+    await bench('generated literal', () => {
       benchEditor.read(() => {
         for (let i = 0; i < nodes.length; i++) {
           _benchSink = nodes[i].exportJSON();
         }
       });
-    },
-    {
+    }).run({
       setup: () => {
         nodes = buildTextNodes();
       },
-    },
-  );
+    });
+  });
 });
 
 // And what the generated parsers buy, on the same subject. The nodes are
@@ -203,27 +205,23 @@ describe('per-node updateFromJSON, TextNode', () => {
     );
   }
 
-  bench(
-    'schema-driven walk',
-    () => {
+  test('schema-driven walk', async ({bench}) => {
+    await bench('schema-driven walk', () => {
       benchEditor.read(() => {
         for (let i = 0; i < nodes.length; i++) {
           _benchSink = $walkJSONSetters(nodes[i], jsons[i]);
         }
       });
-    },
-    {setup: buildInputs},
-  );
+    }).run({setup: buildInputs});
+  });
 
-  bench(
-    'generated literal',
-    () => {
+  test('generated literal', async ({bench}) => {
+    await bench('generated literal', () => {
       benchEditor.read(() => {
         for (let i = 0; i < nodes.length; i++) {
           _benchSink = $applyJSONSetters(nodes[i], jsons[i]);
         }
       });
-    },
-    {setup: buildInputs},
-  );
+    }).run({setup: buildInputs});
+  });
 });

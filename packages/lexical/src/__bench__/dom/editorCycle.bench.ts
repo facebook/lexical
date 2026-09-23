@@ -7,7 +7,7 @@
  */
 
 import invariant from '@lexical/internal/invariant';
-import {bench, describe} from 'vitest';
+import {describe, test} from 'vitest';
 
 import {
   $createParagraphNode,
@@ -40,37 +40,33 @@ for (const size of SIZES) {
       );
     };
 
-    bench(
-      'with children fast path',
-      () => {
+    test('with children fast path', async ({bench}) => {
+      await bench('with children fast path', () => {
         __benchOnly.skipChildrenFastPath = false;
         typeOneChar();
-      },
-      {
+      }).run({
         setup: () => {
           editor = createTestEditor();
           attachToDOM(editor);
           buildLargeDoc(editor, size);
           cycle = 0;
         },
-      },
-    );
+      });
+    });
 
-    bench(
-      'without children fast path (general path)',
-      () => {
+    test('without children fast path (general path)', async ({bench}) => {
+      await bench('without children fast path (general path)', () => {
         __benchOnly.skipChildrenFastPath = true;
         typeOneChar();
-      },
-      {
+      }).run({
         setup: () => {
           editor = createTestEditor();
           attachToDOM(editor);
           buildLargeDoc(editor, size);
           cycle = 0;
         },
-      },
-    );
+      });
+    });
   });
 
   // Append a new paragraph at the end per cycle. Exercises the suffix-
@@ -93,37 +89,33 @@ for (const size of SIZES) {
       );
     };
 
-    bench(
-      'with children fast path',
-      () => {
+    test('with children fast path', async ({bench}) => {
+      await bench('with children fast path', () => {
         __benchOnly.skipChildrenFastPath = false;
         appendParagraph();
-      },
-      {
+      }).run({
         setup: () => {
           editor = createTestEditor();
           attachToDOM(editor);
           buildLargeDoc(editor, size);
           cycle = 0;
         },
-      },
-    );
+      });
+    });
 
-    bench(
-      'without children fast path (general path)',
-      () => {
+    test('without children fast path (general path)', async ({bench}) => {
+      await bench('without children fast path (general path)', () => {
         __benchOnly.skipChildrenFastPath = true;
         appendParagraph();
-      },
-      {
+      }).run({
         setup: () => {
           editor = createTestEditor();
           attachToDOM(editor);
           buildLargeDoc(editor, size);
           cycle = 0;
         },
-      },
-    );
+      });
+    });
   });
 
   // Remove the last paragraph per cycle. Exercises the size-1 / K=1 branch
@@ -146,13 +138,11 @@ for (const size of SIZES) {
       );
     };
 
-    bench(
-      'with children fast path',
-      () => {
+    test('with children fast path', async ({bench}) => {
+      await bench('with children fast path', () => {
         __benchOnly.skipChildrenFastPath = false;
         removeLast();
-      },
-      {
+      }).run({
         setup: () => {
           editor = createTestEditor();
           attachToDOM(editor);
@@ -161,60 +151,54 @@ for (const size of SIZES) {
           // root, which is the case the suffix path is meant to cover.
           buildLargeDoc(editor, size * 4);
         },
-      },
-    );
+      });
+    });
 
-    bench(
-      'without children fast path (general path)',
-      () => {
+    test('without children fast path (general path)', async ({bench}) => {
+      await bench('without children fast path (general path)', () => {
         __benchOnly.skipChildrenFastPath = true;
         removeLast();
-      },
-      {
+      }).run({
         setup: () => {
           editor = createTestEditor();
           attachToDOM(editor);
           buildLargeDoc(editor, size * 4);
         },
-      },
-    );
+      });
+    });
   });
 
   describe(`size=${size} :: read-only update (no mutation)`, () => {
     let editor: LexicalEditor;
 
-    bench(
-      'editor.update with no mutation',
-      () => {
+    test('editor.update with no mutation', async ({bench}) => {
+      await bench('editor.update with no mutation', () => {
         editor.update(() => {}, {discrete: true});
-      },
-      {
+      }).run({
         setup: () => {
           editor = createTestEditor();
           attachToDOM(editor);
           buildLargeDoc(editor, size);
         },
-      },
-    );
+      });
+    });
   });
 
   describe(`size=${size} :: editor.read (pure read)`, () => {
     let editor: LexicalEditor;
 
-    bench(
-      'editor.read',
-      () => {
+    test('editor.read', async ({bench}) => {
+      await bench('editor.read', () => {
         editor.read(() => {
           $getRoot().getChildrenSize();
         });
-      },
-      {
+      }).run({
         setup: () => {
           editor = createTestEditor();
           attachToDOM(editor);
           buildLargeDoc(editor, size);
         },
-      },
-    );
+      });
+    });
   });
 }

@@ -1,15 +1,15 @@
 # Lexical Benchmarks
 
 Performance benchmarks for the Lexical core. Run via `pnpm bench` from the
-repo root, or scoped to a single project with `--project bench` (data
-structure microbenches, node env) or `--project bench-dom` (real-editor
+repo root. Vitest 5 creates separate benchmark projects named `bench (bench)`
+(data structure microbenches, node env) and `bench-dom (bench)` (real-editor
 benches, jsdom env).
 
 ```sh
 pnpm bench                                # all bench projects
-pnpm vitest bench --project bench         # microbenches only
-pnpm vitest bench --project bench-dom     # editor cycle benches only
-pnpm vitest bench --project bench nodeMap # filter by file substring
+pnpm vitest bench --project 'bench (bench)'         # microbenches only
+pnpm vitest bench --project 'bench-dom (bench)'     # editor cycle benches only
+pnpm vitest bench --project 'bench (bench)' nodeMap # filter by file substring
 ```
 
 ## Two projects, why?
@@ -83,11 +83,12 @@ isolation.
 - `*.bench.ts` directly under `__bench__/` for node-env microbenches.
 - `*.bench.ts` under `__bench__/dom/` for jsdom-env benches.
 
-**Structure** — sweep across realistic sizes; one `describe` per scenario;
-one `bench` per implementation under test.
+**Structure** — sweep across realistic sizes; one `describe` per scenario.
+Get `bench` from an async test's context and await each measurement. The
+top-level `bench` export was removed in Vitest 5.
 
 ```ts
-import {bench, describe} from 'vitest';
+import {describe, test} from 'vitest';
 
 import {buildMap, type FakeNode} from './_utils';
 import {MyImpl} from '../MyImpl';
@@ -99,37 +100,35 @@ for (const size of SIZES) {
     let oldImpl: Map<string, FakeNode>;
     let newImpl: MyImpl<string, FakeNode>;
 
-    bench(
-      'old',
-      () => {
+    test('old', async ({bench}) => {
+      await bench('old', () => {
         // operation under test using oldImpl
-      },
-      {
+      }).run({
         setup: () => {
           oldImpl = buildMap(size);
         },
-      },
-    );
+      });
+    });
 
-    bench(
-      'new',
-      () => {
+    test('new', async ({bench}) => {
+      await bench('new', () => {
         // operation under test using newImpl
-      },
-      {
+      }).run({
         setup: () => {
           newImpl = MyImpl.fromMap(buildMap(size));
         },
-      },
-    );
+      });
+    });
   });
 }
 ```
 
-**Comparison pattern** — when comparing an old vs new implementation,
-register both under the same `describe` block. Vitest's summary shows the
-relative factor between benches in the same block, which is exactly what
-you want to cite in PR descriptions.
+**Comparison pattern** — each test above produces its own measurement.
+For an interleaved comparison table, register independent workloads in the
+same test and pass them to `await bench.compare(oldBench, newBench)`. Keep
+their mutable fixtures separate; do not interleave editor benchmarks that
+share a root element or an editor. See the
+[Vitest benchmarking guide](https://vitest.dev/guide/benchmarking).
 
 **Setup state** — use the `setup` callback to initialize state before a
 task's measurement loop begins. Vitest invokes `setup` once per task
@@ -145,18 +144,22 @@ assign into it from the timed body so the call can't be elided:
 ```ts
 let _benchSink: unknown;
 
-bench('get', () => {
-  _benchSink = map.get(someKey);
+test('get', async ({bench}) => {
+  await bench('get', () => {
+    _benchSink = map.get(someKey);
+  }).run();
 });
 ```
 
 For loops, accumulate into a local and assign the local once at the end:
 
 ```ts
-bench('iterate', () => {
-  let count = 0;
-  for (const _ of map) count++;
-  _benchSink = count;
+test('iterate', async ({bench}) => {
+  await bench('iterate', () => {
+    let count = 0;
+    for (const _ of map) count++;
+    _benchSink = count;
+  }).run();
 });
 ```
 
@@ -166,11 +169,11 @@ of iterations per bench cycle.
 
 ## Reading results
 
-Vitest bench reports `hz` (ops/sec), `mean`, `p75`, `p99`, and a relative
-factor in the summary. The summary block at the end is the primary signal:
-look for "Nx faster than..." lines comparing the relevant impls. `mean` is
-useful to cite as an absolute number; `p99` indicates tail behavior under
-GC or compaction.
+Vitest's verbose reporter displays `hz` (ops/sec), `mean`, `p75`, and `p99`
+for each measured workload. Use `pnpm bench --reporter=verbose` to retain
+the tables in CI logs. `bench.compare()` groups multiple implementations
+in one table. `mean` describes average time; `p99` indicates tail behavior
+under GC or compaction.
 
 Sample size and warmup are managed by Vitest. The default heuristics are
 fine for stable comparisons between two impls on the same machine; for

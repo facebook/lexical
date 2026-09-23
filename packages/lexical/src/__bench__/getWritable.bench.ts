@@ -6,7 +6,7 @@
  *
  */
 
-import {bench, describe} from 'vitest';
+import {describe, test} from 'vitest';
 
 import {
   $createParagraphNode,
@@ -125,26 +125,28 @@ for (const size of [100, 1000]) {
         });
       };
 
-      bench(workload, run, {
-        setup: () => {
-          editor = createEditor({
-            onError(error) {
-              throw error;
-            },
-          });
-          cycle = 0;
-          editor.update($populate, {discrete: true});
-          // Check both alternating edits before timing. A final-only check
-          // can miss stale-reference no-ops when the last cycle is odd.
-          for (let i = 0; i < 2; i++) {
-            run();
-            verify();
-          }
-        },
-        teardown: verify,
-        throws: true,
-        time: 1500,
-        warmupTime: 500,
+      test(workload, async ({bench}) => {
+        await bench(workload, run).run({
+          setup: () => {
+            editor = createEditor({
+              onError(error) {
+                throw error;
+              },
+            });
+            cycle = 0;
+            editor.update($populate, {discrete: true});
+            // Check both alternating edits before timing. A final-only check
+            // can miss stale-reference no-ops when the last cycle is odd.
+            for (let i = 0; i < 2; i++) {
+              run();
+              verify();
+            }
+          },
+          teardown: verify,
+          throws: true,
+          time: 1500,
+          warmupTime: 500,
+        });
       });
     }
   });

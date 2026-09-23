@@ -6,7 +6,7 @@
  *
  */
 
-import {bench, describe} from 'vitest';
+import {describe, test} from 'vitest';
 
 import {GenMap} from '../LexicalGenMap';
 import {buildMap, type FakeNode, makeNode} from './_utils';
@@ -36,71 +36,62 @@ for (const size of SIZES) {
     let mapBase: Map<string, FakeNode>;
     let genBase: GenMap<string, FakeNode>;
 
-    bench(
-      'Map: new Map(prev)',
-      () => {
+    test('Map: new Map(prev)', async ({bench}) => {
+      await bench('Map: new Map(prev)', () => {
         _benchSink = new Map(mapBase);
-      },
-      {
+      }).run({
         setup: () => {
           mapBase = buildMap(size);
         },
-      },
-    );
+      });
+    });
 
-    bench(
-      'GenMap: clone()',
-      () => {
+    test('GenMap: clone()', async ({bench}) => {
+      await bench('GenMap: clone()', () => {
         _benchSink = genBase.clone();
-      },
-      {
+      }).run({
         setup: () => {
           genBase = buildGenMap(size);
         },
-      },
-    );
+      });
+    });
   });
 
   describe(`size=${size} :: clone + 1 set (typing 1 char)`, () => {
     let mapBase: Map<string, FakeNode>;
     let genBase: GenMap<string, FakeNode>;
 
-    bench(
-      'Map',
-      () => {
+    test('Map', async ({bench}) => {
+      await bench('Map', () => {
         const next = new Map(mapBase);
         next.set('newKey', makeNode('newKey'));
         _benchSink = next;
-      },
-      {
+      }).run({
         setup: () => {
           mapBase = buildMap(size);
         },
-      },
-    );
+      });
+    });
 
-    bench(
-      'GenMap',
-      () => {
+    test('GenMap', async ({bench}) => {
+      await bench('GenMap', () => {
         const next = genBase.clone();
         next.set('newKey', makeNode('newKey'));
         _benchSink = next;
-      },
-      {
+      }).run({
         setup: () => {
           genBase = buildGenMap(size);
         },
-      },
-    );
+      });
+    });
   });
 
   describe(`size=${size} :: 50 sustained cycles (typing)`, () => {
     let mapBase: Map<string, FakeNode>;
     let genBase: GenMap<string, FakeNode>;
 
-    bench(
-      'Map',
-      () => {
+    test('Map', async ({bench}) => {
+      await bench('Map', () => {
         let cur = mapBase;
         for (let c = 0; c < 50; c++) {
           const next = new Map(cur);
@@ -108,17 +99,15 @@ for (const size of SIZES) {
           cur = next;
         }
         _benchSink = cur;
-      },
-      {
+      }).run({
         setup: () => {
           mapBase = buildMap(size);
         },
-      },
-    );
+      });
+    });
 
-    bench(
-      'GenMap',
-      () => {
+    test('GenMap', async ({bench}) => {
+      await bench('GenMap', () => {
         let cur = genBase;
         for (let c = 0; c < 50; c++) {
           const next = cur.clone();
@@ -126,52 +115,47 @@ for (const size of SIZES) {
           cur = next;
         }
         _benchSink = cur;
-      },
-      {
+      }).run({
         setup: () => {
           genBase = buildGenMap(size);
         },
-      },
-    );
+      });
+    });
   });
 
   describe(`size=${size} :: paste 100 nodes (1 cycle, 100 mutations)`, () => {
     let mapBase: Map<string, FakeNode>;
     let genBase: GenMap<string, FakeNode>;
 
-    bench(
-      'Map',
-      () => {
+    test('Map', async ({bench}) => {
+      await bench('Map', () => {
         const next = new Map(mapBase);
         for (let i = 0; i < 100; i++) {
           const k = `paste${i}`;
           next.set(k, makeNode(k));
         }
         _benchSink = next;
-      },
-      {
+      }).run({
         setup: () => {
           mapBase = buildMap(size);
         },
-      },
-    );
+      });
+    });
 
-    bench(
-      'GenMap',
-      () => {
+    test('GenMap', async ({bench}) => {
+      await bench('GenMap', () => {
         const next = genBase.clone();
         for (let i = 0; i < 100; i++) {
           const k = `paste${i}`;
           next.set(k, makeNode(k));
         }
         _benchSink = next;
-      },
-      {
+      }).run({
         setup: () => {
           genBase = buildGenMap(size);
         },
-      },
-    );
+      });
+    });
   });
 
   describe(`size=${size} :: get`, () => {
@@ -179,61 +163,53 @@ for (const size of SIZES) {
     let genBase: GenMap<string, FakeNode>;
     const k = String(Math.floor(size / 2));
 
-    bench(
-      'Map',
-      () => {
+    test('Map', async ({bench}) => {
+      await bench('Map', () => {
         _benchSink = mapBase.get(k);
-      },
-      {
+      }).run({
         setup: () => {
           mapBase = buildMap(size);
         },
-      },
-    );
+      });
+    });
 
-    bench(
-      'GenMap',
-      () => {
+    test('GenMap', async ({bench}) => {
+      await bench('GenMap', () => {
         _benchSink = genBase.get(k);
-      },
-      {
+      }).run({
         setup: () => {
           genBase = buildGenMap(size);
         },
-      },
-    );
+      });
+    });
   });
 
   describe(`size=${size} :: full iteration`, () => {
     let mapBase: Map<string, FakeNode>;
     let genBase: GenMap<string, FakeNode>;
 
-    bench(
-      'Map',
-      () => {
+    test('Map', async ({bench}) => {
+      await bench('Map', () => {
         let count = 0;
         for (const _ of mapBase) count++;
         _benchSink = count;
-      },
-      {
+      }).run({
         setup: () => {
           mapBase = buildMap(size);
         },
-      },
-    );
+      });
+    });
 
-    bench(
-      'GenMap',
-      () => {
+    test('GenMap', async ({bench}) => {
+      await bench('GenMap', () => {
         let count = 0;
         for (const _ of genBase) count++;
         _benchSink = count;
-      },
-      {
+      }).run({
         setup: () => {
           genBase = buildGenMap(size);
         },
-      },
-    );
+      });
+    });
   });
 }

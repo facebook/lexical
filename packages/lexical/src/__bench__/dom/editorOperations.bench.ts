@@ -7,7 +7,7 @@
  */
 
 import invariant from '@lexical/internal/invariant';
-import {bench, describe} from 'vitest';
+import {describe, test} from 'vitest';
 
 import {
   $createParagraphNode,
@@ -36,9 +36,8 @@ for (const size of SIZES) {
   describe(`size=${size} :: split paragraph (Enter)`, () => {
     let editor: LexicalEditor;
 
-    bench(
-      'insertParagraph',
-      () => {
+    test('insertParagraph', async ({bench}) => {
+      await bench('insertParagraph', () => {
         editor.update(
           () => {
             const last = $getRoot().getLastChild();
@@ -59,15 +58,14 @@ for (const size of SIZES) {
           },
           {discrete: true},
         );
-      },
-      {
+      }).run({
         setup: () => {
           editor = createTestEditor();
           attachToDOM(editor);
           buildLargeDoc(editor, size);
         },
-      },
-    );
+      });
+    });
   });
 
   // Non-destructive: bold toggles on the same paragraph each iteration.
@@ -75,9 +73,8 @@ for (const size of SIZES) {
   describe(`size=${size} :: format text (bold on selection)`, () => {
     let editor: LexicalEditor;
 
-    bench(
-      'formatText bold',
-      () => {
+    test('formatText bold', async ({bench}) => {
+      await bench('formatText bold', () => {
         editor.update(
           () => {
             const last = $getRoot().getLastChild();
@@ -94,15 +91,14 @@ for (const size of SIZES) {
           },
           {discrete: true},
         );
-      },
-      {
+      }).run({
         setup: () => {
           editor = createTestEditor();
           attachToDOM(editor);
           buildLargeDoc(editor, size);
         },
-      },
-    );
+      });
+    });
   });
 
   // Destructive: selects the last 10 paragraphs and deletes via
@@ -113,9 +109,8 @@ for (const size of SIZES) {
   describe(`size=${size} :: delete range (10 paragraphs)`, () => {
     let editor: LexicalEditor;
 
-    bench(
-      'removeText across 10 paragraphs',
-      () => {
+    test('removeText across 10 paragraphs', async ({bench}) => {
+      await bench('removeText across 10 paragraphs', () => {
         editor.update(
           () => {
             const root = $getRoot();
@@ -132,7 +127,10 @@ for (const size of SIZES) {
             let firstToDelete = lastNode;
             for (let i = 0; i < 9; i++) {
               const prev = firstToDelete.getPreviousSibling();
-              invariant(prev !== null, 'Expected previous sibling');
+              invariant(
+                prev !== null && $isParagraphNode(prev),
+                'Expected previous ParagraphNode',
+              );
               firstToDelete = prev;
             }
             const anchorNode = firstToDelete.getPreviousSibling();
@@ -159,8 +157,7 @@ for (const size of SIZES) {
           },
           {discrete: true},
         );
-      },
-      {
+      }).run({
         iterations: size,
         setup: () => {
           editor = createTestEditor();
@@ -170,15 +167,13 @@ for (const size of SIZES) {
         time: 0,
         warmupIterations: 5,
         warmupTime: 0,
-      },
-    );
+      });
+    });
   });
 
   // Insert 10 paragraphs into the same initial document each iteration.
   // Tinybench runs task hooks outside the timed body, so restoring the state
-  // keeps the paste workload at the requested size throughout the run. Vitest
-  // passes options to Bench but creates Task without options: install its task
-  // hooks through the setup callback instead of bench options.
+  // keeps the paste workload at the requested size throughout the run.
   describe(`size=${size} :: paste 10 paragraphs`, () => {
     let editor: LexicalEditor;
     let initialState: EditorState;
@@ -186,51 +181,11 @@ for (const size of SIZES) {
     let pasted = 0;
     let checked = 0;
 
-    bench(
-      '$insertNodes at end',
-      () => {
-        editor.update(
-          () => {
-            const last = $getRoot().getLastChild();
-            invariant(
-              last !== null && $isParagraphNode(last),
-              'Expected ParagraphNode',
-            );
-            const textNode = last.getFirstChild();
-            invariant($isTextNode(textNode), 'Expected TextNode');
-            textNode.select(
-              textNode.getTextContentSize(),
-              textNode.getTextContentSize(),
-            );
-            const nodes = [];
-            for (let i = 0; i < 10; i++) {
-              nodes.push(
-                $createParagraphNode().append(
-                  $createTextNode(`paste-${cycle}-${i}`),
-                ),
-              );
-            }
-            $insertNodes(nodes);
-            cycle++;
-            pasted++;
-          },
-          {discrete: true},
-        );
-      },
-      {
-        setup: task => {
-          editor = createTestEditor();
-          attachToDOM(editor);
-          buildLargeDoc(editor, size);
-          initialState = editor.getEditorState();
-          cycle = 0;
-          pasted = 0;
-          checked = 0;
-          task.opts.beforeEach = () => {
-            editor.setEditorState(initialState);
-            cycle = 0;
-          };
-          task.opts.afterEach = () => {
+    test('$insertNodes at end', async ({bench}) => {
+      await bench(
+        '$insertNodes at end',
+        {
+          afterEach: () => {
             checked++;
             editor.read(() => {
               const actual = $getRoot().getChildrenSize();
@@ -243,7 +198,50 @@ for (const size of SIZES) {
                 String(actual),
               );
             });
-          };
+          },
+          beforeEach: () => {
+            editor.setEditorState(initialState);
+            cycle = 0;
+          },
+        },
+        () => {
+          editor.update(
+            () => {
+              const last = $getRoot().getLastChild();
+              invariant(
+                last !== null && $isParagraphNode(last),
+                'Expected ParagraphNode',
+              );
+              const textNode = last.getFirstChild();
+              invariant($isTextNode(textNode), 'Expected TextNode');
+              textNode.select(
+                textNode.getTextContentSize(),
+                textNode.getTextContentSize(),
+              );
+              const nodes = [];
+              for (let i = 0; i < 10; i++) {
+                nodes.push(
+                  $createParagraphNode().append(
+                    $createTextNode(`paste-${cycle}-${i}`),
+                  ),
+                );
+              }
+              $insertNodes(nodes);
+              cycle++;
+              pasted++;
+            },
+            {discrete: true},
+          );
+        },
+      ).run({
+        setup: () => {
+          editor = createTestEditor();
+          attachToDOM(editor);
+          buildLargeDoc(editor, size);
+          initialState = editor.getEditorState();
+          cycle = 0;
+          pasted = 0;
+          checked = 0;
         },
         teardown: () => {
           invariant(
@@ -252,17 +250,16 @@ for (const size of SIZES) {
           );
         },
         throws: true,
-      },
-    );
+      });
+    });
   });
 
   // Non-destructive: select all + italic toggle.
   describe(`size=${size} :: select all + format`, () => {
     let editor: LexicalEditor;
 
-    bench(
-      '$selectAll + formatText italic',
-      () => {
+    test('$selectAll + formatText italic', async ({bench}) => {
+      await bench('$selectAll + formatText italic', () => {
         editor.update(
           () => {
             $selectAll();
@@ -272,14 +269,13 @@ for (const size of SIZES) {
           },
           {discrete: true},
         );
-      },
-      {
+      }).run({
         setup: () => {
           editor = createTestEditor();
           attachToDOM(editor);
           buildLargeDoc(editor, size);
         },
-      },
-    );
+      });
+    });
   });
 }

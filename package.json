@@ -46,7 +46,7 @@
     "test-unit-watch": "vitest --project unit --project scripts-unit",
     "test-browser": "vitest --project browser --no-watch",
     "test-browser-watch": "vitest --project browser",
-    "bench": "vitest bench --project bench --project bench-dom --run",
+    "bench": "vitest bench --project \"bench (bench)\" --project \"bench-dom (bench)\" --run",
     "test-eslint-integration": "node packages/lexical-eslint-plugin/__tests__/integration/integration-test.mjs",
     "test-integration": "vitest --project integration --no-watch",
     "test-e2e-chromium": "cross-env E2E_BROWSER=chromium playwright test --project=\"chromium\"",

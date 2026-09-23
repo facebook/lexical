@@ -25,7 +25,7 @@ Node Replacement allow you to replace all instances of a given node in your edit
 ```ts
 const editorConfig = {
     ...
-    nodes=[
+    nodes: [
         // Don't forget to register your custom node separately!
         CustomParagraphNode,
         {

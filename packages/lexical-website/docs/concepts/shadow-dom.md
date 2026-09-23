@@ -64,10 +64,10 @@ live in a shadow tree keep working on any engine the rest of Lexical supports.
 | `Selection.getComposedRanges` | Reading the un‑retargeted boundary points | 137+ | 142+ | 17.0+ |
 | `Selection.direction` | Mapping the composed range back onto anchor/focus | 137+ | 126+ | 17.0+ |
 | `ShadowRoot.activeElement` | Resolving the focused element through the host | All modern | All modern | All modern |
-| `Document.caretPositionFromPoint({shadowRoots})` | Shadow-aware drop / drag hit-tests | 128+ | (not yet) | 18.1+ |
+| `Document.caretPositionFromPoint({shadowRoots})` | Shadow-aware drop / drag hit-tests | 128+ | 125+ | 18.1+ |
 
 Lexical also supports the legacy variadic form of `getComposedRanges` shipped by
-Safari 17 / 17.1, automatically choosing the dictionary or variadic call shape
+Safari 17–18.1, automatically choosing the dictionary or variadic call shape
 at runtime.
 
 ### Closed shadow roots
@@ -292,15 +292,15 @@ A typical dropdown registers `document.addEventListener('click', ...)` and
 calls `setShowDropDown(false)` whenever `button.contains(event.target)` is
 false. From inside a shadow tree that check always fails (the target is the
 host), so the dropdown closes on the very click that opened it. Compare
-against `getComposedEventTarget(event)` instead — the same fix Lexical's
-`LexicalMenu` and the playground's `DropDown` use.
+against `getComposedEventTarget(event)` instead — the same fix the playground's
+`DropDown` and `@lexical/react`'s `DraggableBlockPlugin` use.
 
 ### Drop hit-tests
 
 `document.caretRangeFromPoint` and the no-argument
 `document.caretPositionFromPoint` return the host when the pointer is over
 shadow content, so an image drop lands on the host rather than the textnode
-under the cursor. `@lexical/clipboard/caretFromPoint` switches to
+under the cursor. `@lexical/clipboard`'s internal `caretFromPoint` helper switches to
 `caretPositionFromPoint(x, y, {shadowRoots})` when `rootElement` lives in a
 shadow tree, and verifies the returned offset node really did land inside
 one of the requested shadow roots — engines that silently ignore the option

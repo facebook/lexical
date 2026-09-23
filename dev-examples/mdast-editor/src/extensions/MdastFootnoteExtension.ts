@@ -28,7 +28,7 @@ import {
   type FootnoteReference,
   MdastExportExtension,
   type MdastExportHandler,
-  MdastImportExtension,
+  MdastExtension,
   type MdastImportHandler,
   type PhrasingContent,
   RenderContextMarkdownSelection,
@@ -1133,7 +1133,7 @@ export const MdastFootnoteExtension = defineExtension({
     configExtension(DOMRenderExtension, {
       overrides: [FootnotesRenderOverride],
     }),
-    configExtension(MdastImportExtension, {
+    configExtension(MdastExtension, {
       exportRules: [
         {$export: $exportFootnoteRef, type: 'footnote-ref'},
         {$export: $exportFootnoteDefinition, type: 'footnote-def'},

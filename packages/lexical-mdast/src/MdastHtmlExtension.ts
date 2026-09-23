@@ -55,7 +55,7 @@ import {
 } from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
 
-import {MdastImportExtension} from './MdastImportExtension';
+import {MdastExtension} from './MdastExtension';
 
 // The mdast nodes raw HTML is normalized into — one for a block-level tag
 // sequence, one for an inline (phrasing) tag run. Declared through interface
@@ -541,7 +541,7 @@ const $importHtmlBlock: MdastImportHandler<HtmlBlock> = (node, ctx) => {
   // ...and so does the Markdown text embedded between the raw tags, parsed
   // with the registry's own grammar so it supports exactly the constructs
   // the document does.
-  const {registry} = $getExtensionOutput(MdastImportExtension);
+  const {registry} = $getExtensionOutput(MdastExtension);
   const segmentMdastExtensions = registry.mdastExtensions.filter(
     extension => extension !== rawHtmlFromMarkdown,
   );
@@ -785,7 +785,7 @@ function leadsWithCustomTag(segment: string): boolean {
  * Markdown, and serializes via {@link rawHtmlBlock}. Register it directly:
  *
  * ```ts
- * configExtension(MdastImportExtension, {
+ * configExtension(MdastExtension, {
  *   exportRules: [{$export: $exportViaDOM, type: 'collapsible'}],
  * })
  * ```
@@ -1018,7 +1018,7 @@ export const MdastHtmlExtension = defineExtension({
     configExtension(DOMImportExtension, {
       rules: [HtmlChildPlaceholderRule, HtmlInlineRootRule],
     }),
-    configExtension(MdastImportExtension, {
+    configExtension(MdastExtension, {
       importRules: [
         {$import: $importHtmlBlock, type: 'htmlBlock'},
         {$import: $importHtmlInline, type: 'htmlInline'},

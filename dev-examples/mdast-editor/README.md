@@ -87,7 +87,8 @@ It builds functionally-equivalent headless bundles — editor + markdown
 node set + typing shortcuts + import/export — one per implementation, from
 the production dist artifacts, and prints their sizes. All include the
 lexical core, so the deltas are the markdown machinery itself. Snapshot at
-the time of writing:
+the time of writing, before import and export were unified in `MdastExtension`
+(run the probe for current measurements):
 
 | bundle                         | minified  | min+gzip |
 | ------------------------------ | --------- | -------- |
@@ -96,15 +97,14 @@ the time of writing:
 | `@lexical/mdast` (import only) | 393.5 kB  | 99.9 kB  |
 | delta (full vs legacy)         | +121.4 kB | +26.3 kB |
 
-Two packaging decisions keep the delta down:
+The measurements above used two packaging decisions:
 
 - The dist build keeps the micromark/mdast dependencies **external**, so
   the app bundler resolves them with browser export conditions (named
   character references decode through the DOM instead of shipping a
   ~36 kB entity table) and tree-shakes what's unused.
-- Import and export are **separate extensions**; the import-only row
-  omits `MdastExportExtension` and with it most of
-  `mdast-util-to-markdown`.
+- Import and export were separate extensions. `MdastExtension` now exposes
+  both directions, so the import-only probe also includes the serializer.
 
 That ~26 kB (gzip) buys spec-compliant CommonMark + GFM parsing, a single
 grammar shared by import and typing shortcuts, and the micromark/mdast

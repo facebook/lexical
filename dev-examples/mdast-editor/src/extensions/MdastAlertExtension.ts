@@ -21,10 +21,7 @@ import {
   DOMRenderExtension,
   sel,
 } from '@lexical/html';
-import {
-  MdastImportExtension,
-  MdastShadowRootQuoteExtension,
-} from '@lexical/mdast';
+import {MdastExtension, MdastShadowRootQuoteExtension} from '@lexical/mdast';
 import {$createQuoteNode, $isQuoteNode, QuoteNode} from '@lexical/rich-text';
 import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
 import {
@@ -459,7 +456,7 @@ export const MdastAlertExtension = defineExtension({
     configExtension(DOMRenderExtension, {
       overrides: [AlertRenderOverride],
     }),
-    configExtension(MdastImportExtension, {
+    configExtension(MdastExtension, {
       exportRules: [{$export: $exportAlertQuote, type: 'quote'}],
       importRules: [{$import: $importAlertBlockquote, type: 'blockquote'}],
     }),

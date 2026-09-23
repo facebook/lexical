@@ -18,6 +18,7 @@ import {
   $getSelection,
   $isParagraphNode,
   $isRangeSelection,
+  configExtension,
   defineExtension,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
@@ -36,6 +37,39 @@ import {
 } from '../../index';
 
 describe('@lexical/mdast extensions', () => {
+  it('keeps MdastImportExtension as an alias of MdastExtension', () => {
+    expect(MdastImportExtension).toBe(MdastExtension);
+  });
+
+  it('configures import and export through MdastExtension', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          configExtension(MdastExtension, {
+            exportRules: [
+              {
+                $export: () => ({type: 'text', value: 'configured'}),
+                type: 'text',
+              },
+            ],
+          }),
+          MdastImportExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () =>
+        $getExtensionOutput(MdastExtension).$convertFromMarkdownString('input'),
+      {discrete: true},
+    );
+    expect(
+      editor.read(() =>
+        $getExtensionOutput(MdastExtension).$convertToMarkdownString(),
+      ),
+    ).toBe('configured');
+  });
+
   it('feature extensions ship the nodes their rules need', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({

@@ -6,7 +6,7 @@
  *
  */
 
-import type {ElementNode, LexicalNode} from 'lexical';
+import type {ElementNode, Klass, LexicalNode} from 'lexical';
 import type {
   BlockContent,
   Nodes as MdastNode,
@@ -163,7 +163,7 @@ export type MdastExportHandler<T extends LexicalNode = LexicalNode> = (
 /**
  * A single import mapping: which mdast node `type` it handles and how. The
  * unit an extension contributes (alongside the micromark/mdast extensions that
- * tokenize the construct) to {@link MdastImportExtension}'s `importRules` config.
+ * tokenize the construct) to {@link MdastExtension}'s `importRules` config.
  * @experimental
  */
 export interface MdastImportRule {
@@ -178,8 +178,12 @@ export interface MdastImportRule {
  * @experimental
  */
 export interface MdastExportRule {
-  /** The Lexical node `getType()` this rule handles (e.g. `'heading'`). */
-  type: string;
+  /**
+   * A Lexical node type string or class (e.g. `'heading'` or `HeadingNode`).
+   * Applies to that type and its subclasses. The nearest matching ancestor
+   * wins; rules for the same type use contribution order (first wins).
+   */
+  type: string | Klass<LexicalNode>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   $export: MdastExportHandler<any>;
 }

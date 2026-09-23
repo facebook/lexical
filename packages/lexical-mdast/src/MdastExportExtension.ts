@@ -12,12 +12,11 @@ import type {Root} from 'mdast';
 import {$getExtensionOutput} from '@lexical/extension';
 import {defineExtension} from 'lexical';
 
-import {createMdastExport} from './MdastExport';
-import {MdastImportExtension} from './MdastImportExtension';
+import {MdastExtension} from './MdastExtension';
 
 /**
  * The runtime API exposed by {@link MdastExportExtension}. Obtain it inside a
- * read/update with `$getExtensionOutput(MdastExportExtension)`, or use the
+ * read/update with `$getExtensionOutput(MdastExtension)`, or use the
  * {@link $convertToMarkdownString} shorthand.
  * @experimental
  */
@@ -51,17 +50,9 @@ export interface MdastExportExtensionOutput {
 }
 
 /**
- * Markdown serialization for `@lexical/mdast`. Import
- * (`MdastImportExtension` and the feature extensions that contribute to it) and
- * export are separate extensions so that editors which only *parse* Markdown
- * — never serialize back — don't bundle `mdast-util-to-markdown`.
- *
- * The export rules themselves are contributed by the same feature extensions
- * that contribute import rules; this extension compiles the shared registry
- * into a serializer:
- * ```ts
- * dependencies: [MdastCommonMarkExtension, MdastExportExtension]
- * ```
+ * Compatibility extension exposing the export API of {@link MdastExtension}.
+ * Existing dependencies and output lookups continue to work; new editors can
+ * use {@link MdastExtension} directly for both import and export.
  * @experimental
  */
 export const MdastExportExtension = defineExtension<
@@ -71,55 +62,46 @@ export const MdastExportExtension = defineExtension<
   void
 >({
   build(editor, config, state): MdastExportExtensionOutput {
-    const {registry} = state.getDependency(MdastImportExtension).output;
-    const {$exportSelectionToMarkdown, $exportToMdast, $exportToMarkdown} =
-      createMdastExport(registry);
-    return {
-      $convertSelectionToMarkdownString: $exportSelectionToMarkdown,
-      $convertToMarkdownString: $exportToMarkdown,
-      $convertToMdast: $exportToMdast,
-    };
+    return state.getDependency(MdastExtension).output;
   },
-  dependencies: [MdastImportExtension],
+  dependencies: [MdastExtension],
   name: '@lexical/mdast/Export',
 });
 
 /**
  * Shorthand for
- * `$getExtensionOutput(MdastExportExtension).$convertToMarkdownString`.
+ * `$getExtensionOutput(MdastExtension).$convertToMarkdownString`.
  * Must be called inside an `editor.read()` or `editor.update()`. Throws if
- * the editor was not built with {@link MdastExportExtension}.
+ * the editor was not built with {@link MdastExtension}.
  * @experimental
  */
 export function $convertToMarkdownString(node?: ElementNode): string {
-  return $getExtensionOutput(MdastExportExtension).$convertToMarkdownString(
-    node,
-  );
+  return $getExtensionOutput(MdastExtension).$convertToMarkdownString(node);
 }
 
 /**
- * Shorthand for `$getExtensionOutput(MdastExportExtension).$convertToMdast`.
+ * Shorthand for `$getExtensionOutput(MdastExtension).$convertToMdast`.
  * Must be called inside an `editor.read()` or `editor.update()`. Throws if
- * the editor was not built with {@link MdastExportExtension}.
+ * the editor was not built with {@link MdastExtension}.
  * @experimental
  */
 export function $convertToMdast(node?: ElementNode): Root {
-  return $getExtensionOutput(MdastExportExtension).$convertToMdast(node);
+  return $getExtensionOutput(MdastExtension).$convertToMdast(node);
 }
 
 /**
  * Shorthand for
- * `$getExtensionOutput(MdastExportExtension).$convertSelectionToMarkdownString`.
+ * `$getExtensionOutput(MdastExtension).$convertSelectionToMarkdownString`.
  * Serializes only the selected content (defaulting to the current selection)
  * to a Markdown string; returns `''` for a null or collapsed selection.
  * Must be called inside an `editor.read()` or `editor.update()`. Throws if
- * the editor was not built with {@link MdastExportExtension}.
+ * the editor was not built with {@link MdastExtension}.
  * @experimental
  */
 export function $convertSelectionToMarkdownString(
   selection?: BaseSelection | null,
 ): string {
-  return $getExtensionOutput(
-    MdastExportExtension,
-  ).$convertSelectionToMarkdownString(selection);
+  return $getExtensionOutput(MdastExtension).$convertSelectionToMarkdownString(
+    selection,
+  );
 }

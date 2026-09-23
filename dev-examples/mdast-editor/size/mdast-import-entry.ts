@@ -9,8 +9,8 @@
 /**
  * Bundle-size probe: @lexical/mdast import only. An editor with the
  * markdown node set, streaming typing shortcuts, and markdown import — no
- * serialization back to Markdown, so `MdastExportExtension` (and with it
- * `mdast-util-to-markdown`) should be tree-shaken away.
+ * serialization calls. MdastExtension exposes both directions, so this
+ * also includes the serializer even though the probe only calls import.
  */
 
 import {buildEditorFromExtensions} from '@lexical/extension';

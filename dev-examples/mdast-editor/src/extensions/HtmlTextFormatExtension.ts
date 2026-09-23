@@ -16,7 +16,7 @@ import {
   ImportTextStyle,
   sel,
 } from '@lexical/html';
-import {MdastHtmlExtension, MdastImportExtension} from '@lexical/mdast';
+import {MdastExtension, MdastHtmlExtension} from '@lexical/mdast';
 import {getCSSFromStyleObject} from '@lexical/selection';
 import {
   $isTextNode,
@@ -147,7 +147,7 @@ export const HtmlTextFormatExtension = defineExtension({
     configExtension(DOMImportExtension, {
       rules: [StyledSpanImportRule],
     }),
-    configExtension(MdastImportExtension, {
+    configExtension(MdastExtension, {
       exportRules: [{$export: $exportHtmlFormattedText, type: 'text'}],
     }),
   ],

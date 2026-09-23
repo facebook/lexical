@@ -24,7 +24,7 @@ export type MdastNode = unknown;
 export type MdastParent = unknown;
 
 // The compiled registry is a pure handle: consumers only receive it from
-// `MdastImportExtensionOutput` and hand it back to `@lexical/mdast` APIs,
+// `MdastExtensionOutput` and hand it back to `@lexical/mdast` APIs,
 // never construct or introspect it — exactly what opaque models.
 declare export opaque type CompiledMdast;
 
@@ -72,7 +72,7 @@ export type MdastImportRule = {
 };
 
 export type MdastExportRule = {
-  readonly type: string,
+  readonly type: string | Class<LexicalNode>,
   readonly $export: MdastExportHandler,
 };
 
@@ -90,6 +90,7 @@ export type MdastShortcutsConfig = {
   readonly disabled: boolean,
 };
 
+/** @deprecated Use MdastExtensionOutput instead. */
 export type MdastImportExtensionOutput = {
   $convertFromMarkdownString(markdown: string, node?: ElementNode): void,
   $convertFromMdast(tree: unknown, node?: ElementNode): void,
@@ -102,6 +103,11 @@ export type MdastExportExtensionOutput = {
   $convertToMarkdownString(node?: ElementNode): string,
   $convertToMdast(node?: ElementNode): unknown,
   $convertSelectionToMarkdownString(selection?: BaseSelection | null): string,
+};
+
+export type MdastExtensionOutput = {
+  ...MdastImportExtensionOutput,
+  ...MdastExportExtensionOutput,
 };
 
 declare export function $convertFromMarkdownString(
@@ -128,16 +134,12 @@ declare export function $convertSelectionToMarkdownString(
   selection?: BaseSelection | null,
 ): string;
 
-declare export var MdastImportExtension: LexicalExtension<
-  MdastConfig,
-  '@lexical/mdast/Import',
-  MdastImportExtensionOutput,
-  void,
->;
+/** @deprecated Use MdastExtension instead. */
+declare export var MdastImportExtension: typeof MdastExtension;
 declare export var MdastExtension: LexicalExtension<
-  ExtensionConfigBase,
+  MdastConfig,
   '@lexical/mdast/Mdast',
-  void,
+  MdastExtensionOutput,
   void,
 >;
 declare export var MdastHeadingExtension: LexicalExtension<

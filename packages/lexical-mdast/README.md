@@ -31,7 +31,7 @@ Markdown — `* a`/`+ b` bullets and `~~~` fences round-trip unchanged.
 system, modeled on `@lexical/html`'s `DOMImportExtension`. Each feature
 extension ships the nodes it needs and contributes its import/export rules (and
 the micromark/mdast extensions that tokenize them) to the core
-`MdastImportExtension` registry:
+`MdastExtension` registry:
 
 CommonMark features:
 
@@ -60,8 +60,9 @@ Behavior and convenience bundles:
 | `MdastCommonMarkExtension` | bundle of the six CommonMark extensions |
 | `MdastGfmExtension` | bundle of the four GFM extensions |
 | `MdastRichTextExtension` | bundle of heading + blockquote |
-| `MdastExportExtension` | serialization back to Markdown (`$convertToMarkdownString`) |
-| `MdastExtension` | bundle of `MdastImportExtension` + `MdastExportExtension` |
+| `MdastExtension` | core registry, Markdown import and export |
+| `MdastImportExtension` | deprecated alias of `MdastExtension` |
+| `MdastExportExtension` | compatibility extension exposing the export API |
 | `MdastShadowRootQuoteExtension` | opt-in: blockquotes as block containers (full-fidelity nested content) |
 | `MdastHtmlExtension` | opt-in: raw HTML routed through the `@lexical/html` DOM import rules; HTML-encoded export via `$exportViaDOM` / `rawHtmlBlock` |
 | `MdastShortcutsExtension` | streaming keyboard shortcuts |
@@ -72,13 +73,11 @@ the extensions it wants imports unsupported constructs as their content
 same registry — only fire for constructs the editor can represent (`> `
 stays literal without `MdastBlockquoteExtension`).
 
-Import and export are separate extensions: `MdastImportExtension` (and the
-feature extensions that contribute to it) only parse, and
-`MdastExportExtension` compiles the same registry into a serializer. An
-editor that never converts back to Markdown simply omits
-`MdastExportExtension` and doesn't bundle `mdast-util-to-markdown`. When you
-want both directions without thinking about it, depend on `MdastExtension`,
-which bundles the two.
+`MdastExtension` owns the shared configuration and exposes both import and
+export. Feature extensions depend on it automatically. `MdastImportExtension`
+is a deprecated alias of the same extension, so existing configuration and
+output lookups continue to work. `MdastExportExtension` also remains available
+for existing export-output lookups; new code can use `MdastExtension` directly.
 
 ## Usage
 
@@ -117,9 +116,9 @@ const markdown = editor.read(() => $convertToMarkdownString());
 ```
 
 The same API is available from the editor as
-`$getExtensionOutput(MdastImportExtension).$convertFromMarkdownString(...)`
+`$getExtensionOutput(MdastExtension).$convertFromMarkdownString(...)`
 and
-`$getExtensionOutput(MdastExportExtension).$convertToMarkdownString(...)`.
+`$getExtensionOutput(MdastExtension).$convertToMarkdownString(...)`.
 
 `$convertSelectionToMarkdownString(selection?)` serializes only the
 selected content (defaulting to the current selection): unselected
@@ -173,13 +172,13 @@ scalar options in a `toMarkdownExtensions` entry apply document-wide
 and override the package defaults:
 
 ```ts
-import {MdastImportExtension} from '@lexical/mdast';
+import {MdastExtension} from '@lexical/mdast';
 import {configExtension} from 'lexical';
 
 // Serialize bullets as `+` and emphasis as `_`. Per-node syntax
 // recorded on import (a list's bullet, a code block's fence, ...)
 // still wins for those nodes' own output.
-configExtension(MdastImportExtension, {
+configExtension(MdastExtension, {
   toMarkdownExtensions: [{bullet: '+', emphasis: '_'}],
 });
 ```
@@ -237,7 +236,7 @@ A complete HTML-encoded construct is one DOM import rule (which then also
 serves HTML paste) plus one export rule:
 
 ```ts
-import {$exportViaDOM, MdastHtmlExtension, MdastImportExtension} from '@lexical/mdast';
+import {$exportViaDOM, MdastHtmlExtension, MdastExtension} from '@lexical/mdast';
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {configExtension, defineExtension} from 'lexical';
 
@@ -250,7 +249,7 @@ export const MdastCollapsibleExtension = defineExtension({
       // sel.tag('details') -> CollapsibleNode; serves Markdown and paste.
       rules: [DetailsImportRule],
     }),
-    configExtension(MdastImportExtension, {
+    configExtension(MdastExtension, {
       // exportDOM is the single source of truth for the encoding.
       exportRules: [{$export: $exportViaDOM, type: 'collapsible'}],
     }),
@@ -266,19 +265,19 @@ formats (`<u>`, `<mark>`, `<sub>`/`<sup>`, `style="color: …"` spans).
 ### Custom mappings
 
 Because extensions are the unit of configuration, you add or override behavior
-by contributing rules to `MdastImportExtension` from your own extension:
+by contributing rules to `MdastExtension` from your own extension:
 
 ```ts
-import {MdastImportExtension} from '@lexical/mdast';
+import {MdastExtension} from '@lexical/mdast';
 import {configExtension, defineExtension} from 'lexical';
 
 export const MyMdastExtension = defineExtension({
   name: 'my-mdast',
   nodes: [MyNode],
   dependencies: [
-    configExtension(MdastImportExtension, {
+    configExtension(MdastExtension, {
       importRules: [{type: 'myMdastType', $import: $importMyNode}],
-      exportRules: [{type: 'my-node', $export: $exportMyNode}],
+      exportRules: [{type: MyNode, $export: $exportMyNode}],
       micromarkExtensions: [myMicromarkExtension()],
       mdastExtensions: [myMdastExtension()],
       toMarkdownExtensions: [myToMarkdownExtension()],
@@ -286,3 +285,16 @@ export const MyMdastExtension = defineExtension({
   ],
 });
 ```
+
+Export rule `type` accepts a Lexical type string or node class: `'text'` and
+`TextNode` are equivalent. Rules also apply to subclasses, so a text rule
+handles `TabNode` and custom text nodes unless a more specific rule exists.
+The nearest matching ancestor wins, regardless of contribution order. For
+multiple rules targeting the same type (including a mix of strings and classes),
+the first rule wins; contributions merged later are prepended. Ancestor classes
+do not need to be registered in the editor themselves, and abstract classes
+such as `ElementNode` can also be used as rule types. Rules are resolved once
+when the editor is built.
+
+Import rules still use mdast type strings: mdast nodes are plain objects,
+without a Lexical node class hierarchy.

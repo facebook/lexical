@@ -20,6 +20,7 @@ import {packagesManager} from '../../scripts/shared/packagesManager.mjs';
 import copyPageButtonPlugin from './plugins/copy-page-button/index.mjs';
 import packageDocsPlugin from './plugins/package-docs/index.mjs';
 import slugifyPlugin from './src/plugins/lexical-remark-slugify-anchors/index.js';
+import {externalSymbolLinkMappings} from './src/plugins/lexical-typedoc-plugin-external-links/index.mjs';
 
 type SidebarItemsGenerator = NonNullable<
   DocsPluginOptions['sidebarItemsGenerator']
@@ -259,7 +260,12 @@ const docusaurusPluginTypedocConfig = {
             ),
         ),
   excludeInternal: true,
+  externalSymbolLinkMappings,
   plugin: [
+    path.resolve(
+      __dirname,
+      'src/plugins/lexical-typedoc-plugin-external-links/index.mjs',
+    ),
     'typedoc-plugin-no-inherit',
     path.resolve(
       __dirname,

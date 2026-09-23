@@ -41,9 +41,11 @@ Framework-agnostic accessibility extensions. See [Keyboard Accessibility](/docs/
 - [ClickAfterLastBlockExtension](/docs/api/modules/lexical_extension#clickafterlastblockextension) - Inserts a paragraph when clicking below a last block that can not accommodate the click (e.g. a DecoratorNode or TableNode)
 - [DecoratorTextExtension](/docs/api/modules/lexical_extension#decoratortextextension) - DecoratorTextNode support, sets the format and CSS classes for the DOM container
 - [EditorStateExtension](/docs/api/modules/lexical_extension#editorstateextension) - Provide EditorState as a signal (alternative to `registerUpdateListener`)
+- [HMRExtension](/docs/api/modules/lexical_extension#hmrextension) - Preserves editor state, selection, editability and undo/redo history across Hot Module Replacement (HMR) cycles
 - [HorizontalRuleExtension](/docs/api/modules/lexical_extension#horizontalruleextension) - HorizontalRuleNode (`<hr>` tag)
 - [IMEExtension](/docs/api/modules/lexical_extension#imeextension) - Centralizes IME composition state as signals
 - [InitialStateExtension](/docs/api/modules/lexical_extension#initialstateextension) - Sets the initial state of the editor (always included)
+- [KeyboardShortcutsExtension](/docs/api/modules/lexical_extension#keyboardshortcutsextension) - Dispatches a table of keyboard shortcuts from a single compiled `KEY_DOWN_COMMAND` listener; the table is merged across the extension graph by name (experimental)
 - [NestedEditorExtension](/docs/api/modules/lexical_extension#nestededitorextension) - Configures an editor as a nested editor of a parent editor (theme inheritance, optionally editable state)
 - [NodeSelectionExtension](/docs/api/modules/lexical_extension#nodeselectionextension) - Tracks selection, typically for DecoratorNodes
 - [NodeSelectionDataSelectedExtension](/docs/api/modules/lexical_extension#nodeselectiondataselectedextension) - Mirrors a node's `NodeSelection` membership onto its host DOM as a `data-selected` attribute so CSS can outline selected `ElementNode` hosts; configured per node type (experimental)

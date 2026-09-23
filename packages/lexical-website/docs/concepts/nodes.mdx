@@ -338,7 +338,7 @@ Note that since these example use NodeState and `$config`, they will
 automatically get full and correct implementations of the following methods:
 
 - `static clone`
-- `static importFromJSON`
+- `static importJSON`
 - `updateFromJSON`
 - `afterCloneFrom`
 - `exportJSON`
@@ -582,7 +582,7 @@ export class ColoredNode extends TextNode {
     return new ColoredNode(node.__text, node.__color, node.__key);
   }
 
-  static importFromJSON(serializedNode: SerializedColoredNode) {
+  static importJSON(serializedNode: SerializedColoredNode) {
     return new ColoredNode().updateFromJSON(serializedNode);
   }
 
@@ -1023,7 +1023,7 @@ When using this method of extension, it is also required to implement the
 following methods:
 
 - `static clone` (always - this is already in the above examples)
-- `static importFromJSON` (always)
+- `static importJSON` (always)
 - `updateFromJSON` (if any custom properties are defined)
 - `afterCloneFrom` (if any custom properties are defined that are not carried over from static clone)
 - `exportJSON` (if any custom properties are defined)

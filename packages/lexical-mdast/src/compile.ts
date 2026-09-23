@@ -60,6 +60,8 @@ export function compileMdast(
       exportHandlers.set(type, rule.$export);
     }
   }
+  // Resolve rules against the editor's registered node classes, including
+  // replacement classes, so each type uses its nearest matching rule.
   for (const [type, {klass}] of editor._nodes) {
     for (const {ownNodeType} of iterStaticNodeConfigChain(klass)) {
       const handler =

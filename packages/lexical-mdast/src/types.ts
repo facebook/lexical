@@ -103,7 +103,8 @@ export interface MdastImportContext {
 
 /**
  * Converts an mdast node of a particular `type` into one or more Lexical
- * nodes. Returning `null` defers to the next registered handler.
+ * nodes. Returning `null` omits the node and its children from the import.
+ * Only the first registered handler for a type is used.
  * @experimental
  */
 export type MdastImportHandler<T extends MdastNode = MdastNode> = (
@@ -152,7 +153,8 @@ export interface MdastExportContext {
 
 /**
  * Converts a Lexical node into one or more mdast nodes. Returning `null`
- * defers to the next registered handler.
+ * uses the default export for the node. Only the handler selected for the
+ * node's type is called; parent-class and lower-priority rules are not tried.
  * @experimental
  */
 export type MdastExportHandler<T extends LexicalNode = LexicalNode> = (

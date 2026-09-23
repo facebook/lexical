@@ -291,5 +291,9 @@ do not need to be registered in the editor themselves. Classes must have their
 own node type; abstract classes without one (such as `ElementNode`) are rejected.
 Rules are resolved once when the editor is built.
 
+Only the selected export handler runs. Returning `null` uses the default
+export for the node; parent-class and lower-priority rules are not tried.
+
 Import rules use mdast type strings: mdast nodes are plain objects,
-without a Lexical node class hierarchy.
+without a Lexical node class hierarchy. Only the first registered handler for
+a type runs. Returning `null` omits the node and its children from the import.

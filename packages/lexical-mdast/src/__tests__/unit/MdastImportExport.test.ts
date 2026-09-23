@@ -53,6 +53,7 @@ import {
   MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
   MdastExportExtension,
+  MdastExtension,
   MdastHeadingExtension,
   MdastImportExtension,
   MdastShadowRootQuoteExtension,
@@ -91,6 +92,24 @@ function importExport(markdown: string, withTable = false): string {
 }
 
 describe('@lexical/mdast import/export', () => {
+  it('omits a node and its children when its import handler returns null', () => {
+    using editor = buildEditorFromExtensions(
+      configExtension(MdastExtension, {
+        importRules: [
+          {$import: () => null, type: 'strong'},
+          {
+            $import: (_node, context) => context.createText('lower-priority'),
+            type: 'strong',
+          },
+        ],
+      }),
+    );
+    editor.update(() => $convertFromMarkdownString('a **b** c'), {
+      discrete: true,
+    });
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('a  c');
+  });
+
   describe('round-trips simple constructs', () => {
     const cases: [string, string][] = [
       ['paragraph', 'Hello world'],

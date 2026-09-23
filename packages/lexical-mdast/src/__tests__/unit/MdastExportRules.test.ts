@@ -177,6 +177,40 @@ describe('mdast export rule inheritance', () => {
   );
 
   it.each([
+    {label: 'string', type: 'derived-text'},
+    {label: 'class', type: DerivedTextNode},
+  ])(
+    'uses the default export when the selected $label handler returns null',
+    ({type}) => {
+      using editor = createEditor([
+        {$export: () => null, type},
+        {$export: () => ({type: 'text', value: 'lower-priority'}), type},
+        {
+          $export: (node: TextNode) => ({
+            type: 'text',
+            value: node.getTextContent().toUpperCase(),
+          }),
+          type: TextNode,
+        },
+      ]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode('a'),
+                $create(DerivedTextNode).setTextContent('b'),
+                $createTextNode('c'),
+              ),
+            ),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe('AbC');
+    },
+  );
+
+  it.each([
     {name: 'ElementNode', type: ElementNode},
     {name: 'DecoratorNode', type: DecoratorNode},
     {name: 'AbstractElementNode', type: AbstractElementNode},

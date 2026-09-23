@@ -39,6 +39,10 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  IS_BOLD,
+  IS_CODE,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
 } from 'lexical';
 import {defaultHandlers, toMarkdown} from 'mdast-util-to-markdown';
 import {toString as mdastToString} from 'mdast-util-to-string';
@@ -184,12 +188,50 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
 };
 
 /**
- * Accumulates adjacent plain text nodes so a whole stretch of formatted text
- * serializes together: nodes sharing a format merge into a single delimiter
- * pair (`**ab**` rather than `**a****b**`), and nodes whose formats *overlap*
- * (bold, bold+italic, italic) nest inside shared containers so the emitted
- * delimiters re-parse to the same formatting. Shared by the inline and block
- * export walks.
+ * Collects plain formatted text from middleware output, leaving custom
+ * structure and metadata intact when the output cannot be represented as runs.
+ */
+function collectExportedTextRuns(
+  node: MdastNode,
+  format: number,
+  runs: TextRun[],
+): boolean {
+  // Preserve annotated/custom output verbatim instead of discarding metadata
+  // when rebuilding the formatting containers.
+  if (
+    Object.keys(node).some(
+      key => key !== 'type' && key !== 'value' && key !== 'children',
+    )
+  ) {
+    return false;
+  }
+  if (node.type === 'text' || node.type === 'inlineCode') {
+    runs.push({
+      format: format | (node.type === 'inlineCode' ? IS_CODE : 0),
+      value: node.value,
+    });
+    return true;
+  }
+  const bit =
+    node.type === 'strong'
+      ? IS_BOLD
+      : node.type === 'emphasis'
+        ? IS_ITALIC
+        : node.type === 'delete'
+          ? IS_STRIKETHROUGH
+          : 0;
+  return (
+    bit !== 0 &&
+    'children' in node &&
+    node.children.every(child =>
+      collectExportedTextRuns(child, format | bit, runs),
+    )
+  );
+}
+
+/**
+ * Accumulates adjacent text so shared and overlapping formats serialize
+ * together and re-parse correctly. Shared by the inline and block walks.
  */
 class TextRunAccumulator {
   private runs: TextRun[] = [];
@@ -203,14 +245,30 @@ class TextRunAccumulator {
     if (!$isTextNode(child)) {
       return false;
     }
-    const format = child.getFormat() & TEXT_FORMAT_MASK;
+    this.pushRun(child.getTextContent(), child.getFormat() & TEXT_FORMAT_MASK);
+    return true;
+  }
+
+  private pushRun(value: string, format: number): void {
     const last = this.runs[this.runs.length - 1];
     if (last !== undefined && last.format === format) {
-      last.value += child.getTextContent();
+      last.value += value;
     } else {
-      this.runs.push({format, value: child.getTextContent()});
+      this.runs.push({format, value});
     }
-    return true;
+  }
+
+  /** Run middleware first, then group its plain formatted text output. */
+  appendExported(nodes: MdastNode[], out: PhrasingContent[]): void {
+    const runs: TextRun[] = [];
+    if (nodes.every(node => collectExportedTextRuns(node, 0, runs))) {
+      for (const run of runs) {
+        this.pushRun(run.value, run.format);
+      }
+    } else {
+      this.flushInto(out);
+      out.push(...(nodes as PhrasingContent[]));
+    }
   }
 
   flushInto(out: PhrasingContent[]): void {
@@ -239,7 +297,8 @@ function createNodeExporter(
    * this keeps replaced/custom text nodes dispatching to their handlers.
    */
   function mayAccumulate(child: LexicalNode): boolean {
-    const handler = exportHandlers.get(child.getType());
+    const handlers = exportHandlers.get(child.getType());
+    const handler = handlers && handlers[0];
     return handler === undefined || handler === exportText;
   }
 
@@ -313,7 +372,7 @@ function createNodeExporter(
       : (source as ElementNode).getChildren();
   }
 
-  const context: MdastExportContext = {
+  const context: Omit<MdastExportContext, 'next'> = {
     exportBlocks: source => $exportBlocks(source),
     exportChildren: source => {
       const out: MdastNode[] = [];
@@ -334,10 +393,17 @@ function createNodeExporter(
     isIncluded: $isIncluded,
   };
 
-  function $dispatch(node: LexicalNode): MdastNode[] {
-    const handler = exportHandlers.get(node.getType());
+  function $dispatch(
+    node: LexicalNode,
+    handlers = exportHandlers.get(node.getType()),
+    index = 0,
+  ): MdastNode[] {
+    const handler = handlers && handlers[index];
     if (handler) {
-      const result = handler(node, context);
+      const result = handler(node, {
+        ...context,
+        next: () => $dispatch(node, handlers, index + 1),
+      });
       if (result != null) {
         return Array.isArray(result) ? result : [result];
       }
@@ -373,6 +439,10 @@ function createNodeExporter(
         continue;
       }
       if (!(mayAccumulate(target) && runs.push(target))) {
+        if ($isTextNode(target)) {
+          runs.appendExported($dispatch(target), result);
+          continue;
+        }
         runs.flushInto(result);
         if ($isElementNode(target)) {
           // The registry erases types; phrasing output is the dispatch
@@ -423,6 +493,8 @@ function createNodeExporter(
         }
       } else if (mayAccumulate(target) && runs.push(target)) {
         continue;
+      } else if ($isTextNode(target)) {
+        runs.appendExported($dispatch(target), inline);
       } else if ($isBlockLevelNode(target)) {
         flushParagraph();
         if ($isElementNode(target)) {

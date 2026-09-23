@@ -26,11 +26,15 @@ import {
 } from '@lexical/mdast';
 import {$isQuoteNode, RichTextExtension} from '@lexical/rich-text';
 import {
+  $createParagraphNode,
   $createRangeSelection,
+  $createTabNode,
+  $createTextNode,
   $getRoot,
   $getSlot,
   $isElementNode,
   $isParagraphNode,
+  $isTabNode,
   $isTextNode,
   defineExtension,
   type ElementNode,
@@ -774,6 +778,54 @@ describe('read-only', () => {
 });
 
 describe('HtmlTextFormatExtension', () => {
+  it('preserves a tab between formatted text through the custom text rule', () => {
+    using editor = createEditor();
+    editor.update(
+      () => {
+        const nodes = [
+          $createTextNode('left'),
+          $createTabNode(),
+          $createTextNode('right'),
+        ];
+        for (const node of nodes) {
+          node
+            .toggleFormat('underline')
+            .toggleFormat('bold')
+            .setStyle('color: red;');
+        }
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append(...nodes));
+      },
+      {discrete: true},
+    );
+    const markdown = editor.read(() => $convertToMarkdownString());
+    expect(markdown).toBe(
+      '<u><span style="color: red;">**left**</span></u>' +
+        '<u><span style="color: red;">**&#x9;**</span></u>' +
+        '<u><span style="color: red;">**right**</span></u>',
+    );
+    editor.update(() => $convertFromMarkdownString(markdown), {discrete: true});
+    editor.read(() => {
+      const paragraph = $firstChild();
+      expect($isElementNode(paragraph)).toBe(true);
+      if ($isElementNode(paragraph)) {
+        const children = paragraph.getChildren();
+        expect(children.map(node => node.getTextContent())).toEqual([
+          'left',
+          '\t',
+          'right',
+        ]);
+        expect($isTabNode(children[1])).toBe(true);
+        for (const child of children) {
+          expect($isTextNode(child) && child.hasFormat('underline')).toBe(true);
+          expect($isTextNode(child) && child.hasFormat('bold')).toBe(true);
+          expect($isTextNode(child) && child.getStyle()).toBe('color: red;');
+        }
+      }
+    });
+  });
+
   it('round-trips the formats Markdown cannot express', () => {
     const source =
       '<u>underline</u>, <mark>highlight</mark>, H<sub>2</sub>O, e=mc<sup>2</sup>, and <span style="color: red;">styled text</span>.';

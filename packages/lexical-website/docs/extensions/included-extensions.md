@@ -90,9 +90,7 @@ Framework-agnostic accessibility extensions. See [Keyboard Accessibility](/docs/
 
 Experimental micromark/mdast-based Markdown support (every extension in this package is experimental). See [Markdown with @lexical/mdast](/docs/serialization/markdown-mdast) for the full story.
 
-- [MdastImportExtension](/docs/api/modules/lexical_mdast#mdastimportextension) - The core registry: compiles the rules and grammar contributed by feature extensions, exposes `$convertFromMarkdownString` / `$convertFromMdast`
-- [MdastExportExtension](/docs/api/modules/lexical_mdast#mdastexportextension) - Serialization back to Markdown (`$convertToMarkdownString` / `$convertToMdast`); separate from import so import-only editors don't bundle the serializer
-- [MdastExtension](/docs/api/modules/lexical_mdast#mdastextension) - Bundle of `MdastImportExtension` + `MdastExportExtension`
+- [MdastExtension](/docs/api/modules/lexical_mdast#mdastextension) - The configurable core registry, exposing both Markdown import and export
 - [MdastHeadingExtension](/docs/api/modules/lexical_mdast#mdastheadingextension) - ATX & setext headings (HeadingNode)
 - [MdastBlockquoteExtension](/docs/api/modules/lexical_mdast#mdastblockquoteextension) - Block quotes (QuoteNode)
 - [MdastRichTextExtension](/docs/api/modules/lexical_mdast#mdastrichtextextension) - Bundle of heading + blockquote

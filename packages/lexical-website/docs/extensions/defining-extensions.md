@@ -239,18 +239,28 @@ commands that the extension implements, etc.
 export interface TabIndentationConfig {
   disabled: boolean;
   maxIndent: null | number;
+  /**
+   * By default, indents are set on all elements for which the
+   * {@link ElementNode.canIndent} returns true. This option allows you to set
+   * indents for specific nodes without overriding the method for others.
+   */
+  $canIndent: CanIndentPredicate;
 }
 export const TabIndentationExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: safeCast<TabIndentationConfig>({disabled: false, maxIndent: null}),
+  config: safeCast<TabIndentationConfig>({
+    $canIndent: $defaultCanIndent,
+    disabled: false,
+    maxIndent: null,
+  }),
   name: '@lexical/extension/TabIndentation',
   register(editor, config, state) {
-    const {disabled, maxIndent} = state.getOutput();
+    const {disabled, maxIndent, $canIndent} = state.getOutput();
     return effect(() => {
       if (!disabled.value) {
-        return registerTabIndentation(editor, maxIndent);
+        return registerTabIndentation(editor, maxIndent, $canIndent);
       }
     });
   },

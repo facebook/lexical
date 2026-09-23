@@ -457,7 +457,7 @@ export const MdastAlertExtension = defineExtension({
       overrides: [AlertRenderOverride],
     }),
     configExtension(MdastExtension, {
-      exportRules: [{$export: $exportAlertQuote, type: 'quote'}],
+      exportRules: [{$export: $exportAlertQuote, type: QuoteNode}],
       importRules: [{$import: $importAlertBlockquote, type: 'blockquote'}],
     }),
   ],

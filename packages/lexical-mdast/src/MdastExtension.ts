@@ -28,6 +28,7 @@ import {
   effect,
   getExtensionDependencyFromEditor,
   HorizontalRuleExtension,
+  HorizontalRuleNode,
   namedSignals,
 } from '@lexical/extension';
 import {LinkNode} from '@lexical/link';
@@ -38,8 +39,11 @@ import {
   $setState,
   configExtension,
   defineExtension,
+  LineBreakNode,
+  ParagraphNode,
   safeCast,
   shallowMergeConfig,
+  TextNode,
 } from 'lexical';
 import {
   gfmAutolinkLiteralFromMarkdown,
@@ -135,7 +139,7 @@ export interface MdastExtensionOutput
   extends MdastImportExtensionOutput, MdastExportExtensionOutput {}
 
 /**
- * The import API retained for compatibility.
+ * The Markdown import API.
  * @deprecated Use {@link MdastExtensionOutput} instead.
  */
 export interface MdastImportExtensionOutput {
@@ -187,9 +191,9 @@ const CORE_IMPORT_RULES: readonly MdastImportRule[] = [
   {$import: $importBreak, type: 'break'},
 ];
 const CORE_EXPORT_RULES: readonly MdastExportRule[] = [
-  {$export: exportParagraph, type: 'paragraph'},
-  {$export: exportText, type: 'text'},
-  {$export: $exportLineBreak, type: 'linebreak'},
+  {$export: exportParagraph, type: ParagraphNode},
+  {$export: exportText, type: TextNode},
+  {$export: $exportLineBreak, type: LineBreakNode},
 ];
 
 /**
@@ -307,7 +311,7 @@ export const MdastImportExtension = MdastExtension;
 export const MdastHeadingExtension = defineExtension({
   dependencies: [
     configExtension(MdastExtension, {
-      exportRules: [{$export: $exportHeading, type: 'heading'}],
+      exportRules: [{$export: $exportHeading, type: HeadingNode}],
       importRules: [{$import: $importHeading, type: 'heading'}],
     }),
   ],
@@ -324,7 +328,7 @@ export const MdastHeadingExtension = defineExtension({
 export const MdastBlockquoteExtension = defineExtension({
   dependencies: [
     configExtension(MdastExtension, {
-      exportRules: [{$export: exportQuote, type: 'quote'}],
+      exportRules: [{$export: exportQuote, type: QuoteNode}],
       importRules: [{$import: $importBlockquote, type: 'blockquote'}],
     }),
   ],
@@ -352,7 +356,7 @@ export const MdastRichTextExtension = defineExtension({
 export const MdastListExtension = defineExtension({
   dependencies: [
     configExtension(MdastExtension, {
-      exportRules: [{$export: $exportList, type: 'list'}],
+      exportRules: [{$export: $exportList, type: ListNode}],
       importRules: [
         {$import: $importList, type: 'list'},
         {$import: $importListItem, type: 'listItem'},
@@ -390,7 +394,7 @@ export const MdastTaskListExtension = defineExtension({
 export const MdastCodeExtension = defineExtension({
   dependencies: [
     configExtension(MdastExtension, {
-      exportRules: [{$export: $exportCode, type: 'code'}],
+      exportRules: [{$export: $exportCode, type: CodeNode}],
       importRules: [{$import: $importCode, type: 'code'}],
     }),
   ],
@@ -409,7 +413,7 @@ export const MdastCodeExtension = defineExtension({
 export const MdastLinkExtension = defineExtension({
   dependencies: [
     configExtension(MdastExtension, {
-      exportRules: [{$export: $exportLink, type: 'link'}],
+      exportRules: [{$export: $exportLink, type: LinkNode}],
       importRules: [
         {$import: $importLink, type: 'link'},
         {$import: $importLinkReference, type: 'linkReference'},
@@ -508,7 +512,7 @@ export const MdastHorizontalRuleExtension = defineExtension({
   dependencies: [
     HorizontalRuleExtension,
     configExtension(MdastExtension, {
-      exportRules: [{$export: $exportThematicBreak, type: 'horizontalrule'}],
+      exportRules: [{$export: $exportThematicBreak, type: HorizontalRuleNode}],
       importRules: [{$import: $importThematicBreak, type: 'thematicBreak'}],
     }),
   ],

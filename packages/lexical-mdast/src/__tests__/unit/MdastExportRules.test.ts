@@ -14,6 +14,7 @@ import {
   $createTextNode,
   $getRoot,
   configExtension,
+  DecoratorNode,
   defineExtension,
   ElementNode,
   TabNode,
@@ -41,11 +42,7 @@ class DerivedTextNode extends CustomTextNode {
   }
 }
 
-class CustomElementNode extends ElementNode {
-  $config() {
-    return this.config('custom-element', {extends: ElementNode});
-  }
-}
+class AbstractElementNode extends ElementNode {}
 
 function createEditor(exportRules: readonly MdastExportRule[]) {
   return buildEditorFromExtensions(
@@ -57,7 +54,7 @@ function createEditor(exportRules: readonly MdastExportRule[]) {
       ],
       name: '[root]',
       // The intermediate CustomTextNode deliberately is not registered.
-      nodes: [DerivedTextNode, CustomElementNode],
+      nodes: [DerivedTextNode],
     }),
   );
 }
@@ -166,22 +163,17 @@ describe('mdast export rule inheritance', () => {
     },
   );
 
-  it('supports abstract node classes without overriding specific core rules', () => {
-    using editor = createEditor([
-      {$export: () => ({type: 'thematicBreak'}), type: ElementNode},
-    ]);
-    editor.update(
-      () =>
-        $getRoot()
-          .clear()
-          .append(
-            $createParagraphNode().append($createTextNode('paragraph')),
-            $create(CustomElementNode),
-          ),
-      {discrete: true},
-    );
-    expect(editor.read(() => $convertToMarkdownString())).toBe(
-      'paragraph\n\n***',
+  it.each([
+    {name: 'ElementNode', type: ElementNode},
+    {name: 'DecoratorNode', type: DecoratorNode},
+    {name: 'AbstractElementNode', type: AbstractElementNode},
+  ])('rejects $name because it has no node type', ({type}) => {
+    expect(() => {
+      using _editor = createEditor([
+        {$export: () => ({type: 'thematicBreak'}), type},
+      ]);
+    }).toThrow(
+      'MdastExtension: export rule node classes must have their own type.',
     );
   });
 

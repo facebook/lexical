@@ -1135,8 +1135,8 @@ export const MdastFootnoteExtension = defineExtension({
     }),
     configExtension(MdastExtension, {
       exportRules: [
-        {$export: $exportFootnoteRef, type: 'footnote-ref'},
-        {$export: $exportFootnoteDefinition, type: 'footnote-def'},
+        {$export: $exportFootnoteRef, type: FootnoteRefNode},
+        {$export: $exportFootnoteDefinition, type: FootnoteDefinitionNode},
       ],
       importRules: [
         {$import: $importFootnoteReference, type: 'footnoteReference'},

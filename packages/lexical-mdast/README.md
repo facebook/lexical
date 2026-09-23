@@ -61,8 +61,6 @@ Behavior and convenience bundles:
 | `MdastGfmExtension` | bundle of the four GFM extensions |
 | `MdastRichTextExtension` | bundle of heading + blockquote |
 | `MdastExtension` | core registry, Markdown import and export |
-| `MdastImportExtension` | deprecated alias of `MdastExtension` |
-| `MdastExportExtension` | compatibility extension exposing the export API |
 | `MdastShadowRootQuoteExtension` | opt-in: blockquotes as block containers (full-fidelity nested content) |
 | `MdastHtmlExtension` | opt-in: raw HTML routed through the `@lexical/html` DOM import rules; HTML-encoded export via `$exportViaDOM` / `rawHtmlBlock` |
 | `MdastShortcutsExtension` | streaming keyboard shortcuts |
@@ -74,10 +72,7 @@ same registry — only fire for constructs the editor can represent (`> `
 stays literal without `MdastBlockquoteExtension`).
 
 `MdastExtension` owns the shared configuration and exposes both import and
-export. Feature extensions depend on it automatically. `MdastImportExtension`
-is a deprecated alias of the same extension, so existing configuration and
-output lookups continue to work. `MdastExportExtension` also remains available
-for existing export-output lookups; new code can use `MdastExtension` directly.
+export. Feature extensions depend on it automatically.
 
 ## Usage
 
@@ -251,7 +246,7 @@ export const MdastCollapsibleExtension = defineExtension({
     }),
     configExtension(MdastExtension, {
       // exportDOM is the single source of truth for the encoding.
-      exportRules: [{$export: $exportViaDOM, type: 'collapsible'}],
+      exportRules: [{$export: $exportViaDOM, type: CollapsibleNode}],
     }),
   ],
 });
@@ -292,9 +287,9 @@ handles `TabNode` and custom text nodes unless a more specific rule exists.
 The nearest matching ancestor wins, regardless of contribution order. For
 multiple rules targeting the same type (including a mix of strings and classes),
 the first rule wins; contributions merged later are prepended. Ancestor classes
-do not need to be registered in the editor themselves, and abstract classes
-such as `ElementNode` can also be used as rule types. Rules are resolved once
-when the editor is built.
+do not need to be registered in the editor themselves. Classes must have their
+own node type; abstract classes without one (such as `ElementNode`) are rejected.
+Rules are resolved once when the editor is built.
 
-Import rules still use mdast type strings: mdast nodes are plain objects,
+Import rules use mdast type strings: mdast nodes are plain objects,
 without a Lexical node class hierarchy.

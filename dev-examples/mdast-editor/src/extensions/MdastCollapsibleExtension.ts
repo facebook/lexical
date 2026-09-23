@@ -381,7 +381,7 @@ export const MdastCollapsibleExtension = defineExtension({
       // Export is fully generic: $exportViaDOM renders CollapsibleNode's own
       // exportDOM shell and embeds the summary slot and body children as
       // Markdown — no construct-specific serialization at all.
-      exportRules: [{$export: $exportViaDOM, type: 'collapsible'}],
+      exportRules: [{$export: $exportViaDOM, type: CollapsibleNode}],
     }),
   ],
   name: '@lexical/dev-mdast-editor-example/MdastCollapsible',

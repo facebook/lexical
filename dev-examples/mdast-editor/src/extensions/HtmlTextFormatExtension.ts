@@ -24,6 +24,7 @@ import {
   defineExtension,
   getStyleObjectFromCSS,
   type TextFormatType,
+  TextNode,
 } from 'lexical';
 
 // Text-level constructs that are a good case for HTML rather than Markdown:
@@ -148,7 +149,7 @@ export const HtmlTextFormatExtension = defineExtension({
       rules: [StyledSpanImportRule],
     }),
     configExtension(MdastExtension, {
-      exportRules: [{$export: $exportHtmlFormattedText, type: 'text'}],
+      exportRules: [{$export: $exportHtmlFormattedText, type: TextNode}],
     }),
   ],
   name: '@lexical/dev-mdast-editor-example/HtmlTextFormat',

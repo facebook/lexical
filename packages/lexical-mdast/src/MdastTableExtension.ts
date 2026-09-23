@@ -132,7 +132,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
 export const MdastTableExtension = defineExtension({
   dependencies: [
     configExtension(MdastExtension, {
-      exportRules: [{$export: $exportTable, type: 'table'}],
+      exportRules: [{$export: $exportTable, type: TableNode}],
       importRules: [{$import: $importTable, type: 'table'}],
       mdastExtensions: [/* @__PURE__ */ gfmTableFromMarkdown()],
       micromarkExtensions: [/* @__PURE__ */ gfmTable()],

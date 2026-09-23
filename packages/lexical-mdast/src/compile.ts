@@ -7,9 +7,10 @@
  */
 
 import type {MdastConfig} from './MdastExtension';
-import type {CompiledMdast, MdastExportRule} from './types';
+import type {CompiledMdast} from './types';
 import type {LexicalEditor} from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {getStaticNodeConfig, iterStaticNodeConfigChain} from 'lexical';
 
 /**
@@ -33,27 +34,26 @@ export function compileMdast(
       importHandlers.set(rule.type, rule.$import);
     }
   }
-  const exportRules = new Map<
-    MdastExportRule['type'],
-    MdastExportRule['$export']
-  >();
+  const exportRules: CompiledMdast['exportHandlers'] = new Map();
   for (const rule of config.exportRules) {
     // Class and string rules for the same type share contribution priority.
-    // Abstract classes have no type string, so retain the class as the key.
     const type =
       typeof rule.type === 'string'
         ? rule.type
-        : (getStaticNodeConfig(rule.type).ownNodeType ?? rule.type);
+        : getStaticNodeConfig(rule.type).ownNodeType;
+    invariant(
+      type !== undefined,
+      'MdastExtension: export rule node classes must have their own type.',
+    );
     if (!exportRules.has(type)) {
       exportRules.set(type, rule.$export);
-      if (typeof type === 'string') {
-        exportHandlers.set(type, rule.$export);
-      }
+      exportHandlers.set(type, rule.$export);
     }
   }
   for (const [type, {klass}] of editor._nodes) {
-    for (const ancestor of iterStaticNodeConfigChain(klass)) {
-      const handler = exportRules.get(ancestor.ownNodeType ?? ancestor.klass);
+    for (const {ownNodeType} of iterStaticNodeConfigChain(klass)) {
+      const handler =
+        ownNodeType === undefined ? undefined : exportRules.get(ownNodeType);
       if (handler) {
         exportHandlers.set(type, handler);
         break;

@@ -50,9 +50,7 @@ export interface MdastExportExtensionOutput {
 }
 
 /**
- * Compatibility extension exposing the export API of {@link MdastExtension}.
- * Existing dependencies and output lookups continue to work; new editors can
- * use {@link MdastExtension} directly for both import and export.
+ * Exposes the export API of {@link MdastExtension}.
  * @experimental
  */
 export const MdastExportExtension = defineExtension<

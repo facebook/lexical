@@ -145,7 +145,7 @@ export const MdastKbdExtension = defineExtension({
       rules: [KbdImportRule],
     }),
     configExtension(MdastExtension, {
-      exportRules: [{$export: $exportKbd, type: 'kbd'}],
+      exportRules: [{$export: $exportKbd, type: KbdNode}],
     }),
   ],
   name: '@lexical/dev-mdast-editor-example/MdastKbd',

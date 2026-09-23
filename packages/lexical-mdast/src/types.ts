@@ -182,6 +182,8 @@ export interface MdastExportRule {
    * A Lexical node type string or class (e.g. `'heading'` or `HeadingNode`).
    * Applies to that type and its subclasses. The nearest matching ancestor
    * wins; rules for the same type use contribution order (first wins).
+   * Classes must have their own node type; abstract classes without one
+   * are rejected when the editor is built.
    */
   type: string | Klass<LexicalNode>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

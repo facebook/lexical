@@ -786,7 +786,7 @@ function leadsWithCustomTag(segment: string): boolean {
  *
  * ```ts
  * configExtension(MdastExtension, {
- *   exportRules: [{$export: $exportViaDOM, type: 'collapsible'}],
+ *   exportRules: [{$export: $exportViaDOM, type: CollapsibleNode}],
  * })
  * ```
  *

@@ -565,11 +565,7 @@ export class ColoredNode extends TextNode {
   // highlight-start
   __color: string;
 
-  constructor(
-    text: string = '',
-    color: string = DEFAULT_COLOR,
-    key?: NodeKey,
-  ) {
+  constructor(text: string = '', color: string = DEFAULT_COLOR, key?: NodeKey) {
     super(text, key);
     this.__color = color;
   }

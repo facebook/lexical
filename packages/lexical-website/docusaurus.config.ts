@@ -80,7 +80,9 @@ const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update w
 const DISCORD_URL = 'https://discord.gg/KmG4wQnnD9';
 
 function sourceLinkOptions() {
-  const sourceLinkTemplate = `${GITHUB_REPO_URL}/tree/{gitRevision}/{path}#L{line}`;
+  // With disableGit, TypeDoc makes {path} relative to the common directory of
+  // the entry points (packages/) rather than the repository root
+  const sourceLinkTemplate = `${GITHUB_REPO_URL}/tree/{gitRevision}/packages/{path}#L{line}`;
   return {
     disableGit: true,
     gitRevision: 'main',

@@ -142,7 +142,7 @@ between creation of new `EditorState` snapshots.
 Expanding on the example above with these methods:
 
 ```ts
-interface SerializedCustomNode extends SerializedLexicalNode {
+interface SerializedMyCustomNode extends SerializedLexicalNode {
   foo?: string;
 }
 
@@ -565,11 +565,7 @@ export class ColoredNode extends TextNode {
   // highlight-start
   __color: string;
 
-  constructor(
-    text: string = '',
-    color: string = DEFAULT_COLOR,
-    key?: NodeKey,
-  ): void {
+  constructor(text: string = '', color: string = DEFAULT_COLOR, key?: NodeKey) {
     super(text, key);
     this.__color = color;
   }
@@ -931,7 +927,7 @@ export function $isCustomParagraphNode(
 export class ColoredNode extends TextNode {
   __color: string;
 
-  constructor(text: string, color: string, key?: NodeKey): void {
+  constructor(text: string, color: string, key?: NodeKey) {
     super(text, key);
     this.__color = color;
   }

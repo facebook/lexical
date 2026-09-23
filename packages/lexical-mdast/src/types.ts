@@ -65,6 +65,12 @@ declare module 'mdast' {
  */
 export interface MdastImportContext {
   /**
+   * Import the same node with the next handler in contribution order, or
+   * the generic import fallback when no handlers remain. Returns normalized
+   * output that may be returned directly or modified by this handler.
+   */
+  next(): LexicalNode[];
+  /**
    * The accumulated text-format bitmask for the current inline position
    * (e.g. inside `strong` > `emphasis` this carries the bold + italic bits).
    * Block handlers can ignore this; inline handlers should pass it along to
@@ -104,7 +110,8 @@ export interface MdastImportContext {
 /**
  * Converts an mdast node of a particular `type` into one or more Lexical
  * nodes. Returning `null` omits the node and its children from the import.
- * Only the first registered handler for a type is used.
+ * Call {@link MdastImportContext.next} to delegate to the next handler.
+ * Returning an empty array also omits the node.
  * @experimental
  */
 export type MdastImportHandler<T extends MdastNode = MdastNode> = (
@@ -118,6 +125,13 @@ export type MdastImportHandler<T extends MdastNode = MdastNode> = (
  * @experimental
  */
 export interface MdastExportContext {
+  /**
+   * Export the same node with the next handler: lower-priority rules for its
+   * type, then rules for its ancestors from nearest to farthest, then the
+   * generic export fallback. Returns normalized output that may be returned
+   * directly or modified by this handler.
+   */
+  next(): MdastNode[];
   /**
    * Convert the children of `source` into mdast nodes by dispatching each
    * child through the registered export handlers. `source` is an element
@@ -153,8 +167,9 @@ export interface MdastExportContext {
 
 /**
  * Converts a Lexical node into one or more mdast nodes. Returning `null`
- * uses the default export for the node. Only the handler selected for the
- * node's type is called; parent-class and lower-priority rules are not tried.
+ * uses the default export for the node. Call {@link MdastExportContext.next}
+ * to delegate to the next handler instead. Returning an empty array omits
+ * the node.
  * @experimental
  */
 export type MdastExportHandler<T extends LexicalNode = LexicalNode> = (
@@ -183,7 +198,8 @@ export interface MdastExportRule {
   /**
    * A Lexical node type string or class (e.g. `'heading'` or `HeadingNode`).
    * Applies to that type and its subclasses. The nearest matching ancestor
-   * wins; rules for the same type use contribution order (first wins).
+   * runs first; rules for the same type use contribution order. Handlers
+   * can delegate to the remaining rules with context.next().
    * Classes must have their own node type; abstract classes without one
    * are rejected when the editor is built.
    */
@@ -198,8 +214,8 @@ export interface MdastExportRule {
  * @experimental
  */
 export interface CompiledMdast {
-  importHandlers: Map<string, MdastImportHandler>;
-  exportHandlers: Map<string, MdastExportHandler>;
+  importHandlers: Map<string, MdastImportHandler[]>;
+  exportHandlers: Map<string, MdastExportHandler[]>;
   micromarkExtensions: MicromarkExtension[];
   mdastExtensions: FromMarkdownExtension[];
   toMarkdownExtensions: ToMarkdownExtension[];

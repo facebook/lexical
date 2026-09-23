@@ -284,16 +284,38 @@ export const MyMdastExtension = defineExtension({
 Export rule `type` accepts a Lexical type string or node class: `'text'` and
 `TextNode` are equivalent. Rules also apply to subclasses, so a text rule
 handles `TabNode` and custom text nodes unless a more specific rule exists.
-The nearest matching ancestor wins, regardless of contribution order. For
+The nearest matching ancestor runs first, regardless of contribution order. For
 multiple rules targeting the same type (including a mix of strings and classes),
-the first rule wins; contributions merged later are prepended. Ancestor classes
-do not need to be registered in the editor themselves. Classes must have their
+array order determines priority; contributions merged later are prepended.
+Ancestor classes do not need to be registered in the editor themselves. Classes must have their
 own node type; abstract classes without one (such as `ElementNode`) are rejected.
 Rules are resolved once when the editor is built.
 
-Only the selected export handler runs. Returning `null` uses the default
-export for the node; parent-class and lower-priority rules are not tried.
+Handlers can delegate with `context.next()`, which converts the same node
+using the next handler and returns an array of output nodes. An export chain
+runs lower-priority rules for the same type before moving to its ancestors,
+from nearest to farthest. When no handlers remain, it uses the generic export
+fallback. A handler can return the delegated result or modify it:
+
+```ts
+import {MdastExtension} from '@lexical/mdast';
+import {configExtension, TextNode} from 'lexical';
+
+configExtension(MdastExtension, {
+  exportRules: [{
+    type: TextNode,
+    $export: (_node, context) => context.next().map(node =>
+      node.type === 'text' ? {...node, value: node.value.toUpperCase()} : node,
+    ),
+  }],
+});
+```
+
+Returning `null` uses the default export directly, without trying remaining
+rules. Returning `[]` omits the node.
 
 Import rules use mdast type strings: mdast nodes are plain objects,
-without a Lexical node class hierarchy. Only the first registered handler for
-a type runs. Returning `null` omits the node and its children from the import.
+without a Lexical node class hierarchy. Their `context.next()` runs the next
+handler for the same type in contribution order, eventually reaching the
+generic import fallback. Returning `null` or `[]` omits the node and its
+children from the import.

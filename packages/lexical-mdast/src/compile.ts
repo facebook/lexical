@@ -7,7 +7,7 @@
  */
 
 import type {MdastConfig} from './MdastExtension';
-import type {CompiledMdast, MdastExportRule} from './types';
+import type {CompiledMdast, MdastExportHandler, MdastExportRule} from './types';
 import type {LexicalEditor} from 'lexical';
 
 import invariant from '@lexical/internal/invariant';
@@ -37,39 +37,49 @@ function getExportRuleType(klass: MdastExportRule['type']): string {
  * rules contributed by extensions merged later (closer to the editor root),
  * those higher-priority rules take precedence — mirroring the dispatch order
  * of `@lexical/html`'s `DOMImportExtension`. Export rules also apply to
- * subclasses, with the nearest ancestor's rule taking precedence.
+ * subclasses, with the nearest ancestor's rules taking precedence. Handlers
+ * can delegate to the remaining rules with context.next().
  */
 export function compileMdast(
   editor: LexicalEditor,
   config: MdastConfig,
 ): CompiledMdast {
   const importHandlers: CompiledMdast['importHandlers'] = new Map();
-  const exportHandlers: CompiledMdast['exportHandlers'] = new Map();
 
   for (const rule of config.importRules) {
-    if (!importHandlers.has(rule.type)) {
-      importHandlers.set(rule.type, rule.$import);
+    const handlers = importHandlers.get(rule.type);
+    if (handlers) {
+      handlers.push(rule.$import);
+    } else {
+      importHandlers.set(rule.type, [rule.$import]);
     }
   }
   const exportRules: CompiledMdast['exportHandlers'] = new Map();
   for (const rule of config.exportRules) {
     // Class and string rules for the same type share contribution priority.
     const type = getExportRuleType(rule.type);
-    if (!exportRules.has(type)) {
-      exportRules.set(type, rule.$export);
-      exportHandlers.set(type, rule.$export);
+    const handlers = exportRules.get(type);
+    if (handlers) {
+      handlers.push(rule.$export);
+    } else {
+      exportRules.set(type, [rule.$export]);
     }
   }
+  const exportHandlers = new Map(exportRules);
   // Resolve rules against the editor's registered node classes, including
-  // replacement classes, so each type uses its nearest matching rule.
+  // replacement classes. Same-type rules precede ancestor rules, and each
+  // type contributes once even when multiple classes in the chain share it.
   for (const [type, {klass}] of editor._nodes) {
+    const handlers: MdastExportHandler[] = [];
+    const seenTypes = new Set<string>();
     for (const {ownNodeType} of iterStaticNodeConfigChain(klass)) {
-      const handler =
-        ownNodeType === undefined ? undefined : exportRules.get(ownNodeType);
-      if (handler) {
-        exportHandlers.set(type, handler);
-        break;
+      if (ownNodeType !== undefined && !seenTypes.has(ownNodeType)) {
+        seenTypes.add(ownNodeType);
+        handlers.push(...(exportRules.get(ownNodeType) || []));
       }
+    }
+    if (handlers.length > 0) {
+      exportHandlers.set(type, handlers);
     }
   }
 

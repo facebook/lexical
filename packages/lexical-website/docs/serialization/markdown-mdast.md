@@ -101,6 +101,14 @@ apply to subclasses. The nearest matching ancestor takes precedence, so a
 contribution order: later extension contributions take priority. Classes must
 have their own node type; abstract classes without one are rejected.
 
+Import and export handlers can call `context.next()` to delegate conversion
+of the same node and receive an array of output nodes to return or modify.
+Export tries the remaining rules for the same type before its ancestors,
+from nearest to farthest; import uses contribution order for the mdast type.
+After the last handler, `next()` uses the generic fallback. Returning `null`
+uses the default export directly, or omits the node and its children on import.
+Returning `[]` omits the node in either direction.
+
 ## Round-trips are minimally different
 
 The literal syntax of each construct is preserved on the Lexical

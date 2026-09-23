@@ -29,6 +29,7 @@ export type MdastParent = unknown;
 declare export opaque type CompiledMdast;
 
 export type MdastImportContext = {
+  next(): LexicalNode[],
   readonly format: number,
   readonly source: string,
   importChildren(parent: MdastParent, format?: number): LexicalNode[],
@@ -50,6 +51,7 @@ export type PhrasingContent = unknown;
 export type RootContent = unknown;
 
 export type MdastExportContext = {
+  next(): MdastNode[],
   exportChildren(source: ElementNode | ReadonlyArray<LexicalNode>): MdastNode[],
   exportInline(source: ElementNode | ReadonlyArray<LexicalNode>): MdastNode[],
   exportBlocks(source: ElementNode | ReadonlyArray<LexicalNode>): MdastNode[],

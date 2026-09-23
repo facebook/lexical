@@ -287,35 +287,58 @@ handles `TabNode` and custom text nodes unless a more specific rule exists.
 The nearest matching ancestor runs first, regardless of contribution order. For
 multiple rules targeting the same type (including a mix of strings and classes),
 array order determines priority; contributions merged later are prepended.
-Ancestor classes do not need to be registered in the editor themselves. Classes must have their
-own node type; abstract classes without one (such as `ElementNode`) are rejected.
+Ancestor classes do not need to be registered in the editor themselves. Classes
+must have their own node type; abstract classes without one (such as `ElementNode`)
+are rejected.
 Rules are resolved once when the editor is built.
 
 Handlers can delegate with `context.next()`, which converts the same node
 using the next handler and returns an array of output nodes. An export chain
 runs lower-priority rules for the same type before moving to its ancestors,
 from nearest to farthest. When no handlers remain, it uses the generic export
-fallback. A handler can return the delegated result or modify it:
+fallback. A handler can return the delegated result or modify it. Formatting
+such as bold and italic wraps text in child nodes, so this uppercase example
+walks the returned tree, including inline code:
 
 ```ts
-import {MdastExtension} from '@lexical/mdast';
+import {MdastExtension, type MdastNode} from '@lexical/mdast';
 import {configExtension, TextNode} from 'lexical';
+
+function uppercaseText(nodes: readonly MdastNode[]): void {
+  for (const node of nodes) {
+    if (node.type === 'text' || node.type === 'inlineCode') {
+      node.value = node.value.toUpperCase();
+    } else if ('children' in node) {
+      uppercaseText(node.children);
+    }
+  }
+}
 
 configExtension(MdastExtension, {
   exportRules: [{
     type: TextNode,
-    $export: (_node, context) => context.next().map(node =>
-      node.type === 'text' ? {...node, value: node.value.toUpperCase()} : node,
-    ),
+    $export: (_node, context) => {
+      const output = context.next();
+      uppercaseText(output);
+      return output;
+    },
   }],
 });
 ```
 
-Returning `null` uses the default export directly, without trying remaining
-rules. Returning `[]` omits the node.
+Plain formatted text returned by text middleware is merged into adjacent text
+runs so shared and overlapping formats serialize correctly. Output containing
+extra fields such as `data`, or custom structure, is preserved as-is instead
+of merged. Such middleware must ensure its output serializes correctly on its
+own; adjacent bold nodes, for example, can produce `**a****b**`.
 
 Import rules use mdast type strings: mdast nodes are plain objects,
 without a Lexical node class hierarchy. Their `context.next()` runs the next
 handler for the same type in contribution order, eventually reaching the
-generic import fallback. Returning `null` or `[]` omits the node and its
-children from the import.
+generic import fallback.
+
+| Handler result | Import | Export |
+| --- | --- | --- |
+| `context.next()` | Runs the next handler for the same mdast type, or the generic import fallback when none remain. | Runs the next same-type or ancestor handler, or the generic export fallback when none remain. |
+| `null` | Omits the node and its children. | Uses the default export directly, without trying remaining handlers. |
+| `[]` | Omits the node and its children. | Omits the node. |

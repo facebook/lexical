@@ -130,8 +130,10 @@ built with the editor. You can use
 [declarePeerDependency](/docs/api/modules/lexical#declarepeerdependency) to
 build this array with type inference.
 
-Since these are optional and by name, the graph between `peerDependencies`
-are not restricted. Loops are allowed.
+Since these are optional and by name, an extension may declare a peer it does
+not import. The graph must still be acyclic: peer edges take part in the same
+topological sort as `dependencies`, so two extensions that peer-depend on each
+other and are both present will fail to build.
 
 This is rarely needed in practice and is considered an advanced use case,
 typically to avoid a direct import or dependency loop. See
@@ -149,7 +151,11 @@ in the same editor.
 ```ts
 export const PlainTextExtension = defineExtension({
   conflictsWith: ['@lexical/rich-text'],
-  dependencies: [DragonExtension],
+  dependencies: [
+    DragonExtension,
+    NormalizeInlineElementsExtension,
+    NormalizeTripleClickSelectionExtension,
+  ],
   name: '@lexical/plain-text',
   register: registerPlainText,
 });
@@ -221,7 +227,8 @@ This is rarely needed in practice and is considered an advanced use case.
 
 ### build
 
-The build phase happens just before the editor is constructed but after
+The build phase happens after the editor is constructed — it receives the
+`LexicalEditor` — but before [register](#register), and after
 [config](#config) and [init](#init). The return value of the `build`
 phase is `output` and is available for later phases.
 
@@ -261,8 +268,8 @@ export const TabIndentationExtension = defineExtension({
 
 This happens after the editor has been constructed. This is where you will
 register any commands, listeners, etc. that your extension needs. It can use
-the result of `init` or `build` via `state.getInit()` and `state.getOutput()`
-respectively.
+the result of `init` or `build` via `state.getInitResult()` and
+`state.getOutput()` respectively.
 
 The return value is a dispose function, typically the result of `mergeRegister`.
 

@@ -1,15 +1,15 @@
 # Lexical Benchmarks
 
 Performance benchmarks for the Lexical core. Run via `pnpm bench` from the
-repo root, or scoped to a single project with `--project bench` (data
-structure microbenches, node env) or `--project bench-dom` (real-editor
+repo root, or scoped to a single project with `--project "bench (bench)"` (data
+structure microbenches, node env) or `--project "bench-dom (bench)"` (real-editor
 benches, jsdom env).
 
 ```sh
-pnpm bench                                # all bench projects
-pnpm vitest bench --project bench         # microbenches only
-pnpm vitest bench --project bench-dom     # editor cycle benches only
-pnpm vitest bench --project bench nodeMap # filter by file substring
+pnpm bench                                       # all bench projects
+pnpm vitest bench --project "bench (bench)"         # microbenches only
+pnpm vitest bench --project "bench-dom (bench)"     # editor cycle benches only
+pnpm vitest bench --project "bench (bench)" nodeMap # filter by file substring
 ```
 
 ## Two projects, why?
@@ -83,11 +83,13 @@ isolation.
 - `*.bench.ts` directly under `__bench__/` for node-env microbenches.
 - `*.bench.ts` under `__bench__/dom/` for jsdom-env benches.
 
-**Structure** — sweep across realistic sizes; one `describe` per scenario;
-one `bench` per implementation under test.
+**Structure** — sweep across realistic sizes; one `test` per scenario;
+one `bench` per implementation under test. Vitest 5 provides `bench` through
+the test context. Call `.run()` for a single benchmark or `bench.compare()`
+for multiple implementations.
 
 ```ts
-import {bench, describe} from 'vitest';
+import {test} from 'vitest';
 
 import {buildMap, type FakeNode} from './_utils';
 import {MyImpl} from '../MyImpl';
@@ -95,48 +97,48 @@ import {MyImpl} from '../MyImpl';
 const SIZES = [100, 1000, 10000, 100000] as const;
 
 for (const size of SIZES) {
-  describe(`size=${size} :: <scenario name>`, () => {
+  test(`size=${size} :: <scenario name>`, async ({bench}) => {
     let oldImpl: Map<string, FakeNode>;
     let newImpl: MyImpl<string, FakeNode>;
 
-    bench(
-      'old',
-      () => {
-        // operation under test using oldImpl
-      },
-      {
-        setup: () => {
-          oldImpl = buildMap(size);
+    await bench.compare(
+      bench(
+        'old',
+        {
+          beforeAll: () => {
+            oldImpl = buildMap(size);
+          },
         },
-      },
-    );
-
-    bench(
-      'new',
-      () => {
-        // operation under test using newImpl
-      },
-      {
-        setup: () => {
-          newImpl = MyImpl.fromMap(buildMap(size));
+        () => {
+          // operation under test using oldImpl
         },
-      },
+      ),
+      bench(
+        'new',
+        {
+          beforeAll: () => {
+            newImpl = MyImpl.fromMap(buildMap(size));
+          },
+        },
+        () => {
+          // operation under test using newImpl
+        },
+      ),
     );
   });
 }
 ```
 
-**Comparison pattern** — when comparing an old vs new implementation,
-register both under the same `describe` block. Vitest's summary shows the
-relative factor between benches in the same block, which is exactly what
-you want to cite in PR descriptions.
+**Comparison pattern** — pass both implementations to `bench.compare()` in
+one test. Vitest reports their relative performance in a comparison table.
 
-**Setup state** — use the `setup` callback to initialize state before a
-task's measurement loop begins. Vitest invokes `setup` once per task
-(before warmup iterations and again before measured iterations), not
-per-iteration. Mutations made by the bench body accumulate across
-iterations — design accordingly (either make the body idempotent, or
-accept that it measures incremental cost on evolving state).
+**Setup state** — use the `beforeAll` benchmark option to initialize state
+before warmup and again before measured iterations. It does not run for
+every iteration. Use `beforeEach` and `afterEach` benchmark options for
+per-iteration work outside the timed body. Timing options such as `time`,
+`iterations`, and `warmupTime` go in `.run(options)` or the final argument
+to `bench.compare()`. Mutations made by the benchmark body accumulate across
+iterations unless a hook resets the state.
 
 **DCE prevention** — V8 may eliminate calls whose return values are
 unused. Each bench file should declare a module-level scalar sink and
@@ -145,18 +147,22 @@ assign into it from the timed body so the call can't be elided:
 ```ts
 let _benchSink: unknown;
 
-bench('get', () => {
-  _benchSink = map.get(someKey);
+test('map lookup', async ({bench}) => {
+  await bench('get', () => {
+    _benchSink = map.get(someKey);
+  }).run();
 });
 ```
 
 For loops, accumulate into a local and assign the local once at the end:
 
 ```ts
-bench('iterate', () => {
-  let count = 0;
-  for (const _ of map) count++;
-  _benchSink = count;
+test('map iteration', async ({bench}) => {
+  await bench('iterate', () => {
+    let count = 0;
+    for (const _ of map) count++;
+    _benchSink = count;
+  }).run();
 });
 ```
 
@@ -166,11 +172,10 @@ of iterations per bench cycle.
 
 ## Reading results
 
-Vitest bench reports `hz` (ops/sec), `mean`, `p75`, `p99`, and a relative
-factor in the summary. The summary block at the end is the primary signal:
-look for "Nx faster than..." lines comparing the relevant impls. `mean` is
-useful to cite as an absolute number; `p99` indicates tail behavior under
-GC or compaction.
+Vitest reports throughput (ops/sec), latency, percentiles, and relative
+performance in each comparison table. Compare implementations within the
+same table; mean latency is useful as an absolute number, while high
+percentiles indicate tail behavior under GC or compaction.
 
 Sample size and warmup are managed by Vitest. The default heuristics are
 fine for stable comparisons between two impls on the same machine; for

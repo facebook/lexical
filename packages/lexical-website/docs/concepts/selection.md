@@ -61,6 +61,17 @@ has moved to another editor on the page. This can also happen when trying to sel
 Selection can be found using the `$getSelection()` helper, exported from the `lexical` package. This function can be used within
 an update, a read, or a command listener.
 
+:::tip
+
+To walk the document from a selection point — or to write a traversal that
+handles empty nodes and collapsed selections correctly — see
+[Node Traversals with NodeCaret](./traversals.md).
+`$caretRangeFromSelection(selection)` converts a `RangeSelection` into the
+caret range that traversal API works with, and
+`$setSelectionFromCaretRange(range)` converts back.
+
+:::
+
 ```js
 import {$getSelection, SELECTION_CHANGE_COMMAND} from 'lexical';
 

@@ -18,8 +18,10 @@ import {
   $isRangeSelection,
   $onUpdate,
   $setSelection,
+  CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_LOW,
   configExtension,
+  createCommand,
   type LexicalEditor,
   SELECTION_CHANGE_COMMAND,
   SKIP_DOM_SELECTION_TAG,
@@ -195,7 +197,7 @@ describe('SELECTION_CHANGE_COMMAND', () => {
     expect(updates).toHaveBeenCalledTimes(1);
   });
 
-  test.each(['onUpdate', '$onUpdate', 'none'])(
+  test.each(['onUpdate', '$onUpdate', 'selection listener', 'none'])(
     'preserves typing undo merging with %s callbacks',
     async callback => {
       using editor = buildEditorFromExtensions(
@@ -213,6 +215,23 @@ describe('SELECTION_CHANGE_COMMAND', () => {
       await Promise.resolve();
       const onUpdate = vi.fn();
       const updates = vi.fn();
+      // Toolbars listen to history availability during the commit, while
+      // callbacks from selection listeners are still waiting to run.
+      editor.registerCommand(
+        CAN_UNDO_COMMAND,
+        () => false,
+        COMMAND_PRIORITY_LOW,
+      );
+      const unregisterSelection = editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        () => {
+          if (callback === 'selection listener') {
+            $onUpdate(onUpdate);
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      );
       const unregister = editor.registerUpdateListener(updates);
       for (const character of 'abcd') {
         editor.update(
@@ -233,12 +252,54 @@ describe('SELECTION_CHANGE_COMMAND', () => {
       }
       expect(editor.read(() => $getRoot().getTextContent())).toBe('abcd');
       unregister();
+      unregisterSelection();
       editor.dispatchCommand(UNDO_COMMAND, undefined);
       expect(editor.read(() => $getRoot().getTextContent())).toBe('');
       expect(updates).toHaveBeenCalledTimes(4);
       expect(onUpdate).toHaveBeenCalledTimes(callback === 'none' ? 0 : 4);
     },
   );
+
+  test('preserves callbacks added by a command during commit listeners', async () => {
+    using editor = buildEditorFromExtensions();
+    mountEditor(editor);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('initial')));
+      },
+      {discrete: true},
+    );
+    const command = createCommand<void>();
+    const callbacks: string[] = [];
+    editor.registerCommand(
+      command,
+      () => {
+        $getRoot().getAllTextNodes()[0].setTextContent('second');
+        $onUpdate(() =>
+          callbacks.push(`second: ${editor.getRootElement()!.textContent}`),
+        );
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+    const unregister = editor.registerUpdateListener(() => {
+      unregister();
+      editor.dispatchCommand(command);
+    });
+    editor.update(
+      () => {
+        $getRoot().getAllTextNodes()[0].setTextContent('first');
+        $onUpdate(() =>
+          callbacks.push(`first: ${editor.getRootElement()!.textContent}`),
+        );
+      },
+      {discrete: true},
+    );
+    await Promise.resolve();
+    expect(callbacks).toEqual(['first: first', 'second: second']);
+  });
 
   test('focus produces one tagged commit and one callback', async () => {
     using editor = buildEditorFromExtensions();

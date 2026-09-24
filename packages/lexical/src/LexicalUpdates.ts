@@ -734,6 +734,14 @@ function $commitPendingUpdatesImpl(
   // reconciles) would inherit the COLLABORATION tag and be skipped by
   // syncLexicalUpdateToYjs, desyncing the peers.
   editor._updateTags = new Set();
+  // These callbacks belong to this commit. Commands dispatched by commit
+  // listeners may start another update, which must not inherit them and
+  // schedule an otherwise empty commit (breaking typing history merging).
+  // An outer update still owns its callbacks when it forces an early commit.
+  const deferred = editor._deferred;
+  if (!previouslyUpdating) {
+    editor._deferred = [];
+  }
   $garbageCollectDetachedDecorators(editor, pendingEditorState);
 
   // ======
@@ -829,7 +837,6 @@ function $commitPendingUpdatesImpl(
   // example, setEditorState() inside editor.update()). Keep $onUpdate
   // callbacks queued so the outer update drains them after updateFn returns.
   if (!previouslyUpdating) {
-    const deferred = editor._deferred;
     triggerDeferredUpdateCallbacks(editor, deferred);
   }
   $triggerEnqueuedUpdates(editor);
@@ -1151,7 +1158,9 @@ function triggerDeferredUpdateCallbacks(
   editor: LexicalEditor,
   deferred: (() => void)[],
 ): void {
-  editor._deferred = [];
+  if (editor._deferred === deferred) {
+    editor._deferred = [];
+  }
 
   if (deferred.length !== 0) {
     const previouslyUpdating = editor._updating;

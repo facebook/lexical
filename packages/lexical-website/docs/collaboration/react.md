@@ -101,6 +101,7 @@ function Editor() {
         <CollaborationPlugin
           id="lexical/react-rich-collab"
           providerFactory={providerFactory}
+          shouldBootstrap={true}
         />
       </LexicalComposer>
     </LexicalCollaboration>
@@ -120,15 +121,15 @@ import type {CreateEditorArgs} from 'lexical';
 import {$getRoot, $createParagraphNode} from 'lexical';
 import {Doc} from 'yjs';
 
-import {withHeadlessCollaborationEditor} from './withHeadlessCollaborationEditor';
+import {withHeadlessCollaborationEditor} from './createHeadlessCollaborativeEditor';
 
 function createBootstrappedYDoc(nodes: CreateEditorArgs['nodes']): Doc {
-  return withHeadlessCollaborationEditor(nodes, (editor) => {
-    const yDoc = new Doc();
+  return withHeadlessCollaborationEditor(nodes, (editor, binding) => {
     editor.update(() => {
       $getRoot().append($createParagraphNode());
     }, {discrete: true});
-    return yDoc;
+    // binding.doc is the Doc the editor synced into
+    return binding.doc;
   });
 }
 ```
@@ -225,9 +226,9 @@ recognized.
 [Lexical Playground](https://playground.lexical.dev/) features set of the collaboration enabled plugins that integrate with primary document via `useCollaborationContext()` hook. Notable mentions:
 
 - [`CommentPlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-playground/src/plugins/CommentPlugin) - features use of the separate provider and Yjs room to sync comments.
-- [`ImageComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/ImageComponent.tsx) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin`.
-- [`PollOptionComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/PollComponent.tsx) - showcases poll implementation using `clientID` from Yjs context.
-- [`StickyComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/StickyComponent.tsx) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin` as well as sticky note position real-time sync.
+- [`ImageComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/ImageComponent.tsx) - features use of the `LexicalExtensionEditorComposer` for its nested caption editor.
+- [`PollOptionComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/PollComponent.tsx) - showcases poll implementation using `name` from the collaboration context.
+- [`StickyComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/StickyComponent.tsx) - features use of the `LexicalExtensionEditorComposer` for its nested editor as well as sticky note position real-time sync.
 
 :::note
 

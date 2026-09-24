@@ -349,6 +349,8 @@ function onSelectionChange(
           appliedPoints.focusNode === focusDOM &&
           appliedPoints.focusOffset === focusOffset))
     ) {
+      // The selection was already committed by the update that moved it,
+      // so listeners can read it with $getSelection() outside of an update.
       dispatchCommand(editor, SELECTION_CHANGE_COMMAND);
       return;
     }

@@ -21,6 +21,7 @@ import type {
   TabNode,
   LexicalExtension,
   ExtensionConfigBase,
+  ValueOrUpdater,
 } from 'lexical';
 
 import {ElementNode, TextNode} from 'lexical';
@@ -86,6 +87,7 @@ declare export function $plainifyCodeContent(text: string): LexicalNode[];
 export type SerializedCodeNode = {
   ...SerializedElementNode,
   language: string | null | void,
+  wordWrap?: boolean,
   ...
 };
 
@@ -106,6 +108,8 @@ declare export class CodeNode extends ElementNode {
   collapseAtStart(): true;
   setLanguage(language: string): void;
   getLanguage(): string | void;
+  getWordWrap(): boolean;
+  setWordWrap(valueOrUpdater: ValueOrUpdater<boolean>): this;
 }
 
 /**

@@ -20,6 +20,7 @@ import {
   $createTextNode,
   $getRoot,
   COMMAND_PRIORITY_CRITICAL,
+  DELETE_CHARACTER_COMMAND,
   isDOMTextNode,
   type NodeKey,
   SELECTION_CHANGE_COMMAND,
@@ -120,5 +121,35 @@ describe('Issue #8885: SELECTION_CHANGE_COMMAND on redundant selectionchange', (
     domSelection.setBaseAndExtent(outsideText, 1, outsideText, 1);
     await settle();
     expect(onSelectionChange).toHaveBeenCalledTimes(2);
+  });
+
+  test('dispatches when a deletion moves the selection inside a text node (#9179)', async () => {
+    const {contentEditable, editor} = mountEditor();
+
+    editor.update(
+      () => {
+        const text = $createTextNode('Hello world');
+        $getRoot().clear().append($createParagraphNode().append(text));
+        text.select(2, 8);
+      },
+      {discrete: true},
+    );
+
+    contentEditable.focus();
+    await settle();
+
+    const onSelectionChange = vi.fn(() => false);
+    const unregister = editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      onSelectionChange,
+      COMMAND_PRIORITY_CRITICAL,
+    );
+    onTestFinished(() => {
+      unregister();
+    });
+
+    editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
+    await vi.waitFor(() => expect(onSelectionChange).toHaveBeenCalledTimes(1));
+    expect(contentEditable.textContent).toBe('Herld');
   });
 });

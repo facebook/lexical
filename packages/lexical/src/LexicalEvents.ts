@@ -349,6 +349,7 @@ function onSelectionChange(
           appliedPoints.focusNode === focusDOM &&
           appliedPoints.focusOffset === focusOffset))
     ) {
+      dispatchCommand(editor, SELECTION_CHANGE_COMMAND);
       return;
     }
   }

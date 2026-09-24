@@ -6,6 +6,28 @@ This package contains the base functionality for the code blocks and code highli
 is considered an implementation detail and is being used transitionally while the deprecated highlighting
 functionality is still available in `@lexical/code`.
 
+## Word wrap
+
+`CodeNode.setWordWrap(true)` makes a code block soft wrap lines that are wider than it, instead of scrolling sideways,
+and `getWordWrap()` reads it back. `setWordWrap` also takes an updater, for example `wordWrap => !wordWrap`. Wrapping is
+visual only: no `LineBreakNode` is added and the text is unchanged.
+
+While it is on:
+
+- the node's JSON has `"wordWrap": true`. The key is left out while it is off, so the JSON of other code blocks doesn't
+  change.
+- the code element and the exported `<pre>` get `data-lexical-code-word-wrap="true"`. HTML import reads the attribute
+  back, and a value of `"false"` counts as off.
+
+The package adds no CSS for it. A theme wraps the lines under the attribute:
+
+```css
+code[data-lexical-code-word-wrap] {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+```
+
 ## Caret scrolling
 
 When Lexical moves the caret itself, it scrolls the code block sideways to show the caret. That happens on the line

@@ -79,6 +79,30 @@ test.each(['flat', 'pnpm'])(
       path.join(packageDirectory, 'many-lines.d.ts'),
       '\n'.repeat(2000) + 'export interface ManyLines { value: string; }',
     );
+    writeFileSync(
+      path.join(packageDirectory, 'mapped.js'),
+      '\n'.repeat(20) +
+        'export class Mapped {}\n\n\n\nexport class MappedBox {}\n',
+    );
+    writeFileSync(
+      path.join(packageDirectory, 'mapped.d.ts'),
+      [
+        'export declare class Mapped {}',
+        'export declare class MappedBox {}',
+        '//# sourceMappingURL=mapped.d.ts.map',
+      ].join('\n'),
+    );
+    writeFileSync(
+      path.join(packageDirectory, 'mapped.d.ts.map'),
+      JSON.stringify({
+        file: 'mapped.d.ts',
+        mappings: 'AAoBA;AAIA',
+        names: [],
+        sourceRoot: '',
+        sources: ['mapped.js'],
+        version: 3,
+      }),
+    );
     for (const name of ['private', 'no-manifest']) {
       const dependency = path.join(path.dirname(packageDirectory), name);
       mkdirSync(dependency, {recursive: true});
@@ -124,6 +148,10 @@ test.each(['flat', 'pnpm'])(
         "export {ManyLines} from '@fixture/types/many-lines';",
         "export {Unpublished as Private} from '@fixture/private';",
         "export {Unpublished as NoManifest} from '@fixture/no-manifest';",
+        "import type {Mapped} from '@fixture/types/mapped';",
+        "export {MappedBox} from '@fixture/types/mapped';",
+        '/** Links to {@link Mapped}. */',
+        'export interface WithMapped { value: Mapped; }',
       ].join('\n'),
     );
     const tsconfig = path.join(directory, 'tsconfig.json');
@@ -195,6 +223,15 @@ test.each(['flat', 'pnpm'])(
     );
     expect(markdown).toContain(
       'Links to [Node](https://app.unpkg.com/@fixture/types@1.2.3/files/index.d.ts#L2), [Documented](https://example.com/documented), and [Local](#local).',
+    );
+    // TypeDoc maps the symbol's file to mapped.js but retains its .d.ts offset.
+    expect(markdown).toContain(
+      'Links to [Mapped](https://app.unpkg.com/@fixture/types@1.2.3/files/mapped.js).',
+    );
+    expect(markdown).not.toContain('mapped.js#');
+    // SourcePlugin keeps both the original declaration file and its line.
+    expect(markdown).toContain(
+      '[@fixture/types/mapped.d.ts:2](https://app.unpkg.com/@fixture/types@1.2.3/files/mapped.d.ts#L2)',
     );
   },
   20000,

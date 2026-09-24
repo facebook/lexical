@@ -203,7 +203,11 @@ export function load(app) {
     if (!id || !id.fileName) {
       return;
     }
-    const link = sourceLink(id.fileName, {pos: id.pos});
+    // Declaration maps can change fileName to the source file while pos still
+    // refers to the declaration file. Only use offsets in declaration files.
+    const link = sourceLink(id.fileName, {
+      pos: /\.d\.[cm]?ts$/.test(id.fileName) ? id.pos : Infinity,
+    });
     return link && link.url;
   });
 

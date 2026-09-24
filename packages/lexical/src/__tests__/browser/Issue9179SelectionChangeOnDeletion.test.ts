@@ -128,6 +128,10 @@ describe('selection change after deleting a range (#9179)', () => {
         ),
       );
 
+      // Focus the test iframe as well as the editor. In Firefox, an editor can
+      // remain document.activeElement while its iframe is inactive, in which
+      // case Playwright's keyboard events never reach the contenteditable.
+      window.focus();
       await userEvent.keyboard(input);
       await vi.waitFor(() => {
         expect(editor.read(() => $getRoot().getTextContent())).toBe(

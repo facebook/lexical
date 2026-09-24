@@ -168,7 +168,7 @@ treatment (splitting instead of removing, for example).
 
 ## Traversal Strategies
 
-<!-- when you update the example code below, please update the tests in packages/src/lexical/caret/__tests__/unit/docs-traversals.test.ts -->
+<!-- when you update the example code below, please update the tests in packages/lexical/src/caret/__tests__/unit/docs-traversals.test.ts -->
 
 ### Adjacent Caret Traversals
 

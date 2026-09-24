@@ -15,6 +15,7 @@ import {
   CodeIndentExtension,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
+  registerCodeGutter,
   registerCodeIndentation,
 } from '@lexical/code-core';
 import {effect, namedSignals} from '@lexical/extension';
@@ -98,30 +99,6 @@ function $textNodeTransform(
     // code highlight nodes converted back to normal text
     node.replace($createTextNode(node.__text));
   }
-}
-
-function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
-  const codeElement = editor.getElementByKey(node.getKey());
-  if (codeElement === null) {
-    return;
-  }
-  const children = node.getChildren();
-  const childrenLength = children.length;
-  // @ts-ignore: internal field
-  if (childrenLength === codeElement.__cachedChildrenLength) {
-    // Avoid updating the attribute if the children length hasn't changed.
-    return;
-  }
-  // @ts-ignore:: internal field
-  codeElement.__cachedChildrenLength = childrenLength;
-  let gutter = '1';
-  let count = 1;
-  for (let i = 0; i < childrenLength; i++) {
-    if ($isLineBreakNode(children[i])) {
-      gutter += '\n' + ++count;
-    }
-  }
-  codeElement.setAttribute('data-gutter', gutter);
 }
 
 function $codeNodeTransform(
@@ -378,27 +355,7 @@ export function registerHighlightingOnly(
 ): () => void {
   const registrations = [];
 
-  // Only register the mutation listener if not in headless mode
-  if (editor._headless !== true) {
-    registrations.push(
-      editor.registerMutationListener(
-        CodeNode,
-        mutations => {
-          editor.read('latest', () => {
-            for (const [key, type] of mutations) {
-              if (type !== 'destroyed') {
-                const node = $getNodeByKey(key);
-                if (node !== null) {
-                  updateCodeGutter(node as CodeNode, editor);
-                }
-              }
-            }
-          });
-        },
-        {skipInitialization: false},
-      ),
-    );
-  }
+  registrations.push(registerCodeGutter(editor));
 
   const transformState: TransformState = {
     didTransform: false,

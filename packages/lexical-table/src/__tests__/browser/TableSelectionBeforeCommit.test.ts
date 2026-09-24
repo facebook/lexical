@@ -40,7 +40,7 @@ function mount() {
   const editor = buildEditorFromExtensions({
     dependencies: [RichTextExtension, TableExtension],
     name: 'test/table-before-commit',
-    theme: {tableCellSelected: 'selected-cell'},
+    theme: {tableCellSelected: 'selected-cell', tableScrollableWrapper: ''},
   });
   editor.setRootElement(root);
   onTestFinished(() => {

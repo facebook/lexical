@@ -77,7 +77,8 @@ const loadContent = async () => {
 
 const initialEditorState = await loadContent();
 const editor = createEditor(...);
-registerRichText(editor, initialEditorState);
+registerRichText(editor);
+editor.setEditorState(editor.parseEditorState(initialEditorState));
 
 ...
 
@@ -96,8 +97,11 @@ const editorStateRef = useRef(undefined);
 <LexicalComposer initialConfig={{
   editorState: initialEditorState
 }}>
-  <LexicalRichTextPlugin />
-  <LexicalOnChangePlugin onChange={(editorState) => {
+  <RichTextPlugin
+    contentEditable={<ContentEditable />}
+    ErrorBoundary={LexicalErrorBoundary}
+  />
+  <OnChangePlugin onChange={(editorState) => {
     editorStateRef.current = editorState;
   }} />
   <Button label="Save" onPress={() => {

@@ -96,11 +96,13 @@ test.each(['typing', 'backspace', 'format', 'style', 'clear'])(
       ),
     );
     if (operation === 'typing') {
+      window.focus();
       await userEvent.keyboard('x');
       expect(editor.read(() => $getRoot().getTextContent())).toBe(
         'hexllo world',
       );
     } else if (operation === 'backspace') {
+      window.focus();
       await userEvent.keyboard('{Backspace}');
       expect(editor.read(() => $getRoot().getTextContent())).toBe('hllo world');
     } else {

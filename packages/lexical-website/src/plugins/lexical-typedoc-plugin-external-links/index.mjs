@@ -97,6 +97,22 @@ function namedLinks(baseURL, names) {
 
 /** @type {import('typedoc').TypeDocOptions['externalSymbolLinkMappings']} */
 export const externalSymbolLinkMappings = {
+  '@preact/signals-core': {
+    Computed:
+      'https://github.com/preactjs/signals/blob/main/packages/core/README.md#computedfn',
+    DisposeFn:
+      'https://github.com/preactjs/signals/blob/main/packages/core/README.md#effectfn',
+    Effect:
+      'https://github.com/preactjs/signals/blob/main/packages/core/README.md#effectfn',
+    EffectFn:
+      'https://github.com/preactjs/signals/blob/main/packages/core/README.md#effectfn',
+    ReadonlySignal:
+      'https://github.com/preactjs/signals/blob/main/packages/core/README.md#computedfn',
+    Signal:
+      'https://github.com/preactjs/signals/blob/main/packages/core/README.md#signalinitialvalue',
+    SignalOptions:
+      'https://github.com/preactjs/signals/blob/main/packages/core/README.md#signalinitialvalue',
+  },
   '@types/mdast': {
     ...Object.fromEntries(
       [
@@ -132,7 +148,9 @@ export const externalSymbolLinkMappings = {
     Node: 'https://github.com/syntax-tree/unist#node',
   },
   '@types/react': {
+    'JSX.Element': 'https://react.dev/learn/typescript#typing-children',
     'React.Context': 'https://react.dev/reference/react/createContext',
+    'React.JSX.Element': 'https://react.dev/learn/typescript#typing-children',
     'React.ReactElement': 'https://react.dev/learn/typescript#typing-children',
     'React.ReactNode': 'https://react.dev/learn/typescript#typing-children',
     'React.RefObject': 'https://react.dev/reference/react/useRef',
@@ -172,8 +190,11 @@ export const externalSymbolLinkMappings = {
 export function load(app) {
   /** @type {Map<string, {name: string, version: string} | undefined>} */
   const packages = new Map();
+  /** @type {Map<string, string | undefined>} */
+  const anchoredFiles = new Map();
   app.converter.on(Converter.EVENT_BEGIN, () => {
     packages.clear();
+    anchoredFiles.clear();
   });
 
   // TypeDoc's configured documentation mappings take precedence over this
@@ -182,7 +203,7 @@ export function load(app) {
     if (!id || !id.fileName) {
       return;
     }
-    const link = sourceLink(id.fileName);
+    const link = sourceLink(id.fileName, {pos: id.pos});
     return link && link.url;
   });
 
@@ -195,13 +216,14 @@ export function load(app) {
           reflection instanceof SignatureReflection
         ) {
           for (const source of reflection.sources || []) {
-            if (source.fullFileName.includes('/node_modules/')) {
-              const link = sourceLink(source.fullFileName);
+            const fileName = normalizePath(source.fullFileName);
+            if (fileName.includes('/node_modules/')) {
+              const link = sourceLink(source.fullFileName, {line: source.line});
               // Never retain the default Lexical repository URL for a dependency.
               source.url = link && link.url;
-              if (link) {
-                source.fileName = link.fileName;
-              }
+              source.fileName = link
+                ? link.fileName
+                : normalizePath(fileName.replace(/^.*\/node_modules\//, ''));
             }
           }
         }
@@ -214,13 +236,13 @@ export function load(app) {
   /**
    * Link to the exact published file, which also works for generated .d.ts files
    * that do not exist in the dependency's git repository. The last node_modules
-   * segment handles both flat installs and pnpm's virtual store. Do not append
-   * line anchors: UNPKG only renders them for small files, not e.g. React's types
-   * or lib.dom.d.ts. TypeDoc still displays the line number in the link text.
+   * segment handles both flat installs and pnpm's virtual store. Include line
+   * anchors where UNPKG renders its interactive source viewer.
    *
    * @param {string} fileName
+   * @param {{line: number} | {pos: number}} location
    */
-  function sourceLink(fileName) {
+  function sourceLink(fileName, location) {
     const match = /^(.*\/node_modules\/((?:@[^/]+\/)?[^/]+))\/(.+)$/.exec(
       fileName.replaceAll('\\', '/'),
     );
@@ -242,11 +264,34 @@ export function load(app) {
     if (!pkg) {
       return;
     }
+    if (!anchoredFiles.has(fileName)) {
+      const text = readFileSync(fileName, 'utf8');
+      // UNPKG's interactive viewer is limited to 50,000 characters / 2,000 lines:
+      // https://github.com/unpkg/unpkg/blob/5ab1f6b48a0f3e4d75d284f9f1f801d86d548ebc/packages/unpkg-app/src/components/file-detail.tsx
+      anchoredFiles.set(
+        fileName,
+        text.length <= 50000 && text.split('\n').length <= 2000
+          ? text
+          : undefined,
+      );
+    }
+    const text = anchoredFiles.get(fileName);
+    const line =
+      'line' in location
+        ? location.line
+        : text !== undefined &&
+            Number.isFinite(location.pos) &&
+            location.pos >= 0 &&
+            location.pos <= text.length
+          ? text.slice(0, location.pos).split('\n').length
+          : undefined;
+    const anchor = text !== undefined && line ? `#L${line}` : '';
     return {
       fileName: normalizePath(`${pkg.name}/${packagePath}`),
       url:
-        `https://unpkg.com/browse/${pkg.name}@${pkg.version}/` +
-        packagePath.split('/').map(encodeURIComponent).join('/'),
+        `https://app.unpkg.com/${pkg.name}@${pkg.version}/files/` +
+        packagePath.split('/').map(encodeURIComponent).join('/') +
+        anchor,
     };
   }
 }

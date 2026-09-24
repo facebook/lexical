@@ -62,11 +62,48 @@ test.each(['flat', 'pnpm'])(
     writeFileSync(
       path.join(packageDirectory, 'index.d.ts'),
       [
+        '// An external declaration after a comment: 🦊',
         'export interface Node { value: string; }',
         'export interface Documented { value: string; }',
-        'export declare class Box { constructor(value: string); get(): string; }',
-      ].join('\n'),
+        'export declare class Box {',
+        '  constructor(value: string);',
+        '  get(): string;',
+        '}',
+      ].join('\r\n'),
     );
+    writeFileSync(
+      path.join(packageDirectory, 'large.d.ts'),
+      '// ' + 'x'.repeat(50000) + '\nexport interface Large { value: string; }',
+    );
+    writeFileSync(
+      path.join(packageDirectory, 'many-lines.d.ts'),
+      '\n'.repeat(2000) + 'export interface ManyLines { value: string; }',
+    );
+    for (const name of ['private', 'no-manifest']) {
+      const dependency = path.join(path.dirname(packageDirectory), name);
+      mkdirSync(dependency, {recursive: true});
+      if (layout === 'pnpm') {
+        symlinkSync(
+          dependency,
+          path.join(directory, 'node_modules/@fixture', name),
+          'junction',
+        );
+      }
+      if (name === 'private') {
+        writeFileSync(
+          path.join(dependency, 'package.json'),
+          JSON.stringify({
+            name: '@fixture/private',
+            private: true,
+            version: '1.0.0',
+          }),
+        );
+      }
+      writeFileSync(
+        path.join(dependency, 'index.d.ts'),
+        'export interface Unpublished { value: string; }',
+      );
+    }
     writeFileSync(
       path.join(directory, 'package.json'),
       JSON.stringify({name: 'fixture', private: true}),
@@ -83,6 +120,10 @@ test.each(['flat', 'pnpm'])(
         '  element: HTMLElement;',
         '  optional: Partial<Local>;',
         '}',
+        "export {Large} from '@fixture/types/large';",
+        "export {ManyLines} from '@fixture/types/many-lines';",
+        "export {Unpublished as Private} from '@fixture/private';",
+        "export {Unpublished as NoManifest} from '@fixture/no-manifest';",
       ].join('\n'),
     );
     const tsconfig = path.join(directory, 'tsconfig.json');
@@ -127,20 +168,33 @@ test.each(['flat', 'pnpm'])(
     );
     // An external Node must not be confused with the DOM Node of the same name.
     expect(markdown).toContain(
-      'https://unpkg.com/browse/@fixture/types@1.2.3/index.d.ts',
+      'https://app.unpkg.com/@fixture/types@1.2.3/files/index.d.ts#L2',
     );
     expect(markdown).toContain('https://example.com/documented');
     expect(markdown).not.toContain('node_modules');
-    // UNPKG does not provide line anchors for large declaration files.
-    expect(markdown).not.toMatch(/https:\/\/unpkg\.com\/[^)\s]*#/);
+    for (const name of ['private', 'no-manifest']) {
+      expect(markdown).toContain(`@fixture/${name}/index.d.ts:1`);
+      expect(markdown).not.toContain(`unpkg.com/@fixture/${name}`);
+      expect(markdown).not.toContain(`[\u0040fixture/${name}/index.d.ts:1](`);
+    }
+    // UNPKG omits its interactive line viewer above either size limit.
+    for (const file of ['large.d.ts', 'many-lines.d.ts']) {
+      expect(markdown).toContain(
+        `(https://app.unpkg.com/@fixture/types@1.2.3/files/${file})`,
+      );
+      expect(markdown).not.toContain(`${file}#L`);
+    }
     expect(markdown).toContain(
       '[index.ts:4](https://github.com/facebook/lexical/blob/main/index.ts#L4)',
     );
     expect(markdown).toContain(
-      '[@fixture/types/index.d.ts:3](https://unpkg.com/browse/@fixture/types@1.2.3/index.d.ts)',
+      '[@fixture/types/index.d.ts:4](https://app.unpkg.com/@fixture/types@1.2.3/files/index.d.ts#L4)',
     );
     expect(markdown).toContain(
-      'Links to [Node](https://unpkg.com/browse/@fixture/types@1.2.3/index.d.ts), [Documented](https://example.com/documented), and [Local](#local).',
+      '[@fixture/types/index.d.ts:6](https://app.unpkg.com/@fixture/types@1.2.3/files/index.d.ts#L6)',
+    );
+    expect(markdown).toContain(
+      'Links to [Node](https://app.unpkg.com/@fixture/types@1.2.3/files/index.d.ts#L2), [Documented](https://example.com/documented), and [Local](#local).',
     );
   },
   20000,

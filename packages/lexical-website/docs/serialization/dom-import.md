@@ -259,9 +259,9 @@ sel.comment()                                   // comment nodes
 sel.tag('li').classAll('task-list-item')        // <li class="task-list-item …">
 sel.tag('span').classAny('hl', 'mark')          // <span class="hl|mark …">
 sel.tag('a').attr('href', /^https:/)            // <a href> matching a regex
-sel.tag('a').attr('target', 'true')             // attribute present
+sel.tag('a').attr('target', true)               // attribute present
 sel.tag('a').attr('href', '/wiki')              // exact value
-sel.tag('span').styleAny('fontSize', /^(\d+)pt/) // inline-style match
+sel.tag('span').styleAny('font-size', /^(\d+)pt/) // inline-style match
 ```
 
 A CSS-subset parser is also available for terse selectors:
@@ -548,7 +548,7 @@ the branched subtree see the unchanged inherited value.
   covered by `ImportTextFormat` (`font-weight`, `font-style`,
   `text-decoration`, `vertical-align`) are filtered out so they
   remain owned by the format-bit path.
-- **`ImportOverlays`** — session slot (`{dispatch: CompiledDispatch}[]`)
+- **`ImportOverlays`** — session slot (`readonly CompiledOverlayRules[]`)
   holding overlays installed during the preprocess phase. The walker
   primes its overlay stack from this list before starting, so a
   preprocess can scope an overlay to the whole document based on a
@@ -581,8 +581,8 @@ helpers (`a`, `abbr`, `acronym`, `b`, `cite`, `code`, `del`, `em`,
 `i`, `ins`, `kbd`, `label`, `mark`, `output`, `q`, `ruby`, `s`,
 `samp`, `span`, `strong`, `sub`, `sup`, `time`, `u`, `tt`, `var`).
 The canonical list lives in `packages/lexical/src/LexicalUtils.ts` —
-see the `INLINE_TAG_RE` / `BLOCK_TAG_RE` exports if you want to
-inspect or extend the defaults.
+see the module-private `INLINE_TAG_RE` / `BLOCK_TAG_RE` constants if you
+want to inspect the defaults.
 
 To recognize custom tags (e.g. a custom `<tooltip>` that should be
 treated as inline so the spaces around it survive), override the
@@ -966,9 +966,9 @@ export interface ClipboardImportConfig {
 configExtension(ClipboardImportExtension, {
   $importMimeType: {
     'application/vnd.myapp+json': [
-      (data, selection, editor) => {
+      (data, selection) => {
         const nodes = parseMyAppFormat(data);
-        $insertGeneratedNodes(editor, nodes, selection);
+        $insertGeneratedNodes($getEditor(), nodes, selection);
         return true;
       },
     ],
@@ -1151,18 +1151,19 @@ The migrated rule:
 
 ```ts
 import {
-  $createQuoteNode,
   BlockSchema,
   defineImportRule,
   InlineSchema,
   sel,
 } from '@lexical/html';
+import {$createQuoteNode} from '@lexical/rich-text';
 
 const QuoteRule = defineImportRule({
   $import: (ctx, el) => {
     const node = $createQuoteNode();
     // The recursion is explicit. QuoteNode contains inline children
-    // only, so we constrain the schema; rejected blocks hoist out.
+    // only, so we constrain the schema; rejected blocks are dropped
+    // (InlineSchema declares no onReject, and 'drop' is the default).
     node.splice(0, 0, ctx.$importChildren(el, {schema: InlineSchema}));
     return [node];
   },

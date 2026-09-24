@@ -1724,8 +1724,7 @@ function scrollIntoViewHorizontally(
   let caretRight = Math.max(right, left + 1);
   if (caretRight - caretLeft > viewRight - viewLeft) {
     // Wider than the view: an element point measured on the whole node
-    // after it (a token or a line break wrapper). The caret is at its
-    // inline start.
+    // after it, like a long token. The caret is at its inline start.
     if (isRTL) {
       caretLeft = caretRight - 1;
     } else {

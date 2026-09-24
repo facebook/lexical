@@ -4105,6 +4105,31 @@ function $getElementAndOffsetForPoint(
   return [element, offset];
 }
 
+/**
+ * The DOM node that a caret at an element point is measured on to scroll it
+ * into view: the child at `offset` in the element's slot, which the caret is
+ * just before. When that child is the keyed DOM of a leaf node whose DOM slot
+ * is an element inside it, like a <br> that a DOMRenderExtension override
+ * wraps in a <span>, the caret is next to that inner element. The wrapper
+ * can be much wider, for example when it also draws something at the start
+ * of the next line, so it is not measured.
+ */
+function $getElementPointScrollTarget(
+  editor: LexicalEditor,
+  slotElement: Node,
+  offset: number,
+): HTMLElement | Text | null {
+  const child = slotElement.childNodes[offset];
+  if (!isHTMLElement(child)) {
+    return (child as Text | undefined) || null;
+  }
+  const key = getNodeKeyFromDOMNode(child, editor);
+  const node = key !== undefined ? $getNodeByKey(key) : null;
+  return node !== null && !$isElementNode(node)
+    ? $getDOMSlot(node, child, editor).element
+    : child;
+}
+
 /** @internal */
 export function $updateDOMSelection(
   prevSelection: BaseSelection | null,
@@ -4343,8 +4368,7 @@ export function $updateDOMSelection(
     const selectionTarget: null | Range | HTMLElement | Text =
       $isRangeSelection(nextSelection) &&
       nextSelection.anchor.type === 'element'
-        ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
-          null
+        ? $getElementPointScrollTarget(editor, nextAnchorNode, nextAnchorOffset)
         : getCurrentRange();
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;

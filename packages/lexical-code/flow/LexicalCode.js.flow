@@ -20,6 +20,7 @@ import type {
   TabNode,
   LexicalExtension,
   ExtensionConfigBase,
+  ValueOrUpdater,
 } from 'lexical';
 
 import {ElementNode, TextNode} from 'lexical';
@@ -81,6 +82,7 @@ declare export function $getStartOfCodeInLine(
 export type SerializedCodeNode = {
   ...SerializedElementNode,
   language: string | null | void,
+  wordWrap?: boolean,
   ...
 };
 
@@ -101,6 +103,8 @@ declare export class CodeNode extends ElementNode {
   collapseAtStart(): true;
   setLanguage(language: string): void;
   getLanguage(): string | void;
+  getWordWrap(): boolean;
+  setWordWrap(valueOrUpdater: ValueOrUpdater<boolean>): this;
 }
 
 declare export var CodeExtension: LexicalExtension<ExtensionConfigBase, "@lexical/code", unknown, unknown>;

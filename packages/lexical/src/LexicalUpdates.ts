@@ -602,12 +602,20 @@ export function $commitPendingUpdates(
   const previouslyCommitting = isCommittingPendingUpdates;
   isCommittingPendingUpdates = true;
   try {
-    const notificationError = $notifyPendingSelectionChange(editor);
+    const selectionChangeLimitReached = $notifyPendingSelectionChange(editor);
     $commitPendingUpdatesImpl(editor, recoveryEditorState);
-    if (notificationError !== undefined) {
+    if (selectionChangeLimitReached) {
       // Report only after preserving the pending edit. Update error recovery
       // would otherwise roll it back, even with a non-throwing error handler.
-      editor._onWarn(notificationError);
+      // Keep error-code extraction while routing the error through onWarn.
+      try {
+        invariant(
+          false,
+          'Selection change listeners are endlessly changing the selection.',
+        );
+      } catch (error) {
+        editor._onWarn(error as Error);
+      }
     }
   } finally {
     isCommittingPendingUpdates = previouslyCommitting;
@@ -937,59 +945,47 @@ export function $dispatchSelectionChangeCommand(
   editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
 }
 
-function $notifyPendingSelectionChange(
-  editor: LexicalEditor,
-): Error | undefined {
+/** Returns true if selection listeners exceed the notification limit. */
+function $notifyPendingSelectionChange(editor: LexicalEditor): boolean {
   if (editorsWithPendingSelectionChange.has(editor)) {
-    return;
+    return false;
   }
   editorsWithPendingSelectionChange.add(editor);
   try {
-    let count = 0;
-    for (;;) {
+    for (let count = 0; editor._pendingEditorState !== null; count++) {
       const pending = editor._pendingEditorState;
+      const selection = pending._selection;
       const root = editor._rootElement;
       if (
-        pending === null ||
-        ((editor._headless || root === null || !root.isConnected) &&
-          (pending._selection === null ||
-            $isRangeSelection(pending._selection))) ||
-        !hasSelectionChanged(editor, pending._selection)
+        !hasSelectionChanged(editor, selection) ||
+        ((selection === null || $isRangeSelection(selection)) &&
+          (editor._headless || root === null || !root.isConnected))
       ) {
-        return;
+        return false;
       }
-      if (count++ >= 100) {
-        // Bound non-converging listeners without losing the user's edit or
-        // scheduling another notification for the final selection.
-        const selection = pending._selection;
-        editor._lastNotifiedSelection =
-          selection === null ? null : selection.clone();
-        return new Error(
-          'Selection change listeners are endlessly changing the selection.',
-        );
+      // Snapshot before dispatch, including the final selection at the limit,
+      // so it cannot schedule another notification after this commit.
+      editor._lastNotifiedSelection =
+        selection === null ? null : selection.clone();
+      if (count === 100) {
+        return true;
       }
       // Recovery can supply a frozen state. Preserve its selection instead of
       // initializing one from the DOM, which still represents the previous state.
       if (pending._readOnly) {
         const writable = cloneEditorState(pending);
-        writable._selection =
-          pending._selection === null ? null : pending._selection.clone();
+        writable._selection = selection === null ? null : selection.clone();
         editor._pendingEditorState = writable;
       }
+      // Apply listener edits and transforms without starting another commit.
       $beginUpdate(
         editor,
-        () => {
-          $dispatchSelectionChangeCommand(
-            editor,
-            getActiveEditorState()._selection,
-          );
-        },
+        () => editor.dispatchCommand(SELECTION_CHANGE_COMMAND),
         undefined,
         true,
       );
-      // The normal update pipeline applies listener mutations, nested updates,
-      // transforms and selection validation before we reconcile this state.
     }
+    return false;
   } finally {
     editorsWithPendingSelectionChange.delete(editor);
   }

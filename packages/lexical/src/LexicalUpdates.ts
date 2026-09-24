@@ -1335,7 +1335,11 @@ export function updateEditorSync(
       // routed to editor._onError rather than rethrown, so the mutation is
       // silently dropped. Route through $beginUpdate instead, which starts a
       // fresh writable update, so the work actually applies.
-      if (__DEV__) {
+      // DOM selection updates during commit can synchronously dispatch focus
+      // commands against the frozen state. This is internal bookkeeping, not
+      // an application read. Explicit reads set isReadOnlyMode and should
+      // still warn, even when entered from a callback during a commit.
+      if (__DEV__ && (!isCommittingPendingUpdates || isReadOnlyMode)) {
         console.warn(
           `updateEditorSync: an editor update (e.g. a command listener that ` +
             `mutates the editor) ran while a read-only context was on the ` +

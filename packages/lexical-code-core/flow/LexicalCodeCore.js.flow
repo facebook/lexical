@@ -24,6 +24,8 @@ import type {
   ValueOrUpdater,
 } from 'lexical';
 
+import type {NamedSignalsOutput} from '@lexical/extension';
+
 import {ElementNode, TextNode} from 'lexical';
 
 /**
@@ -131,3 +133,14 @@ declare export function registerCodeIndentation(
 ): () => void;
 
 declare export var CodeIndentExtension: LexicalExtension<CodeIndentConfig, "@lexical/code-indent", unknown, unknown>;
+
+/**
+ * CodeLineNumbers
+ */
+
+export type CodeLineNumbersConfig = {
+  disabled: boolean,
+  onlyWordWrapped: boolean,
+};
+
+declare export var CodeLineNumbersExtension: LexicalExtension<CodeLineNumbersConfig, "@lexical/code-line-numbers", NamedSignalsOutput<CodeLineNumbersConfig>, void>;

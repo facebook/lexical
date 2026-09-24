@@ -19,6 +19,8 @@ import {
   $createLineBreakNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
+  $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
   type AnyLexicalExtensionArgument,
@@ -72,6 +74,7 @@ const LONG_LINE = Array.from(
   .join('')
   .slice(0, 655);
 const INDENTED_LINE = ' '.repeat(12) + LONG_LINE.slice(0, 400);
+const MEDIUM_LINE = LONG_LINE.slice(0, 200);
 const RTL_LINE = 'שלום '.repeat(130);
 const SHORT_RTL_LINE = 'שלום '.repeat(60);
 
@@ -484,6 +487,49 @@ describe.each(GUTTERS)('caret scrolling in a code block with $name', gutter => {
     await expect.poll(() => code.scrollLeft).toBe(0);
     const m = measure(code);
     expect(m.caretLeft, JSON.stringify(m)).toBeGreaterThan(m.lineStartX + 1);
+    expectCaretVisible(code);
+  });
+
+  test('insertLineBreak(true) at the end of a long line keeps the caret in view', async () => {
+    const {code, editor, rootElement} = setUpEditor(gutter, [
+      MEDIUM_LINE,
+      'abc',
+    ]);
+    await focus(rootElement);
+    await selectInLine(editor, 0, 'end');
+    expect(code.scrollLeft).toBeGreaterThan(0);
+
+    // Ctrl+O on macOS: a line break goes in after the caret, and the caret
+    // stays at the end of the line, just before it. With per line numbers
+    // the new <br> is wrapped in a span that draws the next line's number
+    // at the start of that line.
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          throw new Error('Expected a range selection');
+        }
+        selection.insertLineBreak(true);
+      },
+      {discrete: true},
+    );
+    await settle();
+    expect(
+      editor.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return null;
+        }
+        const {anchor} = selection;
+        const node = anchor.getNode();
+        return $isElementNode(node) &&
+          $isLineBreakNode(node.getChildAtIndex(anchor.offset))
+          ? 'before the new line break'
+          : `${anchor.type} point`;
+      }),
+    ).toBe('before the new line break');
+    const m = measure(code);
+    expect(m.scrollLeft, JSON.stringify(m)).toBeGreaterThan(0);
     expectCaretVisible(code);
   });
 

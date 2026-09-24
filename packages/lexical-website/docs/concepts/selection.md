@@ -72,7 +72,7 @@ editorState.read(() => {
   const selection = $getSelection();
 });
 
-// SELECTION_CHANGE_COMMAND fires when selection changes within a Lexical editor.
+// SELECTION_CHANGE_COMMAND runs before reconciliation in the pending update.
 editor.registerCommand(SELECTION_CHANGE_COMMAND, () => {
   const selection = $getSelection();
 });
@@ -195,3 +195,44 @@ those reads to the shadow host. See
 un-retargeted boundary points; they fall through to the standard reads in the
 plain light DOM, so there's nothing to do until you actually mount the editor
 in a shadow tree.
+
+### Selection change timing
+
+`SELECTION_CHANGE_COMMAND` runs **before reconciliation**, in a writable update,
+for native, programmatic, and non-range selection changes. `$getSelection()`
+returns the pending selection; `$getPreviousSelection()` returns the selection
+from the last committed state. A listener can normalize the selection or edit
+nodes before that same update commits. Listeners that change the selection may
+cause another notification before commit; they must converge.
+
+The DOM is not guaranteed to match the pending state, even for a `NodeSelection`.
+New nodes may not have an element yet, and DOM ranges, layout, and focus may
+still reflect the previous state. Schedule DOM-dependent work after the update
+and read the reconciled state there:
+
+```ts
+editor.registerCommand(
+  SELECTION_CHANGE_COMMAND,
+  () => {
+    $onUpdate(() => {
+      editor.read('latest', () => {
+        // Read $getSelection(), look up elements, or position floating UI here.
+      });
+    });
+    return false;
+  },
+  COMMAND_PRIORITY_LOW,
+);
+```
+
+Import `$onUpdate` and `COMMAND_PRIORITY_LOW` from `lexical`. Read selection and
+nodes inside the callback rather than capturing mutable pending objects.
+`registerUpdateListener` is another option for UI that must respond to every
+commit, including content changes that do not change the selection. Updates
+using `SKIP_DOM_SELECTION_TAG` still deliberately leave the browser selection
+unsynchronized.
+
+Automatic range and cleared-selection notifications require a connected editor
+root. Non-range selections continue to notify in unmounted and headless editors,
+with the same pre-reconciliation timing. Native dirty-selection notifications
+may fire even when the selection compares equal to the previous selection.

@@ -26,6 +26,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  $onUpdate,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -64,6 +65,7 @@ import {
 import {
   $findTableNode,
   $handleTableSelectionChangeCommand,
+  $syncTableSelectionObservers,
   applyTableHandlers,
   getTableElement,
   registerTableWindowHandlers,
@@ -348,13 +350,23 @@ export function registerTableSelectionObserver(
 
   return mergeRegister(
     registerTableWindowHandlers(editor, tableObservers),
-    editor.registerCommand(
-      SELECTION_CHANGE_COMMAND,
-      () => {
-        return $handleTableSelectionChangeCommand(tableObservers, editor);
-      },
-      COMMAND_PRIORITY_HIGH,
-    ),
+    editor.registerRootListener(rootElement => {
+      if (rootElement === null) {
+        return;
+      }
+      return editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        () => {
+          $onUpdate(() => {
+            editor.read('latest', () => {
+              $syncTableSelectionObservers(tableObservers, editor);
+            });
+          });
+          return $handleTableSelectionChangeCommand(tableObservers, editor);
+        },
+        COMMAND_PRIORITY_HIGH,
+      );
+    }),
     editor.registerMutationListener(
       TableNode,
       nodeMutations => {

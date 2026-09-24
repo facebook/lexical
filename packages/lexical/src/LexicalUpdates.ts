@@ -57,6 +57,7 @@ import {
   $isRangeSelection,
   $updateDOMSelection,
   applySelectionTransforms,
+  type BaseSelection,
 } from './LexicalSelection';
 import {$isSlotHost, $setSlot} from './LexicalSlot';
 import {
@@ -92,6 +93,7 @@ let isCommittingPendingUpdates = false;
 // Tracks editors that have a pending macrotask scheduled to reset their cascade
 // budget. See `scheduleCascadeReset`.
 const editorsWithPendingCascadeReset = new Set<LexicalEditor>();
+const editorsWithPendingSelectionChange = new Set<LexicalEditor>();
 let infiniteTransformCount = 0;
 
 const observerOptions = {
@@ -600,7 +602,13 @@ export function $commitPendingUpdates(
   const previouslyCommitting = isCommittingPendingUpdates;
   isCommittingPendingUpdates = true;
   try {
+    const notificationError = $notifyPendingSelectionChange(editor);
     $commitPendingUpdatesImpl(editor, recoveryEditorState);
+    if (notificationError !== undefined) {
+      // Report only after preserving the pending edit. Update error recovery
+      // would otherwise roll it back, even with a non-throwing error handler.
+      editor._onWarn(notificationError);
+    }
   } finally {
     isCommittingPendingUpdates = previouslyCommitting;
   }
@@ -788,13 +796,6 @@ function $commitPendingUpdatesImpl(
       currentEditorState,
     );
   }
-  if (
-    !$isRangeSelection(pendingSelection) &&
-    pendingSelection !== null &&
-    (currentSelection === null || !currentSelection.is(pendingSelection))
-  ) {
-    editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
-  }
   /**
    * Capture pendingDecorators after garbage collecting detached decorators
    */
@@ -904,6 +905,86 @@ export function triggerListeners<T extends keyof MapListeners>(
     }
   } finally {
     editor._updating = previouslyUpdating;
+  }
+}
+
+function hasSelectionChanged(
+  editor: LexicalEditor,
+  selection: null | BaseSelection,
+): boolean {
+  const previous = editor._lastNotifiedSelection;
+  return selection === null ? previous !== null : !selection.is(previous);
+}
+
+/** @internal Must run in the editor's pending update. */
+export function $dispatchSelectionChangeCommand(
+  editor: LexicalEditor,
+  selection: null | BaseSelection,
+  force = false,
+): void {
+  if (!force && !hasSelectionChanged(editor, selection)) {
+    return;
+  }
+  // Snapshot before notifying: listeners and transforms can change selection.
+  editor._lastNotifiedSelection = selection === null ? null : selection.clone();
+  editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+}
+
+function $notifyPendingSelectionChange(
+  editor: LexicalEditor,
+): Error | undefined {
+  if (editorsWithPendingSelectionChange.has(editor)) {
+    return;
+  }
+  editorsWithPendingSelectionChange.add(editor);
+  try {
+    let count = 0;
+    for (;;) {
+      const pending = editor._pendingEditorState;
+      const root = editor._rootElement;
+      if (
+        pending === null ||
+        ((editor._headless || root === null || !root.isConnected) &&
+          (pending._selection === null ||
+            $isRangeSelection(pending._selection))) ||
+        !hasSelectionChanged(editor, pending._selection)
+      ) {
+        return;
+      }
+      if (count++ >= 100) {
+        // Bound non-converging listeners without losing the user's edit or
+        // scheduling another notification for the final selection.
+        const selection = pending._selection;
+        editor._lastNotifiedSelection =
+          selection === null ? null : selection.clone();
+        return new Error(
+          'Selection change listeners are endlessly changing the selection.',
+        );
+      }
+      // Recovery can supply a frozen state. Preserve its selection instead of
+      // initializing one from the DOM, which still represents the previous state.
+      if (pending._readOnly) {
+        const writable = cloneEditorState(pending);
+        writable._selection =
+          pending._selection === null ? null : pending._selection.clone();
+        editor._pendingEditorState = writable;
+      }
+      $beginUpdate(
+        editor,
+        () => {
+          $dispatchSelectionChangeCommand(
+            editor,
+            getActiveEditorState()._selection,
+          );
+        },
+        undefined,
+        true,
+      );
+      // The normal update pipeline applies listener mutations, nested updates,
+      // transforms and selection validation before we reconcile this state.
+    }
+  } finally {
+    editorsWithPendingSelectionChange.delete(editor);
   }
 }
 
@@ -1152,6 +1233,7 @@ function $beginUpdate(
   editor: LexicalEditor,
   updateFn: () => void,
   options?: EditorUpdateOptions,
+  skipCommit = false,
 ): void {
   const updateTags = editor._updateTags;
   let onUpdate;
@@ -1288,6 +1370,12 @@ function $beginUpdate(
     activeEditor = previousActiveEditor;
     editor._updating = previouslyUpdating;
     infiniteTransformCount = 0;
+  }
+
+  // Selection notifications extend an update that is already about to commit.
+  // Its caller owns the commit, including any deferred callbacks.
+  if (skipCommit) {
+    return;
   }
 
   const shouldUpdate =

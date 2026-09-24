@@ -14,13 +14,17 @@ import {
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
+  $isTableSelection,
   TableExtension,
 } from '@lexical/table';
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $isParagraphNode,
+  $isRangeSelection,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
@@ -32,9 +36,59 @@ import {
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
-import {afterEach, beforeEach, describe, expect, test} from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+} from 'vitest';
 
 describe('LexicalTableSelectionHelpers', () => {
+  test('table selection handling follows the root lifecycle', () => {
+    using editor = buildEditorFromExtensions(TableExtension);
+    const firstRoot = document.createElement('div');
+    const secondRoot = document.createElement('div');
+    document.body.append(firstRoot, secondRoot);
+    onTestFinished(() => {
+      firstRoot.remove();
+      secondRoot.remove();
+    });
+
+    // Explicit dispatch also exercises the rootless path, where core does not
+    // automatically notify range selection changes.
+    const selectAcrossCells = (mounted: boolean) => {
+      editor.update(
+        () => {
+          const table = $createTableNodeWithDimensions(1, 2);
+          $getRoot().clear().append(table);
+          const [map] = $computeTableMapSkipCellCheck(table, null, null);
+          const selection = $createRangeSelection();
+          selection.anchor.set(map[0][0].cell.getKey(), 0, 'element');
+          selection.focus.set(map[0][1].cell.getKey(), 0, 'element');
+          $setSelection(selection);
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+          expect($isTableSelection($getSelection())).toBe(mounted);
+          expect($isRangeSelection($getSelection())).toBe(!mounted);
+        },
+        {discrete: true},
+      );
+    };
+
+    selectAcrossCells(false);
+    editor.setRootElement(firstRoot);
+    selectAcrossCells(true);
+    editor.setRootElement(null);
+    selectAcrossCells(false);
+    editor.setRootElement(firstRoot);
+    selectAcrossCells(true);
+    editor.setRootElement(secondRoot);
+    selectAcrossCells(true);
+    editor.setRootElement(null);
+    selectAcrossCells(false);
+  });
+
   describe('regression #8670', () => {
     let editor: LexicalEditorWithDispose;
     let container: HTMLDivElement;

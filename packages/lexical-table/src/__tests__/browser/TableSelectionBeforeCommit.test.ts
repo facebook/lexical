@@ -157,6 +157,39 @@ test('includes newly inserted cells when synchronizing selection DOM', () => {
   expect(updates).toHaveBeenCalledTimes(1);
 });
 
+test('retains selection highlights when selected cells are replaced during reconciliation', () => {
+  const {editor, root} = mount();
+  editor.update(
+    () => {
+      const table = $createTableNodeWithDimensions(2, 2);
+      $getRoot().clear().append(table);
+      const rows = table.getChildren();
+      assert(rows.every($isTableRowNode));
+      const cells = rows.flatMap(row => row.getChildren());
+      const first = cells[0];
+      const last = cells[3];
+      assert($isTableCellNode(first) && $isTableCellNode(last));
+      $setSelection($createTableSelectionFrom(table, first, last));
+    },
+    {discrete: true},
+  );
+  const selection = editor.read(() => $getSelection());
+  const previousCell = root.querySelector('th');
+  editor.update(
+    () => {
+      const current = $getSelection();
+      assert($isTableSelection(current));
+      for (const cell of current.getNodes().filter($isTableCellNode)) {
+        cell.setBackgroundColor('rgb(242, 243, 245)');
+      }
+    },
+    {discrete: true},
+  );
+  expect(root.querySelector('th')).not.toBe(previousCell);
+  expect(root.querySelectorAll('.selected-cell')).toHaveLength(4);
+  expect(editor.read(() => $getSelection()!.is(selection))).toBe(true);
+});
+
 test('preserves the pointerdown anchor while the native caret enters its cell', () => {
   const {editor, root} = mount();
   editor.update(

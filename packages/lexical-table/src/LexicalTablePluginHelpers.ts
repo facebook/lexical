@@ -362,7 +362,18 @@ export function registerTableSelectionObserver(
       },
       COMMAND_PRIORITY_HIGH,
     ),
-    editor.registerUpdateListener(() => {
+    editor.registerUpdateListener(({dirtyElements}) => {
+      if (!selectionNeedsSync) {
+        // Cell/row changes dirty their table ancestor without necessarily
+        // mutating the TableNode itself or changing the selection. Replaced
+        // cell DOM still needs its selection highlight restored.
+        for (const key of dirtyElements.keys()) {
+          if (tableObservers.observers.has(key)) {
+            selectionNeedsSync = true;
+            break;
+          }
+        }
+      }
       if (selectionNeedsSync) {
         // Mutation listeners have initialized new observers. Synchronize once,
         // even if normalization notified several times before this commit.

@@ -1023,6 +1023,17 @@ function $runSelectionChangeListeners(
       undefined,
       true,
     );
+    if (editor._pendingEditorState === writable) {
+      // The reconciler also uses this map to detect structural changes made
+      // anywhere in the commit. Restore earlier writes after isolating listener
+      // mutations, using their latest versions and excluding collected nodes.
+      for (const key of checkpoint._cloneNotNeeded.keys()) {
+        const node = writable._nodeMap.get(key);
+        if (node !== undefined) {
+          editor._cloneNotNeeded.set(key, node);
+        }
+      }
+    }
   } catch (error) {
     Object.assign(editor, checkpoint);
     // The failed attempt may have dispatched again with a different selection.

@@ -39,6 +39,80 @@ function mountEditor(editor: LexicalEditor): void {
 }
 
 describe('SELECTION_CHANGE_COMMAND', () => {
+  test.each([
+    ['replace', false],
+    ['replace', true],
+    ['reorder', false],
+    ['reorder', true],
+  ] as const)(
+    'reconciles a same-size child %s across selection notifications (normalize: %s)',
+    (operation, normalize) => {
+      using editor = buildEditorFromExtensions();
+      mountEditor(editor);
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          for (const text of ['first', 'second', 'third', 'fourth']) {
+            root.append($createParagraphNode().append($createTextNode(text)));
+          }
+          root.selectStart();
+        },
+        {discrete: true},
+      );
+      const previous = editor.getEditorState();
+      const listener = vi.fn(() => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        if (!selection.hasFormat('bold')) selection.toggleFormat('bold');
+        return false;
+      });
+      if (normalize) {
+        editor.registerCommand(
+          SELECTION_CHANGE_COMMAND,
+          listener,
+          COMMAND_PRIORITY_LOW,
+        );
+      }
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const third = root.getChildAtIndex(2)!;
+          if (operation === 'replace') {
+            third.replace(
+              $createParagraphNode().append($createTextNode('replacement')),
+            );
+          } else {
+            third.insertBefore(root.getLastChildOrThrow());
+          }
+          root.selectEnd();
+        },
+        {discrete: true},
+      );
+      const expected =
+        operation === 'replace'
+          ? ['first', 'second', 'replacement', 'fourth']
+          : ['first', 'second', 'fourth', 'third'];
+      expect(
+        [...editor.getRootElement()!.children].map(node => node.textContent),
+      ).toEqual(expected);
+      expect(
+        editor.read(() =>
+          $getRoot()
+            .getChildren()
+            .map(node => node.getTextContent()),
+        ),
+      ).toEqual(expected);
+      expect(
+        previous.read(() =>
+          $getRoot()
+            .getChildren()
+            .map(node => node.getTextContent()),
+        ),
+      ).toEqual(['first', 'second', 'third', 'fourth']);
+      if (normalize) expect(listener).toHaveBeenCalledTimes(2);
+    },
+  );
+
   test('explicit selection commands retain a fresh update-cascade budget', async () => {
     using editor = buildEditorFromExtensions();
     const onWarn = vi.spyOn(editor, '_onWarn').mockImplementation(() => {});

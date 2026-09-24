@@ -1670,14 +1670,18 @@ function parseScrollPadding(value: string, clientWidth: number): number {
  * scroll) with something to scroll, scrolls it sideways so the caret rect
  * [left, right] is inside its scrollport, less its scroll-padding. Returns
  * how far it actually scrolled, in viewport px.
+ *
+ * The caret may also be above or below the element, like a caret below the
+ * visible part of a root with overflow: auto. It is still revealed sideways
+ * here. Scrolling sideways doesn't move it up or down, and scrolling up or
+ * down doesn't move it sideways, so the vertical pass that runs after this
+ * one reveals it vertically and leaves this reveal alone.
  */
 function scrollIntoViewHorizontally(
   view: Window,
   element: HTMLElement,
   left: number,
   right: number,
-  top: number,
-  bottom: number,
 ): number {
   // Cheap check first. Layout is already clean because the caret rect was
   // just measured.
@@ -1694,12 +1698,6 @@ function scrollIntoViewHorizontally(
     return 0;
   }
   const rect = element.getBoundingClientRect();
-  // Only a caret level with the container is revealed sideways. A caret above
-  // or below it is left to the vertical pass, so a container that scrolls both
-  // ways with the caret out of view vertically is only scrolled vertically.
-  if (bottom <= rect.top || top >= rect.bottom) {
-    return 0;
-  }
   // The rects are in viewport px, but clientLeft, clientWidth, scroll-padding
   // and scrollLeft are in the element's own px. They differ under CSS zoom or
   // a transform: scale. offsetWidth is rounded, so a difference of 1px or less
@@ -1726,8 +1724,7 @@ function scrollIntoViewHorizontally(
   let caretRight = Math.max(right, left + 1);
   if (caretRight - caretLeft > viewRight - viewLeft) {
     // Wider than the view: an element point measured on the whole node
-    // after it (a token or a line break wrapper). The caret is at its
-    // inline start.
+    // after it, like a long token. The caret is at its inline start.
     if (isRTL) {
       caretLeft = caretRight - 1;
     } else {
@@ -1857,8 +1854,6 @@ export function scrollIntoViewIfNeeded(
         scroller,
         currentLeft,
         currentRight,
-        selectionRect.top,
-        selectionRect.bottom,
       );
       currentLeft -= xOffset;
       currentRight -= xOffset;

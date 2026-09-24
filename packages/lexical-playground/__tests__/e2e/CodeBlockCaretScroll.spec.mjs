@@ -171,6 +171,7 @@ test.describe('Code block caret scrolling', () => {
       page,
       isCollab,
       isPlainText,
+      browserName,
     }) => {
       test.skip(isPlainText || isCollab);
       await initialize({isCollab, page, ...settings});
@@ -234,13 +235,21 @@ test.describe('Code block caret scrolling', () => {
       await page.keyboard.press('ArrowUp');
       await page.keyboard.press('ArrowUp');
 
+      // The end of the longest line, with the block scrolled as far as it
+      // goes. Firefox leaves the theme's inline end padding out of the scroll
+      // range while a sticky box is in the block, like the data-gutter float.
+      // On the Windows CI runners it drew the caret here 0.25px past the
+      // right edge: at x 1143.25, with scrollLeft 3699 and the scrollport
+      // ending at 1143. So only this step allows 0.5px past the edge, and
+      // only in Firefox.
+      const endSlack = browserName === 'firefox' ? 0.5 : 0;
       await moveToLineEnd(page);
       await pollGeometry(
         page,
         m =>
           m.scrollLeft > 0 &&
           m.caretLeft >= m.lineStartX - 1 &&
-          m.caretRight <= m.scrollportRight,
+          m.caretRight <= m.scrollportRight + endSlack,
       );
       await moveToLineBeginning(page);
       await pollGeometry(

@@ -54,12 +54,16 @@ const IS_FIREFOX =
 
 // The theme's inline end padding leaves room for the caret at the end of the
 // longest line. Firefox leaves that padding out of the scroll range while a
-// sticky box is in the block, like the data-gutter float, so at the far left
-// end of a right to left line it draws the caret 0.33px outside the block.
-// Chromium and WebKit keep it inside. That is how Firefox lays out the block,
-// and the block can't scroll any further, so only that step allows 0.5px
-// past the left edge, and only in Firefox.
-const FIREFOX_RTL_END_SLACK = IS_FIREFOX ? 0.5 : 0;
+// sticky box is in the block, like the data-gutter float. So with the block
+// scrolled as far as it goes, Firefox can draw the caret just outside it. At
+// the far left end of a right to left line it is 0.33px past the left edge.
+// At the end of the longest left to right line, Firefox on the Windows CI
+// runners drew it 0.25px past the right edge: at x 360.25, with scrollLeft
+// 4375 and the scrollport ending at 360. Chromium and WebKit keep it inside.
+// That is how Firefox lays out the block, and the block can't scroll any
+// further, so only those two steps allow 0.5px past the edge, and only in
+// Firefox.
+const FIREFOX_LINE_END_SLACK = IS_FIREFOX ? 0.5 : 0;
 
 const LONG_LINE = Array.from(
   {length: 40},
@@ -345,18 +349,25 @@ function measure(code: HTMLElement, scale = 1) {
  * The caret is inside the code block's scrollport, and no line number is
  * drawn over it. At the end of the longest line the block is scrolled as far
  * as it goes, so this also checks the theme leaves room for the caret there.
- * leftSlack lets the caret be that many px past the left edge.
+ * leftSlack and rightSlack let the caret be that many px past the left or
+ * the right edge.
  */
 function expectCaretVisible(
   code: HTMLElement,
-  {leftSlack = 0, scale = 1}: {leftSlack?: number; scale?: number} = {},
+  {
+    leftSlack = 0,
+    rightSlack = 0,
+    scale = 1,
+  }: {leftSlack?: number; rightSlack?: number; scale?: number} = {},
 ): void {
   const m = measure(code, scale);
   const state = JSON.stringify(m);
   expect(m.caretLeft, state).toBeGreaterThanOrEqual(
     m.scrollportLeft - leftSlack,
   );
-  expect(m.caretRight, state).toBeLessThanOrEqual(m.scrollportRight);
+  expect(m.caretRight, state).toBeLessThanOrEqual(
+    m.scrollportRight + rightSlack,
+  );
   const x = Math.min(
     Math.max(m.caretLeft, m.scrollportLeft + 0.5),
     m.scrollportRight - 0.5,
@@ -384,7 +395,8 @@ describe.each(GUTTERS)('caret scrolling in a code block with $name', gutter => {
     expect(m.caretLeft, JSON.stringify(m)).toBeGreaterThanOrEqual(
       m.lineStartX - 1,
     );
-    expectCaretVisible(code);
+    // The end of the longest line, with the block scrolled as far as it goes
+    expectCaretVisible(code, {rightSlack: FIREFOX_LINE_END_SLACK});
 
     await moveTo(editor, MOVE_TO_START);
     m = measure(code);
@@ -496,7 +508,7 @@ describe.each(GUTTERS)('caret scrolling in a code block with $name', gutter => {
     // line, on the left, which is its logical end.
     await moveTo(editor, MOVE_TO_START);
     expect(code.scrollLeft).toBeLessThan(0);
-    expectCaretVisible(code, {leftSlack: FIREFOX_RTL_END_SLACK});
+    expectCaretVisible(code, {leftSlack: FIREFOX_LINE_END_SLACK});
 
     await moveTo(editor, MOVE_TO_END);
     expect(

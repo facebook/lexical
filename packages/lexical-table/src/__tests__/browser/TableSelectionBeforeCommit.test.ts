@@ -171,8 +171,10 @@ test('preserves the pointerdown anchor while the native caret enters its cell', 
   assert(tableDOM !== null);
   const observer = getTableObserverFromTableElement(tableDOM);
   assert(observer !== null);
-  const anchorCell = observer.table.domRows[0][1];
-  const focusCell = observer.table.domRows[1][2];
+  const anchorCell = observer.table.domRows[0]?.[1];
+  const focusCell = observer.table.domRows[1]?.[2];
+  assert(anchorCell !== undefined);
+  assert(focusCell !== undefined);
   const pointer = {
     bubbles: true,
     button: 0,

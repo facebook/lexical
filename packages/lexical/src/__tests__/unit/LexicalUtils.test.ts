@@ -804,10 +804,41 @@ describe('LexicalUtils tests', () => {
         },
       );
 
-      test('ignores a scroller that does not contain the caret vertically', () => {
+      test('reveals a caret above or below a scroller sideways too', () => {
+        // Like a code block with a max-height, scrolled so the caret's line
+        // is out of view. Scrolling sideways doesn't move the caret up or
+        // down, so its right edge 1011 still lines up with 310.
         expect(reveal(1010, {codeRect: new DOMRect(10, 200, 300, 100)})).toBe(
-          0,
+          701,
         );
+        expect(reveal(1010, {codeRect: new DOMRect(10, -200, 300, 100)})).toBe(
+          701,
+        );
+      });
+
+      test('reveals a caret below and right of a root that scrolls both ways', () => {
+        // A 300 by 100 root with overflow: auto, and a caret at (800, 500).
+        // Only the root scrolls here. jsdom doesn't expand the overflow
+        // shorthand, so the root gets both longhands.
+        const {code, root, text} = setUp();
+        code.style.overflowX = 'visible';
+        root.style.overflowX = 'auto';
+        root.style.overflowY = 'auto';
+        mockScroller(root, {
+          clientWidth: 300,
+          rect: new DOMRect(0, 0, 300, 100),
+          scrollWidth: 2000,
+        });
+        scrollIntoViewIfNeeded(
+          testEnv.editor,
+          new DOMRect(800, 500, 0, 19),
+          root,
+          text,
+        );
+        // The caret's bottom 519 is 419px below the root's bottom at 100
+        expect(root.scrollTop).toBe(419);
+        // and its right edge 801 is 501px past the root's right edge at 300
+        expect(root.scrollLeft).toBe(501);
       });
 
       test('scrolls nested scroll containers from the caret outward', () => {
@@ -957,13 +988,7 @@ describe('LexicalUtils tests', () => {
       });
 
       test('ignores a rect above the editor and an empty rect', () => {
-        // The code element overlaps both rects vertically, so only the
-        // guards stop them.
-        const codeRect = new DOMRect(10, -50, 300, 100);
-        const above = setUp({
-          codeRect,
-          rootRect: new DOMRect(0, 200, 300, 400),
-        });
+        const above = setUp({rootRect: new DOMRect(0, 200, 300, 400)});
         scrollIntoViewIfNeeded(
           testEnv.editor,
           caretAt(1010, -40),
@@ -972,7 +997,7 @@ describe('LexicalUtils tests', () => {
         );
         expect(above.code.scrollLeft).toBe(0);
 
-        const empty = setUp({codeRect, scrollLeft: 400});
+        const empty = setUp({scrollLeft: 400});
         scrollIntoViewIfNeeded(
           testEnv.editor,
           new DOMRect(),

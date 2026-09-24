@@ -39,6 +39,257 @@ function mountEditor(editor: LexicalEditor): void {
 }
 
 describe('SELECTION_CHANGE_COMMAND', () => {
+  test('explicit selection commands retain a fresh update-cascade budget', async () => {
+    using editor = buildEditorFromExtensions();
+    const onWarn = vi.spyOn(editor, '_onWarn').mockImplementation(() => {});
+    const onError = vi.spyOn(editor, '_onError').mockImplementation(() => {});
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
+        editor.update(() => $getRoot().markDirty());
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+    const unregister = editor.registerUpdateListener(() => {
+      editor.update(() => {});
+    });
+    for (let i = 0; i < 150; i++) {
+      editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+      // Flush commits without allowing the macrotask budget reset to run.
+      for (let j = 0; j < 4; j++) {
+        await Promise.resolve();
+      }
+    }
+    unregister();
+    expect(onWarn).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  test('does not warn when the last allowed notification clears a rootless selection', () => {
+    using editor = buildEditorFromExtensions();
+    const onWarn = vi.spyOn(editor, '_onWarn');
+    let calls = 0;
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
+        if (++calls === 100) {
+          $setSelection(null);
+        } else {
+          const root = $getRoot();
+          const selection = $createNodeSelection();
+          selection.add(
+            (calls % 2
+              ? root.getLastChildOrThrow()
+              : root.getFirstChildOrThrow()
+            ).getKey(),
+          );
+          $setSelection(selection);
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+    editor.update(
+      () => {
+        const first = $createParagraphNode();
+        $getRoot().clear().append(first, $createParagraphNode());
+        const selection = $createNodeSelection();
+        selection.add(first.getKey());
+        $setSelection(selection);
+      },
+      {discrete: true},
+    );
+    expect(calls).toBe(100);
+    expect(onWarn).not.toHaveBeenCalled();
+    expect(editor.read(() => $getSelection())).toBe(null);
+  });
+
+  test.each([false, true])(
+    'counts explicit dispatches before commit (outside update: %s)',
+    outside => {
+      using editor = buildEditorFromExtensions();
+      mountEditor(editor);
+      editor.update(
+        () => {
+          const text = $createTextNode('original');
+          $getRoot().clear().append($createParagraphNode().append(text));
+          text.select(1, 1);
+        },
+        {discrete: true},
+      );
+      const listener = vi.fn(() => false);
+      editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        listener,
+        COMMAND_PRIORITY_LOW,
+      );
+      editor.update(() => {
+        $getRoot().getAllTextNodes()[0].select(3, 3);
+        if (!outside) editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+      });
+      if (outside) editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+      editor.read(() => {});
+      expect(listener).toHaveBeenCalledTimes(1);
+      // Explicit commands still run even when the selection is unchanged.
+      editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+      editor.read(() => {});
+      expect(listener).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  test.each([false, true])(
+    'preserves the edit and discards failed listener work (throwing onError: %s)',
+    throws => {
+      using editor = buildEditorFromExtensions();
+      mountEditor(editor);
+      editor.update(
+        () => {
+          const text = $createTextNode('original');
+          $getRoot().clear().append($createParagraphNode().append(text));
+          text.select(1, 1);
+        },
+        {discrete: true},
+      );
+      const failure = new Error('selection listener failed');
+      const onError = vi.spyOn(editor, '_onError').mockImplementation(error => {
+        expect(editor.getRootElement()!.textContent).toBe('edited!');
+        if (throws) throw error;
+      });
+      const onWarn = vi.spyOn(editor, '_onWarn');
+      const originalCallback = vi.fn();
+      const failedCallback = vi.fn();
+      const queuedCallback = vi.fn();
+      const updates = vi.fn();
+      editor.registerUpdateListener(updates);
+      const unregister = editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        () => {
+          $getRoot().getAllTextNodes()[0].setTextContent('listener change');
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('discard')),
+          );
+          $getRoot().selectEnd();
+          $onUpdate(failedCallback);
+          editor.update(queuedCallback);
+          throw failure;
+        },
+        COMMAND_PRIORITY_LOW,
+      );
+      const update = () =>
+        editor.update(
+          () => {
+            const text = $getRoot().getAllTextNodes()[0];
+            text.setTextContent('edited!');
+            text.select(3, 3);
+          },
+          {discrete: true, onUpdate: originalCallback},
+        );
+      if (throws) expect(update).toThrow(failure);
+      else update();
+      expect(onError).toHaveBeenCalledExactlyOnceWith(failure);
+      expect(onWarn).not.toHaveBeenCalled();
+      expect(editor.getRootElement()!.textContent).toBe('edited!');
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('edited!');
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        expect(selection.anchor.offset).toBe(3);
+      });
+      expect(updates).toHaveBeenCalledTimes(1);
+      expect(originalCallback).toHaveBeenCalledTimes(1);
+      expect(failedCallback).not.toHaveBeenCalled();
+      expect(queuedCallback).not.toHaveBeenCalled();
+      unregister();
+      editor.update(() => $getRoot().getAllTextNodes()[0].select(4, 4), {
+        discrete: true,
+      });
+      expect(onError).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  test.each(['transform', 'nested update'])(
+    'preserves the edit when listener work fails in a %s',
+    origin => {
+      using editor = buildEditorFromExtensions();
+      mountEditor(editor);
+      editor.update(
+        () => {
+          const text = $createTextNode('original');
+          $getRoot().clear().append($createParagraphNode().append(text));
+          text.select(1, 1);
+        },
+        {discrete: true},
+      );
+      const failure = new Error('listener work failed');
+      const onError = vi.spyOn(editor, '_onError').mockImplementation(() => {});
+      editor.registerNodeTransform(TextNode, node => {
+        if (node.getTextContent() === 'transform failure') {
+          node.setTextContent('must be discarded');
+          throw failure;
+        }
+      });
+      editor.read(() => {});
+      editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        () => {
+          const text = $getRoot().getAllTextNodes()[0];
+          text.setTextContent('transform failure');
+          if (origin === 'nested update') {
+            editor.update(() => {
+              text.remove();
+              throw failure;
+            });
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      );
+      editor.update(
+        () => {
+          const text = $getRoot().getAllTextNodes()[0];
+          text.setTextContent('edited!');
+          text.select(3, 3);
+        },
+        {discrete: true},
+      );
+      expect(onError).toHaveBeenCalledExactlyOnceWith(failure);
+      expect(editor.read(() => $getRoot().getTextContent())).toBe('edited!');
+      expect(editor.getRootElement()!.textContent).toBe('edited!');
+    },
+  );
+
+  test('does not replay skipped range changes when a detached root reconnects', () => {
+    using editor = buildEditorFromExtensions();
+    mountEditor(editor);
+    editor.update(
+      () => {
+        const text = $createTextNode('original');
+        $getRoot().clear().append($createParagraphNode().append(text));
+        text.select(1, 1);
+      },
+      {discrete: true},
+    );
+    const root = editor.getRootElement()!;
+    root.remove();
+    const listener = vi.fn(() => false);
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      listener,
+      COMMAND_PRIORITY_LOW,
+    );
+    editor.update(() => $getRoot().getAllTextNodes()[0].select(3, 3), {
+      discrete: true,
+    });
+    expect(listener).not.toHaveBeenCalled();
+    document.body.append(root);
+    editor.update(() => $getRoot().append($createParagraphNode()), {
+      discrete: true,
+      tag: SKIP_DOM_SELECTION_TAG,
+    });
+    expect(listener).not.toHaveBeenCalled();
+  });
+
   test.each([false, true])(
     'caps notifications without discarding edits (throwing warning: %s)',
     throws => {

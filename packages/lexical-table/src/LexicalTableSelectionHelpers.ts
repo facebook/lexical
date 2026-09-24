@@ -1485,6 +1485,17 @@ function $syncTableSelectionState(
   tableObserver: TableObserver,
 ) {
   const selection = $getSelection();
+  const isSelected = tableNode.isSelected();
+  if (
+    !(
+      $isTableSelection(selection) && selection.tableKey === tableNode.getKey()
+    ) &&
+    !tableObserver.isHighlightingCells &&
+    !tableObserver.hasHijackedSelectionStyles &&
+    !isSelected
+  ) {
+    return;
+  }
   // MutationObserver callbacks have not necessarily run yet. Refresh the grid
   // now so newly inserted/replaced cells can be selected and highlighted.
   const {tableElement} = tableObserver.$lookup();
@@ -1522,12 +1533,9 @@ function $syncTableSelectionState(
     tableObserver.$clearHighlight(false);
   }
 
-  if (tableObserver.hasHijackedSelectionStyles && !tableNode.isSelected()) {
+  if (tableObserver.hasHijackedSelectionStyles && !isSelected) {
     $removeHighlightStyleToTable(editor, tableObserver);
-  } else if (
-    !tableObserver.hasHijackedSelectionStyles &&
-    tableNode.isSelected()
-  ) {
+  } else if (!tableObserver.hasHijackedSelectionStyles && isSelected) {
     $addHighlightStyleToTable(editor, tableObserver);
   }
 }

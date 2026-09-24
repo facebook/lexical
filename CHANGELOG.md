@@ -1,3 +1,14 @@
+## Unreleased
+
+### Breaking Changes
+
+- `SELECTION_CHANGE_COMMAND` now runs before DOM reconciliation for native,
+  programmatic, and non-range selection changes. Listeners see the pending
+  selection and may edit the same update. Move DOM-dependent work into
+  `$onUpdate(() => editor.read('latest', ...))`; see
+  [selection change timing](https://lexical.dev/docs/concepts/selection#selection-change-timing)
+  for migration guidance (#9219).
+
 ## v0.51.0 (2026-09-17)
 
 - build(deps-dev) bump the vitest group across 1 directory with 2 updates (#9157) dependabotbot

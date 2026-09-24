@@ -26,7 +26,6 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
-  $onUpdate,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -331,6 +330,7 @@ export function registerTableSelectionObserver(
   hasTabHandler: boolean = true,
 ): () => void {
   const tableObservers = new TableObservers();
+  let selectionNeedsSync = false;
 
   const initializeTableNode = (
     tableNode: TableNode,
@@ -350,26 +350,34 @@ export function registerTableSelectionObserver(
 
   return mergeRegister(
     registerTableWindowHandlers(editor, tableObservers),
-    editor.registerRootListener(rootElement => {
-      if (rootElement === null) {
-        return;
-      }
-      return editor.registerCommand(
-        SELECTION_CHANGE_COMMAND,
-        () => {
-          $onUpdate(() => {
-            editor.read('latest', () => {
-              $syncTableSelectionObservers(tableObservers, editor);
-            });
+    // Register once so attaching/replacing a root cannot reorder HIGH listeners.
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
+        if (editor.getRootElement() === null) {
+          return false;
+        }
+        selectionNeedsSync = true;
+        return $handleTableSelectionChangeCommand(tableObservers, editor);
+      },
+      COMMAND_PRIORITY_HIGH,
+    ),
+    editor.registerUpdateListener(() => {
+      if (selectionNeedsSync) {
+        // Mutation listeners have initialized new observers. Synchronize once,
+        // even if normalization notified several times before this commit.
+        selectionNeedsSync = false;
+        if (editor.getRootElement() !== null) {
+          editor.read('latest', () => {
+            $syncTableSelectionObservers(tableObservers, editor);
           });
-          return $handleTableSelectionChangeCommand(tableObservers, editor);
-        },
-        COMMAND_PRIORITY_HIGH,
-      );
+        }
+      }
     }),
     editor.registerMutationListener(
       TableNode,
       nodeMutations => {
+        selectionNeedsSync = true;
         editor.read('latest', () => {
           for (const [nodeKey, mutation] of nodeMutations) {
             const tableSelection = tableObservers.observers.get(nodeKey);

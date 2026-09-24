@@ -602,9 +602,11 @@ export function $commitPendingUpdates(
   const previouslyCommitting = isCommittingPendingUpdates;
   isCommittingPendingUpdates = true;
   try {
-    const selectionChangeLimitReached = $notifyPendingSelectionChange(editor);
+    const notificationResult = $notifyPendingSelectionChange(editor);
     $commitPendingUpdatesImpl(editor, recoveryEditorState);
-    if (selectionChangeLimitReached) {
+    if (notificationResult instanceof Error) {
+      editor._onError(notificationResult);
+    } else if (notificationResult) {
       // Report only after preserving the pending edit. Update error recovery
       // would otherwise roll it back, even with a non-throwing error handler.
       // Keep error-code extraction while routing the error through onWarn.
@@ -940,13 +942,11 @@ export function $dispatchSelectionChangeCommand(
   if (!force && !hasSelectionChanged(editor, selection)) {
     return;
   }
-  // Snapshot before notifying: listeners and transforms can change selection.
-  editor._lastNotifiedSelection = selection === null ? null : selection.clone();
   editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
 }
 
-/** Returns true if selection listeners exceed the notification limit. */
-function $notifyPendingSelectionChange(editor: LexicalEditor): boolean {
+/** Returns a listener error or true when listeners exceed the limit. */
+function $notifyPendingSelectionChange(editor: LexicalEditor): boolean | Error {
   if (editorsWithPendingSelectionChange.has(editor)) {
     return false;
   }
@@ -956,38 +956,81 @@ function $notifyPendingSelectionChange(editor: LexicalEditor): boolean {
       const pending = editor._pendingEditorState;
       const selection = pending._selection;
       const root = editor._rootElement;
-      if (
-        !hasSelectionChanged(editor, selection) ||
-        ((selection === null || $isRangeSelection(selection)) &&
-          (editor._headless || root === null || !root.isConnected))
-      ) {
+      if (!hasSelectionChanged(editor, selection)) {
         return false;
       }
-      // Snapshot before dispatch, including the final selection at the limit,
-      // so it cannot schedule another notification after this commit.
-      editor._lastNotifiedSelection =
-        selection === null ? null : selection.clone();
-      if (count === 100) {
-        return true;
+      const skipNotification =
+        (selection === null || $isRangeSelection(selection)) &&
+        (editor._headless || root === null || !root.isConnected);
+      if (skipNotification || count === 100) {
+        // Do not replay skipped notifications after reconnecting the root or
+        // after stopping a listener loop.
+        editor._lastNotifiedSelection =
+          selection === null ? null : selection.clone();
+        return !skipNotification;
       }
-      // Recovery can supply a frozen state. Preserve its selection instead of
-      // initializing one from the DOM, which still represents the previous state.
-      if (pending._readOnly) {
-        const writable = cloneEditorState(pending);
-        writable._selection = selection === null ? null : selection.clone();
-        editor._pendingEditorState = writable;
+      const error = $runSelectionChangeListeners(editor, pending);
+      if (error !== undefined) {
+        return error;
       }
-      // Apply listener edits and transforms without starting another commit.
-      $beginUpdate(
-        editor,
-        () => editor.dispatchCommand(SELECTION_CHANGE_COMMAND),
-        undefined,
-        true,
-      );
     }
     return false;
   } finally {
     editorsWithPendingSelectionChange.delete(editor);
+  }
+}
+
+function $runSelectionChangeListeners(
+  editor: LexicalEditor,
+  pending: EditorState,
+): Error | undefined {
+  // Keep the user's pending edit as the recovery point. Listener writes must
+  // clone nodes even when the original update already made them writable.
+  const checkpoint = {
+    _cloneNotNeeded: editor._cloneNotNeeded,
+    _compositionKey: editor._compositionKey,
+    _deferred: editor._deferred,
+    _dirtyElements: editor._dirtyElements,
+    _dirtyLeaves: editor._dirtyLeaves,
+    _dirtyType: editor._dirtyType,
+    _normalizedNodes: editor._normalizedNodes,
+    _pendingDecorators: editor._pendingDecorators,
+    _pendingEditorState: pending,
+    _updateTags: editor._updateTags,
+    _updates: editor._updates,
+  };
+  const writable = cloneEditorState(pending);
+  const selection = pending._selection;
+  if (selection !== null) {
+    writable._selection = selection.clone();
+    writable._selection.dirty = selection.dirty;
+  }
+  editor._pendingEditorState = writable;
+  editor._cloneNotNeeded = new Map();
+  editor._deferred = [...editor._deferred];
+  editor._dirtyElements = new Map(editor._dirtyElements);
+  editor._dirtyLeaves = new Set(editor._dirtyLeaves);
+  editor._normalizedNodes = new Set(editor._normalizedNodes);
+  editor._pendingDecorators =
+    editor._pendingDecorators === null ? null : {...editor._pendingDecorators};
+  editor._updates = [...editor._updates];
+  editor._updateTags = new Set(editor._updateTags);
+  try {
+    // Apply listener edits and transforms without starting another commit.
+    $beginUpdate(
+      editor,
+      () => editor.dispatchCommand(SELECTION_CHANGE_COMMAND),
+      undefined,
+      true,
+    );
+  } catch (error) {
+    Object.assign(editor, checkpoint);
+    // The failed attempt may have dispatched again with a different selection.
+    editor._lastNotifiedSelection =
+      selection === null ? null : selection.clone();
+    if (error instanceof Error) {
+      return error;
+    }
   }
 }
 
@@ -1016,8 +1059,8 @@ export function triggerCommandListeners<TCommand extends AnyLexicalCommand>(
   //   dispatched from those contexts.
   // - isCommittingPendingUpdates is true for the whole of
   //   $commitPendingUpdates, covering the internal SELECTION_CHANGE_COMMAND
-  //   dispatch and commands dispatched from mutation listeners, both of which
-  //   run with editor._updating === false.
+  //   dispatch (inside an update) as well as commands dispatched from mutation
+  //   listeners, which can run with editor._updating === false.
   // Genuine external input can never arrive in the middle of a commit because
   // the commit is synchronous, so neither guard weakens the per-action reset.
   if (!isCommittingPendingUpdates) {
@@ -1026,6 +1069,21 @@ export function triggerCommandListeners<TCommand extends AnyLexicalCommand>(
         editors[e]._cascadeCount = 0;
       }
     }
+  }
+
+  if (type === SELECTION_CHANGE_COMMAND) {
+    if (activeEditor !== editor || isReadOnlyMode) {
+      let handled = false;
+      updateEditorSync(editor, () => {
+        handled = triggerCommandListeners(editor, type, payload, fromEditor);
+      });
+      return handled;
+    }
+    // Count every dispatch, including explicit calls by applications. Capture
+    // before listeners run so their selection changes can notify in turn.
+    const selection = getActiveEditorState()._selection;
+    editor._lastNotifiedSelection =
+      selection === null ? null : selection.clone();
   }
 
   for (let i = 4; i >= 0; i--) {
@@ -1125,14 +1183,9 @@ function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
     // throw in dev / `console.warn` in prod) so embedders can capture how often
     // the guard trips as warn-severity telemetry.
     //
-    // This must be a direct `editor._onWarn(...)` call rather than an
-    // `invariant`/`$devInvariant` helper: `transform-error-messages` rewrites
-    // those call sites to a bare `formatProd*Message(code, ...)` in the
-    // compiled bundle, dropping the editor reference, so the warning would
-    // never actually reach `_onWarn` in a built artifact (only when the
-    // untransformed `source` is consumed). Calling the hook directly keeps the
-    // routing intact in every build, at the cost of shipping this message
-    // string in the bundle.
+    // A bare invariant/devInvariant would bypass onWarn after transformation.
+    // This legacy warning constructs its Error directly; the selection-loop
+    // warning above instead catches an invariant to retain error-code extraction.
     editor._onWarn(
       new Error(
         'One or more update listeners are endlessly enqueueing more updates. ' +
@@ -1352,6 +1405,11 @@ function $beginUpdate(
       }
     }
   } catch (error) {
+    if (skipCommit) {
+      // Selection notifications recover to the pending edit in their caller,
+      // and report the error only after that edit has committed.
+      throw error;
+    }
     // Report errors
     if (error instanceof Error) {
       editor._onError(error);

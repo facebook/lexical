@@ -215,6 +215,11 @@ from the last committed state. A listener can normalize the selection or edit
 nodes before that same update commits. Listeners that change the selection may
 cause another notification before commit; they must converge.
 
+If an automatic pre-commit notification throws, its pending model changes and
+queued callbacks are discarded. The edit preceding that notification still
+commits, and the error is then reported through `onError`. Explicit command
+dispatches inside an update retain that update's normal error handling.
+
 The DOM is not guaranteed to match the pending state, even for a `NodeSelection`.
 New nodes may not have an element yet, and DOM ranges, layout, and focus may
 still reflect the previous state. Schedule DOM-dependent work after the update
@@ -243,6 +248,8 @@ using `SKIP_DOM_SELECTION_TAG` still deliberately leave the browser selection
 unsynchronized.
 
 Automatic range and cleared-selection notifications require a connected editor
-root. Non-range selections continue to notify in unmounted and headless editors,
+root. Changes committed while those notifications are skipped advance the
+selection baseline and are not replayed when the root reconnects. Non-range
+selections continue to notify in unmounted and headless editors,
 with the same pre-reconciliation timing. Native dirty-selection notifications
 may fire even when the selection compares equal to the previous selection.

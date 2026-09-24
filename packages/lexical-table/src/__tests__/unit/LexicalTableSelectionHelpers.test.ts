@@ -28,6 +28,7 @@ import {
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_HIGH,
   COPY_COMMAND,
   defineExtension,
   DELETE_LINE_COMMAND,
@@ -46,6 +47,41 @@ import {
 } from 'vitest';
 
 describe('LexicalTableSelectionHelpers', () => {
+  test('table normalization keeps its priority order across root attachment', () => {
+    using editor = buildEditorFromExtensions(TableExtension);
+    const root = document.createElement('div');
+    document.body.append(root);
+    onTestFinished(() => root.remove());
+    let normalized = false;
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
+        normalized = $isTableSelection($getSelection());
+        return true;
+      },
+      COMMAND_PRIORITY_HIGH,
+    );
+    for (let i = 0; i < 2; i++) {
+      editor.setRootElement(root);
+      editor.update(
+        () => {
+          const table = $createTableNodeWithDimensions(1, 2);
+          $getRoot().clear().append(table);
+          const [map] = $computeTableMapSkipCellCheck(table, null, null);
+          const selection = $createRangeSelection();
+          selection.anchor.set(map[0][0].cell.getKey(), 0, 'element');
+          selection.focus.set(map[0][1].cell.getKey(), 0, 'element');
+          $setSelection(selection);
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+          expect(normalized).toBe(true);
+        },
+        {discrete: true},
+      );
+      editor.setRootElement(null);
+      normalized = false;
+    }
+  });
+
   test('table selection handling follows the root lifecycle', () => {
     using editor = buildEditorFromExtensions(TableExtension);
     const firstRoot = document.createElement('div');

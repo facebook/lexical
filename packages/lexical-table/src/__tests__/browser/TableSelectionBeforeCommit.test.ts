@@ -216,6 +216,96 @@ test('preserves the pointerdown anchor while the native caret enters its cell', 
   );
 });
 
+test('caret movement outside tables does not rebuild their DOM grids', () => {
+  const {editor, root} = mount();
+  editor.update(
+    () => {
+      const paragraph = $createParagraphNode().append(
+        $createTextNode('outside'),
+      );
+      $getRoot()
+        .clear()
+        .append(
+          paragraph,
+          $createTableNodeWithDimensions(10, 10),
+          $createTableNodeWithDimensions(10, 10),
+        );
+      paragraph.selectStart();
+    },
+    {discrete: true},
+  );
+  const tables = [...root.querySelectorAll('table')];
+  expect(tables).toHaveLength(2);
+  const queries = tables.map(table => vi.spyOn(table, 'querySelector'));
+  editor.update(
+    () => {
+      $getRoot().getAllTextNodes()[0].select(3, 3);
+    },
+    {discrete: true},
+  );
+  for (const query of queries) {
+    expect(
+      query.mock.calls.filter(([selector]) => selector === 'tr'),
+    ).toHaveLength(0);
+  }
+});
+
+test('converging notifications synchronize the selected table once per commit', () => {
+  const {editor, root} = mount();
+  editor.update(
+    () => {
+      const table = $createTableNodeWithDimensions(1, 3);
+      $getRoot().clear().append(table);
+      table.selectStart();
+    },
+    {discrete: true},
+  );
+  const tableDOM = root.querySelector('table');
+  assert(tableDOM !== null);
+  const queries = vi.spyOn(tableDOM, 'querySelector');
+  const listener = vi.fn(() => {
+    const selection = $getSelection();
+    if ($isTableSelection(selection)) {
+      const table = $getRoot().getFirstChildOrThrow();
+      assert($isTableNode(table));
+      const row = table.getFirstChildOrThrow();
+      assert($isTableRowNode(row));
+      const cells = row.getChildren();
+      const first = cells[0];
+      const last = cells[2];
+      assert($isTableCellNode(first) && $isTableCellNode(last));
+      if (selection.focus.key !== last.getKey()) {
+        $setSelection($createTableSelectionFrom(table, first, last));
+      }
+    }
+    return false;
+  });
+  editor.registerCommand(
+    SELECTION_CHANGE_COMMAND,
+    listener,
+    COMMAND_PRIORITY_LOW,
+  );
+  editor.update(
+    () => {
+      const table = $getRoot().getFirstChildOrThrow();
+      assert($isTableNode(table));
+      const row = table.getFirstChildOrThrow();
+      assert($isTableRowNode(row));
+      const cells = row.getChildren();
+      const first = cells[0];
+      const second = cells[1];
+      assert($isTableCellNode(first) && $isTableCellNode(second));
+      $setSelection($createTableSelectionFrom(table, first, second));
+    },
+    {discrete: true},
+  );
+  expect(listener).toHaveBeenCalledTimes(2);
+  expect(root.querySelectorAll('.selected-cell')).toHaveLength(3);
+  expect(
+    queries.mock.calls.filter(([selector]) => selector === 'tr'),
+  ).toHaveLength(1);
+});
+
 test('only an unchanged table selection follows a native drag outside the table', () => {
   const {editor, root} = mount();
   editor.update(

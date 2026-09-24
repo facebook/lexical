@@ -154,13 +154,12 @@ to and focuses the initial selection. To prevent that, call
 `$setSelection(null)` inside your initial state setup function:
 
 ```js
-const editor = createEditor({
+const editor = buildEditorFromExtensions({
+  name: '[root]',
   // ...
-  editorState: (editor) => {
-    editor.update(() => {
-      // ... build your initial nodes ...
-      $setSelection(null);
-    });
+  $initialEditorState: () => {
+    // ... build your initial nodes ...
+    $setSelection(null);
   },
 });
 ```

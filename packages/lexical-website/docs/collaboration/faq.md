@@ -70,7 +70,7 @@ It's achievable by leveraging headless Lexical and no-op provider for Yjs:
    * connect to message distribution infra) and binding. It also sets up
    * bi-directional synchronization between yDoc and editor
    */
-  function withHeadlessCollaborationEditor<T>(
+  export function withHeadlessCollaborationEditor<T>(
     nodes: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
     callback: (editor: LexicalEditor, binding: Binding, provider: Provider) => T,
   ): T {
@@ -146,6 +146,7 @@ It's achievable by leveraging headless Lexical and no-op provider for Yjs:
         off: emptyFunction,
         on: emptyFunction,
         setLocalState: emptyFunction,
+        setLocalStateField: emptyFunction,
       },
       connect: emptyFunction,
       disconnect: emptyFunction,

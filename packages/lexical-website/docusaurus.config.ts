@@ -20,6 +20,7 @@ import {packagesManager} from '../../scripts/shared/packagesManager.mjs';
 import copyPageButtonPlugin from './plugins/copy-page-button/index.mjs';
 import packageDocsPlugin from './plugins/package-docs/index.mjs';
 import slugifyPlugin from './src/plugins/lexical-remark-slugify-anchors/index.js';
+import {externalSymbolLinkMappings} from './src/plugins/lexical-typedoc-plugin-external-links/index.mjs';
 
 type SidebarItemsGenerator = NonNullable<
   DocsPluginOptions['sidebarItemsGenerator']
@@ -153,6 +154,28 @@ const sidebarItemsGenerator: SidebarItemsGenerator = async ({
 }) => {
   const items = await defaultSidebarItemsGenerator(args);
   if (args.item.dirName === 'api') {
+    const moduleNames = new Map(
+      args.docs
+        .filter(doc => /^api\/modules\//i.test(doc.id))
+        .map(doc => [doc.id, doc.title]),
+    );
+    // Submodule directories already provide the package and nested path context.
+    // Use TypeDoc's module titles to preserve names, including underscores.
+    function shortenSubmoduleLabels(
+      item: NormalizedSidebarItem,
+    ): NormalizedSidebarItem {
+      if (item.type === 'doc') {
+        const name = moduleNames.get(item.id);
+        return name ? {...item, label: name.split('/').at(-1)} : item;
+      } else if (item.type === 'category') {
+        return {
+          ...item,
+          items: item.items.map(shortenSubmoduleLabels),
+          label: item.label.split('/').at(-1)!,
+        };
+      }
+      return item;
+    }
     return items
       .map(sidebarItem => {
         if (sidebarItem.type === 'doc' && sidebarItem.id in docLabels) {
@@ -163,7 +186,7 @@ const sidebarItemsGenerator: SidebarItemsGenerator = async ({
         const groupedItems: NormalizedSidebarItem[] = [];
         for (const item of sidebarItem.items) {
           if (item.type === 'doc' && item.id.match(/^api\/modules\//i)) {
-            const label = idToModuleName(item.id);
+            const label = moduleNames.get(item.id) ?? idToModuleName(item.id);
             const lastItem = groupedItems.at(-1);
             if (
               lastItem &&
@@ -203,6 +226,7 @@ const sidebarItemsGenerator: SidebarItemsGenerator = async ({
           } else if (item.type === 'category') {
             groupedItems.push({
               ...item,
+              items: item.items.map(shortenSubmoduleLabels),
               label: idToModuleName(item.label),
             });
           } else {
@@ -259,7 +283,12 @@ const docusaurusPluginTypedocConfig = {
             ),
         ),
   excludeInternal: true,
+  externalSymbolLinkMappings,
   plugin: [
+    path.resolve(
+      __dirname,
+      'src/plugins/lexical-typedoc-plugin-external-links/index.mjs',
+    ),
     'typedoc-plugin-no-inherit',
     path.resolve(
       __dirname,

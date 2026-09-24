@@ -1514,8 +1514,11 @@ function $syncTableSelectionState(
       tableObserver.focusY = focusCell.y;
     }
     tableObserver.$updateTableTableSelection(selection);
-  } else if (tableObserver.tableSelection !== null) {
-    // Clearing DOM highlighting must not clear the new model selection.
+  } else if (tableObserver.isHighlightingCells) {
+    // Only clear an active table selection's highlighting. Pointerdown also
+    // prepares tableSelection while the native caret is still a range; clearing
+    // that here would erase the starting cell of the drag.
+    // Preserve the new model selection when removing the old highlighting.
     tableObserver.$clearHighlight(false);
   }
 

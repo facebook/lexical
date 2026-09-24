@@ -157,6 +157,63 @@ test('includes newly inserted cells when synchronizing selection DOM', () => {
   expect(updates).toHaveBeenCalledTimes(1);
 });
 
+test('preserves the pointerdown anchor while the native caret enters its cell', () => {
+  const {editor, root} = mount();
+  editor.update(
+    () => {
+      const table = $createTableNodeWithDimensions(2, 3);
+      $getRoot().clear().append(table);
+      table.selectStart();
+    },
+    {discrete: true},
+  );
+  const tableDOM = root.querySelector('table');
+  assert(tableDOM !== null);
+  const observer = getTableObserverFromTableElement(tableDOM);
+  assert(observer !== null);
+  const anchorCell = observer.table.domRows[0][1];
+  const focusCell = observer.table.domRows[1][2];
+  const pointer = {
+    bubbles: true,
+    button: 0,
+    buttons: 1,
+    pointerId: 1,
+    pointerType: 'mouse',
+  };
+  anchorCell.elem.dispatchEvent(new PointerEvent('pointerdown', pointer));
+  // The browser moves its caret after pointerdown. This range notification
+  // must keep the prepared drag anchor even though no cells are highlighted.
+  editor.update(
+    () => {
+      observer.$getAnchorTableCellOrThrow().selectStart();
+    },
+    {discrete: true},
+  );
+  expect(observer.anchorCell?.elem).toBe(anchorCell.elem);
+  expect(observer.isHighlightingCells).toBe(false);
+  expect(root.querySelectorAll('.selected-cell')).toHaveLength(0);
+
+  const rect = focusCell.elem.getBoundingClientRect();
+  focusCell.elem.dispatchEvent(
+    new PointerEvent('pointermove', {
+      ...pointer,
+      clientX: rect.x + rect.width / 2,
+      clientY: rect.y + rect.height / 2,
+    }),
+  );
+  editor.read(() => {
+    const selection = $getSelection();
+    assert($isTableSelection(selection));
+    expect(selection.getShape()).toEqual({fromX: 1, fromY: 0, toX: 2, toY: 1});
+    expect(observer.anchorCell?.elem).toBe(anchorCell.elem);
+    expect(observer.focusCell?.elem).toBe(focusCell.elem);
+  });
+  expect(root.querySelectorAll('.selected-cell')).toHaveLength(4);
+  focusCell.elem.dispatchEvent(
+    new PointerEvent('pointerup', {...pointer, buttons: 0}),
+  );
+});
+
 test('only an unchanged table selection follows a native drag outside the table', () => {
   const {editor, root} = mount();
   editor.update(

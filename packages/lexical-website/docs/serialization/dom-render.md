@@ -84,9 +84,12 @@ const editor = buildEditorFromExtensions(
 ```
 
 The override above tags every rendered TextNode with
-`data-fluid="true"`. It composes with whatever else
-`DOMRenderExtension` is configured to do for `TextNode` — both inside
-the editor and during HTML export.
+`data-fluid="true"` inside the editor. It composes with whatever else
+`DOMRenderExtension` is configured to do for `TextNode`. Note that
+`$createDOM` is the reconciler's hook only: HTML export goes through
+`$exportDOM`, whose default calls the node class's own `createDOM`, so
+`data-fluid` does not reach exported HTML unless the override supplies
+`$exportDOM` too.
 
 :::tip
 

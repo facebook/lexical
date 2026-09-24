@@ -66,6 +66,7 @@ import {
   $cloneWithProperties,
   $exportNodeJSONOnce,
   $getCompositionKey,
+  $getEditorDOMRenderConfig,
   $getNodeByKey,
   $hasAncestor,
   $isRootOrShadowRoot,
@@ -1793,7 +1794,7 @@ export class LexicalNode {
    *
    * */
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = this.createDOM(editor._config, editor);
+    const element = $getEditorDOMRenderConfig(editor).$createDOM(this, editor);
     return {element};
   }
 

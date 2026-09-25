@@ -101,6 +101,8 @@ export async function initialize({
   shouldAllowHighlightingWithBrackets,
   selectionAlwaysOnDisplay,
   isShadowDOM,
+  isCodeLineNumbers,
+  isCodeShiki,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -145,6 +147,13 @@ export async function initialize({
   appSettings.selectBlock = !!selectBlock;
 
   appSettings.isShadowDOM = !!isShadowDOM;
+
+  if (isCodeLineNumbers !== undefined) {
+    appSettings.isCodeLineNumbers = isCodeLineNumbers;
+  }
+  if (isCodeShiki !== undefined) {
+    appSettings.isCodeShiki = isCodeShiki;
+  }
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${

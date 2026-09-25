@@ -13,7 +13,7 @@ import {
   HistoryAnnounceExtension,
   RovingTabIndexExtension,
 } from '@lexical/a11y';
-import {$isCodeNode} from '@lexical/code';
+import {$isCodeNode, CodeLineNumbersExtension} from '@lexical/code';
 import {
   $defaultShouldInsertAfter,
   AutoFocusExtension,
@@ -288,6 +288,7 @@ const AppExtension = defineExtension({
     configExtension(VisibleNonPrintingExtension, {
       disabled: true,
     }),
+    configExtension(CodeLineNumbersExtension, {onlyWordWrapped: true}),
     // DOMImportExtension pipeline — `PlaygroundImportExtension` bundles
     // the shared `CoreImportExtension` baseline, the playground-specific
     // inline-style overlay and the `ClipboardDOMImportExtension` paste

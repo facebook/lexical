@@ -21,7 +21,10 @@ import type {
   TabNode,
   LexicalExtension,
   ExtensionConfigBase,
+  ValueOrUpdater,
 } from 'lexical';
+
+import type {NamedSignalsOutput} from '@lexical/extension';
 
 import {ElementNode, TextNode} from 'lexical';
 
@@ -86,6 +89,7 @@ declare export function $plainifyCodeContent(text: string): LexicalNode[];
 export type SerializedCodeNode = {
   ...SerializedElementNode,
   language: string | null | void,
+  wordWrap?: boolean,
   ...
 };
 
@@ -106,6 +110,8 @@ declare export class CodeNode extends ElementNode {
   collapseAtStart(): true;
   setLanguage(language: string): void;
   getLanguage(): string | void;
+  getWordWrap(): boolean;
+  setWordWrap(valueOrUpdater: ValueOrUpdater<boolean>): this;
 }
 
 /**
@@ -127,3 +133,14 @@ declare export function registerCodeIndentation(
 ): () => void;
 
 declare export var CodeIndentExtension: LexicalExtension<CodeIndentConfig, "@lexical/code-indent", unknown, unknown>;
+
+/**
+ * CodeLineNumbers
+ */
+
+export type CodeLineNumbersConfig = {
+  disabled: boolean,
+  onlyWordWrapped: boolean,
+};
+
+declare export var CodeLineNumbersExtension: LexicalExtension<CodeLineNumbersConfig, "@lexical/code-line-numbers", NamedSignalsOutput<CodeLineNumbersConfig>, void>;

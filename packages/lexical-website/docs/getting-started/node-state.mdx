@@ -6,7 +6,7 @@ import GettingStartedExample from '@site/src/components/GettingStartedExample';
 
 # Adding Data to Nodes
 
-[Creating an Extension](creating-plugin.md) adds an emoji node with its own
+[Creating an Extension](creating-plugin.mdx) adds an emoji node with its own
 properties. Sometimes a feature only needs extra data on existing nodes.
 [NodeState](../concepts/node-state.md) lets you attach that data without creating
 or replacing a node class.
@@ -206,7 +206,9 @@ const html = editor.read('latest', () => $generateHtmlFromNodes(editor));
 const dom = new DOMParser().parseFromString(html, 'text/html');
 editor.update(() => {
   const nodes = $generateNodesFromDOMViaExtension(dom);
-  $getRoot().clear().append(...nodes);
+  $getRoot()
+    .clear()
+    .append(...nodes);
 });
 ```
 

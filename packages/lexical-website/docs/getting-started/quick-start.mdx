@@ -9,7 +9,7 @@ import GettingStartedExample from '@site/src/components/GettingStartedExample';
 Build a Lexical editor by composing [extensions](../extensions/intro.md). An
 extension bundles a feature's nodes, configuration, and behavior, including any
 other extensions it needs. The same extensions work with or without React; for
-React's mounting and UI components, see [Getting Started with React](react.md).
+React's mounting and UI components, see [Getting Started with React](react.mdx).
 
 ## Install Lexical
 
@@ -25,8 +25,12 @@ must resolve [one copy of each package](../concepts/one-lexical-per-app.md).
 Start with an editable element:
 
 ```html
-<div id="editor" contenteditable="true" role="textbox"
-  aria-label="Rich text editor" aria-multiline="true"></div>
+<div
+  id="editor"
+  contenteditable="true"
+  role="textbox"
+  aria-label="Rich text editor"
+  aria-multiline="true"></div>
 ```
 
 Define one root extension at module scope, then build and attach the editor:
@@ -36,7 +40,12 @@ import {ClipboardDOMImportExtension} from '@lexical/clipboard';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {RichTextExtension} from '@lexical/rich-text';
-import {$createParagraphNode, $createTextNode, $getRoot, defineExtension} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  defineExtension,
+} from 'lexical';
 
 const appExtension = defineExtension({
   name: 'MyEditor',
@@ -74,9 +83,15 @@ not provide a complete editing experience; the feature extensions supply it.
 Add CSS for the theme classes:
 
 ```css
-.editor-paragraph { margin: 0 0 1em; }
-.editor-text-bold { font-weight: bold; }
-.editor-text-italic { font-style: italic; }
+.editor-paragraph {
+  margin: 0 0 1em;
+}
+.editor-text-bold {
+  font-weight: bold;
+}
+.editor-text-italic {
+  font-style: italic;
+}
 ```
 
 See [Theming](theming.md) for more options. Errors throw by default; supply
@@ -91,12 +106,12 @@ change the interval used to group typing into undo steps, replace
 ```js
 import {configExtension} from 'lexical';
 
-configExtension(HistoryExtension, {delay: 300})
+configExtension(HistoryExtension, {delay: 300});
 ```
 
 Choose the extension graph when creating the editor. See
 [Included Extensions](../extensions/included-extensions.md) for more features and
-[Creating an Extension](creating-plugin.md) to add your own.
+[Creating an Extension](creating-plugin.mdx) to add your own.
 
 ### Cleanup
 
@@ -140,7 +155,9 @@ If you need to read the result immediately after a programmatic update, use
 `'force-commit'` to flush pending updates first:
 
 ```js
-const updatedText = editor.read('force-commit', () => $getRoot().getTextContent());
+const updatedText = editor.read('force-commit', () =>
+  $getRoot().getTextContent(),
+);
 ```
 
 Use this only when you need the synchronous commit; ordinary reads can leave
@@ -176,13 +193,15 @@ function. For example, add this extension to your root's `dependencies`:
 const LogChangesExtension = defineExtension({
   name: 'LogChanges',
   register(editor) {
-    return editor.registerUpdateListener(({editorState, dirtyElements, dirtyLeaves}) => {
-      // Ignore updates that only change the selection.
-      if (dirtyElements.size === 0 && dirtyLeaves.size === 0) {
-        return;
-      }
-      console.log(JSON.stringify(editorState.toJSON(true)));
-    });
+    return editor.registerUpdateListener(
+      ({editorState, dirtyElements, dirtyLeaves}) => {
+        // Ignore updates that only change the selection.
+        if (dirtyElements.size === 0 && dirtyLeaves.size === 0) {
+          return;
+        }
+        console.log(JSON.stringify(editorState.toJSON(true)));
+      },
+    );
   },
 });
 ```

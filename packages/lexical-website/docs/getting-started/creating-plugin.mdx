@@ -86,9 +86,7 @@ export class EmojiNode extends TextNode {
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.classList.add('emoji-node');
-    dom.style.backgroundImage = getEmojiBackground(
-      this.__unifiedID,
-    );
+    dom.style.backgroundImage = getEmojiBackground(this.__unifiedID);
     return dom;
   }
 
@@ -246,14 +244,14 @@ editor.setRootElement(document.getElementById('editor'));
 // Call editor.dispose() when removing this editor permanently.
 ```
 
-Use the editable element from [Quick Start](quick-start.md). In React, pass the
+Use the editable element from [Quick Start](quick-start.mdx). In React, pass the
 same root extension to `LexicalExtensionComposer` instead of building and
 attaching the editor yourself. No React-specific emoji plugin is needed.
 
 <GettingStartedExample example="vanilla-js-plugin" />
 
 To add data to an existing node without defining a subclass, continue with
-[Adding Data to Nodes](node-state.md).
+[Adding Data to Nodes](node-state.mdx).
 
 ## Publishing your extension
 

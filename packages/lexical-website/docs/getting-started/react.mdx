@@ -53,7 +53,9 @@ export default function Editor() {
           className="editor-input"
           aria-label="Rich text editor"
           aria-placeholder="Enter some text..."
-          placeholder={<div className="editor-placeholder">Enter some text...</div>}
+          placeholder={
+            <div className="editor-placeholder">Enter some text...</div>
+          }
         />
       </div>
     </LexicalExtensionComposer>
@@ -62,8 +64,13 @@ export default function Editor() {
 ```
 
 ```css
-.editor { position: relative; }
-.editor-input { min-height: 8em; padding: 1em; }
+.editor {
+  position: relative;
+}
+.editor-input {
+  min-height: 8em;
+  padding: 1em;
+}
 .editor-placeholder {
   position: absolute;
   top: 1em;
@@ -72,9 +79,15 @@ export default function Editor() {
   pointer-events: none;
   user-select: none;
 }
-.editor-paragraph { margin: 0 0 1em; }
-.editor-text-bold { font-weight: bold; }
-.editor-text-italic { font-style: italic; }
+.editor-paragraph {
+  margin: 0 0 1em;
+}
+.editor-text-bold {
+  font-weight: bold;
+}
+.editor-text-italic {
+  font-style: italic;
+}
 ```
 
 The composer renders a `ContentEditable` by default. Here `contentEditable={null}`
@@ -115,7 +128,9 @@ import {FORMAT_TEXT_COMMAND} from 'lexical';
 function BoldButton() {
   const [editor] = useLexicalComposerContext();
   return (
-    <button type="button" onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}>
+    <button
+      type="button"
+      onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}>
       Bold
     </button>
   );
@@ -136,7 +151,7 @@ import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {TreeViewExtension} from '@lexical/react/TreeViewExtension';
 
 // Add TreeViewExtension to appExtension.dependencies, then render inside the composer:
-<ExtensionComponent lexical:extension={TreeViewExtension} />
+<ExtensionComponent lexical:extension={TreeViewExtension} />;
 ```
 
 The runnable example includes a toolbar, the debug panel, and an extension that
@@ -158,10 +173,14 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 function SaveButton({onSave}) {
   const [editor] = useLexicalComposerContext();
   return (
-    <button type="button" onClick={() => {
-      const json = editor.read('latest', () => JSON.stringify(editor.getEditorState().toJSON()));
-      onSave(json);
-    }}>
+    <button
+      type="button"
+      onClick={() => {
+        const json = editor.read('latest', () =>
+          JSON.stringify(editor.getEditorState().toJSON()),
+        );
+        onSave(json);
+      }}>
       Save
     </button>
   );
@@ -171,7 +190,7 @@ function SaveButton({onSave}) {
 Render this inside the composer and pass your persistence callback as `onSave`.
 For autosave or other subscriptions, register an update listener in an extension
 and return its cleanup function, as shown in the
-[vanilla guide](quick-start.md#responding-to-changes). For React UI that needs the
+[vanilla guide](quick-start.mdx#responding-to-changes). For React UI that needs the
 current state, add `EditorStateExtension` from `@lexical/extension` and subscribe
 with `useSignalValue(useExtensionDependency(EditorStateExtension).output)`.
 
@@ -199,7 +218,7 @@ controlled input. For deliberately loading a different document, see
 ## Next steps
 
 - [Theming](theming.md): map node styles to your CSS.
-- [Creating an Extension](creating-plugin.md): package a custom node and transform.
+- [Creating an Extension](creating-plugin.mdx): package a custom node and transform.
 - [Included Extensions](../extensions/included-extensions.md): add more features.
 - [React and Lexical Extension](../extensions/react.md): integrate custom React UI.
 

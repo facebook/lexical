@@ -86,6 +86,47 @@ example, to use the heading and quote styles below, add `RichTextExtension` in
 place of `PlainTextExtension`. Add the corresponding extensions for lists, links,
 and code highlighting when you need those features.
 
+## Merging extension themes
+
+Every extension can supply a `theme`. Lexical recursively merges these themes in
+dependency order: dependencies contribute first, and extensions that depend on
+them can override individual entries. Your root extension can therefore customize
+an extension's styles while keeping the rest of its theme, including nested
+entries such as `text` and `heading`.
+
+```js
+const EmphasisExtension = defineExtension({
+  name: 'Emphasis',
+  theme: {
+    text: {
+      bold: 'emphasis-bold',
+      italic: 'emphasis-italic',
+    },
+  },
+});
+
+const appExtension = defineExtension({
+  name: 'MyEditor',
+  dependencies: [PlainTextExtension, EmphasisExtension],
+  theme: {
+    paragraph: 'editor-paragraph',
+    text: {bold: 'editor-bold'},
+  },
+});
+
+// The merged theme is:
+// {
+//   paragraph: 'editor-paragraph',
+//   text: {bold: 'editor-bold', italic: 'emphasis-italic'},
+// }
+```
+
+When two themes set the same entry, the later value replaces the earlier one;
+class-name strings are not concatenated. There is no need to spread a dependency's
+theme into your own.
+
+## Available theme entries
+
 Many of the Lexical's core nodes also accept theming properties. Here's a more comprehensive theming object:
 
 ```js

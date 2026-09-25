@@ -2,6 +2,8 @@
 sidebar_position: 1
 ---
 
+import GettingStartedExample from '@site/src/components/GettingStartedExample';
+
 # Quick Start (Vanilla JS)
 
 Build a Lexical editor by composing [extensions](../extensions/intro.md). An
@@ -115,12 +117,12 @@ Lexical's source of truth is its immutable `EditorState`, which contains the nod
 tree and selection. The editor reconciles that state to the DOM.
 
 Functions prefixed with `$`, such as `$getRoot()`, need a synchronous Lexical read
-or update context. Use `editor.read()` for reading and `editor.update()` for
+or update context. Use `editor.read('latest', ...)` for reading and `editor.update()` for
 changes. Initialization callbacks, node transforms, and command listeners also
 run in an update context.
 
 ```js
-const text = editor.read(() => $getRoot().getTextContent());
+const text = editor.read('latest', () => $getRoot().getTextContent());
 
 editor.update(() => {
   $getRoot().append(
@@ -130,16 +132,27 @@ editor.update(() => {
 ```
 
 The update callback runs synchronously, but Lexical normally batches DOM commits.
-`editor.read()` flushes pending updates before reading. Keep `$` calls inside the
+`editor.read('latest', ...)` reads the latest committed state without flushing
+pending updates. This is usually the mode you want. Keep `$` calls inside the
 callback, and do not use `await` inside it.
+
+If you need to read the result immediately after a programmatic update, use
+`'force-commit'` to flush pending updates first:
+
+```js
+const updatedText = editor.read('force-commit', () => $getRoot().getTextContent());
+```
+
+Use this only when you need the synchronous commit; ordinary reads can leave
+Lexical's update batching intact.
 
 ### Saving and restoring state
 
 `toJSON()` returns a JSON-compatible object; `JSON.stringify()` turns it into a
-string. To capture pending edits as well as committed ones:
+string. To save the latest committed state:
 
 ```js
-const savedState = editor.read(() =>
+const savedState = editor.read('latest', () =>
   JSON.stringify(editor.getEditorState().toJSON()),
 );
 ```
@@ -183,4 +196,4 @@ inside it adds an unnecessary reconciliation.
 This runnable example uses one root extension for rich text, HTML paste, history,
 initial content, and a JSON debug view:
 
-<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js?embed=1&file=src%2Fmain.ts&terminalHeight=0&ctl=1" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
+<GettingStartedExample example="vanilla-js" />

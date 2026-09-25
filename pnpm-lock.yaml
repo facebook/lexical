@@ -1680,6 +1680,9 @@ importers:
       docusaurus-plugin-typedoc:
         specifier: ^1.4.2
         version: 1.4.2(typedoc-plugin-markdown@4.13.0(typedoc@0.28.20(typescript@6.0.3)))
+      emoji-datasource-facebook:
+        specifier: 15.1.2
+        version: 15.1.2
       fs-extra:
         specifier: ^11.3.4
         version: 11.3.4
@@ -8174,6 +8177,9 @@ packages:
 
   elkjs@0.9.3:
     resolution: {integrity: sha512-f/ZeWvW/BCXbhGEf1Ujp29EASo/lk1FDnETgNKwJrsVvGZhUWCZyg3xLJjAsxfOmt8KjswHmI5EwCQcPMpOYhQ==}
+
+  emoji-datasource-facebook@15.1.2:
+    resolution: {integrity: sha512-6uQXO3FOpkkxclzI0YvoHorSoUyA4NnCWCXBMWDgy5mymtnWGLDkoY+/wTQCmW1/3PIUUh47SOWPp3hdq4+Svg==}
 
   emoji-regex@10.6.0:
     resolution: {integrity: sha512-toUI84YS5YmxW219erniWD0CIVOo46xGKColeNQRgOzDorgBi1v4D71/OFzgD9GO2UGKIv1C3Sp8DAn0+j5w7A==}
@@ -22258,6 +22264,8 @@ snapshots:
   electron-to-chromium@1.5.366: {}
 
   elkjs@0.9.3: {}
+
+  emoji-datasource-facebook@15.1.2: {}
 
   emoji-regex@10.6.0: {}
 

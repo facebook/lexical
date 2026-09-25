@@ -13,7 +13,7 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {TreeViewExtension} from '@lexical/react/TreeViewExtension';
 import {RichTextExtension} from '@lexical/rich-text';
-import {defineExtension} from 'lexical';
+import {configExtension, defineExtension} from 'lexical';
 
 import ExampleTheme from './ExampleTheme';
 import {StyleImportExportExtension} from './StyleImportExportExtension';
@@ -28,7 +28,8 @@ const appExtension = defineExtension({
     StyleImportExportExtension,
     EditorStateExtension,
     HistoryExtension,
-    AutoFocusExtension,
+    // Let the documentation page keep focus when this example is embedded.
+    configExtension(AutoFocusExtension, {disabled: window.parent !== window}),
     TreeViewExtension,
   ],
   name: '@lexical/examples/react-rich',

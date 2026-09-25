@@ -2,6 +2,8 @@
 sidebar_position: 2
 ---
 
+import GettingStartedExample from '@site/src/components/GettingStartedExample';
+
 # Getting Started with React
 
 Use `LexicalExtensionComposer` to create an editor from one root extension and
@@ -99,7 +101,7 @@ For a plain-text editor, install `@lexical/plain-text` and replace
 `ClipboardDOMImportExtension`, since plain-text paste does not import HTML. Keep
 history, autofocus, and the same React composition.
 
-<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-plain-text?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
+<GettingStartedExample example="react-plain-text" />
 
 ## Adding UI to control text formatting
 
@@ -141,13 +143,14 @@ The runnable example includes a toolbar, the debug panel, and an extension that
 customizes HTML style import and export. Its theme classes are defined in
 `ExampleTheme.ts` and styled in `styles.css`.
 
-<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
+<GettingStartedExample example="react-rich" />
 
 ## Saving Lexical State
 
 For an explicit Save action, read and serialize the editor when the user clicks.
-`editor.read()` flushes pending edits first. `toJSON()` produces a JSON-compatible
-object, and `JSON.stringify()` produces the string you can store:
+Use `editor.read('latest', ...)` to read the latest committed state without forcing
+a commit. `toJSON()` produces a JSON-compatible object, and `JSON.stringify()`
+produces the string you can store:
 
 ```jsx
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -156,7 +159,7 @@ function SaveButton({onSave}) {
   const [editor] = useLexicalComposerContext();
   return (
     <button type="button" onClick={() => {
-      const json = editor.read(() => JSON.stringify(editor.getEditorState().toJSON()));
+      const json = editor.read('latest', () => JSON.stringify(editor.getEditorState().toJSON()));
       onSave(json);
     }}>
       Save

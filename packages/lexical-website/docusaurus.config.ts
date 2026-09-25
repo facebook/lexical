@@ -10,6 +10,7 @@ import type {Options as DocsPluginOptions} from '@docusaurus/plugin-content-docs
 import type {Config, PluginModule} from '@docusaurus/types';
 
 import tailwindcssPostcss from '@tailwindcss/postcss';
+import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
 import path from 'node:path';
@@ -308,10 +309,36 @@ const docusaurusPluginTypedocConfig = {
   watch: process.env.TYPEDOC_WATCH === 'true',
 };
 
-const GIT_COMMIT_SHA = process.env.VERCEL_GIT_COMMIT_SHA || 'main';
-const GIT_COMMIT_REF = process.env.VERCEL_GIT_COMMIT_REF || 'main';
-const GIT_REPO_OWNER = process.env.VERCEL_GIT_REPO_OWNER || 'facebook';
-const GIT_REPO_SLUG = process.env.VERCEL_GIT_REPO_SLUG || 'lexical';
+// Cloudflare supplies the branch and commit, but not the GitHub repository.
+// Use its checkout's remote so preview links also work in forks.
+function getCloudflareRepository(): string[] {
+  if (process.env.CF_PAGES) {
+    try {
+      const remote = execFileSync('git', ['remote', 'get-url', 'origin'], {
+        cwd: __dirname,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+      const match = remote.match(/github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
+      if (match) {
+        return [match[1], match[2]];
+      }
+    } catch {
+      // Direct uploads may have no git checkout; keep the canonical fallback.
+    }
+  }
+  return ['facebook', 'lexical'];
+}
+
+const [repoOwner, repoSlug] = getCloudflareRepository();
+const GIT_COMMIT_SHA =
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.CF_PAGES_COMMIT_SHA ||
+  'main';
+const GIT_COMMIT_REF =
+  process.env.VERCEL_GIT_COMMIT_REF || process.env.CF_PAGES_BRANCH || 'main';
+const GIT_REPO_OWNER = process.env.VERCEL_GIT_REPO_OWNER || repoOwner;
+const GIT_REPO_SLUG = process.env.VERCEL_GIT_REPO_SLUG || repoSlug;
 const STACKBLITZ_PREFIX = `https://stackblitz.com/github/${GIT_REPO_OWNER}/${GIT_REPO_SLUG}/tree/${
   // Vercel does not set owner and slug correctly for fork PRs so we can't trust the ref by default
   (GIT_COMMIT_REF === 'main' && !process.env.VERCEL_GIT_PULL_REQUEST_ID) ||

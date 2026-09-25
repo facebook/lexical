@@ -12,7 +12,7 @@ import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {TreeViewExtension} from '@lexical/react/TreeViewExtension';
-import {defineExtension} from 'lexical';
+import {configExtension, defineExtension} from 'lexical';
 
 import ExampleTheme from './ExampleTheme';
 
@@ -22,7 +22,8 @@ const appExtension = defineExtension({
   dependencies: [
     PlainTextExtension,
     HistoryExtension,
-    AutoFocusExtension,
+    // Let the documentation page keep focus when this example is embedded.
+    configExtension(AutoFocusExtension, {disabled: window.parent !== window}),
     TreeViewExtension,
   ],
   name: '@lexical/examples/react-plain-text',

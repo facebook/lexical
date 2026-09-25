@@ -1,0 +1,220 @@
+---
+sidebar_position: 6
+---
+
+import GettingStartedExample from '@site/src/components/GettingStartedExample';
+
+# Adding Data to Nodes
+
+[Creating an Extension](creating-plugin.md) adds an emoji node with its own
+properties. Sometimes a feature only needs extra data on existing nodes.
+[NodeState](../concepts/node-state.md) lets you attach that data without creating
+or replacing a node class.
+
+This example adds a `reviewed` flag to ordinary `ParagraphNode` instances. It
+highlights reviewed paragraphs in the editor and preserves the flag when saving
+JSON or exporting and importing HTML.
+
+## Defining the state
+
+```ts
+import {createState} from 'lexical';
+
+export const reviewedState = createState('reviewed', {
+  parse: value => value === true,
+});
+```
+
+Define the state once at module scope. Its parser accepts untrusted JSON and
+returns `false` for missing or invalid values. Read with `$getState(node,
+reviewedState)` and write with `$setState(node, reviewedState, value)` inside a
+Lexical read or update context, as appropriate.
+
+There is no `stateConfigs` registration here: this is ad-hoc data attached to an
+existing node. Lexical carries it across clones, undo/redo, and JSON saves. A
+reviewed paragraph includes `"$": {"reviewed": true}` in its JSON; the default
+`false` value is omitted. Choose a state key that won't collide with other
+features using the same nodes.
+
+## Rendering and preserving HTML
+
+NodeState handles JSON, but your feature defines what the data means in HTML.
+The following extension maps the flag to `data-reviewed="true"`:
+
+```ts
+import {
+  defineImportRule,
+  DOMImportExtension,
+  domOverride,
+  DOMRenderExtension,
+  sel,
+} from '@lexical/html';
+import {RichTextExtension} from '@lexical/rich-text';
+import {
+  $getState,
+  $isParagraphNode,
+  $setState,
+  configExtension,
+  createState,
+  defineExtension,
+  isHTMLElement,
+  ParagraphNode,
+} from 'lexical';
+
+export const reviewedState = createState('reviewed', {
+  parse: value => value === true,
+});
+
+function $applyReviewedAttribute(node: ParagraphNode, element: HTMLElement) {
+  if ($getState(node, reviewedState)) {
+    element.setAttribute('data-reviewed', 'true');
+  } else {
+    element.removeAttribute('data-reviewed');
+  }
+}
+
+const ReviewedParagraphRule = defineImportRule({
+  $import(_context, _element, $next) {
+    // Let the existing paragraph rule create the nodes and their children.
+    const nodes = $next();
+    for (const node of nodes) {
+      if ($isParagraphNode(node)) {
+        $setState(node, reviewedState, true);
+      }
+    }
+    return nodes;
+  },
+  match: sel.tag('p').attr('data-reviewed', 'true'),
+  name: '@lexical/examples/reviewed-paragraph',
+});
+
+export const ReviewExtension = defineExtension({
+  dependencies: [
+    RichTextExtension,
+    configExtension(DOMImportExtension, {rules: [ReviewedParagraphRule]}),
+    configExtension(DOMRenderExtension, {
+      overrides: [
+        domOverride([ParagraphNode], {
+          $decorateDOM(node, _prevNode, dom) {
+            $applyReviewedAttribute(node, dom);
+          },
+          $exportDOM(node, $next) {
+            const output = $next();
+            if (isHTMLElement(output.element)) {
+              $applyReviewedAttribute(node, output.element);
+            }
+            return output;
+          },
+        }),
+      ],
+    }),
+  ],
+  name: '@lexical/examples/Review',
+});
+```
+
+`DOMRenderExtension`'s `$decorateDOM` runs after a paragraph's DOM is created or
+updated. It adds or removes the attribute as the flag changes. The separate
+`$exportDOM` hook adds the same attribute to exported HTML, including clipboard
+HTML; `$decorateDOM` only handles the live editor.
+
+The import rule matches `<p data-reviewed="true">`. Calling `$next()` keeps the
+normal paragraph import behavior, including its children and text formatting,
+then `$setState` restores the extra data. `RichTextExtension` supplies the
+underlying import rules and rich text behavior.
+
+Style the attribute in your application's CSS:
+
+```css
+#editor p[data-reviewed='true'] {
+  background: #e4f5e8;
+  border-left: 4px solid #277a3c;
+}
+```
+
+This CSS belongs to the application. The exported attribute preserves the data;
+other applications decide how to display it.
+
+## Updating the current paragraph
+
+The example's toolbar toggles the paragraph containing the selection's anchor:
+
+```ts
+import {
+  $getSelection,
+  $isParagraphNode,
+  $isRangeSelection,
+  $setState,
+} from 'lexical';
+import {reviewedState} from './ReviewExtension';
+
+editor.update(() => {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection)) {
+    const paragraph = selection.anchor.getNode().getTopLevelElement();
+    if ($isParagraphNode(paragraph)) {
+      $setState(paragraph, reviewedState, reviewed => !reviewed);
+    }
+  }
+});
+```
+
+`$setState` marks the paragraph dirty so the render hook runs. Lexical handles
+copy-on-write updates; do not mutate node objects or the DOM from the toolbar.
+
+## Putting it together
+
+Add `ReviewExtension`, `HistoryExtension`, and `ClipboardDOMImportExtension` to
+your root extension. The clipboard extension routes pasted HTML through
+`DOMImportExtension`:
+
+```ts
+import {ClipboardDOMImportExtension} from '@lexical/clipboard';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
+import {defineExtension} from 'lexical';
+import {ReviewExtension} from './ReviewExtension';
+
+const appExtension = defineExtension({
+  name: 'ParagraphReviewEditor',
+  namespace: 'ParagraphReviewEditor',
+  dependencies: [
+    ReviewExtension,
+    HistoryExtension,
+    ClipboardDOMImportExtension,
+  ],
+});
+
+const editor = buildEditorFromExtensions(appExtension);
+editor.setRootElement(document.getElementById('editor'));
+// Call editor.dispose() when removing this editor permanently.
+```
+
+For an explicit HTML import/export interface, use the extension-based importer:
+
+```ts
+import {
+  $generateHtmlFromNodes,
+  $generateNodesFromDOMViaExtension,
+} from '@lexical/html';
+import {$getRoot} from 'lexical';
+
+const html = editor.read('latest', () => $generateHtmlFromNodes(editor));
+
+// In a separate import action, replace the document with the parsed HTML.
+const dom = new DOMParser().parseFromString(html, 'text/html');
+editor.update(() => {
+  const nodes = $generateNodesFromDOMViaExtension(dom);
+  $getRoot().clear().append(...nodes);
+});
+```
+
+Use **Toggle reviewed**, then **Export HTML** and **Import HTML** to try the round
+trip. Expand **Editor state JSON** to inspect the ad-hoc data. The same
+`ReviewExtension` also works with `LexicalExtensionComposer` in React.
+
+<GettingStartedExample example="node-state-review" />
+
+See [DOM rendering](../serialization/dom-render.md) and
+[DOM import](../serialization/dom-import.md) for more ways to compose render
+hooks and import rules.

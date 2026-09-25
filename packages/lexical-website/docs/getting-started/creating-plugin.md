@@ -2,6 +2,8 @@
 sidebar_position: 5
 ---
 
+import GettingStartedExample from '@site/src/components/GettingStartedExample';
+
 # Creating an Extension
 
 An extension keeps a feature's nodes, configuration, dependencies, and behavior
@@ -36,40 +38,57 @@ An emoji is text with a custom appearance, so extend `TextNode`. Use `ElementNod
 for nodes with children, or `DecoratorNode` for arbitrary embedded UI. See
 [Nodes](../concepts/nodes.mdx) for those alternatives.
 
-Use `$config()` and [NodeState](../concepts/node-state.md) to declare the emoji ID.
+Declare the `__unifiedID` property in a [`$config` JSON schema](../concepts/nodes.mdx#creating-custom-nodes-with-a-serialization-schema).
 Lexical then supplies cloning and JSON serialization, including inherited text
 properties, without handwritten `clone`, `importJSON`, or `exportJSON` methods:
 
 ```ts
 import {
   $create,
-  $getState,
-  $getStateChange,
-  $setState,
-  createState,
   type EditorConfig,
+  nodeSchema,
+  stringValue,
   TextNode,
+  withField,
 } from 'lexical';
 
 // Serve the example's emoji PNGs from this directory.
 const BASE_EMOJI_URI = '/emojis';
 
-const unifiedIDState = createState('unifiedID', {
-  parse: value => typeof value === 'string' ? value.toLowerCase() : '',
+function getEmojiBackground(unifiedID: string): string {
+  return `url('${BASE_EMOJI_URI}/${unifiedID.toLowerCase()}.png')`;
+}
+
+const emojiNodeSchema = nodeSchema<EmojiNode>()({
+  unifiedID: withField(stringValue(), {field: '__unifiedID'}),
 });
 
 export class EmojiNode extends TextNode {
+  __unifiedID: string = '';
+
   $config() {
     return this.config('emoji', {
       extends: TextNode,
-      stateConfigs: [{flat: true, stateConfig: unifiedIDState}],
+      json: emojiNodeSchema,
     });
+  }
+
+  getUnifiedID(): string {
+    return this.getLatest().__unifiedID;
+  }
+
+  setUnifiedID(unifiedID: string): this {
+    const self = this.getWritable();
+    self.__unifiedID = unifiedID.toLowerCase();
+    return self;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.classList.add('emoji-node');
-    dom.style.backgroundImage = `url('${BASE_EMOJI_URI}/${$getState(this, unifiedIDState)}.png')`;
+    dom.style.backgroundImage = getEmojiBackground(
+      this.__unifiedID,
+    );
     return dom;
   }
 
@@ -77,9 +96,8 @@ export class EmojiNode extends TextNode {
     if (super.updateDOM(prevNode, dom, config)) {
       return true;
     }
-    const change = $getStateChange(this, prevNode, unifiedIDState);
-    if (change !== null) {
-      dom.style.backgroundImage = `url('${BASE_EMOJI_URI}/${change[0]}.png')`;
+    if (this.__unifiedID !== prevNode.__unifiedID) {
+      dom.style.backgroundImage = getEmojiBackground(this.__unifiedID);
     }
     return false;
   }
@@ -89,11 +107,10 @@ export function $createEmojiNode(unifiedID: string): EmojiNode {
   const text = String.fromCodePoint(
     ...unifiedID.split('-').map(value => parseInt(value, 16)),
   );
-  return $setState(
-    $create(EmojiNode).setTextContent(text).setMode('token'),
-    unifiedIDState,
-    unifiedID.toLowerCase(),
-  );
+  return $create(EmojiNode)
+    .setTextContent(text)
+    .setMode('token')
+    .setUnifiedID(unifiedID);
 }
 ```
 
@@ -102,14 +119,16 @@ and the generated deserializer to construct the node. The factory sets its text,
 its ID, and `token` mode: an emoji is deleted as a unit, and typing beside it
 creates regular text.
 
-`stateConfigs` declares the node's custom data. `flat: true` stores `unifiedID`
-as a top-level JSON property, preserving the format used by the earlier version
-of this example. The parser validates imported values and supplies a default.
+`withField` maps the top-level JSON property `unifiedID` to `__unifiedID` on the
+node, preserving the example's serialized format. `stringValue()` validates
+imported values and defaults missing or invalid values to an empty string. The
+schema also carries the property across clones. Getters use `getLatest()` and
+setters use `getWritable()` to respect Lexical's immutable editor states.
 
 `createDOM` and `updateDOM` preserve `TextNode`'s rendering behavior while adding
-the emoji image. `$getStateChange` detects a change to the stored ID during
-reconciliation. The example includes CSS that hides the Unicode text visually
-while keeping it in the document:
+the emoji image. Comparing the current and previous properties detects changes
+during reconciliation. The example includes CSS that hides the Unicode text
+visually while keeping it in the document:
 
 ```css
 .emoji-node {
@@ -231,7 +250,10 @@ Use the editable element from [Quick Start](quick-start.md). In React, pass the
 same root extension to `LexicalExtensionComposer` instead of building and
 attaching the editor yourself. No React-specific emoji plugin is needed.
 
-<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiExtension.ts&terminalHeight=1&ctl=1" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
+<GettingStartedExample example="vanilla-js-plugin" />
+
+To add data to an existing node without defining a subclass, continue with
+[Adding Data to Nodes](node-state.md).
 
 ## Publishing your extension
 

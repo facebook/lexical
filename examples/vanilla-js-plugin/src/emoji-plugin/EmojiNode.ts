@@ -7,12 +7,11 @@
  */
 import {
   $create,
-  $getState,
-  $getStateChange,
-  $setState,
-  createState,
   type EditorConfig,
+  nodeSchema,
+  stringValue,
   TextNode,
+  withField,
 } from 'lexical';
 
 // @emoji-datasource-facebook is defined in vite.config.ts
@@ -27,28 +26,38 @@ const emojiImages = new Map(
 );
 
 function getEmojiBackground(unifiedID: string): string {
-  const url = emojiImages.get(`${unifiedID}.png`);
+  const url = emojiImages.get(`${unifiedID.toLowerCase()}.png`);
   return url ? `url('${url}')` : '';
 }
 
-const unifiedIDState = createState('unifiedID', {
-  parse: value => (typeof value === 'string' ? value.toLowerCase() : ''),
+const emojiNodeSchema = nodeSchema<EmojiNode>()({
+  unifiedID: withField(stringValue(), {field: '__unifiedID'}),
 });
 
 export class EmojiNode extends TextNode {
+  __unifiedID: string = '';
+
   $config() {
     return this.config('emoji', {
       extends: TextNode,
-      stateConfigs: [{flat: true, stateConfig: unifiedIDState}],
+      json: emojiNodeSchema,
     });
+  }
+
+  getUnifiedID(): string {
+    return this.getLatest().__unifiedID;
+  }
+
+  setUnifiedID(unifiedID: string): this {
+    const self = this.getWritable();
+    self.__unifiedID = unifiedID.toLowerCase();
+    return self;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.classList.add('emoji-node');
-    dom.style.backgroundImage = getEmojiBackground(
-      $getState(this, unifiedIDState),
-    );
+    dom.style.backgroundImage = getEmojiBackground(this.__unifiedID);
     return dom;
   }
 
@@ -56,9 +65,8 @@ export class EmojiNode extends TextNode {
     if (super.updateDOM(prevNode, dom, config)) {
       return true;
     }
-    const change = $getStateChange(this, prevNode, unifiedIDState);
-    if (change !== null) {
-      dom.style.backgroundImage = getEmojiBackground(change[0]);
+    if (this.__unifiedID !== prevNode.__unifiedID) {
+      dom.style.backgroundImage = getEmojiBackground(this.__unifiedID);
     }
     return false;
   }
@@ -68,9 +76,8 @@ export function $createEmojiNode(unifiedID: string): EmojiNode {
   const text = String.fromCodePoint(
     ...unifiedID.split('-').map(value => parseInt(value, 16)),
   );
-  return $setState(
-    $create(EmojiNode).setTextContent(text).setMode('token'),
-    unifiedIDState,
-    unifiedID.toLowerCase(),
-  );
+  return $create(EmojiNode)
+    .setTextContent(text)
+    .setMode('token')
+    .setUnifiedID(unifiedID);
 }

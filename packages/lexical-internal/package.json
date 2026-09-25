@@ -16,6 +16,22 @@
   },
   "sideEffects": false,
   "exports": {
+    "./createDevError": {
+      "source": "./src/createDevError.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/createDevError.d.ts",
+      "development": "./dist/LexicalInternalCreateDevError.dev.js",
+      "production": "./dist/LexicalInternalCreateDevError.prod.js",
+      "default": "./dist/LexicalInternalCreateDevError.js"
+    },
+    "./createDevError.js": {
+      "source": "./src/createDevError.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/createDevError.d.ts",
+      "development": "./dist/LexicalInternalCreateDevError.dev.js",
+      "production": "./dist/LexicalInternalCreateDevError.prod.js",
+      "default": "./dist/LexicalInternalCreateDevError.js"
+    },
     "./createError": {
       "source": "./src/createError.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",

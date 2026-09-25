@@ -50,10 +50,10 @@ function getErrorMap(filepath) {
 
 const errorExpressions = [
   {
-    dev: 'createError',
+    dev: 'createDevError',
     name: 'createError',
     prod: 'createProdError',
-    prodNoCode: 'createError',
+    prodNoCode: 'createDevError',
   },
   {
     dev: 'formatDevErrorMessage',
@@ -85,8 +85,22 @@ export default function transformErrorMessages(babel, opts) {
         const node = path.node;
         const {extractCodes, noMinify} =
           /** @type Partial<TransformErrorMessagesOptions> */ (file.opts);
+        const callee = path.get('callee');
         for (const {name, dev, prod, prodNoCode} of errorExpressions) {
-          if (path.get('callee').isIdentifier({name})) {
+          const isErrorFactory = name === 'createError';
+          if (
+            isErrorFactory
+              ? callee.isIdentifier() &&
+                (callee.referencesImport(
+                  '@lexical/internal/createError',
+                  'default',
+                ) ||
+                  callee.referencesImport(
+                    '@lexical/internal/createError.js',
+                    'default',
+                  ))
+              : callee.isIdentifier({name})
+          ) {
             // Turns this code:
             //
             // invariant(condition, 'A %s message that contains %s', adj, noun);
@@ -104,7 +118,6 @@ export default function transformErrorMessages(babel, opts) {
             // where ERR_CODE is an error code: a unique identifier (a number
             // string) that references a verbose error message. The mapping is
             // stored in `scripts/error-codes/codes.json`.
-            const isErrorFactory = name === 'createError';
             const messageIndex = isErrorFactory ? 0 : 1;
             const condition = node.arguments[0];
             const errorMsgLiteral = evalToString(node.arguments[messageIndex]);

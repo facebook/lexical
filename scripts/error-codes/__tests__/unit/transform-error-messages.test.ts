@@ -9,6 +9,7 @@ import * as babel from '@babel/core';
 import prettier from '@prettier/sync';
 import * as fs from 'fs-extra';
 import * as path from 'node:path';
+import {rollup} from 'rollup';
 import {describe, expect, it} from 'vitest';
 
 import transformErrorMessages from '../../transform-error-messages.mjs';
@@ -56,6 +57,8 @@ function fmt(strings: TemplateStringsArray, ...keys: unknown[]): string {
     .replace(/\(0,\s*createProdError\.default\)/g, 'createProdError')
     .replace(/_createError\d*/g, 'createError')
     .replace(/\(0,\s*createError\.default\)/g, 'createError')
+    .replace(/_createDevError\d*/g, 'createDevError')
+    .replace(/\(0,\s*createDevError\.default\)/g, 'createDevError')
     .replace(
       /\(0,\s*format(Dev|Prod)(Error|Warning)Message\.default\)/g,
       'format$1$2Message',
@@ -91,7 +94,7 @@ async function expectTransform(opts: ExpectTransformOptions) {
     opts.messageMapBefore,
     opts.messageMapExpect,
     async errorCodesPath => {
-      const {code} = babel.transformSync(fmt`${opts.codeBefore}`, {
+      const {code} = babel.transformSync(opts.codeBefore, {
         configFile: false,
         plugins: [[transformErrorMessages, {errorCodesPath, ...opts.opts}]],
         presets: [
@@ -112,18 +115,126 @@ async function expectTransform(opts: ExpectTransformOptions) {
 
 describe('transform-error-messages', () => {
   describe('createError', () => {
+    it.each(['', '.js'])(
+      'recognizes an aliased default import from createError%s',
+      async extension => {
+        await expectTransform({
+          codeBefore: `import makeError from '@lexical/internal/createError${extension}';
+            const error = makeError(${JSON.stringify(KNOWN_MSG)}, adj, noun);`,
+          codeExpect: 'const error = createProdError(0, adj, noun);',
+          messageMapBefore: KNOWN_MSG_MAP,
+          messageMapExpect: KNOWN_MSG_MAP,
+          opts: {noMinify: false},
+        });
+      },
+    );
+
+    it.each([
+      'function createError(message) { return new Error(message); }',
+      "import createError from 'another-package';",
+    ])('does not rewrite unrelated functions: %s', async declaration => {
+      const code = `${declaration}
+        createError('A new invariant');
+        createError(message);`;
+      await expectTransform({
+        codeBefore: code,
+        codeExpect: code,
+        messageMapBefore: KNOWN_MSG_MAP,
+        messageMapExpect: KNOWN_MSG_MAP,
+        opts: {extractCodes: true, noMinify: false},
+      });
+    });
+
+    it('does not rewrite a shadowed import', async () => {
+      await expectTransform({
+        codeBefore: `import createError from '@lexical/internal/createError';
+          function run(createError, message) {
+            return createError(message);
+          }
+          const error = createError(${JSON.stringify(KNOWN_MSG)}, adj, noun);`,
+        codeExpect: `function run(createError, message) {
+            return createError(message);
+          }
+          const error = createProdError(0, adj, noun);`,
+        messageMapBefore: KNOWN_MSG_MAP,
+        messageMapExpect: KNOWN_MSG_MAP,
+        opts: {noMinify: false},
+      });
+    });
+
+    it.each([true, false])(
+      'can transform bundled errors again (noMinify: %s)',
+      async noMinify => {
+        await withCodes(KNOWN_MSG_MAP, KNOWN_MSG_MAP, async errorCodesPath => {
+          const entry = path.resolve('error-factory-entry.ts');
+          const internalDir = path.resolve('packages/lexical-internal/src');
+          const bundle = await rollup({
+            input: entry,
+            plugins: [
+              {
+                load(id) {
+                  return id === entry
+                    ? `import createError from '@lexical/internal/createError';
+                       export const known = createError(${JSON.stringify(KNOWN_MSG)}, 'test', 'an argument');
+                       export const unknown = createError(${JSON.stringify(NEW_MSG)});`
+                    : fs.readFileSync(id, 'utf8');
+                },
+                name: 'error-factory-regression',
+                resolveId(id, importer) {
+                  if (id === entry) return entry;
+                  if (id.startsWith('@lexical/internal/')) {
+                    return path.join(internalDir, id.split('/').pop() + '.ts');
+                  }
+                  if (importer && id.startsWith('.')) {
+                    return path.resolve(path.dirname(importer), id + '.ts');
+                  }
+                  return null;
+                },
+                transform(code, id) {
+                  return babel.transformSync(code, {
+                    configFile: false,
+                    filename: id,
+                    plugins: [
+                      [transformErrorMessages, {errorCodesPath, noMinify}],
+                    ],
+                    presets: ['@babel/preset-typescript'],
+                  })!.code;
+                },
+              },
+            ],
+          });
+          try {
+            const {output} = await bundle.generate({format: 'es'});
+            const code = output[0].code;
+            const secondPass = babel.transformSync(code, {
+              configFile: false,
+              plugins: [
+                [transformErrorMessages, {errorCodesPath, noMinify: true}],
+              ],
+            })!.code;
+            expect(secondPass).toBe(
+              babel.transformSync(code, {configFile: false})!.code,
+            );
+          } finally {
+            await bundle.close();
+          }
+        });
+      },
+    );
+
     it.each([false, true])(
       'extracts codes while preserving expression context (noMinify: %s)',
       async noMinify => {
         await expectTransform({
           codeBefore: `
+            import createError from '@lexical/internal/createError';
             const error = createError(${JSON.stringify(NEW_MSG)});
             editor._onWarn(createError(${JSON.stringify(KNOWN_MSG)}, adj, noun));
           `,
           codeExpect: noMinify
             ? `
-                const error = createError(\`A new invariant\`);
-                editor._onWarn(createError(\`A \${adj} message that contains \${noun}\`));
+                const error = createDevError(\`A new invariant\`);
+                editor._onWarn(createDevError(\`A \${adj} message that contains \${noun}\`));
               `
             : `
                 const error = createProdError(1);
@@ -138,7 +249,8 @@ describe('transform-error-messages', () => {
 
     it('uses an existing code without extracting new ones', async () => {
       await expectTransform({
-        codeBefore: `const makeError = () => createError(${JSON.stringify(KNOWN_MSG)}, adj, noun);`,
+        codeBefore: `import createError from '@lexical/internal/createError';
+          const makeError = () => createError(${JSON.stringify(KNOWN_MSG)}, adj, noun);`,
         codeExpect: 'const makeError = () => createProdError(0, adj, noun);',
         messageMapBefore: KNOWN_MSG_MAP,
         messageMapExpect: KNOWN_MSG_MAP,
@@ -148,9 +260,10 @@ describe('transform-error-messages', () => {
 
     it('keeps uncoded production errors usable without throwing', async () => {
       await expectTransform({
-        codeBefore: `editor._onWarn(createError(${JSON.stringify(NEW_MSG)}));`,
+        codeBefore: `import createError from '@lexical/internal/createError';
+          editor._onWarn(createError(${JSON.stringify(NEW_MSG)}));`,
         codeExpect: `editor._onWarn(
-          /*FIXME (minify-errors-in-prod): Unminified error message in production build!*/ createError(\`A new invariant\`)
+          /*FIXME (minify-errors-in-prod): Unminified error message in production build!*/ createDevError(\`A new invariant\`)
         );`,
         messageMapBefore: KNOWN_MSG_MAP,
         messageMapExpect: KNOWN_MSG_MAP,

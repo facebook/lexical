@@ -8,6 +8,7 @@
 
 import {expect, test} from 'vitest';
 
+import createDevError from '../../createDevError';
 import createError from '../../createError';
 import createProdError from '../../createProdError';
 import formatProdErrorMessage from '../../formatProdErrorMessage';
@@ -16,8 +17,8 @@ test('constructs a development error without throwing and interpolates literal a
   const error = createError('Expected %s, got %s.', '$& %s', 'a%b');
   expect(error).toBeInstanceOf(Error);
   expect(error.message).toBe('Expected $& %s, got a%b.');
-  // The dev transform passes an already formatted message without arguments.
-  expect(createError(error.message).message).toBe(error.message);
+  // Runtime formatting must preserve placeholders introduced by arguments.
+  expect(createDevError(error.message).message).toBe(error.message);
 });
 
 test('constructs a production error with a decoder URL and encoded arguments', () => {

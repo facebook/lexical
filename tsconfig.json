@@ -138,6 +138,9 @@
       "@lexical/headless/dom": ["./packages/lexical-headless/src/dom.ts"],
       "@lexical/history": ["./packages/lexical-history/src/index.ts"],
       "@lexical/html": ["./packages/lexical-html/src/index.ts"],
+      "@lexical/internal/createDevError": [
+        "./packages/lexical-internal/src/createDevError.ts"
+      ],
       "@lexical/internal/createError": [
         "./packages/lexical-internal/src/createError.ts"
       ],

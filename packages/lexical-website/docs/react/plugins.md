@@ -73,32 +73,50 @@ Use [PlainTextExtension](/docs/api/modules/lexical_plain-text#plaintextextension
 
 :::
 
-### Configuring an error boundary with `PlainTextExtension`
+### Configuring an error boundary for React extensions
 
-The `ErrorBoundary` prop on `PlainTextPlugin` is configured through
-`ReactExtension` when using `PlainTextExtension`. Add a configured
-`ReactExtension` to the root extension's dependencies:
+The `ErrorBoundary` prop on `PlainTextPlugin` and `RichTextPlugin` is configured
+through `ReactExtension` when using `PlainTextExtension` or
+`RichTextExtension`. Add a configured `ReactExtension` to the root extension's
+dependencies:
 
 ```tsx
 import {configExtension, defineExtension} from 'lexical';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import type {ReactElement} from 'react';
+
+type ErrorBoundaryProps = {
+  children: ReactElement;
+  onError: (error: Error) => void;
+};
+
+function CustomErrorBoundary({children, onError}: ErrorBoundaryProps) {
+  return (
+    <LexicalErrorBoundary
+      fallback={<div>Something went wrong.</div>}
+      onError={onError}>
+      {children}
+    </LexicalErrorBoundary>
+  );
+}
 
 const editorExtension = defineExtension({
   name: 'MyEditor',
   dependencies: [
     PlainTextExtension,
     configExtension(ReactExtension, {
-      ErrorBoundary: LexicalErrorBoundary,
+      ErrorBoundary: CustomErrorBoundary,
     }),
   ],
 });
 ```
 
-If you do not provide `ErrorBoundary`, `ReactExtension` uses its default error
-boundary. Replace `LexicalErrorBoundary` above with your own error boundary
-component when you need custom error handling.
+If you do not provide `ErrorBoundary`, `ReactExtension` uses its default
+`LexicalErrorBoundary`. Replace `CustomErrorBoundary` with
+`LexicalErrorBoundary` when the default fallback and error reporting are
+sufficient.
 
 ### `LexicalRichTextPlugin`
 

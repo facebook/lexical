@@ -3,6 +3,12 @@ sidebar_position: 6
 ---
 
 import GettingStartedExample from '@site/src/components/GettingStartedExample';
+import CodeBlock from '@theme/CodeBlock';
+import ReviewedStateSource from '!!example-source?region=reviewed-state!@site/../../examples/node-state-review/src/ReviewExtension.ts';
+import ReviewSource from '!!example-source?region=review-extension!@site/../../examples/node-state-review/src/ReviewExtension.ts';
+import ReviewStyles from '!!example-source?region=review-styles!@site/../../examples/node-state-review/src/styles.css';
+import AppSource from '!!example-source?region=app-extension!@site/../../examples/node-state-review/src/AppExtension.ts';
+import MainSource from '!!example-source?region=main!@site/../../examples/node-state-review/src/main.ts';
 
 # Adding Data to Nodes
 
@@ -13,19 +19,19 @@ or replacing a node class.
 
 This example adds a `reviewed` flag to ordinary `ParagraphNode` instances. It
 highlights reviewed paragraphs in the editor and preserves the flag when saving
-JSON or exporting and importing HTML.
+JSON or exporting and importing HTML. The source blocks are read directly from
+named regions in the runnable example.
 
 ## Defining the state
 
-```ts
-import {booleanValue, createState} from 'lexical';
+<CodeBlock
+  language="ts"
+  title="examples/node-state-review/src/ReviewExtension.ts">
+  {ReviewedStateSource}
+</CodeBlock>
 
-export const reviewedState = createState('reviewed', {
-  parse: booleanValue(),
-});
-```
-
-Define the state once at module scope. `booleanValue()` accepts untrusted JSON and
+Import `createState` and `booleanValue` from `lexical` and define the state once
+at module scope. `booleanValue()` accepts untrusted JSON and
 returns `false` for missing or invalid values. Read with `$getState(node,
 reviewedState)` and write with `$setState(node, reviewedState, value)` inside a
 Lexical read or update context, as appropriate.
@@ -41,78 +47,11 @@ features using the same nodes.
 NodeState handles JSON, but your feature defines what the data means in HTML.
 The following extension maps the flag to `data-reviewed="true"`:
 
-```ts
-import {
-  defineImportRule,
-  DOMImportExtension,
-  domOverride,
-  DOMRenderExtension,
-  sel,
-} from '@lexical/html';
-import {RichTextExtension} from '@lexical/rich-text';
-import {
-  $getState,
-  $isParagraphNode,
-  $setState,
-  booleanValue,
-  configExtension,
-  createState,
-  defineExtension,
-  isHTMLElement,
-  ParagraphNode,
-} from 'lexical';
-
-export const reviewedState = createState('reviewed', {
-  parse: booleanValue(),
-});
-
-function $applyReviewedAttribute(node: ParagraphNode, element: HTMLElement) {
-  if ($getState(node, reviewedState)) {
-    element.setAttribute('data-reviewed', 'true');
-  } else {
-    element.removeAttribute('data-reviewed');
-  }
-}
-
-const ReviewedParagraphRule = defineImportRule({
-  $import(_context, _element, $next) {
-    // Let the existing paragraph rule create the nodes and their children.
-    const nodes = $next();
-    for (const node of nodes) {
-      if ($isParagraphNode(node)) {
-        $setState(node, reviewedState, true);
-      }
-    }
-    return nodes;
-  },
-  match: sel.tag('p').attr('data-reviewed', 'true'),
-  name: '@lexical/examples/reviewed-paragraph',
-});
-
-export const ReviewExtension = defineExtension({
-  dependencies: [
-    RichTextExtension,
-    configExtension(DOMImportExtension, {rules: [ReviewedParagraphRule]}),
-    configExtension(DOMRenderExtension, {
-      overrides: [
-        domOverride([ParagraphNode], {
-          $decorateDOM(node, _prevNode, dom) {
-            $applyReviewedAttribute(node, dom);
-          },
-          $exportDOM(node, $next) {
-            const output = $next();
-            if (isHTMLElement(output.element)) {
-              $applyReviewedAttribute(node, output.element);
-            }
-            return output;
-          },
-        }),
-      ],
-    }),
-  ],
-  name: '@lexical/examples/Review',
-});
-```
+<CodeBlock
+  language="ts"
+  title="examples/node-state-review/src/ReviewExtension.ts">
+  {ReviewSource}
+</CodeBlock>
 
 `DOMRenderExtension`'s `$decorateDOM` runs after a paragraph's DOM is created or
 updated. It adds or removes the attribute as the flag changes. The separate
@@ -126,91 +65,62 @@ underlying import rules and rich text behavior.
 
 Style the attribute in your application's CSS:
 
-```css
-#editor p[data-reviewed='true'] {
-  background: #e4f5e8;
-  border-left: 4px solid #277a3c;
-}
-```
+<CodeBlock language="css" title="examples/node-state-review/src/styles.css">
+  {ReviewStyles}
+</CodeBlock>
 
 This CSS belongs to the application. The exported attribute preserves the data;
 other applications decide how to display it.
 
 ## Updating the current paragraph
 
-The example's toolbar toggles the paragraph containing the selection's anchor:
+`ReviewExtension` registers `SET_REVIEWED_COMMAND` for the paragraph containing
+the selection's anchor. Its payload is a boolean or an updater function, matching
+`$setState`. The command handler already runs in an editor update, so a toolbar
+or React component only needs to dispatch it:
 
 ```ts
-import {
-  $getSelection,
-  $isParagraphNode,
-  $isRangeSelection,
-  $setState,
-} from 'lexical';
-import {reviewedState} from './ReviewExtension';
+import {SET_REVIEWED_COMMAND} from './ReviewExtension';
 
-editor.update(() => {
-  const selection = $getSelection();
-  if ($isRangeSelection(selection)) {
-    const paragraph = selection.anchor.getNode().getTopLevelElement();
-    if ($isParagraphNode(paragraph)) {
-      $setState(paragraph, reviewedState, reviewed => !reviewed);
-    }
-  }
-});
+editor.dispatchCommand(SET_REVIEWED_COMMAND, true); // Mark reviewed.
+editor.dispatchCommand(SET_REVIEWED_COMMAND, false); // Clear the flag.
+editor.dispatchCommand(SET_REVIEWED_COMMAND, reviewed => !reviewed); // Toggle.
 ```
 
-`$setState` marks the paragraph dirty so the render hook runs. Lexical handles
-copy-on-write updates; do not mutate node objects or the DOM from the toolbar.
+The handler returns `false` when there is no range selection anchored in a
+paragraph. `$setState` marks the paragraph dirty so the render hook runs. Lexical
+handles copy-on-write updates.
 
 ## Putting it together
 
-Add `ReviewExtension`, `HistoryExtension`, and `ClipboardDOMImportExtension` to
-your root extension. The clipboard extension routes pasted HTML through
-`DOMImportExtension`:
+The application's root extension owns its DOM event handlers and JSON view.
+Define it at module scope in `AppExtension.ts`, with the interface elements in
+`index.html`:
 
-```ts
-import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-import {buildEditorFromExtensions} from '@lexical/extension';
-import {HistoryExtension} from '@lexical/history';
-import {defineExtension} from 'lexical';
-import {ReviewExtension} from './ReviewExtension';
+<CodeBlock language="ts" title="examples/node-state-review/src/AppExtension.ts">
+  {AppSource}
+</CodeBlock>
 
-const appExtension = defineExtension({
-  name: 'ParagraphReviewEditor',
-  namespace: 'ParagraphReviewEditor',
-  dependencies: [
-    ReviewExtension,
-    HistoryExtension,
-    ClipboardDOMImportExtension,
-  ],
-});
+`registerEventListener` and `registerEventListeners` return cleanup functions.
+`mergeRegister` combines them with the editor listener's cleanup, so disposing
+the editor also removes the toolbar and import/export handlers. No separate
+`AbortController` is needed. For asynchronous work or other APIs that accept an
+`AbortSignal`, `register(editor, config, state)` can use `state.getSignal()`.
 
-const editor = buildEditorFromExtensions(appExtension);
-editor.setRootElement(document.getElementById('editor'));
-// Call editor.dispose() when removing this editor permanently.
-```
+`register` runs before editor-state initialization. Use `afterRegistration` when
+setup needs the initialized state; these handlers only need it when an event
+fires. The clipboard extension routes pasted HTML through `DOMImportExtension`.
 
-For an explicit HTML import/export interface, use the extension-based importer:
+The entry point now builds the editor and attaches its root:
 
-```ts
-import {
-  $generateHtmlFromNodes,
-  $generateNodesFromDOMViaExtension,
-} from '@lexical/html';
-import {$getRoot} from 'lexical';
+<CodeBlock language="ts" title="examples/node-state-review/src/main.ts">
+  {MainSource}
+</CodeBlock>
 
-const html = editor.read('latest', () => $generateHtmlFromNodes(editor));
-
-// In a separate import action, replace the document with the parsed HTML.
-const dom = new DOMParser().parseFromString(html, 'text/html');
-editor.update(() => {
-  const nodes = $generateNodesFromDOMViaExtension(dom);
-  $getRoot()
-    .clear()
-    .append(...nodes);
-});
-```
+`HMRExtension` preserves editor state, selection, and undo/redo history through
+Vite updates. The entry point still accepts those updates and disposes the old
+editor; the extension does not perform those bundler lifecycle steps. Passing
+`hot: null` makes it a no-op when HMR is unavailable.
 
 Use **Toggle reviewed**, then **Export HTML** and **Import HTML** to try the round
 trip. Expand **Editor state JSON** to inspect the ad-hoc data. This view uses

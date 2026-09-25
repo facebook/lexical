@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// [docs:emoji-node] Read directly by the Creating an Extension guide.
 import {
   $create,
   type EditorConfig,
@@ -88,3 +89,4 @@ export function $createEmojiNode(unifiedID: string): EmojiNode {
     .setMode('token')
     .setUnifiedID(unifiedID);
 }
+// [/docs:emoji-node]

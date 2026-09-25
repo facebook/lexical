@@ -6,6 +6,7 @@
  *
  */
 
+/* [docs:editor-styles] Read directly by the Quick Start guide. */
 .editor-wrapper {
   border: 2px solid gray;
 }
@@ -25,3 +26,4 @@
   border-left-style: solid;
   padding-left: 16px;
 }
+/* [/docs:editor-styles] */

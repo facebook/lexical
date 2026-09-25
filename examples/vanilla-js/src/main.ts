@@ -5,43 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// [docs:main] Read directly by the Quick Start guide.
 import './styles.css';
 
-import {ClipboardDOMImportExtension} from '@lexical/clipboard';
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {HistoryExtension} from '@lexical/history';
-import {RichTextExtension} from '@lexical/rich-text';
-import {configExtension, defineExtension} from 'lexical';
 
-import $prepopulatedRichText from './prepopulatedRichText';
+import {AppExtension} from './AppExtension';
 
-const editorRef = document.getElementById('lexical-editor');
-const stateRef = document.getElementById(
-  'lexical-state',
-) as HTMLTextAreaElement;
+const editor = buildEditorFromExtensions(AppExtension);
+editor.setRootElement(document.getElementById('lexical-editor'));
 
-const appExtension = defineExtension({
-  $initialEditorState: $prepopulatedRichText,
-  dependencies: [
-    RichTextExtension,
-    ClipboardDOMImportExtension,
-    configExtension(HistoryExtension, {delay: 300}),
-  ],
-  name: '@lexical/examples/vanilla-js',
-  namespace: 'Vanilla JS Demo',
-  register(editor) {
-    return editor.registerUpdateListener(({editorState}) => {
-      stateRef.value = JSON.stringify(editorState.toJSON(true), null, 2);
-    });
-  },
-  theme: {quote: 'PlaygroundEditorTheme__quote'},
-});
-
-const editor = buildEditorFromExtensions(appExtension);
-editor.setRootElement(editorRef);
-
-// Dispose the editor and its registrations when Vite replaces this module.
+// Accept Vite updates; AppExtension preserves editor state with HMRExtension.
 // In an application, also call dispose() when removing the editor permanently.
 if (import.meta.hot) {
+  import.meta.hot.accept();
   import.meta.hot.dispose(() => editor.dispose());
 }
+// [/docs:main]

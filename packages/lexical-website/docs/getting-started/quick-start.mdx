@@ -3,6 +3,11 @@ sidebar_position: 1
 ---
 
 import GettingStartedExample from '@site/src/components/GettingStartedExample';
+import CodeBlock from '@theme/CodeBlock';
+import EditorHTML from '!!example-source?region=editor-html!@site/../../examples/vanilla-js/index.html';
+import AppSource from '!!example-source?region=app-extension!@site/../../examples/vanilla-js/src/AppExtension.ts';
+import MainSource from '!!example-source?region=main!@site/../../examples/vanilla-js/src/main.ts';
+import EditorStyles from '!!example-source?region=editor-styles!@site/../../examples/vanilla-js/src/styles.css';
 
 # Quick Start (Vanilla JS)
 
@@ -22,53 +27,28 @@ must resolve [one copy of each package](../concepts/one-lexical-per-app.md).
 
 ## Creating an editor and using it
 
-Start with an editable element:
+The following code is read directly from the runnable example below. Start with
+an editable element and a read-only view of its JSON state in `index.html`:
 
-```html
-<div
-  id="editor"
-  contenteditable="true"
-  role="textbox"
-  aria-label="Rich text editor"
-  aria-multiline="true"></div>
-```
+<CodeBlock language="html" title="examples/vanilla-js/index.html">
+  {EditorHTML}
+</CodeBlock>
 
-Define one root extension at module scope, then build and attach the editor:
+Define one root extension at module scope. Its `register` method keeps the JSON
+view up to date:
 
-```js
-import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-import {buildEditorFromExtensions} from '@lexical/extension';
-import {HistoryExtension} from '@lexical/history';
-import {RichTextExtension} from '@lexical/rich-text';
-import {
-  $createParagraphNode,
-  $createTextNode,
-  $getRoot,
-  defineExtension,
-} from 'lexical';
+<CodeBlock language="ts" title="examples/vanilla-js/src/AppExtension.ts">
+  {AppSource}
+</CodeBlock>
 
-const appExtension = defineExtension({
-  name: 'MyEditor',
-  namespace: 'MyEditor',
-  dependencies: [
-    RichTextExtension,
-    HistoryExtension,
-    ClipboardDOMImportExtension,
-  ],
-  theme: {
-    paragraph: 'editor-paragraph',
-    text: {bold: 'editor-text-bold', italic: 'editor-text-italic'},
-  },
-  $initialEditorState() {
-    $getRoot().append(
-      $createParagraphNode().append($createTextNode('Hello world')),
-    );
-  },
-});
+Build the editor and attach it to the editable element in the entry point:
 
-const editor = buildEditorFromExtensions(appExtension);
-editor.setRootElement(document.getElementById('editor'));
-```
+<CodeBlock language="ts" title="examples/vanilla-js/src/main.ts">
+  {MainSource}
+</CodeBlock>
+
+`$prepopulatedRichText` supplies the example's initial content. Use **Open in
+StackBlitz** below to explore that module and the complete project.
 
 `RichTextExtension` installs editing commands, heading and quote nodes, and its
 dependencies, including Dragon speech recognition support. `HistoryExtension`
@@ -80,19 +60,11 @@ You do not need to register those nodes or behaviors again. Dependencies shared
 by multiple extensions are included once. The core `lexical` package alone does
 not provide a complete editing experience; the feature extensions supply it.
 
-Add CSS for the theme classes:
+Add CSS for the editor layout and the quote theme class:
 
-```css
-.editor-paragraph {
-  margin: 0 0 1em;
-}
-.editor-text-bold {
-  font-weight: bold;
-}
-.editor-text-italic {
-  font-style: italic;
-}
-```
+<CodeBlock language="css" title="examples/vanilla-js/src/styles.css">
+  {EditorStyles}
+</CodeBlock>
 
 See [Theming](theming.md) for more options. Errors throw by default; supply
 `onError` on your root extension only if your application needs custom handling.
@@ -100,7 +72,7 @@ See [Theming](theming.md) for more options. Errors throw by default; supply
 ### Configuring features
 
 Use `configExtension` to override a dependency's configuration. For example, to
-change the interval used to group typing into undo steps, replace
+group typing into undo steps with a 300 ms interval, the example configures
 `HistoryExtension` in `dependencies` with:
 
 ```js
@@ -114,6 +86,12 @@ Choose the extension graph when creating the editor. See
 [Creating an Extension](creating-plugin.mdx) to add your own.
 
 ### Cleanup
+
+The runnable vanilla examples keep their module-level root extension in
+`AppExtension.ts`. Its `register` function owns the JSON view and any DOM event
+handlers, returning their cleanup functions. The entry point builds the editor
+and attaches its root. See [Adding Data to Nodes](node-state.mdx#putting-it-together)
+for a complete example using event registration helpers and `HMRExtension`.
 
 `editor.setRootElement(null)` detaches the editable element; you can attach
 another element later. When the editor is no longer needed, dispose it:

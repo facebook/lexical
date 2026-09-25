@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {AutoFocusExtension} from '@lexical/extension';
+import {AutoFocusExtension, HMRExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
@@ -22,6 +22,7 @@ const isEmbedded = new URLSearchParams(window.location.search).has('embed');
 
 const appExtension = defineExtension({
   dependencies: [
+    configExtension(HMRExtension, {hot: import.meta.hot ?? null}),
     PlainTextExtension,
     HistoryExtension,
     // Let the documentation page keep focus when this example is embedded.

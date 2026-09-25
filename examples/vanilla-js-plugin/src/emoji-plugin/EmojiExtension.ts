@@ -6,6 +6,7 @@
  *
  */
 
+// [docs:emoji-extension] Read directly by the Creating an Extension guide.
 import {defineExtension, TextNode} from 'lexical';
 
 import {$createEmojiNode, EmojiNode} from './EmojiNode';
@@ -52,3 +53,4 @@ export const EmojiExtension = defineExtension({
     return editor.registerNodeTransform(TextNode, $textNodeTransform);
   },
 });
+// [/docs:emoji-extension]

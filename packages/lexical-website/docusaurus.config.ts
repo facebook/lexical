@@ -462,6 +462,14 @@ const config: Config = {
               }),
             ],
             resolve: {alias},
+            resolveLoader: {
+              alias: {
+                'example-source': path.resolve(
+                  __dirname,
+                  'plugins/example-source/loader.cjs',
+                ),
+              },
+            },
           };
         },
         name: 'webpack-lexical-modules',

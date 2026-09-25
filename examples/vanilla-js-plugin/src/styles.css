@@ -20,6 +20,7 @@
   height: 300px;
 }
 
+/* [docs:emoji-styles] Read directly by the Creating an Extension guide. */
 .emoji-node {
   caret-color: #050505;
 }
@@ -32,3 +33,4 @@
   width: 1em;
   height: 1em;
 }
+/* [/docs:emoji-styles] */

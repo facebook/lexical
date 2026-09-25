@@ -3,6 +3,9 @@ sidebar_position: 2
 ---
 
 import GettingStartedExample from '@site/src/components/GettingStartedExample';
+import CodeBlock from '@theme/CodeBlock';
+import AppSource from '!!example-source?region=react-app!@site/../../examples/react-rich/src/App.tsx';
+import EditorStyles from '!!example-source?region=editor-styles!@site/../../examples/react-rich/src/styles.css';
 
 # Getting Started with React
 
@@ -15,84 +18,24 @@ the editable area and your application's UI.
 Install the packages used below in an existing React application:
 
 ```sh
-npm install lexical @lexical/react @lexical/extension @lexical/rich-text @lexical/history @lexical/clipboard
+npm install lexical @lexical/react @lexical/extension @lexical/rich-text @lexical/history @lexical/clipboard @lexical/html
 ```
 
 Keep all Lexical packages on the same version. Define the root extension outside
-of the component so its identity stays stable across renders:
+of the component so its identity stays stable across renders. This source is
+read directly from the runnable rich-text example, including its toolbar, theme,
+and HTML style extension:
 
-```jsx
-import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-import {AutoFocusExtension} from '@lexical/extension';
-import {HistoryExtension} from '@lexical/history';
-import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {RichTextExtension} from '@lexical/rich-text';
-import {configExtension, defineExtension} from 'lexical';
+<CodeBlock language="tsx" title="examples/react-rich/src/App.tsx">
+  {AppSource}
+</CodeBlock>
 
-const isEmbedded = new URLSearchParams(window.location.search).has('embed');
+<CodeBlock language="css" title="examples/react-rich/src/styles.css">
+  {EditorStyles}
+</CodeBlock>
 
-const appExtension = defineExtension({
-  name: 'MyEditor',
-  namespace: 'MyEditor',
-  dependencies: [
-    RichTextExtension,
-    HistoryExtension,
-    configExtension(AutoFocusExtension, {
-      disabled: isEmbedded,
-    }),
-    ClipboardDOMImportExtension,
-  ],
-  theme: {
-    paragraph: 'editor-paragraph',
-    text: {bold: 'editor-text-bold', italic: 'editor-text-italic'},
-  },
-});
-
-export default function Editor() {
-  return (
-    <LexicalExtensionComposer extension={appExtension} contentEditable={null}>
-      <div className="editor">
-        <ContentEditable
-          className="editor-input"
-          aria-label="Rich text editor"
-          aria-placeholder="Enter some text..."
-          placeholder={
-            <div className="editor-placeholder">Enter some text...</div>
-          }
-        />
-      </div>
-    </LexicalExtensionComposer>
-  );
-}
-```
-
-```css
-.editor {
-  position: relative;
-}
-.editor-input {
-  min-height: 8em;
-  padding: 1em;
-}
-.editor-placeholder {
-  position: absolute;
-  top: 1em;
-  left: 1em;
-  color: #757575;
-  pointer-events: none;
-  user-select: none;
-}
-.editor-paragraph {
-  margin: 0 0 1em;
-}
-.editor-text-bold {
-  font-weight: bold;
-}
-.editor-text-italic {
-  font-style: italic;
-}
-```
+Use **Open in StackBlitz** in the rich-text example below for the complete project,
+including the imported local modules and the rest of the stylesheet.
 
 The composer renders a `ContentEditable` by default. Here `contentEditable={null}`
 lets us place it inside our own layout. The composer also sets up React decorator
@@ -103,6 +46,9 @@ provides undo and redo, and `AutoFocusExtension` focuses the editor when it moun
 The examples opt out of autofocus when their URL includes `?embed`, which the
 documentation embeds add to avoid taking focus from the page. Standalone examples
 and StackBlitz previews keep autofocus enabled, even inside an iframe.
+`HMRExtension` preserves editor state and history during Vite updates; React's
+composer manages editor disposal. Passing `hot: null` is a no-op when HMR is
+unavailable.
 Omit autofocus if focus should stay elsewhere on your page.
 `ClipboardDOMImportExtension` enables the extensions' HTML import rules for paste.
 
@@ -119,7 +65,8 @@ runtime changes expose [signals](../extensions/signals.md).
 For a plain-text editor, install `@lexical/plain-text` and replace
 `RichTextExtension` with `PlainTextExtension` from that package. Remove
 `ClipboardDOMImportExtension`, since plain-text paste does not import HTML. Keep
-history, autofocus, and the same React composition.
+history, autofocus, and the same React composition. The plain-text example omits
+the rich-text toolbar and `StyleImportExportExtension` as well.
 
 <GettingStartedExample example="react-plain-text" />
 
@@ -157,7 +104,7 @@ can be enabled. `TreeViewExtension` provides a debug panel through
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {TreeViewExtension} from '@lexical/react/TreeViewExtension';
 
-// Add TreeViewExtension to appExtension.dependencies, then render inside the composer:
+// Render inside the composer (TreeViewExtension is already a dependency above):
 <ExtensionComponent lexical:extension={TreeViewExtension} />;
 ```
 
@@ -228,13 +175,3 @@ controlled input. For deliberately loading a different document, see
 - [Creating an Extension](creating-plugin.mdx): package a custom node and transform.
 - [Included Extensions](../extensions/included-extensions.md): add more features.
 - [React and Lexical Extension](../extensions/react.md): integrate custom React UI.
-
-## Video Tutorials
-
-These videos demonstrate earlier APIs, including the legacy React plugin setup.
-Use the extension setup above for new code.
-
-- [Getting Started with Lexical & React](https://www.youtube.com/watch?v=qIqxvk2qcmo)
-- [Themes, Nodes, and Rich Text](https://www.youtube.com/watch?v=pIBUFYd9zJY)
-- [Headings, Lists, Toolbar](https://www.youtube.com/watch?v=5sRh_WXw0WI)
-- [Creating Nodes and Plugins](https://www.youtube.com/watch?v=abZNazybzvs)

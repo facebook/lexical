@@ -260,6 +260,29 @@ async function main() {
           process.stdout.write(
             'PASS NodeState: toggle, clone, boolean JSON validation, HTML export/import\n',
           );
+          const disposed = await editor.evaluate(element => {
+            const instance = element.__lexicalEditor;
+            const doc = element.ownerDocument;
+            instance.dispose();
+            const htmlInput = doc.getElementById('html');
+            htmlInput.value = 'Unchanged after disposal';
+            const pointerEvent = new MouseEvent('mousedown', {
+              cancelable: true,
+            });
+            doc.getElementById('toggle-reviewed').dispatchEvent(pointerEvent);
+            doc.getElementById('export-html').click();
+            return {
+              html: htmlInput.value,
+              prevented: pointerEvent.defaultPrevented,
+            };
+          });
+          assert.deepEqual(disposed, {
+            html: 'Unchanged after disposal',
+            prevented: false,
+          });
+          process.stdout.write(
+            'PASS NodeState: editor disposal removes toolbar handlers\n',
+          );
         }
         // Focus the document again before checking the next lazy-loaded demo.
         await page.locator('h1').click();

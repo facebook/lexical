@@ -3,6 +3,13 @@ sidebar_position: 5
 ---
 
 import GettingStartedExample from '@site/src/components/GettingStartedExample';
+import CodeBlock from '@theme/CodeBlock';
+import EmojiMatchSource from '!!example-source?region=emoji-match!@site/../../examples/vanilla-js-plugin/src/emoji-plugin/findEmoji.ts';
+import EmojiNodeSource from '!!example-source?region=emoji-node!@site/../../examples/vanilla-js-plugin/src/emoji-plugin/EmojiNode.ts';
+import EmojiStyles from '!!example-source?region=emoji-styles!@site/../../examples/vanilla-js-plugin/src/styles.css';
+import EmojiExtensionSource from '!!example-source?region=emoji-extension!@site/../../examples/vanilla-js-plugin/src/emoji-plugin/EmojiExtension.ts';
+import AppSource from '!!example-source?region=app-extension!@site/../../examples/vanilla-js-plugin/src/AppExtension.ts';
+import MainSource from '!!example-source?region=main!@site/../../examples/vanilla-js-plugin/src/main.ts';
 
 # Creating an Extension
 
@@ -14,20 +21,19 @@ editor cleans up its registrations on disposal. It works with both
 This guide builds `EmojiExtension`: a node transform replaces shortcodes such as
 `:)` and `:smiley:` with a custom `EmojiNode` that displays an emoji image. The
 [runnable example](#putting-it-all-together) includes the lookup data and CSS,
-and loads the displayed images on demand.
+and loads the displayed images on demand. The code blocks below are read directly
+from named regions in that example.
 
 ## Finding emoji shortcodes
 
 The example's `findEmoji.ts` uses `emoji-datasource-facebook` to find the first
 space-delimited shortcode in a string. Its result has this shape:
 
-```ts
-export type EmojiMatch = Readonly<{
-  position: number;
-  shortcode: string;
-  unifiedID: string;
-}>;
-```
+<CodeBlock
+  language="ts"
+  title="examples/vanilla-js-plugin/src/emoji-plugin/findEmoji.ts">
+  {EmojiMatchSource}
+</CodeBlock>
 
 For example, `findEmoji('Hello :)')` returns the match position, `:)`, and a
 hexadecimal Unicode code point ID used to find the corresponding image.
@@ -42,91 +48,11 @@ Declare the `__unifiedID` property in a [`$config` JSON schema](../concepts/node
 Lexical then supplies cloning and JSON serialization, including inherited text
 properties, without handwritten `clone`, `importJSON`, or `exportJSON` methods:
 
-```ts
-import {
-  $create,
-  type EditorConfig,
-  nodeSchema,
-  stringValue,
-  TextNode,
-  withField,
-} from 'lexical';
-
-const BASE_EMOJI_URI =
-  'https://cdn.jsdelivr.net/npm/emoji-datasource-facebook@15.1.2/img/facebook/64';
-
-function applyEmojiImage(dom: HTMLElement, unifiedID: string): void {
-  const url = `${BASE_EMOJI_URI}/${encodeURIComponent(unifiedID.toLowerCase())}.png`;
-  // Keep the native emoji visible while loading, including for missing images.
-  dom.classList.remove('emoji-node-loaded');
-  dom.style.backgroundImage = '';
-  dom.dataset.emojiUrl = url;
-  const image = dom.ownerDocument.createElement('img');
-  image.onload = () => {
-    // A different ID may have been assigned while this image was loading.
-    if (dom.dataset.emojiUrl === url) {
-      dom.style.backgroundImage = `url('${url}')`;
-      dom.classList.add('emoji-node-loaded');
-    }
-  };
-  image.src = url;
-}
-
-const emojiNodeSchema = nodeSchema<EmojiNode>()({
-  unifiedID: withField(stringValue(), {field: '__unifiedID'}),
-});
-
-export class EmojiNode extends TextNode {
-  __unifiedID: string = '';
-
-  $config() {
-    return this.config('emoji', {
-      extends: TextNode,
-      json: emojiNodeSchema,
-    });
-  }
-
-  getUnifiedID(): string {
-    return this.getLatest().__unifiedID;
-  }
-
-  setUnifiedID(unifiedID: string): this {
-    const self = this.getWritable();
-    self.__unifiedID = unifiedID.toLowerCase();
-    return self;
-  }
-
-  createDOM(config: EditorConfig): HTMLElement {
-    const dom = super.createDOM(config);
-    dom.classList.add('emoji-node');
-    applyEmojiImage(dom, this.__unifiedID);
-    return dom;
-  }
-
-  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    if (super.updateDOM(prevNode, dom, config)) {
-      return true;
-    }
-    if (
-      this.__unifiedID !== prevNode.__unifiedID ||
-      this.__style !== prevNode.__style
-    ) {
-      applyEmojiImage(dom, this.__unifiedID);
-    }
-    return false;
-  }
-}
-
-export function $createEmojiNode(unifiedID: string): EmojiNode {
-  const text = String.fromCodePoint(
-    ...unifiedID.split('-').map(value => parseInt(value, 16)),
-  );
-  return $create(EmojiNode)
-    .setTextContent(text)
-    .setMode('token')
-    .setUnifiedID(unifiedID);
-}
-```
+<CodeBlock
+  language="ts"
+  title="examples/vanilla-js-plugin/src/emoji-plugin/EmojiNode.ts">
+  {EmojiNodeSource}
+</CodeBlock>
 
 The inherited `TextNode` constructor accepts no arguments, which allows `$create`
 and the generated deserializer to construct the node. The factory sets its text,
@@ -148,20 +74,9 @@ prevents a late response for an old ID from replacing the current image.
 Only the loaded class hides the Unicode text; it remains in the document for
 selection, copying, and serialization:
 
-```css
-.emoji-node {
-  caret-color: #050505;
-}
-
-.emoji-node-loaded {
-  color: transparent;
-  background-size: 1em 1em;
-  display: inline-block;
-  vertical-align: top;
-  width: 1em;
-  height: 1em;
-}
-```
+<CodeBlock language="css" title="examples/vanilla-js-plugin/src/styles.css">
+  {EmojiStyles}
+</CodeBlock>
 
 The examples request only the images they display instead of bundling the entire
 PNG collection. To host images yourself, change `BASE_EMOJI_URI` to your own URL.
@@ -184,54 +99,11 @@ again to find additional shortcodes. The `isSimpleText()` guard excludes
 
 Define the transform and its extension together:
 
-```ts
-import {defineExtension, TextNode} from 'lexical';
-
-import {$createEmojiNode, EmojiNode} from './EmojiNode';
-import findEmoji from './findEmoji';
-
-function $textNodeTransform(node: TextNode): void {
-  if (!node.isSimpleText() || node.hasFormat('code')) {
-    return;
-  }
-
-  const text = node.getTextContent();
-
-  // Find only 1st occurrence as transform will be re-run anyway for the rest
-  // because newly inserted nodes are considered to be dirty
-  const emojiMatch = findEmoji(text);
-  if (emojiMatch === null) {
-    return;
-  }
-
-  let targetNode;
-  if (emojiMatch.position === 0) {
-    // First text chunk within string, splitting into 2 parts
-    [targetNode] = node.splitText(
-      emojiMatch.position + emojiMatch.shortcode.length,
-    );
-  } else {
-    // In the middle of a string
-    [, targetNode] = node.splitText(
-      emojiMatch.position,
-      emojiMatch.position + emojiMatch.shortcode.length,
-    );
-  }
-
-  const emojiNode = $createEmojiNode(emojiMatch.unifiedID)
-    .setFormat(targetNode.getFormat())
-    .setStyle(targetNode.getStyle());
-  targetNode.replace(emojiNode);
-}
-
-export const EmojiExtension = defineExtension({
-  name: '@lexical/examples/Emoji',
-  nodes: () => [EmojiNode],
-  register(editor) {
-    return editor.registerNodeTransform(TextNode, $textNodeTransform);
-  },
-});
-```
+<CodeBlock
+  language="ts"
+  title="examples/vanilla-js-plugin/src/emoji-plugin/EmojiExtension.ts">
+  {EmojiExtensionSource}
+</CodeBlock>
 
 `nodes` registers the custom node before the editor is initialized. `register`
 installs the transform and returns its cleanup function. Consumers only add
@@ -242,30 +114,15 @@ function.
 
 Add the feature to a root extension:
 
-```ts
-import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-import {buildEditorFromExtensions} from '@lexical/extension';
-import {HistoryExtension} from '@lexical/history';
-import {RichTextExtension} from '@lexical/rich-text';
-import {defineExtension} from 'lexical';
+<CodeBlock language="ts" title="examples/vanilla-js-plugin/src/AppExtension.ts">
+  {AppSource}
+</CodeBlock>
 
-import {EmojiExtension} from './emoji-plugin/EmojiExtension';
+Then build and attach the editor:
 
-const appExtension = defineExtension({
-  name: 'EmojiEditor',
-  namespace: 'EmojiEditor',
-  dependencies: [
-    RichTextExtension,
-    HistoryExtension,
-    ClipboardDOMImportExtension,
-    EmojiExtension,
-  ],
-});
-
-const editor = buildEditorFromExtensions(appExtension);
-editor.setRootElement(document.getElementById('editor'));
-// Call editor.dispose() when removing this editor permanently.
-```
+<CodeBlock language="ts" title="examples/vanilla-js-plugin/src/main.ts">
+  {MainSource}
+</CodeBlock>
 
 Use the editable element from [Quick Start](quick-start.mdx). In React, pass the
 same root extension to `LexicalExtensionComposer` instead of building and

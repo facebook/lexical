@@ -5,8 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// [docs:react-app] Read directly by the Getting Started with React guide.
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-import {AutoFocusExtension, EditorStateExtension} from '@lexical/extension';
+import {
+  AutoFocusExtension,
+  EditorStateExtension,
+  HMRExtension,
+} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
@@ -25,6 +30,7 @@ const isEmbedded = new URLSearchParams(window.location.search).has('embed');
 
 const appExtension = defineExtension({
   dependencies: [
+    configExtension(HMRExtension, {hot: import.meta.hot ?? null}),
     RichTextExtension,
     ClipboardDOMImportExtension,
     StyleImportExportExtension,
@@ -61,3 +67,4 @@ export default function App() {
     </LexicalExtensionComposer>
   );
 }
+// [/docs:react-app]

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// [docs:review-extension] Read directly by the Adding Data to Nodes guide.
 import {
   defineImportRule,
   DOMImportExtension,
@@ -14,20 +15,31 @@ import {
 } from '@lexical/html';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $getSelection,
   $getState,
   $isParagraphNode,
+  $isRangeSelection,
   $setState,
   booleanValue,
+  COMMAND_PRIORITY_EDITOR,
   configExtension,
+  createCommand,
   createState,
   defineExtension,
   isHTMLElement,
   ParagraphNode,
+  type StateValueOrUpdater,
 } from 'lexical';
 
+// [docs:reviewed-state] Read directly by the Adding Data to Nodes guide.
 export const reviewedState = createState('reviewed', {
   parse: booleanValue(),
 });
+// [/docs:reviewed-state]
+
+export const SET_REVIEWED_COMMAND = createCommand<
+  StateValueOrUpdater<typeof reviewedState>
+>('SET_REVIEWED_COMMAND');
 
 function $applyReviewedAttribute(node: ParagraphNode, element: HTMLElement) {
   if ($getState(node, reviewedState)) {
@@ -74,4 +86,22 @@ export const ReviewExtension = defineExtension({
     }),
   ],
   name: '@lexical/examples/Review',
+  register(editor) {
+    return editor.registerCommand(
+      SET_REVIEWED_COMMAND,
+      valueOrUpdater => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          const paragraph = selection.anchor.getNode().getTopLevelElement();
+          if ($isParagraphNode(paragraph)) {
+            $setState(paragraph, reviewedState, valueOrUpdater);
+            return true;
+          }
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+  },
 });
+// [/docs:review-extension]

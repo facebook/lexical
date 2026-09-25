@@ -52,6 +52,10 @@ function fmt(strings: TemplateStringsArray, ...keys: unknown[]): string {
     .replace(/import [^;]*?from ['"]@lexical\/internal\/[^'"]+['"];\n?/g, '')
     .replace(/function _interopRequireDefault\([^)]*\) {[^;]+?;[\s\n]*}\n/g, '')
     .replace(/_format(Dev|Prod)(Error|Warning)Message\d*/g, 'format$1$2Message')
+    .replace(/_createProdError\d*/g, 'createProdError')
+    .replace(/\(0,\s*createProdError\.default\)/g, 'createProdError')
+    .replace(/_createError\d*/g, 'createError')
+    .replace(/\(0,\s*createError\.default\)/g, 'createError')
     .replace(
       /\(0,\s*format(Dev|Prod)(Error|Warning)Message\.default\)/g,
       'format$1$2Message',
@@ -107,6 +111,54 @@ async function expectTransform(opts: ExpectTransformOptions) {
 }
 
 describe('transform-error-messages', () => {
+  describe('createError', () => {
+    it.each([false, true])(
+      'extracts codes while preserving expression context (noMinify: %s)',
+      async noMinify => {
+        await expectTransform({
+          codeBefore: `
+            const error = createError(${JSON.stringify(NEW_MSG)});
+            editor._onWarn(createError(${JSON.stringify(KNOWN_MSG)}, adj, noun));
+          `,
+          codeExpect: noMinify
+            ? `
+                const error = createError(\`A new invariant\`);
+                editor._onWarn(createError(\`A \${adj} message that contains \${noun}\`));
+              `
+            : `
+                const error = createProdError(1);
+                editor._onWarn(createProdError(0, adj, noun));
+              `,
+          messageMapBefore: KNOWN_MSG_MAP,
+          messageMapExpect: NEW_MSG_MAP,
+          opts: {extractCodes: true, noMinify},
+        });
+      },
+    );
+
+    it('uses an existing code without extracting new ones', async () => {
+      await expectTransform({
+        codeBefore: `const makeError = () => createError(${JSON.stringify(KNOWN_MSG)}, adj, noun);`,
+        codeExpect: 'const makeError = () => createProdError(0, adj, noun);',
+        messageMapBefore: KNOWN_MSG_MAP,
+        messageMapExpect: KNOWN_MSG_MAP,
+        opts: {extractCodes: false, noMinify: false},
+      });
+    });
+
+    it('keeps uncoded production errors usable without throwing', async () => {
+      await expectTransform({
+        codeBefore: `editor._onWarn(createError(${JSON.stringify(NEW_MSG)}));`,
+        codeExpect: `editor._onWarn(
+          /*FIXME (minify-errors-in-prod): Unminified error message in production build!*/ createError(\`A new invariant\`)
+        );`,
+        messageMapBefore: KNOWN_MSG_MAP,
+        messageMapExpect: KNOWN_MSG_MAP,
+        opts: {extractCodes: false, noMinify: false},
+      });
+    });
+  });
+
   describe('invariant', () => {
     describe('{extractCodes: true, noMinify: false}', () => {
       const opts = {extractCodes: true, noMinify: false};

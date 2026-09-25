@@ -16,6 +16,38 @@
   },
   "sideEffects": false,
   "exports": {
+    "./createError": {
+      "source": "./src/createError.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/createError.d.ts",
+      "development": "./dist/LexicalInternalCreateError.dev.js",
+      "production": "./dist/LexicalInternalCreateError.prod.js",
+      "default": "./dist/LexicalInternalCreateError.js"
+    },
+    "./createError.js": {
+      "source": "./src/createError.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/createError.d.ts",
+      "development": "./dist/LexicalInternalCreateError.dev.js",
+      "production": "./dist/LexicalInternalCreateError.prod.js",
+      "default": "./dist/LexicalInternalCreateError.js"
+    },
+    "./createProdError": {
+      "source": "./src/createProdError.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/createProdError.d.ts",
+      "development": "./dist/LexicalInternalCreateProdError.dev.js",
+      "production": "./dist/LexicalInternalCreateProdError.prod.js",
+      "default": "./dist/LexicalInternalCreateProdError.js"
+    },
+    "./createProdError.js": {
+      "source": "./src/createProdError.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/createProdError.d.ts",
+      "development": "./dist/LexicalInternalCreateProdError.dev.js",
+      "production": "./dist/LexicalInternalCreateProdError.prod.js",
+      "default": "./dist/LexicalInternalCreateProdError.js"
+    },
     "./devInvariant": {
       "source": "./src/devInvariant.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",

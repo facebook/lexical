@@ -13,6 +13,7 @@ import type {
   SerializedPartialNode,
 } from './LexicalNode';
 
+import createError from '@lexical/internal/createError';
 import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
 
@@ -607,15 +608,11 @@ export function $commitPendingUpdates(
     if (notificationResult) {
       // Report only after preserving the pending edit. Update error recovery
       // would otherwise roll it back, even with a non-throwing error handler.
-      // Keep error-code extraction while routing the error through onWarn.
-      try {
-        invariant(
-          false,
+      editor._onWarn(
+        createError(
           'Selection change listeners are endlessly changing the selection.',
-        );
-      } catch (error) {
-        editor._onWarn(error as Error);
-      }
+        ),
+      );
     }
   } finally {
     isCommittingPendingUpdates = previouslyCommitting;
@@ -1125,21 +1122,14 @@ function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
     // commit.
     editor._updates = [];
     editor._cascadeCount = 0;
-    // The cascade has already been broken above by clearing the update queue,
-    // so this is a recoverable internal guard rather than a fatal error. Route
-    // it directly through the editor's warn-level hook (`_onWarn`, default:
-    // throw in dev / `console.warn` in prod) so embedders can capture how often
-    // the guard trips as warn-severity telemetry.
-    //
-    // A bare invariant/devInvariant would bypass onWarn after transformation.
-    // This legacy warning constructs its Error directly; the selection-loop
-    // warning above instead catches an invariant to retain error-code extraction.
+    // Report the recoverable guard through onWarn after breaking the cascade.
     editor._onWarn(
-      new Error(
+      createError(
         'One or more update listeners are endlessly enqueueing more updates. ' +
           'May have encountered infinite recursion caused by update listeners ' +
           'that trigger additional updates without a stop condition. ' +
-          `Editor namespace: ${editor._config.namespace}`,
+          'Editor namespace: %s',
+        editor._config.namespace,
       ),
     );
     return;
@@ -1360,6 +1350,11 @@ function $beginUpdate(
 
     // Restore existing editor state to the DOM
     editor._pendingEditorState = currentEditorState;
+    // A notification in the rejected update must not suppress a later retry
+    // or manufacture a selection change while recovering the committed state.
+    const selection = currentEditorState._selection;
+    editor._lastNotifiedSelection =
+      selection === null ? null : selection.clone();
     editor._dirtyType = FULL_RECONCILE;
 
     editor._cloneNotNeeded.clear();

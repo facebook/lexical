@@ -122,6 +122,12 @@
       "@lexical/headless/dom": ["./packages/lexical-headless/src/dom.ts"],
       "@lexical/history": ["./packages/lexical-history/src/index.ts"],
       "@lexical/html": ["./packages/lexical-html/src/index.ts"],
+      "@lexical/internal/createError": [
+        "./packages/lexical-internal/src/createError.ts"
+      ],
+      "@lexical/internal/createProdError": [
+        "./packages/lexical-internal/src/createProdError.ts"
+      ],
       "@lexical/internal/devInvariant": [
         "./packages/lexical-internal/src/devInvariant.ts"
       ],

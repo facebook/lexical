@@ -270,6 +270,56 @@ describe('SELECTION_CHANGE_COMMAND', () => {
     },
   );
 
+  test.each([
+    [false, false],
+    [false, true],
+    [true, false],
+    [true, true],
+  ])(
+    'restores the notification baseline after rollback (explicit: %s, retry selection: %s)',
+    (explicit, retrySelection) => {
+      using editor = buildEditorFromExtensions();
+      mountEditor(editor);
+      editor.update(
+        () => {
+          const text = $createTextNode('original');
+          $getRoot().clear().append($createParagraphNode().append(text));
+          text.select(1, 1);
+        },
+        {discrete: true},
+      );
+      const failure = new Error('selection listener failed');
+      const onError = vi.spyOn(editor, '_onError').mockImplementation(() => {});
+      const listener = vi
+        .fn(() => false)
+        .mockImplementationOnce(() => {
+          throw failure;
+        });
+      editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        listener,
+        COMMAND_PRIORITY_LOW,
+      );
+      editor.update(
+        () => {
+          $getRoot().getAllTextNodes()[0].select(3, 3);
+          if (explicit) editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+        },
+        {discrete: true},
+      );
+      expect(onError).toHaveBeenCalledExactlyOnceWith(failure);
+      expect(listener).toHaveBeenCalledTimes(1);
+      listener.mockClear();
+      editor.update(
+        () => {
+          if (retrySelection) $getRoot().getAllTextNodes()[0].select(3, 3);
+        },
+        {discrete: true, onUpdate: () => {}},
+      );
+      expect(listener).toHaveBeenCalledTimes(retrySelection ? 1 : 0);
+    },
+  );
+
   test.each(['transform', 'nested update'])(
     'aborts the update when listener work fails in a %s',
     origin => {

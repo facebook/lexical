@@ -215,10 +215,18 @@ from the last committed state. A listener can normalize the selection or edit
 nodes before that same update commits. Listeners that change the selection may
 cause another notification before commit; they must converge.
 
+**Breaking change:** eligible programmatic changes such as `node.select()` now
+notify without waiting for a DOM `selectionchange` event. Automatic non-range
+notifications, including `NodeSelection` and `TableSelection`, now run before
+reconciliation instead of after it. Native range-selection notifications already
+ran inside an update.
+
 Selection listeners use the update's normal error handling. A throwing listener
 reports through `onError` and can abort the entire pending update, including the
-edit that triggered the notification, just like an explicit command dispatch
-inside that update.
+edit that triggered the notification and any other edits batched into that
+commit, just like an explicit command dispatch inside that update. For updates
+that did not previously notify, this adds a new point at which a listener error
+can abort content changes. Listener edits do not have a separate rollback scope.
 
 The DOM is not guaranteed to match the pending state, even for a `NodeSelection`.
 New nodes may not have an element yet, and DOM ranges, layout, and focus may
@@ -246,6 +254,42 @@ nodes inside the callback rather than capturing mutable pending objects.
 commit, including content changes that do not change the selection. Updates
 using `SKIP_DOM_SELECTION_TAG` still deliberately leave the browser selection
 unsynchronized.
+
+#### Update tags and local edits
+
+The notification belongs to the pending update and inherits its tags. A listener
+can inspect them with `$hasUpdateTag`. In particular, Yjs does not sync content
+edits back to peers when the update is tagged `COLLABORATION_TAG` or
+`HISTORIC_TAG`; history also treats `HISTORIC_TAG` as replaying an existing entry.
+This applies to content edits made by selection listeners in those updates.
+
+Listeners that only apply to local editing should skip those tagged updates. If
+a remote change or undo must trigger an independent local content edit, schedule
+it after the tagged commit with `$onUpdate`, then start a fresh `editor.update`:
+
+```ts
+const $applyLocalEdit = () => {
+  // Read the current selection and nodes, then apply a convergent local edit.
+};
+
+editor.registerCommand(
+  SELECTION_CHANGE_COMMAND,
+  () => {
+    if ($hasUpdateTag(COLLABORATION_TAG) || $hasUpdateTag(HISTORIC_TAG)) {
+      $onUpdate(() => editor.update($applyLocalEdit));
+    } else {
+      $applyLocalEdit();
+    }
+    return false;
+  },
+  COMMAND_PRIORITY_LOW,
+);
+```
+
+Import the tags and `$hasUpdateTag` from `lexical`. Re-read the state in the fresh
+update; it has its own collaboration and undo behavior. Calling `editor.update`
+directly inside the command listener queues a nested update that still belongs
+to the same tagged commit.
 
 Automatic range and cleared-selection notifications require a connected editor
 root. Changes committed while those notifications are skipped advance the

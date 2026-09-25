@@ -215,10 +215,10 @@ from the last committed state. A listener can normalize the selection or edit
 nodes before that same update commits. Listeners that change the selection may
 cause another notification before commit; they must converge.
 
-If an automatic pre-commit notification throws, its pending model changes and
-queued callbacks are discarded. The edit preceding that notification still
-commits, and the error is then reported through `onError`. Explicit command
-dispatches inside an update retain that update's normal error handling.
+Selection listeners use the update's normal error handling. A throwing listener
+reports through `onError` and can abort the entire pending update, including the
+edit that triggered the notification, just like an explicit command dispatch
+inside that update.
 
 The DOM is not guaranteed to match the pending state, even for a `NodeSelection`.
 New nodes may not have an element yet, and DOM ranges, layout, and focus may

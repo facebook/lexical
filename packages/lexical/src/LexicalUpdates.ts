@@ -604,9 +604,7 @@ export function $commitPendingUpdates(
   try {
     const notificationResult = $notifyPendingSelectionChange(editor);
     $commitPendingUpdatesImpl(editor, recoveryEditorState);
-    if (notificationResult instanceof Error) {
-      editor._onError(notificationResult);
-    } else if (notificationResult) {
+    if (notificationResult) {
       // Report only after preserving the pending edit. Update error recovery
       // would otherwise roll it back, even with a non-throwing error handler.
       // Keep error-code extraction while routing the error through onWarn.
@@ -945,8 +943,8 @@ export function $dispatchSelectionChangeCommand(
   editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
 }
 
-/** Returns a listener error or true when listeners exceed the limit. */
-function $notifyPendingSelectionChange(editor: LexicalEditor): boolean | Error {
+/** Returns true when listeners exceed the notification limit. */
+function $notifyPendingSelectionChange(editor: LexicalEditor): boolean {
   if (editorsWithPendingSelectionChange.has(editor)) {
     return false;
   }
@@ -969,79 +967,18 @@ function $notifyPendingSelectionChange(editor: LexicalEditor): boolean | Error {
           selection === null ? null : selection.clone();
         return !skipNotification;
       }
-      const error = $runSelectionChangeListeners(editor, pending);
-      if (error !== undefined) {
-        return error;
-      }
+      // Extend the pending update, including its normal error handling. The
+      // caller owns the commit, so listener edits and transforms join it.
+      $beginUpdate(
+        editor,
+        () => editor.dispatchCommand(SELECTION_CHANGE_COMMAND),
+        undefined,
+        true,
+      );
     }
     return false;
   } finally {
     editorsWithPendingSelectionChange.delete(editor);
-  }
-}
-
-function $runSelectionChangeListeners(
-  editor: LexicalEditor,
-  pending: EditorState,
-): Error | undefined {
-  // Keep the user's pending edit as the recovery point. Listener writes must
-  // clone nodes even when the original update already made them writable.
-  const checkpoint = {
-    _cloneNotNeeded: editor._cloneNotNeeded,
-    _compositionKey: editor._compositionKey,
-    _deferred: editor._deferred,
-    _dirtyElements: editor._dirtyElements,
-    _dirtyLeaves: editor._dirtyLeaves,
-    _dirtyType: editor._dirtyType,
-    _normalizedNodes: editor._normalizedNodes,
-    _pendingDecorators: editor._pendingDecorators,
-    _pendingEditorState: pending,
-    _updateTags: editor._updateTags,
-    _updates: editor._updates,
-  };
-  const writable = cloneEditorState(pending);
-  const selection = pending._selection;
-  if (selection !== null) {
-    writable._selection = selection.clone();
-    writable._selection.dirty = selection.dirty;
-  }
-  editor._pendingEditorState = writable;
-  editor._cloneNotNeeded = new Map();
-  editor._deferred = [...editor._deferred];
-  editor._dirtyElements = new Map(editor._dirtyElements);
-  editor._dirtyLeaves = new Set(editor._dirtyLeaves);
-  editor._normalizedNodes = new Set(editor._normalizedNodes);
-  editor._pendingDecorators =
-    editor._pendingDecorators === null ? null : {...editor._pendingDecorators};
-  editor._updates = [...editor._updates];
-  editor._updateTags = new Set(editor._updateTags);
-  try {
-    // Apply listener edits and transforms without starting another commit.
-    $beginUpdate(
-      editor,
-      () => editor.dispatchCommand(SELECTION_CHANGE_COMMAND),
-      undefined,
-      true,
-    );
-    if (editor._pendingEditorState === writable) {
-      // The reconciler also uses this map to detect structural changes made
-      // anywhere in the commit. Restore earlier writes after isolating listener
-      // mutations, using their latest versions and excluding collected nodes.
-      for (const key of checkpoint._cloneNotNeeded.keys()) {
-        const node = writable._nodeMap.get(key);
-        if (node !== undefined) {
-          editor._cloneNotNeeded.set(key, node);
-        }
-      }
-    }
-  } catch (error) {
-    Object.assign(editor, checkpoint);
-    // The failed attempt may have dispatched again with a different selection.
-    editor._lastNotifiedSelection =
-      selection === null ? null : selection.clone();
-    if (error instanceof Error) {
-      return error;
-    }
   }
 }
 
@@ -1416,11 +1353,6 @@ function $beginUpdate(
       }
     }
   } catch (error) {
-    if (skipCommit) {
-      // Selection notifications recover to the pending edit in their caller,
-      // and report the error only after that edit has committed.
-      throw error;
-    }
     // Report errors
     if (error instanceof Error) {
       editor._onError(error);

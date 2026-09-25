@@ -213,8 +213,8 @@ describe('SELECTION_CHANGE_COMMAND', () => {
   );
 
   test.each([false, true])(
-    'preserves the edit and discards failed listener work (throwing onError: %s)',
-    throws => {
+    'aborts the update when a selection listener throws (explicit dispatch: %s)',
+    explicit => {
       using editor = buildEditorFromExtensions();
       mountEditor(editor);
       editor.update(
@@ -226,54 +226,42 @@ describe('SELECTION_CHANGE_COMMAND', () => {
         {discrete: true},
       );
       const failure = new Error('selection listener failed');
-      const onError = vi.spyOn(editor, '_onError').mockImplementation(error => {
-        expect(editor.getRootElement()!.textContent).toBe('edited!');
-        if (throws) throw error;
-      });
+      const onError = vi.spyOn(editor, '_onError').mockImplementation(() => {});
       const onWarn = vi.spyOn(editor, '_onWarn');
-      const originalCallback = vi.fn();
-      const failedCallback = vi.fn();
-      const queuedCallback = vi.fn();
-      const updates = vi.fn();
-      editor.registerUpdateListener(updates);
       const unregister = editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         () => {
-          $getRoot().getAllTextNodes()[0].setTextContent('listener change');
-          $getRoot().append(
-            $createParagraphNode().append($createTextNode('discard')),
-          );
-          $getRoot().selectEnd();
-          $onUpdate(failedCallback);
-          editor.update(queuedCallback);
-          throw failure;
+          const text = $getRoot().getAllTextNodes()[0];
+          if (text.getTextContent() === 'edited!') {
+            text.setTextContent('listener change');
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('discard')),
+            );
+            $getRoot().selectEnd();
+            throw failure;
+          }
+          return false;
         },
         COMMAND_PRIORITY_LOW,
       );
-      const update = () =>
-        editor.update(
-          () => {
-            const text = $getRoot().getAllTextNodes()[0];
-            text.setTextContent('edited!');
-            text.select(3, 3);
-          },
-          {discrete: true, onUpdate: originalCallback},
-        );
-      if (throws) expect(update).toThrow(failure);
-      else update();
+      editor.update(
+        () => {
+          const text = $getRoot().getAllTextNodes()[0];
+          text.setTextContent('edited!');
+          text.select(3, 3);
+          if (explicit) editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+        },
+        {discrete: true},
+      );
       expect(onError).toHaveBeenCalledExactlyOnceWith(failure);
       expect(onWarn).not.toHaveBeenCalled();
-      expect(editor.getRootElement()!.textContent).toBe('edited!');
+      expect(editor.getRootElement()!.textContent).toBe('original');
       editor.read(() => {
-        expect($getRoot().getTextContent()).toBe('edited!');
+        expect($getRoot().getTextContent()).toBe('original');
         const selection = $getSelection();
         assert($isRangeSelection(selection));
-        expect(selection.anchor.offset).toBe(3);
+        expect(selection.anchor.offset).toBe(1);
       });
-      expect(updates).toHaveBeenCalledTimes(1);
-      expect(originalCallback).toHaveBeenCalledTimes(1);
-      expect(failedCallback).not.toHaveBeenCalled();
-      expect(queuedCallback).not.toHaveBeenCalled();
       unregister();
       editor.update(() => $getRoot().getAllTextNodes()[0].select(4, 4), {
         discrete: true,
@@ -283,7 +271,7 @@ describe('SELECTION_CHANGE_COMMAND', () => {
   );
 
   test.each(['transform', 'nested update'])(
-    'preserves the edit when listener work fails in a %s',
+    'aborts the update when listener work fails in a %s',
     origin => {
       using editor = buildEditorFromExtensions();
       mountEditor(editor);
@@ -328,8 +316,8 @@ describe('SELECTION_CHANGE_COMMAND', () => {
         {discrete: true},
       );
       expect(onError).toHaveBeenCalledExactlyOnceWith(failure);
-      expect(editor.read(() => $getRoot().getTextContent())).toBe('edited!');
-      expect(editor.getRootElement()!.textContent).toBe('edited!');
+      expect(editor.read(() => $getRoot().getTextContent())).toBe('original');
+      expect(editor.getRootElement()!.textContent).toBe('original');
     },
   );
 

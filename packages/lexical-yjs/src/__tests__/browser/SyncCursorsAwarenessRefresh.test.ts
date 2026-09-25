@@ -10,6 +10,7 @@ import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
+import {createDOMRange} from '@lexical/selection';
 import {
   type Binding,
   createBinding,
@@ -55,13 +56,14 @@ describe('syncCursorPositions awareness refresh', () => {
    * A mounted editor holding `ab cd`, bound to a Yjs doc that already has the
    * content synced, plus a cursors container attached to the page.
    */
-  function mountEditorWithBinding(): {
+  function mountEditorWithBinding(mixedTypography = false): {
     binding: Binding;
     cursorsContainer: HTMLElement;
     editor: LexicalEditorWithDispose;
   } {
     const rootElement = document.createElement('div');
     rootElement.contentEditable = 'true';
+    rootElement.style.font = '16px/1.5 Arial';
     const cursorsContainer = document.createElement('div');
     cursorsContainer.style.position = 'relative';
     document.body.append(rootElement, cursorsContainer);
@@ -81,7 +83,14 @@ describe('syncCursorPositions awareness refresh', () => {
     editor.update(
       () => {
         const paragraph = $createParagraphNode();
-        paragraph.append($createTextNode('ab cd'));
+        if (mixedTypography) {
+          paragraph.append(
+            $createTextNode('Small before '),
+            $createTextNode('LARGE').setStyle('font-size:40px'),
+          );
+        } else {
+          paragraph.append($createTextNode('ab cd'));
+        }
         $getRoot().clear().append(paragraph);
       },
       {discrete: true},
@@ -120,6 +129,8 @@ describe('syncCursorPositions awareness refresh', () => {
   function remoteUserState(
     binding: Binding,
     editor: LexicalEditorWithDispose,
+    mixedTypography = false,
+    backward = false,
   ): UserState {
     let localState: UserState = {
       anchorPos: null,
@@ -144,9 +155,18 @@ describe('syncCursorPositions awareness refresh', () => {
         const paragraph = $getRoot().getFirstChild();
         assert($isElementNode(paragraph));
         const text = paragraph.getFirstChildOrThrow();
+        const large = mixedTypography ? paragraph.getLastChildOrThrow() : text;
         const selection = $createRangeSelection();
-        selection.anchor.set(text.getKey(), 0, 'text');
-        selection.focus.set(text.getKey(), 5, 'text');
+        selection.anchor.set(
+          backward ? large.getKey() : text.getKey(),
+          backward ? 5 : 0,
+          'text',
+        );
+        selection.focus.set(
+          backward ? text.getKey() : large.getKey(),
+          backward ? 0 : 5,
+          'text',
+        );
         $setSelection(selection);
       },
       {discrete: true},
@@ -246,4 +266,39 @@ describe('syncCursorPositions awareness refresh', () => {
     expect(first.selection.caret).toBe(caret);
     expect(caret.isConnected).toBe(true);
   });
+
+  test.each([false, true])(
+    'anchors a mixed-typography remote caret to its %s focus endpoint',
+    backward => {
+      const {binding, cursorsContainer, editor} = mountEditorWithBinding(true);
+      const state = remoteUserState(binding, editor, true, backward);
+      sync(binding, {...state, color: '#ff0000', name: 'Bob'});
+
+      const cursor = binding.cursors.get(REMOTE_CLIENT_ID);
+      assert(cursor !== undefined && cursor.selection !== null);
+      const focus = cursor.selection.focus;
+      const focusRange = editor.read(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(paragraph));
+        const node = backward
+          ? paragraph.getFirstChildOrThrow()
+          : paragraph.getLastChildOrThrow();
+        return createDOMRange(editor, node, focus.offset, node, focus.offset);
+      });
+      assert(focusRange !== null);
+      const offsetParent = cursorsContainer.offsetParent;
+      assert(offsetParent !== null);
+      const expected = focusRange.getBoundingClientRect();
+      const parent = offsetParent.getBoundingClientRect();
+      expect(Number.parseFloat(cursor.selection.caret.style.left)).toBeCloseTo(
+        expected.left - parent.left,
+        1,
+      );
+      expect(Number.parseFloat(cursor.selection.caret.style.top)).toBeCloseTo(
+        expected.top - parent.top,
+        1,
+      );
+      expect(cursor.selection.caret.parentNode).toBe(cursorsContainer);
+    },
+  );
 });

@@ -15,6 +15,7 @@ function createRoot(html: string): HTMLDivElement {
   root.style.cssText =
     'position:absolute;left:20px;top:20px;width:600px;padding:0;font:16px/1.5 Arial';
   root.innerHTML = html;
+  void root.offsetHeight;
   document.body.append(root);
   onTestFinished(() => root.remove());
   return root;
@@ -88,6 +89,19 @@ describe('createRectsFromDOMRange with mixed typography', () => {
 
     expectTextCovered(root, rects);
     expectTextCovered(root, dedupeSelectionRects(rects));
+  });
+
+  it('keeps text coverage when an overlapping inline box sits one pixel lower', () => {
+    const root = createRoot(
+      '<span>Wide selected text</span><span style="display:inline-block;width:12px;height:18px;margin-left:-100px;vertical-align:-1px">N</span>',
+    );
+    const range = document.createRange();
+    range.selectNodeContents(root);
+
+    expectTextCovered(
+      root,
+      createRectsFromDOMRange({getRootElement: () => root}, range),
+    );
   });
 
   it.each(['ltr', 'rtl'])(

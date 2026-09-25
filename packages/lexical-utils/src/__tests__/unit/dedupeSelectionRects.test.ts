@@ -112,8 +112,8 @@ describe('dedupeSelectionRects', () => {
   });
 });
 
-// The consumer pipeline in positionNodeOnRange is
-// `dedupeSelectionRects(createRectsFromDOMRange(editor, range))`.
+// Characterize why positionNodeOnRange must not compose this keep-smaller
+// helper with createRectsFromDOMRange.
 // createRectsFromDOMRange already runs its own dedupe — single-pass and
 // adjacent-only: it sorts by top (3px tolerance) then left, drops a rect only when
 // it is contained in the immediately-preceding KEPT rect, and drops rects spanning the

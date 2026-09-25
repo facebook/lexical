@@ -89,6 +89,30 @@ describe('positionNodeOnRange', () => {
     }
   });
 
+  it('keeps the wide selected area beside a vertically shifted inline box', () => {
+    const rootElement = createRootElement();
+    const editor = createTestEditor();
+    editor.setRootElement(rootElement);
+    const range = document.createRange();
+    const wide = new DOMRect(128, 90, 900, 18);
+    const narrow = new DOMRect(128, 89.5, 12, 18);
+    vi.spyOn(range, 'getClientRects').mockReturnValue([
+      wide,
+      narrow,
+    ] as unknown as DOMRectList);
+    const onReposition = vi.fn();
+    const cleanup = positionNodeOnRange(editor, range, onReposition);
+
+    try {
+      expect(onReposition).toHaveBeenCalled();
+      const nodes = onReposition.mock.lastCall![0] as HTMLElement[];
+      expect(nodes.map(node => node.style.width)).toEqual(['900px', '12px']);
+    } finally {
+      cleanup();
+      editor.setRootElement(null);
+    }
+  });
+
   it.each([0, 1])(
     'notifies when overlay rectangles shrink to %i',
     async remaining => {

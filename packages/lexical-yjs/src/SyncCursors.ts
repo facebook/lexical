@@ -487,6 +487,45 @@ function updateCursor(
     return;
   }
 
+  const positionCaretAtFocus = (): boolean => {
+    const focusRange = createDOMRange(
+      editor,
+      focusNode,
+      focus.offset,
+      focusNode,
+      focus.offset,
+    );
+    let caretRect =
+      focusRange === null ? undefined : focusRange.getBoundingClientRect();
+    if ((!caretRect || caretRect.height === 0) && $isLineBreakNode(focusNode)) {
+      const focusEl = editor.getElementByKey(focusKey) as HTMLElement | null;
+      if (focusEl !== null) {
+        caretRect = focusEl.getBoundingClientRect();
+      }
+    }
+    if (!caretRect) {
+      return false;
+    }
+
+    setDOMStyleObject(caret.style, {
+      'background-color': theme.cursor ? '' : color,
+      bottom: '',
+      height: `${caretRect.height || 16}px`,
+      left: `${caretRect.left - containerRect.left}px`,
+      'pointer-events': 'none',
+      position: 'absolute',
+      right: '',
+      top: `${caretRect.top - containerRect.top}px`,
+      width: '1px',
+      'z-index': '10',
+    });
+
+    if (caret.parentNode !== cursorsContainer) {
+      cursorsContainer.appendChild(caret);
+    }
+    return true;
+  };
+
   if (highlight !== null) {
     // modern path: CSS Custom Highlight API
     const range = createDOMRange(
@@ -506,35 +545,7 @@ function updateCursor(
       highlight.add(range);
     }
 
-    // Caret stays as a positioned element; anchor it to the focus end.
-    const caretRange = range.cloneRange();
-    caretRange.collapse(false);
-    let caretRect: DOMRect = caretRange.getBoundingClientRect();
-    if (caretRect.height === 0 && $isLineBreakNode(focusNode)) {
-      // Bare <br>: collapsed range reports zero size. Fall back to the
-      // line break's own box so the caret still renders.
-      const focusEl = editor.getElementByKey(focusKey) as HTMLElement | null;
-      if (focusEl !== null) {
-        caretRect = focusEl.getBoundingClientRect();
-      }
-    }
-
-    setDOMStyleObject(caret.style, {
-      'background-color': theme.cursor ? '' : color,
-      bottom: '',
-      height: `${caretRect.height || 16}px`,
-      left: `${caretRect.left - containerRect.left}px`,
-      'pointer-events': 'none',
-      position: 'absolute',
-      right: '',
-      top: `${caretRect.top - containerRect.top}px`,
-      width: '1px',
-      'z-index': '10',
-    });
-
-    if (caret.parentNode !== cursorsContainer) {
-      cursorsContainer.appendChild(caret);
-    }
+    positionCaretAtFocus();
     return;
   }
 
@@ -620,11 +631,12 @@ function updateCursor(
         'z-index': '5',
       });
     }
+  }
 
-    if (i === selectionRectsLength - 1) {
-      if (caret.parentNode !== selection) {
-        selection.appendChild(caret);
-      }
+  if (!positionCaretAtFocus() && selectionRectsLength > 0) {
+    const lastSelection = selections[selectionRectsLength - 1];
+    if (caret.parentNode !== lastSelection) {
+      lastSelection.appendChild(caret);
     }
   }
 

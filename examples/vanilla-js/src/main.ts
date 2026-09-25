@@ -42,7 +42,7 @@ const appExtension = defineExtension({
   namespace: 'Vanilla JS Demo',
   register(editor) {
     return editor.registerUpdateListener(({editorState}) => {
-      stateRef.value = JSON.stringify(editorState.toJSON(), null, 2);
+      stateRef.value = JSON.stringify(editorState.toJSON(true), null, 2);
     });
   },
   theme: {quote: 'PlaygroundEditorTheme__quote'},

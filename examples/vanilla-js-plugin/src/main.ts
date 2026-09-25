@@ -44,7 +44,7 @@ const appExtension = defineExtension({
   namespace: 'Vanilla JS Emoji Demo',
   register(editor) {
     return editor.registerUpdateListener(({editorState}) => {
-      stateRef.value = JSON.stringify(editorState.toJSON(), null, 2);
+      stateRef.value = JSON.stringify(editorState.toJSON(true), null, 2);
     });
   },
 });

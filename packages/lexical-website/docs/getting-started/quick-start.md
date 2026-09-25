@@ -181,7 +181,7 @@ const LogChangesExtension = defineExtension({
       if (dirtyElements.size === 0 && dirtyLeaves.size === 0) {
         return;
       }
-      console.log(JSON.stringify(editorState.toJSON()));
+      console.log(JSON.stringify(editorState.toJSON(true)));
     });
   },
 });
@@ -194,6 +194,8 @@ inside it adds an unnecessary reconciliation.
 ## Putting it together
 
 This runnable example uses one root extension for rich text, HTML paste, history,
-initial content, and a JSON debug view:
+initial content, and a JSON debug view. The view uses `editorState.toJSON(true)`
+to omit fields that parsing restores to their default values, and keeps the JSON
+indented for readability:
 
 <GettingStartedExample example="vanilla-js" />

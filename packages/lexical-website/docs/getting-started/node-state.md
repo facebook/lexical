@@ -18,14 +18,14 @@ JSON or exporting and importing HTML.
 ## Defining the state
 
 ```ts
-import {createState} from 'lexical';
+import {booleanValue, createState} from 'lexical';
 
 export const reviewedState = createState('reviewed', {
-  parse: value => value === true,
+  parse: booleanValue(),
 });
 ```
 
-Define the state once at module scope. Its parser accepts untrusted JSON and
+Define the state once at module scope. `booleanValue()` accepts untrusted JSON and
 returns `false` for missing or invalid values. Read with `$getState(node,
 reviewedState)` and write with `$setState(node, reviewedState, value)` inside a
 Lexical read or update context, as appropriate.
@@ -54,6 +54,7 @@ import {
   $getState,
   $isParagraphNode,
   $setState,
+  booleanValue,
   configExtension,
   createState,
   defineExtension,
@@ -62,7 +63,7 @@ import {
 } from 'lexical';
 
 export const reviewedState = createState('reviewed', {
-  parse: value => value === true,
+  parse: booleanValue(),
 });
 
 function $applyReviewedAttribute(node: ParagraphNode, element: HTMLElement) {
@@ -210,7 +211,8 @@ editor.update(() => {
 ```
 
 Use **Toggle reviewed**, then **Export HTML** and **Import HTML** to try the round
-trip. Expand **Editor state JSON** to inspect the ad-hoc data. The same
+trip. Expand **Editor state JSON** to inspect the ad-hoc data. This view uses
+`editorState.toJSON(true)` to omit default-valued fields. The same
 `ReviewExtension` also works with `LexicalExtensionComposer` in React.
 
 <GettingStartedExample example="node-state-review" />

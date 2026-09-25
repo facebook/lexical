@@ -17,6 +17,7 @@ import {
   $getState,
   $isParagraphNode,
   $setState,
+  booleanValue,
   configExtension,
   createState,
   defineExtension,
@@ -25,7 +26,7 @@ import {
 } from 'lexical';
 
 export const reviewedState = createState('reviewed', {
-  parse: value => value === true,
+  parse: booleanValue(),
 });
 
 function $applyReviewedAttribute(node: ParagraphNode, element: HTMLElement) {

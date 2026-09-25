@@ -70,7 +70,7 @@ const appExtension = defineExtension({
   namespace: 'Paragraph Review',
   register(editor) {
     return editor.registerUpdateListener(({editorState}) => {
-      json.value = JSON.stringify(editorState.toJSON(), null, 2);
+      json.value = JSON.stringify(editorState.toJSON(true), null, 2);
     });
   },
 });

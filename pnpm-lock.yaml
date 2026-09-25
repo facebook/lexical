@@ -1134,6 +1134,9 @@ importers:
       '@lexical/html':
         specifier: workspace:*
         version: link:../lexical-html
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/link':
         specifier: workspace:*
         version: link:../lexical-link

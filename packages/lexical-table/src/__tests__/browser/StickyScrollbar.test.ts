@@ -73,7 +73,7 @@ function setUpEditor(options: {css?: string; theme?: EditorThemeClasses} = {}) {
         configExtension(TableExtension, {hasStickyScrollbar: true}),
       ],
       name: 'sticky-scrollbar-test',
-      ...(theme ? {theme} : {}),
+      theme: {tableScrollableWrapper: '', ...theme},
     }),
   );
   onTestFinished(() => editor.dispose());

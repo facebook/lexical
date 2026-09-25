@@ -103,6 +103,7 @@ import {
 } from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {
+  $createTableSelectionFrom,
   $isTableSelection,
   type TableMapType,
   type TableMapValueType,
@@ -1193,7 +1194,7 @@ export function $handleTableSelectionChangeCommand(
   const prevSelection = $getPreviousSelection();
 
   const nextFocus = tableObservers.getAndClearNextFocus();
-  if (nextFocus !== null) {
+  if (nextFocus !== null && $isTableNode($getNodeByKey(nextFocus.tableKey))) {
     const {tableKey, focusCell} = nextFocus;
     const observerAndTable = tableObservers.observers.get(tableKey);
     invariant(
@@ -1277,17 +1278,20 @@ export function $handleTableSelectionChangeCommand(
     $fixRangeSelectionForSelectedTable(selection, tableObservers);
   }
 
-  // Generic selection logic that runs across every table observer when the selection changes.
-  // Note: the selection might have changed in the code above, which re-dispatches the selection change command
-  // and gets handled here on the second pass. This should be refactored.
+  return false;
+}
+
+/** Synchronize selection UI after table DOM and mutation listeners are ready. */
+export function $syncTableSelectionObservers(
+  tableObservers: TableObservers,
+  editor: LexicalEditor,
+): void {
   for (const [
     tableNode,
     tableObserver,
   ] of tableObservers.$getTableNodesAndObservers()) {
     $syncTableSelectionState(editor, tableNode, tableObserver);
   }
-
-  return false;
 }
 
 /**
@@ -1366,22 +1370,23 @@ function $fixRangeSelectionForSelectedTable(
     // has range selection, then we convert it into table selection
     // For example, this fires when dragging up from first cell, outside of the table, or when clicking a cell
     // then shift-clicking another cell.
-    const observerInfo = tableObservers.observers.get(anchorCellTable.getKey());
-    invariant(
-      !!observerInfo,
-      'tableObserver not found for tableKey: %s',
-      anchorCellTable.getKey(),
-    );
-    const [tableObserver] = observerInfo;
     if (!anchorCellNode.is(focusCellNode)) {
-      tableObserver.$setAnchorCellForSelection(
-        $getObserverCellFromCellNodeOrThrow(tableObserver, anchorCellNode),
+      // Selection normalization is model work: the table or cells may not
+      // have DOM yet. Its observer will synchronize after reconciliation.
+      $setSelection(
+        $createTableSelectionFrom(
+          anchorCellTable,
+          anchorCellNode,
+          focusCellNode,
+        ),
       );
-      tableObserver.$setFocusCellForSelection(
-        $getObserverCellFromCellNodeOrThrow(tableObserver, focusCellNode),
-        true,
-      );
+      return;
     }
+    const observerInfo = tableObservers.observers.get(anchorCellTable.getKey());
+    if (observerInfo === undefined) {
+      return;
+    }
+    const [tableObserver] = observerInfo;
 
     // Handle case when the pointer type is touch and the current and
     // previous selection are collapsed, and the previous anchor and current
@@ -1398,31 +1403,31 @@ function $fixRangeSelectionForSelectedTable(
       $isRangeSelection(prevSelection) &&
       prevSelection.isCollapsed()
     ) {
-      const prevAnchorCellNode = $findCellNode(prevSelection.anchor.getNode());
+      const prevAnchorNode = $getNodeByKey(prevSelection.anchor.key);
+      const prevAnchorCellNode =
+        prevAnchorNode && $findCellNode(prevAnchorNode);
       // Being a drag is not enough: it has to have left the cell it started
       // on. A drag that stays inside one cell is selecting text there, and
       // the caret the browser moves as it goes would otherwise be paired with
       // whatever cell the previous gesture left in the range selection,
       // producing exactly the multi-cell selection tapping is meant to avoid.
       const {pointerStartCell} = tableObserver;
+      const pointerStartNode =
+        pointerStartCell && $getNearestNodeFromDOMNode(pointerStartCell.elem);
       const hasLeftStartCell =
-        pointerStartCell !== null &&
-        $getObserverCellFromCellNodeOrThrow(tableObserver, focusCellNode)
-          .elem !== pointerStartCell.elem;
+        pointerStartNode !== null && !pointerStartNode.is(focusCellNode);
       if (
         hasLeftStartCell &&
         prevAnchorCellNode &&
+        anchorCellTable.is($findTableNode(prevAnchorCellNode)) &&
         !prevAnchorCellNode.is(focusCellNode)
       ) {
-        tableObserver.$setAnchorCellForSelection(
-          $getObserverCellFromCellNodeOrThrow(
-            tableObserver,
+        $setSelection(
+          $createTableSelectionFrom(
+            anchorCellTable,
             prevAnchorCellNode,
+            focusCellNode,
           ),
-        );
-        tableObserver.$setFocusCellForSelection(
-          $getObserverCellFromCellNodeOrThrow(tableObserver, focusCellNode),
-          true,
         );
         tableObserver.pointerType = null;
       }
@@ -1439,6 +1444,9 @@ function $fixTableSelectionForSelectedTable(
 ) {
   const editorWindow = getEditorWindow(editor);
   const prevSelection = $getPreviousSelection();
+  // A changed model selection is authoritative; the DOM may still describe
+  // the previous selection. Only an unchanged TableSelection can represent a
+  // native drag that has escaped the table without changing the model yet.
   if (!selection.is(prevSelection)) {
     return;
   }
@@ -1477,34 +1485,57 @@ function $syncTableSelectionState(
   tableObserver: TableObserver,
 ) {
   const selection = $getSelection();
-  const prevSelection = $getPreviousSelection();
+  const isSelected = tableNode.isSelected();
   if (
-    selection &&
-    !selection.is(prevSelection) &&
-    ($isTableSelection(selection) || $isTableSelection(prevSelection)) &&
-    tableObserver.tableSelection &&
-    !tableObserver.tableSelection.is(prevSelection)
+    !(
+      $isTableSelection(selection) && selection.tableKey === tableNode.getKey()
+    ) &&
+    !tableObserver.isHighlightingCells &&
+    !tableObserver.hasHijackedSelectionStyles &&
+    !isSelected
   ) {
-    if (
-      $isTableSelection(selection) &&
-      selection.tableKey === tableObserver.tableNodeKey
-    ) {
-      tableObserver.$updateTableTableSelection(selection);
-    } else if (
-      !$isTableSelection(selection) &&
-      $isTableSelection(prevSelection) &&
-      prevSelection.tableKey === tableObserver.tableNodeKey
-    ) {
-      tableObserver.$updateTableTableSelection(null);
+    return;
+  }
+  // MutationObserver callbacks have not necessarily run yet. Refresh the grid
+  // now so newly inserted/replaced cells can be selected and highlighted.
+  const {tableElement} = tableObserver.$lookup();
+  tableObserver.table = getTable(tableNode, tableElement);
+  if (
+    $isTableSelection(selection) &&
+    selection.tableKey === tableNode.getKey()
+  ) {
+    const anchor = $getNodeByKey(selection.anchor.key);
+    const focus = $getNodeByKey(selection.focus.key);
+    if ($isTableCellNode(anchor) && $isTableCellNode(focus)) {
+      const anchorCell = $getObserverCellFromCellNodeOrThrow(
+        tableObserver,
+        anchor,
+      );
+      const focusCell = $getObserverCellFromCellNodeOrThrow(
+        tableObserver,
+        focus,
+      );
+      tableObserver.anchorCell = anchorCell;
+      tableObserver.anchorCellNodeKey = anchor.getKey();
+      tableObserver.anchorX = anchorCell.x;
+      tableObserver.anchorY = anchorCell.y;
+      tableObserver.focusCell = focusCell;
+      tableObserver.focusCellNodeKey = focus.getKey();
+      tableObserver.focusX = focusCell.x;
+      tableObserver.focusY = focusCell.y;
     }
+    tableObserver.$updateTableTableSelection(selection);
+  } else if (tableObserver.isHighlightingCells) {
+    // Only clear an active table selection's highlighting. Pointerdown also
+    // prepares tableSelection while the native caret is still a range; clearing
+    // that here would erase the starting cell of the drag.
+    // Preserve the new model selection when removing the old highlighting.
+    tableObserver.$clearHighlight(false);
   }
 
-  if (tableObserver.hasHijackedSelectionStyles && !tableNode.isSelected()) {
+  if (tableObserver.hasHijackedSelectionStyles && !isSelected) {
     $removeHighlightStyleToTable(editor, tableObserver);
-  } else if (
-    !tableObserver.hasHijackedSelectionStyles &&
-    tableNode.isSelected()
-  ) {
+  } else if (!tableObserver.hasHijackedSelectionStyles && isSelected) {
     $addHighlightStyleToTable(editor, tableObserver);
   }
 }

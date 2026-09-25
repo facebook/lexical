@@ -65,7 +65,6 @@ import {
   PASTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
-  SELECTION_CHANGE_COMMAND,
   SKIP_SELECTION_FOCUS_TAG,
   UNDO_COMMAND,
 } from '.';
@@ -101,7 +100,11 @@ import {
   $internalCreateRangeSelection,
   type RangeSelection,
 } from './LexicalSelection';
-import {getActiveEditor, updateEditorSync} from './LexicalUpdates';
+import {
+  $dispatchSelectionChangeCommand,
+  getActiveEditor,
+  updateEditorSync,
+} from './LexicalUpdates';
 import {
   $addUpdateTag,
   $findMatchingParent,
@@ -318,9 +321,7 @@ function onSelectionChange(
     focusOffset,
   } = getDOMSelectionPoints(domSelection, editor._rootElement);
   const inputState = editor._inputState;
-  const isSelectionChangeFromDOMUpdate =
-    inputState.isSelectionChangeFromDOMUpdate;
-  if (isSelectionChangeFromDOMUpdate) {
+  if (inputState.isSelectionChangeFromDOMUpdate) {
     inputState.isSelectionChangeFromDOMUpdate = false;
     const appliedPoints = inputState.selectionChangeFromDOMUpdatePoints;
     inputState.selectionChangeFromDOMUpdatePoints = null;
@@ -490,18 +491,11 @@ function onSelectionChange(
       }
     }
 
-    const previousSelection = $getPreviousSelection();
-    const hasSelectionChanged =
-      isSelectionChangeFromDOMUpdate ||
-      (selection !== null
-        ? selection.dirty ||
-          !$isRangeSelection(selection) ||
-          !selection.is(previousSelection)
-        : previousSelection !== null);
-
-    if (hasSelectionChanged) {
-      dispatchCommand(editor, SELECTION_CHANGE_COMMAND);
-    }
+    $dispatchSelectionChangeCommand(
+      editor,
+      selection,
+      selection !== null && (selection.dirty || !$isRangeSelection(selection)),
+    );
   });
 }
 

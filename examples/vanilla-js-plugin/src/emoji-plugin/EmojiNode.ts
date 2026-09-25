@@ -6,34 +6,7 @@
  *
  */
 // [docs:emoji-node] Read directly by the Creating an Extension guide.
-import {
-  $create,
-  type EditorConfig,
-  nodeSchema,
-  stringValue,
-  TextNode,
-  withField,
-} from 'lexical';
-
-const BASE_EMOJI_URI =
-  'https://cdn.jsdelivr.net/npm/emoji-datasource-facebook@15.1.2/img/facebook/64';
-
-function applyEmojiImage(dom: HTMLElement, unifiedID: string): void {
-  const url = `${BASE_EMOJI_URI}/${encodeURIComponent(unifiedID.toLowerCase())}.png`;
-  // Keep the native emoji visible while loading, including for missing images.
-  dom.classList.remove('emoji-node-loaded');
-  dom.style.backgroundImage = '';
-  dom.dataset.emojiUrl = url;
-  const image = dom.ownerDocument.createElement('img');
-  image.onload = () => {
-    // A different ID may have been assigned while this image was loading.
-    if (dom.dataset.emojiUrl === url) {
-      dom.style.backgroundImage = `url('${url}')`;
-      dom.classList.add('emoji-node-loaded');
-    }
-  };
-  image.src = url;
-}
+import {$create, nodeSchema, stringValue, TextNode, withField} from 'lexical';
 
 const emojiNodeSchema = nodeSchema<EmojiNode>()({
   unifiedID: withField(stringValue(), {field: '__unifiedID'}),
@@ -57,26 +30,6 @@ export class EmojiNode extends TextNode {
     const self = this.getWritable();
     self.__unifiedID = unifiedID.toLowerCase();
     return self;
-  }
-
-  createDOM(config: EditorConfig): HTMLElement {
-    const dom = super.createDOM(config);
-    dom.classList.add('emoji-node');
-    applyEmojiImage(dom, this.__unifiedID);
-    return dom;
-  }
-
-  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    if (super.updateDOM(prevNode, dom, config)) {
-      return true;
-    }
-    if (
-      this.__unifiedID !== prevNode.__unifiedID ||
-      this.__style !== prevNode.__style
-    ) {
-      applyEmojiImage(dom, this.__unifiedID);
-    }
-    return false;
   }
 }
 

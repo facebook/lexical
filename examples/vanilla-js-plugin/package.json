@@ -13,6 +13,7 @@
     "@lexical/clipboard": "0.51.0",
     "@lexical/extension": "0.51.0",
     "@lexical/history": "0.51.0",
+    "@lexical/html": "0.51.0",
     "@lexical/rich-text": "0.51.0",
     "emoji-datasource-facebook": "15.1.2",
     "lexical": "0.51.0"

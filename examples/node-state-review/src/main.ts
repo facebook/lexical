@@ -8,14 +8,18 @@
 // [docs:main] Read directly by the Adding Data to Nodes guide.
 import './styles.css';
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {buildEditorFromExtensions, HMRExtension} from '@lexical/extension';
+import {configExtension} from 'lexical';
 
 import {AppExtension} from './AppExtension';
 
-const editor = buildEditorFromExtensions(AppExtension);
+const editor = buildEditorFromExtensions(
+  AppExtension,
+  configExtension(HMRExtension, {hot: import.meta.hot ?? null}),
+);
 editor.setRootElement(document.getElementById('editor'));
 
-// Accept Vite updates; AppExtension preserves editor state with HMRExtension.
+// Accept Vite updates; HMRExtension preserves editor state.
 // In an application, also call dispose() when removing the editor permanently.
 if (import.meta.hot) {
   import.meta.hot.accept();

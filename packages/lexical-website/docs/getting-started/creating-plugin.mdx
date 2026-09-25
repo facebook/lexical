@@ -65,11 +65,15 @@ imported values and defaults missing or invalid values to an empty string. The
 schema also carries the property across clones. Getters use `getLatest()` and
 setters use `getWritable()` to respect Lexical's immutable editor states.
 
-`createDOM` and `updateDOM` preserve `TextNode`'s rendering behavior while adding
-an image loaded from the version-pinned jsDelivr copy of the emoji package. The
-native Unicode text stays visible until the image loads successfully. An unknown
-ID or a failed request therefore keeps the native emoji visible. The URL check
-prevents a late response for an old ID from replacing the current image.
+The node inherits `TextNode`'s DOM creation, updates, and HTML export. The
+extension below adds the image through `DOMRenderExtension.$decorateDOM`, which
+only runs for the live editor. Copying or exporting HTML preserves the Unicode
+text and formatting without loading images or including emoji-specific classes
+and loading attributes.
+
+The native Unicode text stays visible until the image loads successfully. An
+unknown ID or a failed request therefore keeps the native emoji visible. The
+URL check prevents a late response for an old ID from replacing the current image.
 
 Only the loaded class hides the Unicode text; it remains in the document for
 selection, copying, and serialization:
@@ -78,8 +82,10 @@ selection, copying, and serialization:
   {EmojiStyles}
 </CodeBlock>
 
-The examples request only the images they display instead of bundling the entire
-PNG collection. To host images yourself, change `BASE_EMOJI_URI` to your own URL.
+The example requests only the images it displays instead of bundling the entire
+PNG collection. It reads the CDN version from the installed emoji package's
+`package.json`, keeping images and lookup data on the same version. To host images
+yourself, change `BASE_EMOJI_URI` in `EmojiExtension.ts` to your own URL.
 
 ## Creating a node transform
 
@@ -97,13 +103,18 @@ The remaining text is dirty after splitting, so Lexical runs transforms on it
 again to find additional shortcodes. The `isSimpleText()` guard excludes
 `EmojiNode`, so replacements do not transform themselves in a loop.
 
-Define the transform and its extension together:
+Define the transform and live DOM decoration in the extension:
 
 <CodeBlock
   language="ts"
   title="examples/vanilla-js-plugin/src/emoji-plugin/EmojiExtension.ts">
   {EmojiExtensionSource}
 </CodeBlock>
+
+The decorator remembers the URL on the DOM element. When an update changes
+inline styles, it restores the loaded background without clearing the image or
+starting another preload. Changing the emoji ID starts a new load and shows the
+native text until it succeeds.
 
 `nodes` registers the custom node before the editor is initialized. `register`
 installs the transform and returns its cleanup function. Consumers only add

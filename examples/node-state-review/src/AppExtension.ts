@@ -7,7 +7,6 @@
  */
 // [docs:app-extension] Read directly by the Adding Data to Nodes guide.
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-import {HMRExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {
   $generateHtmlFromNodes,
@@ -17,7 +16,6 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  configExtension,
   defineExtension,
   mergeRegister,
   registerEventListener,
@@ -42,7 +40,6 @@ export const AppExtension = defineExtension({
     );
   },
   dependencies: [
-    configExtension(HMRExtension, {hot: import.meta.hot ?? null}),
     ReviewExtension,
     HistoryExtension,
     ClipboardDOMImportExtension,

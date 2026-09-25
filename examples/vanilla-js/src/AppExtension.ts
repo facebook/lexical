@@ -7,17 +7,23 @@
  */
 // [docs:app-extension] Read directly by the Quick Start guide.
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-import {HMRExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {RichTextExtension} from '@lexical/rich-text';
-import {configExtension, defineExtension} from 'lexical';
-
-import $prepopulatedRichText from './prepopulatedRichText';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  configExtension,
+  defineExtension,
+} from 'lexical';
 
 export const AppExtension = defineExtension({
-  $initialEditorState: $prepopulatedRichText,
+  $initialEditorState() {
+    $getRoot().append(
+      $createParagraphNode().append($createTextNode('Hello world')),
+    );
+  },
   dependencies: [
-    configExtension(HMRExtension, {hot: import.meta.hot ?? null}),
     RichTextExtension,
     ClipboardDOMImportExtension,
     configExtension(HistoryExtension, {delay: 300}),
@@ -31,6 +37,9 @@ export const AppExtension = defineExtension({
       stateRef.value = JSON.stringify(editorState.toJSON(true), null, 2);
     });
   },
-  theme: {quote: 'PlaygroundEditorTheme__quote'},
+  theme: {
+    paragraph: 'editor-paragraph',
+    text: {bold: 'editor-text-bold', italic: 'editor-text-italic'},
+  },
 });
 // [/docs:app-extension]

@@ -117,9 +117,10 @@ The entry point now builds the editor and attaches its root:
   {MainSource}
 </CodeBlock>
 
-`HMRExtension` preserves editor state, selection, and undo/redo history through
-Vite updates. The entry point still accepts those updates and disposes the old
-editor; the extension does not perform those bundler lifecycle steps. Passing
+The entry point adds `HMRExtension` to `buildEditorFromExtensions`, keeping
+Vite-specific setup out of `AppExtension`. It preserves editor state, selection,
+and undo/redo history through Vite updates. The entry point accepts those updates
+and disposes the old editor; the extension does not perform those bundler lifecycle steps. Passing
 `hot: null` makes it a no-op when HMR is unavailable.
 
 Use **Toggle reviewed**, then **Export HTML** and **Import HTML** to try the round

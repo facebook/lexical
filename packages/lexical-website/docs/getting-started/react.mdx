@@ -48,7 +48,9 @@ documentation embeds add to avoid taking focus from the page. Standalone example
 and StackBlitz previews keep autofocus enabled, even inside an iframe.
 `HMRExtension` preserves editor state and history during Vite updates; React's
 composer manages editor disposal. Passing `hot: null` is a no-op when HMR is
-unavailable.
+unavailable. The composer accepts a single root extension, so this example
+includes HMR in its dependencies. Omit it for other bundlers; TypeScript projects
+using Vite need `vite/client` types, as described in [Quick Start](quick-start.mdx#creating-an-editor-and-using-it).
 Omit autofocus if focus should stay elsewhere on your page.
 `ClipboardDOMImportExtension` enables the extensions' HTML import rules for paste.
 

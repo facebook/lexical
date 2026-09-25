@@ -41,14 +41,20 @@ view up to date:
   {AppSource}
 </CodeBlock>
 
-Build the editor and attach it to the editable element in the entry point:
+Build the editor and attach it to the editable element in the entry point. This
+example uses Vite, so the entry point also passes `HMRExtension` to the builder
+to preserve editor state during hot updates. The app extension is independent
+of the bundler:
 
 <CodeBlock language="ts" title="examples/vanilla-js/src/main.ts">
   {MainSource}
 </CodeBlock>
 
-`$prepopulatedRichText` supplies the example's initial content. Use **Open in
-StackBlitz** below to explore that module and the complete project.
+With other bundlers, omit `HMRExtension`, its `configExtension` argument, and the
+`import.meta.hot` block; `buildEditorFromExtensions(AppExtension)` is sufficient.
+For TypeScript with Vite, include `/// <reference types="vite/client" />` in
+`src/vite-env.d.ts` to type `import.meta.hot`. Use **Open in StackBlitz** below for
+the complete project.
 
 `RichTextExtension` installs editing commands, heading and quote nodes, and its
 dependencies, including Dragon speech recognition support. `HistoryExtension`
@@ -60,7 +66,7 @@ You do not need to register those nodes or behaviors again. Dependencies shared
 by multiple extensions are included once. The core `lexical` package alone does
 not provide a complete editing experience; the feature extensions supply it.
 
-Add CSS for the editor layout and the quote theme class:
+Add CSS for the editor layout and the paragraph, bold, and italic theme classes:
 
 <CodeBlock language="css" title="examples/vanilla-js/src/styles.css">
   {EditorStyles}

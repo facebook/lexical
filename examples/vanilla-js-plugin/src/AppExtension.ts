@@ -7,7 +7,6 @@
  */
 // [docs:app-extension] Read directly by the Creating an Extension guide.
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-import {HMRExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {RichTextExtension} from '@lexical/rich-text';
 import {configExtension, defineExtension} from 'lexical';
@@ -18,7 +17,6 @@ import $prepopulatedRichText from './prepopulatedRichText';
 export const AppExtension = defineExtension({
   $initialEditorState: $prepopulatedRichText,
   dependencies: [
-    configExtension(HMRExtension, {hot: import.meta.hot ?? null}),
     RichTextExtension,
     ClipboardDOMImportExtension,
     configExtension(HistoryExtension, {delay: 300}),

@@ -27,11 +27,14 @@ const FILES = {
   'vanilla-js-plugin': 'src/emoji-plugin/EmojiExtension.ts',
 };
 
-const EMOJI_BASE_URL =
-  'https://cdn.jsdelivr.net/npm/emoji-datasource-facebook@15.1.2/img/facebook/64';
-const EMOJI_IMAGE = createRequire(import.meta.url).resolve(
-  'emoji-datasource-facebook/img/facebook/64/1f642.png',
-);
+const require = createRequire(import.meta.url);
+const {
+  version: emojiVersion,
+} = require('emoji-datasource-facebook/package.json');
+
+const EMOJI_BASE_URL = `https://cdn.jsdelivr.net/npm/emoji-datasource-facebook@${emojiVersion}/img/facebook/64`;
+const EMOJI_IMAGE =
+  require.resolve('emoji-datasource-facebook/img/facebook/64/1f642.png');
 
 async function main() {
   const server = await startServer();
@@ -178,6 +181,75 @@ async function main() {
           assert.equal(serializedEmoji.unifiedID, '1f642');
           assert.equal(serializedEmoji.format, 1);
           assert.equal(serializedEmoji.mode, 'token');
+          await expect(emoji).toHaveClass(/emoji-node-loaded/);
+          const rendering = await editor.evaluate(element => {
+            const instance = element.__lexicalEditor;
+            const doc = element.ownerDocument;
+            const dom = element.querySelector('.emoji-node');
+            const createElement = doc.createElement;
+            let imageCreations = 0;
+            // Count even cached loads, which need not produce network requests.
+            doc.createElement = function (tag, ...args) {
+              if (tag === 'img') {
+                imageCreations++;
+              }
+              return createElement.call(this, tag, ...args);
+            };
+            try {
+              const clipboardData = new DataTransfer();
+              element.dispatchEvent(
+                new ClipboardEvent('copy', {
+                  bubbles: true,
+                  cancelable: true,
+                  clipboardData,
+                }),
+              );
+              const exportImages = imageCreations;
+              const html = clipboardData.getData('text/html');
+              imageCreations = 0;
+              instance.update(
+                () => {
+                  const node = Array.from(
+                    instance.getEditorState()._nodeMap.values(),
+                  ).find(candidate => candidate.getType() === 'emoji');
+                  node.setStyle('font-size: 18px; background-image: none;');
+                },
+                {discrete: true},
+              );
+              return {
+                background: dom.style.backgroundImage,
+                exportImages,
+                html,
+                loaded: dom.classList.contains('emoji-node-loaded'),
+                sameDOM: dom === element.querySelector('.emoji-node'),
+                styleImages: imageCreations,
+              };
+            } finally {
+              doc.createElement = createElement;
+            }
+          });
+          assert.equal(
+            rendering.exportImages,
+            0,
+            'HTML export must not load images',
+          );
+          assert.match(rendering.html, /🙂/);
+          assert.match(rendering.html, /<(strong|b)>/);
+          assert.doesNotMatch(
+            rendering.html,
+            /emoji-node|data-emoji-url|cdn\.jsdelivr/,
+          );
+          assert.equal(
+            rendering.styleImages,
+            0,
+            'Style changes must reuse loaded images',
+          );
+          assert.equal(rendering.sameDOM, true);
+          assert.equal(rendering.loaded, true);
+          assert.equal(rendering.background, background);
+          process.stdout.write(
+            'PASS emoji: clean clipboard HTML, no export loads, stable image on style changes\n',
+          );
           await editor.evaluate((element, json) => {
             const instance = element.__lexicalEditor;
             instance.setEditorState(instance.parseEditorState(json));

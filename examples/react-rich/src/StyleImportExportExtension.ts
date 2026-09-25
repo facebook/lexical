@@ -5,55 +5,47 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
+import {
+  defineImportRule,
+  DOMImportExtension,
+  domOverride,
+  DOMRenderExtension,
+  sel,
+} from '@lexical/html';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $isTextNode,
   configExtension,
   defineExtension,
-  type DOMExportOutput,
-  type DOMExportOutputMap,
   isHTMLElement,
-  type Klass,
-  type LexicalEditor,
-  type LexicalNode,
   ParagraphNode,
   TextNode,
 } from 'lexical';
 
 import {parseAllowedColor, parseAllowedFontSize} from './styleConfig';
 
-const removeStylesExportDOM = (
-  editor: LexicalEditor,
-  target: LexicalNode,
-): DOMExportOutput => {
-  const output = target.exportDOM(editor);
-  if (output && isHTMLElement(output.element)) {
-    // Remove all inline styles and classes if the element is an HTMLElement
-    // Children are checked as well since TextNode can be nested
-    // in i, b, and strong tags.
-    for (const el of [
-      output.element,
-      ...output.element.querySelectorAll('[style],[class]'),
-    ]) {
-      el.removeAttribute('class');
-      el.removeAttribute('style');
-    }
-  }
-  return output;
-};
-
-const exportMap: DOMExportOutputMap = new Map<
-  Klass<LexicalNode>,
-  (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
->([
-  [ParagraphNode, removeStylesExportDOM],
-  [TextNode, removeStylesExportDOM],
-]);
+const RemoveStylesOverride = domOverride<ParagraphNode | TextNode>(
+  [ParagraphNode, TextNode],
+  {
+    $exportDOM(_node, $next) {
+      const output = $next();
+      if (isHTMLElement(output.element)) {
+        // TextNode may wrap its text in nested formatting elements.
+        for (const el of [
+          output.element,
+          ...output.element.querySelectorAll('[style],[class]'),
+        ]) {
+          el.removeAttribute('class');
+          el.removeAttribute('style');
+        }
+      }
+      return output;
+    },
+  },
+);
 
 const getExtraStyles = (element: HTMLElement): string => {
-  // Parse styles from pasted input, but only if they match exactly the
-  // sort of styles that would be produced by exportDOM
+  // Keep only supported font sizes and colors from pasted input.
   let extraStyles = '';
   const fontSize = parseAllowedFontSize(element.style.fontSize);
   const backgroundColor = parseAllowedColor(element.style.backgroundColor);
@@ -103,7 +95,7 @@ export const StyleImportExportExtension = defineExtension({
   dependencies: [
     RichTextExtension,
     configExtension(DOMImportExtension, {rules: [AllowedStylesRule]}),
+    configExtension(DOMRenderExtension, {overrides: [RemoveStylesOverride]}),
   ],
-  html: {export: exportMap},
   name: '@lexical/examples/StyleImportExport',
 });

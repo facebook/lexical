@@ -14,20 +14,24 @@ import {
   withField,
 } from 'lexical';
 
-// @emoji-datasource-facebook is defined in vite.config.ts
-const emojiImages = new Map(
-  Object.entries(
-    import.meta.glob<string>('@emoji-datasource-facebook/*.png', {
-      eager: true,
-      import: 'default',
-      query: '?url&no-inline',
-    }),
-  ).map(([path, url]) => [path.slice(path.lastIndexOf('/') + 1), url]),
-);
+const BASE_EMOJI_URI =
+  'https://cdn.jsdelivr.net/npm/emoji-datasource-facebook@15.1.2/img/facebook/64';
 
-function getEmojiBackground(unifiedID: string): string {
-  const url = emojiImages.get(`${unifiedID.toLowerCase()}.png`);
-  return url ? `url('${url}')` : '';
+function applyEmojiImage(dom: HTMLElement, unifiedID: string): void {
+  const url = `${BASE_EMOJI_URI}/${encodeURIComponent(unifiedID.toLowerCase())}.png`;
+  // Keep the native emoji visible while loading, including for missing images.
+  dom.classList.remove('emoji-node-loaded');
+  dom.style.backgroundImage = '';
+  dom.dataset.emojiUrl = url;
+  const image = dom.ownerDocument.createElement('img');
+  image.onload = () => {
+    // A different ID may have been assigned while this image was loading.
+    if (dom.dataset.emojiUrl === url) {
+      dom.style.backgroundImage = `url('${url}')`;
+      dom.classList.add('emoji-node-loaded');
+    }
+  };
+  image.src = url;
 }
 
 const emojiNodeSchema = nodeSchema<EmojiNode>()({
@@ -57,7 +61,7 @@ export class EmojiNode extends TextNode {
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.classList.add('emoji-node');
-    dom.style.backgroundImage = getEmojiBackground(this.__unifiedID);
+    applyEmojiImage(dom, this.__unifiedID);
     return dom;
   }
 
@@ -65,8 +69,11 @@ export class EmojiNode extends TextNode {
     if (super.updateDOM(prevNode, dom, config)) {
       return true;
     }
-    if (this.__unifiedID !== prevNode.__unifiedID) {
-      dom.style.backgroundImage = getEmojiBackground(this.__unifiedID);
+    if (
+      this.__unifiedID !== prevNode.__unifiedID ||
+      this.__style !== prevNode.__style
+    ) {
+      applyEmojiImage(dom, this.__unifiedID);
     }
     return false;
   }

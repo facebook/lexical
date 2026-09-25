@@ -18,12 +18,16 @@ import ExampleTheme from './ExampleTheme';
 
 const placeholder = 'Enter some plain text...';
 
+const isEmbedded = new URLSearchParams(window.location.search).has('embed');
+
 const appExtension = defineExtension({
   dependencies: [
     PlainTextExtension,
     HistoryExtension,
     // Let the documentation page keep focus when this example is embedded.
-    configExtension(AutoFocusExtension, {disabled: window.parent !== window}),
+    configExtension(AutoFocusExtension, {
+      disabled: isEmbedded,
+    }),
     TreeViewExtension,
   ],
   name: '@lexical/examples/react-plain-text',

@@ -22,6 +22,9 @@
 
 .emoji-node {
   caret-color: #050505;
+}
+
+.emoji-node-loaded {
   color: transparent;
   background-size: 1em 1em;
   display: inline-block;

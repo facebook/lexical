@@ -13,8 +13,8 @@ editor cleans up its registrations on disposal. It works with both
 
 This guide builds `EmojiExtension`: a node transform replaces shortcodes such as
 `:)` and `:smiley:` with a custom `EmojiNode` that displays an emoji image. The
-[runnable example](#putting-it-all-together) includes the lookup data, images,
-and CSS.
+[runnable example](#putting-it-all-together) includes the lookup data and CSS,
+and loads the displayed images on demand.
 
 ## Finding emoji shortcodes
 
@@ -52,11 +52,24 @@ import {
   withField,
 } from 'lexical';
 
-// Serve the example's emoji PNGs from this directory.
-const BASE_EMOJI_URI = '/emojis';
+const BASE_EMOJI_URI =
+  'https://cdn.jsdelivr.net/npm/emoji-datasource-facebook@15.1.2/img/facebook/64';
 
-function getEmojiBackground(unifiedID: string): string {
-  return `url('${BASE_EMOJI_URI}/${unifiedID.toLowerCase()}.png')`;
+function applyEmojiImage(dom: HTMLElement, unifiedID: string): void {
+  const url = `${BASE_EMOJI_URI}/${encodeURIComponent(unifiedID.toLowerCase())}.png`;
+  // Keep the native emoji visible while loading, including for missing images.
+  dom.classList.remove('emoji-node-loaded');
+  dom.style.backgroundImage = '';
+  dom.dataset.emojiUrl = url;
+  const image = dom.ownerDocument.createElement('img');
+  image.onload = () => {
+    // A different ID may have been assigned while this image was loading.
+    if (dom.dataset.emojiUrl === url) {
+      dom.style.backgroundImage = `url('${url}')`;
+      dom.classList.add('emoji-node-loaded');
+    }
+  };
+  image.src = url;
 }
 
 const emojiNodeSchema = nodeSchema<EmojiNode>()({
@@ -86,7 +99,7 @@ export class EmojiNode extends TextNode {
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.classList.add('emoji-node');
-    dom.style.backgroundImage = getEmojiBackground(this.__unifiedID);
+    applyEmojiImage(dom, this.__unifiedID);
     return dom;
   }
 
@@ -94,8 +107,11 @@ export class EmojiNode extends TextNode {
     if (super.updateDOM(prevNode, dom, config)) {
       return true;
     }
-    if (this.__unifiedID !== prevNode.__unifiedID) {
-      dom.style.backgroundImage = getEmojiBackground(this.__unifiedID);
+    if (
+      this.__unifiedID !== prevNode.__unifiedID ||
+      this.__style !== prevNode.__style
+    ) {
+      applyEmojiImage(dom, this.__unifiedID);
     }
     return false;
   }
@@ -124,14 +140,21 @@ schema also carries the property across clones. Getters use `getLatest()` and
 setters use `getWritable()` to respect Lexical's immutable editor states.
 
 `createDOM` and `updateDOM` preserve `TextNode`'s rendering behavior while adding
-the emoji image. Comparing the current and previous properties detects changes
-during reconciliation. The example includes CSS that hides the Unicode text
-visually while keeping it in the document:
+an image loaded from the version-pinned jsDelivr copy of the emoji package. The
+native Unicode text stays visible until the image loads successfully. An unknown
+ID or a failed request therefore keeps the native emoji visible. The URL check
+prevents a late response for an old ID from replacing the current image.
+
+Only the loaded class hides the Unicode text; it remains in the document for
+selection, copying, and serialization:
 
 ```css
 .emoji-node {
-  color: transparent;
   caret-color: #050505;
+}
+
+.emoji-node-loaded {
+  color: transparent;
   background-size: 1em 1em;
   display: inline-block;
   vertical-align: top;
@@ -140,8 +163,8 @@ visually while keeping it in the document:
 }
 ```
 
-The runnable example resolves its images from the installed emoji package with
-Vite. If you use the `/emojis` path above, serve the same images there.
+The examples request only the images they display instead of bundling the entire
+PNG collection. To host images yourself, change `BASE_EMOJI_URI` to your own URL.
 
 ## Creating a node transform
 

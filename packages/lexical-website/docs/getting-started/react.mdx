@@ -28,7 +28,9 @@ import {HistoryExtension} from '@lexical/history';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextExtension} from '@lexical/rich-text';
-import {defineExtension} from 'lexical';
+import {configExtension, defineExtension} from 'lexical';
+
+const isEmbedded = new URLSearchParams(window.location.search).has('embed');
 
 const appExtension = defineExtension({
   name: 'MyEditor',
@@ -36,7 +38,9 @@ const appExtension = defineExtension({
   dependencies: [
     RichTextExtension,
     HistoryExtension,
-    AutoFocusExtension,
+    configExtension(AutoFocusExtension, {
+      disabled: isEmbedded,
+    }),
     ClipboardDOMImportExtension,
   ],
   theme: {
@@ -96,6 +100,9 @@ rendering and its error boundary, and disposes the editor when it unmounts.
 
 `RichTextExtension` registers its nodes and editing behavior, `HistoryExtension`
 provides undo and redo, and `AutoFocusExtension` focuses the editor when it mounts.
+The examples opt out of autofocus when their URL includes `?embed`, which the
+documentation embeds add to avoid taking focus from the page. Standalone examples
+and StackBlitz previews keep autofocus enabled, even inside an iframe.
 Omit autofocus if focus should stay elsewhere on your page.
 `ClipboardDOMImportExtension` enables the extensions' HTML import rules for paste.
 

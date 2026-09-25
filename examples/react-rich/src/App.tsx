@@ -21,6 +21,8 @@ import Toolbar from './Toolbar';
 
 const placeholder = 'Enter some rich text...';
 
+const isEmbedded = new URLSearchParams(window.location.search).has('embed');
+
 const appExtension = defineExtension({
   dependencies: [
     RichTextExtension,
@@ -29,7 +31,9 @@ const appExtension = defineExtension({
     EditorStateExtension,
     HistoryExtension,
     // Let the documentation page keep focus when this example is embedded.
-    configExtension(AutoFocusExtension, {disabled: window.parent !== window}),
+    configExtension(AutoFocusExtension, {
+      disabled: isEmbedded,
+    }),
     TreeViewExtension,
   ],
   name: '@lexical/examples/react-rich',

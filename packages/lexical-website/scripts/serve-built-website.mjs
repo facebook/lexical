@@ -25,10 +25,15 @@ const CONTENT_TYPES = {
   '.wasm': 'application/wasm',
 };
 
-export function startServer() {
+export function startServer({baseUrl = '/'} = {}) {
   const server = createServer((req, res) => {
     const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
-    let filePath = path.join(BUILD_DIR, urlPath);
+    if (!urlPath.startsWith(baseUrl)) {
+      res.writeHead(404);
+      res.end('Not found');
+      return;
+    }
+    let filePath = path.join(BUILD_DIR, urlPath.slice(baseUrl.length));
     if (existsSync(filePath) && statSync(filePath).isDirectory()) {
       filePath = path.join(filePath, 'index.html');
     }

@@ -34,7 +34,8 @@ for (const name of examples) {
   const root = path.join(monorepoRoot, 'examples', name);
   console.log(`Building examples/${name} -> /examples/${name}/`);
   await build({
-    base: `/examples/${name}/`,
+    // Resolve assets beside index.html, including under a site's baseUrl.
+    base: './',
     build: {
       emptyOutDir: true,
       outDir: path.join(websiteRoot, 'static/examples', name),
@@ -44,7 +45,6 @@ for (const name of examples) {
     mode: 'development',
     resolve: {
       alias: {
-        '@emoji-datasource-facebook': path.join(emojiRoot, 'img/facebook/64'),
         'emoji-datasource-facebook': emojiRoot,
         // Keep the apps and local Lexical packages on the website's React,
         // even when a standalone example has its own node_modules directory.

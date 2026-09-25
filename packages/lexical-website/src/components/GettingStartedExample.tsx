@@ -30,7 +30,7 @@ export default function GettingStartedExample({
   example: keyof typeof EXAMPLES;
 }) {
   const {file, title} = EXAMPLES[example];
-  const src = useBaseUrl(`/examples/${example}/`);
+  const src = useBaseUrl(`/examples/${example}/?embed`);
   return (
     <div className="my-6 flex flex-col gap-3" data-doc-example={example}>
       <iframe

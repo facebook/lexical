@@ -38,7 +38,9 @@ function transform(code: string, filename = 'consumer.ts', strict = true) {
 }
 
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lexical-subpath-imports-'));
+  dir = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), 'lexical-subpath-imports-')),
+  );
   packageJson = path.join(dir, 'package.json');
   write(
     'package.json',

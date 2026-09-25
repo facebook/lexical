@@ -188,4 +188,5 @@ median.
   the same load. Don't compare numbers across hardware.
 - jsdom DOM ops are slower than real browsers. Treat `bench-dom` numbers
   as relative comparisons, not absolute production estimates.
-- Benches do not run in CI today. They are local tools for perf work.
+- Benchmark timings do not run in CI. Benchmark types are checked by
+  `pnpm run tsc-test`, which is part of `pnpm run ci-check`.

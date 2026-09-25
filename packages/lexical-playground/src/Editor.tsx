@@ -144,7 +144,9 @@ export default function Editor(): JSX.Element {
           <>
             <div className="editor-scroller">
               <div className="editor" ref={onRef}>
-                <ContentEditable placeholder={placeholder} />
+                <div className="editor-page-host">
+                  <ContentEditable placeholder={placeholder} />
+                </div>
               </div>
             </div>
             {hasFitNestedTables ? <TableFitNestedTablePlugin /> : null}

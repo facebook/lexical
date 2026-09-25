@@ -6,18 +6,32 @@
  *
  */
 import {ReactExtension} from '@lexical/react/ReactExtension';
-import {defineExtension} from 'lexical';
+import {configExtension, defineExtension} from 'lexical';
 
+import {buildPlaygroundHeaderFooterEditor} from '../../PlaygroundExtensions';
 import {PagesExtension} from '../PagesExtension';
-import {PageSetupDropdownComponent} from './PageSetupDropdown';
+import {PageSetupComponent} from './PageSetupComponent';
+import {PageSlotEditorsHostDecorator} from './PageSlotEditorsHost';
 
 export {
-  PageSetupDropdownComponent,
-  type PageSetupDropdownProps,
-} from './PageSetupDropdown';
+  PageSetupComponent,
+  type PageSetupComponentProps,
+} from './PageSetupComponent';
+export {PAGE_SIZE_ORDER, PageSetupDialog} from './PageSetupDialog';
+export {PageSlotEditorsHost} from './PageSlotEditorsHost';
 
 export const PagesReactExtension = defineExtension({
-  build: () => ({Component: PageSetupDropdownComponent}),
-  dependencies: [ReactExtension, PagesExtension],
+  build: () => ({Component: PageSetupComponent}),
+  dependencies: [
+    // The nested header/footer editors are created outside React; this
+    // renders a composer for each inside the document's React tree.
+    configExtension(ReactExtension, {
+      decorators: [PageSlotEditorsHostDecorator],
+    }),
+    // Headers and footers get the playground's full feature set.
+    configExtension(PagesExtension, {
+      buildSlotEditor: buildPlaygroundHeaderFooterEditor,
+    }),
+  ],
   name: '@lexical/playground/PagesReact',
 });

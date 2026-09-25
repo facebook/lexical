@@ -89,7 +89,7 @@ header h1 {
 .editor-shell {
   margin: 20px auto;
   border-radius: 2px;
-  max-width: 1128px;
+  max-width: 1140px;
   color: #000;
   position: relative;
   line-height: 1.7;
@@ -155,7 +155,9 @@ header h1 {
     *:not(
       [data-lexical-editor],
       [data-lexical-editor] *,
-      :has([data-lexical-editor])
+      :has([data-lexical-editor]),
+      .Pages__layer,
+      .Pages__layer *
     ) {
     display: none !important;
   }
@@ -777,6 +779,18 @@ i.page-break,
 
 i.page-setup,
 .icon.page-setup {
+  -webkit-mask-image: url(images/icons/page-setup.svg);
+  mask-image: url(images/icons/page-setup.svg);
+}
+
+i.page-number,
+.icon.page-number {
+  -webkit-mask-image: url(images/icons/list-ol.svg);
+  mask-image: url(images/icons/list-ol.svg);
+}
+
+i.page-count,
+.icon.page-count {
   -webkit-mask-image: url(images/icons/file-earmark-text.svg);
   mask-image: url(images/icons/file-earmark-text.svg);
 }

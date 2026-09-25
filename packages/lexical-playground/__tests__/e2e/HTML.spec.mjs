@@ -233,14 +233,22 @@ test.describe('HTML', () => {
     await page.keyboard.type('Hello world');
 
     await click(page, '.page-setup');
-    const btn = page.getByRole('button', {name: /^Statement /});
-    await expect(btn).toBeVisible();
-    await btn.click();
-    // Ensure we're in page mode
+    const pageSizeSelect = page.locator('select[data-test-id="page-size"]');
+    // While pageless the page controls are disabled; turn "Paged" on first.
+    await expect(pageSizeSelect).toBeDisabled();
+    await click(page, '#paged-toggle button[role="switch"]');
+    await expect(pageSizeSelect).toBeEnabled();
+    await pageSizeSelect.selectOption('Statement');
+    await click(page, '.Modal__closeButton');
+    // Ensure we're in page mode: the page layer is rendered next to the
+    // root while the document itself stays flat.
+    await page.waitForSelector('.Pages__host > .Pages__layer');
     await page.waitForSelector(
-      '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
+      '.Pages__host > .ContentEditable__root > .PlaygroundEditorTheme__paragraph',
     );
     await click(page, '.action-button .html');
+    // Pages are hidden while in HTML mode
+    await page.waitForSelector('.Pages__layer', {state: 'detached'});
 
     const expectedPrettyHtml = [
       '<h1><span>Foo</span></h1>',
@@ -257,9 +265,7 @@ test.describe('HTML', () => {
     }).toPass({intervals: [100, 250, 500], timeout: 5000});
 
     await click(page, '.action-button .html');
-    // Ensure we're in page mode
-    await page.waitForSelector(
-      '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
-    );
+    // Ensure we're back in page mode
+    await page.waitForSelector('.Pages__host > .Pages__layer');
   });
 });

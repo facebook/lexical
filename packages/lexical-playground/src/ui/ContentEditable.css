@@ -6,6 +6,9 @@
  *
  *
  */
+/* PagesExtension relies on this element being a plain block (no `overflow`,
+   `contain`, `display: flow-root`, flex or grid) so page-break floats from
+   the sibling page layer can intrude into its line boxes. */
 .ContentEditable__root {
   border: 0;
   font-size: 16px;

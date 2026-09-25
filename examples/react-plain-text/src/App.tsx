@@ -5,46 +5,47 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
-import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {AutoFocusExtension} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
+import {PlainTextExtension} from '@lexical/plain-text';
+import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
+import {TreeViewExtension} from '@lexical/react/TreeViewExtension';
+import {defineExtension} from 'lexical';
 
 import ExampleTheme from './ExampleTheme';
-import TreeViewPlugin from './plugins/TreeViewPlugin';
 
-function Placeholder() {
-  return <div className="editor-placeholder">Enter some plain text...</div>;
-}
+const placeholder = 'Enter some plain text...';
 
-const editorConfig = {
-  namespace: 'React.js Demo',
-  nodes: [],
-  // Handling of errors during update
-  onError(error: Error) {
-    throw error;
-  },
-  // The editor theme
+const appExtension = defineExtension({
+  dependencies: [
+    PlainTextExtension,
+    HistoryExtension,
+    AutoFocusExtension,
+    TreeViewExtension,
+  ],
+  name: '@lexical/examples/react-plain-text',
+  namespace: 'react-plain-text',
   theme: ExampleTheme,
-};
+});
 
 export default function App() {
   return (
-    <LexicalComposer initialConfig={editorConfig}>
+    <LexicalExtensionComposer extension={appExtension} contentEditable={null}>
       <div className="editor-container">
         <div className="editor-inner">
-          <PlainTextPlugin
-            contentEditable={<ContentEditable className="editor-input" />}
-            placeholder={<Placeholder />}
-            ErrorBoundary={LexicalErrorBoundary}
+          <ContentEditable
+            className="editor-input"
+            aria-label="Plain text editor"
+            aria-placeholder={placeholder}
+            placeholder={
+              <div className="editor-placeholder">{placeholder}</div>
+            }
           />
-          <HistoryPlugin />
-          <AutoFocusPlugin />
-          <TreeViewPlugin />
+          <ExtensionComponent lexical:extension={TreeViewExtension} />
         </div>
       </div>
-    </LexicalComposer>
+    </LexicalExtensionComposer>
   );
 }

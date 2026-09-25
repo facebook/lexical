@@ -6,9 +6,9 @@
  *
  */
 
-import {type LexicalEditor, TextNode} from 'lexical';
+import {defineExtension, TextNode} from 'lexical';
 
-import {$createEmojiNode} from './EmojiNode';
+import {$createEmojiNode, EmojiNode} from './EmojiNode';
 import findEmoji from './findEmoji';
 
 function $textNodeTransform(node: TextNode): void {
@@ -39,12 +39,16 @@ function $textNodeTransform(node: TextNode): void {
     );
   }
 
-  const emojiNode = $createEmojiNode(emojiMatch.unifiedID);
+  const emojiNode = $createEmojiNode(emojiMatch.unifiedID)
+    .setFormat(targetNode.getFormat())
+    .setStyle(targetNode.getStyle());
   targetNode.replace(emojiNode);
 }
 
-export function registerEmoji(editor: LexicalEditor): () => void {
-  // We don't use editor.registerUpdateListener here as alternative approach where we rely
-  // on update listener is highly discouraged as it triggers an additional render (the most expensive lifecycle operation).
-  return editor.registerNodeTransform(TextNode, $textNodeTransform);
-}
+export const EmojiExtension = defineExtension({
+  name: '@lexical/examples/Emoji',
+  nodes: () => [EmojiNode],
+  register(editor) {
+    return editor.registerNodeTransform(TextNode, $textNodeTransform);
+  },
+});

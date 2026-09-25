@@ -5,77 +5,72 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
+  $create,
+  $getState,
+  $getStateChange,
+  $setState,
+  createState,
   type EditorConfig,
-  type NodeKey,
-  type SerializedTextNode,
-  type Spread,
   TextNode,
 } from 'lexical';
 
-export type SerializedEmojiNode = Spread<
-  {
-    unifiedID: string;
-  },
-  SerializedTextNode
->;
-
 // @emoji-datasource-facebook is defined in vite.config.ts
-const BASE_EMOJI_URI = new URL(`@emoji-datasource-facebook/`, import.meta.url)
-  .href;
+const emojiImages = new Map(
+  Object.entries(
+    import.meta.glob<string>('@emoji-datasource-facebook/*.png', {
+      eager: true,
+      import: 'default',
+      query: '?url&no-inline',
+    }),
+  ).map(([path, url]) => [path.slice(path.lastIndexOf('/') + 1), url]),
+);
+
+function getEmojiBackground(unifiedID: string): string {
+  const url = emojiImages.get(`${unifiedID}.png`);
+  return url ? `url('${url}')` : '';
+}
+
+const unifiedIDState = createState('unifiedID', {
+  parse: value => (typeof value === 'string' ? value.toLowerCase() : ''),
+});
 
 export class EmojiNode extends TextNode {
-  __unifiedID: string;
-
   $config() {
-    return this.config('emoji', {extends: TextNode});
+    return this.config('emoji', {
+      extends: TextNode,
+      stateConfigs: [{flat: true, stateConfig: unifiedIDState}],
+    });
   }
 
-  static clone(node: EmojiNode): EmojiNode {
-    return new EmojiNode(node.__unifiedID, node.__key);
-  }
-
-  constructor(unifiedID: string, key?: NodeKey) {
-    const unicodeEmoji = String.fromCodePoint(
-      ...unifiedID.split('-').map(v => parseInt(v, 16)),
+  createDOM(config: EditorConfig): HTMLElement {
+    const dom = super.createDOM(config);
+    dom.classList.add('emoji-node');
+    dom.style.backgroundImage = getEmojiBackground(
+      $getState(this, unifiedIDState),
     );
-    super(unicodeEmoji, key);
-
-    this.__unifiedID = unifiedID.toLowerCase();
-  }
-
-  /**
-   * DOM that will be rendered by browser within contenteditable
-   * This is what Lexical renders
-   */
-  createDOM(_config: EditorConfig): HTMLElement {
-    const dom = document.createElement('span');
-    dom.className = 'emoji-node';
-    dom.style.backgroundImage = `url('${BASE_EMOJI_URI}/${this.__unifiedID}.png')`;
-    dom.innerText = this.__text;
     return dom;
   }
 
-  static importJSON(serializedNode: SerializedEmojiNode): EmojiNode {
-    return $createEmojiNode(serializedNode.unifiedID);
-  }
-
-  exportJSON(): SerializedEmojiNode {
-    return {
-      ...super.exportJSON(),
-      unifiedID: this.__unifiedID,
-    };
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    if (super.updateDOM(prevNode, dom, config)) {
+      return true;
+    }
+    const change = $getStateChange(this, prevNode, unifiedIDState);
+    if (change !== null) {
+      dom.style.backgroundImage = getEmojiBackground(change[0]);
+    }
+    return false;
   }
 }
 
 export function $createEmojiNode(unifiedID: string): EmojiNode {
-  const node = new EmojiNode(unifiedID)
-    // In token mode node can be navigated through character-by-character,
-    // but are deleted as a single entity (not invdividually by character).
-    // This also forces Lexical to create adjacent TextNode on user input instead of
-    // modifying Emoji node as it now acts as immutable node.
-    .setMode('token');
-
-  return node;
+  const text = String.fromCodePoint(
+    ...unifiedID.split('-').map(value => parseInt(value, 16)),
+  );
+  return $setState(
+    $create(EmojiNode).setTextContent(text).setMode('token'),
+    unifiedIDState,
+    unifiedID.toLowerCase(),
+  );
 }

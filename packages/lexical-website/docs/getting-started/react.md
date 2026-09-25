@@ -4,190 +4,208 @@ sidebar_position: 2
 
 # Getting Started with React
 
-## Video Tutorials
-
-For a detailed walkthrough of setting up a basic editor with Lexical in React, check out these videos:
-
-* [Getting Started with Lexical & React](https://www.youtube.com/watch?v=qIqxvk2qcmo)
-* [Themes, Nodes, and Rich Text](https://www.youtube.com/watch?v=pIBUFYd9zJY)
-* [Headings, Lists, Toolbar](https://www.youtube.com/watch?v=5sRh_WXw0WI)
-* [Creating Nodes and Plugins](https://www.youtube.com/watch?v=abZNazybzvs)
-
-Keep in mind that some of these videos may be partially outdated as we do not update them as often as textual documentation.
+Use `LexicalExtensionComposer` to create an editor from one root extension and
+manage its lifetime. Extensions provide editing behavior; React components render
+the editable area and your application's UI.
 
 ## Creating Basic Rich Text Editor
 
-To simplify Lexical integration with React we provide the `@lexical/react` package that wraps Lexical APIs with React components so the editor itself as well as all the plugins now can be easily composed using JSX.
-Furthermore, you can lazy load plugins if desired, so you don't pay the cost for plugins until you actually use them.
+Install the packages used below in an existing React application:
 
-To start, install `lexical` and `@lexical/react`:
-
-```
-npm install --save lexical @lexical/react
+```sh
+npm install lexical @lexical/react @lexical/extension @lexical/rich-text @lexical/history @lexical/clipboard
 ```
 
-Below is an example of a basic rich text editor using `lexical` and `@lexical/react`.
+Keep all Lexical packages on the same version. Define the root extension outside
+of the component so its identity stays stable across renders:
 
 ```jsx
-import {$getRoot, $getSelection} from 'lexical';
-import {useEffect} from 'react';
-
-import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
-import {LexicalComposer} from '@lexical/react/LexicalComposer';
-import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {ClipboardDOMImportExtension} from '@lexical/clipboard';
+import {AutoFocusExtension} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
+import {RichTextExtension} from '@lexical/rich-text';
+import {defineExtension} from 'lexical';
 
-const theme = {
-  // Theme styling goes here
-  //...
-}
+const appExtension = defineExtension({
+  name: 'MyEditor',
+  namespace: 'MyEditor',
+  dependencies: [
+    RichTextExtension,
+    HistoryExtension,
+    AutoFocusExtension,
+    ClipboardDOMImportExtension,
+  ],
+  theme: {
+    paragraph: 'editor-paragraph',
+    text: {bold: 'editor-text-bold', italic: 'editor-text-italic'},
+  },
+});
 
-// Catch any errors that occur during Lexical updates and log them
-// or throw them as needed. If you don't throw them, Lexical will
-// try to recover gracefully without losing user data.
-function onError(error) {
-  console.error(error);
-}
-
-function Editor() {
-  const initialConfig = {
-    namespace: 'MyEditor',
-    theme,
-    onError,
-  };
-
+export default function Editor() {
   return (
-    <LexicalComposer initialConfig={initialConfig}>
-      <RichTextPlugin
-        contentEditable={
-          <ContentEditable
-            aria-placeholder={'Enter some text...'}
-            placeholder={<div>Enter some text...</div>}
-          />
-        }
-        ErrorBoundary={LexicalErrorBoundary}
-      />
-      <HistoryPlugin />
-      <AutoFocusPlugin />
-    </LexicalComposer>
+    <LexicalExtensionComposer extension={appExtension} contentEditable={null}>
+      <div className="editor">
+        <ContentEditable
+          className="editor-input"
+          aria-label="Rich text editor"
+          aria-placeholder="Enter some text..."
+          placeholder={<div className="editor-placeholder">Enter some text...</div>}
+        />
+      </div>
+    </LexicalExtensionComposer>
   );
 }
 ```
+
+```css
+.editor { position: relative; }
+.editor-input { min-height: 8em; padding: 1em; }
+.editor-placeholder {
+  position: absolute;
+  top: 1em;
+  left: 1em;
+  color: #757575;
+  pointer-events: none;
+  user-select: none;
+}
+.editor-paragraph { margin: 0 0 1em; }
+.editor-text-bold { font-weight: bold; }
+.editor-text-italic { font-style: italic; }
+```
+
+The composer renders a `ContentEditable` by default. Here `contentEditable={null}`
+lets us place it inside our own layout. The composer also sets up React decorator
+rendering and its error boundary, and disposes the editor when it unmounts.
+
+`RichTextExtension` registers its nodes and editing behavior, `HistoryExtension`
+provides undo and redo, and `AutoFocusExtension` focuses the editor when it mounts.
+Omit autofocus if focus should stay elsewhere on your page.
+`ClipboardDOMImportExtension` enables the extensions' HTML import rules for paste.
+
+There is no separate `nodes` list or set of behavior plugins to keep in sync with
+these dependencies. Errors throw by default; add `onError` to the root extension
+only when you need custom handling.
+
+Changing the extension reference recreates the editor. Keep it at module scope,
+and choose the feature set when creating the editor. Features that support
+runtime changes expose [signals](../extensions/signals.md).
+
+### Plain text
+
+For a plain-text editor, install `@lexical/plain-text` and replace
+`RichTextExtension` with `PlainTextExtension` from that package. Remove
+`ClipboardDOMImportExtension`, since plain-text paste does not import HTML. Keep
+history, autofocus, and the same React composition.
+
+<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-plain-text?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
 
 ## Adding UI to control text formatting
 
-Out of the box Lexical doesn't provide any type of UI as it's not a ready to use editor but rather a framework for creation of your own editor.
-Below you can find an example of the integration from the previous chapter that now features 2 new plugins:
-- `ToolbarPlugin` - renders UI to control text formatting
-- `TreeViewPlugin` - renders debug view below the editor so we can see its state in real time
+Lexical provides commands and state for your UI. A React component inside the
+composer can access the editor with `useLexicalComposerContext`:
 
-However no UI can be created w/o CSS and Lexical is not an exception here. Pay attention to `ExampleTheme.ts` and how it's used in this example, with corresponding styles defined in `styles.css`.
+```jsx
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {FORMAT_TEXT_COMMAND} from 'lexical';
+
+function BoldButton() {
+  const [editor] = useLexicalComposerContext();
+  return (
+    <button type="button" onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}>
+      Bold
+    </button>
+  );
+}
+```
+
+Render `<BoldButton />` inside the composer alongside your editable area.
+`RichTextExtension` handles the command. UI components do not need to register the
+editing behavior again.
+
+For reactive UI, use an extension's output signals. For example,
+`useExtensionSignalValue(HistoryExtension, 'canUndo')` tells an Undo button when it
+can be enabled. `TreeViewExtension` provides a debug panel through
+`ExtensionComponent`:
+
+```jsx
+import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
+import {TreeViewExtension} from '@lexical/react/TreeViewExtension';
+
+// Add TreeViewExtension to appExtension.dependencies, then render inside the composer:
+<ExtensionComponent lexical:extension={TreeViewExtension} />
+```
+
+The runnable example includes a toolbar, the debug panel, and an extension that
+customizes HTML style import and export. Its theme classes are defined in
+`ExampleTheme.ts` and styled in `styles.css`.
 
 <iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
 
-
 ## Saving Lexical State
 
-:::tip
-While we attempt to write our own plugin here for demonstration purposes, in real life projects it's better to opt for [LexicalOnChangePlugin](../react/plugins.md#lexicalonchangeplugin).
-:::
-
-Now that we have a simple editor in React, the next thing we might want to do is access the content of the editor to, for instance,
-save it in a database. We can do this via the an [update listener](../concepts/listeners.md#registerupdatelistener), which will execute every time the editor state changes and provide us with the latest state. In React, we typically use the plugin system to set up listeners like this, since it provides us easy access to the LexicalEditor instance via a React Context. So, let's write our own plugin that notifies us when the editor updates.
+For an explicit Save action, read and serialize the editor when the user clicks.
+`editor.read()` flushes pending edits first. `toJSON()` produces a JSON-compatible
+object, and `JSON.stringify()` produces the string you can store:
 
 ```jsx
-// When the editor changes, you can get notified via the
-// OnChangePlugin!
-function MyOnChangePlugin({ onChange }) {
-  // Access the editor through the LexicalComposerContext
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+
+function SaveButton({onSave}) {
   const [editor] = useLexicalComposerContext();
-  // Wrap our listener in useEffect to handle the teardown and avoid stale references.
-  useEffect(() => {
-    // most listeners return a teardown function that can be called to clean them up.
-    return editor.registerUpdateListener(({editorState}) => {
-      // call onChange here to pass the latest state up to the parent.
-      onChange(editorState);
-    });
-  }, [editor, onChange]);
-  return null;
-}
-```
-
-Now, we can implement this in our editor and save the EditorState in a React state variable:
-
-```jsx
-function MyOnChangePlugin({ onChange }) {
-  const [editor] = useLexicalComposerContext();
-  useEffect(() => {
-    return editor.registerUpdateListener(({editorState}) => {
-      onChange(editorState);
-    });
-  }, [editor, onChange]);
-  return null;
-}
-
-function Editor() {
-  // ...
-
-  const [editorState, setEditorState] = useState();
-  function onChange(editorState) {
-    setEditorState(editorState);
-  }
-
   return (
-    <LexicalComposer initialConfig={initialConfig}>
-      <RichTextPlugin
-        contentEditable={
-          <ContentEditable
-            aria-placeholder={'Enter some text...'}
-            placeholder={<div>Enter some text...</div>}
-          />
-        }
-        ErrorBoundary={LexicalErrorBoundary}
-      />
-      <HistoryPlugin />
-      <MyCustomAutoFocusPlugin />
-      <MyOnChangePlugin onChange={onChange}/>
-    </LexicalComposer>
+    <button type="button" onClick={() => {
+      const json = editor.read(() => JSON.stringify(editor.getEditorState().toJSON()));
+      onSave(json);
+    }}>
+      Save
+    </button>
   );
 }
-
 ```
-Ok, so now we're saving the EditorState object in a React state variable, but we can't save a JavaScript object to our database - so how do we persist the state so we can load it later? We need to serialize it to a storage format. For this purpose (among others) Lexical provides several serialization APIs that convert EditorState to a string that can be sent over the network and saved to a database. Building on our previous example, we can do that this way:
 
-```jsx
-function MyOnChangePlugin({ onChange }) {
-  const [editor] = useLexicalComposerContext();
-  useEffect(() => {
-    return editor.registerUpdateListener(({editorState}) => {
-      onChange(editorState);
-    });
-  }, [editor, onChange]);
-  return null;
-}
+Render this inside the composer and pass your persistence callback as `onSave`.
+For autosave or other subscriptions, register an update listener in an extension
+and return its cleanup function, as shown in the
+[vanilla guide](quick-start.md#responding-to-changes). For React UI that needs the
+current state, add `EditorStateExtension` from `@lexical/extension` and subscribe
+with `useSignalValue(useExtensionDependency(EditorStateExtension).output)`.
 
-function Editor() {
-  // ...
+### Initial content
 
-  const [editorState, setEditorState] = useState();
-  function onChange(editorState) {
-    // Call toJSON on the EditorState object, which produces a serialization safe string
-    const editorStateJSON = editorState.toJSON();
-    // However, we still have a JavaScript object, so we need to convert it to an actual string with JSON.stringify
-    setEditorState(JSON.stringify(editorStateJSON));
-  }
+Use `$initialEditorState` on the root extension for either serialized JSON or a
+synchronous initialization function:
 
-  return (
-    <LexicalComposer initialConfig={initialConfig}>
-      {/*...*/}
-      <MyOnChangePlugin onChange={onChange}/>
-    </LexicalComposer>
+```js
+import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+
+function $initialEditorState() {
+  $getRoot().append(
+    $createParagraphNode().append($createTextNode('Hello world')),
   );
-
+}
 ```
 
-From there, it's straightforward to wire up a submit button or some other UI trigger that will take the state from the React state variable and send it to a server for storage in a database.
+Set `$initialEditorState` to this function on `appExtension`. It runs during
+editor initialization. Lexical owns subsequent edits; do not
+feed every change back into `editor.setEditorState()` as if the editor were a
+controlled input. For deliberately loading a different document, see
+[Editor State](../concepts/editor-state.md).
 
-One important thing to note: Lexical is generally meant to be uncontrolled, so avoid trying to pass the EditorState back into Editor.setEditorState or something along those lines.
+## Next steps
+
+- [Theming](theming.md): map node styles to your CSS.
+- [Creating an Extension](creating-plugin.md): package a custom node and transform.
+- [Included Extensions](../extensions/included-extensions.md): add more features.
+- [React and Lexical Extension](../extensions/react.md): integrate custom React UI.
+
+## Video Tutorials
+
+These videos demonstrate earlier APIs, including the legacy React plugin setup.
+Use the extension setup above for new code.
+
+- [Getting Started with Lexical & React](https://www.youtube.com/watch?v=qIqxvk2qcmo)
+- [Themes, Nodes, and Rich Text](https://www.youtube.com/watch?v=pIBUFYd9zJY)
+- [Headings, Lists, Toolbar](https://www.youtube.com/watch?v=5sRh_WXw0WI)
+- [Creating Nodes and Plugins](https://www.youtube.com/watch?v=abZNazybzvs)

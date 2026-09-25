@@ -7,24 +7,24 @@
  */
 import './styles.css';
 
-import {registerDragonSupport} from '@lexical/dragon';
-import {createEmptyHistoryState, registerHistory} from '@lexical/history';
-import {HeadingNode, QuoteNode, registerRichText} from '@lexical/rich-text';
-import {mergeRegister} from '@lexical/utils';
-import {createEditor, HISTORY_MERGE_TAG} from 'lexical';
+import {ClipboardDOMImportExtension} from '@lexical/clipboard';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
+import {RichTextExtension} from '@lexical/rich-text';
+import {configExtension, defineExtension} from 'lexical';
 
-import {EmojiNode} from './emoji-plugin/EmojiNode';
-import {registerEmoji} from './emoji-plugin/EmojiPlugin';
-import prepopulatedRichText from './prepopulatedRichText';
+import {EmojiExtension} from './emoji-plugin/EmojiExtension';
+import $prepopulatedRichText from './prepopulatedRichText';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
-    <h1>Vanilla JS Lexical Plugin</h1>
+    <h1>Vanilla JS Lexical Extension</h1>
     <div class="editor-wrapper">
-      <div id="lexical-editor" contenteditable></div>
+      <div id="lexical-editor" contenteditable="true" role="textbox"
+        aria-label="Rich text editor" aria-multiline="true"></div>
     </div>
-    <h4>Editor state:</h4>
-    <textarea id="lexical-state"></textarea>
+    <h4><label for="lexical-state">Editor state:</label></h4>
+    <textarea id="lexical-state" readonly></textarea>
   </div>
 `;
 const editorRef = document.getElementById('lexical-editor');
@@ -32,27 +32,28 @@ const stateRef = document.getElementById(
   'lexical-state',
 ) as HTMLTextAreaElement;
 
-const initialConfig = {
-  namespace: 'Vanilla JS Plugin Demo',
-  // Register nodes specific for @lexical/rich-text and our plugin
-  nodes: [HeadingNode, QuoteNode, EmojiNode],
-  onError: (error: Error) => {
-    throw error;
+const appExtension = defineExtension({
+  $initialEditorState: $prepopulatedRichText,
+  dependencies: [
+    RichTextExtension,
+    ClipboardDOMImportExtension,
+    configExtension(HistoryExtension, {delay: 300}),
+    EmojiExtension,
+  ],
+  name: '@lexical/examples/vanilla-js-plugin',
+  namespace: 'Vanilla JS Emoji Demo',
+  register(editor) {
+    return editor.registerUpdateListener(({editorState}) => {
+      stateRef.value = JSON.stringify(editorState.toJSON(), null, 2);
+    });
   },
-};
-const editor = createEditor(initialConfig);
+});
+
+const editor = buildEditorFromExtensions(appExtension);
 editor.setRootElement(editorRef);
 
-// Registering Plugins
-mergeRegister(
-  registerRichText(editor),
-  registerDragonSupport(editor),
-  registerHistory(editor, createEmptyHistoryState(), 300),
-  registerEmoji(editor),
-);
-
-editor.update(prepopulatedRichText, {tag: HISTORY_MERGE_TAG});
-
-editor.registerUpdateListener(({editorState}) => {
-  stateRef!.value = JSON.stringify(editorState.toJSON(), undefined, 2);
-});
+// Dispose the editor and its registrations when Vite replaces this module.
+// In an application, also call dispose() when removing the editor permanently.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => editor.dispose());
+}

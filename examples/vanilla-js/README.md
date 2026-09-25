@@ -1,6 +1,8 @@
 # Basic Vanilla JS example
 
-Here we have simplest Lexical setup in rich text configuration (`@lexical/rich-text`) with history (`@lexical/history`) and accessibility (`@lexical/dragon`) features enabled.
+A rich text editor configured with one root extension. It composes `RichTextExtension` and `HistoryExtension` with `buildEditorFromExtensions`.
+
+[Getting started guide](https://lexical.dev/docs/getting-started/quick-start)
 
 **Run it locally:** `pnpm i && pnpm run dev`
 

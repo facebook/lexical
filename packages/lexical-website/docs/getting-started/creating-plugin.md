@@ -1,115 +1,156 @@
 ---
-sidebar_position: 15
+sidebar_position: 5
 ---
 
-# Creating a Plugin
+# Creating an Extension
 
-This page covers Lexical plugin creation, independently of any framework or library. For those not yet familiar with Lexical it's advisable to [check out the Quick Start (Vanilla JS) page](quick-start.md).
+An extension keeps a feature's nodes, configuration, dependencies, and behavior
+together. Adding it to an editor includes everything the feature needs, and the
+editor cleans up its registrations on disposal. It works with both
+`buildEditorFromExtensions` and `LexicalExtensionComposer`.
 
-Lexical, on the contrary to many other frameworks, doesn't define any specific interface for its plugins. The plugin in its simplest form is a function that accepts a `LexicalEditor` instance, and returns a cleanup function. With access to the `LexicalEditor`, plugin can extend editor via [Commands](../concepts/commands.md), [Transforms](../concepts/transforms.md), [Nodes](../concepts/nodes.mdx), or other APIs.
+This guide builds `EmojiExtension`: a node transform replaces shortcodes such as
+`:)` and `:smiley:` with a custom `EmojiNode` that displays an emoji image. The
+[runnable example](#putting-it-all-together) includes the lookup data, images,
+and CSS.
 
-In this guide we'll create plugin that replaces smiles (`:)`, `:P`, etc...) with actual emojis (using [Node Transforms](../concepts/transforms.md)) and uses own graphics for emojis rendering by creating our own custom node that extends [TextNode](../concepts/nodes.mdx#textnode).
+## Finding emoji shortcodes
 
-<figure class="text--center">
- <img src="/img/docs/lexical-emoji-plugin-design.drawio.svg" alt="Conceptual View"/>
-</figure>
+The example's `findEmoji.ts` uses `emoji-datasource-facebook` to find the first
+space-delimited shortcode in a string. Its result has this shape:
 
-## Preconditions
-
-We assume that you have already implemented (see `findEmoji.ts` within provided code) function that allows you to find emoji shortcodes (smiles) in text and return their position as well as some other info:
-
-```typescript
-// findEmoji.ts
-export type EmojiMatch = Readonly<{position: number, shortcode: string, unifiedID: string}>;
-
-export default function findEmoji(text: string): EmojiMatch | null;
+```ts
+export type EmojiMatch = Readonly<{
+  position: number;
+  shortcode: string;
+  unifiedID: string;
+}>;
 ```
 
-## Creating own `LexicalNode`
+For example, `findEmoji('Hello :)')` returns the match position, `:)`, and a
+hexadecimal Unicode code point ID used to find the corresponding image.
 
-Lexical as a framework provides 2 ways to customize appearance of it's content:
-- By extending one of the base nodes:
-   - [`ElementNode`](../concepts/nodes.mdx#elementnode) – used as parent for other nodes, can be block level or inline.
-   - [`TextNode`](../concepts/nodes.mdx#textnode) - leaf type (_so it can't have child elements_) of node that contains text.
-   - [`DecoratorNode`](../concepts/nodes.mdx#decoratornode) - useful to insert arbitrary view (component) inside the editor.
-- Via [Node Replacement](../concepts/node-replacement.md) – useful if you want to augment behavior of the built in nodes, such as `ParagraphNode`.
+## Creating a custom node
 
-As in our case we don't expect `EmojiNode` to have any child nodes nor we aim to insert arbitrary component the best choice for us is to proceed with [`TextNode`](../concepts/nodes.mdx#textnode) extension.
+An emoji is text with a custom appearance, so extend `TextNode`. Use `ElementNode`
+for nodes with children, or `DecoratorNode` for arbitrary embedded UI. See
+[Nodes](../concepts/nodes.mdx) for those alternatives.
 
-```typescript
+Use `$config()` and [NodeState](../concepts/node-state.md) to declare the emoji ID.
+Lexical then supplies cloning and JSON serialization, including inherited text
+properties, without handwritten `clone`, `importJSON`, or `exportJSON` methods:
+
+```ts
+import {
+  $create,
+  $getState,
+  $getStateChange,
+  $setState,
+  createState,
+  type EditorConfig,
+  TextNode,
+} from 'lexical';
+
+// Serve the example's emoji PNGs from this directory.
+const BASE_EMOJI_URI = '/emojis';
+
+const unifiedIDState = createState('unifiedID', {
+  parse: value => typeof value === 'string' ? value.toLowerCase() : '',
+});
+
 export class EmojiNode extends TextNode {
-  __unifiedID: string;
-
-  static getType(): string {
-    return 'emoji';
+  $config() {
+    return this.config('emoji', {
+      extends: TextNode,
+      stateConfigs: [{flat: true, stateConfig: unifiedIDState}],
+    });
   }
 
-  static clone(node: EmojiNode): EmojiNode {
-    return new EmojiNode(node.__unifiedID, node.__key);
-  }
-
-  constructor(unifiedID: string, key?: NodeKey) {
-    const unicodeEmoji = /*...*/;
-    super(unicodeEmoji, key);
-
-    this.__unifiedID = unifiedID.toLowerCase();
-  }
-
-  /**
-  * DOM that will be rendered by browser within contenteditable
-  * This is what Lexical renders
-  */
-  createDOM(_config: EditorConfig): HTMLElement {
-    const dom = document.createElement('span');
-    dom.className = 'emoji-node';
-    dom.style.backgroundImage = `url('${BASE_EMOJI_URI}/${this.__unifiedID}.png')`;
-    dom.innerText = this.__text;
-
+  createDOM(config: EditorConfig): HTMLElement {
+    const dom = super.createDOM(config);
+    dom.classList.add('emoji-node');
+    dom.style.backgroundImage = `url('${BASE_EMOJI_URI}/${$getState(this, unifiedIDState)}.png')`;
     return dom;
   }
 
-  static importJSON(serializedNode: SerializedEmojiNode): EmojiNode {
-    return $createEmojiNode(serializedNode.unifiedID).updateFromJSON(serializedNode);
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    if (super.updateDOM(prevNode, dom, config)) {
+      return true;
+    }
+    const change = $getStateChange(this, prevNode, unifiedIDState);
+    if (change !== null) {
+      dom.style.backgroundImage = `url('${BASE_EMOJI_URI}/${change[0]}.png')`;
+    }
+    return false;
   }
+}
 
-  exportJSON(): SerializedEmojiNode {
-    return {
-      ...super.exportJSON(),
-      unifiedID: this.__unifiedID,
-    };
-  }
+export function $createEmojiNode(unifiedID: string): EmojiNode {
+  const text = String.fromCodePoint(
+    ...unifiedID.split('-').map(value => parseInt(value, 16)),
+  );
+  return $setState(
+    $create(EmojiNode).setTextContent(text).setMode('token'),
+    unifiedIDState,
+    unifiedID.toLowerCase(),
+  );
 }
 ```
 
-Example above represents absolute minimal setup of the custom node that extends [`TextNode`](../concepts/nodes.mdx#textnode). Let's look at the key elements here:
+The inherited `TextNode` constructor accepts no arguments, which allows `$create`
+and the generated deserializer to construct the node. The factory sets its text,
+its ID, and `token` mode: an emoji is deleted as a unit, and typing beside it
+creates regular text.
 
-- `constructor(...)` + class props – Allows us to store custom data within nodes at runtime as well as accept custom parameters.
-- `getType()` & `clone(...)` – methods allow Lexical to correctly identify node type as well as being able to clone it correctly as we may want to customize cloning behavior.
-- `importJSON(...)` & `exportJSON()` – define how our data will be serialized / deserialized to/from Lexical state. Here you define your node presentation in state.
-- `createDOM(...)` – defines DOM that will be rendered by Lexical
+`stateConfigs` declares the node's custom data. `flat: true` stores `unifiedID`
+as a top-level JSON property, preserving the format used by the earlier version
+of this example. The parser validates imported values and supplies a default.
 
-## Creating Node Transform
+`createDOM` and `updateDOM` preserve `TextNode`'s rendering behavior while adding
+the emoji image. `$getStateChange` detects a change to the stored ID during
+reconciliation. The example includes CSS that hides the Unicode text visually
+while keeping it in the document:
 
-[Transforms](../concepts/transforms.md) allow efficient response to changes to the `EditorState`, and so user input. Their efficiency comes from the fact that transforms are executed before DOM reconciliation (the most expensive operation in Lexical's life cycle).
+```css
+.emoji-node {
+  color: transparent;
+  caret-color: #050505;
+  background-size: 1em 1em;
+  display: inline-block;
+  vertical-align: top;
+  width: 1em;
+  height: 1em;
+}
+```
 
-Additionally it's important to mention that [Lexical Node Transforms](../concepts/transforms.md) are smart enough to allow you not to think about any side effects of the modifications done within transform or interdependencies with other transform listeners. Rule of thumb here is that changes done to the node within a particular transform will trigger rerun of the other transforms till no changes are made to the `EditorState`. Read more about it in [Transform heuristic](../concepts/transforms.md#transform-heuristic).
+The runnable example resolves its images from the installed emoji package with
+Vite. If you use the `/emojis` path above, serve the same images there.
 
-In our example we have simple transform that executes the following business logic:
-1. Attempt to transform `TextNode`. It will be run on any change to `TextNode`'s.
-2. Check if emoji shortcodes (smiles) are present in the text within `TextNode`. Skip if none.
-3. Split `TextNode` into 2 or 3 pieces (depending on the position of the shortcode in text) so target emoji shortcode has own dedicated `TextNode`
-4. Replace emoji shortcode `TextNode` with `EmojiNode`
+## Creating a node transform
 
+A [node transform](../concepts/transforms.md) runs before DOM reconciliation,
+within the update that changed a node. Use it to replace shortcodes without
+starting a second update from an update listener.
 
-```typescript
-import {LexicalEditor, TextNode} from 'lexical';
+The transform below:
 
+1. Skips custom text nodes, token nodes, and inline code.
+2. Finds a shortcode and splits it out of the surrounding text.
+3. Replaces that part with an `EmojiNode`, preserving text formatting and styles.
 
-import {$createEmojiNode} from './EmojiNode';
+The remaining text is dirty after splitting, so Lexical runs transforms on it
+again to find additional shortcodes. The `isSimpleText()` guard excludes
+`EmojiNode`, so replacements do not transform themselves in a loop.
+
+Define the transform and its extension together:
+
+```ts
+import {defineExtension, TextNode} from 'lexical';
+
+import {$createEmojiNode, EmojiNode} from './EmojiNode';
 import findEmoji from './findEmoji';
 
-
-function textNodeTransform(node: TextNode): void {
+function $textNodeTransform(node: TextNode): void {
   if (!node.isSimpleText() || node.hasFormat('code')) {
     return;
   }
@@ -137,58 +178,67 @@ function textNodeTransform(node: TextNode): void {
     );
   }
 
-
-  const emojiNode = $createEmojiNode(emojiMatch.unifiedID);
+  const emojiNode = $createEmojiNode(emojiMatch.unifiedID)
+    .setFormat(targetNode.getFormat())
+    .setStyle(targetNode.getStyle());
   targetNode.replace(emojiNode);
 }
 
-
-export function registerEmoji(editor: LexicalEditor): () => void {
-  // We don't use editor.registerUpdateListener here as alternative approach where we rely
-  // on update listener is highly discouraged as it triggers an additional render (the most expensive lifecycle operation).
-  return editor.registerNodeTransform(TextNode, textNodeTransform);
-}
+export const EmojiExtension = defineExtension({
+  name: '@lexical/examples/Emoji',
+  nodes: () => [EmojiNode],
+  register(editor) {
+    return editor.registerNodeTransform(TextNode, $textNodeTransform);
+  },
+});
 ```
+
+`nodes` registers the custom node before the editor is initialized. `register`
+installs the transform and returns its cleanup function. Consumers only add
+`EmojiExtension`; they do not separately register `EmojiNode` or call a bootstrap
+function.
 
 ## Putting it all together
 
-Finally we configure Lexical instance with our newly created plugin by registering `EmojiNode` within editor config and executing `registerEmoji(editor)` plugin bootstrap function. Here for that sake of simplicity we assume that the plugin picks its own approach for CSS & Static Assets distribution (if any), Lexical doesn't enforce any rules on that.
+Add the feature to a root extension:
 
-Refer to [Quick Start (Vanilla JS) Example](quick-start.md#putting-it-together) to fill the gaps in this pseudocode.
+```ts
+import {ClipboardDOMImportExtension} from '@lexical/clipboard';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
+import {RichTextExtension} from '@lexical/rich-text';
+import {defineExtension} from 'lexical';
 
-```typescript
-import {createEditor} from 'lexical';
-import {mergeRegister} from '@lexical/utils';
-/* ... */
+import {EmojiExtension} from './emoji-plugin/EmojiExtension';
 
-import {EmojiNode} from './emoji-plugin/EmojiNode';
-import {registerEmoji} from './emoji-plugin/EmojiPlugin';
+const appExtension = defineExtension({
+  name: 'EmojiEditor',
+  namespace: 'EmojiEditor',
+  dependencies: [
+    RichTextExtension,
+    HistoryExtension,
+    ClipboardDOMImportExtension,
+    EmojiExtension,
+  ],
+});
 
-const initialConfig = {
-  /* ... */
-  // Register our newly created node
-  nodes: [EmojiNode, /* ... */],
-};
-
-const editor = createEditor(config);
-
-const editorRef = document.getElementById('lexical-editor');
-editor.setRootElement(editorRef);
-
-// Registering Plugins
-mergeRegister(
-  /* ... */
-  registerEmoji(editor), // Our plugin
-);
+const editor = buildEditorFromExtensions(appExtension);
+editor.setRootElement(document.getElementById('editor'));
+// Call editor.dispose() when removing this editor permanently.
 ```
 
-<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=1&ctl=1" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
+Use the editable element from [Quick Start](quick-start.md). In React, pass the
+same root extension to `LexicalExtensionComposer` instead of building and
+attaching the editor yourself. No React-specific emoji plugin is needed.
 
-## Publishing your plugin
+<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiExtension.ts&terminalHeight=1&ctl=1" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
 
-If the plugin ships as its own npm package, declare `lexical` and any
-`@lexical/*` packages you import as `peerDependencies` (plus `devDependencies`
-for your own build and tests) rather than as `dependencies`. Lexical relies on
-module-scope state and class identity, so an app that ends up with two copies of
-`lexical` fails at runtime with errors that do not point at the cause. See
-[One Lexical per app](../concepts/one-lexical-per-app.md).
+## Publishing your extension
+
+If the extension ships as its own npm package, declare `lexical` and any
+`@lexical/*` packages you import as `peerDependencies`, plus `devDependencies`
+for your build and tests. Applications must resolve
+[one copy of each Lexical package](../concepts/one-lexical-per-app.md).
+
+For configurable features, outputs, and dependency configuration, continue with
+[Defining Extensions](../extensions/defining-extensions.md).

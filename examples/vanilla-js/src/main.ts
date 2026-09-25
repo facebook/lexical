@@ -7,22 +7,23 @@
  */
 import './styles.css';
 
-import {registerDragonSupport} from '@lexical/dragon';
-import {createEmptyHistoryState, registerHistory} from '@lexical/history';
-import {HeadingNode, QuoteNode, registerRichText} from '@lexical/rich-text';
-import {mergeRegister} from '@lexical/utils';
-import {createEditor, HISTORY_MERGE_TAG} from 'lexical';
+import {ClipboardDOMImportExtension} from '@lexical/clipboard';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
+import {RichTextExtension} from '@lexical/rich-text';
+import {configExtension, defineExtension} from 'lexical';
 
-import prepopulatedRichText from './prepopulatedRichText';
+import $prepopulatedRichText from './prepopulatedRichText';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
     <h1>Lexical Basic - Vanilla JS</h1>
     <div class="editor-wrapper">
-      <div id="lexical-editor" contenteditable></div>
+      <div id="lexical-editor" contenteditable="true" role="textbox"
+        aria-label="Rich text editor" aria-multiline="true"></div>
     </div>
-    <h4>Editor state:</h4>
-    <textarea id="lexical-state"></textarea>
+    <h4><label for="lexical-state">Editor state:</label></h4>
+    <textarea id="lexical-state" readonly></textarea>
   </div>
 `;
 const editorRef = document.getElementById('lexical-editor');
@@ -30,30 +31,28 @@ const stateRef = document.getElementById(
   'lexical-state',
 ) as HTMLTextAreaElement;
 
-const initialConfig = {
+const appExtension = defineExtension({
+  $initialEditorState: $prepopulatedRichText,
+  dependencies: [
+    RichTextExtension,
+    ClipboardDOMImportExtension,
+    configExtension(HistoryExtension, {delay: 300}),
+  ],
+  name: '@lexical/examples/vanilla-js',
   namespace: 'Vanilla JS Demo',
-  // Register nodes specific for @lexical/rich-text
-  nodes: [HeadingNode, QuoteNode],
-  onError: (error: Error) => {
-    throw error;
+  register(editor) {
+    return editor.registerUpdateListener(({editorState}) => {
+      stateRef.value = JSON.stringify(editorState.toJSON(), null, 2);
+    });
   },
-  theme: {
-    // Adding styling to Quote node, see styles.css
-    quote: 'PlaygroundEditorTheme__quote',
-  },
-};
-const editor = createEditor(initialConfig);
+  theme: {quote: 'PlaygroundEditorTheme__quote'},
+});
+
+const editor = buildEditorFromExtensions(appExtension);
 editor.setRootElement(editorRef);
 
-// Registering Plugins
-mergeRegister(
-  registerRichText(editor),
-  registerDragonSupport(editor),
-  registerHistory(editor, createEmptyHistoryState(), 300),
-);
-
-editor.update(prepopulatedRichText, {tag: HISTORY_MERGE_TAG});
-
-editor.registerUpdateListener(({editorState}) => {
-  stateRef!.value = JSON.stringify(editorState.toJSON(), undefined, 2);
-});
+// Dispose the editor and its registrations when Vite replaces this module.
+// In an application, also call dispose() when removing the editor permanently.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => editor.dispose());
+}

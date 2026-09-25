@@ -16,17 +16,6 @@ import {configExtension, defineExtension} from 'lexical';
 import {EmojiExtension} from './emoji-plugin/EmojiExtension';
 import $prepopulatedRichText from './prepopulatedRichText';
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <h1>Vanilla JS Lexical Extension</h1>
-    <div class="editor-wrapper">
-      <div id="lexical-editor" contenteditable="true" role="textbox"
-        aria-label="Rich text editor" aria-multiline="true"></div>
-    </div>
-    <h4><label for="lexical-state">Editor state:</label></h4>
-    <textarea id="lexical-state" readonly></textarea>
-  </div>
-`;
 const editorRef = document.getElementById('lexical-editor');
 const stateRef = document.getElementById(
   'lexical-state',

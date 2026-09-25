@@ -27,23 +27,6 @@ import {
 
 import {reviewedState, ReviewExtension} from './ReviewExtension';
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <h1>Paragraph review</h1>
-  <p>Place the cursor in a paragraph, then toggle its review status.</p>
-  <button id="toggle-reviewed" type="button">Toggle reviewed</button>
-  <div id="editor" contenteditable="true" role="textbox"
-    aria-label="Paragraph review editor" aria-multiline="true"></div>
-  <div class="actions">
-    <button id="export-html" type="button">Export HTML</button>
-    <button id="import-html" type="button">Import HTML</button>
-  </div>
-  <label for="html">HTML (export, edit, then import)</label>
-  <textarea id="html" spellcheck="false"></textarea>
-  <details>
-    <summary>Editor state JSON</summary>
-    <textarea id="json" aria-label="Editor state JSON" readonly></textarea>
-  </details>
-`;
 const html = document.querySelector<HTMLTextAreaElement>('#html')!;
 const json = document.querySelector<HTMLTextAreaElement>('#json')!;
 const appExtension = defineExtension({

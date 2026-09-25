@@ -6,14 +6,66 @@
  *
  */
 
-// [docs:emoji-extension] Read directly by the Creating an Extension guide.
-import {domOverride, DOMRenderExtension} from '@lexical/html';
+// [docs:emoji-node] Read directly by the Creating an Extension guide.
+import {
+  defineImportRule,
+  DOMImportExtension,
+  domOverride,
+  DOMRenderExtension,
+  sel,
+} from '@lexical/html';
 import {version as emojiVersion} from 'emoji-datasource-facebook/package.json';
-import {configExtension, defineExtension, TextNode} from 'lexical';
+import {
+  $create,
+  $isTextNode,
+  configExtension,
+  defineExtension,
+  isHTMLElement,
+  nodeSchema,
+  stringValue,
+  TextNode,
+  withField,
+} from 'lexical';
 
-import {$createEmojiNode, EmojiNode} from './EmojiNode';
 import findEmoji from './findEmoji';
 
+const emojiNodeSchema = nodeSchema<EmojiNode>()({
+  unifiedID: withField(stringValue(), {field: '__unifiedID'}),
+});
+
+export class EmojiNode extends TextNode {
+  __unifiedID: string = '';
+
+  $config() {
+    return this.config('emoji', {
+      extends: TextNode,
+      json: emojiNodeSchema,
+    });
+  }
+
+  getUnifiedID(): string {
+    return this.getLatest().__unifiedID;
+  }
+
+  setUnifiedID(unifiedID: string): this {
+    const self = this.getWritable();
+    self.__unifiedID = unifiedID.toLowerCase();
+    return self;
+  }
+}
+
+export function $createEmojiNode(unifiedID: string): EmojiNode {
+  const text = String.fromCodePoint(
+    ...unifiedID.split('-').map(value => parseInt(value, 16)),
+  );
+  return $create(EmojiNode)
+    .setTextContent(text)
+    .setMode('token')
+    .setUnifiedID(unifiedID);
+}
+// [/docs:emoji-node]
+
+// [docs:emoji-extension] Read directly by the Creating an Extension guide.
 const BASE_EMOJI_URI = `https://cdn.jsdelivr.net/npm/emoji-datasource-facebook@${emojiVersion}/img/facebook/64`;
 
 function applyEmojiImage(dom: HTMLElement, unifiedID: string): void {
@@ -76,14 +128,55 @@ function $textNodeTransform(node: TextNode): void {
   targetNode.replace(emojiNode);
 }
 
+// [/docs:emoji-extension]
+
+// [docs:emoji-html] Read directly by the Creating an Extension guide.
+const EmojiImportRule = defineImportRule({
+  $import(_context, element, $next) {
+    // Preserve the usual text import behavior, including nested formatting.
+    const nodes = $next();
+    const node = nodes[0];
+    if (nodes.length === 1 && $isTextNode(node)) {
+      const text = node.getTextContent();
+      const unifiedID = Array.from(text, char =>
+        char.codePointAt(0)!.toString(16).padStart(4, '0'),
+      ).join('-');
+      const attribute = element.getAttribute('data-emoji-id');
+      // Only restore the emoji when the attribute agrees with the actual text.
+      // Invalid or mismatched attributes leave the imported content unchanged.
+      if (attribute !== null && unifiedID === attribute.toLowerCase()) {
+        return [
+          $create(EmojiNode)
+            .setUnifiedID(unifiedID)
+            .setTextContent(text)
+            .setMode('token')
+            .setFormat(node.getFormat())
+            .setStyle(node.getStyle()),
+        ];
+      }
+    }
+    return nodes;
+  },
+  match: sel.any().attr('data-emoji-id', true),
+  name: '@lexical/examples/emoji',
+});
+
 export const EmojiExtension = defineExtension({
   dependencies: [
+    configExtension(DOMImportExtension, {rules: [EmojiImportRule]}),
     configExtension(DOMRenderExtension, {
       overrides: [
         domOverride([EmojiNode], {
           $decorateDOM(node, _prevNode, dom) {
             dom.classList.add('emoji-node');
             applyEmojiImage(dom, node.getUnifiedID());
+          },
+          $exportDOM(node, $next) {
+            const output = $next();
+            if (isHTMLElement(output.element)) {
+              output.element.setAttribute('data-emoji-id', node.getUnifiedID());
+            }
+            return output;
           },
         }),
       ],
@@ -95,4 +188,4 @@ export const EmojiExtension = defineExtension({
     return editor.registerNodeTransform(TextNode, $textNodeTransform);
   },
 });
-// [/docs:emoji-extension]
+// [/docs:emoji-html]

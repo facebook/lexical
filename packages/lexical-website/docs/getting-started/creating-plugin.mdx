@@ -5,9 +5,10 @@ sidebar_position: 5
 import GettingStartedExample from '@site/src/components/GettingStartedExample';
 import CodeBlock from '@theme/CodeBlock';
 import EmojiMatchSource from '!!example-source?region=emoji-match!@site/../../examples/vanilla-js-plugin/src/emoji-plugin/findEmoji.ts';
-import EmojiNodeSource from '!!example-source?region=emoji-node!@site/../../examples/vanilla-js-plugin/src/emoji-plugin/EmojiNode.ts';
+import EmojiNodeSource from '!!example-source?region=emoji-node!@site/../../examples/vanilla-js-plugin/src/emoji-plugin/EmojiExtension.ts';
 import EmojiStyles from '!!example-source?region=emoji-styles!@site/../../examples/vanilla-js-plugin/src/styles.css';
 import EmojiExtensionSource from '!!example-source?region=emoji-extension!@site/../../examples/vanilla-js-plugin/src/emoji-plugin/EmojiExtension.ts';
+import EmojiHTMLSource from '!!example-source?region=emoji-html!@site/../../examples/vanilla-js-plugin/src/emoji-plugin/EmojiExtension.ts';
 import AppSource from '!!example-source?region=app-extension!@site/../../examples/vanilla-js-plugin/src/AppExtension.ts';
 import MainSource from '!!example-source?region=main!@site/../../examples/vanilla-js-plugin/src/main.ts';
 
@@ -46,11 +47,12 @@ for nodes with children, or `DecoratorNode` for arbitrary embedded UI. See
 
 Declare the `__unifiedID` property in a [`$config` JSON schema](../concepts/nodes.mdx#creating-custom-nodes-with-a-serialization-schema).
 Lexical then supplies cloning and JSON serialization, including inherited text
-properties, without handwritten `clone`, `importJSON`, or `exportJSON` methods:
+properties, without handwritten `clone`, `importJSON`, or `exportJSON` methods.
+Keep the node, its factory, and the extension together in `EmojiExtension.ts`:
 
 <CodeBlock
   language="ts"
-  title="examples/vanilla-js-plugin/src/emoji-plugin/EmojiNode.ts">
+  title="examples/vanilla-js-plugin/src/emoji-plugin/EmojiExtension.ts">
   {EmojiNodeSource}
 </CodeBlock>
 
@@ -66,10 +68,11 @@ schema also carries the property across clones. Getters use `getLatest()` and
 setters use `getWritable()` to respect Lexical's immutable editor states.
 
 The node inherits `TextNode`'s DOM creation, updates, and HTML export. The
-extension below adds the image through `DOMRenderExtension.$decorateDOM`, which
-only runs for the live editor. Copying or exporting HTML preserves the Unicode
-text and formatting without loading images or including emoji-specific classes
-and loading attributes.
+extension below adds the image through a `$decorateDOM` override in
+`DOMRenderExtension`, which only runs for the live editor. Its separate
+`$exportDOM` override adds a stable `data-emoji-id` attribute for HTML import.
+Copying or exporting HTML preserves the Unicode text and formatting without
+loading images or including the live editor's classes and loading attributes.
 
 The native Unicode text stays visible until the image loads successfully. An
 unknown ID or a failed request therefore keeps the native emoji visible. The
@@ -103,7 +106,8 @@ The remaining text is dirty after splitting, so Lexical runs transforms on it
 again to find additional shortcodes. The `isSimpleText()` guard excludes
 `EmojiNode`, so replacements do not transform themselves in a loop.
 
-Define the transform and live DOM decoration in the extension:
+The next fragment of `EmojiExtension.ts` defines the transform and image helper
+using the node and imports above:
 
 <CodeBlock
   language="ts"
@@ -115,6 +119,28 @@ The decorator remembers the URL on the DOM element. When an update changes
 inline styles, it restores the loaded background without clearing the image or
 starting another preload. Changing the emoji ID starts a new load and shows the
 native text until it succeeds.
+
+## Preserving emojis in HTML
+
+Unicode text alone does not identify an `EmojiNode` on import. The extension's
+`$exportDOM` override calls `$next()` to keep the usual text formatting, then adds
+`data-emoji-id` to the exported element. The same output is used for HTML export
+and copying to the clipboard.
+
+`EmojiImportRule` matches that attribute and delegates to `$next()` first, so the
+normal rules import text and nested formatting. It restores an `EmojiNode` only
+when the result is a single text node whose Unicode code points agree with the
+attribute. Comparing against the actual text avoids parsing untrusted code point
+values. Invalid or mismatched attributes fall back to the ordinary imported
+content. The new node retains the imported formatting and styles.
+
+Register the import rule and both DOM hooks in the same extension:
+
+<CodeBlock
+  language="ts"
+  title="examples/vanilla-js-plugin/src/emoji-plugin/EmojiExtension.ts">
+  {EmojiHTMLSource}
+</CodeBlock>
 
 `nodes` registers the custom node before the editor is initialized. `register`
 installs the transform and returns its cleanup function. Consumers only add
@@ -138,6 +164,12 @@ Then build and attach the editor:
 Use the editable element from [Quick Start](quick-start.mdx). In React, pass the
 same root extension to `LexicalExtensionComposer` instead of building and
 attaching the editor yourself. No React-specific emoji plugin is needed.
+
+In the example below, type a shortcode, then use **Export HTML** and **Import
+HTML** to try the round trip. The markup contains the Unicode text and
+`data-emoji-id`; **Editor state JSON** confirms that import restores the `emoji`
+type, `unifiedID`, and token mode. HTML pasted from another application goes
+through the same import rule via `ClipboardDOMImportExtension`.
 
 <GettingStartedExample example="vanilla-js-plugin" />
 

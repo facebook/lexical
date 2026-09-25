@@ -234,6 +234,11 @@ async function main() {
             'HTML export must not load images',
           );
           assert.match(rendering.html, /🙂/);
+          assert.match(
+            rendering.html,
+            /data-emoji-id="1f642"/,
+            'HTML export must preserve the emoji ID for import',
+          );
           assert.match(rendering.html, /<(strong|b)>/);
           assert.doesNotMatch(
             rendering.html,
@@ -275,6 +280,80 @@ async function main() {
           await expect(emoji).toHaveCSS('background-image', 'none');
           process.stdout.write(
             'PASS emoji: CDN image, clone, formatting, JSON round trip, missing-image fallback\n',
+          );
+          // Exercise the HTML path without Lexical's private clipboard JSON.
+          await editor.click();
+          await editor.press('ControlOrMeta+a');
+          await editor.evaluate((element, html) => {
+            const clipboardData = new DataTransfer();
+            clipboardData.setData('text/html', html);
+            element.dispatchEvent(
+              new ClipboardEvent('paste', {
+                bubbles: true,
+                cancelable: true,
+                clipboardData,
+              }),
+            );
+          }, rendering.html);
+          await expect(state).toHaveValue(/"unifiedID": "1f642"/);
+          await expect(emoji).toHaveCount(1);
+
+          const html = frame.getByLabel('HTML (export, edit, then import)');
+          for (const [unifiedID, text, format] of [
+            ['1f642', '🙂', 1],
+            ['2764-fe0f', '❤️', 3],
+            ['1f469-1f3fd-200d-1f4bb', '👩🏽‍💻', 0],
+          ]) {
+            const fixture = JSON.parse(saved);
+            const node = fixture.root.children[0].children.find(
+              child => child.type === 'emoji',
+            );
+            Object.assign(node, {format, text, unifiedID});
+            await editor.evaluate((element, json) => {
+              const instance = element.__lexicalEditor;
+              instance.setEditorState(instance.parseEditorState(json));
+            }, JSON.stringify(fixture));
+            await frame
+              .getByRole('button', {exact: true, name: 'Export HTML'})
+              .click();
+            assert.ok(
+              (await html.inputValue()).includes(
+                `data-emoji-id="${unifiedID}"`,
+              ),
+            );
+            await frame
+              .getByRole('button', {exact: true, name: 'Import HTML'})
+              .click();
+            await expect(emoji).toHaveText(text);
+            const imported = JSON.parse(await state.inputValue())
+              .root.children.flatMap(paragraph => paragraph.children)
+              .find(child => child.type === 'emoji');
+            assert.equal(imported.unifiedID, unifiedID);
+            assert.equal(imported.text, text);
+            assert.equal(imported.format ?? 0, format);
+            assert.equal(imported.mode, 'token');
+          }
+
+          // Malformed IDs, out-of-range code points, and mismatched text must
+          // retain the ordinary content instead of throwing or replacing it.
+          for (const marker of [
+            'data-emoji-id="invalid"',
+            'data-emoji-id="110000"',
+            'data-emoji-id="1f600"',
+            '',
+          ]) {
+            await html.fill(
+              `<p>Before <strong ${marker}>🙂</strong> after</p>`,
+            );
+            await frame
+              .getByRole('button', {exact: true, name: 'Import HTML'})
+              .click();
+            await expect(emoji).toHaveCount(0);
+            await expect(editor).toHaveText('Before 🙂 after');
+            await expect(editor.locator('strong')).toHaveText('🙂');
+          }
+          process.stdout.write(
+            'PASS emoji HTML: clipboard import, formatted and multi-code-point round trips, invalid attribute fallback\n',
           );
         }
         if (example === 'node-state-review') {

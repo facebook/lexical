@@ -122,10 +122,11 @@ single integer.
 | | Lexical | ProseMirror |
 | -- | -- | -- |
 | Document | Immutable tree of nodes, one `RootNode` | Immutable tree of nodes, one `doc` node |
-| Blocks | `ElementNode` subclasses (paragraph, heading, list, table, …) | Block nodes defined in the schema |
+| Blocks | `ElementNode` subclasses (paragraph, heading, list, table, …), or a block `DecoratorNode` (image, embed, …) | Block nodes defined in the schema |
 | Inline formatting | Format flags on each `TextNode` (bold, italic, code, …) | Marks on text |
 | Links and other inline wrappers | Inline `ElementNode`s (`LinkNode`, `MarkNode`) that contain text nodes | Marks on text, like formatting |
-| Embedded content | `DecoratorNode`, rendered by your framework (for example React) | Leaf or atom nodes, often with a custom `NodeView` |
+| Embedded content | `DecoratorNode`, inline or block, rendered by your framework (for example React) | Leaf or atom nodes, often with a custom `NodeView` |
+| Several editable regions in one node | [Named slots](./concepts/named-slots.md) (experimental): regions addressed by name, like a card's `title`, each isolated so editing and selection never cross the boundary | Child nodes in the order the schema's content expression allows, optionally marked `isolating`, or a separate editor inside a `NodeView` |
 | Addressing a position | Node key plus offset (`{key, offset, type}`) | One integer counted across the whole document |
 | Allowed structure | Declared by node classes, enforced with node transforms and normalization | Declared by a schema of content expressions |
 | Rendering | Each node's `createDOM()`/`updateDOM()`, applied by the reconciler | `toDOM` in the schema, or a `NodeView` |

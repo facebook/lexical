@@ -315,9 +315,10 @@ The DOM is only needed to show an editor on screen. Because every read and
 update goes through the editor state, Lexical also works where there is no
 browser DOM:
 
-- **With no DOM at all**, using
-  [`@lexical/headless`](/docs/packages/lexical-headless). A headless editor
-  supports updates, transforms, listeners, commands, and JSON serialization,
+- **With no DOM at all.** An editor that has no root element skips
+  reconciliation and DOM selection entirely, so you can build one with
+  `buildEditorFromExtensions()` and never call `setRootElement()`. Updates,
+  transforms, listeners, commands, and JSON serialization all still work,
   which is enough to process documents on a server, apply changes from a
   collaboration backend, or write tests.
 - **With a virtual DOM** such as happy-dom or jsdom, for the features that

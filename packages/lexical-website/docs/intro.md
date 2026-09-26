@@ -231,27 +231,32 @@ update inside a read.
 ### Updates and the DOM reconciler {#dom-reconciler}
 
 Lexical uses double-buffering. The current editor state is frozen; an update
-works on a pending copy. Several updates made in the same tick are batched,
-and then the reconciler compares the pending state with the current one and
-changes only the parts of the DOM that differ. Because Lexical tracks which
-nodes each update changed, it skips most of the diffing a virtual DOM would
-do. The pending state then becomes the new, frozen current state, which makes
-features such as undo/redo cheap to implement.
+works on a pending copy, and updates made in the same tick are batched into
+it. When the batch commits, the pending state becomes the new, frozen current
+state, and the reconciler changes only the parts of the DOM that belong to
+nodes the updates changed, so it skips most of the diffing a virtual DOM would
+do. Keeping every committed state frozen is also what makes features such as
+undo/redo cheap to implement. Here is the order of events:
 
 ```mermaid
-flowchart TB
-  accTitle: How an update reaches the DOM
-  accDescr: User input and your code dispatch commands, whose handlers update the pending editor state; your code can also call editor.update directly. Node transforms run after the update. The pending state is committed to the DOM reconciler, which patches the contenteditable DOM and sets the new current editor state, which notifies update and mutation listeners. Changes made to the DOM outside Lexical are picked up by a MutationObserver and fed back into the pending state.
-  input(["User input<br/>(DOM events)"]) -->|dispatches| cmd["Command handlers"]
-  cmd -->|"update"| pending
-  api(["Your code"]) -->|"editor.update()"| pending["Pending EditorState"]
-  api -->|"editor.dispatchCommand()"| cmd
-  pending <-->|"after the update"| transforms["Node transforms"]
-  pending -->|"commit"| reconciler["DOM reconciler"]
-  reconciler -->|"patches"| dom(["contenteditable DOM"])
-  dom -.->|"outside changes<br/>(MutationObserver)"| pending
-  reconciler -->|"sets"| current["Current EditorState"]
-  current -->|"notifies"| listeners["Update and mutation listeners"]
+sequenceDiagram
+  accTitle: The steps of an update
+  accDescr: User input or your code starts an update, either directly with editor.update or through a command whose handlers run inside an update. The first update in a batch clones the current editor state. The callback changes the pending state, then node transforms run on changed nodes until nothing is dirty. Further updates in the same tick join the batch. On commit, the pending state becomes the frozen current state, the reconciler patches the DOM and the DOM selection, and then mutation, text content, and update listeners are called. Changes made to the DOM outside Lexical are seen by a MutationObserver and start a new update.
+  autonumber
+  participant Src as User input or your code
+  participant Ed as Editor
+  participant P as Pending state
+  participant DOM as contenteditable DOM
+  participant L as Listeners
+  Src->>Ed: editor.update(fn), or dispatchCommand()<br/>(handlers run by priority inside an update)
+  Ed->>P: Clone the current state<br/>(first update in a batch only)
+  Ed->>P: Run fn to change it
+  Ed->>P: Run node transforms on changed nodes<br/>until nothing is dirty
+  Note over Src,P: More updates in the same tick join this batch
+  P->>Ed: Commit (in a microtask, or at once if discrete):<br/>becomes the frozen current state
+  Ed->>DOM: Reconcile changed nodes, then the DOM selection
+  Ed->>L: Mutation, text content, then update listeners
+  DOM-->>Ed: Changes made outside Lexical (MutationObserver)<br/>start a new update
 ```
 
 The editor state, not the DOM, is the source of truth. For some plain typing,

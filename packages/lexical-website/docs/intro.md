@@ -29,14 +29,13 @@ the main exception is custom nodes, which define how they render.
 Lexical supplies the editing infrastructure. Your application supplies the
 layout, toolbars, menus, styling, and storage.
 
-Lexical is developed at Meta, where it powers text editing across its web
-products. It is also the editor behind
-[Ghost's Koenig editor](https://ghost.org/changelog/new-editor/),
-[Payload CMS](https://payloadcms.com/docs/rich-text/overview),
-[Proton Docs](https://github.com/ProtonMail/WebClients/tree/main/applications/docs-editor),
-[Sveltia CMS](https://sveltiacms.app/en/docs/fields/richtext), and
-[Dify](https://github.com/langgenius/dify). To see what it can do, try the
-[playground](https://playground.lexical.dev).
+Lexical started at Meta, which still uses it across its web products, and is
+now an open-source project built by a community of volunteers, who contribute
+most of its development. It is also the editor behind
+[Ghost](https://ghost.org), [Payload CMS](https://payloadcms.com),
+[Proton Docs](https://proton.me/drive/document-editor),
+[Sveltia CMS](https://sveltiacms.app), and [Dify](https://dify.ai). To see
+what it can do, try the [playground](https://playground.lexical.dev).
 
 ## How it fits together
 

@@ -841,7 +841,10 @@ export function $restoreEmptyContainerParagraph(
   if (
     !$isRootOrShadowRoot(container) ||
     !container.isAttached() ||
-    !container.isEmpty() ||
+    // Root slots (such as footnotes) do not replace the editable body.
+    ($isRootNode(container)
+      ? container.getChildrenSize() !== 0
+      : !container.isEmpty()) ||
     !(
       $isRootNode(container) ||
       (removedChild !== null && INTERNAL_$isBlock(removedChild))

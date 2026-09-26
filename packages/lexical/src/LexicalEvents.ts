@@ -1129,8 +1129,10 @@ function $handleBeforeInput(event: InputEvent): boolean {
 
       // Safari does not provide the type "insertLineBreak".
       // So instead, we need to infer it from the keyboard event.
-      // We do not apply this logic to iOS to allow newline auto-capitalization
-      // work without creating linebreaks when pressing Enter
+      // On iOS, shiftKey also reflects automatic capitalization, so treating it
+      // as an explicit Shift press breaks ordinary Enter (e.g. exiting lists).
+      // Use INSERT_LINE_BREAK_COMMAND from a toolbar for an unambiguous action.
+      // https://github.com/w3c/editing/issues/542
       if (inputState.isInsertLineBreak && !IS_IOS) {
         inputState.isInsertLineBreak = false;
         dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);

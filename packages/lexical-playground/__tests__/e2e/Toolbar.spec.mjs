@@ -41,6 +41,28 @@ test.describe('Toolbar', () => {
     }),
   );
 
+  test('Insert line break from the toolbar and continue typing', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('First line');
+    await selectFromInsertDropdown(page, '.line-break');
+    await page.keyboard.type('Second line');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">First line</span>
+          <br />
+          <span data-lexical-text="true">Second line</span>
+        </p>
+      `,
+    );
+  });
+
   test('Insert image caption + table', async ({page, isPlainText}) => {
     // TODO(collab-v2): nested editors are not supported yet
     test.skip(isPlainText || IS_COLLAB_V2);

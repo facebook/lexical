@@ -64,6 +64,7 @@ import {getIsProcessingMutations} from './LexicalMutations';
 import {insertRangeAfter, type LexicalNode, type NodeKey} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
+  $getSelectionSlotFrame,
   $getSlot,
   $getSlotFrame,
   $getSlotHost,
@@ -573,7 +574,12 @@ export class NodeSelection implements BaseSelection {
 
 function $ensureRootHasParagraph(): void {
   const root = $getRoot();
-  if (root.isEmpty()) {
+  // Root slots (such as footnotes) do not replace the editable document body.
+  // Deletion inside a slot must keep the selection in that slot.
+  if (
+    root.getChildrenSize() === 0 &&
+    $getSelectionSlotFrame($getSelection()) === null
+  ) {
     const paragraph = $createParagraphNode();
     root.append(paragraph);
     paragraph.select();

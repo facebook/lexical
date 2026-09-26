@@ -2941,7 +2941,13 @@ describe('$getSlotNameWithinHost', () => {
 
 // Regression tests for the slot-aware $selectAll path.
 describe('$selectAll boundary cases', () => {
-  test.each(['range', 'node'])(
+  test.each([
+    'deleteCharacter',
+    'deleteWord',
+    'deleteLine',
+    'removeText',
+    'node',
+  ] as const)(
     'deleting a %s selection inside a root slot keeps the selection in that slot',
     kind => {
       using editor = createSlotEditor();
@@ -2950,13 +2956,18 @@ describe('$selectAll boundary cases', () => {
           const root = $getRoot();
           const slot = $slotContainer('Footnote');
           $setSlot(root, 'footnotes', slot);
-          if (kind === 'range') {
-            $selectAll(slot.selectStart()).deleteCharacter(true);
-          } else {
+          if (kind === 'node') {
             const selection = $createNodeSelection();
             selection.add(slot.getFirstChildOrThrow().getKey());
             $setSelection(selection);
             selection.deleteNodes();
+          } else {
+            const selection = $selectAll(slot.selectStart());
+            if (kind === 'removeText') {
+              selection.removeText();
+            } else {
+              selection[kind](true);
+            }
           }
           expect($getSelectionSlotFrame($getSelection())).toBe(slot);
           expect(root.getChildrenSize()).toBe(0);
@@ -2966,7 +2977,13 @@ describe('$selectAll boundary cases', () => {
     },
   );
 
-  test.each(['range', 'node'])(
+  test.each([
+    'deleteCharacter',
+    'deleteWord',
+    'deleteLine',
+    'removeText',
+    'node',
+  ] as const)(
     'deleting all children with a %s selection restores a paragraph before root slots',
     kind => {
       using editor = createSlotEditor();
@@ -2979,13 +2996,18 @@ describe('$selectAll boundary cases', () => {
           root.append(paragraph);
           const slot = $slotContainer('Footnote');
           $setSlot(root, 'footnotes', slot);
-          if (kind === 'range') {
-            $selectAll().deleteCharacter(true);
-          } else {
+          if (kind === 'node') {
             const selection = $createNodeSelection();
             selection.add(paragraph.getKey());
             $setSelection(selection);
             selection.deleteNodes();
+          } else {
+            const selection = $selectAll();
+            if (kind === 'removeText') {
+              selection.removeText();
+            } else {
+              selection[kind](true);
+            }
           }
 
           expect(root.getChildrenSize()).toBe(1);

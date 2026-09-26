@@ -220,8 +220,9 @@ Which state you see depends on how you read it:
   convenience and backwards compatibility.
 - `editor.read('latest', fn)` reads the most recently reconciled state without
   committing anything, so pending changes are not visible.
-- `editorState.read(fn)` reads one particular snapshot, such as the
-  `editorState` an update listener receives.
+- `editorState.read(fn, {editor})` reads one particular snapshot, such as the
+  `editorState` an update listener receives. Passing the `editor` keeps
+  `$getEditor()` and extension lookups working inside the callback.
 
 Because the callbacks are synchronous, do any asynchronous work (fetching
 data, awaiting a promise) first, and then enter an update with the result.
@@ -331,9 +332,12 @@ method returns a function that removes what it registered.
 
 ```js
 const unregister = editor.registerUpdateListener(({editorState}) => {
-  editorState.read(() => {
-    console.log($getRoot().getTextContent());
-  });
+  editorState.read(
+    () => {
+      console.log($getRoot().getTextContent());
+    },
+    {editor},
+  );
 });
 
 // Later, when you no longer need it:

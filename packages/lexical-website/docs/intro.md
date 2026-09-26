@@ -27,8 +27,11 @@ the main exception is custom nodes, which define how they render.
   integration in `@lexical/yjs`.
 
 Lexical is developed at Meta, where it powers text editing across its web
-products. To see what it can do, try the
-[playground](https://playground.lexical.dev).
+products. It is also the editor behind [Ghost](https://ghost.org),
+[Payload CMS](https://payloadcms.com),
+[Proton Docs](https://proton.me/drive/document-editor), and
+[Sveltia CMS](https://github.com/sveltia/sveltia-cms). To see what it can do,
+try the [playground](https://playground.lexical.dev).
 
 ## How it fits together
 

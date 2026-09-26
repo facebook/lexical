@@ -511,7 +511,7 @@ function updateCursor(
     ) {
       // A collapsed range at an element boundary can have no geometry. Use
       // the adjacent text boundary instead of treating (0, 0) as a caret.
-      const adjacentRect = editor.getEditorState().read(() => {
+      const adjacentRect = editor.read('latest', () => {
         const previous = focusNode.getChildAtIndex(focus.offset - 1);
         const next = focusNode.getChildAtIndex(focus.offset);
         for (const [node, offset] of [
@@ -665,6 +665,15 @@ function updateCursor(
 
   if (!positionCaretAtFocus() && selectionRectsLength > 0) {
     const lastSelection = selections[selectionRectsLength - 1];
+    // A reused caret may still have container-relative coordinates. Restore
+    // rectangle-relative positioning before moving it into the fallback span.
+    setDOMStyleObject(caret.style, {
+      bottom: '0',
+      height: '',
+      left: '',
+      right: '-1px',
+      top: '0',
+    });
     if (caret.parentNode !== lastSelection) {
       lastSelection.appendChild(caret);
     }

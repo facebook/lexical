@@ -95,10 +95,23 @@ try {
             bundler.onLoad({filter: /.*/, namespace: 'benchmark'}, () => ({
               contents: `
           export const cases = [];
+          export const pendingTests = [];
           let group;
           export function describe(name, run) {group = name; run();}
-          export function bench(name, run, options) {
-            cases.push({name: group + ' / ' + name, run, ...options});
+          export function test(name, runTest) {
+            const prefix = group;
+            pendingTests.push(runTest({
+              bench(name, options, run) {
+                return {run() {
+                  cases.push({
+                    name: prefix + ' / ' + name,
+                    run,
+                    setup: options.beforeAll,
+                    teardown: options.afterAll,
+                  });
+                }};
+              },
+            }));
           }
         `,
               loader: 'js',
@@ -122,7 +135,7 @@ try {
         },
       ],
       stdin: {
-        contents: `import './${benchmark}'; export {cases} from 'vitest';`,
+        contents: `import './${benchmark}'; export {cases, pendingTests} from 'vitest';`,
         loader: 'js',
         resolveDir: root,
       },
@@ -135,7 +148,8 @@ try {
     );
     await writeFile(outfile, code);
     bundles.push({bytes: Buffer.byteLength(code), eliminatedDevConstants});
-    const {cases} = await import(pathToFileURL(outfile).href);
+    const {cases, pendingTests} = await import(pathToFileURL(outfile).href);
+    await Promise.all(pendingTests);
     if (cases.length !== 12) {
       throw new Error(`Expected 12 workloads, got ${cases.length}`);
     }

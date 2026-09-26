@@ -42,10 +42,12 @@ When transforming an editor state into HTML, we simply traverse the current edit
 Sometimes, it's necessary or useful to do some post-processing after a node has been converted to HTML. For this, we expose the "after" API on `DOMExportOutput`, which allows `exportDOM` to specify a function that should be run after the conversion to an `HTMLElement` has happened.
 
 ```js
-export type DOMExportOutput = {
-  after?: (generatedElement: ?HTMLElement) => ?HTMLElement,
-  element?: HTMLElement | null,
-};
+export interface DOMExportOutput {
+  after?: (
+    generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
+  ) => HTMLElement | DocumentFragment | Text | null | undefined;
+  element: HTMLElement | DocumentFragment | Text | null;
+}
 ```
 
 If the element property is null in the return value of exportDOM, that Node will not be represented in the serialized output.
@@ -137,7 +139,7 @@ type DOMConversionMap = Record<
 
 type DOMConversion = {
   conversion: DOMConversionFn;
-  priority: 0 | 1 | 2 | 3 | 4;
+  priority?: 0 | 1 | 2 | 3 | 4;
 };
 
 type DOMConversionFn = (element: HTMLElement) => DOMConversionOutput | null;
@@ -406,7 +408,8 @@ exportJSON(): SerializedLexicalNode
 
 When transforming an editor state into JSON, we simply traverse the current editor state and call the `exportJSON` method for each Node in order to convert it to a `SerializedLexicalNode` object that represents the JSON object for the given node. The built-in nodes from Lexical already have a JSON representation defined, but you'll need to define ones for your own custom nodes.
 
-Here's an example of `exportJSON` for the `HeadingNode`:
+Here's what an `exportJSON` for a node like the `HeadingNode` looks like
+(the shipped `HeadingNode` no longer writes this by hand — see the note below):
 
 ```js
 export type SerializedHeadingNode = Spread<
@@ -441,7 +444,7 @@ This method works in the opposite way to how `exportJSON` works. Lexical uses th
 
 You should use the `updateFromJSON` method in your `importJSON` to simplify the implementation and allow for future extension by the base classes.
 
-Here's an example of `importJSON` for the `HeadingNode`:
+And the matching `importJSON` (again, written out here for illustration):
 
 ```ts
 static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
@@ -454,6 +457,17 @@ updateFromJSON(
   return super.updateFromJSON(serializedNode).setTag(serializedNode.tag);
 }
 ```
+
+:::note
+
+The shipped `HeadingNode` no longer writes any of these three methods by
+hand — it declares its `tag` property once in a
+[declarative serialization schema](#declarative-serialization-schemas-with-config)
+(`$config`'s `json`) and the implementations are generated from it. The
+hand-written versions above are still correct and still supported; they are
+shown because they make the two directions explicit.
+
+:::
 
 #### `LexicalNode.updateFromJSON()`
 

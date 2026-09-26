@@ -88,8 +88,8 @@ The features that this blocks are:
 - Compile-time support for required configuration without defaults.
   An extension can implement this at runtime in `init` or `register`.
 - Compile-time support for required peer dependencies. A use case for this
-  would be the requirement of a `RectProviderExtension` provided by either
-  `LexicalExtensionComposer` or `ReactPluginHost`. An extension can implement this
+  would be the requirement of a `ReactProviderExtension` provided by either
+  `LexicalExtensionComposer` or `ReactPluginHostExtension`. An extension can implement this
   at runtime in `init` or `register`.
 
 Generally speaking, all of these are already surfaced as runtime errors

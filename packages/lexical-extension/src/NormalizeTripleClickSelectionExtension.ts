@@ -122,6 +122,9 @@ function $fixFocusOverselection() {
       const domSelection =
         rootElement && getDOMSelection(rootElement.ownerDocument.defaultView);
       if (domSelection) {
+        // This native triple-click correction intentionally updates the browser
+        // range synchronously on already-mounted nodes. General selection UI
+        // must defer DOM reads until reconciliation has completed.
         $updateDOMSelection(
           $getPreviousSelection(),
           sel,

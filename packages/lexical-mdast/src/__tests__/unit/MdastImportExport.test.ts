@@ -53,6 +53,7 @@ import {
   MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
   MdastExportExtension,
+  MdastExtension,
   MdastHeadingExtension,
   MdastImportExtension,
   MdastShadowRootQuoteExtension,
@@ -91,6 +92,24 @@ function importExport(markdown: string, withTable = false): string {
 }
 
 describe('@lexical/mdast import/export', () => {
+  it('omits a node and its children when its import handler returns null', () => {
+    using editor = buildEditorFromExtensions(
+      configExtension(MdastExtension, {
+        importRules: [
+          {$import: () => null, type: 'strong'},
+          {
+            $import: (_node, context) => context.createText('lower-priority'),
+            type: 'strong',
+          },
+        ],
+      }),
+    );
+    editor.update(() => $convertFromMarkdownString('a **b** c'), {
+      discrete: true,
+    });
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('a  c');
+  });
+
   describe('round-trips simple constructs', () => {
     const cases: [string, string][] = [
       ['paragraph', 'Hello world'],
@@ -1004,23 +1023,32 @@ describe('@lexical/mdast import/export', () => {
     });
   });
 
-  it('imports tab characters as TabNodes', () => {
-    using editor = createEditor();
-    editor.update(
-      () => {
-        $convertFromMarkdownString('foo\tbar');
-      },
-      {discrete: true},
-    );
-    editor.read(() => {
-      const paragraph = $assertNodeType(
-        $getRoot().getFirstChild(),
-        $isElementNode,
+  it.each(['foo\tbar', '**foo\tbar**'])(
+    'round-trips tabs with their text format: %s',
+    markdown => {
+      using editor = createEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString(markdown);
+        },
+        {discrete: true},
       );
-      const types = paragraph.getChildren().map(n => n.getType());
-      expect(types).toEqual(['text', 'tab', 'text']);
-    });
-  });
+      editor.read(() => {
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
+        const types = paragraph.getChildren().map(n => n.getType());
+        expect(types).toEqual(['text', 'tab', 'text']);
+        for (const child of paragraph.getChildren()) {
+          expect($assertNodeType(child, $isTextNode).hasFormat('bold')).toBe(
+            markdown.startsWith('**'),
+          );
+        }
+        expect($convertToMarkdownString()).toBe(markdown);
+      });
+    },
+  );
 
   it('tolerates explicitly-undefined config keys in configExtension', () => {
     using editor = buildEditorFromExtensions(

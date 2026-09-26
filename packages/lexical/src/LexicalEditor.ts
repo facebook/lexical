@@ -1211,6 +1211,8 @@ export class LexicalEditor {
   /** @internal */
   _inputState: InputState;
   /** @internal */
+  _lastNotifiedSelection: null | BaseSelection;
+  /** @internal */
   _createEditorArgs?: undefined | CreateEditorArgs;
 
   /** @internal */
@@ -1281,6 +1283,7 @@ export class LexicalEditor {
     this._slotsUsed = false;
     this._keyDownShortcuts = null;
     this._inputState = createInputState();
+    this._lastNotifiedSelection = null;
   }
 
   /**

@@ -236,27 +236,37 @@ it. When the batch commits, the pending state becomes the new, frozen current
 state, and the reconciler changes only the parts of the DOM that belong to
 nodes the updates changed, so it skips most of the diffing a virtual DOM would
 do. Keeping every committed state frozen is also what makes features such as
-undo/redo cheap to implement. Here is the order of events:
+undo/redo cheap to implement. This is what happens, in order:
 
 ```mermaid
-sequenceDiagram
-  accTitle: The steps of an update
-  accDescr: User input or your code starts an update, either directly with editor.update or through a command whose handlers run inside an update. The first update in a batch clones the current editor state. The callback changes the pending state, then node transforms run on changed nodes until nothing is dirty. Further updates in the same tick join the batch. On commit, the pending state becomes the frozen current state, the reconciler patches the DOM and the DOM selection, and then mutation, text content, and update listeners are called. Changes made to the DOM outside Lexical are seen by a MutationObserver and start a new update.
-  autonumber
-  participant Src as User input or your code
-  participant Ed as Editor
-  participant P as Pending state
-  participant DOM as contenteditable DOM
-  participant L as Listeners
-  Src->>Ed: editor.update(fn), or dispatchCommand()<br/>(handlers run by priority inside an update)
-  Ed->>P: Clone the current state<br/>(first update in a batch only)
-  Ed->>P: Run fn to change it
-  Ed->>P: Run node transforms on changed nodes<br/>until nothing is dirty
-  Note over Src,P: More updates in the same tick join this batch
-  P->>Ed: Commit (in a microtask, or at once if discrete):<br/>becomes the frozen current state
-  Ed->>DOM: Reconcile changed nodes, then the DOM selection
-  Ed->>L: Mutation, text content, then update listeners
-  DOM-->>Ed: Changes made outside Lexical (MutationObserver)<br/>start a new update
+flowchart TB
+  accTitle: The phases of an update
+  accDescr: An update can start from user input, which Lexical turns into commands, from your code calling editor.update or editor.dispatchCommand, from editor.setEditorState, or from changes made to the DOM outside Lexical that a MutationObserver detects. During the update, the callback or command handlers change the pending state, which the first update in a batch clones from the current state, and then node transforms run on changed nodes until nothing is dirty. After the update, nested updates run, detached nodes are removed, and a commit is scheduled for a microtask, so more updates in the same tick join the batch; discrete updates commit immediately. When the batch is reconciled, the pending state becomes the frozen current state, the MutationObserver is paused, and the reconciler patches changed nodes and then the DOM selection. After reconciliation, mutation, text content, and update listeners are called, followed by onUpdate callbacks.
+  subgraph start["What starts an update"]
+    direction LR
+    input(["User input<br/>(DOM events)"]) --> commands["Commands"]
+    code(["Your code"]) -->|"dispatchCommand()"| commands
+    code -->|"update(fn)<br/>setEditorState()"| entry["Update"]
+    commands -->|"handlers run<br/>inside an update"| entry
+    outside(["Outside DOM changes<br/>(MutationObserver)"]) --> entry
+  end
+  subgraph during["During the update"]
+    direction LR
+    clone["Pending state cloned from<br/>current (first in a batch)"] --> fn["fn or command handlers<br/>change the pending state"] --> transforms["Node transforms run until<br/>nothing is dirty"]
+  end
+  subgraph after["After the update"]
+    direction LR
+    nested["Queued nested<br/>updates run"] --> gc["Detached nodes<br/>removed"] --> schedule["Commit scheduled for a<br/>microtask; later updates<br/>join the batch (discrete<br/>commits now)"]
+  end
+  subgraph reconcile["When the batch is reconciled"]
+    direction LR
+    current["Pending state becomes the<br/>frozen current state"] --> patch["Changed nodes patched<br/>into the DOM<br/>(MutationObserver paused)"] --> sel["DOM selection<br/>updated"]
+  end
+  subgraph post["After reconciliation"]
+    direction LR
+    mut["Mutation<br/>listeners"] --> text["Text content<br/>listeners"] --> upd["Update<br/>listeners"] --> cb["onUpdate<br/>callbacks"]
+  end
+  start --> during --> after --> reconcile --> post
 ```
 
 The editor state, not the DOM, is the source of truth. For some plain typing,

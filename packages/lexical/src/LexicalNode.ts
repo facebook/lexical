@@ -1497,25 +1497,6 @@ export class LexicalNode {
   }
 
   /**
-   * @deprecated use {@link $getCommonAncestor}
-   *
-   * Returns the closest common ancestor of this node and the provided one or null
-   * if one cannot be found.
-   *
-   * @param node - the other node to find the common ancestor of.
-   */
-  getCommonAncestor<T extends ElementNode = ElementNode>(
-    node: LexicalNode,
-  ): T | null {
-    const a = $isElementNode(this) ? this : this.getParent();
-    const b = $isElementNode(node) ? node : node.getParent();
-    const result = a && b ? $getCommonAncestor(a, b) : null;
-    return result
-      ? (result.commonAncestor as T) /* TODO this type cast is a lie, but fixing it would break backwards compatibility */
-      : null;
-  }
-
-  /**
    * Returns true if the provided node is the exact same one as this node, from Lexical's perspective.
    * Always use this instead of referential equality.
    *

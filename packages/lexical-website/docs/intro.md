@@ -207,6 +207,7 @@ flowchart TB
   input(["User input<br/>(DOM events)"]) -->|dispatches| cmd["Command handlers"]
   cmd -->|"update"| pending
   api(["Your code"]) -->|"editor.update()"| pending["Pending EditorState"]
+  api -->|"editor.dispatchCommand()"| cmd
   pending <-->|"after the update"| transforms["Node transforms"]
   pending -->|"commit"| reconciler["DOM reconciler"]
   reconciler -->|"patches"| dom(["contenteditable DOM"])

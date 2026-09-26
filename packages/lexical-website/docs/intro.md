@@ -160,7 +160,7 @@ links, and every position in the document is a single integer.
 | Addressing a position | Node key plus offset (`{key, offset, type}`) | One integer counted across the whole document |
 | Allowed structure | Declared by node classes, enforced with node transforms and normalization | Declared by a schema of content expressions |
 | Applying edits | Call node and selection methods inside `editor.update()` | Build a transaction from steps that address positions or ranges |
-| Rendering | Each node's `createDOM()`/`updateDOM()`, applied by the reconciler | `toDOM` in the schema, or a `NodeView` |
+| Rendering | Each node's `createDOM()`/`updateDOM()`, applied by the reconciler, and optionally changed per node class by a `DOMRenderExtension` override | `toDOM` in the schema, or a `NodeView` |
 
 In practice, this means Lexical code navigates the document the way DOM code
 does, with methods like `getParent()`, `getChildren()`, and `getNextSibling()`,
@@ -168,6 +168,14 @@ and each node owns the DOM it renders. The resemblance is structural, not one
 node per HTML element: bold or italic text, for example, is a format on a
 `TextNode`, not a separate `<strong>` or `<em>` node. See
 [Nodes](./concepts/nodes.mdx) for the built-in node types.
+
+You can also change how nodes render without subclassing them.
+[`DOMRenderExtension`](./serialization/dom-render.md) from `@lexical/html`
+takes overrides for `createDOM`, `updateDOM`, and `exportDOM`, for one node
+class or for every node, such as adding a `data-` attribute or wrapping a
+node's children in another element. Each override calls `$next()` to get the
+default result and adjusts it, so overrides from several extensions compose,
+and the same overrides apply both to the editor's DOM and to HTML export.
 
 ### Reading and updating editor state {#reading-and-updating-editor-state}
 
@@ -317,6 +325,34 @@ browser DOM:
   `@lexical/headless/dom` runs a callback with a temporary happy-dom window,
   for example to convert HTML on a server. See
   [Serialization](./serialization/serialization.md) for an example.
+
+### Exporting and importing content
+
+Every format works the same way: Lexical walks the node tree and asks each
+node, or an extension, how to convert it. Because the tree is already shaped
+like HTML, a link exports as an `<a>` around the text nodes it already
+contains. A mark-based model has to find the adjacent text that shares a mark
+and group it into one element first.
+
+| Format | Lexical | ProseMirror |
+| -- | -- | -- |
+| JSON | `editorState.toJSON()` writes the node tree. Each node class defines its JSON with `exportJSON()` and `importJSON()`, or has them generated from `$config`. Restore with `editor.parseEditorState()`. | `doc.toJSON()` and `Node.fromJSON(schema, json)` |
+| HTML export | `$generateHtmlFromNodes(editor, selection)` from `@lexical/html`. By default a node exports the element its `createDOM()` renders; `exportDOM()` or a `DOMRenderExtension` override can change that. | `DOMSerializer.fromSchema(schema)`, using `toDOM` from the schema's nodes and marks |
+| HTML import | `$generateNodesFromDOM(editor, dom)`, using each node class's `static importDOM()` or the rules of [`DOMImportExtension`](./serialization/dom-import.md) | `DOMParser.fromSchema(schema)`, using the schema's `parseDOM` rules |
+| Markdown | [`@lexical/markdown`](/docs/packages/lexical-markdown) (transformers) or [`@lexical/mdast`](./serialization/markdown-mdast.md) (CommonMark and GFM through micromark and mdast), both with `$convertToMarkdownString()` and `$convertFromMarkdownString()` | `prosemirror-markdown`: a markdown-it parser and a serializer with a function per node and mark |
+| Clipboard | Copy writes plain text, HTML, and Lexical JSON (`application/x-lexical-editor`). Paste uses the JSON when it is present, then HTML, then plain text. | Copy writes HTML and plain text. Paste parses the HTML with the schema's parse rules. |
+
+The JSON follows the tree too. A link is a `link` node with its text nodes as
+`children`, and bold is a `format` value on a `text` node, where ProseMirror's
+JSON gives each text node a list of `marks`. In both editors the default HTML
+export reuses the definition that renders the editor (`createDOM()` in Lexical,
+`toDOM` in ProseMirror), so the two stay in step unless you override one.
+
+HTML import and export need a DOM. Outside a browser, run them inside
+`withDOM()` from `@lexical/headless/dom`, as described
+[above](#running-without-a-browser). JSON and Markdown do not need a DOM. See
+[Serialization](./serialization/serialization.md) for the details of each
+format.
 
 ### Commands, transforms, and listeners {#listeners-node-transforms-and-commands}
 

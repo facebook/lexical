@@ -8,6 +8,7 @@
 
 import {
   $getClipboardDataFromSelection,
+  $handlePlainTextDrop,
   $handleRichTextDrop,
   $writeDragSourceToDataTransfer,
   setLexicalClipboardDataTransfer,
@@ -16,16 +17,19 @@ import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
   $isRangeSelection,
   $setSelection,
   type LexicalEditor,
+  type RangeSelection,
   TextNode,
 } from 'lexical';
 import {
   $createTestDecoratorNode,
+  $createTestInlineElementNode,
   createTestEditor,
   initializeUnitTest,
   invariant,
@@ -482,6 +486,233 @@ describe('$handleTextDrop', () => {
   });
 });
 
+describe.each([
+  ['rich text', $handleRichTextDrop],
+  ['plain text', $handlePlainTextDrop],
+] as const)('%s drop boundaries', (_name, $handleDrop) => {
+  initializeUnitTest(testEnv => {
+    describe.each([false, true])('backward=%s', backward => {
+      test.each([
+        'text start',
+        'text middle',
+        'text end',
+        'previous end',
+        'next start',
+        'element start',
+        'element end',
+      ])('keeps a token unchanged at %s', async position => {
+        const {editor} = testEnv;
+        let sourceKey = '';
+        let beforeKey = '';
+        let afterKey = '';
+        let paragraphKey = '';
+        await editor.update(() => {
+          const before = $createTextNode('before ');
+          const source = $createTextNode('Hello').setMode('token');
+          const after = $createTextNode(' world');
+          const paragraph = $createParagraphNode().append(
+            before,
+            source,
+            after,
+          );
+          $getRoot().clear().append(paragraph);
+          sourceKey = source.getKey();
+          beforeKey = before.getKey();
+          afterKey = after.getKey();
+          paragraphKey = paragraph.getKey();
+          source.select(backward ? 5 : 0, backward ? 0 : 5);
+        });
+        const original = editor.getEditorState();
+        const selection = editor.read(() => $getSelection()!.clone());
+        await editor.update(() => {
+          const points: Record<string, [Node, number]> = {
+            'element end': [editor.getElementByKey(paragraphKey)!, 2],
+            'element start': [editor.getElementByKey(paragraphKey)!, 1],
+            'next start': [getParagraphTextDOM(editor, afterKey), 0],
+            'previous end': [getParagraphTextDOM(editor, beforeKey), 7],
+            'text end': [getParagraphTextDOM(editor, sourceKey), 5],
+            'text middle': [getParagraphTextDOM(editor, sourceKey), 2],
+            'text start': [getParagraphTextDOM(editor, sourceKey), 0],
+          };
+          setCaretFromPoint(...points[position]);
+          const {dataTransfer, event, preventDefault} = createDropEvent();
+          setLexicalClipboardDataTransfer(
+            dataTransfer,
+            $getClipboardDataFromSelection(),
+          );
+          $writeDragSourceToDataTransfer(dataTransfer, editor);
+          expect($handleDrop(event, editor)).toBe(true);
+          expect(preventDefault).toHaveBeenCalledOnce();
+        });
+        expect(editor.getEditorState().toJSON()).toEqual(original.toJSON());
+        editor.read(() => {
+          expect($getSelection()!.is(selection)).toBe(true);
+          for (const key of [paragraphKey, beforeKey, sourceKey, afterKey]) {
+            expect($getNodeByKey(key)?.isAttached()).toBe(true);
+          }
+        });
+      });
+
+      test.each(['previous end', 'next start', 'element start', 'element end'])(
+        'keeps nested inline wrappers unchanged at %s',
+        async position => {
+          const {editor} = testEnv;
+          let beforeKey = '';
+          let afterKey = '';
+          let paragraphKey = '';
+          let wrapperKeys: string[] = [];
+          await editor.update(() => {
+            const before = $createTextNode('before ');
+            const source = $createTextNode('Hello');
+            const after = $createTextNode(' world');
+            const inner = $createTestInlineElementNode().append(source);
+            const outer = $createTestInlineElementNode().append(inner);
+            const paragraph = $createParagraphNode().append(
+              before,
+              outer,
+              after,
+            );
+            $getRoot().clear().append(paragraph);
+            beforeKey = before.getKey();
+            afterKey = after.getKey();
+            paragraphKey = paragraph.getKey();
+            wrapperKeys = [inner.getKey(), outer.getKey()];
+            source.select(backward ? 5 : 0, backward ? 0 : 5);
+          });
+          const original = editor.getEditorState();
+          const selection = editor.read(() => $getSelection()!.clone());
+          await editor.update(() => {
+            const points: Record<string, [Node, number]> = {
+              'element end': [editor.getElementByKey(paragraphKey)!, 2],
+              'element start': [editor.getElementByKey(paragraphKey)!, 1],
+              'next start': [getParagraphTextDOM(editor, afterKey), 0],
+              'previous end': [getParagraphTextDOM(editor, beforeKey), 7],
+            };
+            setCaretFromPoint(...points[position]);
+            const {dataTransfer, event} = createDropEvent();
+            setLexicalClipboardDataTransfer(
+              dataTransfer,
+              $getClipboardDataFromSelection(),
+            );
+            $writeDragSourceToDataTransfer(dataTransfer, editor);
+            expect($handleDrop(event, editor)).toBe(true);
+          });
+          expect(editor.getEditorState().toJSON()).toEqual(original.toJSON());
+          editor.read(() => {
+            expect($getSelection()!.is(selection)).toBe(true);
+            for (const key of wrapperKeys) {
+              expect($getNodeByKey(key)?.isAttached()).toBe(true);
+            }
+          });
+        },
+      );
+
+      test('keeps a decorator in a multi-node range at the adjacent end edge', async () => {
+        const {editor} = testEnv;
+        let afterKey = '';
+        let decoratorKey = '';
+        await editor.update(() => {
+          const first = $createTextNode('before');
+          const decorator = $createTestDecoratorNode();
+          const last = $createTextNode('after').setMode('token');
+          const after = $createTextNode(' rest');
+          afterKey = after.getKey();
+          decoratorKey = decorator.getKey();
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(first, decorator, last, after),
+            );
+          const selection = $createRangeSelection();
+          const start = backward ? selection.focus : selection.anchor;
+          const end = backward ? selection.anchor : selection.focus;
+          start.set(first.getKey(), 0, 'text');
+          end.set(last.getKey(), 5, 'text');
+          $setSelection(selection);
+        });
+        const original = editor.getEditorState();
+        const selection = editor.read(() => $getSelection()!.clone());
+        await editor.update(() => {
+          setCaretFromPoint(getParagraphTextDOM(editor, afterKey), 0);
+          const {dataTransfer, event} = createDropEvent();
+          setLexicalClipboardDataTransfer(
+            dataTransfer,
+            $getClipboardDataFromSelection(),
+          );
+          $writeDragSourceToDataTransfer(dataTransfer, editor);
+          expect($handleDrop(event, editor)).toBe(true);
+        });
+        expect(editor.getEditorState().toJSON()).toEqual(original.toJSON());
+        editor.read(() => {
+          expect($getSelection()!.is(selection)).toBe(true);
+          expect($getNodeByKey(decoratorKey)?.isAttached()).toBe(true);
+        });
+      });
+
+      test.each(['text', 'paragraph', 'root'])(
+        'keeps a %s destination after a cross-paragraph deletion',
+        async position => {
+          const {editor} = testEnv;
+          let lastKey = '';
+          let paragraphKey = '';
+          await editor.update(() => {
+            const first = $createTextNode('abc');
+            const last = $createTextNode('def');
+            const paragraph = $createParagraphNode().append(last);
+            lastKey = last.getKey();
+            paragraphKey = paragraph.getKey();
+            $getRoot()
+              .clear()
+              .append($createParagraphNode().append(first), paragraph);
+            const selection = $createRangeSelection();
+            const start = backward ? selection.focus : selection.anchor;
+            const end = backward ? selection.anchor : selection.focus;
+            start.set(first.getKey(), 1, 'text');
+            end.set(last.getKey(), 2, 'text');
+            $setSelection(selection);
+          });
+          await editor.update(() => {
+            const points: Record<string, [Node, number]> = {
+              paragraph: [editor.getElementByKey(paragraphKey)!, 1],
+              root: [editor.getRootElement()!, 2],
+              text: [getParagraphTextDOM(editor, lastKey), 3],
+            };
+            setCaretFromPoint(...points[position]);
+            const {dataTransfer, event, preventDefault} = createDropEvent();
+            setLexicalClipboardDataTransfer(
+              dataTransfer,
+              $getClipboardDataFromSelection(),
+            );
+            $writeDragSourceToDataTransfer(dataTransfer, editor);
+            expect($handleDrop(event, editor)).toBe(true);
+            expect(preventDefault).toHaveBeenCalledOnce();
+          });
+          editor.read(() => {
+            // The unselected f must precede the moved bc/de, even when its
+            // former paragraph was the destination caret's origin.
+            expect($getRoot().getTextContent().replace(/\n/g, '')).toBe(
+              'afbcde',
+            );
+            expect(($getSelection() as RangeSelection).isCollapsed()).toBe(
+              true,
+            );
+            if (position !== 'root') {
+              expect(
+                $getRoot()
+                  .getChildren()
+                  .map(node => node.getTextContent()),
+              ).toEqual(
+                $handleDrop === $handleRichTextDrop
+                  ? ['afbc', 'de']
+                  : ['afbc\nde'],
+              );
+            }
+          });
+        },
+      );
+    });
+  });
+});
 describe('$handleRichTextDrop across editors', () => {
   let sourceContainer: HTMLDivElement;
   let destContainer: HTMLDivElement;

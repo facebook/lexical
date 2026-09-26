@@ -281,15 +281,25 @@ The editor state, not the DOM, is the source of truth. For some plain typing,
 Lexical lets the browser change the DOM itself for performance and then
 updates the editor state from the `input` event. Beyond that, Lexical watches
 its root element with a `MutationObserver` (paused while the reconciler makes
-its own changes) and handles any other change that did not come from Lexical:
+its own changes) and handles any other change that did not come from Lexical.
+It keeps a change only if it looks like native text input, and reverts
+everything else:
 
-- **Text edits** inside a text node that arrive without an input event Lexical
-  handled (for example from autocorrect or a browser extension) are read back
-  into the editor state.
-- **Other changes**, such as elements added or removed by a browser extension
-  or other script, are reverted so the DOM matches the current editor state
-  again. DOM that a node or extension adds on purpose can opt out with
-  `setDOMUnmanaged()`.
+- **Kept: text changes inside a text node.** When the characters of a DOM
+  text node that Lexical rendered change, which is what typing, spellcheck,
+  autocorrect, and IME composition produce, Lexical reads the new text into
+  the matching `TextNode`. Changes that arrive right after a text input event
+  are left to the `input` handler instead.
+- **Reverted: structural changes.** Elements or other DOM nodes added or
+  removed inside the editor, for example by a browser extension, a script, or
+  the browser's own editing of block structure, are undone. Added nodes are
+  removed, removed nodes are put back by their parent node, stray `<br>`
+  elements the browser adds are cleaned up, and the previous selection is
+  restored, so the DOM matches the current editor state again.
+- **Ignored: DOM that Lexical does not manage.** The contents of decorator
+  nodes belong to your framework, and DOM that a node or extension adds on
+  purpose can be marked with `setDOMUnmanaged()` so the observer leaves it
+  alone.
 
 ### Running without a browser
 

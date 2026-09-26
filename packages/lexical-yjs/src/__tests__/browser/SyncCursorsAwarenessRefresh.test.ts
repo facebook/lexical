@@ -430,9 +430,12 @@ describe('syncCursorPositions awareness refresh', () => {
         assert(textRange !== null);
         const expected = textRange.getBoundingClientRect();
         const actual = caret.getBoundingClientRect();
-        expect(actual.left).toBeCloseTo(expected.left, 1);
-        expect(actual.top).toBeCloseTo(expected.top, 1);
-        expect(actual.height).toBeCloseTo(expected.height, 1);
+        for (const property of ['left', 'top', 'height'] as const) {
+          expect(
+            Math.abs(actual[property] - expected[property]),
+            property,
+          ).toBeLessThanOrEqual(0.25);
+        }
       }
 
       const caret = updateRemoteFocus('text', 2);

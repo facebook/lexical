@@ -2,6 +2,8 @@
 sidebar_position: 1
 ---
 
+import UpdateLifecycle from '@site/src/components/UpdateLifecycle';
+
 # Introduction
 
 Lexical is an extensible text editor framework for the web, built for
@@ -268,6 +270,11 @@ flowchart TB
   end
   start --> during --> after --> reconcile --> post
 ```
+
+To see how a real change moves through these phases, step through one of
+these examples:
+
+<UpdateLifecycle />
 
 The editor state, not the DOM, is the source of truth. For some plain typing,
 Lexical lets the browser change the DOM itself for performance and then

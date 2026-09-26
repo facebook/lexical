@@ -101,6 +101,36 @@ that JSON back into a state you can pass to `editor.setEditorState()`. See
 [Serialization](./serialization/serialization.md) for JSON, HTML, and
 Markdown.
 
+### A DOM-like document tree
+
+Lexical's node tree is shaped like the HTML it renders. A paragraph is an
+`ElementNode` whose children are the nodes inside it, and inline structure
+nests the same way: a link is a `LinkNode` element that contains the text
+nodes it wraps, just as an `<a>` contains its text. Each node type decides how
+it renders with `createDOM()` and `updateDOM()`, so the model maps closely to
+the DOM, and a position in the document is a node plus an offset within it.
+
+This is a deliberate difference from text-first editors such as
+[ProseMirror](https://prosemirror.net), where the content of a block is a flat
+run of text annotated with marks, and every position in the document is a
+single integer.
+
+| | Lexical | ProseMirror |
+| -- | -- | -- |
+| Document | Immutable tree of nodes, one `RootNode` | Immutable tree of nodes, one `doc` node |
+| Blocks | `ElementNode` subclasses (paragraph, heading, list, table, …) | Block nodes defined in the schema |
+| Inline formatting | Format flags on each `TextNode` (bold, italic, code, …) | Marks on text |
+| Links and other inline wrappers | Inline `ElementNode`s (`LinkNode`, `MarkNode`) that contain text nodes | Marks on text, like formatting |
+| Embedded content | `DecoratorNode`, rendered by your framework (for example React) | Leaf or atom nodes, often with a custom `NodeView` |
+| Addressing a position | Node key plus offset (`{key, offset, type}`) | One integer counted across the whole document |
+| Allowed structure | Declared by node classes, enforced with node transforms and normalization | Declared by a schema of content expressions |
+| Rendering | Each node's `createDOM()`/`updateDOM()`, applied by the reconciler | `toDOM` in the schema, or a `NodeView` |
+
+In practice, this means Lexical code navigates the document the way DOM code
+does, with methods like `getParent()`, `getChildren()`, and `getNextSibling()`,
+and each node owns the DOM it renders. See
+[Nodes](./concepts/nodes.mdx) for the built-in node types.
+
 ### Reading and Updating Editor State
 
 All reads and writes of the document happen inside a synchronous callback:

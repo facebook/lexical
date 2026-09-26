@@ -211,14 +211,41 @@ flowchart TB
   pending <-->|"after the update"| transforms["Node transforms"]
   pending -->|"commit"| reconciler["DOM reconciler"]
   reconciler -->|"patches"| dom(["contenteditable DOM"])
+  dom -.->|"outside changes<br/>(MutationObserver)"| pending
   reconciler -->|"sets"| current["Current EditorState"]
   current -->|"notifies"| listeners["Update and mutation listeners"]
 ```
 
-For some simple text input, Lexical lets the browser change the DOM itself for
-performance and then updates the editor state to match. Lexical can also run
-without a DOM at all with [`@lexical/headless`](/docs/packages/lexical-headless),
-for example on a server.
+The editor state, not the DOM, is the source of truth. For some plain typing,
+Lexical lets the browser change the DOM itself for performance and then
+updates the editor state from the `input` event. Beyond that, Lexical watches
+its root element with a `MutationObserver` (paused while the reconciler makes
+its own changes) and handles any other change that did not come from Lexical:
+
+- **Text edits** inside a text node that arrive without an input event Lexical
+  handled (for example from autocorrect or a browser extension) are read back
+  into the editor state.
+- **Other changes**, such as elements added or removed by a browser extension
+  or other script, are reverted so the DOM matches the current editor state
+  again. DOM that a node or extension adds on purpose can opt out with
+  `setDOMUnmanaged()`.
+
+### Running without a browser
+
+The DOM is only needed to show an editor on screen. Because every read and
+update goes through the editor state, Lexical also works where there is no
+browser DOM:
+
+- **With no DOM at all**, using
+  [`@lexical/headless`](/docs/packages/lexical-headless). A headless editor
+  supports updates, transforms, listeners, commands, and JSON serialization,
+  which is enough to process documents on a server, apply changes from a
+  collaboration backend, or write tests.
+- **With a virtual DOM** such as happy-dom or jsdom, for the features that
+  create DOM nodes, like HTML import and export. `withDOM()` from
+  `@lexical/headless/dom` runs a callback with a temporary happy-dom window,
+  for example to convert HTML on a server. See
+  [Serialization](./serialization/serialization.md) for an example.
 
 ### Commands, transforms, and listeners
 

@@ -2941,6 +2941,71 @@ describe('$getSlotNameWithinHost', () => {
 
 // Regression tests for the slot-aware $selectAll path.
 describe('$selectAll boundary cases', () => {
+  test.each(['range', 'node'])(
+    'deleting a %s selection inside a root slot keeps the selection in that slot',
+    kind => {
+      using editor = createSlotEditor();
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const slot = $slotContainer('Footnote');
+          $setSlot(root, 'footnotes', slot);
+          if (kind === 'range') {
+            $selectAll(slot.selectStart()).deleteCharacter(true);
+          } else {
+            const selection = $createNodeSelection();
+            selection.add(slot.getFirstChildOrThrow().getKey());
+            $setSelection(selection);
+            selection.deleteNodes();
+          }
+          expect($getSelectionSlotFrame($getSelection())).toBe(slot);
+          expect(root.getChildrenSize()).toBe(0);
+        },
+        {discrete: true},
+      );
+    },
+  );
+
+  test.each(['range', 'node'])(
+    'deleting all children with a %s selection restores a paragraph before root slots',
+    kind => {
+      using editor = createSlotEditor();
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('Body'),
+          );
+          root.append(paragraph);
+          const slot = $slotContainer('Footnote');
+          $setSlot(root, 'footnotes', slot);
+          if (kind === 'range') {
+            $selectAll().deleteCharacter(true);
+          } else {
+            const selection = $createNodeSelection();
+            selection.add(paragraph.getKey());
+            $setSelection(selection);
+            selection.deleteNodes();
+          }
+
+          expect(root.getChildrenSize()).toBe(1);
+          const replacement = root.getFirstChild();
+          assert($isParagraphNode(replacement));
+          expect(replacement.isEmpty()).toBe(true);
+          expect($getSlot(root, 'footnotes')).toBe(slot);
+          expect(slot.getTextContent()).toBe('Footnote');
+          const selection = $getSelection();
+          assert($isRangeSelection(selection));
+          expect(selection.isCollapsed()).toBe(true);
+          expect(selection.anchor.getNode()).toBe(replacement);
+          selection.insertText('Replacement');
+          expect(replacement.getTextContent()).toBe('Replacement');
+        },
+        {discrete: true},
+      );
+    },
+  );
+
   // $selectAll on a selection whose anchor sits on a slot value's own
   // element point. The slot value's getTopLevelElement stops at itself
   // (slot boundary), and its __parent is null (it's reached through

@@ -199,6 +199,37 @@ describe('$handleTextDrop', () => {
       });
     });
 
+    test('keeps the dragged text when dropped on the end edge of the source range', async () => {
+      const {editor} = testEnv;
+      let boldKey = '';
+      let restKey = '';
+      await editor.update(() => {
+        const bold = $createTextNode('Hello').toggleFormat('bold');
+        const rest = $createTextNode(' world');
+        $getRoot().clear().append($createParagraphNode().append(bold, rest));
+        boldKey = bold.getKey();
+        restKey = rest.getKey();
+        bold.select(0, 5);
+      });
+
+      // Drop at the end of "Hello", then at the start of " world".
+      for (const [key, offset] of [
+        [boldKey, 5],
+        [restKey, 0],
+      ] as const) {
+        await editor.update(() => {
+          setCaretFromPoint(getParagraphTextDOM(editor, key), offset);
+          const {dataTransfer, event} = createDropEvent();
+          dataTransfer.setData('text/plain', 'Hello');
+          $markActiveSelectionAsDragSource(dataTransfer, editor);
+          expect($handleRichTextDrop(event, editor)).toBe(true);
+        });
+        await editor.read(() => {
+          expect($getRoot().getTextContent()).toBe('Hello world');
+        });
+      }
+    });
+
     test('moves a selection across TextNodes in the same block', async () => {
       const {editor} = testEnv;
       let sourceKey = '';

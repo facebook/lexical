@@ -276,8 +276,8 @@ function $isDropCaretInsideSelection(
     'next',
   );
   return (
-    $comparePointCaretNext(start, dropCaret) < 0 &&
-    $comparePointCaretNext(dropCaret, end) < 0
+    $comparePointCaretNext(start, dropCaret) <= 0 &&
+    $comparePointCaretNext(dropCaret, end) <= 0
   );
 }
 
@@ -338,10 +338,13 @@ function $doDrop(
     currentSelection.removeText();
   }
 
-  // If the drop caret's origin was swept away by the source removal, abort —
-  // this can happen on a same-editor drag whose range covered the entire
-  // text node we tried to split at.
+  // If the drop caret's origin was swept away by the source removal, the drop
+  // was on the edge of the dragged range (e.g. at the start of the next text
+  // node), which is where removeText() left the selection, so insert there.
   if (!stableDropCaret.origin.isAttached()) {
+    if ($isRangeSelection(currentSelection)) {
+      $insertDataTransfer(dataTransfer, currentSelection, editor);
+    }
     event.preventDefault();
     return true;
   }

@@ -17,7 +17,8 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  INSERT_LINE_BREAK_COMMAND,
+  COMMAND_PRIORITY_HIGH,
+  KEY_ENTER_COMMAND,
   type LexicalEditor,
 } from 'lexical';
 import {describe, expect, test, vi} from 'vitest';
@@ -53,24 +54,45 @@ function createTestEditor($initialEditorState: () => void) {
   });
 }
 
-function pressEnter(editor: LexicalEditor, shiftKey: boolean) {
-  const root = editor.getRootElement()!;
-  const keydown = new KeyboardEvent('keydown', {
+function dispatchKey(
+  editor: LexicalEditor,
+  type: 'keydown' | 'keyup',
+  key: string,
+  shiftKey: boolean,
+) {
+  const event = new KeyboardEvent(type, {
     bubbles: true,
     cancelable: true,
-    key: 'Enter',
+    key,
     shiftKey,
   });
-  root.dispatchEvent(keydown);
-  expect(keydown.defaultPrevented).toBe(false);
+  editor.getRootElement()!.dispatchEvent(event);
+  return event;
+}
+
+function beforeInput(editor: LexicalEditor, inputType = 'insertParagraph') {
   const beforeinput = new InputEvent('beforeinput', {
     bubbles: true,
     cancelable: true,
-    inputType: 'insertParagraph',
+    inputType,
   });
   Object.defineProperty(beforeinput, 'getTargetRanges', {value: () => []});
-  root.dispatchEvent(beforeinput);
+  editor.getRootElement()!.dispatchEvent(beforeinput);
   expect(beforeinput.defaultPrevented).toBe(true);
+}
+
+function pressEnter(editor: LexicalEditor, shiftKey: boolean) {
+  const keydown = dispatchKey(editor, 'keydown', 'Enter', shiftKey);
+  expect(keydown.defaultPrevented).toBe(false);
+  beforeInput(editor);
+}
+
+function editorWithText(offset = 10) {
+  return createTestEditor(() => {
+    const text = $createTextNode('Some words');
+    $getRoot().append($createParagraphNode().append(text));
+    text.select(offset, offset);
+  });
 }
 
 function paragraphs(editor: LexicalEditor) {
@@ -85,15 +107,154 @@ function paragraphs(editor: LexicalEditor) {
 }
 
 describe('iOS line breaks and auto-capitalization', () => {
-  test('inserts a line break through an explicit command', () => {
-    using editor = createTestEditor(() => {
-      const text = $createTextNode('Some words');
-      $getRoot().append($createParagraphNode().append(text));
-      text.selectEnd();
-    });
-    editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND, false);
+  test.each([0, 5, 10])(
+    'inserts a line break at offset %i after an explicit Shift keydown',
+    offset => {
+      using editor = editorWithText(offset);
+      dispatchKey(editor, 'keydown', 'Shift', true);
+      pressEnter(editor, true);
+      expect(paragraphs(editor)).toEqual([
+        {
+          text:
+            'Some words'.slice(0, offset) + '\n' + 'Some words'.slice(offset),
+          type: 'paragraph',
+        },
+      ]);
+    },
+  );
+
+  test('supports repeated Enter while explicit Shift remains active', () => {
+    using editor = editorWithText();
+    dispatchKey(editor, 'keydown', 'Shift', true);
+    pressEnter(editor, true);
+    editor.read(() => {});
+    dispatchKey(editor, 'keyup', 'Enter', true);
+    pressEnter(editor, true);
+    expect(paragraphs(editor)).toEqual([
+      {text: 'Some words\n\n', type: 'paragraph'},
+    ]);
+  });
+
+  test('remembers Enter intent if Shift is released before beforeinput', () => {
+    using editor = editorWithText();
+    dispatchKey(editor, 'keydown', 'Shift', true);
+    dispatchKey(editor, 'keydown', 'Enter', true);
+    dispatchKey(editor, 'keyup', 'Shift', false);
+    beforeInput(editor);
     expect(paragraphs(editor)).toEqual([
       {text: 'Some words\n', type: 'paragraph'},
+    ]);
+  });
+
+  test('consumes Enter intent when the browser reports insertLineBreak', () => {
+    using editor = editorWithText();
+    dispatchKey(editor, 'keydown', 'Shift', true);
+    dispatchKey(editor, 'keydown', 'Enter', true);
+    beforeInput(editor, 'insertLineBreak');
+    editor.read(() => {});
+    // An independent beforeinput without a keydown must not reuse the earlier
+    // Enter's intent.
+    beforeInput(editor);
+    expect(paragraphs(editor)).toEqual([
+      {text: 'Some words\n', type: 'paragraph'},
+      {text: '', type: 'paragraph'},
+    ]);
+  });
+
+  test('does not retain Enter intent when a command prevents its default', () => {
+    using editor = editorWithText();
+    editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      event => {
+        event?.preventDefault();
+        return true;
+      },
+      COMMAND_PRIORITY_HIGH,
+    );
+    dispatchKey(editor, 'keydown', 'Shift', true);
+    expect(dispatchKey(editor, 'keydown', 'Enter', true).defaultPrevented).toBe(
+      true,
+    );
+    beforeInput(editor);
+    expect(paragraphs(editor)).toEqual([
+      {text: 'Some words', type: 'paragraph'},
+      {text: '', type: 'paragraph'},
+    ]);
+  });
+
+  test('does not retain line-break intent after handling Control+O', () => {
+    using editor = editorWithText();
+    editor.getRootElement()!.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        ctrlKey: true,
+        key: 'o',
+      }),
+    );
+    expect(paragraphs(editor)).toEqual([
+      {text: 'Some words\n', type: 'paragraph'},
+    ]);
+    beforeInput(editor);
+    expect(paragraphs(editor)).toEqual([
+      {text: 'Some words', type: 'paragraph'},
+      {text: '\n', type: 'paragraph'},
+    ]);
+  });
+
+  test.each([
+    ['keyup', 'Shift', false],
+    ['keyup', 'A', false],
+    ['keydown', 'a', false],
+    ['keydown', 'CapsLock', true],
+  ] as const)(
+    'clears explicit Shift on %s %s with shiftKey=%s',
+    (type, key, shiftKey) => {
+      using editor = editorWithText();
+      dispatchKey(editor, 'keydown', 'Shift', true);
+      dispatchKey(editor, type, key, shiftKey);
+      // Automatic capitalization can set the flag again without another
+      // explicit Shift keydown.
+      pressEnter(editor, true);
+      expect(paragraphs(editor)).toEqual([
+        {text: 'Some words', type: 'paragraph'},
+        {text: '', type: 'paragraph'},
+      ]);
+    },
+  );
+
+  test('clears explicit Shift on blur', () => {
+    using editor = editorWithText();
+    dispatchKey(editor, 'keydown', 'Shift', true);
+    editor.getRootElement()!.dispatchEvent(new FocusEvent('blur'));
+    pressEnter(editor, true);
+    expect(paragraphs(editor)).toEqual([
+      {text: 'Some words', type: 'paragraph'},
+      {text: '', type: 'paragraph'},
+    ]);
+  });
+
+  test('does not share explicit Shift between editors', () => {
+    using first = editorWithText();
+    using second = editorWithText();
+    dispatchKey(first, 'keydown', 'Shift', true);
+    pressEnter(second, true);
+    expect(paragraphs(second)).toEqual([
+      {text: 'Some words', type: 'paragraph'},
+      {text: '', type: 'paragraph'},
+    ]);
+  });
+
+  test('does not retain Shift after replacing the root element', () => {
+    using editor = editorWithText();
+    dispatchKey(editor, 'keydown', 'Shift', true);
+    const root = editor.getRootElement()!;
+    editor.setRootElement(null);
+    editor.setRootElement(root);
+    pressEnter(editor, true);
+    expect(paragraphs(editor)).toEqual([
+      {text: 'Some words', type: 'paragraph'},
+      {text: '', type: 'paragraph'},
     ]);
   });
 

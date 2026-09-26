@@ -527,11 +527,6 @@ i.ruby {
   mask-image: url(images/icons/ruby.svg);
 }
 
-i.line-break {
-  -webkit-mask-image: url(images/icons/line-break.svg);
-  mask-image: url(images/icons/line-break.svg);
-}
-
 i.horizontal-rule {
   -webkit-mask-image: url(images/icons/horizontal-rule.svg);
   mask-image: url(images/icons/horizontal-rule.svg);

@@ -157,30 +157,6 @@ browser's native processing of that event.
 
 :::
 
-## How can users insert a line break on an iOS virtual keyboard?
-
-Provide a **Line Break** toolbar button or menu item. The playground exposes this
-under **Insert → Line Break**. With `RichTextExtension` (or `RichTextPlugin`),
-dispatch the existing command to insert a line break at the selection and move
-the caret after it:
-
-```js
-import {INSERT_LINE_BREAK_COMMAND} from 'lexical';
-
-editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND, false);
-```
-
-On iOS, `KeyboardEvent.shiftKey` can be `true` both when the user taps Shift and
-when the virtual keyboard automatically capitalizes the next character. Safari
-also reports `insertParagraph` for these Enter presses, so Lexical cannot
-reliably distinguish the two intentions. Interpreting every shifted Enter as a
-line break would prevent ordinary Enter from exiting empty list items or
-inserting a paragraph at the start of a heading.
-
-Lexical therefore keeps these iOS Enter presses as paragraph insertions. A
-dedicated control avoids relying on ambiguous keyboard modifiers; see the
-[W3C editing discussion](https://github.com/w3c/editing/issues/542).
-
 ## Why do I get "does not implement .getType()" or "does not match registered node"?
 
 ```
@@ -248,3 +224,4 @@ from `process.env.NODE_ENV`.
     },
   });
   ```
+

@@ -53,7 +53,6 @@ import {
   FORMAT_TEXT_COMMAND,
   HISTORIC_TAG,
   INDENT_CONTENT_COMMAND,
-  INSERT_LINE_BREAK_COMMAND,
   IS_APPLE,
   type LexicalEditor,
   type LexicalNode,
@@ -1325,14 +1324,6 @@ export default function ToolbarPlugin({
                 buttonLabel="Insert"
                 buttonAriaLabel="Insert specialized editor node"
                 buttonIconClassName="icon plus">
-                <DropDownItem
-                  onClick={() =>
-                    dispatchToolbarCommand(INSERT_LINE_BREAK_COMMAND, false)
-                  }
-                  className="item">
-                  <i className="icon line-break" />
-                  <span className="text">Line Break</span>
-                </DropDownItem>
                 <DropDownItem
                   onClick={() =>
                     dispatchToolbarCommand(INSERT_HORIZONTAL_RULE_COMMAND)

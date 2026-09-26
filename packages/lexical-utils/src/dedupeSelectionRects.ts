@@ -37,10 +37,10 @@ export type RectLike = Pick<
  * Known limitation: the disjoint assumption holds for normal flow. Overlapping
  * inline content — a negative margin, a transform, or a baseline-shifted inline
  * decorator — can place a real sub-fragment inside a wider real-text rect on the
- * same row; if a sub-pixel top offset also lets both clear
- * `createRectsFromDOMRange`'s asymmetric overlap filter, applying this
- * keep-smaller helper afterward drops the wider rect and under-paints the
- * glyphs it uniquely covered. There is no
+ * same row; if a sub-pixel top offset also keeps the smaller rect from being
+ * strictly contained in the wider one, both survive `createRectsFromDOMRange`'s
+ * containment filter, and applying this keep-smaller helper afterward drops the
+ * wider rect and under-paints the glyphs it uniquely covered. There is no
  * rect-only fix: that wider rect is geometrically indistinguishable from the
  * spurious-wider (#7106) rect, so keeping it would re-introduce the extra-area
  * paint. See the under-paint characterization browser test.

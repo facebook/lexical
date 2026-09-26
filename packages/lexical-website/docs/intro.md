@@ -23,8 +23,11 @@ the main exception is custom nodes, which define how they render.
 - Rich-text editors for comments, posts, and messages.
 - Full document editors with tables, lists, code blocks, and images, for a CMS
   or a notes app.
-- Real-time collaborative editing, using the [Yjs](https://yjs.dev)
-  integration in `@lexical/yjs`.
+- Real-time collaborative editing with shared content and remote cursors,
+  using the [Yjs integration](./collaboration/react.md).
+
+Lexical supplies the editing infrastructure. Your application supplies the
+layout, toolbars, menus, styling, and storage.
 
 Lexical is developed at Meta, where it powers text editing across its web
 products. It is also the editor behind
@@ -137,10 +140,11 @@ nodes it wraps, just as an `<a>` contains its text. Each node type decides how
 it renders with `createDOM()` and `updateDOM()`, so the model maps closely to
 the DOM, and a position in the document is a node plus an offset within it.
 
-This is a deliberate difference from text-first editors such as
-[ProseMirror](https://prosemirror.net), where the content of a block is a flat
-run of text annotated with marks, and every position in the document is a
-single integer.
+This is a deliberate difference from editors such as
+[ProseMirror](https://prosemirror.net). ProseMirror's document is also a tree,
+and blocks can contain other blocks, but the inline content of a textblock is
+a flat sequence of nodes (text and inline nodes) with marks for formatting and
+links, and every position in the document is a single integer.
 
 | | Lexical | ProseMirror |
 | -- | -- | -- |
@@ -158,7 +162,9 @@ single integer.
 
 In practice, this means Lexical code navigates the document the way DOM code
 does, with methods like `getParent()`, `getChildren()`, and `getNextSibling()`,
-and each node owns the DOM it renders. See
+and each node owns the DOM it renders. The resemblance is structural, not one
+node per HTML element: bold or italic text, for example, is a format on a
+`TextNode`, not a separate `<strong>` or `<em>` node. See
 [Nodes](./concepts/nodes.mdx) for the built-in node types.
 
 ### Reading and updating editor state {#reading-and-updating-editor-state}
@@ -212,6 +218,11 @@ Which state you see depends on how you read it:
   convenience and backwards compatibility.
 - `editor.read('latest', fn)` reads the most recently reconciled state without
   committing anything, so pending changes are not visible.
+- `editorState.read(fn)` reads one particular snapshot, such as the
+  `editorState` an update listener receives.
+
+Because the callbacks are synchronous, do any asynchronous work (fetching
+data, awaiting a promise) first, and then enter an update with the result.
 
 Avoid nesting one `editor.update()` inside another: the inner update does not
 run immediately but is queued to run after the outer one. Never start an
@@ -289,9 +300,12 @@ method returns a function that removes what it registered.
   `editor.registerNodeTransform(NodeClass, fn)`, run during an update whenever
   a node of that class has changed. They are the efficient way to keep the
   document in a normalized shape, such as turning `#hashtag` text into a
-  hashtag node.
-- **[Listeners](./concepts/listeners.md)** are notified after an update has
-  been committed. For example:
+  hashtag node, because they run inside the same update rather than
+  scheduling another one from a listener.
+- **[Listeners](./concepts/listeners.md)** react to changes in the editor.
+  Update listeners, the most common kind, are called after each update has
+  been committed; others, such as root and editable listeners, fire when the
+  root element or the editable state changes. For example:
 
 ```js
 const unregister = editor.registerUpdateListener(({editorState}) => {

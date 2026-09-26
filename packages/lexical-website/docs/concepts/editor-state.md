@@ -77,7 +77,8 @@ const loadContent = async () => {
 
 const initialEditorState = await loadContent();
 const editor = createEditor(...);
-registerRichText(editor, initialEditorState);
+registerRichText(editor);
+editor.setEditorState(editor.parseEditorState(initialEditorState));
 
 ...
 
@@ -96,8 +97,11 @@ const editorStateRef = useRef(undefined);
 <LexicalComposer initialConfig={{
   editorState: initialEditorState
 }}>
-  <LexicalRichTextPlugin />
-  <LexicalOnChangePlugin onChange={(editorState) => {
+  <RichTextPlugin
+    contentEditable={<ContentEditable />}
+    ErrorBoundary={LexicalErrorBoundary}
+  />
+  <OnChangePlugin onChange={(editorState) => {
     editorStateRef.current = editorState;
   }} />
   <Button label="Save" onPress={() => {
@@ -193,15 +197,17 @@ editor.setEditorState(editorState);
 
 :::warning
 
-`setEditorState` throws when called with an `EditorState` that satisfies
-`editorState.isEmpty()` — i.e. the root is the only node and there is no selection. The
-message is `"setEditorState: the editor state is empty. Ensure the editor state's root
-node never becomes empty."`. The `EditorState` produced by initializing with
-`editorState: null` and never appending content (typical for a collaboration document
-before peers connect) has exactly this shape, so persisting and reloading such a state
-will fail at the `setEditorState` call. Note that `parseEditorState` itself succeeds — the
-throw lands on the apply step. Either guard with `editorState.isEmpty()` before calling
-`setEditorState`, or seed the document with a `ParagraphNode` before serializing.
+`setEditorState` rejects an `EditorState` that satisfies `editorState.isEmpty()` — i.e.
+the root is the only node and there is no selection. In a development build it throws
+`"setEditorState: the editor state is empty. Ensure the editor state's root node never
+becomes empty."`; in production it warns with the same message and recovers by appending
+an empty `ParagraphNode`, so the editor stays usable. The `EditorState` produced by
+initializing with `editorState: null` and never appending content (typical for a
+collaboration document before peers connect) has exactly this shape, so persisting and
+reloading such a state hits this path. Note that `parseEditorState` itself succeeds — the
+check lands on the apply step. To avoid relying on the recovery, guard with
+`editorState.isEmpty()` before calling `setEditorState`, or seed the document with a
+`ParagraphNode` before serializing.
 
 :::
 

@@ -58,7 +58,6 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isParagraphNode,
-  $isTabNode,
   $isTextNode,
   $setState,
   IS_BOLD,
@@ -775,6 +774,3 @@ export const $exportLineBreak = (node: LexicalNode): Break | null =>
         type: 'break',
       }
     : null;
-
-export const exportTab = (node: LexicalNode): MdastText | null =>
-  $isTabNode(node) ? {type: 'text', value: '\t'} : null;

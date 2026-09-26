@@ -158,16 +158,19 @@ export function createRectsFromDOMRange(
   let prevRect;
   for (let i = 0; i < selectionRectsLength; i++) {
     const selectionRect = selectionRects[i];
-    // Exclude rects that overlap preceding Rects in the sorted list.
-    const isOverlappingRect =
+    // Only discard a rect whose entire area is already covered. Mixed font
+    // metrics can put a later run before an earlier one in the sorted list,
+    // and partially overlapping rects can each cover unique selected text.
+    const isContainedRect =
       prevRect &&
       prevRect.top <= selectionRect.top &&
-      prevRect.top + prevRect.height > selectionRect.top &&
-      prevRect.left + prevRect.width > selectionRect.left;
+      prevRect.bottom >= selectionRect.bottom &&
+      prevRect.left <= selectionRect.left &&
+      prevRect.right >= selectionRect.right;
     // Exclude selections that span the entire element
     const selectionSpansElement =
       selectionRect.width + rootPadding === rootRect.width;
-    if (isOverlappingRect || selectionSpansElement) {
+    if (isContainedRect || selectionSpansElement) {
       selectionRects.splice(i--, 1);
       selectionRectsLength--;
       continue;

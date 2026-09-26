@@ -64,6 +64,7 @@ import {getIsProcessingMutations} from './LexicalMutations';
 import {insertRangeAfter, type LexicalNode, type NodeKey} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
+  $getSelectionSlotFrame,
   $getSlot,
   $getSlotFrame,
   $getSlotHost,
@@ -97,6 +98,7 @@ import {
   doesContainSurrogatePair,
   getActiveElement,
   getActiveElementDeep,
+  getCaretRect,
   getComposedStaticRange,
   getDOMSelection,
   getDOMSelectionPoints,
@@ -572,7 +574,12 @@ export class NodeSelection implements BaseSelection {
 
 function $ensureRootHasParagraph(): void {
   const root = $getRoot();
-  if (root.isEmpty()) {
+  // Root slots (such as footnotes) do not replace the editable document body.
+  // Deletion inside a slot must keep the selection in that slot.
+  if (
+    root.getChildrenSize() === 0 &&
+    $getSelectionSlotFrame($getSelection()) === null
+  ) {
     const paragraph = $createParagraphNode();
     root.append(paragraph);
     paragraph.select();
@@ -2070,14 +2077,6 @@ export class RangeSelection implements BaseSelection {
       this.anchor.type === 'element' &&
       this.anchor.offset === 0
     ) {
-      const anchorNode = this.anchor.getNode();
-      if (
-        anchorNode.isEmpty() &&
-        $isRootNode(anchorNode.getParent()) &&
-        anchorNode.getPreviousSibling() === null
-      ) {
-        $collapseAtStart(this, anchorNode);
-      }
       $ensureRootHasParagraph();
     }
   }
@@ -4104,6 +4103,31 @@ function $getElementAndOffsetForPoint(
   return [element, offset];
 }
 
+/**
+ * The DOM node that a caret at an element point is measured on to scroll it
+ * into view: the child at `offset` in the element's slot, which the caret is
+ * just before. When that child is the keyed DOM of a leaf node whose DOM slot
+ * is an element inside it, like a <br> that a DOMRenderExtension override
+ * wraps in a <span>, the caret is next to that inner element. The wrapper
+ * can be much wider, for example when it also draws something at the start
+ * of the next line, so it is not measured.
+ */
+function $getElementPointScrollTarget(
+  editor: LexicalEditor,
+  slotElement: Node,
+  offset: number,
+): HTMLElement | Text | null {
+  const child = slotElement.childNodes[offset];
+  if (!isHTMLElement(child)) {
+    return (child as Text | undefined) || null;
+  }
+  const key = getNodeKeyFromDOMNode(child, editor);
+  const node = key !== undefined ? $getNodeByKey(key) : null;
+  return node !== null && !$isElementNode(node)
+    ? $getDOMSlot(node, child, editor).element
+    : child;
+}
+
 /** @internal */
 export function $updateDOMSelection(
   prevSelection: BaseSelection | null,
@@ -4342,8 +4366,7 @@ export function $updateDOMSelection(
     const selectionTarget: null | Range | HTMLElement | Text =
       $isRangeSelection(nextSelection) &&
       nextSelection.anchor.type === 'element'
-        ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
-          null
+        ? $getElementPointScrollTarget(editor, nextAnchorNode, nextAnchorOffset)
         : getCurrentRange();
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;
@@ -4351,10 +4374,17 @@ export function $updateDOMSelection(
         const range = selectionTarget.ownerDocument.createRange();
         range.selectNode(selectionTarget);
         selectionRect = range.getBoundingClientRect();
-      } else {
+      } else if (isHTMLElement(selectionTarget)) {
         selectionRect = selectionTarget.getBoundingClientRect();
+      } else {
+        selectionRect = getCaretRect(selectionTarget);
       }
-      scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
+      scrollIntoViewIfNeeded(
+        editor,
+        selectionRect,
+        rootElement,
+        nextAnchorNode,
+      );
     }
   }
 

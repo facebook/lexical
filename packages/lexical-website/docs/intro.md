@@ -29,9 +29,10 @@ the main exception is custom nodes, which define how they render.
 Lexical supplies the editing infrastructure. Your application supplies the
 layout, toolbars, menus, styling, and storage.
 
-Lexical started at Meta, which still uses it across its web products, and is
-now an open-source project built by a community of volunteers, who contribute
-most of its development. It is also the editor behind
+Lexical is an open-source community project. It began at Meta, and its
+contributors today include Meta engineers alongside many volunteers and
+developers from other companies. It powers text editing in Meta's web products
+and is also the editor behind
 [Ghost](https://ghost.org), [Payload CMS](https://payloadcms.com),
 [Proton Docs](https://proton.me/drive/document-editor),
 [Sveltia CMS](https://sveltiacms.app), and [Dify](https://dify.ai). To see

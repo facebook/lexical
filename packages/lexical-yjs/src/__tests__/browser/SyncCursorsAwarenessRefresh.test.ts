@@ -13,7 +13,9 @@ import {
 import {createDOMRange} from '@lexical/selection';
 import {
   type Binding,
+  type BindingV2,
   createBinding,
+  createBindingV2__EXPERIMENTAL,
   type Provider,
   type ProviderAwareness,
   syncCursorPositions,
@@ -33,6 +35,7 @@ import {afterEach, assert, describe, expect, test} from 'vitest';
 import {Doc} from 'yjs';
 
 import {syncLexicalSelectionToYjs} from '../../SyncCursors';
+import {$updateYFragment} from '../../SyncV2';
 
 // Runs in a real browser rather than jsdom: `updateCursor` bails out as soon as
 // `cursorsContainer.offsetParent` is null, which is always the case under
@@ -299,6 +302,120 @@ describe('syncCursorPositions awareness refresh', () => {
         1,
       );
       expect(cursor.selection.caret.parentNode).toBe(cursorsContainer);
+    },
+  );
+
+  test.each([false, true])(
+    'anchors a v2 element-point caret to the text boundary with highlight=%s',
+    selectionHighlight => {
+      const rootElement = document.createElement('div');
+      rootElement.contentEditable = 'true';
+      rootElement.style.font = '16px/1.5 Arial';
+      const cursorsContainer = document.createElement('div');
+      cursorsContainer.style.position = 'relative';
+      document.body.append(rootElement, cursorsContainer);
+
+      const editor = buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: null,
+          name: '[cursor-element-point-browser]',
+        }),
+      );
+      cleanups.push(() => {
+        editor.dispose();
+        rootElement.remove();
+        cursorsContainer.remove();
+      });
+      editor.setRootElement(rootElement);
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('ab cd')));
+        },
+        {discrete: true},
+      );
+
+      const doc = new Doc();
+      const binding: BindingV2 = createBindingV2__EXPERIMENTAL(
+        editor,
+        'cursor-element-point-browser',
+        doc,
+        new Map<string, Doc>([['cursor-element-point-browser', doc]]),
+      );
+      binding.cursorsContainer = cursorsContainer;
+      editor.read(() => {
+        doc.transact(() => {
+          $updateYFragment(
+            doc,
+            binding.root,
+            $getRoot(),
+            binding,
+            new Set(['root']),
+          );
+        });
+      });
+
+      let state: UserState = {
+        anchorPos: null,
+        awarenessData: {},
+        color: '#ff0000',
+        focusPos: null,
+        focusing: true,
+        name: 'Bob',
+      };
+      const provider = {
+        awareness: {
+          getLocalState: () => state,
+          setLocalState: (next: UserState | null) => {
+            assert(next !== null);
+            state = next;
+          },
+        } as unknown as ProviderAwareness,
+      } as unknown as Provider;
+      editor.update(
+        () => {
+          const paragraph = $getRoot().getFirstChildOrThrow();
+          assert($isElementNode(paragraph));
+          const text = paragraph.getFirstChildOrThrow();
+          const selection = $createRangeSelection();
+          selection.anchor.set(text.getKey(), 0, 'text');
+          selection.focus.set(paragraph.getKey(), 1, 'element');
+          $setSelection(selection);
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        syncLexicalSelectionToYjs(binding, provider, null, $getSelection());
+      });
+      assert(state.anchorPos !== null && state.focusPos !== null);
+      syncCursorPositions(binding, provider, {
+        getAwarenessStates: () =>
+          new Map<number, UserState>([[REMOTE_CLIENT_ID, state]]),
+        selectionHighlight,
+      });
+
+      const cursor = binding.cursors.get(REMOTE_CLIENT_ID);
+      assert(cursor !== undefined && cursor.selection !== null);
+      const textRange = editor.read(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(paragraph));
+        const text = paragraph.getFirstChildOrThrow();
+        return createDOMRange(editor, text, 5, text, 5);
+      });
+      assert(textRange !== null);
+      const offsetParent = cursorsContainer.offsetParent;
+      assert(offsetParent !== null);
+      const expected = textRange.getBoundingClientRect();
+      const parent = offsetParent.getBoundingClientRect();
+      expect(Number.parseFloat(cursor.selection.caret.style.left)).toBeCloseTo(
+        expected.left - parent.left,
+        1,
+      );
+      expect(Number.parseFloat(cursor.selection.caret.style.top)).toBeCloseTo(
+        expected.top - parent.top,
+        1,
+      );
     },
   );
 });

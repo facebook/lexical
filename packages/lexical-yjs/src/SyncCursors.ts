@@ -503,7 +503,37 @@ function updateCursor(
         caretRect = focusEl.getBoundingClientRect();
       }
     }
-    if (!caretRect) {
+    if (
+      caretRect !== undefined &&
+      caretRect.width === 0 &&
+      caretRect.height === 0 &&
+      $isElementNode(focusNode)
+    ) {
+      // A collapsed range at an element boundary can have no geometry. Use
+      // the adjacent text boundary instead of treating (0, 0) as a caret.
+      const adjacentRect = editor.getEditorState().read(() => {
+        const previous = focusNode.getChildAtIndex(focus.offset - 1);
+        const next = focusNode.getChildAtIndex(focus.offset);
+        for (const [node, offset] of [
+          [previous, $isTextNode(previous) ? previous.getTextContentSize() : 0],
+          [next, 0],
+        ] as const) {
+          if ($isTextNode(node)) {
+            const range = createDOMRange(editor, node, offset, node, offset);
+            const rect =
+              range === null ? undefined : range.getBoundingClientRect();
+            if (rect && rect.height > 0) {
+              return rect;
+            }
+          }
+        }
+        return null;
+      });
+      if (adjacentRect !== null) {
+        caretRect = adjacentRect;
+      }
+    }
+    if (!caretRect || (caretRect.width === 0 && caretRect.height === 0)) {
       return false;
     }
 

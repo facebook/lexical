@@ -150,7 +150,7 @@ single integer.
 | Inline formatting | Format flags on each `TextNode` (bold, italic, code, …) | Marks on text |
 | Links and other inline wrappers | Inline `ElementNode`s (`LinkNode`, `MarkNode`) that contain text nodes | Marks on text, like formatting |
 | Embedded content | `DecoratorNode`, inline or block, rendered by your framework (for example React) | Leaf or atom nodes, often with a custom `NodeView` |
-| Several editable regions in one node | [Named slots](./concepts/named-slots.md) (experimental): regions addressed by name, like a card's `title`, each isolated so editing and selection never cross the boundary | Child nodes in the order the schema's content expression allows, optionally marked `isolating`, or a separate editor inside a `NodeView` |
+| Several editable regions in one node | [Named slots](./concepts/named-slots.md): regions addressed by name, like a card's `title`, each isolated so editing and selection never cross the boundary | Child nodes in the order the schema's content expression allows, optionally marked `isolating`, or a separate editor inside a `NodeView` |
 | Addressing a position | Node key plus offset (`{key, offset, type}`) | One integer counted across the whole document |
 | Allowed structure | Declared by node classes, enforced with node transforms and normalization | Declared by a schema of content expressions |
 | Applying edits | Call node and selection methods inside `editor.update()` | Build a transaction from steps that address positions or ranges |

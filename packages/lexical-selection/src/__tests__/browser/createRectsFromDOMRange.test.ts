@@ -15,8 +15,8 @@ function createRoot(html: string): HTMLDivElement {
   root.style.cssText =
     'position:absolute;left:20px;top:20px;width:600px;padding:0;font:16px/1.5 Arial';
   root.innerHTML = html;
-  void root.offsetHeight;
   document.body.append(root);
+  void root.offsetHeight;
   onTestFinished(() => root.remove());
   return root;
 }

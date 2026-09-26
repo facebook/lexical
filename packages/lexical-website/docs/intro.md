@@ -149,7 +149,7 @@ editor.update(() => {
   $getRoot().append(paragraph);
 });
 
-const text = editor.read(() => $getRoot().getTextContent());
+const text = editor.read('force-commit', () => $getRoot().getTextContent());
 ```
 
 Functions whose names start with `$`, such as `$getRoot()` and
@@ -181,8 +181,10 @@ Which state you see depends on how you read it:
   are visible but transforms and reconciliation may not have run yet.
   `editor.read('pending', fn)` gives you the same view without allowing
   changes.
-- `editor.read(fn)` first commits any pending updates, so it always sees a
-  consistent, reconciled state. Do not call it inside an update.
+- `editor.read('force-commit', fn)` first commits any pending updates, so it
+  always sees a consistent, reconciled state. Do not call it inside an update.
+  `editor.read(fn)` with no mode does the same thing, and is kept for
+  convenience and backwards compatibility.
 - `editor.read('latest', fn)` reads the most recently reconciled state without
   committing anything, so pending changes are not visible.
 

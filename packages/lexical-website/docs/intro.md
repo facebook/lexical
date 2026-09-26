@@ -16,7 +16,7 @@ takes care of keeping the DOM, the selection, and the browser's many
 `contenteditable` quirks in sync. Most code never touches the DOM directly;
 the main exception is custom nodes, which define how they render.
 
-## What can you build?
+## What can you build? {#what-can-be-built-with-lexical}
 
 - Plain-text inputs that need more than a `<textarea>`: mentions, hashtags,
   links, custom emoji.
@@ -27,10 +27,11 @@ the main exception is custom nodes, which define how they render.
   integration in `@lexical/yjs`.
 
 Lexical is developed at Meta, where it powers text editing across its web
-products. It is also the editor behind [Ghost](https://ghost.org),
-[Payload CMS](https://payloadcms.com),
-[Proton Docs](https://proton.me/drive/document-editor),
-[Sveltia CMS](https://github.com/sveltia/sveltia-cms), and
+products. It is also the editor behind
+[Ghost's Koenig editor](https://ghost.org/changelog/new-editor/),
+[Payload CMS](https://payloadcms.com/docs/rich-text/overview),
+[Proton Docs](https://github.com/ProtonMail/WebClients/tree/main/applications/docs-editor),
+[Sveltia CMS](https://sveltiacms.app/en/docs/fields/richtext), and
 [Dify](https://github.com/langgenius/dify). To see what it can do, try the
 [playground](https://playground.lexical.dev).
 
@@ -44,6 +45,8 @@ provides React bindings.
 
 ```mermaid
 flowchart TB
+  accTitle: How Lexical's packages fit together
+  accDescr: Your application uses optional packages such as rich text, history, lists, tables, and React bindings. Both the application and those packages build on the lexical core, which contains the editor, the editor state, commands, and the DOM reconciler.
   app["Your application"]
   subgraph features["Optional packages"]
     rich["@lexical/rich-text<br/>@lexical/plain-text"] ~~~ more["@lexical/history<br/>@lexical/list<br/>@lexical/table<br/>…"] ~~~ bindings["@lexical/react"]
@@ -81,9 +84,9 @@ In React, [`LexicalExtensionComposer`](./extensions/react.md) does the same
 job. The [Quick Start](./getting-started/quick-start.md) and
 [React guide](./getting-started/react.md) walk through a complete setup.
 
-## Core concepts
+## Core concepts {#lexicals-design}
 
-### Editor
+### Editor {#editor-instances}
 
 The editor wires everything together. It owns the current editor state,
 attaches to a root DOM element, and is where you register nodes, listeners,
@@ -91,17 +94,37 @@ transforms, and commands. You usually create it with
 `buildEditorFromExtensions` or through the React bindings rather than calling
 `createEditor()` yourself.
 
-### Editor state
+### Editor state {#editor-states}
 
-An [`EditorState`](./concepts/editor-state.md) is an immutable snapshot of the
-document. It holds two things:
+An [`EditorState`](./concepts/editor-state.md) is a snapshot of the document.
+Once committed it is immutable, so later edits never change an earlier state.
+It holds two things:
 
 - a tree of [nodes](./concepts/nodes.mdx), starting from a single `RootNode`
 - a [selection](./concepts/selection.md), or `null`
 
-`editor.getEditorState()` returns the current state. Editor states serialize
-to JSON with `editorState.toJSON()`, and `editor.parseEditorState()` turns
-that JSON back into a state you can pass to `editor.setEditorState()`. See
+For example, "Hello world" with a link around "world" and the caret at the
+end looks like this:
+
+```mermaid
+flowchart TB
+  accTitle: A simple editor state
+  accDescr: The root contains a paragraph with a "Hello " text node and a link. The link contains the "world" text node. The selection's anchor and focus both point to offset 5 in "world".
+  subgraph state["EditorState"]
+    direction TB
+    root["Root"] --> paragraph["Paragraph"]
+    paragraph --> hello["Text: 'Hello '"]
+    paragraph --> link["Link"]
+    link --> world["Text: 'world'"]
+    selection["Selection"] -.->|"caret at offset 5"| world
+  end
+```
+
+`editor.getEditorState()` returns the latest committed state. Its `toJSON()`
+method serializes the document tree only; the selection and the runtime node
+keys are not included. To restore saved content, pass the JSON to
+`editor.parseEditorState()` and the result to `editor.setEditorState()`. The
+editor must have the same node types registered. See
 [Serialization](./serialization/serialization.md) for JSON, HTML, and
 Markdown.
 
@@ -122,6 +145,7 @@ single integer.
 | | Lexical | ProseMirror |
 | -- | -- | -- |
 | Document | Immutable tree of nodes, one `RootNode` | Immutable tree of nodes, one `doc` node |
+| Node identity and navigation | Each node has a runtime key and knows its parent and siblings | Nodes are plain values with no parent links; a resolved position supplies ancestor context |
 | Blocks | `ElementNode` subclasses (paragraph, heading, list, table, …), or a block `DecoratorNode` (image, embed, …) | Block nodes defined in the schema |
 | Inline formatting | Format flags on each `TextNode` (bold, italic, code, …) | Marks on text |
 | Links and other inline wrappers | Inline `ElementNode`s (`LinkNode`, `MarkNode`) that contain text nodes | Marks on text, like formatting |
@@ -129,6 +153,7 @@ single integer.
 | Several editable regions in one node | [Named slots](./concepts/named-slots.md) (experimental): regions addressed by name, like a card's `title`, each isolated so editing and selection never cross the boundary | Child nodes in the order the schema's content expression allows, optionally marked `isolating`, or a separate editor inside a `NodeView` |
 | Addressing a position | Node key plus offset (`{key, offset, type}`) | One integer counted across the whole document |
 | Allowed structure | Declared by node classes, enforced with node transforms and normalization | Declared by a schema of content expressions |
+| Applying edits | Call node and selection methods inside `editor.update()` | Build a transaction from steps that address positions or ranges |
 | Rendering | Each node's `createDOM()`/`updateDOM()`, applied by the reconciler | `toDOM` in the schema, or a `NodeView` |
 
 In practice, this means Lexical code navigates the document the way DOM code
@@ -136,7 +161,7 @@ does, with methods like `getParent()`, `getChildren()`, and `getNextSibling()`,
 and each node owns the DOM it renders. See
 [Nodes](./concepts/nodes.mdx) for the built-in node types.
 
-### Reading and Updating Editor State
+### Reading and updating editor state {#reading-and-updating-editor-state}
 
 All reads and writes of the document happen inside a synchronous callback:
 
@@ -192,7 +217,7 @@ Avoid nesting one `editor.update()` inside another: the inner update does not
 run immediately but is queued to run after the outer one. Never start an
 update inside a read.
 
-### Updates and the DOM reconciler
+### Updates and the DOM reconciler {#dom-reconciler}
 
 Lexical uses double-buffering. The current editor state is frozen; an update
 works on a pending copy. Several updates made in the same tick are batched,
@@ -204,6 +229,8 @@ features such as undo/redo cheap to implement.
 
 ```mermaid
 flowchart TB
+  accTitle: How an update reaches the DOM
+  accDescr: User input and your code dispatch commands, whose handlers update the pending editor state; your code can also call editor.update directly. Node transforms run after the update. The pending state is committed to the DOM reconciler, which patches the contenteditable DOM and sets the new current editor state, which notifies update and mutation listeners. Changes made to the DOM outside Lexical are picked up by a MutationObserver and fed back into the pending state.
   input(["User input<br/>(DOM events)"]) -->|dispatches| cmd["Command handlers"]
   cmd -->|"update"| pending
   api(["Your code"]) -->|"editor.update()"| pending["Pending EditorState"]
@@ -247,7 +274,7 @@ browser DOM:
   for example to convert HTML on a server. See
   [Serialization](./serialization/serialization.md) for an example.
 
-### Commands, transforms, and listeners
+### Commands, transforms, and listeners {#listeners-node-transforms-and-commands}
 
 Most editor behavior is built from three kinds of hooks. Each `register*`
 method returns a function that removes what it registered.
@@ -279,3 +306,14 @@ unregister();
 
 When you package these into an [extension](./extensions/defining-extensions.md),
 the editor calls the cleanup for you when it is disposed.
+
+## Get started
+
+- [Quick Start](./getting-started/quick-start.md) builds an editor without a
+  framework, and [Getting Started with React](./getting-started/react.md) does
+  the same in React.
+- [Lexical Extensions](./extensions/intro.md) and
+  [Included Extensions](./extensions/included-extensions.md) cover how to add
+  features.
+- The [playground](https://playground.lexical.dev) shows many features working
+  together.

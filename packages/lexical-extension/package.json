@@ -23,7 +23,7 @@
   "dependencies": {
     "@lexical/internal": "workspace:*",
     "@lexical/utils": "workspace:*",
-    "@preact/signals-core": "^1.14.1",
+    "@preact/signals-core": "^1.14.4",
     "lexical": "workspace:*"
   },
   "exports": {

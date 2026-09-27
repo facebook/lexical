@@ -50,7 +50,7 @@ describe('HeadlessExtension', () => {
   it('refuses a root element but allows setting it to null', () => {
     using editor = buildHeadlessEditor();
     expect(() => editor.setRootElement(document.createElement('div'))).toThrow(
-      'setRootElement is not supported in headless mode',
+      'HeadlessExtension: setRootElement is not supported in headless mode',
     );
     expect(editor.getRootElement()).toBe(null);
     expect(() => editor.setRootElement(null)).not.toThrow();

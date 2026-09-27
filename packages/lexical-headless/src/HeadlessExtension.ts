@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {defineExtension, type LexicalEditor} from 'lexical';
 
 /**
@@ -39,9 +40,10 @@ function markEditorHeadless(editor: LexicalEditor): void {
   editor._headless = true;
   const setRootElement = editor.setRootElement;
   editor.setRootElement = function (nextRootElement) {
-    if (nextRootElement !== null) {
-      throw new Error('setRootElement is not supported in headless mode');
-    }
+    invariant(
+      nextRootElement === null,
+      'HeadlessExtension: setRootElement is not supported in headless mode',
+    );
     setRootElement.call(this, nextRootElement);
   };
 }

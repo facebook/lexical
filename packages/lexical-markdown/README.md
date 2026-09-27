@@ -53,6 +53,29 @@ const editor = createEditor(...);
 registerMarkdownShortcuts(editor, TRANSFORMERS);
 ```
 
+## Paste
+`MarkdownPasteExtension` imports pasted or dropped plain text as markdown, so text copied from a README or a chat
+keeps its headings, lists, links and formatting. It handles the `text/plain` clipboard payload in rich text
+editors, after HTML and Lexical content, and inserts the text literally when it contains no markdown, when the caret
+is inside a code block, or when it is pasted with Mod+Shift+V (paste as plain text).
+```js
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {MarkdownPasteExtension, TRANSFORMERS} from '@lexical/markdown';
+import {RichTextExtension} from '@lexical/rich-text';
+import {configExtension} from 'lexical';
+
+const editor = buildEditorFromExtensions({
+  dependencies: [
+    RichTextExtension,
+    configExtension(MarkdownPasteExtension, {transformers: TRANSFORMERS}),
+  ],
+  name: 'app',
+});
+```
+
+Transformers whose nodes are not registered on the editor are skipped. Set `disabled` to turn it off, or
+`$shouldImport` to decide per paste.
+
 ## Transformers
 Markdown functionality relies on transformers configuration. It's an array of objects that define how certain text or nodes
 are processed during import, export or while typing. `@lexical/markdown` package provides set of built-in transformers:

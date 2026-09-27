@@ -16,6 +16,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isTabNode,
+  ArtificialNode__DO_NOT_USE,
   type ElementNode,
   type LexicalNode,
   type TextNode,
@@ -26,9 +27,11 @@ import {
   $createMarkdownLineBreakNode,
   type ElementTransformer,
   type MultilineElementTransformer,
+  normalizeMarkdown,
   type TextFormatTransformer,
   type TextMatchTransformer,
   type Transformer,
+  TRANSFORMERS,
   withListIndentColumns,
 } from './MarkdownTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
@@ -103,6 +106,33 @@ export function $importMarkdownNodes(
       }
     }
   }
+}
+
+/**
+ * Parses a markdown string and returns the resulting nodes as an array,
+ * without modifying the document tree or selection. The returned nodes can be
+ * inserted at an arbitrary position via `selection.insertNodes()`.
+ *
+ *  @param {boolean} [shouldPreserveNewLines] By setting this to true, new lines will be preserved between conversions
+ *  @param {boolean} [shouldMergeAdjacentLines] By setting this to true, adjacent non empty lines will be merged according to commonmark spec: https://spec.commonmark.org/0.24/#example-177. Not applicable if shouldPreserveNewLines = true.
+ */
+export function $generateNodesFromMarkdownString(
+  markdown: string,
+  transformers: Transformer[] = TRANSFORMERS,
+  shouldPreserveNewLines = false,
+  shouldMergeAdjacentLines = false,
+): LexicalNode[] {
+  const sanitizedMarkdown = shouldPreserveNewLines
+    ? markdown
+    : normalizeMarkdown(markdown, shouldMergeAdjacentLines);
+  const container = new ArtificialNode__DO_NOT_USE();
+  $importMarkdownNodes(
+    sanitizedMarkdown,
+    container,
+    transformers,
+    shouldPreserveNewLines,
+  );
+  return container.getChildren();
 }
 
 /**

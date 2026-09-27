@@ -39,6 +39,7 @@ import {
   CheckListExtension,
   ListExtension,
 } from '@lexical/list';
+import {MarkdownPasteExtension} from '@lexical/markdown';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {
@@ -95,6 +96,7 @@ import {ReactFindReplaceExtension} from './plugins/FindReplaceExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {LayoutExtension} from './plugins/LayoutExtension/LayoutExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
+import {PLAYGROUND_TRANSFORMERS} from './plugins/MarkdownTransformers';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import {MentionsExtension} from './plugins/MentionsExtension';
 import {PageBreakExtension} from './plugins/PageBreakExtension';
@@ -236,6 +238,9 @@ const PlaygroundRichTextExtension = defineExtension({
     }),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,
+    configExtension(MarkdownPasteExtension, {
+      transformers: PLAYGROUND_TRANSFORMERS,
+    }),
     PageBreakExtension,
     PagesReactExtension,
     PollExtension,

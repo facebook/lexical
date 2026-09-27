@@ -15,6 +15,11 @@ import type {
   TextFormatType,
   TextNode,
 } from 'lexical';
+import type {
+  LexicalExtension,
+  NamedSignalsOutput,
+  Signal,
+} from '@lexical/extension';
 
 export type Transformer =
   | ElementTransformer
@@ -104,6 +109,33 @@ declare export function $convertFromMarkdownString(
   shouldPreserveNewLines?: boolean,
   shouldMergeAdjacentLines?: boolean,
 ): void;
+
+declare export function $generateNodesFromMarkdownString(
+  markdown: string,
+  transformers?: Transformer[],
+  shouldPreserveNewLines?: boolean,
+  shouldMergeAdjacentLines?: boolean,
+): Array<LexicalNode>;
+
+export type MarkdownPasteConfig = {
+  disabled: boolean,
+  transformers: Transformer[],
+  shouldPreserveNewLines: boolean,
+  shouldMergeAdjacentLines: boolean,
+  $shouldImport: (markdown: string, selection: BaseSelection) => boolean,
+};
+
+export type MarkdownPasteOutput = {
+  ...NamedSignalsOutput<MarkdownPasteConfig>,
+  pasteAsPlainText: Signal<boolean>,
+};
+
+declare export var MarkdownPasteExtension: LexicalExtension<
+  MarkdownPasteConfig,
+  '@lexical/markdown/MarkdownPaste',
+  MarkdownPasteOutput,
+  void,
+>;
 
 declare export function $convertSelectionToMarkdownString(
   transformers?: Transformer[],

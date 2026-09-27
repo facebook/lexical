@@ -88,8 +88,8 @@ editor.setRootElement(document.getElementById('editor'));
 ```
 
 In React, [`LexicalExtensionComposer`](./extensions/react.md) does the same
-job. The [Quick Start](./getting-started/quick-start.md) and
-[React guide](./getting-started/react.md) walk through a complete setup.
+job. The [Quick Start](/docs/getting-started/quick-start) and
+[React guide](/docs/getting-started/react) walk through a complete setup.
 
 ## Core concepts {#lexicals-design}
 
@@ -152,8 +152,8 @@ tests; see [Running Without a Browser](./concepts/headless.md).
 
 ## Get started
 
-- [Quick Start](./getting-started/quick-start.md) builds an editor without a
-  framework, and [Getting Started with React](./getting-started/react.md) does
+- [Quick Start](/docs/getting-started/quick-start) builds an editor without a
+  framework, and [Getting Started with React](/docs/getting-started/react) does
   the same in React.
 - [Lexical Extensions](./extensions/intro.md) and
   [Included Extensions](./extensions/included-extensions.md) cover how to add

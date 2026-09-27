@@ -148,10 +148,6 @@ type HTMLConfig = {
 };
 ```
 
-### Example
-
-[Rich text sandbox](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
-
 ## Legacy JSON methods
 
 Before [serialization schemas](./serialization.md#declarative-serialization-schemas-with-config),

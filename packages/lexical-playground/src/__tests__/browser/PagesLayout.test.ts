@@ -25,6 +25,7 @@ import {$createPageBreakNode} from '../../nodes/PageBreakNode';
 import {
   $setPageSetup,
   computeGeometry,
+  computeZoom,
   DEFAULT_PAGE_SETUP,
   pageContentTop,
   type PageSetup,
@@ -356,5 +357,75 @@ describe('PagesLayout', () => {
     await expect
       .poll(() => host.style.getPropertyValue('--page-zoom'))
       .toBe('1');
+  });
+
+  test('keeps the zoom in step with a continuous resize', async () => {
+    const {editor, host, viewport} = mount({viewportWidth: 300});
+    editor.update(
+      () => {
+        $fillLines(3);
+        $setPageSetup(PAGE_SETUP);
+      },
+      {discrete: true},
+    );
+    await expect
+      .poll(() => parseFloat(host.style.getPropertyValue('--page-zoom')))
+      .toBeLessThan(0.6);
+    // A window drag: a new width every frame, for longer than the layout's
+    // settle guard allows passes in one burst.
+    let width = 300;
+    for (let frame = 0; frame < 30; frame++) {
+      width += 7;
+      viewport.style.width = `${width}px`;
+      await nextFrames(1);
+    }
+    const expected = computeZoom(width - 2, GEOM.pageWidth);
+    expect(expected).toBeLessThan(1);
+    await settled(host);
+    expect(parseFloat(host.style.getPropertyValue('--page-zoom'))).toBeCloseTo(
+      expected,
+      5,
+    );
+  });
+
+  test('paginates an editor whose root lives in an iframe', async () => {
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '800px';
+    iframe.style.height = '600px';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument!;
+    const viewport = doc.createElement('div');
+    const host = doc.createElement('div');
+    const root = doc.createElement('div');
+    root.contentEditable = 'true';
+    host.appendChild(root);
+    viewport.appendChild(host);
+    doc.body.appendChild(viewport);
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [RichTextExtension, PagesExtension],
+        name: 'PagesLayout.iframe.test',
+      }),
+    );
+    onTestFinished(() => {
+      editor.dispose();
+      iframe.remove();
+    });
+    editor.setRootElement(root);
+    editor.update(
+      () => {
+        $fillLines(3);
+        $setPageSetup(PAGE_SETUP);
+      },
+      {discrete: true},
+    );
+    // The layer and its geometry come from the iframe's own document and
+    // window, not the test page's.
+    await expect
+      .poll(() => host.querySelector('.Pages__layer') !== null)
+      .toBe(true);
+    await expect
+      .poll(() => host.style.getPropertyValue('--page-width'))
+      .toBe(`${GEOM.pageWidth}px`);
   });
 });

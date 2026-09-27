@@ -183,19 +183,31 @@
   border-top: 2px solid var(--editor-color-primary, #4766cb);
 }
 
-/* An empty block renders as `<p><br></p>`; a line box with no width fits
-   beside a full-width float, so the browser would leave it at the top of
-   the break band (caret at the right edge of the previous page) instead of
-   on the next page. While empty, give the block its own formatting context
-   so the float pushes it whole; once it has text the rule stops matching. */
+/* A line that holds nothing but a line break has no width, and every
+   engine fits a zero-width line beside a full-width float: it lands inside
+   the break band, past the right margin (with the caret), instead of on
+   the next page. That line is an empty block (`<p><br></p>`), or a blank
+   soft line inside one: consecutive breaks, a leading break, or a
+   trailing one (followed by Lexical's managed break, or in WebKit by its
+   managed image). No style on the `<br>` itself changes this, so while a
+   block holds such a line it becomes a formatting context of its own and
+   the float pushes it whole; the rule stops matching once the line has
+   text. */
 .Pages__host
   .ContentEditable__root
-  :is(p, h1, h2, h3, h4, h5, h6, blockquote):has(> br:only-child) {
+  :is(p, h1, h2, h3, h4, h5, h6, blockquote):is(
+    :has(> br:first-child),
+    :has(> br + br),
+    :has(> br + img[data-lexical-managed-linebreak])
+  ) {
   display: flow-root;
   /* A formatting context may be narrowed to fit beside a float; refuse,
      so the only option left is the next page. */
   min-width: 100%;
   box-sizing: border-box;
+  /* Moved whole, it must fit on a page (see below). */
+  max-height: calc(var(--page-content-height) - 10px);
+  overflow-y: auto;
 }
 
 /* Blocks that must never be split by a page break: make them formatting
@@ -215,7 +227,8 @@
   .ContentEditable__root
   :is(
     .PlaygroundEditorTheme__tableScrollableWrapper,
-    .PlaygroundEditorTheme__code
+    .PlaygroundEditorTheme__code,
+    .PlaygroundEditorTheme__layoutContainer
   ) {
   min-width: 100%;
   box-sizing: border-box;
@@ -233,6 +246,11 @@
   .ContentEditable__root
   .PlaygroundEditorTheme__tableScrollableWrapper {
   max-height: calc(var(--page-content-height) - 5px);
+}
+/* A column layout is a grid, so it moves whole too; its margins are 10px. */
+.Pages__host .ContentEditable__root .PlaygroundEditorTheme__layoutContainer {
+  max-height: calc(var(--page-content-height) - 20px);
+  overflow-y: auto;
 }
 .Pages__host .ContentEditable__root > [data-lexical-decorator] {
   max-height: calc(var(--page-content-height) - 32px);

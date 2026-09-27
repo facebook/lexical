@@ -10,6 +10,7 @@ import {
   $getSelection,
   $insertNodes,
   $isRangeSelection,
+  $isTextNode,
   $nodesOfType,
   COMMAND_PRIORITY_EDITOR,
   configExtension,
@@ -21,11 +22,17 @@ import {
   type LexicalNode,
   mergeRegister,
   type NodeKey,
+  type SerializedEditorState,
   TextNode,
 } from 'lexical';
 
 export const PAGE_NUMBER_ATTRIBUTE = 'data-lexical-page-number';
 export const PAGE_COUNT_ATTRIBUTE = 'data-lexical-page-count';
+const PAGE_NUMBER_TYPE = 'page-number';
+const PAGE_COUNT_TYPE = 'page-count';
+/** Text of a counter that has not been resolved to a page yet. */
+const PAGE_NUMBER_PLACEHOLDER = '#';
+const PAGE_COUNT_PLACEHOLDER = '##';
 
 /**
  * The number of the page a header/footer is drawn on, as a token text node:
@@ -36,10 +43,10 @@ export const PAGE_COUNT_ATTRIBUTE = 'data-lexical-page-count';
  */
 export class PageNumberNode extends TextNode {
   $config() {
-    return this.config('page-number', {extends: TextNode});
+    return this.config(PAGE_NUMBER_TYPE, {extends: TextNode});
   }
 
-  constructor(text: string = '#', key?: NodeKey) {
+  constructor(text: string = PAGE_NUMBER_PLACEHOLDER, key?: NodeKey) {
     super(text, key);
   }
 
@@ -57,10 +64,10 @@ export class PageNumberNode extends TextNode {
 /** The total number of pages, see {@link PageNumberNode}. */
 export class PageCountNode extends TextNode {
   $config() {
-    return this.config('page-count', {extends: TextNode});
+    return this.config(PAGE_COUNT_TYPE, {extends: TextNode});
   }
 
-  constructor(text: string = '##', key?: NodeKey) {
+  constructor(text: string = PAGE_COUNT_PLACEHOLDER, key?: NodeKey) {
     super(text, key);
   }
 
@@ -100,14 +107,34 @@ export const INSERT_PAGE_NUMBER_COMMAND: LexicalCommand<undefined> =
 export const INSERT_PAGE_COUNT_COMMAND: LexicalCommand<undefined> =
   createCommand('INSERT_PAGE_COUNT_COMMAND');
 
+/**
+ * Import a counter from any element carrying its attribute: a formatted
+ * counter exports as `<strong>`, `<em>` and so on rather than `<span>`. The
+ * next rule (the core inline-format rule) imports the element as text with
+ * the formatting its tag and styles imply; the counter takes that text's
+ * format and style.
+ */
+function $withImportedFormat(
+  counter: TextNode,
+  $next: () => readonly LexicalNode[],
+): LexicalNode[] {
+  const text = $next().find($isTextNode);
+  if (text !== undefined) {
+    counter.setFormat(text.getFormat()).setStyle(text.getStyle());
+  }
+  return [counter];
+}
+
 const PageNumberImportRule = defineImportRule({
-  $import: () => [$createPageNumberNode()],
-  match: sel.tag('span').attr(PAGE_NUMBER_ATTRIBUTE, true),
+  $import: (_ctx, _element, $next) =>
+    $withImportedFormat($createPageNumberNode(), $next),
+  match: sel.any().attr(PAGE_NUMBER_ATTRIBUTE, true),
   name: '@lexical/playground/page-number',
 });
 const PageCountImportRule = defineImportRule({
-  $import: () => [$createPageCountNode()],
-  match: sel.tag('span').attr(PAGE_COUNT_ATTRIBUTE, true),
+  $import: (_ctx, _element, $next) =>
+    $withImportedFormat($createPageCountNode(), $next),
+  match: sel.any().attr(PAGE_COUNT_ATTRIBUTE, true),
   name: '@lexical/playground/page-count',
 });
 
@@ -209,4 +236,32 @@ export function $writeCountersIntoEditor(
   for (const node of $nodesOfType(PageCountNode)) {
     $setCounterText(node, String(pageCount));
   }
+}
+
+/**
+ * A copy of a serialized header/footer with every counter's text reset to
+ * its placeholder. The live editor shows the numbers of the page it is
+ * opened on; storing those would make the document depend on which page
+ * the header was last edited from.
+ */
+export function normalizeCounterText<T extends SerializedEditorState>(
+  state: T,
+): T {
+  const visit = (node: unknown): unknown => {
+    if (typeof node !== 'object' || node === null) {
+      return node;
+    }
+    const record = node as {children?: unknown[]; type?: unknown};
+    const copy: Record<string, unknown> = {...record};
+    if (record.type === PAGE_NUMBER_TYPE) {
+      copy.text = PAGE_NUMBER_PLACEHOLDER;
+    } else if (record.type === PAGE_COUNT_TYPE) {
+      copy.text = PAGE_COUNT_PLACEHOLDER;
+    }
+    if (Array.isArray(record.children)) {
+      copy.children = record.children.map(visit);
+    }
+    return copy;
+  };
+  return {...state, root: visit(state.root)} as T;
 }

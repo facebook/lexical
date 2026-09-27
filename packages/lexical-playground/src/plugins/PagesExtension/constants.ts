@@ -61,5 +61,11 @@ export const MAX_SLOT_HEIGHT_RATIO = 0.4;
  * external change (undo, collaboration) that must reload those editors.
  */
 export const HEADER_FOOTER_COMMIT_TAG = 'pages-header-footer-commit';
+/**
+ * Update tag on the nested header/footer editors' own bookkeeping updates
+ * (loading stored content, showing the live page number), so they are not
+ * mistaken for the user's edits and written back to the document.
+ */
+export const SLOT_SYNC_TAG = 'pages-slot-sync';
 /** Debounce for writing nested header/footer edits back to the root. */
 export const SLOT_WRITE_BACK_DELAY_MS = 300;

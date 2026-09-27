@@ -25,13 +25,17 @@ import {
   $getStateChange,
   $isElementNode,
   $isRangeSelection,
+  $onUpdate,
   $setSelection,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
-  COMMAND_PRIORITY_HIGH,
   type EditorState,
   getComposedEventTarget,
   getDOMSelection,
+  getParentElement,
   HISTORY_MERGE_TAG,
+  isDOMNode,
+  isHTMLElement,
   KEY_ESCAPE_COMMAND,
   type LexicalEditor,
   mergeRegister,
@@ -43,7 +47,11 @@ import {
   type SerializedEditorState,
 } from 'lexical';
 
-import {HEADER_FOOTER_COMMIT_TAG, SLOT_WRITE_BACK_DELAY_MS} from './constants';
+import {
+  HEADER_FOOTER_COMMIT_TAG,
+  SLOT_SYNC_TAG,
+  SLOT_WRITE_BACK_DELAY_MS,
+} from './constants';
 import {
   $getPageSlotContent,
   $setPageSlotContent,
@@ -55,6 +63,7 @@ import {
 } from './headerFooter';
 import {
   $writeCountersIntoEditor,
+  normalizeCounterText,
   writeCountersIntoDOM,
 } from './PageCounterNodes';
 
@@ -92,6 +101,14 @@ function $isPointValid(point: PointType): boolean {
   return point.offset <= size;
 }
 
+/**
+ * The form in which header/footer content is compared: what the document
+ * stores for one variant, or `null` when it stores nothing.
+ */
+function serializeSlotContent(content: SerializedEditorState | null): string {
+  return JSON.stringify(content ?? null);
+}
+
 /** The caret position under a client point, using whichever API exists. */
 function caretRangeAt(doc: Document, point: Point): Range | null {
   const withPosition = doc as Document & {
@@ -123,9 +140,16 @@ interface SlotEditor {
   root: HTMLElement;
   /** Cached static render, recreated after every nested update. */
   clone: HTMLElement | null;
-  /** Hosts the React root that renders the editor's decorators and plugins. */
   refreshRafId: number | null;
   empty: boolean;
+  /** The user has edited this editor since its content was last stored. */
+  dirty: boolean;
+  /**
+   * What the document stored for this variant when the editor last loaded
+   * or wrote it (see {@link serializeSlotContent}). A document whose copy no
+   * longer matches was changed by someone else, and that change wins.
+   */
+  baseline: string;
   cleanup: () => void;
 }
 
@@ -175,15 +199,18 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
    */
   private parentSelection: RangeSelection | null = null;
   private disposed = false;
+  /** The window that owns the page layer (it may be an iframe's). */
+  private readonly win: Window & typeof globalThis;
 
   constructor(
     private readonly parent: LexicalEditor,
     private readonly layout: PagesLayout,
     private readonly options: HeaderFooterSessionOptions,
   ) {
+    this.win = layout.win;
     this.heightObserver =
-      typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => this.measureHeights())
+      typeof this.win.ResizeObserver !== 'undefined'
+        ? new this.win.ResizeObserver(() => this.measureHeights())
         : null;
     this.cleanup = mergeRegister(
       registerEventListeners(layout.layer, {
@@ -286,7 +313,10 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     if (this.disposed) {
       return;
     }
-    this.close(true);
+    // Commits only real edits, and only if the document still holds what
+    // they were made against (not, say, a document loaded meanwhile). The
+    // toolbar is not handed back: the editor may be going away.
+    this.close(true, false);
     this.disposed = true;
     this.cleanup();
     this.heightObserver?.disconnect();
@@ -340,13 +370,24 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     }
   }
 
+  /**
+   * The layout is about to remove `slot` (its page no longer exists). A
+   * live editor in it would be detached from the page while still active,
+   * so close it first.
+   */
+  releaseSlot(slot: HTMLElement): void {
+    if (this.active !== null && this.active.slot === slot) {
+      this.close(true);
+    }
+  }
+
   /** Show the real page number / count in the editor of the live slot. */
   private syncLiveCounters(active: ActiveSession): void {
     const pageNumber = active.pageIndex + 1;
     const pageCount = this.layout.getPageCount();
     active.slotEditor.editor.update(
       () => $writeCountersIntoEditor(pageNumber, pageCount),
-      {tag: HISTORY_MERGE_TAG},
+      {tag: [HISTORY_MERGE_TAG, SLOT_SYNC_TAG]},
     );
   }
 
@@ -402,12 +443,44 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     this.syncLiveCounters(this.active);
     this.placeCaret(slotEditor, point);
     slotEditor.editor.focus(undefined, {defaultSelection: 'rootEnd'});
-    // The toolbar and the floating editors follow SELECTION_CHANGE_COMMAND
-    // to learn which editor is active. Lexical skips the DOM selectionchange
-    // that its own reconciler caused when the caret sits inside a text node,
-    // so a click into header text would leave them pointed at the document.
-    slotEditor.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    this.handOver(this.parent, slotEditor.editor);
     return true;
+  }
+
+  /**
+   * Tell the toolbar and the floating editors (which follow
+   * SELECTION_CHANGE_COMMAND to learn which editor is active) that `to`
+   * is active now instead of `from`.
+   *
+   * `from`'s selection is cleared, and `to` announced only after that
+   * update has committed: the core notifies a selection change as it
+   * commits, so announcing first would let `from`'s own notification
+   * (its selection becoming null, which the browser's selectionchange
+   * causes anyway, possibly later) point them back at `from`. `to` is
+   * announced explicitly because its selection may not have changed
+   * (reopening a header at the caret it was closed with).
+   */
+  private handOver(from: LexicalEditor, to: LexicalEditor): void {
+    const target = this.active?.slotEditor.editor ?? this.parent;
+    if (target !== to) {
+      return;
+    }
+    from.update(
+      () => {
+        $setSelection(null);
+        // After the commit, and outside it: a command dispatched while
+        // `from` is still committing does not reach a parent's listeners.
+        $onUpdate(() =>
+          this.win.queueMicrotask(() => {
+            const current = this.active?.slotEditor.editor ?? this.parent;
+            if (!this.disposed && current === to) {
+              to.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+            }
+          }),
+        );
+      },
+      {tag: [HISTORY_MERGE_TAG, SLOT_SYNC_TAG]},
+    );
   }
 
   /**
@@ -439,7 +512,13 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     );
   }
 
-  close(commit: boolean): void {
+  /**
+   * Close the live slot. With `commit`, edits not yet written back are
+   * written now. With `handBack` (the default), the toolbar and floating
+   * editors are told the document is the active editor again; otherwise
+   * they would keep targeting the hidden header editor.
+   */
+  close(commit: boolean, handBack = true): void {
     const active = this.active;
     if (active === null) {
       return;
@@ -462,6 +541,9 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     this.layout.layer.setAttribute('aria-hidden', 'true');
     this.options.activeSlot.value = null;
     this.options.activeSlotEditor.value = null;
+    if (handBack) {
+      this.handOver(slotEditor.editor, this.parent);
+    }
   }
 
   /**
@@ -483,16 +565,19 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       }
     });
     this.parent.focus();
-    // See open(): hand the toolbar back to the document explicitly.
-    this.parent.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
   }
 
   private onClick(event: MouseEvent): void {
     const target = getComposedEventTarget(event);
-    if (!(target instanceof Element)) {
+    const element = isHTMLElement(target)
+      ? target
+      : isDOMNode(target)
+        ? getParentElement(target)
+        : null;
+    if (element === null) {
       return;
     }
-    const slot = target.closest<HTMLElement>('[data-page-slot]');
+    const slot = element.closest<HTMLElement>('[data-page-slot]');
     if (
       slot === null ||
       slot.dataset.pageSlotEnabled !== 'true' ||
@@ -522,18 +607,36 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     }, SLOT_WRITE_BACK_DELAY_MS);
   }
 
+  /**
+   * Store the live editor's content in the document, if the user changed
+   * it, and only over the content those changes were made against: when
+   * the document's copy changed meanwhile (another document was loaded, a
+   * collaborator or undo replaced it), that change wins.
+   */
   private writeBack(session: ActiveSession): void {
     const {slotEditor} = session;
-    const content = slotEditor.editor.getEditorState().toJSON();
+    if (!slotEditor.dirty) {
+      return;
+    }
+    slotEditor.dirty = false;
+    const content = normalizeCounterText(
+      slotEditor.editor.getEditorState().toJSON(),
+    );
     this.parent.update(
       () => {
+        const stored =
+          $getPageSlotContent(slotEditor.kind)?.[slotEditor.variant] ?? null;
+        if (serializeSlotContent(stored) !== slotEditor.baseline) {
+          return;
+        }
         $setPageSlotContent(slotEditor.kind, slotEditor.variant, content);
         $addUpdateTag(HEADER_FOOTER_COMMIT_TAG);
+        slotEditor.baseline = serializeSlotContent(content);
+        session.committed = true;
       },
       // One undo step per editing session.
       session.committed ? {tag: HISTORY_MERGE_TAG} : undefined,
     );
-    session.committed = true;
   }
 
   private onRootMutation(
@@ -555,11 +658,16 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
         if (slotEditor.kind !== kind) {
           continue;
         }
+        const next = content?.[slotEditor.variant] ?? null;
+        if (serializeSlotContent(next) === slotEditor.baseline) {
+          // Another variant of this kind changed, not this one.
+          continue;
+        }
         if (this.active && this.active.slotEditor === slotEditor) {
           // Undo, collaboration or a load replaced what is being edited.
           this.close(false);
         }
-        this.load(slotEditor, content?.[slotEditor.variant] ?? null);
+        this.load(slotEditor, next);
       }
     }
   }
@@ -585,8 +693,10 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     editor.setEditable(false);
     root.contentEditable = 'false';
     slotEditor = {
+      baseline: serializeSlotContent(null),
       cleanup: () => {},
       clone: null,
+      dirty: false,
       editor,
       empty: true,
       kind,
@@ -602,8 +712,10 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     // React renders decorators (images, polls, ...) into the root after the
     // Lexical update that created them, so the clones also follow the DOM.
     const domObserver =
-      typeof MutationObserver !== 'undefined'
-        ? new MutationObserver(() => this.scheduleCloneRefresh(slotEditor!))
+      typeof this.win.MutationObserver !== 'undefined'
+        ? new this.win.MutationObserver(() =>
+            this.scheduleCloneRefresh(slotEditor!),
+          )
         : null;
     domObserver?.observe(root, {
       attributes: true,
@@ -617,12 +729,12 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       () => {
         domObserver?.disconnect();
         if (slotEditor!.refreshRafId !== null) {
-          cancelAnimationFrame(slotEditor!.refreshRafId);
+          this.win.cancelAnimationFrame(slotEditor!.refreshRafId);
         }
       },
-      editor.registerUpdateListener(({dirtyElements, dirtyLeaves}) => {
+      editor.registerUpdateListener(({dirtyElements, dirtyLeaves, tags}) => {
         if (dirtyElements.size > 0 || dirtyLeaves.size > 0) {
-          this.onNestedUpdate(slotEditor!);
+          this.onNestedUpdate(slotEditor!, !tags.has(SLOT_SYNC_TAG));
         }
       }),
       editor.registerCommand(
@@ -634,7 +746,10 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
           }
           return false;
         },
-        COMMAND_PRIORITY_HIGH,
+        // After an open typeahead menu (the component picker, emoji and
+        // mention pickers handle Escape at LOW and only close themselves),
+        // but before rich text's own Escape handler, which blurs.
+        COMMAND_PRIORITY_BEFORE_EDITOR,
       ),
     );
     this.load(
@@ -651,9 +766,13 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     content: SerializedEditorState | null,
   ): void {
     const {editor} = slotEditor;
+    slotEditor.baseline = serializeSlotContent(content);
+    slotEditor.dirty = false;
     if (content !== null) {
       try {
-        editor.setEditorState(editor.parseEditorState(content));
+        editor.setEditorState(editor.parseEditorState(content), {
+          tag: SLOT_SYNC_TAG,
+        });
         return;
       } catch {
         // Unknown nodes in the stored header: fall back to empty below.
@@ -665,7 +784,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
         root.clear();
         root.append($createParagraphNode());
       },
-      {discrete: true},
+      {discrete: true, tag: SLOT_SYNC_TAG},
     );
   }
 
@@ -674,7 +793,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     if (this.disposed || slotEditor.refreshRafId !== null) {
       return;
     }
-    slotEditor.refreshRafId = requestAnimationFrame(() => {
+    slotEditor.refreshRafId = this.win.requestAnimationFrame(() => {
       slotEditor.refreshRafId = null;
       if (!this.disposed) {
         slotEditor.clone = null;
@@ -683,14 +802,21 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     });
   }
 
-  private onNestedUpdate(slotEditor: SlotEditor): void {
+  /**
+   * @param userEdit Whether the update is the user's edit, as opposed to
+   * loading stored content or showing the live page's numbers.
+   */
+  private onNestedUpdate(slotEditor: SlotEditor, userEdit: boolean): void {
+    if (userEdit) {
+      slotEditor.dirty = true;
+    }
     slotEditor.clone = null;
     slotEditor.empty = slotEditor.editor.read(
       'latest',
       () => $getRoot().getTextContent().trim() === '',
     );
     this.layout.refreshSlots(slotEditor.kind);
-    if (this.active && this.active.slotEditor === slotEditor) {
+    if (userEdit && this.active && this.active.slotEditor === slotEditor) {
       this.scheduleWriteBack();
     }
   }

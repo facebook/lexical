@@ -82,4 +82,21 @@ describe('registerPrintHandlers', () => {
     expect(rootStyle.getPropertyValue('--page-width')).toBe('');
     expect(rootStyle.getPropertyValue('--page-margin-top')).toBe('');
   });
+
+  it('prints the latest layout even before its next frame', () => {
+    const {host, layout} = mountLayout();
+    cleanups.push(registerPrintHandlers(layout));
+    // Layout writes wait for the next animation frame; printing right after
+    // a change (Ctrl+P straight after typing) must not print the old one.
+    layout.setPageSetup({
+      ...DEFAULT_PAGE_SETUP,
+      orientation: 'landscape',
+      pageSize: 'Letter',
+    });
+    window.dispatchEvent(new Event('beforeprint'));
+    expect(host.style.getPropertyValue('--page-width')).toBe('1056px');
+    expect(rootStyle.getPropertyValue('--page-width')).toBe('1056px');
+    expect(rootStyle.getPropertyValue('--page-height')).toBe('816px');
+    window.dispatchEvent(new Event('afterprint'));
+  });
 });

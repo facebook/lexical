@@ -44,6 +44,9 @@ export function registerPrintHandlers(layout: PagesLayout): () => void {
       }
     },
     beforeprint: () => {
+      // Layout writes wait for the next frame; printing straight after an
+      // edit or a setup change must not print the layout from before it.
+      layout.flush();
       const width = host.style.getPropertyValue('--page-width');
       const height = host.style.getPropertyValue('--page-height');
       if (!width || !height) {

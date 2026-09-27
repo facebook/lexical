@@ -428,4 +428,161 @@ describe('Pages headers and footers', () => {
     await nextFrames(6);
     expect(updates).toBe(5);
   });
+  test('opening and closing a slot without editing leaves the document alone', async () => {
+    const {editor, host} = mount();
+    editor.update(
+      () => {
+        $fillLines(LINES_PER_PAGE * 2 + 5);
+        $setPageSetup(HEADER_SETUP);
+        $setPageHeader(slotState(editor, 'Page ', true));
+      },
+      {discrete: true},
+    );
+    await expect.poll(() => headerTexts(host).length).toBe(3);
+    await nextFrames(4);
+    const serialize = () =>
+      editor.read(() => JSON.stringify(editor.getEditorState().toJSON()));
+    const before = serialize();
+    let parentUpdates = 0;
+    onTestFinished(
+      editor.registerUpdateListener(({dirtyElements, dirtyLeaves}) => {
+        if (dirtyElements.size > 0 || dirtyLeaves.size > 0) {
+          parentUpdates++;
+        }
+      }),
+    );
+    // On page 2 the live editor shows "Page 2"; that number is a view of
+    // the page, not an edit, and must not be written into the document.
+    editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+      kind: 'header',
+      pageIndex: 1,
+    });
+    await nextFrames(2);
+    editor.dispatchCommand(CLOSE_PAGE_SLOT_COMMAND, undefined);
+    await nextFrames(2);
+    expect(serialize()).toBe(before);
+    expect(parentUpdates).toBe(0);
+  });
+
+  test('an edit to another variant leaves the open slot alone', async () => {
+    const {editor, host} = mount();
+    editor.update(
+      () => {
+        $fillLines(LINES_PER_PAGE * 2 + 5);
+        $setPageSetup({
+          ...HEADER_SETUP,
+          header: {...HEADER_SETUP.header, differentFirstPage: true},
+        });
+        $setPageSlotContent('header', 'default', slotState(editor, 'Default'));
+        $setPageSlotContent('header', 'first', slotState(editor, 'First'));
+      },
+      {discrete: true},
+    );
+    await expect
+      .poll(() => headerTexts(host))
+      .toEqual(['First', 'Default', 'Default']);
+    const {activeSlot, activeSlotEditor} = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+    editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+      kind: 'header',
+      pageIndex: 1,
+    });
+    activeSlotEditor.value!.update(
+      () => {
+        $getRoot().getFirstChild()!.selectEnd().insertText(' typing');
+      },
+      {discrete: true},
+    );
+    // A collaborator (or undo) changes the first-page header meanwhile.
+    editor.update(
+      () =>
+        $setPageSlotContent(
+          'header',
+          'first',
+          slotState(editor, 'First changed'),
+        ),
+      {discrete: true},
+    );
+    await expect
+      .poll(() => headerSlots(host)[0].textContent)
+      .toBe('First changed');
+    expect(activeSlot.value).toEqual({
+      kind: 'header',
+      pageIndex: 1,
+      variant: 'default',
+    });
+    activeSlotEditor.value!.read(() => {
+      expect($getRoot().getTextContent()).toBe('Default typing');
+    });
+  });
+
+  test('loading another document does not write the open slot into it', async () => {
+    const {editor, host} = mount();
+    editor.update(
+      () => {
+        $fillLines(3);
+        $setPageSetup(HEADER_SETUP);
+        $setPageHeader(slotState(editor, 'Old header'));
+      },
+      {discrete: true},
+    );
+    await expect.poll(() => headerTexts(host)).toEqual(['Old header']);
+    const {activeSlotEditor} = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+    editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+      kind: 'header',
+      pageIndex: 0,
+    });
+    activeSlotEditor.value!.update(
+      () => {
+        $getRoot().getFirstChild()!.selectEnd().insertText(' edited');
+      },
+      {discrete: true},
+    );
+    // A pageless document with its own header replaces this one while the
+    // header is still open.
+    const incoming = editor.getEditorState().toJSON();
+    (incoming.root as {$?: unknown}).$ = {
+      pageHeader: {default: slotState(editor, 'New header')},
+    };
+    editor.setEditorState(editor.parseEditorState(incoming));
+    await nextFrames(2);
+    editor.read(() => {
+      const header = JSON.stringify($getPageHeader());
+      expect(header).toContain('New header');
+      expect(header).not.toContain('Old header');
+    });
+  });
+
+  test('removing the page of the open slot closes it', async () => {
+    const {editor, host} = mount();
+    editor.update(
+      () => {
+        $fillLines(LINES_PER_PAGE * 2 + 5);
+        $setPageSetup(HEADER_SETUP);
+        $setPageHeader(slotState(editor, 'Hello'));
+      },
+      {discrete: true},
+    );
+    await expect.poll(() => headerTexts(host).length).toBe(3);
+    const {activeSlot, activeSlotEditor} = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+    editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+      kind: 'header',
+      pageIndex: 2,
+    });
+    const liveRoot = activeSlotEditor.value!.getRootElement()!;
+    // Someone else shortens the document to a single page.
+    editor.update(() => $fillLines(3), {discrete: true});
+    await expect.poll(() => headerTexts(host).length).toBe(1);
+    expect(activeSlot.value).toBeNull();
+    expect(activeSlotEditor.value).toBeNull();
+    expect(liveRoot.isConnected).toBe(true);
+  });
 });

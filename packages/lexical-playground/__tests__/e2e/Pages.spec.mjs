@@ -125,6 +125,64 @@ function codeBlock(lines) {
   };
 }
 
+function columnLayout(count, perColumn) {
+  return {
+    children: Array.from({length: count}, (_column, c) => ({
+      children: Array.from({length: perColumn}, (_line, l) =>
+        paragraph(`Column ${c + 1} line ${l + 1}`),
+      ),
+      direction: null,
+      format: '',
+      indent: 0,
+      type: 'layout-item',
+      version: 1,
+    })),
+    direction: null,
+    format: '',
+    indent: 0,
+    templateColumns: `repeat(${count}, 1fr)`,
+    type: 'layout-container',
+    version: 1,
+  };
+}
+
+/** A paragraph of `before`, then `breaks` soft line breaks, then `after`. */
+function softBreakParagraph(before, breaks, after) {
+  return {
+    ...paragraph(before),
+    children: [
+      textNode(before),
+      ...Array.from({length: breaks}, () => ({type: 'linebreak', version: 1})),
+      textNode(after),
+    ],
+  };
+}
+
+async function setPageSize(page, size) {
+  await openPageSetup(page);
+  await page.locator('select[data-test-id="page-size"]').selectOption(size);
+  await closePageSetup(page);
+}
+
+/** Host-relative boxes of the bands that separate pages. */
+function bandBoxes(page) {
+  return evaluate(
+    page,
+    host => {
+      const hostTop = document.querySelector(host).getBoundingClientRect().top;
+      return [
+        ...document.querySelectorAll(
+          '.Pages__break, .Pages__gap, .Pages__breakHeader',
+        ),
+      ]
+        .map(el => el.getBoundingClientRect())
+        .filter(r => r.height > 0)
+        .map(r => ({bottom: r.bottom - hostTop, top: r.top - hostTop}));
+    },
+    HOST,
+  );
+}
+
 /** Replace the document with `children` (top-level nodes, as JSON). */
 async function loadDocument(page, children) {
   await evaluate(
@@ -825,5 +883,146 @@ test.describe('Pages', () => {
         '[data-page-slot="header"][data-page-index="0"] .editor-image img',
       ),
     ).toHaveCount(1);
+  });
+  test('Escape in a header closes the component picker, not the header', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body');
+    await enablePaged(page);
+    await enableHeader(page);
+    await editHeader(page);
+    await page.keyboard.type('Title ');
+    await page.keyboard.type('/');
+    await waitForSelector(page, '.typeahead-popover');
+    await page.keyboard.press('Escape');
+    await waitForSelector(page, '.typeahead-popover', {state: 'detached'});
+    await expect(page.locator(LIVE_SLOT)).toHaveCount(1);
+    await page.keyboard.type('more');
+    await expect(page.locator(LIVE_CONTENT)).toHaveText('Title /more');
+  });
+
+  test('Closing a header without Escape hands the toolbar back to the document', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body');
+    await enablePaged(page);
+    await enableHeader(page);
+    await editHeader(page);
+    await page.keyboard.type('Header');
+    expect(await insertMenuItems(page)).toContain('Page Number');
+
+    // Read-only mode closes the header without touching the body.
+    await click(page, '.action-button .lock');
+    await expect(page.locator(LIVE_SLOT)).toHaveCount(0);
+    await click(page, '.action-button .unlock');
+
+    const items = await insertMenuItems(page);
+    expect(items).toContain('Page Break');
+    expect(items).not.toContain('Page Number');
+  });
+
+  test('A column layout that crosses a page boundary moves whole to the next page', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    const short = Array.from({length: 25}, (_, i) =>
+      paragraph(`Short ${i + 1}`),
+    );
+    await loadDocument(page, [...short, columnLayout(2, 10)]);
+    await enablePaged(page);
+    await setPageSize(page, 'Statement');
+    const count = await waitForStablePageCount(page);
+    expect(count).toBeLessThanOrEqual(3);
+
+    const areas = await contentAreas(page);
+    const rootBox = await hostRelativeBox(page, '.ContentEditable__root');
+    const box = await hostRelativeBox(
+      page,
+      '.PlaygroundEditorTheme__layoutContainer',
+    );
+    expect(box.width).toBeGreaterThan(rootBox.width / 2);
+    const containing = areas.find(
+      area => box.top >= area.top - 1 && box.bottom <= area.bottom + 1,
+    );
+    expect(containing).toBeDefined();
+  });
+
+  test('Soft line breaks never land in the page margins', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await loadDocument(page, [
+      ...paragraphs(6),
+      softBreakParagraph('start', 50, 'end'),
+      ...paragraphs(3, 'Trailing'),
+    ]);
+    await enablePaged(page);
+    const count = await waitForStablePageCount(page);
+    expect(count).toBeLessThanOrEqual(3);
+
+    const bands = await bandBoxes(page);
+    const result = await evaluate(
+      page,
+      host => {
+        const hostRect = document.querySelector(host).getBoundingClientRect();
+        const root = document.querySelector('.ContentEditable__root');
+        const style = getComputedStyle(root);
+        const rootRect = root.getBoundingClientRect();
+        const contentRight =
+          rootRect.right - parseFloat(style.paddingRight) - hostRect.left;
+        const block = [...root.querySelectorAll(':scope > p')].find(p =>
+          p.textContent.startsWith('start'),
+        );
+        const r = block.getBoundingClientRect();
+        return {
+          box: {bottom: r.bottom - hostRect.top, top: r.top - hostRect.top},
+          outside: [...block.querySelectorAll('br')]
+            .map(br => br.getBoundingClientRect().left - hostRect.left)
+            .filter(left => left > contentRight + 1).length,
+        };
+      },
+      HOST,
+    );
+    // No empty line is placed beside a band (past the right margin) ...
+    expect(result.outside).toBe(0);
+    // ... and the paragraph does not run under one.
+    expect(
+      bands.filter(
+        band =>
+          result.box.top < band.bottom - 1 && result.box.bottom > band.top + 1,
+      ),
+    ).toEqual([]);
+  });
+
+  test('Sticky notes get no block format menu', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body');
+    await selectFromInsertDropdown(page, '.sticky');
+    const note = page.locator('.sticky-note [contenteditable="true"]');
+    await note.click();
+    await page.keyboard.type('Note');
+    await expect(note).toHaveText('Note');
+    // A sticky note is plain text: headings, lists and quotes do not exist
+    // there, so the toolbar must not offer them.
+    await expect(
+      page.locator('[aria-label="Formatting options for text style"]'),
+    ).toHaveCount(0);
   });
 });

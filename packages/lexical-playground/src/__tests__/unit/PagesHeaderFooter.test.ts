@@ -6,18 +6,26 @@
  *
  */
 import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  $generateHtmlFromNodes,
+  $generateNodesFromDOMViaExtension,
+} from '@lexical/html';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $insertNodes,
   defineExtension,
   type ElementNode,
   type SerializedEditorState,
 } from 'lexical';
 import {describe, expect, it} from 'vitest';
 
+import {PlaygroundImportExtension} from '../../nodes/PlaygroundImportExtension';
 import {
+  $createPageCountNode,
+  $createPageNumberNode,
   $isPageCountNode,
   $isPageNumberNode,
   $writeCountersIntoEditor,
@@ -168,6 +176,56 @@ describe('page counter nodes', () => {
     expect(dom.textContent).toBe('2 of 9');
     expect(dom.querySelector('strong')!.textContent).toBe('2');
     editor.setRootElement(null);
+  });
+
+  it('keeps counter formatting through HTML export and import', () => {
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        dependencies: [
+          PlaygroundImportExtension,
+          RichTextExtension,
+          PageCounterNodesExtension,
+        ],
+        name: 'PagesHeaderFooter.import.test',
+      }),
+    );
+    editor.update(
+      () => {
+        const pageNumber = $createPageNumberNode().toggleFormat('bold');
+        const pageCount = $createPageCountNode().toggleFormat('italic');
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              pageNumber,
+              $createTextNode(' of '),
+              pageCount,
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    const html = editor.read(() => $generateHtmlFromNodes(editor, null));
+    // Bold and italic text export as <strong> / <em>, not <span>.
+    expect(html).toMatch(/<(b|strong)[^>]*data-lexical-page-number/);
+    expect(html).toMatch(/<(i|em)[^>]*data-lexical-page-count/);
+    editor.update(
+      () => {
+        $getRoot().clear().select();
+        const dom = new DOMParser().parseFromString(html, 'text/html');
+        $insertNodes($generateNodesFromDOMViaExtension(dom));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const nodes = $getRoot().getAllTextNodes();
+      const pageNumber = nodes.find($isPageNumberNode);
+      const pageCount = nodes.find($isPageCountNode);
+      expect(pageNumber?.hasFormat('bold')).toBe(true);
+      expect(pageCount?.hasFormat('italic')).toBe(true);
+    });
+    editor.dispose();
   });
 
   it('round-trips through JSON', () => {

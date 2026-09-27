@@ -9,6 +9,7 @@ import type {PageGeometry, PageSetup, PageSlotKind, SlotHeights} from './types';
 
 import {
   getParentElement,
+  isHTMLElement,
   type LexicalEditor,
   mergeRegister,
   type NodeKey,
@@ -33,6 +34,8 @@ import {
  */
 export interface PagesLayoutSlotProvider {
   fillSlot(slot: HTMLElement, kind: PageSlotKind, pageIndex: number): void;
+  /** `slot` is about to be removed along with its page. */
+  releaseSlot(slot: HTMLElement): void;
 }
 
 export interface PagesLayoutOptions {
@@ -112,6 +115,11 @@ interface PageBreakElements {
  * this class calls `editor.update()`.
  */
 export class PagesLayout {
+  /**
+   * The window that owns the editor root. Frames, observers and timing all
+   * come from it, so an editor inside an iframe is laid out by the iframe.
+   */
+  readonly win: Window & typeof globalThis;
   readonly host: HTMLElement;
   readonly layer: HTMLElement;
   readonly parking: HTMLElement;
@@ -126,6 +134,7 @@ export class PagesLayout {
   private gap: number;
   private slotHeights: SlotHeights = {footer: {}, header: {}};
   private pageCount = 1;
+  /** The zoom last written to `--page-zoom`, not the one last measured. */
   private zoom = 1;
   private pendingWrites: (() => void)[] = [];
   private writeRafId: number | null = null;
@@ -142,14 +151,16 @@ export class PagesLayout {
     private readonly options: PagesLayoutOptions,
   ) {
     const host = getParentElement(rootElement);
-    if (!(host instanceof HTMLElement)) {
+    const doc = rootElement.ownerDocument;
+    const win = doc.defaultView;
+    if (!isHTMLElement(host) || win === null) {
       throw new Error(
         'PagesLayout: the editor root must have a parent element',
       );
     }
+    this.win = win as Window & typeof globalThis;
     this.host = host;
     this.gap = options.gap;
-    const doc = rootElement.ownerDocument;
     const createDiv = (className: string) => {
       const el = doc.createElement('div');
       el.className = className;
@@ -167,13 +178,14 @@ export class PagesLayout {
     host.insertBefore(this.layer, rootElement);
 
     const observers: ResizeObserver[] = [];
-    if (typeof ResizeObserver !== 'undefined') {
-      const rootObserver = new ResizeObserver(() => this.measure());
+    const Observer = this.win.ResizeObserver;
+    if (typeof Observer !== 'undefined') {
+      const rootObserver = new Observer(() => this.measure());
       rootObserver.observe(rootElement);
       observers.push(rootObserver);
       const viewport = getParentElement(host);
-      if (viewport instanceof HTMLElement) {
-        const viewportObserver = new ResizeObserver(() => this.measureZoom());
+      if (isHTMLElement(viewport)) {
+        const viewportObserver = new Observer(() => this.measureZoom());
         viewportObserver.observe(viewport);
         observers.push(viewportObserver);
       }
@@ -259,10 +271,10 @@ export class PagesLayout {
   flush(): void {
     for (let pass = 0; pass < 4 && !this.disposed; pass++) {
       if (this.writeRafId !== null) {
-        cancelAnimationFrame(this.writeRafId);
+        this.win.cancelAnimationFrame(this.writeRafId);
         this.writeRafId = null;
       }
-      this.measureRafIds.forEach(id => cancelAnimationFrame(id));
+      this.measureRafIds.forEach(id => this.win.cancelAnimationFrame(id));
       this.measureRafIds = [];
       const queued = this.pendingWrites;
       this.pendingWrites = [];
@@ -320,9 +332,9 @@ export class PagesLayout {
     }
     this.disposed = true;
     if (this.writeRafId !== null) {
-      cancelAnimationFrame(this.writeRafId);
+      this.win.cancelAnimationFrame(this.writeRafId);
     }
-    this.measureRafIds.forEach(id => cancelAnimationFrame(id));
+    this.measureRafIds.forEach(id => this.win.cancelAnimationFrame(id));
     this.cleanup();
     for (const key of this.pageBreakKeys) {
       const el = this.editor.getElementByKey(key);
@@ -407,14 +419,21 @@ export class PagesLayout {
       return;
     }
     const viewport = getParentElement(this.host);
-    if (!(viewport instanceof HTMLElement)) {
+    if (!isHTMLElement(viewport)) {
       return;
     }
     const zoom = computeZoom(viewport.clientWidth - 2, this.geom.pageWidth);
     if (zoom !== this.zoom) {
-      this.zoom = zoom;
+      // A resize is outside input, like an edit: whatever the settle guard
+      // decided about the previous size does not apply to this one.
+      this.resetGuard();
       this.scheduleWrites([
-        () => this.host.style.setProperty('--page-zoom', String(zoom)),
+        () => {
+          // Record the zoom only once it is written: a write that never
+          // lands must leave the next measurement free to try again.
+          this.zoom = zoom;
+          this.host.style.setProperty('--page-zoom', String(zoom));
+        },
       ]);
     }
   }
@@ -458,7 +477,9 @@ export class PagesLayout {
     style.setProperty('--page-zoom', String(this.zoom));
     this.applyPageSizes();
     // Width and zoom changed, so re-derive the fit on the next frame.
-    this.measureRafIds.push(requestAnimationFrame(() => this.measureZoom()));
+    this.measureRafIds.push(
+      this.win.requestAnimationFrame(() => this.measureZoom()),
+    );
   }
 
   private applyPageCount(count: number): void {
@@ -505,6 +526,12 @@ export class PagesLayout {
     }
     while (this.breaks.length > Math.max(0, count - 1)) {
       const {footerBand, gap, headerBand, spacer} = this.breaks.pop()!;
+      for (const band of [footerBand, headerBand]) {
+        const slot = band.firstElementChild;
+        if (isHTMLElement(slot)) {
+          this.slotProvider?.releaseSlot(slot);
+        }
+      }
       for (const el of [spacer, footerBand, gap, headerBand]) {
         el.remove();
       }
@@ -568,14 +595,14 @@ export class PagesLayout {
     if (this.writeRafId !== null) {
       return;
     }
-    this.writeRafId = requestAnimationFrame(() => {
+    this.writeRafId = this.win.requestAnimationFrame(() => {
       this.writeRafId = null;
       const queued = this.pendingWrites;
       this.pendingWrites = [];
       if (this.disposed) {
         return;
       }
-      const now = performance.now();
+      const now = this.win.performance.now();
       if (now - this.lastPassAt > BURST_WINDOW_MS) {
         this.passes = 0;
       }
@@ -606,8 +633,8 @@ export class PagesLayout {
     if (this.disposed || this.measureRafIds.length > 0) {
       return;
     }
-    const outer = requestAnimationFrame(() => {
-      const inner = requestAnimationFrame(() => {
+    const outer = this.win.requestAnimationFrame(() => {
+      const inner = this.win.requestAnimationFrame(() => {
         this.measureRafIds = [];
         this.measure();
       });

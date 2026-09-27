@@ -7,7 +7,7 @@
  */
 
 import {useMergeRefs} from '@floating-ui/react';
-import {$isCodeNode} from '@lexical/code';
+import {$isCodeNode, CodeNode} from '@lexical/code';
 import {
   getCodeLanguageOptions as getCodeLanguageOptionsPrism,
   normalizeCodeLanguage as normalizeCodeLanguagePrism,
@@ -27,7 +27,7 @@ import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
 import {useLexicalFocusManagerRef} from '@lexical/react/useLexicalFocusManagerRef';
 import {useLexicalRovingTabIndexRef} from '@lexical/react/useLexicalRovingTabIndexRef';
-import {$isHeadingNode} from '@lexical/rich-text';
+import {$isHeadingNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
@@ -290,6 +290,9 @@ function BlockFormatDropDown({
   editor: LexicalEditor;
   disabled?: boolean;
 }): JSX.Element {
+  // Offer a block type only where the editor registers its node: a page
+  // header has them all, a caption or sticky note has none.
+  const has = (node: Klass<LexicalNode>) => editor.hasNodes([node]);
   return (
     <DropDown
       disabled={disabled}
@@ -308,78 +311,94 @@ function BlockFormatDropDown({
         </div>
         <span className="shortcut">{shortcut('NORMAL')}</span>
       </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'h1')}
-        onClick={() => formatHeading(editor, blockType, 'h1')}>
-        <div className="icon-text-container">
-          <i className="icon h1" />
-          <span className="text">Heading 1</span>
-        </div>
-        <span className="shortcut">{shortcut('HEADING1')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'h2')}
-        onClick={() => formatHeading(editor, blockType, 'h2')}>
-        <div className="icon-text-container">
-          <i className="icon h2" />
-          <span className="text">Heading 2</span>
-        </div>
-        <span className="shortcut">{shortcut('HEADING2')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'h3')}
-        onClick={() => formatHeading(editor, blockType, 'h3')}>
-        <div className="icon-text-container">
-          <i className="icon h3" />
-          <span className="text">Heading 3</span>
-        </div>
-        <span className="shortcut">{shortcut('HEADING3')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'number')}
-        onClick={() => formatNumberedList(editor, blockType)}>
-        <div className="icon-text-container">
-          <i className="icon numbered-list" />
-          <span className="text">Numbered List</span>
-        </div>
-        <span className="shortcut">{shortcut('NUMBERED_LIST')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'bullet')}
-        onClick={() => formatBulletList(editor, blockType)}>
-        <div className="icon-text-container">
-          <i className="icon bullet-list" />
-          <span className="text">Bullet List</span>
-        </div>
-        <span className="shortcut">{shortcut('BULLET_LIST')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'check')}
-        onClick={() => formatCheckList(editor, blockType)}>
-        <div className="icon-text-container">
-          <i className="icon check-list" />
-          <span className="text">Check List</span>
-        </div>
-        <span className="shortcut">{shortcut('CHECK_LIST')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'quote')}
-        onClick={() => formatQuote(editor, blockType)}>
-        <div className="icon-text-container">
-          <i className="icon quote" />
-          <span className="text">Quote</span>
-        </div>
-        <span className="shortcut">{shortcut('QUOTE')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'code')}
-        onClick={() => formatCode(editor, blockType)}>
-        <div className="icon-text-container">
-          <i className="icon code" />
-          <span className="text">Code Block</span>
-        </div>
-        <span className="shortcut">{shortcut('CODE_BLOCK')}</span>
-      </DropDownItem>
+      {has(HeadingNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'h1')}
+          onClick={() => formatHeading(editor, blockType, 'h1')}>
+          <div className="icon-text-container">
+            <i className="icon h1" />
+            <span className="text">Heading 1</span>
+          </div>
+          <span className="shortcut">{shortcut('HEADING1')}</span>
+        </DropDownItem>
+      )}
+      {has(HeadingNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'h2')}
+          onClick={() => formatHeading(editor, blockType, 'h2')}>
+          <div className="icon-text-container">
+            <i className="icon h2" />
+            <span className="text">Heading 2</span>
+          </div>
+          <span className="shortcut">{shortcut('HEADING2')}</span>
+        </DropDownItem>
+      )}
+      {has(HeadingNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'h3')}
+          onClick={() => formatHeading(editor, blockType, 'h3')}>
+          <div className="icon-text-container">
+            <i className="icon h3" />
+            <span className="text">Heading 3</span>
+          </div>
+          <span className="shortcut">{shortcut('HEADING3')}</span>
+        </DropDownItem>
+      )}
+      {has(ListNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'number')}
+          onClick={() => formatNumberedList(editor, blockType)}>
+          <div className="icon-text-container">
+            <i className="icon numbered-list" />
+            <span className="text">Numbered List</span>
+          </div>
+          <span className="shortcut">{shortcut('NUMBERED_LIST')}</span>
+        </DropDownItem>
+      )}
+      {has(ListNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'bullet')}
+          onClick={() => formatBulletList(editor, blockType)}>
+          <div className="icon-text-container">
+            <i className="icon bullet-list" />
+            <span className="text">Bullet List</span>
+          </div>
+          <span className="shortcut">{shortcut('BULLET_LIST')}</span>
+        </DropDownItem>
+      )}
+      {has(ListNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'check')}
+          onClick={() => formatCheckList(editor, blockType)}>
+          <div className="icon-text-container">
+            <i className="icon check-list" />
+            <span className="text">Check List</span>
+          </div>
+          <span className="shortcut">{shortcut('CHECK_LIST')}</span>
+        </DropDownItem>
+      )}
+      {has(QuoteNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'quote')}
+          onClick={() => formatQuote(editor, blockType)}>
+          <div className="icon-text-container">
+            <i className="icon quote" />
+            <span className="text">Quote</span>
+          </div>
+          <span className="shortcut">{shortcut('QUOTE')}</span>
+        </DropDownItem>
+      )}
+      {has(CodeNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'code')}
+          onClick={() => formatCode(editor, blockType)}>
+          <div className="icon-text-container">
+            <i className="icon code" />
+            <span className="text">Code Block</span>
+          </div>
+          <span className="shortcut">{shortcut('CODE_BLOCK')}</span>
+        </DropDownItem>
+      )}
     </DropDown>
   );
 }
@@ -999,7 +1018,9 @@ export default function ToolbarPlugin({
       {toolbarState.blockType in blockTypeToBlockName &&
         // Nested rich-text editors (page headers and footers) take block
         // formats too; only image captions stay inline-only.
-        !toolbarState.isImageCaption && (
+        !toolbarState.isImageCaption &&
+        // Nothing to choose from in a plain-text editor (a sticky note).
+        activeEditor.hasNodes([HeadingNode]) && (
           <>
             <BlockFormatDropDown
               disabled={!isEditable}

@@ -691,17 +691,20 @@ export class LexicalEditorElement extends HTMLElement {
         // Reflect the selection's formats in the toolbar, proving selection
         // reads work inside the shadow root. Runs on every update so pure
         // selection changes still refresh the active-format indicators.
-        editorState.read(() => {
-          const selection = $getSelection();
-          for (const [format, button] of formatButtons) {
-            button.setAttribute(
-              'aria-pressed',
-              String(
-                $isRangeSelection(selection) && selection.hasFormat(format),
-              ),
-            );
-          }
-        });
+        editorState.read(
+          () => {
+            const selection = $getSelection();
+            for (const [format, button] of formatButtons) {
+              button.setAttribute(
+                'aria-pressed',
+                String(
+                  $isRangeSelection(selection) && selection.hasFormat(format),
+                ),
+              );
+            }
+          },
+          {editor},
+        );
         dispatchSelectionRect();
         // Form value + bubbling input event mirror an HTMLInputElement: only
         // fire on real content changes, not on pure selection updates, so

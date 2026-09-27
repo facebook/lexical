@@ -1,7 +1,7 @@
 # Lexical Shadow DOM Example
 
 A minimal [Vite](https://vitejs.dev/) + React app that demonstrates Lexical
-across a Shadow DOM boundary in a *nested* shape:
+across a Shadow DOM boundary in a _nested_ shape:
 
 - An **outer editor** lives in the light DOM, with a `LexicalExtensionComposer`
   registering Rich Text, History, and Tab Indentation.
@@ -42,17 +42,17 @@ so the inner editor lives at a real position inside the outer editor's
 document.
 
 The toolbar in [`Toolbar.tsx`](./src/Toolbar.tsx) lives in the light DOM and
-dispatches commands (`FORMAT_TEXT_COMMAND`, undo/redo) that act on the *outer*
+dispatches commands (`FORMAT_TEXT_COMMAND`, undo/redo) that act on the _outer_
 editor's selection.
 
 ## Running
 
-From the repository root:
-
 ```sh
-pnpm install
-pnpm -C dev-examples/shadow-dom dev
+pnpm i && pnpm run dev
 ```
+
+To run it against the Lexical sources in this repository instead of the
+published packages, use `pnpm run monorepo:dev`.
 
 Then open the printed URL. Try:
 
@@ -70,6 +70,5 @@ selection via the light-DOM toolbar, and word deletion in the inner editor.
 They start the dev server automatically:
 
 ```sh
-pnpm -C dev-examples/shadow-dom exec playwright install chromium
-pnpm -C dev-examples/shadow-dom test
+pnpm run test
 ```

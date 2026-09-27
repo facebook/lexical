@@ -232,7 +232,7 @@ contract only after that guard. The initial `setFormValue` is what keeps a
 form submission before the user types from carrying an empty value, since
 the update listener has not fired yet at that point. A full reference
 implementation lives in
-[`dev-examples/shadow-dom-web-component`](https://github.com/facebook/lexical/tree/main/dev-examples/shadow-dom-web-component).
+[`examples/shadow-dom-web-component`](https://github.com/facebook/lexical/tree/main/examples/shadow-dom-web-component).
 
 DOM moves (re-parenting the host into a different `<form>` or list) trigger
 `disconnectedCallback` followed by `connectedCallback`, which rebuilds the
@@ -372,9 +372,9 @@ detached popup whose `getRootNode()` returns itself.
 
 Runnable examples live in the repository:
 
-- [`dev-examples/shadow-dom`](https://github.com/facebook/lexical/tree/main/dev-examples/shadow-dom)
+- [`examples/shadow-dom`](https://github.com/facebook/lexical/tree/main/examples/shadow-dom)
   — a React editor inside a shadow root with a light‑DOM toolbar.
-- [`dev-examples/shadow-dom-web-component`](https://github.com/facebook/lexical/tree/main/dev-examples/shadow-dom-web-component)
+- [`examples/shadow-dom-web-component`](https://github.com/facebook/lexical/tree/main/examples/shadow-dom-web-component)
   — a framework‑free `<lexical-editor>` custom element, form‑associated via
   `ElementInternals`. The page also mounts one instance inside a wrapper
   `<div>` that opens its own shadow root, exercising the multi‑level

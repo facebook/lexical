@@ -21,6 +21,7 @@ import {
   $create,
   $createParagraphNode,
   $createTextNode,
+  $getDocument,
   $getRoot,
   DecoratorNode,
   defineExtension,
@@ -91,7 +92,7 @@ export class NestedEditorNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(): HTMLElement {
-    const dom = document.createElement('div');
+    const dom = $getDocument().createElement('div');
     dom.className = 'nested-editor-host';
     return dom;
   }
@@ -142,7 +143,7 @@ const outerExtension = defineExtension({
   ],
   name: '@lexical/examples/shadow-dom-outer',
   namespace: 'Shadow DOM Demo Outer',
-  nodes: [NestedEditorNode],
+  nodes: () => [NestedEditorNode],
   theme: ExampleTheme,
 });
 

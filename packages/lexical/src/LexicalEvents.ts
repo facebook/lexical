@@ -73,6 +73,7 @@ import {
   IS_ANDROID_CHROME,
   IS_APPLE,
   IS_APPLE_WEBKIT,
+  IS_CHROME,
   IS_FIREFOX,
   IS_IOS,
   IS_SAFARI,
@@ -754,6 +755,11 @@ function clearHandledSelectionCommandInsertText(inputState: InputState): void {
 }
 
 function markHandledSelectionCommandInsertText(inputState: InputState): void {
+  // Only desktop Chrome on macOS accepts pending system text replacements
+  // after these commands. Elsewhere, the next insertText may be real input.
+  if (!IS_APPLE || IS_IOS || !IS_CHROME) {
+    return;
+  }
   clearHandledSelectionCommandInsertText(inputState);
   inputState.isInsertTextAfterHandledSelectionCommand = true;
   inputState.handledSelectionCommandTimeoutId = setTimeout(

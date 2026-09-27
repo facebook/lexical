@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {createEditor, type CreateEditorArgs, type LexicalEditor} from 'lexical';
 
 export {HeadlessExtension} from './HeadlessExtension';
@@ -35,7 +36,7 @@ export function createHeadlessEditor(
 
   unsupportedMethods.forEach((method: (typeof unsupportedMethods)[number]) => {
     editor[method] = () => {
-      throw new Error(`${method} is not supported in headless mode`);
+      invariant(false, '%s is not supported in headless mode', method);
     };
   });
 

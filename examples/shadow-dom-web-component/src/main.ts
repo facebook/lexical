@@ -47,11 +47,9 @@ form.addEventListener('submit', event => {
   event.preventDefault();
   const lines: string[] = [];
   for (const [name, value] of new FormData(form)) {
-    const text = JSON.stringify(JSON.parse(String(value)), null, 1).replaceAll(
-      '\n',
-      ' ',
+    lines.push(
+      `${name}: ${JSON.stringify(JSON.parse(String(value)), null, 2)}`,
     );
-    lines.push(`${name}: ${text.slice(0, 300)}${text.length > 300 ? '…' : ''}`);
   }
   output.textContent = lines.join('\n\n');
 });

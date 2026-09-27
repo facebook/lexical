@@ -60,12 +60,12 @@ runs on platform APIs only:
 
 ## Running
 
-From the repository root:
-
 ```sh
-pnpm install
-pnpm -C dev-examples/shadow-dom-web-component dev
+pnpm i && pnpm run dev
 ```
+
+To run it against the Lexical sources in this repository instead of the
+published packages, use `pnpm run monorepo:dev`.
 
 Then open the printed URL. Try:
 
@@ -104,8 +104,7 @@ popover anchoring to a selection inside the nested shadow root. They
 start the dev server automatically:
 
 ```sh
-pnpm -C dev-examples/shadow-dom-web-component exec playwright install chromium
-pnpm -C dev-examples/shadow-dom-web-component test
+pnpm run test
 ```
 
 ## What's covered

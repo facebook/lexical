@@ -5,13 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {defineConfig} from 'vite';
+import {mergeConfig} from 'vite';
 
 import lexicalMonorepoPlugin from '../../scripts/vite/lexicalMonorepoPlugin.ts';
+import config from './vite.config';
 
-export default defineConfig({
+export default mergeConfig(config, {
   plugins: [lexicalMonorepoPlugin()],
-  // Pinned so the Playwright config can point a webServer at it.
-  preview: {port: 4327, strictPort: true},
-  server: {port: 4327, strictPort: true},
 });

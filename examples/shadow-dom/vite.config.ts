@@ -8,10 +8,8 @@
 import react from '@vitejs/plugin-react';
 import {defineConfig} from 'vite';
 
-import lexicalMonorepoPlugin from '../../scripts/vite/lexicalMonorepoPlugin.ts';
-
 export default defineConfig({
-  plugins: [react(), lexicalMonorepoPlugin()],
+  plugins: [react()],
   // Pinned so the Playwright config can point a webServer at it.
   preview: {port: 4326, strictPort: true},
   server: {port: 4326, strictPort: true},

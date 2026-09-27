@@ -14,6 +14,7 @@
     "@lexical/extension": "0.51.0",
     "@lexical/history": "0.51.0",
     "@lexical/html": "0.51.0",
+    "@lexical/plain-text": "0.51.0",
     "@lexical/react": "0.51.0",
     "@lexical/rich-text": "0.51.0",
     "@lexical/selection": "0.51.0",

@@ -1,30 +1,23 @@
 {
-  "name": "@lexical/dev-shadow-dom-example",
+  "name": "@lexical/shadow-dom-web-component-example",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.51.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "monorepo:dev": "vite -c vite.config.monorepo.ts",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "playwright install chromium && playwright test"
   },
   "dependencies": {
-    "@lexical/extension": "workspace:*",
-    "@lexical/history": "workspace:*",
-    "@lexical/link": "workspace:*",
-    "@lexical/list": "workspace:*",
-    "@lexical/react": "workspace:*",
-    "@lexical/rich-text": "workspace:*",
-    "lexical": "workspace:*",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@lexical/extension": "0.51.0",
+    "@lexical/history": "0.51.0",
+    "@lexical/rich-text": "0.51.0",
+    "lexical": "0.51.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.2",
-    "@vitejs/plugin-react": "^6.1.1",
     "typescript": "^6.0.3",
     "vite": "^8.2.2"
   },

@@ -203,7 +203,7 @@ export class LexicalEditorElement extends HTMLElement {
   /** The serialized Lexical editor state (JSON), as submitted with forms. */
   get value(): string {
     return this.editor
-      ? JSON.stringify(this.editor.getEditorState().toJSON())
+      ? JSON.stringify(this.editor.getEditorState().toJSON(true))
       : '';
   }
 
@@ -691,17 +691,20 @@ export class LexicalEditorElement extends HTMLElement {
         // Reflect the selection's formats in the toolbar, proving selection
         // reads work inside the shadow root. Runs on every update so pure
         // selection changes still refresh the active-format indicators.
-        editorState.read(() => {
-          const selection = $getSelection();
-          for (const [format, button] of formatButtons) {
-            button.setAttribute(
-              'aria-pressed',
-              String(
-                $isRangeSelection(selection) && selection.hasFormat(format),
-              ),
-            );
-          }
-        });
+        editorState.read(
+          () => {
+            const selection = $getSelection();
+            for (const [format, button] of formatButtons) {
+              button.setAttribute(
+                'aria-pressed',
+                String(
+                  $isRangeSelection(selection) && selection.hasFormat(format),
+                ),
+              );
+            }
+          },
+          {editor},
+        );
         dispatchSelectionRect();
         // Form value + bubbling input event mirror an HTMLInputElement: only
         // fire on real content changes, not on pure selection updates, so
@@ -710,7 +713,7 @@ export class LexicalEditorElement extends HTMLElement {
           return;
         }
         // Standard form association: the form value is the serialized state.
-        this.internals.setFormValue(JSON.stringify(editorState.toJSON()));
+        this.internals.setFormValue(JSON.stringify(editorState.toJSON(true)));
         // Re-evaluate `required` validity now that the text content changed.
         this.updateValidity();
         // Composed so it crosses the shadow boundary to page listeners.

@@ -129,6 +129,9 @@
       "@lexical/hashtag": ["../lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["../lexical-headless/src/index.ts"],
       "@lexical/headless/dom": ["../lexical-headless/src/dom.ts"],
+      "@lexical/headless/HeadlessExtension": [
+        "../lexical-headless/src/HeadlessExtension.ts"
+      ],
       "@lexical/history": ["../lexical-history/src/index.ts"],
       "@lexical/html": ["../lexical-html/src/index.ts"],
       "@lexical/internal/createDevError": [

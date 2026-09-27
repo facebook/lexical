@@ -18,6 +18,7 @@ import {
   normalizeCodeLanguage as normalizeCodeLanguageShiki,
 } from '@lexical/code-shiki';
 import {
+  effect,
   getPeerDependencyFromEditor,
   HorizontalRuleNode,
   INSERT_HORIZONTAL_RULE_COMMAND,
@@ -904,27 +905,26 @@ export default function ToolbarPlugin({
   }, [$updateToolbar, activeEditor, editor, updateToolbarState]);
 
   // The undo and redo buttons act on the history that undo in the active
-  // editor reaches. Read that history's stacks whenever any editor reports
-  // a change (a nested editor's reports bubble up to this one) and when the
-  // active editor changes, rather than trusting whichever editor spoke
-  // last. Without such a history (collaboration's undo manager), trust the
-  // reports of the active editor and the editors it is nested in.
+  // editor reaches: its own, or the enclosing editor's (a page header has
+  // none and undoes in the document). Follow that history's `canUndo` /
+  // `canRedo` signals, which always hold the current value, instead of
+  // whichever editor last reported a change.
   useEffect(() => {
-    const syncFromHistory = () => {
-      const history = getHistoryFor(activeEditor);
-      if (history === null) {
-        return false;
-      }
-      const {undoStack, redoStack} = history.historyState.peek();
-      updateToolbarState('canUndo', undoStack.length > 0);
-      updateToolbarState('canRedo', redoStack.length > 0);
-      return true;
-    };
-    syncFromHistory();
+    const history = getHistoryFor(activeEditor);
+    if (history !== null) {
+      return effect(() => {
+        updateToolbarState('canUndo', history.canUndo.value);
+        updateToolbarState('canRedo', history.canRedo.value);
+      });
+    }
+    // Collaboration replaces the history with Yjs's undo manager, which
+    // still reports only through the deprecated commands (it has no signal
+    // yet). They are dispatched on the root editor; ignore any that come
+    // from editors the caret is not in.
     const onReport =
       (key: 'canRedo' | 'canUndo') =>
       (payload: boolean, from: LexicalEditor) => {
-        if (!syncFromHistory() && isSelfOrAncestor(from, activeEditor)) {
+        if (isSelfOrAncestor(from, activeEditor)) {
           updateToolbarState(key, payload);
         }
         return false;

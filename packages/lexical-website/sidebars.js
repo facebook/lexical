@@ -84,6 +84,7 @@ const sidebars = {
         'serialization/dom-import',
         'serialization/dom-render',
         'serialization/markdown-mdast',
+        'serialization/legacy',
       ],
       label: 'Serialization',
       type: 'category',

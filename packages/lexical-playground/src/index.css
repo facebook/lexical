@@ -89,7 +89,8 @@ header h1 {
 .editor-shell {
   margin: 20px auto;
   border-radius: 2px;
-  max-width: 1140px;
+  /* Wide enough for the whole rich-text toolbar on one line. */
+  max-width: 1184px;
   color: #000;
   position: relative;
   line-height: 1.7;
@@ -1056,7 +1057,9 @@ i.page-count,
   height: 1px;
 }
 
-@media screen and (max-width: 1100px) {
+/* Below the editor shell's full width the toolbar would overflow: show
+   its dropdowns as icons only. */
+@media screen and (max-width: 1200px) {
   .dropdown-button-text {
     display: none !important;
   }
@@ -1997,6 +2000,17 @@ button.item.dropdown-item-active i {
 
 .toolbar .block-controls .dropdown-button-text {
   width: 7em;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+/* As wide as the widest option ("Center Align"), so choosing another
+   alignment does not shift the toolbar. */
+.toolbar .alignment .dropdown-button-text {
+  width: 6.25em;
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;

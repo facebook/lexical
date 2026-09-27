@@ -58,11 +58,34 @@ Editor states have two phases:
 
 Editor states contain two core things:
 
-- The editor node tree (starting from the root node).
-- The editor selection (which can be null).
+- The editor node tree (starting from the root node). See
+  [Document Model](./document-model.md) for how the tree is shaped.
+- The editor [selection](./selection.md) (which can be null).
 
-Editor states are serializable to JSON, and the editor instance provides a useful method
-to deserialize stringified editor states.
+For example, "Hello world" with a link around "world" and the caret at the
+end looks like this:
+
+```mermaid
+flowchart TB
+  accTitle: A simple editor state
+  accDescr: The root contains a paragraph with a "Hello " text node and a link. The link contains the "world" text node. The selection's anchor and focus both point to offset 5 in "world".
+  subgraph state["EditorState"]
+    direction TB
+    root["Root"] --> paragraph["Paragraph"]
+    paragraph --> hello["Text: 'Hello '"]
+    paragraph --> link["Link"]
+    link --> world["Text: 'world'"]
+    selection["Selection"] -.->|"caret at offset 5"| world
+  end
+```
+
+`editor.getEditorState()` returns the latest committed state. Its `toJSON()`
+method serializes the document tree only; the selection and the runtime node
+keys are not included. To restore saved content, pass the JSON to
+`editor.parseEditorState()` and the result to `editor.setEditorState()`. The
+editor must have the same node types registered. See
+[Serialization](../serialization/serialization.md) for JSON, HTML, and
+Markdown.
 
 Here's an example of how you can initialize editor with some state and then persist it:
 
@@ -141,50 +164,57 @@ For a deep dive into how state updates work, check out [this blog post](https://
 
 :::
 
-The most common way to update the editor is to use `editor.update()`. Calling this function
-requires a function to be passed in that will provide access to mutate the underlying
-editor state. When starting a fresh update, the current editor state is cloned and
-used as the starting point. From a technical perspective, this means that Lexical leverages a technique
-called double-buffering during updates. There's the "current" frozen editor state to represent what was
-most recently reconciled to the DOM, and another work-in-progress "pending" editor state that represents
-future changes for the next reconciliation.
-
-Reconciling an update is typically an async process that allows Lexical to batch multiple synchronous
-updates of the editor state together in a single update to the DOM – improving performance. When
-Lexical is ready to commit the update to the DOM, the underlying mutations and changes in the update
-batch will form a new immutable editor state. Calling `editor.getEditorState()` will then return the
-latest editor state based on the changes from the update.
-
-Here's an example of how you can update an editor instance:
+All reads and writes of the document happen inside a synchronous callback:
 
 ```js
-import {$getRoot, $getSelection} from 'lexical';
-import {$createParagraphNode} from 'lexical';
+import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 
-// Inside the `editor.update` you can use special $ prefixed helper functions.
-// These functions cannot be used outside the closure, and will error if you try.
-// (If you're familiar with React, you can imagine these to be a bit like using a hook
-// outside of a React function component).
 editor.update(() => {
-  // Get the RootNode from the EditorState
-  const root = $getRoot();
-
-  // Get the selection from the EditorState
-  const selection = $getSelection();
-
-  // Create a new ParagraphNode
-  const paragraphNode = $createParagraphNode();
-
-  // Create a new TextNode
-  const textNode = $createTextNode('Hello world');
-
-  // Append the text node to the paragraph
-  paragraphNode.append(textNode);
-
-  // Finally, append the paragraph to the root
-  root.append(paragraphNode);
+  const paragraph = $createParagraphNode();
+  paragraph.append($createTextNode('Hello world'));
+  $getRoot().append(paragraph);
 });
+
+const text = editor.read('force-commit', () => $getRoot().getTextContent());
 ```
+
+### The `$` function convention {#dollar-functions}
+
+Functions whose names start with `$`, such as `$getRoot()` and
+`$getSelection()`, only work inside one of these callbacks, because they act
+on the active editor state. Calling them anywhere else throws an error. The
+convention is similar to React Hooks:
+
+| | React Hooks | Lexical `$` functions |
+| -- | -- | -- |
+| Naming | `useFunction` | `$function` |
+| Can only be called | while rendering a component | inside an update or read |
+| Can call others of the same kind | ✅ | ✅ |
+| Must be synchronous | ✅ | ✅ |
+| Must be called unconditionally, in the same order | ✅ | ❌ No such rule |
+
+Command handlers and node transforms already run inside an update, so they
+can call `$` functions directly.
+
+The same rule applies to node objects. Call node methods only inside a read or
+update. Every node has a key that identifies it across versions of the editor
+state, and node methods use that key to find the latest version of the node.
+This is why a node reference taken earlier in an update stays usable after the
+node changes. Keys exist only at runtime: they are not serialized, and you
+should treat them as opaque.
+
+Because the callbacks are synchronous, do any asynchronous work (fetching
+data, awaiting a promise) first, and then enter an update with the result.
+
+Avoid nesting one `editor.update()` inside another: the inner update does not
+run immediately but is queued to run after the outer one. Never start an
+update inside a read.
+
+Each update works on a pending copy of the editor state, and updates made in
+the same tick are committed and reconciled to the DOM together. See
+[Updates](./updates.mdx#update-lifecycle) for the full lifecycle.
+
+### Replacing the state
 
 Another way to set state is `setEditorState` method, which replaces current state with the one passed as an argument.
 
@@ -211,6 +241,24 @@ check lands on the apply step. To avoid relying on the recovery, guard with
 
 :::
 
+## Reading state
+
+Which state you see depends on how you read it:
+
+- Inside `editor.update()` you see the **pending** state, where your changes
+  are visible but transforms and reconciliation may not have run yet.
+  `editor.read('pending', fn)` gives you the same view without allowing
+  changes.
+- `editor.read('force-commit', fn)` first commits any pending updates, so it
+  always sees a consistent, reconciled state. Do not call it inside an update.
+  `editor.read(fn)` with no mode does the same thing, and is kept for
+  convenience and backwards compatibility.
+- `editor.read('latest', fn)` reads the most recently reconciled state without
+  committing anything, so pending changes are not visible.
+- `editorState.read(fn, {editor})` reads one particular snapshot, such as the
+  `editorState` an update listener receives. Passing the `editor` keeps
+  `$getEditor()` and extension lookups working inside the callback.
+
 ## State update listener
 
 If you want to know when the editor updates so you can react to the changes, you can add an update
@@ -221,10 +269,14 @@ editor.registerUpdateListener(({editorState}) => {
   // The latest EditorState can be found as `editorState`.
   // To read the contents of the EditorState, use the following API:
 
-  editorState.read(() => {
-    // Just like editor.update(), .read() expects a closure where you can use
-    // the $ prefixed helper functions.
-  });
+  editorState.read(
+    () => {
+      // Just like editor.update(), .read() expects a closure where you can use
+      // the $ prefixed helper functions.
+    },
+    // Passing the editor keeps $getEditor() and extension lookups working.
+    {editor},
+  );
 });
 ```
 

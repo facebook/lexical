@@ -32,7 +32,7 @@ layout, toolbars, menus, styling, and storage.
 Lexical is an open-source community project. It began at Meta, and its
 contributors today include Meta engineers alongside many volunteers and
 developers from other companies. It powers text editing in Meta's web products
-and is also the editor behind
+and at [Bloomberg](https://www.bloomberg.com), and is also the editor behind
 [Ghost](https://ghost.org), [Payload CMS](https://payloadcms.com),
 [Supabase](https://supabase.com),
 [Proton Docs](https://proton.me/drive/document-editor),

@@ -298,6 +298,10 @@ const docusaurusPluginTypedocConfig = {
       __dirname,
       'src/plugins/lexical-typedoc-plugin-legacy-router/index.mjs',
     ),
+    path.resolve(
+      __dirname,
+      'src/plugins/lexical-typedoc-plugin-command-group/index.mjs',
+    ),
     'typedoc-plugin-rename-defaults',
   ],
   router: 'legacy',

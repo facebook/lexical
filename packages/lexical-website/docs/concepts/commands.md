@@ -10,7 +10,7 @@ When registering a `command` you supply a `priority` and can return `true` to ma
 
 ## `createCommand(...)`
 
-You can view the core commands in [`LexicalCommands.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.ts). Other packages define their own, such as `TOGGLE_LINK_COMMAND` in `@lexical/link`. If you need a custom command for your own use case, check out the typed `createCommand(...)` function.
+You can view the core commands in the [`lexical` API reference](/docs/api/modules/lexical#commands). Other packages define their own, listed under Commands in each package's API reference, such as [`TOGGLE_LINK_COMMAND`](/docs/api/modules/lexical_link#toggle_link_command) in `@lexical/link`. If you need a custom command for your own use case, check out the typed `createCommand(...)` function.
 
 ```js
 const HELLO_WORLD_COMMAND: LexicalCommand<string> = createCommand('HELLO_WORLD');
@@ -32,6 +32,12 @@ editor.dispatchCommand(HELLO_WORLD_COMMAND, 'Hello World!');
 Commands can be dispatched from anywhere you have access to the `editor` such as a Toolbar Button, an event listener, or an extension, but most of the core commands are dispatched from [`LexicalEvents.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalEvents.ts).
 
 Calling `dispatchCommand` will implicitly call `editor.update` to trigger its command listeners if it was not called from inside `editor.update`.
+
+Don't dispatch a command from inside a read-only context such as
+`editor.read(fn)` or `editorState.read(fn)`. Command listeners usually change
+the editor, so Lexical runs them in a separate writable update and
+development builds log a warning when they detect this. Dispatch after the
+read returns instead.
 
 ```js
 editor.dispatchCommand(command, payload);

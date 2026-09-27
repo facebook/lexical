@@ -114,10 +114,10 @@ the source of truth. Its `toJSON()` output is how you save and restore content.
 ### A DOM-like document tree {#document-model}
 
 Lexical's node tree is shaped like the HTML it renders. A paragraph contains
-its text, and a link is an element that contains the text it wraps, where
-editors such as ProseMirror keep a textblock's content flat and use marks for
-links. [Document Model](./concepts/document-model.md) compares the two in
-detail.
+its text, and a link is an element that contains the text it wraps. See
+[Document Model](./concepts/document-model.md), and
+[Compared with ProseMirror](./concepts/compared-with-prosemirror.md) for how
+this differs from a mark-based editor.
 
 ### Reading and updating editor state {#reading-and-updating-editor-state}
 

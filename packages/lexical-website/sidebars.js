@@ -41,6 +41,7 @@ const sidebars = {
       items: [
         'concepts/editor-state',
         'concepts/document-model',
+        'concepts/compared-with-prosemirror',
         'concepts/updates',
         'concepts/selection',
         'concepts/commands',

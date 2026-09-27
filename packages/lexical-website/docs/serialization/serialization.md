@@ -9,23 +9,23 @@ Internally, Lexical maintains the state of a given editor in memory, updating it
 
 Every format works the same way: Lexical walks the node tree and asks each
 node, or an extension, how to convert it. Because the tree is already shaped
-like HTML (see [Document Model](../concepts/document-model.md)), a link exports as an `<a>` around the text nodes it already
-contains. A mark-based model has to find the adjacent text that shares a mark
-and group it into one element first.
+like HTML (see [Document Model](../concepts/document-model.md)), a link exports
+as an `<a>` around the text nodes it already contains.
 
-| Format | Lexical | ProseMirror |
-| -- | -- | -- |
-| JSON | `editorState.toJSON()` writes the node tree. Each node class defines its JSON with `exportJSON()` and `importJSON()`, or has them generated from `$config`. Restore with `editor.parseEditorState()`. | `doc.toJSON()` and `Node.fromJSON(schema, json)` |
-| HTML export | `$generateHtmlFromNodes(editor, selection)` from `@lexical/html`. By default a node exports the element its `createDOM()` renders; `exportDOM()` or a `DOMRenderExtension` override can change that. | `DOMSerializer.fromSchema(schema)`, using `toDOM` from the schema's nodes and marks |
-| HTML import | `$generateNodesFromDOM(editor, dom)`, using each node class's `static importDOM()` or the rules of [`DOMImportExtension`](./dom-import.md) | `DOMParser.fromSchema(schema)`, using the schema's `parseDOM` rules |
-| Markdown | [`@lexical/markdown`](/docs/packages/lexical-markdown) (transformers) or [`@lexical/mdast`](./markdown-mdast.md) (CommonMark and GFM through micromark and mdast), both with `$convertToMarkdownString()` and `$convertFromMarkdownString()` | `prosemirror-markdown`: a markdown-it parser and a serializer with a function per node and mark |
-| Clipboard | Copy writes plain text, HTML, and Lexical JSON (`application/x-lexical-editor`). Paste uses the JSON when it is present, then HTML, then plain text. | Copy writes HTML and plain text. Paste parses the HTML with the schema's parse rules. |
+| Format | How |
+| -- | -- |
+| JSON | `editorState.toJSON()` writes the node tree. Each node class defines its JSON with `exportJSON()` and `importJSON()`, or has them generated from `$config`. Restore with `editor.parseEditorState()`. |
+| HTML export | `$generateHtmlFromNodes(editor, selection)` from `@lexical/html`. By default a node exports the element its `createDOM()` renders; `exportDOM()` or a `DOMRenderExtension` override can change that. |
+| HTML import | `$generateNodesFromDOM(editor, dom)`, using each node class's `static importDOM()` or the rules of [`DOMImportExtension`](./dom-import.md) |
+| Markdown | [`@lexical/markdown`](/docs/packages/lexical-markdown) (transformers) or [`@lexical/mdast`](./markdown-mdast.md) (CommonMark and GFM through micromark and mdast), both with `$convertToMarkdownString()` and `$convertFromMarkdownString()` |
+| Clipboard | Copy writes plain text, HTML, and Lexical JSON (`application/x-lexical-editor`). Paste uses the JSON when it is present, then HTML, then plain text. |
 
-The JSON follows the tree too. A link is a `link` node with its text nodes as
-`children`, and bold is a `format` value on a `text` node, where ProseMirror's
-JSON gives each text node a list of `marks`. In both editors the default HTML
-export reuses the definition that renders the editor (`createDOM()` in Lexical,
-`toDOM` in ProseMirror), so the two stay in step unless you override one.
+The JSON follows the tree too: a link is a `link` node with its text nodes as
+`children`, and bold is a `format` value on a `text` node. The default HTML
+export reuses `createDOM()`, the same definition that renders the editor, so
+the two stay in step unless you override one. For how each format compares
+with ProseMirror, see
+[Compared with ProseMirror](../concepts/compared-with-prosemirror.md#serialization).
 
 HTML import and export need a DOM. Outside a browser, run them inside
 `withDOM()` from `@lexical/headless/dom`, as described in

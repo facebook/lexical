@@ -8,6 +8,8 @@
 
 import {createEditor, type CreateEditorArgs, type LexicalEditor} from 'lexical';
 
+export {HeadlessExtension} from './HeadlessExtension';
+
 /**
  * Generates a headless editor that allows lexical to be used without the need for a DOM, eg in Node.js.
  * Throws an error when unsupported methods are used.

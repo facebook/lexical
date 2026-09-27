@@ -317,7 +317,9 @@ browser DOM:
 
 - **With no DOM at all.** An editor that has no root element skips
   reconciliation and DOM selection entirely, so you can build one with
-  `buildEditorFromExtensions()` and never call `setRootElement()`. Updates,
+  `buildEditorFromExtensions()` and never call `setRootElement()`. Adding
+  `HeadlessExtension` from `@lexical/headless` makes that explicit: attaching a
+  root element then throws, and nested editors are headless too. Updates,
   transforms, listeners, commands, and JSON serialization all still work,
   which is enough to process documents on a server, apply changes from a
   collaboration backend, or write tests.

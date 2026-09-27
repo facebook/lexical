@@ -40,10 +40,20 @@ On top of that it allows to decouple content structure from content formatting. 
 
 In contrast, Lexical decouples structure from formatting by offsetting this information to attributes. This allows us to have canonical document structure regardless of the order in which different styles were applied.
 
-<figure class="text--center">
-  <img src="/img/docs/state-formatting-lexical.png" alt="Flat Lexical state"/>
-  <figcaption>Flat Lexical state structure</figcaption>
-</figure>
+Here is the same content as a Lexical node tree, printed the way the
+[tree view](/docs/getting-started/devtools) shows it (the numbers are node keys):
+
+```text
+root
+  └ (2) paragraph
+    ├ (3) text "Why did the JavaScript developer go to the bar? "
+    ├ (4) text "Because he couldn't handle his " { format: bold }
+    ├ (5) text "Promise" { format: bold, italic }
+    └ (6) text "s" { format: bold }
+```
+
+The paragraph's children are a flat list of text nodes, and the formatting is a
+property of each one, so there is only one way to represent this content.
 
 ## Understanding the Editor State
 
@@ -179,12 +189,6 @@ except that a function there only runs if the root is still empty.
 
 ## Updating state
 
-:::tip
-
-For a deep dive into how state updates work, check out [this blog post](https://dio.la/article/lexical-state-updates) by Lexical contributor [@DaniGuardiola](https://twitter.com/daniguardio_la).
-
-:::
-
 All reads and writes of the document happen inside a synchronous callback:
 
 ```js
@@ -216,6 +220,19 @@ convention is similar to React Hooks:
 
 Command handlers and node transforms already run inside an update, so they
 can call `$` functions directly.
+
+This works because, while a callback runs, Lexical keeps the active editor and
+the active editor state in module-level variables, and `$` functions read
+them: `$getRoot()` returns the root of the active state, and `$getEditor()`
+returns the active editor. Because the callback is synchronous, nothing else
+can run in between and change them. The same mechanism enforces the
+difference between reads and updates. Inside a read, a method that would
+change a node throws `Cannot use method in read-only mode.`
+
+Give your own functions a `$` prefix when they call `$` functions, so it is
+clear where they can be used. The
+[`@lexical/rules-of-lexical`](/docs/packages/lexical-eslint-plugin) ESLint rule
+checks this convention.
 
 The same rule applies to node objects. Call node methods only inside a read or
 update. Every node has a key that identifies it across versions of the editor

@@ -54,14 +54,23 @@ registerMarkdownShortcuts(editor, TRANSFORMERS);
 ```
 
 ## Paste
-`MarkdownPasteExtension` imports pasted or dropped plain text as markdown, so text copied from a README or a chat
-keeps its headings, lists, links and formatting. It handles the `text/plain` clipboard payload in rich text
-editors. A regular paste still prefers HTML or Lexical content when the clipboard has it; paste as plain text
-(Mod+Shift+V) imports the clipboard's plain text as markdown instead, which picks the markdown source over its
-rendered HTML. The text is inserted literally when it contains no markdown or when the caret is inside a code block.
+`MarkdownPasteExtension` offers to convert pasted text that looks like markdown into rich text. Pasting itself is
+unchanged. When the clipboard's plain text looks like markdown (`looksLikeMarkdown`, or your own `isMarkdown`) and the
+pasted content still shows the markdown syntax, which is the case for plain text and for HTML copied from terminals or
+code editors, the paste is published as the extension's `offer` signal. A prompt can then dispatch
+`CONVERT_PASTED_MARKDOWN_COMMAND`, which replaces the pasted content with the imported markdown as one undoable update,
+or `DISMISS_PASTED_MARKDOWN_COMMAND`. The next edit, selection change or Escape drops the offer.
 ```js
-import {buildEditorFromExtensions} from '@lexical/extension';
-import {MarkdownPasteExtension, TRANSFORMERS} from '@lexical/markdown';
+import {
+  buildEditorFromExtensions,
+  effect,
+  getExtensionDependencyFromEditor,
+} from '@lexical/extension';
+import {
+  CONVERT_PASTED_MARKDOWN_COMMAND,
+  MarkdownPasteExtension,
+  TRANSFORMERS,
+} from '@lexical/markdown';
 import {RichTextExtension} from '@lexical/rich-text';
 import {configExtension} from 'lexical';
 
@@ -72,10 +81,18 @@ const editor = buildEditorFromExtensions({
   ],
   name: 'app',
 });
+const {offer} = getExtensionDependencyFromEditor(
+  editor,
+  MarkdownPasteExtension,
+).output;
+effect(() => {
+  // Show or hide your prompt; on accept:
+  // editor.dispatchCommand(CONVERT_PASTED_MARKDOWN_COMMAND, undefined);
+  showPrompt(offer.value !== null);
+});
 ```
 
-Transformers whose nodes are not registered on the editor are skipped. Set `disabled` to turn it off, or
-`$shouldImport` to decide per paste.
+Transformers whose nodes are not registered on the editor are skipped. Nothing is offered inside a code block.
 
 ## Transformers
 Markdown functionality relies on transformers configuration. It's an array of objects that define how certain text or nodes

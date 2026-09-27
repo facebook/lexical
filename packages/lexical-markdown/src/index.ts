@@ -23,9 +23,14 @@ import {
   $importMarkdownNodes,
 } from './MarkdownImport';
 import {
+  CONVERT_PASTED_MARKDOWN_COMMAND,
+  DISMISS_PASTED_MARKDOWN_COMMAND,
+  looksLikeMarkdown,
   type MarkdownPasteConfig,
   MarkdownPasteExtension,
+  type MarkdownPasteOffer,
   type MarkdownPasteOutput,
+  type MarkdownPastePoint,
 } from './MarkdownPasteExtension';
 import {registerMarkdownShortcuts} from './MarkdownShortcuts';
 import {
@@ -132,6 +137,8 @@ export {
   BOLD_UNDERSCORE,
   CHECK_LIST,
   CODE,
+  CONVERT_PASTED_MARKDOWN_COMMAND,
+  DISMISS_PASTED_MARKDOWN_COMMAND,
   ELEMENT_TRANSFORMERS,
   type ElementTransformer,
   HEADING,
@@ -141,9 +148,12 @@ export {
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
+  looksLikeMarkdown,
   type MarkdownPasteConfig,
   MarkdownPasteExtension,
+  type MarkdownPasteOffer,
   type MarkdownPasteOutput,
+  type MarkdownPastePoint,
   MULTILINE_ELEMENT_TRANSFORMERS,
   type MultilineElementTransformer,
   ORDERED_LIST,

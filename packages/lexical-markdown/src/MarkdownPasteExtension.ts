@@ -6,38 +6,40 @@
  *
  */
 
-import {
-  $insertGeneratedNodes,
-  ClipboardImportExtension,
-  type ImportMimeTypeFunction,
-} from '@lexical/clipboard';
+import {$insertGeneratedNodes} from '@lexical/clipboard';
 import {$isCodeNode} from '@lexical/code-core';
 import {
-  $getExtensionDependency,
   namedSignals,
   type NamedSignalsOutput,
   type Signal,
   signal,
 } from '@lexical/extension';
 import {
+  $createRangeSelection,
   $findMatchingParent,
-  $getEditor,
-  $isLineBreakNode,
-  $isParagraphNode,
+  $getNodeByKey,
+  $getSelection,
+  $isElementNode,
   $isRangeSelection,
-  $isTabNode,
+  $isRootOrShadowRoot,
   $isTextNode,
-  type BaseSelection,
+  $setSelection,
   COMMAND_PRIORITY_CRITICAL,
-  configExtension,
+  COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_LOW,
+  createCommand,
   defineExtension,
-  DROP_COMMAND,
-  IS_APPLE,
-  isExactShortcutMatch,
-  KEY_DOWN_COMMAND,
+  type ElementNode,
+  KEY_ESCAPE_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
   type LexicalNode,
   mergeRegister,
+  type NodeKey,
   PASTE_COMMAND,
+  PASTE_TAG,
+  type PointType,
+  type RangeSelection,
   safeCast,
 } from 'lexical';
 
@@ -45,17 +47,38 @@ import {$generateNodesFromMarkdownString} from './MarkdownImport';
 import {type Transformer, TRANSFORMERS} from './MarkdownTransformers';
 
 /**
+ * A position in the document, recorded by key so that it can outlive the
+ * update it was taken in. See {@link MarkdownPasteOffer}.
+ */
+export interface MarkdownPastePoint {
+  readonly key: NodeKey;
+  readonly offset: number;
+  readonly type: 'text' | 'element';
+}
+
+/**
+ * A paste whose plain text looks like Markdown, which
+ * {@link CONVERT_PASTED_MARKDOWN_COMMAND} can replace with the Markdown
+ * imported as rich text.
+ */
+export interface MarkdownPasteOffer {
+  /** The `text/plain` payload of the paste. */
+  readonly markdown: string;
+  /** Where the pasted content starts. */
+  readonly start: MarkdownPastePoint;
+  /** Where the pasted content ends, which is where the caret was left. */
+  readonly end: MarkdownPastePoint;
+}
+
+/**
  * Configuration for {@link MarkdownPasteExtension}.
  */
 export interface MarkdownPasteConfig {
-  /**
-   * When `true`, pasted plain text is inserted literally, as it is without
-   * this extension.
-   */
+  /** When `true`, pastes are never offered for conversion. */
   disabled: boolean;
   /**
-   * The transformers used to import the pasted Markdown. Transformers whose
-   * node dependencies are not registered on the editor are skipped, so the
+   * The transformers used to import the Markdown. Transformers whose node
+   * dependencies are not registered on the editor are skipped, so the
    * default {@link TRANSFORMERS} is safe to use with any set of nodes.
    */
   transformers: Transformer[];
@@ -70,10 +93,10 @@ export interface MarkdownPasteConfig {
    */
   shouldMergeAdjacentLines: boolean;
   /**
-   * Decide whether a paste should be imported as Markdown. Called after the
-   * built-in checks pass; return `false` to insert the text literally.
+   * Whether the pasted plain text looks like Markdown, so that the paste is
+   * offered for conversion. Defaults to {@link looksLikeMarkdown}.
    */
-  $shouldImport: (markdown: string, selection: BaseSelection) => boolean;
+  isMarkdown: (text: string) => boolean;
 }
 
 /**
@@ -81,82 +104,194 @@ export interface MarkdownPasteConfig {
  */
 export interface MarkdownPasteOutput extends NamedSignalsOutput<MarkdownPasteConfig> {
   /**
-   * `true` while the paste being handled was requested as plain text with
-   * Mod+Shift+V. The clipboard's `text/plain` payload is then imported as
-   * Markdown even when HTML or Lexical content is on the clipboard too.
+   * The paste currently offered for conversion, or `null`. It is cleared by
+   * the next change to the document or the selection, by Escape, and by
+   * {@link CONVERT_PASTED_MARKDOWN_COMMAND} or
+   * {@link DISMISS_PASTED_MARKDOWN_COMMAND}.
    */
-  pasteAsPlainText: Signal<boolean>;
-}
-
-function isPasteAsPlainTextShortcut(event: KeyboardEvent): boolean {
-  return isExactShortcutMatch(
-    event,
-    'v',
-    IS_APPLE
-      ? {altKey: 'any', metaKey: true, shiftKey: true}
-      : {altKey: 'any', ctrlKey: true, shiftKey: true},
-  );
+  offer: Signal<MarkdownPasteOffer | null>;
 }
 
 /**
- * Whether the nodes imported from `markdown` are just its lines as
- * unformatted paragraphs, i.e. the text had no Markdown in it. The default
- * plain-text paste handles that case better: it keeps the format and style
- * at the caret, and every line break of the text.
+ * Replace the content of the pending {@link MarkdownPasteOffer} with its
+ * Markdown imported as rich text. Handled by {@link MarkdownPasteExtension};
+ * does nothing when there is no offer.
  */
-function $isPlainTextImport(nodes: LexicalNode[], markdown: string): boolean {
-  const importedLines: string[] = [];
-  for (const node of nodes) {
-    if (!$isParagraphNode(node) || node.getType() !== 'paragraph') {
-      return false;
+export const CONVERT_PASTED_MARKDOWN_COMMAND: LexicalCommand<void> =
+  createCommand('CONVERT_PASTED_MARKDOWN_COMMAND');
+
+/**
+ * Drop the pending {@link MarkdownPasteOffer}, keeping the paste as it is.
+ */
+export const DISMISS_PASTED_MARKDOWN_COMMAND: LexicalCommand<void> =
+  createCommand('DISMISS_PASTED_MARKDOWN_COMMAND');
+
+const FENCE = /^ {0,3}(?:`{3,}|~{3,})/;
+const HEADING = /^ {0,3}#{1,6}[ \t]+\S/;
+const QUOTE = /^ {0,3}>[ \t]?\S/;
+const LIST_ITEM = /^[ \t]*(?:[-*+]|\d{1,9}[.)])[ \t]+\S/;
+const TABLE_DIVIDER =
+  /^ {0,3}\|?[ \t]*:?-{3,}:?[ \t]*(?:\|[ \t]*:?-{3,}:?[ \t]*)+\|?[ \t]*$/;
+const INLINE = [
+  // **strong** and __strong__
+  /\*\*[^\s*](?:[^*\n]*[^\s*])?\*\*/g,
+  /(?:^|[^\w_])__[^\s_](?:[^_\n]*[^\s_])?__(?![\w_])/g,
+  // *emphasis* and _emphasis_, not inside words like snake_case
+  /(?:^|[^\w*])\*[^\s*](?:[^*\n]*[^\s*])?\*(?![\w*])/g,
+  /(?:^|[^\w_])_[^\s_](?:[^_\n]*[^\s_])?_(?![\w_])/g,
+  // ~~strikethrough~~
+  /~~[^\s~](?:[^~\n]*[^\s~])?~~/g,
+  // `code`
+  /`[^`\n]+`/g,
+  // [link](url) and ![image](url)
+  /\[[^\]\n]+\]\([^)\s]+(?:[ \t]+"[^"\n]*")?\)/g,
+];
+
+/**
+ * The default {@link MarkdownPasteConfig.isMarkdown} check. Text looks like
+ * Markdown when it has a heading, a block quote, a fenced code block, a
+ * table, or at least two list items, or else at least two inline constructs
+ * (emphasis, strikethrough, code spans, links). A lone `*` or a single line
+ * starting with `1.` is not enough.
+ */
+export function looksLikeMarkdown(text: string): boolean {
+  let listItems = 0;
+  let fences = 0;
+  for (const line of text.split(/\r?\n/)) {
+    if (HEADING.test(line) || QUOTE.test(line) || TABLE_DIVIDER.test(line)) {
+      return true;
     }
-    let line = '';
-    for (const child of node.getChildren()) {
-      if ($isLineBreakNode(child)) {
-        line += '\n';
-      } else if ($isTabNode(child)) {
-        line += '\t';
-      } else if (
-        $isTextNode(child) &&
-        child.getType() === 'text' &&
-        child.getFormat() === 0 &&
-        child.getStyle() === ''
-      ) {
-        line += child.getTextContent();
-      } else {
-        return false;
-      }
+    if (FENCE.test(line) && ++fences === 2) {
+      return true;
     }
-    importedLines.push(...line.split('\n'));
+    if (LIST_ITEM.test(line) && ++listItems === 2) {
+      return true;
+    }
   }
-  const sourceLines = markdown.split(/\r?\n/).map(line => line.trimEnd());
-  const nonEmpty = (line: string) => line !== '';
-  return (
-    importedLines.filter(nonEmpty).join('\n') ===
-    sourceLines.filter(nonEmpty).join('\n')
-  );
+  let inline = 0;
+  for (const regExp of INLINE) {
+    inline += (text.match(regExp) || []).length;
+    if (inline >= 2) {
+      return true;
+    }
+  }
+  return false;
 }
 
-const $importMarkdownFromPlainText: ImportMimeTypeFunction = (
-  data,
-  selection,
-  $next,
-) => {
-  const {output} = $getExtensionDependency(MarkdownPasteExtension);
-  if (output.disabled.peek()) {
-    return $next();
+/**
+ * A point equivalent to `point` that survives content being inserted at
+ * `point`. The insertion can merge a text node that starts at the point into
+ * the pasted text before it, or replace an empty block the point is in, so a
+ * point at the start of a node is moved to the end of what precedes it, or to
+ * the position of its block within the nearest root or shadow root.
+ */
+function $pointBeforeInsertion(point: PointType): MarkdownPastePoint | null {
+  if (point.type === 'text' && point.offset > 0) {
+    return {key: point.key, offset: point.offset, type: 'text'};
   }
-  // Markdown means nothing inside a code block: its text is taken literally.
-  if (
-    $isRangeSelection(selection) &&
-    $findMatchingParent(selection.anchor.getNode(), $isCodeNode)
-  ) {
-    return $next();
+  const node = point.getNode();
+  let parent: ElementNode | null;
+  let index: number;
+  if (point.type === 'text') {
+    parent = node.getParent();
+    index = node.getIndexWithinParent();
+  } else {
+    parent = node as ElementNode;
+    index = point.offset;
   }
-  if (!output.$shouldImport.peek()(data, selection)) {
-    return $next();
+  while (parent !== null) {
+    const previous = index > 0 ? parent.getChildAtIndex(index - 1) : null;
+    if ($isTextNode(previous)) {
+      return {
+        key: previous.getKey(),
+        offset: previous.getTextContentSize(),
+        type: 'text',
+      };
+    }
+    if (previous !== null || $isRootOrShadowRoot(parent)) {
+      return {key: parent.getKey(), offset: index, type: 'element'};
+    }
+    index = parent.getIndexWithinParent();
+    parent = parent.getParent();
   }
-  const editor = $getEditor();
+  return null;
+}
+
+/**
+ * Resolve a recorded point in the current editor state. An element point
+ * before a child is moved to the start of that child, so that selection
+ * operations work within blocks rather than on their parent.
+ */
+function $resolvePoint(
+  point: MarkdownPastePoint,
+): [NodeKey, number, 'text' | 'element'] | null {
+  const node = $getNodeByKey(point.key);
+  if (node === null || !node.isAttached()) {
+    return null;
+  }
+  if (point.type === 'text') {
+    return $isTextNode(node) && point.offset <= node.getTextContentSize()
+      ? [point.key, point.offset, 'text']
+      : null;
+  }
+  if (!$isElementNode(node) || point.offset > node.getChildrenSize()) {
+    return null;
+  }
+  let child: LexicalNode | null = node.getChildAtIndex(point.offset);
+  if (child === null) {
+    return [point.key, point.offset, 'element'];
+  }
+  while ($isElementNode(child)) {
+    const first: LexicalNode | null = child.getFirstChild();
+    if (first === null) {
+      return [child.getKey(), 0, 'element'];
+    }
+    child = first;
+  }
+  if ($isTextNode(child)) {
+    return [child.getKey(), 0, 'text'];
+  }
+  return [
+    child.getParentOrThrow().getKey(),
+    child.getIndexWithinParent(),
+    'element',
+  ];
+}
+
+/**
+ * The range covered by `offer`, if it still holds the pasted text: its text
+ * must equal the Markdown apart from whitespace. That also leaves out pastes
+ * whose HTML already rendered the Markdown, where there is nothing left to
+ * convert.
+ */
+function $getOfferRange(offer: MarkdownPasteOffer): RangeSelection | null {
+  const start = $resolvePoint(offer.start);
+  const end = $resolvePoint(offer.end);
+  if (start === null || end === null) {
+    return null;
+  }
+  const range = $createRangeSelection();
+  range.anchor.set(...start);
+  range.focus.set(...end);
+  if (range.isCollapsed() || range.isBackward()) {
+    return null;
+  }
+  const withoutWhitespace = (text: string) => text.replace(/\s+/g, '');
+  return withoutWhitespace(range.getTextContent()) ===
+    withoutWhitespace(offer.markdown)
+    ? range
+    : null;
+}
+
+function $convertOffer(
+  editor: LexicalEditor,
+  offer: MarkdownPasteOffer,
+  output: MarkdownPasteOutput,
+): boolean {
+  const range = $getOfferRange(offer);
+  if (range === null) {
+    return false;
+  }
   const transformers = output.transformers
     .peek()
     .filter(
@@ -165,58 +300,135 @@ const $importMarkdownFromPlainText: ImportMimeTypeFunction = (
         editor.hasNodes(transformer.dependencies),
     );
   const nodes = $generateNodesFromMarkdownString(
-    data,
+    offer.markdown,
     transformers,
     output.shouldPreserveNewLines.peek(),
     output.shouldMergeAdjacentLines.peek(),
   );
-  if (nodes.length === 0 || $isPlainTextImport(nodes, data)) {
-    return $next();
-  }
-  $insertGeneratedNodes(editor, nodes, selection);
+  $setSelection(range);
+  $insertGeneratedNodes(editor, nodes, range);
   return true;
-};
+}
+
+function registerMarkdownPaste(
+  editor: LexicalEditor,
+  output: MarkdownPasteOutput,
+): () => void {
+  const {disabled, isMarkdown, offer} = output;
+  // Recorded when a paste starts, and turned into an offer once the update
+  // that inserts it has been committed.
+  let pending: {markdown: string; start: MarkdownPastePoint} | null = null;
+  const dismiss = () => {
+    if (offer.peek() === null) {
+      return false;
+    }
+    offer.value = null;
+    return true;
+  };
+  return mergeRegister(
+    editor.registerCommand(
+      PASTE_COMMAND,
+      event => {
+        pending = null;
+        offer.value = null;
+        const clipboardData =
+          'clipboardData' in event ? event.clipboardData : null;
+        const markdown = clipboardData
+          ? clipboardData.getData('text/plain')
+          : '';
+        const selection = $getSelection();
+        if (
+          disabled.peek() ||
+          !markdown ||
+          !$isRangeSelection(selection) ||
+          // Markdown means nothing inside a code block.
+          $findMatchingParent(selection.anchor.getNode(), $isCodeNode) ||
+          !isMarkdown.peek()(markdown)
+        ) {
+          return false;
+        }
+        const start = $pointBeforeInsertion(
+          selection.isBackward() ? selection.focus : selection.anchor,
+        );
+        if (start !== null) {
+          pending = {markdown, start};
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    ),
+    editor.registerUpdateListener(
+      ({dirtyElements, dirtyLeaves, editorState, prevEditorState, tags}) => {
+        if (pending !== null && tags.has(PASTE_TAG)) {
+          const {markdown, start} = pending;
+          pending = null;
+          offer.value = editorState.read(() => {
+            const selection = $getSelection();
+            if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+              return null;
+            }
+            const {key, offset, type} = selection.anchor;
+            const candidate: MarkdownPasteOffer = {
+              end: {key, offset, type},
+              markdown,
+              start,
+            };
+            return $getOfferRange(candidate) ? candidate : null;
+          });
+          return;
+        }
+        if (offer.peek() === null) {
+          return;
+        }
+        const selection = editorState._selection;
+        const prevSelection = prevEditorState._selection;
+        if (
+          dirtyElements.size > 0 ||
+          dirtyLeaves.size > 0 ||
+          selection === null ||
+          prevSelection === null ||
+          !selection.is(prevSelection)
+        ) {
+          offer.value = null;
+        }
+      },
+    ),
+    editor.registerCommand(
+      CONVERT_PASTED_MARKDOWN_COMMAND,
+      () => {
+        const current = offer.peek();
+        if (current === null) {
+          return false;
+        }
+        offer.value = null;
+        return $convertOffer(editor, current, output);
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      DISMISS_PASTED_MARKDOWN_COMMAND,
+      dismiss,
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    // Ahead of rich text's Escape handler, which blurs the editor: the
+    // first Escape only dismisses the offer.
+    editor.registerCommand(KEY_ESCAPE_COMMAND, dismiss, COMMAND_PRIORITY_LOW),
+  );
+}
 
 /**
- * Handles a paste as plain text (Mod+Shift+V) ahead of the richer payloads
- * on the clipboard: the `text/plain` stack imports the clipboard's plain
- * text instead, as Markdown. Apps copying Markdown sources (editors, chat
- * apps) usually put a rendition of it in `text/html` too, so this is how a
- * user picks the Markdown over the HTML.
- */
-const $importPlainTextInstead: ImportMimeTypeFunction = (
-  _data,
-  selection,
-  $next,
-  dataTransfer,
-) => {
-  const {output} = $getExtensionDependency(MarkdownPasteExtension);
-  const text = dataTransfer.getData('text/plain');
-  if (output.disabled.peek() || !output.pasteAsPlainText.peek() || !text) {
-    return $next();
-  }
-  const stack =
-    $getExtensionDependency(ClipboardImportExtension).output.$importMimeType[
-      'text/plain'
-    ] || [];
-  const callAt = (i: number): boolean =>
-    i >= 0 && stack[i](text, selection, () => callAt(i - 1), dataTransfer);
-  return callAt(stack.length - 1) || $next();
-};
-
-/**
- * Imports pasted or dropped plain text as Markdown, so that text copied
- * from a README, a notes app or an LLM chat keeps its headings, lists,
- * links, code blocks and inline formats. It adds a `text/plain` handler to
- * {@link ClipboardImportExtension}, so it applies to rich text editors.
+ * Offers to convert pasted text that looks like Markdown into rich text.
  *
- * A regular paste keeps the priority of HTML or Lexical content on the
- * clipboard. Pasting as plain text (Mod+Shift+V) imports the clipboard's
- * plain text as Markdown instead, even when those are present.
- *
- * Text is inserted literally when it contains no Markdown, when the
- * selection is inside a code block, or when
- * {@link MarkdownPasteConfig.$shouldImport} returns `false`.
+ * Pasting is unchanged: the clipboard's Lexical, HTML or plain text content
+ * is inserted as usual. When its `text/plain` payload looks like Markdown
+ * (see {@link MarkdownPasteConfig.isMarkdown}) and the pasted content still
+ * shows the Markdown syntax (it came in as plain text, or as HTML that did
+ * not render it, e.g. from a terminal or a code editor), the paste is
+ * published as {@link MarkdownPasteOutput.offer}. A UI can then show a
+ * prompt that dispatches {@link CONVERT_PASTED_MARKDOWN_COMMAND}, which
+ * replaces the pasted content with the imported Markdown as one undoable
+ * update, or {@link DISMISS_PASTED_MARKDOWN_COMMAND}. The offer is dropped
+ * by the next edit or selection change, or by Escape.
  *
  * @example
  * ```ts
@@ -236,58 +448,16 @@ const $importPlainTextInstead: ImportMimeTypeFunction = (
 export const MarkdownPasteExtension = defineExtension({
   build: (_editor, config): MarkdownPasteOutput => ({
     ...namedSignals(config),
-    pasteAsPlainText: signal(false),
+    offer: signal<MarkdownPasteOffer | null>(null),
   }),
   config: safeCast<MarkdownPasteConfig>({
-    $shouldImport: () => true,
     disabled: false,
+    isMarkdown: looksLikeMarkdown,
     shouldMergeAdjacentLines: false,
     shouldPreserveNewLines: false,
     transformers: TRANSFORMERS,
   }),
-  dependencies: [
-    configExtension(ClipboardImportExtension, {
-      $importMimeType: {
-        'application/x-lexical-editor': [$importPlainTextInstead],
-        'text/html': [$importPlainTextInstead],
-        'text/plain': [$importMarkdownFromPlainText],
-      },
-    }),
-  ],
   name: '@lexical/markdown/MarkdownPaste',
-  register: (editor, _config, state) => {
-    const {pasteAsPlainText} = state.getOutput();
-    // The paste event follows the keydown of its shortcut, and the paste
-    // itself is imported in a later update, so the shortcut is remembered
-    // from the keydown until the next paste event decides it. A drop is
-    // never a plain-text paste.
-    let shortcutPressed = false;
-    return mergeRegister(
-      editor.registerCommand(
-        KEY_DOWN_COMMAND,
-        event => {
-          shortcutPressed = isPasteAsPlainTextShortcut(event);
-          return false;
-        },
-        COMMAND_PRIORITY_CRITICAL,
-      ),
-      editor.registerCommand(
-        PASTE_COMMAND,
-        () => {
-          pasteAsPlainText.value = shortcutPressed;
-          shortcutPressed = false;
-          return false;
-        },
-        COMMAND_PRIORITY_CRITICAL,
-      ),
-      editor.registerCommand(
-        DROP_COMMAND,
-        () => {
-          pasteAsPlainText.value = false;
-          return false;
-        },
-        COMMAND_PRIORITY_CRITICAL,
-      ),
-    );
-  },
+  register: (editor, _config, state) =>
+    registerMarkdownPaste(editor, state.getOutput()),
 });

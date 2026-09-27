@@ -11,9 +11,13 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {
+  CONVERT_PASTED_MARKDOWN_COMMAND,
+  DISMISS_PASTED_MARKDOWN_COMMAND,
+  looksLikeMarkdown,
   type MarkdownPasteConfig,
   MarkdownPasteExtension,
 } from '@lexical/markdown';
@@ -27,13 +31,12 @@ import {
   $isTextNode,
   configExtension,
   defineExtension,
-  DROP_COMMAND,
   type ElementNode,
-  IS_APPLE,
-  KEY_DOWN_COMMAND,
+  KEY_ESCAPE_COMMAND,
   type LexicalEditor,
   type LexicalNode,
   PASTE_COMMAND,
+  UNDO_COMMAND,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -52,9 +55,17 @@ const MARKDOWN = [
   '```',
 ].join('\n');
 
+const CONVERTED = [
+  ['heading', 'Heading'],
+  ['paragraph', 'Some bold and a link'],
+  ['list', 'one\n\ntwo'],
+  ['quote', 'quote'],
+  ['code', 'const x = 1;'],
+];
+
 function createEditor(
   config: Partial<MarkdownPasteConfig> = {},
-  {withMarkdownPaste = true, withAllNodes = true} = {},
+  {withAllNodes = true} = {},
 ): LexicalEditor {
   return buildEditorFromExtensions(
     defineExtension({
@@ -65,14 +76,18 @@ function createEditor(
       },
       dependencies: [
         RichTextExtension,
-        ...(withMarkdownPaste
-          ? [configExtension(MarkdownPasteExtension, config)]
-          : []),
+        configExtension(HistoryExtension, {delay: 0}),
+        configExtension(MarkdownPasteExtension, config),
       ],
       name: 'test',
       nodes: withAllNodes ? [CodeNode, LinkNode, ListItemNode, ListNode] : [],
     }),
   );
+}
+
+function getOffer(editor: LexicalEditor) {
+  return getExtensionDependencyFromEditor(editor, MarkdownPasteExtension).output
+    .offer;
 }
 
 function paste(editor: LexicalEditor, data: Record<string, string>): void {
@@ -88,281 +103,288 @@ function paste(editor: LexicalEditor, data: Record<string, string>): void {
   editor.read(() => {});
 }
 
-function pasteAsPlainTextShortcut(editor: LexicalEditor): void {
-  editor.dispatchCommand(
-    KEY_DOWN_COMMAND,
-    new KeyboardEvent('keydown', {
-      ctrlKey: !IS_APPLE,
-      key: 'V',
-      metaKey: IS_APPLE,
-      shiftKey: true,
-    }),
+function convert(editor: LexicalEditor): boolean {
+  let handled = false;
+  editor.update(
+    () => {
+      handled = editor.dispatchCommand(
+        CONVERT_PASTED_MARKDOWN_COMMAND,
+        undefined,
+      );
+    },
+    {discrete: true},
   );
+  return handled;
 }
 
-function describeNode(node: LexicalNode): unknown {
+function describeNode(node: LexicalNode): [string, string] {
   return [node.getType(), node.getTextContent()];
 }
 
-function $describeRoot(): unknown[] {
-  return $getRoot().getChildren().map(describeNode);
+function describeRoot(editor: LexicalEditor): [string, string][] {
+  return editor.read(() => $getRoot().getChildren().map(describeNode));
 }
 
-function describeAfterPaste(
-  editor: LexicalEditor,
-  data: Record<string, string>,
-): unknown[] {
-  paste(editor, data);
-  return editor.read($describeRoot);
+function setUp(editor: LexicalEditor, $fn: () => void): void {
+  editor.update($fn, {discrete: true});
 }
+
+describe('looksLikeMarkdown', () => {
+  test.each([
+    '# Heading',
+    '> quoted',
+    '- one\n- two',
+    '1. one\n2. two',
+    '```\ncode\n```',
+    '| a | b |\n| --- | --- |\n| 1 | 2 |',
+    '**bold** and *italic*',
+    'see [docs](https://lexical.dev) and `code`',
+    '~~old~~ __new__',
+  ])('%j looks like Markdown', text => {
+    expect(looksLikeMarkdown(text)).toBe(true);
+  });
+
+  test.each([
+    'plain words',
+    '#hashtag and more',
+    '1. just one numbered line',
+    '- a single dash item',
+    '5 * 3 = 15',
+    'a snake_case_name and another_one',
+    'one **bold** word',
+    '```',
+  ])('%j does not look like Markdown', text => {
+    expect(looksLikeMarkdown(text)).toBe(false);
+  });
+});
 
 describe('MarkdownPasteExtension', () => {
-  test('imports pasted plain-text Markdown', () => {
+  test('pastes Markdown literally and offers to convert it', () => {
     const editor = createEditor();
     paste(editor, {'text/plain': MARKDOWN});
+    expect(describeRoot(editor)[0]).toEqual(['paragraph', '# Heading']);
+    expect(getOffer(editor).peek()).toMatchObject({markdown: MARKDOWN});
+
+    expect(convert(editor)).toBe(true);
+    expect(getOffer(editor).peek()).toBe(null);
+    expect(describeRoot(editor)).toEqual(CONVERTED);
     editor.read(() => {
-      expect($describeRoot()).toEqual([
-        ['heading', 'Heading'],
-        ['paragraph', 'Some bold and a link'],
-        ['list', 'one\n\ntwo'],
-        ['quote', 'quote'],
-        ['code', 'const x = 1;'],
-      ]);
       const paragraph = $getRoot().getChildAtIndex<ElementNode>(1)!;
       const [, bold, , link] = paragraph.getChildren();
       expect($isTextNode(bold) && bold.hasFormat('bold')).toBe(true);
-      expect(bold.getTextContent()).toBe('bold');
       expect(link.getType()).toBe('link');
     });
   });
 
-  test('inserts inline Markdown into the paragraph at the caret', () => {
+  test('undo after converting restores the paste', () => {
     const editor = createEditor();
-    editor.update(
-      () => {
-        const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
-        const text = $createTextNode('before  after');
-        paragraph.append(text);
-        text.select(7, 7);
-      },
-      {discrete: true},
-    );
-    paste(editor, {'text/plain': '**bold**'});
+    paste(editor, {'text/plain': '# Heading\n\n- one\n- two'});
+    const pasted = describeRoot(editor);
+    convert(editor);
+    expect(describeRoot(editor)).toEqual([
+      ['heading', 'Heading'],
+      ['list', 'one\n\ntwo'],
+    ]);
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    expect(describeRoot(editor)).toEqual(pasted);
+  });
+
+  test('offers HTML pastes that show the Markdown syntax', () => {
+    // Terminals and code editors put the same characters, styled, in HTML.
+    const editor = createEditor();
+    paste(editor, {
+      'text/html':
+        '<div style="color: #ccc"><span># Title</span><br><span>- **one**</span><br><span>- two</span></div>',
+      'text/plain': '# Title\n- **one**\n- two',
+    });
+    expect(getOffer(editor).peek()).not.toBe(null);
+    convert(editor);
+    expect(describeRoot(editor)).toEqual([
+      ['heading', 'Title'],
+      ['list', 'one\n\ntwo'],
+    ]);
+  });
+
+  test('does not offer HTML pastes that rendered the Markdown', () => {
+    const editor = createEditor();
+    paste(editor, {
+      'text/html': '<h1>Title</h1><ul><li><b>one</b></li><li>two</li></ul>',
+      'text/plain': '# Title\n- **one**\n- two',
+    });
+    expect(describeRoot(editor)[0]).toEqual(['heading', 'Title']);
+    expect(getOffer(editor).peek()).toBe(null);
+  });
+
+  test('converts inline Markdown pasted into the middle of text', () => {
+    const editor = createEditor();
+    setUp(editor, () => {
+      const text = $createTextNode('before  after');
+      $getRoot().getFirstChildOrThrow<ElementNode>().append(text);
+      text.select(7, 7);
+    });
+    paste(editor, {'text/plain': '**bold** and *italic*'});
+    expect(describeRoot(editor)).toEqual([
+      ['paragraph', 'before **bold** and *italic* after'],
+    ]);
+    convert(editor);
+    expect(describeRoot(editor)).toEqual([
+      ['paragraph', 'before bold and italic after'],
+    ]);
     editor.read(() => {
-      const children = $getRoot().getChildren<ElementNode>();
-      expect(children.map(describeNode)).toEqual([
-        ['paragraph', 'before bold after'],
-      ]);
-      const bold = children[0]
-        .getChildren()
-        .find(node => node.getTextContent() === 'bold');
+      const nodes = $getRoot()
+        .getFirstChildOrThrow<ElementNode>()
+        .getChildren();
+      const byText = (text: string) =>
+        nodes.find(node => node.getTextContent() === text);
+      const bold = byText('bold');
+      const italic = byText('italic');
       expect($isTextNode(bold) && bold.hasFormat('bold')).toBe(true);
+      expect($isTextNode(italic) && italic.hasFormat('italic')).toBe(true);
     });
   });
 
-  test('leaves text without Markdown to the default plain-text paste', () => {
-    const text = 'first line\n\tsecond line\n\nthird line';
-    const expected = describeAfterPaste(
-      createEditor({}, {withMarkdownPaste: false}),
-      {'text/plain': text},
-    );
-    expect(describeAfterPaste(createEditor(), {'text/plain': text})).toEqual(
-      expected,
-    );
-    // The default handler keeps the format at the caret.
+  test('converts Markdown pasted at the start of text', () => {
     const editor = createEditor();
-    editor.update(
-      () => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          selection.formatText('italic');
-        }
-      },
-      {discrete: true},
-    );
-    paste(editor, {'text/plain': 'plain words'});
-    editor.read(() => {
-      const [pasted] = $getRoot()
-        .getFirstChildOrThrow<ElementNode>()
-        .getChildren();
-      expect(pasted.getTextContent()).toBe('plain words');
-      expect($isTextNode(pasted) && pasted.hasFormat('italic')).toBe(true);
+    setUp(editor, () => {
+      const text = $createTextNode('after');
+      $getRoot().getFirstChildOrThrow<ElementNode>().append(text);
+      text.select(0, 0);
     });
+    paste(editor, {'text/plain': '**bold** and *italic* '});
+    convert(editor);
+    expect(describeRoot(editor)).toEqual([
+      ['paragraph', 'bold and italic after'],
+    ]);
   });
 
-  test('imports text whose only Markdown is an escape', () => {
+  test('converts Markdown pasted between blocks', () => {
     const editor = createEditor();
-    expect(
-      describeAfterPaste(editor, {'text/plain': '\\*not bold\\*'}),
-    ).toEqual([['paragraph', '*not bold*']]);
+    setUp(editor, () => {
+      const root = $getRoot().clear();
+      const empty = $createParagraphNode();
+      root.append(
+        $createParagraphNode().append($createTextNode('first')),
+        empty,
+        $createParagraphNode().append($createTextNode('last')),
+      );
+      empty.select();
+    });
+    paste(editor, {'text/plain': '# Heading\n\n- one\n- two'});
+    convert(editor);
+    expect(describeRoot(editor)).toEqual([
+      ['paragraph', 'first'],
+      ['heading', 'Heading'],
+      ['list', 'one\n\ntwo'],
+      ['paragraph', 'last'],
+    ]);
   });
 
-  test('HTML on the clipboard takes priority over plain text', () => {
+  test('converts Markdown pasted over a selection', () => {
     const editor = createEditor();
-    expect(
-      describeAfterPaste(editor, {
-        'text/html': '<p>from html</p>',
-        'text/plain': '# from plain text',
-      }),
-    ).toEqual([['paragraph', 'from html']]);
+    setUp(editor, () => {
+      const text = $createTextNode('keep REPLACE keep');
+      $getRoot().getFirstChildOrThrow<ElementNode>().append(text);
+      text.select(5, 12);
+    });
+    paste(editor, {'text/plain': '**bold** and `code`'});
+    expect(describeRoot(editor)).toEqual([
+      ['paragraph', 'keep **bold** and `code` keep'],
+    ]);
+    convert(editor);
+    expect(describeRoot(editor)).toEqual([
+      ['paragraph', 'keep bold and code keep'],
+    ]);
   });
 
-  test('pastes literally inside a code block', () => {
+  test('does not offer text that does not look like Markdown', () => {
     const editor = createEditor();
-    editor.update(
-      () => {
-        const code = $createCodeNode();
-        $getRoot().clear().append(code);
-        code.selectEnd();
-      },
-      {discrete: true},
-    );
-    expect(
-      describeAfterPaste(editor, {'text/plain': '# not a heading'}),
-    ).toEqual([['code', '# not a heading']]);
+    paste(editor, {'text/plain': 'plain words\n\nand more'});
+    expect(getOffer(editor).peek()).toBe(null);
+    expect(convert(editor)).toBe(false);
   });
 
-  test('pasting as plain text imports the Markdown over HTML', () => {
+  test('does not offer a paste into a code block', () => {
     const editor = createEditor();
-    const clipboard = {
-      'text/html': '<p>from html</p>',
-      'text/plain': '# from plain text',
+    setUp(editor, () => {
+      const code = $createCodeNode();
+      $getRoot().clear().append(code);
+      code.selectEnd();
+    });
+    paste(editor, {'text/plain': '# not a heading'});
+    expect(getOffer(editor).peek()).toBe(null);
+  });
+
+  test('typing dismisses the offer', () => {
+    const editor = createEditor();
+    paste(editor, {'text/plain': '# Heading'});
+    expect(getOffer(editor).peek()).not.toBe(null);
+    setUp(editor, () => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        selection.insertText('!');
+      }
+    });
+    expect(getOffer(editor).peek()).toBe(null);
+  });
+
+  test('moving the selection dismisses the offer', () => {
+    const editor = createEditor();
+    paste(editor, {'text/plain': '# Heading'});
+    setUp(editor, () => $getRoot().selectStart());
+    expect(getOffer(editor).peek()).toBe(null);
+  });
+
+  test('an update that changes nothing keeps the offer', () => {
+    const editor = createEditor();
+    paste(editor, {'text/plain': '# Heading'});
+    setUp(editor, () => {});
+    expect(getOffer(editor).peek()).not.toBe(null);
+  });
+
+  test('Escape and the dismiss command drop the offer', () => {
+    const editor = createEditor();
+    // Rich text blurs the editor on Escape; the first one only dismisses.
+    let blurred = false;
+    editor.blur = () => {
+      blurred = true;
     };
-    pasteAsPlainTextShortcut(editor);
-    expect(describeAfterPaste(editor, clipboard)).toEqual([
-      ['heading', 'from plain text'],
-    ]);
-    // The shortcut applies only to the paste it triggered.
-    editor.update(
-      () => $getRoot().clear().append($createParagraphNode()).selectEnd(),
-      {discrete: true},
-    );
-    expect(describeAfterPaste(editor, clipboard)).toEqual([
-      ['paragraph', 'from html'],
-    ]);
-  });
-
-  test('pasting as plain text imports the Markdown over Lexical content', () => {
-    const editor = createEditor();
-    const lexical = JSON.stringify({
-      namespace: editor._config.namespace,
-      nodes: [
-        {
-          children: [{text: 'from lexical', type: 'text', version: 1}],
-          type: 'paragraph',
-          version: 1,
-        },
-      ],
-    });
-    const clipboard = {
-      'application/x-lexical-editor': lexical,
-      'text/plain': '# from plain text',
-    };
-    expect(describeAfterPaste(editor, clipboard)).toEqual([
-      ['paragraph', 'from lexical'],
-    ]);
-    editor.update(
-      () => $getRoot().clear().append($createParagraphNode()).selectEnd(),
-      {discrete: true},
-    );
-    pasteAsPlainTextShortcut(editor);
-    expect(describeAfterPaste(editor, clipboard)).toEqual([
-      ['heading', 'from plain text'],
-    ]);
-  });
-
-  test('pasting as plain text without Markdown drops the HTML formatting', () => {
-    const editor = createEditor();
-    pasteAsPlainTextShortcut(editor);
-    paste(editor, {'text/html': '<p><b>rich</b></p>', 'text/plain': 'rich'});
-    editor.read(() => {
-      const [pasted] = $getRoot()
-        .getFirstChildOrThrow<ElementNode>()
-        .getChildren();
-      expect(pasted.getTextContent()).toBe('rich');
-      expect($isTextNode(pasted) && pasted.hasFormat('bold')).toBe(false);
-    });
-  });
-
-  test('pasting as plain text into a code block inserts the plain text', () => {
-    const editor = createEditor();
-    editor.update(
-      () => {
-        const code = $createCodeNode();
-        $getRoot().clear().append(code);
-        code.selectEnd();
-      },
-      {discrete: true},
-    );
-    pasteAsPlainTextShortcut(editor);
+    paste(editor, {'text/plain': '# Heading'});
     expect(
-      describeAfterPaste(editor, {
-        'text/html': '<h1>not a heading</h1>',
-        'text/plain': '# not a heading',
-      }),
-    ).toEqual([['code', '# not a heading']]);
+      editor.dispatchCommand(
+        KEY_ESCAPE_COMMAND,
+        new KeyboardEvent('keydown', {key: 'Escape'}),
+      ),
+    ).toBe(true);
+    expect(blurred).toBe(false);
+    expect(getOffer(editor).peek()).toBe(null);
+
+    setUp(editor, () => $getRoot().selectEnd());
+    paste(editor, {'text/plain': '# Heading'});
+    expect(getOffer(editor).peek()).not.toBe(null);
+    editor.dispatchCommand(DISMISS_PASTED_MARKDOWN_COMMAND, undefined);
+    expect(getOffer(editor).peek()).toBe(null);
+    expect(describeRoot(editor)).toEqual([['paragraph', '# Heading# Heading']]);
   });
 
-  test('a key pressed after the shortcut cancels it', () => {
-    const editor = createEditor();
-    pasteAsPlainTextShortcut(editor);
-    editor.dispatchCommand(
-      KEY_DOWN_COMMAND,
-      new KeyboardEvent('keydown', {key: 'a'}),
-    );
-    expect(
-      describeAfterPaste(editor, {
-        'text/html': '<p>from html</p>',
-        'text/plain': '# from plain text',
-      }),
-    ).toEqual([['paragraph', 'from html']]);
-  });
-
-  test('pasting as plain text is a regular paste when disabled', () => {
+  test('does not offer when disabled', () => {
     const editor = createEditor({disabled: true});
-    pasteAsPlainTextShortcut(editor);
-    expect(
-      describeAfterPaste(editor, {
-        'text/html': '<p>from html</p>',
-        'text/plain': '# from plain text',
-      }),
-    ).toEqual([['paragraph', 'from html']]);
+    paste(editor, {'text/plain': '# Heading'});
+    expect(getOffer(editor).peek()).toBe(null);
   });
 
-  test('a drop is never a plain-text paste', () => {
-    const editor = createEditor();
-    const {pasteAsPlainText} = getExtensionDependencyFromEditor(
-      editor,
-      MarkdownPasteExtension,
-    ).output;
-    pasteAsPlainTextShortcut(editor);
-    paste(editor, {'text/plain': 'x'});
-    expect(pasteAsPlainText.peek()).toBe(true);
-    editor.dispatchCommand(DROP_COMMAND, new DragEvent('drop'));
-    expect(pasteAsPlainText.peek()).toBe(false);
-  });
-
-  test('pastes literally when disabled', () => {
-    const editor = createEditor({disabled: true});
-    expect(describeAfterPaste(editor, {'text/plain': '# literal'})).toEqual([
-      ['paragraph', '# literal'],
-    ]);
-  });
-
-  test('$shouldImport can decline a paste', () => {
-    const editor = createEditor({
-      $shouldImport: markdown => !markdown.startsWith('#'),
-    });
-    expect(describeAfterPaste(editor, {'text/plain': '# literal'})).toEqual([
-      ['paragraph', '# literal'],
-    ]);
+  test('isMarkdown decides what is offered', () => {
+    const editor = createEditor({isMarkdown: text => text.startsWith('!')});
+    paste(editor, {'text/plain': '# Heading'});
+    expect(getOffer(editor).peek()).toBe(null);
+    paste(editor, {'text/plain': '! **x**'});
+    expect(getOffer(editor).peek()).not.toBe(null);
   });
 
   test('skips transformers whose nodes are not registered', () => {
     const editor = createEditor({}, {withAllNodes: false});
-    expect(
-      describeAfterPaste(editor, {'text/plain': '# heading\n\n- item'}),
-    ).toEqual([
+    paste(editor, {'text/plain': '# heading\n\n- item'});
+    convert(editor);
+    expect(describeRoot(editor)).toEqual([
       ['heading', 'heading'],
       ['paragraph', '- item'],
     ]);

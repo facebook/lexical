@@ -7,8 +7,13 @@ and JSON serialization.
 ## Use Case
 
 NodeState allows your application to define keys that can be stored on
-any node with automatic JSON support, you can even add state to the root
-node to store document-level metadata.
+any node with automatic JSON support.
+
+:::tip
+
+You can even add node state to the RootNode to store document-level metadata.
+
+:::
 
 With a combination of NodeState and other APIs such as
 [Listeners](listeners.md) or
@@ -59,13 +64,25 @@ value such as boolean, string, number, null, or undefined.
 
 :::tip
 
-We recommend building a library of small reusable parse functions for the data
-types that you use, or a library that can be used to generate them such as
-[zod](https://zod.dev/),
-[ArkType](https://arktype.io/),
-[Effect](https://effect.website/),
-[Valibot](https://valibot.dev/),
-etc. especially when working with non-primitive data types.
+Instead of writing parse functions by hand, use the
+[serialization schema combinators](/docs/serialization/#declarative-serialization-schemas-with-config)
+from `lexical`, such as `stringValue`, `numberValue`, `enumValue`,
+`arrayValue`, `objectValue`, and `nullable`. They are the same ones a node's
+`$config` JSON schema uses. A schema is itself a parse function, so it can be
+passed directly as `parse`:
+
+```ts
+import {arrayValue, createState, stringValue} from 'lexical';
+
+const questionState = createState('question', {parse: stringValue()});
+const tagsState = createState('tags', {parse: arrayValue(stringValue())});
+```
+
+Because `parse` is just a function, the combinators also compose with schema
+libraries such as [zod](https://zod.dev/), [ArkType](https://arktype.io/),
+[Effect](https://effect.website/), and [Valibot](https://valibot.dev/). Wrap a
+library's validator in a parse function that returns a default for invalid
+input, or use `transformValue` to refine what a combinator parsed.
 
 :::
 

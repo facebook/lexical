@@ -297,6 +297,8 @@ export interface InputState {
   };
   isSelectionChangeFromMouseDown: boolean;
   isInsertLineBreak: boolean;
+  /** Explicit Shift state, excluding iOS automatic capitalization. */
+  isShiftKeyDown: boolean;
 
   isInsertTextAfterHandledSelectionCommand: boolean;
   handledSelectionCommandTimeoutId: ReturnType<typeof setTimeout> | null;
@@ -320,6 +322,7 @@ export function createInputState(): InputState {
     isInsertTextAfterHandledSelectionCommand: false,
     isSelectionChangeFromDOMUpdate: false,
     isSelectionChangeFromMouseDown: false,
+    isShiftKeyDown: false,
     lastBeforeInputInsertTextTimeStamp: 0,
     lastKeyCode: null,
     lastKeyDownTimeStamp: 0,

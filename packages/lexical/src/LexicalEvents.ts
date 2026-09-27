@@ -183,6 +183,12 @@ function getRootElementEvents(): RootElementEvents {
       (event, editor) => onBeforeInput(event as InputEvent, editor),
     ]);
   }
+  if (IS_IOS) {
+    events.push([
+      'keyup',
+      (event, editor) => onKeyUp(event as KeyboardEvent, editor),
+    ]);
+  }
   rootElementEvents = events;
   return events;
 }
@@ -1125,6 +1131,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
     case 'insertLineBreak': {
       // Used for Android
       $setCompositionKey(null);
+      inputState.isInsertLineBreak = false;
       dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);
       break;
     }
@@ -1135,9 +1142,9 @@ function $handleBeforeInput(event: InputEvent): boolean {
 
       // Safari does not provide the type "insertLineBreak".
       // So instead, we need to infer it from the keyboard event.
-      // We do not apply this logic to iOS to allow newline auto-capitalization
-      // work without creating linebreaks when pressing Enter
-      if (inputState.isInsertLineBreak && !IS_IOS) {
+      // The keydown handler distinguishes an explicit iOS Shift press from
+      // automatic capitalization before saving the intent for this input.
+      if (inputState.isInsertLineBreak) {
         inputState.isInsertLineBreak = false;
         dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);
       } else {
@@ -1603,6 +1610,14 @@ function onCompositionEnd(
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   const inputState = editor._inputState;
+  if (IS_IOS) {
+    // The virtual keyboard emits Shift events for manual toggles, but not for
+    // automatic capitalization. Other key events may clear this state, never
+    // set it, since their shiftKey flag also reflects automatic capitalization.
+    inputState.isShiftKeyDown =
+      event.key === 'Shift' ||
+      (inputState.isShiftKeyDown && event.shiftKey && event.key !== 'CapsLock');
+  }
   inputState.lastKeyDownTimeStamp = event.timeStamp;
   inputState.lastKeyCode = event.key;
   if (event.key !== 'Backspace') {
@@ -1612,6 +1627,12 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     return;
   }
   dispatchCommand(editor, KEY_DOWN_COMMAND, event);
+}
+
+function onKeyUp(event: KeyboardEvent, editor: LexicalEditor): void {
+  if (!event.shiftKey || event.key === 'CapsLock') {
+    editor._inputState.isShiftKeyDown = false;
+  }
 }
 
 /** @internal */
@@ -1672,8 +1693,13 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
     key: 'Enter',
     modifiers,
     onMatch: (event, editor) => {
-      editor._inputState.isInsertLineBreak = isInsertLineBreak;
+      const inputState = editor._inputState;
+      inputState.isInsertLineBreak =
+        isInsertLineBreak && (!IS_IOS || inputState.isShiftKeyDown);
       dispatchCommand(editor, KEY_ENTER_COMMAND, event);
+      if (event.defaultPrevented) {
+        inputState.isInsertLineBreak = false;
+      }
     },
   });
   // Only RangeSelection can use the native cut/copy
@@ -1732,7 +1758,6 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
             modifiers: CTRL_KEY,
             onMatch: (event: KeyboardEvent, editor: LexicalEditor) => {
               event.preventDefault();
-              editor._inputState.isInsertLineBreak = true;
               dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
             },
           },
@@ -2115,6 +2140,8 @@ export function addRootElementEvents(
                 );
 
               case 'blur': {
+                editor._inputState.isShiftKeyDown = false;
+                editor._inputState.isInsertLineBreak = false;
                 return (
                   isEditable &&
                   dispatchCommand(editor, BLUR_COMMAND, event as FocusEvent)

@@ -38,8 +38,8 @@ and at [Bloomberg](https://www.bloomberg.com), and is also the editor behind
 [Proton Docs](https://proton.me/drive/document-editor),
 [MDXEditor](https://mdxeditor.dev), [Sveltia CMS](https://sveltiacms.app),
 [Dify](https://dify.ai), [RAGFlow](https://ragflow.io),
-[DeepSeek Harness](https://deepseek.com/harness/), and
-[Paperclip](https://paperclip.ing). To see
+[DeepSeek Harness](https://deepseek.com/harness/),
+[Paperclip](https://paperclip.ing), and [Lexxy](https://lexxy.dev). To see
 what it can do, try the [playground](https://playground.lexical.dev).
 
 ## How it fits together

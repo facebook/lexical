@@ -445,7 +445,7 @@ exportJSON(): SerializedLexicalNode
 When transforming an editor state into JSON, we simply traverse the current editor state and call the `exportJSON` method for each Node in order to convert it to a `SerializedLexicalNode` object that represents the JSON object for the given node. The built-in nodes from Lexical already have a JSON representation defined, but you'll need to define ones for your own custom nodes.
 
 Here's what an `exportJSON` for a node like the `HeadingNode` looks like
-(the shipped `HeadingNode` no longer writes this by hand — see the note below):
+(the shipped `HeadingNode` doesn't write this by hand — see the note below):
 
 ```js
 export type SerializedHeadingNode = Spread<
@@ -496,7 +496,7 @@ updateFromJSON(
 
 :::note
 
-The shipped `HeadingNode` no longer writes any of these three methods by
+The shipped `HeadingNode` doesn't write any of these three methods by
 hand — it declares its `tag` property once in a
 [declarative serialization schema](#declarative-serialization-schemas-with-config)
 (`$config`'s `json`) and the implementations are generated from it. The
@@ -979,20 +979,17 @@ you are working on Lexical itself, see
 [the generated JSON code](/docs/maintainers-guide#pnpm-run-generate-node-json)
 in the maintainers' guide.
 
-### `exportJSON` may serialize the instance as-is (breaking change)
+### `exportJSON` serializes the version it is called on
 
-`exportJSON` no longer promises to resolve the latest version of the node it is
-called on. This is a breaking change, and it affects code that calls
-`exportJSON` directly on a node reference it kept across a mutation.
+`exportJSON` does not resolve the latest version of the node it is called on.
+This matters for code that calls `exportJSON` directly on a node reference it
+kept across a mutation.
 
 A property declared with `withField` is read straight off the node. That is the
 optimization the serialization walk is built on: every node the walk reaches
 comes from the `EditorState`'s node map and is already the current version, so
-the walk resolves nothing per node. Previously each property went through its
-accessor, and every accessor resolves `getLatest()`, so a stale node reference
-still exported current values.
-
-It no longer does:
+the walk resolves nothing per node. Unlike a property accessor, which resolves
+`getLatest()`, it does not bring a stale node reference up to date:
 
 ```ts
 const stale = node;

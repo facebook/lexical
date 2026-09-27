@@ -143,8 +143,8 @@ Command listeners are called in the following order until a listener returns `tr
 
 :::note
 
-As of v0.44.0 there are new `COMMAND_PRIORITY_BEFORE_*` priorities available
-which make it much easier to override default behavior without escalating the priority.
+The `COMMAND_PRIORITY_BEFORE_*` priorities make it much easier to override
+default behavior without escalating the priority.
 
 :::
 

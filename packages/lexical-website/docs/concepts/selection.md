@@ -159,8 +159,8 @@ editor.update(() => {
 ```
 
 `SKIP_DOM_SELECTION_TAG` does not apply to the initial editor state setup
-(`editorState` supplied to `createEditor` or the `$initialEditorState`
-property of the root extension). On first mount the editor still scrolls
+(the `$initialEditorState` property of the root extension, or
+`initialConfig.editorState` with the legacy `LexicalComposer`). On first mount the editor still scrolls
 to and focuses the initial selection. To prevent that, call
 `$setSelection(null)` inside your initial state setup function:
 

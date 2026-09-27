@@ -118,29 +118,39 @@ editor.update(() => {
 });
 ```
 
-If you are running in headless mode, you can do it this way using JSDOM:
+Outside a browser, build an editor with the same extensions (so it has the
+same nodes) and run the import inside `withDOM()` from `@lexical/headless/dom`,
+which provides a temporary happy-dom window. See
+[Running Without a Browser](../concepts/headless.md).
 
 ```js
-import {createHeadlessEditor} from '@lexical/headless';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {HeadlessExtension} from '@lexical/headless';
+import {withDOM} from '@lexical/headless/dom';
 import {$generateNodesFromDOM} from '@lexical/html';
+import {RichTextExtension} from '@lexical/rich-text';
+import {$getRoot, $insertNodes, defineExtension} from 'lexical';
 
-// Once you've generated LexicalNodes from your HTML you can now initialize an editor instance with the parsed nodes.
-const editorNodes = [] // Any custom nodes you register on the editor
-const editor = createHeadlessEditor({ ...config, nodes: editorNodes });
+const editor = buildEditorFromExtensions(
+  defineExtension({
+    // Use the same extensions (and so the same nodes) as your editor
+    dependencies: [HeadlessExtension, RichTextExtension],
+    name: '@my-app/server-editor',
+  }),
+);
 
-editor.update(() => {
-  // In a headless environment you can use a package such as JSDom to parse the HTML string.
-  const dom = new JSDOM(htmlString);
-
-  // Once you have the DOM instance it's easy to generate LexicalNodes.
-  const nodes = $generateNodesFromDOM(editor, dom.window.document);
-
-  // Select the root
-  $getRoot().select();
-
-  // Insert them at a selection.
-  const selection = $getSelection();
-  selection.insertNodes(nodes);
+withDOM((window) => {
+  const dom = new window.DOMParser().parseFromString(htmlString, 'text/html');
+  editor.update(
+    () => {
+      // Once you have the DOM instance it's easy to generate LexicalNodes.
+      const nodes = $generateNodesFromDOM(editor, dom);
+      // Select the root and insert the nodes there.
+      $getRoot().select();
+      $insertNodes(nodes);
+    },
+    {discrete: true},
+  );
 });
 ```
 
@@ -246,24 +256,23 @@ Since the TextNode is foundational to all Lexical packages, including the plain 
 You need to override the base TextNode:
 
 ```js
-const initialConfig: InitialConfigType = {
-    namespace: 'editor',
-    theme: editorThemeClasses,
-    onError: (error: any) => console.log(error),
-    nodes: [
-      ExtendedTextNode,
-      {
-        replace: TextNode,
-        with: (node: TextNode) => new ExtendedTextNode(node.__text),
-        withKlass: ExtendedTextNode,
-      },
-      ListNode,
-      ListItemNode,
-    ]
-  };
+const ExtendedTextExtension = defineExtension({
+  name: '@my-app/ExtendedText',
+  nodes: () => [
+    ExtendedTextNode,
+    {
+      replace: TextNode,
+      with: (node: TextNode) => new ExtendedTextNode(node.__text),
+      withKlass: ExtendedTextNode,
+    },
+  ],
+});
 ```
 
-and create a new Extended Text Node plugin
+Add `ExtendedTextExtension` to your editor's `dependencies` alongside the
+extensions it already uses.
+
+and create the `ExtendedTextNode` class
 
 ```js
 import {

@@ -32,7 +32,7 @@ Transforms are executed sequentially before changes are propagated to the DOM an
 
 While it is possible to achieve the same or very similar result through an [update listener](listeners.md#registerupdatelistener) followed by an update, this is highly discouraged as it triggers an additional render (the most expensive lifecycle operation).
 
-Additionally, each cycle creates a brand new `EditorState` object which can interfere with plugins like HistoryPlugin (undo-redo) if not handled correctly.
+Additionally, each cycle creates a brand new `EditorState` object which can interfere with features like undo/redo (`HistoryExtension`) if not handled correctly.
 
 ```js
 editor.registerUpdateListener(() => {
@@ -105,14 +105,14 @@ editor.registerNodeTransform(TextNode, textNode => {
 But oftentimes, the order is not important. The below would always end up in the result of the two transforms:
 
 ```js
-// Plugin 1
+// Extension 1
 editor.registerNodeTransform(TextNode, textNode => {
   // This transform runs twice but does nothing the first time because it doesn't meet the preconditions
   if (textNode.getTextContent() === 'modified') {
     textNode.setTextContent('re-modified');
   }
 })
-// Plugin 2
+// Extension 2
 editor.registerNodeTransform(TextNode, textNode => {
   // This transform runs only once
   if (textNode.getTextContent() === 'original') {
@@ -186,4 +186,4 @@ registerLexicalTextEntity<T extends TextNode>(
 
 1. [Emojis](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/EmojisExtension/index.ts)
 2. [AutoLink](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/AutoLinkExtension/index.ts)
-3. [HashtagPlugin](https://github.com/facebook/lexical/blob/main/packages/lexical-react/src/LexicalHashtagPlugin.ts)
+3. [HashtagExtension](https://github.com/facebook/lexical/blob/main/packages/lexical-hashtag/src/LexicalHashtagExtension.ts)

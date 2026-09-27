@@ -115,7 +115,7 @@ resolved against the iframe rather than the top‑level document:
 const iframeDoc = iframe.contentDocument;
 const contentEditable = iframeDoc.querySelector('#editor');
 
-// createEditor / setRootElement can run in the parent frame; the editor uses
+// The editor can be built in the parent frame; once its root element is set it uses
 // the iframe's own window and document for selection and focus.
 editor.setRootElement(contentEditable);
 ```

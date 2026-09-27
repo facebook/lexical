@@ -87,66 +87,84 @@ editor must have the same node types registered. See
 [Serialization](../serialization/serialization.md) for JSON, HTML, and
 Markdown.
 
-Here's an example of how you can initialize editor with some state and then persist it:
+Here's an example of how you can initialize an editor with saved content and
+then persist it. The saved JSON is passed as the editor's `$initialEditorState`:
 
 ```js
-// Get editor initial state (e.g. loaded from backend)
-const loadContent = async () => {
-  // 'empty' editor
-  const value = '{"root":{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {RichTextExtension} from '@lexical/rich-text';
+import {defineExtension} from 'lexical';
 
-  return value;
-}
-
+// Get the saved content (e.g. loaded from a backend)
 const initialEditorState = await loadContent();
-const editor = createEditor(...);
-registerRichText(editor);
-editor.setEditorState(editor.parseEditorState(initialEditorState));
 
-...
+const editor = buildEditorFromExtensions(
+  defineExtension({
+    $initialEditorState: initialEditorState,
+    dependencies: [RichTextExtension],
+    name: '@my-app/editor',
+  }),
+);
+editor.setRootElement(document.getElementById('editor'));
 
-// Handler to store content (e.g. when user submits a form)
-const onSubmit = () => {
+// Store the content (e.g. when the user submits a form)
+async function onSubmit() {
   await saveContent(JSON.stringify(editor.getEditorState()));
 }
 ```
 
-For React it could be something like the following:
+With React, pass the extension to `LexicalExtensionComposer`. A component
+rendered inside it can reach the editor with `useLexicalComposerContext()`:
 
 ```jsx
-const initialEditorState = await loadContent();
-const editorStateRef = useRef(undefined);
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {RichTextExtension} from '@lexical/rich-text';
+import {defineExtension} from 'lexical';
+import {useMemo} from 'react';
 
-<LexicalComposer initialConfig={{
-  editorState: initialEditorState
-}}>
-  <RichTextPlugin
-    contentEditable={<ContentEditable />}
-    ErrorBoundary={LexicalErrorBoundary}
-  />
-  <OnChangePlugin onChange={(editorState) => {
-    editorStateRef.current = editorState;
-  }} />
-  <Button label="Save" onPress={() => {
-    if (editorStateRef.current) {
-      saveContent(JSON.stringify(editorStateRef.current))
-    }
-  }} />
-</LexicalComposer>
+function SaveButton() {
+  const [editor] = useLexicalComposerContext();
+  return (
+    <button
+      onClick={() => saveContent(JSON.stringify(editor.getEditorState()))}>
+      Save
+    </button>
+  );
+}
+
+function Editor({initialEditorState}) {
+  // The editor is recreated whenever this extension changes,
+  // so keep it stable for the life of the editor.
+  const extension = useMemo(
+    () =>
+      defineExtension({
+        $initialEditorState: initialEditorState,
+        dependencies: [RichTextExtension],
+        name: '@my-app/editor',
+      }),
+    [initialEditorState],
+  );
+  return (
+    <LexicalExtensionComposer extension={extension}>
+      <SaveButton />
+    </LexicalExtensionComposer>
+  );
+}
 ```
 
-Lexical reads `initialConfig.editorState` only once (when the editor is created); passing
-a different value later won't be reflected. See "Updating state" below for the proper way
-to change editor state after initialization.
+`$initialEditorState` is applied once, when the editor is built; changing it
+later has no effect on that editor. See "Updating state" below for the proper
+way to change editor state after initialization.
 
-The `editorState` field accepts:
+`$initialEditorState` accepts:
 
-- a JSON string, parsed with `editor.parseEditorState()` (as in the example above);
+- a JSON string or a parsed `SerializedEditorState` object, passed to
+  `editor.parseEditorState()` (as in the example above);
 - an `EditorState` instance, applied directly with `editor.setEditorState()`;
-- a function `(editor) => void`, run inside `editor.update(...)` and invoked only if the
-  root is still empty (so a populated root is left untouched);
-- `null`, which skips default initialization entirely. Use this with the
-  [collaboration plugin](/docs/collaboration/react) so that the Yjs document, not
+- a function `(editor) => void`, run inside `editor.update(...)`;
+- `null`, which skips default initialization entirely. Use this with
+  [collaboration](/docs/collaboration/react) so that the Yjs document, not
   Lexical, owns the initial state.
 
 Omitting the field (or passing `undefined`) seeds the root with a default empty
@@ -155,6 +173,9 @@ while `undefined` produces a single empty line. If your `loadContent` may yield 
 `undefined` for new documents, coalesce to `undefined` (e.g. `(await loadContent()) ?? undefined`)
 so the editor still gets the default paragraph rather than the collab-style uninitialized
 state.
+
+The legacy `LexicalComposer` takes the same values as `initialConfig.editorState`,
+except that a function there only runs if the root is still empty.
 
 ## Updating state
 

@@ -773,7 +773,7 @@ export function $isVideoNode(
 </TabItem>
 </Tabs>
 
-Using `useReactDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
+In React, the editor rendered by `LexicalExtensionComposer` (and, in legacy setups, `RichTextPlugin` or `PlainTextPlugin`) calls `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
 where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
 and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.
 
@@ -1009,7 +1009,7 @@ export function $isVideoNode(
 }
 ```
 
-Using `useReactDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
+In React, the editor rendered by `LexicalExtensionComposer` (and, in legacy setups, `RichTextPlugin` or `PlainTextPlugin`) calls `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
 where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
 and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.
 

@@ -56,8 +56,9 @@ registerMarkdownShortcuts(editor, TRANSFORMERS);
 ## Paste
 `MarkdownPasteExtension` imports pasted or dropped plain text as markdown, so text copied from a README or a chat
 keeps its headings, lists, links and formatting. It handles the `text/plain` clipboard payload in rich text
-editors, after HTML and Lexical content, and inserts the text literally when it contains no markdown, when the caret
-is inside a code block, or when it is pasted with Mod+Shift+V (paste as plain text).
+editors. A regular paste still prefers HTML or Lexical content when the clipboard has it; paste as plain text
+(Mod+Shift+V) imports the clipboard's plain text as markdown instead, which picks the markdown source over its
+rendered HTML. The text is inserted literally when it contains no markdown or when the caret is inside a code block.
 ```js
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {MarkdownPasteExtension, TRANSFORMERS} from '@lexical/markdown';

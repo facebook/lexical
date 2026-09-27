@@ -82,7 +82,8 @@ export interface MarkdownPasteConfig {
 export interface MarkdownPasteOutput extends NamedSignalsOutput<MarkdownPasteConfig> {
   /**
    * `true` while the paste being handled was requested as plain text with
-   * Mod+Shift+V, so it is inserted literally instead of as Markdown.
+   * Mod+Shift+V. The clipboard's `text/plain` payload is then imported as
+   * Markdown even when HTML or Lexical content is on the clipboard too.
    */
   pasteAsPlainText: Signal<boolean>;
 }
@@ -142,7 +143,7 @@ const $importMarkdownFromPlainText: ImportMimeTypeFunction = (
   $next,
 ) => {
   const {output} = $getExtensionDependency(MarkdownPasteExtension);
-  if (output.disabled.peek() || output.pasteAsPlainText.peek()) {
+  if (output.disabled.peek()) {
     return $next();
   }
   // Markdown means nothing inside a code block: its text is taken literally.
@@ -177,16 +178,45 @@ const $importMarkdownFromPlainText: ImportMimeTypeFunction = (
 };
 
 /**
+ * Handles a paste as plain text (Mod+Shift+V) ahead of the richer payloads
+ * on the clipboard: the `text/plain` stack imports the clipboard's plain
+ * text instead, as Markdown. Apps copying Markdown sources (editors, chat
+ * apps) usually put a rendition of it in `text/html` too, so this is how a
+ * user picks the Markdown over the HTML.
+ */
+const $importPlainTextInstead: ImportMimeTypeFunction = (
+  _data,
+  selection,
+  $next,
+  dataTransfer,
+) => {
+  const {output} = $getExtensionDependency(MarkdownPasteExtension);
+  const text = dataTransfer.getData('text/plain');
+  if (output.disabled.peek() || !output.pasteAsPlainText.peek() || !text) {
+    return $next();
+  }
+  const stack =
+    $getExtensionDependency(ClipboardImportExtension).output.$importMimeType[
+      'text/plain'
+    ] || [];
+  const callAt = (i: number): boolean =>
+    i >= 0 && stack[i](text, selection, () => callAt(i - 1), dataTransfer);
+  return callAt(stack.length - 1) || $next();
+};
+
+/**
  * Imports pasted or dropped plain text as Markdown, so that text copied
  * from a README, a notes app or an LLM chat keeps its headings, lists,
  * links, code blocks and inline formats. It adds a `text/plain` handler to
- * {@link ClipboardImportExtension}, so it applies to rich text editors, and
- * HTML or Lexical content on the clipboard keeps its priority.
+ * {@link ClipboardImportExtension}, so it applies to rich text editors.
+ *
+ * A regular paste keeps the priority of HTML or Lexical content on the
+ * clipboard. Pasting as plain text (Mod+Shift+V) imports the clipboard's
+ * plain text as Markdown instead, even when those are present.
  *
  * Text is inserted literally when it contains no Markdown, when the
- * selection is inside a code block, when {@link MarkdownPasteConfig.$shouldImport}
- * returns `false`, or when it is pasted with Mod+Shift+V (paste as plain
- * text).
+ * selection is inside a code block, or when
+ * {@link MarkdownPasteConfig.$shouldImport} returns `false`.
  *
  * @example
  * ```ts
@@ -217,7 +247,11 @@ export const MarkdownPasteExtension = defineExtension({
   }),
   dependencies: [
     configExtension(ClipboardImportExtension, {
-      $importMimeType: {'text/plain': [$importMarkdownFromPlainText]},
+      $importMimeType: {
+        'application/x-lexical-editor': [$importPlainTextInstead],
+        'text/html': [$importPlainTextInstead],
+        'text/plain': [$importMarkdownFromPlainText],
+      },
     }),
   ],
   name: '@lexical/markdown/MarkdownPaste',

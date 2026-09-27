@@ -222,20 +222,85 @@ describe('MarkdownPasteExtension', () => {
     ).toEqual([['code', '# not a heading']]);
   });
 
-  test('pastes literally with the paste-as-plain-text shortcut', () => {
+  test('pasting as plain text imports the Markdown over HTML', () => {
     const editor = createEditor();
+    const clipboard = {
+      'text/html': '<p>from html</p>',
+      'text/plain': '# from plain text',
+    };
     pasteAsPlainTextShortcut(editor);
-    expect(describeAfterPaste(editor, {'text/plain': '# literal'})).toEqual([
-      ['paragraph', '# literal'],
+    expect(describeAfterPaste(editor, clipboard)).toEqual([
+      ['heading', 'from plain text'],
     ]);
     // The shortcut applies only to the paste it triggered.
-    editor.update(() => $getRoot().clear().append($createParagraphNode()), {
-      discrete: true,
-    });
-    editor.update(() => $getRoot().selectEnd(), {discrete: true});
-    expect(describeAfterPaste(editor, {'text/plain': '# heading'})).toEqual([
-      ['heading', 'heading'],
+    editor.update(
+      () => $getRoot().clear().append($createParagraphNode()).selectEnd(),
+      {discrete: true},
+    );
+    expect(describeAfterPaste(editor, clipboard)).toEqual([
+      ['paragraph', 'from html'],
     ]);
+  });
+
+  test('pasting as plain text imports the Markdown over Lexical content', () => {
+    const editor = createEditor();
+    const lexical = JSON.stringify({
+      namespace: editor._config.namespace,
+      nodes: [
+        {
+          children: [{text: 'from lexical', type: 'text', version: 1}],
+          type: 'paragraph',
+          version: 1,
+        },
+      ],
+    });
+    const clipboard = {
+      'application/x-lexical-editor': lexical,
+      'text/plain': '# from plain text',
+    };
+    expect(describeAfterPaste(editor, clipboard)).toEqual([
+      ['paragraph', 'from lexical'],
+    ]);
+    editor.update(
+      () => $getRoot().clear().append($createParagraphNode()).selectEnd(),
+      {discrete: true},
+    );
+    pasteAsPlainTextShortcut(editor);
+    expect(describeAfterPaste(editor, clipboard)).toEqual([
+      ['heading', 'from plain text'],
+    ]);
+  });
+
+  test('pasting as plain text without Markdown drops the HTML formatting', () => {
+    const editor = createEditor();
+    pasteAsPlainTextShortcut(editor);
+    paste(editor, {'text/html': '<p><b>rich</b></p>', 'text/plain': 'rich'});
+    editor.read(() => {
+      const [pasted] = $getRoot()
+        .getFirstChildOrThrow<ElementNode>()
+        .getChildren();
+      expect(pasted.getTextContent()).toBe('rich');
+      expect($isTextNode(pasted) && pasted.hasFormat('bold')).toBe(false);
+    });
+  });
+
+  test('pasting as plain text into a code block inserts the plain text', () => {
+    const editor = createEditor();
+    editor.update(
+      () => {
+        const code = $createCodeNode();
+        $getRoot().clear().append(code);
+        code.selectEnd();
+      },
+      {discrete: true},
+    );
+    pasteAsPlainTextShortcut(editor);
+    expect(
+      describeAfterPaste(editor, {
+        'text/html': '<h1>not a heading</h1>',
+        'text/plain': '# not a heading',
+      }),
+    ).toEqual([['code', '# not a heading']]);
   });
 
   test('a key pressed after the shortcut cancels it', () => {
@@ -245,9 +310,23 @@ describe('MarkdownPasteExtension', () => {
       KEY_DOWN_COMMAND,
       new KeyboardEvent('keydown', {key: 'a'}),
     );
-    expect(describeAfterPaste(editor, {'text/plain': '# heading'})).toEqual([
-      ['heading', 'heading'],
-    ]);
+    expect(
+      describeAfterPaste(editor, {
+        'text/html': '<p>from html</p>',
+        'text/plain': '# from plain text',
+      }),
+    ).toEqual([['paragraph', 'from html']]);
+  });
+
+  test('pasting as plain text is a regular paste when disabled', () => {
+    const editor = createEditor({disabled: true});
+    pasteAsPlainTextShortcut(editor);
+    expect(
+      describeAfterPaste(editor, {
+        'text/html': '<p>from html</p>',
+        'text/plain': '# from plain text',
+      }),
+    ).toEqual([['paragraph', 'from html']]);
   });
 
   test('a drop is never a plain-text paste', () => {

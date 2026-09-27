@@ -10,7 +10,7 @@ When registering a `command` you supply a `priority` and can return `true` to ma
 
 ## `createCommand(...)`
 
-You can view all of the existing commands in [`LexicalCommands.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.ts), but if you need a custom command for your own use case check out the typed `createCommand(...)` function.
+You can view all of the core commands in [`LexicalCommands.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.ts). Other packages define their own, such as `TOGGLE_LINK_COMMAND` in `@lexical/link`. If you need a custom command for your own use case, check out the typed `createCommand(...)` function.
 
 ```js
 const HELLO_WORLD_COMMAND: LexicalCommand<string> = createCommand('HELLO_WORLD');

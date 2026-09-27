@@ -57,3 +57,4 @@ scripts/__tests__/integration/fixtures/*/pnpm-lock.yaml
 *.tsbuildinfo
 dist-size/
 packages/lexical-website/static/dev-examples/
+packages/lexical-website/static/examples/

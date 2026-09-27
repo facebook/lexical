@@ -5,87 +5,52 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {EditorStateExtension} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
+import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
+import {
+  useExtensionSignalValue,
+  useSignalValue,
+} from '@lexical/react/useExtensionSignalValue';
 import {
   $getSelection,
   $isRangeSelection,
-  CAN_REDO_COMMAND,
-  CAN_UNDO_COMMAND,
-  COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   REDO_COMMAND,
-  SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import {useCallback, useEffect, useRef, useState} from 'react';
 
 function Divider() {
   return <div className="divider" />;
 }
 
-export default function ToolbarPlugin() {
+export default function Toolbar() {
   const [editor] = useLexicalComposerContext();
-  const toolbarRef = useRef(null);
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  const [isUnderline, setIsUnderline] = useState(false);
-  const [isStrikethrough, setIsStrikethrough] = useState(false);
-
-  const $updateToolbar = useCallback(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      // Update text format
-      setIsBold(selection.hasFormat('bold'));
-      setIsItalic(selection.hasFormat('italic'));
-      setIsUnderline(selection.hasFormat('underline'));
-      setIsStrikethrough(selection.hasFormat('strikethrough'));
-    }
-  }, []);
-
-  useEffect(() => {
-    return mergeRegister(
-      editor.registerUpdateListener(({editorState}) => {
-        editorState.read(
-          () => {
-            $updateToolbar();
-          },
-          {editor},
-        );
-      }),
-      editor.registerCommand(
-        SELECTION_CHANGE_COMMAND,
-        (_payload, _newEditor) => {
-          $updateToolbar();
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        CAN_UNDO_COMMAND,
-        payload => {
-          setCanUndo(payload);
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        CAN_REDO_COMMAND,
-        payload => {
-          setCanRedo(payload);
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-    );
-  }, [editor, $updateToolbar]);
+  const canUndo = useExtensionSignalValue(HistoryExtension, 'canUndo');
+  const canRedo = useExtensionSignalValue(HistoryExtension, 'canRedo');
+  const editorState = useSignalValue(
+    useExtensionDependency(EditorStateExtension).output,
+  );
+  const {isBold, isItalic, isUnderline, isStrikethrough} = editorState.read(
+    () => {
+      const selection = $getSelection();
+      const isRange = $isRangeSelection(selection);
+      return {
+        isBold: isRange && selection.hasFormat('bold'),
+        isItalic: isRange && selection.hasFormat('italic'),
+        isStrikethrough: isRange && selection.hasFormat('strikethrough'),
+        isUnderline: isRange && selection.hasFormat('underline'),
+      };
+    },
+    {editor},
+  );
 
   return (
-    <div className="toolbar" ref={toolbarRef}>
+    <div className="toolbar">
       <button
+        type="button"
         disabled={!canUndo}
         onClick={() => {
           editor.dispatchCommand(UNDO_COMMAND, undefined);
@@ -95,6 +60,7 @@ export default function ToolbarPlugin() {
         <i className="format undo" />
       </button>
       <button
+        type="button"
         disabled={!canRedo}
         onClick={() => {
           editor.dispatchCommand(REDO_COMMAND, undefined);
@@ -105,6 +71,7 @@ export default function ToolbarPlugin() {
       </button>
       <Divider />
       <button
+        type="button"
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
         }}
@@ -113,6 +80,7 @@ export default function ToolbarPlugin() {
         <i className="format bold" />
       </button>
       <button
+        type="button"
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
         }}
@@ -121,6 +89,7 @@ export default function ToolbarPlugin() {
         <i className="format italic" />
       </button>
       <button
+        type="button"
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
         }}
@@ -129,6 +98,7 @@ export default function ToolbarPlugin() {
         <i className="format underline" />
       </button>
       <button
+        type="button"
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
         }}
@@ -138,6 +108,7 @@ export default function ToolbarPlugin() {
       </button>
       <Divider />
       <button
+        type="button"
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
         }}
@@ -146,6 +117,7 @@ export default function ToolbarPlugin() {
         <i className="format left-align" />
       </button>
       <button
+        type="button"
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
         }}
@@ -154,6 +126,7 @@ export default function ToolbarPlugin() {
         <i className="format center-align" />
       </button>
       <button
+        type="button"
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
         }}
@@ -162,6 +135,7 @@ export default function ToolbarPlugin() {
         <i className="format right-align" />
       </button>
       <button
+        type="button"
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
         }}

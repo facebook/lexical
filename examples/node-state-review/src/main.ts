@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// [docs:main] Read directly by the Creating an Extension guide.
+// [docs:main] Read directly by the Adding Data to Nodes guide.
 import './styles.css';
 
 import {buildEditorFromExtensions, HMRExtension} from '@lexical/extension';
@@ -17,7 +17,7 @@ const editor = buildEditorFromExtensions(
   AppExtension,
   configExtension(HMRExtension, {hot: import.meta.hot ?? null}),
 );
-editor.setRootElement(document.getElementById('lexical-editor'));
+editor.setRootElement(document.getElementById('editor'));
 
 // Accept Vite updates; HMRExtension preserves editor state.
 // In an application, also call dispose() when removing the editor permanently.

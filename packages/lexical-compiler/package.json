@@ -9,7 +9,7 @@
     "rollup-plugin",
     "tree-shaking"
   ],
-  "version": "0.50.0",
+  "version": "0.51.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -21,7 +21,7 @@
   },
   "homepage": "https://lexical.dev/docs/packages/lexical-compiler",
   "dependencies": {
-    "@babel/parser": "^8.0.0",
+    "@babel/parser": "^8.0.4",
     "lexical": "workspace:*",
     "magic-string": "^0.30.21"
   },

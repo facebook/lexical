@@ -19,7 +19,7 @@ const removeTransform = editor.registerNodeTransform(TextNode, (textNode) => {
 ## Syntax
 
 ```typescript
-editor.registerNodeTransform<T: LexicalNode>(Class<T>, T): () => void
+editor.registerNodeTransform<T extends LexicalNode>(klass: Klass<T>, listener: Transform<T>): () => void
 ```
 
 ## Lifecycle
@@ -82,7 +82,7 @@ find a fixed point where no more transforms are required.
     - If element transforms generate additional dirty nodes we repeat `step 1`.
     - If element transforms only generate additional dirty elements we only repeat `step 2`.
 
-Node will be marked as dirty on any (or most) modifications done to it, it's children or siblings in certain cases.
+A node will be marked as dirty on any (or most) modifications done to it, its children, or siblings in certain cases.
 
 ## Preconditions
 
@@ -99,7 +99,7 @@ editor.registerNodeTransform(TextNode, textNode => {
   if (!textNode.hasFormat('bold')) {
     textNode.toggleFormat('bold');
   }
-}
+});
 ```
 
 But oftentimes, the order is not important. The below would always end up in the result of the two transforms:
@@ -120,8 +120,8 @@ editor.registerNodeTransform(TextNode, textNode => {
   }
 })
 // App
-editor.addListener('update', ({editorState}) => {
-  const text = editorState.read($textContent);
+editor.registerUpdateListener(({editorState}) => {
+  const text = editorState.read(() => $getRoot().getTextContent());
   // text === 're-modified'
 });
 ```
@@ -143,9 +143,9 @@ Transforms are very specific to a type of node. This applies to both the declara
 
 ```js
 // Won't trigger
-editor.registerNodeTransform(ParagraphNode, ..)
+editor.registerNodeTransform(ParagraphNode, () => {});
 // Will trigger as TextNode was marked dirty
-editor.registerNodeTransform(TextNode, ..)
+editor.registerNodeTransform(TextNode, () => {});
 editor.update(() => {
   const textNode = $getNodeByKey('3');
   textNode.setTextContent('foo');
@@ -163,7 +163,7 @@ editor.registerNodeTransform(ParagraphNode, paragraph => {
 });
 editor.update(() => {
   const paragraph = $getRoot().getFirstChild();
-  paragraph.append($createTextNode('foo');
+  paragraph.append($createTextNode('foo'));
 });
 ```
 
@@ -174,16 +174,16 @@ It is common to have certain nodes that are created/destroyed based on their tex
 This is a perfectly valid case for transforms but we have gone ahead and already built a utility transform wrapper for you for this specific case:
 
 ```typescript
-registerLexicalTextEntity<N: TextNode>(
+registerLexicalTextEntity<T extends TextNode>(
   editor: LexicalEditor,
   getMatch: (text: string) => null | EntityMatch,
-  targetNode: Class<N>,
-  createNode: (textNode: TextNode) => N,
+  targetNode: Klass<T>,
+  createNode: (textNode: TextNode) => T,
 ): Array<() => void>;
 ```
 
 ## Examples
 
-1. [Emojis](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/EmojisPlugin/index.ts)
-2. [AutoLink](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/AutoLinkPlugin/index.tsx)
+1. [Emojis](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/EmojisExtension/index.ts)
+2. [AutoLink](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/AutoLinkExtension/index.ts)
 3. [HashtagPlugin](https://github.com/facebook/lexical/blob/main/packages/lexical-react/src/LexicalHashtagPlugin.ts)

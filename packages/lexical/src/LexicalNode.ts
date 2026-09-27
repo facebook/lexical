@@ -66,6 +66,7 @@ import {
   $cloneWithProperties,
   $exportNodeJSONOnce,
   $getCompositionKey,
+  $getEditorDOMRenderConfig,
   $getNodeByKey,
   $hasAncestor,
   $isRootOrShadowRoot,
@@ -1496,25 +1497,6 @@ export class LexicalNode {
   }
 
   /**
-   * @deprecated use {@link $getCommonAncestor}
-   *
-   * Returns the closest common ancestor of this node and the provided one or null
-   * if one cannot be found.
-   *
-   * @param node - the other node to find the common ancestor of.
-   */
-  getCommonAncestor<T extends ElementNode = ElementNode>(
-    node: LexicalNode,
-  ): T | null {
-    const a = $isElementNode(this) ? this : this.getParent();
-    const b = $isElementNode(node) ? node : node.getParent();
-    const result = a && b ? $getCommonAncestor(a, b) : null;
-    return result
-      ? (result.commonAncestor as T) /* TODO this type cast is a lie, but fixing it would break backwards compatibility */
-      : null;
-  }
-
-  /**
    * Returns true if the provided node is the exact same one as this node, from Lexical's perspective.
    * Always use this instead of referential equality.
    *
@@ -1681,25 +1663,30 @@ export class LexicalNode {
     errorOnReadOnly();
     const editorState = getActiveEditorState();
     const editor = getActiveEditor();
-    const nodeMap = editorState._nodeMap;
     const key = this.__key;
-    // Ensure we get the latest node from pending state
-    const latestNode = this.getLatest();
     const cloneNotNeeded = editor._cloneNotNeeded;
-    const selection = $getSelection();
+    // Cast: a key always identifies the same node class.
+    const writableNode = cloneNotNeeded.get(key) as this | undefined;
+    const selection = editorState._selection;
     if (selection !== null) {
       selection.setCachedNodes(null);
     }
-    if (cloneNotNeeded.has(key)) {
+    if (writableNode !== undefined) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
-      internalMarkNodeAsDirty(latestNode);
-      return latestNode;
+      internalMarkNodeAsDirty(writableNode);
+      return writableNode;
     }
+    const nodeMap = editorState._nodeMap;
+    // Cast: the nodeMap entry for this key is always the same node class.
+    const latestNode = nodeMap.get(key) as this | undefined;
+    invariant(
+      latestNode !== undefined,
+      'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
+    );
     const mutableNode = $cloneWithProperties(latestNode);
-    cloneNotNeeded.add(key);
-    internalMarkNodeAsDirty(mutableNode);
-    // Update reference in node map
+    cloneNotNeeded.set(key, mutableNode);
     nodeMap.set(key, mutableNode);
+    internalMarkNodeAsDirty(mutableNode);
 
     return mutableNode;
   }
@@ -1788,7 +1775,7 @@ export class LexicalNode {
    *
    * */
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = this.createDOM(editor._config, editor);
+    const element = $getEditorDOMRenderConfig(editor).$createDOM(this, editor);
     return {element};
   }
 

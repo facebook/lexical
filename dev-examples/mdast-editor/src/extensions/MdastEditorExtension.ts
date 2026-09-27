@@ -25,7 +25,7 @@ import {
   $convertSelectionToMarkdownString,
   $convertToMarkdownString,
   MdastCommonMarkExtension,
-  MdastExportExtension,
+  MdastExtension,
   MdastGfmExtension,
   MdastShortcutsExtension,
 } from '@lexical/mdast';
@@ -122,7 +122,7 @@ export const MdastEditorExtension = defineExtension({
     // in), and the typing shortcuts follow whatever grammar is present.
     MdastCommonMarkExtension,
     MdastGfmExtension,
-    MdastExportExtension,
+    MdastExtension,
     MdastShortcutsExtension,
     // Example custom construct: a collapsible section whose summary line is
     // edited in a named slot, encoded in Markdown as a GFM-style raw

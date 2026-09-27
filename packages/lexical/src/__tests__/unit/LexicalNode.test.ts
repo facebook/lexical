@@ -780,59 +780,6 @@ describe('LexicalNode tests', () => {
         expect(() => textNode.getNextSiblings()).toThrow();
       });
 
-      test('LexicalNode.getCommonAncestor()', async () => {
-        const {editor} = testEnv;
-        let quxTextNode: TextNode;
-        let barParagraphNode: ParagraphNode;
-        let barTextNode: TextNode;
-        let bazParagraphNode: ParagraphNode;
-        let bazTextNode: TextNode;
-
-        editor.update(
-          () => {
-            const rootNode = $getRoot();
-            barParagraphNode = new ParagraphNode();
-            barTextNode = new TextNode('bar');
-            barTextNode.toggleUnmergeable();
-            bazParagraphNode = new ParagraphNode();
-            bazTextNode = new TextNode('baz');
-            bazTextNode.toggleUnmergeable();
-            expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(null);
-            quxTextNode = new TextNode('qux');
-            quxTextNode.toggleUnmergeable();
-            paragraphNode.append(quxTextNode);
-            expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
-            barParagraphNode.append(barTextNode);
-            bazParagraphNode.append(bazTextNode);
-            expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
-            expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(
-              bazParagraphNode,
-            );
-            rootNode.append(barParagraphNode, bazParagraphNode);
-          },
-          {discrete: true},
-        );
-
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">qux</span></p><p dir="auto"><span data-lexical-text="true">bar</span></p><p dir="auto"><span data-lexical-text="true">baz</span></p></div>',
-        );
-
-        await editor.read('latest', () => {
-          const rootNode = $getRoot();
-          expect(textNode.getCommonAncestor(rootNode)).toBe(rootNode);
-          expect(quxTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
-          expect(barTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
-          expect(bazTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
-          expect(textNode.getCommonAncestor(quxTextNode)).toBe(
-            paragraphNode.getLatest(),
-          );
-          expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(rootNode);
-          expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(rootNode);
-        });
-
-        expect(() => textNode.getCommonAncestor(barTextNode)).toThrow();
-      });
-
       test('LexicalNode.isBefore()', async () => {
         const {editor} = testEnv;
         let barTextNode: TextNode;

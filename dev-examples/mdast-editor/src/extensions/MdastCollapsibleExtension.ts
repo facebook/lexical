@@ -17,8 +17,8 @@ import {
 } from '@lexical/html';
 import {
   $exportViaDOM,
+  MdastExtension,
   MdastHtmlExtension,
-  MdastImportExtension,
   RenderContextMarkdownExport,
 } from '@lexical/mdast';
 import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
@@ -377,11 +377,11 @@ export const MdastCollapsibleExtension = defineExtension({
         }),
       ],
     }),
-    configExtension(MdastImportExtension, {
+    configExtension(MdastExtension, {
       // Export is fully generic: $exportViaDOM renders CollapsibleNode's own
       // exportDOM shell and embeds the summary slot and body children as
       // Markdown — no construct-specific serialization at all.
-      exportRules: [{$export: $exportViaDOM, type: 'collapsible'}],
+      exportRules: [{$export: $exportViaDOM, type: CollapsibleNode}],
     }),
   ],
   name: '@lexical/dev-mdast-editor-example/MdastCollapsible',

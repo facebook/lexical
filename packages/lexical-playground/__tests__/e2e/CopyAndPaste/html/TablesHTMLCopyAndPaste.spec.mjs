@@ -7,6 +7,7 @@
  */
 import {
   assertHTML,
+  assertTableSelectionCoordinates,
   focusEditor,
   html,
   initialize,
@@ -340,6 +341,12 @@ test.describe('HTML Tables CopyAndPaste', () => {
     );
 
     await pasteFromClipboard(page, clipboard);
+    // Pasting preserves the whole-table selection, including cells whose
+    // imported background color caused their DOM to be replaced.
+    await assertTableSelectionCoordinates(page, {
+      anchor: {x: 0, y: 0},
+      focus: {x: 3, y: 3},
+    });
 
     await assertHTML(
       page,
@@ -358,7 +365,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
           </colgroup>
           <tr dir="auto">
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
               dir="auto"
               style="background-color: rgb(242, 243, 245)">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -366,7 +373,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
               </p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
               dir="auto"
               style="background-color: rgb(242, 243, 245)">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -390,7 +397,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
           </tr>
           <tr dir="auto">
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
               dir="auto"
               style="background-color: rgb(242, 243, 245)">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">

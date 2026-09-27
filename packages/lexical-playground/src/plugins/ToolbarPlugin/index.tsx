@@ -45,6 +45,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $onUpdate,
   type AnyLexicalCommand,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
@@ -814,7 +815,7 @@ export default function ToolbarPlugin({
       SELECTION_CHANGE_COMMAND,
       (_payload, newEditor) => {
         setActiveEditor(newEditor);
-        $updateToolbar();
+        $onUpdate(() => newEditor.read('latest', $updateToolbar));
         return false;
       },
       COMMAND_PRIORITY_CRITICAL,

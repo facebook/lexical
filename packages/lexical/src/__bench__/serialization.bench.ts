@@ -7,7 +7,7 @@
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
-import {bench, describe} from 'vitest';
+import {test} from 'vitest';
 
 import {
   $createParagraphNode,
@@ -55,49 +55,48 @@ function buildEditor(): LexicalEditor {
   return editor;
 }
 
-describe('EditorState.toJSON', () => {
+test('EditorState.toJSON', async ({bench}) => {
   let editorState: EditorState;
   let json: string;
-
-  bench(
-    `${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
-    () => {
-      _benchSink = editorState.toJSON();
-    },
-    {
-      setup: () => {
-        editorState = buildEditor().getEditorState();
-      },
-    },
-  );
-
-  bench(
-    `compact, ${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
-    () => {
-      _benchSink = editorState.toJSON(true);
-    },
-    {
-      setup: () => {
-        editorState = buildEditor().getEditorState();
-      },
-    },
-  );
-
-  bench(
-    `parseEditorState, ${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
-    () => {
-      _benchSink = parseTarget.parseEditorState(json);
-    },
-    {
-      setup: () => {
-        const editor = buildEditor();
-        json = JSON.stringify(editor.getEditorState().toJSON());
-        parseTarget = editor;
-      },
-    },
-  );
-
   let parseTarget: LexicalEditor;
+
+  await bench.compare(
+    bench(
+      `${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
+      {
+        beforeAll: () => {
+          editorState = buildEditor().getEditorState();
+        },
+      },
+      () => {
+        _benchSink = editorState.toJSON();
+      },
+    ),
+    bench(
+      `compact, ${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
+      {
+        beforeAll: () => {
+          editorState = buildEditor().getEditorState();
+        },
+      },
+      () => {
+        _benchSink = editorState.toJSON(true);
+      },
+    ),
+    bench(
+      `parseEditorState, ${PARAGRAPHS * (TEXTS_PER_PARAGRAPH + 1) + 1} nodes`,
+      {
+        beforeAll: () => {
+          const editor = buildEditor();
+          json = JSON.stringify(editor.getEditorState().toJSON());
+          parseTarget = editor;
+        },
+      },
+      () => {
+        _benchSink = parseTarget.parseEditorState(json);
+      },
+    ),
+  );
 });
 
 // What the generated exporters buy, measured on TextNode only.
@@ -121,44 +120,45 @@ function buildTextNodes(): LexicalNode[] {
   return nodes;
 }
 
-describe('per-node exportJSON, TextNode', () => {
+test('per-node exportJSON, TextNode', async ({bench}) => {
   let nodes: LexicalNode[] = [];
 
-  bench(
-    'schema-driven walk',
-    () => {
-      benchEditor.read(() => {
-        for (let i = 0; i < nodes.length; i++) {
-          const node = nodes[i];
-          const json: {[key: string]: unknown} = {};
-          $writeJSONGetters(node, json, false);
-          json.type = node.getType();
-          json.version = 1;
-          _benchSink = json;
-        }
-      });
-    },
-    {
-      setup: () => {
-        nodes = buildTextNodes();
+  await bench.compare(
+    bench(
+      'schema-driven walk',
+      {
+        beforeAll: () => {
+          nodes = buildTextNodes();
+        },
       },
-    },
-  );
-
-  bench(
-    'generated literal',
-    () => {
-      benchEditor.read(() => {
-        for (let i = 0; i < nodes.length; i++) {
-          _benchSink = nodes[i].exportJSON();
-        }
-      });
-    },
-    {
-      setup: () => {
-        nodes = buildTextNodes();
+      () => {
+        benchEditor.read(() => {
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            const json: {[key: string]: unknown} = {};
+            $writeJSONGetters(node, json, false);
+            json.type = node.getType();
+            json.version = 1;
+            _benchSink = json;
+          }
+        });
       },
-    },
+    ),
+    bench(
+      'generated literal',
+      {
+        beforeAll: () => {
+          nodes = buildTextNodes();
+        },
+      },
+      () => {
+        benchEditor.read(() => {
+          for (let i = 0; i < nodes.length; i++) {
+            _benchSink = nodes[i].exportJSON();
+          }
+        });
+      },
+    ),
   );
 });
 
@@ -171,7 +171,7 @@ describe('per-node exportJSON, TextNode', () => {
 // carried so that each one is read; a compact document would measure the
 // fall-through instead. Run inside a `read` for the class records the entry
 // points resolve and the `$` convention they follow.
-describe('per-node updateFromJSON, TextNode', () => {
+test('per-node updateFromJSON, TextNode', async ({bench}) => {
   let nodes: TextNode[] = [];
   let jsons: {[key: string]: unknown}[] = [];
 
@@ -203,27 +203,20 @@ describe('per-node updateFromJSON, TextNode', () => {
     );
   }
 
-  bench(
-    'schema-driven walk',
-    () => {
+  await bench.compare(
+    bench('schema-driven walk', {beforeAll: buildInputs}, () => {
       benchEditor.read(() => {
         for (let i = 0; i < nodes.length; i++) {
           _benchSink = $walkJSONSetters(nodes[i], jsons[i]);
         }
       });
-    },
-    {setup: buildInputs},
-  );
-
-  bench(
-    'generated literal',
-    () => {
+    }),
+    bench('generated literal', {beforeAll: buildInputs}, () => {
       benchEditor.read(() => {
         for (let i = 0; i < nodes.length; i++) {
           _benchSink = $applyJSONSetters(nodes[i], jsons[i]);
         }
       });
-    },
-    {setup: buildInputs},
+    }),
   );
 });

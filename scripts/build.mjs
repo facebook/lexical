@@ -22,7 +22,10 @@ import {rollup} from 'rollup';
 
 import {pureAnnotations} from '../packages/lexical-compiler/src/passes/pureAnnotations.mjs';
 import {subpathImports} from '../packages/lexical-compiler/src/passes/subpathImports.mjs';
-import transformErrorMessages from './error-codes/transform-error-messages.mjs';
+import {
+  getBuildBabelOptions,
+  productionTerserOptions,
+} from './shared/buildOptions.mjs';
 import {exec} from './shared/childProcess.mjs';
 import {packagesManager} from './shared/packagesManager.mjs';
 import {
@@ -330,36 +333,9 @@ async function build(
       }),
       babel({
         babelHelpers: 'bundled',
-        babelrc: false,
-        configFile: false,
+        ...getBuildBabelOptions(isProd, extractCodes),
         exclude: '**/node_modules/**',
         extensions,
-        // JSX only parses in .jsx/.tsx files. Applying preset-react
-        // unconditionally would enable the jsx syntax plugin for plain .ts
-        // too, where `<T>` in a generic arrow function (`<T>(x: T) => ...`)
-        // is ambiguous with an opening JSX element and fails to parse.
-        overrides: [
-          {
-            presets: [
-              // Pin development:false so the automatic runtime always emits the
-              // production `jsx`/`jsxs` helpers, never `jsxDEV`. Babel 8 flipped the
-              // default to infer development mode from the environment, which made
-              // the dev builds import `react/jsx-dev-runtime`; consumers that bundle
-              // those dev builds (e.g. the Docusaurus website SSG) then crash with
-              // "jsxDEV is not a function".
-              [
-                '@babel/preset-react',
-                {development: false, runtime: 'automatic'},
-              ],
-            ],
-            test: /\.[jt]sx$/,
-          },
-        ],
-        plugins: [
-          [transformErrorMessages, {extractCodes, noMinify: !isProd}],
-          '@babel/plugin-transform-optional-catch-binding',
-        ],
-        presets: ['@babel/preset-typescript'],
       }),
       // Redirect all package consumers before Rollup resolves dependencies.
       // Keeping public siblings external also avoids duplicated singleton state.
@@ -411,15 +387,7 @@ async function build(
       // been updated since Aug 2021
       isProd &&
         terser({
-          // terser prints Infinity as `1/0`, a division that esbuild and
-          // webpack have to keep as a side effect (see #9120), pinning the
-          // module-scope declaration it initializes into consumer bundles.
-          compress: {keep_infinity: true},
-          ecma: 2019,
-          // Keep /* @__PURE__ */ and @__NO_SIDE_EFFECTS__ annotations in the
-          // prod output so downstream bundlers can tree-shake unused
-          // extension/command/rule definitions out of application bundles.
-          format: {ascii_only: true, preserve_annotations: true},
+          ...productionTerserOptions,
           module: format === 'esm',
         }),
       isProd && {

@@ -6,20 +6,9 @@
  *
  */
 
-// `@lexical/mdast` is configured exclusively through the Lexical extension
-// system. Each feature extension ships the nodes it needs and contributes its
-// import/export rules (and micromark/mdast extensions) to the core
-// `MdastImportExtension` registry — mirroring how `@lexical/html`'s feature
-// extensions contribute to `DOMImportExtension`.
-//
-// - Add `MdastCommonMarkExtension` (or individual feature extensions) for
-//   import, `MdastExportExtension` to serialize back to Markdown (or
-//   `MdastExtension`, which bundles both directions), and
-//   `MdastShortcutsExtension` for streaming shortcuts.
-// - Read the Markdown API from the editor with
-//   `$getExtensionOutput(MdastImportExtension)` /
-//   `$getExtensionOutput(MdastExportExtension)`, or via the
-//   `$convert*` shorthands.
+// Feature extensions contribute import/export rules and grammar to the
+// configurable MdastExtension. Read both directions from its output or use
+// the $convert* shorthands. Add MdastShortcutsExtension for typing shortcuts.
 
 export {RenderContextMarkdownSelection} from './MdastExport';
 export type {MdastExportExtensionOutput} from './MdastExportExtension';
@@ -29,21 +18,12 @@ export {
   $convertToMdast,
   MdastExportExtension,
 } from './MdastExportExtension';
-export {MdastExtension} from './MdastExtension';
-export {MdastGfmExtension} from './MdastGfmExtension';
-export {
-  $exportViaDOM,
-  MdastHtmlExtension,
-  rawHtmlBlock,
-  type RawHtmlBlockPart,
-  RenderContextMarkdownExport,
-} from './MdastHtmlExtension';
-export {ImportContextMarkdown} from './MdastImport';
 export type {
   MdastConfig,
+  MdastExtensionOutput,
   MdastImportExtensionOutput,
   MdastShortcutsConfig,
-} from './MdastImportExtension';
+} from './MdastExtension';
 export {
   $convertFromMarkdownString,
   $convertFromMdast,
@@ -53,6 +33,7 @@ export {
   MdastBlockquoteExtension,
   MdastCodeExtension,
   MdastCommonMarkExtension,
+  MdastExtension,
   MdastHeadingExtension,
   MdastHorizontalRuleExtension,
   MdastImportExtension,
@@ -63,7 +44,16 @@ export {
   MdastShortcutsExtension,
   MdastStrikethroughExtension,
   MdastTaskListExtension,
-} from './MdastImportExtension';
+} from './MdastExtension';
+export {MdastGfmExtension} from './MdastGfmExtension';
+export {
+  $exportViaDOM,
+  MdastHtmlExtension,
+  rawHtmlBlock,
+  type RawHtmlBlockPart,
+  RenderContextMarkdownExport,
+} from './MdastHtmlExtension';
+export {ImportContextMarkdown} from './MdastImport';
 export {MdastTableExtension} from './MdastTableExtension';
 export type {
   CompiledMdast,

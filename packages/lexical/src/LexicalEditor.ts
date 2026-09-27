@@ -11,10 +11,12 @@ import type {KeyDownShortcut} from './LexicalEvents';
 import type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
+import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
 import {LEXICAL_VERSION} from '@lexical/internal/version';
 
 import {
+  $createParagraphNode,
   $getRoot,
   $getSelection,
   $isElementNode,
@@ -1168,7 +1170,7 @@ export class LexicalEditor {
   /** @internal */
   _dirtyType: 0 | 1 | 2;
   /** @internal */
-  _cloneNotNeeded: Set<NodeKey>;
+  _cloneNotNeeded: Map<NodeKey, LexicalNode>;
   /** @internal */
   _dirtyLeaves: Set<NodeKey>;
   /** @internal */
@@ -1208,6 +1210,8 @@ export class LexicalEditor {
   _keyDownShortcuts: null | CompiledKeyboardShortcuts<KeyDownShortcut>;
   /** @internal */
   _inputState: InputState;
+  /** @internal */
+  _lastNotifiedSelection: null | BaseSelection;
   /** @internal */
   _createEditorArgs?: undefined | CreateEditorArgs;
 
@@ -1259,7 +1263,7 @@ export class LexicalEditor {
     this._pendingDecorators = null;
     // Used to optimize reconciliation
     this._dirtyType = NO_DIRTY_NODES;
-    this._cloneNotNeeded = new Set();
+    this._cloneNotNeeded = new Map();
     this._dirtyLeaves = new Set();
     this._dirtyElements = new Map();
     this._normalizedNodes = new Set();
@@ -1279,6 +1283,7 @@ export class LexicalEditor {
     this._slotsUsed = false;
     this._keyDownShortcuts = null;
     this._inputState = createInputState();
+    this._lastNotifiedSelection = null;
   }
 
   /**
@@ -1742,12 +1747,7 @@ export class LexicalEditor {
    * @param options - options for the update.
    */
   setEditorState(editorState: EditorState, options?: EditorSetOptions): void {
-    if (editorState.isEmpty()) {
-      invariant(
-        false,
-        "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty.",
-      );
-    }
+    const isEmptyEditorState = editorState.isEmpty();
 
     // Ensure that we have a writable EditorState so that transforms can run
     // during a historic operation
@@ -1789,6 +1789,20 @@ export class LexicalEditor {
       () => {
         if (tag) {
           this._updateTags.add(tag);
+        }
+        if (isEmptyEditorState) {
+          // A root with no children is not the canonical empty document: it
+          // reconciles to a contenteditable with no block element to place a
+          // caret in. It still arrives from outside the editor, because
+          // content persisted while the editor was empty round-trips to
+          // `{"root":{"children":[]}}`, so recover rather than leave the
+          // editor unusable. Reusing the wording of the invariant this
+          // replaces keeps the existing error code.
+          devInvariant(
+            false,
+            "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty.",
+          );
+          $getRoot().append($createParagraphNode());
         }
         if (editorState._parsed) {
           for (const [key, node] of writableEditorState._nodeMap.entries()) {

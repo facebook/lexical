@@ -39,7 +39,7 @@ configured **exclusively** through the
 [extension system](/docs/extensions/intro). Each feature extension
 ships the nodes it needs and contributes its import/export rules (and
 the micromark grammar that tokenizes them) to the core
-`MdastImportExtension` registry. There is no transformer list to
+`MdastExtension` registry. There is no transformer list to
 curate and no `registerMarkdownShortcuts` call:
 
 ```ts
@@ -90,14 +90,24 @@ their content (a table becomes its cell text), and typing shortcuts
 only fire for constructs the editor can represent (`> ` stays literal
 without `MdastBlockquoteExtension`).
 
-## Import and export are split
+## Import and export share one extension
 
-`MdastImportExtension` owns the compiled registry and parsing;
-`MdastExportExtension` compiles the same registry into a serializer
-(`$convertToMarkdownString`). An editor that never converts back to
-Markdown simply omits `MdastExportExtension` and doesn't bundle
-`mdast-util-to-markdown`. `MdastExtension` is a convenience bundle of
-both directions.
+`MdastExtension` owns the compiled registry and exposes both import and export.
+Feature extensions contribute their rules and grammar to it automatically.
+
+Export rules accept a node type string or class (`'text'` or `TextNode`) and
+apply to subclasses. The nearest matching ancestor takes precedence, so a
+`TabNode` rule overrides a `TextNode` rule. Rules for the same type retain
+contribution order: later extension contributions take priority. Classes must
+have their own node type; abstract classes without one are rejected.
+
+Import and export handlers can call `context.next()` to delegate conversion
+of the same node and receive an array of output nodes to return or modify.
+Export tries the remaining rules for the same type before its ancestors,
+from nearest to farthest; import uses contribution order for the mdast type.
+After the last handler, `next()` uses the generic fallback. Returning `null`
+uses the default export directly, or omits the node and its children on import.
+Returning `[]` omits the node in either direction.
 
 ## Round-trips are minimally different
 

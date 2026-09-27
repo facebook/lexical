@@ -131,6 +131,15 @@
       "@lexical/headless/dom": ["../lexical-headless/src/dom.ts"],
       "@lexical/history": ["../lexical-history/src/index.ts"],
       "@lexical/html": ["../lexical-html/src/index.ts"],
+      "@lexical/internal/createDevError": [
+        "../lexical-internal/src/createDevError.ts"
+      ],
+      "@lexical/internal/createError": [
+        "../lexical-internal/src/createError.ts"
+      ],
+      "@lexical/internal/createProdError": [
+        "../lexical-internal/src/createProdError.ts"
+      ],
       "@lexical/internal/devInvariant": [
         "../lexical-internal/src/devInvariant.ts"
       ],

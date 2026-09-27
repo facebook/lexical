@@ -62,7 +62,7 @@ Has various methods which define its behaviour that can be overridden during ext
 
 Leaf type of node that contains text. It also includes few text-specific properties:
 
-- `format` any combination of `bold`, `italic`, `underline`, `strikethrough`, `code`, `highlight`, `subscript` and `superscript`
+- `format` any combination of `bold`, `italic`, `underline`, `strikethrough`, `code`, `highlight`, `subscript`, `superscript`, `lowercase`, `uppercase` and `capitalize`
 - `mode`
   - `token` - acts as immutable node, can't change its content and is deleted all at once
   - `segmented` - its content deleted by segments (one word at a time), it is editable although node becomes non-segmented once its content is updated
@@ -142,7 +142,7 @@ between creation of new `EditorState` snapshots.
 Expanding on the example above with these methods:
 
 ```ts
-interface SerializedCustomNode extends SerializedLexicalNode {
+interface SerializedMyCustomNode extends SerializedLexicalNode {
   foo?: string;
 }
 
@@ -338,7 +338,7 @@ Note that since these example use NodeState and `$config`, they will
 automatically get full and correct implementations of the following methods:
 
 - `static clone`
-- `static importFromJSON`
+- `static importJSON`
 - `updateFromJSON`
 - `afterCloneFrom`
 - `exportJSON`
@@ -565,11 +565,7 @@ export class ColoredNode extends TextNode {
   // highlight-start
   __color: string;
 
-  constructor(
-    text: string = '',
-    color: string = DEFAULT_COLOR,
-    key?: NodeKey,
-  ): void {
+  constructor(text: string = '', color: string = DEFAULT_COLOR, key?: NodeKey) {
     super(text, key);
     this.__color = color;
   }
@@ -582,7 +578,7 @@ export class ColoredNode extends TextNode {
     return new ColoredNode(node.__text, node.__color, node.__key);
   }
 
-  static importFromJSON(serializedNode: SerializedColoredNode) {
+  static importJSON(serializedNode: SerializedColoredNode) {
     return new ColoredNode().updateFromJSON(serializedNode);
   }
 
@@ -777,7 +773,7 @@ export function $isVideoNode(
 </TabItem>
 </Tabs>
 
-Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
+Using `useReactDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
 where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
 and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.
 
@@ -931,7 +927,7 @@ export function $isCustomParagraphNode(
 export class ColoredNode extends TextNode {
   __color: string;
 
-  constructor(text: string, color: string, key?: NodeKey): void {
+  constructor(text: string, color: string, key?: NodeKey) {
     super(text, key);
     this.__color = color;
   }
@@ -1013,7 +1009,7 @@ export function $isVideoNode(
 }
 ```
 
-Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
+Using `useReactDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
 where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
 and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.
 
@@ -1023,7 +1019,7 @@ When using this method of extension, it is also required to implement the
 following methods:
 
 - `static clone` (always - this is already in the above examples)
-- `static importFromJSON` (always)
+- `static importJSON` (always)
 - `updateFromJSON` (if any custom properties are defined)
 - `afterCloneFrom` (if any custom properties are defined that are not carried over from static clone)
 - `exportJSON` (if any custom properties are defined)

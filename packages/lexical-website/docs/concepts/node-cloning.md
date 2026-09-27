@@ -14,7 +14,7 @@ Lexical provides several ways to clone nodes, each serving a different purpose:
 
 ### What is `clone`?
 
-The `clone` method is a static method required by all Lexical nodes that creates the next version of a node. However, it's important to understand that this is an **internal API** used by Lexical's state management system.
+The `clone` method is a static method that creates the next version of a node. A node that declares [`$config()`](./nodes.mdx) has one synthesized for it and need not implement it — a hand-written `clone` is only required for a node that does not use `$config()`, or whose constructor has required arguments. Either way, it's important to understand that this is an **internal API** used by Lexical's state management system.
 
 ```typescript
 class MyCustomNode extends ElementNode {
@@ -43,7 +43,7 @@ class MyCustomNode extends ElementNode {
      }
    }
 
-   node.setSomeData("new data");
+   node.setData("new data");
    ```
 
 ### When NOT to Use `clone`?

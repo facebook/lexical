@@ -49,7 +49,7 @@ runtime.
 
 ## How do we prevent all of the frameworks from being loaded?
 
-Vanilla JS and React have first class support in Lexical. Lexical Builder
+Vanilla JS and React have first class support in Lexical. Lexical Extensions
 provides a path for Extensions written for either of these to be loaded into
 any editor regardless of what framework the page is using.
 
@@ -59,7 +59,7 @@ error if a React provider is not present (`LexicalExtensionComposer` or
 dependency. This way you won't get confused if you add an extension that requires
 React but it never renders correctly because React isn't set up properly.
 
-Other frameworks can use the functionality exposed by Lexical Builder
+Other frameworks can use the functionality exposed by Lexical Extensions
 to provide their own integrations in a similar way. Supporting
 `DecoratorNode` subclasses in multiple frameworks is not currently
 supported, or planned to be supported, because I am pretty sure that

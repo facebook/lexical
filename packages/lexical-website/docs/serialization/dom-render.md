@@ -90,10 +90,12 @@ the editor and during HTML export.
 
 :::tip
 
-The same override fires for the editor's in-place reconciliation
-(`createDOM`/`updateDOM`/`decorateDOM`) AND for HTML export
-(`$exportDOM`). When the override is render-only or export-only,
-that's just a matter of which methods you implement.
+The default `LexicalNode.exportDOM` calls the editor's configured
+`$createDOM` hook. A `$createDOM` override therefore also affects HTML
+export for nodes that inherit this method or call `super.exportDOM(editor)`,
+including `TextNode`. A custom `exportDOM` implementation that creates its
+own element can bypass it. Use `$exportDOM` for export-specific changes;
+`$updateDOM` and `$decorateDOM` only run during reconciliation.
 
 :::
 
@@ -105,7 +107,7 @@ the following middleware methods:
 
 | Override | When it's called | Replaces / wraps |
 | --- | --- | --- |
-| `$createDOM` | Reconciler creates the DOM for a node | `node.createDOM` |
+| `$createDOM` | Reconciler creates DOM, or the default `LexicalNode.exportDOM` creates an export element | `node.createDOM` |
 | `$updateDOM` | Reconciler updates an existing DOM node | `node.updateDOM` |
 | `$decorateDOM` | After create or update, after children reconcile | (additive — no default to replace) |
 | `$getDOMSlot` | Reconciler asks "where do children attach?" for an `ElementNode` | `ElementNode.getDOMSlot` |

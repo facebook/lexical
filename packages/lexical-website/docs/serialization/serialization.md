@@ -623,10 +623,20 @@ const ExportClassesExtension = defineExtension({
 });
 ```
 
-The same extension can override `$createDOM`, `$updateDOM` and
-`$decorateDOM`, which apply inside the editor as well as to export, so the
-two don't drift apart. See [DOMRenderExtension](./dom-render.md) for
-everything it can override.
+`$exportDOM` overrides only affect export. The same extension can also
+override how nodes render inside the editor, and only part of that carries
+through to export:
+
+- A `$createDOM` override also changes the export of nodes that use the
+  default `exportDOM` (or call `super.exportDOM()`), such as `TextNode` and
+  `ParagraphNode`, since that default builds its element with the editor's
+  `$createDOM`. A node class whose `exportDOM` creates its own element skips
+  it, so use `$exportDOM` for that node.
+- `$updateDOM` and `$decorateDOM` run only while the editor reconciles its
+  DOM, so anything they add appears in the editor but not in exported HTML.
+  Add it with `$exportDOM` too if the export needs it.
+
+See [DOMRenderExtension](./dom-render.md) for everything it can override.
 
 ### HTML -> Lexical
 

@@ -60,8 +60,12 @@ You can also change how nodes render without subclassing them.
 takes overrides for `createDOM`, `updateDOM`, and `exportDOM`, for one node
 class or for every node, such as adding a `data-` attribute or wrapping a
 node's children in another element. Each override calls `$next()` to get the
-default result and adjusts it, so overrides from several extensions compose,
-and the same overrides apply both to the editor's DOM and to HTML export.
+default result and adjusts it, so overrides from several extensions compose.
+Export overrides only affect HTML export, and `createDOM` overrides also carry
+through to export for nodes that use the default `exportDOM`. Changes made
+while updating the editor's DOM don't; see
+[Lexical -> HTML](../serialization/serialization.md#lexical---html) for which
+hooks reach export.
 
 For how the tree is converted to and from JSON, HTML, and Markdown, see
 [Serialization](../serialization/serialization.md#formats-at-a-glance). For

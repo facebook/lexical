@@ -99,10 +99,12 @@ register several things, combine their callbacks with `mergeRegister` from
 `@lexical/utils`.
 
 ```js
-import {TOGGLE_LINK_COMMAND} from '@lexical/link';
-import {COMMAND_PRIORITY_EDITOR, defineExtension} from 'lexical';
+import {LinkExtension, TOGGLE_LINK_COMMAND} from '@lexical/link';
+import {COMMAND_PRIORITY_BEFORE_EDITOR, defineExtension} from 'lexical';
 
 export const LinkLoggerExtension = defineExtension({
+  // The command it observes is handled by LinkExtension
+  dependencies: [LinkExtension],
   name: '@my-app/LinkLogger',
   register: (editor) =>
     editor.registerCommand(
@@ -111,10 +113,18 @@ export const LinkLoggerExtension = defineExtension({
         console.log('link', payload);
         return false; // let the link extension handle it too
       },
-      COMMAND_PRIORITY_EDITOR,
+      // LinkExtension handles this command at COMMAND_PRIORITY_EDITOR and
+      // returns true, so observe it at the BEFORE variant of that priority.
+      COMMAND_PRIORITY_BEFORE_EDITOR,
     ),
 });
 ```
+
+A listener that only observes a command, like this one, needs to run before
+the listener that handles it. Depending on the extension that handles it and
+using the `COMMAND_PRIORITY_BEFORE_*` variant of its priority does that
+without escalating to a higher priority. See
+[Priorities and ordering](#priorities-and-ordering) below.
 
 In a legacy React plugin, return the `registerCommand` call from a
 `useEffect` instead.

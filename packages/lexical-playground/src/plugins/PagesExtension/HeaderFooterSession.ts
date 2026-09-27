@@ -24,15 +24,19 @@ import {
   $getSelection,
   $getStateChange,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
   $onUpdate,
   $setSelection,
+  CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
   type EditorState,
   getComposedEventTarget,
   getDOMSelection,
   getParentElement,
+  HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   isDOMNode,
   isHTMLElement,
@@ -107,6 +111,24 @@ function $isPointValid(point: PointType): boolean {
  */
 function serializeSlotContent(content: SerializedEditorState | null): string {
   return JSON.stringify(content ?? null);
+}
+
+/**
+ * Whether a header/footer holds nothing to show: only paragraphs of blank
+ * text. An image or any other node is content, even without text.
+ */
+function $isSlotEmpty(): boolean {
+  return $getRoot()
+    .getChildren()
+    .every(
+      block =>
+        $isParagraphNode(block) &&
+        block
+          .getChildren()
+          .every(
+            child => $isTextNode(child) && child.getTextContent().trim() === '',
+          ),
+    );
 }
 
 /** The caret position under a client point, using whichever API exists. */
@@ -242,8 +264,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       ),
       parent.registerMutationListener(
         RootNode,
-        (_mutations, {prevEditorState, updateTags}) =>
-          this.onRootMutation(prevEditorState, updateTags),
+        (_mutations, {prevEditorState}) => this.onRootMutation(prevEditorState),
       ),
       parent.registerEditableListener(editable => {
         this.setEditable(editable);
@@ -315,9 +336,20 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     }
     // Commits only real edits, and only if the document still holds what
     // they were made against (not, say, a document loaded meanwhile). The
-    // toolbar is not handed back: the editor may be going away.
+    // header editor is about to be disposed, so it cannot hand over itself.
+    const hadActive = this.active !== null;
     this.close(true, false);
     this.disposed = true;
+    if (hadActive) {
+      // Tell the toolbar and floating editors, which may still target the
+      // disposed header editor, that the document is active again: unless
+      // the document itself is going away (its root is detached first).
+      this.win.queueMicrotask(() => {
+        if (this.parent.getRootElement() !== null) {
+          this.parent.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        }
+      });
+    }
     this.cleanup();
     this.heightObserver?.disconnect();
     for (const slotEditor of this.editors.values()) {
@@ -337,16 +369,20 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     const variant = enabled ? resolveSlotVariant(setup, pageIndex) : null;
     const active = this.active;
     if (active && active.slot === slot) {
-      if (
-        variant !== null &&
-        active.slotEditor.variant === variant &&
-        active.slotEditor.kind === kind
-      ) {
-        active.pageIndex = pageIndex;
+      if (active.slotEditor.kind !== kind || active.pageIndex !== pageIndex) {
+        // This element now belongs to another page (the last page's footer
+        // after the page count changed). The editor stays with the page it
+        // was opened on; this element is filled like any other below.
+        if (!this.rehome(active)) {
+          this.close(true);
+        }
+      } else if (variant !== null && active.slotEditor.variant === variant) {
         this.syncLiveCounters(active);
         return;
+      } else {
+        // The page now shows another variant (or none): a setup change.
+        this.close(true);
       }
-      this.close(true);
     }
     slot.dataset.pageSlotEnabled = String(enabled);
     const content = slot.firstElementChild;
@@ -363,21 +399,80 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     slot.dataset.empty = String(slotEditor.empty);
     const clone = this.cloneFor(slotEditor);
     writeCountersIntoDOM(clone, pageIndex + 1, this.layout.getPageCount());
-    if (content) {
-      content.replaceWith(clone);
-    } else {
-      slot.appendChild(clone);
-    }
+    // A slot holds exactly one content element.
+    slot.replaceChildren(clone);
   }
 
   /**
    * The layout is about to remove `slot` (its page no longer exists). A
-   * live editor in it would be detached from the page while still active,
-   * so close it first.
+   * live editor in it would be detached from the page while still active:
+   * move it to the page it was opened on if that page remains, else to the
+   * last page if that shows the same variant, else close it.
    */
   releaseSlot(slot: HTMLElement): void {
-    if (this.active !== null && this.active.slot === slot) {
+    const active = this.active;
+    if (active !== null && active.slot === slot && !this.rehome(active)) {
       this.close(true);
+    }
+  }
+
+  /**
+   * Move the live editor into the slot of the page it was opened on, or of
+   * the last page, whichever exists first and shows the editor's variant.
+   * Returns false when neither does.
+   */
+  private rehome(active: ActiveSession): boolean {
+    const {kind, variant} = active.slotEditor;
+    const setup = this.pageSetup?.[kind];
+    if (!setup || !setup.enabled) {
+      return false;
+    }
+    const pageCount = this.layout.getPageCount();
+    for (const pageIndex of [active.pageIndex, pageCount - 1]) {
+      if (
+        pageIndex < 0 ||
+        pageIndex >= pageCount ||
+        resolveSlotVariant(setup, pageIndex) !== variant
+      ) {
+        continue;
+      }
+      const target = this.layout.getSlot(kind, pageIndex);
+      if (target !== null && target !== active.slot) {
+        this.moveLive(active, target, pageIndex);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Put the live editor's root into `target` in place of its clone. Moving
+   * a focused element takes the focus away, so it is given back, with the
+   * editor's own selection.
+   */
+  private moveLive(
+    active: ActiveSession,
+    target: HTMLElement,
+    pageIndex: number,
+  ): void {
+    const {slotEditor} = active;
+    const doc = slotEditor.root.ownerDocument;
+    const hadFocus = slotEditor.root.contains(doc.activeElement);
+    target.replaceChildren(slotEditor.root);
+    active.slot.classList.remove(LIVE_SLOT_CLASS);
+    target.classList.add(LIVE_SLOT_CLASS);
+    target.dataset.pageVariant = slotEditor.variant;
+    target.dataset.pageSlotEnabled = 'true';
+    active.slot = target;
+    active.pageIndex = pageIndex;
+    this.options.activeSlot.value = {
+      kind: slotEditor.kind,
+      pageIndex,
+      variant: slotEditor.variant,
+    };
+    this.syncLiveCounters(active);
+    if (hadFocus) {
+      slotEditor.editor.focus();
     }
   }
 
@@ -421,12 +516,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       }
       this.close(true);
     }
-    const content = slot.firstElementChild;
-    if (content) {
-      content.replaceWith(slotEditor.root);
-    } else {
-      slot.appendChild(slotEditor.root);
-    }
+    slot.replaceChildren(slotEditor.root);
     slot.classList.add(LIVE_SLOT_CLASS);
     this.layout.layer.removeAttribute('aria-hidden');
     this.active = {committed: false, pageIndex, slot, slotEditor};
@@ -479,7 +569,10 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
           }),
         );
       },
-      {tag: [HISTORY_MERGE_TAG, SLOT_SYNC_TAG]},
+      // Selection bookkeeping, not an edit: keep it out of the undo history
+      // (merged into the current entry, a later undo would restore a null
+      // selection and put the caret at the start of the document).
+      {tag: [HISTORIC_TAG, SLOT_SYNC_TAG]},
     );
   }
 
@@ -639,11 +732,11 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     );
   }
 
-  private onRootMutation(
-    prevEditorState: EditorState,
-    updateTags: Set<string>,
-  ): void {
-    if (this.disposed || updateTags.has(HEADER_FOOTER_COMMIT_TAG)) {
+  private onRootMutation(prevEditorState: EditorState): void {
+    // Our own write-backs are recognized by the baseline comparison below
+    // (the stored content equals what the editor just wrote), not by their
+    // tag: an outside change batched into the same update must still load.
+    if (this.disposed) {
       return;
     }
     const root = this.parent.read('latest', $getRoot);
@@ -768,24 +861,30 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     const {editor} = slotEditor;
     slotEditor.baseline = serializeSlotContent(content);
     slotEditor.dirty = false;
+    let loaded = false;
     if (content !== null) {
       try {
         editor.setEditorState(editor.parseEditorState(content), {
           tag: SLOT_SYNC_TAG,
         });
-        return;
+        loaded = true;
       } catch {
         // Unknown nodes in the stored header: fall back to empty below.
       }
     }
-    editor.update(
-      () => {
-        const root = $getRoot();
-        root.clear();
-        root.append($createParagraphNode());
-      },
-      {discrete: true, tag: SLOT_SYNC_TAG},
-    );
+    if (!loaded) {
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          root.append($createParagraphNode());
+        },
+        {discrete: true, tag: SLOT_SYNC_TAG},
+      );
+    }
+    // What the editor held before is another document's (or another
+    // version's) header: undo inside the header must not bring it back.
+    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
   }
 
   /** Coalesce DOM-driven clone refreshes to one per frame. */
@@ -811,10 +910,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       slotEditor.dirty = true;
     }
     slotEditor.clone = null;
-    slotEditor.empty = slotEditor.editor.read(
-      'latest',
-      () => $getRoot().getTextContent().trim() === '',
-    );
+    slotEditor.empty = slotEditor.editor.read('latest', $isSlotEmpty);
     this.layout.refreshSlots(slotEditor.kind);
     if (userEdit && this.active && this.active.slotEditor === slotEditor) {
       this.scheduleWriteBack();

@@ -71,8 +71,9 @@ function parseMargins(v: unknown): PageSetup['margins'] {
     const defaults = structuredClone(DEFAULT_PAGE_SETUP.margins);
     const o = v as Record<string, unknown>;
     for (const k of ['top', 'right', 'bottom', 'left'] as const) {
-      if (typeof o[k] === 'number') {
-        defaults[k] = o[k];
+      const value = o[k];
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        defaults[k] = Math.max(0, value);
       }
     }
     return defaults;

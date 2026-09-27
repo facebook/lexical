@@ -47,6 +47,19 @@ describe('pageSetupState', () => {
     expect(parsed?.footer).toEqual(DEFAULT_SLOT_SETUP);
   });
 
+  it('drops negative and non-finite margins', () => {
+    const parsed = pageSetupState.parse({
+      margins: {bottom: Number.NaN, left: 0.5, right: -2, top: -1},
+      pageSize: 'A4',
+    });
+    expect(parsed?.margins).toEqual({
+      ...DEFAULT_PAGE_SETUP.margins,
+      left: 0.5,
+      right: 0,
+      top: 0,
+    });
+  });
+
   it('returns null for non-objects', () => {
     expect(pageSetupState.parse(null)).toBeNull();
     expect(pageSetupState.parse([])).toBeNull();

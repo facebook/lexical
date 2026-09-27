@@ -22,6 +22,7 @@ import {
   type LexicalEditor,
   type RangeSelection,
   type SerializedEditorState,
+  UNDO_COMMAND,
 } from 'lexical';
 import {describe, expect, onTestFinished, test} from 'vitest';
 
@@ -558,7 +559,7 @@ describe('Pages headers and footers', () => {
     });
   });
 
-  test('removing the page of the open slot closes it', async () => {
+  test('removing the page of the open slot moves it to the last page', async () => {
     const {editor, host} = mount();
     editor.update(
       () => {
@@ -578,11 +579,125 @@ describe('Pages headers and footers', () => {
       pageIndex: 2,
     });
     const liveRoot = activeSlotEditor.value!.getRootElement()!;
-    // Someone else shortens the document to a single page.
+    // Someone else shortens the document to a single page: the header
+    // being typed in stays open, on the page that remains.
     editor.update(() => $fillLines(3), {discrete: true});
     await expect.poll(() => headerTexts(host).length).toBe(1);
-    expect(activeSlot.value).toBeNull();
-    expect(activeSlotEditor.value).toBeNull();
+    expect(activeSlot.value).toEqual({
+      kind: 'header',
+      pageIndex: 0,
+      variant: 'default',
+    });
     expect(liveRoot.isConnected).toBe(true);
+    expect(
+      liveRoot.closest<HTMLElement>('[data-page-slot]')!.dataset.pageIndex,
+    ).toBe('0');
+  });
+  test('loading stored content resets the header editor undo history', async () => {
+    const {editor, host} = mount();
+    editor.update(
+      () => {
+        $fillLines(3);
+        $setPageSetup(HEADER_SETUP);
+        $setPageHeader(slotState(editor, 'Doc A'));
+      },
+      {discrete: true},
+    );
+    await expect.poll(() => headerTexts(host)).toEqual(['Doc A']);
+    const {activeSlotEditor} = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+    editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+      kind: 'header',
+      pageIndex: 0,
+    });
+    activeSlotEditor.value!.update(
+      () => {
+        $getRoot().getFirstChild()!.selectEnd().insertText(' edited');
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(CLOSE_PAGE_SLOT_COMMAND, undefined);
+    // Another document's header arrives (a load, collaboration, undo).
+    editor.update(() => $setPageHeader(slotState(editor, 'Doc B')), {
+      discrete: true,
+    });
+    await expect.poll(() => headerTexts(host)).toEqual(['Doc B']);
+    editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+      kind: 'header',
+      pageIndex: 0,
+    });
+    const nested = activeSlotEditor.value!;
+    nested.dispatchCommand(UNDO_COMMAND, undefined);
+    await nextFrames(2);
+    nested.read(() => {
+      expect($getRoot().getTextContent()).toBe('Doc B');
+    });
+  });
+
+  test('keeps a live footer on its page when the page count changes', async () => {
+    const {editor, host} = mount();
+    editor.update(
+      () => {
+        $fillLines(Math.floor(LINES_PER_PAGE / 2));
+        $setPageSetup({
+          ...HEADER_SETUP,
+          footer: {
+            ...DEFAULT_SLOT_SETUP,
+            differentEvenPages: true,
+            enabled: true,
+          },
+          header: DEFAULT_SLOT_SETUP,
+        });
+        $setPageSlotContent('footer', 'default', slotState(editor, 'Odd'));
+        $setPageSlotContent('footer', 'even', slotState(editor, 'Even'));
+      },
+      {discrete: true},
+    );
+    await expect
+      .poll(() => host.querySelectorAll('[data-page-slot="footer"]').length)
+      .toBe(1);
+    const {activeSlot, activeSlotEditor} = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+    editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+      kind: 'footer',
+      pageIndex: 0,
+    });
+    const nested = activeSlotEditor.value!;
+    const liveRoot = nested.getRootElement()!;
+    // The document grows to a second page while the footer is being typed
+    // in: the last page's footer is now page 2's, which shows the even
+    // variant, while the footer being edited is still page 1's.
+    editor.update(
+      () => {
+        for (let i = 0; i < LINES_PER_PAGE; i++) {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode(`more ${i}`)),
+          );
+        }
+      },
+      {discrete: true},
+    );
+    await expect
+      .poll(() => host.querySelectorAll('.Pages__break').length)
+      .toBe(1);
+    await nextFrames(4);
+    expect(activeSlot.value).toEqual({
+      kind: 'footer',
+      pageIndex: 0,
+      variant: 'default',
+    });
+    expect(activeSlotEditor.value).toBe(nested);
+    const slot = liveRoot.closest<HTMLElement>('[data-page-slot]')!;
+    expect(slot.dataset.pageSlot).toBe('footer');
+    expect(slot.dataset.pageIndex).toBe('0');
+    expect(nested.isEditable()).toBe(true);
+    const footers = Array.from(
+      host.querySelectorAll<HTMLElement>('[data-page-slot="footer"]'),
+    ).map(footer => `${footer.dataset.pageIndex}:${footer.textContent}`);
+    expect(footers).toEqual(['0:Odd', '1:Even']);
   });
 });

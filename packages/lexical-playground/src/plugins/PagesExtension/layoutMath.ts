@@ -15,6 +15,7 @@ import type {
 
 import {
   MIN_CONTENT_HEIGHT,
+  MIN_CONTENT_WIDTH,
   PAGE_GAP,
   PAGE_SIZES,
   PX_PER_INCH,
@@ -60,10 +61,10 @@ export function computeGeometry(
   slotHeights?: SlotHeights,
 ): PageGeometry {
   const {width: pageWidth, height: pageHeight} = pageSizeInPixels(pageSetup);
-  const marginTop = Math.round(inchesToPixels(pageSetup.margins.top));
-  const marginRight = inchesToPixels(pageSetup.margins.right);
-  const marginBottom = Math.round(inchesToPixels(pageSetup.margins.bottom));
-  const marginLeft = inchesToPixels(pageSetup.margins.left);
+  let marginTop = Math.round(inchesToPixels(pageSetup.margins.top));
+  let marginRight = inchesToPixels(pageSetup.margins.right);
+  let marginBottom = Math.round(inchesToPixels(pageSetup.margins.bottom));
+  let marginLeft = inchesToPixels(pageSetup.margins.left);
   const snapped = (heights: Partial<Record<PageSlotVariant, number>>) => {
     const out: Partial<Record<PageSlotVariant, number>> = {};
     for (const [variant, height] of Object.entries(heights)) {
@@ -79,6 +80,30 @@ export function computeGeometry(
   };
   headerHeight = heights.header.default ?? 0;
   footerHeight = heights.footer.default ?? 0;
+  // Margins the page cannot hold (a setup typed in inches knows nothing of
+  // the header and footer heights) shrink proportionally, so that every
+  // page still sums to the page height with room for some content, and the
+  // printed pages match the screen.
+  const tallest = (values: Partial<Record<PageSlotVariant, number>>) =>
+    Math.max(0, ...Object.values(values).map(value => value ?? 0));
+  const verticalRoom = Math.max(
+    0,
+    pageHeight -
+      MIN_CONTENT_HEIGHT -
+      tallest(heights.header) -
+      tallest(heights.footer),
+  );
+  if (marginTop + marginBottom > verticalRoom) {
+    const scale = verticalRoom / (marginTop + marginBottom);
+    marginTop = Math.floor(marginTop * scale);
+    marginBottom = Math.floor(marginBottom * scale);
+  }
+  const horizontalRoom = Math.max(0, pageWidth - MIN_CONTENT_WIDTH);
+  if (marginLeft + marginRight > horizontalRoom) {
+    const scale = horizontalRoom / (marginLeft + marginRight);
+    marginLeft = Math.floor(marginLeft * scale * 10) / 10;
+    marginRight = Math.floor(marginRight * scale * 10) / 10;
+  }
   const contentHeight = Math.max(
     MIN_CONTENT_HEIGHT,
     pageHeight - marginTop - marginBottom - headerHeight - footerHeight,
@@ -165,13 +190,20 @@ const MAX_PAGES = 10_000;
 
 /**
  * Number of pages needed so that the content area of the last page reaches
- * `contentBottom` (the host-relative bottom of the editor root). Exact when
- * `contentBottom` was measured with `pageCount - 1` breaks in place; otherwise
- * the next measurement after applying the count is exact.
+ * `contentBottom` (the host-relative bottom of the editor root), when
+ * `renderedBreaks` page boundaries were in place as it was measured.
+ *
+ * Content below the last rendered boundary has no bands in it yet, so it
+ * is counted by content height alone: the result is exact in one pass for
+ * text, however tall the bands are. (Counting a band per page there would
+ * converge only geometrically, band over stride, and with deep margins
+ * not within the layout's settle guard.) Omitting `renderedBreaks` assumes
+ * every page already has its band.
  */
 export function computePageCount(
   contentBottom: number,
   geom: PageGeometry,
+  renderedBreaks: number = Number.POSITIVE_INFINITY,
 ): number {
   let top = geom.firstTop;
   for (let index = 0; index < MAX_PAGES; index++) {
@@ -179,7 +211,8 @@ export function computePageCount(
     if (bottom + BOUNDARY_EPSILON >= contentBottom) {
       return index + 1;
     }
-    top = bottom + pageBreakHeight(geom, index);
+    top =
+      index < renderedBreaks ? bottom + pageBreakHeight(geom, index) : bottom;
   }
   return MAX_PAGES;
 }

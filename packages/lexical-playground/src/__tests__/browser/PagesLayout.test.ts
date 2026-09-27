@@ -12,6 +12,7 @@ import {
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -386,6 +387,117 @@ describe('PagesLayout', () => {
       expected,
       5,
     );
+  });
+
+  test('settles the page count when bands are taller than the content', async () => {
+    const {editor, host, root} = mount();
+    const deep: PageSetup = {
+      ...PAGE_SETUP,
+      margins: {bottom: 4.3, left: 1, right: 1, top: 4.3},
+      pageSize: 'Letter',
+    };
+    editor.update(
+      () => {
+        const docRoot = $getRoot().clear();
+        for (let i = 0; i < 60; i++) {
+          docRoot.append(
+            $createParagraphNode().append($createTextNode(`${i} ${LOREM}`)),
+          );
+        }
+        $setPageSetup(deep);
+      },
+      {discrete: true},
+    );
+    await nextFrames(60);
+    await settled(host);
+    // Every line sits above the last page's footer.
+    const lastFooter = host.querySelector<HTMLElement>('.Pages__footer--last')!;
+    const lastLine = root.lastElementChild as HTMLElement;
+    expect(
+      lastLine.getBoundingClientRect().bottom -
+        lastFooter.getBoundingClientRect().top,
+    ).toBeLessThanOrEqual(1);
+  });
+
+  test('moves a paragraph with a blank soft line past a band, not into it', async () => {
+    const {editor, host, root} = mount();
+    editor.update(
+      () => {
+        $fillLines(LINES_PER_PAGE - 2);
+        // Four lines, the middle two blank: the blank ones would land
+        // beside the band, past the right margin.
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('before'),
+            $createLineBreakNode(),
+            $createLineBreakNode(),
+            $createLineBreakNode(),
+            $createTextNode('after'),
+          ),
+        );
+        $setPageSetup(PAGE_SETUP);
+      },
+      {discrete: true},
+    );
+    await expect.poll(() => breaks(host).length).toBe(1);
+    await settled(host);
+    const paragraph = root.lastElementChild as HTMLElement;
+    const top = root.offsetTop + paragraph.offsetTop;
+    expect(Math.abs(top - pageContentTop(1, GEOM))).toBeLessThan(1);
+    const contentRight =
+      root.getBoundingClientRect().right -
+      parseFloat(getComputedStyle(root).paddingRight);
+    for (const br of Array.from(paragraph.querySelectorAll('br'))) {
+      expect(br.getBoundingClientRect().left).toBeLessThanOrEqual(
+        contentRight + 1,
+      );
+    }
+  });
+
+  test('never scrolls a paragraph of soft-broken stanzas', async () => {
+    const {editor, host, root} = mount();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        for (let i = 0; i < 60; i++) {
+          if (i > 0) {
+            paragraph.append($createLineBreakNode(), $createLineBreakNode());
+          }
+          paragraph.append($createTextNode(`stanza ${i}`));
+        }
+        $getRoot().clear().append(paragraph);
+        $setPageSetup(PAGE_SETUP);
+      },
+      {discrete: true},
+    );
+    await expect.poll(() => breaks(host).length).toBeGreaterThanOrEqual(2);
+    await settled(host);
+    const paragraph = root.firstElementChild as HTMLElement;
+    // All of it is laid out on the pages (and printed), none of it hidden
+    // behind an inner scroll bar.
+    expect(paragraph.scrollHeight - paragraph.clientHeight).toBeLessThanOrEqual(
+      1,
+    );
+  });
+
+  test('does not stretch a page break with nothing after it', async () => {
+    const {editor, host, root} = mount();
+    editor.update(
+      () => {
+        $fillLines(3);
+        $getRoot().append($createPageBreakNode());
+        $setPageSetup(PAGE_SETUP);
+      },
+      {discrete: true},
+    );
+    await expect
+      .poll(() => host.style.getPropertyValue('--page-count'))
+      .toBe('1');
+    await settled(host);
+    // Print would otherwise add a blank page that the screen does not show.
+    const hr = root.querySelector('hr')!;
+    expect(hr.style.marginBottom).toBe('');
+    expect(host.style.getPropertyValue('--page-count')).toBe('1');
   });
 
   test('paginates an editor whose root lives in an iframe', async () => {

@@ -8,6 +8,7 @@
 import type {PageGeometry, PageSetup, PageSlotKind, SlotHeights} from './types';
 
 import {
+  $getNodeByKey,
   getParentElement,
   isHTMLElement,
   type LexicalEditor,
@@ -24,6 +25,7 @@ import {
   computeZoom,
   pageContentHeight,
   pageContentTop,
+  pageIndexAtY,
   slotHeight,
 } from './layoutMath';
 
@@ -49,6 +51,17 @@ const MAX_PASSES_PER_BURST = 8;
 const BURST_WINDOW_MS = 250;
 /** Ignore sub-pixel jitter when deciding whether to rewrite a margin. */
 const MARGIN_EPSILON = 0.5;
+/**
+ * A top-level text block holding a line with nothing but a line break: two
+ * breaks in a row, a leading one, or a trailing one (followed by Lexical's
+ * managed break, or in WebKit by its managed image).
+ */
+const BLANK_SOFT_LINE_BLOCK =
+  ':is(p, h1, h2, h3, h4, h5, h6, blockquote):is(' +
+  ':has(> br:first-child), :has(> br + br), ' +
+  ':has(> br + img[data-lexical-managed-linebreak]))';
+/** Marks a block that `index.css` moves whole past a band. */
+const KEEP_TOGETHER_ATTRIBUTE = 'data-page-keep-together';
 
 const CSS = {
   break: 'Pages__break',
@@ -127,6 +140,8 @@ export class PagesLayout {
   private readonly lastFooter: HTMLElement;
   private readonly breaks: PageBreakElements[] = [];
   private readonly pageBreakKeys = new Set<NodeKey>();
+  /** Blocks marked with {@link KEEP_TOGETHER_ATTRIBUTE}. */
+  private readonly keptTogether = new Set<HTMLElement>();
   private readonly cleanup: () => void;
   private slotProvider: PagesLayoutSlotProvider | null = null;
   private geom: PageGeometry | null = null;
@@ -143,6 +158,8 @@ export class PagesLayout {
   private lastPassAt = 0;
   private recentCounts: number[] = [];
   private pinnedCount: number | null = null;
+  /** The settle guard dropped writes, so the layout may be stale. */
+  private dropped = false;
   private disposed = false;
 
   constructor(
@@ -343,6 +360,10 @@ export class PagesLayout {
         delete el.dataset.pageBreakMargin;
       }
     }
+    for (const el of this.keptTogether) {
+      el.removeAttribute(KEEP_TOGETHER_ATTRIBUTE);
+    }
+    this.keptTogether.clear();
     this.layer.remove();
     this.host.classList.remove(CSS.host);
     this.host.style.removeProperty('min-height');
@@ -368,7 +389,11 @@ export class PagesLayout {
     const root = this.rootElement;
     const rootTop = root.offsetTop;
     const writes: (() => void)[] = [];
-    let count = computePageCount(rootTop + root.offsetHeight, geom);
+    let count = computePageCount(
+      rootTop + root.offsetHeight,
+      geom,
+      this.breaks.length,
+    );
     if (this.pinnedCount !== null) {
       count = this.pinnedCount;
     }
@@ -391,11 +416,20 @@ export class PagesLayout {
         }
         continue;
       }
-      const marginBottom = computePageBreakMarginBottom(
-        rootTop + el.offsetTop,
-        el.offsetHeight,
-        geom,
+      // A break with nothing after it starts no page: its margin would
+      // collapse through the root unseen on screen, yet print a blank page.
+      // (Asked of the document: the DOM ends in a decorator boundary.)
+      const isLast = this.editor.read(
+        'latest',
+        () => $getNodeByKey(key)?.getNextSibling() === null,
       );
+      const marginBottom = isLast
+        ? 0
+        : computePageBreakMarginBottom(
+            rootTop + el.offsetTop,
+            el.offsetHeight,
+            geom,
+          );
       if (Math.abs(marginBottom - current) > MARGIN_EPSILON) {
         writes.push(() => {
           el.dataset.pageBreakMargin = String(marginBottom);
@@ -409,8 +443,90 @@ export class PagesLayout {
         });
       }
     }
+    this.measureBlankSoftLines(geom, rootTop, writes);
     if (writes.length > 0) {
       this.scheduleWrites(writes);
+    }
+  }
+
+  /**
+   * A line holding nothing but a line break has no width, and every engine
+   * fits a zero-width line beside a full-width float: a blank soft line
+   * that reaches a band is drawn inside it, past the right margin, and the
+   * caret with it. No style on the `<br>` changes that in WebKit or
+   * Firefox, so the block holding it is marked to move whole past the band
+   * (as an empty paragraph does in CSS), if it fits on a page. A block
+   * taller than a page is left to split: moved whole it could only fit by
+   * scrolling, hiding lines on screen and cutting them from print.
+   *
+   * Only the block straddling each band is inspected, found by a binary
+   * search of the root's children. Marks stay while they apply, so a block
+   * that moved does not move back and forth.
+   */
+  private measureBlankSoftLines(
+    geom: PageGeometry,
+    rootTop: number,
+    writes: (() => void)[],
+  ): void {
+    const root = this.rootElement;
+    const fitsOnPage = (el: HTMLElement) =>
+      el.offsetHeight <=
+      pageContentHeight(geom, pageIndexAtY(rootTop + el.offsetTop, geom));
+    for (const el of this.keptTogether) {
+      if (
+        !el.isConnected ||
+        getParentElement(el) !== root ||
+        !el.matches(BLANK_SOFT_LINE_BLOCK) ||
+        !fitsOnPage(el)
+      ) {
+        writes.push(() => {
+          el.removeAttribute(KEEP_TOGETHER_ATTRIBUTE);
+          this.keptTogether.delete(el);
+        });
+      }
+    }
+    const children = root.children;
+    for (let k = 0; k < this.breaks.length; k++) {
+      const bandTop = pageContentTop(k, geom) + pageContentHeight(geom, k);
+      const bandBottom = pageContentTop(k + 1, geom);
+      let lo = 0;
+      let hi = children.length - 1;
+      let block: HTMLElement | null = null;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const child = children[mid];
+        if (!isHTMLElement(child)) {
+          break;
+        }
+        const top = rootTop + child.offsetTop;
+        if (top + child.offsetHeight <= bandTop) {
+          lo = mid + 1;
+        } else if (top >= bandBottom) {
+          hi = mid - 1;
+        } else {
+          block = child;
+          break;
+        }
+      }
+      if (
+        block === null ||
+        this.keptTogether.has(block) ||
+        !block.matches(BLANK_SOFT_LINE_BLOCK) ||
+        block.offsetHeight > pageContentHeight(geom, k + 1)
+      ) {
+        continue;
+      }
+      const right = block.getBoundingClientRect().right;
+      const beside = Array.from(block.querySelectorAll(':scope > br')).some(
+        br => br.getBoundingClientRect().left > right + 0.5,
+      );
+      if (beside) {
+        const el = block;
+        writes.push(() => {
+          el.setAttribute(KEEP_TOGETHER_ATTRIBUTE, 'true');
+          this.keptTogether.add(el);
+        });
+      }
     }
   }
 
@@ -524,21 +640,28 @@ export class PagesLayout {
       }
       this.breaks.push({footerBand, gap, headerBand, spacer});
     }
+    const removed: PageBreakElements[] = [];
     while (this.breaks.length > Math.max(0, count - 1)) {
-      const {footerBand, gap, headerBand, spacer} = this.breaks.pop()!;
+      removed.push(this.breaks.pop()!);
+    }
+    this.pageCount = count;
+    this.host.style.setProperty('--page-count', String(count));
+    this.lastFooter.dataset.pageIndex = String(count - 1);
+    // Released once the new page structure is in place, so the provider
+    // can move what lives in these slots to the pages that remain.
+    for (const {footerBand, headerBand} of removed) {
       for (const band of [footerBand, headerBand]) {
         const slot = band.firstElementChild;
         if (isHTMLElement(slot)) {
           this.slotProvider?.releaseSlot(slot);
         }
       }
+    }
+    for (const {footerBand, gap, headerBand, spacer} of removed) {
       for (const el of [spacer, footerBand, gap, headerBand]) {
         el.remove();
       }
     }
-    this.pageCount = count;
-    this.host.style.setProperty('--page-count', String(count));
-    this.lastFooter.dataset.pageIndex = String(count - 1);
     this.applyPageSizes();
     // Every slot may show the page count, so refill them all.
     this.forEachSlot((slot, kind, pageIndex) =>
@@ -613,6 +736,7 @@ export class PagesLayout {
             'PagesLayout: layout did not settle; waiting for the next edit',
           );
         }
+        this.dropped = true;
         return;
       }
       for (const write of queued) {
@@ -647,6 +771,13 @@ export class PagesLayout {
     this.passes = 0;
     this.pinnedCount = null;
     this.recentCounts = [];
+    if (this.dropped) {
+      // The last burst gave up with writes pending; this new input is the
+      // next chance to finish the layout, whether or not it changes the
+      // root's height (which is all the ResizeObserver would notice).
+      this.dropped = false;
+      this.scheduleMeasure();
+    }
   }
 
   // ---- slots ------------------------------------------------------------

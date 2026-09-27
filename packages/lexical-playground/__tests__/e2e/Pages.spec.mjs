@@ -11,6 +11,7 @@ import {
   moveToEditorBeginning,
   moveToLineEnd,
   selectAll,
+  undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertSelection,
@@ -142,6 +143,29 @@ function columnLayout(count, perColumn) {
     indent: 0,
     templateColumns: `repeat(${count}, 1fr)`,
     type: 'layout-container',
+    version: 1,
+  };
+}
+
+function checkList(count) {
+  return {
+    children: Array.from({length: count}, (_, i) => ({
+      checked: false,
+      children: [textNode(`Task ${i + 1}`)],
+      direction: null,
+      format: '',
+      indent: 0,
+      type: 'listitem',
+      value: i + 1,
+      version: 1,
+    })),
+    direction: null,
+    format: '',
+    indent: 0,
+    listType: 'check',
+    start: 1,
+    tag: 'ul',
+    type: 'list',
     version: 1,
   };
 }
@@ -861,7 +885,6 @@ test.describe('Pages', () => {
     await enablePaged(page);
     await enableHeader(page);
     await editHeader(page);
-    await page.keyboard.type('Logo ');
     // The image is a React-rendered node that needs the application's
     // providers; when the header editor's React tree sat outside them, the
     // component threw during render and no image was ever rendered.
@@ -883,6 +906,10 @@ test.describe('Pages', () => {
         '[data-page-slot="header"][data-page-index="0"] .editor-image img',
       ),
     ).toHaveCount(1);
+    // An image is content: no "Click to add a header" drawn over it.
+    await expect(
+      page.locator('[data-page-slot="header"][data-page-index="0"]'),
+    ).toHaveAttribute('data-empty', 'false');
   });
   test('Escape in a header closes the component picker, not the header', async ({
     page,
@@ -964,8 +991,8 @@ test.describe('Pages', () => {
   }) => {
     test.skip(isPlainText || isCollab);
     await loadDocument(page, [
-      ...paragraphs(6),
-      softBreakParagraph('start', 50, 'end'),
+      ...paragraphs(11),
+      softBreakParagraph('start', 12, 'end'),
       ...paragraphs(3, 'Trailing'),
     ]);
     await enablePaged(page);
@@ -1004,6 +1031,140 @@ test.describe('Pages', () => {
           result.box.top < band.bottom - 1 && result.box.bottom > band.top + 1,
       ),
     ).toEqual([]);
+  });
+
+  test('A paragraph taller than a page keeps all of its lines on the pages', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await loadDocument(page, [
+      ...paragraphs(6),
+      softBreakParagraph('start', 50, 'end'),
+      ...paragraphs(3, 'Trailing'),
+    ]);
+    await enablePaged(page);
+    expect(await waitForStablePageCount(page)).toBeLessThanOrEqual(4);
+    // Moving it whole would need an inner scroll bar, hiding lines on
+    // screen and cutting them from print; it splits like any paragraph.
+    const overflow = await evaluate(page, () => {
+      const block = [
+        ...document.querySelectorAll('.ContentEditable__root > p'),
+      ].find(p => p.textContent.startsWith('start'));
+      return block.scrollHeight - block.clientHeight;
+    });
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+
+  test('A tall table without a scroll wrapper stays on the pages', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await initialize({isCollab, page, tableHorizontalScroll: false});
+    await loadDocument(page, [...paragraphs(2), table(60, 3)]);
+    await enablePaged(page);
+    const count = await waitForStablePageCount(page);
+    expect(count).toBeLessThanOrEqual(3);
+    const areas = await contentAreas(page);
+    const box = await hostRelativeBox(page, '.ContentEditable__root > table');
+    const containing = areas.find(
+      area => box.top >= area.top - 1 && box.bottom <= area.bottom + 1,
+    );
+    expect(containing).toBeDefined();
+  });
+
+  test('Check-list items never start under a band', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await loadDocument(page, [checkList(80)]);
+    await enablePaged(page);
+    expect(await waitForStablePageCount(page)).toBeGreaterThanOrEqual(2);
+    const bands = await bandBoxes(page);
+    const items = await evaluate(
+      page,
+      host => {
+        const hostTop = document
+          .querySelector(host)
+          .getBoundingClientRect().top;
+        return [...document.querySelectorAll('li[role="checkbox"]')].map(li => {
+          const r = li.getBoundingClientRect();
+          return {bottom: r.bottom - hostTop, top: r.top - hostTop};
+        });
+      },
+      HOST,
+    );
+    // The checkbox is drawn at the item's vertical middle: an item whose
+    // text was pushed past a band while its box still spans the band hides
+    // its checkbox under the band.
+    const underBand = items.filter(item =>
+      bands.some(
+        band => item.top < band.bottom - 1 && item.bottom > band.top + 1,
+      ),
+    );
+    expect(underBand).toEqual([]);
+  });
+
+  test('Turning pages off with a header open hands the toolbar back', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body');
+    await enablePaged(page);
+    await enableHeader(page);
+    await editHeader(page);
+    await page.keyboard.type('Header');
+    await openPageSetup(page);
+    await togglePageSetupSwitch(page, 'paged-toggle');
+    await closePageSetup(page);
+    await expect(page.locator(LAYER)).toHaveCount(0);
+    const items = await insertMenuItems(page);
+    expect(items).toContain('Page Break');
+    expect(items).not.toContain('Page Number');
+  });
+
+  test('Undoing a header edit from the document keeps the caret', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Body');
+    await enablePaged(page);
+    await enableHeader(page);
+    await focusEditor(page);
+    await moveToEditorBeginning(page);
+    await moveToLineEnd(page);
+    await editHeader(page);
+    await page.keyboard.type('Header');
+    await page.waitForTimeout(400);
+    await page.keyboard.press('Escape');
+    await waitForSelector(page, LIVE_SLOT, {state: 'detached'});
+    await assertSelection(page, {
+      anchorOffset: 4,
+      anchorPath: [0, 0, 0],
+      focusOffset: 4,
+      focusPath: [0, 0, 0],
+    });
+    await undo(page);
+    await expect(
+      page.locator('[data-page-slot="header"][data-page-index="0"]'),
+    ).toHaveAttribute('data-empty', 'true');
+    await assertSelection(page, {
+      anchorOffset: 4,
+      anchorPath: [0, 0, 0],
+      focusOffset: 4,
+      focusPath: [0, 0, 0],
+    });
   });
 
   test('Sticky notes get no block format menu', async ({

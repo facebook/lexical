@@ -9,7 +9,11 @@ import type {PageSetup} from '../../plugins/PagesExtension/types';
 
 import {describe, expect, it} from 'vitest';
 
-import {DEFAULT_PAGE_SETUP} from '../../plugins/PagesExtension/constants';
+import {
+  DEFAULT_PAGE_SETUP,
+  MIN_CONTENT_HEIGHT,
+  MIN_CONTENT_WIDTH,
+} from '../../plugins/PagesExtension/constants';
 import {
   computeGeometry,
   computePageBreakMarginBottom,
@@ -105,6 +109,70 @@ describe('computePageCount', () => {
     // Three pages worth of lines laid out with two breaks in place.
     const bottom = H0 + 3 * C + 2 * Bk - 5;
     expect(computePageCount(bottom, geom)).toBe(3);
+  });
+
+  it('counts content below the rendered breaks by content height alone', () => {
+    // Deep margins: each band is several times taller than a page's
+    // content. Content below the last rendered break has no bands in it
+    // yet, so assuming a band per page would undercount by a wide margin
+    // and take many passes to converge.
+    const deep = computeGeometry(
+      {...setup, margins: {bottom: 4.3, left: 0.5, right: 0.5, top: 4.3}},
+      0,
+      0,
+      24,
+    );
+    const c = deep.contentHeight;
+    expect(deep.breakHeight).toBeGreaterThan(3 * c);
+    expect(computePageCount(deep.firstTop + 10 * c - 1, deep, 0)).toBe(10);
+    expect(computePageCount(pageContentTop(2, deep) + 3 * c - 1, deep, 2)).toBe(
+      5,
+    );
+    // Without the rendered-break count, every page is assumed to have one.
+    expect(computePageCount(pageContentTop(2, deep) + c - 1, deep)).toBe(3);
+  });
+});
+
+describe('computeGeometry with extreme margins', () => {
+  it('keeps the vertical geometry inside the page', () => {
+    const geom = computeGeometry(
+      {...setup, margins: {bottom: 6, left: 0.5, right: 0.5, top: 6}},
+      0,
+      0,
+      24,
+    );
+    expect(geom.contentHeight).toBeGreaterThanOrEqual(MIN_CONTENT_HEIGHT);
+    expect(geom.marginTop + geom.contentHeight + geom.marginBottom).toBe(
+      geom.pageHeight,
+    );
+  });
+
+  it('keeps room for the content with tall headers and footers', () => {
+    const geom = computeGeometry(
+      {...setup, margins: {bottom: 2, left: 0.5, right: 0.5, top: 2}},
+      400,
+      400,
+      24,
+    );
+    expect(
+      geom.marginTop +
+        geom.headerHeight +
+        geom.contentHeight +
+        geom.footerHeight +
+        geom.marginBottom,
+    ).toBe(geom.pageHeight);
+  });
+
+  it('keeps room for a line of text between the side margins', () => {
+    const geom = computeGeometry(
+      {...setup, margins: {bottom: 0.5, left: 4.2, right: 4.2, top: 0.5}},
+      0,
+      0,
+      24,
+    );
+    expect(
+      geom.pageWidth - geom.marginLeft - geom.marginRight,
+    ).toBeGreaterThanOrEqual(MIN_CONTENT_WIDTH);
   });
 });
 

@@ -53,12 +53,15 @@ export const PAGE_GAP = 24;
  * page height, which would otherwise produce an unbounded page count.
  */
 export const MIN_CONTENT_HEIGHT = 48;
+/** Narrowest content area, in CSS px, that side margins may leave. */
+export const MIN_CONTENT_WIDTH = 96;
 /** A header or footer may take at most this fraction of the page height. */
 export const MAX_SLOT_HEIGHT_RATIO = 0.4;
 /**
  * Update tag on the parent editor updates that write header/footer content
- * back from the nested editors, so the write-back is not mistaken for an
- * external change (undo, collaboration) that must reload those editors.
+ * back from the nested editors, for listeners that want to tell a header
+ * edit apart from other changes. (The session itself recognizes its own
+ * writes by content, so an outside change batched with one still loads.)
  */
 export const HEADER_FOOTER_COMMIT_TAG = 'pages-header-footer-commit';
 /**

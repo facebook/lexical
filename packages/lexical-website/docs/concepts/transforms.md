@@ -26,7 +26,18 @@ editor.registerNodeTransform<T extends LexicalNode>(klass: Klass<T>, listener: T
 
 Transforms are executed sequentially before changes are propagated to the DOM and multiple transforms still lead to a single DOM reconciliation (the most expensive operation in Lexical's lifecycle).
 
-![Transforms lifecycle](/img/docs/transforms-lifecycle.svg)
+```mermaid
+flowchart LR
+  accTitle: Transforms lifecycle
+  accDescr: A keyboard event leads to an update function. Its changes mark nodes dirty, and the transforms registered for those nodes run one after another. If a transform changed more nodes, the transforms for those nodes run again. When nothing is left dirty, the DOM is reconciled once and the update listeners run.
+  event{{"Keyboard event"}} --> update["Update function"]
+  update --> t1["transform1"]
+  t1 --> t2["transform2"]
+  t2 --> dirty{"Nodes still dirty?"}
+  dirty -->|"yes"| t1
+  dirty -->|"no"| reconcile["DOM reconciled once"]
+  reconcile --> listeners["Update listeners"]
+```
 
 :::caution Beware!
 

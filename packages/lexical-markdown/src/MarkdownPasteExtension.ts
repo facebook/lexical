@@ -7,7 +7,7 @@
  */
 
 import {$insertGeneratedNodes} from '@lexical/clipboard';
-import {$isCodeNode} from '@lexical/code-core';
+import {$isCodeNode, type CodeNode} from '@lexical/code-core';
 import {
   namedSignals,
   type NamedSignalsOutput,
@@ -15,6 +15,7 @@ import {
   signal,
 } from '@lexical/extension';
 import {
+  $createParagraphNode,
   $createRangeSelection,
   $findMatchingParent,
   $getNodeByKey,
@@ -258,6 +259,40 @@ function $resolvePoint(
   ];
 }
 
+function withoutWhitespace(text: string): string {
+  return text.replace(/\s+/g, '');
+}
+
+function $getOutermostCodeNode(node: LexicalNode): CodeNode | null {
+  let code = $findMatchingParent(node, $isCodeNode);
+  for (
+    let parent = code && code.getParent();
+    $isCodeNode(parent);
+    parent = parent.getParent()
+  ) {
+    code = parent;
+  }
+  return code;
+}
+
+/**
+ * Put an empty paragraph in place of `code`, or next to it, and select it.
+ */
+function $replaceWithParagraph(
+  code: CodeNode,
+  where: 'replace' | 'before' | 'after',
+): void {
+  const paragraph = $createParagraphNode();
+  if (where === 'replace') {
+    code.replace(paragraph);
+  } else if (where === 'before') {
+    code.insertBefore(paragraph);
+  } else {
+    code.insertAfter(paragraph);
+  }
+  paragraph.select();
+}
+
 /**
  * The range covered by `offer`, if it still holds the pasted text: its text
  * must equal the Markdown apart from whitespace. That also leaves out pastes
@@ -276,7 +311,6 @@ function $getOfferRange(offer: MarkdownPasteOffer): RangeSelection | null {
   if (range.isCollapsed() || range.isBackward()) {
     return null;
   }
-  const withoutWhitespace = (text: string) => text.replace(/\s+/g, '');
   return withoutWhitespace(range.getTextContent()) ===
     withoutWhitespace(offer.markdown)
     ? range
@@ -305,8 +339,41 @@ function $convertOffer(
     output.shouldPreserveNewLines.peek(),
     output.shouldMergeAdjacentLines.peek(),
   );
-  $setSelection(range);
-  $insertGeneratedNodes(editor, nodes, range);
+  // HTML with a <pre> in it is pasted as a code block. Inserting into it
+  // would turn the Markdown back into code text, so the Markdown takes the
+  // code block's place instead: the whole block when it holds the whole
+  // paste, or what is left of it once the pasted range is removed.
+  const endCode = $getOutermostCodeNode(range.focus.getNode());
+  if (
+    endCode !== null &&
+    withoutWhitespace(endCode.getTextContent()) ===
+      withoutWhitespace(offer.markdown)
+  ) {
+    $replaceWithParagraph(endCode, 'replace');
+  } else {
+    $setSelection(range);
+    range.removeText();
+    const selection = $getSelection();
+    if (!$isRangeSelection(selection)) {
+      return false;
+    }
+    const code = $getOutermostCodeNode(selection.anchor.getNode());
+    if (code !== null) {
+      $replaceWithParagraph(
+        code,
+        code.getTextContentSize() === 0
+          ? 'replace'
+          : selection.anchor.offset === 0
+            ? 'before'
+            : 'after',
+      );
+    }
+  }
+  const selection = $getSelection();
+  if (selection === null) {
+    return false;
+  }
+  $insertGeneratedNodes(editor, nodes, selection);
   return true;
 }
 

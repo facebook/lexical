@@ -205,6 +205,64 @@ describe('MarkdownPasteExtension', () => {
     ]);
   });
 
+  test('replaces a code block that the HTML was pasted as', () => {
+    const editor = createEditor();
+    paste(editor, {
+      'text/html': '<pre><code># Title\n- **one**\n- two</code></pre>',
+      'text/plain': '# Title\n- **one**\n- two',
+    });
+    expect(describeRoot(editor)).toEqual([
+      ['code', '# Title\n- **one**\n- two'],
+    ]);
+    expect(convert(editor)).toBe(true);
+    expect(describeRoot(editor)).toEqual([
+      ['heading', 'Title'],
+      ['list', 'one\n\ntwo'],
+    ]);
+  });
+
+  test('replaces a pasted code block without touching the text around it', () => {
+    const editor = createEditor();
+    setUp(editor, () => {
+      const text = $createTextNode('abcd');
+      $getRoot().getFirstChildOrThrow<ElementNode>().append(text);
+      text.select(2, 2);
+    });
+    paste(editor, {
+      'text/html': '<pre><code># Title\n- **one**\n- two</code></pre>',
+      'text/plain': '# Title\n- **one**\n- two',
+    });
+    expect(describeRoot(editor)).toEqual([
+      ['paragraph', 'ab'],
+      ['code', '# Title\n- **one**\n- two'],
+      ['paragraph', 'cd'],
+    ]);
+    convert(editor);
+    expect(describeRoot(editor)).toEqual([
+      ['paragraph', 'ab'],
+      ['heading', 'Title'],
+      ['list', 'one\n\ntwo'],
+      ['paragraph', 'cd'],
+    ]);
+  });
+
+  test('replaces the code block at the end of a mixed HTML paste', () => {
+    const editor = createEditor();
+    paste(editor, {
+      'text/html': '<p>## Intro</p><pre><code>- **one**\n- two</code></pre>',
+      'text/plain': '## Intro\n- **one**\n- two',
+    });
+    expect(describeRoot(editor)).toEqual([
+      ['paragraph', '## Intro'],
+      ['code', '- **one**\n- two'],
+    ]);
+    convert(editor);
+    expect(describeRoot(editor)).toEqual([
+      ['heading', 'Intro'],
+      ['list', 'one\n\ntwo'],
+    ]);
+  });
+
   test('does not offer HTML pastes that rendered the Markdown', () => {
     const editor = createEditor();
     paste(editor, {

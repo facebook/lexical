@@ -53,47 +53,6 @@ const editor = createEditor(...);
 registerMarkdownShortcuts(editor, TRANSFORMERS);
 ```
 
-## Paste
-`MarkdownPasteExtension` offers to convert pasted text that looks like markdown into rich text. Pasting itself is
-unchanged. When the clipboard's plain text looks like markdown (`looksLikeMarkdown`, or your own `isMarkdown`) and the
-pasted content still shows the markdown syntax, which is the case for plain text and for HTML copied from terminals or
-code editors, the paste is published as the extension's `offer` signal. A prompt can then dispatch
-`CONVERT_PASTED_MARKDOWN_COMMAND`, which replaces the pasted content with the imported markdown as one undoable update,
-or `DISMISS_PASTED_MARKDOWN_COMMAND`. The next edit, selection change or Escape drops the offer.
-```js
-import {
-  buildEditorFromExtensions,
-  effect,
-  getExtensionDependencyFromEditor,
-} from '@lexical/extension';
-import {
-  CONVERT_PASTED_MARKDOWN_COMMAND,
-  MarkdownPasteExtension,
-  TRANSFORMERS,
-} from '@lexical/markdown';
-import {RichTextExtension} from '@lexical/rich-text';
-import {configExtension} from 'lexical';
-
-const editor = buildEditorFromExtensions({
-  dependencies: [
-    RichTextExtension,
-    configExtension(MarkdownPasteExtension, {transformers: TRANSFORMERS}),
-  ],
-  name: 'app',
-});
-const {offer} = getExtensionDependencyFromEditor(
-  editor,
-  MarkdownPasteExtension,
-).output;
-effect(() => {
-  // Show or hide your prompt; on accept:
-  // editor.dispatchCommand(CONVERT_PASTED_MARKDOWN_COMMAND, undefined);
-  showPrompt(offer.value !== null);
-});
-```
-
-Transformers whose nodes are not registered on the editor are skipped. Nothing is offered inside a code block.
-
 ## Transformers
 Markdown functionality relies on transformers configuration. It's an array of objects that define how certain text or nodes
 are processed during import, export or while typing. `@lexical/markdown` package provides set of built-in transformers:

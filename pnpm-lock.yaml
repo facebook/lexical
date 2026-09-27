@@ -1092,15 +1092,9 @@ importers:
 
   packages/lexical-markdown:
     dependencies:
-      '@lexical/clipboard':
-        specifier: workspace:*
-        version: link:../lexical-clipboard
       '@lexical/code-core':
         specifier: workspace:*
         version: link:../lexical-code-core
-      '@lexical/extension':
-        specifier: workspace:*
-        version: link:../lexical-extension
       '@lexical/internal':
         specifier: workspace:*
         version: link:../lexical-internal

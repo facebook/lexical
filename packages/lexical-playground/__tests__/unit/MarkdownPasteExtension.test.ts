@@ -14,13 +14,6 @@ import {
 import {HistoryExtension} from '@lexical/history';
 import {LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
-import {
-  CONVERT_PASTED_MARKDOWN_COMMAND,
-  DISMISS_PASTED_MARKDOWN_COMMAND,
-  looksLikeMarkdown,
-  type MarkdownPasteConfig,
-  MarkdownPasteExtension,
-} from '@lexical/markdown';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -39,6 +32,14 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
+
+import {
+  CONVERT_PASTED_MARKDOWN_COMMAND,
+  DISMISS_PASTED_MARKDOWN_COMMAND,
+  looksLikeMarkdown,
+  type MarkdownPasteConfig,
+  MarkdownPasteExtension,
+} from '../../src/plugins/MarkdownPasteExtension';
 
 const MARKDOWN = [
   '# Heading',

@@ -15,6 +15,11 @@ import {
   signal,
 } from '@lexical/extension';
 import {
+  $generateNodesFromMarkdownString,
+  type Transformer,
+  TRANSFORMERS,
+} from '@lexical/markdown';
+import {
   $createParagraphNode,
   $createRangeSelection,
   $findMatchingParent,
@@ -43,9 +48,6 @@ import {
   type RangeSelection,
   safeCast,
 } from 'lexical';
-
-import {$generateNodesFromMarkdownString} from './MarkdownImport';
-import {type Transformer, TRANSFORMERS} from './MarkdownTransformers';
 
 /**
  * A position in the document, recorded by key so that it can outlive the
@@ -497,20 +499,8 @@ function registerMarkdownPaste(
  * update, or {@link DISMISS_PASTED_MARKDOWN_COMMAND}. The offer is dropped
  * by the next edit or selection change, or by Escape.
  *
- * @example
- * ```ts
- * import {MarkdownPasteExtension, TRANSFORMERS} from '@lexical/markdown';
- * import {RichTextExtension} from '@lexical/rich-text';
- * import {configExtension, defineExtension} from 'lexical';
- *
- * defineExtension({
- *   dependencies: [
- *     RichTextExtension,
- *     configExtension(MarkdownPasteExtension, {transformers: TRANSFORMERS}),
- *   ],
- *   name: 'app',
- * });
- * ```
+ * The playground renders the prompt with `MarkdownPastePlugin`. This lives
+ * in the playground while the interface settles; copy both to use it.
  */
 export const MarkdownPasteExtension = defineExtension({
   build: (_editor, config): MarkdownPasteOutput => ({
@@ -524,7 +514,7 @@ export const MarkdownPasteExtension = defineExtension({
     shouldPreserveNewLines: false,
     transformers: TRANSFORMERS,
   }),
-  name: '@lexical/markdown/MarkdownPaste',
+  name: '@lexical/playground/MarkdownPaste',
   register: (editor, _config, state) =>
     registerMarkdownPaste(editor, state.getOutput()),
 });

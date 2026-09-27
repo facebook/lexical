@@ -9,19 +9,12 @@
 
 import type {
   BaseSelection,
-  LexicalCommand,
   LexicalEditor,
   LexicalNode,
   ElementNode,
-  NodeKey,
   TextFormatType,
   TextNode,
 } from 'lexical';
-import type {
-  LexicalExtension,
-  NamedSignalsOutput,
-  Signal,
-} from '@lexical/extension';
 
 export type Transformer =
   | ElementTransformer
@@ -111,50 +104,6 @@ declare export function $convertFromMarkdownString(
   shouldPreserveNewLines?: boolean,
   shouldMergeAdjacentLines?: boolean,
 ): void;
-
-declare export function $generateNodesFromMarkdownString(
-  markdown: string,
-  transformers?: Transformer[],
-  shouldPreserveNewLines?: boolean,
-  shouldMergeAdjacentLines?: boolean,
-): Array<LexicalNode>;
-
-export type MarkdownPastePoint = {
-  readonly key: NodeKey,
-  readonly offset: number,
-  readonly type: 'text' | 'element',
-};
-
-export type MarkdownPasteOffer = {
-  readonly markdown: string,
-  readonly start: MarkdownPastePoint,
-  readonly end: MarkdownPastePoint,
-};
-
-export type MarkdownPasteConfig = {
-  disabled: boolean,
-  transformers: Transformer[],
-  shouldPreserveNewLines: boolean,
-  shouldMergeAdjacentLines: boolean,
-  isMarkdown: (text: string) => boolean,
-};
-
-export type MarkdownPasteOutput = {
-  ...NamedSignalsOutput<MarkdownPasteConfig>,
-  offer: Signal<MarkdownPasteOffer | null>,
-};
-
-declare export var CONVERT_PASTED_MARKDOWN_COMMAND: LexicalCommand<void>;
-declare export var DISMISS_PASTED_MARKDOWN_COMMAND: LexicalCommand<void>;
-
-declare export function looksLikeMarkdown(text: string): boolean;
-
-declare export var MarkdownPasteExtension: LexicalExtension<
-  MarkdownPasteConfig,
-  '@lexical/markdown/MarkdownPaste',
-  MarkdownPasteOutput,
-  void,
->;
 
 declare export function $convertSelectionToMarkdownString(
   transformers?: Transformer[],

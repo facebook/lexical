@@ -10,28 +10,17 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  ArtificialNode__DO_NOT_USE,
   type BaseSelection,
   type ElementNode,
+  type LexicalNode,
 } from 'lexical';
 
 import {
   createMarkdownExport,
   createSelectionMarkdownExport,
 } from './MarkdownExport';
-import {
-  $generateNodesFromMarkdownString,
-  $importMarkdownNodes,
-} from './MarkdownImport';
-import {
-  CONVERT_PASTED_MARKDOWN_COMMAND,
-  DISMISS_PASTED_MARKDOWN_COMMAND,
-  looksLikeMarkdown,
-  type MarkdownPasteConfig,
-  MarkdownPasteExtension,
-  type MarkdownPasteOffer,
-  type MarkdownPasteOutput,
-  type MarkdownPastePoint,
-} from './MarkdownPasteExtension';
+import {$importMarkdownNodes} from './MarkdownImport';
 import {registerMarkdownShortcuts} from './MarkdownShortcuts';
 import {
   BOLD_ITALIC_STAR,
@@ -94,6 +83,33 @@ function $convertFromMarkdownString(
 }
 
 /**
+ * Parses a markdown string and returns the resulting nodes as an array,
+ * without modifying the document tree or selection. The returned nodes can be
+ * inserted at an arbitrary position via `selection.insertNodes()`.
+ *
+ *  @param {boolean} [shouldPreserveNewLines] By setting this to true, new lines will be preserved between conversions
+ *  @param {boolean} [shouldMergeAdjacentLines] By setting this to true, adjacent non empty lines will be merged according to commonmark spec: https://spec.commonmark.org/0.24/#example-177. Not applicable if shouldPreserveNewLines = true.
+ */
+function $generateNodesFromMarkdownString(
+  markdown: string,
+  transformers: Transformer[] = TRANSFORMERS,
+  shouldPreserveNewLines = false,
+  shouldMergeAdjacentLines = false,
+): LexicalNode[] {
+  const sanitizedMarkdown = shouldPreserveNewLines
+    ? markdown
+    : normalizeMarkdown(markdown, shouldMergeAdjacentLines);
+  const container = new ArtificialNode__DO_NOT_USE();
+  $importMarkdownNodes(
+    sanitizedMarkdown,
+    container,
+    transformers,
+    shouldPreserveNewLines,
+  );
+  return container.getChildren();
+}
+
+/**
  * Renders string from markdown. The selection is moved to the start after the operation.
  */
 function $convertToMarkdownString(
@@ -137,8 +153,6 @@ export {
   BOLD_UNDERSCORE,
   CHECK_LIST,
   CODE,
-  CONVERT_PASTED_MARKDOWN_COMMAND,
-  DISMISS_PASTED_MARKDOWN_COMMAND,
   ELEMENT_TRANSFORMERS,
   type ElementTransformer,
   HEADING,
@@ -148,12 +162,6 @@ export {
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
-  looksLikeMarkdown,
-  type MarkdownPasteConfig,
-  MarkdownPasteExtension,
-  type MarkdownPasteOffer,
-  type MarkdownPasteOutput,
-  type MarkdownPastePoint,
   MULTILINE_ELEMENT_TRANSFORMERS,
   type MultilineElementTransformer,
   ORDERED_LIST,

@@ -39,7 +39,6 @@ import {
   CheckListExtension,
   ListExtension,
 } from '@lexical/list';
-import {MarkdownPasteExtension} from '@lexical/markdown';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {
@@ -95,6 +94,7 @@ import {FigmaExtension} from './plugins/FigmaExtension';
 import {ReactFindReplaceExtension} from './plugins/FindReplaceExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {LayoutExtension} from './plugins/LayoutExtension/LayoutExtension';
+import {MarkdownPasteExtension} from './plugins/MarkdownPasteExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {PLAYGROUND_TRANSFORMERS} from './plugins/MarkdownTransformers';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';

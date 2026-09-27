@@ -8,22 +8,25 @@
 
 import './index.css';
 
-import {
-  CONVERT_PASTED_MARKDOWN_COMMAND,
-  DISMISS_PASTED_MARKDOWN_COMMAND,
-  MarkdownPasteExtension,
-  type MarkdownPasteOffer,
-} from '@lexical/markdown';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {
   getDOMSelection,
   getDOMSelectionRange,
   type LexicalEditor,
+  mergeRegister,
+  registerEventListener,
 } from 'lexical';
 import * as React from 'react';
 import {type JSX, useLayoutEffect, useRef} from 'react';
 import {createPortal} from 'react-dom';
+
+import {
+  CONVERT_PASTED_MARKDOWN_COMMAND,
+  DISMISS_PASTED_MARKDOWN_COMMAND,
+  MarkdownPasteExtension,
+  type MarkdownPasteOffer,
+} from '../MarkdownPasteExtension';
 
 const GAP = 8;
 
@@ -92,12 +95,10 @@ function MarkdownPastePrompt({
     const update = () => positionPrompt(prompt, getPasteEndRect(editor, offer));
     update();
     // Scrolling does not move the selection, so the offer stays pending.
-    view.addEventListener('scroll', update, true);
-    view.addEventListener('resize', update);
-    return () => {
-      view.removeEventListener('scroll', update, true);
-      view.removeEventListener('resize', update);
-    };
+    return mergeRegister(
+      registerEventListener(view, 'scroll', update, true),
+      registerEventListener(view, 'resize', update),
+    );
   }, [editor, offer]);
 
   // Keep the editor focused and its selection where the paste left it, which

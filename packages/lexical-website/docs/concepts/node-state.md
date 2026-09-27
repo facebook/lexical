@@ -10,13 +10,6 @@ NodeState allows your application to define keys that can be stored on
 any node with automatic JSON support, you can even add state to the root
 node to store document-level metadata.
 
-:::tip
-
-You can even add node state to the RootNode to store document-level metadata,
-which wasn't possible at all before!
-
-:::
-
 With a combination of NodeState and other APIs such as
 [Listeners](listeners.md) or
 [Transforms](transforms.md) you can

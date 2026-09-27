@@ -69,7 +69,7 @@ const StateViewExtension = defineExtension({
     // around a hook, plus it's all framework independent.
     return effect(() => {
       stateRef.textContent = JSON.stringify(
-        editorState.value.toJSON(),
+        editorState.value.toJSON(true),
         undefined,
         2,
       );

@@ -203,7 +203,7 @@ export class LexicalEditorElement extends HTMLElement {
   /** The serialized Lexical editor state (JSON), as submitted with forms. */
   get value(): string {
     return this.editor
-      ? JSON.stringify(this.editor.getEditorState().toJSON())
+      ? JSON.stringify(this.editor.getEditorState().toJSON(true))
       : '';
   }
 
@@ -713,7 +713,7 @@ export class LexicalEditorElement extends HTMLElement {
           return;
         }
         // Standard form association: the form value is the serialized state.
-        this.internals.setFormValue(JSON.stringify(editorState.toJSON()));
+        this.internals.setFormValue(JSON.stringify(editorState.toJSON(true)));
         // Re-evaluate `required` validity now that the text content changed.
         this.updateValidity();
         // Composed so it crosses the shadow boundary to page listeners.

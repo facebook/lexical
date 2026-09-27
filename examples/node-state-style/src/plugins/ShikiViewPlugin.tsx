@@ -37,7 +37,7 @@ function editorHTML(editor: LexicalEditor, editorState: EditorState): string {
 }
 
 function editorJSON(_editor: LexicalEditor, editorState: EditorState): string {
-  return JSON.stringify(editorState.toJSON(), null, 2);
+  return JSON.stringify(editorState.toJSON(true), null, 2);
 }
 
 const langs = {

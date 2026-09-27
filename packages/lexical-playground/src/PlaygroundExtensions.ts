@@ -22,7 +22,6 @@ import {
   TabIndentationExtension,
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
-import {HistoryExtension} from '@lexical/history';
 import {ClickableLinkExtension, LinkExtension} from '@lexical/link';
 import {CheckListExtension, ListExtension} from '@lexical/list';
 import {ReactExtension} from '@lexical/react/ReactExtension';
@@ -173,7 +172,9 @@ export const PlaygroundHeaderFooterEditorExtension = defineExtension({
   dependencies: [
     PlaygroundContentExtension,
     PlaygroundRichTextContentExtension,
-    HistoryExtension,
+    // No history of its own: header edits are the document's undo steps,
+    // and undo in a header reaches the document's history (see
+    // HeaderFooterSession).
     PageCounterNodesExtension,
     // The floating text format toolbar registers itself as a roving
     // tabindex container.

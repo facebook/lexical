@@ -10,6 +10,7 @@ import {
   getExtensionDependencyFromEditor,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -21,6 +22,7 @@ import {
   defineExtension,
   type LexicalEditor,
   type RangeSelection,
+  REDO_COMMAND,
   type SerializedEditorState,
   UNDO_COMMAND,
 } from 'lexical';
@@ -54,6 +56,10 @@ const LINES_PER_PAGE = Math.floor(
   computeGeometry(HEADER_SETUP, 0, 0, 24).contentHeight / LINE_HEIGHT,
 );
 
+function pause(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function nextFrames(count: number): Promise<void> {
   return new Promise(resolve => {
     const step = (n: number) =>
@@ -62,7 +68,7 @@ function nextFrames(count: number): Promise<void> {
   });
 }
 
-function mount() {
+function mount(options: {history?: boolean} = {}) {
   const style = document.createElement('style');
   style.textContent = `
     .ContentEditable__root, .Pages__slotContent { font: 16px/${LINE_HEIGHT}px monospace; position: relative; outline: 0; }
@@ -79,7 +85,9 @@ function mount() {
   document.body.append(style, viewport);
   const editor: LexicalEditorWithDispose = buildEditorFromExtensions(
     defineExtension({
-      dependencies: [RichTextExtension, PagesExtension],
+      dependencies: options.history
+        ? [RichTextExtension, HistoryExtension, PagesExtension]
+        : [RichTextExtension, PagesExtension],
       name: 'PagesHeaderFooter.test',
     }),
   );
@@ -699,5 +707,116 @@ describe('Pages headers and footers', () => {
       host.querySelectorAll<HTMLElement>('[data-page-slot="footer"]'),
     ).map(footer => `${footer.dataset.pageIndex}:${footer.textContent}`);
     expect(footers).toEqual(['0:Odd', '1:Even']);
+  });
+  test('undo in a header walks the document history, a burst at a time', async () => {
+    const {editor, host} = mount({history: true});
+    editor.update(
+      () => {
+        $fillLines(1);
+        $setPageSetup(HEADER_SETUP);
+      },
+      {discrete: true},
+    );
+    await expect.poll(() => headerTexts(host)).toEqual(['']);
+    await pause(400);
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('Body edit')),
+        ),
+      {discrete: true},
+    );
+    await pause(400);
+    const {activeSlot, activeSlotEditor} = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+    editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+      kind: 'header',
+      pageIndex: 0,
+    });
+    const nested = activeSlotEditor.value!;
+    const typeInHeader = async (text: string) => {
+      nested.update(
+        () => {
+          $getRoot().getLastDescendant()!.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText(text);
+          }
+        },
+        {discrete: true},
+      );
+      // A pause long enough to end the typing burst.
+      await pause(400);
+    };
+    await typeInHeader('Head');
+    await typeInHeader(' more');
+    const headerText = () => nested.read(() => $getRoot().getTextContent());
+    const bodyText = () => editor.read(() => $getRoot().getTextContent());
+
+    nested.dispatchCommand(UNDO_COMMAND, undefined);
+    await expect.poll(headerText).toBe('Head');
+    expect(activeSlot.value).not.toBeNull();
+    nested.dispatchCommand(UNDO_COMMAND, undefined);
+    await expect.poll(headerText).toBe('');
+    expect(activeSlot.value).not.toBeNull();
+    nested.dispatchCommand(REDO_COMMAND, undefined);
+    await expect.poll(headerText).toBe('Head');
+    nested.dispatchCommand(UNDO_COMMAND, undefined);
+    await expect.poll(headerText).toBe('');
+    // The header's steps are used up; the next one is the document's.
+    expect(bodyText()).toContain('Body edit');
+    nested.dispatchCommand(UNDO_COMMAND, undefined);
+    await expect.poll(bodyText).not.toContain('Body edit');
+  });
+
+  test('a header typed and cleared again leaves no undo step', async () => {
+    const {editor, host} = mount({history: true});
+    editor.update(
+      () => {
+        $fillLines(1);
+        $setPageSetup(HEADER_SETUP);
+      },
+      {discrete: true},
+    );
+    await expect.poll(() => headerTexts(host)).toEqual(['']);
+    await pause(400);
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('Body edit')),
+        ),
+      {discrete: true},
+    );
+    await pause(400);
+    const {activeSlotEditor} = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+    editor.dispatchCommand(EDIT_PAGE_SLOT_COMMAND, {
+      kind: 'header',
+      pageIndex: 0,
+    });
+    const nested = activeSlotEditor.value!;
+    nested.update(
+      () => {
+        $getRoot().getFirstChild()!.selectEnd().insertText('x');
+      },
+      {discrete: true},
+    );
+    nested.update(
+      () => {
+        $getRoot().clear().append($createParagraphNode());
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(CLOSE_PAGE_SLOT_COMMAND, undefined);
+    await pause(400);
+    // The document's last step is still the body edit.
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    await expect
+      .poll(() => editor.read(() => $getRoot().getTextContent()))
+      .not.toContain('Body edit');
   });
 });

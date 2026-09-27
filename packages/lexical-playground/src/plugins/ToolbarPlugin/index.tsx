@@ -18,9 +18,11 @@ import {
   normalizeCodeLanguage as normalizeCodeLanguageShiki,
 } from '@lexical/code-shiki';
 import {
+  getPeerDependencyFromEditor,
   HorizontalRuleNode,
   INSERT_HORIZONTAL_RULE_COMMAND,
 } from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
@@ -401,6 +403,44 @@ function BlockFormatDropDown({
       )}
     </DropDown>
   );
+}
+
+/**
+ * The history that undo in `editor` reaches: its own, or else the nearest
+ * enclosing editor's (a page header has none of its own and undoes in the
+ * document). Null when no editor on the way has an enabled one.
+ */
+function getHistoryFor(editor: LexicalEditor) {
+  for (
+    let current: LexicalEditor | null = editor;
+    current !== null;
+    current = current._parentEditor
+  ) {
+    const history = getPeerDependencyFromEditor<typeof HistoryExtension>(
+      current,
+      HistoryExtension.name,
+    );
+    if (history !== undefined && !history.output.disabled.peek()) {
+      return history.output;
+    }
+  }
+  return null;
+}
+
+function isSelfOrAncestor(
+  candidate: LexicalEditor,
+  editor: LexicalEditor,
+): boolean {
+  for (
+    let current: LexicalEditor | null = editor;
+    current !== null;
+    current = current._parentEditor
+  ) {
+    if (current === candidate) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function Divider(): JSX.Element {
@@ -860,24 +900,48 @@ export default function ToolbarPlugin({
           {editor: activeEditor},
         );
       }),
-      activeEditor.registerCommand(
+    );
+  }, [$updateToolbar, activeEditor, editor, updateToolbarState]);
+
+  // The undo and redo buttons act on the history that undo in the active
+  // editor reaches. Read that history's stacks whenever any editor reports
+  // a change (a nested editor's reports bubble up to this one) and when the
+  // active editor changes, rather than trusting whichever editor spoke
+  // last. Without such a history (collaboration's undo manager), trust the
+  // reports of the active editor and the editors it is nested in.
+  useEffect(() => {
+    const syncFromHistory = () => {
+      const history = getHistoryFor(activeEditor);
+      if (history === null) {
+        return false;
+      }
+      const {undoStack, redoStack} = history.historyState.peek();
+      updateToolbarState('canUndo', undoStack.length > 0);
+      updateToolbarState('canRedo', redoStack.length > 0);
+      return true;
+    };
+    syncFromHistory();
+    const onReport =
+      (key: 'canRedo' | 'canUndo') =>
+      (payload: boolean, from: LexicalEditor) => {
+        if (!syncFromHistory() && isSelfOrAncestor(from, activeEditor)) {
+          updateToolbarState(key, payload);
+        }
+        return false;
+      };
+    return mergeRegister(
+      editor.registerCommand(
         CAN_UNDO_COMMAND,
-        payload => {
-          updateToolbarState('canUndo', payload);
-          return false;
-        },
+        onReport('canUndo'),
         COMMAND_PRIORITY_CRITICAL,
       ),
-      activeEditor.registerCommand(
+      editor.registerCommand(
         CAN_REDO_COMMAND,
-        payload => {
-          updateToolbarState('canRedo', payload);
-          return false;
-        },
+        onReport('canRedo'),
         COMMAND_PRIORITY_CRITICAL,
       ),
     );
-  }, [$updateToolbar, activeEditor, editor, updateToolbarState]);
+  }, [activeEditor, editor, updateToolbarState]);
 
   const applyStyleText = useCallback(
     (

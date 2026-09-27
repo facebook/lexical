@@ -10,6 +10,7 @@ import {
   applyHeading,
   moveToEditorBeginning,
   moveToLineEnd,
+  redo,
   selectAll,
   undo,
 } from '../keyboardShortcuts/index.mjs';
@@ -1185,5 +1186,75 @@ test.describe('Pages', () => {
     await expect(
       page.locator('[aria-label="Formatting options for text style"]'),
     ).toHaveCount(0);
+  });
+  test('Undo in a header continues into the document', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Alpha');
+    await enablePaged(page);
+    await enableHeader(page);
+    await editHeader(page);
+    await page.keyboard.type('Head');
+    // End the typing burst so it is one undo step of its own.
+    await page.waitForTimeout(500);
+    const body = page.locator('.ContentEditable__root > p').first();
+
+    await undo(page);
+    await expect(page.locator(LIVE_CONTENT)).toHaveText('');
+    await expect(page.locator(LIVE_SLOT)).toHaveCount(1);
+    await redo(page);
+    await expect(page.locator(LIVE_CONTENT)).toHaveText('Head');
+    await undo(page);
+    await expect(page.locator(LIVE_CONTENT)).toHaveText('');
+    // The header has nothing left to undo; the document has: turning on
+    // the header, turning on pages, then the typing.
+    await undo(page);
+    await undo(page);
+    await undo(page);
+    await expect(body).toHaveText('');
+  });
+
+  test('The toolbar undo and redo buttons follow the history', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Alpha');
+    await enablePaged(page);
+    await enableHeader(page);
+    await editHeader(page);
+    await page.keyboard.type('Head');
+    await page.keyboard.press('Escape');
+    await waitForSelector(page, LIVE_SLOT, {state: 'detached'});
+    const undoButton = page.locator('.toolbar [aria-label="Undo"]');
+    const redoButton = page.locator('.toolbar [aria-label="Redo"]');
+
+    await undo(page);
+    await expect(
+      page.locator('[data-page-slot="header"][data-page-index="0"]'),
+    ).toHaveAttribute('data-empty', 'true');
+    // Still plenty to undo (the setup and "Alpha"), and one step to redo.
+    await expect(undoButton).toBeEnabled();
+    await expect(redoButton).toBeEnabled();
+
+    await redo(page);
+    await expect(
+      page.locator('[data-page-slot="header"][data-page-index="0"]'),
+    ).toHaveText('Head');
+    await expect(undoButton).toBeEnabled();
+    await expect(redoButton).toBeDisabled();
+
+    // In a header the buttons act on the same history.
+    await editHeader(page);
+    await expect(undoButton).toBeEnabled();
+    await click(page, '.toolbar [aria-label="Undo"]');
+    await expect(page.locator(LIVE_CONTENT)).toHaveText('');
+    await expect(redoButton).toBeEnabled();
   });
 });

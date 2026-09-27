@@ -29,7 +29,6 @@ import {
   $isTextNode,
   $onUpdate,
   $setSelection,
-  CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
   type EditorState,
@@ -38,17 +37,21 @@ import {
   getParentElement,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
+  HISTORY_PUSH_TAG,
   isDOMNode,
   isHTMLElement,
   KEY_ESCAPE_COMMAND,
+  type LexicalCommand,
   type LexicalEditor,
   mergeRegister,
   type PointType,
   type RangeSelection,
+  REDO_COMMAND,
   registerEventListeners,
   RootNode,
   SELECTION_CHANGE_COMMAND,
   type SerializedEditorState,
+  UNDO_COMMAND,
 } from 'lexical';
 
 import {
@@ -179,8 +182,6 @@ interface ActiveSession {
   slotEditor: SlotEditor;
   slot: HTMLElement;
   pageIndex: number;
-  /** Whether this session already produced a parent history entry. */
-  committed: boolean;
 }
 
 export interface HeaderFooterSessionOptions {
@@ -220,6 +221,11 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
    * when a header or footer is closed from the keyboard.
    */
   private parentSelection: RangeSelection | null = null;
+  /**
+   * The live editor whose undo or redo is being applied to the document,
+   * and whether that step changed its content (so it stays open).
+   */
+  private replaying: {slotEditor: SlotEditor; changed: boolean} | null = null;
   private disposed = false;
   /** The window that owns the page layer (it may be an iframe's). */
   private readonly win: Window & typeof globalThis;
@@ -240,7 +246,14 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
       }),
       // The user clicked back into the document.
       registerEventListeners(layout.rootElement, {
-        focusin: () => this.close(true),
+        // (Not while an undo started in a header is applied: restoring the
+        // document's selection moves the focus, and the header decides
+        // afterwards whether it stays open.)
+        focusin: () => {
+          if (this.replaying === null) {
+            this.close(true);
+          }
+        },
       }),
       parent.registerCommand(
         EDIT_PAGE_SLOT_COMMAND,
@@ -519,7 +532,7 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
     slot.replaceChildren(slotEditor.root);
     slot.classList.add(LIVE_SLOT_CLASS);
     this.layout.layer.removeAttribute('aria-hidden');
-    this.active = {committed: false, pageIndex, slot, slotEditor};
+    this.active = {pageIndex, slot, slotEditor};
     // `setEditable` only flips the editor's flag; the DOM attribute is the
     // host's job (the React ContentEditable does the same).
     slotEditor.root.contentEditable = 'true';
@@ -705,16 +718,25 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
    * it, and only over the content those changes were made against: when
    * the document's copy changed meanwhile (another document was loaded, a
    * collaborator or undo replaced it), that change wins.
+   *
+   * Header content lives in the document, so these writes are the
+   * document's undo steps: one per burst of typing (the write-back is
+   * debounced), like typing in the body. An empty header is stored as no
+   * header, and content that ends where it started is not written, so
+   * undo never has a step that changes nothing visible.
    */
-  private writeBack(session: ActiveSession): void {
+  private writeBack(session: ActiveSession, discrete = false): void {
     const {slotEditor} = session;
     if (!slotEditor.dirty) {
       return;
     }
     slotEditor.dirty = false;
-    const content = normalizeCounterText(
-      slotEditor.editor.getEditorState().toJSON(),
-    );
+    const content = slotEditor.editor.read('latest', $isSlotEmpty)
+      ? null
+      : normalizeCounterText(slotEditor.editor.getEditorState().toJSON());
+    if (serializeSlotContent(content) === slotEditor.baseline) {
+      return;
+    }
     this.parent.update(
       () => {
         const stored =
@@ -725,11 +747,63 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
         $setPageSlotContent(slotEditor.kind, slotEditor.variant, content);
         $addUpdateTag(HEADER_FOOTER_COMMIT_TAG);
         slotEditor.baseline = serializeSlotContent(content);
-        session.committed = true;
       },
-      // One undo step per editing session.
-      session.committed ? {tag: HISTORY_MERGE_TAG} : undefined,
+      discrete
+        ? {discrete: true, tag: HISTORY_PUSH_TAG}
+        : {tag: HISTORY_PUSH_TAG},
     );
+  }
+
+  /**
+   * Undo or redo pressed in a header (or the toolbar's buttons while one is
+   * open). The header has no history of its own, so the step comes from the
+   * document's: typing not yet written back is written first (it is the
+   * latest step), then the document's history applies the step, outside
+   * this editor's update. If that step changed this header, it reloads in
+   * place and keeps the focus; otherwise the step was the body's, and the
+   * header closes with the caret where the document's history put it.
+   */
+  private replay(
+    slotEditor: SlotEditor,
+    command: LexicalCommand<void>,
+  ): boolean {
+    const active = this.active;
+    if (active === null || active.slotEditor !== slotEditor) {
+      return false;
+    }
+    if (this.writeBackTimer !== null) {
+      clearTimeout(this.writeBackTimer);
+      this.writeBackTimer = null;
+    }
+    this.writeBack(active, true);
+    this.win.queueMicrotask(() => {
+      if (this.disposed || this.active !== active) {
+        return;
+      }
+      this.replaying = {changed: false, slotEditor};
+      try {
+        this.parent.dispatchCommand(command, undefined);
+        // Commit the step now, so its root mutation (which tells whether
+        // it changed this header) is seen before deciding below.
+        this.parent.read(() => {});
+      } finally {
+        const {changed} = this.replaying;
+        this.replaying = null;
+        if (this.active === active) {
+          if (changed) {
+            this.parent.update(() => $setSelection(null), {
+              discrete: true,
+              tag: HISTORIC_TAG,
+            });
+            slotEditor.editor.focus(undefined, {defaultSelection: 'rootEnd'});
+          } else {
+            this.close(false);
+            this.parent.focus();
+          }
+        }
+      }
+    });
+    return true;
   }
 
   private onRootMutation(prevEditorState: EditorState): void {
@@ -757,8 +831,14 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
           continue;
         }
         if (this.active && this.active.slotEditor === slotEditor) {
-          // Undo, collaboration or a load replaced what is being edited.
-          this.close(false);
+          if (this.replaying?.slotEditor === slotEditor) {
+            // An undo or redo pressed in this header: it stays open.
+            this.replaying.changed = true;
+          } else {
+            // Collaboration, a load or an undo in the body replaced what
+            // is being edited.
+            this.close(false);
+          }
         }
         this.load(slotEditor, next);
       }
@@ -831,6 +911,16 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
         }
       }),
       editor.registerCommand(
+        UNDO_COMMAND,
+        () => this.replay(slotEditor!, UNDO_COMMAND),
+        COMMAND_PRIORITY_EDITOR,
+      ),
+      editor.registerCommand(
+        REDO_COMMAND,
+        () => this.replay(slotEditor!, REDO_COMMAND),
+        COMMAND_PRIORITY_EDITOR,
+      ),
+      editor.registerCommand(
         KEY_ESCAPE_COMMAND,
         () => {
           if (this.active && this.active.slotEditor === slotEditor) {
@@ -882,9 +972,6 @@ export class HeaderFooterSession implements PagesLayoutSlotProvider {
         {discrete: true, tag: SLOT_SYNC_TAG},
       );
     }
-    // What the editor held before is another document's (or another
-    // version's) header: undo inside the header must not bring it back.
-    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
   }
 
   /** Coalesce DOM-driven clone refreshes to one per frame. */

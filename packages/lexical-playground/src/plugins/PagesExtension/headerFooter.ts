@@ -17,7 +17,6 @@ import {
   type LexicalEditorWithDispose,
   NestedEditorExtension,
 } from '@lexical/extension';
-import {HistoryExtension} from '@lexical/history';
 import {LinkExtension} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
@@ -174,14 +173,13 @@ export const CLOSE_PAGE_SLOT_COMMAND: LexicalCommand<undefined> = createCommand(
  * page count nodes. The playground replaces it through the `buildSlotEditor`
  * config of `PagesExtension` with an editor that has its whole feature set
  * (see `PlaygroundExtensions.ts`).
+ *
+ * It has no history of its own: header content lives in the document, so
+ * its edits are the document's undo steps (see `HeaderFooterSession`), and
+ * undo and redo in a header reach the document's history.
  */
 export const HeaderFooterEditorExtension = defineExtension({
-  dependencies: [
-    RichTextExtension,
-    HistoryExtension,
-    LinkExtension,
-    PageCounterNodesExtension,
-  ],
+  dependencies: [RichTextExtension, LinkExtension, PageCounterNodesExtension],
   name: '@lexical/playground/PageHeaderFooter',
   namespace: 'Playground/PageHeaderFooter',
 });

@@ -34,8 +34,12 @@ contributors today include Meta engineers alongside many volunteers and
 developers from other companies. It powers text editing in Meta's web products
 and is also the editor behind
 [Ghost](https://ghost.org), [Payload CMS](https://payloadcms.com),
+[Supabase](https://supabase.com),
 [Proton Docs](https://proton.me/drive/document-editor),
-[Sveltia CMS](https://sveltiacms.app), and [Dify](https://dify.ai). To see
+[MDXEditor](https://mdxeditor.dev), [Sveltia CMS](https://sveltiacms.app),
+[Dify](https://dify.ai), [RAGFlow](https://ragflow.io),
+[DeepSeek Harness](https://deepseek.com/harness/), and
+[Paperclip](https://paperclip.ing). To see
 what it can do, try the [playground](https://playground.lexical.dev).
 
 ## How it fits together

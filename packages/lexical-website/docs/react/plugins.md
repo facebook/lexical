@@ -18,6 +18,7 @@ React-based plugins use a Lexical editor instance from `<LexicalExtensionCompose
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 ```
@@ -31,8 +32,10 @@ const initialConfig = {
 
 <LexicalComposer initialConfig={initialConfig}>
   <PlainTextPlugin
-    contentEditable={<ContentEditable />}
-    placeholder={<div>Enter some text...</div>}
+    contentEditable={
+      <ContentEditable placeholder={<div>Enter some text...</div>} />
+    }
+    ErrorBoundary={LexicalErrorBoundary}
   />
   <HistoryPlugin />
   <OnChangePlugin onChange={onChange} />
@@ -314,6 +317,8 @@ Use [HashtagExtension](/docs/api/modules/lexical_hashtag#hashtagextension) when 
 
 Plugin will convert text into links based on passed matchers list. In example below whenever user types url-like string it will automatically convert it into a link node
 
+> Note: Requires `AutoLinkNode` from `@lexical/link` to be registered.
+
 ```jsx
 const URL_MATCHER =
   /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
@@ -353,7 +358,8 @@ Watches for pasted links that match any of the provided embed configurations (e.
 > Note: Requires `LinkNode` and `AutoLinkNode` from `@lexical/link` to be registered.
 
 ```jsx
-import {LexicalAutoEmbedPlugin, EmbedConfig, AutoEmbedOption} from '@lexical/react/LexicalAutoEmbedPlugin';
+import {LexicalAutoEmbedPlugin, AutoEmbedOption} from '@lexical/react/LexicalAutoEmbedPlugin';
+import type {EmbedConfig} from '@lexical/react/LexicalAutoEmbedPlugin';
 
 const YouTubeEmbedConfig = {
   type: 'youtube',
@@ -424,7 +430,7 @@ In order to use `TableOfContentsPlugin`, you need to pass a callback function in
 
 `headingKey`: Unique key that identifies the heading.
 `headingTextContent`: A string of the exact text of the heading.
-`headingTag`: A string that reads either 'h1', 'h2', or 'h3'.
+`headingTag`: The heading's tag — `'h1'` through `'h6'`. Every heading in the document is listed; the plugin does not filter by level.
 
 ```jsx
 <TableOfContentsPlugin>
@@ -451,6 +457,7 @@ const editorRef = useRef(null);
 Integrates Yjs-based real-time collaborative editing into Lexical. Creates a Yjs binding between the editor state and a shared Yjs document, renders remote user cursors, and provides collaborative undo/redo history.
 
 ```jsx
+import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {WebsocketProvider} from 'y-websocket';
 import {Doc} from 'yjs';
@@ -461,13 +468,17 @@ function createProvider(id, yjsDocMap) {
   return new WebsocketProvider('ws://localhost:1234', id, doc);
 }
 
-<CollaborationPlugin
-  id="my-document"
-  providerFactory={createProvider}
-  shouldBootstrap={true}
-  username="Alice"
-  cursorColor="#FF0000"
-/>
+<LexicalCollaboration>
+  <LexicalComposer initialConfig={initialConfig}>
+    <CollaborationPlugin
+      id="my-document"
+      providerFactory={createProvider}
+      shouldBootstrap={true}
+      username="Alice"
+      cursorColor="#FF0000"
+    />
+  </LexicalComposer>
+</LexicalCollaboration>
 ```
 
 ### `LexicalDraggableBlockPlugin`

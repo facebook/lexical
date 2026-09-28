@@ -47,16 +47,20 @@ function $garbageCollectDetachedDeepChildNodes(
   dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement> | Set<NodeKey>,
 ): void {
   if ($isElementNode(node)) {
-    let child = node.getFirstChild();
-
-    while (child !== null) {
-      const childKey = child.__key;
-      // TODO Revise condition below, redundant? LexicalNode already cleans up children when moving Nodes
-      if (child.__parent === parentKey) {
-        if (
-          $isElementNode(child) ||
-          ($isSlotHost(child) && child.__slots !== null)
-        ) {
+    let childKey = node.__first;
+    while (childKey !== null) {
+      const child = nodeMap.get(childKey);
+      if (child === undefined) {
+        break;
+      }
+      const isElement = $isElementNode(child);
+      // Dirty elements are visited by the outer loop; leave their entire
+      // subtree to that visit, including cleanup of newly created nodes.
+      if (
+        child.__parent === parentKey &&
+        !(isElement && dirtyNodes.has(childKey))
+      ) {
+        if (isElement || ($isSlotHost(child) && child.__slots !== null)) {
           $garbageCollectDetachedDeepChildNodes(
             child,
             childKey,
@@ -74,7 +78,7 @@ function $garbageCollectDetachedDeepChildNodes(
         }
         nodeMapDelete.push(childKey);
       }
-      child = child.getNextSibling();
+      childKey = child.__next;
     }
   }
 

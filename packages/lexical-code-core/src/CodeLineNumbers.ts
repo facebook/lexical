@@ -8,11 +8,13 @@
 
 import {effect, namedSignals} from '@lexical/extension';
 import {
+  $getRenderContextValue,
   $setRenderContextValue,
   createRenderState,
   domOverride,
   type DOMOverrideOptions,
   DOMRenderExtension,
+  RenderContextExport,
 } from '@lexical/html';
 import {
   $getDocument,
@@ -83,7 +85,14 @@ function lineNumberOverrides(mode: 'all' | 'wordWrapped') {
       {
         $createDOM: (node, $next) => {
           const dom = $next();
-          if (!$hasLineNumbers(node.getParent(), mode)) {
+          if (
+            // The default exportDOM builds its element with $createDOM, so
+            // HTML export and the clipboard come through here too. They get
+            // the plain <br>, and overrides composed after this one change
+            // that <br> rather than the wrapper.
+            $getRenderContextValue(RenderContextExport) ||
+            !$hasLineNumbers(node.getParent(), mode)
+          ) {
             return dom;
           }
           const wrapper = $getDocument().createElement('span');
@@ -171,9 +180,12 @@ function allLineNumberOverrides() {
  *
  * The wrapper is the keyed DOM of the `LineBreakNode` and the inner `<br>`
  * is exposed through `$getDOMSlot`, so a DOM selection inside the wrapper
- * resolves to a point just before or just after the `LineBreakNode`. HTML
- * export and the clipboard don't use this render pipeline, so they still
- * get a plain `<br>`.
+ * resolves to a point just before or just after the `LineBreakNode`. The
+ * default `exportDOM` of a `LineBreakNode` builds its element with the same
+ * `$createDOM` overrides, so the override skips the wrapper while
+ * `RenderContextExport` is set. HTML export and the clipboard get the same
+ * HTML as without the extension, including what other `$createDOM`
+ * overrides do to the `<br>`.
  *
  * When `disabled`, the overrides are left out of the render pipeline and
  * code blocks render exactly as they do without the extension. Toggling it

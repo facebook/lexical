@@ -6,7 +6,10 @@
  *
  */
 
-import {$insertDataTransferForRichText} from '@lexical/clipboard';
+import {
+  $getClipboardDataFromSelection,
+  $insertDataTransferForRichText,
+} from '@lexical/clipboard';
 import {
   $createCodeHighlightNode,
   $createCodeNode,
@@ -27,7 +30,12 @@ import {
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
-import {$generateHtmlFromNodes} from '@lexical/html';
+import {
+  $generateHtmlFromNodes,
+  domOverride,
+  DOMRenderExtension,
+  type DOMRenderMatchConfig,
+} from '@lexical/html';
 import {RichTextExtension} from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
 import {
@@ -53,6 +61,8 @@ import {
   INSERT_PARAGRAPH_COMMAND,
   isHTMLElement,
   type LexicalEditor,
+  type LexicalNode,
+  LineBreakNode,
   type NodeKey,
   type PointType,
   REDO_COMMAND,
@@ -410,23 +420,167 @@ describe('CodeLineNumbersExtension', () => {
       );
       expectWrappedLineBreaks(editor, 4);
     });
+  });
 
-    test('never reaches exported HTML, mounted or not', () => {
-      using mounted = createEditor(() => $appendCode(['a', '', 'b']));
-      using headless = buildEditorFromExtensions(
+  describe('HTML export', () => {
+    /** An empty line in the middle and an empty last line. */
+    const LINES = ['a', '', 'b', ''];
+
+    const $initialCodeAndParagraph = () => {
+      $appendCode(LINES);
+      $getRoot().append($createParagraphNode().append($createTextNode('z')));
+    };
+
+    function createHeadlessEditor(
+      dependencies: AnyLexicalExtensionArgument[],
+    ): LexicalEditorWithDispose {
+      return buildEditorFromExtensions(
         defineExtension({
-          $initialEditorState: () => $appendCode(['a', '', 'b']),
-          dependencies: [RichTextExtension, CodeLineNumbersExtension],
+          $initialEditorState: $initialCodeAndParagraph,
+          dependencies: [RichTextExtension, ...dependencies],
           name: '[code-line-numbers-headless]',
         }),
       );
-      expect(getWrappers(mounted)).toHaveLength(2);
-      for (const editor of [mounted, headless]) {
-        const html = editor.read(() => $generateHtmlFromNodes(editor, null));
-        expect(html).toContain('<br>');
-        expect(html).not.toContain(LINE_BREAK_ATTR);
-        expect(html).not.toContain(LINE_NUMBERS_ATTR);
-      }
+    }
+
+    function exportHTML(editor: LexicalEditor): string {
+      return editor.read(() => $generateHtmlFromNodes(editor, null));
+    }
+
+    /** The text/html that copying the whole document puts on the clipboard. */
+    function copyHTML(editor: LexicalEditor): string {
+      let html: string | undefined;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.select(0, root.getChildrenSize());
+          html = $getClipboardDataFromSelection()['text/html'];
+        },
+        {discrete: true},
+      );
+      assert(html !== undefined, 'expected text/html on the clipboard');
+      return html;
+    }
+
+    describe.each([
+      ['every code block', CodeLineNumbersExtension],
+      ['onlyWordWrapped', OnlyWordWrappedLineNumbers],
+    ])('numbering %s', (_name, lineNumbers) => {
+      test.each([false, true])(
+        'exports and copies the same HTML as without the extension, mounted or not (word wrap %s)',
+        wordWrap => {
+          using baseline = createEditor($initialCodeAndParagraph, [
+            CodeExtension,
+          ]);
+          using mounted = createEditor($initialCodeAndParagraph, [lineNumbers]);
+          using headless = createHeadlessEditor([lineNumbers]);
+          for (const editor of [baseline, mounted, headless]) {
+            setWordWrap(editor, wordWrap);
+          }
+          // The block on screen has the wrappers whenever it is numbered.
+          expect(getWrappers(mounted)).toHaveLength(
+            wordWrap || lineNumbers === CodeLineNumbersExtension ? 3 : 0,
+          );
+
+          const expected = exportHTML(baseline);
+          const doc = new DOMParser().parseFromString(expected, 'text/html');
+          const pre = doc.querySelector('pre');
+          assert(pre !== null, 'expected an exported <pre>');
+          expect(pre.getAttribute(WORD_WRAP_ATTR)).toBe(
+            wordWrap ? 'true' : null,
+          );
+          // A plain <br> for each of the three line breaks, and the managed
+          // one after the last, all directly in the <pre>.
+          expect(pre.querySelectorAll('br')).toHaveLength(4);
+          expect(pre.querySelectorAll(':scope > br')).toHaveLength(4);
+          expect(expected).not.toContain(LINE_BREAK_ATTR);
+          expect(expected).not.toContain(LINE_NUMBERS_ATTR);
+          expect(exportHTML(mounted)).toBe(expected);
+          expect(exportHTML(headless)).toBe(expected);
+
+          const copied = copyHTML(baseline);
+          expect(copied).toContain('<pre');
+          expect(copyHTML(mounted)).toBe(copied);
+          expect(copyHTML(headless)).toBe(copied);
+        },
+      );
+    });
+
+    const MARK_ATTR = 'data-mark';
+    const $mark: DOMRenderMatchConfig<LexicalNode>['$createDOM'] = (
+      _node,
+      $next,
+    ) => {
+      const dom = $next();
+      dom.setAttribute(MARK_ATTR, 'true');
+      return dom;
+    };
+
+    test.each([
+      ['LineBreakNode', domOverride([LineBreakNode], {$createDOM: $mark})],
+      ['wildcard', domOverride('*', {$createDOM: $mark})],
+    ])(
+      'export keeps what a later %s override does to the <br>',
+      (_name, override) => {
+        // Composed after the extension's overrides, so its $next() returns
+        // the wrapper when the extension adds one.
+        const Mark = defineExtension({
+          dependencies: [
+            configExtension(DOMRenderExtension, {overrides: [override]}),
+          ],
+          name: '[mark]',
+        });
+        using baseline = createEditor($initialCodeAndParagraph, [
+          CodeExtension,
+          Mark,
+        ]);
+        using mounted = createEditor($initialCodeAndParagraph, [
+          CodeLineNumbersExtension,
+          Mark,
+        ]);
+        using headless = createHeadlessEditor([CodeLineNumbersExtension, Mark]);
+        // On screen the mark lands on the wrapper.
+        const wrappers = getWrappers(mounted);
+        expect(wrappers).toHaveLength(3);
+        for (const wrapper of wrappers) {
+          expect(wrapper.getAttribute(MARK_ATTR)).toBe('true');
+        }
+
+        const expected = exportHTML(baseline);
+        const doc = new DOMParser().parseFromString(expected, 'text/html');
+        expect(doc.querySelectorAll(`pre > br[${MARK_ATTR}]`)).toHaveLength(3);
+        expect(exportHTML(mounted)).toBe(expected);
+        expect(exportHTML(headless)).toBe(expected);
+
+        const copied = copyHTML(baseline);
+        expect(copyHTML(mounted)).toBe(copied);
+        expect(copyHTML(headless)).toBe(copied);
+      },
+    );
+
+    test('a copied block pastes back with all its lines and word wrap', () => {
+      using source = createEditor($initialCodeAndParagraph);
+      setWordWrap(source, true);
+      const html = copyHTML(source);
+      using target = createEditor(() => {
+        $getRoot().clear().append($createParagraphNode());
+      });
+      target.update(
+        () => {
+          $getRoot().selectStart();
+          const selection = $getSelection();
+          assert($isRangeSelection(selection));
+          const dataTransfer = new DataTransfer();
+          dataTransfer.setData('text/html', html);
+          $insertDataTransferForRichText(dataTransfer, selection, target);
+        },
+        {discrete: true},
+      );
+      target.read(() => {
+        expect($getCode().getTextContent()).toBe(LINES.join('\n'));
+        expect($getCode().getWordWrap()).toBe(true);
+      });
+      expectWrappedLineBreaks(target, 3);
     });
   });
 

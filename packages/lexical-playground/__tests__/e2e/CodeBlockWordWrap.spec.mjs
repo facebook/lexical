@@ -226,6 +226,13 @@ test.describe('Code block word wrap', () => {
       expect(after['text/html']).toContain(
         'data-lexical-code-word-wrap="true"',
       );
+      // The line numbers stay out of the copy. Apart from the word wrap
+      // attribute, it has the same HTML as before, with a plain <br> for
+      // each line break.
+      expect(after['text/html']).not.toContain('data-lexical-code-line');
+      expect(
+        after['text/html'].replace(' data-lexical-code-word-wrap="true"', ''),
+      ).toBe(before['text/html']);
       expect(await countLineBreaks(page)).toBe(3);
 
       await toggleWrap(page);

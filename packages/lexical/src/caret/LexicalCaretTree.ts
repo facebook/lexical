@@ -168,7 +168,9 @@ export function $detachNodeWithSelection(
   $detachNode(node);
   if (selection && parent && index !== -1) {
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
-    // Reinsertion can reverse the points even when repair did not move them.
+  }
+  if (selection) {
+    // Reinsertion can reverse text-only ranges without changing either point.
     selection._cachedIsBackward = null;
   }
   return points;

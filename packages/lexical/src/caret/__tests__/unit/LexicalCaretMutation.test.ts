@@ -226,3 +226,32 @@ test.each(
     );
   },
 );
+
+test.each(['insertBefore', 'insertAfter'] as const)(
+  'invalidates text-only selection direction after %s reorders siblings',
+  operation => {
+    using editor = buildEditorFromExtensions({name: 'move-text-endpoints'});
+    editor.update(
+      () => {
+        const first = $createTextNode('first').toggleUnmergeable();
+        const second = $createTextNode('second').toggleUnmergeable();
+        const parent = $createParagraphNode().append(first, second);
+        $getRoot().append(parent);
+        const selection = $createRangeSelection();
+        selection.anchor.set(first.getKey(), 1, 'text');
+        selection.focus.set(second.getKey(), 1, 'text');
+        $setSelection(selection);
+        expect(selection.isBackward()).toBe(false);
+        if (operation === 'insertAfter') {
+          second.insertAfter(first);
+        } else {
+          first.insertBefore(second);
+        }
+        $expectChildren(parent, [second, first]);
+        expect(selection.isBackward()).toBe(true);
+        expect(selection.isBackward()).toBe(selection.clone().isBackward());
+      },
+      {discrete: true},
+    );
+  },
+);

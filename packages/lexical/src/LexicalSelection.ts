@@ -3814,7 +3814,7 @@ export function $updateElementSelectionOnCreateDeleteNode(
     return;
   }
   // Both endpoints obey the same offset rule, regardless of range direction
-  // or collapse. Resolve each shifted element point to its text child once.
+  // or collapse. Then resolve each element point to an adjacent text child.
   for (const point of [selection.anchor, selection.focus]) {
     if (
       point.key === parentNode.__key &&

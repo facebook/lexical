@@ -22,7 +22,6 @@ import type {
   NodeKey,
   NodeMap,
 } from './LexicalNode';
-import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -33,6 +32,7 @@ import {
   $isRootNode,
   $isTextNode,
   DEFAULT_EDITOR_DOM_CONFIG,
+  ElementNode,
 } from '.';
 import {
   DOUBLE_LINE_BREAK,
@@ -63,6 +63,13 @@ import {
 const __DEV__ = process.env.NODE_ENV !== 'production';
 
 type IntentionallyMarkedAsDirtyElement = boolean;
+
+function $hasCustomTextContent(node: ElementNode): boolean {
+  return (
+    !$isRootNode(node) &&
+    node.getTextContent !== ElementNode.prototype.getTextContent
+  );
+}
 
 /**
  * @internal
@@ -108,7 +115,7 @@ export const CACHED_TEXT_SIZE_KEY = Symbol.for('@lexical/CachedTextSize');
 //
 // The whole walk runs inside `activePrevEditorState.read(...)` so that every
 // node method resolves against the PREVIOUS node map: a moved element recomputes
-// its size via `getTextContentSize()` (its shared keyed-DOM cache may already
+// its text length via `getTextContent()` (its shared keyed-DOM cache may already
 // hold the NEW size, cf. https://github.com/facebook/lexical/pull/8564), and the
 // inter-sibling `isInline()` returns the node's previous-render value (a moved
 // or re-typed node could answer differently in the next state, and a node
@@ -142,7 +149,7 @@ function $prevSuffixTextSize(startKey: NodeKey, count: number): number {
             // cache may already hold its NEW size, so recompute from the prev
             // tree. (`__parent === null` means detached/removed, not moved — its
             // DOM cache is still its prev text.)
-            size += prevNode.getTextContentSize();
+            size += prevNode.getTextContent().length;
           } else {
             const keyedDom = activePrevKeyToDOMMap.get(cur);
             const cached = keyedDom && keyedDom.__lexicalTextContent;
@@ -730,6 +737,7 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
   }
 
   if ($isElementNode(node)) {
+    const outerBefore = subTreeTextContent;
     const indent = node.__indent;
     const childrenSize = node.__size;
     $setElementDirection(dom, node);
@@ -756,7 +764,6 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
         dom.__lexicalSlotTextLength = slotTextContent.length;
       }
     } else {
-      const outerBefore = subTreeTextContent;
       const endIndex = childrenSize - 1;
       const children = $createChildrenArray(node, activeNextNodeMap);
       $createChildren(
@@ -780,6 +787,12 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
       if (slots.size > 0) {
         dom.__lexicalSlotTextLength = slotTextContent.length;
       }
+    }
+
+    if ($hasCustomTextContent(node)) {
+      const text = node.getTextContent();
+      dom.__lexicalTextContent = text;
+      subTreeTextContent = outerBefore + text;
     }
 
     const format = node.__format;
@@ -1403,6 +1416,8 @@ function $reconcileChildren(
     const dirtyChildren = activeDirtyChildrenByParent.get(prevElement.__key);
     if (
       !treatAllNodesAsDirty &&
+      // Custom element text need not be a concatenation of child text.
+      !$hasCustomTextContent(nextElement) &&
       typeof cachedParentText === 'string' &&
       dirtyChildren !== undefined
     ) {
@@ -1834,6 +1849,11 @@ function $reconcileNode(
         // clear the stale prefix length so the next suffix fast path strips
         // nothing from the now child-only cache.
         dom.__lexicalSlotTextLength = 0;
+      }
+      if ($hasCustomTextContent(nextNode)) {
+        const text = nextNode.getTextContent();
+        dom.__lexicalTextContent = text;
+        subTreeTextContent = outerBefore + text;
       }
     } else {
       // Currently unreachable under normal flow — `getWritable()` always

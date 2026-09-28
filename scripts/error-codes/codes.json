@@ -434,5 +434,11 @@
   "432": "%s: serialization schema field \"%s\" has no setter %s(); name one with withAccessors or declare {setter: null} if it is derived on import",
   "433": "%s: $config names the generated JSON code that %s declared; generated code is inherited wherever it still applies, so omit it",
   "434": "$applyImportJSON: node %s with key %s was not constructed by this update; use updateFromJSON instead",
-  "435": "LexicalNode: slot \"%s\" on %s did not serialize to exactly the slot value node (got %s nodes); a slot value must not be excluded from copy."
+  "435": "LexicalNode: slot \"%s\" on %s did not serialize to exactly the slot value node (got %s nodes); a slot value must not be excluded from copy.",
+  "436": "Selection change listeners are endlessly changing the selection.",
+  "437": "One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition. Editor namespace: %s",
+  "438": "$doDrop: drop position was removed by source deletion",
+  "439": "%s is not supported in headless mode",
+  "440": "HeadlessExtension: setRootElement is not supported in headless mode",
+  "441": "MdastExtension: export rule node classes must have their own type."
 }

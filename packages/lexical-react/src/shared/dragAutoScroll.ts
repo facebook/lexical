@@ -12,6 +12,11 @@ const EDGE_ZONE = 40;
 const MAX_SPEED = 1080; // CSS pixels per second.
 
 type Bounds = {left: number; right: number; top: number; bottom: number};
+type Scrollport = {
+  element: HTMLElement;
+  bounds: Bounds;
+  style: CSSStyleDeclaration;
+};
 
 function edgeSpeed(y: number, {top, bottom}: Bounds): number {
   const zone = Math.min(EDGE_ZONE, (bottom - top) / 2);
@@ -34,6 +39,73 @@ function intersect(a: Bounds, b: Bounds): Bounds {
     right: Math.min(a.right, b.right),
     top: Math.max(a.top, b.top),
   };
+}
+
+function getVisibleScrollports(
+  root: HTMLElement,
+  view: Window,
+  viewport: Bounds,
+  scrollingElement: Element | null,
+): Scrollport[] {
+  const scrollports: Scrollport[] = [];
+  for (let el: HTMLElement | null = root; el; el = getParentElement(el)) {
+    if (el === scrollingElement) {
+      break;
+    }
+    const rect = el.getBoundingClientRect();
+    const scale = el.offsetWidth ? rect.width / el.offsetWidth : 1;
+    const left = rect.left + el.clientLeft * scale;
+    const top = rect.top + el.clientTop * scale;
+    scrollports.push({
+      bounds: {
+        bottom: top + el.clientHeight * scale,
+        left,
+        right: left + el.clientWidth * scale,
+        top,
+      },
+      element: el,
+      style: view.getComputedStyle(el),
+    });
+  }
+  // Work from the viewport inward so each scrollport uses its visible edges.
+  let visible = viewport;
+  for (let i = scrollports.length - 1; i >= 0; i--) {
+    const entry = scrollports[i];
+    const {overflowX, overflowY} = entry.style;
+    const clipped = {...visible};
+    if (overflowX !== 'visible') {
+      clipped.left = entry.bounds.left;
+      clipped.right = entry.bounds.right;
+    }
+    if (overflowY !== 'visible') {
+      clipped.top = entry.bounds.top;
+      clipped.bottom = entry.bounds.bottom;
+    }
+    visible = intersect(visible, clipped);
+    entry.bounds = visible;
+  }
+  return scrollports;
+}
+
+function scrollBySpeed(
+  element: Element,
+  speed: number,
+  elapsed: number,
+  visibleHeight: number,
+): boolean {
+  const before = element.scrollTop;
+  // Override CSS smooth scrolling so each frame takes effect immediately.
+  element.scrollTo({
+    behavior: 'instant',
+    top: Math.max(
+      0,
+      Math.min(
+        element.scrollHeight - visibleHeight,
+        before + (speed * elapsed) / 1000,
+      ),
+    ),
+  });
+  return element.scrollTop !== before;
 }
 
 /** Private controller; the caller owns drag event registration and eligibility. */
@@ -70,48 +142,13 @@ export function createDragAutoScroller(
       return false;
     }
     const scrollingElement = ownerDocument.scrollingElement;
-    const ancestors: {
-      element: HTMLElement;
-      bounds: Bounds;
-      style: CSSStyleDeclaration;
-    }[] = [];
-    for (let el: HTMLElement | null = root; el; el = getParentElement(el)) {
-      if (el === scrollingElement) {
-        break;
-      }
-      const rect = el.getBoundingClientRect();
-      const scale = el.offsetWidth ? rect.width / el.offsetWidth : 1;
-      const left = rect.left + el.clientLeft * scale;
-      const top = rect.top + el.clientTop * scale;
-      ancestors.push({
-        bounds: {
-          bottom: top + el.clientHeight * scale,
-          left,
-          right: left + el.clientWidth * scale,
-          top,
-        },
-        element: el,
-        style: view.getComputedStyle(el),
-      });
-    }
-    // Work from the viewport inward so each scrollport uses its visible edges.
-    let visible = viewport;
-    for (let i = ancestors.length - 1; i >= 0; i--) {
-      const entry = ancestors[i];
-      const {overflowX, overflowY} = entry.style;
-      const clipped = {...visible};
-      if (overflowX !== 'visible') {
-        clipped.left = entry.bounds.left;
-        clipped.right = entry.bounds.right;
-      }
-      if (overflowY !== 'visible') {
-        clipped.top = entry.bounds.top;
-        clipped.bottom = entry.bounds.bottom;
-      }
-      visible = intersect(visible, clipped);
-      entry.bounds = visible;
-    }
-    for (const {element, bounds, style} of ancestors) {
+    const scrollports = getVisibleScrollports(
+      root,
+      view,
+      viewport,
+      scrollingElement,
+    );
+    for (const {element, bounds, style} of scrollports) {
       if (!/^(auto|scroll|overlay)$/.test(style.overflowY)) {
         continue;
       }
@@ -127,19 +164,7 @@ export function createDragAutoScroller(
       if (speed === 0) {
         return false;
       }
-      const before = element.scrollTop;
-      // Override CSS smooth scrolling so each frame takes effect immediately.
-      element.scrollTo({
-        behavior: 'instant',
-        top: Math.max(
-          0,
-          Math.min(
-            element.scrollHeight - element.clientHeight,
-            before + (speed * elapsed) / 1000,
-          ),
-        ),
-      });
-      if (element.scrollTop !== before) {
+      if (scrollBySpeed(element, speed, elapsed, element.clientHeight)) {
         return true;
       }
       if (
@@ -150,18 +175,12 @@ export function createDragAutoScroller(
       }
     }
     if (scrollingElement) {
-      const before = scrollingElement.scrollTop;
-      scrollingElement.scrollTo({
-        behavior: 'instant',
-        top: Math.max(
-          0,
-          Math.min(
-            scrollingElement.scrollHeight - viewport.bottom,
-            before + (edgeSpeed(y, viewport) * elapsed) / 1000,
-          ),
-        ),
-      });
-      return scrollingElement.scrollTop !== before;
+      return scrollBySpeed(
+        scrollingElement,
+        edgeSpeed(y, viewport),
+        elapsed,
+        viewport.bottom,
+      );
     }
     return false;
   }

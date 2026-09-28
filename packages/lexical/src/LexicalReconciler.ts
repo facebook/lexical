@@ -1525,9 +1525,6 @@ function $reconcileChildren(
     }
 
     if (sizeDelta === 0) {
-      // Join once instead of building a chain of temporary strings for every
-      // clean sibling in a large parent.
-      const childTextContent: string[] = [];
       let nodeKey: NodeKey | null = prevElement.__first;
       let i = 0;
       while (nodeKey !== null) {
@@ -1539,7 +1536,6 @@ function $reconcileChildren(
           treatAllNodesAsDirty ||
           activeDirtyLeaves.has(nodeKey) ||
           activeDirtyElements.has(nodeKey);
-        subTreeTextContent = '';
         const saved = $beginCaptureGuard();
         if (isDirty) {
           $reconcileNode(nodeKey, dom);
@@ -1566,7 +1562,6 @@ function $reconcileChildren(
             $bubbleChildFirstText(childKeyedDom);
           }
         }
-        childTextContent.push(subTreeTextContent);
         if ($isTextNode(node)) {
           if (subTreeTextFormat === null) {
             subTreeTextFormat = node.getFormat();
@@ -1578,13 +1573,12 @@ function $reconcileChildren(
           i < nextChildrenSize - 1 &&
           !node.isInline()
         ) {
-          childTextContent.push(DOUBLE_LINE_BREAK);
+          subTreeTextContent += DOUBLE_LINE_BREAK;
         }
         $endCaptureGuard(saved);
         nodeKey = node.__next;
         i++;
       }
-      subTreeTextContent = childTextContent.join('');
       cacheDom.__lexicalTextContent = subTreeTextContent;
       cacheDom.__lexicalFirstTextKey = subTreeFirstTextKey;
       subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;

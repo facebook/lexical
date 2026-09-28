@@ -54,8 +54,11 @@ function $garbageCollectDetachedDeepChildNodes(
         break;
       }
       const isElement = $isElementNode(child);
-      // Dirty elements are visited by the outer loop; leave their entire
-      // subtree to that visit, including cleanup of newly created nodes.
+      // With dirtyElements, leave dirty child subtrees to the outer Map
+      // iteration, which visits every entry not deleted before its turn.
+      // Keep skipped entries in that map and defer node-map deletion so the
+      // outer visit can also clean up newly created nodes. With dirtyLeaves
+      // (decorator slot hosts), no element keys are present, so no skip occurs.
       if (
         child.__parent === parentKey &&
         !(isElement && dirtyNodes.has(childKey))

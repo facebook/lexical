@@ -104,7 +104,7 @@ alone.
 When adding a new factory of this kind, annotate its definition with
 `@__NO_SIDE_EFFECTS__`. That alone is enough for calls in the same package to
 be annotated; add its name to `PURE_FACTORY_FUNCTIONS` in
-`packages/lexical-compiler/src/LexicalCompiler.mjs` so that
+`packages/lexical-compiler/src/passes/pureAnnotations.mjs` so that
 calls in code that imports it by package name are too. An object whose
 methods build values and touch nothing else (like `@lexical/html`'s `sel`) is
 marked `@lexical-pure-namespace` instead, so that `sel.tag('p')` is annotated

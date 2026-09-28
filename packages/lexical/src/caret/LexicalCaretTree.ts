@@ -57,22 +57,23 @@ function $linkSiblings(
 export function $insertNodeBetween(
   writableParent: ElementNode,
   writableNode: LexicalNode,
-  previous: LexicalNode | null,
-  next: LexicalNode | null,
+  writablePrevious: LexicalNode | null,
+  writableNext: LexicalNode | null,
 ): void {
   const key = writableNode.__key;
-  if (previous === null) {
+  if (writablePrevious === null) {
     writableParent.__first = key;
   } else {
-    previous.__next = key;
+    writablePrevious.__next = key;
   }
-  if (next === null) {
+  if (writableNext === null) {
     writableParent.__last = key;
   } else {
-    next.__prev = key;
+    writableNext.__prev = key;
   }
-  writableNode.__prev = previous === null ? null : previous.__key;
-  writableNode.__next = next === null ? null : next.__key;
+  writableNode.__prev =
+    writablePrevious === null ? null : writablePrevious.__key;
+  writableNode.__next = writableNext === null ? null : writableNext.__key;
   writableNode.__parent = writableParent.__key;
 }
 
@@ -81,6 +82,7 @@ export function $insertNodeBetween(
  * not modified. Callers obtain getWritable once before entering this layer.
  */
 export function $detachNode(writableNode: LexicalNode): void {
+  // Keep the original $removeFromParent message to preserve its error code.
   invariant(
     $getSlotHostKey(writableNode) === null,
     '$removeFromParent: node %s is slotted into host %s; a slotted node and a child are mutually exclusive. Remove it from its slot first.',
@@ -158,9 +160,16 @@ export function $detachNodeWithSelection(
             point.offset === index + 1,
         )
       : null;
+  if (selection && parent && index !== -1) {
+    // Offset repair needs direction while both points still share a tree.
+    // One point may follow this node while the other stays on its parent.
+    selection.isBackward();
+  }
   $detachNode(node);
   if (selection && parent && index !== -1) {
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
+    // Reinsertion can reverse the points even when repair did not move them.
+    selection._cachedIsBackward = null;
   }
   return points;
 }

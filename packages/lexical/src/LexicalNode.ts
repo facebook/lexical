@@ -1543,16 +1543,24 @@ export class LexicalNode {
     while (node !== null) {
       // Only ancestors above the starting point lack an enter event. Count
       // open elements to recognize their first visit without a visited Set.
-      if (entering || openElements === 0) nodes.push(node);
-      if (node.is(targetNode)) break;
-      if (!entering && openElements > 0) openElements--;
+      if (entering || openElements === 0) {
+        nodes.push(node);
+      }
+      if (node.is(targetNode)) {
+        break;
+      }
+      if (!entering && openElements > 0) {
+        openElements--;
+      }
       const child: LexicalNode | null =
         entering && $isElementNode(node)
           ? forward
             ? node.getFirstChild()
             : node.getLastChild()
           : null;
-      if (child !== null) openElements++;
+      if (child !== null) {
+        openElements++;
+      }
       const adjacent: LexicalNode | null =
         child || (forward ? node.getNextSibling() : node.getPreviousSibling());
       entering = adjacent !== null;

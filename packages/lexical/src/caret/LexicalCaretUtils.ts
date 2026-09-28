@@ -23,6 +23,7 @@ import {
   $getRoot,
   $isRootOrShadowRoot,
   $isShadowRootNode,
+  $removeFromParent,
   $restoreEmptyContainerParagraph,
   $setSelection,
   INTERNAL_$isBlock,
@@ -59,7 +60,7 @@ import {
   type SiblingCaret,
   type TextPointCaret,
 } from './LexicalCaret';
-import {$detachNode, $getAdjacentNodes} from './LexicalCaretTree';
+import {$getAdjacentNodes} from './LexicalCaretTree';
 
 export {$getAdjacentNodes} from './LexicalCaretTree';
 
@@ -296,7 +297,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     if (parent !== null && !seenStart.has(parent.getKey())) {
       removedParents.add(parent);
     }
-    $detachNode(parent === null ? node : node.getWritable());
+    $removeFromParent(node);
   }
   // Remove inline wrappers (canBeEmpty=false) that became empty
   for (const parent of removedParents) {

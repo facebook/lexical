@@ -9,9 +9,13 @@
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $getSiblingCaret,
+  $isRangeSelection,
+  $setSelection,
   type ElementNode,
   type LexicalNode,
   type NodeKey,
@@ -170,5 +174,55 @@ test.each(['previous', 'next'] as const)(
     } finally {
       spy.mockRestore();
     }
+  },
+);
+
+test.each(
+  (['insertBefore', 'insertAfter', 'replace'] as const).flatMap(operation =>
+    [false, true].flatMap(backward =>
+      [0, 2].map(offset => ({backward, offset, operation})),
+    ),
+  ),
+)(
+  'moving a text endpoint beside its parent endpoint ($operation, backward=$backward, offset=$offset)',
+  ({operation, backward, offset}) => {
+    using editor = buildEditorFromExtensions({name: 'move-mixed-endpoints'});
+    editor.update(
+      () => {
+        const first = $createTextNode('first').toggleUnmergeable();
+        const moved = $createTextNode('second').toggleUnmergeable();
+        const parent = $createParagraphNode().append(first, moved);
+        $getRoot().append(parent);
+        const selection = $createRangeSelection();
+        const [textPoint, elementPoint] = backward
+          ? [selection.focus, selection.anchor]
+          : [selection.anchor, selection.focus];
+        textPoint.set(moved.getKey(), 1, 'text');
+        elementPoint.set(parent.getKey(), offset, 'element');
+        $setSelection(selection);
+        first[operation](moved);
+        $expectChildren(
+          parent,
+          operation === 'replace'
+            ? [moved]
+            : operation === 'insertBefore'
+              ? [moved, first]
+              : [first, moved],
+        );
+        const after = $getSelection();
+        expect($isRangeSelection(after)).toBe(true);
+        if ($isRangeSelection(after)) {
+          const retained = backward ? after.focus : after.anchor;
+          expect(retained.key).toBe(moved.getKey());
+          expect(retained.type).toBe('text');
+          expect(retained.offset).toBe(1);
+          expect(after.anchor.getNode().isAttached()).toBe(true);
+          expect(after.focus.getNode().isAttached()).toBe(true);
+          // A primed direction cache must not survive the structural move.
+          expect(after.isBackward()).toBe(after.clone().isBackward());
+        }
+      },
+      {discrete: true},
+    );
   },
 );

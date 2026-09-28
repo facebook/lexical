@@ -28,6 +28,10 @@ class CustomParagraphNode extends ParagraphNode {
   getTextContent(): string {
     return `~"${super.getTextContent()}"`;
   }
+
+  getTextContentSize(): number {
+    return super.getTextContentSize() + 3;
+  }
 }
 
 function createEditor() {
@@ -53,11 +57,17 @@ describe('custom element text content', () => {
             paragraph.append($createTextNode(text));
           }
           $getRoot().clear().append(paragraph);
+          expect(paragraph.getTextContentSize()).toBe(
+            paragraph.getTextContent().length,
+          );
           expect($getRoot().getTextContent()).toBe(`~"${text}"`);
         },
         {discrete: true},
       );
-      editor.read(() => expect($getRoot().getTextContent()).toBe(`~"${text}"`));
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe(`~"${text}"`);
+        expect($getRoot().getTextContentSize()).toBe(`~"${text}"`.length);
+      });
     },
   );
 
@@ -186,16 +196,22 @@ describe('custom element text content', () => {
     );
     editor.update(
       () => {
+        expect(moved.getTextContentSize()).toBe(moved.getTextContent().length);
         target.append(moved);
         text.setTextContent('Changed text');
       },
       {discrete: true},
     );
-    editor.read(() =>
+    editor.read(() => {
+      expect(moved.getTextContentSize()).toBe(moved.getTextContent().length);
+      expect(target.getTextContentSize()).toBe(target.getTextContent().length);
       expect($getRoot().getTextContent()).toBe(
         '~"Changed text"\n\nFirst\n\nSecond\n\nThird',
-      ),
-    );
+      );
+      expect($getRoot().getTextContentSize()).toBe(
+        $getRoot().getTextContent().length,
+      );
+    });
   });
 
   test('includes slots in custom text when they change or are removed', () => {
@@ -213,9 +229,15 @@ describe('custom element text content', () => {
     );
     editor.read(() => expect($getRoot().getTextContent()).toBe('~"TitleBody"'));
     editor.update(() => title.setTextContent('Updated'), {discrete: true});
-    editor.read(() =>
-      expect($getRoot().getTextContent()).toBe('~"UpdatedBody"'),
-    );
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('~"UpdatedBody"');
+      expect(paragraph.getTextContentSize()).toBe(
+        paragraph.getTextContent().length,
+      );
+      expect($getRoot().getTextContentSize()).toBe(
+        $getRoot().getTextContent().length,
+      );
+    });
     editor.update(() => $removeSlot(paragraph, 'title'), {discrete: true});
     editor.read(() => expect($getRoot().getTextContent()).toBe('~"Body"'));
   });

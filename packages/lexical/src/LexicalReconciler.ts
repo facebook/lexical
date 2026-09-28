@@ -115,7 +115,7 @@ export const CACHED_TEXT_SIZE_KEY = Symbol.for('@lexical/CachedTextSize');
 //
 // The whole walk runs inside `activePrevEditorState.read(...)` so that every
 // node method resolves against the PREVIOUS node map: a moved element recomputes
-// its text length via `getTextContent()` (its shared keyed-DOM cache may already
+// its size via `getTextContentSize()` (its shared keyed-DOM cache may already
 // hold the NEW size, cf. https://github.com/facebook/lexical/pull/8564), and the
 // inter-sibling `isInline()` returns the node's previous-render value (a moved
 // or re-typed node could answer differently in the next state, and a node
@@ -149,7 +149,7 @@ function $prevSuffixTextSize(startKey: NodeKey, count: number): number {
             // cache may already hold its NEW size, so recompute from the prev
             // tree. (`__parent === null` means detached/removed, not moved — its
             // DOM cache is still its prev text.)
-            size += prevNode.getTextContent().length;
+            size += prevNode.getTextContentSize();
           } else {
             const keyedDom = activePrevKeyToDOMMap.get(cur);
             const cached = keyedDom && keyedDom.__lexicalTextContent;

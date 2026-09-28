@@ -30,7 +30,7 @@ Note that the local server needs to be running in order to run the e2e tests.
 
 `pnpm run start` will start both the dev server and collab server. If you don't need collab, use `pnpm run dev` to start just the dev server.
 
-If you're contributing to the website or documentation, you can run docusaurus
+If you're contributing to the website or documentation, you can run Docusaurus
 with:
 
 - `pnpm run start:website`

@@ -19,6 +19,7 @@ import {
   type ElementNode,
   type LexicalNode,
   type NodeKey,
+  type ParagraphNode,
   TextNode,
 } from 'lexical';
 import {expect, test, vi} from 'vitest';
@@ -39,7 +40,12 @@ function $expectChildren(parent: ElementNode, children: LexicalNode[]): void {
   expect(parent.getChildrenKeys()).toEqual(children.map(key));
 }
 
-function $createFixture() {
+type Fixture = {
+  children: TextNode[];
+  parent: ParagraphNode;
+};
+
+function $createFixture(): Fixture {
   const children = ['a', 'b', 'c', 'd'].map(text =>
     $createTextNode(text).toggleUnmergeable(),
   );
@@ -52,7 +58,7 @@ test.each(['previous', 'next'] as const)(
   'replacement with an existing %s sibling preserves both links',
   direction => {
     using editor = buildEditorFromExtensions({name: 'caret-mutation-links'});
-    let fixture!: ReturnType<typeof $createFixture>;
+    let fixture!: Fixture;
     editor.update(
       () => {
         fixture = $createFixture();
@@ -78,7 +84,7 @@ for (const direction of ['previous', 'next'] as const) {
       `moving sibling %s ${direction} from ${originIndex} preserves committed links`,
       sourceIndex => {
         using editor = buildEditorFromExtensions({name: 'caret-mutation-move'});
-        let fixture!: ReturnType<typeof $createFixture>;
+        let fixture!: Fixture;
         editor.update(
           () => {
             fixture = $createFixture();
@@ -120,7 +126,7 @@ test.each([
   'splice($start, $count, $insert) repairs both boundary links',
   ({start, count, insert, expected}) => {
     using editor = buildEditorFromExtensions({name: 'caret-mutation-splice'});
-    let fixture!: ReturnType<typeof $createFixture>;
+    let fixture!: Fixture;
     editor.update(
       () => {
         fixture = $createFixture();

@@ -2636,17 +2636,31 @@ declare export function removeClassNamesFromElement(
   ...classNames: (typeof undefined | boolean | null | string)[]
 ): void;
 declare export function mergeRegister(...func: (() => void)[]): () => void;
+// `AddEventListenerOptions` from TypeScript's `lib.dom.d.ts` and
+// `EventListenerOptionsOrUseCapture` from the flow-typed DOM libdef describe
+// the same value under different names, so naming either one ties this
+// declaration to a single DOM libdef. Spelling it structurally keeps it
+// resolvable under both.
+type RegisterEventListenerOptions =
+  | boolean
+  | {
+      capture?: boolean,
+      once?: boolean,
+      passive?: boolean,
+      signal?: AbortSignal,
+      ...
+    };
 declare export function registerEventListener(
   target: EventTarget,
   type: string,
   listener: EventListener,
-  options?: EventListenerOptionsOrUseCapture,
+  options?: RegisterEventListenerOptions,
 ): () => void;
 export type EventListenerMap<T> = {readonly [type: string]: EventListener};
 declare export function registerEventListeners<T extends EventTarget>(
   target: T,
   listeners: EventListenerMap<T>,
-  options?: EventListenerOptionsOrUseCapture,
+  options?: RegisterEventListenerOptions,
 ): () => void;
 declare export function normalizeClassNames(...classNames: (typeof undefined | boolean | null | string)[]): string[];
 declare export function getStyleObjectFromCSS(css: string): {

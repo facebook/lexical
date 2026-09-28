@@ -1751,6 +1751,7 @@ declare export function $splitTextPointCaretSlice(
   slice: TextPointCaretSlice<>,
   selection?: RangeSelection | null,
 ): TextNode | null;
+/** @internal */
 declare export function $getTextPointCaretSliceForNode(
   slices: ReadonlyArray<TextPointCaretSlice<> | null>,
   node: LexicalNode,

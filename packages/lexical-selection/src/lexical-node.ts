@@ -56,12 +56,23 @@ export function $sliceSelectedTextNodeContent<T extends TextNode>(
     const [start, end] = selection.isBackward()
       ? [points[1], points[0]]
       : points;
-    // Interior nodes are copied whole. Only text endpoints can trim this
-    // node, so no element-offset lookup or document traversal is needed.
-    const text = textNode.__text.slice(
-      textNode.__key === start.key ? start.offset : 0,
-      textNode.__key === end.key ? end.offset : undefined,
-    );
+    // Text endpoints can trim directly. Element endpoints need caret
+    // normalization so equivalent mixed points produce an empty interval.
+    const slice =
+      $isRangeSelection(selection) &&
+      (start.type === 'element' || end.type === 'element')
+        ? $getTextPointCaretSliceForNode(
+            $caretRangeFromSelection(selection).getTextSlices(),
+            textNode,
+          )
+        : undefined;
+    const [startOffset, endOffset] = slice
+      ? slice.getSliceIndices()
+      : [
+          textNode.__key === start.key ? start.offset : 0,
+          textNode.__key === end.key ? end.offset : undefined,
+        ];
+    const text = textNode.__text.slice(startOffset, endOffset);
     // This may be an ephemeral clone: do not resolve getLatest() or insert
     // it into the editor state when changing its own text.
     if (text !== textNode.__text) {

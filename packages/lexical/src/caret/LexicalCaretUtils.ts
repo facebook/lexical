@@ -759,7 +759,10 @@ export function $splitTextPointCaret<D extends CaretDirection>(
   return $getCaretInDirection($getSiblingCaret(textNode, 'next'), direction);
 }
 
-/** Find a node's partial text interval among a caret range's endpoint slices. */
+/**
+ * Find a node's partial text interval among a caret range's endpoint slices.
+ * @internal
+ */
 export function $getTextPointCaretSliceForNode(
   slices: readonly (TextPointCaretSlice | null)[],
   node: LexicalNode,

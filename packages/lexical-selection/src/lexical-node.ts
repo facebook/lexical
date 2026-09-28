@@ -332,7 +332,7 @@ export function $patchStyleText(
       $patchStyle(emptyNode, patch);
     }
   }
-  $forEachSelectedTextNode(textNode => {
+  $forEachSelectedTextNodeInSelection(selection, textNode => {
     $patchStyle(textNode, patch);
   });
 
@@ -359,7 +359,13 @@ export function $patchStyleText(
 export function $forEachSelectedTextNode(
   fn: (textNode: TextNode) => void,
 ): void {
-  const selection = $getSelection();
+  $forEachSelectedTextNodeInSelection($getSelection(), fn);
+}
+
+function $forEachSelectedTextNodeInSelection(
+  selection: BaseSelection | null,
+  fn: (textNode: TextNode) => void,
+): void {
   if (!selection) {
     return;
   }

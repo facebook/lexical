@@ -2178,16 +2178,33 @@ function $updateTextFormat(
     ? $caretRangeFromSelection(selection).getTextSlices()
     : [];
   let hasText = false;
+  let skippedStart: PointType | undefined;
+  let firstText: TextNode | undefined;
   let firstFormat: number | undefined;
   let lastFormat = 0;
   for (const node of nodes) {
     if ($isTextNode(node)) {
-      hasText = true;
+      // Main's multi-text-node path moves a skipped text-edge start to
+      // the first formatted node, including when the final slice is empty.
+      if (skippedStart && firstText) {
+        skippedStart.set(firstText.__key, 0, 'text');
+        skippedStart = undefined;
+      }
       const slice = $getTextPointCaretSliceForNode(slices, node);
+      if (!hasText && slice && slice.distance === 0) {
+        const start = selection.isBackward()
+          ? selection.focus
+          : selection.anchor;
+        if (start.type === 'text' && start.key === node.__key) {
+          skippedStart = start;
+        }
+      }
+      hasText = true;
       if (slice && slice.distance === 0) {
         continue;
       }
       const nextFormat = applyFormat(node.getFormat());
+      const originalSize = skippedStart ? node.getTextContentSize() : 0;
       const replacement =
         slice && !$isTokenOrSegmented(node)
           ? $splitTextPointCaretSlice(slice, selection)
@@ -2196,6 +2213,16 @@ function $updateTextFormat(
         replacement.setFormat(nextFormat);
         if (firstFormat === undefined) {
           firstFormat = nextFormat;
+          firstText = replacement;
+          // A single partial TextNode also repins the text endpoints after
+          // splitting. A whole-node or atomic-node selection keeps them.
+          if (
+            skippedStart &&
+            replacement.getTextContentSize() !== originalSize
+          ) {
+            skippedStart.set(replacement.__key, 0, 'text');
+            skippedStart = undefined;
+          }
         }
         lastFormat = nextFormat;
       }

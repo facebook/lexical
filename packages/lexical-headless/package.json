@@ -8,7 +8,7 @@
     "headless"
   ],
   "license": "MIT",
-  "version": "0.51.0",
+  "version": "0.51.1-nightly.20260928.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
@@ -16,6 +16,22 @@
   },
   "sideEffects": false,
   "exports": {
+    "./HeadlessExtension": {
+      "source": "./src/HeadlessExtension.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/HeadlessExtension.d.ts",
+      "development": "./dist/LexicalHeadlessHeadlessExtension.dev.js",
+      "production": "./dist/LexicalHeadlessHeadlessExtension.prod.js",
+      "default": "./dist/LexicalHeadlessHeadlessExtension.js"
+    },
+    "./HeadlessExtension.js": {
+      "source": "./src/HeadlessExtension.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/HeadlessExtension.d.ts",
+      "development": "./dist/LexicalHeadlessHeadlessExtension.dev.js",
+      "production": "./dist/LexicalHeadlessHeadlessExtension.prod.js",
+      "default": "./dist/LexicalHeadlessHeadlessExtension.js"
+    },
     "./dom": {
       "source": "./src/dom.ts",
       "browser": {

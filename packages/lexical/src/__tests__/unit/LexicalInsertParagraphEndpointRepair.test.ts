@@ -5,9 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {
-  ParagraphNode,
-  TextNode} from 'lexical';
+import type {ParagraphNode, TextNode} from 'lexical';
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {$createLinkNode, LinkNode} from '@lexical/link';
@@ -17,7 +15,7 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
-  $setSelection
+  $setSelection,
 } from 'lexical';
 import {expect, test} from 'vitest';
 

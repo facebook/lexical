@@ -7,6 +7,7 @@
  */
 
 import {
+  $isBlockLevel,
   defineImportRule,
   defineOverlayRules,
   type DOMPreprocessFn,
@@ -14,16 +15,53 @@ import {
   sel,
 } from '@lexical/html';
 import {
+  $createLineBreakNode,
   $generateNodesFromRawText,
+  $isParagraphNode,
   isDOMDocumentNode,
   isDOMTextNode,
   isHTMLElement,
+  type LexicalNode,
+  ParagraphNode,
 } from 'lexical';
 
 import {$createCodeNode} from './CodeNode';
 
 const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
 const THEME_DATA_ATTRIBUTE = 'data-theme';
+
+/**
+ * HTML import uses paragraphs for transparent block boundaries. Unwrap the
+ * built-in paragraphs into code lines, preserving custom node implementations.
+ */
+function $flattenCodeParagraphs(children: LexicalNode[]): LexicalNode[] {
+  // Other block nodes can have their own separators or custom semantics.
+  // Only normalize runs of inlines and ordinary paragraphs of inlines.
+  if (
+    children.some(
+      child =>
+        $isBlockLevel(child) &&
+        (!$isParagraphNode(child) ||
+          child.constructor !== ParagraphNode ||
+          child.getChildren().some($isBlockLevel)),
+    )
+  ) {
+    return children;
+  }
+  const out: LexicalNode[] = [];
+  let previousWasParagraph = false;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    const isParagraph =
+      $isParagraphNode(child) && child.constructor === ParagraphNode;
+    if (i > 0 && (isParagraph || previousWasParagraph)) {
+      out.push($createLineBreakNode());
+    }
+    out.push(...(isParagraph ? child.getChildren() : [child]));
+    previousWasParagraph = isParagraph;
+  }
+  return out;
+}
 
 /**
  * True for elements whose `font-family` mentions `monospace` — the
@@ -67,7 +105,7 @@ const PreRule = defineImportRule({
     $createCodeNode(
       el.getAttribute(LANGUAGE_DATA_ATTRIBUTE),
       el.getAttribute(THEME_DATA_ATTRIBUTE),
-    ).splice(0, 0, ctx.$importChildren(el)),
+    ).splice(0, 0, $flattenCodeParagraphs(ctx.$importChildren(el))),
   ],
   match: sel.tag('pre'),
   name: '@lexical/code/pre',
@@ -90,7 +128,7 @@ const MultilineCodeRule = defineImportRule({
       $createCodeNode(
         el.getAttribute(LANGUAGE_DATA_ATTRIBUTE),
         el.getAttribute(THEME_DATA_ATTRIBUTE),
-      ).splice(0, 0, ctx.$importChildren(el)),
+      ).splice(0, 0, $flattenCodeParagraphs(ctx.$importChildren(el))),
     ];
   },
   match: sel.tag('code'),
@@ -314,7 +352,13 @@ export const $installVscodeCodePasteOverlay: DOMPreprocessFn = (
 const DivRule = defineImportRule({
   $import: (ctx, el, $next) => {
     if (isMonospaceElement(el)) {
-      return [$createCodeNode().splice(0, 0, ctx.$importChildren(el))];
+      return [
+        $createCodeNode().splice(
+          0,
+          0,
+          $flattenCodeParagraphs(ctx.$importChildren(el)),
+        ),
+      ];
     }
     if (isMonospaceDescendant(el)) {
       // Unwrap so children flow into the enclosing CodeNode.
@@ -338,7 +382,9 @@ const GitHubCodeTableRule = defineImportRule({
     $createCodeNode().splice(
       0,
       0,
-      ctx.$importChildren(el, {rules: GitHubCodeTableOverlayRules}),
+      $flattenCodeParagraphs(
+        ctx.$importChildren(el, {rules: GitHubCodeTableOverlayRules}),
+      ),
     ),
   ],
   match: sel.tag('table').classAll('js-file-line-container'),

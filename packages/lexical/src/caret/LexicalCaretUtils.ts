@@ -13,6 +13,8 @@ import {
   $createRangeSelection,
   $getSelection,
   $isRangeSelection,
+  $selectionTouchesElement,
+  $updateElementSelectionOnCreateDeleteNode,
   type PointType,
   type RangeSelection,
 } from '../LexicalSelection';
@@ -59,6 +61,7 @@ import {
   type RootMode,
   type SiblingCaret,
   type TextPointCaret,
+  type TextPointCaretSlice,
 } from './LexicalCaret';
 import {$getAdjacentNodes} from './LexicalCaretTree';
 
@@ -710,6 +713,89 @@ export function $splitTextPointCaret<D extends CaretDirection>(
     '$splitTextPointCaret: splitText must return at least one TextNode',
   );
   return $getCaretInDirection($getSiblingCaret(textNode, 'next'), direction);
+}
+
+/**
+ * Find a node's partial text interval among a caret range's endpoint slices.
+ * @internal
+ */
+export function $getTextPointCaretSliceForNode(
+  slices: readonly (TextPointCaretSlice | null)[],
+  node: LexicalNode,
+): TextPointCaretSlice | undefined {
+  for (const slice of slices) {
+    if (slice !== null && slice.caret.origin.is(node)) {
+      return slice;
+    }
+  }
+}
+
+/**
+ * Isolate a non-empty text slice, splitting its node at both boundaries in
+ * one operation. The returned node contains exactly the slice. An empty
+ * slice returns null without mutating the node or selection. The slice
+ * indices must be within the node's text.
+ *
+ * Pass the range selection that produced the slice to retain its endpoints on
+ * the selected fragment, including equivalent element points. Detached
+ * selections also have their parent offsets updated when the split adds
+ * siblings. Otherwise, selection updates are left to TextNode.splitText.
+ *
+ * Like TextNode.splitText, this does not treat token or segmented nodes as
+ * atomic; callers that format those nodes must preserve them explicitly.
+ */
+export function $splitTextPointCaretSlice(
+  slice: TextPointCaretSlice,
+  selection: RangeSelection | null = null,
+): TextNode | null {
+  const {origin} = slice.caret;
+  const [start, end] = slice.getSliceIndices();
+  if (start === end) {
+    return null;
+  }
+  if (start === 0 && end === origin.getTextContentSize()) {
+    return origin;
+  }
+  const parent = origin.getParent();
+  // Only element-point repair needs the sibling index. Text-only ranges
+  // avoid an extra linear scan before splitText's own insertion lookup.
+  const index =
+    selection && parent && $selectionTouchesElement(selection, parent)
+      ? origin.getIndexWithinParent()
+      : -1;
+  // Capture offsets before splitText repairs the active selection. In
+  // particular, an element point before a prefix must stay on that prefix.
+  const points = selection
+    ? [selection.anchor, selection.focus].map(
+        point =>
+          [
+            point,
+            point.key === origin.__key && point.type === 'text'
+              ? point.offset - start
+              : parent !== null &&
+                  point.key === parent.__key &&
+                  point.offset === index
+                ? 0
+                : null,
+          ] as const,
+      )
+    : [];
+  const splitNodes = origin.splitText(start, end);
+  const node = splitNodes[start === 0 ? 0 : 1];
+  if (parent && selection && selection !== $getSelection()) {
+    $updateElementSelectionOnCreateDeleteNode(
+      selection,
+      parent,
+      index,
+      splitNodes.length - 1,
+    );
+  }
+  for (const [point, offset] of points) {
+    if (offset !== null) {
+      point.set(node.__key, offset, 'text');
+    }
+  }
+  return node;
 }
 
 export interface SplitAtPointCaretNextOptions {

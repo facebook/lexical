@@ -1009,28 +1009,28 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
     return this.anchor.isSamePointCaret(this.focus);
   }
   getTextSlices(): TextPointCaretSliceTuple<D> {
-    const getSlice = (k: 'anchor' | 'focus') => {
-      const caret = this[k].getLatest();
-      return $isTextPointCaret(caret)
-        ? $getSliceFromTextPointCaret(caret, k)
-        : null;
-    };
-    const anchorSlice = getSlice('anchor');
-    const focusSlice = getSlice('focus');
-    if (anchorSlice && focusSlice) {
-      const {caret: anchorCaret} = anchorSlice;
-      const {caret: focusCaret} = focusSlice;
-      if (anchorCaret.isSameNodeCaret(focusCaret)) {
-        return [
-          $getTextPointCaretSlice(
-            anchorCaret,
-            focusCaret.offset - anchorCaret.offset,
-          ),
-          null,
-        ];
-      }
+    const anchor = this.anchor.getLatest();
+    const focus = this.focus.getLatest();
+    if (
+      $isTextPointCaret(anchor) &&
+      $isTextPointCaret(focus) &&
+      anchor.isSameNodeCaret(focus)
+    ) {
+      // Compute the single-node interval directly instead of allocating two
+      // whole-node slices only to replace them with a third slice.
+      return [
+        $getTextPointCaretSlice(anchor, focus.offset - anchor.offset),
+        null,
+      ];
     }
-    return [anchorSlice, focusSlice];
+    return [
+      $isTextPointCaret(anchor)
+        ? $getSliceFromTextPointCaret(anchor, 'anchor')
+        : null,
+      $isTextPointCaret(focus)
+        ? $getSliceFromTextPointCaret(focus, 'focus')
+        : null,
+    ];
   }
   iterNodeCarets(rootMode: RootMode = 'root'): IterableIterator<NodeCaret<D>> {
     const anchor = $isTextPointCaret(this.anchor)

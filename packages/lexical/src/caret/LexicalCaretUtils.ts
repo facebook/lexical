@@ -43,6 +43,7 @@ import {
   $getCaretRange,
   $getChildCaret,
   $getCollapsedCaretRange,
+  $getCommonAncestor,
   $getSiblingCaret,
   $getTextNodeOffset,
   $getTextPointCaret,
@@ -59,6 +60,9 @@ import {
   type SiblingCaret,
   type TextPointCaret,
 } from './LexicalCaret';
+import {$getAdjacentNodes} from './LexicalCaretTree';
+
+export {$getAdjacentNodes} from './LexicalCaretTree';
 
 /**
  * @param point
@@ -283,9 +287,8 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       }
     }
   }
-  // Use $removeFromParent instead of node.remove() to skip redundant
-  // per-node selection restoration — selection is rebuilt from
-  // anchor/focus candidates below.
+  // Selection is rebuilt from anchor/focus candidates below, so detach
+  // without restoring it for every removed node.
   const removedParents = new Set<ElementNode>();
   for (const node of removedNodes) {
     const parent = node.getParent();
@@ -357,20 +360,8 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
 
   // Find the deepest anchor and focus candidates that are
   // still attached
-  let anchorCandidate: PointCaret<'next'> | undefined;
-  let focusCandidate: PointCaret<'previous'> | undefined;
-  for (const candidate of anchorCandidates) {
-    if ($isCaretAttached(candidate)) {
-      anchorCandidate = $normalizeCaret(candidate);
-      break;
-    }
-  }
-  for (const candidate of focusCandidates) {
-    if ($isCaretAttached(candidate)) {
-      focusCandidate = $normalizeCaret(candidate);
-      break;
-    }
-  }
+  const anchorCandidate = $getAttachedCaret(anchorCandidates);
+  const focusCandidate = $getAttachedCaret(focusCandidates);
 
   // Merge blocks if necessary
   const mergeTargets = $getBlockMergeTargets(
@@ -447,17 +438,14 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   }
 
   // note this caret can be in either direction
-  const bestCandidate = [
+  const bestCandidate = $getAttachedCaret([
     anchorCandidate,
     focusCandidate,
     ...anchorCandidates,
     ...focusCandidates,
-  ].find($isCaretAttached);
+  ]);
   if (bestCandidate) {
-    const anchor = $getCaretInDirection(
-      $normalizeCaret(bestCandidate),
-      initialRange.direction,
-    );
+    const anchor = $getCaretInDirection(bestCandidate, initialRange.direction);
     return $getCollapsedCaretRange(anchor);
   }
   invariant(
@@ -465,6 +453,14 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     '$removeTextFromCaretRange: selection was lost, could not find a new anchor given candidates with keys: %s',
     JSON.stringify(anchorCandidates.map(n => n.origin.__key)),
   );
+}
+
+/** Resolve the first surviving candidate after a range mutation. */
+function $getAttachedCaret<D extends CaretDirection>(
+  candidates: readonly (PointCaret<D> | null | undefined)[],
+): PointCaret<D> | undefined {
+  const candidate = candidates.find($isCaretAttached);
+  return candidate && $normalizeCaret(candidate);
 }
 
 function $getBlockFromCaret(
@@ -499,59 +495,45 @@ function $getBlockMergeTargets(
   focus: null | undefined | PointCaret<'previous'>,
   seenStart: Set<NodeKey>,
 ): null | [ElementNode, ElementNode] {
-  if (!anchor || !focus) {
+  const anchorParent = anchor && anchor.getParentAtCaret();
+  const focusParent = focus && focus.getParentAtCaret();
+  const common =
+    anchorParent &&
+    focusParent &&
+    $getCommonAncestor(anchorParent, focusParent);
+  if (!common || common.type !== 'branch') {
     return null;
-  }
-  const anchorParent = anchor.getParentAtCaret();
-  const focusParent = focus.getParentAtCaret();
-  if (!anchorParent || !focusParent) {
-    return null;
-  }
-  // TODO refactor when we have a better primitive for common ancestor
-  const anchorElements = anchorParent.getParents().reverse();
-  anchorElements.push(anchorParent);
-  const focusElements = focusParent.getParents().reverse();
-  focusElements.push(focusParent);
-  const maxLen = Math.min(anchorElements.length, focusElements.length);
-  let commonAncestorCount: number;
-  for (
-    commonAncestorCount = 0;
-    commonAncestorCount < maxLen &&
-    anchorElements[commonAncestorCount] === focusElements[commonAncestorCount];
-    commonAncestorCount++
-  ) {
-    // just traverse the ancestors
   }
   const $getBlock = (
-    arr: readonly ElementNode[],
-    predicate: (node: ElementNode) => boolean,
+    parent: ElementNode,
+    selectedOnly: boolean,
   ): ElementNode | undefined => {
     let block: ElementNode | undefined;
-    for (let i = commonAncestorCount; i < arr.length; i++) {
-      const ancestor = arr[i];
-      if ($isRootOrShadowRoot(ancestor)) {
+    // Ascend to the common ancestor, retaining the outermost eligible block
+    // and rejecting any branch that crosses a shadow root.
+    for (
+      let node: ElementNode | null = parent;
+      node && !node.is(common.commonAncestor);
+      node = node.getParent()
+    ) {
+      if ($isRootOrShadowRoot(node)) {
         return;
-      } else if (!block && predicate(ancestor)) {
-        block = ancestor;
+      }
+      if (
+        (!selectedOnly || seenStart.has(node.__key)) &&
+        INTERNAL_$isBlock(node)
+      ) {
+        block = node;
       }
     }
     return block;
   };
-  const anchorBlock = $getBlock(anchorElements, INTERNAL_$isBlock);
-  const focusBlock =
-    anchorBlock &&
-    $getBlock(
-      focusElements,
-      node => seenStart.has(node.getKey()) && INTERNAL_$isBlock(node),
-    );
-  // A merge removes focusBlock with remove(true), which discards any slots it
-  // owns (slots are not children, so they are not spliced onto anchorBlock).
-  // Refuse to merge away a slot-bearing host so its slots can only be removed
-  // as a unit by an explicit host deletion, never silently via backspace.
-  if (focusBlock && $getSlotNames(focusBlock).length > 0) {
-    return null;
-  }
-  return anchorBlock && focusBlock ? [anchorBlock, focusBlock] : null;
+  const anchorBlock = $getBlock(anchorParent, false);
+  const focusBlock = anchorBlock && $getBlock(focusParent, true);
+  // Removing a host must not silently discard its slots during a block merge.
+  return anchorBlock && focusBlock && $getSlotNames(focusBlock).length === 0
+    ? [anchorBlock, focusBlock]
+    : null;
 }
 
 /**
@@ -669,16 +651,18 @@ export function $getChildCaretAtIndex<D extends CaretDirection>(
   index: number,
   direction: D,
 ): NodeCaret<D> {
-  let caret: NodeCaret<'next'> = $getChildCaret(parent, 'next');
-  for (let i = 0; i < index; i++) {
-    const nextCaret: null | SiblingCaret<LexicalNode, 'next'> =
-      caret.getAdjacentCaret();
-    if (nextCaret === null) {
-      break;
-    }
-    caret = nextCaret;
-  }
-  return $getCaretInDirection(caret, direction);
+  // Preserve the forward walk's rounding and clamping, but use the node's
+  // nearest-boundary lookup and allocate only the final caret.
+  const size = parent.getChildrenSize();
+  const offset = index > 0 ? Math.min(Math.ceil(index), size) : 0;
+  const originIndex = offset - (direction === 'next' ? 1 : 0);
+  const origin =
+    originIndex < 0 || originIndex >= size
+      ? null
+      : parent.getChildAtIndex(originIndex);
+  return origin === null
+    ? $getChildCaret(parent, direction)
+    : $getSiblingCaret(origin, direction);
 }
 
 /**
@@ -709,34 +693,6 @@ export function $getAdjacentSiblingOrParentSiblingCaret<
     nextCaret = $getAdjacentChildCaret(caret);
   }
   return nextCaret && [nextCaret, depthDiff];
-}
-
-/**
- * Get the adjacent nodes to initialCaret in the given direction.
- *
- * @example
- * ```ts
- * expect($getAdjacentNodes($getChildCaret(parent, 'next'))).toEqual(parent.getChildren());
- * expect($getAdjacentNodes($getChildCaret(parent, 'previous'))).toEqual(parent.getChildren().reverse());
- * expect($getAdjacentNodes($getSiblingCaret(node, 'next'))).toEqual(node.getNextSiblings());
- * expect($getAdjacentNodes($getSiblingCaret(node, 'previous'))).toEqual(node.getPreviousSiblings().reverse());
- * ```
- *
- * @param initialCaret The caret to start at (the origin will not be included)
- * @returns An array of siblings.
- */
-export function $getAdjacentNodes(
-  initialCaret: NodeCaret<CaretDirection>,
-): LexicalNode[] {
-  const siblings = [];
-  for (
-    let caret = initialCaret.getAdjacentCaret();
-    caret;
-    caret = caret.getAdjacentCaret()
-  ) {
-    siblings.push(caret.origin);
-  }
-  return siblings;
 }
 
 export function $splitTextPointCaret<D extends CaretDirection>(

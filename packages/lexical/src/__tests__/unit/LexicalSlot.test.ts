@@ -3244,6 +3244,8 @@ describe('named-slots: canonical slot order', () => {
       // declaration order, not call order and not code-unit order
       // ('body' < 'title')
       expect($getSlotNames(host)).toEqual(['title', 'body']);
+      expect(host.getTextContent()).toBe('TitleBody');
+      expect(host.getTextContentSize()).toBe(9);
     });
   });
 
@@ -3270,6 +3272,8 @@ describe('named-slots: canonical slot order', () => {
       // declared names lead in declaration order; the undeclared rest trail
       // in code-unit order
       expect($getSlotNames(host)).toEqual(['title', 'body', 'alpha', 'zeta']);
+      expect(host.getTextContent()).toBe('TBAZ');
+      expect(host.getTextContentSize()).toBe(4);
     });
   });
 

@@ -29,6 +29,11 @@ import useLayoutEffect from './useLayoutEffect';
  * preferred way to set ARIA properties. The camelCase `aria*` props (such as
  * `ariaLabel`) are also accepted but are retained only for backwards
  * compatibility.
+ *
+ * `role` defaults to `textbox` while the editor is editable, and to no role at
+ * all while it is not: a non-editable editor renders content rather than a form
+ * widget. Pass `role` explicitly to override either default — a read-only form
+ * field, for instance, is `role="textbox"` with an accessible name.
  */
 export type ContentEditableElementProps = {
   editor: LexicalEditor;
@@ -66,7 +71,7 @@ function ContentEditableElementImpl(
     autoCapitalize,
     className,
     id,
-    role = 'textbox',
+    role,
     spellCheck = true,
     style,
     tabIndex,
@@ -102,10 +107,23 @@ function ContentEditableElementImpl(
     });
   }, [editor]);
 
+  // `textbox` is the default only while the editor is editable. A non-editable
+  // editor renders content, not a widget, so it gets no widget role unless the
+  // caller asks for one (a read-only form field, say, passes role="textbox"
+  // explicitly and keeps the behaviour it had before). An explicit `null` keeps
+  // meaning "no role at all", as it did when `role` carried a default value.
+  const resolvedRole =
+    role === undefined ? (isEditable ? 'textbox' : undefined) : role;
+  // Widget-only ARIA is invalid without a widget role, and dropping the role
+  // while keeping the attributes trades one axe violation for another.
+  const hasWidgetRole = resolvedRole != null;
+
   return (
     <div
       aria-activedescendant={isEditable ? ariaActiveDescendant : undefined}
-      aria-autocomplete={isEditable ? ariaAutoComplete : 'none'}
+      aria-autocomplete={
+        isEditable ? ariaAutoComplete : hasWidgetRole ? 'none' : undefined
+      }
       aria-controls={isEditable ? ariaControls : undefined}
       aria-describedby={ariaDescribedBy}
       // for compat, only override aria-errormessage if ariaErrorMessage is defined
@@ -113,23 +131,23 @@ function ContentEditableElementImpl(
         ? {'aria-errormessage': ariaErrorMessage}
         : {})}
       aria-expanded={
-        isEditable && role === 'combobox' ? !!ariaExpanded : undefined
+        isEditable && resolvedRole === 'combobox' ? !!ariaExpanded : undefined
       }
       // for compat, only override aria-invalid if ariaInvalid is defined
       {...(ariaInvalid != null ? {'aria-invalid': ariaInvalid} : {})}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
-      aria-multiline={ariaMultiline}
+      aria-multiline={hasWidgetRole ? ariaMultiline : undefined}
       aria-owns={isEditable ? ariaOwns : undefined}
-      aria-readonly={isEditable ? undefined : true}
-      aria-required={ariaRequired}
+      aria-readonly={!isEditable && hasWidgetRole ? true : undefined}
+      aria-required={hasWidgetRole ? ariaRequired : undefined}
       autoCapitalize={autoCapitalize}
       className={className}
       contentEditable={isEditable}
       data-testid={testid}
       id={id}
       ref={mergedRefs}
-      role={role}
+      role={resolvedRole}
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex ?? (isEditable ? undefined : -1)}

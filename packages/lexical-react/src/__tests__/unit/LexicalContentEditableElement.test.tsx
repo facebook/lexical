@@ -294,4 +294,93 @@ describe('ContentEditableElement tests', () => {
     const results = await axe(container!);
     expect(results).toHaveNoViolations();
   });
+
+  describe('default role', () => {
+    it('defaults to role="textbox" when editable', async () => {
+      await act(async () => {
+        reactRoot.render(<ContentEditableElement editor={editor} />);
+      });
+      const element = container!.querySelector('div[contenteditable]')!;
+      expect(element.getAttribute('role')).toBe('textbox');
+      expect(element.getAttribute('aria-autocomplete')).toBe(null);
+    });
+
+    it('renders no role and no widget ARIA when not editable', async () => {
+      editor.setEditable(false);
+      await act(async () => {
+        reactRoot.render(<ContentEditableElement editor={editor} />);
+      });
+      const element = container!.querySelector('div[contenteditable]')!;
+      // A non-editable editor renders content, not a widget: without a widget
+      // role, widget-only ARIA would be an aria-allowed-attr violation.
+      expect(element.getAttribute('role')).toBe(null);
+      expect(element.getAttribute('aria-autocomplete')).toBe(null);
+      expect(element.getAttribute('aria-readonly')).toBe(null);
+    });
+
+    it('keeps the widget ARIA when a role is passed explicitly', async () => {
+      editor.setEditable(false);
+      await act(async () => {
+        reactRoot.render(
+          <ContentEditableElement
+            editor={editor}
+            role="textbox"
+            ariaLabel="Notes"
+          />,
+        );
+      });
+      const element = container!.querySelector('[role="textbox"]')!;
+      expect(element.getAttribute('aria-readonly')).toBe('true');
+      expect(element.getAttribute('aria-autocomplete')).toBe('none');
+    });
+
+    it('drops consumer widget-only ARIA when it resolves to no role', async () => {
+      editor.setEditable(false);
+      await act(async () => {
+        reactRoot.render(
+          <ContentEditableElement
+            editor={editor}
+            ariaMultiline={true}
+            ariaRequired="true"
+          />,
+        );
+      });
+      const element = container!.querySelector('div[contenteditable]')!;
+      expect(element.getAttribute('role')).toBe(null);
+      expect(element.getAttribute('aria-multiline')).toBe(null);
+      expect(element.getAttribute('aria-required')).toBe(null);
+    });
+
+    it('follows the editor when editability changes', async () => {
+      await act(async () => {
+        reactRoot.render(<ContentEditableElement editor={editor} />);
+      });
+      const element = container!.querySelector('div[contenteditable]')!;
+      expect(element.getAttribute('role')).toBe('textbox');
+
+      await act(async () => {
+        editor.setEditable(false);
+      });
+      expect(element.getAttribute('role')).toBe(null);
+
+      await act(async () => {
+        editor.setEditable(true);
+      });
+      expect(element.getAttribute('role')).toBe('textbox');
+    });
+
+    it('has no accessibility violations when not editable and unnamed', async () => {
+      expect.extend(toHaveNoViolations);
+      editor.setEditable(false);
+
+      await act(async () => {
+        reactRoot.render(<ContentEditableElement editor={editor} />);
+      });
+
+      // Previously this rendered an unnamed role="textbox", which axe reports
+      // as aria-input-field-name (serious).
+      const results = await axe(container!);
+      expect(results).toHaveNoViolations();
+    });
+  });
 });

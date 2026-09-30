@@ -93,7 +93,9 @@ type IntentionallyMarkedAsDirtyElement = boolean;
  * The reconciler sets this on every reconciled leaf at the end of
  * `$reconcileNode` (and on every newly-created leaf in `$createNode`), so
  * the previous editor state's leaves always carry a valid cached size from
- * the cycle that just committed.
+ * the cycle that just committed. The exception is a decorator slot host:
+ * its text includes its slots' text, which an edit inside a slot changes
+ * without cloning the host, so `$prevSuffixTextSize` measures it instead.
  *
  * Suffix-incremental fast path reads this off the previous-state instance
  * to get the pre-reconcile size of dirty children in O(1), avoiding both
@@ -114,8 +116,8 @@ export const CACHED_TEXT_SIZE_KEY = Symbol.for('@lexical/CachedTextSize');
 // or re-typed node could answer differently in the next state, and a node
 // removed this cycle would throw). The per-child size logic is inlined here
 // rather than shared so it cannot be called outside this read. Non-moved
-// elements and leaves still read their O(1) caches, so a large untouched suffix
-// child is not re-walked.
+// elements and leaves other than slot hosts still read their O(1) caches, so a
+// large untouched suffix child is not re-walked.
 function $prevSuffixTextSize(startKey: NodeKey, count: number): number {
   return activePrevEditorState.read(
     () => {
@@ -156,6 +158,11 @@ function $prevSuffixTextSize(startKey: NodeKey, count: number): number {
           if (i < count - 1 && !prevNode.isInline()) {
             size += DOUBLE_LINE_BREAK.length;
           }
+        } else if ($readSlots(prevNode).size > 0) {
+          // A slot host's text includes its slots' text, which an edit inside
+          // a slot changes without cloning the host, so the size cached on
+          // this instance can be stale.
+          size += prevNode.getTextContentSize();
         } else {
           // $reconcileNode / $createNode set the size on every leaf they touch,
           // so a missing entry means the invariant was broken upstream.

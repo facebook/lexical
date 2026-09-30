@@ -24,6 +24,8 @@ import {
 import {
   $getNearestBlockElementAncestorOrThrow,
   $handleIndentAndOutdent,
+  $isAtEndOfNode,
+  $isAtStartOfNode,
   eventFiles,
   objectKlassEquals,
 } from '@lexical/utils';
@@ -463,13 +465,10 @@ export class HeadingNode extends ElementNode {
     selection?: RangeSelection,
     restoreSelection = true,
   ): ParagraphNode | HeadingNode {
-    const anchorOffet = selection ? selection.anchor.offset : 0;
     const lastDesc = this.getLastDescendant();
     const isAtEnd =
-      !lastDesc ||
-      (selection &&
-        selection.anchor.key === lastDesc.getKey() &&
-        anchorOffet === lastDesc.getTextContentSize());
+      !lastDesc || (selection && $isAtEndOfNode(selection.anchor, this));
+    const isAtStart = selection && $isAtStartOfNode(selection.anchor, this);
     const newElement =
       isAtEnd || !selection
         ? $createParagraphNode()
@@ -481,7 +480,7 @@ export class HeadingNode extends ElementNode {
     const direction = this.getDirection();
     newElement.setDirection(direction);
     this.insertAfter(newElement, restoreSelection);
-    if (anchorOffet === 0 && !this.isEmpty() && selection) {
+    if (isAtStart && !this.isEmpty()) {
       const paragraph = $createParagraphNode();
       paragraph.select();
       this.replace(paragraph, true);

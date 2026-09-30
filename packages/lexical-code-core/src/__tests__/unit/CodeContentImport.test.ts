@@ -6,7 +6,11 @@
  *
  */
 
-import {$isCodeNode, CodeExtension} from '@lexical/code-core';
+import {
+  $isCodeHighlightNode,
+  $isCodeNode,
+  CodeExtension,
+} from '@lexical/code-core';
 import {buildEditorFromExtensions, configExtension} from '@lexical/extension';
 import {
   $generateNodesFromDOMViaExtension,
@@ -15,6 +19,8 @@ import {
   DOMImportExtension,
   sel,
 } from '@lexical/html';
+import {LinkExtension} from '@lexical/link';
+import {ListExtension} from '@lexical/list';
 import {$createQuoteNode, RichTextExtension} from '@lexical/rich-text';
 import {TableExtension} from '@lexical/table';
 import {JSDOM} from 'jsdom';
@@ -22,7 +28,9 @@ import {
   $create,
   $createParagraphNode,
   $createTextNode,
-  $isElementNode,
+  $isLineBreakNode,
+  $isTabNode,
+  DecoratorNode,
   defineExtension,
   type LexicalNode,
   ParagraphNode,
@@ -55,17 +63,53 @@ class InlineSemanticParagraphNode extends SemanticParagraphNode {
   }
 }
 
-function buildEditor(rules: AnyDOMImportRule[] = []) {
+class TextDecoratorNode extends DecoratorNode<null> {
+  $config() {
+    return this.config('text-decorator', {extends: DecoratorNode});
+  }
+
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+
+  isInline(): boolean {
+    return false;
+  }
+
+  getTextContent(): string {
+    return '[attachment]';
+  }
+}
+
+function buildEditor(
+  rules: AnyDOMImportRule[] = [],
+  replaceParagraphs = false,
+) {
   return buildEditorFromExtensions(
     defineExtension({
       dependencies: [
         RichTextExtension,
         TableExtension,
+        ListExtension,
+        LinkExtension,
         CodeExtension,
         configExtension(DOMImportExtension, {rules}),
       ],
-      name: '[code-paragraph-import]',
-      nodes: () => [SemanticParagraphNode, InlineSemanticParagraphNode],
+      name: '[code-content-import]',
+      nodes: () => [
+        SemanticParagraphNode,
+        InlineSemanticParagraphNode,
+        TextDecoratorNode,
+        ...(replaceParagraphs
+          ? [
+              {
+                replace: ParagraphNode,
+                with: () => new SemanticParagraphNode(),
+                withKlass: SemanticParagraphNode,
+              },
+            ]
+          : []),
+      ],
       theme: {tableScrollableWrapper: 'table-wrapper'},
     }),
   );
@@ -78,6 +122,28 @@ function parse(html: string): Document {
 
 function githubTable(contents: string): string {
   return `<table class="js-file-line-container">${contents}</table>`;
+}
+
+function $expectCodeContent(node: LexicalNode, text: string): void {
+  assert($isCodeNode(node));
+  expect.soft(node.getTextContent()).toBe(text);
+  expect
+    .soft(
+      node
+        .getChildren()
+        .every(
+          child =>
+            $isCodeHighlightNode(child) ||
+            $isTabNode(child) ||
+            $isLineBreakNode(child),
+        ),
+    )
+    .toBe(true);
+  for (const child of node.getChildren()) {
+    if ($isCodeHighlightNode(child)) {
+      expect.soft(child.getTextContent()).not.toMatch(/[\r\n\t]/);
+    }
+  }
 }
 
 const CASES: {name: string; html: string; text: string}[] = [
@@ -166,75 +232,69 @@ const CASES: {name: string; html: string; text: string}[] = [
     name: 'PRE with flat text tabs and linebreaks stays unchanged',
     text: '\talpha\nbeta',
   },
+  {
+    html: '<pre>a<code>alpha\nbeta</code><p>after</p>b</pre>',
+    name: 'nested multiline CODE alongside paragraph and inline text',
+    text: 'a\nalpha\nbeta\nafter\nb',
+  },
+  {
+    html: '<pre><table><tr><td>alpha</td><td>beta</td></tr></table><p>after</p></pre>',
+    name: 'table text preserves its own cell separators',
+    text: 'alpha\n\nbeta\nafter',
+  },
+  {
+    html: '<pre><h2>heading</h2><p>body</p></pre>',
+    name: 'heading followed by a paragraph',
+    text: 'heading\nbody',
+  },
+  {
+    html: '<pre><a href="https://example.com/">alpha</a><p>beta</p></pre>',
+    name: 'link text followed by a paragraph',
+    text: 'alpha\nbeta',
+  },
+  {
+    html: '<pre><ul><li>alpha</li><li>beta</li></ul><p>after</p></pre>',
+    name: 'list text preserves its own item separators',
+    text: 'alpha\n\nbeta\nafter',
+  },
+  {
+    html: '<pre>alpha<br>beta\tgamma<br><br>delta</pre>',
+    name: 'hard linebreaks and tabs',
+    text: 'alpha\nbeta\tgamma\n\ndelta',
+  },
+  {
+    html: '<div style="font-family:monospace;white-space:pre"><div>\talpha</div><br><div>beta</div></div>',
+    name: 'VS Code Chrome wrapper',
+    text: '\talpha\n\nbeta',
+  },
+  {
+    html: '<div style="font-family:monospace;white-space:pre">\talpha</div><br style="font-family:monospace;white-space:pre"><div style="font-family:monospace;white-space:pre">beta</div>',
+    name: 'VS Code Safari sibling run',
+    text: '\talpha\n\nbeta',
+  },
+  {
+    html: '<div style="font-family:monospace"><div>alpha</div><div>beta</div></div>',
+    name: 'plain monospace DIV with nested DIV lines',
+    text: 'alpha\nbeta',
+  },
 ];
 
-describe('code import normalizes paragraph boundaries', () => {
+describe('code import normalizes content to supported code children', () => {
   test.each(CASES)('$name', ({html, text}) => {
     using editor = buildEditor();
     editor.update(
       () => {
         const nodes = $generateNodesFromDOMViaExtension(parse(html));
         expect(nodes).toHaveLength(1);
-        const [node] = nodes;
-        assert($isCodeNode(node));
-        expect
-          .soft(node.getChildren().every(child => !$isElementNode(child)))
-          .toBe(true);
-        expect.soft(node.getTextContent()).toBe(text);
+        $expectCodeContent(nodes[0], text);
       },
       {discrete: true},
     );
   });
 
-  test.each([
-    ['code', '<pre>a<code>alpha\nbeta</code><p>after</p>b</pre>', 'code'],
-    [
-      'table',
-      '<pre><table><tr><td>alpha</td><td>beta</td></tr></table><p>after</p></pre>',
-      'table',
-    ],
-  ])(
-    'preserves the existing %s node alongside an ordinary paragraph',
-    (tag, html, type) => {
-      const imported: LexicalNode[] = [];
-      using editor = buildEditor([
-        defineImportRule({
-          $import: (_ctx, _el, $next) => {
-            const nodes = $next();
-            imported.push(...nodes);
-            return nodes;
-          },
-          match: tag === 'code' ? sel.tag('code', 'p') : sel.tag('table', 'p'),
-          name: 'observe-preserved-code-child',
-        }),
-      ]);
-      editor.update(
-        () => {
-          const [node] = $generateNodesFromDOMViaExtension(parse(html));
-          assert($isCodeNode(node));
-          expect(imported.map(child => child.getType())).toEqual([
-            type,
-            'paragraph',
-          ]);
-          const blocks = node.getChildren().filter($isElementNode);
-          expect(blocks).toEqual(imported);
-          expect(blocks[0]).toBe(imported[0]);
-          expect(blocks[1]).toBe(imported[1]);
-          expect(node.getChildren().map(child => child.getType())).toEqual(
-            type === 'code'
-              ? ['text', 'code', 'paragraph', 'text']
-              : ['table', 'paragraph'],
-          );
-        },
-        {discrete: true},
-      );
-    },
-  );
-
   test.each(['quote', 'semantic-paragraph', 'inline-semantic-paragraph'])(
-    'preserves a custom %s node',
+    'preserves text semantics from a custom %s node',
     type => {
-      const imported: LexicalNode[] = [];
       using editor = buildEditor([
         defineImportRule({
           $import: () => {
@@ -245,13 +305,12 @@ describe('code import normalizes paragraph boundaries', () => {
                   ? $create(SemanticParagraphNode)
                   : $create(InlineSemanticParagraphNode)
             ).append($createTextNode('kept'));
-            imported.push(custom);
-            if (type !== 'inline-semantic-paragraph') {
-              imported.push(
-                $createParagraphNode().append($createTextNode('plain')),
-              );
-            }
-            return imported;
+            return type === 'inline-semantic-paragraph'
+              ? [$createTextNode('before'), custom, $createTextNode('after')]
+              : [
+                  custom,
+                  $createParagraphNode().append($createTextNode('plain')),
+                ];
           },
           match: sel.tag('div').classAll('custom-block'),
           name: 'custom-code-child',
@@ -262,20 +321,68 @@ describe('code import normalizes paragraph boundaries', () => {
           const [node] = $generateNodesFromDOMViaExtension(
             parse('<pre><div class="custom-block">ignored</div></pre>'),
           );
-          assert($isCodeNode(node));
-          expect(node.getChildren()).toEqual(imported);
-          expect(node.getFirstChild()).toBe(imported[0]);
-          expect(node.getLastChild()).toBe(imported[imported.length - 1]);
-          expect(node.getTextContent()).toBe(
+          $expectCodeContent(
+            node,
             type === 'quote'
-              ? 'kept\n\nplain'
+              ? 'kept\nplain'
               : type === 'semantic-paragraph'
-                ? '[kept]\n\nplain'
-                : '[kept]',
+                ? '[kept]\nplain'
+                : 'before[kept]after',
           );
         },
         {discrete: true},
       );
     },
   );
+
+  test('uses configured paragraph replacements for their text semantics', () => {
+    using editor = buildEditor([], true);
+    editor.update(
+      () => {
+        const [node] = $generateNodesFromDOMViaExtension(
+          parse('<pre><p>alpha</p><p><br></p><p>beta</p></pre>'),
+        );
+        $expectCodeContent(node, '[alpha]\n[]\n[beta]');
+      },
+      {discrete: true},
+    );
+  });
+
+  test('normalizes raw CRLF and tabs returned by a custom importer', () => {
+    using editor = buildEditor([
+      defineImportRule({
+        $import: () => [$createTextNode('alpha\r\n\tbeta')],
+        match: sel.tag('span').classAll('custom-text'),
+        name: 'custom-raw-code-text',
+      }),
+    ]);
+    editor.update(
+      () => {
+        const [node] = $generateNodesFromDOMViaExtension(
+          parse('<pre><span class="custom-text">ignored</span></pre>'),
+        );
+        $expectCodeContent(node, 'alpha\n\tbeta');
+      },
+      {discrete: true},
+    );
+  });
+
+  test('uses a block decorator text fallback between inline runs', () => {
+    using editor = buildEditor([
+      defineImportRule({
+        $import: () => [$create(TextDecoratorNode)],
+        match: sel.tag('span').classAll('attachment'),
+        name: 'custom-code-attachment',
+      }),
+    ]);
+    editor.update(
+      () => {
+        const [node] = $generateNodesFromDOMViaExtension(
+          parse('<pre>before<span class="attachment"></span>after</pre>'),
+        );
+        $expectCodeContent(node, 'before\n[attachment]\nafter');
+      },
+      {discrete: true},
+    );
+  });
 });

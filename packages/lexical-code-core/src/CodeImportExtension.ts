@@ -15,52 +15,37 @@ import {
   sel,
 } from '@lexical/html';
 import {
-  $createLineBreakNode,
-  $generateNodesFromRawText,
-  $isParagraphNode,
   isDOMDocumentNode,
   isDOMTextNode,
   isHTMLElement,
   type LexicalNode,
-  ParagraphNode,
 } from 'lexical';
 
 import {$createCodeNode} from './CodeNode';
+import {$plainifyCodeContent} from './FlatStructureUtils';
 
 const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
 const THEME_DATA_ATTRIBUTE = 'data-theme';
 
 /**
- * HTML import uses paragraphs for transparent block boundaries. Unwrap the
- * built-in paragraphs into code lines, preserving custom node implementations.
+ * Code editing expects flat CodeHighlightNode, TabNode and LineBreakNode
+ * children. Preserve imported nodes' plain-text representations, separating
+ * block siblings by a line break, then normalize with the code tokenizer.
+ * Nested containers keep their own plain-text separators.
  */
-function $flattenCodeParagraphs(children: LexicalNode[]): LexicalNode[] {
-  // Other block nodes can have their own separators or custom semantics.
-  // Only normalize runs of inlines and ordinary paragraphs of inlines.
-  if (
-    children.some(
-      child =>
-        $isBlockLevel(child) &&
-        (!$isParagraphNode(child) ||
-          child.constructor !== ParagraphNode ||
-          child.getChildren().some($isBlockLevel)),
-    )
-  ) {
-    return children;
-  }
-  const out: LexicalNode[] = [];
-  let previousWasParagraph = false;
+function $normalizeCodeChildren(children: LexicalNode[]): LexicalNode[] {
+  const text: string[] = [];
+  let previousWasBlock = false;
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
-    const isParagraph =
-      $isParagraphNode(child) && child.constructor === ParagraphNode;
-    if (i > 0 && (isParagraph || previousWasParagraph)) {
-      out.push($createLineBreakNode());
+    const isBlock = $isBlockLevel(child);
+    if (i > 0 && (isBlock || previousWasBlock)) {
+      text.push('\n');
     }
-    out.push(...(isParagraph ? child.getChildren() : [child]));
-    previousWasParagraph = isParagraph;
+    text.push(child.getTextContent());
+    previousWasBlock = isBlock;
   }
-  return out;
+  return $plainifyCodeContent(text.join(''));
 }
 
 /**
@@ -105,7 +90,7 @@ const PreRule = defineImportRule({
     $createCodeNode(
       el.getAttribute(LANGUAGE_DATA_ATTRIBUTE),
       el.getAttribute(THEME_DATA_ATTRIBUTE),
-    ).splice(0, 0, $flattenCodeParagraphs(ctx.$importChildren(el))),
+    ).splice(0, 0, $normalizeCodeChildren(ctx.$importChildren(el))),
   ],
   match: sel.tag('pre'),
   name: '@lexical/code/pre',
@@ -128,7 +113,7 @@ const MultilineCodeRule = defineImportRule({
       $createCodeNode(
         el.getAttribute(LANGUAGE_DATA_ATTRIBUTE),
         el.getAttribute(THEME_DATA_ATTRIBUTE),
-      ).splice(0, 0, $flattenCodeParagraphs(ctx.$importChildren(el))),
+      ).splice(0, 0, $normalizeCodeChildren(ctx.$importChildren(el))),
     ];
   },
   match: sel.tag('code'),
@@ -252,11 +237,7 @@ const VscodeWrapperRule = defineImportRule({
       return $next();
     }
     return [
-      $createCodeNode().splice(
-        0,
-        0,
-        $generateNodesFromRawText(lines.join('\n')),
-      ),
+      $createCodeNode().splice(0, 0, $plainifyCodeContent(lines.join('\n'))),
     ];
   },
   match: sel.tag('div'),
@@ -290,11 +271,7 @@ const VscodeLineRunRule = defineImportRule({
       return $next();
     }
     return [
-      $createCodeNode().splice(
-        0,
-        0,
-        $generateNodesFromRawText(lines.join('\n')),
-      ),
+      $createCodeNode().splice(0, 0, $plainifyCodeContent(lines.join('\n'))),
     ];
   },
   match: sel.tag('div', 'br'),
@@ -345,9 +322,8 @@ export const $installVscodeCodePasteOverlay: DOMPreprocessFn = (
 
 /**
  * A `<div style="font-family: …monospace…">` (Google-Docs-style code
- * block) creates a CodeNode. Descendant elements inside a monospace
- * wrapper just unwrap so their text content flows into the surrounding
- * CodeNode.
+ * block) creates a CodeNode. Plain descendant divs defer to the transparent
+ * block rule so their boundaries become separate lines in that CodeNode.
  */
 const DivRule = defineImportRule({
   $import: (ctx, el, $next) => {
@@ -356,13 +332,9 @@ const DivRule = defineImportRule({
         $createCodeNode().splice(
           0,
           0,
-          $flattenCodeParagraphs(ctx.$importChildren(el)),
+          $normalizeCodeChildren(ctx.$importChildren(el)),
         ),
       ];
-    }
-    if (isMonospaceDescendant(el)) {
-      // Unwrap so children flow into the enclosing CodeNode.
-      return ctx.$importChildren(el);
     }
     return $next();
   },
@@ -382,7 +354,7 @@ const GitHubCodeTableRule = defineImportRule({
     $createCodeNode().splice(
       0,
       0,
-      $flattenCodeParagraphs(
+      $normalizeCodeChildren(
         ctx.$importChildren(el, {rules: GitHubCodeTableOverlayRules}),
       ),
     ),

@@ -100,6 +100,7 @@ import {
   enumValue,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  getComposedEventTarget,
   getDOMSelection,
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
@@ -1982,6 +1983,13 @@ export function registerRichText(
     editor.registerCommand(
       CUT_COMMAND,
       event => {
+        // A cut in a decorator's own input is the input's, as a paste is below:
+        // the editor's selection is still the one it had before the input took
+        // the focus.
+        const target = event === null ? null : getComposedEventTarget(event);
+        if (isDOMNode(target) && $isSelectionCapturedInDecoratorInput(target)) {
+          return false;
+        }
         onCutForRichText(event, editor);
         return true;
       },

@@ -26,6 +26,7 @@ import {
   $getChildCaret,
   $getSiblingCaret,
   $getTextNodeOffset,
+  $getTextPointCaretSliceForNode,
   $insertNodeToNearestRootAtCaret,
   $isBlockFullySelected,
   $isChildCaret,
@@ -44,6 +45,7 @@ import {
   $setPointFromCaret,
   $setSelection,
   $setSelectionFromCaretRange,
+  $splitTextPointCaretSlice,
   $updateRangeSelectionFromCaretRange,
   type CaretRange,
   type ChildCaret,
@@ -762,16 +764,11 @@ export class RangeSelection implements BaseSelection {
    * @returns a string representing the text content of all the nodes in the Selection
    */
   getTextContent(): string {
-    const nodes = this.getNodes();
-    if (nodes.length === 0) {
+    if (this.isCollapsed()) {
       return '';
     }
-    const firstNode = nodes[0];
-    const lastNode = nodes[nodes.length - 1];
-    const anchor = this.anchor;
-    const focus = this.focus;
-    const isBefore = anchor.isBefore(focus);
-    const [anchorOffset, focusOffset] = $getCharacterOffsets(this);
+    const nodes = this.getNodes();
+    const slices = $caretRangeFromSelection(this).getTextSlices();
     let textContent = '';
     let prevWasElement = true;
     for (let i = 0; i < nodes.length; i++) {
@@ -802,34 +799,9 @@ export class RangeSelection implements BaseSelection {
       } else {
         prevWasElement = false;
         if ($isTextNode(node)) {
-          let text = node.getTextContent();
-          if (node === firstNode) {
-            if (node === lastNode) {
-              if (
-                anchor.type !== 'element' ||
-                focus.type !== 'element' ||
-                focus.offset === anchor.offset
-              ) {
-                text =
-                  anchorOffset < focusOffset
-                    ? text.slice(anchorOffset, focusOffset)
-                    : text.slice(focusOffset, anchorOffset);
-              }
-            } else {
-              text = isBefore
-                ? text.slice(anchorOffset)
-                : text.slice(focusOffset);
-            }
-          } else if (node === lastNode) {
-            text = isBefore
-              ? text.slice(0, focusOffset)
-              : text.slice(0, anchorOffset);
-          }
-          textContent += text;
-        } else if (
-          ($isDecoratorNode(node) || $isLineBreakNode(node)) &&
-          (node !== lastNode || !this.isCollapsed())
-        ) {
+          const slice = $getTextPointCaretSliceForNode(slices, node);
+          textContent += slice ? slice.getTextContent() : node.getTextContent();
+        } else if ($isDecoratorNode(node) || $isLineBreakNode(node)) {
           textContent += node.getTextContent();
         }
       }
@@ -1497,56 +1469,35 @@ export class RangeSelection implements BaseSelection {
    * @returns The nodes in the Selection
    */
   extract(): LexicalNode[] {
-    const selectedNodes = [...this.getNodes()];
-    const selectedNodesLength = selectedNodes.length;
-    let firstNode = selectedNodes[0];
-    let lastNode = selectedNodes[selectedNodesLength - 1];
-    const [anchorOffset, focusOffset] = $getCharacterOffsets(this);
-    const isBackward = this.isBackward();
-    const [startPoint, endPoint] = isBackward
-      ? [this.focus, this.anchor]
-      : [this.anchor, this.focus];
-    const [startOffset, endOffset] = isBackward
-      ? [focusOffset, anchorOffset]
-      : [anchorOffset, focusOffset];
-
-    if (selectedNodesLength === 0) {
-      return [];
-    } else if (selectedNodesLength === 1) {
-      if ($isTextNode(firstNode) && !this.isCollapsed()) {
-        const splitNodes = firstNode.splitText(startOffset, endOffset);
-        const node = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        if (node) {
-          startPoint.set(node.getKey(), 0, 'text');
-          endPoint.set(node.getKey(), node.getTextContentSize(), 'text');
-          return [node];
-        }
-        return [];
-      }
-      return [firstNode];
+    const nodes = this.getNodes();
+    if (this.isCollapsed()) {
+      return [...nodes];
     }
-
-    if ($isTextNode(firstNode)) {
-      if (startOffset === firstNode.getTextContentSize()) {
-        selectedNodes.shift();
-      } else if (startOffset !== 0) {
-        [, firstNode] = firstNode.splitText(startOffset);
-        selectedNodes[0] = firstNode;
-        startPoint.set(firstNode.getKey(), 0, 'text');
+    const backward = this.isBackward();
+    const slices = $caretRangeFromSelection(this).getTextSlices();
+    const extracted: LexicalNode[] = [];
+    for (const node of nodes) {
+      const slice = $getTextPointCaretSliceForNode(slices, node);
+      const replacement = slice ? $splitTextPointCaretSlice(slice, this) : node;
+      if (replacement !== null) {
+        extracted.push(replacement);
       }
     }
-    if ($isTextNode(lastNode)) {
-      const lastNodeText = lastNode.getTextContent();
-      const lastNodeTextLength = lastNodeText.length;
-      if (endOffset === 0) {
-        selectedNodes.pop();
-      } else if (endOffset !== lastNodeTextLength) {
-        [lastNode] = lastNode.splitText(endOffset);
-        selectedNodes[selectedNodes.length - 1] = lastNode;
-        endPoint.set(lastNode.getKey(), lastNode.getTextContentSize(), 'text');
-      }
+    // Preserve extract's single-text-node selection convention, including
+    // ranges originally expressed with element points.
+    if (
+      nodes.length === 1 &&
+      extracted.length === 1 &&
+      $isTextNode(extracted[0])
+    ) {
+      const node = extracted[0];
+      const [start, end] = backward
+        ? [this.focus, this.anchor]
+        : [this.anchor, this.focus];
+      start.set(node.getKey(), 0, 'text');
+      end.set(node.getKey(), node.getTextContentSize(), 'text');
     }
-    return selectedNodes;
+    return extracted;
   }
 
   /**
@@ -2152,13 +2103,8 @@ function $deleteTextByGranularity(
 }
 
 /**
- * Applies a pure bitmask transform to every formattable node in the selection
- * in a single traversal, splitting the first and last TextNodes as necessary
- * so that only the selected text is affected. Each node receives exactly one
- * `setFormat(applyFormat(getFormat()))` (ElementNodes use their textFormat).
- *
- * @param selection - the selection whose nodes should be formatted.
- * @param applyFormat - maps a node's current 32-bit format to its new format.
+ * Apply a pure bitmask transform to every formattable node, using caret
+ * slices to isolate partially selected text. ElementNodes use textFormat.
  */
 function $updateTextFormat(
   selection: RangeSelection | NodeSelection,
@@ -2173,131 +2119,71 @@ function $updateTextFormat(
     return;
   }
 
-  if (selection.isCollapsed()) {
-    selection.setFormat(applyFormat(selection.format));
-    // When changing format, we should stop composition
-    $setCompositionKey(null);
-    return;
-  }
-
-  const selectedTextNodes: TextNode[] = [];
-  for (const node of selection.getNodes()) {
+  const nodes = selection.isCollapsed() ? [] : selection.getNodes();
+  const slices = nodes.length
+    ? $caretRangeFromSelection(selection).getTextSlices()
+    : [];
+  let hasText = false;
+  let skippedStart: PointType | undefined;
+  let firstText: TextNode | undefined;
+  let firstFormat: number | undefined;
+  let lastFormat = 0;
+  for (const node of nodes) {
     if ($isTextNode(node)) {
-      selectedTextNodes.push(node);
+      // Main's multi-text-node path moves a skipped text-edge start to
+      // the first formatted node, including when the final slice is empty.
+      if (skippedStart && firstText) {
+        skippedStart.set(firstText.__key, 0, 'text');
+        skippedStart = undefined;
+      }
+      const slice = $getTextPointCaretSliceForNode(slices, node);
+      if (!hasText && slice && slice.distance === 0) {
+        const start = selection.isBackward()
+          ? selection.focus
+          : selection.anchor;
+        if (start.type === 'text' && start.key === node.__key) {
+          skippedStart = start;
+        }
+      }
+      hasText = true;
+      if (slice && slice.distance === 0) {
+        continue;
+      }
+      const nextFormat = applyFormat(node.getFormat());
+      const originalSize = skippedStart ? node.getTextContentSize() : 0;
+      const replacement =
+        slice && !$isTokenOrSegmented(node)
+          ? $splitTextPointCaretSlice(slice, selection)
+          : node;
+      if (replacement !== null) {
+        replacement.setFormat(nextFormat);
+        if (firstFormat === undefined) {
+          firstFormat = nextFormat;
+          firstText = replacement;
+          // A single partial TextNode also repins the text endpoints after
+          // splitting. A whole-node or atomic-node selection keeps them.
+          if (
+            skippedStart &&
+            replacement.getTextContentSize() !== originalSize
+          ) {
+            skippedStart.set(replacement.__key, 0, 'text');
+            skippedStart = undefined;
+          }
+        }
+        lastFormat = nextFormat;
+      }
     } else if ($isElementNode(node)) {
       node.setTextFormat(applyFormat(node.getTextFormat()));
     } else if ($isInlineFormattable(node)) {
       node.setFormat(applyFormat(node.getFormat()));
     }
   }
-
-  const selectedTextNodesLength = selectedTextNodes.length;
-  if (selectedTextNodesLength === 0) {
+  if (!hasText) {
     selection.setFormat(applyFormat(selection.format));
-    // When changing format, we should stop composition
     $setCompositionKey(null);
-    return;
+  } else if (firstFormat !== undefined) {
+    selection.format = firstFormat | lastFormat;
   }
-
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const isBackward = selection.isBackward();
-  const startPoint = isBackward ? focus : anchor;
-  const endPoint = isBackward ? anchor : focus;
-
-  let firstIndex = 0;
-  let firstNode = selectedTextNodes[0];
-  let startOffset = startPoint.type === 'element' ? 0 : startPoint.offset;
-
-  // In case selection started at the end of text node use next text node
-  if (
-    startPoint.type === 'text' &&
-    startOffset === firstNode.getTextContentSize()
-  ) {
-    firstIndex = 1;
-    firstNode = selectedTextNodes[1];
-    startOffset = 0;
-  }
-
-  if (firstNode == null) {
-    return;
-  }
-
-  const lastIndex = selectedTextNodesLength - 1;
-  let lastNode = selectedTextNodes[lastIndex];
-  const endOffset =
-    endPoint.type === 'text' ? endPoint.offset : lastNode.getTextContentSize();
-
-  // Single node selected
-  if (firstNode.is(lastNode)) {
-    // No actual text is selected, so do nothing.
-    if (startOffset === endOffset) {
-      return;
-    }
-    const newFormat = applyFormat(firstNode.getFormat());
-    // The entire node is selected or it is token, so just format it
-    if (
-      $isTokenOrSegmented(firstNode) ||
-      (startOffset === 0 && endOffset === firstNode.getTextContentSize())
-    ) {
-      firstNode.setFormat(newFormat);
-    } else {
-      // Node is partially selected, so split it into two nodes
-      // and style the selected one.
-      const splitNodes = firstNode.splitText(startOffset, endOffset);
-      const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-      replacement.setFormat(newFormat);
-
-      // Update selection only if starts/ends on text node
-      if (startPoint.type === 'text') {
-        startPoint.set(replacement.__key, 0, 'text');
-      }
-      if (endPoint.type === 'text') {
-        endPoint.set(replacement.__key, endOffset - startOffset, 'text');
-      }
-    }
-
-    selection.format = newFormat;
-    return;
-  }
-
-  // Multiple nodes selected
-  // The entire first node isn't selected, so split it
-  if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
-    [, firstNode] = firstNode.splitText(startOffset);
-    startOffset = 0;
-  }
-  const firstNextFormat = applyFormat(firstNode.getFormat());
-  firstNode.setFormat(firstNextFormat);
-
-  const lastNextFormat = applyFormat(lastNode.getFormat());
-  // If the offset is 0, it means no actual characters are selected,
-  // so we skip formatting the last node altogether.
-  if (endOffset > 0) {
-    if (
-      endOffset !== lastNode.getTextContentSize() &&
-      !$isTokenOrSegmented(lastNode)
-    ) {
-      [lastNode] = lastNode.splitText(endOffset);
-    }
-    lastNode.setFormat(lastNextFormat);
-  }
-
-  // Process all text nodes in between
-  for (let i = firstIndex + 1; i < lastIndex; i++) {
-    const textNode = selectedTextNodes[i];
-    textNode.setFormat(applyFormat(textNode.getFormat()));
-  }
-
-  // Update selection only if starts/ends on text node
-  if (startPoint.type === 'text') {
-    startPoint.set(firstNode.__key, startOffset, 'text');
-  }
-  if (endPoint.type === 'text') {
-    endPoint.set(lastNode.__key, endOffset, 'text');
-  }
-
-  selection.format = firstNextFormat | lastNextFormat;
 }
 
 /**

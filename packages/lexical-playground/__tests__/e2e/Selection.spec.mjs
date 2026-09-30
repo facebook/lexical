@@ -1359,27 +1359,74 @@ test.describe('Selection', () => {
   test('Select all (DecoratorNode at start) #4670', async ({
     page,
     isPlainText,
-  }) => {
+  }, testInfo) => {
     // TODO selectAll is bad for Linux #4665
     test.skip(isPlainText || IS_LINUX);
 
-    await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
-    // Delete empty paragraph in front
-    await moveLeft(page, 2);
-    await page.keyboard.press('Backspace');
-    await moveRight(page, 2);
-    await page.keyboard.type('abcdefg');
+    const pageErrors = [];
+    const onPageError = error => pageErrors.push(error.stack || error.message);
+    page.on('pageerror', onPageError);
+    try {
+      await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
+      // Delete empty paragraph in front
+      await moveLeft(page, 2);
+      await page.keyboard.press('Backspace');
+      await moveRight(page, 2);
+      await page.keyboard.type('abcdefg');
 
-    await selectAll(page);
-    await page.keyboard.press('Backspace');
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-      `,
-    );
+      await test.step('typing is committed before select-all', async () => {
+        await expect(async () => {
+          const children = await evaluate(
+            page,
+            () => window.lexicalEditor.getEditorState().toJSON().root.children,
+          );
+          expect(children).toMatchObject([
+            {type: 'youtube'},
+            {children: [{text: 'abcdefg', type: 'text'}], type: 'paragraph'},
+          ]);
+        }).toPass({timeout: 5000});
+      });
+
+      await selectAll(page);
+      await test.step('select-all includes the leading decorator', async () => {
+        await expect(async () => {
+          const selection = await evaluate(page, () => {
+            const state = window.lexicalEditor.getEditorState();
+            return state.read(() => {
+              const range = state._selection;
+              return (
+                range && {
+                  collapsed: range.isCollapsed(),
+                  nodes: range.getNodes().map(node => node.getType()),
+                }
+              );
+            });
+          });
+          expect(selection).toMatchObject({
+            collapsed: false,
+            nodes: expect.arrayContaining(['youtube', 'text']),
+          });
+        }).toPass({timeout: 5000});
+      });
+
+      await page.keyboard.press('Backspace');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+      );
+    } catch (error) {
+      await testInfo.attach('page-errors', {
+        body: pageErrors.join('\n\n'),
+        contentType: 'text/plain',
+      });
+      throw error;
+    } finally {
+      page.off('pageerror', onPageError);
+    }
   });
 
   test('Can use block controls on selections including decorator nodes #5371', async ({

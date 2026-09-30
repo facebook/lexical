@@ -105,17 +105,22 @@ export function registerClickableLink(
       return;
     }
 
-    // eslint-disable-next-line no-restricted-syntax
-    window.open(
-      url,
+    const newTab =
       stores.newTab.peek() ||
-        isMiddle ||
-        event.metaKey ||
-        event.ctrlKey ||
-        urlTarget === '_blank'
-        ? '_blank'
-        : '_self',
-    );
+      isMiddle ||
+      event.metaKey ||
+      event.ctrlKey ||
+      urlTarget === '_blank';
+    if (newTab) {
+      // Unlike an `<a target="_blank">` the browser follows itself,
+      // `window.open` gives the new page a `window.opener` unless told not
+      // to, and with it that page can navigate this one away.
+      // eslint-disable-next-line no-restricted-syntax
+      window.open(url, '_blank', 'noopener');
+    } else {
+      // eslint-disable-next-line no-restricted-syntax
+      window.open(url, '_self');
+    }
     event.preventDefault();
   };
 

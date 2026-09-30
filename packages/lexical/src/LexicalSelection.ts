@@ -2080,6 +2080,9 @@ function $deleteTextByGranularity(
       return;
     }
     $extendSelectionForDeletion(selection, isBackward, granularity);
+    if (granularity === 'lineboundary') {
+      $stopLineDeletionAtLineBreak(selection);
+    }
   }
   // Line deletion must remain in one block; word deletion may cross blocks.
   if (
@@ -2099,6 +2102,25 @@ function $deleteTextByGranularity(
       INTERNAL_$expandSelectionToWholeDocument(selection);
     }
     selection.removeText();
+  }
+}
+
+/**
+ * Pulls a line deletion's focus back to the anchor's side of the first
+ * LineBreakNode between them, since a line ends at a hard break. The native
+ * measurement can land past one when a line begins with an inline decorator:
+ * Chromium may have no caret position between it and the <br> (#6916), and
+ * then measures the line's start on the line before. From the start of a line
+ * the selection ends up collapsed, and deleteCharacter removes the break.
+ */
+function $stopLineDeletionAtLineBreak(selection: RangeSelection): void {
+  for (const caret of $caretRangeFromSelection(selection).iterNodeCarets(
+    'shadowRoot',
+  )) {
+    if ($isSiblingCaret(caret) && $isLineBreakNode(caret.origin)) {
+      $setPointFromCaret(selection.focus, $rewindSiblingCaret(caret));
+      return;
+    }
   }
 }
 

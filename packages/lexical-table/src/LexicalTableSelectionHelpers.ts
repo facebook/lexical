@@ -76,6 +76,7 @@ import {
   KEY_TAB_COMMAND,
   type LexicalEditor,
   type LexicalNode,
+  mergeRegister,
   type NodeKey,
   PASTE_COMMAND,
   type PointCaret,
@@ -243,6 +244,7 @@ export function registerTableWindowHandlers(
     }
 
     const pointerDownCallback = (event: PointerEvent) => {
+      tableObservers.touchTapCellKey = null;
       // Listener is on editorWindow; the composed target is needed so the
       // rootElement.contains check below sees the shadow-internal target.
       const target = getComposedEventTarget(event);
@@ -280,10 +282,19 @@ export function registerTableWindowHandlers(
       });
     };
 
-    return registerEventListener(
-      editorWindow,
-      'pointerdown',
-      pointerDownCallback,
+    const clearTouchTap = () => {
+      tableObservers.touchTapCellKey = null;
+    };
+    return mergeRegister(
+      registerEventListener(editorWindow, 'pointerdown', pointerDownCallback),
+      // Clear before a key handler can extend the selection, including when
+      // that handler stops propagation. A later keyboard selection is not a tap.
+      registerEventListeners(
+        editorWindow,
+        {blur: clearTouchTap, keydown: clearTouchTap},
+        {capture: true},
+      ),
+      clearTouchTap,
     );
   });
 }
@@ -571,6 +582,9 @@ function $handleTableClick(
 
     const onPointerUp = (upEvent: PointerEvent) => {
       if (isGesturePointer(upEvent)) {
+        if (isBeyondTapSlop(upEvent.clientX, upEvent.clientY)) {
+          tableObservers.touchTapCellKey = null;
+        }
         stopSelecting();
       }
     };
@@ -584,6 +598,7 @@ function $handleTableClick(
     // gesture, so every subsequent tap selects cells (#8538).
     const onPointerGestureEnd = (endEvent: PointerEvent) => {
       if (isGesturePointer(endEvent)) {
+        tableObservers.touchTapCellKey = null;
         stopSelecting();
       }
     };
@@ -593,6 +608,7 @@ function $handleTableClick(
         return;
       }
       if (!isPointerDownOnEvent(moveEvent) && tableObserver.isSelecting) {
+        tableObservers.touchTapCellKey = null;
         stopSelecting();
         return;
       }
@@ -607,6 +623,7 @@ function $handleTableClick(
         isBeyondTapSlop(lastClientX, lastClientY)
       ) {
         tableObserver.isPointerDrag = true;
+        tableObservers.touchTapCellKey = null;
       }
       let focusCell: null | TableDOMCell = null;
       // In firefox the moveEvent.target may be captured so we must always
@@ -640,6 +657,14 @@ function $handleTableClick(
   };
 
   tableObserver.pointerType = event.pointerType;
+  if (
+    event.pointerType === 'touch' &&
+    !event.shiftKey &&
+    !tableObserver.isSelecting
+  ) {
+    const cellNode = $getNearestNodeFromDOMNode(selectedDOMCell.elem);
+    tableObservers.touchTapCellKey = cellNode ? cellNode.getKey() : null;
+  }
   const tableNode = $getTableNodeByKeyOrThrow(tableObserver.tableNodeKey);
   const prevSelection = $getPreviousSelection();
   // We can't trust Firefox to do the right thing with the selection and
@@ -1313,6 +1338,36 @@ function $fixRangeSelectionForSelectedTable(
     ? $findTableNode(anchorCellNode)
     : null;
   const focusCellTable = focusCellNode ? $findTableNode(focusCellNode) : null;
+
+  // iOS can double-tap an empty cell by issuing only selectionchange after
+  // the first tap's pointerup. Its word selection reaches outside the cell;
+  // expanding that range below would let the next keystroke delete the table.
+  // Only repair a native range from the caret in the last touch-tapped empty
+  // cell. Model selections are dirty, and drags/keyboard input clear the tap.
+  if (
+    tableObservers.touchTapCellKey !== null &&
+    !selection.dirty &&
+    !selection.isCollapsed() &&
+    $isRangeSelection(prevSelection) &&
+    prevSelection.isCollapsed() &&
+    !(anchorCellNode && anchorCellNode.is(focusCellNode))
+  ) {
+    const paragraph = $getNodeByKey(prevSelection.anchor.key);
+    const cell = paragraph && paragraph.getParent();
+    if (
+      $isElementNode(paragraph) &&
+      paragraph.isEmpty() &&
+      $isTableCellNode(cell) &&
+      cell.getKey() === tableObservers.touchTapCellKey &&
+      cell
+        .getChildren()
+        .every(child => $isElementNode(child) && child.isEmpty()) &&
+      (anchor.is(prevSelection.anchor) || focus.is(prevSelection.anchor))
+    ) {
+      $setSelection(prevSelection.clone());
+      return;
+    }
+  }
   const isBackward = selection.isBackward();
 
   const isSameTable =

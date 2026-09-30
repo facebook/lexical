@@ -55,7 +55,7 @@ PASSWORD="XXX" pnpm run safari:upload
 
 If new version of the extension contains big changes to it's UI or functionality, before proceeding, go to the web UI of every marketplace and update screenshots and preview videos.
 
-**Chrome, Firefox, Edge:**
+**Chrome, Firefox:**
 
 Go to the ["Publish DevTools extension to stores" GitHub action](https://github.com/facebook/lexical/actions/workflows/devtools-extension-publish.yml) and start it manually. Increase "Build version" in case publish happens more than once within single Lexical monorepo version.
 
@@ -74,13 +74,6 @@ At this moment all marketplaces are governed by [EPAM Open Source Office](https:
 3. Go to https://addons.mozilla.org/en-US/firefox/users/edit and set a "Display Name" for your account.
 4. Email to [Vladlen Fedosov](mailto:vladlen_fedosov@epam.com) and [Christopher Howard](mailto:christopher_howard@epam.com) with the request to add you as a maintainer to Firefox Add-Ons for Lexical Developer Tools extension. Pls include: Firefox account email; reasoning description.
 5. _[For Maintainer]_ Open [authors & license management page](https://addons.mozilla.org/en-US/developers/addon/lexical-developer-tools/ownership) and add new user email.
-
-**Edge:**
-
-1. Create Microsoft account: https://account.microsoft.com/account
-2. Enable two factor authentication for this account.
-3. Email to [Vladlen Fedosov](mailto:vladlen_fedosov@epam.com) and [Christopher Howard](mailto:christopher_howard@epam.com) with the request to add you as a maintainer to Microsoft Edge App-ons for Lexical Developer Tools extension. Pls include: Microsoft account email; reasoning description.
-4. _[For Maintainer]_ Open [Account settings | User management](https://partner.microsoft.com/en-us/dashboard/account/v3/usermanagement#users) and add new user email as guest account.
 
 **Chrome:**
 

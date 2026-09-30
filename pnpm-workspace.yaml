@@ -32,6 +32,7 @@ overrides:
   tmp: '>=0.2.6'
   yjs: 'catalog:'
   qs: '>=6.15.2'
+  '@docsearch/react': '^4.7.0'
 
 peerDependencyRules:
   allowedVersions:

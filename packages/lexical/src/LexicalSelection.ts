@@ -991,6 +991,8 @@ export class RangeSelection implements BaseSelection {
       if (anchorNode.isSegmented() && offset !== 0 && offset !== anchorSize) {
         if ($getCompositionKey() !== null) {
           anchorNode.setMode('normal').setFormat(format).setStyle(style);
+          getActiveEditor()._inputState.composedSegmentedKey =
+            anchorNode.getKey();
         } else {
           const replacement = $createTextNode(anchorNode.getTextContent());
           replacement.setFormat(format);

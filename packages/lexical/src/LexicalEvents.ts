@@ -1478,7 +1478,10 @@ function $handleCompositionEnd(event: CompositionEvent): boolean {
 }
 
 function $cleanupComposedSubclass(compositionKey: NodeKey | null): void {
-  if (compositionKey === null) {
+  const inputState = getActiveEditor()._inputState;
+  const composedSegmentedKey = inputState.composedSegmentedKey;
+  inputState.composedSegmentedKey = null;
+  if (compositionKey === null || compositionKey !== composedSegmentedKey) {
     return;
   }
   const composedNode = $getNodeByKey(compositionKey);

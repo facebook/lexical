@@ -16,13 +16,13 @@ import {
   $getRoot,
   $getSelection,
   $getState,
+  $isParagraphNode,
   $isRangeSelection,
   $setState,
   COMPOSITION_END_COMMAND,
   COMPOSITION_END_TAG,
   COMPOSITION_START_TAG,
   createState,
-  type ElementNode,
   type LexicalEditor,
   type LexicalNodeConfig,
   TextNode,
@@ -30,6 +30,7 @@ import {
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
 
+import {$assertNodeType} from '../utils';
 import {compose, korean} from './utils/compose';
 
 const IS_FIREFOX =
@@ -662,9 +663,10 @@ describe('Composition into a TextNode subclass (#9289)', () => {
       );
 
       editor.read(() => {
-        const children = $getRoot()
-          .getFirstChildOrThrow<ElementNode>()
-          .getChildren();
+        const children = $assertNodeType(
+          $getRoot().getFirstChildOrThrow(),
+          $isParagraphNode,
+        ).getChildren();
         expect(children.map(node => node.getType())).toEqual([
           'text',
           'highlight',
@@ -703,9 +705,10 @@ describe('Composition into a TextNode subclass (#9289)', () => {
     );
 
     editor.read(() => {
-      const children = $getRoot()
-        .getFirstChildOrThrow<ElementNode>()
-        .getChildren();
+      const children = $assertNodeType(
+        $getRoot().getFirstChildOrThrow(),
+        $isParagraphNode,
+      ).getChildren();
       expect(children.map(node => node.getType())).toEqual(['text']);
       expect(children[0].getTextContent()).toBe('John仮名Smith');
     });

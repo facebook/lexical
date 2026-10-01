@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
+// @vitest-environment node
 import type {ParagraphNode, TextNode} from 'lexical';
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';

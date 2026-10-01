@@ -6,6 +6,8 @@
  *
  */
 
+// @vitest-environment node
+
 import type {Paragraph, PhrasingContent} from 'mdast';
 
 import {TEXT_TYPE_TO_FORMAT} from 'lexical';

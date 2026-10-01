@@ -6,6 +6,8 @@
  *
  */
 
+// @vitest-environment node
+
 import type {PegasusRPCMessage, RuntimeContext} from '@webext-pegasus/rpc';
 
 import {describe, expect, it} from 'vitest';

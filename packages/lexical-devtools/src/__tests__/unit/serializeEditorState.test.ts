@@ -6,6 +6,8 @@
  *
  */
 
+// @vitest-environment node
+
 import type {EditorState} from 'lexical';
 
 import {describe, expect, it} from 'vitest';

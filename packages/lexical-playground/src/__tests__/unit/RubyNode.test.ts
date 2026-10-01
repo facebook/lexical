@@ -12,7 +12,6 @@ import {
 } from '@lexical/extension';
 import {DOMImportExtension} from '@lexical/html';
 import {RichTextExtension} from '@lexical/rich-text';
-import {JSDOM} from 'jsdom';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -1598,10 +1597,11 @@ describe('RubyImportRule — HTML <ruby> import', () => {
           editor,
           DOMImportExtension,
         );
-        const dom = new JSDOM(
+        const dom = new DOMParser().parseFromString(
           `<!doctype html><html><body>${html}</body></html>`,
+          'text/html',
         );
-        const nodes = dep.output.$generateNodesFromDOM(dom.window.document);
+        const nodes = dep.output.$generateNodesFromDOM(dom);
         $getRoot().clear().splice(0, 0, nodes);
       },
       {discrete: true},

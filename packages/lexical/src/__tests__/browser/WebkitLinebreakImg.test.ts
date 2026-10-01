@@ -40,7 +40,7 @@ import {
 } from 'lexical';
 import {describe, expect, onTestFinished, test} from 'vitest';
 
-import {$assertNodeType} from '../utils';
+import {$assertNodeType} from '../utils/assertNodeType';
 
 // Matches the `webkitHack` gate in ElementDOMSlot.setManagedLineBreak.
 const EXPECTS_IMG_HACK = IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT;

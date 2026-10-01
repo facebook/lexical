@@ -30,7 +30,7 @@ import {
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
 
-import {$assertNodeType} from '../utils';
+import {$assertNodeType} from '../utils/assertNodeType';
 import {compose, korean} from './utils/compose';
 
 const IS_FIREFOX =

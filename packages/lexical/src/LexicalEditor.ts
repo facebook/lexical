@@ -297,6 +297,8 @@ export interface InputState {
   };
   isSelectionChangeFromMouseDown: boolean;
   isInsertLineBreak: boolean;
+  /** Explicit Shift state, excluding iOS automatic capitalization. */
+  isShiftKeyDown: boolean;
 
   isInsertTextAfterHandledSelectionCommand: boolean;
   handledSelectionCommandTimeoutId: ReturnType<typeof setTimeout> | null;
@@ -320,6 +322,7 @@ export function createInputState(): InputState {
     isInsertTextAfterHandledSelectionCommand: false,
     isSelectionChangeFromDOMUpdate: false,
     isSelectionChangeFromMouseDown: false,
+    isShiftKeyDown: false,
     lastBeforeInputInsertTextTimeStamp: 0,
     lastKeyCode: null,
     lastKeyDownTimeStamp: 0,
@@ -1612,6 +1615,12 @@ export class LexicalEditor {
    * will be triggered in an implicit {@link LexicalEditor.update}, unless
    * this was invoked from inside an update in which case that update context
    * will be re-used (as if this was a dollar function itself).
+   *
+   * Do not call this from inside a read-only context such as
+   * {@link LexicalEditor.read} or {@link EditorState.read}. Command listeners
+   * usually change the editor, so Lexical runs them in a separate writable
+   * update and development builds log a warning when they detect this.
+   * Dispatch after the read returns instead.
    * @param type - the type of command listeners to trigger.
    * @param payload - the data to pass as an argument to the command listeners.
    */

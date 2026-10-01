@@ -581,7 +581,6 @@ declare export class LexicalNode {
    * argument and narrow the result with a type guard instead.
    */
   getNextSiblings<T extends LexicalNode>(): T[];
-  getCommonAncestor<T extends ElementNode>(node: LexicalNode): T | null;
   is(object: ?LexicalNode): boolean;
   isBefore(targetNode: LexicalNode): boolean;
   isParentOf(targetNode: LexicalNode): boolean;

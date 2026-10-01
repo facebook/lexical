@@ -33,12 +33,12 @@ import {
   evaluate,
   expect,
   focusEditor,
+  getEditorElement,
   html,
   initialize,
   insertCollapsible,
   insertDateTime,
   insertHorizontalRule,
-  insertImageCaption,
   insertSampleImage,
   insertTable,
   insertYouTubeEmbed,
@@ -85,68 +85,162 @@ test.describe('Selection', () => {
   test('keeps single active selection for nested editors', async ({
     page,
     isPlainText,
-    browserName,
   }) => {
     // TODO(collab-v2): nested editors are not supported yet
     test.skip(isPlainText || IS_COLLAB_V2);
-    const hasSelection = async parentSelector =>
-      await evaluate(
-        page,
-        _parentSelector => {
-          return (
-            document
-              .querySelector(`${_parentSelector} > .tree-view-output pre`)
-              .__lexicalEditor.getEditorState()._selection !== null
-          );
-        },
-        parentSelector,
-      );
+    const readSelectionSnapshot = () =>
+      evaluate(page, () => {
+        const editors = {
+          caption: document.querySelector(
+            '.image-caption-container [data-lexical-editor="true"]',
+          ).__lexicalEditor,
+          shell: document.querySelector(
+            '.editor-shell [data-lexical-editor="true"]',
+          ).__lexicalEditor,
+        };
+        const describePoint = point =>
+          point
+            ? {key: point.key, offset: point.offset, type: point.type}
+            : null;
+        const describeSelection = editor => {
+          const selection = editor.getEditorState()._selection;
+          return selection === null
+            ? null
+            : {
+                anchor: describePoint(selection.anchor),
+                focus: describePoint(selection.focus),
+                format: selection.format,
+                nodes: selection._nodes ? [...selection._nodes] : undefined,
+                style: selection.style,
+                type: selection.constructor.name,
+              };
+        };
+        const describeNode = node => {
+          if (node === null) {
+            return null;
+          }
+          const element = node.nodeType === 1 ? node : node.parentElement;
+          const root = element?.closest('[data-lexical-editor="true"]');
+          return {
+            className: element?.className,
+            editor: root
+              ? Object.keys(editors).find(
+                  name => editors[name].getRootElement() === root,
+                ) || 'other'
+              : null,
+            id: element?.id,
+            nodeName: node.nodeName,
+            text: node.nodeType === 3 ? node.textContent : undefined,
+          };
+        };
+        const selection = document.getSelection();
+        return {
+          activeElement: describeNode(document.activeElement),
+          domSelection: selection && {
+            anchor: describeNode(selection.anchorNode),
+            anchorOffset: selection.anchorOffset,
+            focus: describeNode(selection.focusNode),
+            focusOffset: selection.focusOffset,
+            rangeCount: selection.rangeCount,
+            type: selection.type,
+          },
+          hasFocus: document.hasFocus(),
+          selections: {
+            caption: describeSelection(editors.caption),
+            shell: describeSelection(editors.shell),
+          },
+          url: document.URL,
+        };
+      });
 
-    // Which of the two editors currently owns the selection. Focusing an
-    // editor only moves the *DOM* selection; ownership moves when Lexical
-    // handles the `selectionchange` the browser dispatches for it, and that
-    // dispatch is asynchronous. Reading once right after `.focus()` therefore
-    // races the handover -- the DOM selection is already inside the newly
-    // focused editor while both editors still hold their previous Lexical
-    // state. Poll until the pair settles instead, and read both editors in
-    // one assertion so the editor that is losing the selection is checked
-    // against the same handover the winning editor waits for.
-    const expectSelectionOwner = async owner =>
-      await expect
-        .poll(async () => ({
-          caption: await hasSelection('.image-caption-container'),
-          shell: await hasSelection('.editor-shell'),
-        }))
-        .toEqual({caption: owner === 'caption', shell: owner === 'shell'});
+    // DOM focus and Lexical ownership are separate transitions: ownership
+    // transfers through selectionchange. Perform each action once, then only
+    // observe both editors in one evaluate(), in the same page/collab frame.
+    const expectSelectionOwner = (checkpoint, owner, action) =>
+      test.step(checkpoint, async () => {
+        let snapshot;
+        try {
+          await action();
+          await expect
+            .poll(
+              async () => {
+                snapshot = await readSelectionSnapshot();
+                return {
+                  caption: snapshot.selections.caption !== null,
+                  shell: snapshot.selections.shell !== null,
+                };
+              },
+              {message: checkpoint},
+            )
+            .toEqual({caption: owner === 'caption', shell: owner === 'shell'});
+        } catch (error) {
+          // Keep the last polled snapshot so diagnostics describe the failure,
+          // even if selectionchange is handled immediately after the timeout.
+          snapshot ??= await readSelectionSnapshot().catch(readError => ({
+            readError: String(readError),
+          }));
+          error.message += `\n${checkpoint}: ${JSON.stringify(
+            {
+              ...snapshot,
+              openPageURLs: page
+                .context()
+                .pages()
+                .map(openPage => openPage.url()),
+            },
+            null,
+            2,
+          )}`;
+          throw error;
+        }
+      });
 
-    await focusEditor(page);
-    await insertSampleImage(page);
-    await insertImageCaption(page, 'Hello world');
-    await expectSelectionOwner('caption');
+    await expectSelectionOwner('caption after typing', 'caption', async () => {
+      // The nested debug tree can push the caption above the image, where it
+      // is clipped. Disable it so the caption can be entered with a real click.
+      await click(page, '#options-button');
+      await click(page, '.switch:has-text("Nested Editors Debug View") button');
+      await click(page, '#options-button');
+      await getEditorElement(page).click();
+      await insertSampleImage(page);
+      await click(page, '.editor-image img');
+      await click(page, '.image-caption-button');
+      await waitForSelector(page, '.editor-image img.focused', {
+        state: 'detached',
+      });
+      await getEditorElement(page, '.image-caption-container').click();
+      await page.keyboard.type('Hello world');
+    });
 
-    // Click outside of the editor and check that selection remains the same
-    await click(page, 'header .logo');
-    await expectSelectionOwner('caption');
+    // The header's blank top-left margin is outside both editors and the logo
+    // link. Clicking it must retain Lexical selection without opening a popup.
+    const clickOutsideEditors = () =>
+      click(page, 'header', {position: {x: 5, y: 5}});
+    await expectSelectionOwner(
+      'caption retained after clicking outside',
+      'caption',
+      clickOutsideEditors,
+    );
 
-    // Back to root editor
-    if (browserName === 'firefox') {
-      // TODO:
-      // In firefox .focus() on editor does not trigger selectionchange, while checking it
-      // explicitly clicking on an editor (passing position that is on the right side to
-      // prevent clicking on image and its nested editor)
-      await click(page, '.editor-shell', {position: {x: 600, y: 150}});
-    } else {
-      await focusEditor(page);
-    }
-    await expectSelectionOwner('shell');
+    await expectSelectionOwner(
+      'root after clicking back',
+      'shell',
+      async () => {
+        const root = getEditorElement(page);
+        const {width} = await root.boundingBox();
+        // Use the root's right padding, away from the image and nested editor.
+        await root.click({position: {x: width - 10, y: 10}});
+      },
+    );
 
-    // Click outside of the editor and check that selection remains the same
-    await click(page, 'header .logo');
-    await expectSelectionOwner('shell');
+    await expectSelectionOwner(
+      'root retained after clicking outside',
+      'shell',
+      clickOutsideEditors,
+    );
 
-    // Back to nested editor editor
-    await focusEditor(page, '.image-caption-container');
-    await expectSelectionOwner('caption');
+    await expectSelectionOwner('caption after clicking back', 'caption', () =>
+      getEditorElement(page, '.image-caption-container').click(),
+    );
   });
 
   test('can wrap post-linebreak nodes into new element', async ({

@@ -439,7 +439,9 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   // what needs the paragraph.
   if (
     $restoreEmptyContainerParagraph(rangeContainer, rangeContainerChild) ===
-    null
+      null &&
+    rangeContainer !== null &&
+    !rangeContainer.isAttached()
   ) {
     $restoreEmptyContainerParagraph($getRoot(), null);
   }

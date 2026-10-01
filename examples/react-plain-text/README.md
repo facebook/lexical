@@ -1,6 +1,8 @@
 # React Plain Text Lexical example
 
-Here we have simplest Lexical setup in plaintext configuration (`@lexical/plain-text`) with history (`@lexical/history`) and accessibility (`@lexical/dragon`) features enabled.
+A plain text editor configured with one root extension. It composes `PlainTextExtension` and `HistoryExtension` with `LexicalExtensionComposer`. The debug panel uses `TreeViewExtension`.
+
+[Getting started guide](https://lexical.dev/docs/getting-started/react)
 
 **Run it locally:** `pnpm i && pnpm run dev`
 

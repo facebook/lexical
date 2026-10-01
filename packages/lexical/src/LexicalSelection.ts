@@ -64,6 +64,7 @@ import {getIsProcessingMutations} from './LexicalMutations';
 import {insertRangeAfter, type LexicalNode, type NodeKey} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
+  $getSelectionSlotFrame,
   $getSlot,
   $getSlotFrame,
   $getSlotHost,
@@ -573,7 +574,12 @@ export class NodeSelection implements BaseSelection {
 
 function $ensureRootHasParagraph(): void {
   const root = $getRoot();
-  if (root.isEmpty()) {
+  // Root slots (such as footnotes) do not replace the editable document body.
+  // Deletion inside a slot must keep the selection in that slot.
+  if (
+    root.getChildrenSize() === 0 &&
+    $getSelectionSlotFrame($getSelection()) === null
+  ) {
     const paragraph = $createParagraphNode();
     root.append(paragraph);
     paragraph.select();
@@ -2724,8 +2730,29 @@ function $extendSelectionForDeletion(
   const landedRange =
     getComposedStaticRange(domSelection, rootElement) ||
     domSelection.getRangeAt(0);
-  const landedContainer = landedRange.startContainer;
-  const landedOffset = landedRange.startOffset;
+  let landedContainer = landedRange.startContainer;
+  let landedOffset = landedRange.startOffset;
+  if (
+    granularity === 'lineboundary' &&
+    isDOMTextNode(landedContainer) &&
+    getNearestEditorFromDOMNode(landedContainer) === editor
+  ) {
+    const landedNode = $getNodeFromDOM(landedContainer);
+    if (
+      $isDecoratorNode(landedNode) &&
+      landedNode.isInline() &&
+      !landedNode.isIsolated()
+    ) {
+      const decoratorDOM = editor.getElementByKey(landedNode.getKey());
+      if (decoratorDOM !== null && decoratorDOM.contains(landedContainer)) {
+        // A native line boundary can land in a decorator's private text.
+        // Resolve it at the atomic node's edge; that text is not a TextNode
+        // and applyDOMRange would otherwise leave the selection collapsed.
+        landedContainer = decoratorDOM;
+        landedOffset = isBackward ? 0 : decoratorDOM.childNodes.length;
+      }
+    }
+  }
   // Native 'move' cannot cross inline-grid/flex span boundaries (#7301).
   // When at the deletion-side edge of an unmergeable TextNode, extend into
   // the adjacent sibling directly instead of relying on the native result.

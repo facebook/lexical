@@ -525,106 +525,6 @@ importers:
         specifier: 4.63.1
         version: 4.63.1
 
-  dev-examples/shadow-dom:
-    dependencies:
-      '@lexical/extension':
-        specifier: workspace:*
-        version: link:../../packages/lexical-extension
-      '@lexical/history':
-        specifier: workspace:*
-        version: link:../../packages/lexical-history
-      '@lexical/link':
-        specifier: workspace:*
-        version: link:../../packages/lexical-link
-      '@lexical/list':
-        specifier: workspace:*
-        version: link:../../packages/lexical-list
-      '@lexical/react':
-        specifier: workspace:*
-        version: link:../../packages/lexical-react
-      '@lexical/rich-text':
-        specifier: workspace:*
-        version: link:../../packages/lexical-rich-text
-      lexical:
-        specifier: workspace:*
-        version: link:../../packages/lexical
-      react:
-        specifier: 19.2.5
-        version: 19.2.5
-      react-dom:
-        specifier: 19.2.5
-        version: 19.2.5(react@19.2.5)
-    devDependencies:
-      '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
-      '@types/react':
-        specifier: ^19.1.2
-        version: 19.2.16
-      '@types/react-dom':
-        specifier: ^19.1.2
-        version: 19.2.3(@types/react@19.2.16)
-      '@vitejs/plugin-react':
-        specifier: ^6.1.1
-        version: 6.1.1(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.0))
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vite:
-        specifier: ^8.2.2
-        version: 8.2.2(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.0)
-    optionalDependencies:
-      '@rollup/rollup-darwin-arm64':
-        specifier: 4.63.1
-        version: 4.63.1
-      '@rollup/rollup-linux-x64-gnu':
-        specifier: 4.63.1
-        version: 4.63.1
-      '@rollup/rollup-win32-x64-msvc':
-        specifier: 4.63.1
-        version: 4.63.1
-      '@rollup/wasm-node':
-        specifier: 4.63.1
-        version: 4.63.1
-
-  dev-examples/shadow-dom-web-component:
-    dependencies:
-      '@lexical/extension':
-        specifier: workspace:*
-        version: link:../../packages/lexical-extension
-      '@lexical/history':
-        specifier: workspace:*
-        version: link:../../packages/lexical-history
-      '@lexical/rich-text':
-        specifier: workspace:*
-        version: link:../../packages/lexical-rich-text
-      lexical:
-        specifier: workspace:*
-        version: link:../../packages/lexical
-    devDependencies:
-      '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vite:
-        specifier: ^8.2.2
-        version: 8.2.2(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.0)
-    optionalDependencies:
-      '@rollup/rollup-darwin-arm64':
-        specifier: 4.63.1
-        version: 4.63.1
-      '@rollup/rollup-linux-x64-gnu':
-        specifier: 4.63.1
-        version: 4.63.1
-      '@rollup/rollup-win32-x64-msvc':
-        specifier: 4.63.1
-        version: 4.63.1
-      '@rollup/wasm-node':
-        specifier: 4.63.1
-        version: 4.63.1
-
   packages/lexical:
     dependencies:
       '@lexical/internal':
@@ -930,8 +830,8 @@ importers:
         specifier: workspace:*
         version: link:../lexical-utils
       '@preact/signals-core':
-        specifier: ^1.14.1
-        version: 1.14.1
+        specifier: ^1.14.4
+        version: 1.14.4
       lexical:
         specifier: workspace:*
         version: link:../lexical
@@ -1134,6 +1034,9 @@ importers:
       '@lexical/html':
         specifier: workspace:*
         version: link:../lexical-html
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/link':
         specifier: workspace:*
         version: link:../lexical-link
@@ -1680,6 +1583,9 @@ importers:
       docusaurus-plugin-typedoc:
         specifier: ^1.4.2
         version: 1.4.2(typedoc-plugin-markdown@4.13.0(typedoc@0.28.20(typescript@6.0.3)))
+      emoji-datasource-facebook:
+        specifier: 15.1.2
+        version: 15.1.2
       fs-extra:
         specifier: ^11.3.4
         version: 11.3.4
@@ -4566,8 +4472,8 @@ packages:
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
 
-  '@preact/signals-core@1.14.1':
-    resolution: {integrity: sha512-vxPpfXqrwUe9lpjqfYNjAF/0RF/eFGeLgdJzdmIIZjpOnTmGmAB4BjWone562mJGMRP4frU6iZ6ei3PDsu52Ng==}
+  '@preact/signals-core@1.14.4':
+    resolution: {integrity: sha512-HNB6HYeYKhQbJ1aKl+YRjrS4+QWHLKX6qKoUsfS/m0vqzsVaEBiZiaKbG/e+NKk2ch5ALQr/ihWaMHxiCuuWHA==}
 
   '@prettier/sync@0.6.1':
     resolution: {integrity: sha512-yF9G8vK/LYUTF3Cijd7VC9La3b20F20/J/fgoR4H0B8JGOWnZVZX6+I6+vODPosjmMcpdlUV+gUqJQZp3kLOcw==}
@@ -8174,6 +8080,9 @@ packages:
 
   elkjs@0.9.3:
     resolution: {integrity: sha512-f/ZeWvW/BCXbhGEf1Ujp29EASo/lk1FDnETgNKwJrsVvGZhUWCZyg3xLJjAsxfOmt8KjswHmI5EwCQcPMpOYhQ==}
+
+  emoji-datasource-facebook@15.1.2:
+    resolution: {integrity: sha512-6uQXO3FOpkkxclzI0YvoHorSoUyA4NnCWCXBMWDgy5mymtnWGLDkoY+/wTQCmW1/3PIUUh47SOWPp3hdq4+Svg==}
 
   emoji-regex@10.6.0:
     resolution: {integrity: sha512-toUI84YS5YmxW219erniWD0CIVOo46xGKColeNQRgOzDorgBi1v4D71/OFzgD9GO2UGKIv1C3Sp8DAn0+j5w7A==}
@@ -18275,7 +18184,7 @@ snapshots:
 
   '@polka/url@1.0.0-next.29': {}
 
-  '@preact/signals-core@1.14.1': {}
+  '@preact/signals-core@1.14.4': {}
 
   '@prettier/sync@0.6.1(prettier@3.8.5)':
     dependencies:
@@ -22258,6 +22167,8 @@ snapshots:
   electron-to-chromium@1.5.366: {}
 
   elkjs@0.9.3: {}
+
+  emoji-datasource-facebook@15.1.2: {}
 
   emoji-regex@10.6.0: {}
 

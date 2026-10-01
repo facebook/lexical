@@ -5195,6 +5195,15 @@ function injectSynthesizedStatics(
         klass.importDOM = () => importDOM;
       }
     }
+    // Inject a delegated getTextContentSize if only getTextContent is overridden
+    const proto = klass.prototype;
+    if (
+      hasOwnKey(proto, 'getTextContent') &&
+      !hasOwnKey(proto, 'getTextContentSize')
+    ) {
+      klass.prototype.getTextContentSize =
+        LexicalNode.prototype.getTextContentSize;
+    }
   }
 }
 

@@ -18,7 +18,6 @@ import {
   type LinkNode,
 } from '@lexical/link';
 import {$isHeadingNode, RichTextExtension} from '@lexical/rich-text';
-import {JSDOM} from 'jsdom';
 import {
   $getEditor,
   $getRoot,
@@ -44,8 +43,11 @@ function buildEditor() {
 function $generate(html: string): LexicalNode[] {
   const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
-  const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
-  return dep.output.$generateNodesFromDOM(dom.window.document);
+  const dom = new DOMParser().parseFromString(
+    `<!doctype html><html><body>${html}</body></html>`,
+    'text/html',
+  );
+  return dep.output.$generateNodesFromDOM(dom);
 }
 
 function importInto(editor: LexicalEditor, html: string): void {

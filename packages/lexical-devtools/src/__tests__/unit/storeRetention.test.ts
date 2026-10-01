@@ -6,6 +6,8 @@
  *
  */
 
+// @vitest-environment node
+
 import type {SerializedRawEditorState} from '../../types';
 
 import {beforeEach, describe, expect, it} from 'vitest';

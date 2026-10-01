@@ -23,7 +23,6 @@ import {LinkExtension} from '@lexical/link';
 import {ListExtension} from '@lexical/list';
 import {$createQuoteNode, RichTextExtension} from '@lexical/rich-text';
 import {TableExtension} from '@lexical/table';
-import {JSDOM} from 'jsdom';
 import {
   $create,
   $createParagraphNode,
@@ -116,8 +115,10 @@ function buildEditor(
 }
 
 function parse(html: string): Document {
-  return new JSDOM(`<!doctype html><html><body>${html}</body></html>`).window
-    .document;
+  return new DOMParser().parseFromString(
+    `<!doctype html><html><body>${html}</body></html>`,
+    'text/html',
+  );
 }
 
 function githubTable(contents: string): string {

@@ -195,8 +195,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2
       flow-bin:
-        specifier: ^0.331.0
-        version: 0.331.0
+        specifier: ^0.333.0
+        version: 0.333.0
       flow-typed:
         specifier: ^4.1.1
         version: 4.1.1(supports-color@10.2.2)
@@ -8377,8 +8377,8 @@ packages:
   flatted@3.4.4:
     resolution: {integrity: sha512-5+ybhBZANEJxaH3X5evAFatUxLfEHSr7n6kYJ+1Qd0mUqr4eu9gIf6GDbWHf8RJijHrjjO8G+la14SlL2SeS1Q==}
 
-  flow-bin@0.331.0:
-    resolution: {integrity: sha512-GRM2hiixc8gE2q6AoolTfgtS4tWS1sced0iQAbOmZ5jCD/GTsGSINoM/6ENu1oAjqmodWA4H+1qyNhVb+r3V3A==}
+  flow-bin@0.333.0:
+    resolution: {integrity: sha512-cDI5lcb0mbWUmkKs09hTaPEprQzrV+XKp1YzBLgNG13uzr1kM3qhYxZFx766f3an7LmD2lD9BzNbNu+hw4YHew==}
     engines: {node: '>=0.10.0'}
     hasBin: true
 
@@ -22268,7 +22268,7 @@ snapshots:
 
   flatted@3.4.4: {}
 
-  flow-bin@0.331.0: {}
+  flow-bin@0.333.0: {}
 
   flow-enums-runtime@0.0.6: {}
 

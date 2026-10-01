@@ -387,7 +387,25 @@ const config: Config = {
   onBrokenAnchors: 'throw',
   onBrokenLinks: 'throw',
   organizationName: 'facebook',
+  // These are the parts of @docusaurus/preset-classic this site uses, listed
+  // directly. The preset would also install theme-search-algolia (and its
+  // @docsearch/* and AI SDK dependencies) even though search comes from
+  // @easyops-cn/docusaurus-search-local below.
   plugins: [
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        beforeDefaultRemarkPlugins: [slugifyPlugin],
+        editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,
+        path: 'docs',
+        sidebarItemsGenerator,
+        sidebarPath: require.resolve('./sidebars.js'),
+      } satisfies DocsPluginOptions,
+    ],
+    '@docusaurus/plugin-content-pages',
+    ['@docusaurus/plugin-google-gtag', {trackingID: 'G-7C6YYBYBBT'}],
+    process.env.NODE_ENV === 'production' ? '@docusaurus/plugin-sitemap' : null,
+    '@docusaurus/plugin-svgr',
     process.env.FB_INTERNAL
       ? null
       : [
@@ -501,28 +519,6 @@ const config: Config = {
       },
     ],
   ].filter(plugin => plugin != null),
-  presets: [
-    [
-      'classic',
-      {
-        blog: false,
-        docs: {
-          beforeDefaultRemarkPlugins: [slugifyPlugin],
-          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,
-          path: 'docs',
-          sidebarItemsGenerator,
-          sidebarPath: require.resolve('./sidebars.js'),
-        },
-        gtag: {
-          trackingID: 'G-7C6YYBYBBT',
-        },
-        theme: {
-          customCss: require.resolve('./src/css/custom.css'),
-        },
-      },
-    ],
-  ],
-
   // Usually your GitHub org/user name.
   projectName: 'lexical',
 
@@ -595,6 +591,10 @@ const config: Config = {
   },
 
   themes: [
+    [
+      '@docusaurus/theme-classic',
+      {customCss: require.resolve('./src/css/custom.css')},
+    ],
     '@docusaurus/theme-mermaid',
     [
       require.resolve('@easyops-cn/docusaurus-search-local'),

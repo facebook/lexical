@@ -23,6 +23,57 @@ const PASTED_TEXT = 'Some text here\n\nSome more text there';
 
 describe('Regression #9151', () => {
   initializeUnitTest(testEnv => {
+    test.each([
+      ['adjacent pre blocks', '<pre>a</pre><pre>b</pre>', 'a\nb'],
+      ['one separator', '<pre>a</pre><br><pre>b</pre>', 'a\n\nb'],
+      ['two separators', '<pre>a</pre><br><br><pre>b</pre>', 'a\n\n\nb'],
+      [
+        'three separators',
+        '<pre>a</pre><br><br><br><pre>b</pre>',
+        'a\n\n\n\nb',
+      ],
+      ['one trailing break', '<pre>a</pre><br>', 'a'],
+      ['two trailing breaks', '<pre>a</pre><br><br>', 'a\n'],
+      ['three trailing breaks', '<pre>a</pre><br><br><br>', 'a\n\n'],
+      ['pre whitespace', '<pre>a\n</pre><pre>\n\nb</pre>', 'a\n\n\nb'],
+      ['empty pre block', '<pre>a</pre><pre></pre><pre>b</pre>', 'a\n\nb'],
+      ['empty paragraph', '<pre>a</pre><p></p><pre>b</pre>', 'a\n\nb'],
+      ['trailing pre whitespace', '<pre>a\n</pre>', 'a\n'],
+      [
+        'mixed list',
+        '<pre>a</pre><ul><li>one</li><li>two</li></ul>',
+        'a\none\n\ntwo',
+      ],
+      ['inline run', '<pre>a</pre>x<br>y<pre>b</pre>', 'a\nx\ny\nb'],
+      [
+        'non-pre first block',
+        '<p>x</p><pre>a</pre><pre>b</pre>',
+        'x\n\na\n\nb',
+      ],
+    ])('preserves spacing for %s', async (_name, html, expected) => {
+      const {editor} = testEnv;
+      const dataTransfer = new DataTransfer();
+      dataTransfer.setData('text/html', html);
+
+      await editor.update(
+        () => {
+          const code = $createCodeNode();
+          $getRoot().append(code);
+          code.select();
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected a range selection');
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const code = $getRoot().getFirstChild();
+        invariant($isCodeNode(code), 'Expected the existing CodeNode');
+        expect(code.getTextContent()).toBe(expected);
+      });
+    });
+
     test('preserves every pre block pasted into an empty code block', async () => {
       const {editor} = testEnv;
       const dataTransfer = new DataTransfer();

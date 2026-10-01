@@ -13,7 +13,6 @@ import {
   $generateNodesFromDOMViaExtension,
 } from '@lexical/html';
 import {RichTextExtension} from '@lexical/rich-text';
-import {JSDOM} from 'jsdom';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -62,8 +61,10 @@ function exportHtml(editor: LexicalEditor): string {
 }
 
 function parse(html: string): Document {
-  return new JSDOM(`<!doctype html><html><body>${html}</body></html>`).window
-    .document;
+  return new DOMParser().parseFromString(
+    `<!doctype html><html><body>${html}</body></html>`,
+    'text/html',
+  );
 }
 
 function firstTextNode(nodes: LexicalNode[]): LexicalNode {

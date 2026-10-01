@@ -645,6 +645,10 @@ export class ElementNode
     return textContent;
   }
   getTextContentSize(): number {
+    // NOTE: This implementation will be delegated to
+    // LexicalNode.prototype.getTextContentSize when getTextContent is overridden
+    // without a corresponding override to this method
+    //
     // Slots are counted slots-first, ahead of the linked-list children.
     let textContentSize = $getSlotsTextContentSize(this);
     const children = this.getChildren();

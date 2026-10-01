@@ -10,6 +10,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -32,7 +33,9 @@ const websiteRequire = createRequire(
 test.each(['flat', 'pnpm'])(
   'links external types and sources with a %s install',
   async layout => {
-    const directory = mkdtempSync(path.join(tmpdir(), 'lexical-typedoc-'));
+    const directory = realpathSync(
+      mkdtempSync(path.join(tmpdir(), 'lexical-typedoc-')),
+    );
     onTestFinished(() => rmSync(directory, {force: true, recursive: true}));
     const packageDirectory = path.join(
       directory,

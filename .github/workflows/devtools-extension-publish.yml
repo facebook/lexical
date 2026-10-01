@@ -27,10 +27,6 @@ jobs:
       - name: Zip & submit to stores
         run: pnpm run publish-extension
         env:
-          EDGE_ACCESS_TOKEN_URL: ${{ secrets.EXTENSION_EDGE_ACCESS_TOKEN_URL }}
-          EDGE_CLIENT_SECRET: ${{ secrets.EXTENSION_EDGE_CLIENT_SECRET }}
-          EDGE_PRODUCT_ID: ${{ secrets.EXTENSION_EDGE_PRODUCT_ID }}
-          EDGE_CLIENT_ID: ${{ secrets.EXTENSION_EDGE_CLIENT_ID }}
           FIREFOX_EXTENSION_ID: ${{ secrets.EXTENSION_FIREFOX_EXTENSION_ID }}
           FIREFOX_JWT_ISSUER: ${{ secrets.EXTENSION_FIREFOX_JWT_ISSUER }}
           FIREFOX_JWT_SECRET: ${{ secrets.EXTENSION_FIREFOX_JWT_SECRET }}

@@ -1018,6 +1018,16 @@ defaults the legacy code path uses, including the legacy
 
 ### Transforming pasted HTML
 
+:::tip
+
+Use HTML transforms when integrating libraries that accept and return HTML
+strings. For DOM-based normalization, prefer a [DOM import preprocessor](#preprocessors).
+It works directly on the parsed DOM, avoiding an extra serialization and parse.
+See [`WordListImportExtension`](#walk-wide-overlays-installed-by-a-preprocessor)
+and [`$inlineStylesFromStyleSheets`](#inlinestylesfromstylesheets) for examples.
+
+:::
+
 Use extension dependencies to enforce handler ordering. A transform's
 configuration is applied after its dependencies, so its handler runs first.
 

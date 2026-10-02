@@ -1032,17 +1032,18 @@ import {
 import {configExtension, defineExtension} from 'lexical';
 import {normalizePastedHTML} from './normalizePastedHTML';
 
-const transformHTML = configExtension(ClipboardImportExtension, {
-  $importMimeType: {
-    'text/html': [
-      (html, _selection, $next) => $next(normalizePastedHTML(html)),
-    ],
-  },
-});
-
 const TransformPastedHTMLExtension = defineExtension({
   name: 'app/TransformPastedHTML',
-  dependencies: [ClipboardDOMImportExtension, transformHTML],
+  dependencies: [
+    ClipboardDOMImportExtension,
+    configExtension(ClipboardImportExtension, {
+      $importMimeType: {
+        'text/html': [
+          (html, _selection, $next) => $next(normalizePastedHTML(html)),
+        ],
+      },
+    }),
+  ],
 });
 ```
 
@@ -1051,14 +1052,27 @@ Add `TransformPastedHTMLExtension` to your root dependencies. This includes
 its HTML importer, passing the transformed HTML to it through `$next`.
 
 **To support either importer**, declare `ClipboardDOMImportExtension` as an
-optional peer dependency. Using the same `transformHTML` configuration above:
+optional peer dependency:
 
 ```ts
-import {declarePeerDependency} from 'lexical';
+import {
+  type ClipboardDOMImportExtension,
+  ClipboardImportExtension,
+} from '@lexical/clipboard';
+import {configExtension, declarePeerDependency, defineExtension} from 'lexical';
+import {normalizePastedHTML} from './normalizePastedHTML';
 
 const TransformPastedHTMLForEitherImporterExtension = defineExtension({
   name: 'app/TransformPastedHTMLForEitherImporter',
-  dependencies: [transformHTML],
+  dependencies: [
+    configExtension(ClipboardImportExtension, {
+      $importMimeType: {
+        'text/html': [
+          (html, _selection, $next) => $next(normalizePastedHTML(html)),
+        ],
+      },
+    }),
+  ],
   peerDependencies: [
     declarePeerDependency<typeof ClipboardDOMImportExtension>(
       '@lexical/clipboard/DOMImport',
@@ -1069,9 +1083,9 @@ const TransformPastedHTMLForEitherImporterExtension = defineExtension({
 
 Add `TransformPastedHTMLForEitherImporterExtension` to your root dependencies.
 When the editor includes `ClipboardDOMImportExtension`, the peer dependency
-guarantees that the transform runs before its HTML importer. Otherwise, the
-transform runs before the legacy default HTML importer. The editor chooses
-the importer; the transform extension enforces the ordering in either case.
+makes this extension's clipboard configuration apply after the DOM importer's
+configuration, so the transform runs first. Otherwise, the transform runs
+before the legacy default HTML importer.
 
 ### `ImportSourceDataTransfer`
 

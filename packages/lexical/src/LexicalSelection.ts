@@ -3495,6 +3495,18 @@ export function $createRangeSelectionFromDom(
   return $internalCreateRangeSelection(null, domSelection, editor, null);
 }
 
+// Keys whose keydown handlers move the caret or edit at it themselves.
+const SELECTION_KEYS = /* @__PURE__ */ new Set([
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'Backspace',
+  'Delete',
+  'Enter',
+  'Tab',
+]);
+
 export function $internalCreateRangeSelection(
   lastSelection: null | BaseSelection,
   domSelection: Selection | null,
@@ -3522,9 +3534,17 @@ export function $internalCreateRangeSelection(
   const windowEvent = event || windowObj.event;
   const eventType = windowEvent ? windowEvent.type : undefined;
   const isSelectionChange = eventType === 'selectionchange';
+  // Chromium coalesces selectionchange events, so a caret move made natively
+  // by one arrow key can still be unreported when the next keydown arrives
+  // (key repeat, or a busy main thread). Reading the DOM here keeps that
+  // keydown from acting on the caret from before the native move.
+  const isSelectionKeyDown =
+    eventType === 'keydown' &&
+    SELECTION_KEYS.has((windowEvent as KeyboardEvent).key);
   const useDOMSelection =
     !getIsProcessingMutations() &&
     (isSelectionChange ||
+      isSelectionKeyDown ||
       eventType === 'beforeinput' ||
       eventType === 'compositionstart' ||
       eventType === 'compositionend' ||
@@ -3545,7 +3565,7 @@ export function $internalCreateRangeSelection(
     anchorOffset = points.anchorOffset;
     focusOffset = points.focusOffset;
     if (
-      (isSelectionChange || eventType === undefined) &&
+      (isSelectionChange || isSelectionKeyDown || eventType === undefined) &&
       $isRangeSelection(lastSelection) &&
       !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
     ) {

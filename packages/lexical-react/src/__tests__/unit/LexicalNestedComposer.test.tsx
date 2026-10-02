@@ -616,19 +616,25 @@ describe('LexicalNestedComposer', () => {
       html`
         <div
           contenteditable="false"
+          role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           tabindex="-1"
+          aria-autocomplete="none"
           aria-label="parent"
+          aria-readonly="true"
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div contenteditable="false" data-lexical-decorator="true">
             <div
               contenteditable="false"
+              role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               tabindex="-1"
+              aria-autocomplete="none"
               aria-label="nested"
+              aria-readonly="true"
               data-lexical-editor="true">
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
@@ -740,10 +746,13 @@ describe('LexicalNestedComposer', () => {
           <div contenteditable="false" data-lexical-decorator="true">
             <div
               contenteditable="false"
+              role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               tabindex="-1"
+              aria-autocomplete="none"
               aria-label="nested"
+              aria-readonly="true"
               data-lexical-editor="true">
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>
@@ -765,19 +774,25 @@ describe('LexicalNestedComposer', () => {
       html`
         <div
           contenteditable="false"
+          role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           tabindex="-1"
+          aria-autocomplete="none"
           aria-label="parent"
+          aria-readonly="true"
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">parent</span></p>
           <div contenteditable="false" data-lexical-decorator="true">
             <div
               contenteditable="false"
+              role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
               tabindex="-1"
+              aria-autocomplete="none"
               aria-label="nested"
+              aria-readonly="true"
               data-lexical-editor="true">
               <p dir="auto"><span data-lexical-text="true">nested</span></p>
             </div>

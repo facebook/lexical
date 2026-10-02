@@ -358,10 +358,36 @@ Always access node properties/methods within read/update context. Nodes automati
 
 ### Custom Nodes
 When creating custom nodes:
-1. Extend a base node class (TextNode, ElementNode, DecoratorNode)
-2. Implement instance methods: `$config()`, `createDOM()`, `updateDOM()`
-3. Register with extension or editor config: `nodes: [YourCustomNode]`
-4. Export a `$createYourNode()` factory function (follows $ convention)
+1. Extend a base node class (TextNode, ElementNode, DecoratorNode). The
+   constructor must work with no arguments.
+2. Implement `$config()` with `this.config('type', {extends: BaseNode, json:
+   schema})`, where `schema` is built with `nodeSchema<YourNode>()({...})`.
+   Declare every property inherent to the node in it, and declare each one
+   stored verbatim in a field with
+   `withField(stringValue(), {field: '__name'})`. Initialize that field in
+   the class (`__name: string = '';`) so it is an own property of a fresh
+   node. Use `withAccessors` only where a property is not a plain field.
+3. Do not hand-write `clone`, `importJSON`, `exportJSON`, `updateFromJSON`
+   or `afterCloneFrom` for schema properties: `$config` derives all of them
+   from the schema. A field missing from the schema (or declared only through
+   accessors) is not carried across a clone, so it is lost the first time a
+   later update clones the node; declare it with `withField` rather than
+   writing `afterCloneFrom`. Ad-hoc data that is not inherent to the node
+   type belongs in NodeState (`createState`), which clones on its own.
+4. Implement `createDOM()` and `updateDOM()` (and `decorate()` for a
+   DecoratorNode). Keep `exportDOM()` on the class when the default export
+   is not enough.
+5. Do not add `importDOM()` to new nodes. Import HTML with a
+   `defineImportRule` contributed through
+   `configExtension(DOMImportExtension, {rules: [...]})` from an import
+   extension (see `ListImportExtension` in `@lexical/list`).
+6. Register with an extension (`nodes: () => [YourNode]`) or editor config.
+7. Export a `$createYourNode()` factory built on `$create(YourNode)` and the
+   node's setters, and a `$isYourNode()` guard.
+
+The full schema reference is
+`packages/lexical-website/docs/serialization/serialization.md`; the cloning
+rules are in `packages/lexical-website/docs/concepts/node-cloning.md`.
 
 ### Shadow DOM and iframe realm safety
 

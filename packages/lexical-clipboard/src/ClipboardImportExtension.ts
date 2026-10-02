@@ -87,6 +87,9 @@ export type ImportMimeTypeFunction = (
  * functions are appended to the existing array for each MIME type, so
  * later-registered handlers run before earlier ones (including the
  * defaults) and may delegate to them via `next()`.
+ * To transform HTML before {@link ClipboardDOMImportExtension} handles it,
+ * declare it as a dependency or optional peer dependency of the extension
+ * providing the transform, so its configuration is merged first.
  *
  * @experimental
  */

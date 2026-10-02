@@ -1011,55 +1011,96 @@ defineExtension({
 });
 ```
 
-If you need to customize the per-MIME stack (e.g. inspect the HTML
-before walking, or pre-strip a known wrapper), stack your own handler
-manually via `configExtension(ClipboardImportExtension, …)` instead:
-
-```ts
-import {$getEditor, configExtension, defineExtension} from 'lexical';
-import {
-  ClipboardImportExtension,
-  $insertGeneratedNodes,
-} from '@lexical/clipboard';
-import {
-  $generateNodesFromDOMViaExtension,
-  contextValue,
-  CoreImportExtension,
-  DOMImportExtension,
-  ImportSource,
-  ImportSourceDataTransfer,
-} from '@lexical/html';
-
-defineExtension({
-  name: 'app',
-  dependencies: [
-    CoreImportExtension,
-    configExtension(ClipboardImportExtension, {
-      $importMimeType: {
-        'text/html': [
-          (html, selection, _$next, dataTransfer) => {
-            const parser = new DOMParser();
-            const dom = parser.parseFromString(html, 'text/html');
-            const nodes = $generateNodesFromDOMViaExtension(dom, {
-              context: [
-                contextValue(ImportSource, 'paste'),
-                contextValue(ImportSourceDataTransfer, dataTransfer),
-              ],
-            });
-            $insertGeneratedNodes($getEditor(), nodes, selection);
-            return true;
-          },
-        ],
-      },
-    }),
-  ],
-});
-```
-
 Apps that don't configure `ClipboardImportExtension` keep the legacy
 behavior — `$insertDataTransferForRichText` falls back to the same
 defaults the legacy code path uses, including the legacy
 `$generateNodesFromDOM` for HTML.
+
+### Transforming pasted HTML
+
+Handlers added by later configuration merges run before earlier handlers.
+Dependencies contribute their configuration before the extensions that depend
+on them; each MIME-type stack then runs from last to first. The `priority`
+option orders MIME types, not handlers within a MIME type.
+
+**With the legacy default importer**, configure `ClipboardImportExtension`:
+
+```ts
+import {ClipboardImportExtension} from '@lexical/clipboard';
+import {configExtension, defineExtension} from 'lexical';
+import {normalizePastedHTML} from './normalizePastedHTML';
+
+const transformHTML = configExtension(ClipboardImportExtension, {
+  $importMimeType: {
+    'text/html': [
+      (html, _selection, $next) => $next(normalizePastedHTML(html)),
+    ],
+  },
+});
+
+const TransformPastedHTMLExtension = defineExtension({
+  name: 'app/TransformPastedHTML',
+  dependencies: [transformHTML],
+});
+```
+
+Add `TransformPastedHTMLExtension` to your root dependencies. The legacy
+handler comes from `ClipboardImportExtension`'s default configuration, so
+this transform always runs before it. No additional ordering dependency is
+needed to take precedence over that default.
+
+**With `ClipboardDOMImportExtension`**, make the transform extension depend
+on it as well. Using the same `transformHTML` configuration above:
+
+```ts
+import {ClipboardDOMImportExtension} from '@lexical/clipboard';
+
+const TransformPastedHTMLWithDOMImportExtension = defineExtension({
+  name: 'app/TransformPastedHTMLWithDOMImport',
+  dependencies: [ClipboardDOMImportExtension, transformHTML],
+});
+```
+
+Add `TransformPastedHTMLWithDOMImportExtension` to your root dependencies.
+Its dependency guarantees that the DOM import handler is configured first,
+so the transform runs before it and delegates the transformed HTML to it.
+There is no need to list `ClipboardDOMImportExtension` separately in the
+root; if you do, its position relative to the transform extension does not
+matter. JavaScript declaration order does not set handler priority.
+
+If you instead keep the importer and `TransformPastedHTMLExtension` as
+independent siblings, put the transform **after** the importer in the root:
+
+```ts
+dependencies: [
+  ClipboardDOMImportExtension,
+  TransformPastedHTMLExtension,
+],
+```
+
+Reversing these siblings puts the DOM importer ahead of the transform. The
+DOM importer handles the paste without calling `$next`, so the transform
+will not run. Sibling ordering assumes the transform has not already been
+introduced through an earlier dependency; the explicit dependency above
+makes the ordering reliable when extensions are reused in a larger graph.
+
+A transform that should support either importer can instead declare an
+optional peer dependency, which enforces the same ordering when
+`ClipboardDOMImportExtension` is present without enabling it:
+
+```ts
+import {declarePeerDependency} from 'lexical';
+
+const TransformPastedHTMLForEitherImporterExtension = defineExtension({
+  name: 'app/TransformPastedHTMLForEitherImporter',
+  dependencies: [transformHTML],
+  peerDependencies: [
+    declarePeerDependency<typeof ClipboardDOMImportExtension>(
+      '@lexical/clipboard/DOMImport',
+    ),
+  ],
+});
+```
 
 ### `ImportSourceDataTransfer`
 

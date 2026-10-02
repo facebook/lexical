@@ -36,14 +36,13 @@ import {
 } from './clipboard';
 
 /**
- * A middleware function in a per-MIME-type clipboard-import stack. Mirrors
- * the shape of {@link ExportMimeTypeFunction} on the export side.
+ * A middleware function in a per-MIME-type clipboard-import stack.
  *
  * - `data` is initially the non-empty string returned by
  *   `DataTransfer.getData(mime)` for this MIME type. Earlier middleware may
  *   replace it, including with an empty string.
  * - `selection` is the selection at the insertion point, which earlier
- *   middleware may replace.
+ *   middleware may replace. It must reference nodes in the active editor state.
  * - `$next` defers to the next-lower handler in the stack (i.e. the handler
  *   that was registered earlier). Pass optional `data` and `selection`
  *   arguments to replace what the remaining handlers receive. Omitted
@@ -71,10 +70,7 @@ import {
 export type ImportMimeTypeFunction = (
   data: string,
   selection: BaseSelection,
-  $next: (
-    nextData?: string | undefined,
-    nextSelection?: BaseSelection | undefined,
-  ) => boolean,
+  $next: (nextData?: string, nextSelection?: BaseSelection) => boolean,
   dataTransfer: DataTransfer,
 ) => boolean;
 

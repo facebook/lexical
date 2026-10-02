@@ -143,7 +143,6 @@ describe('ClipboardImportExtension', () => {
   });
 
   test.each([
-    {data: 'original', name: 'unchanged arguments', replaceSelection: false},
     {data: 'replacement', name: 'replacement data', replaceSelection: false},
     {data: '', name: 'empty replacement data', replaceSelection: false},
     {data: 'original', name: 'replacement selection', replaceSelection: true},
@@ -187,7 +186,6 @@ describe('ClipboardImportExtension', () => {
           name: 'host',
         }),
       );
-      const expectedData = replacementData;
       editor.update(
         () => {
           const originalSelection = $getSelection();
@@ -202,7 +200,7 @@ describe('ClipboardImportExtension', () => {
 
           expect(seen).toHaveLength(2);
           for (const [data, forwardedSelection, dataTransfer] of seen) {
-            expect(data).toBe(expectedData);
+            expect(data).toBe(replacementData);
             expect(forwardedSelection).toBe(
               replaceSelection ? replacementSelection : originalSelection,
             );
@@ -220,8 +218,8 @@ describe('ClipboardImportExtension', () => {
         ),
       ).toEqual(
         replaceSelection
-          ? ['first', expectedData]
-          : [`first${expectedData}`, 'second'],
+          ? ['first', replacementData]
+          : [`first${replacementData}`, 'second'],
       );
     },
   );

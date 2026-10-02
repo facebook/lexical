@@ -967,9 +967,9 @@ remaining handlers in the same MIME-type stack. Omitted arguments retain
 the values received by the current handler, so `$next()`
 is equivalent to `$next(data, selection)`. For example, `$next(cleanedData)`
 changes only the data, and `$next(data, otherSelection)` changes only
-the selection. An empty string is a valid replacement. These replacements
-do not modify the original `DataTransfer` or the arguments used when trying
-another MIME type.
+the selection. An empty string is forwarded as-is; it does not automatically
+fall back to another MIME type. These replacements do not modify the original
+`DataTransfer` or the arguments used when trying another MIME type.
 
 ```ts
 configExtension(ClipboardImportExtension, {

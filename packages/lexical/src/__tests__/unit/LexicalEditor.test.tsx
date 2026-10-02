@@ -25,7 +25,6 @@ import {
   TableCellNode,
   TableRowNode,
 } from '@lexical/table';
-import {JSDOM} from 'jsdom';
 import * as lexical from 'lexical';
 import {
   $create,
@@ -4225,23 +4224,28 @@ describe('LexicalEditor tests', () => {
       const origEditor = createTestEditor();
       origEditor.setRootElement(container);
 
-      // Register and unregister editor in jsdom document, so that root element
-      // count is non-zero.
-      const jsdom = new JSDOM();
-      const jsdomDocument = jsdom.window.document;
-      const jsdomContainer = jsdomDocument.createElement('div');
-      const jsdomEditor = createTestEditor();
-      jsdomEditor.setRootElement(jsdomContainer);
-      jsdomEditor.setRootElement(null);
+      // An iframe provides a second document/window in the same DOM
+      // implementation, just as moving the root between browser frames does.
+      const iframe = document.createElement('iframe');
+      document.body.appendChild(iframe);
+      try {
+        const iframeDocument = iframe.contentDocument;
+        assert(iframeDocument !== null);
+        const iframeContainer = iframeDocument.createElement('div');
+        const iframeEditor = createTestEditor();
+        // Register and unregister so this document's root count is non-zero.
+        iframeEditor.setRootElement(iframeContainer);
+        iframeEditor.setRootElement(null);
 
-      // Move container from original document to jsdom document
-      jsdomDocument.body.appendChild(container);
+        iframeDocument.body.appendChild(container);
 
-      // Ensure that cleanup still works
-      origEditor.setRootElement(null);
-
-      // Move node back to the original document so afterEach works
-      document.body.appendChild(container);
+        // Ensure that cleanup still works after changing ownerDocument.
+        origEditor.setRootElement(null);
+      } finally {
+        // Move the node back so afterEach works even if the assertion fails.
+        document.body.appendChild(container);
+        iframe.remove();
+      }
     });
   });
 

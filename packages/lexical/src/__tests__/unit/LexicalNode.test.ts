@@ -20,6 +20,7 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTabNode,
   $setSelection,
@@ -52,6 +53,7 @@ import {
   LexicalNode,
 } from '../../LexicalNode';
 import {
+  $assertNodeType,
   $createTestElementNode,
   $createTestInlineElementNode,
   initializeUnitTest,
@@ -3360,7 +3362,10 @@ describe('a setter returns the version it wrote to', () => {
       // getWritable() hands back the same object, so the two never diverge.
       editor.update(
         () => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChildOrThrow(),
+            $isParagraphNode,
+          );
           const afterIndent = paragraph.setIndent(2);
           expect(afterIndent).not.toBe(paragraph);
           expect(afterIndent).toBe(paragraph.getLatest());

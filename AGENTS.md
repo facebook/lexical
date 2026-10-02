@@ -11,7 +11,7 @@ This file provides detailed guidance for AI agents and automated tools working w
 - `pnpm run build-types` - Build TypeScript type definitions and validate them
 
 ### Testing
-- `pnpm run test-unit` - Run all unit tests (Vitest, jsdom)
+- `pnpm run test-unit` - Run all unit tests (Vitest, Node/jsdom)
 - `pnpm run test-unit-watch` - Run unit tests in watch mode
 - `pnpm run test-browser` - Run browser-mode unit tests (Vitest + Playwright, real browser)
 - `pnpm run test-browser-watch` - Run browser-mode tests in watch mode
@@ -326,7 +326,18 @@ sync when either changes.
 Always access node properties/methods within read/update context. Nodes automatically resolve to their latest version via their key. Don't store node references across update boundaries.
 
 ### Testing Strategy
-- **Unit tests** - Vitest (jsdom), located in `packages/**/__tests__/unit/**/*.test.{ts,tsx}`
+- **Unit tests** - Vitest, located in `packages/**/__tests__/unit/**/*.test.{ts,tsx}`.
+  Add `// @vitest-environment node` after the copyright header for tests that
+  only exercise editor state, headless behavior, or pure utilities. DOM tests
+  use jsdom with `vmThreads` on Node 24.9+, which reuses the jsdom implementation
+  while keeping each file's window and module graph isolated. Older Node
+  versions use isolated forks because their VM contexts cannot load jsdom's
+  `require(esm)` dependencies. Platform-mocked tests depend on module isolation.
+  Compiler tests run with `scripts-unit` in
+  ordinary Node workers because native build tools are not VM-realm-safe.
+  Use `DOMParser` to parse HTML in DOM tests and iframes for separate-window
+  tests. Reserve direct JSDOM construction for Node fixtures or CSSOM behavior
+  that jsdom's DOMParser lacks.
 - **Browser tests** - Vitest browser mode driven by the Playwright runner, located in
   `packages/**/__tests__/browser/**/*.test.{ts,tsx}`. Use these for behavior that depends on
   a real layout/selection engine instead of stubbing the missing jsdom functionality from

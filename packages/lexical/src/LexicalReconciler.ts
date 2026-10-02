@@ -22,7 +22,6 @@ import type {
   NodeKey,
   NodeMap,
 } from './LexicalNode';
-import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -33,6 +32,7 @@ import {
   $isRootNode,
   $isTextNode,
   DEFAULT_EDITOR_DOM_CONFIG,
+  ElementNode,
 } from '.';
 import {
   DOUBLE_LINE_BREAK,
@@ -63,6 +63,13 @@ import {
 const __DEV__ = process.env.NODE_ENV !== 'production';
 
 type IntentionallyMarkedAsDirtyElement = boolean;
+
+function $hasCustomTextContent(node: ElementNode): boolean {
+  return (
+    !$isRootNode(node) &&
+    node.getTextContent !== ElementNode.prototype.getTextContent
+  );
+}
 
 /**
  * @internal
@@ -740,6 +747,7 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
   }
 
   if ($isElementNode(node)) {
+    const outerBefore = subTreeTextContent;
     const indent = node.__indent;
     const childrenSize = node.__size;
     $setElementDirection(dom, node);
@@ -766,7 +774,6 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
         dom.__lexicalSlotTextLength = slotTextContent.length;
       }
     } else {
-      const outerBefore = subTreeTextContent;
       const endIndex = childrenSize - 1;
       const children = $createChildrenArray(node, activeNextNodeMap);
       $createChildren(
@@ -790,6 +797,12 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
       if (slots.size > 0) {
         dom.__lexicalSlotTextLength = slotTextContent.length;
       }
+    }
+
+    if ($hasCustomTextContent(node)) {
+      const text = node.getTextContent();
+      dom.__lexicalTextContent = text;
+      subTreeTextContent = outerBefore + text;
     }
 
     const format = node.__format;
@@ -1413,6 +1426,8 @@ function $reconcileChildren(
     const dirtyChildren = activeDirtyChildrenByParent.get(prevElement.__key);
     if (
       !treatAllNodesAsDirty &&
+      // Custom element text need not be a concatenation of child text.
+      !$hasCustomTextContent(nextElement) &&
       typeof cachedParentText === 'string' &&
       dirtyChildren !== undefined
     ) {
@@ -1845,6 +1860,11 @@ function $reconcileNode(
         // nothing from the now child-only cache.
         dom.__lexicalSlotTextLength = 0;
       }
+      if ($hasCustomTextContent(nextNode)) {
+        const text = nextNode.getTextContent();
+        dom.__lexicalTextContent = text;
+        subTreeTextContent = outerBefore + text;
+      }
     } else {
       // Currently unreachable under normal flow — `getWritable()` always
       // calls `internalMarkNodeAsDirty` (LexicalNode.ts: getWritable),
@@ -2034,7 +2054,13 @@ function $reconcileNodeChildren(
       }
       if (!nextChildrenSet.has(prevKey)) {
         // Remove prev and continue
-        siblingDOM = getNextSibling(getPrevElementByKeyOrThrow(prevKey));
+        const prevDOM = getPrevElementByKeyOrThrow(prevKey);
+        // An earlier parent may already have reused this DOM for a moved node.
+        // In that case siblingDOM still points into this slot; advancing from
+        // prevDOM would use a sibling in the destination parent instead.
+        if (prevDOM.parentNode === slot.element) {
+          siblingDOM = getNextSibling(prevDOM);
+        }
         $destroyNode(prevKey, slot.element);
         prevIndex++;
         prevChildrenSet.delete(prevKey);

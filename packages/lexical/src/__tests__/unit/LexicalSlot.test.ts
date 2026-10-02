@@ -42,17 +42,20 @@ import {
   $selectAll,
   $setSelection,
   $setSlot,
+  booleanValue,
   configExtension,
   DecoratorNode,
   defineExtension,
   ElementNode,
   getDOMSelection,
   mountSlotContainer,
+  nodeSchema,
   type ParagraphNode,
   type RangeSelection,
   type SlotName,
   type TextNode,
   unmountSlotContainer,
+  withField,
 } from 'lexical';
 import {afterEach, assert, describe, expect, expectTypeOf, test} from 'vitest';
 
@@ -170,16 +173,18 @@ class WrappedSlotHostNode extends ElementNode {
   }
 }
 
+const slotTextHostNodeSchema = nodeSchema<SlotTextHostNode>()({
+  block: withField(booleanValue(), {field: '__block'}),
+});
 // A decorator host that keeps the base `getTextContent`: its text is its
 // slots' text, so an edit inside a slot changes the host's text size.
 class SlotTextHostNode extends DecoratorNode<null> {
   __block: boolean = false;
   $config() {
-    return this.config('slot_text_host', {extends: DecoratorNode});
-  }
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__block = prevNode.__block;
+    return this.config('slot_text_host', {
+      extends: DecoratorNode,
+      json: slotTextHostNodeSchema,
+    });
   }
   isInline(): boolean {
     return !this.getLatest().__block;
@@ -192,11 +197,8 @@ class SlotTextHostNode extends DecoratorNode<null> {
   createDOM() {
     return document.createElement(this.__block ? 'div' : 'span');
   }
-  updateDOM() {
-    return false;
-  }
-  decorate() {
-    return null;
+  updateDOM(prevNode: this): boolean {
+    return prevNode.__block !== this.__block;
   }
 }
 

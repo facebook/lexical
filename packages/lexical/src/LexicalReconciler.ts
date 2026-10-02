@@ -93,9 +93,10 @@ type IntentionallyMarkedAsDirtyElement = boolean;
  * The reconciler sets this on every reconciled leaf at the end of
  * `$reconcileNode` (and on every newly-created leaf in `$createNode`), so
  * the previous editor state's leaves always carry a valid cached size from
- * the cycle that just committed. The exception is a decorator slot host:
- * its text includes its slots' text, which an edit inside a slot changes
- * without cloning the host, so `$prevSuffixTextSize` measures it instead.
+ * the cycle that just committed. Decorator slot hosts are not stored here
+ * either: its text includes its slots' text, which an edit inside a slot
+ * changes without cloning the host, so `$prevSuffixTextSize` measures them
+ * instead.
  *
  * Suffix-incremental fast path reads this off the previous-state instance
  * to get the pre-reconcile size of dirty children in O(1), avoiding both
@@ -184,7 +185,9 @@ function $prevSuffixTextSize(startKey: NodeKey, count: number): number {
 }
 
 function $setCachedTextSize(node: LexicalNode): void {
-  if ($isElementNode(node)) {
+  // A slot host's size goes stale on its next slot edit, which doesn't clone
+  // it, so `$prevSuffixTextSize` measures it instead and nothing is cached.
+  if ($isElementNode(node) || $readSlots(node).size > 0) {
     return;
   }
   // Skip if a value is already cached on this instance. The setter is only

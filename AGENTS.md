@@ -379,7 +379,8 @@ When creating custom nodes:
    is not enough.
 5. For HTML import, prefer a `defineImportRule` contributed through
    `configExtension(DOMImportExtension, {rules: [...]})` from an import
-   extension (see `ListImportExtension` in `@lexical/list`).
+   extension (see `ListImportExtension` in `@lexical/list`). `importDOM()`
+   is not deprecated yet, but its deprecation is planned.
 6. Register with an extension (`nodes: () => [YourNode]`) or editor config.
 7. Export a `$createYourNode()` factory built on `$create(YourNode)` and the
    node's setters, and a `$isYourNode()` guard.

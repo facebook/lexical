@@ -32,13 +32,15 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isParagraphNode,
   DecoratorNode,
   IS_APPLE_WEBKIT,
   IS_IOS,
   IS_SAFARI,
-  type ParagraphNode,
 } from 'lexical';
 import {describe, expect, onTestFinished, test} from 'vitest';
+
+import {$assertNodeType} from '../utils/assertNodeType';
 
 // Matches the `webkitHack` gate in ElementDOMSlot.setManagedLineBreak.
 const EXPECTS_IMG_HACK = IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT;
@@ -185,8 +187,7 @@ describe('WebKit managed-linebreak img hack (inline decorator last child)', () =
 
     editor.update(
       () => {
-        $getRoot()
-          .getFirstChildOrThrow<ParagraphNode>()
+        $assertNodeType($getRoot().getFirstChildOrThrow(), $isParagraphNode)
           .getLastChildOrThrow()
           .insertAfter($createTextNode('after'));
       },
@@ -216,8 +217,7 @@ describe('WebKit managed-linebreak img hack (inline decorator last child)', () =
 
     editor.update(
       () => {
-        $getRoot()
-          .getFirstChildOrThrow<ParagraphNode>()
+        $assertNodeType($getRoot().getFirstChildOrThrow(), $isParagraphNode)
           .getLastChildOrThrow()
           .replace($createLineBreakNode());
       },

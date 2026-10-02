@@ -357,8 +357,11 @@ function createMergeActionGetter(
       }
 
       // A single node might have been marked as dirty, but not have changed
-      // due to some node transform reverting the change.
-      if (dirtyLeaves.size === 1) {
+      // due to some node transform reverting the change. An explicit
+      // HISTORY_PUSH_TAG always asks for its own entry, so it must not be
+      // merged away here even when the only dirty leaf is an unchanged
+      // TextNode (see #9217).
+      if (!shouldPushHistory && dirtyLeaves.size === 1) {
         const dirtyLeafKey = Array.from(dirtyLeaves)[0];
         if (
           isTextNodeUnchanged(dirtyLeafKey, prevEditorState, nextEditorState)

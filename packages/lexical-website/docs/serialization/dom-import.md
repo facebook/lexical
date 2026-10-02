@@ -1018,15 +1018,17 @@ defaults the legacy code path uses, including the legacy
 
 ### Transforming pasted HTML
 
-Handlers added by later configuration merges run before earlier handlers.
-Dependencies contribute their configuration before the extensions that depend
-on them; each MIME-type stack then runs from last to first. The `priority`
-option orders MIME types, not handlers within a MIME type.
+Use extension dependencies to enforce handler ordering. A transform's
+configuration is applied after its dependencies, so its handler runs first.
 
-**With the legacy default importer**, configure `ClipboardImportExtension`:
+**To use `ClipboardDOMImportExtension`**, declare it as a dependency of your
+transform extension:
 
 ```ts
-import {ClipboardImportExtension} from '@lexical/clipboard';
+import {
+  ClipboardDOMImportExtension,
+  ClipboardImportExtension,
+} from '@lexical/clipboard';
 import {configExtension, defineExtension} from 'lexical';
 import {normalizePastedHTML} from './normalizePastedHTML';
 
@@ -1040,53 +1042,16 @@ const transformHTML = configExtension(ClipboardImportExtension, {
 
 const TransformPastedHTMLExtension = defineExtension({
   name: 'app/TransformPastedHTML',
-  dependencies: [transformHTML],
-});
-```
-
-Add `TransformPastedHTMLExtension` to your root dependencies. The legacy
-handler comes from `ClipboardImportExtension`'s default configuration, so
-this transform always runs before it. No additional ordering dependency is
-needed to take precedence over that default.
-
-**With `ClipboardDOMImportExtension`**, make the transform extension depend
-on it as well. Using the same `transformHTML` configuration above:
-
-```ts
-import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-
-const TransformPastedHTMLWithDOMImportExtension = defineExtension({
-  name: 'app/TransformPastedHTMLWithDOMImport',
   dependencies: [ClipboardDOMImportExtension, transformHTML],
 });
 ```
 
-Add `TransformPastedHTMLWithDOMImportExtension` to your root dependencies.
-Its dependency guarantees that the DOM import handler is configured first,
-so the transform runs before it and delegates the transformed HTML to it.
-There is no need to list `ClipboardDOMImportExtension` separately in the
-root; if you do, its position relative to the transform extension does not
-matter. JavaScript declaration order does not set handler priority.
+Add `TransformPastedHTMLExtension` to your root dependencies. This includes
+`ClipboardDOMImportExtension` and guarantees that the transform runs before
+its HTML importer, passing the transformed HTML to it through `$next`.
 
-If you instead keep the importer and `TransformPastedHTMLExtension` as
-independent siblings, put the transform **after** the importer in the root:
-
-```ts
-dependencies: [
-  ClipboardDOMImportExtension,
-  TransformPastedHTMLExtension,
-],
-```
-
-Reversing these siblings puts the DOM importer ahead of the transform. The
-DOM importer handles the paste without calling `$next`, so the transform
-will not run. Sibling ordering assumes the transform has not already been
-introduced through an earlier dependency; the explicit dependency above
-makes the ordering reliable when extensions are reused in a larger graph.
-
-A transform that should support either importer can instead declare an
-optional peer dependency, which enforces the same ordering when
-`ClipboardDOMImportExtension` is present without enabling it:
+**To support either importer**, declare `ClipboardDOMImportExtension` as an
+optional peer dependency. Using the same `transformHTML` configuration above:
 
 ```ts
 import {declarePeerDependency} from 'lexical';
@@ -1102,11 +1067,17 @@ const TransformPastedHTMLForEitherImporterExtension = defineExtension({
 });
 ```
 
+Add `TransformPastedHTMLForEitherImporterExtension` to your root dependencies.
+When the editor includes `ClipboardDOMImportExtension`, the peer dependency
+guarantees that the transform runs before its HTML importer. Otherwise, the
+transform runs before the legacy default HTML importer. The editor chooses
+the importer; the transform extension enforces the ordering in either case.
+
 ### `ImportSourceDataTransfer`
 
 A builtin `ImportStateConfig<DataTransfer | null>` slot for surfacing
 the original paste/drop `DataTransfer` to import rules and
-preprocessors. The clipboard handler shown above forwards it via
+preprocessors. `ClipboardDOMImportExtension` forwards it via
 `context`; rules can then read it during the walk:
 
 ```ts

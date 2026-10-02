@@ -98,11 +98,6 @@ editor actually routes HTML through the pipeline (the legacy paste
 path is unchanged), and an extension's rules merge above its
 dependencies' rules, so app-registered rules still win dispatch.
 
-The standalone `RichTextImportExtension` / `ListImportExtension` /
-`LinkImportExtension` / `TableImportExtension` / `CodeImportExtension`
-/ `HorizontalRuleImportExtension` bundles from earlier versions still
-exist as deprecated aliases for the corresponding runtime extensions.
-
 :::tip
 
 The legacy entry `$generateNodesFromDOM(editor, dom)` and the new

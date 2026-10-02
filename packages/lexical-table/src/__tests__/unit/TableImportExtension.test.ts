@@ -17,7 +17,6 @@ import {
   $isTableRowNode,
   type TableCellNode,
   TableExtension,
-  TableImportExtension,
   type TableNode,
   type TableRowNode,
 } from '@lexical/table';
@@ -122,21 +121,6 @@ describe('TableImportExtension', () => {
 
   test('row picks up cells via $descendantsMatching', () => {
     using editor = buildEditor();
-    importInto(editor, '<table><tr><td>a</td></tr></table>');
-    editor.read(() => {
-      const cell = $cells($rows($rootTable())[0])[0];
-      expect(cell.getTextContent()).toBe('a');
-    });
-  });
-
-  test('deprecated TableImportExtension alias still imports tables', () => {
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [TableImportExtension],
-        name: 'table-alias-host',
-        theme: {tableScrollableWrapper: ''},
-      }),
-    );
     importInto(editor, '<table><tr><td>a</td></tr></table>');
     editor.read(() => {
       const cell = $cells($rows($rootTable())[0])[0];

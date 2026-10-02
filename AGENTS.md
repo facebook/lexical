@@ -377,8 +377,7 @@ When creating custom nodes:
 4. Implement `createDOM()` and `updateDOM()` (and `decorate()` for a
    DecoratorNode). Keep `exportDOM()` on the class when the default export
    is not enough.
-5. Do not add `importDOM()` to new nodes. Import HTML with a
-   `defineImportRule` contributed through
+5. For HTML import, prefer a `defineImportRule` contributed through
    `configExtension(DOMImportExtension, {rules: [...]})` from an import
    extension (see `ListImportExtension` in `@lexical/list`).
 6. Register with an extension (`nodes: () => [YourNode]`) or editor config.

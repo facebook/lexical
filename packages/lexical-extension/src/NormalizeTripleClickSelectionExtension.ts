@@ -44,8 +44,8 @@ export interface NormalizeTripleClickSelectionConfig {
   disabled: boolean;
   /**
    * @deprecated No longer used. A triple click now applies to the next
-   * selection change however long it takes to arrive, until a keydown or a
-   * single or double click cancels it. Kept so existing configurations still
+   * selection change however long it takes to arrive, until another click or
+   * a non-modifier keydown anywhere in the document cancels it. Kept so existing configurations still
    * type check.
    */
   thresholdMsec: number;
@@ -62,8 +62,8 @@ export interface NormalizeTripleClickSelectionOutput {
   disabled: Signal<boolean>;
   /**
    * @deprecated No longer used. A triple click now applies to the next
-   * selection change however long it takes to arrive, until a keydown or a
-   * single or double click cancels it. Kept so existing configurations still
+   * selection change however long it takes to arrive, until another click or
+   * a non-modifier keydown anywhere in the document cancels it. Kept so existing configurations still
    * type check.
    */
   thresholdMsec: Signal<number>;
@@ -74,6 +74,17 @@ export interface NormalizeTripleClickSelectionOutput {
   /** The update function to call when triple click is detected */
   $fixFocusOverselection: Signal<() => void>;
 }
+
+/** Keys that only modify a following key, so pressing one starts nothing */
+const MODIFIER_KEYS = new Set([
+  'Alt',
+  'AltGraph',
+  'CapsLock',
+  'Control',
+  'Fn',
+  'Meta',
+  'Shift',
+]);
 
 const SKIP_TAGS = new Set([
   SKIP_SELECTION_FOCUS_TAG,
@@ -164,7 +175,7 @@ function $fixFocusOverselection() {
  *
  * It is conservative in that it only fires this
  * `$fixFocusOverselection` callback on the first selection change after a
- * triple click (and before any keydown or other click),
+ * triple click in the editor (and before any other keydown or click),
  * but it provides the function as an output signal so that it can both
  * be called from other places and it can be replaced or wrapped with
  * different functionality.
@@ -197,8 +208,11 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
         // clock: the browser applies the paragraph selection as the default
         // action of that mousedown, so any selection change after it reads at
         // least that selection, however late the selectionchange event is
-        // handled on a busy machine. Any other mousedown or a keydown starts a
-        // new interaction and disarms it.
+        // handled on a busy machine. Any other mousedown or keydown in the
+        // document (including a toolbar outside the editor) starts a new
+        // interaction and disarms it, so a triple click that changed nothing
+        // can't trim a later selection change made by code. Modifier keys on
+        // their own don't, since they only begin a shortcut.
         let armed = false;
         return mergeRegister(
           editor.registerCommand(
@@ -213,13 +227,18 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
             COMMAND_PRIORITY_BEFORE_CRITICAL,
           ),
           registerEventListeners(
-            rootElement,
+            rootElement.ownerDocument,
             {
-              keydown: () => {
-                armed = false;
+              keydown: (event: KeyboardEvent) => {
+                if (!MODIFIER_KEYS.has(event.key)) {
+                  armed = false;
+                }
               },
               mousedown: (event: MouseEvent) => {
-                armed = event.detail > 2;
+                // composedPath sees through shadow roots that retarget the event
+                armed =
+                  event.detail > 2 &&
+                  event.composedPath().includes(rootElement);
               },
             },
             true,

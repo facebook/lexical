@@ -147,6 +147,46 @@ describe('NormalizeTripleClickSelectionExtension', () => {
     }
   });
 
+  test('a modifier key on its own does not cancel it', () => {
+    using editor = setUpEditor();
+    mouseDown(editor, 3);
+    for (const key of ['Control', 'Alt', 'Shift', 'Meta']) {
+      editor
+        .getRootElement()!
+        .dispatchEvent(new KeyboardEvent('keydown', {bubbles: true, key}));
+    }
+    overselect(editor);
+    expect(readFocus(editor)).toEqual(FIXED);
+  });
+
+  test('a click or keydown outside the editor cancels it', () => {
+    for (const event of [
+      new MouseEvent('mousedown', {bubbles: true, detail: 1}),
+      new KeyboardEvent('keydown', {bubbles: true, key: 'z'}),
+    ]) {
+      using editor = setUpEditor();
+      mouseDown(editor, 3);
+      const toolbar = document.createElement('button');
+      document.body.appendChild(toolbar);
+      toolbar.dispatchEvent(event);
+      toolbar.remove();
+      overselect(editor);
+      expect(readFocus(editor)).toEqual(OVERSELECTED);
+    }
+  });
+
+  test('a triple click outside the editor does not arm it', () => {
+    using editor = setUpEditor();
+    const outside = document.createElement('div');
+    document.body.appendChild(outside);
+    outside.dispatchEvent(
+      new MouseEvent('mousedown', {bubbles: true, detail: 3}),
+    );
+    outside.remove();
+    overselect(editor);
+    expect(readFocus(editor)).toEqual(OVERSELECTED);
+  });
+
   test('does nothing without a triple click', () => {
     using editor = setUpEditor();
     overselect(editor);

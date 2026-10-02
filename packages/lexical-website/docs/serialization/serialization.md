@@ -347,17 +347,17 @@ a class that declares only fields needs none at all, and one that declares some
 gets those carried without writing them out again.
 
 ```ts
+const calloutSchema = nodeSchema<CalloutNode>()({
+  label: withField(stringValue(), {field: '__label'}),
+});
+
 class CalloutNode extends ElementNode {
   __label: string = '';
 
-  // No afterCloneFrom: `__label` is declared below, so it is carried.
+  // No afterCloneFrom: `__label` is declared in calloutSchema, so it is
+  // carried.
   $config() {
-    return this.config('callout', {
-      extends: ElementNode,
-      json: nodeSchema<CalloutNode>()({
-        label: withField(stringValue(), {field: '__label'}),
-      }),
-    });
+    return this.config('callout', {extends: ElementNode, json: calloutSchema});
   }
 }
 ```
@@ -378,6 +378,9 @@ Two cases stay the class's own, and both follow the rule the synthesized
   declares `ids`); this is for one whose value does not:
 
   ```ts
+  // Parsed through setCount, written through getCount.
+  const tallySchema = nodeSchema<TallyNode>()({count: numberValue()});
+
   class TallyNode extends ElementNode {
     __count = 0;
 
@@ -389,11 +392,7 @@ Two cases stay the class's own, and both follow the rule the synthesized
     }
 
     $config() {
-      return this.config('tally', {
-        extends: ElementNode,
-        // Parsed through setCount, written through getCount.
-        json: nodeSchema<TallyNode>()({count: numberValue()}),
-      });
+      return this.config('tally', {extends: ElementNode, json: tallySchema});
     }
 
     setCount(count: number): this {

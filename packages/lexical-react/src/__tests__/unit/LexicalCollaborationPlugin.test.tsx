@@ -8,7 +8,7 @@
 
 import type {InitialEditorStateType} from '@lexical/react/LexicalComposer';
 import type {Provider} from '@lexical/yjs';
-import type {ElementNode, LexicalEditor} from 'lexical';
+import type {LexicalEditor} from 'lexical';
 
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {
@@ -24,9 +24,11 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isParagraphNode,
   createEditor,
   UNDO_COMMAND,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {act} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
@@ -569,7 +571,10 @@ describe(`LexicalCollaborationPlugin`, () => {
       // the caret of every node that predates it from being published.
       await act(async () => {
         editor!.update(() => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChildOrThrow(),
+            $isParagraphNode,
+          );
           paragraph.selectStart();
         });
       });

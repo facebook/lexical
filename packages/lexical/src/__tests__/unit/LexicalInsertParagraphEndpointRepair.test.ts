@@ -7,19 +7,21 @@
  */
 
 // @vitest-environment node
-import type {ParagraphNode, TextNode} from 'lexical';
-
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
-import {$createLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $isParagraphNode,
+  $isTextNode,
   $setSelection,
 } from 'lexical';
 import {expect, test} from 'vitest';
+
+import {$assertNodeType} from '../utils';
 
 const testExtension = defineExtension({
   dependencies: [RichTextExtension],
@@ -62,13 +64,21 @@ test.each([false, true])(
       expect(root.getTextContent()).toBe('\n\ndcaa');
       expect(root.getChildrenSize()).toBe(2);
       expect(root.getFirstChildOrThrow().getTextContent()).toBe('');
-      const paragraph = root.getLastChildOrThrow<ParagraphNode>();
+      const paragraph = $assertNodeType(
+        root.getLastChildOrThrow(),
+        $isParagraphNode,
+      );
       expect(paragraph.getChildrenSize()).toBe(2);
-      const remainingText = paragraph.getFirstChildOrThrow<TextNode>();
+      const remainingText = $assertNodeType(
+        paragraph.getFirstChildOrThrow(),
+        $isTextNode,
+      );
       expect(remainingText.getTextContent()).toBe('d');
       expect(remainingText.getStyle()).toBe('color: red');
-      const link = paragraph.getLastChildOrThrow<LinkNode>();
-      expect(link).toBeInstanceOf(LinkNode);
+      const link = $assertNodeType(
+        paragraph.getLastChildOrThrow(),
+        $isLinkNode,
+      );
       expect(link.getURL()).toBe('https://example.com');
       expect(link.getTextContent()).toBe('caa');
     });

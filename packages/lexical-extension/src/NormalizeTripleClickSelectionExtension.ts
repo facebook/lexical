@@ -42,9 +42,16 @@ import {effect, type Signal} from './signals';
 export interface NormalizeTripleClickSelectionConfig {
   /** `true` to disable this extension */
   disabled: boolean;
-  /** The maximum number of msec from the triple click to expect a selection change, default `100` */
+  /**
+   * @deprecated No longer used. A triple click now applies to the next
+   * selection change however long it takes to arrive, until a keydown or a
+   * single or double click cancels it. Kept so existing configurations still
+   * type check.
+   */
   thresholdMsec: number;
-  /** The clock function used for delay-based merging, default `Date.now` */
+  /**
+   * @deprecated No longer used, see `thresholdMsec`.
+   */
   dateNow: () => number;
   /** The update function to call when triple click is detected */
   $fixFocusOverselection: () => void;
@@ -53,9 +60,16 @@ export interface NormalizeTripleClickSelectionConfig {
 export interface NormalizeTripleClickSelectionOutput {
   /** `true` to disable this extension */
   disabled: Signal<boolean>;
-  /** The maximum number of msec from the triple click to expect a selection change, default `100` */
+  /**
+   * @deprecated No longer used. A triple click now applies to the next
+   * selection change however long it takes to arrive, until a keydown or a
+   * single or double click cancels it. Kept so existing configurations still
+   * type check.
+   */
   thresholdMsec: Signal<number>;
-  /** The clock function used for delay-based merging, default `Date.now` */
+  /**
+   * @deprecated No longer used, see `thresholdMsec`.
+   */
   dateNow: Signal<() => number>;
   /** The update function to call when triple click is detected */
   $fixFocusOverselection: Signal<() => void>;
@@ -149,7 +163,8 @@ function $fixFocusOverselection() {
  * it will also eagerly manipulate the DOM selection directly.
  *
  * It is conservative in that it only fires this
- * `$fixFocusOverselection` callback when it has detected a triple click,
+ * `$fixFocusOverselection` callback on the first selection change after a
+ * triple click (and before any keydown or other click),
  * but it provides the function as an output signal so that it can both
  * be called from other places and it can be replaced or wrapped with
  * different functionality.
@@ -159,9 +174,9 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
     namedSignals(config),
   config: safeCast<NormalizeTripleClickSelectionConfig>({
     $fixFocusOverselection,
-    // Wrapped rather than passing `Date.now` itself: a module-scope property
-    // read is a side effect to bundlers, which would pin this extension into
-    // every bundle that imports the module.
+    // Unused (deprecated). Wrapped rather than passing `Date.now` itself: a
+    // module-scope property read is a side effect to bundlers, which would pin
+    // this extension into every bundle that imports the module.
     dateNow: () => Date.now(),
     disabled: false,
     thresholdMsec: 100,
@@ -177,24 +192,20 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
         if (!rootElement) {
           return;
         }
-        let lastTripleClick = 0;
-        const refreshTripleClick = (event: null | MouseEvent) => {
-          if (event ? event.detail > 2 : lastTripleClick > 0) {
-            const now = stores.dateNow.peek()();
-            lastTripleClick =
-              (event && event.type === 'mousedown') ||
-              now - lastTripleClick <= stores.thresholdMsec.peek()
-                ? now
-                : 0;
-          }
-          return lastTripleClick;
-        };
+        // Armed by a triple (or later) click's mousedown and consumed by the
+        // next selection change. This is ordered by events rather than by a
+        // clock: the browser applies the paragraph selection as the default
+        // action of that mousedown, so any selection change after it reads at
+        // least that selection, however late the selectionchange event is
+        // handled on a busy machine. Any other mousedown or a keydown starts a
+        // new interaction and disarms it.
+        let armed = false;
         return mergeRegister(
           editor.registerCommand(
             SELECTION_CHANGE_COMMAND,
             () => {
-              if (refreshTripleClick(null)) {
-                lastTripleClick = 0;
+              if (armed) {
+                armed = false;
                 stores.$fixFocusOverselection.peek()();
               }
               return false;
@@ -203,7 +214,14 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
           ),
           registerEventListeners(
             rootElement,
-            {mousedown: refreshTripleClick, mouseup: refreshTripleClick},
+            {
+              keydown: () => {
+                armed = false;
+              },
+              mousedown: (event: MouseEvent) => {
+                armed = event.detail > 2;
+              },
+            },
             true,
           ),
         );

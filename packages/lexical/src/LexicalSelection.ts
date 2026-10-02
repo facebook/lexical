@@ -88,6 +88,7 @@ import {
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getNodeFromDOM,
+  $getOutermostAncestorRefusingText,
   $getRoot,
   $hasAncestor,
   $isInlineElementOrDecoratorNode,
@@ -972,14 +973,18 @@ export class RangeSelection implements BaseSelection {
 
     const anchorParent = anchorNode.getParentOrThrow();
     const anchorSize = anchorNode.getTextContentSize();
+    const refusingBefore =
+      offset === 0 ? $getOutermostAncestorRefusingText(anchorNode, true) : null;
+    const refusingAfter =
+      offset === anchorSize
+        ? $getOutermostAncestorRefusingText(anchorNode, false)
+        : null;
     const needsRedirect =
       $isTokenOrSegmented(anchorNode) ||
       (offset === 0 &&
-        (!anchorNode.canInsertTextBefore() ||
-          (!anchorParent.canInsertTextBefore() && !anchorNode.__prev))) ||
+        (!anchorNode.canInsertTextBefore() || refusingBefore !== null)) ||
       (offset === anchorSize &&
-        (!anchorNode.canInsertTextAfter() ||
-          (!anchorParent.canInsertTextAfter() && !anchorNode.__next)));
+        (!anchorNode.canInsertTextAfter() || refusingAfter !== null));
 
     if (needsRedirect) {
       // Token/segmented nodes and nodes whose parent forbids text insertion
@@ -1018,12 +1023,12 @@ export class RangeSelection implements BaseSelection {
         return;
       }
       if (offset === 0 || offset === anchorSize) {
-        const before = offset === 0;
+        // An empty text is at both edges: redirect the way something refuses.
+        const before =
+          offset === 0 && (refusingBefore !== null || refusingAfter === null);
         const direction = before ? 'previous' : 'next';
-        const sibling = $getSiblingCaret(
-          anchorNode,
-          direction,
-        ).getNodeAtCaret();
+        const beside = (before ? refusingBefore : refusingAfter) || anchorNode;
+        const sibling = $getSiblingCaret(beside, direction).getNodeAtCaret();
         let target: TextNode;
         if (
           $isTextNode(sibling) &&
@@ -1035,13 +1040,7 @@ export class RangeSelection implements BaseSelection {
           target = sibling;
         } else {
           target = $createTextNode().setFormat(format).setStyle(style);
-          const canInsert = before
-            ? anchorParent.canInsertTextBefore()
-            : anchorParent.canInsertTextAfter();
-          $getSiblingCaret(
-            canInsert ? anchorNode : anchorParent,
-            direction,
-          ).insert(target);
+          $getSiblingCaret(beside, direction).insert(target);
         }
         const targetOffset = before ? undefined : 0;
         target.select(targetOffset, targetOffset);

@@ -26,7 +26,7 @@
     }
   },
   "devDependencies": {
-    "fast-check": "^4.8.0"
+    "fast-check": "^4.10.2"
   },
   "repository": {
     "type": "git",

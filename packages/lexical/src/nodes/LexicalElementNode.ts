@@ -15,6 +15,12 @@ import type {
 
 import invariant from '@lexical/internal/invariant';
 
+import {
+  $collectSiblingNodes,
+  $detachNode,
+  $detachSiblingRange,
+  $insertNodeBetween,
+} from '../caret/LexicalCaretTree';
 import {$isTextNode, type TextNode} from '../index';
 import {
   DOUBLE_LINE_BREAK,
@@ -67,7 +73,6 @@ import {
   $getDOMSlot,
   $getNodeByKey,
   $isRootOrShadowRoot,
-  $removeFromParent,
   isHTMLElement,
   toggleTextFormatType,
 } from '../LexicalUtils';
@@ -380,13 +385,7 @@ export class ElementNode
    */
   getChildren<T extends LexicalNode>(): T[];
   getChildren(): LexicalNode[] {
-    const children: LexicalNode[] = [];
-    let child = this.getFirstChild();
-    while (child !== null) {
-      children.push(child);
-      child = child.getNextSibling();
-    }
-    return children;
+    return $collectSiblingNodes(this.getFirstChild(), 'next');
   }
   getChildrenKeys(): NodeKey[] {
     const children: NodeKey[] = [];
@@ -511,23 +510,12 @@ export class ElementNode
    */
   getDescendantByIndex<T extends LexicalNode>(index: number): null | T;
   getDescendantByIndex(index: number): null | LexicalNode {
-    const children = this.getChildren();
-    const childrenLength = children.length;
-    // For non-empty element nodes, we resolve its descendant
-    // (either a leaf node or the bottom-most element)
-    if (index >= childrenLength) {
-      const resolvedNode = children[childrenLength - 1];
-      return (
-        ($isElementNode(resolvedNode) && resolvedNode.getLastDescendant()) ||
-        resolvedNode ||
-        null
-      );
-    }
-    const resolvedNode = children[index];
+    const atEnd = index >= this.getChildrenSize();
+    const child = atEnd ? this.getLastChild() : this.getChildAtIndex(index);
     return (
-      ($isElementNode(resolvedNode) && resolvedNode.getFirstDescendant()) ||
-      resolvedNode ||
-      null
+      ($isElementNode(child) &&
+        (atEnd ? child.getLastDescendant() : child.getFirstDescendant())) ||
+      child
     );
   }
   /**
@@ -657,6 +645,10 @@ export class ElementNode
     return textContent;
   }
   getTextContentSize(): number {
+    // NOTE: This implementation will be delegated to
+    // LexicalNode.prototype.getTextContentSize when getTextContent is overridden
+    // without a corresponding override to this method
+    //
     // Slots are counted slots-first, ahead of the linked-list children.
     let textContentSize = $getSlotsTextContentSize(this);
     const children = this.getChildren();
@@ -831,7 +823,7 @@ export class ElementNode
     }
     const writableSelfKey = writableSelf.__key;
     const nodesToInsertKeys = [];
-    const nodesToRemoveKeys = [];
+    let nodesToRemoveKeys: NodeKey[] = [];
     let nodeAfterRange = this.getChildAtIndex(start + deleteCount);
     let nodeBeforeRange = null;
     let newSize = oldSize - deleteCount + nodesToInsert.length;
@@ -848,27 +840,26 @@ export class ElementNode
     }
 
     if (deleteCount > 0) {
-      let nodeToDelete =
+      nodesToRemoveKeys = $detachSiblingRange(
+        writableSelf,
         nodeBeforeRange === null
           ? this.getFirstChild()
-          : nodeBeforeRange.getNextSibling();
-      for (let i = 0; i < deleteCount; i++) {
-        if (nodeToDelete === null) {
-          invariant(false, 'splice: sibling not found');
-        }
-        const nextSibling = nodeToDelete.getNextSibling();
-        const nodeKeyToDelete = nodeToDelete.__key;
-        const writableNodeToDelete = nodeToDelete.getWritable();
-        $removeFromParent(writableNodeToDelete);
-        nodesToRemoveKeys.push(nodeKeyToDelete);
-        nodeToDelete = nextSibling;
-      }
+          : nodeBeforeRange.getNextSibling(),
+        deleteCount,
+        nodeBeforeRange,
+      );
     }
 
-    let prevNode = nodeBeforeRange;
+    // Retain the writable insertion tail instead of dirtying it again for
+    // every child. No boundary needs to be writable for a deletion-only splice.
+    let writablePrevNode =
+      nodesToInsert.length > 0 && nodeBeforeRange !== null
+        ? nodeBeforeRange.getWritable()
+        : null;
     for (const nodeToInsert of nodesToInsert) {
-      if (prevNode !== null && nodeToInsert.is(prevNode)) {
-        nodeBeforeRange = prevNode = prevNode.getPreviousSibling();
+      if (writablePrevNode !== null && nodeToInsert.is(writablePrevNode)) {
+        nodeBeforeRange = writablePrevNode.getPreviousSibling();
+        writablePrevNode = nodeBeforeRange && nodeBeforeRange.getWritable();
       }
       if (nodeAfterRange !== null && nodeToInsert.is(nodeAfterRange)) {
         nodeAfterRange = nodeAfterRange.getNextSibling();
@@ -877,40 +868,21 @@ export class ElementNode
       if (writableNodeToInsert.__parent === writableSelfKey) {
         newSize--;
       }
-      $removeFromParent(writableNodeToInsert);
+      $detachNode(writableNodeToInsert);
       const nodeKeyToInsert = nodeToInsert.__key;
-      if (prevNode === null) {
-        writableSelf.__first = nodeKeyToInsert;
-        writableNodeToInsert.__prev = null;
-      } else {
-        const writablePrevNode = prevNode.getWritable();
-        writablePrevNode.__next = nodeKeyToInsert;
-        writableNodeToInsert.__prev = writablePrevNode.__key;
-      }
+      // Keep both links valid before detaching the next insertion. It may be
+      // nodeAfterRange, whose previous sibling must now be this inserted node.
+      $insertNodeBetween(
+        writableSelf,
+        writableNodeToInsert,
+        writablePrevNode,
+        nodeAfterRange && nodeAfterRange.getWritable(),
+      );
       if (nodeToInsert.__key === writableSelfKey) {
         invariant(false, 'append: attempting to append self');
       }
-      // Set child parent to self
-      writableNodeToInsert.__parent = writableSelfKey;
       nodesToInsertKeys.push(nodeKeyToInsert);
-      prevNode = nodeToInsert;
-    }
-
-    if (nodeAfterRange === null) {
-      if (prevNode !== null) {
-        const writablePrevNode = prevNode.getWritable();
-        writablePrevNode.__next = null;
-        writableSelf.__last = prevNode.__key;
-      }
-    } else {
-      const writableNodeAfterRange = nodeAfterRange.getWritable();
-      if (prevNode !== null) {
-        const writablePrevNode = prevNode.getWritable();
-        writableNodeAfterRange.__prev = prevNode.__key;
-        writablePrevNode.__next = nodeAfterRange.__key;
-      } else {
-        writableNodeAfterRange.__prev = null;
-      }
+      writablePrevNode = writableNodeToInsert;
     }
 
     writableSelf.__size = newSize;
@@ -925,24 +897,16 @@ export class ElementNode
         const nodesToRemoveKeySet = new Set(nodesToRemoveKeys);
         const nodesToInsertKeySet = new Set(nodesToInsertKeys);
 
-        const {anchor, focus} = selection;
-        if (isPointRemoved(anchor, nodesToRemoveKeySet, nodesToInsertKeySet)) {
-          moveSelectionPointToSibling(
-            anchor,
-            anchor.getNode(),
-            this,
-            nodeBeforeRange,
-            nodeAfterRange,
-          );
-        }
-        if (isPointRemoved(focus, nodesToRemoveKeySet, nodesToInsertKeySet)) {
-          moveSelectionPointToSibling(
-            focus,
-            focus.getNode(),
-            this,
-            nodeBeforeRange,
-            nodeAfterRange,
-          );
+        for (const point of [selection.anchor, selection.focus]) {
+          if (isPointRemoved(point, nodesToRemoveKeySet, nodesToInsertKeySet)) {
+            moveSelectionPointToSibling(
+              point,
+              point.getNode(),
+              this,
+              nodeBeforeRange,
+              nodeAfterRange,
+            );
+          }
         }
         // Cleanup if node can't be empty
         if (newSize === 0 && !this.canBeEmpty() && !$isRootOrShadowRoot(this)) {

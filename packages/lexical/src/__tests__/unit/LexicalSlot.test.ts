@@ -42,16 +42,20 @@ import {
   $selectAll,
   $setSelection,
   $setSlot,
+  booleanValue,
   configExtension,
+  DecoratorNode,
   defineExtension,
   ElementNode,
   getDOMSelection,
   mountSlotContainer,
+  nodeSchema,
   type ParagraphNode,
   type RangeSelection,
   type SlotName,
   type TextNode,
   unmountSlotContainer,
+  withField,
 } from 'lexical';
 import {afterEach, assert, describe, expect, expectTypeOf, test} from 'vitest';
 
@@ -169,6 +173,35 @@ class WrappedSlotHostNode extends ElementNode {
   }
 }
 
+const slotTextHostNodeSchema = nodeSchema<SlotTextHostNode>()({
+  block: withField(booleanValue(), {field: '__block'}),
+});
+// A decorator host that keeps the base `getTextContent`: its text is its
+// slots' text, so an edit inside a slot changes the host's text size.
+class SlotTextHostNode extends DecoratorNode<null> {
+  __block: boolean = false;
+  $config() {
+    return this.config('slot_text_host', {
+      extends: DecoratorNode,
+      json: slotTextHostNodeSchema,
+    });
+  }
+  isInline(): boolean {
+    return !this.getLatest().__block;
+  }
+  setIsInline(inline: boolean): this {
+    const self = this.getWritable();
+    self.__block = !inline;
+    return self;
+  }
+  createDOM() {
+    return document.createElement(this.__block ? 'div' : 'span');
+  }
+  updateDOM(prevNode: this): boolean {
+    return prevNode.__block !== this.__block;
+  }
+}
+
 const mountedRoots: HTMLElement[] = [];
 afterEach(() => {
   while (mountedRoots.length > 0) {
@@ -197,6 +230,7 @@ function createSlotEditor(): LexicalEditorWithDispose {
         DupDeclaredHostNode,
         ReservedDeclaredHostNode,
         WrappedSlotHostNode,
+        SlotTextHostNode,
       ],
     }),
   );
@@ -4045,5 +4079,185 @@ describe('named-slots: insertNodes redirect termination (#8712)', () => {
       const host = $assertNodeType($getNodeByKey(hostKey), $isParagraphNode);
       expect($getSlot(host, 'title')!.is(slot)).toBe(true);
     });
+  });
+});
+
+describe('named-slots: root text after repeated slot edits', () => {
+  // An edit inside a slot marks its host dirty without cloning it. The
+  // children fast path, which engages from four children, splices the
+  // parent's cached text using each dirty child's previous size, so a leaf
+  // host's size has to be right after every edit, not only the first.
+  function $appendHostWithSlot(
+    parent: ElementNode,
+    host: ElementNode | SlotTextHostNode,
+  ): TextNode {
+    const text = $createTextNode('C');
+    parent.append(host);
+    $setSlot(
+      host,
+      'title',
+      $createTestShadowRootNode().append($createParagraphNode().append(text)),
+    );
+    return text;
+  }
+
+  function editSlot(
+    editor: LexicalEditorWithDispose,
+    textKey: string,
+    text: string,
+  ): void {
+    editor.update(
+      () => {
+        $assertNodeType($getNodeByKey(textKey), $isTextNode).setTextContent(
+          text,
+        );
+      },
+      {discrete: true},
+    );
+  }
+
+  function rootText(editor: LexicalEditorWithDispose): string {
+    return editor.read(() => $getRoot().getTextContent());
+  }
+
+  test('an inline decorator host that ends a paragraph of four children', () => {
+    using editor = createSlotEditor();
+    let textKey = '';
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode().append(
+          $createTextNode('ab'),
+          $createLineBreakNode(),
+          $createTextNode('cd '),
+        );
+        $getRoot().append(paragraph);
+        textKey = $appendHostWithSlot(
+          paragraph,
+          $create(SlotTextHostNode),
+        ).getKey();
+      },
+      {discrete: true},
+    );
+    for (const text of ['CD', 'CDE', 'CDEF']) {
+      editSlot(editor, textKey, text);
+      expect(rootText(editor)).toBe(`ab\ncd ${text}`);
+    }
+  });
+
+  test('a block decorator host that is the last of four blocks', () => {
+    using editor = createSlotEditor();
+    let textKey = '';
+    editor.update(
+      () => {
+        const root = $getRoot();
+        for (const text of ['a', 'b', 'c']) {
+          root.append($createParagraphNode().append($createTextNode(text)));
+        }
+        textKey = $appendHostWithSlot(
+          root,
+          $create(SlotTextHostNode).setIsInline(false),
+        ).getKey();
+      },
+      {discrete: true},
+    );
+    for (const text of ['CD', 'CDE']) {
+      editSlot(editor, textKey, text);
+      expect(rootText(editor)).toBe(`a\n\nb\n\nc\n\n${text}`);
+    }
+  });
+
+  test('a text appended after an edited decorator host', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+    let textKey = '';
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode().append(
+          $createTextNode('ab'),
+          $createLineBreakNode(),
+          $createTextNode('cd '),
+        );
+        $getRoot().append(paragraph);
+        const host = $create(SlotTextHostNode);
+        textKey = $appendHostWithSlot(paragraph, host).getKey();
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+    editSlot(editor, textKey, 'CD');
+    editor.update(
+      () => {
+        $getNodeByKey(hostKey)!.insertAfter($createTextNode(' ef'));
+      },
+      {discrete: true},
+    );
+    expect(rootText(editor)).toBe('ab\ncd CD ef');
+  });
+
+  test('a text removed after an edited decorator host', () => {
+    using editor = createSlotEditor();
+    let afterKey = '';
+    let textKey = '';
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode().append(
+          $createTextNode('ab'),
+          $createLineBreakNode(),
+          $createTextNode('cd '),
+        );
+        $getRoot().append(paragraph);
+        textKey = $appendHostWithSlot(
+          paragraph,
+          $create(SlotTextHostNode),
+        ).getKey();
+        const after = $createTextNode(' ef');
+        paragraph.append(after);
+        afterKey = after.getKey();
+      },
+      {discrete: true},
+    );
+    editSlot(editor, textKey, 'CD');
+    expect(rootText(editor)).toBe('ab\ncd CD ef');
+    editor.update(
+      () => {
+        $getNodeByKey(afterKey)!.remove();
+      },
+      {discrete: true},
+    );
+    expect(rootText(editor)).toBe('ab\ncd CD');
+  });
+
+  test.each([
+    [
+      'an inline decorator host that ends a paragraph of three children',
+      () => [$createTextNode('ab'), $createTextNode('cd ')],
+      () => $create(SlotTextHostNode),
+      'abcd ',
+    ],
+    [
+      'an inline element host that ends a paragraph of four children',
+      () => [
+        $createTextNode('ab'),
+        $createLineBreakNode(),
+        $createTextNode('cd '),
+      ],
+      () => $createTestInlineElementNode(),
+      'ab\ncd ',
+    ],
+  ])('%s', (_name, $before, $host, prefix) => {
+    using editor = createSlotEditor();
+    let textKey = '';
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode().append(...$before());
+        $getRoot().append(paragraph);
+        textKey = $appendHostWithSlot(paragraph, $host()).getKey();
+      },
+      {discrete: true},
+    );
+    for (const text of ['CD', 'CDE', 'CDEF']) {
+      editSlot(editor, textKey, text);
+      expect(rootText(editor)).toBe(`${prefix}${text}`);
+    }
   });
 });

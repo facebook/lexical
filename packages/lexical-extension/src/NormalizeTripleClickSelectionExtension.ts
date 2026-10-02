@@ -8,6 +8,7 @@
 
 import {
   $caretRangeFromSelection,
+  $createRangeSelectionFromDom,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
@@ -208,19 +209,39 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
         // clock: the browser applies the paragraph selection as the default
         // action of that mousedown, so any selection change after it reads at
         // least that selection, however late the selectionchange event is
-        // handled on a busy machine. Any other mousedown or keydown in the
-        // document (including a toolbar outside the editor) starts a new
-        // interaction and disarms it, so a triple click that changed nothing
-        // can't trim a later selection change made by code. Modifier keys on
-        // their own don't, since they only begin a shortcut.
+        // handled on a busy machine. Any other pointerdown, mousedown or
+        // keydown in the document (including a toolbar outside the editor,
+        // even one that cancels its mousedown to keep focus) starts a new
+        // interaction and disarms it. Modifier keys on their own don't, since
+        // they only begin a shortcut.
+        //
+        // The arm has no time limit, so a triple click that changed nothing
+        // stays armed. A selection change still only gets trimmed when it
+        // matches the DOM selection, i.e. it came from the browser rather
+        // than from code (undo, collab, a toolbar in a parent frame), whose
+        // new selection is not in the DOM yet.
         let armed = false;
+        const $isDOMSelection = () => {
+          const selection = $getSelection();
+          const domSelection = getDOMSelection(
+            rootElement.ownerDocument.defaultView,
+          );
+          const fromDOM = $createRangeSelectionFromDom(domSelection, editor);
+          return (
+            $isRangeSelection(selection) &&
+            fromDOM !== null &&
+            selection.is(fromDOM)
+          );
+        };
         return mergeRegister(
           editor.registerCommand(
             SELECTION_CHANGE_COMMAND,
             () => {
               if (armed) {
                 armed = false;
-                stores.$fixFocusOverselection.peek()();
+                if ($isDOMSelection()) {
+                  stores.$fixFocusOverselection.peek()();
+                }
               }
               return false;
             },
@@ -234,11 +255,17 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
                   armed = false;
                 }
               },
+
               mousedown: (event: MouseEvent) => {
                 // composedPath sees through shadow roots that retarget the event
                 armed =
                   event.detail > 2 &&
                   event.composedPath().includes(rootElement);
+              },
+              // Not cancelled by preventDefault, unlike mousedown, and always
+              // dispatched before it (with detail 0)
+              pointerdown: () => {
+                armed = false;
               },
             },
             true,

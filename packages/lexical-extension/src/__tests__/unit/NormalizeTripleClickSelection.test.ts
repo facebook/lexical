@@ -51,8 +51,22 @@ function setUpEditor() {
   return editor;
 }
 
-/** What a triple click selects: all of paragraph 1 up to the start of paragraph 2 */
+/**
+ * What a triple click selects: all of paragraph 1 up to the start of
+ * paragraph 2, put in the DOM and reported with a selectionchange event the
+ * way the browser does
+ */
 function overselect(editor: LexicalEditor) {
+  const rootElement = editor.getRootElement()!;
+  const [p1, p2] = rootElement.children;
+  const domSelection = document.getSelection()!;
+  domSelection.setBaseAndExtent(p1.firstChild!.firstChild!, 0, p2, 0);
+  document.dispatchEvent(new Event('selectionchange'));
+  editor.read(() => {});
+}
+
+/** The same selection, made by code (like undo or a collab update) */
+function overselectByCode(editor: LexicalEditor) {
   editor.update(
     () => {
       const [p1, p2] = $getRoot().getChildren<ParagraphNode>();
@@ -183,6 +197,24 @@ describe('NormalizeTripleClickSelectionExtension', () => {
       new MouseEvent('mousedown', {bubbles: true, detail: 3}),
     );
     outside.remove();
+    overselect(editor);
+    expect(readFocus(editor)).toEqual(OVERSELECTED);
+  });
+
+  test('does not trim a selection change made by code', () => {
+    using editor = setUpEditor();
+    mouseDown(editor, 3);
+    overselectByCode(editor);
+    expect(readFocus(editor)).toEqual(OVERSELECTED);
+  });
+
+  test('a pointerdown cancels it, even without a mousedown', () => {
+    using editor = setUpEditor();
+    mouseDown(editor, 3);
+    const toolbar = document.createElement('button');
+    document.body.appendChild(toolbar);
+    toolbar.dispatchEvent(new Event('pointerdown', {bubbles: true}));
+    toolbar.remove();
     overselect(editor);
     expect(readFocus(editor)).toEqual(OVERSELECTED);
   });

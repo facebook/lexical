@@ -2489,7 +2489,7 @@ function $shrinkSelectionToRoot(
  * boundary, and the `[original .. landed]` range is constructed in the
  * model only. `applyDOMRange` reads just the range's boundary points (it
  * never touches the DOM selection), giving the same point resolution,
- * decorator pre/post handling, shadow-root shrink validation and
+ * decorator endpoint normalization, shadow-root shrink validation and
  * anchor/focus orientation as a native selection extension would, while
  * the DOM selection is only ever collapsed.
  *
@@ -2681,15 +2681,9 @@ function $extendSelectionForDeletion(
     // anchor must stay at the original caret, so restore that orientation.
     $swapPoints(selection);
   }
-  if (granularity === 'lineboundary') {
-    $modifySelectionAroundDecoratorsAndBlocks(
-      selection,
-      'extend',
-      isBackward,
-      granularity,
-      'decorators',
-    );
-  }
+  // The native move already measured the visual line boundary. Walking over
+  // adjacent decorators here would also include ones on the other side of a
+  // soft wrap (#9234). Endpoints inside a decorator were normalized above.
 }
 
 /**

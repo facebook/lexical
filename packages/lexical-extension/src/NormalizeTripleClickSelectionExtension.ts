@@ -219,7 +219,9 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
         // stays armed. A selection change still only gets trimmed when it
         // matches the DOM selection, i.e. it came from the browser rather
         // than from code (undo, collab, a toolbar in a parent frame), whose
-        // new selection is not in the DOM yet.
+        // new selection is not in the DOM yet. Such a change leaves it armed,
+        // since on a busy machine it can land before the browser's late
+        // selectionchange for the triple click itself.
         let armed = false;
         const $isDOMSelection = () => {
           const selection = $getSelection();
@@ -240,11 +242,9 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
           editor.registerCommand(
             SELECTION_CHANGE_COMMAND,
             () => {
-              if (armed) {
+              if (armed && $isDOMSelection()) {
                 armed = false;
-                if ($isDOMSelection()) {
-                  stores.$fixFocusOverselection.peek()();
-                }
+                stores.$fixFocusOverselection.peek()();
               }
               return false;
             },

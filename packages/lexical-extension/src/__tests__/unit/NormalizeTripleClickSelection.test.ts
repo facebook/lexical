@@ -219,6 +219,14 @@ describe('NormalizeTripleClickSelectionExtension', () => {
     expect(readFocus(editor)).toEqual(OVERSELECTED);
   });
 
+  test('still trims the triple click after a selection change made by code', () => {
+    using editor = setUpEditor();
+    mouseDown(editor, 3);
+    editor.update(() => $getRoot().selectEnd(), {discrete: true});
+    overselect(editor);
+    expect(readFocus(editor)).toEqual(FIXED);
+  });
+
   test('does not trim a selection change made by code', () => {
     using editor = setUpEditor();
     mouseDown(editor, 3);

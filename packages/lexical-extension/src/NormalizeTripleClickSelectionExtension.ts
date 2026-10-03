@@ -8,6 +8,7 @@
 
 import {
   $caretRangeFromSelection,
+  $createRangeSelectionFromDom,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
@@ -27,7 +28,9 @@ import {
   $updateDOMSelection,
   COMMAND_PRIORITY_BEFORE_CRITICAL,
   defineExtension,
+  type DOMSelectionBoundaryPoints,
   getDOMSelection,
+  getDOMSelectionPoints,
   mergeRegister,
   registerEventListeners,
   safeCast,
@@ -42,9 +45,16 @@ import {effect, type Signal} from './signals';
 export interface NormalizeTripleClickSelectionConfig {
   /** `true` to disable this extension */
   disabled: boolean;
-  /** The maximum number of msec from the triple click to expect a selection change, default `100` */
+  /**
+   * @deprecated No longer used. A triple click now applies to the next
+   * selection change however long it takes to arrive, until another click or
+   * a non-modifier keydown anywhere in the document cancels it. Kept so existing configurations still
+   * type check.
+   */
   thresholdMsec: number;
-  /** The clock function used for delay-based merging, default `Date.now` */
+  /**
+   * @deprecated No longer used, see `thresholdMsec`.
+   */
   dateNow: () => number;
   /** The update function to call when triple click is detected */
   $fixFocusOverselection: () => void;
@@ -53,13 +63,31 @@ export interface NormalizeTripleClickSelectionConfig {
 export interface NormalizeTripleClickSelectionOutput {
   /** `true` to disable this extension */
   disabled: Signal<boolean>;
-  /** The maximum number of msec from the triple click to expect a selection change, default `100` */
+  /**
+   * @deprecated No longer used. A triple click now applies to the next
+   * selection change however long it takes to arrive, until another click or
+   * a non-modifier keydown anywhere in the document cancels it. Kept so existing configurations still
+   * type check.
+   */
   thresholdMsec: Signal<number>;
-  /** The clock function used for delay-based merging, default `Date.now` */
+  /**
+   * @deprecated No longer used, see `thresholdMsec`.
+   */
   dateNow: Signal<() => number>;
   /** The update function to call when triple click is detected */
   $fixFocusOverselection: Signal<() => void>;
 }
+
+/** Keys that only modify a following key, so pressing one starts nothing */
+const MODIFIER_KEYS = new Set([
+  'Alt',
+  'AltGraph',
+  'CapsLock',
+  'Control',
+  'Fn',
+  'Meta',
+  'Shift',
+]);
 
 const SKIP_TAGS = new Set([
   SKIP_SELECTION_FOCUS_TAG,
@@ -149,7 +177,8 @@ function $fixFocusOverselection() {
  * it will also eagerly manipulate the DOM selection directly.
  *
  * It is conservative in that it only fires this
- * `$fixFocusOverselection` callback when it has detected a triple click,
+ * `$fixFocusOverselection` callback on the first selection change after a
+ * triple click in the editor (and before any other keydown or click),
  * but it provides the function as an output signal so that it can both
  * be called from other places and it can be replaced or wrapped with
  * different functionality.
@@ -159,9 +188,9 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
     namedSignals(config),
   config: safeCast<NormalizeTripleClickSelectionConfig>({
     $fixFocusOverselection,
-    // Wrapped rather than passing `Date.now` itself: a module-scope property
-    // read is a side effect to bundlers, which would pin this extension into
-    // every bundle that imports the module.
+    // Unused (deprecated). Wrapped rather than passing `Date.now` itself: a
+    // module-scope property read is a side effect to bundlers, which would pin
+    // this extension into every bundle that imports the module.
     dateNow: () => Date.now(),
     disabled: false,
     thresholdMsec: 100,
@@ -177,33 +206,125 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
         if (!rootElement) {
           return;
         }
-        let lastTripleClick = 0;
-        const refreshTripleClick = (event: null | MouseEvent) => {
-          if (event ? event.detail > 2 : lastTripleClick > 0) {
-            const now = stores.dateNow.peek()();
-            lastTripleClick =
-              (event && event.type === 'mousedown') ||
-              now - lastTripleClick <= stores.thresholdMsec.peek()
-                ? now
-                : 0;
+        // Armed by a triple (or later) click's mousedown and consumed by the
+        // next selection change. This is ordered by events rather than by a
+        // clock: the browser applies the paragraph selection as the default
+        // action of that mousedown, so any selection change after it reads at
+        // least that selection, however late the selectionchange event is
+        // handled on a busy machine. Any other pointerdown, mousedown or
+        // keydown in the document (including a toolbar outside the editor,
+        // even one that cancels its mousedown to keep focus) starts a new
+        // interaction and disarms it. Modifier keys on their own don't, since
+        // they only begin a shortcut.
+        //
+        // The arm has no time limit, so a triple click that changed nothing
+        // stays armed. A selection change still only gets trimmed when it
+        // matches the DOM selection, i.e. it came from the browser rather
+        // than from code (undo, collab, a toolbar in a parent frame), whose
+        // new selection is not in the DOM yet. Such a change leaves it armed,
+        // since on a busy machine it can land before the browser's late
+        // selectionchange for the triple click itself.
+        //
+        // Matching the DOM doesn't prove the browser made the selection,
+        // because a selection set by code reaches the DOM too, and that
+        // reconciliation can be reported as a selection change. So the arm is
+        // also dropped without a trim when the triple click's mousedown was
+        // cancelled (the browser made no selection), and after the mouseup,
+        // by which time the browser has applied its selection, when the DOM no
+        // longer holds the selection it had at the mouseup.
+        let armingEvent: MouseEvent | null = null;
+        let nativePoints: null | DOMSelectionBoundaryPoints = null;
+        const getDOMSelectionNow = () =>
+          getDOMSelection(rootElement.ownerDocument.defaultView);
+        const readNativePoints = (): null | DOMSelectionBoundaryPoints => {
+          const domSelection = getDOMSelectionNow();
+          if (domSelection === null) {
+            return null;
           }
-          return lastTripleClick;
+          const {anchorNode, anchorOffset, focusNode, focusOffset} =
+            getDOMSelectionPoints(domSelection, rootElement);
+          return {anchorNode, anchorOffset, focusNode, focusOffset};
+        };
+        const isNativeSelection = () => {
+          if (nativePoints === null) {
+            return true;
+          }
+          const points = readNativePoints();
+          return (
+            points !== null &&
+            points.anchorNode === nativePoints.anchorNode &&
+            points.anchorOffset === nativePoints.anchorOffset &&
+            points.focusNode === nativePoints.focusNode &&
+            points.focusOffset === nativePoints.focusOffset
+          );
+        };
+        const disarm = () => {
+          armingEvent = null;
+          nativePoints = null;
+        };
+        const $isDOMSelection = () => {
+          const selection = $getSelection();
+          const fromDOM = $createRangeSelectionFromDom(
+            getDOMSelectionNow(),
+            editor,
+          );
+          return (
+            $isRangeSelection(selection) &&
+            fromDOM !== null &&
+            // Points only: the browser's selection carries the format and
+            // style of the selected text, the one rebuilt from the DOM doesn't
+            selection.anchor.is(fromDOM.anchor) &&
+            selection.focus.is(fromDOM.focus)
+          );
         };
         return mergeRegister(
           editor.registerCommand(
             SELECTION_CHANGE_COMMAND,
             () => {
-              if (refreshTripleClick(null)) {
-                lastTripleClick = 0;
-                stores.$fixFocusOverselection.peek()();
+              if (armingEvent === null) {
+                return false;
+              }
+              if (armingEvent.defaultPrevented) {
+                disarm();
+              } else if ($isDOMSelection()) {
+                const isNative = isNativeSelection();
+                disarm();
+                if (isNative) {
+                  stores.$fixFocusOverselection.peek()();
+                }
               }
               return false;
             },
             COMMAND_PRIORITY_BEFORE_CRITICAL,
           ),
           registerEventListeners(
-            rootElement,
-            {mousedown: refreshTripleClick, mouseup: refreshTripleClick},
+            rootElement.ownerDocument,
+            {
+              keydown: (event: KeyboardEvent) => {
+                if (!MODIFIER_KEYS.has(event.key)) {
+                  disarm();
+                }
+              },
+
+              mousedown: (event: MouseEvent) => {
+                disarm();
+                // composedPath sees through shadow roots that retarget the event
+                if (
+                  event.detail > 2 &&
+                  event.composedPath().includes(rootElement)
+                ) {
+                  armingEvent = event;
+                }
+              },
+              mouseup: () => {
+                if (armingEvent !== null && !armingEvent.defaultPrevented) {
+                  nativePoints = readNativePoints();
+                }
+              },
+              // Not cancelled by preventDefault, unlike mousedown, and always
+              // dispatched before it (with detail 0)
+              pointerdown: disarm,
+            },
             true,
           ),
         );

@@ -96,7 +96,9 @@ function readFocus(editor: LexicalEditor) {
 function mouseDown(editor: LexicalEditor, detail: number) {
   editor
     .getRootElement()!
-    .dispatchEvent(new MouseEvent('mousedown', {bubbles: true, detail}));
+    .dispatchEvent(
+      new MouseEvent('mousedown', {bubbles: true, cancelable: true, detail}),
+    );
 }
 
 const FIXED = {offset: 'Paragraph 1'.length, text: 'Paragraph 1'};
@@ -243,6 +245,57 @@ describe('NormalizeTripleClickSelectionExtension', () => {
     toolbar.remove();
     overselect(editor);
     expect(readFocus(editor)).toEqual(OVERSELECTED);
+  });
+
+  test('does not trim a selection set by code once it reaches the DOM', () => {
+    // A third-click handler that prevents the native selection and sets its
+    // own: its selectionchange from the DOM must not be trimmed either
+    using editor = setUpEditor();
+    const rootElement = editor.getRootElement()!;
+    const preventTripleClick = (event: MouseEvent) => {
+      if (event.detail > 2) {
+        event.preventDefault();
+      }
+    };
+    rootElement.addEventListener('mousedown', preventTripleClick);
+    mouseDown(editor, 3);
+    rootElement.removeEventListener('mousedown', preventTripleClick);
+    overselectByCode(editor);
+    rootElement.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+    document.dispatchEvent(new Event('selectionchange'));
+    editor.read(() => {});
+    expect(readFocus(editor)).toEqual(OVERSELECTED);
+  });
+
+  test('does not trim a selection set by code after the mouseup', () => {
+    // The native selection was applied (and reported late), then a click
+    // handler replaced it with its own before the selectionchange arrived
+    using editor = setUpEditor();
+    const rootElement = editor.getRootElement()!;
+    mouseDown(editor, 3);
+    const [p1] = rootElement.children;
+    document
+      .getSelection()!
+      .setBaseAndExtent(p1.firstChild!.firstChild!, 0, p1, 1);
+    rootElement.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+    overselectByCode(editor);
+    document.dispatchEvent(new Event('selectionchange'));
+    editor.read(() => {});
+    expect(readFocus(editor)).toEqual(OVERSELECTED);
+  });
+
+  test('trims a native selection reported after the mouseup', () => {
+    using editor = setUpEditor();
+    const rootElement = editor.getRootElement()!;
+    const [p1, p2] = rootElement.children;
+    mouseDown(editor, 3);
+    document
+      .getSelection()!
+      .setBaseAndExtent(p1.firstChild!.firstChild!, 0, p2, 0);
+    rootElement.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+    document.dispatchEvent(new Event('selectionchange'));
+    editor.read(() => {});
+    expect(readFocus(editor)).toEqual(FIXED);
   });
 
   test('does nothing without a triple click', () => {

@@ -28,7 +28,9 @@ import {
   $updateDOMSelection,
   COMMAND_PRIORITY_BEFORE_CRITICAL,
   defineExtension,
+  type DOMSelectionBoundaryPoints,
   getDOMSelection,
+  getDOMSelectionPoints,
   mergeRegister,
   registerEventListeners,
   safeCast,
@@ -222,13 +224,50 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
         // new selection is not in the DOM yet. Such a change leaves it armed,
         // since on a busy machine it can land before the browser's late
         // selectionchange for the triple click itself.
-        let armed = false;
+        //
+        // Matching the DOM doesn't prove the browser made the selection,
+        // because a selection set by code reaches the DOM too, and that
+        // reconciliation can be reported as a selection change. So the arm is
+        // also dropped without a trim when the triple click's mousedown was
+        // cancelled (the browser made no selection), and after the mouseup,
+        // by which time the browser has applied its selection, when the DOM no
+        // longer holds the selection it had at the mouseup.
+        let armingEvent: MouseEvent | null = null;
+        let nativePoints: null | DOMSelectionBoundaryPoints = null;
+        const getDOMSelectionNow = () =>
+          getDOMSelection(rootElement.ownerDocument.defaultView);
+        const readNativePoints = (): null | DOMSelectionBoundaryPoints => {
+          const domSelection = getDOMSelectionNow();
+          if (domSelection === null) {
+            return null;
+          }
+          const {anchorNode, anchorOffset, focusNode, focusOffset} =
+            getDOMSelectionPoints(domSelection, rootElement);
+          return {anchorNode, anchorOffset, focusNode, focusOffset};
+        };
+        const isNativeSelection = () => {
+          if (nativePoints === null) {
+            return true;
+          }
+          const points = readNativePoints();
+          return (
+            points !== null &&
+            points.anchorNode === nativePoints.anchorNode &&
+            points.anchorOffset === nativePoints.anchorOffset &&
+            points.focusNode === nativePoints.focusNode &&
+            points.focusOffset === nativePoints.focusOffset
+          );
+        };
+        const disarm = () => {
+          armingEvent = null;
+          nativePoints = null;
+        };
         const $isDOMSelection = () => {
           const selection = $getSelection();
-          const domSelection = getDOMSelection(
-            rootElement.ownerDocument.defaultView,
+          const fromDOM = $createRangeSelectionFromDom(
+            getDOMSelectionNow(),
+            editor,
           );
-          const fromDOM = $createRangeSelectionFromDom(domSelection, editor);
           return (
             $isRangeSelection(selection) &&
             fromDOM !== null &&
@@ -242,9 +281,17 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
           editor.registerCommand(
             SELECTION_CHANGE_COMMAND,
             () => {
-              if (armed && $isDOMSelection()) {
-                armed = false;
-                stores.$fixFocusOverselection.peek()();
+              if (armingEvent === null) {
+                return false;
+              }
+              if (armingEvent.defaultPrevented) {
+                disarm();
+              } else if ($isDOMSelection()) {
+                const isNative = isNativeSelection();
+                disarm();
+                if (isNative) {
+                  stores.$fixFocusOverselection.peek()();
+                }
               }
               return false;
             },
@@ -255,21 +302,28 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
             {
               keydown: (event: KeyboardEvent) => {
                 if (!MODIFIER_KEYS.has(event.key)) {
-                  armed = false;
+                  disarm();
                 }
               },
 
               mousedown: (event: MouseEvent) => {
+                disarm();
                 // composedPath sees through shadow roots that retarget the event
-                armed =
+                if (
                   event.detail > 2 &&
-                  event.composedPath().includes(rootElement);
+                  event.composedPath().includes(rootElement)
+                ) {
+                  armingEvent = event;
+                }
+              },
+              mouseup: () => {
+                if (armingEvent !== null && !armingEvent.defaultPrevented) {
+                  nativePoints = readNativePoints();
+                }
               },
               // Not cancelled by preventDefault, unlike mousedown, and always
               // dispatched before it (with detail 0)
-              pointerdown: () => {
-                armed = false;
-              },
+              pointerdown: disarm,
             },
             true,
           ),

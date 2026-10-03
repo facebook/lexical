@@ -44,12 +44,14 @@ import {
   $setCompositionKey,
   $setSelection,
   $setTextFormat,
+  COMMAND_PRIORITY_HIGH,
   ElementNode,
   getDOMSelection,
   IS_BOLD,
   type LexicalNode,
   type ParagraphNode,
   type RangeSelection,
+  SELECTION_CHANGE_COMMAND,
   type TextNode,
 } from 'lexical';
 import {
@@ -2672,6 +2674,124 @@ describe('Regression #7551 - Selection boundary normalization for single-child i
       },
       {discrete: true},
     );
+  });
+
+  test('restores owned text points from selection change notifications', async () => {
+    const container = document.createElement('div');
+    container.contentEditable = 'true';
+    document.body.appendChild(container);
+    onTestFinished(() => container.remove());
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.setRootElement(container);
+    let beforeKey!: string;
+    let inlineTextKey!: string;
+    let afterKey!: string;
+
+    await editor.update(() => {
+      const paragraph = $createParagraphNode();
+      const before = $createTextNode('ab ');
+      const inlineText = $createTextNode('cd');
+      const inline = $createLinkNode('https://example.com').append(inlineText);
+      const after = $createTextNode(' ef');
+      paragraph.append(before, inline, after);
+      $getRoot().clear().append(paragraph);
+      beforeKey = before.__key;
+      inlineTextKey = inlineText.__key;
+      afterKey = after.__key;
+    });
+
+    let ownedSelection: {
+      anchorKey: string;
+      anchorOffset: number;
+      focusKey: string;
+      focusOffset: number;
+    } | null = null;
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
+        const selection = $getSelection();
+        if (!ownedSelection || !$isRangeSelection(selection)) {
+          return false;
+        }
+        const {anchor, focus} = selection;
+        if (anchor.type === 'element' || focus.type === 'element') {
+          const restoredSelection = $createRangeSelection();
+          restoredSelection.anchor.set(
+            ownedSelection.anchorKey,
+            ownedSelection.anchorOffset,
+            'text',
+          );
+          restoredSelection.focus.set(
+            ownedSelection.focusKey,
+            ownedSelection.focusOffset,
+            'text',
+          );
+          $setSelection(restoredSelection);
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_HIGH,
+    );
+
+    const setDOMSelection = (
+      startKey: string,
+      startOffset: number,
+      endKey: string,
+      endOffset: number,
+    ) => {
+      const domSelection = getDOMSelection(editor._window ?? window);
+      const range = document.createRange();
+      range.setStart(
+        editor.getElementByKey(startKey)!.firstChild!,
+        startOffset,
+      );
+      range.setEnd(editor.getElementByKey(endKey)!.firstChild!, endOffset);
+      domSelection?.removeAllRanges();
+      domSelection?.addRange(range);
+      return domSelection;
+    };
+
+    ownedSelection = {
+      anchorKey: beforeKey,
+      anchorOffset: 3,
+      focusKey: inlineTextKey,
+      focusOffset: 1,
+    };
+    setDOMSelection(beforeKey, 3, inlineTextKey, 1);
+    editor.update(
+      () => {
+        $getRoot().getAllTextNodes()[2].setTextContent(' eg');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const selection = $getSelection();
+      assert(selection !== null && $isRangeSelection(selection));
+      expect(selection.anchor.key).toBe(beforeKey);
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.offset).toBe(3);
+    });
+
+    ownedSelection = {
+      anchorKey: inlineTextKey,
+      anchorOffset: 1,
+      focusKey: afterKey,
+      focusOffset: 0,
+    };
+    setDOMSelection(inlineTextKey, 1, afterKey, 0);
+    editor.update(
+      () => {
+        $getRoot().getAllTextNodes()[0].setTextContent('ab  ');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const selection = $getSelection();
+      assert(selection !== null && $isRangeSelection(selection));
+      expect(selection.focus.key).toBe(afterKey);
+      expect(selection.focus.type).toBe('text');
+      expect(selection.focus.offset).toBe(0);
+    });
   });
 });
 

@@ -14,6 +14,7 @@ import {
   keyUpCtrlOrAlt,
   keyUpCtrlOrMeta,
   sleep,
+  waitForTimerTick,
 } from '../utils/index.mjs';
 
 /**
@@ -127,6 +128,7 @@ export async function deleteBackward(page) {
   } else {
     await page.keyboard.press('Backspace');
   }
+  await waitForTimerTick(page);
 }
 
 export async function deleteForward(page) {
@@ -163,6 +165,7 @@ export async function selectAll(page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('a');
   await keyUpCtrlOrMeta(page);
+  await waitForTimerTick(page);
 }
 
 export async function undo(page) {

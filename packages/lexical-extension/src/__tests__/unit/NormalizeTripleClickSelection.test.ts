@@ -125,6 +125,24 @@ describe('NormalizeTripleClickSelectionExtension', () => {
     expect(readFocus(editor)).toEqual(FIXED);
   });
 
+  test('trims a triple click on formatted text', () => {
+    using editor = setUpEditor();
+    editor.update(
+      () => {
+        for (const paragraph of $getRoot().getChildren<ParagraphNode>()) {
+          paragraph
+            .getFirstChildOrThrow<TextNode>()
+            .setFormat('bold')
+            .setStyle('color: red');
+        }
+      },
+      {discrete: true},
+    );
+    mouseDown(editor, 3);
+    overselect(editor);
+    expect(readFocus(editor)).toEqual(FIXED);
+  });
+
   test('trims after a fourth click', () => {
     using editor = setUpEditor();
     mouseDown(editor, 4);

@@ -230,7 +230,10 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
           return (
             $isRangeSelection(selection) &&
             fromDOM !== null &&
-            selection.is(fromDOM)
+            // Points only: the browser's selection carries the format and
+            // style of the selected text, the one rebuilt from the DOM doesn't
+            selection.anchor.is(fromDOM.anchor) &&
+            selection.focus.is(fromDOM.focus)
           );
         };
         return mergeRegister(

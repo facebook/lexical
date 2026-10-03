@@ -2681,9 +2681,6 @@ function $extendSelectionForDeletion(
     // anchor must stay at the original caret, so restore that orientation.
     $swapPoints(selection);
   }
-  // The native move already measured the visual line boundary. Walking over
-  // adjacent decorators here would also include ones on the other side of a
-  // soft wrap (#9234). Endpoints inside a decorator were normalized above.
 }
 
 /**

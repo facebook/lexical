@@ -1882,7 +1882,17 @@ export function registerRichText(
           // the event below, so the files have to be forwarded regardless,
           // otherwise the drop is silently discarded. PASTE_COMMAND already
           // dispatches DRAG_DROP_PASTE unconditionally.
-          editor.dispatchCommand(DRAG_DROP_PASTE, files);
+          const handled = editor.dispatchCommand(DRAG_DROP_PASTE, files);
+          // iOS can expose keyboard emoji drags as text files. If no file
+          // handler accepts them, let WebKit resolve the text and dispatch
+          // beforeinput insertFromDrop with its text DataTransfer.
+          if (
+            !handled &&
+            IS_IOS &&
+            files.every(file => file.type === 'text/plain')
+          ) {
+            return false;
+          }
           event.preventDefault();
           return true;
         }

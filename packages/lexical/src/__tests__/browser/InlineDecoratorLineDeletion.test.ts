@@ -15,6 +15,7 @@ import {
   $createTextNode,
   $getRoot,
   DecoratorNode,
+  DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
 } from 'lexical';
 import {describe, expect, onTestFinished, test} from 'vitest';
@@ -44,7 +45,14 @@ class InlineDecoratorNode extends DecoratorNode<null> {
 describe.each([RichTextExtension, PlainTextExtension])('$name', extension => {
   test.each(
     [false, true].flatMap(isBackward =>
-      ['empty', 'text', 'nested'].flatMap(content =>
+      [
+        'empty',
+        'text',
+        'nested',
+        'image',
+        'inline-image',
+        'inline-text',
+      ].flatMap(content =>
         [false, true].flatMap(raised =>
           [1, 2].map(count => ({content, count, isBackward, raised})),
         ),
@@ -88,7 +96,18 @@ describe.each([RichTextExtension, PlainTextExtension])('$name', extension => {
       const decorator = root.querySelector<HTMLElement>(
         '[data-lexical-decorator]',
       )!;
-      if (content === 'text') {
+      if (content.startsWith('inline-')) {
+        decorator.style.display = 'inline';
+      }
+      if (content.endsWith('image')) {
+        const img = document.createElement('img');
+        img.width = 24;
+        img.height = 16;
+        img.src =
+          'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="16"></svg>';
+        decorator.appendChild(document.createElement('span')).appendChild(img);
+      }
+      if (content === 'text' || content === 'inline-text') {
         decorator.textContent = 'X';
       } else if (content === 'nested') {
         const child = document.createElement('strong');
@@ -226,6 +245,99 @@ describe.each([RichTextExtension, PlainTextExtension])(
         expect(editor.read(() => $getRoot().getTextContent())).toBe(
           isBackward ? before + after.slice(2) : before.slice(0, 2) + after,
         );
+      },
+    );
+  },
+);
+
+// The repeated forward deletion and image-boundary cases covered by #7270.
+// That change also introduced the post-measurement decorator traversal.
+describe.each([RichTextExtension, PlainTextExtension])(
+  '$name repeated deletion',
+  extension => {
+    test.each([false, true])(
+      'deletes across image and paragraph boundaries (backward: %s)',
+      isBackward => {
+        const root = document.createElement('div');
+        root.contentEditable = 'true';
+        root.style.cssText =
+          'width: 500px; font: 16px monospace; white-space: pre-wrap';
+        document.body.appendChild(root);
+        const editor = buildEditorFromExtensions({
+          $initialEditorState: () => {
+            const paragraph = $createParagraphNode();
+            const text = $createTextNode('Two');
+            const decorator = $create(InlineDecoratorNode);
+            paragraph.append(
+              ...(isBackward ? [text, decorator] : [decorator, text]),
+            );
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('One')),
+              paragraph,
+            );
+            if (isBackward) {
+              paragraph.selectEnd();
+            } else {
+              $getRoot().append($createParagraphNode());
+              paragraph.selectStart();
+            }
+          },
+          dependencies: [extension],
+          name: '[repeated-image-line-deletion]',
+          nodes: [InlineDecoratorNode],
+        });
+        onTestFinished(() => {
+          editor.dispose();
+          root.remove();
+        });
+        editor.setRootElement(root);
+        const wrapper = root.querySelector<HTMLElement>(
+          '[data-lexical-decorator]',
+        )!;
+        wrapper.style.display = 'inline';
+        const image = document.createElement('img');
+        image.width = 24;
+        image.height = 16;
+        image.src =
+          'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="16"></svg>';
+        wrapper.appendChild(document.createElement('span')).appendChild(image);
+        const lines = () =>
+          editor.read(() =>
+            $getRoot()
+              .getChildren()
+              .map(node => node.getTextContent()),
+          );
+        const deleteLine = () =>
+          editor.update(
+            () => editor.dispatchCommand(DELETE_LINE_COMMAND, isBackward),
+            {discrete: true},
+          );
+        deleteLine();
+        expect(lines()).toEqual(isBackward ? ['One', ''] : ['One', '', '']);
+        expect(root.querySelector('[data-lexical-decorator]')).toBeNull();
+        if (isBackward) {
+          editor.update(
+            () => editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true),
+            {discrete: true},
+          );
+          expect(lines()).toEqual(['One']);
+          deleteLine();
+          expect(lines()).toEqual(['']);
+        } else {
+          deleteLine();
+          expect(lines()).toEqual(['One', '']);
+          deleteLine();
+          expect(lines()).toEqual(['One', '']);
+          editor.update(() => $getRoot().getFirstChildOrThrow().selectStart(), {
+            discrete: true,
+          });
+          deleteLine();
+          expect(lines()).toEqual(['', '']);
+          deleteLine();
+          expect(lines()).toEqual(['']);
+          deleteLine();
+          expect(lines()).toEqual(['']);
+        }
       },
     );
   },

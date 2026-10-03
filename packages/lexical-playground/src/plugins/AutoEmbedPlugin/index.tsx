@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {Klass, LexicalEditor, LexicalNode} from 'lexical';
 
 import {
   AutoEmbedOption,
@@ -19,6 +19,9 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {type JSX, useMemo, useState} from 'react';
 
 import useModal from '../../hooks/useModal';
+import {FigmaNode} from '../../nodes/FigmaNode';
+import {TweetNode} from '../../nodes/TweetNode';
+import {YouTubeNode} from '../../nodes/YouTubeNode';
 import Button from '../../ui/Button';
 import {DialogActions} from '../../ui/Dialog';
 import {INSERT_FIGMA_COMMAND} from '../FigmaExtension';
@@ -40,11 +43,14 @@ interface PlaygroundEmbedConfig extends EmbedConfig {
 
   // Embed a Figma Project.
   description?: string;
+
+  // The node the embed inserts; menus hide the embed in editors that do not
+  // register it (page headers, for example).
+  node: Klass<LexicalNode>;
 }
 
 export const YoutubeEmbedConfig: PlaygroundEmbedConfig = {
   contentName: 'Youtube Video',
-
   exampleUrl: 'https://www.youtube.com/watch?v=jNQXAC9IVRw',
 
   // Icon for display.
@@ -55,6 +61,8 @@ export const YoutubeEmbedConfig: PlaygroundEmbedConfig = {
   },
 
   keywords: ['youtube', 'video'],
+
+  node: YouTubeNode,
 
   // Determine if a given URL is a match and return url data.
   parseUrl: async (url: string) => {
@@ -93,6 +101,8 @@ export const TwitterEmbedConfig: PlaygroundEmbedConfig = {
   // For extra searching.
   keywords: ['tweet', 'twitter', 'x'],
 
+  node: TweetNode,
+
   // Determine if a given URL is a match and return url data.
   parseUrl: (text: string) => {
     const match =
@@ -115,7 +125,6 @@ export const TwitterEmbedConfig: PlaygroundEmbedConfig = {
 
 export const FigmaEmbedConfig: PlaygroundEmbedConfig = {
   contentName: 'Figma Document',
-
   exampleUrl: 'https://www.figma.com/file/LKQ4FJ4bTnCSjedbRpk931/Sample-File',
 
   icon: <i className="icon figma" />,
@@ -125,6 +134,8 @@ export const FigmaEmbedConfig: PlaygroundEmbedConfig = {
   },
 
   keywords: ['figma', 'figma.com', 'mock-up'],
+
+  node: FigmaNode,
 
   // Determine if a given URL is a match and return url data.
   parseUrl: (text: string) => {

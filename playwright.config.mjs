@@ -51,7 +51,7 @@ const config = defineConfig({
     project('webkit', 'Desktop Safari'),
   ],
   retries: IS_DEBUG ? 0 : IS_CI ? 2 : 1,
-  testIgnore: /\/__tests__\/unit\//,
+  testIgnore: /\/__tests__\/(?:unit|browser)\//,
   timeout: 150000,
   use: {
     actionTimeout: 10000, // Max time to wait for actions

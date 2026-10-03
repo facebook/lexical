@@ -26,11 +26,12 @@ import {
   test,
 } from '../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('Auto Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('Can convert url-like text into links', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Can convert url-like text into links', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type(
       'Hello http://example.com and https://example.com/path?with=query#and-hash and www.example.com',
@@ -60,11 +61,7 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Can convert url-like text into links for email', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Can convert url-like text into links for email', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type(
       'Hello name@example.com and anothername@test.example.uk !',
@@ -91,9 +88,7 @@ test.describe('Auto Links', () => {
 
   test('Can destruct links if add non-spacing text in front or right after it', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     const htmlWithLink = html`
       <p dir="auto">
         <a href="http://example.com">
@@ -153,11 +148,7 @@ test.describe('Auto Links', () => {
     await assertHTML(page, htmlWithLink, undefined, {ignoreClasses: true});
   });
 
-  test('Can create link when pasting text with urls', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Can create link when pasting text with urls', async ({page}) => {
     await focusEditor(page);
     await pasteFromClipboard(page, {
       'text/plain':
@@ -190,9 +181,7 @@ test.describe('Auto Links', () => {
 
   test('Can create link for email when pasting text with urls', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await pasteFromClipboard(page, {
       'text/plain':
@@ -222,8 +211,7 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Does not create redundant auto-link', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Does not create redundant auto-link', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('hm');
 
@@ -262,9 +250,7 @@ test.describe('Auto Links', () => {
 
   test('Can create links when pasting text with multiple autolinks in a row separated by non-alphanumeric characters, but not whitespaces', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await pasteFromClipboard(page, {
       'text/plain':
@@ -297,8 +283,7 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Handles multiple autolinks in a row', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Handles multiple autolinks in a row', async ({page}) => {
     await focusEditor(page);
     await pasteFromClipboard(page, {
       'text/plain':
@@ -334,11 +319,7 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Handles autolink following an invalid autolink', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Handles autolink following an invalid autolink', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hellohttps://example.com https://example.com');
 
@@ -359,9 +340,7 @@ test.describe('Auto Links', () => {
 
   test('Handles autolink following an invalid autolink to email', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type(
       'Hello name@example.c name@example.1 name-lastname@example.com name.lastname@meta.com',
@@ -390,9 +369,7 @@ test.describe('Auto Links', () => {
 
   test('Can convert url-like text with formatting into links', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type('Hellohttp://example.com and more');
 
@@ -437,11 +414,7 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Can convert url-like text with styles into links', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Can convert url-like text with styles into links', async ({page}) => {
     await focusEditor(page);
 
     //increase font size
@@ -539,8 +512,7 @@ test.describe('Auto Links', () => {
       'http://foo.bar', // Minimal URL with uncommon TLD
       'https://foo.bar', // HTTPS minimal URL with uncommon TLD
     ].forEach(testUrl =>
-      test(testUrl, async ({page, isPlainText}) => {
-        test.skip(isPlainText);
+      test(testUrl, async ({page}) => {
         await focusEditor(page);
         await page.keyboard.type(`${testUrl} ltr`);
 
@@ -580,8 +552,7 @@ test.describe('Auto Links', () => {
       'email@domain.co.uk',
       'firstname-lastname@domain.com',
     ].forEach(testUrl =>
-      test(testUrl, async ({page, isPlainText}) => {
-        test.skip(isPlainText);
+      test(testUrl, async ({page}) => {
         await focusEditor(page);
         await page.keyboard.type(`${testUrl} ltr`);
         const url = testUrl;
@@ -604,7 +575,7 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test(`Can not convert bad URLs into links`, async ({page, isPlainText}) => {
+  test(`Can not convert bad URLs into links`, async ({page}) => {
     const testUrls = [
       // Missing Protocol
       'example.com', // Missing HTTPS and www
@@ -633,7 +604,6 @@ test.describe('Auto Links', () => {
       'ftp://example.com', // Unsupported protocol (assuming only HTTP/HTTPS is supported)
     ];
 
-    test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type(testUrls.join(' '));
 
@@ -649,10 +619,7 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test(`Can not convert bad URLs into email links`, async ({
-    page,
-    isPlainText,
-  }) => {
+  test(`Can not convert bad URLs into email links`, async ({page}) => {
     const testUrls = [
       '@domain.com',
       '@subdomain.domain.com',
@@ -672,7 +639,6 @@ test.describe('Auto Links', () => {
       'not_an_email', // Plain text
     ];
 
-    test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type(testUrls.join(' '));
 
@@ -690,9 +656,7 @@ test.describe('Auto Links', () => {
 
   test('Can unlink the autolink and then make it link again', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
 
     await page.keyboard.type('Hello http://www.example.com test');
@@ -751,10 +715,7 @@ test.describe('Auto Links', () => {
 
   test('Unlinked autolink is preserved when adding punctuation before or after it', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await page.keyboard.type('http://example.com');
     await assertHTML(
@@ -838,10 +799,7 @@ test.describe('Auto Links', () => {
 
   test('Adding an invalid character will destruct an unlinked autolink', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await page.keyboard.type('http://example.com');
     await assertHTML(
@@ -892,10 +850,7 @@ test.describe('Auto Links', () => {
 
   test('Adding an emoji inside an unlinked autolink will destruct it', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await page.keyboard.type('http://example.com');
     await assertHTML(
@@ -951,9 +906,7 @@ test.describe('Auto Links', () => {
 
   test('Pressing Enter inside an AutoLinkNode does not insert extra paragraph', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type('http://example.com');
 
@@ -997,9 +950,7 @@ test.describe('Auto Links', () => {
 
   test('Can convert Unicode url-like text with Arabic path into links', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.insertText('مرحبا https://qabilah.com/posts/عربي end');
     await assertHTML(
@@ -1020,9 +971,7 @@ test.describe('Auto Links', () => {
 
   test('Can convert Unicode url-like text with Korean IDN into links', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.insertText('go http://예시.한국/경로?키=값#부분 done');
     await assertHTML(

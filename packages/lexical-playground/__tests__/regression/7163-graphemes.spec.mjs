@@ -16,6 +16,8 @@ import {
   test,
 } from '../utils/index.mjs';
 
+test.skip(({isCollab}) => !!isCollab, 'Tests local input behavior');
+
 // Regression tests for #7163
 test.describe.configure({mode: 'parallel'});
 test.describe('Grapheme deleteCharacter', () => {
@@ -130,10 +132,7 @@ test.describe('Grapheme deleteCharacter', () => {
     },
   ].forEach(
     ({backspaceCount, caretDistance, description, grapheme, skip = false}) => {
-      test(description, async ({page, browserName, isCollab, isPlainText}) => {
-        // We are only concerned about input here, not collab.
-        test.skip(isCollab || skip);
-
+      (skip ? test.skip : test)(description, async ({page, isPlainText}) => {
         // You can render a grapheme with escape sequences like this:
         // const fmt = (s) => "'" + Array.from({ length: s.length }, (_, i) => `\\u${s.charCodeAt(i).toString(16).padStart(4, '0')}`).join('') + "'";
         // e.g. from dev tools copy(fmt('emoji here')) and then paste it in your text editor

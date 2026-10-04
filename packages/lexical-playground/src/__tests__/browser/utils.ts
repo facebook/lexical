@@ -110,9 +110,9 @@ export async function assertHTML(root: HTMLElement, expected: string) {
 }
 
 interface SelectionExpectation {
-  anchorOffset: number;
+  anchorOffset: number | [number, number];
   anchorPath: number[];
-  focusOffset: number;
+  focusOffset: number | [number, number];
   focusPath: number[];
 }
 
@@ -120,6 +120,10 @@ export async function assertSelection(
   root: HTMLElement,
   expected: SelectionExpectation,
 ) {
+  const offset = (actual: number, wanted: number | [number, number]) =>
+    Array.isArray(wanted) && actual >= wanted[0] && actual <= wanted[1]
+      ? wanted
+      : actual;
   const path = (node: Node | null) => {
     const result: number[] = [];
     while (node !== root && node?.parentNode) {
@@ -135,9 +139,9 @@ export async function assertSelection(
       const selection = window.getSelection();
       return (
         selection && {
-          anchorOffset: selection.anchorOffset,
+          anchorOffset: offset(selection.anchorOffset, expected.anchorOffset),
           anchorPath: path(selection.anchorNode),
-          focusOffset: selection.focusOffset,
+          focusOffset: offset(selection.focusOffset, expected.focusOffset),
           focusPath: path(selection.focusNode),
         }
       );

@@ -101,27 +101,37 @@ function brCount(node: MdastNode): number {
 }
 
 /**
+ * A deep copy of `nodes` with each node that `replace` returns an array for
+ * swapped for that array; the children of the others are mapped in turn.
+ */
+function mapPhrasing(
+  nodes: readonly PhrasingContent[],
+  replace: (node: PhrasingContent) => PhrasingContent[] | undefined,
+): PhrasingContent[] {
+  return nodes.flatMap(
+    node =>
+      replace(node) ||
+      ('children' in node
+        ? ({
+            ...node,
+            children: mapPhrasing(node.children, replace),
+          } as PhrasingContent)
+        : node),
+  );
+}
+
+/**
  * A copy of `nodes` with every `<br>` nested inside other phrasing content
  * (`**a<br>b**`) replaced by hard `break`s, which import as line breaks.
  */
 function nestedBrToBreaks(nodes: PhrasingContent[]): PhrasingContent[] {
-  const result: PhrasingContent[] = [];
-  for (const node of nodes) {
+  return mapPhrasing(nodes, node => {
     const count = brCount(node);
     if (count > 0) {
-      for (let i = 0; i < count; i++) {
-        result.push({type: 'break'});
-      }
-    } else if ('children' in node && node.type !== 'htmlInline') {
-      result.push({
-        ...node,
-        children: nestedBrToBreaks(node.children as PhrasingContent[]),
-      } as PhrasingContent);
-    } else {
-      result.push(node);
+      return Array.from({length: count}, () => ({type: 'break'}));
     }
-  }
-  return result;
+    return node.type === 'htmlInline' ? [node] : undefined;
+  });
 }
 
 /** Trims the whitespace a `<br>` was written with (`a <br> b`). */
@@ -160,35 +170,34 @@ function cellLines(cell: TableCell): PhrasingContent[][] {
 }
 
 const $importTable: MdastImportHandler<Table> = (node, ctx) => {
-  const table = $createTableNode();
   const align = node.align || [];
-  node.children.forEach((row, rowIndex) => {
-    const rowNode = $createTableRowNode();
-    row.children.forEach((cell, columnIndex) => {
-      const cellNode = $createTableCellNode(
-        rowIndex === 0
-          ? TableCellHeaderStates.ROW
-          : TableCellHeaderStates.NO_STATUS,
-      );
-      const cellAlign = align[columnIndex];
-      if (cellAlign) {
-        // Every cell of the column carries it, so it renders as the cell's
-        // text-align and moves with the cells when columns are edited.
-        cellNode.setFormat(cellAlign);
-      }
-      for (const line of cellLines(cell)) {
-        const paragraph = $createParagraphNode();
-        $append(
-          paragraph,
-          ctx.importChildren({children: line, type: 'tableCell'}),
-        );
-        $append(cellNode, [paragraph]);
-      }
-      $append(rowNode, [cellNode]);
-    });
-    $append(table, [rowNode]);
-  });
-  return table;
+  return $append(
+    $createTableNode(),
+    node.children.map((row, rowIndex) =>
+      $append(
+        $createTableRowNode(),
+        row.children.map((cell, columnIndex) => {
+          const cellNode = $createTableCellNode(
+            rowIndex === 0
+              ? TableCellHeaderStates.ROW
+              : TableCellHeaderStates.NO_STATUS,
+          );
+          // Every cell of the column carries the alignment, so it renders as
+          // the cell's text-align and moves with the cells when columns are
+          // edited.
+          return $append(
+            cellNode.setFormat(align[columnIndex] || ''),
+            cellLines(cell).map(line =>
+              $append(
+                $createParagraphNode(),
+                ctx.importChildren({children: line, type: 'tableCell'}),
+              ),
+            ),
+          );
+        }),
+      ),
+    ),
+  );
 };
 
 /** The line separator inside a GFM table cell, which can't hold a newline. */
@@ -202,29 +211,28 @@ function lineBreakHtml(): Html {
  * them as spaces, losing the line structure.
  */
 function breaksToHtml(nodes: readonly PhrasingContent[]): PhrasingContent[] {
-  const result: PhrasingContent[] = [];
-  for (const node of nodes) {
+  return mapPhrasing(nodes, node => {
     if (node.type === 'break') {
-      result.push(lineBreakHtml());
-    } else if (node.type === 'text' && /[\r\n]/.test(node.value)) {
-      node.value.split(/\r?\n|\r/).forEach((value, i) => {
-        if (i > 0) {
-          result.push(lineBreakHtml());
-        }
-        if (value) {
-          result.push({type: 'text', value});
-        }
-      });
-    } else if ('children' in node) {
-      result.push({
-        ...node,
-        children: breaksToHtml(node.children as PhrasingContent[]),
-      } as PhrasingContent);
-    } else {
-      result.push(node);
+      return [lineBreakHtml()];
     }
-  }
-  return result;
+    if (node.type === 'text' && /[\r\n]/.test(node.value)) {
+      return joinLines(
+        node.value
+          .split(/\r?\n|\r/)
+          .map((value): PhrasingContent[] =>
+            value ? [{type: 'text', value}] : [],
+          ),
+      );
+    }
+    return undefined;
+  });
+}
+
+/** Joins lines of phrasing content with `<br>`, keeping empty lines. */
+function joinLines(lines: readonly PhrasingContent[][]): PhrasingContent[] {
+  return lines.flatMap((line, i) =>
+    i > 0 ? [lineBreakHtml(), ...line] : line,
+  );
 }
 
 /**
@@ -295,17 +303,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       const column = cells.length;
       align[column] =
         align[column] || $getCellAlign(cell) || legacyAlign[column] || null;
-      const lines = cellContentLines(ctx.exportChildren(cell));
       // Empty lines are kept as consecutive (or leading/trailing) `<br>`s,
       // which import back as the same empty paragraphs.
-      const children: TableCell['children'] = [];
-      lines.forEach((line, i) => {
-        if (i > 0) {
-          children.push(lineBreakHtml());
-        }
-        children.push(...line);
+      cells.push({
+        children: joinLines(cellContentLines(ctx.exportChildren(cell))),
+        type: 'tableCell',
       });
-      cells.push({children, type: 'tableCell'});
     }
     rows.push({children: cells, type: 'tableRow'});
   }

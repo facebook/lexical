@@ -1073,15 +1073,13 @@ export async function selectorBoundingBox(page, selector) {
 }
 
 export async function click(page, selector, options) {
-  const frame = getPageOrFrame(page);
-  await frame.waitForSelector(selector, options);
-  await frame.click(selector, options);
+  // Playwright already waits for the target to be visible, enabled and stable.
+  // A separate wait repeats that work and adds a protocol round trip per click.
+  await getPageOrFrame(page).click(selector, options);
 }
 
 export async function doubleClick(page, selector, options) {
-  const frame = getPageOrFrame(page);
-  await frame.waitForSelector(selector, options);
-  await frame.dblclick(selector, options);
+  await getPageOrFrame(page).dblclick(selector, options);
 }
 
 export async function focus(page, selector, options) {

@@ -87,6 +87,30 @@ async function caretInSelector(page, selector) {
   );
 }
 
+async function selectionInSlot(page, name, collapsed) {
+  return evaluate(
+    page,
+    ({slotName, isCollapsed}) => {
+      const slot = document.querySelector(`[data-lexical-slot="${slotName}"]`);
+      const editor = window.lexicalEditor;
+      const selection = editor.getEditorState()._selection;
+      const domSelection = window.getSelection();
+      return (
+        slot !== null &&
+        selection?.anchor !== undefined &&
+        selection.isCollapsed() === isCollapsed &&
+        slot.contains(editor.getElementByKey(selection.anchor.key)) &&
+        slot.contains(editor.getElementByKey(selection.focus.key)) &&
+        domSelection !== null &&
+        domSelection.isCollapsed === isCollapsed &&
+        slot.contains(domSelection.anchorNode) &&
+        slot.contains(domSelection.focusNode)
+      );
+    },
+    {isCollapsed: collapsed, slotName: name},
+  );
+}
+
 test.describe('PullQuote slot host', () => {
   test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
   test.beforeEach(async ({isCollab, page}) => {
@@ -276,23 +300,23 @@ test.describe('PullQuote slot host', () => {
     await focusEditor(page);
     await insertPullQuote(page);
 
-    // Clear both seeded slots (select-all is slot-scoped inside each).
-    await click(page, '[data-lexical-slot="quote"] p');
-    await selectAll(page);
-    await page.keyboard.press('Backspace');
-    await sleep(80);
-    await click(page, '[data-lexical-slot="attribution"] p');
-    await selectAll(page);
-    await page.keyboard.press('Backspace');
-    await sleep(80);
-    expect(await slotText(page, 'quote')).toBe('');
-    expect(await slotText(page, 'attribution')).toBe('');
+    // A click's DOM selectionchange may reach Lexical after the click
+    // resolves. Wait for both selections before invoking slot-scoped
+    // select-all, or setup can select and delete the entire editor.
+    for (const name of ['quote', 'attribution']) {
+      await click(page, `[data-lexical-slot="${name}"] p`);
+      await expect.poll(() => selectionInSlot(page, name, true)).toBe(true);
+      await selectAll(page);
+      await expect.poll(() => selectionInSlot(page, name, false)).toBe(true);
+      await page.keyboard.press('Backspace');
+      await expect.poll(() => slotText(page, name)).toBe('');
+    }
 
     // Now backspace from the start of the (empty) quote deletes the whole box.
     await click(page, '[data-lexical-slot="quote"] p');
+    await expect.poll(() => selectionInSlot(page, 'quote', true)).toBe(true);
     await moveToLineBeginning(page);
     await page.keyboard.press('Backspace');
-    await sleep(120);
-    expect(await pullquoteCount(page)).toBe(0);
+    await expect.poll(() => pullquoteCount(page)).toBe(0);
   });
 });

@@ -308,7 +308,16 @@ describe.each([true, false])(
 
       await setupParagraphs(editor, isRichText, false);
       await moveToParagraphBeginning();
-      if (isRichText) {
+      if (!isRichText && IS_APPLE && browserName === 'firefox') {
+        // Firefox on macOS represents this line boundary on the containing
+        // paragraph, immediately before its last text span.
+        await assertSelection(root, {
+          anchorOffset: 4,
+          anchorPath: [0],
+          focusOffset: 4,
+          focusPath: [0],
+        });
+      } else if (isRichText) {
         await assertSelection(root, {
           anchorOffset: 0,
           anchorPath: [2, 0, 0],
@@ -336,16 +345,25 @@ describe.each([true, false])(
       await setupParagraphs(editor, isRichText, false);
       await moveToEditorBeginning();
       await moveToParagraphEnd();
-      await assertSelection(root, {
-        // Due to text rendering it can be in this range of offsets
-        anchorOffset: [65, 74],
+      if (!isRichText && IS_APPLE && browserName === 'firefox') {
+        // Equivalent to the end of the first span, immediately before <br>.
+        await assertSelection(root, {
+          anchorOffset: 1,
+          anchorPath: [0],
+          focusOffset: 1,
+          focusPath: [0],
+        });
+      } else
+        await assertSelection(root, {
+          // Due to text rendering it can be in this range of offsets
+          anchorOffset: [65, 74],
 
-        anchorPath: [0, 0, 0],
-        // Due to text rendering it can be in this range of offsets
-        focusOffset: [65, 74],
+          anchorPath: [0, 0, 0],
+          // Due to text rendering it can be in this range of offsets
+          focusOffset: [65, 74],
 
-        focusPath: [0, 0, 0],
-      });
+          focusPath: [0, 0, 0],
+        });
     });
     test('can navigate through the plain text word by word', async () => {
       const {root} = setupEditor([
@@ -356,7 +374,7 @@ describe.each([true, false])(
       root.style.width = '1400px';
       root.style.font = '15px Arial';
 
-        // type sample text
+      // type sample text
       await typeText('  123 abc 456  def  ');
       await assertSelection(root, {
         anchorOffset: 20,
@@ -573,7 +591,7 @@ describe.each([true, false])(
       root.style.width = '1400px';
       root.style.font = '15px Arial';
 
-        // type sample text
+      // type sample text
       await typeText('  123 abc 456  def  ');
       await assertSelection(root, {
         anchorOffset: 20,
@@ -863,7 +881,7 @@ describe.each([true, false])(
       root.style.width = '1400px';
       root.style.font = '15px Arial';
 
-        // type sample text
+      // type sample text
       await typeText('123:)456 abc:):)de fg');
       await assertSelection(root, {
         anchorOffset: 5,

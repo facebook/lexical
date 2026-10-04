@@ -19,6 +19,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   defineExtension,
+  type ElementFormatType,
   type ParagraphNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
@@ -291,3 +292,62 @@ describe('clearFormatting (Toolbar)', () => {
     });
   });
 });
+
+describe.each(['', 'right', 'center', 'justify'] as ElementFormatType[])(
+  'clearFormatting alignment %j',
+  alignment => {
+    test.each([
+      [0, false],
+      [0, true],
+      [2, false],
+      [2, true],
+    ] as const)(
+      'clears indent %s with text formatting %s',
+      (indent, formatted) => {
+        using editor = createEditor();
+        editor.update(
+          () => {
+            const first = $createTextNode('Hello');
+            const second = $createTextNode(' World');
+            const third = $createTextNode(' Test');
+            if (formatted) {
+              second.toggleFormat('bold');
+              third
+                .toggleFormat('bold')
+                .toggleFormat('italic')
+                .toggleFormat('underline');
+              third.setStyle(
+                'color: red; background-color: blue; font-size: 24px;',
+              );
+            }
+            const paragraph = $createParagraphNode().append(
+              first,
+              second,
+              third,
+            );
+            paragraph.setFormat(alignment);
+            paragraph.setIndent(indent);
+            $getRoot().clear().append(paragraph);
+            paragraph.select(0, paragraph.getChildrenSize());
+          },
+          {discrete: true},
+        );
+        editor.update(() => clearFormatting(editor), {discrete: true});
+        editor.read(() => {
+          const paragraph = $getFirstParagraph();
+          expect(paragraph.getFormatType()).toBe('');
+          expect(paragraph.getIndent()).toBe(0);
+          expect(paragraph.getTextContent()).toBe('Hello World Test');
+          const texts = paragraph.getAllTextNodes();
+          expect(texts).toHaveLength(1);
+          expect(texts[0].getFormat()).toBe(0);
+          expect(texts[0].getStyle()).toBe('');
+          const selection = $getSelection();
+          assert($isRangeSelection(selection));
+          expect(selection.format).toBe(0);
+          expect(selection.style).toBe('');
+        });
+      },
+    );
+  },
+);

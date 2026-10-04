@@ -34,6 +34,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
   createEditor,
   defineExtension,
   type LexicalEditor,
@@ -474,6 +475,33 @@ describe('playground TABLE markdown transformer', () => {
       ['| a |', '| --- |', '| C:\\\\new |'].join('\n'),
     );
     expect(cellTexts(editor)).toEqual([[['a']], [['C:\\new']]]);
+  });
+
+  it.each([
+    ['`<br>`', '<br>', true],
+    ['\\<br>', '<br>', false],
+    ['`a\\|b`', 'a|b', true],
+    ['`\\n`', '\\n', true],
+  ])('keeps %s in a cell literal', (body, text, isCode) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${body} |`].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [[text]]]);
+    editor.read(() => {
+      const cellText = $getRoot().getLastDescendant();
+      assert($isTextNode(cellText), 'The cell must end in text');
+      expect(cellText.hasFormat('code')).toBe(isCode);
+    });
+  });
+
+  it('escapes a literal <br> outside code spans and reads it back', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| `<br>` \\<br> a<br>b |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [['<br> <br> a\nb']]]);
+    expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(
+      ['| h |', '| --- |', '| `<br>` \\<br> a<br>b |'].join('\n'),
+    );
   });
 
   it('leaves a delimiter row with no table above it as text', () => {

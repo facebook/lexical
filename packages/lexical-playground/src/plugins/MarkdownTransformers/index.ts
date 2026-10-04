@@ -211,9 +211,12 @@ const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
  * marker (`\` or two spaces) in front of it, and `\<br>` reads back as an
  * escaped `<`.
  */
+// Stands in for a line break until the text `<br>`s in the cell are escaped.
+const LINE_BREAK_MARK = '\uE000';
+
 const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
   dependencies: [LineBreakNode],
-  export: node => ($isLineBreakNode(node) ? '<br>' : null),
+  export: node => ($isLineBreakNode(node) ? LINE_BREAK_MARK : null),
   regExp: /$^/,
   type: 'text-match',
 };
@@ -240,12 +243,13 @@ export const TABLE: ElementTransformer = {
           // A GFM cell can't contain a newline or an unescaped pipe: line
           // breaks and the blank line between paragraphs become `<br>`.
           rowOutput.push(
-            $convertToMarkdownString(
-              [TABLE_CELL_LINE_BREAK, ...PLAYGROUND_TRANSFORMERS],
-              cell,
+            escapeTableCellBreaks(
+              $convertToMarkdownString(
+                [TABLE_CELL_LINE_BREAK, ...PLAYGROUND_TRANSFORMERS],
+                cell,
+              ).trim(),
             )
-              .trim()
-              .replace(/\n\n?/g, '<br>')
+              .replace(/\n\n?|\uE000/g, '<br>')
               .replace(/\\?\|/g, '\\|'),
           );
           // The top-left cell of a table with both header kinds is ROW|COLUMN.
@@ -365,17 +369,93 @@ function getTableColumnsSize(table: TableNode) {
   return $isTableRowNode(row) ? row.getChildrenSize() : 0;
 }
 
+/**
+ * Splits Markdown into the parts outside code spans and the code spans
+ * themselves (odd indices), whose closing backtick run is exactly as long
+ * as the opening one. An unmatched run is ordinary text.
+ */
+function splitCodeSpans(text: string): string[] {
+  const parts: string[] = [];
+  let start = 0;
+  let i = 0;
+  while (i < text.length) {
+    if (text[i] === '\\') {
+      i += 2;
+      continue;
+    }
+    if (text[i] !== '`') {
+      i++;
+      continue;
+    }
+    let end = i;
+    while (text[end] === '`') {
+      end++;
+    }
+    const fence = text.slice(i, end);
+    let close = text.indexOf(fence, end);
+    while (close !== -1 && text[close + fence.length] === '`') {
+      let next = close;
+      while (text[next] === '`') {
+        next++;
+      }
+      close = text.indexOf(fence, next);
+    }
+    if (close === -1) {
+      i = end;
+      continue;
+    }
+    parts.push(text.slice(start, i), text.slice(i, close + fence.length));
+    start = i = close + fence.length;
+  }
+  parts.push(text.slice(start));
+  return parts;
+}
+
+/**
+ * A cell's Markdown with its line separators as newlines. `<br>` separates
+ * lines in a cell, and the literal `\n` this transformer used to write is
+ * still read, but neither inside a code span nor after a backslash escape
+ * (`\<br>`, `C:\\new`), where they are text. A pipe is escaped (`\|`)
+ * everywhere in a row, code spans included, so it is unescaped here.
+ */
+function decodeTableCell(text: string): string {
+  return splitCodeSpans(text)
+    .map((part, i) =>
+      i % 2 === 1
+        ? part.replace(/\\\|/g, '|')
+        : part.replace(/\\[\s\S]|\s*<br\s*\/?>\s*/gi, match =>
+            match === '\\|'
+              ? '|'
+              : match === '\\n'
+                ? '\n'
+                : match[0] === '\\'
+                  ? match
+                  : '\n',
+          ),
+    )
+    .join('');
+}
+
+/**
+ * Escapes the `<br>` that is text in a cell's Markdown (outside code
+ * spans), so that it doesn't read back as a line separator.
+ */
+function escapeTableCellBreaks(text: string): string {
+  return splitCodeSpans(text)
+    .map((part, i) =>
+      i % 2 === 1 ? part : part.replace(/<(br\s*\/?>)/gi, '\\<$1'),
+    )
+    .join('');
+}
+
 const $createTableCell = (textContent: string): TableCellNode => {
-  // `<br>` is the line separator inside a cell; the literal `\n` this
-  // transformer used to write is still read, but not out of an escaped
-  // backslash (`C:\\new`). GFM trims a cell's padding.
-  textContent = textContent
-    .trim()
-    .replace(/\s*<br\s*\/?>\s*|\\[\\n|]/gi, match =>
-      match === '\\|' ? '|' : match === '\\\\' ? match : '\n',
-    );
+  // GFM trims a cell's padding.
   const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
-  $convertFromMarkdownString(textContent, PLAYGROUND_TRANSFORMERS, cell);
+  $convertFromMarkdownString(
+    decodeTableCell(textContent.trim()),
+    PLAYGROUND_TRANSFORMERS,
+    cell,
+  );
   return cell;
 };
 

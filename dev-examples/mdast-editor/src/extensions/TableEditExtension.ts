@@ -63,7 +63,11 @@ function $alignSelectedColumns(table: TableNode, format: ElementFormatType) {
   const selection = $getSelection();
   const cells = $isTableSelection(selection)
     ? selection.getNodes().filter($isTableCellNode)
-    : [selection && $findCellNode(selection.anchor.getNode())];
+    : [
+        $isRangeSelection(selection)
+          ? $findCellNode(selection.anchor.getNode())
+          : null,
+      ];
   const columns = new Set<number>();
   for (const cell of cells) {
     if (cell) {

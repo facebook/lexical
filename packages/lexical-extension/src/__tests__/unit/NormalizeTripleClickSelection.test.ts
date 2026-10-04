@@ -19,6 +19,7 @@ import {
   defineExtension,
   type LexicalEditor,
   type ParagraphNode,
+  SKIP_DOM_SELECTION_TAG,
   type TextNode,
 } from 'lexical';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
@@ -222,10 +223,20 @@ describe('NormalizeTripleClickSelectionExtension', () => {
   });
 
   test('still trims the triple click after a selection change made by code', () => {
+    // The browser applied its selection, then code changed Lexical's selection
+    // without writing it to the DOM before the late selectionchange arrived
     using editor = setUpEditor();
+    const [p1, p2] = editor.getRootElement()!.children;
     mouseDown(editor, 3);
-    editor.update(() => $getRoot().selectEnd(), {discrete: true});
-    overselect(editor);
+    document
+      .getSelection()!
+      .setBaseAndExtent(p1.firstChild!.firstChild!, 0, p2, 0);
+    editor.update(() => $getRoot().selectEnd(), {
+      discrete: true,
+      tag: SKIP_DOM_SELECTION_TAG,
+    });
+    document.dispatchEvent(new Event('selectionchange'));
+    editor.read(() => {});
     expect(readFocus(editor)).toEqual(FIXED);
   });
 
@@ -278,6 +289,17 @@ describe('NormalizeTripleClickSelectionExtension', () => {
       .getSelection()!
       .setBaseAndExtent(p1.firstChild!.firstChild!, 0, p1, 1);
     rootElement.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+    overselectByCode(editor);
+    document.dispatchEvent(new Event('selectionchange'));
+    editor.read(() => {});
+    expect(readFocus(editor)).toEqual(OVERSELECTED);
+  });
+
+  test('does not trim a selection set by code while the button is held', () => {
+    // The fourth click's native selection was already reported, then code set
+    // its own selection before the mouseup and its DOM update was reported
+    using editor = setUpEditor();
+    mouseDown(editor, 4);
     overselectByCode(editor);
     document.dispatchEvent(new Event('selectionchange'));
     editor.read(() => {});

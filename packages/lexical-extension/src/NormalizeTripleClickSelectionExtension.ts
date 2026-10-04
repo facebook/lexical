@@ -220,52 +220,53 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
         // The arm has no time limit, so a triple click that changed nothing
         // stays armed. A selection change still only gets trimmed when it
         // matches the DOM selection, i.e. it came from the browser rather
-        // than from code (undo, collab, a toolbar in a parent frame), whose
-        // new selection is not in the DOM yet. Such a change leaves it armed,
-        // since on a busy machine it can land before the browser's late
-        // selectionchange for the triple click itself.
+        // than from code (undo, collab, a third-click handler), whose new
+        // selection is not in the DOM yet when the change is reported.
         //
-        // Matching the DOM doesn't prove the browser made the selection,
-        // because a selection set by code reaches the DOM too, and that
-        // reconciliation can be reported as a selection change. So the arm is
-        // also dropped without a trim when the triple click's mousedown was
-        // cancelled (the browser made no selection), and after the mouseup,
-        // by which time the browser has applied its selection, when the DOM no
-        // longer holds the selection it had at the mouseup.
+        // Once a selection set by code has been written to the DOM, the
+        // browser's selection is gone, and the selectionchange reporting that
+        // write would match the DOM too. So the arm is dropped without a trim
+        // when the commit of such a selection changes the DOM selection (unless
+        // that happened while the mousedown was still being dispatched, since
+        // its default action then replaces it with the browser's selection),
+        // and when the triple click's mousedown was cancelled, since the
+        // browser then makes no selection at all.
         let armingEvent: MouseEvent | null = null;
-        let nativePoints: null | DOMSelectionBoundaryPoints = null;
-        const getDOMSelectionNow = () =>
-          getDOMSelection(rootElement.ownerDocument.defaultView);
-        const readNativePoints = (): null | DOMSelectionBoundaryPoints => {
-          const domSelection = getDOMSelectionNow();
+        // The DOM selection when a selection set by code was reported, until
+        // that update is committed
+        let domPointsBeforeCode: null | DOMSelectionBoundaryPoints = null;
+        const disarm = () => {
+          armingEvent = null;
+          domPointsBeforeCode = null;
+        };
+        const readDOMPoints = (): DOMSelectionBoundaryPoints => {
+          const domSelection = getDOMSelection(
+            rootElement.ownerDocument.defaultView,
+          );
           if (domSelection === null) {
-            return null;
+            return {
+              anchorNode: null,
+              anchorOffset: 0,
+              focusNode: null,
+              focusOffset: 0,
+            };
           }
           const {anchorNode, anchorOffset, focusNode, focusOffset} =
             getDOMSelectionPoints(domSelection, rootElement);
           return {anchorNode, anchorOffset, focusNode, focusOffset};
         };
-        const isNativeSelection = () => {
-          if (nativePoints === null) {
-            return true;
-          }
-          const points = readNativePoints();
-          return (
-            points !== null &&
-            points.anchorNode === nativePoints.anchorNode &&
-            points.anchorOffset === nativePoints.anchorOffset &&
-            points.focusNode === nativePoints.focusNode &&
-            points.focusOffset === nativePoints.focusOffset
-          );
-        };
-        const disarm = () => {
-          armingEvent = null;
-          nativePoints = null;
-        };
+        const isSameDOMPoints = (
+          a: DOMSelectionBoundaryPoints,
+          b: DOMSelectionBoundaryPoints,
+        ) =>
+          a.anchorNode === b.anchorNode &&
+          a.anchorOffset === b.anchorOffset &&
+          a.focusNode === b.focusNode &&
+          a.focusOffset === b.focusOffset;
         const $isDOMSelection = () => {
           const selection = $getSelection();
           const fromDOM = $createRangeSelectionFromDom(
-            getDOMSelectionNow(),
+            getDOMSelection(rootElement.ownerDocument.defaultView),
             editor,
           );
           return (
@@ -287,16 +288,28 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
               if (armingEvent.defaultPrevented) {
                 disarm();
               } else if ($isDOMSelection()) {
-                const isNative = isNativeSelection();
                 disarm();
-                if (isNative) {
-                  stores.$fixFocusOverselection.peek()();
-                }
+                stores.$fixFocusOverselection.peek()();
+              } else if (domPointsBeforeCode === null) {
+                domPointsBeforeCode = readDOMPoints();
               }
               return false;
             },
             COMMAND_PRIORITY_BEFORE_CRITICAL,
           ),
+          editor.registerUpdateListener(() => {
+            if (armingEvent === null || domPointsBeforeCode === null) {
+              return;
+            }
+            if (
+              armingEvent.eventPhase === Event.NONE &&
+              !isSameDOMPoints(domPointsBeforeCode, readDOMPoints())
+            ) {
+              disarm();
+            } else {
+              domPointsBeforeCode = null;
+            }
+          }),
           registerEventListeners(
             rootElement.ownerDocument,
             {
@@ -314,11 +327,6 @@ export const NormalizeTripleClickSelectionExtension = defineExtension({
                   event.composedPath().includes(rootElement)
                 ) {
                   armingEvent = event;
-                }
-              },
-              mouseup: () => {
-                if (armingEvent !== null && !armingEvent.defaultPrevented) {
-                  nativePoints = readNativePoints();
                 }
               },
               // Not cancelled by preventDefault, unlike mousedown, and always

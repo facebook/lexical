@@ -13,7 +13,7 @@ import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $copyNode,
   $createParagraphNode,
-  $getChildCaret,
+  $getChildCaretAtIndex,
   $getSelection,
   $getSlotHost,
   $isElementNode,
@@ -340,22 +340,24 @@ export function $removeList(): void {
         insertionPoint.insertAfter(paragraph);
         insertionPoint = paragraph;
 
-        // When the anchor and focus fall on the textNode
-        // we don't have to change the selection because the textNode will be appended to
-        // the newly generated paragraph.
-        // When selection is in empty nested list item, selection is actually on the listItemNode.
-        // When the corresponding listItemNode is deleted and replaced by the newly generated paragraph
-        // we should manually set the selection's focus and anchor to the newly generated paragraph.
+        // Points in the item's children move with them. A point on the item
+        // itself (an empty item, or a caret beside an inline decorator) moves
+        // to the same offset in the paragraph, which holds the same children
+        // in the same order.
         if (listItemNode.__key === selection.anchor.key) {
           $setPointFromCaret(
             selection.anchor,
-            $normalizeCaret($getChildCaret(paragraph, 'next')),
+            $normalizeCaret(
+              $getChildCaretAtIndex(paragraph, selection.anchor.offset, 'next'),
+            ),
           );
         }
         if (listItemNode.__key === selection.focus.key) {
           $setPointFromCaret(
             selection.focus,
-            $normalizeCaret($getChildCaret(paragraph, 'next')),
+            $normalizeCaret(
+              $getChildCaretAtIndex(paragraph, selection.focus.offset, 'next'),
+            ),
           );
         }
 

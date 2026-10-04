@@ -56,6 +56,7 @@ export {
   $getAdjacentSiblingOrParentSiblingCaret,
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,
+  $getTextPointCaretSliceForNode,
   $insertNodeToNearestRootAtCaret,
   $isBlockFullySelected,
   $isExtendableTextPointCaret,
@@ -65,6 +66,7 @@ export {
   $setPointFromCaret,
   $setSelectionFromCaretRange,
   $splitAtPointCaretNext,
+  $splitTextPointCaretSlice,
   $updateRangeSelectionFromCaretRange,
   type SplitAtPointCaretNextOptions,
 } from './caret/LexicalCaretUtils';

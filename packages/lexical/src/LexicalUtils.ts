@@ -34,6 +34,7 @@ import {
   normalizeClassNames,
   type UpdateTag,
 } from '.';
+import {$detachNode} from './caret/LexicalCaretTree';
 import {
   CAN_USE_DOM,
   IS_APPLE,
@@ -542,53 +543,7 @@ export function $markSlotsUsed(): void {
  * Please do not use it as it may change in the future.
  */
 export function $removeFromParent(node: LexicalNode): void {
-  invariant(
-    $getSlotHostKey(node) === null,
-    '$removeFromParent: node %s is slotted into host %s; a slotted node and a child are mutually exclusive. Remove it from its slot first.',
-    node.__key,
-    String($getSlotHostKey(node)),
-  );
-  const oldParent = node.getParent();
-  if (oldParent !== null) {
-    const writableNode = node.getWritable();
-    const writableParent = oldParent.getWritable();
-    const prevSibling = node.getPreviousSibling();
-    const nextSibling = node.getNextSibling();
-
-    // Store sibling keys
-    const nextSiblingKey = nextSibling !== null ? nextSibling.__key : null;
-    const prevSiblingKey = prevSibling !== null ? prevSibling.__key : null;
-
-    // Get writable siblings once
-    const writablePrevSibling =
-      prevSibling !== null ? prevSibling.getWritable() : null;
-    const writableNextSibling =
-      nextSibling !== null ? nextSibling.getWritable() : null;
-
-    // Update parent's first/last pointers
-    if (prevSibling === null) {
-      writableParent.__first = nextSiblingKey;
-    }
-    if (nextSibling === null) {
-      writableParent.__last = prevSiblingKey;
-    }
-
-    // Update sibling links
-    if (writablePrevSibling !== null) {
-      writablePrevSibling.__next = nextSiblingKey;
-    }
-    if (writableNextSibling !== null) {
-      writableNextSibling.__prev = prevSiblingKey;
-    }
-
-    // Clear node's links
-    writableNode.__prev = null;
-    writableNode.__next = null;
-    writableNode.__parent = null;
-
-    // Update parent size
-    writableParent.__size--;
-  }
+  $detachNode(node.getParent() === null ? node : node.getWritable());
 }
 /** @deprecated renamed to {@link $removeFromParent} by @lexical/eslint-plugin rules-of-lexical */
 export const removeFromParent = $removeFromParent;
@@ -941,7 +896,23 @@ export function getEditorsToPropagate(editor: LexicalEditor): LexicalEditor[] {
   return editorsToPropagate;
 }
 
+let serverUIDCounter = 0;
+
+/**
+ * Generates the identifiers `createEditor` uses for an editor's key and its
+ * default namespace.
+ *
+ * In a browser they are random, because both are compared across windows: a
+ * drag marker carries the source editor's key, and a clipboard payload carries
+ * its namespace. Without a DOM (server rendering) a counter is used instead,
+ * which is unique within the process: neither value is serialized into
+ * rendered markup, and frameworks such as Next.js fail a prerender that reads
+ * `Math.random()` (#9318).
+ */
 export function createUID(): string {
+  if (!CAN_USE_DOM) {
+    return `s${(++serverUIDCounter).toString(36)}`;
+  }
   return Math.random()
     .toString(36)
     .replace(/[^a-z]+/g, '')
@@ -5194,6 +5165,15 @@ function injectSynthesizedStatics(
       if (importDOM) {
         klass.importDOM = () => importDOM;
       }
+    }
+    // Inject a delegated getTextContentSize if only getTextContent is overridden
+    const proto = klass.prototype;
+    if (
+      hasOwnKey(proto, 'getTextContent') &&
+      !hasOwnKey(proto, 'getTextContentSize')
+    ) {
+      klass.prototype.getTextContentSize =
+        LexicalNode.prototype.getTextContentSize;
     }
   }
 }

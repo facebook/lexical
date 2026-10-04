@@ -98,8 +98,7 @@ async function initializePlayground({
   hasNestedTables,
   hasFitNestedTables,
   shouldDisableFocusOnClickChecklist,
-  showNestedEditorTreeView = false,
-  showTreeView = false,
+  showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
   shouldUseLexicalContextMenu,
@@ -118,8 +117,9 @@ async function initializePlayground({
     appSettings.useCollabV2 = isCollab === 2;
     appSettings.collabId = randomUUID();
   }
-  appSettings.showNestedEditorTreeView = showNestedEditorTreeView;
-  appSettings.showTreeView = showTreeView;
+  if (showNestedEditorTreeView === undefined) {
+    appSettings.showNestedEditorTreeView = true;
+  }
   appSettings.isAutocomplete = !!isAutocomplete;
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
@@ -315,39 +315,31 @@ async function exposeLexicalEditor(page, pageError = null) {
     );
   }
   const leftFrame = getPageOrFrame(page);
-  await Promise.race([
-    leftFrame.waitForFunction(() => {
-      // querySelector does not pierce shadow roots, so descend into any open
-      // shadow trees to support the "Render in Shadow DOM" playground setting.
-      const findEditorElement = root => {
-        const found = root.querySelector('[data-lexical-editor="true"]');
-        if (found !== null) {
-          return found;
-        }
-        for (const element of root.querySelectorAll('*')) {
-          if (element.shadowRoot !== null) {
-            const inner = findEditorElement(element.shadowRoot);
-            if (inner !== null) {
-              return inner;
-            }
+  await Promise.race(
+    [leftFrame.waitForSelector('.tree-view-output pre'), pageError].filter(
+      Boolean,
+    ),
+  );
+  await leftFrame.evaluate(() => {
+    // querySelector does not pierce shadow roots, so descend into any open
+    // shadow trees to support the "Render in Shadow DOM" playground setting.
+    const findEditorElement = root => {
+      const found = root.querySelector('[data-lexical-editor="true"]');
+      if (found !== null) {
+        return found;
+      }
+      for (const element of root.querySelectorAll('*')) {
+        if (element.shadowRoot !== null) {
+          const inner = findEditorElement(element.shadowRoot);
+          if (inner !== null) {
+            return inner;
           }
         }
-        return null;
-      };
-      const element = findEditorElement(document);
-      const editor = element?.__lexicalEditor;
-      if (
-        !editor ||
-        editor.getRootElement() !== element ||
-        editor.getEditorState().isEmpty()
-      ) {
-        return false;
       }
-      window.lexicalEditor = editor;
-      return true;
-    }),
-    ...(pageError ? [pageError] : []),
-  ]);
+      return null;
+    };
+    window.lexicalEditor = findEditorElement(document).__lexicalEditor;
+  });
 }
 
 export const test = base.extend({

@@ -16,9 +16,7 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('Focus', () => {
-  test.beforeEach(({isCollab, page}) =>
-    initialize({isCollab, page, showTreeView: true}),
-  );
+  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test.describe(() => {
     test.skip(
       ({browserName, isRichText}) => isRichText || browserName === 'webkit',

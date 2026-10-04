@@ -52,6 +52,26 @@ function setup() {
 
 const cases = [
   {
+    html: '<h3 dir="auto"><br data-lexical-managed-linebreak="true" /></h3>',
+    text: '### ',
+  },
+  {
+    html: '<h4 dir="auto"><br data-lexical-managed-linebreak="true" /></h4>',
+    text: '#### ',
+  },
+  {
+    html: '<h5 dir="auto"><br data-lexical-managed-linebreak="true" /></h5>',
+    text: '##### ',
+  },
+  {
+    html: '<h6 dir="auto"><br data-lexical-managed-linebreak="true" /></h6>',
+    text: '###### ',
+  },
+  {
+    html: '<blockquote dir="auto"><br data-lexical-managed-linebreak="true" /></blockquote>',
+    text: '> ',
+  },
+  {
     html: `
         <h1 dir="auto"><br data-lexical-managed-linebreak="true" /></h1>
       `,
@@ -181,7 +201,9 @@ describe('native Markdown block shortcuts', () => {
     await expect
       .poll(() => root.innerHTML)
       .toBe(
-        '<p dir="auto"><span data-lexical-text="true">' + text + '</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">' +
+          text.replaceAll('>', '&gt;') +
+          '</span></p>',
       );
     await userEvent.keyboard(
       IS_APPLE ? '{Meta>}{Shift>}z{/Shift}{/Meta}' : '{Control>}y{/Control}',

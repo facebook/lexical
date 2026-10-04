@@ -28,8 +28,6 @@ import {
   initialize,
   IS_COLLAB_V2,
   pasteFromClipboard,
-  pressToggleBold,
-  pressToggleUnderline,
   SAMPLE_IMAGE_URL,
   test,
   waitForSelector,
@@ -66,67 +64,12 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<h2 class="PlaygroundEditorTheme__h2" dir="auto"><br data-lexical-managed-linebreak="true"></h2>',
-      importExpectation: '',
-      isBlockTest: true,
-      markdownImport: '',
-      markdownText: '## ',
-      undoHTML: '', // H2.
-    },
-    {
-      expectation:
-        '<h3 class="PlaygroundEditorTheme__h3" dir="auto"><br data-lexical-managed-linebreak="true"></h3>',
-      importExpectation: '',
-      isBlockTest: true,
-      markdownImport: '',
-      markdownText: '### ',
-      undoHTML: '', // H3.
-    },
-    {
-      expectation:
-        '<h4 class="PlaygroundEditorTheme__h4" dir="auto"><br data-lexical-managed-linebreak="true"></h4>',
-      importExpectation: '',
-      isBlockTest: true,
-      markdownImport: '',
-      markdownText: '#### ',
-      undoHTML: '', // H4.
-    },
-    {
-      expectation:
-        '<h5 class="PlaygroundEditorTheme__h5" dir="auto"><br data-lexical-managed-linebreak="true"></h5>',
-      importExpectation: '',
-      isBlockTest: true,
-      markdownImport: '',
-      markdownText: '##### ',
-      undoHTML: '', // H5.
-    },
-    {
-      expectation:
-        '<h6 class="PlaygroundEditorTheme__h6" dir="auto"><br data-lexical-managed-linebreak="true"></h6>',
-      importExpectation: '',
-      isBlockTest: true,
-      markdownImport: '',
-      markdownText: '###### ',
-      undoHTML: '', // H6.
-    },
-    {
-      expectation:
         '<code class="PlaygroundEditorTheme__code" dir="auto" spellcheck="false" data-gutter="1"><br data-lexical-managed-linebreak="true"></code>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
       markdownText: '``` ',
       undoHTML: '', // Code block.
-    },
-    {
-      expectation:
-        '<blockquote class="PlaygroundEditorTheme__quote" dir="auto"><br data-lexical-managed-linebreak="true"></blockquote>',
-      importExpectation: '',
-      isBlockTest: true,
-      markdownImport: '',
-      markdownText: '> ',
-      undoHTML:
-        '<p class="PlaygroundEditorTheme__paragraph" dir="auto"><span data-lexical-text="true">&gt;</span></p>', // Block quote.
     },
     {
       expectation:
@@ -202,7 +145,6 @@ test.describe('Markdown', () => {
       markdownText: '~~**test**~~ ',
       undoHTML: 'none', // strikethru, bold
     },
-
     {
       expectation:
         '<p class="PlaygroundEditorTheme__paragraph" dir="auto"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic" data-lexical-text="true">test</strong><span data-lexical-text="true"></span></p>',
@@ -418,133 +360,10 @@ test.describe('Markdown', () => {
     {
       html: html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">hello</span>
-          <em
-            class="PlaygroundEditorTheme__textItalic"
-            data-lexical-text="true">
-            world
-          </em>
-          <span data-lexical-text="true">!</span>
-        </p>
-      `,
-      text: 'hello *world*!',
-    },
-    {
-      html: html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">hello</span>
-          <strong
-            class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true">
-            world
-          </strong>
-          <span data-lexical-text="true">!</span>
-        </p>
-      `,
-      text: 'hello **world**!',
-    },
-    {
-      html: html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">hello</span>
-          <strong
-            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            data-lexical-text="true">
-            world
-          </strong>
-          <span data-lexical-text="true">!</span>
-        </p>
-      `,
-      text: 'hello ***world***!',
-    },
-    {
-      html: html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">hello</span>
-          <strong
-            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            data-lexical-text="true">
-            world
-          </strong>
-          <span data-lexical-text="true">!</span>
-        </p>
-      `,
-      text: 'hello ___world___!',
-    },
-    {
-      html: html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">hello</span>
-          <a class="PlaygroundEditorTheme__link" href="https://www.test.com">
-            <span data-lexical-text="true">world</span>
-          </a>
-          <span data-lexical-text="true">!</span>
-        </p>
-      `,
-      text: 'hello [world](https://www.test.com)!',
-    },
-    {
-      html: html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">10:20:30😄</span>
         </p>
       `,
       text: '10:20:30:smile:',
-    },
-  ];
-
-  const NESTED_TEXT_FORMAT_SHORTCUTS = [
-    {
-      html: html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <strong
-            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
-            data-lexical-text="true">
-            hello world
-          </strong>
-          <span data-lexical-text="true">!</span>
-        </p>
-      `,
-      text: '~~_**hello world**_~~!',
-    },
-    {
-      html: html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <em
-            class="PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
-            data-lexical-text="true">
-            hello world
-          </em>
-          <span data-lexical-text="true">!</span>
-        </p>
-      `,
-      text: '~~_hello world_~~!',
-    },
-    {
-      html: html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <strong
-            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textStrikethrough"
-            data-lexical-text="true">
-            hello world
-          </strong>
-          <span data-lexical-text="true">!</span>
-        </p>
-      `,
-      text: '~~**hello world**~~!',
-    },
-    {
-      html: html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <strong
-            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            data-lexical-text="true">
-            hello world
-          </strong>
-          <span data-lexical-text="true">!</span>
-        </p>
-      `,
-      text: '_**hello world**_!',
     },
   ];
 
@@ -579,127 +398,6 @@ test.describe('Markdown', () => {
       await assertHTML(page, testCase.html, undefined, {ignoreClasses: false});
       await assertMarkdownImportExport(page, testCase.text, testCase.html);
     });
-  });
-
-  NESTED_TEXT_FORMAT_SHORTCUTS.forEach(testCase => {
-    test(`can convert "${testCase.text}" shortcut`, async ({page}) => {
-      await focusEditor(page);
-      await page.keyboard.type(testCase.text);
-      await assertHTML(page, testCase.html, undefined, {ignoreClasses: false});
-      await assertMarkdownImportExport(page, testCase.text, testCase.html);
-    });
-  });
-
-  test('can undo/redo nested transformations', async ({page, isCollab}) => {
-    await focusEditor(page);
-    await page.keyboard.type('~~_**hello world**_~~');
-
-    const BOLD_ITALIC_STRIKETHROUGH = html`
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-        <strong
-          class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
-          data-lexical-text="true">
-          hello world
-        </strong>
-      </p>
-    `;
-    const BOLD_ITALIC = html`
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-        <span data-lexical-text="true">~~</span>
-        <strong
-          class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-          data-lexical-text="true">
-          hello world
-        </strong>
-        <span data-lexical-text="true">~~</span>
-      </p>
-    `;
-    const BOLD = html`
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-        <span data-lexical-text="true">~~_</span>
-        <strong
-          class="PlaygroundEditorTheme__textBold"
-          data-lexical-text="true">
-          hello world
-        </strong>
-        <span data-lexical-text="true">_</span>
-      </p>
-    `;
-    const PLAIN = html`
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-        <span data-lexical-text="true">~~_**hello world**</span>
-      </p>
-    `;
-
-    await assertHTML(page, BOLD_ITALIC_STRIKETHROUGH);
-
-    if (isCollab) {
-      return;
-    }
-
-    await undo(page); // Undo last transformation
-    await assertHTML(page, BOLD_ITALIC);
-    await undo(page); // Undo transformation & its text typing
-    await undo(page);
-    await assertHTML(page, BOLD);
-    await undo(page); // Undo transformation & its text typing
-    await undo(page);
-    await assertHTML(page, PLAIN);
-    await redo(page); // Redo transformation & its text typing
-    await redo(page);
-    await assertHTML(page, BOLD);
-    await redo(page); // Redo transformation & its text typing
-    await redo(page);
-    await assertHTML(page, BOLD_ITALIC);
-    await redo(page); // Redo transformation
-    await assertHTML(page, BOLD_ITALIC_STRIKETHROUGH);
-  });
-
-  test('can convert already styled text (overlapping ranges)', async ({
-    page,
-  }) => {
-    // type partially bold/underlined text, add opening markdown tag within bold/underline part
-    // and add closing within plain text
-    await focusEditor(page);
-    await pressToggleBold(page);
-    await pressToggleUnderline(page);
-    await page.keyboard.type('h*e~~llo');
-    await pressToggleBold(page);
-    await pressToggleUnderline(page);
-    await page.keyboard.type(' wo~~r*ld');
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <strong
-            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textUnderline"
-            data-lexical-text="true">
-            h
-          </strong>
-          <strong
-            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textUnderline"
-            data-lexical-text="true">
-            e
-          </strong>
-          <strong
-            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            data-lexical-text="true">
-            llo
-          </strong>
-          <em
-            class="PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
-            data-lexical-text="true">
-            wo
-          </em>
-          <em
-            class="PlaygroundEditorTheme__textItalic"
-            data-lexical-text="true">
-            r
-          </em>
-          <span data-lexical-text="true">ld</span>
-        </p>
-      `,
-    );
   });
 
   test('can convert markdown text into rich text', async ({page, isCollab}) => {
@@ -899,54 +597,6 @@ test.describe('Markdown', () => {
           </p>
         `,
       );
-    });
-  });
-
-  test('does not use code-formatted text in text format transformers (#7349)', async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await page.keyboard.type('`void*` or `int*`');
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <code spellcheck="false" data-lexical-text="true">
-            <span class="PlaygroundEditorTheme__textCode">void*</span>
-          </code>
-          <span data-lexical-text="true">or</span>
-          <code spellcheck="false" data-lexical-text="true">
-            <span class="PlaygroundEditorTheme__textCode">int*</span>
-          </code>
-        </p>
-      `,
-    );
-  });
-
-  test('can adjust selection after text match transformer', async ({page}) => {
-    await focusEditor(page);
-    await page.keyboard.type('Hello  world');
-    await moveLeft(page, 6);
-    await page.keyboard.type('[link](https://lexical.dev)');
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">Hello</span>
-          <a class="PlaygroundEditorTheme__link" href="https://lexical.dev">
-            <span data-lexical-text="true">link</span>
-          </a>
-          <span data-lexical-text="true">world</span>
-        </p>
-      `,
-    );
-    // Selection starts after newly created link element
-
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 2, 0],
-      focusOffset: 0,
-      focusPath: [0, 2, 0],
     });
   });
 

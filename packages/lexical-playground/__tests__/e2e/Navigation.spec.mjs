@@ -26,17 +26,19 @@ import {
   test,
 } from '../utils/index.mjs';
 
-async function typeParagraphs(page) {
+// Navigation cases need the document, not per-character setup events.
+// The typing smoke test opts into key events explicitly.
+async function setupParagraphs(page, inputMethod = 'insertText') {
   await focusEditor(page);
-  await page.keyboard.type(
+  await page.keyboard[inputMethod](
     'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
   );
   await page.keyboard.press('Enter');
-  await page.keyboard.type(
+  await page.keyboard[inputMethod](
     'It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. ',
   );
   await page.keyboard.press('Enter');
-  await page.keyboard.type(
+  await page.keyboard[inputMethod](
     'It was popularised in the 1960s with the release of Letraset sheets containing lorem ipsum passages.',
   );
 }
@@ -45,7 +47,7 @@ test.describe('Keyboard Navigation', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test('can type several paragraphs', async ({isRichText, page}) => {
-    await typeParagraphs(page);
+    await setupParagraphs(page, 'type');
     if (isRichText) {
       await assertSelection(page, {
         anchorOffset: 100,
@@ -67,7 +69,7 @@ test.describe('Keyboard Navigation', () => {
     isRichText,
     page,
   }) => {
-    await typeParagraphs(page);
+    await setupParagraphs(page);
     await moveToLineBeginning(page);
     if (isRichText) {
       await assertSelection(page, {
@@ -103,7 +105,7 @@ test.describe('Keyboard Navigation', () => {
   });
 
   test('can move to the top of the editor', async ({page}) => {
-    await typeParagraphs(page);
+    await setupParagraphs(page);
     await moveToEditorBeginning(page);
     await assertSelection(page, {
       anchorOffset: 0,
@@ -114,7 +116,7 @@ test.describe('Keyboard Navigation', () => {
   });
 
   test('can move one word to the right', async ({page, browserName}) => {
-    await typeParagraphs(page);
+    await setupParagraphs(page);
     await moveToEditorBeginning(page);
     await moveToNextWord(page);
     if (browserName === 'firefox') {
@@ -155,7 +157,7 @@ test.describe('Keyboard Navigation', () => {
     page,
     browserName,
   }) => {
-    await typeParagraphs(page);
+    await setupParagraphs(page);
     await moveToPrevWord(page);
     // Chrome stops words on punctuation, so we need to trigger
     // the left arrow key one more time.
@@ -196,7 +198,7 @@ test.describe('Keyboard Navigation', () => {
   });
 
   test('can move to the bottom of the editor', async ({isRichText, page}) => {
-    await typeParagraphs(page);
+    await setupParagraphs(page);
     await moveToEditorBeginning(page);
     await moveToEditorEnd(page);
     if (isRichText) {
@@ -220,7 +222,7 @@ test.describe('Keyboard Navigation', () => {
     isRichText,
     page,
   }) => {
-    await typeParagraphs(page);
+    await setupParagraphs(page);
     await moveToParagraphBeginning(page);
     if (isRichText) {
       await assertSelection(page, {
@@ -242,7 +244,7 @@ test.describe('Keyboard Navigation', () => {
   test('can move to the top of the editor, then to the bottom of the current paragraph', async ({
     page,
   }) => {
-    await typeParagraphs(page);
+    await setupParagraphs(page);
     await moveToEditorBeginning(page);
     await moveToParagraphEnd(page);
     await assertSelection(page, {

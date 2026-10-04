@@ -302,6 +302,11 @@ export interface InputState {
     focusOffset: number;
   };
   isSelectionChangeFromMouseDown: boolean;
+  /**
+   * iOS only: the pointerType of the latest pointerdown, so the compatibility
+   * mousedown that follows can tell a tap from an iPadOS trackpad or mouse.
+   */
+  lastPointerType: string;
   isInsertLineBreak: boolean;
   /** Explicit Shift state, excluding iOS automatic capitalization. */
   isShiftKeyDown: boolean;
@@ -333,6 +338,7 @@ export function createInputState(): InputState {
     lastBeforeInputInsertTextTimeStamp: 0,
     lastKeyCode: null,
     lastKeyDownTimeStamp: 0,
+    lastPointerType: '',
     postDeleteSelectionToRestore: null,
     selectionChangeFromDOMUpdatePoints: null,
     unprocessedBeforeInputData: null,

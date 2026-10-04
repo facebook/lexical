@@ -641,10 +641,6 @@ const FOCUSABLE_SELECTOR =
   'input,textarea,select,button,a[href],label,[tabindex],' +
   '[contenteditable]:not([contenteditable="false"])';
 
-// The pointerType of the latest pointerdown on iOS, so the mousedown that
-// follows can tell a tap from an iPad trackpad or mouse press.
-let lastPointerTypeIOS = '';
-
 // iOS only. A tap on a decorator (an image, say) would focus the editor, and
 // iOS answers that focus by opening the keyboard and scrolling to reveal the
 // caret. A decorator is selected with a NodeSelection, which leaves no DOM
@@ -657,7 +653,7 @@ let lastPointerTypeIOS = '';
 function onMouseDownIOS(event: Event, editor: LexicalEditor): void {
   const target = getComposedEventTarget(event);
   if (
-    lastPointerTypeIOS === 'mouse' ||
+    editor._inputState.lastPointerType === 'mouse' ||
     !isHTMLElement(target) ||
     !isDOMCapturingSelection(target, editor)
   ) {
@@ -680,7 +676,7 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
   const target = getComposedEventTarget(event);
   const pointerType = event.pointerType;
   if (IS_IOS) {
-    lastPointerTypeIOS = pointerType;
+    editor._inputState.lastPointerType = pointerType;
   }
   if (
     isDOMNode(target) &&

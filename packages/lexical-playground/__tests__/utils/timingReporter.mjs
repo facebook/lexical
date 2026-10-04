@@ -6,6 +6,8 @@
  *
  */
 
+/* eslint-disable no-console -- This reporter intentionally writes test timings to CI logs. */
+
 // Keep timings in successful CI logs too, so the longest matrix job can be
 // optimized without relying on failure-only traces or artifacts.
 export default class TimingReporter {
@@ -40,29 +42,27 @@ export default class TimingReporter {
   }
 
   onEnd(result) {
-    const lines = [];
     const seconds = ms => `${(ms / 1000).toFixed(1)}s`;
     const total = values => values.reduce((sum, value) => sum + value, 0);
-    lines.push(`\nE2E timings: ${seconds(result.duration)} elapsed`);
-    lines.push(
+    console.log(`\nE2E timings: ${seconds(result.duration)} elapsed`);
+    console.log(
       `Playground initialization: ${this.initialization.length} calls, ${seconds(total(this.initialization))} summed across workers`,
     );
-    lines.push('Slowest test attempts (including setup and teardown):');
+    console.log('Slowest test attempts (including setup and teardown):');
     for (const test of this.tests
       .sort((a, b) => b.duration - a.duration)
       .slice(0, 20)) {
-      lines.push(`  ${seconds(test.duration)} ${test.title}`);
+      console.log(`  ${seconds(test.duration)} ${test.title}`);
     }
     // API times may overlap with initialization and parallel calls. These are
     // attribution totals, not an additive breakdown of elapsed wall time.
-    lines.push('Slowest Playwright methods (summed calls, may overlap):');
+    console.log('Slowest Playwright methods (summed calls, may overlap):');
     for (const [name, value] of [...this.api]
       .sort((a, b) => b[1].duration - a[1].duration)
       .slice(0, 15)) {
-      lines.push(
+      console.log(
         `  ${seconds(value.duration)} / ${value.count} calls: ${name}`,
       );
     }
-    process.stdout.write(lines.join('\n') + '\n');
   }
 }

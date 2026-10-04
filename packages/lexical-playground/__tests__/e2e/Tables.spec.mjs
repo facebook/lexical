@@ -1207,7 +1207,7 @@ test.describe('Tables', () => {
       false,
     );
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
 
       // For some reason you need to click the paragraph twice for this to pass
@@ -1216,7 +1216,7 @@ test.describe('Tables', () => {
       await click(page, 'div.ContentEditable__root > p:first-of-type');
 
       await pasteFromClipboard(page, clipboard);
-    });
+    }
 
     // Check that the character styles are applied.
     await assertHTML(
@@ -5527,7 +5527,7 @@ test.describe('Tables', () => {
     await page.keyboard.type('Hello');
     await selectCharacters(page, 'left', 'Hello'.length);
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
 
       // move caret to the first position of the editor
@@ -5552,7 +5552,7 @@ test.describe('Tables', () => {
       await page.keyboard.press('Enter');
 
       await pasteFromClipboard(page, clipboard);
-    });
+    }
 
     await assertHTML(
       page,
@@ -7072,7 +7072,7 @@ test.describe('Tables', () => {
     await insertTable(page, 2, 2);
     await page.keyboard.type('test');
     await selectAll(page);
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
       await page.keyboard.press('Backspace');
       await moveToEditorBeginning(page);
@@ -7081,7 +7081,7 @@ test.describe('Tables', () => {
       await insertTable(page, 2, 2);
       await click(page, '.PlaygroundEditorTheme__tableCell:first-child');
       await pasteFromClipboard(page, clipboard);
-    });
+    }
 
     // Verify that no content was pasted into the cell
     await assertHTML(
@@ -7128,7 +7128,7 @@ test.describe('Tables', () => {
     await insertTable(page, 2, 2);
     await page.keyboard.type('test inner table');
     await selectAll(page);
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
       await page.keyboard.press('Backspace');
       await moveToEditorBeginning(page);
@@ -7137,7 +7137,7 @@ test.describe('Tables', () => {
       await insertTable(page, 2, 2);
       await click(page, '.PlaygroundEditorTheme__tableCell:first-child');
       await pasteFromClipboard(page, clipboard);
-    });
+    }
 
     // Verify that a nested table was pasted into the cell
     await assertHTML(
@@ -7225,7 +7225,7 @@ test.describe('Tables', () => {
       await page.keyboard.type('test inner table');
 
       await selectAll(page);
-      await withExclusiveClipboardAccess(async () => {
+      {
         const clipboard = await copyToClipboard(page);
         await page.keyboard.press('Backspace');
         await moveToEditorBeginning(page);
@@ -7240,7 +7240,7 @@ test.describe('Tables', () => {
         );
 
         await pasteFromClipboard(page, clipboard);
-      });
+      }
 
       // Verify that a nested table was pasted into the cell
       await assertHTML(
@@ -8077,13 +8077,13 @@ test.describe('Tables', () => {
         false,
       );
 
-      await withExclusiveClipboardAccess(async () => {
+      {
         const clipboard = await copyToClipboard(page);
 
         await selectCellFromTableCoord(page, {x: 0, y: 2});
 
         await pasteFromClipboard(page, clipboard);
-      });
+      }
 
       await assertHTML(
         page,
@@ -8223,13 +8223,13 @@ test.describe('Tables', () => {
         false,
       );
 
-      await withExclusiveClipboardAccess(async () => {
+      {
         const clipboard = await copyToClipboard(page);
 
         await selectCellFromTableCoord(page, {x: 2, y: 1});
 
         await pasteFromClipboard(page, clipboard);
-      });
+      }
 
       await assertHTML(
         page,
@@ -8381,13 +8381,13 @@ test.describe('Tables', () => {
     // UndoManager capture window in collab.
     await advanceHistoryClock(page);
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
 
       await selectCellFromTableCoord(page, {x: 0, y: 2});
 
       await pasteFromClipboard(page, clipboard);
-    });
+    }
 
     await assertHTML(
       page,
@@ -8539,13 +8539,13 @@ test.describe('Tables', () => {
       false,
     );
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
 
       await selectCellFromTableCoord(page, {x: 0, y: 0});
 
       await pasteFromClipboard(page, clipboard);
-    });
+    }
 
     await assertHTML(
       page,

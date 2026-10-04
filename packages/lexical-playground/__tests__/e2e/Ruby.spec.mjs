@@ -25,7 +25,6 @@ import {
   pasteFromClipboard,
   sleep,
   test,
-  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 test.skip(
@@ -365,7 +364,7 @@ test.describe('Ruby', () => {
 
     await selectAll(page);
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
 
       // Collapse selection to end before Enter (webkit keeps selection
@@ -373,7 +372,7 @@ test.describe('Ruby', () => {
       await page.keyboard.press('ArrowRight');
       await page.keyboard.press('Enter');
       await pasteFromClipboard(page, clipboard);
-    });
+    }
 
     await sleep(100);
 

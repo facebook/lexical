@@ -478,7 +478,7 @@ export async function withExclusiveClipboardAccess(f) {
     retries: 5,
   });
   try {
-    return f();
+    return await f();
   } finally {
     await release();
   }
@@ -782,6 +782,7 @@ async function copyToClipboardPageOrFrame(pageOrFrame) {
   });
 }
 
+// Capture the editor's copy payload without accessing the system clipboard.
 export async function copyToClipboard(page) {
   return await copyToClipboardPageOrFrame(getPageOrFrame(page));
 }
@@ -887,6 +888,8 @@ async function pasteWithClipboardDataFromPageOrFrame(
 }
 
 /**
+ * Paste supplied data through a DOM event, or omit it for a native keyboard paste.
+ *
  * @param {import('@playwright/test').Page} page
  */
 export async function pasteFromClipboard(

@@ -15,7 +15,6 @@ import {
   initialize,
   pasteFromClipboard,
   test,
-  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 test.skip(
@@ -36,11 +35,11 @@ test.describe('Regression test #1384', () => {
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('ArrowLeft');
     await selectCharacters(page, 'left', 8);
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
       await page.keyboard.press('ArrowLeft');
       await pasteFromClipboard(page, clipboard);
-    });
+    }
     await assertHTML(
       page,
       html`

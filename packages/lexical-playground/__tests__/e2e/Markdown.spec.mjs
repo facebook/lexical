@@ -33,7 +33,6 @@ import {
   SAMPLE_IMAGE_URL,
   test,
   waitForSelector,
-  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 async function checkHTMLExpectationsIncludingUndoRedo(
@@ -994,7 +993,7 @@ test.describe('Markdown', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('c');
     await selectAll(page);
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
       // Delete selected text and then delete remaining bullet list.
       await page.keyboard.press('Backspace');
@@ -1002,7 +1001,7 @@ test.describe('Markdown', () => {
       await pasteFromClipboard(page, clipboard);
       await click(page, '.action-button .markdown');
       await assertHTML(page, LIST_MARKER_MARKDOWN);
-    });
+    }
   });
 });
 

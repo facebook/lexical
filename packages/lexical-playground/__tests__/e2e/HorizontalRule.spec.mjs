@@ -27,7 +27,6 @@ import {
   selectFromInsertDropdown,
   test,
   waitForSelector,
-  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 async function toggleBulletList(page) {
@@ -478,7 +477,7 @@ test.describe('HorizontalRule', () => {
     // Select all the text
     await selectAll(page);
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       // Copy all the text
       const clipboard = await copyToClipboard(page);
 
@@ -517,7 +516,7 @@ test.describe('HorizontalRule', () => {
       await page.keyboard.press('Backspace');
 
       await pasteFromClipboard(page, clipboard);
-    });
+    }
 
     await assertHTML(
       page,

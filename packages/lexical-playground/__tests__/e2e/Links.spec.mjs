@@ -2020,9 +2020,9 @@ test.describe('Links', () => {
 
       await focusEditor(page);
       await page.keyboard.type('Hello world ');
-      await withExclusiveClipboardAccess(async () => {
-        await pasteFromClipboard(page, {'text/plain': 'https://lexical.dev'});
-      });
+
+      await pasteFromClipboard(page, {'text/plain': 'https://lexical.dev'});
+
       await assertHTML(
         page,
         html`

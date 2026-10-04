@@ -24,7 +24,6 @@ import {
   IS_WINDOWS,
   pasteFromClipboard,
   test,
-  withExclusiveClipboardAccess,
 } from '../../../utils/index.mjs';
 
 test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
@@ -88,7 +87,7 @@ test.describe('Lists CopyAndPaste', () => {
       focusPath: [0, 2, 0, 0],
     });
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       // Copy the partial list item and paragraph
       const clipboard = await copyToClipboard(page);
 
@@ -135,7 +134,7 @@ test.describe('Lists CopyAndPaste', () => {
         focusOffset: 10,
         focusPath: [1, 0, 0],
       });
-    });
+    }
   });
 
   test('Copy and paste of partial list items into the list', async ({
@@ -195,7 +194,7 @@ test.describe('Lists CopyAndPaste', () => {
       focusPath: [0, 2, 0, 0],
     });
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       // Copy the partial list item and paragraph
       const clipboard = await copyToClipboard(page);
 
@@ -273,7 +272,7 @@ test.describe('Lists CopyAndPaste', () => {
         focusOffset: 10,
         focusPath: [1, 0, 0],
       });
-    });
+    }
   });
 
   test('Copy list items and paste back into list', async ({page}) => {
@@ -327,7 +326,7 @@ test.describe('Lists CopyAndPaste', () => {
       focusPath: [0, 3, 0, 0],
     });
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
 
       await page.keyboard.press('Backspace');
@@ -388,7 +387,7 @@ test.describe('Lists CopyAndPaste', () => {
         focusOffset: 4,
         focusPath: [0, 3, 0, 0],
       });
-    });
+    }
   });
 
   test.describe(() => {
@@ -431,7 +430,7 @@ test.describe('Lists CopyAndPaste', () => {
         `,
       );
 
-      await withExclusiveClipboardAccess(async () => {
+      {
         const clipboard = await copyToClipboard(page);
 
         await page.keyboard.press('ArrowDown');
@@ -517,7 +516,7 @@ test.describe('Lists CopyAndPaste', () => {
             </p>
           `,
         );
-      });
+      }
     });
   });
 
@@ -574,7 +573,7 @@ test.describe('Lists CopyAndPaste', () => {
       focusPath: [0, 3, 0, 0],
     });
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
 
       await page.keyboard.press('ArrowRight');
@@ -644,7 +643,7 @@ test.describe('Lists CopyAndPaste', () => {
         focusOffset: 4,
         focusPath: [0, 5, 0, 0],
       });
-    });
+    }
   });
 
   test('Copy and paste two paragraphs into list on an existing item', async ({
@@ -658,7 +657,7 @@ test.describe('Lists CopyAndPaste', () => {
 
     await selectAll(page);
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
 
       await page.keyboard.press('Backspace');
@@ -745,7 +744,7 @@ test.describe('Lists CopyAndPaste', () => {
         focusOffset: 5,
         focusPath: [1, 0, 0],
       });
-    });
+    }
   });
 
   test('Copy and paste two paragraphs at the end of a list', async ({page}) => {
@@ -757,7 +756,7 @@ test.describe('Lists CopyAndPaste', () => {
 
     await selectAll(page);
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
 
       await page.keyboard.press('Backspace');
@@ -849,6 +848,6 @@ test.describe('Lists CopyAndPaste', () => {
         focusOffset: 5,
         focusPath: [2, 0, 0],
       });
-    });
+    }
   });
 });

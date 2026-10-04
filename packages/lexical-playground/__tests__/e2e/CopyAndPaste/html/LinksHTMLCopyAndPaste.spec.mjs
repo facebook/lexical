@@ -28,7 +28,6 @@ import {
   locate,
   pasteFromClipboard,
   test,
-  withExclusiveClipboardAccess,
 } from '../../../utils/index.mjs';
 
 test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
@@ -134,11 +133,11 @@ test.describe('HTML Links CopyAndPaste', () => {
     await page.keyboard.down('Shift');
     await moveLeft(page, 2);
     await page.keyboard.up('Shift');
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
       await moveToEditorEnd(page);
       await pasteFromClipboard(page, clipboard);
-    });
+    }
 
     await assertHTML(
       page,

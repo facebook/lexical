@@ -126,7 +126,7 @@ test.describe('CopyAndPaste', () => {
     }
 
     // Copy all the text
-    await withExclusiveClipboardAccess(async () => {
+    {
       const clipboard = await copyToClipboard(page);
       if (isRichText) {
         await assertHTML(
@@ -209,7 +209,7 @@ test.describe('CopyAndPaste', () => {
           focusPath: [0, 6, 0],
         });
       }
-    });
+    }
   });
 
   test.describe(() => {
@@ -234,7 +234,7 @@ test.describe('CopyAndPaste', () => {
       await moveToLineEnd(page);
       await page.keyboard.up('Shift');
 
-      await withExclusiveClipboardAccess(async () => {
+      {
         const clipboard = await copyToClipboard(page);
 
         await moveToEditorEnd(page);
@@ -264,7 +264,7 @@ test.describe('CopyAndPaste', () => {
           focusOffset: 7,
           focusPath: [2, 0, 0],
         });
-      });
+      }
     });
   });
 
@@ -404,7 +404,7 @@ test.describe('CopyAndPaste', () => {
       });
     }
 
-    await withExclusiveClipboardAccess(async () => {
+    {
       // Copy all the text
       let clipboard = await copyToClipboard(page);
       await page.keyboard.press('Delete');
@@ -687,7 +687,7 @@ test.describe('CopyAndPaste', () => {
         focusOffset: 0,
         focusPath: [0],
       });
-    });
+    }
   });
 
   test.describe(() => {
@@ -712,13 +712,13 @@ test.describe('CopyAndPaste', () => {
 
       await selectAll(page);
 
-      await withExclusiveClipboardAccess(async () => {
+      {
         const clipboard = await copyToClipboard(page);
 
         await page.keyboard.press('ArrowRight');
 
         await pasteFromClipboard(page, clipboard);
-      });
+      }
 
       await assertHTML(
         page,
@@ -776,7 +776,7 @@ test.describe('CopyAndPaste', () => {
       await focusEditor(page);
       await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
       await page.keyboard.press('ArrowLeft'); // this selects the node
-      await withExclusiveClipboardAccess(async () => {
+      {
         const clipboard = await copyToClipboard(page);
         await page.keyboard.press('ArrowRight'); // this moves to a new line (empty paragraph node)
         await pasteFromClipboard(page, clipboard);
@@ -817,7 +817,7 @@ test.describe('CopyAndPaste', () => {
               data-lexical-cursor="true"></div>
           `,
         );
-      });
+      }
     });
   });
 
@@ -832,13 +832,13 @@ test.describe('CopyAndPaste', () => {
 
       await selectAll(page);
 
-      await withExclusiveClipboardAccess(async () => {
+      {
         const clipboard = await copyToClipboard(page);
 
         await page.keyboard.type('> ');
 
         await pasteFromClipboard(page, clipboard);
-      });
+      }
       await assertHTML(
         page,
         html`
@@ -861,23 +861,19 @@ test.describe('CopyAndPaste', () => {
         'text/html': `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-1e6b36e2-7fff-9788-e6e2-d502cc6babbf"><p dir="ltr" style="line-height:1.56;margin-top:10pt;margin-bottom:0pt;"><span style="font-size:24pt;font-family:Lato,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Random text at </span><span style="font-size:36pt;font-family:Lato,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">36 pt</span></p></b>`,
       };
 
-      await withExclusiveClipboardAccess(async () => {
-        await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
 
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
-              <span style="font-size: 24pt" data-lexical-text="true">
-                Random text at
-              </span>
-              <span style="font-size: 36pt" data-lexical-text="true">
-                36 pt
-              </span>
-            </p>
-          `,
-        );
-      });
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+            <span style="font-size: 24pt" data-lexical-text="true">
+              Random text at
+            </span>
+            <span style="font-size: 36pt" data-lexical-text="true">36 pt</span>
+          </p>
+        `,
+      );
     });
 
     test('test font-size in pt and px both are processed correctly', async ({
@@ -889,25 +885,23 @@ test.describe('CopyAndPaste', () => {
         'text/html': `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-2d2ed25f-7fff-2f5a-2422-f7e624a743db"><p dir="ltr" style="line-height:1.56;margin-top:10pt;margin-bottom:0pt;"><span style="font-size:24px;font-family:Lato,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Text in 24px</span></p><p dir="ltr" style="line-height:1.56;margin-top:10pt;margin-bottom:0pt;"><span style="font-size:36pt;font-family:Lato,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Text in 36pt</span></p></b>`,
       };
 
-      await withExclusiveClipboardAccess(async () => {
-        await pasteFromClipboard(page, clipboard);
+      await pasteFromClipboard(page, clipboard);
 
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
-              <span style="font-size: 24px;" data-lexical-text="true">
-                Text in 24px
-              </span>
-            </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
-              <span style="font-size: 36pt;" data-lexical-text="true">
-                Text in 36pt
-              </span>
-            </p>
-          `,
-        );
-      });
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+            <span style="font-size: 24px;" data-lexical-text="true">
+              Text in 24px
+            </span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
+            <span style="font-size: 36pt;" data-lexical-text="true">
+              Text in 36pt
+            </span>
+          </p>
+        `,
+      );
     });
   });
 

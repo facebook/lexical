@@ -633,11 +633,12 @@ test.describe('Links', () => {
     );
   });
 
+  // LinkBoundaryInsertion.test.ts covers the full position/input matrix in
+  // real browsers. Keep toolbar-driven typing and paste paths here, including
+  // convergence in the collaboration projects.
   test.describe('Inserting text either side of links', () => {
-    // In each of the pasting tests, we'll paste the letter 'x' in a different
-    // clipboard data format.
+    // Keep one serialized Lexical paste through the playground integration.
     const clipboardData = {
-      html: {'text/html': 'x'},
       lexical: {
         'application/x-lexical-editor': JSON.stringify({
           namespace: 'Playground',
@@ -654,88 +655,13 @@ test.describe('Links', () => {
           ],
         }),
       },
-      plain: {'text/plain': 'x'},
     };
 
     test.describe('Inserting text before links', () => {
-      test.describe('Start-of-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
-          await focusEditor(page);
-          await page.keyboard.type('ab');
-
-          // Turn 'a' into a link
-          await moveLeft(page, 'b'.length);
-          await selectCharacters(page, 'left', 1);
-          await click(page, '.link');
-          await click(page, '.link-confirm');
-
-          // Insert a character directly before the link
-          await moveLeft(page, 1);
-          if (insertMethod === 'type') {
-            await page.keyboard.type('x');
-          } else {
-            const data =
-              insertMethod === 'paste:plain'
-                ? clipboardData.plain
-                : insertMethod === 'paste:html'
-                  ? clipboardData.html
-                  : clipboardData.lexical;
-            await pasteFromClipboard(page, data);
-          }
-
-          // The character should be inserted before the link
-          await assertHTML(
-            page,
-            html`
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <span data-lexical-text="true">x</span>
-                <a
-                  class="PlaygroundEditorTheme__link"
-                  href="https://"
-                  rel="noreferrer">
-                  <span data-lexical-text="true">a</span>
-                </a>
-                <span data-lexical-text="true">b</span>
-              </p>
-            `,
-          );
-        };
-
-        test(`Can insert text before a start-of-paragraph link, via typing`, async ({
-          page,
-        }) => {
-          await setup(page, 'type');
-        });
-
-        test(`Can insert text before a start-of-paragraph link, via pasting plain text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:plain');
-        });
-
-        test(`Can insert text before a start-of-paragraph link, via pasting HTML`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:html');
-        });
-
-        test(`Can insert text before a start-of-paragraph link, via pasting Lexical text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:lexical');
-        });
-      });
-
       test.describe('Mid-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
+        test(`Can insert text before a mid-paragraph link, via typing`, async ({
+          page,
+        }) => {
           await focusEditor(page);
           await page.keyboard.type('abc');
 
@@ -747,17 +673,7 @@ test.describe('Links', () => {
 
           // Insert a character directly before the link
           await moveLeft(page, 1);
-          if (insertMethod === 'type') {
-            await page.keyboard.type('x');
-          } else {
-            const data =
-              insertMethod === 'paste:plain'
-                ? clipboardData.plain
-                : insertMethod === 'paste:html'
-                  ? clipboardData.html
-                  : clipboardData.lexical;
-            await pasteFromClipboard(page, data);
-          }
+          await page.keyboard.type('x');
 
           // The character should be inserted before the link
           await assertHTML(
@@ -775,254 +691,15 @@ test.describe('Links', () => {
               </p>
             `,
           );
-        };
-
-        test(`Can insert text before a mid-paragraph link, via typing`, async ({
-          page,
-        }) => {
-          await setup(page, 'type');
-        });
-
-        test(`Can insert text before a mid-paragraph link, via pasting plain text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:plain');
-        });
-
-        test(`Can insert text before a mid-paragraph link, via pasting HTML`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:html');
-        });
-
-        test(`Can insert text before a mid-paragraph link, via pasting Lexical text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:lexical');
-        });
-      });
-
-      test.describe('End-of-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
-          await focusEditor(page);
-          await page.keyboard.type('ab');
-
-          // Turn 'b' into a link
-          await selectCharacters(page, 'left', 1);
-          await click(page, '.link');
-          await click(page, '.link-confirm');
-
-          // Insert a character directly before the link
-          await moveLeft(page, 1);
-          if (insertMethod === 'type') {
-            await page.keyboard.type('x');
-          } else {
-            const data =
-              insertMethod === 'paste:plain'
-                ? clipboardData.plain
-                : insertMethod === 'paste:html'
-                  ? clipboardData.html
-                  : clipboardData.lexical;
-            await pasteFromClipboard(page, data);
-          }
-
-          // The character should be inserted before the link
-          await assertHTML(
-            page,
-            html`
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <span data-lexical-text="true">ax</span>
-                <a
-                  class="PlaygroundEditorTheme__link"
-                  href="https://"
-                  rel="noreferrer">
-                  <span data-lexical-text="true">b</span>
-                </a>
-              </p>
-            `,
-          );
-        };
-
-        test(`Can insert text before an end-of-paragraph link, via typing`, async ({
-          page,
-        }) => {
-          await setup(page, 'type');
-        });
-
-        test(`Can insert text before an end-of-paragraph link, via pasting plain text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:plain');
-        });
-
-        test(`Can insert text before an end-of-paragraph link, via pasting HTML`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:html');
-        });
-
-        test(`Can insert text before an end-of-paragraph link, via pasting Lexical text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:lexical');
         });
       });
     });
 
     test.describe('Inserting text after links', () => {
-      test.describe('Start-of-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
-          await focusEditor(page);
-          await page.keyboard.type('ab');
-
-          // Turn 'a' into a link
-          await moveLeft(page, 'b'.length);
-          await selectCharacters(page, 'left', 1);
-          await click(page, '.link');
-          await click(page, '.link-confirm');
-
-          // Insert a character directly after the link
-          await moveRight(page, 1);
-          if (insertMethod === 'type') {
-            await page.keyboard.type('x');
-          } else {
-            const data =
-              insertMethod === 'paste:plain'
-                ? clipboardData.plain
-                : insertMethod === 'paste:html'
-                  ? clipboardData.html
-                  : clipboardData.lexical;
-            await pasteFromClipboard(page, data);
-          }
-
-          // The character should be inserted after the link
-          await assertHTML(
-            page,
-            html`
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <a
-                  class="PlaygroundEditorTheme__link"
-                  href="https://"
-                  rel="noreferrer">
-                  <span data-lexical-text="true">a</span>
-                </a>
-                <span data-lexical-text="true">xb</span>
-              </p>
-            `,
-          );
-        };
-
-        test(`Can insert text after a start-of-paragraph link, via typing`, async ({
-          page,
-        }) => {
-          await setup(page, 'type');
-        });
-
-        test(`Can insert text after a start-of-paragraph link, via pasting plain text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:plain');
-        });
-
-        test(`Can insert text after a start-of-paragraph link, via pasting HTML`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:html');
-        });
-
-        test(`Can insert text after a start-of-paragraph link, via pasting Lexical text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:lexical');
-        });
-      });
-
-      test.describe('Mid-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
-          await focusEditor(page);
-          await page.keyboard.type('abc');
-
-          // Turn 'b' into a link
-          await moveLeft(page, 1);
-          await selectCharacters(page, 'left', 1);
-          await click(page, '.link');
-          await click(page, '.link-confirm');
-
-          // Insert a character directly after the link
-          await moveRight(page, 1);
-          if (insertMethod === 'type') {
-            await page.keyboard.type('x');
-          } else {
-            const data =
-              insertMethod === 'paste:plain'
-                ? clipboardData.plain
-                : insertMethod === 'paste:html'
-                  ? clipboardData.html
-                  : clipboardData.lexical;
-            await pasteFromClipboard(page, data);
-          }
-
-          // The character should be inserted after the link
-          await assertHTML(
-            page,
-            html`
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <span data-lexical-text="true">a</span>
-                <a
-                  class="PlaygroundEditorTheme__link"
-                  href="https://"
-                  rel="noreferrer">
-                  <span data-lexical-text="true">b</span>
-                </a>
-                <span data-lexical-text="true">xc</span>
-              </p>
-            `,
-          );
-        };
-
-        test(`Can insert text after a mid-paragraph link, via typing`, async ({
-          page,
-        }) => {
-          await setup(page, 'type');
-        });
-
-        test(`Can insert text after a mid-paragraph link, via pasting plain text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:plain');
-        });
-
-        test(`Can insert text after a mid-paragraph link, via pasting HTML`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:html');
-        });
-
-        test(`Can insert text after a mid-paragraph link, via pasting Lexical text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:lexical');
-        });
-      });
-
       test.describe('End-of-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
+        test(`Can insert text after an end-of-paragraph link, via pasting Lexical text`, async ({
+          page,
+        }) => {
           await focusEditor(page);
           await page.keyboard.type('ab');
 
@@ -1033,17 +710,7 @@ test.describe('Links', () => {
 
           // Insert a character directly after the link
           await moveRight(page, 1);
-          if (insertMethod === 'type') {
-            await page.keyboard.type('x');
-          } else {
-            const data =
-              insertMethod === 'paste:plain'
-                ? clipboardData.plain
-                : insertMethod === 'paste:html'
-                  ? clipboardData.html
-                  : clipboardData.lexical;
-            await pasteFromClipboard(page, data);
-          }
+          await pasteFromClipboard(page, clipboardData.lexical);
 
           // The character should be inserted after the link
           await assertHTML(
@@ -1061,30 +728,6 @@ test.describe('Links', () => {
               </p>
             `,
           );
-        };
-
-        test(`Can insert text after an end-of-paragraph link, via typing`, async ({
-          page,
-        }) => {
-          await setup(page, 'type');
-        });
-
-        test(`Can insert text after an end-of-paragraph link, via pasting plain text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:plain');
-        });
-
-        test(`Can insert text after an end-of-paragraph link, via pasting HTML`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:html');
-        });
-
-        test(`Can insert text after an end-of-paragraph link, via pasting Lexical text`, async ({
-          page,
-        }) => {
-          await setup(page, 'paste:lexical');
         });
       });
     });

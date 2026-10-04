@@ -132,7 +132,6 @@ import {
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
-  getParentElement,
   getWindow,
   isBackspace,
   isDOMCapturingSelection,
@@ -185,11 +184,10 @@ function getRootElementEvents(): RootElementEvents {
     ]);
   }
   if (IS_IOS) {
-    events.push([
-      'keyup',
-      (event, editor) => onKeyUp(event as KeyboardEvent, editor),
-    ]);
-    events.push(['mousedown', onMouseDownIOS]);
+    events.push(
+      ['keyup', (event, editor) => onKeyUp(event as KeyboardEvent, editor)],
+      ['mousedown', onMouseDownIOS],
+    );
   }
   rootElementEvents = events;
   return events;
@@ -638,39 +636,10 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
   });
 }
 
-// Elements inside a decorator that keep the default action of a tap, because
-// they take focus or text input of their own (a nested editor such as an image
-// caption, a form control, a link).
-const DECORATOR_INTERACTIVE_SELECTOR =
+// Elements that take focus or text input when tapped.
+const FOCUSABLE_SELECTOR =
   'input,textarea,select,button,a[href],label,[tabindex],' +
   '[contenteditable]:not([contenteditable="false"])';
-
-/**
- * Returns the decorator element of `editor` that a tap on `target` lands on,
- * or null when the tap is outside a decorator or on an interactive element
- * inside one.
- */
-function getTappedDecoratorElement(
-  target: EventTarget | null,
-  editor: LexicalEditor,
-): HTMLElement | null {
-  const rootElement = editor.getRootElement();
-  let element: HTMLElement | null = isHTMLElement(target)
-    ? target
-    : isDOMNode(target)
-      ? getParentElement(target)
-      : null;
-  while (element !== null && element !== rootElement) {
-    if (element.getAttribute('data-lexical-decorator') === 'true') {
-      return element;
-    }
-    if (element.matches(DECORATOR_INTERACTIVE_SELECTOR)) {
-      return null;
-    }
-    element = getParentElement(element);
-  }
-  return null;
-}
 
 // iOS only. A tap on a decorator (an image, say) would focus the editor, and
 // iOS answers that focus by opening the keyboard and scrolling to reveal the
@@ -678,8 +647,15 @@ function getTappedDecoratorElement(
 // caret, so iOS reveals the top of the editor instead and the page jumps
 // (facebook/lexical#9112). Cancelling the mousedown keeps focus where it is;
 // the click still follows, so CLICK_COMMAND handlers select the node as usual.
+// A tap on something inside the decorator that takes focus itself (an input,
+// a nested editor) is left alone.
 function onMouseDownIOS(event: Event, editor: LexicalEditor): void {
-  if (getTappedDecoratorElement(getComposedEventTarget(event), editor)) {
+  const target = getComposedEventTarget(event);
+  if (
+    isHTMLElement(target) &&
+    isDOMCapturingSelection(target, editor) &&
+    target.closest(FOCUSABLE_SELECTOR) === editor.getRootElement()
+  ) {
     event.preventDefault();
   }
 }

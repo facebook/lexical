@@ -98,6 +98,61 @@ describe('clearFormatting (Toolbar)', () => {
     });
   });
 
+  test.each([false, true])(
+    'clears only selected text across paragraphs (backward: %s)',
+    backward => {
+      using editor = createEditor();
+      editor.update(
+        () => {
+          const first = $createTextNode('Foo bar').toggleFormat('bold');
+          const second = $createTextNode('baz qux').toggleFormat('bold');
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(first),
+              $createParagraphNode().append(second),
+            );
+          const selection = first.select();
+          if (backward) {
+            selection.setTextNodeRange(second, 4, first, 4);
+          } else {
+            selection.setTextNodeRange(first, 4, second, 4);
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(() => clearFormatting(editor), {discrete: true});
+
+      editor.read(() => {
+        expect(
+          $getRoot()
+            .getChildren()
+            .map(paragraph => {
+              assert($isParagraphNode(paragraph));
+              return paragraph.getAllTextNodes().map(text => ({
+                bold: text.hasFormat('bold'),
+                text: text.getTextContent(),
+              }));
+            }),
+        ).toEqual([
+          [
+            {bold: true, text: 'Foo '},
+            {bold: false, text: 'bar'},
+          ],
+          [
+            {bold: false, text: 'baz '},
+            {bold: true, text: 'qux'},
+          ],
+        ]);
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        expect(selection.getTextContent()).toBe('bar\nbaz ');
+        expect(selection.isBackward()).toBe(backward);
+      });
+    },
+  );
+
   test('clears block formatting of an empty block with a collapsed selection', () => {
     using editor = createEditor();
     editor.update(

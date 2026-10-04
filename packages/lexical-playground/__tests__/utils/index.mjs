@@ -1588,21 +1588,15 @@ export async function typeSushiMojia(client, page) {
 }
 
 export async function pressToggleBold(page) {
-  await keyDownCtrlOrMeta(page);
-  await page.keyboard.press('b');
-  await keyUpCtrlOrMeta(page);
+  await page.keyboard.press('ControlOrMeta+b');
 }
 
 export async function pressToggleItalic(page) {
-  await keyDownCtrlOrMeta(page);
-  await page.keyboard.press('i');
-  await keyUpCtrlOrMeta(page);
+  await page.keyboard.press('ControlOrMeta+i');
 }
 
 export async function pressToggleUnderline(page) {
-  await keyDownCtrlOrMeta(page);
-  await page.keyboard.press('u');
-  await keyUpCtrlOrMeta(page);
+  await page.keyboard.press('ControlOrMeta+u');
 }
 
 export async function dragDraggableMenuTo(

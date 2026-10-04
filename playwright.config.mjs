@@ -34,8 +34,8 @@ function project(name, deviceName) {
     use: {
       ...devices[deviceName],
       launchOptions: {
-        // Opt in when debugging; CI should synchronize on editor state.
-        slowMo: Number(process.env.E2E_SLOW_MO ?? (IS_DEBUG ? 50 : 0)),
+        // Keep the established default while auditing tests for explicit waits.
+        slowMo: Number(process.env.E2E_SLOW_MO ?? 50),
       },
       userAgent: undefined,
       viewport,

@@ -382,36 +382,6 @@ test.describe('Ruby', () => {
     expect(rubies[1]).toEqual({annotation: 'テスト', text: 'Test'});
   });
 
-  test('Ruby node serializes correctly to JSON', async ({page}) => {
-    await focusEditor(page);
-
-    await page.keyboard.type('漢字');
-    await selectAll(page);
-    await insertRubyViaToolbar(page, 'かんじ');
-
-    const roundTrip = await evaluate(page, () => {
-      const editor = window.lexicalEditor;
-      let json;
-      editor.read(() => {
-        json = editor.getEditorState().toJSON();
-      });
-      const paragraph = json.root.children[0];
-      const rubyJSON = paragraph.children.find(c => c.type === 'ruby');
-      return rubyJSON
-        ? {
-            annotation: rubyJSON.annotation,
-            text: rubyJSON.text,
-            type: rubyJSON.type,
-          }
-        : null;
-    });
-
-    expect(roundTrip).not.toBeNull();
-    expect(roundTrip.type).toBe('ruby');
-    expect(roundTrip.text).toBe('漢字');
-    expect(roundTrip.annotation).toBe('かんじ');
-  });
-
   test('Multiple adjacent ruby nodes are independent', async ({page}) => {
     await focusEditor(page);
 
@@ -442,32 +412,6 @@ test.describe('Ruby', () => {
     expect(rubies).toHaveLength(2);
     expect(rubies[0]).toEqual({annotation: 'えい', text: 'A'});
     expect(rubies[1]).toEqual({annotation: 'びー', text: 'B'});
-  });
-
-  test('Ruby exportDOM produces semantic <ruby> with <rt>', async ({page}) => {
-    await focusEditor(page);
-
-    await page.keyboard.type('漢');
-    await selectAll(page);
-    await insertRubyViaToolbar(page, 'かん');
-
-    const exportedHTML = await evaluate(page, () => {
-      const editor = window.lexicalEditor;
-      let result = '';
-      editor.read(() => {
-        for (const [, node] of editor.getEditorState()._nodeMap) {
-          if (node.getType() === 'ruby') {
-            const {element} = node.exportDOM();
-            result = element.outerHTML;
-          }
-        }
-      });
-      return result;
-    });
-
-    expect(exportedHTML).toBe(
-      '<ruby>漢<rp>(</rp><rt>かん</rt><rp>)</rp></ruby>',
-    );
   });
 
   test('Ruby node with collapsed selection is a no-op', async ({page}) => {

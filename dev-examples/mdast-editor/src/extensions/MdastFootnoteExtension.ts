@@ -39,6 +39,7 @@ import {
   $create,
   $createParagraphNode,
   $getDocument,
+  $getEditor,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -725,23 +726,33 @@ export function $clearFootnotes(): void {
   }
 }
 
+/** Whether everything outside the footnotes section is empty paragraphs. */
+function $isBodyEmpty(root: RootNode): boolean {
+  return root
+    .getChildren()
+    .every(child => $isParagraphNode(child) && child.isEmpty());
+}
+
 /**
  * A RootNode transform: once everything outside the footnotes section has
  * been deleted (select-all and Backspace, cut, ...), the section goes too,
  * since a definition with no reference to it doesn't render in GFM and the
  * empty editor would otherwise still show stale notes.
  *
- * Left alone: the Markdown pane's sync (tagged history-merge), so a note
- * typed there before any body text isn't dropped mid-edit, and an editor
- * whose caret is in a definition, which is being edited.
+ * Left alone: a body that was already empty before this update (only a
+ * deletion clears, not Enter in an empty body), the Markdown pane's sync
+ * (tagged history-merge), so a note typed there before any body text isn't
+ * dropped mid-edit, and an editor whose caret is in a definition, which is
+ * being edited.
  */
 function $clearFootnotesOfEmptyDocument(root: RootNode): void {
   if (
     $hasUpdateTag(HISTORY_MERGE_TAG) ||
     !$isFootnotesNode($getSlot(root, FOOTNOTES_SLOT)) ||
-    !root
-      .getChildren()
-      .every(child => $isParagraphNode(child) && child.isEmpty())
+    !$isBodyEmpty(root) ||
+    $getEditor()
+      .getEditorState()
+      .read(() => $isBodyEmpty($getRoot()))
   ) {
     return;
   }

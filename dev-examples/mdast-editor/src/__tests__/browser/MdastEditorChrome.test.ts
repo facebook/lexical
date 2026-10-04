@@ -27,6 +27,7 @@ import {
   $setSelection,
   defineExtension,
   HISTORY_MERGE_TAG,
+  INSERT_PARAGRAPH_COMMAND,
   type LexicalEditor,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';
@@ -292,6 +293,17 @@ describe('footnotes', () => {
       tag: HISTORY_MERGE_TAG,
     });
     expect(markdownOf(editor)).toBe('[^a]: the note');
+  });
+
+  test('typing in an already-empty body keeps definitions', () => {
+    const {editor} = mountEditor('');
+    editor.update(() => $convertFromMarkdownString('[^a]: saved note'), {
+      discrete: true,
+      tag: HISTORY_MERGE_TAG,
+    });
+    editor.update(() => $getRoot().selectEnd(), {discrete: true});
+    editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+    expect(markdownOf(editor).trim()).toBe('[^a]: saved note');
   });
 
   test('removing the last definition drops the section and its refs', async () => {

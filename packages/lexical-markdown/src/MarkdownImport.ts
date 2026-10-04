@@ -242,6 +242,8 @@ function $importBlocks(
       if (replace(elementNode, [textNode], match, true) !== false) {
         break;
       }
+      // A cancelled transform leaves the line as it was.
+      textNode.setTextContent(lineText);
     }
   }
 

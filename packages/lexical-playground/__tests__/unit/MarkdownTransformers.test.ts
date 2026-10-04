@@ -13,11 +13,13 @@ import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   registerMarkdownShortcuts,
+  TRANSFORMERS,
 } from '@lexical/markdown';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createTableCellNode,
   $createTableNode,
+  $createTableNodeWithDimensions,
   $createTableRowNode,
   $isTableNode,
   TableCellHeaderStates,
@@ -399,5 +401,89 @@ describe('playground TABLE markdown transformer', () => {
         ].join('\n'),
       );
     });
+  });
+
+  function importMarkdown(
+    markdown: string,
+  ): ReturnType<typeof buildEditorFromExtensions> {
+    const editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(() => $convertFromMarkdownString(markdown, [TABLE]), {
+      discrete: true,
+    });
+    return editor;
+  }
+
+  function cellTexts(editor: LexicalEditor): string[][][] {
+    return editor.read(() => {
+      const table = $getRoot().getFirstChildOrThrow();
+      assert($isTableNode(table), 'Root child must be a table');
+      return table
+        .getChildren()
+        .map(row =>
+          $isElementNode(row)
+            ? row
+                .getChildren()
+                .map(cell =>
+                  $isElementNode(cell)
+                    ? cell.getChildren().map(p => p.getTextContent())
+                    : [],
+                )
+            : [],
+        );
+    });
+  }
+
+  it('writes a hard line break marked with a backslash as a bare <br>', () => {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(
+      () => {
+        // A hard break imported (or pasted) from Markdown remembers its
+        // `\` marker, which must not end up escaping the `<br>`.
+        $convertFromMarkdownString('a\\\nb', TRANSFORMERS);
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        const cell = $createTableCellNode(TableCellHeaderStates.ROW);
+        paragraph.replace(
+          $createTableNode().append($createTableRowNode().append(cell)),
+        );
+        cell.append(paragraph);
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(
+      ['| a<br>b |', '| --- |'].join('\n'),
+    );
+  });
+
+  it('writes the delimiter row of a single-column table', () => {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createTableNodeWithDimensions(2, 1, true));
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(
+      ['|  |', '| --- |', '|  |'].join('\n'),
+    );
+  });
+
+  it('keeps an escaped backslash before n when reading the legacy \\n', () => {
+    using editor = importMarkdown(
+      ['| a |', '| --- |', '| C:\\\\new |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['a']], [['C:\\new']]]);
+  });
+
+  it('leaves a delimiter row with no table above it as text', () => {
+    using editor = importMarkdown('| --- |');
+    expect(
+      editor.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(node => node.getTextContent()),
+      ),
+    ).toEqual(['| --- |']);
   });
 });

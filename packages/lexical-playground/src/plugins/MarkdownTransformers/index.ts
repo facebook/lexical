@@ -39,9 +39,11 @@ import {
 } from '@lexical/table';
 import {
   $createTextNode,
+  $isLineBreakNode,
   $isParagraphNode,
   $isTextNode,
   type LexicalNode,
+  LineBreakNode,
 } from 'lexical';
 
 import {
@@ -203,6 +205,19 @@ export const TWEET: ElementTransformer = {
 // Very primitive table setup
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 
+/**
+ * Writes a line break inside a table cell as `<br>`. It runs before the
+ * default line break export, which would put the break's hard line break
+ * marker (`\` or two spaces) in front of it, and `\<br>` reads back as an
+ * escaped `<`.
+ */
+const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
+  dependencies: [LineBreakNode],
+  export: node => ($isLineBreakNode(node) ? '<br>' : null),
+  regExp: /$^/,
+  type: 'text-match',
+};
+
 export const TABLE: ElementTransformer = {
   dependencies: [TableNode, TableRowNode, TableCellNode],
   export: (node: LexicalNode) => {
@@ -225,12 +240,16 @@ export const TABLE: ElementTransformer = {
           // A GFM cell can't contain a newline or an unescaped pipe: line
           // breaks and the blank line between paragraphs become `<br>`.
           rowOutput.push(
-            $convertToMarkdownString(PLAYGROUND_TRANSFORMERS, cell)
+            $convertToMarkdownString(
+              [TABLE_CELL_LINE_BREAK, ...PLAYGROUND_TRANSFORMERS],
+              cell,
+            )
               .trim()
               .replace(/\n\n?/g, '<br>')
               .replace(/\\?\|/g, '\\|'),
           );
-          if (cell.__headerState === TableCellHeaderStates.ROW) {
+          // The top-left cell of a table with both header kinds is ROW|COLUMN.
+          if (cell.hasHeaderState(TableCellHeaderStates.ROW)) {
             isHeaderRow = true;
           }
         }
@@ -248,15 +267,16 @@ export const TABLE: ElementTransformer = {
   replace: (parentNode, _1, match) => {
     // Header row
     if (isTableRowDivider(match[0])) {
+      // With no table above it, the line stays text.
       const table = parentNode.getPreviousSibling();
       if (!table || !$isTableNode(table)) {
-        return;
+        return false;
       }
 
       const rows = table.getChildren();
       const lastRow = rows[rows.length - 1];
       if (!lastRow || !$isTableRowNode(lastRow)) {
-        return;
+        return false;
       }
 
       // Add header state to row cells
@@ -347,11 +367,13 @@ function getTableColumnsSize(table: TableNode) {
 
 const $createTableCell = (textContent: string): TableCellNode => {
   // `<br>` is the line separator inside a cell; the literal `\n` this
-  // transformer used to write is still read. GFM trims a cell's padding.
+  // transformer used to write is still read, but not out of an escaped
+  // backslash (`C:\\new`). GFM trims a cell's padding.
   textContent = textContent
     .trim()
-    .replace(/\s*<br\s*\/?>\s*|\\n/gi, '\n')
-    .replace(/\\\|/g, '|');
+    .replace(/\s*<br\s*\/?>\s*|\\[\\n|]/gi, match =>
+      match === '\\|' ? '|' : match === '\\\\' ? match : '\n',
+    );
   const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
   $convertFromMarkdownString(textContent, PLAYGROUND_TRANSFORMERS, cell);
   return cell;

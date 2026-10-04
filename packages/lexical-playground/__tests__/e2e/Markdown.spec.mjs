@@ -344,8 +344,9 @@ test.describe('Markdown', () => {
         }) => {
           await focusEditor(page);
 
-          await page.keyboard.type(
-            '```markdown ' + triggersAndExpectations[i].markdownImport,
+          await page.keyboard.type('```markdown ');
+          await page.keyboard.insertText(
+            triggersAndExpectations[i].markdownImport,
           );
           await click(page, 'i.markdown');
 
@@ -374,7 +375,7 @@ async function assertMarkdownImportExport(
 
   // Create code block that will be imported as a markdown into editor
   await page.keyboard.type('```markdown ');
-  await page.keyboard.type(textToImport);
+  await page.keyboard.insertText(textToImport);
   await click(page, '.action-button .markdown');
   await assertHTML(page, expectedHTML, undefined, {ignoreClasses});
 
@@ -804,10 +805,9 @@ test.describe('Markdown', () => {
       // TODO(collab-v2): nested editors are not supported yet
 
       await focusEditor(page);
-      await page.keyboard.type(
-        '```markdown ![Yellow flower in tilt shift lens](' +
-          SAMPLE_IMAGE_URL +
-          ')',
+      await page.keyboard.type('```markdown ');
+      await page.keyboard.insertText(
+        '![Yellow flower in tilt shift lens](' + SAMPLE_IMAGE_URL + ')',
       );
       await click(page, '.action-button .markdown');
       await waitForSelector(page, '.editor-image img');
@@ -839,8 +839,9 @@ test.describe('Markdown', () => {
       // TODO(collab-v2): nested editors are not supported yet
 
       await focusEditor(page);
-      await page.keyboard.type(
-        '```markdown [link](https://lexical.dev)[link](https://lexical.dev)![Yellow flower in tilt shift lens](' +
+      await page.keyboard.type('```markdown ');
+      await page.keyboard.insertText(
+        '[link](https://lexical.dev)[link](https://lexical.dev)![Yellow flower in tilt shift lens](' +
           SAMPLE_IMAGE_URL +
           ')just text in between$1$',
       );

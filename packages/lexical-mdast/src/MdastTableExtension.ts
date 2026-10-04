@@ -33,8 +33,10 @@ import {
   $createParagraphNode,
   $getState,
   $isElementNode,
+  arrayValue,
   createState,
   defineExtension,
+  enumValue,
 } from 'lexical';
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
@@ -42,9 +44,8 @@ import {gfmTable} from 'micromark-extension-gfm-table';
 import {$append} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
-function parseAlign(v: unknown): AlignType {
-  return v === 'center' || v === 'left' || v === 'right' ? v : null;
-}
+/** A GFM column alignment as mdast spells it; anything else reads as `null`. */
+const alignValue = enumValue<AlignType>([null, 'left', 'center', 'right']);
 
 /**
  * The per-column alignment (`| :-: |`) a table's delimiter row declared, as
@@ -52,7 +53,7 @@ function parseAlign(v: unknown): AlignType {
  * export as the fallback for columns whose cells are not aligned.
  */
 const tableAlignState = createState('mdastTableAlign', {
-  parse: (v): AlignType[] => (Array.isArray(v) ? v.map(parseAlign) : []),
+  parse: arrayValue(alignValue),
   resetOnCopyNode: true,
 });
 
@@ -63,14 +64,14 @@ const tableAlignState = createState('mdastTableAlign', {
  * the caret in a single cell).
  */
 function $getCellAlign(cell: TableCellNode): AlignType {
-  const own = parseAlign(cell.getFormatType());
+  const own = alignValue(cell.getFormatType());
   if (own !== null) {
     return own;
   }
   let shared: AlignType | undefined;
   for (const child of cell.getChildren()) {
     if ($isElementNode(child) && !child.isInline()) {
-      const align = parseAlign(child.getFormatType());
+      const align = alignValue(child.getFormatType());
       if (shared !== undefined && shared !== align) {
         return null;
       }

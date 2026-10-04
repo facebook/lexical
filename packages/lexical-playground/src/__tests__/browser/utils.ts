@@ -15,9 +15,15 @@ import {
   IS_APPLE,
 } from 'lexical';
 import {expect, onTestFinished} from 'vitest';
-import {userEvent} from 'vitest/browser';
+import {commands, userEvent} from 'vitest/browser';
 
 import theme from '../../themes/PlaygroundEditorTheme';
+
+declare module 'vitest/browser' {
+  interface BrowserCommands {
+    typeText(text: string): Promise<void>;
+  }
+}
 
 export function setupEditor(dependencies: AnyLexicalExtensionArgument[]) {
   const root = document.createElement('div');
@@ -46,7 +52,7 @@ export function setupEditor(dependencies: AnyLexicalExtensionArgument[]) {
 }
 
 export async function typeText(text: string) {
-  await userEvent.keyboard(text.replace(/[{[]/g, '$&$&'));
+  await commands.typeText(text);
 }
 
 export async function press(chord: string, count = 1) {

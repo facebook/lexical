@@ -130,6 +130,14 @@ export default defineConfig({
         test: {
           api: {port: 8315},
           browser: {
+            commands: {
+              // Vitest's keyboard descriptor parser splits non-BMP text into
+              // UTF-16 code units. Native Playwright typing preserves code
+              // points, matching the E2E driver's input behavior.
+              typeText: async ({page}, text: string) => {
+                await page.keyboard.type(text);
+              },
+            },
             // Vitest's default browser server port (63315) is in the
             // ephemeral range, and Windows reserves randomized blocks of
             // that range (Hyper-V excluded port ranges), so on Windows CI

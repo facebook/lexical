@@ -122,6 +122,10 @@ const editor = buildEditorFromExtensions({
 `;
 
 const theme = {
+  // The cursor Lexical draws where a text caret can't go, such as between
+  // two tables or decorators: a blinking horizontal bar.
+  blockCursor:
+    'pointer-events-none absolute block after:absolute after:-top-0.5 after:block after:w-5 after:border-0 after:border-t after:border-solid after:border-current after:content-[""] after:animate-[block-cursor-blink_1.1s_steps(2,start)_infinite]',
   code: 'my-2 block rounded-md bg-zinc-100 p-3 font-mono text-sm whitespace-pre dark:bg-zinc-900',
   heading: {
     h1: 'mb-2 text-3xl font-bold',

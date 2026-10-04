@@ -6,17 +6,25 @@
  *
  */
 
-import type {MdastExportHandler, MdastImportHandler, MdastNode} from './types';
+import type {MdastHtmlExtension} from './MdastHtmlExtension';
+import type {
+  MdastExportHandler,
+  MdastImportContext,
+  MdastImportHandler,
+  MdastNode,
+} from './types';
 import type {
   AlignType,
   Html,
+  HtmlBlock,
+  HtmlInline,
   PhrasingContent,
   Table,
   TableCell,
   TableRow,
 } from 'mdast';
 
-import {configExtension} from '@lexical/extension';
+import {$getPeerDependency, configExtension} from '@lexical/extension';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -32,11 +40,15 @@ import {
 import {
   $createParagraphNode,
   $getState,
+  $isDecoratorNode,
   $isElementNode,
   arrayValue,
   createState,
+  declarePeerDependency,
   defineExtension,
   enumValue,
+  type LexicalNode,
+  type ParagraphNode,
 } from 'lexical';
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
@@ -149,24 +161,98 @@ function trimSegment(segment: PhrasingContent[]): PhrasingContent[] {
   return result.filter(node => node.type !== 'text' || node.value !== '');
 }
 
+/** The names of the block elements a cell's HTML can open with. */
+const BLOCK_HTML_RE =
+  /^\s*<(?:address|article|aside|blockquote|details|div|dl|figure|footer|h[1-6]|header|hr|ol|p|pre|section|ul)\b/i;
+
 /**
- * Splits a cell's phrasing content into one paragraph per line. GFM cells
- * can't contain a newline, so `<br>` is the conventional line separator; it
- * imports as a paragraph boundary, which is what Enter inserts in a table
- * cell, so typed lines round-trip.
+ * Whether `node` is a block element written as one line of HTML in a cell
+ * (`<ul><li>a</li></ul>`). Only {@link MdastHtmlExtension} reassembles such
+ * a run into one `htmlInline` node.
  */
-function cellLines(cell: TableCell): PhrasingContent[][] {
-  const lines: PhrasingContent[][] = [[]];
+function isBlockHtml(node: MdastNode): node is HtmlInline {
+  return node.type === 'htmlInline' && BLOCK_HTML_RE.test(node.value);
+}
+
+/**
+ * Splits a cell's phrasing content into lines, one paragraph each, and the
+ * blocks written as HTML between them. GFM cells can't contain a newline,
+ * so `<br>` is the conventional line separator; it imports as a paragraph
+ * boundary, which is what Enter inserts in a table cell, so typed lines
+ * round-trip. A block ends the line before it without a `<br>`, so a `<br>`
+ * next to a block stands for an empty line on that side
+ * (see {@link joinCellItems}).
+ */
+function cellItems(cell: TableCell): (PhrasingContent[] | HtmlInline)[] {
+  const items: (PhrasingContent[] | HtmlInline)[] = [];
+  // The open line, or null right after a block.
+  let line: PhrasingContent[] | null = [];
+  const endLine = () => {
+    if (line !== null) {
+      items.push(trimSegment(nestedBrToBreaks(line)));
+    }
+  };
   for (const child of cell.children) {
     const count = brCount(child);
-    for (let i = 0; i < count; i++) {
-      lines.push([]);
-    }
-    if (count === 0) {
-      lines[lines.length - 1].push(child);
+    if (count > 0) {
+      for (let i = 0; i < count; i++) {
+        endLine();
+        line = [];
+      }
+    } else if (isBlockHtml(child)) {
+      if (line !== null && trimSegment(line).length > 0) {
+        endLine();
+      }
+      items.push(child);
+      line = null;
+    } else if (
+      line !== null ||
+      child.type !== 'text' ||
+      child.value.trim() !== ''
+    ) {
+      line = line || [];
+      line.push(child);
     }
   }
-  return lines.map(line => trimSegment(nestedBrToBreaks(line)));
+  endLine();
+  return items;
+}
+
+/**
+ * Imports a block written as HTML in a cell through
+ * {@link MdastHtmlExtension}'s block import, which keeps its block
+ * structure where an inline run would be flattened into the line.
+ */
+function $importBlockHtml(
+  node: HtmlInline,
+  ctx: MdastImportContext,
+): LexicalNode[] {
+  const block: HtmlBlock = {
+    // The phrasing children are pre-imported into their placeholders the
+    // same way block children are.
+    children: node.children as unknown as HtmlBlock['children'],
+    type: 'htmlBlock',
+    value: node.value,
+  };
+  // Inline output (from a block tag no DOM rule handles) gets a paragraph.
+  const blocks: LexicalNode[] = [];
+  let paragraph: ParagraphNode | null = null;
+  for (const child of ctx.importNode(block)) {
+    if (
+      ($isElementNode(child) || $isDecoratorNode(child)) &&
+      !child.isInline()
+    ) {
+      blocks.push(child);
+      paragraph = null;
+    } else {
+      if (paragraph === null) {
+        paragraph = $createParagraphNode();
+        blocks.push(paragraph);
+      }
+      $append(paragraph, [child]);
+    }
+  }
+  return blocks;
 }
 
 const $importTable: MdastImportHandler<Table> = (node, ctx) => {
@@ -187,11 +273,15 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
           // edited.
           return $append(
             cellNode.setFormat(align[columnIndex] || ''),
-            cellLines(cell).map(line =>
-              $append(
-                $createParagraphNode(),
-                ctx.importChildren({children: line, type: 'tableCell'}),
-              ),
+            cellItems(cell).flatMap(item =>
+              Array.isArray(item)
+                ? [
+                    $append(
+                      $createParagraphNode(),
+                      ctx.importChildren({children: item, type: 'tableCell'}),
+                    ),
+                  ]
+                : $importBlockHtml(item, ctx),
             ),
           );
         }),
@@ -200,9 +290,13 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   );
 };
 
+function html(value: string): Html {
+  return {type: 'html', value};
+}
+
 /** The line separator inside a GFM table cell, which can't hold a newline. */
 function lineBreakHtml(): Html {
-  return {type: 'html', value: '<br>'};
+  return html('<br>');
 }
 
 /**
@@ -279,6 +373,170 @@ function cellContentLines(nodes: readonly MdastNode[]): PhrasingContent[][] {
   return lines;
 }
 
+/**
+ * Whether `value`'s characters can go in an HTML attribute value as is.
+ */
+function isPlainAttribute(value: string): boolean {
+  return /^[\w.+#-]+$/.test(value);
+}
+
+/**
+ * Exported blocks as one line of HTML tags around their Markdown phrasing
+ * (paragraphs as bare lines separated by `<br>`), or null when one of them
+ * has no such form.
+ */
+function flowHtml(nodes: readonly MdastNode[]): PhrasingContent[] | null {
+  const result: PhrasingContent[] = [];
+  let afterLine = false;
+  for (const node of nodes) {
+    if (node.type === 'paragraph') {
+      if (afterLine) {
+        result.push(lineBreakHtml());
+      }
+      result.push(...breaksToHtml(node.children));
+      afterLine = true;
+    } else {
+      const block = blockHtml(node);
+      if (block === null) {
+        return null;
+      }
+      result.push(...block);
+      afterLine = false;
+    }
+  }
+  return result;
+}
+
+/**
+ * An exported block as one line of HTML around its Markdown phrasing, which
+ * GFM allows in a cell, or null for a block with no such form here.
+ */
+function blockHtml(node: MdastNode): PhrasingContent[] | null {
+  const wrap = (
+    open: string,
+    content: PhrasingContent[] | null,
+    close: string,
+  ): PhrasingContent[] | null =>
+    content && [html(open), ...content, html(close)];
+  switch (node.type) {
+    case 'heading':
+      return wrap(
+        `<h${node.depth}>`,
+        breaksToHtml(node.children),
+        `</h${node.depth}>`,
+      );
+    case 'blockquote':
+      return wrap('<blockquote>', flowHtml(node.children), '</blockquote>');
+    case 'list': {
+      const tag = node.ordered ? 'ol' : 'ul';
+      let attributes =
+        node.ordered && typeof node.start === 'number' && node.start !== 1
+          ? ` start="${node.start}"`
+          : '';
+      // The classes GitHub renders task lists with, which the list DOM
+      // import rules read back as a check list.
+      if (node.children.some(item => typeof item.checked === 'boolean')) {
+        attributes += ' class="contains-task-list"';
+      }
+      return wrap(
+        `<${tag}${attributes}>`,
+        flowHtml(node.children),
+        `</${tag}>`,
+      );
+    }
+    case 'listItem':
+      return wrap(
+        typeof node.checked === 'boolean'
+          ? `<li class="task-list-item"><input type="checkbox" disabled${
+              node.checked ? ' checked' : ''
+            }>`
+          : '<li>',
+        flowHtml(node.children),
+        '</li>',
+      );
+    case 'code':
+      return wrap(
+        node.lang && isPlainAttribute(node.lang)
+          ? `<pre data-language="${node.lang}">`
+          : '<pre>',
+        joinLines(
+          node.value
+            .split(/\r?\n|\r/)
+            .map((value): PhrasingContent[] =>
+              value ? [{type: 'text', value}] : [],
+            ),
+        ),
+        '</pre>',
+      );
+    case 'thematicBreak':
+      return [html('<hr>')];
+    case 'html':
+      return [html(node.value.replace(/\s*\n\s*/g, ' '))];
+  }
+  return null;
+}
+
+/**
+ * A cell's exported blocks as lines of phrasing content and, with
+ * {@link MdastHtmlExtension}, blocks written as one line of HTML.
+ * Without it, every block is flattened into lines (see
+ * {@link cellContentLines}).
+ */
+function cellExportItems(
+  nodes: readonly MdastNode[],
+  withHtml: boolean,
+): {block: boolean; content: PhrasingContent[]}[] {
+  const items: {block: boolean; content: PhrasingContent[]}[] = [];
+  let pending: MdastNode[] = [];
+  const flush = () => {
+    for (const content of cellContentLines(pending)) {
+      items.push({block: false, content});
+    }
+    pending = [];
+  };
+  for (const node of nodes) {
+    const block =
+      withHtml && node.type !== 'paragraph' ? blockHtml(node) : null;
+    if (block === null) {
+      pending.push(node);
+    } else {
+      flush();
+      items.push({block: true, content: block});
+    }
+  }
+  flush();
+  return items;
+}
+
+/**
+ * Joins a cell's items into its content, the inverse of
+ * {@link cellItems}: lines are separated by `<br>`, and a block needs none
+ * unless the line beside it is empty. Empty lines are kept as consecutive
+ * (or leading/trailing) `<br>`s, which import back as the same empty
+ * paragraphs.
+ */
+function joinCellItems(
+  items: readonly {block: boolean; content: PhrasingContent[]}[],
+): PhrasingContent[] {
+  return items.flatMap((item, i) => {
+    const prev = items[i - 1];
+    const needsBreak =
+      prev !== undefined &&
+      (prev.block
+        ? !item.block && item.content.length === 0
+        : !item.block || prev.content.length === 0);
+    return needsBreak ? [lineBreakHtml(), ...item.content] : item.content;
+  });
+}
+
+/** Whether the editor writes cell blocks as HTML: its HTML peer is there. */
+function $hasHtmlPeer(): boolean {
+  return (
+    $getPeerDependency<typeof MdastHtmlExtension>('@lexical/mdast/Html') !==
+    undefined
+  );
+}
+
 const $exportTable: MdastExportHandler = (node, ctx) => {
   if (!$isTableNode(node)) {
     return null;
@@ -286,6 +544,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   const rows: TableRow[] = [];
   const legacyAlign = $getState(node, tableAlignState);
   const align: AlignType[] = [];
+  const withHtml = $hasHtmlPeer();
   for (const row of node.getChildren()) {
     // Structural iteration bypasses the walk's selection filter, so rows a
     // selection export does not reach are skipped here. Cells stay: dropping
@@ -303,10 +562,10 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       const column = cells.length;
       align[column] =
         align[column] || $getCellAlign(cell) || legacyAlign[column] || null;
-      // Empty lines are kept as consecutive (or leading/trailing) `<br>`s,
-      // which import back as the same empty paragraphs.
       cells.push({
-        children: joinLines(cellContentLines(ctx.exportChildren(cell))),
+        children: joinCellItems(
+          cellExportItems(ctx.exportChildren(cell), withHtml),
+        ),
         type: 'tableCell',
       });
     }
@@ -325,8 +584,11 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  * nodes it ships. The first table row is treated as the header row in both
  * directions. A GFM cell holds a single line, so the paragraphs and line
  * breaks in a cell are written as `<br>`, and `<br>` reads back as a
- * paragraph boundary. Column alignment is the element format of the
- * column's cells (`TableCellNode.setFormat`).
+ * paragraph boundary. With {@link MdastHtmlExtension} in the editor, the
+ * other blocks in a cell (lists, headings, quotes, code) are written as one
+ * line of HTML and read back as blocks; without it they are flattened into
+ * lines. Column alignment is the element format of the column's cells
+ * (`TableCellNode.setFormat`).
  *
  * @example
  * ```ts
@@ -355,4 +617,9 @@ export const MdastTableExtension = defineExtension({
   ],
   name: '@lexical/mdast/Table',
   nodes: [TableNode, TableRowNode, TableCellNode],
+  // With it, blocks a cell's single line can't express in Markdown are
+  // written as HTML.
+  peerDependencies: [
+    declarePeerDependency<typeof MdastHtmlExtension>('@lexical/mdast/Html'),
+  ],
 });

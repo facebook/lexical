@@ -138,3 +138,23 @@ test('Enter in a cell exports as <br>, not a newline', async () => {
     '| a | b      |\n| - | ------ |\n| 1 | 2<br>3 |',
   );
 });
+
+test('a list and a code block in a cell round-trip as HTML', () => {
+  const markdown =
+    '| a |\n| - |\n| x<ul><li>**i**</li><li>j</li></ul><pre data-language="js">let y<br>  z</pre> |';
+  const {editor} = mountEditor(markdown);
+  expect(
+    editor.read(() => {
+      let node: LexicalNode | null = $getRoot().getFirstChild();
+      while ($isElementNode(node) && !$isTableCellNode(node)) {
+        node = node.getLastChild();
+      }
+      return $isElementNode(node)
+        ? node.getChildren().map(child => child.getType())
+        : [];
+    }),
+  ).toEqual(['paragraph', 'list', 'code']);
+  expect(exportMarkdown(editor).split('\n')[2]).toMatch(
+    /^\| x<ul><li>\*\*i\*\*<\/li><li>j<\/li><\/ul><pre data-language="js">let y<br> {2}z<\/pre> +\|$/,
+  );
+});

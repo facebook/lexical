@@ -36,7 +36,7 @@ test.describe('Shadow DOM', () => {
     // Rich-text-only; collab renders in split iframes which is an orthogonal
     // concern to shadow root encapsulation.
 
-    return initialize({isShadowDOM: true, page});
+    return initialize({isShadowDOM: true, page, showTreeView: true});
   });
 
   test('renders the editor inside an open shadow root', async ({page}) => {

@@ -23,6 +23,8 @@ import {
   test,
 } from '../../../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('HTML Image CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) =>
     initialize({isCollab, page, showNestedEditorTreeView: false}),
@@ -30,10 +32,9 @@ test.describe('HTML Image CopyAndPaste', () => {
 
   test('Copy + paste HTML of a figure with img and figcaption', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     let clipboard = {
       'text/html': html`
         <meta charset="utf-8" />
@@ -128,9 +129,7 @@ test.describe('HTML Image CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste an image', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste an image', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {
@@ -166,12 +165,8 @@ test.describe('HTML Image CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste + undo multiple image', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText || isCollab);
+  test('Copy + paste + undo multiple image', async ({page, isCollab}) => {
+    test.skip(isCollab);
 
     await focusEditor(page);
 

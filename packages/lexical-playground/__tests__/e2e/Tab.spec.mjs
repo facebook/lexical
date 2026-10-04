@@ -18,13 +18,13 @@ import {
 } from '../utils/index.mjs';
 
 /* eslint-disable sort-keys-fix/sort-keys-fix */
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('Tab', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`can tab + IME`, async ({page, isPlainText, browserName}) => {
+  test(`can tab + IME`, async ({page, browserName}) => {
     // CDP session is only available in Chromium
-    test.skip(
-      isPlainText || browserName === 'firefox' || browserName === 'webkit',
-    );
+    test.skip(browserName === 'firefox' || browserName === 'webkit');
 
     const client = await page.context().newCDPSession(page);
     async function imeType() {
@@ -89,8 +89,7 @@ test.describe('Tab', () => {
     );
   });
 
-  test('can tab inside code block #4399', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('can tab inside code block #4399', async ({page}) => {
     await focusEditor(page);
 
     await page.keyboard.type('``` ');
@@ -113,11 +112,7 @@ test.describe('Tab', () => {
     );
   });
 
-  test('can go to start of line after a tab character', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('can go to start of line after a tab character', async ({page}) => {
     await focusEditor(page);
 
     await page.keyboard.type('Foo');

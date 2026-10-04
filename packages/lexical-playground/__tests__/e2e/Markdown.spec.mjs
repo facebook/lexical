@@ -340,7 +340,6 @@ test.describe('Markdown', () => {
       test(`Should test importing markdown (${markdownText}) trigger.`, async ({
         page,
         isPlainText,
-        isCollab,
       }) => {
         test.skip(isPlainText);
         await focusEditor(page);
@@ -385,8 +384,8 @@ async function assertMarkdownImportExport(
 }
 
 test.describe('Markdown', () => {
-  test.beforeEach(({isCollab, isPlainText, page}) => {
-    test.skip(isPlainText);
+  test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+  test.beforeEach(({isCollab, page}) => {
     return initialize({isCollab, page});
   });
 
@@ -682,10 +681,7 @@ test.describe('Markdown', () => {
   });
 
   SIMPLE_TEXT_FORMAT_SHORTCUTS.forEach(testCase => {
-    test(`can convert "${testCase.text}" shortcut`, async ({
-      page,
-      isCollab,
-    }) => {
+    test(`can convert "${testCase.text}" shortcut`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type(testCase.text);
       await assertHTML(page, testCase.html, undefined, {ignoreClasses: false});

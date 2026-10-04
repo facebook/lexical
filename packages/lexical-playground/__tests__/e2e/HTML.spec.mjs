@@ -26,11 +26,11 @@ import {
   test,
 } from '../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('HTML', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`Can export HTML using the button`, async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test(`Can export HTML using the button`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Foo');
     await applyHeading(page, 1);
@@ -123,9 +123,7 @@ test.describe('HTML', () => {
     );
   });
 
-  test(`Can import HTML using the button`, async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test(`Can import HTML using the button`, async ({page}) => {
     await focusEditor(page);
     await click(page, '.action-button .html');
 
@@ -190,12 +188,7 @@ test.describe('HTML', () => {
     );
   });
 
-  test(`Formats a terse HTML export with prettier`, async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test(`Formats a terse HTML export with prettier`, async ({page}) => {
     await focusEditor(page);
     await applyHeading(page, 1);
     await page.keyboard.type('Foo');
@@ -220,8 +213,8 @@ test.describe('HTML', () => {
     }).toPass({intervals: [100, 250, 500], timeout: 5000});
   });
 
-  test(`Can switch from Pages mode`, async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText || isCollab);
+  test(`Can switch from Pages mode`, async ({page, isCollab}) => {
+    test.skip(isCollab);
     await focusEditor(page);
     // Ensure we're in pageless mode
     await page.waitForSelector(

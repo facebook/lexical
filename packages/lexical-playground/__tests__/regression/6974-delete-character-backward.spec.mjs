@@ -18,6 +18,11 @@ import {
   test,
 } from '../utils/index.mjs';
 
+test.skip(
+  ({isCollab, isPlainText}) => isCollab || isPlainText,
+  'Requires rich text without collaboration',
+);
+
 test.describe('Regression tests for #6974', () => {
   test.beforeEach(({isPlainText, isCollab, page}) =>
     initialize({isCollab, isPlainText, page}),
@@ -25,10 +30,7 @@ test.describe('Regression tests for #6974', () => {
 
   test(`deleteCharacter merges children from adjacent blocks even if the previous leaf is an inline decorator`, async ({
     page,
-    isCollab,
-    isPlainText,
   }) => {
-    test.skip(isCollab || isPlainText);
     await focusEditor(page);
     const testEquation = '$x$';
     const testString = 'test';

@@ -36,9 +36,7 @@ import {
   withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
-test.beforeEach(({isPlainText}) => {
-  test.skip(isPlainText);
-});
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
 
 test.describe('Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
@@ -1862,7 +1860,6 @@ test.describe('Links', () => {
 
   test('Can handle pressing Enter inside a Link containing multiple TextNodes', async ({
     page,
-    isCollab,
   }) => {
     await focusEditor(page);
     await page.keyboard.type('Hello ');
@@ -1932,10 +1929,7 @@ test.describe('Links', () => {
     );
   });
 
-  test('Can handle pressing Enter at the end of a Link', async ({
-    isCollab,
-    page,
-  }) => {
+  test('Can handle pressing Enter at the end of a Link', async ({page}) => {
     test.fixme(true, 'Flaky');
     await focusEditor(page);
     await page.keyboard.type('Hello awesome');

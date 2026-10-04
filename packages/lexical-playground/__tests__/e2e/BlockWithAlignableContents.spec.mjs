@@ -20,14 +20,12 @@ import {
   YOUTUBE_SAMPLE_URL,
 } from '../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('BlockWithAlignableContents', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('Can create full width blocks for YouTube videos', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Can create full width blocks for YouTube videos', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello world');
     await assertHTML(
@@ -64,11 +62,7 @@ test.describe('BlockWithAlignableContents', () => {
     );
   });
 
-  test('Can align contents within full width blocks', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Can align contents within full width blocks', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello world');
     await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
@@ -137,10 +131,9 @@ test.describe('BlockWithAlignableContents', () => {
   // precedes it and collapses the selection to the start of that paragraph.
   test('Can triple click to select a paragraph followed by an embed block', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
     const text = 'Hello world';
     await page.keyboard.type(text);

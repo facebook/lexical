@@ -18,15 +18,11 @@ import {
   unmergeTableCell,
 } from '../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('Regression test #4876', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test('unmerging cells should add cells to correct rows', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
-
+  test('unmerging cells should add cells to correct rows', async ({page}) => {
     await focusEditor(page);
 
     await insertTable(page, 4, 4);

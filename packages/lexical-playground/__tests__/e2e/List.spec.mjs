@@ -71,9 +71,7 @@ async function clickOutdentButton(page, times = 1) {
   }
 }
 
-test.beforeEach(({isPlainText}) => {
-  test.skip(isPlainText);
-});
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
 
 test.describe('Checklist focus option', () => {
   test('(shouldDisableFocusOnClickChecklist: true) Keeps focus outside the editor when clicking a checklist item', async ({
@@ -509,7 +507,6 @@ test.describe('Nested List', () => {
 
   test(`Can create a list and partially copy some content out of it`, async ({
     page,
-    isCollab,
   }) => {
     await focusEditor(page);
     await page.keyboard.type(
@@ -2564,7 +2561,6 @@ test.describe('Nested List', () => {
 
   test(`Should NOT merge selected nodes into existing list siblings of a different type when formatting to a list`, async ({
     page,
-    isCollab,
   }) => {
     await focusEditor(page);
 

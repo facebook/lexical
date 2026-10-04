@@ -91,13 +91,10 @@ const nthTableSelector = nth =>
     ? `div:nth-of-type(${nth}) > div.PlaygroundEditorTheme__tableScrollableWrapper > table`
     : `table:nth-of-type(${nth})`;
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('Tables', () => {
-  test(`Can a table be inserted from the toolbar`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test(`Can a table be inserted from the toolbar`, async ({page, isCollab}) => {
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -138,10 +135,9 @@ test.describe('Tables', () => {
 
   test(`Selection placed on a <col> element resolves into the first cell`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -191,10 +187,9 @@ test.describe('Tables', () => {
 
   test(`TableSelection converts to RangeSelection when DOM selection extends onto the editor root (Issue #8584 follow-up)`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -256,12 +251,7 @@ test.describe('Tables', () => {
     expect(selectionAfter.isRange).toBe(true);
   });
 
-  test(`Can type inside of table cell`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test(`Can type inside of table cell`, async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -303,12 +293,7 @@ test.describe('Tables', () => {
   });
 
   test.describe(`Can exit table with the horizontal arrow keys`, () => {
-    test(`Can exit the first cell of a table`, async ({
-      page,
-      isPlainText,
-      isCollab,
-    }) => {
-      test.skip(isPlainText);
+    test(`Can exit the first cell of a table`, async ({page, isCollab}) => {
       await initialize({isCollab, page});
 
       await focusEditor(page);
@@ -349,12 +334,7 @@ test.describe('Tables', () => {
       });
     });
 
-    test(`Can exit the last cell of a table`, async ({
-      page,
-      isPlainText,
-      isCollab,
-    }) => {
-      test.skip(isPlainText);
+    test(`Can exit the last cell of a table`, async ({page, isCollab}) => {
       await initialize({isCollab, page});
 
       await focusEditor(page);
@@ -396,10 +376,8 @@ test.describe('Tables', () => {
 
     test(`Can exit the first cell of a nested table into the parent table cell`, async ({
       page,
-      isPlainText,
       isCollab,
     }) => {
-      test.skip(isPlainText);
       await initialize({hasNestedTables: true, isCollab, page});
 
       await focusEditor(page);
@@ -424,10 +402,8 @@ test.describe('Tables', () => {
 
     test(`Can exit the last cell of a nested table into the parent table cell`, async ({
       page,
-      isPlainText,
       isCollab,
     }) => {
-      test.skip(isPlainText);
       await initialize({hasNestedTables: true, isCollab, page});
 
       await focusEditor(page);
@@ -454,11 +430,8 @@ test.describe('Tables', () => {
 
   test(`Can insert a paragraph after a table, that is the last node, with the "Enter" key`, async ({
     page,
-    isPlainText,
     isCollab,
-    browserName,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -561,12 +534,8 @@ test.describe('Tables', () => {
 
   test(`Can type text after a table that is the last node`, async ({
     page,
-    isPlainText,
     isCollab,
-    browserName,
   }) => {
-    test.skip(isPlainText);
-
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -619,12 +588,8 @@ test.describe('Tables', () => {
 
   test(`Can't backwards delete from text to a table`, async ({
     page,
-    isPlainText,
     isCollab,
-    browserName,
   }) => {
-    test.skip(isPlainText);
-
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -713,10 +678,8 @@ test.describe('Tables', () => {
 
   test(`Can enter a table from a paragraph underneath via the left arrow key`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -740,12 +703,7 @@ test.describe('Tables', () => {
   });
 
   test.describe(`Can navigate table with keyboard`, () => {
-    test(`Can navigate cells horizontally`, async ({
-      page,
-      isPlainText,
-      isCollab,
-    }) => {
-      test.skip(isPlainText);
+    test(`Can navigate cells horizontally`, async ({page, isCollab}) => {
       await initialize({isCollab, page});
 
       await focusEditor(page);
@@ -839,12 +797,7 @@ test.describe('Tables', () => {
       });
     });
 
-    test(`Can navigate cells vertically`, async ({
-      page,
-      isPlainText,
-      isCollab,
-    }) => {
-      test.skip(isPlainText);
+    test(`Can navigate cells vertically`, async ({page, isCollab}) => {
       await initialize({isCollab, page});
 
       await focusEditor(page);
@@ -877,9 +830,7 @@ test.describe('Tables', () => {
     test('Should not navigate cells when typeahead menu is open and focused', async ({
       page,
       isCollab,
-      isPlainText,
     }) => {
-      test.skip(isPlainText);
       await initialize({isCollab, page});
 
       await focusEditor(page);
@@ -913,12 +864,7 @@ test.describe('Tables', () => {
     });
   });
 
-  test(`Can select cells using Table selection`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test(`Can select cells using Table selection`, async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -975,11 +921,8 @@ test.describe('Tables', () => {
 
   test(`Can select cells using Table selection via keyboard`, async ({
     page,
-    isPlainText,
     isCollab,
-    browserName,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -1057,12 +1000,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can style text using Table selection`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test(`Can style text using Table selection`, async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -1124,10 +1062,8 @@ test.describe('Tables', () => {
 
   test(`Can style on empty table cells and paragraphs with no text`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -1185,12 +1121,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Align selection style for table cells`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test(`Align selection style for table cells`, async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -1259,10 +1190,8 @@ test.describe('Tables', () => {
 
   test(`Can copy + paste (internal) using Table selection`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -1350,12 +1279,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can clear text using Table selection`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test(`Can clear text using Table selection`, async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -1415,10 +1339,8 @@ test.describe('Tables', () => {
 
   test(`Range Selection is corrected when it contains a partial Table.`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -1456,10 +1378,8 @@ test.describe('Tables', () => {
 
   test(`Select All when document contains tables adds custom table styles.`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -1509,12 +1429,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Can delete all with node selection', async ({
-    page,
-    isCollab,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Can delete all with node selection', async ({page, isCollab}) => {
     await initialize({isCollab, page});
     await focusEditor(page);
     await page.keyboard.type('Text before');
@@ -1538,9 +1453,8 @@ test.describe('Tables', () => {
   test('Can delete all with range selection anchored in table', async ({
     page,
     isCollab,
-    isPlainText,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
     await insertTable(page, 1, 1);
@@ -1583,8 +1497,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Horizontal rule inside cell`, async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText);
+  test(`Horizontal rule inside cell`, async ({page, isCollab}) => {
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -1621,11 +1534,8 @@ test.describe('Tables', () => {
 
   test('Table selection: can select multiple cells and insert a decorator', async ({
     page,
-    isPlainText,
     isCollab,
-    browserName,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -1695,10 +1605,8 @@ test.describe('Tables', () => {
 
   test('Table selection: can backspace lines, backspacing empty cell does not destroy it #3278', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -1787,11 +1695,9 @@ test.describe('Tables', () => {
 
   test('Can remove new lines in a collapsible section inside of a table', async ({
     page,
-    isPlainText,
     isCollab,
     browserName,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -1924,13 +1830,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Resize merged cells width (1)', async ({
-    browserName,
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test('Resize merged cells width (1)', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -2021,12 +1921,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Resize merged cells width (2)', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test('Resize merged cells width (2)', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -2117,13 +2012,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Resize merged cells height', async ({
-    browserName,
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test('Resize merged cells height', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -2225,8 +2114,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Merge/unmerge cells (1)', async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText);
+  test('Merge/unmerge cells (1)', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -2331,8 +2219,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Merge/unmerge cells (2)', async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText);
+  test('Merge/unmerge cells (2)', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -2503,12 +2390,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Merge/unmerge with already merged cells', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test('Merge/unmerge with already merged cells', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -2918,12 +2800,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Merged cell tab navigation forward', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test('Merged cell tab navigation forward', async ({page, isCollab}) => {
     test.skip(isCollab);
     await initialize({isCollab, page});
 
@@ -3090,12 +2967,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Merged cell tab navigation reverse', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test('Merged cell tab navigation reverse', async ({page, isCollab}) => {
     test.skip(isCollab);
     await initialize({isCollab, page});
 
@@ -3264,8 +3136,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Merge with content', async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText);
+  test('Merge with content', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -3370,10 +3241,8 @@ test.describe('Tables', () => {
 
   test('Select multiple merged cells (selection expands to a rectangle)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -3550,10 +3419,8 @@ test.describe('Tables', () => {
 
   test('Merge multiple merged cells and then unmerge', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -3736,10 +3603,8 @@ test.describe('Tables', () => {
 
   test('Insert row above (with conflicting merged cell)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -3815,10 +3680,8 @@ test.describe('Tables', () => {
 
   test('Insert column before (with conflicting merged cell)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -3890,10 +3753,8 @@ test.describe('Tables', () => {
 
   test('Insert column before (with selected cell with rowspan > 1)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -3958,10 +3819,8 @@ test.describe('Tables', () => {
 
   test('Insert column before (with 1+ selected cells in a row)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -4055,10 +3914,8 @@ test.describe('Tables', () => {
 
   test('Delete rows (with conflicting merged cell)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -4128,10 +3985,8 @@ test.describe('Tables', () => {
 
   test('Delete selected rows (with merged cell overflowing selection from top and bottom)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -4401,10 +4256,8 @@ test.describe('Tables', () => {
 
   test('Delete selected rows (with merged cell overflowing selection from the top)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -4681,10 +4534,8 @@ test.describe('Tables', () => {
 
   test('Delete selected rows (with merged cell overflowing selection from the bottom)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -4961,10 +4812,8 @@ test.describe('Tables', () => {
 
   test('Delete columns (with conflicting merged cell)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -5032,8 +4881,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Delete columns backward', async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText);
+  test('Delete columns backward', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -5086,12 +4934,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Delete columns forward at end of table', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test('Delete columns forward at end of table', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -5144,12 +4987,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Deselect when click outside #3785 #4138', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test('Deselect when click outside #3785 #4138', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -5168,8 +5006,7 @@ test.describe('Tables', () => {
     });
   });
 
-  test('Background color to cell', async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText);
+  test('Background color to cell', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -5207,8 +5044,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Cell merge feature disabled', async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText);
+  test('Cell merge feature disabled', async ({page, isCollab}) => {
     await initialize({isCollab, page, tableCellMerge: false});
 
     await focusEditor(page);
@@ -5310,12 +5146,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Cell background color feature disabled', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test('Cell background color feature disabled', async ({page, isCollab}) => {
     await initialize({isCollab, page, tableCellBackgroundColor: false});
 
     await focusEditor(page);
@@ -5354,10 +5185,8 @@ test.describe('Tables', () => {
 
   test('Add column header after merging cells #4378', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -5483,12 +5312,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Can align text using Table selection', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test('Can align text using Table selection', async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -5567,10 +5391,8 @@ test.describe('Tables', () => {
 
   test('Aligns the table itself (not cell text) when the whole table is selected in reverse, e.g. bottom-right to top-left (#8880)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -5605,10 +5427,8 @@ test.describe('Tables', () => {
 
   test('Paste and insert new lines after unmerging cells', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     const pageOrFrame = getPageOrFrame(page);
@@ -5823,9 +5643,7 @@ test.describe('Tables', () => {
   test('Can delete table row when previous cell is a merged cell', async ({
     page,
     isCollab,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -6151,9 +5969,7 @@ test.describe('Tables', () => {
   test('Can delete table row when siblings are merged cell', async ({
     page,
     isCollab,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -6463,10 +6279,9 @@ test.describe('Tables', () => {
   test('Can insert multiple rows above the selection', async ({
     page,
     isCollab,
-    isPlainText,
   }) => {
     await initialize({isCollab, page});
-    test.skip(isPlainText);
+
     test.skip(isCollab);
 
     await focusEditor(page);
@@ -6774,10 +6589,9 @@ test.describe('Tables', () => {
   test('Can insert multiple rows below the selection', async ({
     page,
     isCollab,
-    isPlainText,
   }) => {
     await initialize({isCollab, page});
-    test.skip(isPlainText);
+
     test.skip(isCollab);
 
     await focusEditor(page);
@@ -7085,12 +6899,10 @@ test.describe('Tables', () => {
     test.use({shouldUseLexicalContextMenu: true});
     test(`Can select cells using Table selection and cut them with the context menu`, async ({
       page,
-      isPlainText,
       isCollab,
       shouldUseLexicalContextMenu,
       browserName,
     }) => {
-      test.skip(isPlainText);
       // The way that the clicks happen in test doesn't work in firefox for some reason
       // but it does seem to work when you do it by hand
       test.fixme(browserName === 'firefox');
@@ -7199,8 +7011,7 @@ test.describe('Tables', () => {
     });
   });
 
-  test(`Cannot insert nested tables`, async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText);
+  test(`Cannot insert nested tables`, async ({page, isCollab}) => {
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -7247,12 +7058,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Cannot paste tables inside table cells`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test(`Cannot paste tables inside table cells`, async ({page, isCollab}) => {
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -7308,10 +7114,8 @@ test.describe('Tables', () => {
 
   test(`Can paste tables inside table cells (with hasNestedTables)`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({hasNestedTables: true, isCollab, page});
     await focusEditor(page);
 
@@ -7397,10 +7201,8 @@ test.describe('Tables', () => {
 
   test(`Can paste and autofit tables inside table cells (with hasNestedTables, hasFitNestedTables)`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     test.skip(IS_TABLE_HORIZONTAL_SCROLL); // hasFitNestedTables disables horizontally scrollable tables
     await initialize({
       hasFitNestedTables: true,
@@ -7500,10 +7302,9 @@ test.describe('Tables', () => {
 
   test(`Click and drag to create selection in Firefox #7245`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -8099,12 +7900,9 @@ test.describe('Tables', () => {
   });
 
   test('Resize row with merged cells spanning multiple rows', async ({
-    browserName,
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -8205,14 +8003,13 @@ test.describe('Tables', () => {
 
   test(`Table action menu is hidden when cell overflows`, async ({
     page,
-    isPlainText,
     isCollab,
     browserName,
   }) => {
     // The way that the clicks happen in test doesn't work in firefox for some reason
     // but it does seem to work when you do it by hand
     test.fixme(browserName === 'firefox');
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -8251,10 +8048,9 @@ test.describe('Tables', () => {
 
   test(`Can expand table to fit content when pasting table into table`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -8552,10 +8348,8 @@ test.describe('Tables', () => {
 
   test(`Can paste table containing merged cells into table`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -8824,10 +8618,8 @@ test.describe('Tables', () => {
 
   test(`Can paste table into table while having table selection`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -8951,10 +8743,8 @@ test.describe('Tables', () => {
 
   test('Can delete table when fully selected with merged cells', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     test.fixme(isCollab, 'Flaky on Collab');
     await initialize({isCollab, page});
 
@@ -9001,11 +8791,8 @@ test.describe('Tables', () => {
 
   test('Ctrl+A selects all cells in table with merged cells when table is only content', async ({
     page,
-    isPlainText,
     isCollab,
-    browserName,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -9061,10 +8848,8 @@ test.describe('Tables', () => {
 
   test('Drag-select column in 2x2 table selects all cells in that column', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -9242,10 +9027,8 @@ test.describe('Tables', () => {
 
   test('Can clear table selection in table by selecting cell in another table', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -9301,10 +9084,8 @@ test.describe('Tables', () => {
 
   test('Table selection is properly cleared when clicking and dragging a cell in the same table', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -9366,10 +9147,9 @@ test.describe('Tables', () => {
 
   test(`Drag-selecting to the edge of a scrollable table auto-scrolls it #7153`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     // The horizontal scroll wrapper only exists when scrollable tables are on.
     test.skip(!IS_TABLE_HORIZONTAL_SCROLL);
     await initialize({isCollab, page});
@@ -9432,10 +9212,8 @@ test.describe('Tables', () => {
   test.describe('shift-selection tests', () => {
     test('Range-select from above table into it selects the entire table', async ({
       page,
-      isPlainText,
       isCollab,
     }) => {
-      test.skip(isPlainText);
       await initialize({isCollab, page});
 
       await focusEditor(page);
@@ -9469,10 +9247,8 @@ test.describe('Tables', () => {
 
     test('Range-select from below table into it selects the entire table', async ({
       page,
-      isPlainText,
       isCollab,
     }) => {
-      test.skip(isPlainText);
       await initialize({isCollab, page});
 
       await focusEditor(page);
@@ -9504,10 +9280,8 @@ test.describe('Tables', () => {
 
     test('Range-select from inside table to text above it selects the entire table', async ({
       page,
-      isPlainText,
       isCollab,
     }) => {
-      test.skip(isPlainText);
       await initialize({isCollab, page});
 
       await focusEditor(page);
@@ -9540,10 +9314,8 @@ test.describe('Tables', () => {
 
     test('Range-select from inside table to text below it selects the entire table', async ({
       page,
-      isPlainText,
       isCollab,
     }) => {
-      test.skip(isPlainText);
       await initialize({isCollab, page});
 
       await focusEditor(page);
@@ -9593,10 +9365,8 @@ test.describe('Tables', () => {
 
     test('Range-select from above nested table into it selects the entire table, but not the outer table', async ({
       page,
-      isPlainText,
       isCollab,
     }) => {
-      test.skip(isPlainText);
       test.skip(isCollab);
       await initialize({hasNestedTables: true, page});
 
@@ -9627,10 +9397,8 @@ test.describe('Tables', () => {
 
     test('Range-select from below nested table into it selects the entire table, but not the outer table', async ({
       page,
-      isPlainText,
       isCollab,
     }) => {
-      test.skip(isPlainText);
       test.skip(isCollab);
       await initialize({hasNestedTables: true, page});
 
@@ -9657,10 +9425,8 @@ test.describe('Tables', () => {
     test('Range-select from inside nested table to text above it selects the entire table, but not the outer table', async ({
       browserName,
       page,
-      isPlainText,
       isCollab,
     }) => {
-      test.skip(isPlainText);
       test.skip(isCollab);
       test.fixme(
         browserName === 'firefox',
@@ -9695,10 +9461,8 @@ test.describe('Tables', () => {
     test('Range-select from inside nested table to text below it selects the entire table, but not the outer table', async ({
       browserName,
       page,
-      isPlainText,
       isCollab,
     }) => {
-      test.skip(isPlainText);
       test.skip(isCollab);
       test.fixme(
         browserName === 'firefox',

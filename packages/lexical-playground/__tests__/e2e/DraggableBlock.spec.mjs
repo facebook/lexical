@@ -21,17 +21,18 @@ import {
   YOUTUBE_SAMPLE_URL,
 } from '../utils/index.mjs';
 
+test.skip(
+  ({isCollab, isPlainText}) => isCollab || isPlainText,
+  'Requires rich text without collaboration',
+);
+
 test.describe('DraggableBlock', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test('Paragraph one can be successfully dragged below paragraph two', async ({
     page,
-    isPlainText,
     browserName,
-    isCollab,
   }) => {
-    test.skip(isCollab);
-    test.skip(isPlainText);
     test.skip(browserName === 'firefox');
 
     await focusEditor(page);
@@ -75,12 +76,8 @@ test.describe('DraggableBlock', () => {
 
   test('Dragging a paragraph to the end of itself does not change the content', async ({
     page,
-    isPlainText,
     browserName,
-    isCollab,
   }) => {
-    test.skip(isCollab);
-    test.skip(isPlainText);
     test.skip(browserName === 'firefox');
 
     await focusEditor(page);
@@ -117,12 +114,8 @@ test.describe('DraggableBlock', () => {
 
   test('Drag a paragraph to the bottom of its previous paragraph and nothing happens', async ({
     page,
-    isPlainText,
     browserName,
-    isCollab,
   }) => {
-    test.skip(isCollab);
-    test.skip(isPlainText);
     test.skip(browserName === 'firefox');
 
     await focusEditor(page);
@@ -159,12 +152,8 @@ test.describe('DraggableBlock', () => {
 
   test('Dragging the first paragraph to an empty space in the middle of the editor works correctly', async ({
     page,
-    isPlainText,
     browserName,
-    isCollab,
   }) => {
-    test.skip(isCollab);
-    test.skip(isPlainText);
     test.skip(browserName === 'firefox');
 
     await focusEditor(page);
@@ -196,13 +185,7 @@ test.describe('DraggableBlock', () => {
 
   test('Restores focus after dragging a selected decorator block', async ({
     page,
-    isPlainText,
-    browserName,
-    isCollab,
   }) => {
-    test.skip(isCollab);
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await page.keyboard.type('Before');
     await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);

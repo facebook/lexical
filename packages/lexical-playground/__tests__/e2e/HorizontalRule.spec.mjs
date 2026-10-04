@@ -35,15 +35,14 @@ async function toggleBulletList(page) {
   await click(page, '.dropdown .icon.bullet-list');
 }
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('HorizontalRule', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test('Can create a horizontal rule and move selection around it', async ({
     page,
     isCollab,
-    isPlainText,
-    browserName,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
 
     await selectFromInsertDropdown(page, '.horizontal-rule');
@@ -167,9 +166,8 @@ test.describe('HorizontalRule', () => {
   test('Shows block cursor before a horizontal rule preceded by a paragraph', async ({
     page,
     isCollab,
-    isPlainText,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
 
     await page.keyboard.type('Before');
@@ -214,10 +212,7 @@ test.describe('HorizontalRule', () => {
 
   test('Will add a horizontal rule at the end of a current TextNode and move selection to the new ParagraphNode.', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
 
     await page.keyboard.type('Test');
@@ -268,9 +263,7 @@ test.describe('HorizontalRule', () => {
 
   test('Will add a horizontal rule and split a TextNode across 2 paragraphs if the caret is in the middle of the TextNode, moving selection to the start of the new ParagraphNode.', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
 
     await page.keyboard.type('Test');
@@ -330,9 +323,7 @@ test.describe('HorizontalRule', () => {
 
   test('Will add a horizontal rule and split a TextNode across 2 ListItemNode if the caret is in the middle of the TextNode, moving selection to the start of the new ParagraphNode', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await toggleBulletList(page);
 
@@ -399,9 +390,7 @@ test.describe('HorizontalRule', () => {
 
   test('Will add a horizontal rule and split a TextNode across 2 ListItemNode if the caret is in an empty ListItemNode, moving selection to the start of the new ListItemNode (#6849)', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await toggleBulletList(page);
 
@@ -455,9 +444,7 @@ test.describe('HorizontalRule', () => {
     });
   });
 
-  test('Can copy and paste a horizontal rule', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Can copy and paste a horizontal rule', async ({page}) => {
     await focusEditor(page);
 
     await selectFromInsertDropdown(page, '.horizontal-rule');
@@ -565,10 +552,9 @@ test.describe('HorizontalRule', () => {
   test('Can delete empty paragraph after a horizontal rule without deleting the horizontal rule', async ({
     page,
     browserName,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
 
     await focusEditor(page);
 
@@ -655,10 +641,9 @@ test.describe('HorizontalRule', () => {
 
   test('ArrowDown from middle of multi-line paragraph does not jump to adjacent decorator', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
 
     // Soft line breaks (Shift+Enter) guarantee multiple visual lines
@@ -700,10 +685,9 @@ test.describe('HorizontalRule', () => {
 
   test('ArrowUp navigates through consecutive decorators', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
 
     await page.keyboard.type('Top');
@@ -740,10 +724,9 @@ test.describe('HorizontalRule', () => {
 
   test('ArrowDown from last line of paragraph stops at adjacent decorator', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
 
     await page.keyboard.type('Some text');
@@ -767,10 +750,9 @@ test.describe('HorizontalRule', () => {
 
   test('ArrowDown from last list item selects adjacent decorator', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
 
     // Create a bullet list then insert HR after it
@@ -806,10 +788,9 @@ test.describe('HorizontalRule', () => {
 
   test('Clicking between consecutive block decorators creates selection (#6775)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
 
     await selectFromInsertDropdown(page, '.horizontal-rule');
@@ -873,10 +854,9 @@ test.describe('HorizontalRule', () => {
 
   test('ArrowDown from block cursor between shadow root and decorator selects the decorator', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
 
     await page.keyboard.type('Top');

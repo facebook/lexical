@@ -136,9 +136,10 @@ async function toggleReadOnly(page) {
 
 // These drive real mouse buttons and count the tabs the browser opens, which
 // the split-frame collab harness cannot observe, and links need rich text.
-test.beforeEach(({isCollab, isPlainText}) => {
-  test.skip(isPlainText || isCollab);
-});
+test.skip(
+  ({isCollab, isPlainText}) => isPlainText || isCollab,
+  'Requires rich text without collaboration',
+);
 
 test.describe('Clickable links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

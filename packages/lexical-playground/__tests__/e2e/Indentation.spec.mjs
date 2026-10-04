@@ -38,6 +38,8 @@ async function clickOutdentButton(page, times = 1) {
 
 const MAX_INDENT = 7;
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('Identation', () => {
   test.beforeEach(({isCollab, page}) =>
     initialize({isCollab, page, tableHorizontalScroll: false}),
@@ -45,12 +47,10 @@ test.describe('Identation', () => {
 
   test(`Can create content and indent and outdent it all`, async ({
     page,
-    browserName,
-    isPlainText,
     isCollab,
   }) => {
     // We have to skip collab due to styling on the table for selected cells
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
     await page.keyboard.type('foo');
     await page.keyboard.press('Enter');
@@ -460,11 +460,7 @@ test.describe('Identation', () => {
     );
   });
 
-  test(`Can only indent paragraph until the max depth`, async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test(`Can only indent paragraph until the max depth`, async ({page}) => {
     await focusEditor(page);
     await clickIndentButton(page, MAX_INDENT);
 
@@ -480,9 +476,7 @@ test.describe('Identation', () => {
 
   test(`Can only indent until the max depth when list is empty`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await toggleBulletList(page);
 
@@ -592,9 +586,7 @@ test.describe('Identation', () => {
 
   test(`Can only indent until the max depth when list has content`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await toggleBulletList(page);
     await page.keyboard.type('World');
@@ -705,10 +697,7 @@ test.describe('Identation', () => {
 
   test(`Can only indent until the max depth a list with nested lists`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await toggleBulletList(page);
     await page.keyboard.type('Hello');
@@ -1006,8 +995,7 @@ test.describe('Identation', () => {
     );
   });
 
-  test(`Cannot have negative indents (#7410)`, async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test(`Cannot have negative indents (#7410)`, async ({page}) => {
     await focusEditor(page);
 
     await pasteFromClipboard(page, {

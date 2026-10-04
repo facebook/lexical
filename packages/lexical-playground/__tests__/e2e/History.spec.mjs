@@ -24,14 +24,14 @@ import {
   test,
 } from '../utils/index.mjs';
 
+test.skip(({isCollab}) => isCollab, 'Requires non-collaborative editing');
+
 test.describe('History', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can type two paragraphs of text and correctly undo and redo`, async ({
     isRichText,
     page,
-    isCollab,
   }) => {
-    test.skip(isCollab);
     await page.focus('div[contenteditable="true"]');
     // Freeze the history merge clock before the first burst so "hello" coalesces
     // into a single undo entry deterministically. Each advanceHistoryClock call
@@ -446,10 +446,9 @@ test.describe('History', () => {
 
   test('Can coalesce when switching inline styles (#1151)', async ({
     page,
-    isCollab,
     isPlainText,
   }) => {
-    test.skip(isCollab || isPlainText);
+    test.skip(isPlainText);
 
     await focusEditor(page);
     // Freeze the history merge clock: without it each burst is typed against
@@ -528,11 +527,10 @@ test.describe('History - IME', () => {
   test('Can undo composed Hirigana via IME after composition ends (#2479)', async ({
     page,
     browserName,
-    isCollab,
     isPlainText,
   }) => {
     // We don't yet support FF.
-    test.skip(isCollab || isPlainText || browserName !== 'chromium');
+    test.skip(isPlainText || browserName !== 'chromium');
 
     await focusEditor(page);
     await enableCompositionKeyEvents(page);
@@ -749,11 +747,10 @@ test.describe('History - IME', () => {
   test('Cancel composition not push undo stack', async ({
     page,
     browserName,
-    isCollab,
     isPlainText,
   }) => {
     // We don't yet support FF.
-    test.skip(isCollab || isPlainText || browserName !== 'chromium');
+    test.skip(isPlainText || browserName !== 'chromium');
 
     await focusEditor(page);
     await enableCompositionKeyEvents(page);
@@ -803,11 +800,10 @@ test.describe('History - IME', () => {
   test('Merge IME input when less delay', async ({
     page,
     browserName,
-    isCollab,
     isPlainText,
   }) => {
     // We don't yet support FF.
-    test.skip(isCollab || isPlainText || browserName !== 'chromium');
+    test.skip(isPlainText || browserName !== 'chromium');
 
     await focusEditor(page);
     await enableCompositionKeyEvents(page);
@@ -913,11 +909,10 @@ test.describe('History - IME', () => {
   test('RangeSelection should be retained when undo IME', async ({
     page,
     browserName,
-    isCollab,
     isPlainText,
   }) => {
     // We don't yet support FF.
-    test.skip(isCollab || isPlainText || browserName !== 'chromium');
+    test.skip(isPlainText || browserName !== 'chromium');
 
     await focusEditor(page);
     await enableCompositionKeyEvents(page);

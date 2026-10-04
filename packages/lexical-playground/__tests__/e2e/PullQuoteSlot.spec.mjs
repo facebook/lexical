@@ -88,8 +88,8 @@ async function caretInSelector(page, selector) {
 }
 
 test.describe('PullQuote slot host', () => {
-  test.beforeEach(async ({isCollab, isPlainText, page}) => {
-    test.skip(isPlainText);
+  test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+  test.beforeEach(async ({isCollab, page}) => {
     await initialize({isCollab, page});
   });
 

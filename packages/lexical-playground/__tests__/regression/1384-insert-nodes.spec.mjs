@@ -18,14 +18,14 @@ import {
   withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
+test.skip(
+  ({isCollab, isPlainText}) => isPlainText || isCollab,
+  'Requires rich text without collaboration',
+);
+
 test.describe('Regression test #1384', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`Properly pastes in code blocks`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText || isCollab);
+  test(`Properly pastes in code blocks`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('``` alert(1);');
     await page.keyboard.press('Enter');

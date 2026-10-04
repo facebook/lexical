@@ -23,15 +23,16 @@ import {
   test,
 } from '../../../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('HTML CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test('Copy + paste multi line html with extra newlines', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
 
     await focusEditor(page);
     await pasteFromClipboard(page, {
@@ -54,12 +55,7 @@ test.describe('HTML CopyAndPaste', () => {
     });
   });
 
-  test('Copy + paste blocks after two line breaks', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste blocks after two line breaks', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Line of text');
     await pressShiftEnter(page);
@@ -97,10 +93,7 @@ test.describe('HTML CopyAndPaste', () => {
 
   test('Copy + paste blocks ending in an empty block keeps the caret at the join', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await page.keyboard.type('asdf');
     await moveToLineBeginning(page);
@@ -151,9 +144,7 @@ test.describe('HTML CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste a code block with BR', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste a code block with BR', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {
@@ -235,11 +226,8 @@ test.describe('HTML CopyAndPaste', () => {
 
   test('Copy + paste a paragraph element between horizontal rules', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
 
     let clipboard = {'text/html': '<hr/><hr/>'};
@@ -299,10 +287,9 @@ test.describe('HTML CopyAndPaste', () => {
 
   test('Paste top level element in the middle of paragraph', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
     await page.keyboard.type('Hello world');
     await moveToPrevWord(page);

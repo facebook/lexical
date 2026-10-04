@@ -19,12 +19,12 @@ import {
   test,
 } from '../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test('Layout - removes layout completely when both columns are empty and backspace is pressed at the first layout item', async ({
   page,
-  isPlainText,
   isCollab,
 }) => {
-  test.skip(isPlainText);
   await initialize({isCollab, page});
   await focusEditor(page);
 
@@ -94,10 +94,9 @@ test('Layout - removes layout completely when both columns are empty and backspa
 for (const key of ['ArrowRight', 'ArrowDown']) {
   test(`Layout - ${key} key should exit from the layout if the selection is at the end of the element`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await initialize({page});
     await focusEditor(page);
 

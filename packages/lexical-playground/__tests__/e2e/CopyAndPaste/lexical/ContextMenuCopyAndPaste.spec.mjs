@@ -20,14 +20,15 @@ import {
   withExclusiveClipboardAccess,
 } from '../../../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('ContextMenuCopyAndPaste', () => {
   test.use({shouldUseLexicalContextMenu: true});
   test.beforeEach(({isCollab, page, shouldUseLexicalContextMenu}) =>
     initialize({isCollab, page, shouldUseLexicalContextMenu}),
   );
 
-  test('Basic copy-paste #6231', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Basic copy-paste #6231', async ({page}) => {
     await focusEditor(page);
 
     await page.keyboard.type('hello');
@@ -55,11 +56,10 @@ test.describe('ContextMenuCopyAndPaste', () => {
 
   test('Rich text Copy and Paste with  different Font Size', async ({
     page,
-    isPlainText,
     isCollab,
     browserName,
   }) => {
-    test.skip(isCollab || isPlainText || browserName !== 'chromium');
+    test.skip(isCollab || browserName !== 'chromium');
 
     await withExclusiveClipboardAccess(async () => {
       await page

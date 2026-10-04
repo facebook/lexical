@@ -36,8 +36,8 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('Clear All Formatting', () => {
-  test.beforeEach(({isPlainText, isCollab, page}) => {
-    test.skip(isPlainText);
+  test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+  test.beforeEach(({isCollab, page}) => {
     return initialize({isCollab, page});
   });
   test(`Can clear BIU formatting`, async ({page}) => {

@@ -127,8 +127,8 @@ async function clearDocument(page) {
 // slot (useLexicalSlotRef) and the getDOMSlot body children — which use the
 // same render-hidden-then-attach technique as the other slot demos.
 test.describe('Review React-chromed ElementNode', () => {
-  test.beforeEach(({isCollab, isPlainText, page}) => {
-    test.skip(isPlainText);
+  test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+  test.beforeEach(({isCollab, page}) => {
     return initialize({isCollab, page});
   });
 
@@ -463,8 +463,8 @@ test.describe('Review React-chromed ElementNode', () => {
 });
 
 test.describe('Review empty-field placeholders', () => {
-  test.beforeEach(({isCollab, isPlainText, page}) => {
-    test.skip(isPlainText);
+  test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+  test.beforeEach(({isCollab, page}) => {
     return initialize({isCollab, page});
   });
 

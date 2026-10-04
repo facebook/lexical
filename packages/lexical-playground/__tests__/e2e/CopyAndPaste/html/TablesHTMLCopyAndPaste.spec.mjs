@@ -17,18 +17,14 @@ import {
   test,
 } from '../../../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('HTML Tables CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) =>
     initialize({isCollab, page, tableHorizontalScroll: false}),
   );
 
-  test('Copy + paste (Table - Google Docs)', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste (Table - Google Docs)', async ({page, isCollab}) => {
     test.fixme(
       isCollab,
       'Table selection styles are not properly synced to the right hand frame',
@@ -95,10 +91,9 @@ test.describe('HTML Tables CopyAndPaste', () => {
 
   test('Copy + paste (Table - Google Docs with custom widths)', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
     const clipboard = {
       'text/html': `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-dd8626d9-7fff-78d6-4aad-a0d248a19533"><div dir="ltr" style="margin-left:0pt;" align="center"><table style="border:none;border-collapse:collapse;"><colgroup><col width="78" /><col width="405" /><col width="233" /></colgroup><tbody><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">short</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">wide</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">default</span></p></td></tr><tr style="height:0pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">a</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">b</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">c</span></p></td></tr></tbody></table></div><br data-lexical-managed-linebreak="true" /></b>`,
@@ -161,9 +156,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste (Table - Quip)', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste (Table - Quip)', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {
@@ -239,9 +232,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste (Table - Google Sheets)', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste (Table - Google Sheets)', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {
@@ -318,8 +309,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste - Merge Grids', async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText);
+  test('Copy + paste - Merge Grids', async ({page, isCollab}) => {
     test.fixme(
       isCollab,
       'Table selection styles are not properly selected/deselected',
@@ -499,11 +489,8 @@ test.describe('HTML Tables CopyAndPaste', () => {
 
   test('Copy + paste nested block and inline html in a table', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
-
     test.fixme(
       isCollab,
       'Table selection styles are not properly synced to the right hand frame',
@@ -599,11 +586,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
 
   test('Copy + paste table with merged cells and unequal number of cells in rows', async ({
     page,
-    isPlainText,
-    isCollab,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     const clipboard = {
       'text/html': html`
@@ -770,13 +753,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste table with empty row', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste table with empty row', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {

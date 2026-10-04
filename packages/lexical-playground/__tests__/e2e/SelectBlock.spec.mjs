@@ -42,16 +42,14 @@ async function setupMultiContent(page) {
   await page.keyboard.press('Enter');
 }
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('SelectBlock', () => {
   test.beforeEach(({isCollab, page}) =>
     initialize({isCollab, page, selectBlock: true}),
   );
 
-  test('Select paragraph with simple text only', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Select paragraph with simple text only', async ({page}) => {
     await setupMultiContent(page);
 
     await page.keyboard.type('Simple text');
@@ -74,8 +72,7 @@ test.describe('SelectBlock', () => {
     });
   });
 
-  test('Select paragraph with formatted text', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Select paragraph with formatted text', async ({page}) => {
     await setupMultiContent(page);
 
     await page.keyboard.type('Formatted ');
@@ -100,8 +97,7 @@ test.describe('SelectBlock', () => {
     });
   });
 
-  test('Select paragraph with inline element', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Select paragraph with inline element', async ({page}) => {
     await setupMultiContent(page);
 
     await page.keyboard.type('link');
@@ -126,11 +122,7 @@ test.describe('SelectBlock', () => {
     });
   });
 
-  test('Select paragraph with [inline decorator, text]', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Select paragraph with [inline decorator, text]', async ({page}) => {
     await setupMultiContent(page);
 
     await insertDateTime(page);
@@ -154,11 +146,7 @@ test.describe('SelectBlock', () => {
     });
   });
 
-  test('Select paragraph with [text, inline decorator]', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Select paragraph with [text, inline decorator]', async ({page}) => {
     await setupMultiContent(page);
 
     await page.keyboard.type('text ');
@@ -184,9 +172,7 @@ test.describe('SelectBlock', () => {
 
   test('Select paragraph with [text, inline decorator, text]', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await setupMultiContent(page);
 
     await page.keyboard.type('text ');
@@ -211,11 +197,7 @@ test.describe('SelectBlock', () => {
     });
   });
 
-  test('Select paragraph with [element, inline decorator]', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Select paragraph with [element, inline decorator]', async ({page}) => {
     await setupMultiContent(page);
 
     await page.keyboard.type('link');
@@ -242,11 +224,7 @@ test.describe('SelectBlock', () => {
     });
   });
 
-  test('Select paragraph with [inline decorator, element]', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Select paragraph with [inline decorator, element]', async ({page}) => {
     await setupMultiContent(page);
 
     await insertDateTime(page);
@@ -272,11 +250,7 @@ test.describe('SelectBlock', () => {
     });
   });
 
-  test('Select empty paragraph should trigger selectAll', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Select empty paragraph should trigger selectAll', async ({page}) => {
     await setupMultiContent(page);
     // selection on empty paragraph
     await assertSelection(page, {
@@ -298,9 +272,7 @@ test.describe('SelectBlock', () => {
 
   test('Repeated selectAll should not change the current selection', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await setupMultiContent(page);
     // selection on empty paragraph
     await assertSelection(page, {
@@ -331,9 +303,7 @@ test.describe('SelectBlock', () => {
 
   test('The block is selected if part of the text is already selected', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await setupMultiContent(page);
     await page.keyboard.type('my text');
     await selectCharacters(page, 'left', 4);
@@ -366,9 +336,7 @@ test.describe('SelectBlock', () => {
 
   test('Selection spanning multiple blocks selects all content', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type('first');
     await page.keyboard.press('Enter');
@@ -388,12 +356,7 @@ test.describe('SelectBlock', () => {
     });
   });
 
-  test('Select paragraph with focus on decorator', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
+  test('Select paragraph with focus on decorator', async ({page, isCollab}) => {
     await setupMultiContent(page);
     await page.keyboard.type('my text');
     await insertSampleImage(page);
@@ -496,11 +459,9 @@ test.describe('SelectBlock', () => {
 
   test('Select with node selection on multiple decorators within one parent', async ({
     page,
-    isPlainText,
     isCollab,
     browserName,
   }) => {
-    test.skip(isPlainText);
     await setupMultiContent(page);
     await page.keyboard.type('my text');
     await insertSampleImage(page);
@@ -640,11 +601,9 @@ test.describe('SelectBlock', () => {
 
   test('Select with node selection on multiple decorators from different parent elements', async ({
     page,
-    isPlainText,
     isCollab,
     browserName,
   }) => {
-    test.skip(isPlainText);
     await setupMultiContent(page);
     await page.keyboard.type('my text');
     await insertSampleImage(page);
@@ -773,8 +732,7 @@ test.describe('SelectBlock', () => {
     });
   });
 
-  test('Select within shadow root', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Select within shadow root', async ({page}) => {
     await setupMultiContent(page);
     await insertCollapsible(page);
     await page.keyboard.press('ArrowDown');
@@ -806,8 +764,7 @@ test.describe('SelectBlock', () => {
     });
   });
 
-  test('Select within nested editor', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Select within nested editor', async ({page}) => {
     await setupMultiContent(page);
     await page.keyboard.type('my text');
     await insertSampleImage(page);

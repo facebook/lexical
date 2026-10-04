@@ -31,12 +31,12 @@ import {
   withExclusiveClipboardAccess,
 } from '../../../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('HTML Links CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('Copy + paste an anchor element', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste an anchor element', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {
@@ -96,11 +96,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste in front of or after a link', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Copy + paste in front of or after a link', async ({page}) => {
     await focusEditor(page);
     await pasteFromClipboard(page, {
       'text/html': `text<a href="https://test.com/1">link</a>text`,
@@ -129,9 +125,7 @@ test.describe('HTML Links CopyAndPaste', () => {
 
   test('Copy + paste link by selecting its (partial) content', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await pasteFromClipboard(page, {
       'text/html': `text<a href="https://test.com/">link</a>text`,
@@ -163,9 +157,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste empty link #3193', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste empty link #3193', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {
@@ -210,9 +202,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     );
   });
 
-  test('Paste a link into text', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Paste a link into text', async ({page}) => {
     await focusEditor(page);
 
     await page.keyboard.type('A Lexical in the wild');
@@ -244,8 +234,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     );
   });
 
-  test('Paste text into a link', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Paste text into a link', async ({page}) => {
     await focusEditor(page);
 
     await page.keyboard.type('Link text');
@@ -281,8 +270,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     );
   });
 
-  test('Paste formatted text into a link', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Paste formatted text into a link', async ({page}) => {
     await focusEditor(page);
 
     await page.keyboard.type('Link text');
@@ -323,8 +311,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     );
   });
 
-  test('Paste a link into a link', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Paste a link into a link', async ({page}) => {
     await focusEditor(page);
 
     await page.keyboard.type('Link text');
@@ -363,8 +350,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     );
   });
 
-  test('Paste multiple blocks into a link', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Paste multiple blocks into a link', async ({page}) => {
     await focusEditor(page);
 
     await page.keyboard.type('Link text');

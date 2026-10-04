@@ -31,6 +31,8 @@ import {
   waitForSelector,
 } from '../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('Toolbar', () => {
   test.beforeEach(({isCollab, page}) =>
     initialize({
@@ -41,9 +43,9 @@ test.describe('Toolbar', () => {
     }),
   );
 
-  test('Insert image caption + table', async ({page, isPlainText}) => {
+  test('Insert image caption + table', async ({page}) => {
     // TODO(collab-v2): nested editors are not supported yet
-    test.skip(isPlainText || IS_COLLAB_V2);
+    test.skip(IS_COLLAB_V2);
     await focusEditor(page);
 
     // Add caption
@@ -268,9 +270,9 @@ test.describe('Toolbar', () => {
     );
   });
 
-  test('Center align image', async ({page, isPlainText, isCollab}) => {
+  test('Center align image', async ({page, isCollab}) => {
     // Image selection can't be synced in collab
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
 
     await insertSampleImage(page);
@@ -350,10 +352,9 @@ test.describe('Toolbar', () => {
 
   test('When we select three textNodes with different formatting at the same time, the selection formatting should show no formatting at all', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
 
     await toggleBold(page);
@@ -372,10 +373,9 @@ test.describe('Toolbar', () => {
 
   test('Selecting empty paragraphs has empty selection format', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
     await page.keyboard.press('Enter');
     await selectAll(page);

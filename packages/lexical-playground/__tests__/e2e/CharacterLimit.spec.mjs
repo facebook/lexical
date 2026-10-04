@@ -21,8 +21,7 @@ import {
 } from '../utils/index.mjs';
 
 function testSuite(charset) {
-  test('displays overflow on text', async ({page, isCollab}) => {
-    test.skip(isCollab);
+  test('displays overflow on text', async ({page}) => {
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('12345');
@@ -76,8 +75,7 @@ function testSuite(charset) {
     });
   });
 
-  test('handles auto link nodes', async ({page, isCollab}) => {
-    test.skip(isCollab);
+  test('handles auto link nodes', async ({page}) => {
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('1234:)56 www.example.com');
@@ -118,13 +116,13 @@ function testSuite(charset) {
     );
   });
 
-  test('displays overflow on token nodes', async ({page, isCollab}) => {
+  test('displays overflow on token nodes', async ({page}) => {
     // The smile emoji (S) is length 2, so for 1234S56:
     // - 1234 is non-overflow text
     // - S takes characters 5 and 6, since it's a token and can't be split we count the whole
     //   node as overflowed
     // - 56 is overflowed
-    test.skip(isCollab);
+
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('1234:)56');
@@ -154,12 +152,7 @@ function testSuite(charset) {
     );
   });
 
-  test('can type new lines inside overflow', async ({
-    page,
-    isRichText,
-    isCollab,
-  }) => {
-    test.skip(isCollab);
+  test('can type new lines inside overflow', async ({page, isRichText}) => {
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('123456');
@@ -212,9 +205,7 @@ function testSuite(charset) {
   test('can delete text in front and overflow is recomputed', async ({
     page,
     isRichText,
-    isCollab,
   }) => {
-    test.skip(isCollab);
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('123456');
@@ -285,9 +276,7 @@ function testSuite(charset) {
 
   test('can delete text in front and overflow is recomputed (token nodes)', async ({
     page,
-    isCollab,
   }) => {
-    test.skip(isCollab);
     // See 'displays overflow on token nodes'
     await page.focus('div[contenteditable="true"]');
 
@@ -328,8 +317,8 @@ function testSuite(charset) {
     }
   });
 
-  test('can overflow in lists', async ({page, isCollab, isPlainText}) => {
-    test.skip(isCollab || isPlainText);
+  test('can overflow in lists', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('- 1234');
@@ -349,12 +338,8 @@ function testSuite(charset) {
     );
   });
 
-  test('can delete an overflowed paragraph', async ({
-    page,
-    isCollab,
-    isPlainText,
-  }) => {
-    test.skip(isCollab || isPlainText);
+  test('can delete an overflowed paragraph', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('12345');
@@ -389,8 +374,7 @@ function testSuite(charset) {
     );
   });
 
-  test('handles accented characters', async ({page, isCollab}) => {
-    test.skip(isCollab);
+  test('handles accented characters', async ({page}) => {
     await page.focus('div[contenteditable="true"]');
 
     // Worth 1 byte in UTF-16, 2 bytes in UTF-8
@@ -422,8 +406,7 @@ function testSuite(charset) {
     }
   });
 
-  test('handles graphemes', async ({page, isCollab, browserName}) => {
-    test.skip(isCollab);
+  test('handles graphemes', async ({page}) => {
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('👨‍👩‍👦‍👦');
@@ -439,6 +422,8 @@ function testSuite(charset) {
     );
   });
 }
+
+test.skip(({isCollab}) => isCollab, 'Requires non-collaborative editing');
 
 test.describe('CharacterLimit', () => {
   test.describe('UTF-16', () => {

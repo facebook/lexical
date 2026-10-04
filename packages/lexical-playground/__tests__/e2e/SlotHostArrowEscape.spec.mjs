@@ -164,8 +164,8 @@ const PQ_ATTRIBUTION = '[data-lexical-slot="attribution"] p';
 // so the host is never a dead end. Stepping into an existing sibling is left to
 // the browser.
 test.describe('Slot host ArrowDown/Up escape', () => {
-  test.beforeEach(({isCollab, isPlainText, page}) => {
-    test.skip(isPlainText);
+  test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+  test.beforeEach(({isCollab, page}) => {
     return initialize({isCollab, page});
   });
 

@@ -28,10 +28,14 @@ import {
 const IGNORE = {ignoreClasses: true, ignoreDir: true, ignoreInlineStyles: true};
 
 test.describe('Shadow DOM', () => {
-  test.beforeEach(({isCollab, isPlainText, page}) => {
+  test.skip(
+    ({isCollab, isPlainText}) => isPlainText || isCollab,
+    'Requires rich text without collaboration',
+  );
+  test.beforeEach(({page}) => {
     // Rich-text-only; collab renders in split iframes which is an orthogonal
     // concern to shadow root encapsulation.
-    test.skip(isPlainText || isCollab);
+
     return initialize({isShadowDOM: true, page});
   });
 
@@ -624,12 +628,16 @@ test.describe('Shadow DOM', () => {
 });
 
 test.describe('Shadow DOM (collab)', () => {
-  test.beforeEach(({isCollab, isPlainText, page}) => {
+  test.skip(
+    ({isCollab, isPlainText}) => isPlainText || !isCollab,
+    'Requires rich text with collaboration',
+  );
+  test.beforeEach(({isCollab, page}) => {
     // The split view's two clients both render through ShadowDomWrapper
     // when the playground's shadow toggle is on. Rich-text-only mirrors
     // the non-collab block above; this describe only runs when the suite
     // is invoked in a collab mode.
-    test.skip(isPlainText || !isCollab);
+
     return initialize({isCollab, isShadowDOM: true, page});
   });
 

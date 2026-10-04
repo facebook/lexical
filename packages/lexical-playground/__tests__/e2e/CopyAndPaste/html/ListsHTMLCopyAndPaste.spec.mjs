@@ -18,12 +18,12 @@ import {
   test,
 } from '../../../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('HTML Lists CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('Copy + paste a list element', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste a list element', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {'text/html': '<ul><li>Hello</li><li>world!</li></ul>'};
@@ -90,12 +90,7 @@ test.describe('HTML Lists CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste a list element with right alignment', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste a list element with right alignment', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {
@@ -133,9 +128,7 @@ test.describe('HTML Lists CopyAndPaste', () => {
     });
   });
 
-  test('Copy + paste a Lexical nested list', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste a Lexical nested list', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {
@@ -169,12 +162,7 @@ test.describe('HTML Lists CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste (Nested List - directly nested ul)', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste (Nested List - directly nested ul)', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {
@@ -259,10 +247,7 @@ test.describe('HTML Lists CopyAndPaste', () => {
 
   test('Copy + paste (Nested List - li with non-list content plus ul child)', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
 
     const clipboard = {
@@ -339,9 +324,7 @@ test.describe('HTML Lists CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste a checklist', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste a checklist', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {
@@ -414,10 +397,9 @@ test.describe('HTML Lists CopyAndPaste', () => {
 
   test('Paste top level element in the middle of list', async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isCollab);
     await focusEditor(page);
     // Add three list items
     await page.keyboard.type('- one');
@@ -467,9 +449,7 @@ test.describe('HTML Lists CopyAndPaste', () => {
     );
   });
 
-  test('Copy + paste a nested divs in a list', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Copy + paste a nested divs in a list', async ({page}) => {
     await focusEditor(page);
 
     const clipboard = {

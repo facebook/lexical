@@ -15,6 +15,8 @@ import {
   test,
 } from '../utils/index.mjs';
 
+test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
+
 test.describe('Auto scroll while typing', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   async function addScroll(page, selector_) {
@@ -66,8 +68,8 @@ test.describe('Auto scroll while typing', () => {
     [true, false].forEach(isSoftLineBreak => {
       test(`${testCase.name}${
         isSoftLineBreak ? ' (soft line break)' : ''
-      }`, async ({page, isPlainText, browserName}) => {
-        test.skip(isPlainText || isSoftLineBreak);
+      }`, async ({page}) => {
+        test.skip(isSoftLineBreak);
         await focusEditor(page);
         await addScroll(page, testCase.selector);
 
@@ -174,10 +176,7 @@ test.describe('Auto scroll respects mobile visual viewport', () => {
 
   test('Pressing Enter scrolls new caret above the on-screen keyboard', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await page.setViewportSize({height: VIEWPORT_HEIGHT, width: 400});
     await focusEditor(page);
     await toggleBulletList(page);

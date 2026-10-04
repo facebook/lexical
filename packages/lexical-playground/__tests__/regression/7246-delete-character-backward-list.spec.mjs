@@ -18,6 +18,11 @@ import {
   test,
 } from '../utils/index.mjs';
 
+test.skip(
+  ({isCollab, isPlainText}) => isCollab || isPlainText,
+  'Requires rich text without collaboration',
+);
+
 test.describe('Regression tests for #7246', () => {
   test.beforeEach(({isPlainText, isCollab, page}) =>
     initialize({isCollab, isPlainText, page}),
@@ -25,10 +30,7 @@ test.describe('Regression tests for #7246', () => {
 
   test(`deleteCharacter merges children from block adjacent to ListNode`, async ({
     page,
-    isCollab,
-    isPlainText,
   }) => {
-    test.skip(isCollab || isPlainText);
     await focusEditor(page);
     await page.keyboard.type('* list');
     await page.keyboard.press('Enter');

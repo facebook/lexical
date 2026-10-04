@@ -213,46 +213,48 @@ test.describe('HTML', () => {
     }).toPass({intervals: [100, 250, 500], timeout: 5000});
   });
 
-  test(`Can switch from Pages mode`, async ({page, isCollab}) => {
-    test.skip(isCollab);
-    await focusEditor(page);
-    // Ensure we're in pageless mode
-    await page.waitForSelector(
-      '.ContentEditable__root > .PlaygroundEditorTheme__paragraph',
-    );
-    await applyHeading(page, 1);
-    await page.keyboard.type('Foo');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('Hello world');
+  test.describe(() => {
+    test.skip(({isCollab}) => isCollab);
+    test(`Can switch from Pages mode`, async ({page}) => {
+      await focusEditor(page);
+      // Ensure we're in pageless mode
+      await page.waitForSelector(
+        '.ContentEditable__root > .PlaygroundEditorTheme__paragraph',
+      );
+      await applyHeading(page, 1);
+      await page.keyboard.type('Foo');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('Hello world');
 
-    await click(page, '.page-setup');
-    const btn = page.getByRole('button', {name: /^Statement /});
-    await expect(btn).toBeVisible();
-    await btn.click();
-    // Ensure we're in page mode
-    await page.waitForSelector(
-      '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
-    );
-    await click(page, '.action-button .html');
+      await click(page, '.page-setup');
+      const btn = page.getByRole('button', {name: /^Statement /});
+      await expect(btn).toBeVisible();
+      await btn.click();
+      // Ensure we're in page mode
+      await page.waitForSelector(
+        '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
+      );
+      await click(page, '.action-button .html');
 
-    const expectedPrettyHtml = [
-      '<h1><span>Foo</span></h1>',
-      '<p><span>Hello world</span></p>',
-    ].join('\n');
-    await expect(async () => {
-      const codeText = await evaluate(page, () => {
-        const editor = window.lexicalEditor;
-        return window.lexicalEditor.read(() =>
-          editor.getEditorState()._nodeMap.get('root').getTextContent(),
-        );
-      });
-      expect(codeText).toBe(expectedPrettyHtml);
-    }).toPass({intervals: [100, 250, 500], timeout: 5000});
+      const expectedPrettyHtml = [
+        '<h1><span>Foo</span></h1>',
+        '<p><span>Hello world</span></p>',
+      ].join('\n');
+      await expect(async () => {
+        const codeText = await evaluate(page, () => {
+          const editor = window.lexicalEditor;
+          return window.lexicalEditor.read(() =>
+            editor.getEditorState()._nodeMap.get('root').getTextContent(),
+          );
+        });
+        expect(codeText).toBe(expectedPrettyHtml);
+      }).toPass({intervals: [100, 250, 500], timeout: 5000});
 
-    await click(page, '.action-button .html');
-    // Ensure we're in page mode
-    await page.waitForSelector(
-      '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
-    );
+      await click(page, '.action-button .html');
+      // Ensure we're in page mode
+      await page.waitForSelector(
+        '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
+      );
+    });
   });
 });

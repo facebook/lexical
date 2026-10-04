@@ -391,54 +391,22 @@ test.describe('Lists CopyAndPaste', () => {
     });
   });
 
-  test('Copy list items and paste into list', async ({page, isCollab}) => {
-    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
+  test.describe(() => {
+    test.fixme(({isCollab}) => isCollab && IS_LINUX, 'Flaky on Linux + Collab');
+    test('Copy list items and paste into list', async ({page}) => {
+      await focusEditor(page);
 
-    await focusEditor(page);
-
-    await page.keyboard.type('- one');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('two');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('three');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('four');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('five');
-
-    await selectAll(page);
-
-    await assertHTML(
-      page,
-      html`
-        <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1">
-            <span data-lexical-text="true">one</span>
-          </li>
-          <li class="PlaygroundEditorTheme__listItem" value="2">
-            <span data-lexical-text="true">two</span>
-          </li>
-          <li class="PlaygroundEditorTheme__listItem" value="3">
-            <span data-lexical-text="true">three</span>
-          </li>
-          <li class="PlaygroundEditorTheme__listItem" value="4">
-            <span data-lexical-text="true">four</span>
-          </li>
-          <li class="PlaygroundEditorTheme__listItem" value="5">
-            <span data-lexical-text="true">five</span>
-          </li>
-        </ul>
-      `,
-    );
-
-    await withExclusiveClipboardAccess(async () => {
-      const clipboard = await copyToClipboard(page);
-
-      await page.keyboard.press('ArrowDown');
+      await page.keyboard.type('- one');
       await page.keyboard.press('Enter');
+      await page.keyboard.type('two');
       await page.keyboard.press('Enter');
+      await page.keyboard.type('three');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('four');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('five');
 
-      await page.keyboard.type('12345');
+      await selectAll(page);
 
       await assertHTML(
         page,
@@ -460,63 +428,96 @@ test.describe('Lists CopyAndPaste', () => {
               <span data-lexical-text="true">five</span>
             </li>
           </ul>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">12345</span>
-          </p>
         `,
       );
 
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
-      await selectCharacters(page, 'left', 1);
+      await withExclusiveClipboardAccess(async () => {
+        const clipboard = await copyToClipboard(page);
 
-      await pasteFromClipboard(page, clipboard);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Enter');
 
-      await assertHTML(
-        page,
-        html`
-          <ul class="PlaygroundEditorTheme__ul" dir="auto">
-            <li class="PlaygroundEditorTheme__listItem" value="1">
-              <span data-lexical-text="true">one</span>
-            </li>
-            <li class="PlaygroundEditorTheme__listItem" value="2">
-              <span data-lexical-text="true">two</span>
-            </li>
-            <li class="PlaygroundEditorTheme__listItem" value="3">
-              <span data-lexical-text="true">three</span>
-            </li>
-            <li class="PlaygroundEditorTheme__listItem" value="4">
-              <span data-lexical-text="true">four</span>
-            </li>
-            <li class="PlaygroundEditorTheme__listItem" value="5">
-              <span data-lexical-text="true">five</span>
-            </li>
-          </ul>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">12</span>
-          </p>
-          <ul class="PlaygroundEditorTheme__ul" dir="auto">
-            <li class="PlaygroundEditorTheme__listItem" value="1">
-              <span data-lexical-text="true">one</span>
-            </li>
-            <li class="PlaygroundEditorTheme__listItem" value="2">
-              <span data-lexical-text="true">two</span>
-            </li>
-            <li class="PlaygroundEditorTheme__listItem" value="3">
-              <span data-lexical-text="true">three</span>
-            </li>
-            <li class="PlaygroundEditorTheme__listItem" value="4">
-              <span data-lexical-text="true">four</span>
-            </li>
-            <li class="PlaygroundEditorTheme__listItem" value="5">
-              <span data-lexical-text="true">five</span>
-            </li>
-          </ul>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">45</span>
-          </p>
-        `,
-      );
+        await page.keyboard.type('12345');
+
+        await assertHTML(
+          page,
+          html`
+            <ul class="PlaygroundEditorTheme__ul" dir="auto">
+              <li class="PlaygroundEditorTheme__listItem" value="1">
+                <span data-lexical-text="true">one</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="2">
+                <span data-lexical-text="true">two</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="3">
+                <span data-lexical-text="true">three</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="4">
+                <span data-lexical-text="true">four</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="5">
+                <span data-lexical-text="true">five</span>
+              </li>
+            </ul>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <span data-lexical-text="true">12345</span>
+            </p>
+          `,
+        );
+
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowLeft');
+        await selectCharacters(page, 'left', 1);
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          html`
+            <ul class="PlaygroundEditorTheme__ul" dir="auto">
+              <li class="PlaygroundEditorTheme__listItem" value="1">
+                <span data-lexical-text="true">one</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="2">
+                <span data-lexical-text="true">two</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="3">
+                <span data-lexical-text="true">three</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="4">
+                <span data-lexical-text="true">four</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="5">
+                <span data-lexical-text="true">five</span>
+              </li>
+            </ul>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <span data-lexical-text="true">12</span>
+            </p>
+            <ul class="PlaygroundEditorTheme__ul" dir="auto">
+              <li class="PlaygroundEditorTheme__listItem" value="1">
+                <span data-lexical-text="true">one</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="2">
+                <span data-lexical-text="true">two</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="3">
+                <span data-lexical-text="true">three</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="4">
+                <span data-lexical-text="true">four</span>
+              </li>
+              <li class="PlaygroundEditorTheme__listItem" value="5">
+                <span data-lexical-text="true">five</span>
+              </li>
+            </ul>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <span data-lexical-text="true">45</span>
+            </p>
+          `,
+        );
+      });
     });
   });
 

@@ -74,11 +74,11 @@ async function clickOutdentButton(page, times = 1) {
 test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
 
 test.describe('Checklist focus option', () => {
+  test.skip(({isCollab}) => isCollab);
   test('(shouldDisableFocusOnClickChecklist: true) Keeps focus outside the editor when clicking a checklist item', async ({
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({
       isCollab,
       page,
@@ -119,7 +119,6 @@ test.describe('Checklist focus option', () => {
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({
       isCollab,
       page,
@@ -169,11 +168,12 @@ test.describe('Checklist space key', () => {
   // tabIndex="-1" for its checkbox role. Firefox left focus there, and the
   // key handlers read a focused item as "the checkbox is what the keyboard is
   // operating", so Space toggled the item instead of typing a space.
+
+  test.skip(({isCollab}) => isCollab);
   test('typing a space in the label leaves the checkbox alone', async ({
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -208,7 +208,6 @@ test.describe('Checklist space key', () => {
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -239,7 +238,6 @@ test.describe('Checklist space key', () => {
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -269,7 +267,6 @@ test.describe('Checklist space key', () => {
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -294,7 +291,6 @@ test.describe('Checklist space key', () => {
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -325,7 +321,6 @@ test.describe('Checklist space key', () => {
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -355,7 +350,6 @@ test.describe('Checklist space key', () => {
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -388,7 +382,6 @@ test.describe('Checklist space key', () => {
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -431,7 +424,6 @@ test.describe('Checklist space key', () => {
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 
@@ -470,7 +462,6 @@ test.describe('Checklist space key', () => {
     isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await initialize({isCollab, page});
     await focusEditor(page);
 

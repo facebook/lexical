@@ -223,140 +223,142 @@ test.describe('Markdown', () => {
     const markdownText = triggersAndExpectations[i].markdownText;
 
     if (triggersAndExpectations[i].isBlockTest === false) {
-      test(`Should create stylized (e.g. BIUS) text from plain text using a markdown shortcut e.g. ${markdownText}`, async ({
-        page,
-        isPlainText,
-        isCollab,
-      }) => {
-        test.skip(isPlainText);
-        const text = 'x' + markdownText + 'y';
+      test.describe(() => {
+        test.skip(({isPlainText}) => isPlainText);
+        test(`Should create stylized (e.g. BIUS) text from plain text using a markdown shortcut e.g. ${markdownText}`, async ({
+          page,
+          isCollab,
+        }) => {
+          const text = 'x' + markdownText + 'y';
 
-        await focusEditor(page);
-        await page.keyboard.type(text);
-        await moveLeft(page, text.length);
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [0, 0, 0],
-          focusOffset: 0,
-          focusPath: [0, 0, 0],
+          await focusEditor(page);
+          await page.keyboard.type(text);
+          await moveLeft(page, text.length);
+          await assertSelection(page, {
+            anchorOffset: 0,
+            anchorPath: [0, 0, 0],
+            focusOffset: 0,
+            focusPath: [0, 0, 0],
+          });
+
+          await moveRight(page, 1 + markdownText.length);
+
+          // Trigger markdown.
+          await page.keyboard.type(' ');
+
+          await checkHTMLExpectationsIncludingUndoRedo(
+            page,
+            triggersAndExpectations[i].expectation,
+            triggersAndExpectations[i].undoHTML,
+            isCollab,
+          );
         });
 
-        await moveRight(page, 1 + markdownText.length);
-
-        // Trigger markdown.
-        await page.keyboard.type(' ');
-
-        await checkHTMLExpectationsIncludingUndoRedo(
+        test(`Should create stylized (e.g. BIUS) text from already stylized text using a markdown shortcut e.g. ${markdownText}`, async ({
           page,
-          triggersAndExpectations[i].expectation,
-          triggersAndExpectations[i].undoHTML,
           isCollab,
-        );
-      });
+        }) => {
+          const text = 'x' + markdownText + 'y';
 
-      test(`Should create stylized (e.g. BIUS) text from already stylized text using a markdown shortcut e.g. ${markdownText}`, async ({
-        page,
-        isPlainText,
-        isCollab,
-      }) => {
-        test.skip(isPlainText);
+          await focusEditor(page);
+          await page.keyboard.type(text);
+          await moveLeft(page, text.length);
+          await assertSelection(page, {
+            anchorOffset: 0,
+            anchorPath: [0, 0, 0],
+            focusOffset: 0,
+            focusPath: [0, 0, 0],
+          });
 
-        const text = 'x' + markdownText + 'y';
+          // Select first 2 characters.
+          await selectCharacters(page, 'right', 2);
 
-        await focusEditor(page);
-        await page.keyboard.type(text);
-        await moveLeft(page, text.length);
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [0, 0, 0],
-          focusOffset: 0,
-          focusPath: [0, 0, 0],
+          // Make underline.
+          await toggleUnderline(page);
+
+          // Back to beginning.
+          await moveLeft(page, 2);
+
+          // Move to end.
+          await moveRight(page, text.length);
+
+          // Select last two characters.
+          await selectCharacters(page, 'left', 2);
+
+          // Make underline.
+          await toggleUnderline(page);
+
+          // Back to beginning of text.
+          await moveLeft(page, text.length);
+
+          // Move after markdown text.
+          await moveRight(page, 1 + markdownText.length);
+
+          // Trigger markdown.
+          await page.keyboard.type(' ');
+
+          await assertHTML(
+            page,
+            triggersAndExpectations[i].stylizedExpectation,
+          );
+
+          await checkHTMLExpectationsIncludingUndoRedo(
+            page,
+            triggersAndExpectations[i].stylizedExpectation,
+            triggersAndExpectations[i].stylizedUndoHTML,
+            isCollab,
+          );
         });
-
-        // Select first 2 characters.
-        await selectCharacters(page, 'right', 2);
-
-        // Make underline.
-        await toggleUnderline(page);
-
-        // Back to beginning.
-        await moveLeft(page, 2);
-
-        // Move to end.
-        await moveRight(page, text.length);
-
-        // Select last two characters.
-        await selectCharacters(page, 'left', 2);
-
-        // Make underline.
-        await toggleUnderline(page);
-
-        // Back to beginning of text.
-        await moveLeft(page, text.length);
-
-        // Move after markdown text.
-        await moveRight(page, 1 + markdownText.length);
-
-        // Trigger markdown.
-        await page.keyboard.type(' ');
-
-        await assertHTML(page, triggersAndExpectations[i].stylizedExpectation);
-
-        await checkHTMLExpectationsIncludingUndoRedo(
-          page,
-          triggersAndExpectations[i].stylizedExpectation,
-          triggersAndExpectations[i].stylizedUndoHTML,
-          isCollab,
-        );
       });
     }
 
     if (triggersAndExpectations[i].isBlockTest === true) {
-      test(`Should test markdown with the (${markdownText}) trigger. Should include undo and redo.`, async ({
-        page,
-        isPlainText,
-        isCollab,
-      }) => {
-        test.skip(isPlainText);
-
-        await focusEditor(page);
-
-        await page.keyboard.type(markdownText);
-
-        const forwardHTML = triggersAndExpectations[i].expectation;
-
-        const undoHTML = `<p class="PlaygroundEditorTheme__paragraph" dir="auto"><span data-lexical-text="true">${markdownText}</span></p>`;
-
-        await checkHTMLExpectationsIncludingUndoRedo(
+      test.describe(() => {
+        test.skip(({isPlainText}) => isPlainText);
+        test(`Should test markdown with the (${markdownText}) trigger. Should include undo and redo.`, async ({
           page,
-          forwardHTML,
-          triggersAndExpectations[i].undoHTML || undoHTML,
           isCollab,
-        );
+        }) => {
+          await focusEditor(page);
+
+          await page.keyboard.type(markdownText);
+
+          const forwardHTML = triggersAndExpectations[i].expectation;
+
+          const undoHTML = `<p class="PlaygroundEditorTheme__paragraph" dir="auto"><span data-lexical-text="true">${markdownText}</span></p>`;
+
+          await checkHTMLExpectationsIncludingUndoRedo(
+            page,
+            forwardHTML,
+            triggersAndExpectations[i].undoHTML || undoHTML,
+            isCollab,
+          );
+        });
       });
     }
 
     if (triggersAndExpectations[i].markdownImport.length > 0) {
-      test(`Should test importing markdown (${markdownText}) trigger.`, async ({
-        page,
-        isPlainText,
-      }) => {
-        test.skip(isPlainText);
-        await focusEditor(page);
+      test.describe(() => {
+        test.skip(({isPlainText}) => isPlainText);
+        test(`Should test importing markdown (${markdownText}) trigger.`, async ({
+          page,
+        }) => {
+          await focusEditor(page);
 
-        await page.keyboard.type(
-          '```markdown ' + triggersAndExpectations[i].markdownImport,
-        );
-        await click(page, 'i.markdown');
+          await page.keyboard.type(
+            '```markdown ' + triggersAndExpectations[i].markdownImport,
+          );
+          await click(page, 'i.markdown');
 
-        const htmlInner = triggersAndExpectations[i].importExpectation;
-        await assertHTML(page, htmlInner);
+          const htmlInner = triggersAndExpectations[i].importExpectation;
+          await assertHTML(page, htmlInner);
 
-        // Click on markdow toggle twice to run import -> export loop and then
-        // validate that it's the same rich text after full cycle
-        await click(page, 'i.markdown');
-        await click(page, 'i.markdown');
-        await assertHTML(page, htmlInner);
+          // Click on markdow toggle twice to run import -> export loop and then
+          // validate that it's the same rich text after full cycle
+          await click(page, 'i.markdown');
+          await click(page, 'i.markdown');
+          await assertHTML(page, htmlInner);
+        });
       });
     }
   }
@@ -907,106 +909,107 @@ test.describe('Markdown', () => {
     );
   });
 
-  test('can import single decorator node (#2604)', async ({page}) => {
-    // TODO(collab-v2): nested editors are not supported yet
+  test.describe(() => {
     test.skip(IS_COLLAB_V2);
+    test('can import single decorator node (#2604)', async ({page}) => {
+      // TODO(collab-v2): nested editors are not supported yet
 
-    await focusEditor(page);
-    await page.keyboard.type(
-      '```markdown ![Yellow flower in tilt shift lens](' +
-        SAMPLE_IMAGE_URL +
-        ')',
-    );
-    await click(page, '.action-button .markdown');
-    await waitForSelector(page, '.editor-image img');
-    await assertHTML(
+      await focusEditor(page);
+      await page.keyboard.type(
+        '```markdown ![Yellow flower in tilt shift lens](' +
+          SAMPLE_IMAGE_URL +
+          ')',
+      );
+      await click(page, '.action-button .markdown');
+      await waitForSelector(page, '.editor-image img');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="false">
+                <img
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+            </span>
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+      );
+    });
+
+    test('can import several text match transformers in a same line (#5385)', async ({
       page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <div draggable="false">
-              <img
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit" />
-            </div>
-          </span>
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-      `,
-    );
-  });
+    }) => {
+      // TODO(collab-v2): nested editors are not supported yet
 
-  test('can import several text match transformers in a same line (#5385)', async ({
-    page,
-  }) => {
-    // TODO(collab-v2): nested editors are not supported yet
-    test.skip(IS_COLLAB_V2);
-
-    await focusEditor(page);
-    await page.keyboard.type(
-      '```markdown [link](https://lexical.dev)[link](https://lexical.dev)![Yellow flower in tilt shift lens](' +
-        SAMPLE_IMAGE_URL +
-        ')just text in between$1$',
-    );
-    await click(page, '.action-button .markdown');
-    await waitForSelector(page, '.editor-image img');
-    await waitForSelector(page, '.editor-equation');
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <a class="PlaygroundEditorTheme__link" href="https://lexical.dev">
-            <span data-lexical-text="true">linklink</span>
-          </a>
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <div draggable="false">
+      await focusEditor(page);
+      await page.keyboard.type(
+        '```markdown [link](https://lexical.dev)[link](https://lexical.dev)![Yellow flower in tilt shift lens](' +
+          SAMPLE_IMAGE_URL +
+          ')just text in between$1$',
+      );
+      await click(page, '.action-button .markdown');
+      await waitForSelector(page, '.editor-image img');
+      await waitForSelector(page, '.editor-equation');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <a class="PlaygroundEditorTheme__link" href="https://lexical.dev">
+              <span data-lexical-text="true">linklink</span>
+            </a>
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="false">
+                <img
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+            </span>
+            <span data-lexical-text="true">just text in between</span>
+            <span
+              class="editor-equation"
+              contenteditable="false"
+              role="math"
+              aria-label="Equation: 1"
+              data-lexical-decorator="true">
               <img
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit" />
-            </div>
-          </span>
-          <span data-lexical-text="true">just text in between</span>
-          <span
-            class="editor-equation"
-            contenteditable="false"
-            role="math"
-            aria-label="Equation: 1"
-            data-lexical-decorator="true">
-            <img
-              alt=""
-              height="0"
-              src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-              width="0" />
-            <span>
-              <span class="katex">
-                <span class="katex-html" aria-hidden="true">
-                  <span class="base">
-                    <span class="strut" style="height: 0.6444em;"></span>
-                    <span class="mord">1</span>
+                alt=""
+                height="0"
+                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                width="0" />
+              <span>
+                <span class="katex">
+                  <span class="katex-html" aria-hidden="true">
+                    <span class="base">
+                      <span class="strut" style="height: 0.6444em;"></span>
+                      <span class="mord">1</span>
+                    </span>
                   </span>
                 </span>
               </span>
+              <img
+                alt=""
+                height="0"
+                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                width="0" />
             </span>
-            <img
-              alt=""
-              height="0"
-              src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-              width="0" />
-          </span>
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-      `,
-    );
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+      );
+    });
   });
 
   test('does not use code-formatted text in text format transformers (#7349)', async ({

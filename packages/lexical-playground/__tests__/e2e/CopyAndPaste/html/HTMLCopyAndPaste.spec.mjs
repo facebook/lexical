@@ -28,30 +28,28 @@ test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
 test.describe('HTML CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('Copy + paste multi line html with extra newlines', async ({
-    page,
-    isCollab,
-  }) => {
-    test.skip(isCollab);
+  test.describe(() => {
+    test.skip(({isCollab}) => isCollab);
+    test('Copy + paste multi line html with extra newlines', async ({page}) => {
+      await focusEditor(page);
+      await pasteFromClipboard(page, {
+        'text/html':
+          '<p>Hello\n</p>\n\n<p>\n\nWorld\n\n</p>\n\n<p>Hello\n\n   World   \n\n!\n\n</p><p>Hello <b>World</b> <i>!</i></p>',
+      });
 
-    await focusEditor(page);
-    await pasteFromClipboard(page, {
-      'text/html':
-        '<p>Hello\n</p>\n\n<p>\n\nWorld\n\n</p>\n\n<p>Hello\n\n   World   \n\n!\n\n</p><p>Hello <b>World</b> <i>!</i></p>',
-    });
+      const paragraphs = page.locator('div[contenteditable="true"] > p');
+      await expect(paragraphs).toHaveCount(4);
 
-    const paragraphs = page.locator('div[contenteditable="true"] > p');
-    await expect(paragraphs).toHaveCount(4);
-
-    // Explicitly checking inner text, since regular assertHTML will prettify it and strip all
-    // extra newlines, which makes this test less accurate
-    await expect(paragraphs.nth(0)).toHaveText('Hello', {useInnerText: true});
-    await expect(paragraphs.nth(1)).toHaveText('World', {useInnerText: true});
-    await expect(paragraphs.nth(2)).toHaveText('Hello   World   !', {
-      useInnerText: true,
-    });
-    await expect(paragraphs.nth(3)).toHaveText('Hello World !', {
-      useInnerText: true,
+      // Explicitly checking inner text, since regular assertHTML will prettify it and strip all
+      // extra newlines, which makes this test less accurate
+      await expect(paragraphs.nth(0)).toHaveText('Hello', {useInnerText: true});
+      await expect(paragraphs.nth(1)).toHaveText('World', {useInnerText: true});
+      await expect(paragraphs.nth(2)).toHaveText('Hello   World   !', {
+        useInnerText: true,
+      });
+      await expect(paragraphs.nth(3)).toHaveText('Hello World !', {
+        useInnerText: true,
+      });
     });
   });
 
@@ -285,32 +283,33 @@ test.describe('HTML CopyAndPaste', () => {
     });
   });
 
-  test('Paste top level element in the middle of paragraph', async ({
-    page,
-    isCollab,
-  }) => {
-    test.skip(isCollab);
-    await focusEditor(page);
-    await page.keyboard.type('Hello world');
-    await moveToPrevWord(page);
-    await pasteFromClipboard(page, {
-      'text/html': `<hr />`,
-    });
-
-    await assertHTML(
+  test.describe(() => {
+    test.skip(({isCollab}) => isCollab);
+    test('Paste top level element in the middle of paragraph', async ({
       page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">Hello</span>
-        </p>
-        <hr
-          class="PlaygroundEditorTheme__hr"
-          contenteditable="false"
-          data-lexical-decorator="true" />
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">world</span>
-        </p>
-      `,
-    );
+    }) => {
+      await focusEditor(page);
+      await page.keyboard.type('Hello world');
+      await moveToPrevWord(page);
+      await pasteFromClipboard(page, {
+        'text/html': `<hr />`,
+      });
+
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Hello</span>
+          </p>
+          <hr
+            class="PlaygroundEditorTheme__hr"
+            contenteditable="false"
+            data-lexical-decorator="true" />
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">world</span>
+          </p>
+        `,
+      );
+    });
   });
 });

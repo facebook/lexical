@@ -268,25 +268,27 @@ test.describe('Hashtags', () => {
     });
   });
 
-  test('Hashtag inherits format', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-    await focusEditor(page);
-    await page.keyboard.type('Hello ');
-    await pressToggleBold(page);
-    await page.keyboard.type('#world');
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">Hello</span>
-          <strong
-            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__hashtag"
-            data-lexical-text="true">
-            #world
-          </strong>
-        </p>
-      `,
-    );
+  test.describe(() => {
+    test.skip(({isPlainText}) => isPlainText);
+    test('Hashtag inherits format', async ({page}) => {
+      await focusEditor(page);
+      await page.keyboard.type('Hello ');
+      await pressToggleBold(page);
+      await page.keyboard.type('#world');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Hello</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true">
+              #world
+            </strong>
+          </p>
+        `,
+      );
+    });
   });
 
   test('Should not break with multiple leading "#" #5636', async ({page}) => {
@@ -419,60 +421,63 @@ test.describe('Hashtags', () => {
     );
   });
 
-  test('Should not break when pasting multiple matches', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test.describe(() => {
+    test.skip(({isPlainText}) => isPlainText);
+    test('Should not break when pasting multiple matches', async ({page}) => {
+      await focusEditor(page);
 
-    await focusEditor(page);
+      const clipboard = {'text/html': '#hello#world'};
+      await pasteFromClipboard(page, clipboard);
 
-    const clipboard = {'text/html': '#hello#world'};
-    await pasteFromClipboard(page, clipboard);
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true">
+              #hello
+            </span>
+            <span data-lexical-text="true">#world</span>
+          </p>
+        `,
+      );
+    });
 
-    await assertHTML(
+    test('Should not break while importing and exporting multiple matches', async ({
       page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
-            #hello
-          </span>
-          <span data-lexical-text="true">#world</span>
-        </p>
-      `,
-    );
-  });
+    }) => {
+      await focusEditor(page);
+      await page.keyboard.type('```markdown #hello#invalid #a #b');
 
-  test('Should not break while importing and exporting multiple matches', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+      await click(page, '.action-button .markdown');
+      await click(page, '.action-button .markdown');
+      await click(page, '.action-button .markdown');
 
-    await focusEditor(page);
-    await page.keyboard.type('```markdown #hello#invalid #a #b');
-
-    await click(page, '.action-button .markdown');
-    await click(page, '.action-button .markdown');
-    await click(page, '.action-button .markdown');
-
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
-            #hello
-          </span>
-          <span data-lexical-text="true">#invalid</span>
-          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
-            #a
-          </span>
-          <span data-lexical-text="true"></span>
-          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
-            #b
-          </span>
-        </p>
-      `,
-    );
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true">
+              #hello
+            </span>
+            <span data-lexical-text="true">#invalid</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true">
+              #a
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true">
+              #b
+            </span>
+          </p>
+        `,
+      );
+    });
   });
 });

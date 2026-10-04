@@ -317,61 +317,62 @@ function testSuite(charset) {
     }
   });
 
-  test('can overflow in lists', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-    await page.focus('div[contenteditable="true"]');
+  test.describe(() => {
+    test.skip(({isPlainText}) => isPlainText);
+    test('can overflow in lists', async ({page}) => {
+      await page.focus('div[contenteditable="true"]');
 
-    await page.keyboard.type('- 1234');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('56');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('7');
-    await assertHTML(
-      page,
-      '<ul class="PlaygroundEditorTheme__ul" dir="auto"><li value="1" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem"><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">56</span></span></li><li value="3" class="PlaygroundEditorTheme__listItem"><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">7</span></span></li></ul>',
-    );
+      await page.keyboard.type('- 1234');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('56');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('7');
+      await assertHTML(
+        page,
+        '<ul class="PlaygroundEditorTheme__ul" dir="auto"><li value="1" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem"><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">56</span></span></li><li value="3" class="PlaygroundEditorTheme__listItem"><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">7</span></span></li></ul>',
+      );
 
-    await pressBackspace(page, 4);
-    await assertHTML(
-      page,
-      '<ul class="PlaygroundEditorTheme__ul" dir="auto"><li value="1" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem"><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">5</span></span></li></ul>',
-    );
-  });
+      await pressBackspace(page, 4);
+      await assertHTML(
+        page,
+        '<ul class="PlaygroundEditorTheme__ul" dir="auto"><li value="1" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem"><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">5</span></span></li></ul>',
+      );
+    });
 
-  test('can delete an overflowed paragraph', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-    await page.focus('div[contenteditable="true"]');
+    test('can delete an overflowed paragraph', async ({page}) => {
+      await page.focus('div[contenteditable="true"]');
 
-    await page.keyboard.type('12345');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('6');
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">12345</span>
-        </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span class="PlaygroundEditorTheme__characterLimit">
-            <span data-lexical-text="true">6</span>
-          </span>
-        </p>
-      `,
-    );
+      await page.keyboard.type('12345');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('6');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">12345</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span class="PlaygroundEditorTheme__characterLimit">
+              <span data-lexical-text="true">6</span>
+            </span>
+          </p>
+        `,
+      );
 
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('Backspace');
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">12345</span>
-          <span class="PlaygroundEditorTheme__characterLimit">
-            <span data-lexical-text="true">6</span>
-          </span>
-        </p>
-      `,
-    );
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('Backspace');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">12345</span>
+            <span class="PlaygroundEditorTheme__characterLimit">
+              <span data-lexical-text="true">6</span>
+            </span>
+          </p>
+        `,
+      );
+    });
   });
 
   test('handles accented characters', async ({page}) => {

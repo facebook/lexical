@@ -54,50 +54,55 @@ test.describe('ContextMenuCopyAndPaste', () => {
     );
   });
 
-  test('Rich text Copy and Paste with  different Font Size', async ({
-    page,
-    isCollab,
-    browserName,
-  }) => {
-    test.skip(isCollab || browserName !== 'chromium');
-
-    await withExclusiveClipboardAccess(async () => {
-      await page
-        .context()
-        .grantPermissions(['clipboard-read', 'clipboard-write']);
-
-      await click(page, '.font-increment');
-      await focusEditor(page);
-      await page.keyboard.type('MLH Fellowship');
-      await moveToLineEnd(page);
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('Fall 2024');
-
-      await click(page, '.lock');
-
-      await doubleClick(page, 'div[contenteditable="false"] span');
-      await click(page, 'div[contenteditable="false"] span', {button: 'right'});
-      await getPageOrFrame(page).getByRole('menuitem', {name: 'Copy'}).click();
-
-      await click(page, '.unlock');
-      await focusEditor(page);
-      await pasteFromClipboard(page);
-    });
-
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span style="font-size: 18px;" data-lexical-text="true">
-            MLH Fellowship
-          </span>
-        </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span style="font-size: 18px;" data-lexical-text="true">
-            Fall 2024Fellowship
-          </span>
-        </p>
-      `,
+  test.describe(() => {
+    test.skip(
+      ({browserName, isCollab}) => isCollab || browserName !== 'chromium',
     );
+    test('Rich text Copy and Paste with  different Font Size', async ({
+      page,
+    }) => {
+      await withExclusiveClipboardAccess(async () => {
+        await page
+          .context()
+          .grantPermissions(['clipboard-read', 'clipboard-write']);
+
+        await click(page, '.font-increment');
+        await focusEditor(page);
+        await page.keyboard.type('MLH Fellowship');
+        await moveToLineEnd(page);
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('Fall 2024');
+
+        await click(page, '.lock');
+
+        await doubleClick(page, 'div[contenteditable="false"] span');
+        await click(page, 'div[contenteditable="false"] span', {
+          button: 'right',
+        });
+        await getPageOrFrame(page)
+          .getByRole('menuitem', {name: 'Copy'})
+          .click();
+
+        await click(page, '.unlock');
+        await focusEditor(page);
+        await pasteFromClipboard(page);
+      });
+
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span style="font-size: 18px;" data-lexical-text="true">
+              MLH Fellowship
+            </span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span style="font-size: 18px;" data-lexical-text="true">
+              Fall 2024Fellowship
+            </span>
+          </p>
+        `,
+      );
+    });
   });
 });

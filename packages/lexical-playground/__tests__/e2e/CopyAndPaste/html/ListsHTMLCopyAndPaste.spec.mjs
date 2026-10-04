@@ -395,58 +395,57 @@ test.describe('HTML Lists CopyAndPaste', () => {
     );
   });
 
-  test('Paste top level element in the middle of list', async ({
-    page,
-    isCollab,
-  }) => {
-    test.skip(isCollab);
-    await focusEditor(page);
-    // Add three list items
-    await page.keyboard.type('- one');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('two');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('three');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('four');
+  test.describe(() => {
+    test.skip(({isCollab}) => isCollab);
+    test('Paste top level element in the middle of list', async ({page}) => {
+      await focusEditor(page);
+      // Add three list items
+      await page.keyboard.type('- one');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('two');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('three');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('four');
 
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('ArrowUp');
-    await pasteFromClipboard(page, {
-      'text/html': `<hr />`,
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.press('ArrowUp');
+      await pasteFromClipboard(page, {
+        'text/html': `<hr />`,
+      });
+
+      await assertHTML(
+        page,
+        html`
+          <ul class="PlaygroundEditorTheme__ul" dir="auto">
+            <li class="PlaygroundEditorTheme__listItem" value="1">
+              <span data-lexical-text="true">one</span>
+            </li>
+          </ul>
+          <hr
+            class="PlaygroundEditorTheme__hr"
+            contenteditable="false"
+            data-lexical-decorator="true" />
+          <ul class="PlaygroundEditorTheme__ul" dir="auto">
+            <li class="PlaygroundEditorTheme__listItem" value="1">
+              <span data-lexical-text="true">two</span>
+            </li>
+            <li class="PlaygroundEditorTheme__listItem" value="2">
+              <span data-lexical-text="true">three</span>
+            </li>
+            <li class="PlaygroundEditorTheme__listItem" value="3">
+              <span data-lexical-text="true">four</span>
+            </li>
+          </ul>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+      );
     });
-
-    await assertHTML(
-      page,
-      html`
-        <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1">
-            <span data-lexical-text="true">one</span>
-          </li>
-        </ul>
-        <hr
-          class="PlaygroundEditorTheme__hr"
-          contenteditable="false"
-          data-lexical-decorator="true" />
-        <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1">
-            <span data-lexical-text="true">two</span>
-          </li>
-          <li class="PlaygroundEditorTheme__listItem" value="2">
-            <span data-lexical-text="true">three</span>
-          </li>
-          <li class="PlaygroundEditorTheme__listItem" value="3">
-            <span data-lexical-text="true">four</span>
-          </li>
-        </ul>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-      `,
-    );
   });
 
   test('Copy + paste a nested divs in a list', async ({page}) => {

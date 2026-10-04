@@ -346,11 +346,13 @@ export const test = base.extend({
   hasLinkAttributes: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
-  /** @type {number | false} */
-  isCollab: IS_COLLAB_V1 ? 1 : IS_COLLAB_V2 ? 2 : false,
+  // Editor mode is fixed by the worker's environment. Worker-scoped fixtures
+  // let skip callbacks run before any parent beforeEach hook creates a page
+  // or initializes the playground, including skips in nested describe blocks.
+  isCollab: [IS_COLLAB_V1 ? 1 : IS_COLLAB_V2 ? 2 : false, {scope: 'worker'}],
   isMaxLength: false,
-  isPlainText: IS_PLAIN_TEXT,
-  isRichText: IS_RICH_TEXT,
+  isPlainText: [IS_PLAIN_TEXT, {scope: 'worker'}],
+  isRichText: [IS_RICH_TEXT, {scope: 'worker'}],
   selectionAlwaysOnDisplay: false,
   shouldAllowHighlightingWithBrackets: false,
   shouldUseLexicalContextMenu: false,

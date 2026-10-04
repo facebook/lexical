@@ -1572,490 +1572,491 @@ test.describe('Links', () => {
     );
   });
 
-  test('Can handle pressing Enter at the end of a Link', async ({page}) => {
+  test.describe(() => {
     test.fixme(true, 'Flaky');
-    await focusEditor(page);
-    await page.keyboard.type('Hello awesome');
-    await selectAll(page);
-    await click(page, '.link');
-    await click(page, '.link-confirm');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.type(' world');
+    test('Can handle pressing Enter at the end of a Link', async ({page}) => {
+      await focusEditor(page);
+      await page.keyboard.type('Hello awesome');
+      await selectAll(page);
+      await click(page, '.link');
+      await click(page, '.link-confirm');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.type(' world');
 
-    await moveLeft(page, 6, STANDARD_KEYPRESS_DELAY_MS);
+      await moveLeft(page, 6, STANDARD_KEYPRESS_DELAY_MS);
 
-    await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
 
-    await assertHTML(
-      page,
-      html`
-        <p dir="auto">
-          <a href="https://" rel="noreferrer">
-            <span data-lexical-text="true">Hello awesome</span>
-          </a>
-        </p>
-        <p dir="auto">
-          <span data-lexical-text="true">world</span>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
-  });
-
-  test('Can add, edit and remove links on images', async ({
-    page,
-    isCollab,
-    browserName,
-  }) => {
-    // Skip for collaborative mode and Firefox on Linux
-    test.skip(
-      isCollab || (browserName === 'firefox' && process.platform === 'linux'),
-    );
-    await focusEditor(page);
-
-    // Insert image
-    await insertSampleImage(page);
-
-    // Add link to image
-    await click(page, '.editor-image img');
-    await click(page, '.link');
-    await focus(page, '.link-input');
-    await page.keyboard.type('lexical.dev');
-    await click(page, '.link-confirm');
-
-    // Verify link was added
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <a
-            class="PlaygroundEditorTheme__link"
-            href="https://lexical.dev"
-            rel="noreferrer">
-            <span
-              class="editor-image"
-              contenteditable="false"
-              data-lexical-decorator="true">
-              <div draggable="true">
-                <img
-                  class="focused draggable"
-                  alt="Yellow flower in tilt shift lens"
-                  draggable="false"
-                  src="${SAMPLE_IMAGE_URL}"
-                  style="height: inherit; max-width: 500px; width: inherit" />
-              </div>
-              <div>
-                <button class="image-caption-button">Add Caption</button>
-                <div class="image-resizer image-resizer-n"></div>
-                <div class="image-resizer image-resizer-ne"></div>
-                <div class="image-resizer image-resizer-e"></div>
-                <div class="image-resizer image-resizer-se"></div>
-                <div class="image-resizer image-resizer-s"></div>
-                <div class="image-resizer image-resizer-sw"></div>
-                <div class="image-resizer image-resizer-w"></div>
-                <div class="image-resizer image-resizer-nw"></div>
-              </div>
-            </span>
-          </a>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: false},
-    );
-
-    // Edit link
-    await click(page, '.editor-image img');
-    await click(page, '.link-edit');
-    await focus(page, '.link-input');
-    await selectAll(page);
-    await page.keyboard.press('Backspace');
-    await page.keyboard.type('https://github.com/facebook/lexical');
-    await click(page, '.link-confirm');
-
-    // Verify link was updated
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <a
-            class="PlaygroundEditorTheme__link"
-            href="https://github.com/facebook/lexical"
-            rel="noreferrer">
-            <span
-              class="editor-image"
-              contenteditable="false"
-              data-lexical-decorator="true">
-              <div draggable="true">
-                <img
-                  class="focused draggable"
-                  alt="Yellow flower in tilt shift lens"
-                  draggable="false"
-                  src="${SAMPLE_IMAGE_URL}"
-                  style="height: inherit; max-width: 500px; width: inherit" />
-              </div>
-              <div>
-                <button class="image-caption-button">Add Caption</button>
-                <div class="image-resizer image-resizer-n"></div>
-                <div class="image-resizer image-resizer-ne"></div>
-                <div class="image-resizer image-resizer-e"></div>
-                <div class="image-resizer image-resizer-se"></div>
-                <div class="image-resizer image-resizer-s"></div>
-                <div class="image-resizer image-resizer-sw"></div>
-                <div class="image-resizer image-resizer-w"></div>
-                <div class="image-resizer image-resizer-nw"></div>
-              </div>
-            </span>
-          </a>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: false},
-    );
-
-    // Remove link
-    await click(page, '.editor-image img');
-    await click(page, '.link-trash');
-
-    // Verify link was removed but image remains
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <div draggable="true">
-              <img
-                class="focused draggable"
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit" />
-            </div>
-            <div>
-              <button class="image-caption-button">Add Caption</button>
-              <div class="image-resizer image-resizer-n"></div>
-              <div class="image-resizer image-resizer-ne"></div>
-              <div class="image-resizer image-resizer-e"></div>
-              <div class="image-resizer image-resizer-se"></div>
-              <div class="image-resizer image-resizer-s"></div>
-              <div class="image-resizer image-resizer-sw"></div>
-              <div class="image-resizer image-resizer-w"></div>
-              <div class="image-resizer image-resizer-nw"></div>
-            </div>
-          </span>
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: false},
-    );
-  });
-
-  test('Can add, edit and remove links on multiple selected images', async ({
-    page,
-    isCollab,
-    browserName,
-  }) => {
-    // Skip for collaborative mode and Firefox on Linux
-    test.skip(
-      isCollab || (browserName === 'firefox' && process.platform === 'linux'),
-    );
-    await focusEditor(page);
-
-    // Insert first image
-    await insertSampleImage(page);
-    await page.keyboard.press('Enter');
-
-    // Insert second image
-    await insertSampleImage(page);
-
-    // Select both images
-    await click(page, 'p:nth-child(1) .editor-image img');
-    await page.keyboard.down('Shift');
-    await click(page, 'p:nth-child(2) .editor-image img');
-    await page.keyboard.up('Shift');
-
-    // Add link to both images
-    await click(page, '.link');
-    await focus(page, '.link-input');
-    await page.keyboard.type('lexical.dev');
-    await click(page, '.link-confirm');
-
-    // Verify both images are linked
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <a
-            class="PlaygroundEditorTheme__link"
-            href="https://lexical.dev"
-            rel="noreferrer">
-            <span
-              class="editor-image"
-              contenteditable="false"
-              data-lexical-decorator="true">
-              <div draggable="true">
-                <img
-                  class="focused draggable"
-                  alt="Yellow flower in tilt shift lens"
-                  draggable="false"
-                  src="${SAMPLE_IMAGE_URL}"
-                  style="height: inherit; max-width: 500px; width: inherit" />
-              </div>
-              <div>
-                <button class="image-caption-button">Add Caption</button>
-                <div class="image-resizer image-resizer-n"></div>
-                <div class="image-resizer image-resizer-ne"></div>
-                <div class="image-resizer image-resizer-e"></div>
-                <div class="image-resizer image-resizer-se"></div>
-                <div class="image-resizer image-resizer-s"></div>
-                <div class="image-resizer image-resizer-sw"></div>
-                <div class="image-resizer image-resizer-w"></div>
-                <div class="image-resizer image-resizer-nw"></div>
-              </div>
-            </span>
-          </a>
-        </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <a
-            class="PlaygroundEditorTheme__link"
-            href="https://lexical.dev"
-            rel="noreferrer">
-            <span
-              class="editor-image"
-              contenteditable="false"
-              data-lexical-decorator="true">
-              <div draggable="true">
-                <img
-                  class="focused draggable"
-                  alt="Yellow flower in tilt shift lens"
-                  draggable="false"
-                  src="${SAMPLE_IMAGE_URL}"
-                  style="height: inherit; max-width: 500px; width: inherit" />
-              </div>
-              <div>
-                <button class="image-caption-button">Add Caption</button>
-                <div class="image-resizer image-resizer-n"></div>
-                <div class="image-resizer image-resizer-ne"></div>
-                <div class="image-resizer image-resizer-e"></div>
-                <div class="image-resizer image-resizer-se"></div>
-                <div class="image-resizer image-resizer-s"></div>
-                <div class="image-resizer image-resizer-sw"></div>
-                <div class="image-resizer image-resizer-w"></div>
-                <div class="image-resizer image-resizer-nw"></div>
-              </div>
-            </span>
-          </a>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: false},
-    );
-
-    // Edit link for both images
-    await click(page, 'p:nth-child(1) .editor-image img');
-    await page.keyboard.down('Shift');
-    await click(page, 'p:nth-child(2) .editor-image img');
-    await page.keyboard.up('Shift');
-    await click(page, '.link-edit');
-    await focus(page, '.link-input');
-    await selectAll(page);
-    await page.keyboard.press('Backspace');
-    await page.keyboard.type('https://github.com/facebook/lexical');
-    await click(page, '.link-confirm');
-
-    // Verify both links were updated
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <a
-            class="PlaygroundEditorTheme__link"
-            href="https://github.com/facebook/lexical"
-            rel="noreferrer">
-            <span
-              class="editor-image"
-              contenteditable="false"
-              data-lexical-decorator="true">
-              <div draggable="true">
-                <img
-                  class="focused draggable"
-                  alt="Yellow flower in tilt shift lens"
-                  draggable="false"
-                  src="${SAMPLE_IMAGE_URL}"
-                  style="height: inherit; max-width: 500px; width: inherit" />
-              </div>
-              <div>
-                <button class="image-caption-button">Add Caption</button>
-                <div class="image-resizer image-resizer-n"></div>
-                <div class="image-resizer image-resizer-ne"></div>
-                <div class="image-resizer image-resizer-e"></div>
-                <div class="image-resizer image-resizer-se"></div>
-                <div class="image-resizer image-resizer-s"></div>
-                <div class="image-resizer image-resizer-sw"></div>
-                <div class="image-resizer image-resizer-w"></div>
-                <div class="image-resizer image-resizer-nw"></div>
-              </div>
-            </span>
-          </a>
-        </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <a
-            class="PlaygroundEditorTheme__link"
-            href="https://github.com/facebook/lexical"
-            rel="noreferrer">
-            <span
-              class="editor-image"
-              contenteditable="false"
-              data-lexical-decorator="true">
-              <div draggable="true">
-                <img
-                  class="focused draggable"
-                  alt="Yellow flower in tilt shift lens"
-                  draggable="false"
-                  src="${SAMPLE_IMAGE_URL}"
-                  style="height: inherit; max-width: 500px; width: inherit" />
-              </div>
-              <div>
-                <button class="image-caption-button">Add Caption</button>
-                <div class="image-resizer image-resizer-n"></div>
-                <div class="image-resizer image-resizer-ne"></div>
-                <div class="image-resizer image-resizer-e"></div>
-                <div class="image-resizer image-resizer-se"></div>
-                <div class="image-resizer image-resizer-s"></div>
-                <div class="image-resizer image-resizer-sw"></div>
-                <div class="image-resizer image-resizer-w"></div>
-                <div class="image-resizer image-resizer-nw"></div>
-              </div>
-            </span>
-          </a>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: false},
-    );
-
-    // Remove links from both images
-    await click(page, 'p:nth-child(1) .editor-image img');
-    await page.keyboard.down('Shift');
-    await click(page, 'p:nth-child(2) .editor-image img');
-    await page.keyboard.up('Shift');
-    await click(page, '.link-trash');
-
-    // Verify links were removed but images remain
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <div draggable="true">
-              <img
-                class="focused draggable"
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit" />
-            </div>
-            <div>
-              <button class="image-caption-button">Add Caption</button>
-              <div class="image-resizer image-resizer-n"></div>
-              <div class="image-resizer image-resizer-ne"></div>
-              <div class="image-resizer image-resizer-e"></div>
-              <div class="image-resizer image-resizer-se"></div>
-              <div class="image-resizer image-resizer-s"></div>
-              <div class="image-resizer image-resizer-sw"></div>
-              <div class="image-resizer image-resizer-w"></div>
-              <div class="image-resizer image-resizer-nw"></div>
-            </div>
-          </span>
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <div draggable="true">
-              <img
-                class="focused draggable"
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit" />
-            </div>
-            <div>
-              <button class="image-caption-button">Add Caption</button>
-              <div class="image-resizer image-resizer-n"></div>
-              <div class="image-resizer image-resizer-ne"></div>
-              <div class="image-resizer image-resizer-e"></div>
-              <div class="image-resizer image-resizer-se"></div>
-              <div class="image-resizer image-resizer-s"></div>
-              <div class="image-resizer image-resizer-sw"></div>
-              <div class="image-resizer image-resizer-w"></div>
-              <div class="image-resizer image-resizer-nw"></div>
-            </div>
-          </span>
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: false},
-    );
-  });
-
-  test('Undo from the link URL input undoes in the editor rather than natively (#6714)', async ({
-    page,
-    browserName,
-    isCollab,
-  }) => {
-    // Firefox keeps the undo scoped to the focused control and never
-    // dispatches `beforeinput`/`historyUndo` on the editor root, so there is
-    // nothing for the editor to mishandle.
-    test.skip(browserName === 'firefox' || isCollab);
-    await focusEditor(page);
-    await page.keyboard.type('Hello world ');
-    await withExclusiveClipboardAccess(async () => {
-      await pasteFromClipboard(page, {'text/plain': 'https://lexical.dev'});
+      await assertHTML(
+        page,
+        html`
+          <p dir="auto">
+            <a href="https://" rel="noreferrer">
+              <span data-lexical-text="true">Hello awesome</span>
+            </a>
+          </p>
+          <p dir="auto">
+            <span data-lexical-text="true">world</span>
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: true},
+      );
     });
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">Hello world</span>
-          <a class="PlaygroundEditorTheme__link" href="https://lexical.dev">
-            <span data-lexical-text="true">https://lexical.dev</span>
-          </a>
-        </p>
-      `,
+  });
+
+  test.describe(() => {
+    test.skip(
+      ({browserName, isCollab}) =>
+        isCollab || (browserName === 'firefox' && process.platform === 'linux'),
     );
+    test('Can add, edit and remove links on images', async ({page}) => {
+      // Skip for collaborative mode and Firefox on Linux
 
-    // Open the URL field of the link popup, which moves focus out of the
-    // editor and leaves the editor without a selection.
-    await click(page, '.link-edit');
-    await focus(page, '.link-input');
+      await focusEditor(page);
 
-    // Chromium and WebKit exhaust the URL field's own (empty) undo stack and
-    // then dispatch the undo at the editor root. Nothing has been typed into
-    // the URL field, so this is the very first undo the user presses.
-    await undo(page);
+      // Insert image
+      await insertSampleImage(page);
 
-    // The pasted link is undone. Before the fix the browser ran its native
-    // undo over the editor's DOM instead, producing "Hhttps://lexical.dev":
-    // a state that was never in Lexical's history.
-    await assertHTML(
+      // Add link to image
+      await click(page, '.editor-image img');
+      await click(page, '.link');
+      await focus(page, '.link-input');
+      await page.keyboard.type('lexical.dev');
+      await click(page, '.link-confirm');
+
+      // Verify link was added
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <a
+              class="PlaygroundEditorTheme__link"
+              href="https://lexical.dev"
+              rel="noreferrer">
+              <span
+                class="editor-image"
+                contenteditable="false"
+                data-lexical-decorator="true">
+                <div draggable="true">
+                  <img
+                    class="focused draggable"
+                    alt="Yellow flower in tilt shift lens"
+                    draggable="false"
+                    src="${SAMPLE_IMAGE_URL}"
+                    style="height: inherit; max-width: 500px; width: inherit" />
+                </div>
+                <div>
+                  <button class="image-caption-button">Add Caption</button>
+                  <div class="image-resizer image-resizer-n"></div>
+                  <div class="image-resizer image-resizer-ne"></div>
+                  <div class="image-resizer image-resizer-e"></div>
+                  <div class="image-resizer image-resizer-se"></div>
+                  <div class="image-resizer image-resizer-s"></div>
+                  <div class="image-resizer image-resizer-sw"></div>
+                  <div class="image-resizer image-resizer-w"></div>
+                  <div class="image-resizer image-resizer-nw"></div>
+                </div>
+              </span>
+            </a>
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: false},
+      );
+
+      // Edit link
+      await click(page, '.editor-image img');
+      await click(page, '.link-edit');
+      await focus(page, '.link-input');
+      await selectAll(page);
+      await page.keyboard.press('Backspace');
+      await page.keyboard.type('https://github.com/facebook/lexical');
+      await click(page, '.link-confirm');
+
+      // Verify link was updated
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <a
+              class="PlaygroundEditorTheme__link"
+              href="https://github.com/facebook/lexical"
+              rel="noreferrer">
+              <span
+                class="editor-image"
+                contenteditable="false"
+                data-lexical-decorator="true">
+                <div draggable="true">
+                  <img
+                    class="focused draggable"
+                    alt="Yellow flower in tilt shift lens"
+                    draggable="false"
+                    src="${SAMPLE_IMAGE_URL}"
+                    style="height: inherit; max-width: 500px; width: inherit" />
+                </div>
+                <div>
+                  <button class="image-caption-button">Add Caption</button>
+                  <div class="image-resizer image-resizer-n"></div>
+                  <div class="image-resizer image-resizer-ne"></div>
+                  <div class="image-resizer image-resizer-e"></div>
+                  <div class="image-resizer image-resizer-se"></div>
+                  <div class="image-resizer image-resizer-s"></div>
+                  <div class="image-resizer image-resizer-sw"></div>
+                  <div class="image-resizer image-resizer-w"></div>
+                  <div class="image-resizer image-resizer-nw"></div>
+                </div>
+              </span>
+            </a>
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: false},
+      );
+
+      // Remove link
+      await click(page, '.editor-image img');
+      await click(page, '.link-trash');
+
+      // Verify link was removed but image remains
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="true">
+                <img
+                  class="focused draggable"
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+              <div>
+                <button class="image-caption-button">Add Caption</button>
+                <div class="image-resizer image-resizer-n"></div>
+                <div class="image-resizer image-resizer-ne"></div>
+                <div class="image-resizer image-resizer-e"></div>
+                <div class="image-resizer image-resizer-se"></div>
+                <div class="image-resizer image-resizer-s"></div>
+                <div class="image-resizer image-resizer-sw"></div>
+                <div class="image-resizer image-resizer-w"></div>
+                <div class="image-resizer image-resizer-nw"></div>
+              </div>
+            </span>
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: false},
+      );
+    });
+
+    test('Can add, edit and remove links on multiple selected images', async ({
       page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">Hello world</span>
-        </p>
-      `,
+    }) => {
+      // Skip for collaborative mode and Firefox on Linux
+
+      await focusEditor(page);
+
+      // Insert first image
+      await insertSampleImage(page);
+      await page.keyboard.press('Enter');
+
+      // Insert second image
+      await insertSampleImage(page);
+
+      // Select both images
+      await click(page, 'p:nth-child(1) .editor-image img');
+      await page.keyboard.down('Shift');
+      await click(page, 'p:nth-child(2) .editor-image img');
+      await page.keyboard.up('Shift');
+
+      // Add link to both images
+      await click(page, '.link');
+      await focus(page, '.link-input');
+      await page.keyboard.type('lexical.dev');
+      await click(page, '.link-confirm');
+
+      // Verify both images are linked
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <a
+              class="PlaygroundEditorTheme__link"
+              href="https://lexical.dev"
+              rel="noreferrer">
+              <span
+                class="editor-image"
+                contenteditable="false"
+                data-lexical-decorator="true">
+                <div draggable="true">
+                  <img
+                    class="focused draggable"
+                    alt="Yellow flower in tilt shift lens"
+                    draggable="false"
+                    src="${SAMPLE_IMAGE_URL}"
+                    style="height: inherit; max-width: 500px; width: inherit" />
+                </div>
+                <div>
+                  <button class="image-caption-button">Add Caption</button>
+                  <div class="image-resizer image-resizer-n"></div>
+                  <div class="image-resizer image-resizer-ne"></div>
+                  <div class="image-resizer image-resizer-e"></div>
+                  <div class="image-resizer image-resizer-se"></div>
+                  <div class="image-resizer image-resizer-s"></div>
+                  <div class="image-resizer image-resizer-sw"></div>
+                  <div class="image-resizer image-resizer-w"></div>
+                  <div class="image-resizer image-resizer-nw"></div>
+                </div>
+              </span>
+            </a>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <a
+              class="PlaygroundEditorTheme__link"
+              href="https://lexical.dev"
+              rel="noreferrer">
+              <span
+                class="editor-image"
+                contenteditable="false"
+                data-lexical-decorator="true">
+                <div draggable="true">
+                  <img
+                    class="focused draggable"
+                    alt="Yellow flower in tilt shift lens"
+                    draggable="false"
+                    src="${SAMPLE_IMAGE_URL}"
+                    style="height: inherit; max-width: 500px; width: inherit" />
+                </div>
+                <div>
+                  <button class="image-caption-button">Add Caption</button>
+                  <div class="image-resizer image-resizer-n"></div>
+                  <div class="image-resizer image-resizer-ne"></div>
+                  <div class="image-resizer image-resizer-e"></div>
+                  <div class="image-resizer image-resizer-se"></div>
+                  <div class="image-resizer image-resizer-s"></div>
+                  <div class="image-resizer image-resizer-sw"></div>
+                  <div class="image-resizer image-resizer-w"></div>
+                  <div class="image-resizer image-resizer-nw"></div>
+                </div>
+              </span>
+            </a>
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: false},
+      );
+
+      // Edit link for both images
+      await click(page, 'p:nth-child(1) .editor-image img');
+      await page.keyboard.down('Shift');
+      await click(page, 'p:nth-child(2) .editor-image img');
+      await page.keyboard.up('Shift');
+      await click(page, '.link-edit');
+      await focus(page, '.link-input');
+      await selectAll(page);
+      await page.keyboard.press('Backspace');
+      await page.keyboard.type('https://github.com/facebook/lexical');
+      await click(page, '.link-confirm');
+
+      // Verify both links were updated
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <a
+              class="PlaygroundEditorTheme__link"
+              href="https://github.com/facebook/lexical"
+              rel="noreferrer">
+              <span
+                class="editor-image"
+                contenteditable="false"
+                data-lexical-decorator="true">
+                <div draggable="true">
+                  <img
+                    class="focused draggable"
+                    alt="Yellow flower in tilt shift lens"
+                    draggable="false"
+                    src="${SAMPLE_IMAGE_URL}"
+                    style="height: inherit; max-width: 500px; width: inherit" />
+                </div>
+                <div>
+                  <button class="image-caption-button">Add Caption</button>
+                  <div class="image-resizer image-resizer-n"></div>
+                  <div class="image-resizer image-resizer-ne"></div>
+                  <div class="image-resizer image-resizer-e"></div>
+                  <div class="image-resizer image-resizer-se"></div>
+                  <div class="image-resizer image-resizer-s"></div>
+                  <div class="image-resizer image-resizer-sw"></div>
+                  <div class="image-resizer image-resizer-w"></div>
+                  <div class="image-resizer image-resizer-nw"></div>
+                </div>
+              </span>
+            </a>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <a
+              class="PlaygroundEditorTheme__link"
+              href="https://github.com/facebook/lexical"
+              rel="noreferrer">
+              <span
+                class="editor-image"
+                contenteditable="false"
+                data-lexical-decorator="true">
+                <div draggable="true">
+                  <img
+                    class="focused draggable"
+                    alt="Yellow flower in tilt shift lens"
+                    draggable="false"
+                    src="${SAMPLE_IMAGE_URL}"
+                    style="height: inherit; max-width: 500px; width: inherit" />
+                </div>
+                <div>
+                  <button class="image-caption-button">Add Caption</button>
+                  <div class="image-resizer image-resizer-n"></div>
+                  <div class="image-resizer image-resizer-ne"></div>
+                  <div class="image-resizer image-resizer-e"></div>
+                  <div class="image-resizer image-resizer-se"></div>
+                  <div class="image-resizer image-resizer-s"></div>
+                  <div class="image-resizer image-resizer-sw"></div>
+                  <div class="image-resizer image-resizer-w"></div>
+                  <div class="image-resizer image-resizer-nw"></div>
+                </div>
+              </span>
+            </a>
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: false},
+      );
+
+      // Remove links from both images
+      await click(page, 'p:nth-child(1) .editor-image img');
+      await page.keyboard.down('Shift');
+      await click(page, 'p:nth-child(2) .editor-image img');
+      await page.keyboard.up('Shift');
+      await click(page, '.link-trash');
+
+      // Verify links were removed but images remain
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="true">
+                <img
+                  class="focused draggable"
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+              <div>
+                <button class="image-caption-button">Add Caption</button>
+                <div class="image-resizer image-resizer-n"></div>
+                <div class="image-resizer image-resizer-ne"></div>
+                <div class="image-resizer image-resizer-e"></div>
+                <div class="image-resizer image-resizer-se"></div>
+                <div class="image-resizer image-resizer-s"></div>
+                <div class="image-resizer image-resizer-sw"></div>
+                <div class="image-resizer image-resizer-w"></div>
+                <div class="image-resizer image-resizer-nw"></div>
+              </div>
+            </span>
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="true">
+                <img
+                  class="focused draggable"
+                  alt="Yellow flower in tilt shift lens"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+              <div>
+                <button class="image-caption-button">Add Caption</button>
+                <div class="image-resizer image-resizer-n"></div>
+                <div class="image-resizer image-resizer-ne"></div>
+                <div class="image-resizer image-resizer-e"></div>
+                <div class="image-resizer image-resizer-se"></div>
+                <div class="image-resizer image-resizer-s"></div>
+                <div class="image-resizer image-resizer-sw"></div>
+                <div class="image-resizer image-resizer-w"></div>
+                <div class="image-resizer image-resizer-nw"></div>
+              </div>
+            </span>
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+        undefined,
+        {ignoreClasses: false},
+      );
+    });
+  });
+
+  test.describe(() => {
+    test.skip(
+      ({browserName, isCollab}) => browserName === 'firefox' || isCollab,
     );
+    test('Undo from the link URL input undoes in the editor rather than natively (#6714)', async ({
+      page,
+    }) => {
+      // Firefox keeps the undo scoped to the focused control and never
+      // dispatches `beforeinput`/`historyUndo` on the editor root, so there is
+      // nothing for the editor to mishandle.
+
+      await focusEditor(page);
+      await page.keyboard.type('Hello world ');
+      await withExclusiveClipboardAccess(async () => {
+        await pasteFromClipboard(page, {'text/plain': 'https://lexical.dev'});
+      });
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Hello world</span>
+            <a class="PlaygroundEditorTheme__link" href="https://lexical.dev">
+              <span data-lexical-text="true">https://lexical.dev</span>
+            </a>
+          </p>
+        `,
+      );
+
+      // Open the URL field of the link popup, which moves focus out of the
+      // editor and leaves the editor without a selection.
+      await click(page, '.link-edit');
+      await focus(page, '.link-input');
+
+      // Chromium and WebKit exhaust the URL field's own (empty) undo stack and
+      // then dispatch the undo at the editor root. Nothing has been typed into
+      // the URL field, so this is the very first undo the user presses.
+      await undo(page);
+
+      // The pasted link is undone. Before the fix the browser ran its native
+      // undo over the editor's DOM instead, producing "Hhttps://lexical.dev":
+      // a state that was never in Lexical's history.
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Hello world</span>
+          </p>
+        `,
+      );
+    });
   });
 });
 

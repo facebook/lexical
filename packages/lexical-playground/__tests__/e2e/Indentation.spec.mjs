@@ -32,419 +32,419 @@ test.describe('Identation', () => {
     initialize({isCollab, page, tableHorizontalScroll: false}),
   );
 
-  test(`Can create content and indent and outdent it all`, async ({
-    page,
-    isCollab,
-  }) => {
-    // We have to skip collab due to styling on the table for selected cells
-    test.skip(isCollab);
-    await focusEditor(page);
-    await page.keyboard.type('foo');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('bar');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('yar');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('- item');
-    await page.keyboard.type('item 2');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('item 3');
-    await click(page, '.toolbar-item.alignment');
-    await click(page, 'button:has-text("Indent")');
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('``` ');
-    await page.keyboard.type('code');
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');
+  test.describe(() => {
+    test.skip(({isCollab}) => isCollab);
+    test(`Can create content and indent and outdent it all`, async ({page}) => {
+      // We have to skip collab due to styling on the table for selected cells
 
-    await insertTable(page, 1, 1);
+      await focusEditor(page);
+      await page.keyboard.type('foo');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('bar');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('yar');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('- item');
+      await page.keyboard.type('item 2');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('item 3');
+      await click(page, '.toolbar-item.alignment');
+      await click(page, 'button:has-text("Indent")');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('``` ');
+      await page.keyboard.type('code');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
 
-    await page.keyboard.type('foo');
+      await insertTable(page, 1, 1);
 
-    await selectAll(page);
+      await page.keyboard.type('foo');
 
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">foo</span>
-        </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">bar</span>
-        </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">yar</span>
-        </p>
-        <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1">
-            <span data-lexical-text="true">itemitem 2</span>
-          </li>
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-            value="2">
-            <ul class="PlaygroundEditorTheme__ul">
-              <li class="PlaygroundEditorTheme__listItem" value="1">
-                <span data-lexical-text="true">item 3</span>
-              </li>
-            </ul>
-          </li>
-        </ul>
-        <code
-          class="PlaygroundEditorTheme__code"
-          dir="auto"
-          spellcheck="false"
-          data-gutter="1">
-          <span data-lexical-text="true">code</span>
-        </code>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-        <table
-          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
-          dir="auto">
-          <colgroup>
-            <col style="width: 92px" />
-          </colgroup>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <span data-lexical-text="true">foo</span>
-              </p>
-            </th>
-          </tr>
-        </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-      `,
-    );
+      await selectAll(page);
 
-    await click(page, '.toolbar-item.alignment');
-    await click(page, 'button:has-text("Indent")');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">foo</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">bar</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">yar</span>
+          </p>
+          <ul class="PlaygroundEditorTheme__ul" dir="auto">
+            <li class="PlaygroundEditorTheme__listItem" value="1">
+              <span data-lexical-text="true">itemitem 2</span>
+            </li>
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+              value="2">
+              <ul class="PlaygroundEditorTheme__ul">
+                <li class="PlaygroundEditorTheme__listItem" value="1">
+                  <span data-lexical-text="true">item 3</span>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <code
+            class="PlaygroundEditorTheme__code"
+            dir="auto"
+            spellcheck="false"
+            data-gutter="1">
+            <span data-lexical-text="true">code</span>
+          </code>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+          <table
+            class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
+            dir="auto">
+            <colgroup>
+              <col style="width: 92px" />
+            </colgroup>
+            <tr dir="auto">
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+                dir="auto">
+                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                  <span data-lexical-text="true">foo</span>
+                </p>
+              </th>
+            </tr>
+          </table>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+      );
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <span data-lexical-text="true">foo</span>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <span data-lexical-text="true">bar</span>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <span data-lexical-text="true">yar</span>
-        </p>
-        <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-            value="1">
-            <ul class="PlaygroundEditorTheme__ul">
-              <li class="PlaygroundEditorTheme__listItem" value="1">
-                <span data-lexical-text="true">itemitem 2</span>
-              </li>
-              <li
-                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-                value="2">
-                <ul class="PlaygroundEditorTheme__ul">
-                  <li class="PlaygroundEditorTheme__listItem" value="1">
-                    <span data-lexical-text="true">item 3</span>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-        </ul>
-        <code
-          class="PlaygroundEditorTheme__code"
-          dir="auto"
-          spellcheck="false"
-          data-gutter="1">
-          <span data-lexical-text="true">code</span>
-        </code>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-        <table
-          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
-          dir="auto">
-          <colgroup>
-            <col style="width: 92px" />
-          </colgroup>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                dir="auto"
-                style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-                <span data-lexical-text="true">foo</span>
-              </p>
-            </th>
-          </tr>
-        </table>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-      `,
-    );
+      await click(page, '.toolbar-item.alignment');
+      await click(page, 'button:has-text("Indent")');
 
-    await click(page, '.toolbar-item.alignment');
-    await click(page, 'button:has-text("Indent")');
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <span data-lexical-text="true">foo</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <span data-lexical-text="true">bar</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <span data-lexical-text="true">yar</span>
+          </p>
+          <ul class="PlaygroundEditorTheme__ul" dir="auto">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+              value="1">
+              <ul class="PlaygroundEditorTheme__ul">
+                <li class="PlaygroundEditorTheme__listItem" value="1">
+                  <span data-lexical-text="true">itemitem 2</span>
+                </li>
+                <li
+                  class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                  value="2">
+                  <ul class="PlaygroundEditorTheme__ul">
+                    <li class="PlaygroundEditorTheme__listItem" value="1">
+                      <span data-lexical-text="true">item 3</span>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <code
+            class="PlaygroundEditorTheme__code"
+            dir="auto"
+            spellcheck="false"
+            data-gutter="1">
+            <span data-lexical-text="true">code</span>
+          </code>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+          <table
+            class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
+            dir="auto">
+            <colgroup>
+              <col style="width: 92px" />
+            </colgroup>
+            <tr dir="auto">
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+                dir="auto">
+                <p
+                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+                  dir="auto"
+                  style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+                  <span data-lexical-text="true">foo</span>
+                </p>
+              </th>
+            </tr>
+          </table>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+      );
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
-          <span data-lexical-text="true">foo</span>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
-          <span data-lexical-text="true">bar</span>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
-          <span data-lexical-text="true">yar</span>
-        </p>
-        <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-            value="1">
-            <ul class="PlaygroundEditorTheme__ul">
-              <li
-                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-                value="1">
-                <ul class="PlaygroundEditorTheme__ul">
-                  <li class="PlaygroundEditorTheme__listItem" value="1">
-                    <span data-lexical-text="true">itemitem 2</span>
-                  </li>
-                  <li
-                    class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-                    value="2">
-                    <ul class="PlaygroundEditorTheme__ul">
-                      <li class="PlaygroundEditorTheme__listItem" value="1">
-                        <span data-lexical-text="true">item 3</span>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-        </ul>
-        <code
-          class="PlaygroundEditorTheme__code"
-          dir="auto"
-          spellcheck="false"
-          data-gutter="1">
-          <span data-lexical-text="true">code</span>
-        </code>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-        <table
-          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
-          dir="auto">
-          <colgroup>
-            <col style="width: 92px" />
-          </colgroup>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                dir="auto"
-                style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
-                <span data-lexical-text="true">foo</span>
-              </p>
-            </th>
-          </tr>
-        </table>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-      `,
-    );
+      await click(page, '.toolbar-item.alignment');
+      await click(page, 'button:has-text("Indent")');
 
-    await click(page, '.toolbar-item.alignment');
-    await click(page, 'button:has-text("Outdent")');
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
+            <span data-lexical-text="true">foo</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
+            <span data-lexical-text="true">bar</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
+            <span data-lexical-text="true">yar</span>
+          </p>
+          <ul class="PlaygroundEditorTheme__ul" dir="auto">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+              value="1">
+              <ul class="PlaygroundEditorTheme__ul">
+                <li
+                  class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                  value="1">
+                  <ul class="PlaygroundEditorTheme__ul">
+                    <li class="PlaygroundEditorTheme__listItem" value="1">
+                      <span data-lexical-text="true">itemitem 2</span>
+                    </li>
+                    <li
+                      class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                      value="2">
+                      <ul class="PlaygroundEditorTheme__ul">
+                        <li class="PlaygroundEditorTheme__listItem" value="1">
+                          <span data-lexical-text="true">item 3</span>
+                        </li>
+                      </ul>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <code
+            class="PlaygroundEditorTheme__code"
+            dir="auto"
+            spellcheck="false"
+            data-gutter="1">
+            <span data-lexical-text="true">code</span>
+          </code>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+          <table
+            class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
+            dir="auto">
+            <colgroup>
+              <col style="width: 92px" />
+            </colgroup>
+            <tr dir="auto">
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+                dir="auto">
+                <p
+                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+                  dir="auto"
+                  style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
+                  <span data-lexical-text="true">foo</span>
+                </p>
+              </th>
+            </tr>
+          </table>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+      );
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <span data-lexical-text="true">foo</span>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <span data-lexical-text="true">bar</span>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <span data-lexical-text="true">yar</span>
-        </p>
-        <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-            value="1">
-            <ul class="PlaygroundEditorTheme__ul">
-              <li class="PlaygroundEditorTheme__listItem" value="1">
-                <span data-lexical-text="true">itemitem 2</span>
-              </li>
-              <li
-                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-                value="2">
-                <ul class="PlaygroundEditorTheme__ul">
-                  <li class="PlaygroundEditorTheme__listItem" value="1">
-                    <span data-lexical-text="true">item 3</span>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-        </ul>
-        <code
-          class="PlaygroundEditorTheme__code"
-          dir="auto"
-          spellcheck="false"
-          data-gutter="1">
-          <span data-lexical-text="true">code</span>
-        </code>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-        <table
-          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
-          dir="auto">
-          <colgroup>
-            <col style="width: 92px" />
-          </colgroup>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                dir="auto"
-                style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-                <span data-lexical-text="true">foo</span>
-              </p>
-            </th>
-          </tr>
-        </table>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          dir="auto"
-          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-      `,
-    );
+      await click(page, '.toolbar-item.alignment');
+      await click(page, 'button:has-text("Outdent")');
 
-    await click(page, '.toolbar-item.alignment');
-    await click(page, 'button:has-text("Outdent")');
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <span data-lexical-text="true">foo</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <span data-lexical-text="true">bar</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <span data-lexical-text="true">yar</span>
+          </p>
+          <ul class="PlaygroundEditorTheme__ul" dir="auto">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+              value="1">
+              <ul class="PlaygroundEditorTheme__ul">
+                <li class="PlaygroundEditorTheme__listItem" value="1">
+                  <span data-lexical-text="true">itemitem 2</span>
+                </li>
+                <li
+                  class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                  value="2">
+                  <ul class="PlaygroundEditorTheme__ul">
+                    <li class="PlaygroundEditorTheme__listItem" value="1">
+                      <span data-lexical-text="true">item 3</span>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <code
+            class="PlaygroundEditorTheme__code"
+            dir="auto"
+            spellcheck="false"
+            data-gutter="1">
+            <span data-lexical-text="true">code</span>
+          </code>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+          <table
+            class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
+            dir="auto">
+            <colgroup>
+              <col style="width: 92px" />
+            </colgroup>
+            <tr dir="auto">
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+                dir="auto">
+                <p
+                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+                  dir="auto"
+                  style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+                  <span data-lexical-text="true">foo</span>
+                </p>
+              </th>
+            </tr>
+          </table>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+      );
 
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">foo</span>
-        </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">bar</span>
-        </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">yar</span>
-        </p>
-        <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1">
-            <span data-lexical-text="true">itemitem 2</span>
-          </li>
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-            value="2">
-            <ul class="PlaygroundEditorTheme__ul">
-              <li class="PlaygroundEditorTheme__listItem" value="1">
-                <span data-lexical-text="true">item 3</span>
-              </li>
-            </ul>
-          </li>
-        </ul>
-        <code
-          class="PlaygroundEditorTheme__code"
-          dir="auto"
-          spellcheck="false"
-          data-gutter="1">
-          <span data-lexical-text="true">code</span>
-        </code>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-        <table
-          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
-          dir="auto">
-          <colgroup>
-            <col style="width: 92px" />
-          </colgroup>
-          <tr dir="auto">
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
-              dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <span data-lexical-text="true">foo</span>
-              </p>
-            </th>
-          </tr>
-        </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br data-lexical-managed-linebreak="true" />
-        </p>
-      `,
-    );
+      await click(page, '.toolbar-item.alignment');
+      await click(page, 'button:has-text("Outdent")');
+
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">foo</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">bar</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">yar</span>
+          </p>
+          <ul class="PlaygroundEditorTheme__ul" dir="auto">
+            <li class="PlaygroundEditorTheme__listItem" value="1">
+              <span data-lexical-text="true">itemitem 2</span>
+            </li>
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+              value="2">
+              <ul class="PlaygroundEditorTheme__ul">
+                <li class="PlaygroundEditorTheme__listItem" value="1">
+                  <span data-lexical-text="true">item 3</span>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <code
+            class="PlaygroundEditorTheme__code"
+            dir="auto"
+            spellcheck="false"
+            data-gutter="1">
+            <span data-lexical-text="true">code</span>
+          </code>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+          <table
+            class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
+            dir="auto">
+            <colgroup>
+              <col style="width: 92px" />
+            </colgroup>
+            <tr dir="auto">
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+                dir="auto">
+                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                  <span data-lexical-text="true">foo</span>
+                </p>
+              </th>
+            </tr>
+          </table>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+      );
+    });
   });
 
   test(`Cannot have negative indents (#7410)`, async ({page}) => {

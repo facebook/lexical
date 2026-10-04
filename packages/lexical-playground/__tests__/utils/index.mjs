@@ -81,7 +81,12 @@ export function wrapTableHtml(
   `;
 }
 
-export async function initialize({
+export async function initialize(options) {
+  return test.step('Initialize playground', () =>
+    initializePlayground(options));
+}
+
+async function initializePlayground({
   page,
   isCollab,
   selectBlock,
@@ -93,7 +98,8 @@ export async function initialize({
   hasNestedTables,
   hasFitNestedTables,
   shouldDisableFocusOnClickChecklist,
-  showNestedEditorTreeView,
+  showNestedEditorTreeView = false,
+  showTreeView = false,
   tableCellMerge,
   tableCellBackgroundColor,
   shouldUseLexicalContextMenu,
@@ -112,9 +118,10 @@ export async function initialize({
     appSettings.useCollabV2 = isCollab === 2;
     appSettings.collabId = randomUUID();
   }
-  if (showNestedEditorTreeView === undefined) {
-    appSettings.showNestedEditorTreeView = true;
-  }
+  // Debug views serialize and render editor state on every update in both
+  // collab clients. Only specs exercising the debug UI need to opt in.
+  appSettings.showNestedEditorTreeView = showNestedEditorTreeView;
+  appSettings.showTreeView = showTreeView;
   appSettings.isAutocomplete = !!isAutocomplete;
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
@@ -310,31 +317,38 @@ async function exposeLexicalEditor(page, pageError = null) {
     );
   }
   const leftFrame = getPageOrFrame(page);
-  await Promise.race(
-    [leftFrame.waitForSelector('.tree-view-output pre'), pageError].filter(
-      Boolean,
-    ),
-  );
-  await leftFrame.evaluate(() => {
-    // querySelector does not pierce shadow roots, so descend into any open
-    // shadow trees to support the "Render in Shadow DOM" playground setting.
-    const findEditorElement = root => {
-      const found = root.querySelector('[data-lexical-editor="true"]');
-      if (found !== null) {
-        return found;
-      }
-      for (const element of root.querySelectorAll('*')) {
-        if (element.shadowRoot !== null) {
-          const inner = findEditorElement(element.shadowRoot);
-          if (inner !== null) {
-            return inner;
+  await Promise.race([
+    leftFrame.waitForFunction(() => {
+      // Query through open shadow roots as well as the ordinary document.
+      const findEditorElement = root => {
+        const found = root.querySelector('[data-lexical-editor="true"]');
+        if (found !== null) {
+          return found;
+        }
+        for (const element of root.querySelectorAll('*')) {
+          if (element.shadowRoot !== null) {
+            const inner = findEditorElement(element.shadowRoot);
+            if (inner !== null) {
+              return inner;
+            }
           }
         }
+        return null;
+      };
+      const element = findEditorElement(document);
+      const editor = element?.__lexicalEditor;
+      if (
+        !editor ||
+        editor.getRootElement() !== element ||
+        editor.getEditorState().isEmpty()
+      ) {
+        return false;
       }
-      return null;
-    };
-    window.lexicalEditor = findEditorElement(document).__lexicalEditor;
-  });
+      window.lexicalEditor = editor;
+      return true;
+    }),
+    ...(pageError ? [pageError] : []),
+  ]);
 }
 
 export const test = base.extend({

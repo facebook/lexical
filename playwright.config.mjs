@@ -34,7 +34,8 @@ function project(name, deviceName) {
     use: {
       ...devices[deviceName],
       launchOptions: {
-        slowMo: 50,
+        // Opt in when debugging; CI should synchronize on editor state.
+        slowMo: Number(process.env.E2E_SLOW_MO ?? (IS_DEBUG ? 50 : 0)),
       },
       userAgent: undefined,
       viewport,
@@ -50,6 +51,12 @@ const config = defineConfig({
     project('firefox', 'Desktop Firefox'),
     project('webkit', 'Desktop Safari'),
   ],
+  reporter: IS_CI
+    ? [
+        ['dot'],
+        ['./packages/lexical-playground/__tests__/utils/timingReporter.mjs'],
+      ]
+    : undefined,
   retries: IS_DEBUG ? 0 : IS_CI ? 2 : 1,
   testIgnore: /\/__tests__\/(?:unit|browser)\//,
   timeout: 150000,

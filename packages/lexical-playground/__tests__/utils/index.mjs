@@ -1270,6 +1270,10 @@ export async function dragImage(
   );
 }
 
+// The two collab clients, undo/redo assertions and polling frequently format
+// identical DOM. Share in-flight work too, while bounding retained snapshots.
+const htmlFormattingCache = new Map();
+
 export async function prettifyHTML(
   string,
   {ignoreClasses, ignoreInlineStyles, ignoreDir} = {},
@@ -1290,7 +1294,11 @@ export async function prettifyHTML(
 
   output = output.replace(/\s__playwright_target__="[^"]+"/, '');
 
-  return await prettier.format(output, {
+  const cached = htmlFormattingCache.get(output);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const formatted = prettier.format(output, {
     attributeGroups: ['$DEFAULT', '^data-'],
     attributeSort: 'asc',
     bracketSameLine: true,
@@ -1298,6 +1306,11 @@ export async function prettifyHTML(
     parser: 'html',
     plugins: ['prettier-plugin-organize-attributes'],
   });
+  htmlFormattingCache.set(output, formatted);
+  if (htmlFormattingCache.size > 128) {
+    htmlFormattingCache.delete(htmlFormattingCache.keys().next().value);
+  }
+  return formatted;
 }
 
 // This function does not suppose to do anything, it's only used as a trigger

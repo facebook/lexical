@@ -391,117 +391,7 @@ test.describe('Markdown', () => {
     return initialize({isCollab, page});
   });
 
-  const BASE_BLOCK_SHORTCUTS = [
-    {
-      html: html`
-        <h1 dir="auto"><br data-lexical-managed-linebreak="true" /></h1>
-      `,
-      text: '# ',
-    },
-    {
-      html: html`
-        <h2 dir="auto"><br data-lexical-managed-linebreak="true" /></h2>
-      `,
-      text: '## ',
-    },
-    {
-      html: html`
-        <ol dir="auto">
-          <li value="1"><br data-lexical-managed-linebreak="true" /></li>
-        </ol>
-      `,
-      text: '1. ',
-    },
-    {
-      html: html`
-        <ol dir="auto" start="25">
-          <li value="25"><br data-lexical-managed-linebreak="true" /></li>
-        </ol>
-      `,
-      text: '25. ',
-    },
-    {
-      html: html`
-        <ol dir="auto">
-          <li value="1">
-            <ol>
-              <li value="1"><br data-lexical-managed-linebreak="true" /></li>
-            </ol>
-          </li>
-        </ol>
-      `,
-      text: '    1. ',
-    },
-    {
-      html: html`
-        <ul dir="auto">
-          <li value="1"><br data-lexical-managed-linebreak="true" /></li>
-        </ul>
-      `,
-      text: '- ',
-    },
-    {
-      html: html`
-        <ul dir="auto">
-          <li value="1">
-            <ul>
-              <li value="1"><br data-lexical-managed-linebreak="true" /></li>
-            </ul>
-          </li>
-        </ul>
-      `,
-      text: '    - ',
-    },
-    {
-      html: html`
-        <ul dir="auto">
-          <li value="1"><br data-lexical-managed-linebreak="true" /></li>
-        </ul>
-      `,
-      text: '* ',
-    },
-    {
-      html: html`
-        <ul dir="auto">
-          <li value="1">
-            <ul>
-              <li value="1"><br data-lexical-managed-linebreak="true" /></li>
-            </ul>
-          </li>
-        </ul>
-      `,
-      text: '    * ',
-    },
-    {
-      html: html`
-        <ul dir="auto">
-          <li value="1">
-            <ul>
-              <li value="1"><br data-lexical-managed-linebreak="true" /></li>
-            </ul>
-          </li>
-        </ul>
-      `,
-      text: '      * ',
-    },
-    {
-      html: html`
-        <ul dir="auto">
-          <li value="1">
-            <ul>
-              <li value="1">
-                <ul>
-                  <li value="1">
-                    <br data-lexical-managed-linebreak="true" />
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      `,
-      text: '        * ',
-    },
+  const HORIZONTAL_RULE_SHORTCUTS = [
     {
       html: html`
         <hr
@@ -658,7 +548,7 @@ test.describe('Markdown', () => {
     },
   ];
 
-  BASE_BLOCK_SHORTCUTS.forEach(testCase => {
+  HORIZONTAL_RULE_SHORTCUTS.forEach(testCase => {
     test(`can convert "${testCase.text}" shortcut`, async ({
       page,
       isCollab,

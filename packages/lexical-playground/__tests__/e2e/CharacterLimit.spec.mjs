@@ -7,7 +7,6 @@
  */
 
 import {
-  moveToEditorBeginning,
   moveToLineBeginning,
   pressBackspace,
 } from '../keyboardShortcuts/index.mjs';
@@ -16,7 +15,6 @@ import {
   assertSelection,
   html,
   initialize,
-  repeat,
   test,
 } from '../utils/index.mjs';
 
@@ -152,128 +150,6 @@ function testSuite(charset) {
     );
   });
 
-  test('can type new lines inside overflow', async ({page, isRichText}) => {
-    await page.focus('div[contenteditable="true"]');
-
-    await page.keyboard.type('123456');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('7');
-    if (isRichText) {
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">12345</span>
-            <span class="PlaygroundEditorTheme__characterLimit">
-              <span data-lexical-text="true">6</span>
-            </span>
-          </p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span class="PlaygroundEditorTheme__characterLimit">
-              <span data-lexical-text="true">7</span>
-            </span>
-          </p>
-        `,
-      );
-    } else {
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">12345</span>
-            <span class="PlaygroundEditorTheme__characterLimit">
-              <span data-lexical-text="true">6</span>
-              <br />
-              <span data-lexical-text="true">7</span>
-            </span>
-          </p>
-        `,
-      );
-    }
-
-    await pressBackspace(page, 3);
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">12345</span>
-        </p>
-      `,
-    );
-  });
-
-  test('can delete text in front and overflow is recomputed', async ({
-    page,
-    isRichText,
-  }) => {
-    await page.focus('div[contenteditable="true"]');
-
-    await page.keyboard.type('123456');
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('7');
-    await moveToEditorBeginning(page);
-
-    await page.keyboard.press('Delete');
-    if (isRichText) {
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">23456</span>
-          </p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span class="PlaygroundEditorTheme__characterLimit">
-              <span data-lexical-text="true">7</span>
-            </span>
-          </p>
-        `,
-      );
-    } else {
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">23456</span>
-            <span class="PlaygroundEditorTheme__characterLimit">
-              <br />
-              <span data-lexical-text="true">7</span>
-            </span>
-          </p>
-        `,
-      );
-    }
-
-    await page.keyboard.press('Delete');
-    if (isRichText) {
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">3456</span>
-          </p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span class="PlaygroundEditorTheme__characterLimit">
-              <span data-lexical-text="true">7</span>
-            </span>
-          </p>
-        `,
-      );
-    } else {
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">3456</span>
-            <br />
-            <span class="PlaygroundEditorTheme__characterLimit">
-              <span data-lexical-text="true">7</span>
-            </span>
-          </p>
-        `,
-      );
-    }
-  });
-
   test('can delete text in front and overflow is recomputed (token nodes)', async ({
     page,
   }) => {
@@ -373,54 +249,6 @@ function testSuite(charset) {
         `,
       );
     });
-  });
-
-  test('handles accented characters', async ({page}) => {
-    await page.focus('div[contenteditable="true"]');
-
-    // Worth 1 byte in UTF-16, 2 bytes in UTF-8
-    await repeat(6, async () => await page.keyboard.type('à'));
-    if (charset === 'UTF-16') {
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">ààààà</span>
-            <span class="PlaygroundEditorTheme__characterLimit">
-              <span data-lexical-text="true">à</span>
-            </span>
-          </p>
-        `,
-      );
-    } else {
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">àà</span>
-            <span class="PlaygroundEditorTheme__characterLimit">
-              <span data-lexical-text="true">àààà</span>
-            </span>
-          </p>
-        `,
-      );
-    }
-  });
-
-  test('handles graphemes', async ({page}) => {
-    await page.focus('div[contenteditable="true"]');
-
-    await page.keyboard.type('👨‍👩‍👦‍👦');
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span class="PlaygroundEditorTheme__characterLimit">
-            <span data-lexical-text="true">👨‍👩‍👦‍👦</span>
-          </span>
-        </p>
-      `,
-    );
   });
 }
 

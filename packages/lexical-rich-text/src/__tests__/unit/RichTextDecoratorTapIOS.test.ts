@@ -58,7 +58,15 @@ function setUp() {
   return {decoratorElement, editor, rootElement, textElement};
 }
 
-function mouseDown(target: Element): MouseEvent {
+// The pointerdown and compatibility mousedown of a press, as iOS sends them;
+// returns the mousedown.
+function mouseDown(target: Element, pointerType = 'touch'): MouseEvent {
+  const pointerDown = new MouseEvent('pointerdown', {
+    bubbles: true,
+    cancelable: true,
+  });
+  Object.defineProperty(pointerDown, 'pointerType', {value: pointerType});
+  target.dispatchEvent(pointerDown);
   const event = new MouseEvent('mousedown', {bubbles: true, cancelable: true});
   target.dispatchEvent(event);
   return event;
@@ -93,6 +101,16 @@ describe('a tap on a decorator on iOS', () => {
 
     expect(mouseDown(label).defaultPrevented).toBe(false);
     expect(mouseDown(captionText).defaultPrevented).toBe(false);
+  });
+
+  test('keeps the default for a trackpad or mouse press', () => {
+    const {decoratorElement, editor} = setUp();
+    using _editor = editor;
+    const img = document.createElement('img');
+    decoratorElement.appendChild(img);
+
+    expect(mouseDown(img, 'mouse').defaultPrevented).toBe(false);
+    expect(mouseDown(img, 'pen').defaultPrevented).toBe(true);
   });
 
   test('keeps the default for text', () => {

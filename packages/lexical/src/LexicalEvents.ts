@@ -641,6 +641,10 @@ const FOCUSABLE_SELECTOR =
   'input,textarea,select,button,a[href],label,[tabindex],' +
   '[contenteditable]:not([contenteditable="false"])';
 
+// The pointerType of the latest pointerdown on iOS, so the mousedown that
+// follows can tell a tap from an iPad trackpad or mouse press.
+let lastPointerTypeIOS = '';
+
 // iOS only. A tap on a decorator (an image, say) would focus the editor, and
 // iOS answers that focus by opening the keyboard and scrolling to reveal the
 // caret. A decorator is selected with a NodeSelection, which leaves no DOM
@@ -648,14 +652,22 @@ const FOCUSABLE_SELECTOR =
 // (facebook/lexical#9112). Cancelling the mousedown keeps focus where it is;
 // the click still follows, so CLICK_COMMAND handlers select the node as usual.
 // A tap on something inside the decorator that takes focus itself (an input,
-// a nested editor) is left alone.
+// a nested editor) is left alone, and so is a trackpad or mouse press on
+// iPadOS, which opens no keyboard and whose default starts a drag.
 function onMouseDownIOS(event: Event, editor: LexicalEditor): void {
   const target = getComposedEventTarget(event);
   if (
-    isHTMLElement(target) &&
-    isDOMCapturingSelection(target, editor) &&
-    target.closest(FOCUSABLE_SELECTOR) === editor.getRootElement()
+    lastPointerTypeIOS === 'mouse' ||
+    !isHTMLElement(target) ||
+    !isDOMCapturingSelection(target, editor)
   ) {
+    return;
+  }
+  // The element this tap would focus: the editor root, unless the target is
+  // inside something focusable of its own (a button, an input, a nested
+  // editor), which keeps the default.
+  const focusTarget = target.closest(FOCUSABLE_SELECTOR);
+  if (focusTarget === editor.getRootElement()) {
     event.preventDefault();
   }
 }
@@ -667,6 +679,9 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
   // outer shadow host the engine retargets to.
   const target = getComposedEventTarget(event);
   const pointerType = event.pointerType;
+  if (IS_IOS) {
+    lastPointerTypeIOS = pointerType;
+  }
   if (
     isDOMNode(target) &&
     pointerType !== 'touch' &&

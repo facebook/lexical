@@ -28,13 +28,14 @@ import {
 
 async function setupMultiContent(page) {
   await focusEditor(page);
-  await page.keyboard.type('Lorem ipsum dolor ');
+  // These strings prepare the document for selection; they do not test typing.
+  await page.keyboard.insertText('Lorem ipsum dolor ');
   await toggleBold(page);
-  await page.keyboard.type('sit amet');
+  await page.keyboard.insertText('sit amet');
   await toggleBold(page);
-  await page.keyboard.type(', consectetur adipiscing elit.');
+  await page.keyboard.insertText(', consectetur adipiscing elit.');
   await page.keyboard.press('Enter');
-  await page.keyboard.type('Link text');
+  await page.keyboard.insertText('Link text');
   await pressInsertLinkButton(page);
   await page.keyboard.press('Enter');
   await page.keyboard.press('Enter');
@@ -45,6 +46,8 @@ async function setupMultiContent(page) {
 test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
 
 test.describe('SelectBlock', () => {
+  // The range-selection matrix lives in lexical-extension's browser tests.
+  // Keep playground coverage for extension wiring, decorators and nested editors.
   test.beforeEach(({isCollab, page}) =>
     initialize({isCollab, page, selectBlock: true}),
   );
@@ -72,56 +75,6 @@ test.describe('SelectBlock', () => {
     });
   });
 
-  test('Select paragraph with formatted text', async ({page}) => {
-    await setupMultiContent(page);
-
-    await page.keyboard.type('Formatted ');
-    await toggleBold(page);
-    await page.keyboard.type('text');
-    await selectAll(page);
-    // select only current block
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [3],
-      focusOffset: 2,
-      focusPath: [3],
-    });
-
-    // select all content
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 0, 0],
-      focusOffset: 4,
-      focusPath: [3, 1, 0],
-    });
-  });
-
-  test('Select paragraph with inline element', async ({page}) => {
-    await setupMultiContent(page);
-
-    await page.keyboard.type('link');
-    await pressInsertLinkButton(page);
-    await page.keyboard.press('Enter');
-    await selectAll(page);
-    // select only current block
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [3],
-      focusOffset: 1,
-      focusPath: [3],
-    });
-
-    // select all content
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 0, 0],
-      focusOffset: 4,
-      focusPath: [3, 0, 0, 0],
-    });
-  });
-
   test('Select paragraph with [inline decorator, text]', async ({page}) => {
     await setupMultiContent(page);
 
@@ -143,216 +96,6 @@ test.describe('SelectBlock', () => {
       anchorPath: [0, 0, 0],
       focusOffset: 5,
       focusPath: [3, 1, 0],
-    });
-  });
-
-  test('Select paragraph with [text, inline decorator]', async ({page}) => {
-    await setupMultiContent(page);
-
-    await page.keyboard.type('text ');
-    await insertDateTime(page);
-    await selectAll(page);
-    // select only current block
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [3],
-      focusOffset: 2,
-      focusPath: [3],
-    });
-
-    // select all content
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 0, 0],
-      focusOffset: 2,
-      focusPath: [3],
-    });
-  });
-
-  test('Select paragraph with [text, inline decorator, text]', async ({
-    page,
-  }) => {
-    await setupMultiContent(page);
-
-    await page.keyboard.type('text ');
-    await insertDateTime(page);
-    await page.keyboard.type(' text');
-    await selectAll(page);
-    // select only current block
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [3],
-      focusOffset: 3,
-      focusPath: [3],
-    });
-
-    // select all content
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 0, 0],
-      focusOffset: 5,
-      focusPath: [3, 2, 0],
-    });
-  });
-
-  test('Select paragraph with [element, inline decorator]', async ({page}) => {
-    await setupMultiContent(page);
-
-    await page.keyboard.type('link');
-    await pressInsertLinkButton(page);
-    await page.keyboard.press('Enter');
-    await page.keyboard.type(' ');
-    await insertDateTime(page);
-    await selectAll(page);
-    // select only current block
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [3],
-      focusOffset: 3,
-      focusPath: [3],
-    });
-
-    // select all content
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 0, 0],
-      focusOffset: 3,
-      focusPath: [3],
-    });
-  });
-
-  test('Select paragraph with [inline decorator, element]', async ({page}) => {
-    await setupMultiContent(page);
-
-    await insertDateTime(page);
-    await page.keyboard.type(' link');
-    await pressInsertLinkButton(page);
-    await page.keyboard.press('Enter');
-    await selectAll(page);
-    // select only current block
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [3],
-      focusOffset: 2,
-      focusPath: [3],
-    });
-
-    // select all content
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 0, 0],
-      focusOffset: 5,
-      focusPath: [3, 1, 0, 0],
-    });
-  });
-
-  test('Select empty paragraph should trigger selectAll', async ({page}) => {
-    await setupMultiContent(page);
-    // selection on empty paragraph
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [3],
-      focusOffset: 0,
-      focusPath: [3],
-    });
-
-    // select all content
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 0, 0],
-      focusOffset: 0,
-      focusPath: [3],
-    });
-  });
-
-  test('Repeated selectAll should not change the current selection', async ({
-    page,
-  }) => {
-    await setupMultiContent(page);
-    // selection on empty paragraph
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [3],
-      focusOffset: 0,
-      focusPath: [3],
-    });
-
-    // select all content
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 0, 0],
-      focusOffset: 0,
-      focusPath: [3],
-    });
-
-    // once again
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 0, 0],
-      focusOffset: 0,
-      focusPath: [3],
-    });
-  });
-
-  test('The block is selected if part of the text is already selected', async ({
-    page,
-  }) => {
-    await setupMultiContent(page);
-    await page.keyboard.type('my text');
-    await selectCharacters(page, 'left', 4);
-    // current selection on 'text'
-    await assertSelection(page, {
-      anchorOffset: 7,
-      anchorPath: [3, 0, 0],
-      focusOffset: 3,
-      focusPath: [3, 0, 0],
-    });
-
-    // select block
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [3],
-      focusOffset: 1,
-      focusPath: [3],
-    });
-
-    // select all content
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 0, 0],
-      focusOffset: 7,
-      focusPath: [3, 0, 0],
-    });
-  });
-
-  test('Selection spanning multiple blocks selects all content', async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await page.keyboard.type('first');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('second');
-    // Extend the selection backwards across the block boundary, several
-    // characters into 'first'. The exact intermediate offsets at the block
-    // boundary vary by browser engine and are not asserted here.
-    await selectCharacters(page, 'left', 'second'.length + 3);
-
-    // the selection already spans multiple blocks, select all content
-    await selectAll(page);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 0, 0],
-      focusOffset: 6,
-      focusPath: [1, 0, 0],
     });
   });
 

@@ -64,10 +64,15 @@ function mouseDown(target: Element, pointerType = 'touch'): MouseEvent {
   const pointerDown = new MouseEvent('pointerdown', {
     bubbles: true,
     cancelable: true,
+    composed: true,
   });
   Object.defineProperty(pointerDown, 'pointerType', {value: pointerType});
   target.dispatchEvent(pointerDown);
-  const event = new MouseEvent('mousedown', {bubbles: true, cancelable: true});
+  const event = new MouseEvent('mousedown', {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+  });
   target.dispatchEvent(event);
   return event;
 }
@@ -101,6 +106,47 @@ describe('a tap on a decorator on iOS', () => {
 
     expect(mouseDown(label).defaultPrevented).toBe(false);
     expect(mouseDown(captionText).defaultPrevented).toBe(false);
+  });
+
+  test('cancels the mousedown on SVG artwork', () => {
+    const {decoratorElement, editor} = setUp();
+    using _editor = editor;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    svg.appendChild(path);
+    decoratorElement.appendChild(svg);
+
+    expect(mouseDown(path).defaultPrevented).toBe(true);
+  });
+
+  test('looks through an open shadow root', () => {
+    const {decoratorElement, editor} = setUp();
+    using _editor = editor;
+    const host = document.createElement('div');
+    decoratorElement.appendChild(host);
+    const shadow = host.attachShadow({mode: 'open'});
+    const img = document.createElement('img');
+    const button = document.createElement('button');
+    const label = document.createElement('span');
+    button.appendChild(label);
+    shadow.append(img, button);
+
+    expect(mouseDown(img).defaultPrevented).toBe(true);
+    expect(mouseDown(label).defaultPrevented).toBe(false);
+  });
+
+  test('keeps the default for a closed shadow host with a tabindex', () => {
+    const {decoratorElement, editor} = setUp();
+    using _editor = editor;
+    // A closed shadow root hides its controls, so the tap is retargeted to
+    // the host. A focusable host says the widget handles focus itself.
+    const host = document.createElement('div');
+    host.tabIndex = -1;
+    decoratorElement.appendChild(host);
+    const input = document.createElement('input');
+    host.attachShadow({mode: 'closed'}).appendChild(input);
+
+    expect(mouseDown(input).defaultPrevented).toBe(false);
   });
 
   test('keeps the default for a trackpad or mouse press', () => {

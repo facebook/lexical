@@ -88,6 +88,7 @@ import {
 } from './LexicalCommands';
 import {
   COMPOSITION_START_CHAR,
+  DOM_ELEMENT_TYPE,
   DOUBLE_LINE_BREAK,
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
@@ -132,6 +133,7 @@ import {
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
+  getParentElement,
   getWindow,
   isBackspace,
   isDOMCapturingSelection,
@@ -654,17 +656,32 @@ function onMouseDownIOS(event: Event, editor: LexicalEditor): void {
   const target = getComposedEventTarget(event);
   if (
     editor._inputState.lastPointerType === 'mouse' ||
-    !isHTMLElement(target) ||
+    !isDOMNode(target) ||
     !isDOMCapturingSelection(target, editor)
   ) {
     return;
   }
-  // The element this tap would focus: the editor root, unless the target is
-  // inside something focusable of its own (a button, an input, a nested
-  // editor), which keeps the default.
-  const focusTarget = target.closest(FOCUSABLE_SELECTOR);
-  if (focusTarget === editor.getRootElement()) {
-    event.preventDefault();
+  // Find the element this tap would focus, crossing open shadow roots: the
+  // editor root, unless something focusable of its own (a button, an input, a
+  // nested editor) comes first, which keeps the default. A closed shadow root
+  // hides its controls and the tap is retargeted to its host, so a widget
+  // like that needs a tabindex on its host to keep native focus.
+  const rootElement = editor.getRootElement();
+  for (
+    let node: Node | null = target;
+    node !== null;
+    node = getParentElement(node)
+  ) {
+    if (node === rootElement) {
+      event.preventDefault();
+      return;
+    }
+    if (
+      node.nodeType === DOM_ELEMENT_TYPE &&
+      (node as Element).matches(FOCUSABLE_SELECTOR)
+    ) {
+      return;
+    }
   }
 }
 

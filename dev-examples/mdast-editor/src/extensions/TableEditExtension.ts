@@ -9,9 +9,13 @@
 import {
   $deleteTableColumnAtSelection,
   $deleteTableRowAtSelection,
+  $findCellNode,
   $findTableNode,
+  $getTableColumnIndexFromTableCellNode,
   $insertTableColumnAtSelection,
   $insertTableRowAtSelection,
+  $isTableCellNode,
+  $isTableRowNode,
   $isTableSelection,
   TableExtension,
   type TableNode,
@@ -19,11 +23,13 @@ import {
 import {
   $createParagraphNode,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
   configExtension,
   createCommand,
   defineExtension,
+  type ElementFormatType,
   type LexicalCommand,
 } from 'lexical';
 
@@ -34,7 +40,54 @@ export type TableEdit =
   | 'column-right'
   | 'delete-row'
   | 'delete-column'
-  | 'delete-table';
+  | 'delete-table'
+  | 'align-left'
+  | 'align-center'
+  | 'align-right'
+  | 'align-none';
+
+const COLUMN_ALIGN = {
+  'align-center': 'center',
+  'align-left': 'left',
+  'align-none': '',
+  'align-right': 'right',
+} as const;
+
+/**
+ * Aligns every column the selection touches. GFM alignment belongs to a
+ * column (the delimiter row's `:-:`), so it is set as the element format of
+ * each cell in the column, which `@lexical/mdast` renders as `text-align`
+ * and exports. The cells' paragraphs are reset so they follow the cell.
+ */
+function $alignSelectedColumns(table: TableNode, format: ElementFormatType) {
+  const selection = $getSelection();
+  const cells = $isTableSelection(selection)
+    ? selection.getNodes().filter($isTableCellNode)
+    : [selection && $findCellNode(selection.anchor.getNode())];
+  const columns = new Set<number>();
+  for (const cell of cells) {
+    if (cell) {
+      columns.add($getTableColumnIndexFromTableCellNode(cell));
+    }
+  }
+  for (const row of table.getChildren()) {
+    if (!$isTableRowNode(row)) {
+      continue;
+    }
+    const rowCells = row.getChildren();
+    for (const column of columns) {
+      const cell = rowCells[column];
+      if ($isTableCellNode(cell)) {
+        cell.setFormat(format);
+        for (const child of cell.getChildren()) {
+          if ($isElementNode(child) && !child.isInline()) {
+            child.setFormat('');
+          }
+        }
+      }
+    }
+  }
+}
 
 /**
  * Edits the structure of the table the selection is in. The toolbar
@@ -97,6 +150,12 @@ export const TableEditExtension = defineExtension({
             break;
           case 'delete-column':
             $deleteTableColumnAtSelection();
+            break;
+          case 'align-left':
+          case 'align-center':
+          case 'align-right':
+          case 'align-none':
+            $alignSelectedColumns(table, COLUMN_ALIGN[edit]);
             break;
           case 'delete-table': {
             const paragraph = $createParagraphNode();

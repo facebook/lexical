@@ -93,6 +93,8 @@ test.each<[TableEdit, string]>([
   ['delete-row', '| a | b |\n| - | - |'],
   ['delete-column', '| a |\n| - |\n| 1 |'],
   ['delete-table', ''],
+  ['align-center', '| a |  b  |\n| - | :-: |\n| 1 |  2  |'],
+  ['align-right', '| a |  b |\n| - | -: |\n| 1 |  2 |'],
 ])('TABLE_EDIT_COMMAND %s', (edit, expected) => {
   const {editor} = mountEditor(TABLE);
   selectLastCell(editor);
@@ -109,6 +111,21 @@ test('an inserted table exports as GFM with a header row', () => {
     rows: '2',
   });
   expect(exportMarkdown(editor)).toContain('|   |   |\n| - | - |\n|   |   |');
+});
+
+test('an aligned column renders and clears its alignment', () => {
+  const {editor, root} = mountEditor('| a | b |\n| - | -: |\n| 1 | 2 |');
+  const cells = () =>
+    [...root.querySelectorAll('td, th')].map(
+      cell => (cell as HTMLElement).style.textAlign,
+    );
+  expect(cells()).toEqual(['', 'right', '', 'right']);
+  selectLastCell(editor);
+  editor.dispatchCommand(TABLE_EDIT_COMMAND, 'align-none');
+  // Reading commits the pending update to the DOM.
+  editor.read(() => {});
+  expect(cells()).toEqual(['', '', '', '']);
+  expect(exportMarkdown(editor)).toBe('| a | b |\n| - | - |\n| 1 | 2 |');
 });
 
 // https://github.com/facebook/lexical/issues/9323

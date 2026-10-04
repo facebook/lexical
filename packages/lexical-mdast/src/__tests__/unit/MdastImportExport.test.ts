@@ -948,6 +948,52 @@ describe('@lexical/mdast import/export', () => {
       ).toBe('|  b |\n| -: |\n|  2 |');
     });
 
+    it("renders column alignment as the cells' element format", () => {
+      using editor = createEditor(true);
+      editor.update(
+        () =>
+          $convertFromMarkdownString(
+            '| a | b | c |\n| :- | :-: | - |\n| 1 | 2 | 3 |',
+          ),
+        {discrete: true},
+      );
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        expect(
+          table.getChildren().map(row =>
+            $assertNodeType(row, $isElementNode)
+              .getChildren()
+              .map(cell =>
+                $assertNodeType(cell, $isElementNode).getFormatType(),
+              ),
+          ),
+        ).toEqual([
+          ['left', 'center', ''],
+          ['left', 'center', ''],
+        ]);
+      });
+    });
+
+    it('exports alignment set on a cell or on all of its blocks', () => {
+      // A cell's own format (what FORMAT_ELEMENT_COMMAND sets on a table
+      // selection) or the format its paragraphs share (what it sets with
+      // the caret in one cell) aligns the column.
+      expect(
+        editColumns('| a | b |\n| - | - |\n| 1 | 2 |', row => {
+          const [first, second] = row.getChildren();
+          $assertNodeType(first, $isElementNode).setFormat('right');
+          if (row.getIndexWithinParent() === 1) {
+            for (const child of $assertNodeType(
+              second,
+              $isElementNode,
+            ).getChildren()) {
+              $assertNodeType(child, $isElementNode).setFormat('center');
+            }
+          }
+        }),
+      ).toBe('|  a |  b  |\n| -: | :-: |\n|  1 |  2  |');
+    });
+
     it('gives an inserted column no alignment', () => {
       expect(
         editColumns('| a | b |\n| :- | -: |\n| 1 | 2 |', row =>

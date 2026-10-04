@@ -126,7 +126,9 @@ GFM table cells hold a single line, so `MdastTableExtension` writes each
 paragraph or line break in a cell as `<br>`, the line separator GitHub and
 most renderers accept there, and reads `<br>`, `<br/>` and `<br />` back as
 paragraph boundaries. Content a cell can't express, such as a list or code
-block, is flattened to one line per item.
+block, is flattened to one line per item. A column's alignment (`:-:`) is
+set as the element format of each of its cells, so it renders as their
+`text-align` and stays with the column when columns are added or removed.
 
 ## unified / remark interop
 

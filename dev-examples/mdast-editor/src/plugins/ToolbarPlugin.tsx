@@ -65,6 +65,10 @@ const TABLE_EDITS: readonly {label: string; value: TableEdit}[] = [
   {label: 'Insert column right', value: 'column-right'},
   {label: 'Delete row', value: 'delete-row'},
   {label: 'Delete column', value: 'delete-column'},
+  {label: 'Align column left', value: 'align-left'},
+  {label: 'Align column center', value: 'align-center'},
+  {label: 'Align column right', value: 'align-right'},
+  {label: 'Clear column alignment', value: 'align-none'},
   {label: 'Delete table', value: 'delete-table'},
 ];
 

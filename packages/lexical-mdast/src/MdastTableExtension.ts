@@ -32,7 +32,7 @@ import {
 import {
   $createParagraphNode,
   $getState,
-  $setState,
+  $isElementNode,
   createState,
   defineExtension,
 } from 'lexical';
@@ -48,8 +48,8 @@ function parseAlign(v: unknown): AlignType {
 
 /**
  * The per-column alignment (`| :-: |`) a table's delimiter row declared, as
- * imported before alignment moved to the cells. Read on export as the
- * fallback for columns whose cells carry no {@link cellAlignState}.
+ * imported before alignment moved to the cells' element format. Read on
+ * export as the fallback for columns whose cells are not aligned.
  */
 const tableAlignState = createState('mdastTableAlign', {
   parse: (v): AlignType[] => (Array.isArray(v) ? v.map(parseAlign) : []),
@@ -57,14 +57,28 @@ const tableAlignState = createState('mdastTableAlign', {
 });
 
 /**
- * The alignment of the column a cell was imported in. It is stored on every
- * cell of the column, so inserting, deleting or moving columns and rows
- * keeps each column's alignment with it.
+ * The GFM alignment a cell renders with: its own element format (what
+ * import sets, and what `FORMAT_ELEMENT_COMMAND` sets on a cell selection),
+ * else the format its block children share (what that command sets with
+ * the caret in a single cell).
  */
-const cellAlignState = createState('mdastCellAlign', {
-  parse: parseAlign,
-  resetOnCopyNode: true,
-});
+function $getCellAlign(cell: TableCellNode): AlignType {
+  const own = parseAlign(cell.getFormatType());
+  if (own !== null) {
+    return own;
+  }
+  let shared: AlignType | undefined;
+  for (const child of cell.getChildren()) {
+    if ($isElementNode(child) && !child.isInline()) {
+      const align = parseAlign(child.getFormatType());
+      if (shared !== undefined && shared !== align) {
+        return null;
+      }
+      shared = align;
+    }
+  }
+  return shared || null;
+}
 
 /**
  * The number of line breaks an inline `<br>` run stands for (`<br>`,
@@ -157,7 +171,9 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
       );
       const cellAlign = align[columnIndex];
       if (cellAlign) {
-        $setState(cellNode, cellAlignState, cellAlign);
+        // Every cell of the column carries it, so it renders as the cell's
+        // text-align and moves with the cells when columns are edited.
+        cellNode.setFormat(cellAlign);
       }
       for (const line of cellLines(cell)) {
         const paragraph = $createParagraphNode();
@@ -277,10 +293,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       // row inserted above the header doesn't clear it.
       const column = cells.length;
       align[column] =
-        align[column] ||
-        $getState(cell, cellAlignState) ||
-        legacyAlign[column] ||
-        null;
+        align[column] || $getCellAlign(cell) || legacyAlign[column] || null;
       const lines = cellContentLines(ctx.exportChildren(cell));
       // Empty lines are kept as consecutive (or leading/trailing) `<br>`s,
       // which import back as the same empty paragraphs.
@@ -308,7 +321,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  * nodes it ships. The first table row is treated as the header row in both
  * directions. A GFM cell holds a single line, so the paragraphs and line
  * breaks in a cell are written as `<br>`, and `<br>` reads back as a
- * paragraph boundary.
+ * paragraph boundary. Column alignment is the element format of the
+ * column's cells (`TableCellNode.setFormat`).
  *
  * @example
  * ```ts

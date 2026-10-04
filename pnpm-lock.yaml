@@ -468,6 +468,9 @@ importers:
       '@lexical/selection':
         specifier: workspace:*
         version: link:../../packages/lexical-selection
+      '@lexical/table':
+        specifier: workspace:*
+        version: link:../../packages/lexical-table
       '@lexical/utils':
         specifier: workspace:*
         version: link:../../packages/lexical-utils

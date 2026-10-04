@@ -16,10 +16,20 @@ import {
 } from '@lexical/markdown';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $createTableCellNode,
+  $createTableNode,
+  $createTableRowNode,
+  $isTableNode,
+  TableCellHeaderStates,
+  TableExtension,
+} from '@lexical/table';
+import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
   createEditor,
@@ -38,6 +48,7 @@ import {
   BLOCK_EQUATION,
   EQUATION,
   IMAGE,
+  TABLE,
 } from '../../src/plugins/MarkdownTransformers';
 
 const EQUATION_TRANSFORMERS = [BLOCK_EQUATION, EQUATION];
@@ -293,6 +304,100 @@ describe('playground IMAGE markdown transformer', () => {
       assert($isImageNode(image), 'Paragraph child must be an ImageNode');
       expect(image.getAltText()).toBe('alt text');
       expect(image.__maxWidth).toBe(500);
+    });
+  });
+});
+
+// https://github.com/facebook/lexical/issues/9323
+describe('playground TABLE markdown transformer', () => {
+  const TableMarkdownTestExtension = defineExtension({
+    dependencies: [RichTextExtension, TableExtension],
+    name: 'TableMarkdownTest',
+  });
+
+  function exportCells(): string {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(
+      () => {
+        const header = $createTableRowNode().append(
+          $createTableCellNode(TableCellHeaderStates.ROW).append(
+            $createParagraphNode().append($createTextNode('a')),
+          ),
+          $createTableCellNode(TableCellHeaderStates.ROW).append(
+            $createParagraphNode().append($createTextNode('b')),
+          ),
+        );
+        const body = $createTableRowNode().append(
+          $createTableCellNode().append(
+            $createParagraphNode().append($createTextNode('one')),
+            $createParagraphNode().append(
+              $createTextNode('two'),
+              $createLineBreakNode(),
+              $createTextNode('three'),
+            ),
+          ),
+          $createTableCellNode().append(
+            $createParagraphNode().append($createTextNode('x|y')),
+          ),
+        );
+        $getRoot().clear().append($createTableNode().append(header, body));
+      },
+      {discrete: true},
+    );
+    return editor.read(() => $convertToMarkdownString([TABLE]));
+  }
+
+  it('writes line breaks in a cell as <br> and escapes pipes', () => {
+    expect(exportCells()).toBe(
+      ['| a | b |', '| --- | --- |', '| one<br>two<br>three | x\\|y |'].join(
+        '\n',
+      ),
+    );
+  });
+
+  it('reads <br>, escaped pipes and the legacy \\n back', () => {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          [
+            '| a | b |',
+            '| --- | --- |',
+            '| one<br>two <br/> three | x\\|y\\nz |',
+          ].join('\n'),
+          [TABLE],
+        );
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const table = $getRoot().getFirstChildOrThrow();
+      assert($isTableNode(table), 'Root child must be a table');
+      expect(
+        table
+          .getChildren()
+          .map(row =>
+            $isElementNode(row)
+              ? row
+                  .getChildren()
+                  .map(cell =>
+                    $isElementNode(cell)
+                      ? cell.getChildren().map(p => p.getTextContent())
+                      : [],
+                  )
+              : [],
+          ),
+      ).toEqual([
+        [['a'], ['b']],
+        [['one\ntwo\nthree'], ['x|y\nz']],
+      ]);
+      expect($convertToMarkdownString([TABLE])).toBe(
+        [
+          '| a | b |',
+          '| --- | --- |',
+          '| one<br>two<br>three | x\\|y<br>z |',
+        ].join('\n'),
+      );
     });
   });
 });

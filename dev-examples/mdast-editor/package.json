@@ -24,6 +24,7 @@
     "@lexical/react": "workspace:*",
     "@lexical/rich-text": "workspace:*",
     "@lexical/selection": "workspace:*",
+    "@lexical/table": "workspace:*",
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*",
     "mdast-util-gfm-footnote": "^2.1.0",

@@ -122,6 +122,12 @@ defer to the document-level serialization options, which can be
 configured by contributing `mdast-util-to-markdown` options through
 `toMarkdownExtensions`.
 
+GFM table cells hold a single line, so `MdastTableExtension` writes each
+paragraph or line break in a cell as `<br>`, the line separator GitHub and
+most renderers accept there, and reads `<br>`, `<br/>` and `<br />` back as
+paragraph boundaries. Content a cell can't express, such as a list or code
+block, is flattened to one line per item.
+
 ## unified / remark interop
 
 The mdast tree itself is part of the API, so editor content can flow

@@ -222,10 +222,13 @@ export const TABLE: ElementTransformer = {
       for (const cell of row.getChildren()) {
         // It's TableCellNode so it's just to make flow happy
         if ($isTableCellNode(cell)) {
+          // A GFM cell can't contain a newline or an unescaped pipe: line
+          // breaks and the blank line between paragraphs become `<br>`.
           rowOutput.push(
             $convertToMarkdownString(PLAYGROUND_TRANSFORMERS, cell)
-              .replace(/\n/g, '\\n')
-              .trim(),
+              .trim()
+              .replace(/\n\n?/g, '<br>')
+              .replace(/\\?\|/g, '\\|'),
           );
           if (cell.__headerState === TableCellHeaderStates.ROW) {
             isHeaderRow = true;
@@ -343,7 +346,12 @@ function getTableColumnsSize(table: TableNode) {
 }
 
 const $createTableCell = (textContent: string): TableCellNode => {
-  textContent = textContent.replace(/\\n/g, '\n');
+  // `<br>` is the line separator inside a cell; the literal `\n` this
+  // transformer used to write is still read. GFM trims a cell's padding.
+  textContent = textContent
+    .trim()
+    .replace(/\s*<br\s*\/?>\s*|\\n/gi, '\n')
+    .replace(/\\\|/g, '|');
   const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
   $convertFromMarkdownString(textContent, PLAYGROUND_TRANSFORMERS, cell);
   return cell;
@@ -354,8 +362,24 @@ const mapToTableCells = (textContent: string): TableCellNode[] | null => {
   if (!match || !match[1]) {
     return null;
   }
-  return match[1].split('|').map(text => $createTableCell(text));
+  return splitTableRow(match[1]).map(text => $createTableCell(text));
 };
+
+/** Splits a row on its pipes; escaped pipes (`\|`) are cell content. */
+function splitTableRow(text: string): string[] {
+  const cells = [''];
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '|') {
+      cells.push('');
+    } else if (text[i] === '\\' && text[i + 1] === '|') {
+      cells[cells.length - 1] += '\\|';
+      i++;
+    } else {
+      cells[cells.length - 1] += text[i];
+    }
+  }
+  return cells;
+}
 
 export const PLAYGROUND_TRANSFORMERS: Transformer[] = [
   TABLE,

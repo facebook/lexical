@@ -14,6 +14,7 @@ import {
 } from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
+import {INSERT_TABLE_COMMAND} from '@lexical/table';
 import {
   FORMAT_TEXT_COMMAND,
   type LexicalEditor,
@@ -30,6 +31,10 @@ import {
 } from '../extensions/MdastEditorExtension';
 import {INSERT_FOOTNOTE_COMMAND} from '../extensions/MdastFootnoteExtension';
 import {FORMAT_KBD_COMMAND} from '../extensions/MdastKbdExtension';
+import {
+  TABLE_EDIT_COMMAND,
+  type TableEdit,
+} from '../extensions/TableEditExtension';
 import {
   type BlockType,
   ToolbarStateExtension,
@@ -50,7 +55,18 @@ const INSERT_TYPES = [
   {label: 'Collapsible section', value: 'details'},
   {label: 'Alert', value: 'alert'},
   {label: 'Footnote', value: 'footnote'},
+  {label: 'Table', value: 'table'},
 ] as const;
+
+const TABLE_EDITS: readonly {label: string; value: TableEdit}[] = [
+  {label: 'Insert row above', value: 'row-above'},
+  {label: 'Insert row below', value: 'row-below'},
+  {label: 'Insert column left', value: 'column-left'},
+  {label: 'Insert column right', value: 'column-right'},
+  {label: 'Delete row', value: 'delete-row'},
+  {label: 'Delete column', value: 'delete-column'},
+  {label: 'Delete table', value: 'delete-table'},
+];
 
 type InsertType = (typeof INSERT_TYPES)[number]['value'];
 
@@ -67,6 +83,14 @@ function applyInsert(editor: LexicalEditor, type: InsertType): void {
       return;
     case 'footnote':
       editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND);
+      return;
+    case 'table':
+      // A GFM table always has a header row.
+      editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+        columns: '3',
+        includeHeaders: {columns: false, rows: true},
+        rows: '3',
+      });
       return;
   }
 }
@@ -118,6 +142,7 @@ export function ToolbarPlugin() {
   const isBold = useExtensionSignalValue(ToolbarStateExtension, 'isBold');
   const isItalic = useExtensionSignalValue(ToolbarStateExtension, 'isItalic');
   const isCode = useExtensionSignalValue(ToolbarStateExtension, 'isCode');
+  const isInTable = useExtensionSignalValue(ToolbarStateExtension, 'isInTable');
   const isEditable = useExtensionSignalValue(
     MdastEditorExtension,
     'isEditable',
@@ -203,6 +228,28 @@ export function ToolbarPlugin() {
           </option>
         ))}
       </select>
+      {isInTable && (
+        <select
+          className={selectClass}
+          value=""
+          disabled={!isEditable}
+          onChange={e =>
+            editor.dispatchCommand(
+              TABLE_EDIT_COMMAND,
+              e.target.value as TableEdit,
+            )
+          }
+          aria-label="Table">
+          <option value="" hidden={true}>
+            Table
+          </option>
+          {TABLE_EDITS.map(({label, value}) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      )}
       <div className="ml-auto flex items-center">
         <Divider />
         <button

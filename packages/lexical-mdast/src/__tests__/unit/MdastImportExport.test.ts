@@ -8,6 +8,7 @@
 
 // @vitest-environment node
 
+import {$createCodeNode} from '@lexical/code-core';
 import {
   buildEditorFromExtensions,
   configExtension,
@@ -21,10 +22,11 @@ import {
   createImportState,
 } from '@lexical/html';
 import {$isLinkNode} from '@lexical/link';
-import {$isListNode} from '@lexical/list';
+import {$createListItemNode, $createListNode, $isListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
-import {$isTableNode} from '@lexical/table';
+import {$createTableCellNode, $isTableNode} from '@lexical/table';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getCaretRange,
@@ -36,6 +38,8 @@ import {
   $isTextNode,
   $setSelectionFromCaretRange,
   defineExtension,
+  type ElementNode,
+  type LexicalNode,
   TEXT_TYPE_TO_FORMAT,
   type TextNode,
 } from 'lexical';
@@ -915,6 +919,49 @@ describe('@lexical/mdast import/export', () => {
       expect(importExport(out, true)).toBe(out);
     });
 
+    function editColumns(
+      markdown: string,
+      edit: (row: ElementNode) => void,
+    ): string {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString(markdown);
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          for (const row of table.getChildren()) {
+            edit($assertNodeType(row, $isElementNode));
+          }
+        },
+        {discrete: true},
+      );
+      return editor.read(() => $convertToMarkdownString());
+    }
+
+    it('keeps each column its alignment when a column is removed', () => {
+      expect(
+        editColumns('| a | b |\n| :- | -: |\n| 1 | 2 |', row =>
+          row.getFirstChildOrThrow().remove(),
+        ),
+      ).toBe('|  b |\n| -: |\n|  2 |');
+    });
+
+    it('gives an inserted column no alignment', () => {
+      expect(
+        editColumns('| a | b |\n| :- | -: |\n| 1 | 2 |', row =>
+          row
+            .getFirstChildOrThrow()
+            .insertBefore(
+              $createTableCellNode().append(
+                $createParagraphNode().append($createTextNode('x')),
+              ),
+            ),
+        ),
+      ).toBe('| x | a  |  b |\n| - | :- | -: |\n| x | 1  |  2 |');
+    });
+
     it('joins multi-paragraph cells instead of fusing their text', () => {
       using editor = createEditor(true);
       editor.update(
@@ -933,7 +980,104 @@ describe('@lexical/mdast import/export', () => {
         {discrete: true},
       );
       const out = editor.read(() => $convertToMarkdownString());
-      expect(out).toContain('| foo bar |');
+      expect(out).toContain('| foo<br>bar |');
+    });
+
+    function cellOf(markdown: string): string {
+      // The second row's first cell, as exported.
+      return markdown.split('\n')[2].replace(/^\| (.*?) *\|$/, '$1');
+    }
+
+    function exportCell(...children: (() => LexicalNode)[]): string {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| - |\n| x |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const lastRow = $assertNodeType(table.getLastChild(), $isElementNode);
+          const cell = $assertNodeType(lastRow.getFirstChild(), $isElementNode);
+          cell.clear().append(...children.map(f => f()));
+        },
+        {discrete: true},
+      );
+      return editor.read(() => $convertToMarkdownString());
+    }
+
+    const text = (value: string) => () =>
+      $createParagraphNode().append($createTextNode(value));
+
+    // https://github.com/facebook/lexical/issues/9323
+    it('writes line breaks in a cell as <br>, never a newline', () => {
+      const cases: [string, string][] = [
+        [
+          exportCell(() =>
+            $createParagraphNode().append(
+              $createTextNode('a'),
+              $createLineBreakNode(),
+              $createTextNode('b'),
+            ),
+          ),
+          'a<br>b',
+        ],
+        [exportCell(text('a'), text('b')), 'a<br>b'],
+        [exportCell(text('a'), text(''), text('b')), 'a<br><br>b'],
+        [exportCell(text('a\nb')), 'a<br>b'],
+        [
+          exportCell(() =>
+            $createListNode('bullet').append(
+              $createListItemNode().append($createTextNode('x')),
+              $createListItemNode().append($createTextNode('y')),
+            ),
+          ),
+          'x<br>y',
+        ],
+        [
+          exportCell(() =>
+            $createCodeNode().append(
+              $createTextNode('l1'),
+              $createLineBreakNode(),
+              $createTextNode('l2'),
+            ),
+          ),
+          '`l1`<br>`l2`',
+        ],
+      ];
+      for (const [out, expected] of cases) {
+        expect(out.split('\n')).toHaveLength(3);
+        expect(cellOf(out)).toBe(expected);
+        expect(importExport(out, true)).toBe(out);
+      }
+    });
+
+    it('reads <br> in a cell as a paragraph boundary', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString(
+            '| a |\n| - |\n| x <br/> y<BR /><br>**z<br>w** |',
+          );
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const lastRow = $assertNodeType(table.getLastChild(), $isElementNode);
+        const cell = $assertNodeType(lastRow.getFirstChild(), $isElementNode);
+        expect(cell.getChildren().map(p => p.getTextContent())).toEqual([
+          'x',
+          'y',
+          '',
+          'z\nw',
+        ]);
+      });
+      expect(
+        cellOf(
+          importExport('| a |\n| - |\n| x <br/> y<BR /><br>**z<br>w** |', true),
+        ),
+      ).toBe('x<br>y<br><br>**z**<br>**w**');
     });
   });
 

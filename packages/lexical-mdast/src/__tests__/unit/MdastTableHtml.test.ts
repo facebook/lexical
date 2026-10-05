@@ -167,6 +167,39 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
     expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
   });
 
+  it.each(['\nx\n', 'x\n\n', '\n'])(
+    'keeps the empty last line of a code block in a cell: %j',
+    code => {
+      using editor = createEditor(true);
+      editor.update(
+        () =>
+          $appendCell(
+            $createCodeNode('js').append(
+              ...code
+                .split('\n')
+                .flatMap((line, i): LexicalNode[] => [
+                  ...(i > 0 ? [$createLineBreakNode()] : []),
+                  ...(line ? [$createTextNode(line)] : []),
+                ]),
+            ),
+          ),
+        {discrete: true},
+      );
+      const markdown = editor.read(() => $convertToMarkdownString());
+      editor.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+      expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
+      const cellCode = editor.read(() => {
+        const shape = $bodyCellShape() as {'code:js': unknown[]}[];
+        return shape[0]['code:js'];
+      });
+      expect(
+        cellCode.map(part => (part === 'linebreak' ? '\n' : part)).join(''),
+      ).toBe(code);
+    },
+  );
+
   it('flattens the same blocks into lines without MdastHtmlExtension', () => {
     using editor = createEditor(false);
     editor.update($buildBlocks, {discrete: true});

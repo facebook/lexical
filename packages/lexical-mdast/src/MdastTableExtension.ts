@@ -458,20 +458,25 @@ function blockHtml(node: MdastNode): PhrasingContent[] | null {
         flowHtml(node.children),
         '</li>',
       );
-    case 'code':
+    case 'code': {
+      const lines = node.value.split(/\r?\n|\r/);
+      // HTML drops a block's last `<br>`, so a code block that ends with
+      // an empty line needs one more.
+      if (lines.length > 1 && lines[lines.length - 1] === '') {
+        lines.push('');
+      }
       return wrap(
         node.lang && isPlainAttribute(node.lang)
           ? `<pre data-language="${node.lang}">`
           : '<pre>',
         joinLines(
-          node.value
-            .split(/\r?\n|\r/)
-            .map((value): PhrasingContent[] =>
-              value ? [{type: 'text', value}] : [],
-            ),
+          lines.map((value): PhrasingContent[] =>
+            value ? [{type: 'text', value}] : [],
+          ),
         ),
         '</pre>',
       );
+    }
     case 'thematicBreak':
       return [html('<hr>')];
     case 'html':

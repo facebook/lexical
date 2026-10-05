@@ -1264,6 +1264,7 @@ function $beginUpdate(
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
   const previouslyUpdating = editor._updating;
+  const previouslyNotifiedSelection = editor._lastNotifiedSelection;
   activeEditorState = pendingEditorState;
   isReadOnlyMode = false;
   editor._updating = true;
@@ -1400,6 +1401,10 @@ function $beginUpdate(
       updateTags.clear();
       editor._deferred = [];
       editor._pendingEditorState = null;
+      // A notification in the dropped update recorded a selection that never
+      // commits. Left in place, it would suppress the next notification of
+      // that selection, so a listener that restated it would never run again.
+      editor._lastNotifiedSelection = previouslyNotifiedSelection;
     }
   }
 }

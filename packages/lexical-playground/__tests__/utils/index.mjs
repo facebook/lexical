@@ -956,6 +956,20 @@ export async function sleep(delay) {
 }
 
 /**
+ * Wait for one timer task in the page. On Chrome for macOS, Lexical ignores an
+ * insertText that arrives before a zero-delay timer after a handled Backspace
+ * or select all, because the OS can use it to accept a pending text
+ * replacement. A real keystroke always comes after that timer, but text
+ * Playwright types with `Input.insertText` (an emoji, or any character with no
+ * key on the US layout) can arrive before it on a busy machine and be dropped.
+ * Timers with the same delay run in order, so once ours has run, Lexical's has
+ * too.
+ */
+export async function waitForTimerTick(page) {
+  await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 0)));
+}
+
+/**
  * Force a new undo group (a "merge boundary") deterministically — a drop-in
  * replacement for `sleep(mergeWindow + overhead)`. Works in both editor modes
  * and picks the right mechanism automatically:
@@ -1160,6 +1174,7 @@ export async function clearEditor(page) {
   await selectAll(page);
   await page.keyboard.press('Backspace');
   await page.keyboard.press('Backspace');
+  await waitForTimerTick(page);
 }
 
 export async function insertSampleImage(page, modifier) {

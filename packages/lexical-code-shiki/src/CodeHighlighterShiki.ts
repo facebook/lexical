@@ -455,32 +455,3 @@ export const CodeShikiExtension = defineExtension({
     });
   },
 });
-
-/**
- * @deprecated Use {@link CodeShikiExtension} instead. This type is a
- * flat alias for {@link Tokenizer} kept for backward compatibility with
- * {@link CodeHighlighterShikiExtension}.
- */
-export type CodeHighlighterShikiConfig = Tokenizer;
-
-/**
- * @deprecated Use {@link CodeShikiExtension} instead.
- *
- * This is a thin backward-compatibility shim that preserves the original
- * flat {@link Tokenizer} config API. It depends on
- * {@link CodeShikiExtension} and routes its configured tokenizer to the
- * underlying extension during `init` (before `CodeShikiExtension` builds),
- * so consumers using
- * `configExtension(CodeHighlighterShikiExtension, customTokenizer)`
- * continue to work without modification.
- */
-export const CodeHighlighterShikiExtension = defineExtension({
-  config: safeCast<CodeHighlighterShikiConfig>(ShikiTokenizer),
-  dependencies: [CodeShikiExtension],
-  init: (editorConfig, config, state) => {
-    // Forward the flat Tokenizer config to CodeShikiExtension's `tokenizer`
-    // field before it builds.
-    state.getDependency(CodeShikiExtension).config.tokenizer = config;
-  },
-  name: '@lexical/code-shiki/legacy',
-});

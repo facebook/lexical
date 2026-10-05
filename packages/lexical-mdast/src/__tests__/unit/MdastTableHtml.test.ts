@@ -6,7 +6,7 @@
  *
  */
 
-import {$createCodeNode, CodeImportExtension} from '@lexical/code-core';
+import {$createCodeNode, CodeExtension} from '@lexical/code-core';
 import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
@@ -57,7 +57,7 @@ function createEditor(withHtml: boolean): LexicalEditorWithDispose {
         // Node packages whose DOM import rules the cell HTML should reach.
         RichTextExtension,
         ListExtension,
-        CodeImportExtension,
+        CodeExtension,
         TableExtension,
       ],
       name: '[root]',

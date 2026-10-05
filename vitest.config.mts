@@ -133,9 +133,12 @@ export default defineConfig({
             commands: {
               // Vitest's keyboard descriptor parser splits non-BMP text into
               // UTF-16 code units. Native Playwright typing preserves code
-              // points, matching the E2E driver's input behavior.
-              typeText: async ({page}, text: string) => {
-                await page.keyboard.type(text);
+              // points, matching the E2E driver's input behavior. Target the
+              // focused element through its test frame so Playwright completes
+              // focus before dispatching the first key.
+              typeText: async ({frame}, text: string) => {
+                const testFrame = await frame();
+                await testFrame.locator(':focus').pressSequentially(text);
               },
             },
             // Vitest's default browser server port (63315) is in the

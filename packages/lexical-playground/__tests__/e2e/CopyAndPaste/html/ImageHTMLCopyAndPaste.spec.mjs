@@ -56,7 +56,6 @@ test.describe('HTML Image CopyAndPaste', () => {
       await pasteFromClipboard(page, clipboard);
       await sleepInsertImage();
       await page.keyboard.type(' inline ');
-      await page.pause();
       const captionEditorStyle = `user-select: text; white-space: pre-wrap; word-break: break-word`;
 
       await assertHTML(

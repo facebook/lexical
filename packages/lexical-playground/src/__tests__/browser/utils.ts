@@ -83,9 +83,9 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]) {
   );
 }
 
-// Like the E2E HTML assertions, ignore indentation and boundary whitespace,
-// but compare every element, attribute, and non-whitespace text node.
-function normalizeHTML(value: string): string {
+// Like the E2E HTML assertions, normalize whitespace, CSS serialization, and
+// invisible decorator boundary anchors while comparing the editor's content.
+export function normalizeHTML(value: string): string {
   const template = document.createElement('template');
   template.innerHTML = value;
   const walker = document.createTreeWalker(
@@ -96,6 +96,16 @@ function normalizeHTML(value: string): string {
     walker.currentNode.textContent = walker.currentNode.textContent!.trim();
   }
   for (const element of template.content.querySelectorAll('*')) {
+    if (element.hasAttribute('data-lexical-decorator-boundary')) {
+      element.remove();
+      continue;
+    }
+    if (element.hasAttribute('class')) {
+      element.setAttribute('class', Array.from(element.classList).join(' '));
+    }
+    if (element instanceof HTMLElement && element.hasAttribute('style')) {
+      element.setAttribute('style', element.style.cssText);
+    }
     const attributes = Array.from(element.attributes).sort((a, b) =>
       a.name.localeCompare(b.name),
     );
@@ -134,7 +144,15 @@ export async function assertSelection(
     const result: number[] = [];
     while (node !== root && node?.parentNode) {
       result.unshift(
-        Array.from(node.parentNode.childNodes).indexOf(node as ChildNode),
+        Array.from(node.parentNode.childNodes)
+          .filter(
+            child =>
+              !(
+                child instanceof Element &&
+                child.hasAttribute('data-lexical-decorator-boundary')
+              ),
+          )
+          .indexOf(node as ChildNode),
       );
       node = node.parentNode;
     }

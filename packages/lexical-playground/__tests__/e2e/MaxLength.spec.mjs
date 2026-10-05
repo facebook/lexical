@@ -11,6 +11,7 @@ import {
   STANDARD_KEYPRESS_DELAY_MS,
 } from '../keyboardShortcuts/index.mjs';
 import {
+  assertCaret,
   assertHTML,
   assertSelection,
   clearEditor,
@@ -86,6 +87,7 @@ test.describe('MaxLength', () => {
       `,
     );
 
+    await assertCaret(page, 'p > span', 29);
     await page.keyboard.type('💏', {delay: STANDARD_KEYPRESS_DELAY_MS});
 
     await assertHTML(
@@ -97,7 +99,9 @@ test.describe('MaxLength', () => {
       `,
     );
 
+    await assertCaret(page, 'p > span', 29);
     await pressBackspace(page);
+    await assertCaret(page, 'p > span', 28);
     await page.keyboard.type('💏');
 
     await assertHTML(

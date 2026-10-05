@@ -49,9 +49,10 @@ jobs:
             "pnpm run collab" \
             "pnpm run test-e2e-collab-${{ inputs.editor-mode == 'rich-text-with-collab-v2' && 'v2-' || '' }}${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }} --shard=${{ inputs.shard-index }}/${{ inputs.shard-total }}"
       - name: Upload Artifacts
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}-shard-${{ inputs.shard-index }}-of-${{ inputs.shard-total }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.test_results_path }}
+          if-no-files-found: ignore
           retention-days: 7

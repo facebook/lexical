@@ -11,6 +11,7 @@ import {
   moveToLineBeginning,
 } from '../keyboardShortcuts/index.mjs';
 import {
+  assertCaret,
   assertHTML,
   focusEditor,
   html,
@@ -74,6 +75,7 @@ test.describe('Regression tests for #6974', () => {
       ignoreInlineStyles: true,
     });
     await moveToLineBeginning(page);
+    await assertCaret(page, ':scope > p:last-child > span', 0);
     await deleteBackward(page);
     const afterHtml = html`
       <p dir="auto">

@@ -25,6 +25,7 @@ import {
   selectPrevWord,
 } from '../keyboardShortcuts/index.mjs';
 import {
+  assertCaret,
   assertHTML,
   assertSelection,
   assertTableSelectionCoordinates,
@@ -758,7 +759,9 @@ test.describe('Selection', () => {
       await insertCollapsible(page);
       await page.keyboard.type('title');
       await moveToEditorBeginning(page);
+      await assertCaret(page, ':scope > p:first-child > span', 0);
       await moveRight(page, 3);
+      await assertCaret(page, ':scope > p:first-child > span', 3);
       await deleteForward(page);
 
       const collapsibleTag =
@@ -911,7 +914,9 @@ test.describe('Selection', () => {
       await page.keyboard.type('abc');
       await insertTable(page, 1, 2);
       await moveToEditorBeginning(page);
+      await assertCaret(page, ':scope > p:first-child > span', 0);
       await moveRight(page, 3);
+      await assertCaret(page, ':scope > p:first-child > span', 3);
       await deleteForward(page);
 
       await assertHTML(
@@ -1926,9 +1931,13 @@ test.describe('Selection', () => {
       await focusEditor(page);
       await insertTable(page, 2, 2);
       await moveToEditorBeginning(page);
+      await assertCaret(page, ':scope > p:first-child', 0);
       await deleteBackward(page);
+      await expect(getEditorElement(page).locator(':scope > p')).toHaveCount(1);
       await moveToEditorEnd(page);
+      await assertCaret(page, ':scope > p:last-child', 0);
       await deleteBackward(page);
+      await expect(getEditorElement(page).locator(':scope > p')).toHaveCount(0);
       await moveToEditorBeginning(page);
       await moveUp(page, 1);
       await assertSelection(page, {
@@ -1953,10 +1962,14 @@ test.describe('Selection', () => {
       await insertTable(page, 2, 2);
       // delete the paragraph before the table
       await moveToEditorBeginning(page);
+      await assertCaret(page, ':scope > p:first-child', 0);
       await deleteBackward(page);
+      await expect(getEditorElement(page).locator(':scope > p')).toHaveCount(1);
       await moveToEditorEnd(page);
       // delete the paragraph after the table
+      await assertCaret(page, ':scope > p:last-child', 0);
       await deleteBackward(page);
+      await expect(getEditorElement(page).locator(':scope > p')).toHaveCount(0);
       await moveDown(page, 1);
       await assertSelection(page, {
         anchorOffset: 1,

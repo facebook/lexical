@@ -20,6 +20,7 @@ import {
   undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
+  assertCaret,
   assertHTML,
   assertSelection,
   click,
@@ -1164,8 +1165,21 @@ test.describe('Links', () => {
       `,
     );
 
+    await assertSelection(page, {
+      anchorOffset: 15,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 0,
+      focusPath: [0, 1, 0, 0],
+    });
     await page.keyboard.press('ArrowRight');
+    await assertSelection(page, {
+      anchorOffset: 15,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 15,
+      focusPath: [0, 1, 0, 0],
+    });
     await page.keyboard.press('ArrowRight');
+    await assertCaret(page, 'p > span:last-child', 1);
     await deleteBackward(page);
 
     await page.keyboard.type(', ');

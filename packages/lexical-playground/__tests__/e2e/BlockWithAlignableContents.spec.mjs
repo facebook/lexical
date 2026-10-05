@@ -23,7 +23,16 @@ import {
 test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
 
 test.describe('BlockWithAlignableContents', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test.beforeEach(async ({isCollab, page}) => {
+    // These checks exercise the embed wrapper, not the remote video player.
+    await page.route('https://www.youtube-nocookie.com/embed/**', route =>
+      route.fulfill({
+        body: '<!doctype html><title>YouTube embed fixture</title>',
+        contentType: 'text/html',
+      }),
+    );
+    await initialize({isCollab, page});
+  });
 
   test('Can create full width blocks for YouTube videos', async ({page}) => {
     await focusEditor(page);

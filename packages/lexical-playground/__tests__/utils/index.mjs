@@ -594,96 +594,141 @@ export async function assertTableSelectionCoordinates(page, coordinates) {
 }
 
 async function assertSelectionOnPageOrFrame(page, expected) {
-  // Assert the selection of the editor matches the snapshot
-  const selection = await page.evaluate(() => {
-    const rootElement = document.querySelector('div[contenteditable="true"]');
+  await expect(async () => {
+    // Assert the selection of the editor matches the snapshot
+    const selection = await page.evaluate(() => {
+      const rootElement = document.querySelector('div[contenteditable="true"]');
 
-    // The zero-size anchors the reconciler parks outside a leading / trailing
-    // block decorator (#8922) occupy a DOM child slot but no lexical one, so
-    // discount them from both paths and offsets.
-    const boundaryAnchorsBefore = (parent, index) => {
-      const children = parent.childNodes;
-      let count = 0;
-      for (let i = 0; i < index && i < children.length; i++) {
-        const child = children[i];
-        if (
-          child.nodeType === Node.ELEMENT_NODE &&
-          child.getAttribute('data-lexical-decorator-boundary') === 'true'
-        ) {
-          count++;
+      // The zero-size anchors the reconciler parks outside a leading / trailing
+      // block decorator (#8922) occupy a DOM child slot but no lexical one, so
+      // discount them from both paths and offsets.
+      const boundaryAnchorsBefore = (parent, index) => {
+        const children = parent.childNodes;
+        let count = 0;
+        for (let i = 0; i < index && i < children.length; i++) {
+          const child = children[i];
+          if (
+            child.nodeType === Node.ELEMENT_NODE &&
+            child.getAttribute('data-lexical-decorator-boundary') === 'true'
+          ) {
+            count++;
+          }
         }
-      }
-      return count;
-    };
+        return count;
+      };
 
-    const getPathFromNode = node => {
-      const path = [];
-      if (node === rootElement) {
-        return [];
-      }
-      while (node !== null) {
-        const parent = node.parentNode;
-        if (parent === null || node === rootElement) {
-          break;
+      const getPathFromNode = node => {
+        const path = [];
+        if (node === rootElement) {
+          return [];
         }
-        const index = Array.from(parent.childNodes).indexOf(node);
-        path.push(index - boundaryAnchorsBefore(parent, index));
-        node = parent;
-      }
-      return path.reverse();
-    };
-
-    const fixOffset = (node, offset) => {
-      if (node && node.nodeType === Node.ELEMENT_NODE) {
-        offset -= boundaryAnchorsBefore(node, offset);
-      }
-      // If the selection offset is at the br of a webkit img+br linebreak
-      // then move the offset to the img so the tests are consistent across
-      // browsers
-      if (node && node.nodeType === Node.ELEMENT_NODE && offset > 0) {
-        const child = node.children[offset - 1];
-        if (
-          child &&
-          child.nodeType === Node.ELEMENT_NODE &&
-          child.nodeName === 'IMG' &&
-          child.getAttribute('data-lexical-managed-linebreak') === 'true'
-        ) {
-          return offset - 1;
+        while (node !== null) {
+          const parent = node.parentNode;
+          if (parent === null || node === rootElement) {
+            break;
+          }
+          const index = Array.from(parent.childNodes).indexOf(node);
+          path.push(index - boundaryAnchorsBefore(parent, index));
+          node = parent;
         }
-      }
-      return offset;
-    };
+        return path.reverse();
+      };
 
-    const {anchorNode, anchorOffset, focusNode, focusOffset} =
-      window.getSelection();
+      const fixOffset = (node, offset) => {
+        if (node && node.nodeType === Node.ELEMENT_NODE) {
+          offset -= boundaryAnchorsBefore(node, offset);
+        }
+        // If the selection offset is at the br of a webkit img+br linebreak
+        // then move the offset to the img so the tests are consistent across
+        // browsers
+        if (node && node.nodeType === Node.ELEMENT_NODE && offset > 0) {
+          const child = node.children[offset - 1];
+          if (
+            child &&
+            child.nodeType === Node.ELEMENT_NODE &&
+            child.nodeName === 'IMG' &&
+            child.getAttribute('data-lexical-managed-linebreak') === 'true'
+          ) {
+            return offset - 1;
+          }
+        }
+        return offset;
+      };
 
-    return {
-      anchorOffset: fixOffset(anchorNode, anchorOffset),
-      anchorPath: getPathFromNode(anchorNode),
-      focusOffset: fixOffset(focusNode, focusOffset),
-      focusPath: getPathFromNode(focusNode),
-    };
-  });
-  expect(selection.anchorPath).toEqual(expected.anchorPath);
-  expect(selection.focusPath).toEqual(expected.focusPath);
-  if (Array.isArray(expected.anchorOffset)) {
-    const [start, end] = expected.anchorOffset;
-    expect(selection.anchorOffset).toBeGreaterThanOrEqual(start);
-    expect(selection.anchorOffset).toBeLessThanOrEqual(end);
-  } else {
-    expect(selection.anchorOffset).toEqual(expected.anchorOffset);
-  }
-  if (Array.isArray(expected.focusOffset)) {
-    const [start, end] = expected.focusOffset;
-    expect(selection.focusOffset).toBeGreaterThanOrEqual(start);
-    expect(selection.focusOffset).toBeLessThanOrEqual(end);
-  } else {
-    expect(selection.focusOffset).toEqual(expected.focusOffset);
-  }
+      const {anchorNode, anchorOffset, focusNode, focusOffset} =
+        window.getSelection();
+
+      return {
+        anchorOffset: fixOffset(anchorNode, anchorOffset),
+        anchorPath: getPathFromNode(anchorNode),
+        focusOffset: fixOffset(focusNode, focusOffset),
+        focusPath: getPathFromNode(focusNode),
+      };
+    });
+    expect(selection.anchorPath).toEqual(expected.anchorPath);
+    expect(selection.focusPath).toEqual(expected.focusPath);
+    if (Array.isArray(expected.anchorOffset)) {
+      const [start, end] = expected.anchorOffset;
+      expect(selection.anchorOffset).toBeGreaterThanOrEqual(start);
+      expect(selection.anchorOffset).toBeLessThanOrEqual(end);
+    } else {
+      expect(selection.anchorOffset).toEqual(expected.anchorOffset);
+    }
+    if (Array.isArray(expected.focusOffset)) {
+      const [start, end] = expected.focusOffset;
+      expect(selection.focusOffset).toBeGreaterThanOrEqual(start);
+      expect(selection.focusOffset).toBeLessThanOrEqual(end);
+    } else {
+      expect(selection.focusOffset).toEqual(expected.focusOffset);
+    }
+  }).toPass({intervals: [20, 50, 100], timeout: 5000});
 }
 
 export async function assertSelection(page, expected) {
   await assertSelectionOnPageOrFrame(getPageOrFrame(page), expected);
+}
+
+// Native caret movement and Lexical's selectionchange handler complete in
+// separate tasks. Editing tests need both selections at the intended point
+// before sending the next key, especially a destructive one.
+export async function assertCaret(page, selector, offset) {
+  await expect
+    .poll(() =>
+      evaluate(
+        page,
+        target => {
+          const editor = window.lexicalEditor;
+          const element = editor
+            .getRootElement()
+            .querySelector(target.selector);
+          const domSelection = window.getSelection();
+          const selection = editor.getEditorState()._selection;
+          return {
+            domCollapsed: domSelection?.isCollapsed,
+            domOffset: domSelection?.anchorOffset,
+            domTarget:
+              element !== null &&
+              (domSelection?.anchorNode === element ||
+                domSelection?.anchorNode === element.firstChild),
+            modelCollapsed: selection?.isCollapsed(),
+            modelOffset: selection?.anchor?.offset,
+            modelTarget:
+              element !== null &&
+              selection?.anchor !== undefined &&
+              editor.getElementByKey(selection.anchor.key) === element,
+          };
+        },
+        {selector},
+      ),
+    )
+    .toEqual({
+      domCollapsed: true,
+      domOffset: offset,
+      domTarget: true,
+      modelCollapsed: true,
+      modelOffset: offset,
+      modelTarget: true,
+    });
 }
 
 export async function isMac(page) {

@@ -24,6 +24,7 @@ import {
   undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
+  assertCaret,
   assertHTML,
   assertSelection,
   clearEditor,
@@ -94,13 +95,15 @@ test.describe('Checklist focus option', () => {
       document.body.tabIndex = -1;
       document.body.focus();
     });
-    expect(
-      await page.evaluate(
-        () =>
-          document.activeElement === document.body ||
-          document.activeElement === document.documentElement,
-      ),
-    ).toBe(true);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.activeElement === document.body ||
+            document.activeElement === document.documentElement,
+        ),
+      )
+      .toBe(true);
 
     // Click on the checkbox marker area (left side of the item)
     const box = await checklistItem.boundingBox();
@@ -134,13 +137,15 @@ test.describe('Checklist focus option', () => {
       document.body.tabIndex = -1;
       document.body.focus();
     });
-    expect(
-      await page.evaluate(
-        () =>
-          document.activeElement === document.body ||
-          document.activeElement === document.documentElement,
-      ),
-    ).toBe(true);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.activeElement === document.body ||
+            document.activeElement === document.documentElement,
+        ),
+      )
+      .toBe(true);
 
     // Click on the checkbox marker area (left side of the item)
     const box = await checklistItem.boundingBox();
@@ -191,11 +196,9 @@ test.describe('Checklist space key', () => {
 
     // The click is in the label, so the editor holds the focus. The item is
     // the active element only when its checkbox is what was clicked.
-    expect(
-      await page.evaluate(
-        () => document.activeElement === window.lexicalEditor.getRootElement(),
-      ),
-    ).toBe(true);
+    await expect(
+      page.locator('[data-lexical-editor="true"]').first(),
+    ).toBeFocused();
 
     await page.keyboard.press('Space');
 
@@ -219,13 +222,7 @@ test.describe('Checklist space key', () => {
     // Click the marker, which is the flow that hands the item keyboard focus.
     await page.mouse.click(box.x + 5, box.y + box.height / 2);
     await expect(item).toHaveAttribute('aria-checked', 'true');
-    expect(
-      await page.evaluate(
-        () =>
-          document.activeElement ===
-          document.querySelector('li[role="checkbox"]'),
-      ),
-    ).toBe(true);
+    await expect(page.locator('li[role="checkbox"]').first()).toBeFocused();
 
     await page.keyboard.press('Space');
 
@@ -301,14 +298,9 @@ test.describe('Checklist space key', () => {
     // The left arrow at the start of the label is the third way onto the
     // checkbox, with the caret never having left the item.
     await moveToLineBeginning(page);
+    await assertCaret(page, 'li[role=checkbox] > span', 0);
     await moveLeft(page);
-    expect(
-      await page.evaluate(
-        () =>
-          document.activeElement ===
-          document.querySelector('li[role="checkbox"]'),
-      ),
-    ).toBe(true);
+    await expect(page.locator('li[role="checkbox"]').first()).toBeFocused();
 
     await page.keyboard.press('Space');
 
@@ -336,11 +328,9 @@ test.describe('Checklist space key', () => {
     );
     await page.mouse.down();
 
-    expect(
-      await page.evaluate(
-        () => document.activeElement === window.lexicalEditor.getRootElement(),
-      ),
-    ).toBe(true);
+    await expect(
+      page.locator('[data-lexical-editor="true"]').first(),
+    ).toBeFocused();
 
     await page.mouse.up();
   });
@@ -365,11 +355,9 @@ test.describe('Checklist space key', () => {
     // Moving the caret through the label is operating the text, not the
     // checkbox, so the editor takes the focus back.
     await moveLeft(page);
-    expect(
-      await page.evaluate(
-        () => document.activeElement === window.lexicalEditor.getRootElement(),
-      ),
-    ).toBe(true);
+    await expect(
+      page.locator('[data-lexical-editor="true"]').first(),
+    ).toBeFocused();
 
     await page.keyboard.press('Space');
 
@@ -394,23 +382,16 @@ test.describe('Checklist space key', () => {
 
     // The first left arrow reaches the checkbox of the second item.
     await moveToLineBeginning(page);
+    await assertCaret(page, 'li[role=checkbox]:nth-child(2) > span', 0);
     await moveLeft(page);
-    expect(
-      await page.evaluate(
-        () =>
-          document.activeElement ===
-          document.querySelectorAll('li[role="checkbox"]')[1],
-      ),
-    ).toBe(true);
+    await expect(page.locator('li[role="checkbox"]').nth(1)).toBeFocused();
 
     // The second one leaves the item, so the caret carries on into the item
     // before it and the focus goes with it.
     await moveLeft(page);
-    expect(
-      await page.evaluate(
-        () => document.activeElement === window.lexicalEditor.getRootElement(),
-      ),
-    ).toBe(true);
+    await expect(
+      page.locator('[data-lexical-editor="true"]').first(),
+    ).toBeFocused();
 
     await page.keyboard.type('X');
 
@@ -433,23 +414,16 @@ test.describe('Checklist space key', () => {
 
     // Left at the start of the label puts the focus on the checkbox.
     await moveToLineBeginning(page);
+    await assertCaret(page, 'li[role=checkbox] > span', 0);
     await moveLeft(page);
-    expect(
-      await page.evaluate(
-        () =>
-          document.activeElement ===
-          document.querySelector('li[role="checkbox"]'),
-      ),
-    ).toBe(true);
+    await expect(page.locator('li[role="checkbox"]').first()).toBeFocused();
 
     // Right moves the caret back into the label, so the checkbox is no
     // longer what the keyboard is operating.
     await moveRight(page, 1);
-    expect(
-      await page.evaluate(
-        () => document.activeElement === window.lexicalEditor.getRootElement(),
-      ),
-    ).toBe(true);
+    await expect(
+      page.locator('[data-lexical-editor="true"]').first(),
+    ).toBeFocused();
 
     await page.keyboard.press('Space');
 
@@ -478,11 +452,9 @@ test.describe('Checklist space key', () => {
     // Typing is text entry, so the editor takes the focus back and the next
     // Space is a space rather than a toggle.
     await page.keyboard.type('X');
-    expect(
-      await page.evaluate(
-        () => document.activeElement === window.lexicalEditor.getRootElement(),
-      ),
-    ).toBe(true);
+    await expect(
+      page.locator('[data-lexical-editor="true"]').first(),
+    ).toBeFocused();
 
     await moveLeft(page);
     await page.keyboard.press('Space');

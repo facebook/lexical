@@ -209,20 +209,57 @@ export const TWEET: ElementTransformer = {
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 
 /**
+ * Characters that `text` doesn't contain, by themselves or as a numeric
+ * character reference (`&#57344;`), which reads as its character: the
+ * first `count` of `candidates`, then private-use characters.
+ */
+function unusedChars(
+  text: string,
+  count: number,
+  candidates: readonly number[] = [],
+): string[] {
+  const used = new Set<number>();
+  for (const char of text) {
+    used.add(char.codePointAt(0)!);
+  }
+  for (const [, decimal, hex] of text.matchAll(/&#(?:(\d+)|x([\da-f]+));/gi)) {
+    used.add(decimal ? parseInt(decimal, 10) : parseInt(hex, 16));
+  }
+  const chars: string[] = [];
+  for (const code of candidates) {
+    if (chars.length < count && !used.has(code)) {
+      chars.push(String.fromCharCode(code));
+    }
+  }
+  for (let code = 0xe000; chars.length < count; code++) {
+    if (!used.has(code)) {
+      chars.push(String.fromCharCode(code));
+    }
+  }
+  return chars;
+}
+
+/**
  * A private-use character that `text` doesn't contain, to stand in for the
- * line breaks in a cell's Markdown while it is encoded or decoded.
+ * line breaks in a cell's Markdown while it is encoded.
  */
 function lineBreakMark(text: string): string {
-  // A numeric character reference (`&#57344;`) reads as its character.
-  const references = new Set<number>();
-  for (const [, decimal, hex] of text.matchAll(/&#(?:(\d+)|x([\da-f]+));/gi)) {
-    references.add(decimal ? parseInt(decimal, 10) : parseInt(hex, 16));
-  }
-  let code = 0xe000;
-  while (text.includes(String.fromCharCode(code)) || references.has(code)) {
-    code++;
-  }
-  return String.fromCharCode(code);
+  return unusedChars(text, 1)[0];
+}
+
+// Space characters that a line break can stand in for while a cell is
+// read: Markdown takes them, like the line ending they replace, as
+// whitespace beside emphasis (`a<br>**(b)**`), and `.` matches them.
+const LINE_BREAK_MARKS = [
+  0x3000, 0x205f, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006,
+  0x2007, 0x2008, 0x2009, 0x200a, 0x202f, 0x1680,
+];
+
+/** The characters that stand in for line breaks and code while a cell is read. */
+interface CellMarks {
+  codeEnd: string;
+  codeStart: string;
+  lineBreak: string;
 }
 
 /**
@@ -461,7 +498,7 @@ const ESCAPED_PIPE_REG_EXP = /(?:^|[^\\])(?:\\\\)*\\\|/;
  * own. Code with a backslash right before a pipe can't be written that way,
  * since `\\|` is an escaped backslash and then a pipe that splits the row,
  * so it is written as HTML, with its punctuation as character references,
- * which {@link codeSpanFromHtml} reads back.
+ * which {@link codeFromHtml} reads back.
  */
 function encodeCodeSpan(span: string): string {
   if (!ESCAPED_PIPE_REG_EXP.test(span)) {
@@ -481,8 +518,13 @@ function encodeCodeSpan(span: string): string {
 // A `<code>` element that has only text, past backslash escapes.
 const CODE_HTML_REG_EXP = /\\[^]|<code>([^<]*)<\/code>/gi;
 
-/** A code span with the code of a `<code>` element that has only text. */
-function codeSpanFromHtml(html: string): string {
+/**
+ * The code of a `<code>` element that has only text, between the marks
+ * that {@link $marksToNodes} turns into a code span after the cell is
+ * parsed. A code span would read as a code block if its fence were three
+ * backticks or more at the start of a line, so the code is escaped instead.
+ */
+function codeFromHtml(html: string, marks: CellMarks): string {
   const code = html.replace(
     /&(?:#(\d+)|#x([\da-f]+)|(amp|lt|gt|quot));/gi,
     (reference, decimal?: string, hex?: string, name?: string) => {
@@ -497,13 +539,15 @@ function codeSpanFromHtml(html: string): string {
         : reference;
     },
   );
-  const fence = '`'.repeat(
-    Math.max(0, ...Array.from(code.matchAll(/`+/g), run => run[0].length)) + 1,
+  return (
+    marks.codeStart +
+    // A character reference is decoded after backslash escapes, so `&` is
+    // one too.
+    code.replace(/[!-/:-@[-`{-~]/g, char =>
+      char === '&' ? '&#38;' : '\\' + char,
+    ) +
+    marks.codeEnd
   );
-  // A space keeps a backtick or a padded code span from merging into the
-  // fence or losing its padding.
-  const pad = /^[` ]|[` ]$/.test(code) && code.trim() !== '' ? ' ' : '';
-  return fence + pad + code + pad + fence;
 }
 
 /**
@@ -670,19 +714,26 @@ function cellBreaks(lines: CellLine[]): CellBreak[] {
     } else {
       kind =
         BLOCK_START_REG_EXP.test(line.text) ||
-        BLOCK_LINE_REG_EXP.test(prev.text)
+        BLOCK_LINE_REG_EXP.test(prev.text) ||
+        // A nested list item is indented past the parent's content.
+        (container && NESTED_LIST_ITEM_REG_EXP.test(line.text))
           ? 'block'
           : 'inline';
     }
     if (ended) {
       container = false;
     } else if (kind !== 'inline') {
-      container = isContainerStart(line);
+      container =
+        isContainerStart(line) ||
+        (container && NESTED_LIST_ITEM_REG_EXP.test(line.text));
     }
     breaks.push(kind);
   }
   return breaks;
 }
+
+// A list item at any indentation.
+const NESTED_LIST_ITEM_REG_EXP = /^[ \t]*(?:[-*+]|\d{1,9}[.)])\s/;
 
 // A line that starts a list item or a quote.
 const CONTAINER_START_REG_EXP = /^ {0,3}(?:>|[-*+]\s|\d{1,9}[.)]\s)/;
@@ -697,16 +748,17 @@ function isContainerStart(line: CellLine): boolean {
  * literal `\n` this transformer used to write still does, but neither
  * inside a code span nor after a backslash escape (`\<br>`, `C:\\new`).
  * A separator that `newline` picks becomes a newline; any other becomes
- * `mark`, which {@link $createTableCell} turns into a line break after
- * parsing, so formatting and links that span it (`**a<br>b**`,
+ * the line break mark, which {@link $marksToNodes} turns into a line break
+ * after parsing, so formatting and links that span it (`**a<br>b**`,
  * `[a<br>b](url)`) stay whole. A pipe is escaped (`\|`) everywhere in a
  * row, code spans included, so it is unescaped here.
  */
 function decodeTableCell(
   lines: CellLine[],
   newline: readonly boolean[],
-  mark: string,
+  marks: CellMarks,
 ): string {
+  const mark = marks.lineBreak;
   let result = '';
   lines.forEach((line, i) => {
     if (i > 0) {
@@ -731,7 +783,7 @@ function decodeTableCell(
             : unescaped.replace(
                 CODE_HTML_REG_EXP,
                 (match, html: string | undefined) =>
-                  html === undefined ? match : codeSpanFromHtml(html),
+                  html === undefined ? match : codeFromHtml(html, marks),
               );
         })
         .join('');
@@ -752,22 +804,33 @@ function $markNodes(cell: TableCellNode, mark: string): TextNode[] {
   );
 }
 
-/** Turns each `mark` in the text under `cell` into a line break. */
-function $markToLineBreaks(cell: TableCellNode, mark: string): void {
+/**
+ * Turns each line break mark in the text under `cell` into a line break,
+ * and the text between code marks into a code span.
+ */
+function $marksToNodes(cell: TableCellNode, marks: CellMarks): void {
+  const markChars = [marks.lineBreak, marks.codeStart, marks.codeEnd];
   for (const node of cell.getAllTextNodes()) {
     const textContent = node.getTextContent();
-    if (!textContent.includes(mark)) {
-      continue;
-    }
     const offsets: number[] = [];
     for (let i = 0; i < textContent.length; i++) {
-      if (textContent[i] === mark) {
+      if (markChars.includes(textContent[i])) {
         offsets.push(i, i + 1);
       }
     }
+    if (offsets.length === 0) {
+      continue;
+    }
+    let code = false;
     for (const piece of node.splitText(...offsets)) {
-      if (piece.getTextContent() === mark) {
+      const pieceText = piece.getTextContent();
+      if (pieceText === marks.lineBreak) {
         piece.replace($createLineBreakNode());
+      } else if (pieceText === marks.codeStart || pieceText === marks.codeEnd) {
+        code = pieceText === marks.codeStart;
+        piece.remove();
+      } else if (code && !piece.hasFormat('code')) {
+        piece.toggleFormat('code');
       }
     }
   }
@@ -776,7 +839,9 @@ function $markToLineBreaks(cell: TableCellNode, mark: string): void {
 const $createTableCell = (textContent: string): TableCellNode => {
   // GFM trims a cell's padding.
   const text = textContent.trim();
-  const mark = lineBreakMark(text);
+  const [lineBreak] = unusedChars(text, 1, LINE_BREAK_MARKS);
+  const [codeStart, codeEnd] = unusedChars(text + lineBreak, 2);
+  const marks: CellMarks = {codeEnd, codeStart, lineBreak};
   const lines = splitCellLines(text);
   const breaks = cellBreaks(lines);
   if (breaks.includes('block')) {
@@ -789,12 +854,12 @@ const $createTableCell = (textContent: string): TableCellNode => {
       decodeTableCell(
         lines,
         breaks.map(kind => kind === 'newline'),
-        mark,
+        marks,
       ),
       PLAYGROUND_TRANSFORMERS,
       probe,
     );
-    const marked = $markNodes(probe, mark);
+    const marked = $markNodes(probe, lineBreak);
     const unmarked = breaks.flatMap((kind, i) =>
       kind === 'newline' ? [] : [i],
     );
@@ -815,12 +880,12 @@ const $createTableCell = (textContent: string): TableCellNode => {
     decodeTableCell(
       lines,
       breaks.map(kind => kind !== 'inline'),
-      mark,
+      marks,
     ),
     PLAYGROUND_TRANSFORMERS,
     cell,
   );
-  $markToLineBreaks(cell, mark);
+  $marksToNodes(cell, marks);
   return cell;
 };
 

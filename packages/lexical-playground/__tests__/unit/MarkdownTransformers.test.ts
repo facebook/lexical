@@ -545,7 +545,17 @@ describe('playground TABLE markdown transformer', () => {
     },
   );
 
-  it.each(['a|b', 'a\\|b', 'a\\\\|b', '\\|', 'x`\\|`*y*'])(
+  it.each([
+    'a|b',
+    'a\\|b',
+    'a\\\\|b',
+    '\\|',
+    'x`\\|`*y*',
+    '``\\|``',
+    '```\\|```',
+    ' `a\\|` ',
+    '&#38;\\|*',
+  ])(
     'round-trips inline code with pipes and backslashes in a cell: %j',
     text => {
       using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
@@ -733,8 +743,39 @@ describe('playground TABLE markdown transformer', () => {
   ] as const)(
     'keeps %s formatting whole across a <br> before %j',
     (marker, line, format) => {
+      // Formatting is closed on each side of a line break, as elsewhere.
+      const exported = `| ${marker}a${marker}<br>${marker}${line}${marker} |`;
+      for (const body of [`| ${marker}a<br>${line}${marker} |`, exported]) {
+        using editor = importMarkdown(['| h |', '| --- |', body].join('\n'));
+        editor.read(() => {
+          const paragraph = $getRoot().getLastDescendant()?.getParent();
+          assert($isParagraphNode(paragraph), 'The cell must hold a paragraph');
+          const children = paragraph.getChildren();
+          expect(
+            children.map(node => node.getTextContent() || node.getType()),
+          ).toEqual(['a', '\n', line]);
+          for (const node of children) {
+            if ($isTextNode(node)) {
+              expect(node.hasFormat(format)).toBe(true);
+            }
+          }
+          expect($convertToMarkdownString([TABLE]).split('\n')[2]).toBe(
+            exported,
+          );
+        });
+      }
+    },
+  );
+
+  it.each([
+    ['a<br>**(b)**', ['a', '\n', '(b)'], 2],
+    ['**(a)**<br>b', ['(a)', '\n', 'b'], 0],
+    ['*[a]*<br>_.b_', ['[a]', '\n', '.b'], 0],
+  ])(
+    'reads formatting beside punctuation and a <br>: %j',
+    (body, texts, formatted) => {
       using editor = importMarkdown(
-        ['| h |', '| --- |', `| ${marker}a<br>${line}${marker} |`].join('\n'),
+        ['| h |', '| --- |', `| ${body} |`].join('\n'),
       );
       editor.read(() => {
         const paragraph = $getRoot().getLastDescendant()?.getParent();
@@ -742,16 +783,10 @@ describe('playground TABLE markdown transformer', () => {
         const children = paragraph.getChildren();
         expect(
           children.map(node => node.getTextContent() || node.getType()),
-        ).toEqual(['a', '\n', line]);
-        for (const node of children) {
-          if ($isTextNode(node)) {
-            expect(node.hasFormat(format)).toBe(true);
-          }
-        }
-        // Formatting is closed on each side of a line break, as elsewhere.
-        expect($convertToMarkdownString([TABLE]).split('\n')[2]).toBe(
-          `| ${marker}a${marker}<br>${marker}${line}${marker} |`,
-        );
+        ).toEqual(texts);
+        const node = children[formatted];
+        assert($isTextNode(node), 'The formatted child must be text');
+        expect(node.getFormat()).not.toBe(0);
       });
     },
   );
@@ -775,6 +810,18 @@ describe('playground TABLE markdown transformer', () => {
       ['| h |', '| --- |', '| **a**<br># b |'].join('\n'),
     );
     expect(cellTexts(editor)).toEqual([[['h']], [['a', 'b']]]);
+  });
+
+  it.each([
+    ['a　b<br>c', 'a　b\nc'],
+    ['a&#12288;b<br>c', 'a　b\nc'],
+    ['a<br>', 'a\n'],
+    ['<br>a', '\na'],
+  ])('reads %j with its spaces and line breaks', (body, text) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${body} |`].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [[text]]]);
   });
 
   it('keeps a character reference to the line break marker', () => {
@@ -825,6 +872,8 @@ describe('playground TABLE markdown transformer', () => {
     ['- i\n- j\n\nafter', ['list', 'paragraph']],
     ['> q\n\nafter', ['quote', 'paragraph']],
     ['- i\nmore', ['list']],
+    ['- a\n    - nested\n\nend', ['list', 'paragraph']],
+    ['1. a\n    1. b\n        - c\n2. d', ['list']],
     ['a\n\n> q\n\nafter', ['paragraph', 'quote', 'paragraph']],
   ])('keeps the blocks of %j apart in a cell', (markdown, types) => {
     using editor = buildEditorFromExtensions(TableMarkdownTestExtension);

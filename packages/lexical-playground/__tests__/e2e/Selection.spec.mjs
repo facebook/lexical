@@ -804,7 +804,9 @@ test.describe('Selection', () => {
       await page.keyboard.type('title');
       await moveRight(page, 2);
       await page.keyboard.type('after');
+      await assertCaret(page, ':scope > p:last-child > span', 'after'.length);
       await moveLeft(page, 'after'.length);
+      await assertCaret(page, ':scope > p:last-child > span', 0);
       await deleteBackward(page);
 
       const collapsibleTag =

@@ -819,24 +819,24 @@ test.describe('HorizontalRule', () => {
 
       // Without the fix, Firefox leaves selection as null (rangeCount === 0).
       // The fix computes the correct child offset from click coordinates.
-      const selState = await getPageOrFrame(page).evaluate(() => {
-        const sel = window.lexicalEditor.getEditorState()._selection;
-        if (sel === null) {
-          return null;
-        }
-        if ('anchor' in sel) {
-          return {
-            anchorKey: sel.anchor.key,
-            anchorType: sel.anchor.type,
-            type: 'range',
-          };
-        }
-        return {type: 'node'};
-      });
-      expect(selState).not.toBeNull();
-      expect(selState.type).toBe('range');
-      expect(selState.anchorKey).toBe('root');
-      expect(selState.anchorType).toBe('element');
+      await expect
+        .poll(() =>
+          getPageOrFrame(page).evaluate(() => {
+            const sel = window.lexicalEditor.getEditorState()._selection;
+            if (sel === null) {
+              return null;
+            }
+            if ('anchor' in sel) {
+              return {
+                anchorKey: sel.anchor.key,
+                anchorType: sel.anchor.type,
+                type: 'range',
+              };
+            }
+            return {type: 'node'};
+          }),
+        )
+        .toEqual({anchorKey: 'root', anchorType: 'element', type: 'range'});
     });
 
     test('ArrowDown from block cursor between shadow root and decorator selects the decorator', async ({

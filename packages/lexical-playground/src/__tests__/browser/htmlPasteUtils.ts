@@ -48,6 +48,14 @@ export function setupPasteEditor() {
   return setupEditor([pasteExtension]);
 }
 
+function clipboardEvent(type: 'copy' | 'paste', clipboardData: DataTransfer) {
+  const event = new ClipboardEvent(type, {bubbles: true, cancelable: true});
+  // Firefox creates its own clipboardData instead of using the constructor
+  // argument. Define the payload on the event, as the E2E helper does.
+  Object.defineProperty(event, 'clipboardData', {value: clipboardData});
+  return event;
+}
+
 // Exercise the registered DOM clipboard handler with the same in-memory
 // payloads used by the playground E2E tests, without the system clipboard.
 export async function pasteFromClipboard(
@@ -59,25 +67,13 @@ export async function pasteFromClipboard(
     clipboardData.setData(type, value);
   }
   await act(async () => {
-    root.dispatchEvent(
-      new ClipboardEvent('paste', {
-        bubbles: true,
-        cancelable: true,
-        clipboardData,
-      }),
-    );
+    root.dispatchEvent(clipboardEvent('paste', clipboardData));
   });
 }
 
 export async function copyToClipboard(root: HTMLElement) {
   const clipboardData = new DataTransfer();
-  root.dispatchEvent(
-    new ClipboardEvent('copy', {
-      bubbles: true,
-      cancelable: true,
-      clipboardData,
-    }),
-  );
+  root.dispatchEvent(clipboardEvent('copy', clipboardData));
   return Object.fromEntries(
     clipboardData.types.map(type => [type, clipboardData.getData(type)]),
   );

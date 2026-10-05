@@ -28,6 +28,7 @@ import {server} from 'vitest/browser';
 
 import theme from '../../themes/PlaygroundEditorTheme';
 import {
+  assertCaret,
   assertHTML,
   html,
   press as nativePress,
@@ -85,7 +86,7 @@ async function setup(charset: 'UTF-8' | 'UTF-16', isRichText: boolean) {
   });
   window.focus();
   root.focus();
-  return {root};
+  return {editor, root};
 }
 
 describe.each(['UTF-8', 'UTF-16'] as const)('character limit %s', charset => {
@@ -140,13 +141,14 @@ describe.each(['UTF-8', 'UTF-16'] as const)('character limit %s', charset => {
       );
     });
     test('can delete text in front and overflow is recomputed', async () => {
-      const {root} = await setup(charset, isRichText);
+      const {editor, root} = await setup(charset, isRichText);
 
       await typeText('123456');
       await press('Enter');
       await press('7');
       await moveToEditorBeginning();
 
+      await assertCaret(editor, 'p:first-child > span:first-child', 0);
       await press('Delete');
       if (isRichText) {
         await assertHTML(
@@ -177,6 +179,7 @@ describe.each(['UTF-8', 'UTF-16'] as const)('character limit %s', charset => {
         );
       }
 
+      await assertCaret(editor, 'p:first-child > span:first-child', 0);
       await press('Delete');
       if (isRichText) {
         await assertHTML(

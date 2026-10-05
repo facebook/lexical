@@ -10,9 +10,12 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $createParagraphNode,
   $getRoot,
+  $getSelection,
+  $isRangeSelection,
   type AnyLexicalExtensionArgument,
   defineExtension,
   IS_APPLE,
+  type LexicalEditor,
 } from 'lexical';
 import {expect, onTestFinished} from 'vitest';
 import {commands, userEvent} from 'vitest/browser';
@@ -136,6 +139,37 @@ export async function assertHTML(root: HTMLElement, expected: string) {
   await expect
     .poll(() => normalizeHTML(root.innerHTML))
     .toBe(normalizeHTML(expected));
+}
+
+// Native navigation and Lexical's selectionchange handler settle separately.
+// Follow-up edits need both carets at the intended boundary.
+export async function assertCaret(
+  editor: LexicalEditor,
+  selector: string,
+  offset?: number,
+) {
+  await expect
+    .poll(() => {
+      const root = editor.getRootElement();
+      const target = root?.querySelector(selector);
+      const domSelection = root?.ownerDocument.defaultView?.getSelection();
+      return editor.read('latest', () => {
+        const selection = $getSelection();
+        return (
+          target != null &&
+          domSelection != null &&
+          domSelection.isCollapsed &&
+          (domSelection.anchorNode === target ||
+            domSelection.anchorNode === target.firstChild) &&
+          $isRangeSelection(selection) &&
+          selection.isCollapsed() &&
+          editor.getElementByKey(selection.anchor.key) === target &&
+          selection.anchor.offset === domSelection.anchorOffset &&
+          (offset === undefined || selection.anchor.offset === offset)
+        );
+      });
+    })
+    .toBe(true);
 }
 
 interface SelectionExpectation {

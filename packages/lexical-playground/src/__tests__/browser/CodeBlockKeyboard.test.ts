@@ -13,17 +13,17 @@ import {MarkdownTestExtension} from '@lexical/markdown/src/__tests__/utils';
 import {$setBlocksType} from '@lexical/selection';
 import {
   $getSelection,
-  $isRangeSelection,
   configExtension,
   defineExtension,
   INDENT_CONTENT_COMMAND,
   IS_APPLE,
 } from 'lexical';
-import {expect, test} from 'vitest';
+import {test} from 'vitest';
 import {userEvent} from 'vitest/browser';
 
 import {CodeHighlightExtension} from '../../plugins/CodeHighlightExtension';
 import {
+  assertCaret,
   assertHTML,
   assertSelection,
   html,
@@ -146,8 +146,10 @@ test('should not prevent selection and typing outside code block boundaries if b
   await press('Enter');
   await press('Enter');
   await press('ArrowUp');
+  await assertCaret(editor, 'p:nth-child(2)', 0);
 
   await typeText('console.log("test");');
+  await assertCaret(editor, 'p:nth-child(2) > span', 20);
   await editor.update(
     () => $setBlocksType($getSelection(), () => $createCodeNode()),
     {discrete: true},
@@ -162,19 +164,7 @@ test('should not prevent selection and typing outside code block boundaries if b
     focusOffset: 0,
     focusPath: [1, 0, 0],
   });
-  await expect
-    .poll(() =>
-      editor.getEditorState().read(() => {
-        const selection = $getSelection();
-        return (
-          $isRangeSelection(selection) &&
-          selection.isCollapsed() &&
-          selection.anchor.offset === 0 &&
-          selection.anchor.getNode().getParent()?.getType() === 'code'
-        );
-      }),
-    )
-    .toBe(true);
+  await assertCaret(editor, 'code > span', 0);
   await press('ArrowUp');
   await assertSelection(root, {
     anchorOffset: 0,
@@ -182,6 +172,7 @@ test('should not prevent selection and typing outside code block boundaries if b
     focusOffset: 0,
     focusPath: [0],
   });
+  await assertCaret(editor, 'p:first-child', 0);
 
   await typeText('Hello');
 
@@ -204,7 +195,9 @@ test('should not prevent selection and typing outside code block boundaries if b
     `,
   );
 
+  await assertCaret(editor, 'p:first-child > span', 5);
   await press('ArrowDown');
+  await assertCaret(editor, 'code > span');
   await press(IS_APPLE ? 'Meta+ArrowRight' : 'End');
 
   // Selection must at the end of code block
@@ -214,6 +207,7 @@ test('should not prevent selection and typing outside code block boundaries if b
     focusOffset: 20,
     focusPath: [1, 0, 0],
   });
+  await assertCaret(editor, 'code > span', 20);
 
   // Selection must at the start of next paragraph after another when pressing down
   await press('ArrowDown');
@@ -223,6 +217,7 @@ test('should not prevent selection and typing outside code block boundaries if b
     focusOffset: 0,
     focusPath: [2],
   });
+  await assertCaret(editor, 'p:last-child', 0);
 
   await typeText('world');
 

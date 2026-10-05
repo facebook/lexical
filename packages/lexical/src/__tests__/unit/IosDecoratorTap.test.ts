@@ -18,12 +18,11 @@ import {
   $setSelection,
   getDOMSelection,
   type NodeKey,
+  setDOMUnmanaged,
 } from 'lexical';
-import {
-  $createTestDecoratorNode,
-  TestDecoratorNode,
-} from 'lexical/src/__tests__/utils';
 import {afterEach, assert, describe, expect, test, vi} from 'vitest';
+
+import {$createTestDecoratorNode, TestDecoratorNode} from '../utils';
 
 // `vi.mock` is hoisted above all imports, so LexicalEvents.ts sees iOS.
 vi.mock('lexical/src/environment', async importOriginal => ({
@@ -58,16 +57,21 @@ function setUp() {
   return {decoratorElement, editor, rootElement, textElement};
 }
 
-// The pointerdown and compatibility mousedown of a press, as iOS sends them;
-// returns the mousedown.
-function mouseDown(target: Element, pointerType = 'touch'): MouseEvent {
-  const pointerDown = new MouseEvent('pointerdown', {
+function pointerDown(target: Element, pointerType: string): void {
+  // jsdom has no PointerEvent constructor, so define pointerType by hand.
+  const event = new MouseEvent('pointerdown', {
     bubbles: true,
     cancelable: true,
     composed: true,
   });
-  Object.defineProperty(pointerDown, 'pointerType', {value: pointerType});
-  target.dispatchEvent(pointerDown);
+  Object.defineProperty(event, 'pointerType', {value: pointerType});
+  target.dispatchEvent(event);
+}
+
+// The pointerdown and compatibility mousedown of a press, as iOS sends them;
+// returns the mousedown.
+function mouseDown(target: Element, pointerType = 'touch'): MouseEvent {
+  pointerDown(target, pointerType);
   const event = new MouseEvent('mousedown', {
     bubbles: true,
     cancelable: true,
@@ -149,6 +153,51 @@ describe('a tap on a decorator on iOS', () => {
     expect(mouseDown(input).defaultPrevented).toBe(false);
   });
 
+  test('keeps the default for embeds and media controls', () => {
+    const {decoratorElement, editor} = setUp();
+    using _editor = editor;
+    const iframe = document.createElement('iframe');
+    const video = document.createElement('video');
+    video.controls = true;
+    const summary = document.createElement('summary');
+    decoratorElement.append(iframe, video, summary);
+
+    expect(mouseDown(iframe).defaultPrevented).toBe(false);
+    expect(mouseDown(video).defaultPrevented).toBe(false);
+    expect(mouseDown(summary).defaultPrevented).toBe(false);
+  });
+
+  test('cancels the mousedown on a disabled control', () => {
+    const {decoratorElement, editor} = setUp();
+    using _editor = editor;
+    const button = document.createElement('button');
+    button.disabled = true;
+    decoratorElement.appendChild(button);
+
+    expect(mouseDown(button).defaultPrevented).toBe(true);
+  });
+
+  test('keeps the default for a captured widget outside a decorator', () => {
+    const {editor, textElement} = setUp();
+    using _editor = editor;
+    const widget = document.createElement('div');
+    setDOMUnmanaged(widget, {captureSelection: true});
+    textElement.parentElement!.appendChild(widget);
+
+    expect(mouseDown(widget).defaultPrevented).toBe(false);
+  });
+
+  test('reads the pointer type even when a decorator stops pointerdown', () => {
+    const {decoratorElement, editor} = setUp();
+    using _editor = editor;
+    const handle = document.createElement('div');
+    handle.addEventListener('pointerdown', event => event.stopPropagation());
+    decoratorElement.appendChild(handle);
+
+    expect(mouseDown(handle, 'mouse').defaultPrevented).toBe(false);
+    expect(mouseDown(handle, 'touch').defaultPrevented).toBe(true);
+  });
+
   test('keeps the default for a trackpad or mouse press', () => {
     const {decoratorElement, editor} = setUp();
     using _editor = editor;
@@ -174,6 +223,7 @@ describe('a tap on text after a NodeSelection on iOS', () => {
     const textDOM = textElement.firstChild!;
     // iOS focuses the editor and places the caret, then fires the click
     // (reported with pointerType 'mouse') before the selectionchange.
+    pointerDown(textElement, 'touch');
     rootElement.focus();
     const domSelection = getDOMSelection(window)!;
     domSelection.setBaseAndExtent(textDOM, 3, textDOM, 3);
@@ -191,5 +241,23 @@ describe('a tap on text after a NodeSelection on iOS', () => {
     expect(domSelection.rangeCount).toBe(1);
     expect(domSelection.anchorNode).toBe(textDOM);
     expect(domSelection.anchorOffset).toBe(3);
+  });
+
+  test('leaves an iPadOS trackpad click to selectionchange', () => {
+    const {editor, rootElement, textElement} = setUp();
+    using _editor = editor;
+    const textDOM = textElement.firstChild!;
+    pointerDown(textElement, 'mouse');
+    rootElement.focus();
+    getDOMSelection(window)!.setBaseAndExtent(textDOM, 3, textDOM, 3);
+    textElement.dispatchEvent(
+      new MouseEvent('click', {bubbles: true, detail: 1}),
+    );
+
+    // The click builds no RangeSelection of its own; for a real mouse press
+    // the selectionchange handler does that.
+    editor.read(() => {
+      expect($isRangeSelection($getSelection())).toBe(false);
+    });
   });
 });

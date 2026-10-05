@@ -574,8 +574,10 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
         // and fires it before the selectionchange for the caret the tap just
         // placed. Without this, the NodeSelection survives into CLICK_COMMAND,
         // where rich text clears it and the reconciler removes that caret, so
-        // the keyboard opens with no caret to reveal and the page jumps.
-        IS_IOS
+        // the keyboard opens with no caret to reveal and the page jumps. The
+        // tap's pointerdown is still 'touch' (or 'pen'); an iPadOS trackpad
+        // click is handled by selectionchange like any other mouse click.
+        (IS_IOS && editor._inputState.lastPointerType !== 'mouse')
       ) {
         // This is used to update the selection on touch devices (including Apple Pencil) when the user clicks on text after a
         // node selection. See isSelectionChangeFromMouseDown for the inverse
@@ -638,9 +640,13 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
   });
 }
 
-// Elements that take focus or text input when tapped.
+// Elements that take a tap (focus, text input, or their own controls) instead
+// of letting it fall through to the editor. `[tabindex]` includes
+// tabindex="-1", which makes an element focusable by tap but not by Tab.
 const FOCUSABLE_SELECTOR =
-  'input,textarea,select,button,a[href],label,[tabindex],' +
+  'input:not(:disabled),textarea:not(:disabled),select:not(:disabled),' +
+  'button:not(:disabled),a[href],area[href],label,summary,iframe,object,' +
+  'embed,audio[controls],video[controls],[tabindex],' +
   '[contenteditable]:not([contenteditable="false"])';
 
 // iOS only. A tap on a decorator (an image, say) would focus the editor, and
@@ -649,38 +655,50 @@ const FOCUSABLE_SELECTOR =
 // caret, so iOS reveals the top of the editor instead and the page jumps
 // (facebook/lexical#9112). Cancelling the mousedown keeps focus where it is;
 // the click still follows, so CLICK_COMMAND handlers select the node as usual.
-// A tap on something inside the decorator that takes focus itself (an input,
-// a nested editor) is left alone, and so is a trackpad or mouse press on
-// iPadOS, which opens no keyboard and whose default starts a drag.
+//
+// The trade-off: when the editor did not already have focus, it still doesn't
+// after the tap, so keys from an iPad hardware keyboard (Backspace to delete
+// the image) don't reach it, and focus stays in whatever field had it. That is
+// accepted over the jump; a trackpad or mouse press is left alone, so it
+// focuses the editor as before.
+//
+// Only taps that would focus the editor through a decorator are cancelled.
+// Something that takes the tap itself (a button, an input, a nested editor, an
+// embed) keeps the default. So does an element outside any decorator, such as
+// a `setDOMUnmanaged({captureSelection: true})` widget in an element node; one
+// inside a decorator needs a tabindex to keep native focus. A closed shadow
+// root hides its controls and the tap is retargeted to its host, so a widget
+// like that needs a tabindex on its host too.
 function onMouseDownIOS(event: Event, editor: LexicalEditor): void {
-  const target = getComposedEventTarget(event);
-  if (
-    editor._inputState.lastPointerType === 'mouse' ||
-    !isDOMNode(target) ||
-    !isDOMCapturingSelection(target, editor)
-  ) {
+  if (editor._inputState.lastPointerType === 'mouse') {
     return;
   }
-  // Find the element this tap would focus, crossing open shadow roots: the
-  // editor root, unless something focusable of its own (a button, an input, a
-  // nested editor) comes first, which keeps the default. A closed shadow root
-  // hides its controls and the tap is retargeted to its host, so a widget
-  // like that needs a tabindex on its host to keep native focus.
+  const target = getComposedEventTarget(event);
+  if (!isDOMNode(target)) {
+    return;
+  }
+  // Walk up to the editor root, crossing open shadow roots.
   const rootElement = editor.getRootElement();
+  let inDecorator = false;
   for (
     let node: Node | null = target;
     node !== null;
     node = getParentElement(node)
   ) {
     if (node === rootElement) {
-      event.preventDefault();
+      if (inDecorator) {
+        event.preventDefault();
+      }
       return;
     }
-    if (
-      node.nodeType === DOM_ELEMENT_TYPE &&
-      (node as Element).matches(FOCUSABLE_SELECTOR)
-    ) {
-      return;
+    if (node.nodeType === DOM_ELEMENT_TYPE) {
+      const element = node as Element;
+      if (element.matches(FOCUSABLE_SELECTOR)) {
+        return;
+      }
+      if (element.getAttribute('data-lexical-decorator') === 'true') {
+        inDecorator = true;
+      }
     }
   }
 }
@@ -692,9 +710,6 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
   // outer shadow host the engine retargets to.
   const target = getComposedEventTarget(event);
   const pointerType = event.pointerType;
-  if (IS_IOS) {
-    editor._inputState.lastPointerType = pointerType;
-  }
   if (
     isDOMNode(target) &&
     pointerType !== 'touch' &&
@@ -2221,6 +2236,21 @@ export function addRootElementEvents(
           };
     removeHandles.push(
       registerEventListener(rootElement, eventName, eventHandler),
+    );
+  }
+  if (IS_IOS) {
+    // Captured, so a decorator that stops its pointerdown from propagating
+    // (resize handles often do) can't leave a stale pointer type behind for
+    // the mousedown that follows.
+    removeHandles.push(
+      registerEventListener(
+        rootElement,
+        'pointerdown',
+        event => {
+          editor._inputState.lastPointerType = event.pointerType;
+        },
+        {capture: true},
+      ),
     );
   }
 }

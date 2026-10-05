@@ -303,10 +303,12 @@ export interface InputState {
   };
   isSelectionChangeFromMouseDown: boolean;
   /**
-   * iOS only: the pointerType of the latest pointerdown, so the compatibility
-   * mousedown that follows can tell a tap from an iPadOS trackpad or mouse.
+   * The pointerType of the latest pointerdown in the root element ('touch',
+   * 'pen' or 'mouse'), so the compatibility mousedown and click that follow a
+   * tap can tell it from an iPadOS trackpad or mouse press. Recorded on iOS
+   * only; '' until the first pointerdown, and always '' elsewhere.
    */
-  lastPointerType: string;
+  lastPointerType: '' | PointerEvent['pointerType'];
   isInsertLineBreak: boolean;
   /** Explicit Shift state, excluding iOS automatic capitalization. */
   isShiftKeyDown: boolean;

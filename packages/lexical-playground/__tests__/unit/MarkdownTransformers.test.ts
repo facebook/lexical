@@ -16,6 +16,7 @@ import {
 } from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {$isLinkNode, LinkNode} from '@lexical/link';
+import {ListItemNode, ListNode} from '@lexical/list';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
@@ -28,6 +29,7 @@ import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableRowNode,
+  $isTableCellNode,
   $isTableNode,
   TableCellHeaderStates,
   TableExtension,
@@ -58,6 +60,7 @@ import {
   BLOCK_EQUATION,
   EQUATION,
   IMAGE,
+  PLAYGROUND_TRANSFORMERS,
   TABLE,
 } from '../../src/plugins/MarkdownTransformers';
 
@@ -323,7 +326,7 @@ describe('playground TABLE markdown transformer', () => {
   const TableMarkdownTestExtension = defineExtension({
     dependencies: [RichTextExtension, TableExtension],
     name: 'TableMarkdownTest',
-    nodes: [CodeNode, CodeHighlightNode, LinkNode],
+    nodes: [CodeNode, CodeHighlightNode, LinkNode, ListNode, ListItemNode],
   });
 
   function exportCells(): string {
@@ -683,6 +686,7 @@ describe('playground TABLE markdown transformer', () => {
     'const x = a*b;\nc;',
     '/* a */\nb;',
     'a\n\nb',
+    'x  \n  y \t',
     'x = "<br>";\ny = "\\<br>";',
     '| p_q_r ~~s',
   ])('round-trips a code block in a cell: %j', code => {
@@ -804,6 +808,69 @@ describe('playground TABLE markdown transformer', () => {
       const markdown = $convertToMarkdownString([TABLE]);
       expect(markdown.split('\n')[2]).toBe('| [a<br>b](https://example.com) |');
     });
+  });
+
+  it('keeps a lone delimiter row out of the table below it', () => {
+    using editor = importMarkdown(['| --- |', '| a |'].join('\n'));
+    editor.read(() => {
+      const [text, table] = $getRoot().getChildren();
+      expect($isParagraphNode(text) && text.getTextContent()).toBe('| --- |');
+      assert($isTableNode(table), 'A table must follow the text');
+      expect(table.getTextContent()).toBe('a');
+    });
+  });
+
+  it.each([
+    ['- i\n\nafter', ['list', 'paragraph']],
+    ['- i\n- j\n\nafter', ['list', 'paragraph']],
+    ['> q\n\nafter', ['quote', 'paragraph']],
+    ['- i\nmore', ['list']],
+    ['a\n\n> q\n\nafter', ['paragraph', 'quote', 'paragraph']],
+  ])('keeps the blocks of %j apart in a cell', (markdown, types) => {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(
+      () => {
+        const cell = $createTableCellNode();
+        $convertFromMarkdownString(markdown, PLAYGROUND_TRANSFORMERS, cell);
+        $getRoot()
+          .clear()
+          .append(
+            $createTableNode().append(
+              $createTableRowNode().append(
+                $createTableCellNode(TableCellHeaderStates.ROW).append(
+                  $createParagraphNode().append($createTextNode('h')),
+                ),
+              ),
+              $createTableRowNode().append(cell),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    const shape = editor.read(() =>
+      $getRoot()
+        .getLastDescendant()
+        ?.getParents()
+        .find($isTableCellNode)
+        ?.getChildren()
+        .map(node => [node.getType(), node.getTextContent()]),
+    );
+    expect(shape?.map(([type]) => type)).toEqual(types);
+    const exported = editor.read(() => $convertToMarkdownString([TABLE]));
+    using imported = importMarkdown(exported);
+    expect(
+      imported.read(() =>
+        $getRoot()
+          .getLastDescendant()
+          ?.getParents()
+          .find($isTableCellNode)
+          ?.getChildren()
+          .map(node => [node.getType(), node.getTextContent()]),
+      ),
+    ).toEqual(shape);
+    expect(imported.read(() => $convertToMarkdownString([TABLE]))).toBe(
+      exported,
+    );
   });
 
   it('leaves a delimiter row with no table above it as text', () => {

@@ -345,7 +345,13 @@ export const TABLE: ElementTransformer = {
         break;
       }
 
-      const cells = mapToTableCells(firstChild.getTextContent());
+      const textContent = firstChild.getTextContent();
+      // A delimiter row with no table above it stayed text.
+      if (isTableRowDivider(textContent)) {
+        break;
+      }
+
+      const cells = mapToTableCells(textContent);
 
       if (cells == null) {
         break;
@@ -524,7 +530,15 @@ function encodeTableCell(markdown: string): string {
             ),
       )
       .join('')
-      .replace(/\n\n?/g, '<br>');
+      .replace(/\n\n?/g, (separator, offset: number, encoded: string) => {
+        // The blank line that ends a list or a quote is kept as an empty
+        // line, or the paragraph after it would continue its last line.
+        const start = encoded.lastIndexOf('\n\n', offset - 1);
+        const block = encoded.slice(start === -1 ? 0 : start + 2);
+        return separator.length > 1 && CONTAINER_START_REG_EXP.test(block)
+          ? '<br><br>'
+          : '<br>';
+      });
     text = '';
   };
   let fence: string | null = null;
@@ -638,16 +652,43 @@ const BLOCK_LINE_REG_EXP =
 type CellBreak = 'newline' | 'block' | 'inline';
 
 function cellBreaks(lines: CellLine[]): CellBreak[] {
-  return lines.slice(1).map((line, i) => {
-    const prev = lines[i];
-    if (line.fence !== null || prev.fence !== null) {
-      return 'newline';
+  const breaks: CellBreak[] = [];
+  // Whether the block being read is a list or a quote, which an empty line
+  // ends.
+  let container = isContainerStart(lines[0]);
+  let ended = false;
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    const prev = lines[i - 1];
+    let kind: CellBreak;
+    if (line.fence !== null || prev.fence !== null || ended) {
+      kind = 'newline';
+      ended = false;
+    } else if (container && line.text.trim() === '') {
+      kind = 'newline';
+      ended = true;
+    } else {
+      kind =
+        BLOCK_START_REG_EXP.test(line.text) ||
+        BLOCK_LINE_REG_EXP.test(prev.text)
+          ? 'block'
+          : 'inline';
     }
-    return BLOCK_START_REG_EXP.test(line.text) ||
-      BLOCK_LINE_REG_EXP.test(prev.text)
-      ? 'block'
-      : 'inline';
-  });
+    if (ended) {
+      container = false;
+    } else if (kind !== 'inline') {
+      container = isContainerStart(line);
+    }
+    breaks.push(kind);
+  }
+  return breaks;
+}
+
+// A line that starts a list item or a quote.
+const CONTAINER_START_REG_EXP = /^ {0,3}(?:>|[-*+]\s|\d{1,9}[.)]\s)/;
+
+function isContainerStart(line: CellLine): boolean {
+  return line.fence === null && CONTAINER_START_REG_EXP.test(line.text);
 }
 
 /**
@@ -669,7 +710,10 @@ function decodeTableCell(
   let result = '';
   lines.forEach((line, i) => {
     if (i > 0) {
-      result = result.replace(/[ \t]+$/, '');
+      // Spaces at the end of a line of code are code.
+      if (lines[i - 1].fence !== 'code') {
+        result = result.replace(/[ \t]+$/, '');
+      }
       result += newline[i - 1] ? '\n' : mark;
     }
     if (line.fence === 'code') {

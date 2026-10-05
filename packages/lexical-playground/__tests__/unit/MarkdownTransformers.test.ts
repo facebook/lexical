@@ -524,6 +524,74 @@ describe('playground TABLE markdown transformer', () => {
     });
   });
 
+  it.each([
+    ['**', 'bold'],
+    ['*', 'italic'],
+    ['~~', 'strikethrough'],
+  ] as const)(
+    'keeps %s formatting across a <br> in a cell',
+    (marker, format) => {
+      const $cellShape = () => {
+        const cell = $getRoot().getLastDescendant()?.getParentOrThrow();
+        assert($isElementNode(cell), 'The cell must hold a paragraph');
+        return cell
+          .getChildren()
+          .map(node =>
+            $isTextNode(node)
+              ? [node.getTextContent(), node.hasFormat(format)]
+              : node.getType(),
+          );
+      };
+      using editor = importMarkdown(
+        ['| h |', '| --- |', `| ${marker}a<br>b${marker} |`].join('\n'),
+      );
+      expect(editor.read($cellShape)).toEqual([
+        ['a', true],
+        'linebreak',
+        ['b', true],
+      ]);
+      // Export closes the formatting around the break, which reads back
+      // the same way.
+      const markdown = editor.read(() => $convertToMarkdownString([TABLE]));
+      expect(markdown.split('\n')[2]).toBe(
+        `| ${marker}a${marker}<br>${marker}b${marker} |`,
+      );
+      using reimported = importMarkdown(markdown);
+      expect(reimported.read($cellShape)).toEqual(editor.read($cellShape));
+    },
+  );
+
+  it.each([false, true])(
+    'keeps a literal U+E000 in a cell (code: %s)',
+    isCode => {
+      using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+      editor.update(
+        () => {
+          const text = $createTextNode('a\uE000b');
+          if (isCode) {
+            text.toggleFormat('code');
+          }
+          $getRoot()
+            .clear()
+            .append(
+              $createTableNode().append(
+                $createTableRowNode().append(
+                  $createTableCellNode(TableCellHeaderStates.ROW).append(
+                    $createParagraphNode().append(text),
+                  ),
+                ),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+      const body = isCode ? '`a\uE000b`' : 'a\uE000b';
+      expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(
+        [`| ${body} |`, '| --- |'].join('\n'),
+      );
+    },
+  );
+
   it('leaves a delimiter row with no table above it as text', () => {
     using editor = importMarkdown('| --- |');
     expect(

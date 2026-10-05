@@ -38,6 +38,7 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {
+  $createLineBreakNode,
   $createTextNode,
   $isLineBreakNode,
   $isParagraphNode,
@@ -206,20 +207,63 @@ export const TWEET: ElementTransformer = {
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 
 /**
- * Writes a line break inside a table cell as `<br>`. It runs before the
+ * Reads a `<br>` that decoding left inside inline formatting in a cell
+ * (see {@link decodeTableCell}) as a line break.
+ */
+const TABLE_CELL_LINE_BREAK_IMPORT: TextMatchTransformer = {
+  dependencies: [LineBreakNode],
+  importRegExp: /<br>/,
+  regExp: /$^/,
+  replace: textNode => {
+    textNode.replace($createLineBreakNode());
+  },
+  type: 'text-match',
+};
+
+/**
+ * A private-use character that `text` doesn't contain, to stand in for the
+ * line breaks in a cell's Markdown until the `<br>`s that are text in it are
+ * escaped.
+ */
+function lineBreakMark(text: string): string {
+  let code = 0xe000;
+  while (text.includes(String.fromCharCode(code))) {
+    code++;
+  }
+  return String.fromCharCode(code);
+}
+
+/**
+ * Writes a line break inside a table cell as `mark`. It runs before the
  * default line break export, which would put the break's hard line break
  * marker (`\` or two spaces) in front of it, and `\<br>` reads back as an
  * escaped `<`.
  */
-// Stands in for a line break until the text `<br>`s in the cell are escaped.
-const LINE_BREAK_MARK = '\uE000';
+function tableCellLineBreak(mark: string): TextMatchTransformer {
+  return {
+    dependencies: [LineBreakNode],
+    export: node => ($isLineBreakNode(node) ? mark : null),
+    regExp: /$^/,
+    type: 'text-match',
+  };
+}
 
-const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
-  dependencies: [LineBreakNode],
-  export: node => ($isLineBreakNode(node) ? LINE_BREAK_MARK : null),
-  regExp: /$^/,
-  type: 'text-match',
-};
+/** A cell's content as the Markdown of one GFM cell. */
+function $exportTableCell(cell: TableCellNode): string {
+  const mark = lineBreakMark(cell.getTextContent());
+  // A GFM cell can't contain a newline or an unescaped pipe: line breaks
+  // and the blank line between paragraphs become `<br>`.
+  return escapeTableCellBreaks(
+    $convertToMarkdownString(
+      [tableCellLineBreak(mark), ...PLAYGROUND_TRANSFORMERS],
+      cell,
+    ).trim(),
+  )
+    .replace(/\n\n?/g, '<br>')
+    .split(mark)
+    .join('<br>')
+    .replace(/\\?\|/g, '\\|');
+}
 
 export const TABLE: ElementTransformer = {
   dependencies: [TableNode, TableRowNode, TableCellNode],
@@ -240,18 +284,7 @@ export const TABLE: ElementTransformer = {
       for (const cell of row.getChildren()) {
         // It's TableCellNode so it's just to make flow happy
         if ($isTableCellNode(cell)) {
-          // A GFM cell can't contain a newline or an unescaped pipe: line
-          // breaks and the blank line between paragraphs become `<br>`.
-          rowOutput.push(
-            escapeTableCellBreaks(
-              $convertToMarkdownString(
-                [TABLE_CELL_LINE_BREAK, ...PLAYGROUND_TRANSFORMERS],
-                cell,
-              ).trim(),
-            )
-              .replace(/\n\n?|\uE000/g, '<br>')
-              .replace(/\\?\|/g, '\\|'),
-          );
+          rowOutput.push($exportTableCell(cell));
           // The top-left cell of a table with both header kinds is ROW|COLUMN.
           if (cell.hasHeaderState(TableCellHeaderStates.ROW)) {
             isHeaderRow = true;
@@ -434,29 +467,92 @@ function splitCodeSpans(text: string): string[] {
   return parts;
 }
 
+/** The inline delimiters whose runs are tracked across a cell's `<br>`s. */
+const CELL_DELIMITER_REG_EXP = /^(?:\*+|_+|~~|==)/;
+
 /**
- * A cell's Markdown with its line separators as newlines. `<br>` separates
- * lines in a cell, and the literal `\n` this transformer used to write is
- * still read, but neither inside a code span nor after a backslash escape
- * (`\<br>`, `C:\\new`), where they are text. A pipe is escaped (`\|`)
- * everywhere in a row, code spans included, so it is unescaped here.
+ * A cell's Markdown with its line separators as newlines, where the lines
+ * are read like any other. `<br>` separates lines in a cell, and the literal
+ * `\n` this transformer used to write is still read, but neither inside a
+ * code span nor after a backslash escape (`\<br>`, `C:\\new`), where they
+ * are text. A `<br>` inside open inline formatting (`**a<br>b**`) stays,
+ * for {@link TABLE_CELL_LINE_BREAK_IMPORT} to read as a line break, since a
+ * newline would split the formatting's markers onto separate lines. A pipe
+ * is escaped (`\|`) everywhere in a row, code spans included, so it is
+ * unescaped here.
  */
 function decodeTableCell(text: string): string {
-  return splitCodeSpans(text)
-    .map((part, i) =>
-      i % 2 === 1
-        ? part.replace(/\\\|/g, '|')
-        : part.replace(/\\[\s\S]|\s*<br\s*\/?>\s*/gi, match =>
-            match === '\\|'
-              ? '|'
-              : match === '\\n'
-                ? '\n'
-                : match[0] === '\\'
-                  ? match
-                  : '\n',
-          ),
-    )
-    .join('');
+  let result = '';
+  // The delimiters (`**`, `*`, `_`, ...) opened on the current line.
+  const open = new Set<string>();
+  const newLine = () => {
+    result = result.replace(/[ \t]+$/, '') + '\n';
+    open.clear();
+  };
+  splitCodeSpans(text).forEach((part, partIndex) => {
+    if (partIndex % 2 === 1) {
+      result += part.replace(/\\\|/g, '|');
+      return;
+    }
+    let i = 0;
+    while (i < part.length) {
+      const rest = part.slice(i);
+      const br = /^<br\s*\/?>[ \t]*/i.exec(rest);
+      const delimiter = CELL_DELIMITER_REG_EXP.exec(rest);
+      if (rest[0] === '\\') {
+        const escaped = rest.slice(0, 2);
+        if (escaped === '\\|') {
+          result += '|';
+        } else if (escaped === '\\n') {
+          newLine();
+        } else if (/^\\<br\s*\/?>/i.test(rest)) {
+          // Text, which TABLE_CELL_LINE_BREAK_IMPORT must not match.
+          result += '&#60;';
+        } else {
+          result += escaped;
+        }
+        i += 2;
+      } else if (br) {
+        if (open.size > 0) {
+          result = result.replace(/[ \t]+$/, '') + '<br>';
+        } else {
+          newLine();
+        }
+        i += br[0].length;
+      } else if (delimiter) {
+        // A run opens when followed by non-space and closes when preceded
+        // by it; `_` inside a word (snake_case) does neither.
+        const run = delimiter[0];
+        const before = result.slice(-1);
+        const after = rest.charAt(run.length);
+        const canOpen = after !== '' && !/\s/.test(after);
+        const canClose = before !== '' && !/\s/.test(before);
+        const intraword = /\w/.test(before) && /\w/.test(after);
+        const kinds =
+          run[0] === '*' || run[0] === '_'
+            ? [
+                ...(run.length >= 2 ? [run[0] + run[0]] : []),
+                ...(run.length % 2 === 1 ? [run[0]] : []),
+              ]
+            : [run];
+        if (!(run[0] === '_' && intraword)) {
+          for (const kind of kinds) {
+            if (open.has(kind) && canClose) {
+              open.delete(kind);
+            } else if (canOpen) {
+              open.add(kind);
+            }
+          }
+        }
+        result += run;
+        i += run.length;
+      } else {
+        result += rest[0];
+        i++;
+      }
+    }
+  });
+  return result;
 }
 
 /**
@@ -476,7 +572,7 @@ const $createTableCell = (textContent: string): TableCellNode => {
   const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
   $convertFromMarkdownString(
     decodeTableCell(textContent.trim()),
-    PLAYGROUND_TRANSFORMERS,
+    [TABLE_CELL_LINE_BREAK_IMPORT, ...PLAYGROUND_TRANSFORMERS],
     cell,
   );
   return cell;

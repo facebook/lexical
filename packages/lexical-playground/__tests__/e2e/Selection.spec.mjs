@@ -1896,6 +1896,7 @@ test.describe('Selection', () => {
       await focusEditor(page);
       await insertTable(page, 2, 2);
       await moveToEditorBeginning(page);
+      await assertCaret(page, ':scope > p:first-child', 0);
       await page.keyboard.down('Shift');
       await page.keyboard.press('ArrowDown');
       await page.keyboard.up('Shift');
@@ -1913,6 +1914,7 @@ test.describe('Selection', () => {
       await focusEditor(page);
       await insertTable(page, 2, 2);
       await moveToEditorEnd(page);
+      await assertCaret(page, ':scope > p:last-child', 0);
       await page.keyboard.down('Shift');
       await page.keyboard.press('ArrowUp');
       await page.keyboard.up('Shift');
@@ -1933,8 +1935,11 @@ test.describe('Selection', () => {
       await focusEditor(page);
       await insertTable(page, 2, 2);
       await moveToEditorEnd(page);
+      await assertCaret(page, ':scope > p:last-child', 0);
       await deleteBackward(page);
+      await expect(getEditorElement(page).locator(':scope > p')).toHaveCount(1);
       await moveToEditorBeginning(page);
+      await assertCaret(page, ':scope > p:first-child', 0);
       await page.keyboard.down('Shift');
       await page.keyboard.press('ArrowDown');
       await page.keyboard.up('Shift');
@@ -1952,8 +1957,11 @@ test.describe('Selection', () => {
       await focusEditor(page);
       await insertTable(page, 2, 2);
       await moveToEditorBeginning(page);
+      await assertCaret(page, ':scope > p:first-child', 0);
       await deleteBackward(page);
+      await expect(getEditorElement(page).locator(':scope > p')).toHaveCount(1);
       await moveToEditorEnd(page);
+      await assertCaret(page, ':scope > p:last-child', 0);
       await page.keyboard.down('Shift');
       await page.keyboard.press('ArrowUp');
       await page.keyboard.up('Shift');
@@ -2033,9 +2041,11 @@ test.describe('Selection', () => {
       await insertTable(page, 2, 2);
 
       await moveToEditorEnd(page);
+      await assertCaret(page, ':scope > p:last-child', 0);
       await page.keyboard.type('def');
 
       await moveToEditorBeginning(page);
+      await assertCaret(page, ':scope > p:first-child', 0);
       await page.keyboard.down('Shift');
       await page.keyboard.press('ArrowDown');
       await page.keyboard.up('Shift');
@@ -2053,9 +2063,11 @@ test.describe('Selection', () => {
       await focusEditor(page);
       await insertTable(page, 2, 2);
       await moveToEditorBeginning(page);
+      await assertCaret(page, ':scope > p:first-child', 0);
       await page.keyboard.type('abc');
 
       await moveToEditorEnd(page);
+      await assertCaret(page, ':scope > p:last-child', 0);
       await page.keyboard.down('Shift');
       await page.keyboard.press('ArrowUp');
       await page.keyboard.up('Shift');

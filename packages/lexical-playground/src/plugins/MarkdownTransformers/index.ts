@@ -207,23 +207,8 @@ export const TWEET: ElementTransformer = {
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 
 /**
- * Reads a `<br>` that decoding left inside inline formatting in a cell
- * (see {@link decodeTableCell}) as a line break.
- */
-const TABLE_CELL_LINE_BREAK_IMPORT: TextMatchTransformer = {
-  dependencies: [LineBreakNode],
-  importRegExp: /<br>/,
-  regExp: /$^/,
-  replace: textNode => {
-    textNode.replace($createLineBreakNode());
-  },
-  type: 'text-match',
-};
-
-/**
  * A private-use character that `text` doesn't contain, to stand in for the
- * line breaks in a cell's Markdown until the `<br>`s that are text in it are
- * escaped.
+ * line breaks in a cell's Markdown while it is encoded or decoded.
  */
 function lineBreakMark(text: string): string {
   let code = 0xe000;
@@ -251,18 +236,14 @@ function tableCellLineBreak(mark: string): TextMatchTransformer {
 /** A cell's content as the Markdown of one GFM cell. */
 function $exportTableCell(cell: TableCellNode): string {
   const mark = lineBreakMark(cell.getTextContent());
-  // A GFM cell can't contain a newline or an unescaped pipe: line breaks
-  // and the blank line between paragraphs become `<br>`.
-  return escapeTableCellBreaks(
+  return encodeTableCell(
     $convertToMarkdownString(
       [tableCellLineBreak(mark), ...PLAYGROUND_TRANSFORMERS],
       cell,
     ).trim(),
   )
-    .replace(/\n\n?/g, '<br>')
     .split(mark)
-    .join('<br>')
-    .replace(/\\?\|/g, '\\|');
+    .join('<br>');
 }
 
 export const TABLE: ElementTransformer = {
@@ -402,29 +383,10 @@ function getTableColumnsSize(table: TableNode) {
   return $isTableRowNode(row) ? row.getChildrenSize() : 0;
 }
 
-// A line separator inside a cell: `<br>`, the legacy `\n`, or a newline.
-const CELL_LINE_END_REG_EXP = /<br\s*\/?>|\\n|\n/i;
-const CELL_LINE_START_REG_EXP = /(?:^|<br\s*\/?>|\\n|\n)[ \t]*$/i;
-
-/**
- * Whether the backtick run from `start` to `end` is a code block fence: at
- * least three backticks at the start of one of the cell's lines, with no
- * backtick in the rest of that line (the info string or nothing).
- */
-function isCodeFence(text: string, start: number, end: number): boolean {
-  if (end - start < 3 || !CELL_LINE_START_REG_EXP.test(text.slice(0, start))) {
-    return false;
-  }
-  const rest = text.slice(end);
-  const lineEnd = rest.search(CELL_LINE_END_REG_EXP);
-  return !rest.slice(0, lineEnd === -1 ? rest.length : lineEnd).includes('`');
-}
-
 /**
  * Splits Markdown into the parts outside code spans and the code spans
  * themselves (odd indices), whose closing backtick run is exactly as long
- * as the opening one. An unmatched run, or a code block fence, is ordinary
- * text, so the line separators in a code block are read like any other.
+ * as the opening one. An unmatched run is ordinary text.
  */
 function splitCodeSpans(text: string): string[] {
   const parts: string[] = [];
@@ -439,142 +401,238 @@ function splitCodeSpans(text: string): string[] {
       i++;
       continue;
     }
-    let end = i;
-    while (text[end] === '`') {
-      end++;
-    }
-    if (isCodeFence(text, i, end)) {
-      i = end;
-      continue;
-    }
-    const fence = text.slice(i, end);
-    let close = text.indexOf(fence, end);
-    while (close !== -1 && text[close + fence.length] === '`') {
-      let next = close;
-      while (text[next] === '`') {
-        next++;
-      }
-      close = text.indexOf(fence, next);
-    }
+    const close = codeSpanEnd(text, i);
     if (close === -1) {
-      i = end;
+      while (text[i] === '`') {
+        i++;
+      }
       continue;
     }
-    parts.push(text.slice(start, i), text.slice(i, close + fence.length));
-    start = i = close + fence.length;
+    parts.push(text.slice(start, i), text.slice(i, close));
+    start = i = close;
   }
   parts.push(text.slice(start));
   return parts;
 }
 
-/** The inline delimiters whose runs are tracked across a cell's `<br>`s. */
-const CELL_DELIMITER_REG_EXP = /^(?:\*+|_+|~~|==)/;
+/**
+ * The end of the code span that the backtick run at `start` opens: after a
+ * closing run exactly as long as the opening one, or -1 when there is none.
+ */
+function codeSpanEnd(text: string, start: number): number {
+  let end = start;
+  while (text[end] === '`') {
+    end++;
+  }
+  const fence = text.slice(start, end);
+  let close = text.indexOf(fence, end);
+  while (close !== -1 && text[close + fence.length] === '`') {
+    while (text[close] === '`') {
+      close++;
+    }
+    close = text.indexOf(fence, close);
+  }
+  return close === -1 ? -1 : close + fence.length;
+}
+
+const CODE_FENCE_OPEN_REG_EXP = /^ {0,3}(`{3,})[^`\n]*$/;
+const CODE_FENCE_CLOSE_REG_EXP = /^ {0,3}(`{3,})[ \t]*$/;
 
 /**
- * A cell's Markdown with its line separators as newlines, where the lines
- * are read like any other. `<br>` separates lines in a cell, and the literal
- * `\n` this transformer used to write is still read, but neither inside a
- * code span nor after a backslash escape (`\<br>`, `C:\\new`), where they
- * are text. A `<br>` inside open inline formatting (`**a<br>b**`) stays,
- * for {@link TABLE_CELL_LINE_BREAK_IMPORT} to read as a line break, since a
- * newline would split the formatting's markers onto separate lines. A pipe
- * is escaped (`\|`) everywhere in a row, code spans included, so it is
- * unescaped here.
+ * Writes a cell's Markdown as one line. Outside code blocks, a line break
+ * and the blank line between paragraphs become `<br>`, and a `<br>` that is
+ * text is escaped (`\<br>`) except in code spans, which take no escapes.
+ * Inside a code block, which takes no escapes either, each newline becomes
+ * a `<br>` (so blank lines survive), and a backslash, a pipe and a `<br>`
+ * that are code are backslash-escaped, which {@link decodeTableCell} undoes.
  */
-function decodeTableCell(text: string): string {
+function encodeTableCell(markdown: string): string {
+  const lines = markdown.split('\n');
   let result = '';
-  // The delimiters (`**`, `*`, `_`, ...) opened on the current line.
-  const open = new Set<string>();
-  const newLine = () => {
-    result = result.replace(/[ \t]+$/, '') + '\n';
-    open.clear();
+  let text = '';
+  const flushText = () => {
+    result += splitCodeSpans(text)
+      .map((part, i) =>
+        i % 2 === 1 ? part : part.replace(/<(br\s*\/?>)/gi, '\\<$1'),
+      )
+      .join('')
+      .replace(/\n\n?/g, '<br>')
+      .replace(/\\?\|/g, '\\|');
+    text = '';
   };
-  splitCodeSpans(text).forEach((part, partIndex) => {
-    if (partIndex % 2 === 1) {
-      result += part.replace(/\\\|/g, '|');
+  let fence: string | null = null;
+  lines.forEach((line, i) => {
+    const separator = i > 0 ? '\n' : '';
+    if (fence === null) {
+      const open = CODE_FENCE_OPEN_REG_EXP.exec(line);
+      if (open === null) {
+        text += separator + line;
+        return;
+      }
+      fence = open[1];
+      text += separator;
+      flushText();
+      result += line;
       return;
     }
-    let i = 0;
-    while (i < part.length) {
-      const rest = part.slice(i);
-      const br = /^<br\s*\/?>[ \t]*/i.exec(rest);
-      const delimiter = CELL_DELIMITER_REG_EXP.exec(rest);
-      if (rest[0] === '\\') {
-        const escaped = rest.slice(0, 2);
-        if (escaped === '\\|') {
-          result += '|';
-        } else if (escaped === '\\n') {
-          newLine();
-        } else if (/^\\<br\s*\/?>/i.test(rest)) {
-          // Text, which TABLE_CELL_LINE_BREAK_IMPORT must not match.
-          result += '&#60;';
-        } else {
-          result += escaped;
-        }
-        i += 2;
-      } else if (br) {
-        if (open.size > 0) {
-          result = result.replace(/[ \t]+$/, '') + '<br>';
-        } else {
-          newLine();
-        }
-        i += br[0].length;
-      } else if (delimiter) {
-        // A run opens when followed by non-space and closes when preceded
-        // by it; `_` inside a word (snake_case) does neither.
-        const run = delimiter[0];
-        const before = result.slice(-1);
-        const after = rest.charAt(run.length);
-        const canOpen = after !== '' && !/\s/.test(after);
-        const canClose = before !== '' && !/\s/.test(before);
-        const intraword = /\w/.test(before) && /\w/.test(after);
-        const kinds =
-          run[0] === '*' || run[0] === '_'
-            ? [
-                ...(run.length >= 2 ? [run[0] + run[0]] : []),
-                ...(run.length % 2 === 1 ? [run[0]] : []),
-              ]
-            : [run];
-        if (!(run[0] === '_' && intraword)) {
-          for (const kind of kinds) {
-            if (open.has(kind) && canClose) {
-              open.delete(kind);
-            } else if (canOpen) {
-              open.add(kind);
-            }
-          }
-        }
-        result += run;
-        i += run.length;
-      } else {
-        result += rest[0];
-        i++;
+    const close = CODE_FENCE_CLOSE_REG_EXP.exec(line);
+    result +=
+      '<br>' +
+      (close !== null && close[1].length >= fence.length
+        ? line
+        : line.replace(/[\\|]|<(?=br\s*\/?>)/gi, '\\$&'));
+    if (close !== null && close[1].length >= fence.length) {
+      fence = null;
+    }
+  });
+  flushText();
+  return result;
+}
+
+/** One of a cell's lines, and where it is relative to a code block. */
+interface CellLine {
+  fence: 'open' | 'code' | 'close' | null;
+  text: string;
+}
+
+// The line separators in a cell: `<br>`, or the legacy `\n`.
+const CELL_BREAK_REG_EXP = /^<br\s*\/?>/i;
+const CELL_FENCE_OPEN_REG_EXP = /^ {0,3}(`{3,})[^`]*?(?=<br\s*\/?>|\\n|$)/i;
+const CELL_FENCE_CLOSE_REG_EXP = /^ {0,3}(`{3,})[ \t]*(?=<br\s*\/?>|\\n|$)/i;
+
+/** Splits a cell's Markdown into its lines. */
+function splitCellLines(text: string): CellLine[] {
+  const lines: CellLine[] = [];
+  let fence: string | null = null;
+  let i = 0;
+  for (;;) {
+    const rest = text.slice(i);
+    let kind: CellLine['fence'] = null;
+    if (fence === null) {
+      const open = CELL_FENCE_OPEN_REG_EXP.exec(rest);
+      if (open !== null) {
+        fence = open[1];
+        kind = 'open';
       }
+    } else {
+      const close = CELL_FENCE_CLOSE_REG_EXP.exec(rest);
+      kind =
+        close !== null && close[1].length >= fence.length ? 'close' : 'code';
+    }
+    let end = i;
+    let separator = 0;
+    while (end < text.length) {
+      const br = CELL_BREAK_REG_EXP.exec(text.slice(end, end + 8));
+      if (br !== null) {
+        separator = br[0].length;
+        break;
+      }
+      if (text[end] === '\\') {
+        if (text[end + 1] === 'n') {
+          separator = 2;
+          break;
+        }
+        end += 2;
+      } else if (text[end] === '`' && kind === null) {
+        // `<br>` in a code span is code.
+        const spanEnd = codeSpanEnd(text, end);
+        end = spanEnd === -1 ? end + 1 : spanEnd;
+      } else {
+        end++;
+      }
+    }
+    lines.push({fence: kind, text: text.slice(i, Math.min(end, text.length))});
+    if (kind === 'close') {
+      fence = null;
+    }
+    if (end >= text.length) {
+      return lines;
+    }
+    i = end + separator;
+  }
+}
+
+// A line that must start a block of its own: a heading, a quote, a list
+// item, a thematic break, or a block equation.
+const BLOCK_START_REG_EXP =
+  /^ {0,3}(?:#{1,6}(?:\s|$)|>|[-*+]\s|\d{1,9}[.)]\s|([-*_])(?:[ \t]*\1){2,}[ \t]*$|\$\$)/;
+// A line that a block of its own ends: a heading or a thematic break.
+const BLOCK_LINE_REG_EXP =
+  /^ {0,3}(?:#{1,6}(?:\s|$)|([-*_])(?:[ \t]*\1){2,}[ \t]*$)/;
+
+/**
+ * A cell's Markdown with its line separators decoded, for
+ * `$convertFromMarkdownString`. `<br>` separates lines in a cell, and the
+ * literal `\n` this transformer used to write still does, but neither
+ * inside a code span nor after a backslash escape (`\<br>`, `C:\\new`).
+ * A separator becomes a newline where a block needs one: in a code block,
+ * and before a line that starts a block or after one that a block ends.
+ * Elsewhere it becomes `mark`, which {@link $createTableCell} turns into a
+ * line break after parsing, so formatting and links that span it
+ * (`**a<br>b**`, `[a<br>b](url)`) stay whole. A pipe is escaped (`\|`)
+ * everywhere in a row, code spans included, so it is unescaped here.
+ */
+function decodeTableCell(text: string, mark: string): string {
+  let result = '';
+  splitCellLines(text).forEach((line, i, lines) => {
+    if (i > 0) {
+      const prev = lines[i - 1];
+      const inline =
+        line.fence === null &&
+        prev.fence === null &&
+        !BLOCK_START_REG_EXP.test(line.text) &&
+        !BLOCK_LINE_REG_EXP.test(prev.text);
+      result = result.replace(/[ \t]+$/, '');
+      result += inline ? mark : '\n';
+    }
+    if (line.fence === 'code') {
+      result += line.text.replace(/\\([\\|<n])/g, (_, char: string) =>
+        char === 'n' ? '\n' : char,
+      );
+    } else if (line.fence !== null) {
+      result += line.text;
+    } else {
+      const body = splitCodeSpans(line.text)
+        .map(part => part.replace(/\\\|/g, '|'))
+        .join('');
+      result += i > 0 && result.endsWith(mark) ? body.trimStart() : body;
     }
   });
   return result;
 }
 
-/**
- * Escapes the `<br>` that is text in a cell's Markdown (outside code
- * spans), so that it doesn't read back as a line separator.
- */
-function escapeTableCellBreaks(text: string): string {
-  return splitCodeSpans(text)
-    .map((part, i) =>
-      i % 2 === 1 ? part : part.replace(/<(br\s*\/?>)/gi, '\\<$1'),
-    )
-    .join('');
+/** Turns each `mark` in the text under `cell` into a line break. */
+function $markToLineBreaks(cell: TableCellNode, mark: string): void {
+  for (const node of cell.getAllTextNodes()) {
+    const textContent = node.getTextContent();
+    if (!textContent.includes(mark)) {
+      continue;
+    }
+    const offsets: number[] = [];
+    for (let i = 0; i < textContent.length; i++) {
+      if (textContent[i] === mark) {
+        offsets.push(i, i + 1);
+      }
+    }
+    for (const piece of node.splitText(...offsets)) {
+      if (piece.getTextContent() === mark) {
+        piece.replace($createLineBreakNode());
+      }
+    }
+  }
 }
 
 const $createTableCell = (textContent: string): TableCellNode => {
   // GFM trims a cell's padding.
+  const text = textContent.trim();
+  const mark = lineBreakMark(text);
   const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
   $convertFromMarkdownString(
-    decodeTableCell(textContent.trim()),
-    [TABLE_CELL_LINE_BREAK_IMPORT, ...PLAYGROUND_TRANSFORMERS],
+    decodeTableCell(text, mark),
+    PLAYGROUND_TRANSFORMERS,
     cell,
   );
+  $markToLineBreaks(cell, mark);
   return cell;
 };
 

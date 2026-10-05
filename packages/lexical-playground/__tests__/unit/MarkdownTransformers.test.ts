@@ -8,8 +8,14 @@
 
 // @vitest-environment node
 
-import {$isCodeNode, CodeHighlightNode, CodeNode} from '@lexical/code-core';
+import {
+  $createCodeNode,
+  $isCodeNode,
+  CodeHighlightNode,
+  CodeNode,
+} from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
+import {$isLinkNode, LinkNode} from '@lexical/link';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
@@ -317,7 +323,7 @@ describe('playground TABLE markdown transformer', () => {
   const TableMarkdownTestExtension = defineExtension({
     dependencies: [RichTextExtension, TableExtension],
     name: 'TableMarkdownTest',
-    nodes: [CodeNode, CodeHighlightNode],
+    nodes: [CodeNode, CodeHighlightNode, LinkNode],
   });
 
   function exportCells(): string {
@@ -591,6 +597,64 @@ describe('playground TABLE markdown transformer', () => {
       );
     },
   );
+
+  it.each([
+    'const x = a*b;\nc;',
+    '/* a */\nb;',
+    'a\n\nb',
+    'x = "<br>";\ny = "\\<br>";',
+    '| p_q_r ~~s',
+  ])('round-trips a code block in a cell: %j', code => {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(
+      () => {
+        const block = $createCodeNode('js');
+        code.split('\n').forEach((line, i) => {
+          if (i > 0) {
+            block.append($createLineBreakNode());
+          }
+          if (line) {
+            block.append($createTextNode(line));
+          }
+        });
+        $getRoot()
+          .clear()
+          .append(
+            $createTableNode().append(
+              $createTableRowNode().append(
+                $createTableCellNode(TableCellHeaderStates.ROW).append(block),
+              ),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    const markdown = editor.read(() => $convertToMarkdownString([TABLE]));
+    using reimported = importMarkdown(markdown);
+    reimported.read(() => {
+      const cellCode = $getRoot().getFirstDescendant()?.getParent();
+      assert($isCodeNode(cellCode), 'The cell must hold a code block');
+      expect(cellCode.getLanguage()).toBe('js');
+      expect(cellCode.getTextContent()).toBe(code);
+      expect($convertToMarkdownString([TABLE])).toBe(markdown);
+    });
+  });
+
+  it('reads a link with a <br> in its text', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| [a<br>b](https://example.com) |'].join('\n'),
+    );
+    editor.read(() => {
+      const link = $getRoot().getLastDescendant()?.getParent();
+      assert($isLinkNode(link), 'The cell must hold a link');
+      expect(link.getURL()).toBe('https://example.com');
+      expect(
+        link.getChildren().map(node => node.getTextContent() || node.getType()),
+      ).toEqual(['a', '\n', 'b']);
+      const markdown = $convertToMarkdownString([TABLE]);
+      expect(markdown.split('\n')[2]).toBe('| [a<br>b](https://example.com) |');
+    });
+  });
 
   it('leaves a delimiter row with no table above it as text', () => {
     using editor = importMarkdown('| --- |');

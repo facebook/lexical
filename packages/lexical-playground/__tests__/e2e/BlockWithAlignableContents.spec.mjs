@@ -16,6 +16,7 @@ import {
   initialize,
   insertYouTubeEmbed,
   selectFromAlignDropdown,
+  stubYouTubePlayer,
   test,
   YOUTUBE_SAMPLE_URL,
 } from '../utils/index.mjs';
@@ -25,12 +26,7 @@ test.skip(({isPlainText}) => isPlainText, 'Requires rich text');
 test.describe('BlockWithAlignableContents', () => {
   test.beforeEach(async ({isCollab, page}) => {
     // These checks exercise the embed wrapper, not the remote video player.
-    await page.route('https://www.youtube-nocookie.com/embed/**', route =>
-      route.fulfill({
-        body: '<!doctype html><title>YouTube embed fixture</title>',
-        contentType: 'text/html',
-      }),
-    );
+    await stubYouTubePlayer(page);
     await initialize({isCollab, page});
   });
 

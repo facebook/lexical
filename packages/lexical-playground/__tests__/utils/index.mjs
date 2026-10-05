@@ -1200,6 +1200,17 @@ export async function insertUploadImage(page, files, altText) {
   await click(page, 'button[data-test-id="image-modal-file-upload-btn"]');
 }
 
+// Selection and embed-wrapper tests exercise the iframe element, not the
+// remote player's network requests and cross-origin event handlers.
+export async function stubYouTubePlayer(page) {
+  await page.route('https://www.youtube-nocookie.com/embed/**', route =>
+    route.fulfill({
+      body: '<!doctype html><title>YouTube embed fixture</title>',
+      contentType: 'text/html',
+    }),
+  );
+}
+
 export async function insertYouTubeEmbed(page, url) {
   await selectFromInsertDropdown(page, '.youtube');
   await focus(page, 'input[data-test-id="youtube-video-embed-modal-url"]');

@@ -53,6 +53,7 @@ import {
   SAMPLE_IMAGE_URL,
   selectFromFormatDropdown,
   sleep,
+  stubYouTubePlayer,
   test,
   waitForSelector,
   YOUTUBE_SAMPLE_URL,
@@ -1317,6 +1318,7 @@ test.describe('Selection', () => {
   test.describe(() => {
     test.skip(({isPlainText}) => isPlainText || IS_LINUX);
     test('Select all from Node selection #4658', async ({page}) => {
+      await stubYouTubePlayer(page);
       // TODO selectAll is bad for Linux #4665
 
       await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
@@ -1373,6 +1375,7 @@ test.describe('Selection', () => {
     test('Select all (DecoratorNode at start) #4670', async ({
       page,
     }, testInfo) => {
+      await stubYouTubePlayer(page);
       // TODO selectAll is bad for Linux #4665
 
       const pageErrors = [];

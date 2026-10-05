@@ -42,6 +42,7 @@ import {
   $getState,
   $isDecoratorNode,
   $isElementNode,
+  $setState,
   arrayValue,
   createState,
   declarePeerDependency,
@@ -61,8 +62,11 @@ const alignValue = enumValue<AlignType>([null, 'left', 'center', 'right']);
 
 /**
  * The per-column alignment (`| :-: |`) a table's delimiter row declared, as
- * imported before alignment moved to the cells' element format. Read on
- * export as the fallback for columns whose cells are not aligned.
+ * imported before alignment moved to the cells' element format. An editor
+ * moves it onto the cells and clears it as soon as such a table is loaded
+ * (see {@link $migrateTableAlign}); export reads it as the fallback only
+ * where that hasn't happened, such as a read of an `EditorState` that was
+ * never set on an editor.
  */
 const tableAlignState = createState('mdastTableAlign', {
   parse: arrayValue(alignValue),
@@ -537,6 +541,32 @@ function $hasHtmlPeer(): boolean {
   );
 }
 
+/**
+ * Moves a table's legacy alignment state onto the element format of its
+ * cells that have none, and clears it, so it can no longer override a
+ * column's alignment after the column is cleared or moved.
+ */
+function $migrateTableAlign(table: TableNode): void {
+  const legacyAlign = $getState(table, tableAlignState);
+  if (legacyAlign.length === 0) {
+    return;
+  }
+  for (const row of table.getChildren()) {
+    if ($isTableRowNode(row)) {
+      row
+        .getChildren()
+        .filter($isTableCellNode)
+        .forEach((cell, column) => {
+          const align = legacyAlign[column];
+          if (align && !$getCellAlign(cell)) {
+            cell.setFormat(align);
+          }
+        });
+    }
+  }
+  $setState(table, tableAlignState, []);
+}
+
 const $exportTable: MdastExportHandler = (node, ctx) => {
   if (!$isTableNode(node)) {
     return null;
@@ -622,4 +652,9 @@ export const MdastTableExtension = defineExtension({
   peerDependencies: [
     declarePeerDependency<typeof MdastHtmlExtension>('@lexical/mdast/Html'),
   ],
+  // A node transform runs before anything edits a table: in the update that
+  // creates or pastes it, when the editor loads a parsed editor state (which
+  // marks every node dirty), and when the transform is registered.
+  register: editor =>
+    editor.registerNodeTransform(TableNode, $migrateTableAlign),
 });

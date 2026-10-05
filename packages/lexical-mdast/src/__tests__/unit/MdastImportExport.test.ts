@@ -940,6 +940,72 @@ describe('@lexical/mdast import/export', () => {
       return editor.read(() => $convertToMarkdownString());
     }
 
+    describe('a table aligned by the legacy table-level state', () => {
+      function legacyEditor(): LexicalEditorWithDispose {
+        const editor = createEditor(true);
+        editor.update(
+          () => $convertFromMarkdownString('| a | b |\n| - | - |\n| 1 | 2 |'),
+          {discrete: true},
+        );
+        // What a document imported before alignment moved to the cells
+        // holds: the alignment as an array on the table.
+        const json = editor.getEditorState().toJSON();
+        Object.assign(json.root.children[0], {
+          $: {mdastTableAlign: [null, 'center']},
+        });
+        editor.setEditorState(editor.parseEditorState(json));
+        return editor;
+      }
+
+      it('keeps its alignment', () => {
+        using editor = legacyEditor();
+        expect(editor.read(() => $convertToMarkdownString())).toBe(
+          '| a |  b  |\n| - | :-: |\n| 1 |  2  |',
+        );
+      });
+
+      it('loses the alignment a column edit clears', () => {
+        using editor = legacyEditor();
+        editor.update(
+          () => {
+            for (const node of $getRoot().getAllTextNodes()) {
+              $assertNodeType(
+                node.getParent()?.getParent(),
+                $isElementNode,
+              ).setFormat('');
+            }
+          },
+          {discrete: true},
+        );
+        expect(editor.read(() => $convertToMarkdownString())).toBe(
+          '| a | b |\n| - | - |\n| 1 | 2 |',
+        );
+      });
+
+      it('keeps the alignment with its column when one is inserted', () => {
+        using editor = legacyEditor();
+        editor.update(
+          () => {
+            const table = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isTableNode,
+            );
+            for (const row of table.getChildren()) {
+              $assertNodeType(row, $isElementNode).splice(0, 0, [
+                $createTableCellNode().append(
+                  $createParagraphNode().append($createTextNode('x')),
+                ),
+              ]);
+            }
+          },
+          {discrete: true},
+        );
+        expect(editor.read(() => $convertToMarkdownString())).toBe(
+          '| x | a |  b  |\n| - | - | :-: |\n| x | 1 |  2  |',
+        );
+      });
+    });
+
     it('keeps each column its alignment when a column is removed', () => {
       expect(
         editColumns('| a | b |\n| :- | -: |\n| 1 | 2 |', row =>

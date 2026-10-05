@@ -21,7 +21,7 @@ import theme from '../../themes/PlaygroundEditorTheme';
 
 declare module 'vitest/browser' {
   interface BrowserCommands {
-    typeText(text: string): Promise<void>;
+    typeText(text: string, selector: string): Promise<void>;
   }
 }
 
@@ -52,7 +52,20 @@ export function setupEditor(dependencies: AnyLexicalExtensionArgument[]) {
 }
 
 export async function typeText(text: string) {
-  await commands.typeText(text);
+  const target = document.activeElement;
+  if (!(target instanceof HTMLElement) || !target.isContentEditable) {
+    throw new Error('typeText requires a focused editor');
+  }
+  // :focus can stop matching when the browser temporarily deactivates this
+  // frame. Bind the command to this element so it cannot resume in a later
+  // test's editor after a timeout.
+  const inputId = Math.random().toString(36).slice(2);
+  target.setAttribute('data-lexical-test-input', inputId);
+  try {
+    await commands.typeText(text, `[data-lexical-test-input="${inputId}"]`);
+  } finally {
+    target.removeAttribute('data-lexical-test-input');
+  }
 }
 
 export async function press(chord: string, count = 1) {

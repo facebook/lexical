@@ -369,10 +369,29 @@ function getTableColumnsSize(table: TableNode) {
   return $isTableRowNode(row) ? row.getChildrenSize() : 0;
 }
 
+// A line separator inside a cell: `<br>`, the legacy `\n`, or a newline.
+const CELL_LINE_END_REG_EXP = /<br\s*\/?>|\\n|\n/i;
+const CELL_LINE_START_REG_EXP = /(?:^|<br\s*\/?>|\\n|\n)[ \t]*$/i;
+
+/**
+ * Whether the backtick run from `start` to `end` is a code block fence: at
+ * least three backticks at the start of one of the cell's lines, with no
+ * backtick in the rest of that line (the info string or nothing).
+ */
+function isCodeFence(text: string, start: number, end: number): boolean {
+  if (end - start < 3 || !CELL_LINE_START_REG_EXP.test(text.slice(0, start))) {
+    return false;
+  }
+  const rest = text.slice(end);
+  const lineEnd = rest.search(CELL_LINE_END_REG_EXP);
+  return !rest.slice(0, lineEnd === -1 ? rest.length : lineEnd).includes('`');
+}
+
 /**
  * Splits Markdown into the parts outside code spans and the code spans
  * themselves (odd indices), whose closing backtick run is exactly as long
- * as the opening one. An unmatched run is ordinary text.
+ * as the opening one. An unmatched run, or a code block fence, is ordinary
+ * text, so the line separators in a code block are read like any other.
  */
 function splitCodeSpans(text: string): string[] {
   const parts: string[] = [];
@@ -390,6 +409,10 @@ function splitCodeSpans(text: string): string[] {
     let end = i;
     while (text[end] === '`') {
       end++;
+    }
+    if (isCodeFence(text, i, end)) {
+      i = end;
+      continue;
     }
     const fence = text.slice(i, end);
     let close = text.indexOf(fence, end);

@@ -8,6 +8,7 @@
 
 // @vitest-environment node
 
+import {$isCodeNode, CodeHighlightNode, CodeNode} from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $convertFromMarkdownString,
@@ -316,6 +317,7 @@ describe('playground TABLE markdown transformer', () => {
   const TableMarkdownTestExtension = defineExtension({
     dependencies: [RichTextExtension, TableExtension],
     name: 'TableMarkdownTest',
+    nodes: [CodeNode, CodeHighlightNode],
   });
 
   function exportCells(): string {
@@ -502,6 +504,24 @@ describe('playground TABLE markdown transformer', () => {
     expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(
       ['| h |', '| --- |', '| `<br>` \\<br> a<br>b |'].join('\n'),
     );
+  });
+
+  it.each([
+    ['the legacy \\n', '```js\\nfoo\\nbar\\n```'],
+    ['<br>', '```js<br>foo<br>bar<br>```'],
+  ])('reads a code block in a cell written with %s', (_, body) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${body} |`].join('\n'),
+    );
+    editor.read(() => {
+      const cellCode = $getRoot().getAllTextNodes().at(-1)?.getParentOrThrow();
+      assert($isCodeNode(cellCode), 'The cell must hold a code block');
+      expect(cellCode.getLanguage()).toBe('js');
+      expect(cellCode.getTextContent()).toBe('foo\nbar');
+      expect($convertToMarkdownString([TABLE])).toBe(
+        ['| h |', '| --- |', '| ```js<br>foo<br>bar<br>``` |'].join('\n'),
+      );
+    });
   });
 
   it('leaves a delimiter row with no table above it as text', () => {

@@ -39,6 +39,7 @@ import {
   addRootElementEvents,
   registerDefaultCommandHandlers,
   removeRootElementEvents,
+  restoreInputModeIOS,
 } from './LexicalEvents';
 import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
@@ -309,6 +310,12 @@ export interface InputState {
    * only; '' until the first pointerdown, and always '' elsewhere.
    */
   lastPointerType: '' | PointerEvent['pointerType'];
+  /**
+   * iOS only. The root element's own `inputmode` attribute (null when it had
+   * none), saved while Lexical holds it at "none" after a tap on a decorator
+   * focused the editor; undefined otherwise.
+   */
+  savedInputMode: string | null | undefined;
   isInsertLineBreak: boolean;
   /** Explicit Shift state, excluding iOS automatic capitalization. */
   isShiftKeyDown: boolean;
@@ -342,6 +349,7 @@ export function createInputState(): InputState {
     lastKeyDownTimeStamp: 0,
     lastPointerType: '',
     postDeleteSelectionToRestore: null,
+    savedInputMode: undefined,
     selectionChangeFromDOMUpdatePoints: null,
     unprocessedBeforeInputData: null,
   };
@@ -840,6 +848,9 @@ export function resetEditor(
   editor._blockCursorElement = null;
   if (editor._inputState.handledSelectionCommandTimeoutId !== null) {
     clearTimeout(editor._inputState.handledSelectionCommandTimeoutId);
+  }
+  if (prevRootElement !== null) {
+    restoreInputModeIOS(editor, prevRootElement);
   }
   editor._inputState = createInputState();
 

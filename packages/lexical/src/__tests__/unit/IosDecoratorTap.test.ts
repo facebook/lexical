@@ -81,12 +81,36 @@ function mouseDown(target: Element, pointerType = 'touch'): MouseEvent {
   return event;
 }
 
+function touch(
+  target: Element,
+  type: 'touchstart' | 'touchend',
+  x: number,
+  y: number,
+): void {
+  // jsdom has no Touch constructor, so define the touch lists by hand.
+  const event = new Event(type, {bubbles: true, cancelable: true});
+  const point = {clientX: x, clientY: y, target};
+  Object.defineProperties(event, {
+    changedTouches: {value: [point]},
+    touches: {value: type === 'touchstart' ? [point] : []},
+  });
+  target.dispatchEvent(event);
+}
+
+// A whole tap as iOS sends it: touches, then the compatibility mousedown.
+// `moveBy` makes it a drag instead.
+function tap(target: Element, moveBy = 0): MouseEvent {
+  touch(target, 'touchstart', 100, 100);
+  touch(target, 'touchend', 100, 100 + moveBy);
+  return mouseDown(target);
+}
+
 afterEach(() => {
   document.body.textContent = '';
 });
 
 describe('a tap on a decorator on iOS', () => {
-  test('cancels the mousedown so the editor does not take focus', () => {
+  test('cancels the mousedown so no keyboard opens', () => {
     const {decoratorElement, editor} = setUp();
     using _editor = editor;
     const img = document.createElement('img');
@@ -94,6 +118,93 @@ describe('a tap on a decorator on iOS', () => {
 
     expect(mouseDown(img).defaultPrevented).toBe(true);
     expect(mouseDown(decoratorElement).defaultPrevented).toBe(true);
+  });
+
+  test('focuses an unfocused editor without a keyboard or a scroll', () => {
+    const {decoratorElement, editor, rootElement} = setUp();
+    using _editor = editor;
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    const focus = vi.spyOn(rootElement, 'focus');
+
+    mouseDown(decoratorElement);
+
+    expect(focus).toHaveBeenCalledWith({preventScroll: true});
+    expect(document.activeElement).toBe(rootElement);
+    expect(rootElement.getAttribute('inputmode')).toBe('none');
+  });
+
+  test('leaves an editor that already has focus alone', () => {
+    const {decoratorElement, editor, rootElement} = setUp();
+    using _editor = editor;
+    rootElement.focus();
+    const focus = vi.spyOn(rootElement, 'focus');
+
+    expect(mouseDown(decoratorElement).defaultPrevented).toBe(true);
+
+    expect(focus).not.toHaveBeenCalled();
+    expect(rootElement.hasAttribute('inputmode')).toBe(false);
+  });
+
+  test("puts the root's inputmode back on the next tap on text", () => {
+    const {decoratorElement, editor, rootElement, textElement} = setUp();
+    using _editor = editor;
+    rootElement.setAttribute('inputmode', 'text');
+
+    tap(decoratorElement);
+    tap(decoratorElement);
+    expect(rootElement.getAttribute('inputmode')).toBe('none');
+    const blur = vi.spyOn(rootElement, 'blur');
+    touch(textElement, 'touchstart', 100, 100);
+    touch(textElement, 'touchend', 100, 100);
+    // Blurred before iOS handles the tap, so the tap focuses the editor again
+    // and iOS reveals the caret as the keyboard opens.
+    expect(blur).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).not.toBe(rootElement);
+    expect(rootElement.getAttribute('inputmode')).toBe('text');
+  });
+
+  test('keeps the quiet focus through a scroll', () => {
+    const {decoratorElement, editor, rootElement, textElement} = setUp();
+    using _editor = editor;
+
+    tap(decoratorElement);
+    touch(textElement, 'touchstart', 100, 100);
+    touch(textElement, 'touchend', 100, 300);
+    expect(document.activeElement).toBe(rootElement);
+    expect(rootElement.getAttribute('inputmode')).toBe('none');
+  });
+
+  test('does not blur an editor that the user focused', () => {
+    const {decoratorElement, editor, rootElement, textElement} = setUp();
+    using _editor = editor;
+    rootElement.focus();
+    tap(decoratorElement);
+    const blur = vi.spyOn(rootElement, 'blur');
+
+    tap(textElement);
+    expect(blur).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(rootElement);
+  });
+
+  test('removes inputmode when the editor loses focus', () => {
+    const {decoratorElement, editor, rootElement} = setUp();
+    using _editor = editor;
+
+    mouseDown(decoratorElement);
+    expect(rootElement.getAttribute('inputmode')).toBe('none');
+    rootElement.blur();
+    expect(rootElement.hasAttribute('inputmode')).toBe(false);
+  });
+
+  test('removes inputmode when the root element is replaced', () => {
+    const {decoratorElement, editor, rootElement} = setUp();
+    using _editor = editor;
+
+    mouseDown(decoratorElement);
+    editor.setRootElement(null);
+    expect(rootElement.hasAttribute('inputmode')).toBe(false);
   });
 
   test('keeps the default for interactive elements inside the decorator', () => {
@@ -199,13 +310,15 @@ describe('a tap on a decorator on iOS', () => {
   });
 
   test('keeps the default for a trackpad or mouse press', () => {
-    const {decoratorElement, editor} = setUp();
+    const {decoratorElement, editor, rootElement} = setUp();
     using _editor = editor;
     const img = document.createElement('img');
     decoratorElement.appendChild(img);
 
     expect(mouseDown(img, 'mouse').defaultPrevented).toBe(false);
+    expect(rootElement.hasAttribute('inputmode')).toBe(false);
     expect(mouseDown(img, 'pen').defaultPrevented).toBe(true);
+    expect(rootElement.getAttribute('inputmode')).toBe('none');
   });
 
   test('keeps the default for text', () => {

@@ -542,6 +542,24 @@ function $hasHtmlPeer(): boolean {
 }
 
 /**
+ * Whether a cell or one of its blocks has a format of its own, which may
+ * be one that GFM can't write (`justify`, `start`, `end`).
+ */
+function $hasFormat(cell: TableCellNode): boolean {
+  return (
+    cell.getFormatType() !== '' ||
+    cell
+      .getChildren()
+      .some(
+        child =>
+          $isElementNode(child) &&
+          !child.isInline() &&
+          child.getFormatType() !== '',
+      )
+  );
+}
+
+/**
  * Moves a table's legacy alignment state onto the element format of its
  * cells that have none, and clears it, so it can no longer override a
  * column's alignment after the column is cleared or moved.
@@ -558,7 +576,7 @@ function $migrateTableAlign(table: TableNode): void {
         .filter($isTableCellNode)
         .forEach((cell, column) => {
           const align = legacyAlign[column];
-          if (align && !$getCellAlign(cell)) {
+          if (align && !$hasFormat(cell)) {
             cell.setFormat(align);
           }
         });

@@ -1004,6 +1004,43 @@ describe('@lexical/mdast import/export', () => {
           '| x | a |  b  |\n| - | - | :-: |\n| x | 1 |  2  |',
         );
       });
+
+      it.each(['justify', 'start', 'end'] as const)(
+        'leaves a cell its own %s format',
+        format => {
+          using editor = legacyEditor();
+          editor.update(
+            () => {
+              for (const node of $getRoot().getAllTextNodes()) {
+                const cell = $assertNodeType(
+                  node.getParent()?.getParent(),
+                  $isElementNode,
+                );
+                if (cell.getIndexWithinParent() === 1) {
+                  cell.setFormat(format);
+                }
+              }
+            },
+            {discrete: true},
+          );
+          const json = editor.getEditorState().toJSON();
+          Object.assign(json.root.children[0], {
+            $: {mdastTableAlign: [null, 'center']},
+          });
+          editor.setEditorState(editor.parseEditorState(json));
+          editor.read(() => {
+            for (const node of $getRoot().getAllTextNodes()) {
+              const cell = $assertNodeType(
+                node.getParent()?.getParent(),
+                $isElementNode,
+              );
+              expect(cell.getFormatType()).toBe(
+                cell.getIndexWithinParent() === 1 ? format : '',
+              );
+            }
+          });
+        },
+      );
     });
 
     it('keeps each column its alignment when a column is removed', () => {

@@ -189,7 +189,9 @@ async function initializePlayground({
     });
   }
 
-  await page.goto(url);
+  // The split page's load event also waits for iframe subresources. The
+  // explicit provider/editor checks below determine collaboration readiness.
+  await page.goto(url, {waitUntil: isCollab ? 'domcontentloaded' : 'load'});
 
   await exposeLexicalEditor(page, pageError);
 }
@@ -301,7 +303,7 @@ async function exposeLexicalEditor(page, pageError = null) {
         if (attempt >= 2) {
           throw err;
         }
-        await page.reload();
+        await page.reload({waitUntil: 'domcontentloaded'});
       }
     }
     // Ensure that they started up with the correct empty state

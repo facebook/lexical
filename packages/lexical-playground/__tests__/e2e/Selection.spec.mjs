@@ -1321,9 +1321,43 @@ test.describe('Selection', () => {
 
       await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
       await page.keyboard.type('abcdefg');
-      await moveLeft(page, 'abcdefg'.length + 1);
+      await assertCaret(page, ':scope > p:last-child > span', 7);
+      await moveLeft(page, 'abcdefg'.length);
+      await assertCaret(page, ':scope > p:last-child > span', 0);
+      await moveLeft(page);
+      await expect
+        .poll(() =>
+          evaluate(page, () => {
+            const state = window.lexicalEditor.getEditorState();
+            return state.read(() => {
+              const selection = state._selection;
+              return {
+                isNodeSelection: selection?._nodes instanceof Set,
+                nodes: selection?.getNodes().map(node => node.getType()),
+              };
+            });
+          }),
+        )
+        .toEqual({isNodeSelection: true, nodes: ['youtube']});
 
       await selectAll(page);
+      await expect
+        .poll(() =>
+          evaluate(page, () => {
+            const state = window.lexicalEditor.getEditorState();
+            return state.read(() => {
+              const selection = state._selection;
+              return {
+                collapsed: selection?.isCollapsed(),
+                nodes: selection?.getNodes().map(node => node.getType()),
+              };
+            });
+          }),
+        )
+        .toMatchObject({
+          collapsed: false,
+          nodes: expect.arrayContaining(['youtube', 'text']),
+        });
       await page.keyboard.press('Backspace');
 
       await assertHTML(

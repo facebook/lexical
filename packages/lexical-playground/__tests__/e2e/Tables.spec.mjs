@@ -23,6 +23,7 @@ import {
 } from '../keyboardShortcuts/index.mjs';
 import {
   advanceHistoryClock,
+  assertCaret,
   assertSelection,
   assertTableHTML as assertHTML,
   assertTableSelectionCoordinates,
@@ -35,6 +36,7 @@ import {
   evaluate,
   expect,
   focusEditor,
+  getEditorElement,
   getExpectedDateTimeHtml,
   getPageOrFrame,
   html,
@@ -513,6 +515,7 @@ test.describe('Tables', () => {
     );
 
     await moveLeft(page, 2);
+    await assertCaret(page, ':scope > p:last-child > span', 2);
     await deleteBackward(page);
     await deleteBackward(page);
     await deleteBackward(page);
@@ -8723,11 +8726,15 @@ test.describe('Tables', () => {
 
     // Delete the paragraph before the table
     await moveToEditorBeginning(page);
+    await assertCaret(page, ':scope > p:first-child', 0);
     await deleteBackward(page);
+    await expect(getEditorElement(page).locator(':scope > p')).toHaveCount(1);
 
     // Delete the paragraph after the table
     await moveToEditorEnd(page);
+    await assertCaret(page, ':scope > p:last-child', 0);
     await deleteBackward(page);
+    await expect(getEditorElement(page).locator(':scope > p')).toHaveCount(0);
 
     // Place cursor inside any cell of the table
     await selectCellFromTableCoord(page, {x: 0, y: 0}, true);

@@ -133,9 +133,9 @@ export default defineConfig({
             commands: {
               // Vitest's keyboard descriptor parser splits non-BMP text into
               // UTF-16 code units. Native Playwright typing preserves code
-              // points, matching the E2E driver's input behavior. Focus the
-              // captured element before typing, with a command timeout shorter
-              // than the test timeout so input cannot outlive its fixture.
+              // points, matching the E2E driver's input behavior. The helper
+              // sends one code point at a time so this timeout bounds stalled
+              // input without limiting the total length of a typed string.
               typeText: async ({frame}, text: string, selector: string) => {
                 const testFrame = await frame();
                 await testFrame

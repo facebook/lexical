@@ -16,15 +16,9 @@ import {
   ReactPluginHostExtension,
 } from '@lexical/react/ReactPluginHostExtension';
 import {RichTextExtension} from '@lexical/rich-text';
-import {
-  $createParagraphNode,
-  $getRoot,
-  defineExtension,
-  IS_APPLE,
-} from 'lexical';
+import {$createParagraphNode, $getRoot, defineExtension} from 'lexical';
 import {act} from 'react';
 import {describe, onTestFinished, test} from 'vitest';
-import {server} from 'vitest/browser';
 
 import theme from '../../themes/PlaygroundEditorTheme';
 import {
@@ -39,10 +33,6 @@ const press = (key: string, count = 1) => act(() => nativePress(key, count));
 const typeText = (text: string) => act(() => nativeTypeText(text));
 async function repeat(count: number, callback: () => Promise<void>) {
   for (let i = 0; i < count; i++) await callback();
-}
-async function moveToEditorBeginning() {
-  await press(IS_APPLE ? 'Meta+ArrowUp' : 'PageUp');
-  if (!IS_APPLE && server.browser === 'firefox') await press('Home');
 }
 
 async function setup(charset: 'UTF-8' | 'UTF-16', isRichText: boolean) {
@@ -146,7 +136,9 @@ describe.each(['UTF-8', 'UTF-16'] as const)('character limit %s', charset => {
       await typeText('123456');
       await press('Enter');
       await press('7');
-      await moveToEditorBeginning();
+      await act(async () => {
+        editor.update(() => $getRoot().selectStart(), {discrete: true});
+      });
 
       await assertCaret(editor, 'p:first-child > span:first-child', 0);
       await press('Delete');

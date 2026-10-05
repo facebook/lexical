@@ -21,3 +21,21 @@ test('pending native input stays with the editor that requested it', async () =>
   expect(first.root.textContent).toBe('A🙂B');
   expect(second.root.textContent).toBe('');
 });
+
+test('native input stops when its editor is removed', async () => {
+  const first = setupEditor([PlainTextExtension]);
+  const second = setupEditor([PlainTextExtension]);
+  first.root.focus();
+  first.root.addEventListener(
+    'keyup',
+    () => {
+      first.root.remove();
+      second.root.focus();
+    },
+    {once: true},
+  );
+
+  await expect(typeText('A🙂B')).rejects.toThrow('typeText target was removed');
+  expect(first.root.textContent).toBe('A');
+  expect(second.root.textContent).toBe('');
+});

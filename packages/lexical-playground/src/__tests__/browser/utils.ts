@@ -65,7 +65,18 @@ export async function typeText(text: string) {
   const inputId = Math.random().toString(36).slice(2);
   target.setAttribute('data-lexical-test-input', inputId);
   try {
-    await commands.typeText(text, `[data-lexical-test-input="${inputId}"]`);
+    // Bound each code point, not the whole string: long input can make steady
+    // progress past the command timeout on a busy CI runner. Recheck the
+    // fixture between characters so pending input stops when it is removed.
+    for (const character of text) {
+      if (!target.isConnected) {
+        throw new Error('typeText target was removed');
+      }
+      await commands.typeText(
+        character,
+        `[data-lexical-test-input="${inputId}"]`,
+      );
+    }
   } finally {
     target.removeAttribute('data-lexical-test-input');
   }

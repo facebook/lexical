@@ -502,6 +502,40 @@ describe('playground TABLE markdown transformer', () => {
     });
   });
 
+  it.each(['a\\|b', 'a\\\\|b', 'a|b\\'])(
+    'round-trips backslashes beside a pipe in a cell: %j',
+    text => {
+      using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createTableNode().append(
+                $createTableRowNode().append(
+                  $createTableCellNode(TableCellHeaderStates.ROW).append(
+                    $createParagraphNode().append($createTextNode('h')),
+                  ),
+                ),
+                $createTableRowNode().append(
+                  $createTableCellNode().append(
+                    $createParagraphNode().append($createTextNode(text)),
+                  ),
+                ),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+      const markdown = editor.read(() => $convertToMarkdownString([TABLE]));
+      using imported = importMarkdown(markdown);
+      expect(cellTexts(imported)).toEqual([[['h']], [[text]]]);
+      expect(imported.read(() => $convertToMarkdownString([TABLE]))).toBe(
+        markdown,
+      );
+    },
+  );
+
   it('escapes a literal <br> outside code spans and reads it back', () => {
     using editor = importMarkdown(
       ['| h |', '| --- |', '| `<br>` \\<br> a<br>b |'].join('\n'),

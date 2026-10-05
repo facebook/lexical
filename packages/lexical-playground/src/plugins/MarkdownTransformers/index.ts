@@ -453,11 +453,17 @@ function encodeTableCell(markdown: string): string {
   const flushText = () => {
     result += splitCodeSpans(text)
       .map((part, i) =>
-        i % 2 === 1 ? part : part.replace(/<(br\s*\/?>)/gi, '\\<$1'),
+        i % 2 === 1
+          ? // Code spans take no escapes, but a row still splits on a pipe.
+            part.replace(/\\?\|/g, '\\|')
+          : // Escapes a pipe and a `<br>` that are text, past what a
+            // backslash already escapes (in `\\|`, the backslash).
+            part.replace(/\\[^]|\||<(?=br\s*\/?>)/gi, match =>
+              match.length > 1 ? match : '\\' + match,
+            ),
       )
       .join('')
-      .replace(/\n\n?/g, '<br>')
-      .replace(/\\?\|/g, '\\|');
+      .replace(/\n\n?/g, '<br>');
     text = '';
   };
   let fence: string | null = null;
@@ -650,8 +656,9 @@ function splitTableRow(text: string): string[] {
   for (let i = 0; i < text.length; i++) {
     if (text[i] === '|') {
       cells.push('');
-    } else if (text[i] === '\\' && text[i + 1] === '|') {
-      cells[cells.length - 1] += '\\|';
+    } else if (text[i] === '\\' && i + 1 < text.length) {
+      // A backslash escapes the next character, pipe or not (`\\|`).
+      cells[cells.length - 1] += text.slice(i, i + 2);
       i++;
     } else {
       cells[cells.length - 1] += text[i];

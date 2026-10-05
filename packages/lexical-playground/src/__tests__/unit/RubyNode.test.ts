@@ -147,6 +147,15 @@ describe('RubyNode', () => {
       );
 
       const json = editor.getEditorState().toJSON();
+      expect(json).toMatchObject({
+        root: {
+          children: [
+            {
+              children: [{annotation: 'かんじ', text: '漢字', type: 'ruby'}],
+            },
+          ],
+        },
+      });
 
       const editor2 = buildEditorFromExtensions({
         dependencies: [RubyExtension],
@@ -187,6 +196,9 @@ describe('RubyNode', () => {
 
         expect(element).not.toBeNull();
         const el = element as HTMLElement;
+        expect(el.outerHTML).toBe(
+          '<ruby>漢字<rp>(</rp><rt>かんじ</rt><rp>)</rp></ruby>',
+        );
         expect(el.tagName).toBe('RUBY');
         expect(el.childNodes.length).toBe(4);
         expect(el.childNodes[0].textContent).toBe('漢字');

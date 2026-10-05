@@ -2168,7 +2168,6 @@ export {
 export {
   type RichTextConfig,
   RichTextExtension,
-  RichTextImportExtension,
 } from './LexicalRichTextExtension';
 export {
   RichTextImportRules,

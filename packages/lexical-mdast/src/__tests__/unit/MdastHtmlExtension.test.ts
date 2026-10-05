@@ -58,10 +58,9 @@ import {
   $exportViaDOM,
   ImportContextMarkdown,
   MdastCommonMarkExtension,
-  MdastExportExtension,
   type MdastExportHandler,
+  MdastExtension,
   MdastHtmlExtension,
-  MdastImportExtension,
   MdastShadowRootQuoteExtension,
   MdastStrikethroughExtension,
   rawHtmlBlock,
@@ -266,7 +265,7 @@ function createEditor(withAsideExport = false): LexicalEditorWithDispose {
         MdastCommonMarkExtension,
         MdastStrikethroughExtension,
         MdastShadowRootQuoteExtension,
-        MdastExportExtension,
+        MdastExtension,
         MdastHtmlExtension,
         // Node packages whose DOM import rules the raw HTML should reach.
         RichTextExtension,
@@ -282,7 +281,7 @@ function createEditor(withAsideExport = false): LexicalEditorWithDispose {
             RedactedRule,
           ],
         }),
-        configExtension(MdastImportExtension, {
+        configExtension(MdastExtension, {
           exportRules: [
             {$export: $exportViaDOM, type: 'x-callout'},
             {$export: $exportViaDOM, type: 'x-redacted'},
@@ -291,7 +290,7 @@ function createEditor(withAsideExport = false): LexicalEditorWithDispose {
         }),
         ...(withAsideExport
           ? [
-              configExtension(MdastImportExtension, {
+              configExtension(MdastExtension, {
                 exportRules: [{$export: $exportAsideViaRawHtml, type: 'quote'}],
               }),
             ]
@@ -865,10 +864,10 @@ describe('MdastHtmlExtension', () => {
         defineExtension({
           dependencies: [
             MdastCommonMarkExtension,
-            MdastExportExtension,
+            MdastExtension,
             MdastHtmlExtension,
             configExtension(DOMImportExtension, {rules: [ProbeRule]}),
-            configExtension(MdastImportExtension, {
+            configExtension(MdastExtension, {
               importRules: [
                 {
                   $import: (node, ctx) =>

@@ -34,17 +34,12 @@ async function toggleCheckList(page) {
   await click(page, '.dropdown .icon.check-list');
 }
 
+test.skip(({isCollab}) => !isCollab, 'Requires collaboration');
+
 test.describe('Collaboration', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('Undo with collaboration on', async ({
-    isRichText,
-    page,
-    isCollab,
-    browserName,
-  }) => {
-    test.skip(!isCollab);
-
+  test('Undo with collaboration on', async ({page, isCollab}) => {
     await focusEditor(page);
     // The two `undo`s below each expect to revert an entire edit group as a unit
     // (the "hello world again" burst, then the whole checklist). Disable the Yjs
@@ -227,13 +222,8 @@ test.describe('Collaboration', () => {
   });
 
   test('Remove dangling text from YJS when there is no preceding text node', async ({
-    isRichText,
     page,
-    isCollab,
-    browserName,
   }) => {
-    test.skip(!isCollab);
-
     // Left collaborator types two paragraphs of text
     await focusEditor(page);
     // The undo below expects to revert the whole "This is a test. " burst as a
@@ -309,14 +299,7 @@ test.describe('Collaboration', () => {
     );
   });
 
-  test('Merge dangling text into preceding text node', async ({
-    isRichText,
-    page,
-    isCollab,
-    browserName,
-  }) => {
-    test.skip(!isCollab);
-
+  test('Merge dangling text into preceding text node', async ({page}) => {
     // Left collaborator types two pieces of text in the same paragraph, but with different styling.
     await focusEditor(page);
     // The undo below expects to revert the bold format *and* the "bold" burst
@@ -406,13 +389,10 @@ test.describe('Collaboration', () => {
   });
 
   test('Undo/redo where text node is split by formatting change', async ({
-    isRichText,
     page,
     isCollab,
     browserName,
   }) => {
-    test.skip(!isCollab);
-
     // Left collaborator types two words, sets the second one to bold.
     await focusEditor(page);
     await page.keyboard.type('normal bold');
@@ -530,13 +510,9 @@ test.describe('Collaboration', () => {
   });
 
   test('Undo/redo where text node is split by inline element node', async ({
-    isRichText,
     page,
     isCollab,
-    browserName,
   }) => {
-    test.skip(!isCollab);
-
     // Left collaborator types some text, then splits the text nodes with an element node.
     await focusEditor(page);
     await page.keyboard.type('Check out the website!');
@@ -661,10 +637,7 @@ test.describe('Collaboration', () => {
 
   test('$handleNormalizationMergeConflicts handles nodes that have been reparented', async ({
     page,
-    isCollab,
   }) => {
-    test.skip(!isCollab);
-
     // Add paragraph, type ABC into second paragraph, bold the B, backspace text into the first paragraph to reparent the text nodes
     await focusEditor(page);
     await page.keyboard.press('Enter');

@@ -373,8 +373,11 @@ export async function clickSelectors(page, selectors) {
   }
 }
 
+// WebKit, and Chromium since #7158, render the managed line break after a
+// trailing inline decorator as an img+br pair; keep the img out of the HTML
+// the specs assert on.
 function removeSafariLinebreakImgHack(actualHtml) {
-  return E2E_BROWSER === 'webkit'
+  return E2E_BROWSER === 'webkit' || E2E_BROWSER === 'chromium'
     ? actualHtml.replaceAll(
         /<img (?:[^>]+ )?data-lexical-managed-linebreak="true"(?: [^>]+)?>/g,
         '',

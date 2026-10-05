@@ -955,6 +955,22 @@ function $isBlockDecoratorChild(
 }
 
 /**
+ * Whether the element's first child needs the leading boundary anchor: any
+ * DecoratorNode, block or inline. A line that starts with an inline decorator
+ * has no editable caret position before it either, so a browser canonicalizes
+ * a caret at the start of the line into the decorator's non-editable DOM and
+ * will not extend a mouse drag out of it (#7158). (The trailing edge of an
+ * inline decorator already has an editable position: the managed line break
+ * that {@link $reconcileElementTerminatingLineBreak} appends after it.)
+ */
+function $isLeadingDecoratorChild(
+  key: null | NodeKey,
+  nodeMap: NodeMap,
+): boolean {
+  return !!key && $isDecoratorNode(nodeMap.get(key));
+}
+
+/**
  * Browsers drop the selection highlight for the whole document when a range
  * endpoint lands on an element boundary that is immediately adjacent to a
  * block-level `contenteditable=false` child — e.g. select-all in a document
@@ -962,6 +978,9 @@ function $isBlockDecoratorChild(
  * out-of-flow anchor parked outside each such boundary child so the browser has
  * an editable inline box to resolve the boundary position against. Interior
  * decorators are unaffected, so only the first / last child is considered.
+ * The leading anchor is also parked before an inline first-child decorator,
+ * so a mouse drag can start at the start of such a line
+ * (see {@link $isLeadingDecoratorChild}, #7158).
  */
 function $reconcileDecoratorBoundaryAnchors(
   nextElement: ElementNode,
@@ -970,7 +989,7 @@ function $reconcileDecoratorBoundaryAnchors(
   const slot = $getDOMSlot(nextElement, dom, activeEditor);
   slot.setDecoratorBoundaryAnchor(
     'leading',
-    $isBlockDecoratorChild(nextElement.__first, activeNextNodeMap),
+    $isLeadingDecoratorChild(nextElement.__first, activeNextNodeMap),
   );
   slot.setDecoratorBoundaryAnchor(
     'trailing',

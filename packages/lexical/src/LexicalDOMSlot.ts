@@ -11,7 +11,13 @@ import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
 
-import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from './environment';
+import {
+  IS_ANDROID,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
 import {$getDocument, $getEditor} from './LexicalUtils';
 
 /**
@@ -56,6 +62,11 @@ const IS_WEBKIT_BROWSER = IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI;
  * `document.execCommand('selectAll')` hits the same wall — and Chromium drops
  * it when both endpoints do. Interior element points next to the same decorator
  * paint fine everywhere; only the first / last child matters.
+ *
+ * The leading anchor is also used before an *inline* first-child decorator:
+ * without an editable position there, a click at the start of the line puts
+ * the caret inside the decorator's non-editable DOM, and a mouse drag that
+ * starts there cannot extend past that decorator (#7158).
  *
  * Parking a zero-size, out-of-flow `<img>` on the outside of such a boundary
  * decorator gives the browser an editable inline box to canonicalize the
@@ -447,7 +458,15 @@ export class ElementDOMSlot<
     if (nextLineBreakType === null) {
       this.removeManagedLineBreak();
     } else {
-      const webkitHack = nextLineBreakType === 'decorator' && IS_WEBKIT_BROWSER;
+      // Desktop Chromium needs the same editable inline box after a trailing
+      // inline decorator: without it, a click to the right of the decorator
+      // puts the DOM caret inside its contentEditable=false DOM, and a mouse
+      // drag that starts there can never extend beyond that decorator
+      // (#7158). Android is left alone: it has no mouse drag, and its IME is
+      // sensitive to the DOM around the caret.
+      const webkitHack =
+        nextLineBreakType === 'decorator' &&
+        (IS_WEBKIT_BROWSER || (IS_CHROME && !IS_ANDROID));
       this.insertManagedLineBreak(webkitHack);
     }
   }

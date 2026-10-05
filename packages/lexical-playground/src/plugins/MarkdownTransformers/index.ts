@@ -445,6 +445,60 @@ function codeSpanEnd(text: string, start: number): number {
 const CODE_FENCE_OPEN_REG_EXP = /^ {0,3}(`{3,})[^`\n]*$/;
 const CODE_FENCE_CLOSE_REG_EXP = /^ {0,3}(`{3,})[ \t]*$/;
 
+// A pipe after an odd run of backslashes.
+const ESCAPED_PIPE_REG_EXP = /(?:^|[^\\])(?:\\\\)*\\\|/;
+
+/**
+ * A code span as it is written in a cell. GFM splits a row on each pipe
+ * that no backslash escapes, then drops the backslash of each `\|` in a
+ * cell, code spans included, so each pipe in code gets a backslash of its
+ * own. Code with a backslash right before a pipe can't be written that way,
+ * since `\\|` is an escaped backslash and then a pipe that splits the row,
+ * so it is written as HTML, with its punctuation as character references,
+ * which {@link codeSpanFromHtml} reads back.
+ */
+function encodeCodeSpan(span: string): string {
+  if (!ESCAPED_PIPE_REG_EXP.test(span)) {
+    return span.replace(/\|/g, '\\|');
+  }
+  const fence = span.length - span.replace(/^`+/, '').length;
+  let code = span.slice(fence, -fence);
+  if (/^ [^]* $/.test(code) && code.trim() !== '') {
+    code = code.slice(1, -1);
+  }
+  return `<code>${code.replace(
+    /[^\p{L}\p{N} ]/gu,
+    char => `&#${char.codePointAt(0)};`,
+  )}</code>`;
+}
+
+const CODE_HTML_REG_EXP = /<code>([^<]*)<\/code>/gi;
+
+/** A code span with the code of a `<code>` element that has only text. */
+function codeSpanFromHtml(html: string): string {
+  const code = html.replace(
+    /&(?:#(\d+)|#x([\da-f]+)|(amp|lt|gt|quot));/gi,
+    (reference, decimal?: string, hex?: string, name?: string) => {
+      if (name !== undefined) {
+        return {amp: '&', gt: '>', lt: '<', quot: '"'}[
+          name.toLowerCase() as 'amp' | 'gt' | 'lt' | 'quot'
+        ];
+      }
+      const codePoint = decimal ? parseInt(decimal, 10) : parseInt(hex!, 16);
+      return codePoint > 0 && codePoint <= 0x10ffff
+        ? String.fromCodePoint(codePoint)
+        : reference;
+    },
+  );
+  const fence = '`'.repeat(
+    Math.max(0, ...Array.from(code.matchAll(/`+/g), run => run[0].length)) + 1,
+  );
+  // A space keeps a backtick or a padded code span from merging into the
+  // fence or losing its padding.
+  const pad = /^[` ]|[` ]$/.test(code) && code.trim() !== '' ? ' ' : '';
+  return fence + pad + code + pad + fence;
+}
+
 /**
  * Writes a cell's Markdown as one line. Outside code blocks, a line break
  * and the blank line between paragraphs become `<br>`, and a `<br>` that is
@@ -461,8 +515,7 @@ function encodeTableCell(markdown: string): string {
     result += splitCodeSpans(text)
       .map((part, i) =>
         i % 2 === 1
-          ? // Code spans take no escapes, but a row still splits on a pipe.
-            part.replace(/\\?\|/g, '\\|')
+          ? encodeCodeSpan(part)
           : // Escapes a pipe and a `<br>` that are text, past what a
             // backslash already escapes (in `\\|`, the backslash).
             part.replace(/\\[^]|\||<(?=br\s*\/?>)/gi, match =>
@@ -626,7 +679,14 @@ function decodeTableCell(
       result += line.text;
     } else {
       const body = splitCodeSpans(line.text)
-        .map(part => part.replace(/\\\|/g, '|'))
+        .map((part, k) => {
+          const unescaped = part.replace(/\\\|/g, '|');
+          return k % 2 === 1
+            ? unescaped
+            : unescaped.replace(CODE_HTML_REG_EXP, (_, html: string) =>
+                codeSpanFromHtml(html),
+              );
+        })
         .join('');
       result += i > 0 && result.endsWith(mark) ? body.trimStart() : body;
     }

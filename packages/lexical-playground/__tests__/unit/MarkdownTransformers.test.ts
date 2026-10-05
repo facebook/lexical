@@ -536,6 +536,47 @@ describe('playground TABLE markdown transformer', () => {
     },
   );
 
+  it.each(['a|b', 'a\\|b', 'a\\\\|b', '\\|', 'x`\\|`*y*'])(
+    'round-trips inline code with pipes and backslashes in a cell: %j',
+    text => {
+      using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createTableNode().append(
+                $createTableRowNode().append(
+                  $createTableCellNode(TableCellHeaderStates.ROW).append(
+                    $createParagraphNode().append($createTextNode('h')),
+                  ),
+                ),
+                $createTableRowNode().append(
+                  $createTableCellNode().append(
+                    $createParagraphNode().append(
+                      $createTextNode(text).toggleFormat('code'),
+                    ),
+                  ),
+                ),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+      const markdown = editor.read(() => $convertToMarkdownString([TABLE]));
+      using imported = importMarkdown(markdown);
+      expect(cellTexts(imported)).toEqual([[['h']], [[text]]]);
+      imported.read(() => {
+        const node = $getRoot().getLastDescendant();
+        assert($isTextNode(node), 'The cell must hold text');
+        expect(node.hasFormat('code')).toBe(true);
+      });
+      expect(imported.read(() => $convertToMarkdownString([TABLE]))).toBe(
+        markdown,
+      );
+    },
+  );
+
   it('escapes a literal <br> outside code spans and reads it back', () => {
     using editor = importMarkdown(
       ['| h |', '| --- |', '| `<br>` \\<br> a<br>b |'].join('\n'),

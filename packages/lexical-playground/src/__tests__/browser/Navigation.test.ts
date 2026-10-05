@@ -17,7 +17,7 @@ import {
   IS_APPLE,
   type LexicalEditor,
 } from 'lexical';
-import {describe, test} from 'vitest';
+import {describe, expect, test} from 'vitest';
 import {server} from 'vitest/browser';
 
 import {EmojiNode} from '../../nodes/EmojiNode';
@@ -36,13 +36,20 @@ const paragraphs = [
   'It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. ',
   'It was popularised in the 1960s with the release of Letraset sheets containing lorem ipsum passages.',
 ];
+// Typing across paragraph boundaries only needs a few words. Keep the longer
+// fixture above for the line/word navigation tests that initialize it directly.
+const typedParagraphs = [
+  'First paragraph.',
+  'Second paragraph.',
+  'Third paragraph.',
+];
 async function setupParagraphs(
   editor: LexicalEditor,
   isRichText: boolean,
   type: boolean,
 ) {
   if (type) {
-    for (const [i, text] of paragraphs.entries()) {
+    for (const [i, text] of typedParagraphs.entries()) {
       if (i > 0) await press('Enter');
       await typeText(text);
     }
@@ -102,19 +109,25 @@ describe.each([true, false])(
       await setupParagraphs(editor, isRichText, true);
       if (isRichText) {
         await assertSelection(root, {
-          anchorOffset: 100,
+          anchorOffset: 16,
           anchorPath: [2, 0, 0],
-          focusOffset: 100,
+          focusOffset: 16,
           focusPath: [2, 0, 0],
         });
       } else {
         await assertSelection(root, {
-          anchorOffset: 100,
+          anchorOffset: 16,
           anchorPath: [0, 4, 0],
-          focusOffset: 100,
+          focusOffset: 16,
           focusPath: [0, 4, 0],
         });
       }
+      expect(
+        Array.from(
+          root.querySelectorAll('[data-lexical-text]'),
+          element => element.textContent,
+        ),
+      ).toEqual(typedParagraphs);
     });
     test('can move to the beginning of the current line, then back to the end of the current line', async () => {
       const {editor, root} = setupEditor([

@@ -35,7 +35,9 @@ test('native input stops when its editor is removed', async () => {
     {once: true},
   );
 
-  await expect(typeText('A🙂B')).rejects.toThrow('typeText target was removed');
+  await expect(typeText('A🙂B')).rejects.toThrow(
+    'Element is not attached to the DOM',
+  );
   expect(first.root.textContent).toBe('A');
   expect(second.root.textContent).toBe('');
 });

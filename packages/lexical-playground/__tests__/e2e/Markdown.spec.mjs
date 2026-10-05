@@ -408,6 +408,8 @@ test.describe('Markdown', () => {
     });
 
     const originalHTML = await getHTML(page);
+    // Both peers must receive the source before converting the whole document.
+    await assertHTML(page, originalHTML);
 
     // Import from current markdown codeblock content
     await click(page, '.action-button .markdown');

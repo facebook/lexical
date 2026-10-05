@@ -129,9 +129,34 @@ does not guarantee that the node still exists in the active editor state.
 Methods that use `getLatest()` or `getWritable()` can then throw
 `Lexical node does not exist in active editor state.`
 
-One approach is to capture `node.getKey()` while reading or updating the node,
-then resolve that key when the callback runs. Keep the lookup, attachment check,
-and mutation inside the same `editor.update()` callback:
+You can store a node reference and use it in a later read or update. Node
+methods resolve the latest version from the active editor state, so keeping a
+reference preserves the node's type. For an action that targets a node in the
+document, check `node.isAttached()` inside the same `editor.update()` callback
+before using it:
+
+```typescript
+import type {LexicalEditor, LexicalNode} from 'lexical';
+
+function createSelectNodeCallback(editor: LexicalEditor, node: LexicalNode) {
+  return () => {
+    editor.update(() => {
+      if (node.isAttached()) {
+        node.selectEnd();
+      }
+    });
+  };
+}
+```
+
+`isAttached()` checks whether the node is still connected to the root in the
+active state. It returns `false` if the node is detached or is no longer in
+that state's node map, so it is safe to call on a reference to a removed node
+inside a read or update.
+
+Alternatively, you can capture `node.getKey()` and resolve that key when the
+callback runs. Keep the lookup, attachment check, and mutation inside the same
+`editor.update()` callback:
 
 ```typescript
 import type {LexicalEditor, NodeKey} from 'lexical';
@@ -153,23 +178,7 @@ function createSelectNodeCallback(editor: LexicalEditor, nodeKey: NodeKey) {
 `$getNodeByKey()` returns `null` when the key is absent from the active state.
 A node can also still be in that state's node map after being detached, before
 garbage collection removes it. For an action that targets a node in the
-document, `isAttached()` checks that it is still connected to the root.
-
-If existing code keeps a node reference, guard its use inside the update:
-
-```typescript
-import type {LexicalEditor, LexicalNode} from 'lexical';
-
-function createSelectNodeCallback(editor: LexicalEditor, node: LexicalNode) {
-  return () => {
-    editor.update(() => {
-      if (node.isAttached()) {
-        node.selectEnd();
-      }
-    });
-  };
-}
-```
+document, check `isAttached()` as well.
 
 Both `$getNodeByKey()` and `isAttached()` require an active read or update
 context. Checking them before `editor.update()`, or keeping a check's result
@@ -315,7 +324,7 @@ Understanding key management is crucial for performance:
 ## Common Questions
 
 **Q: How do I reference a node later?**
-A: Capture `node.getKey()` and resolve it inside the later read or update. If you keep a node reference, its methods resolve the latest version, but the node may have been removed. See [Referencing a node in a later callback](#referencing-a-node-in-a-later-callback) for both patterns and the checks needed before acting on a node in the document.
+A: Store a reference to the node. Its methods resolve the latest version inside a read or update, preserving the node's type. If the node may have been removed, check `node.isAttached()` in that same context before using it. Storing the key and resolving it with `$getNodeByKey()` is also supported. See [Referencing a node in a later callback](#referencing-a-node-in-a-later-callback) for both patterns.
 
 **Q: How do I ensure unique nodes?**
 A: Let Lexical handle key generation and management. Focus on node content and structure.

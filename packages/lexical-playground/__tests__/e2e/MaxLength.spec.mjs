@@ -114,7 +114,20 @@ test.describe('MaxLength', () => {
     );
 
     await clearEditor(page);
-    await page.keyboard.type('👨‍💻👨‍💻👨‍💻👨‍💻👨‍💻👨‍💻👨‍💻');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+    );
+    await assertCaret(page, 'p', 0);
+    // Let the limit transform commit each grapheme before the next insertion.
+    for (let count = 1; count <= 7; count++) {
+      await page.keyboard.type('👨‍💻');
+      await assertCaret(page, 'p > span', Math.min(count, 6) * '👨‍💻'.length);
+    }
 
     await assertHTML(
       page,

@@ -1786,6 +1786,7 @@ test.describe('Selection', () => {
       await pressToggleItalic(page);
       await page.keyboard.type('Line2');
       await page.keyboard.press('ArrowUp');
+      await assertCaret(page, ':scope > p:nth-child(3)', 0);
       await pressToggleBold(page);
       await page.keyboard.type('Line3');
       await assertHTML(

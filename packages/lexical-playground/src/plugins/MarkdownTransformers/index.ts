@@ -40,11 +40,13 @@ import {
 import {
   $createLineBreakNode,
   $createTextNode,
+  $isElementNode,
   $isLineBreakNode,
   $isParagraphNode,
   $isTextNode,
   type LexicalNode,
   LineBreakNode,
+  type TextNode,
 } from 'lexical';
 
 import {
@@ -211,8 +213,13 @@ const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
  * line breaks in a cell's Markdown while it is encoded or decoded.
  */
 function lineBreakMark(text: string): string {
+  // A numeric character reference (`&#57344;`) reads as its character.
+  const references = new Set<number>();
+  for (const [, decimal, hex] of text.matchAll(/&#(?:(\d+)|x([\da-f]+));/gi)) {
+    references.add(decimal ? parseInt(decimal, 10) : parseInt(hex, 16));
+  }
   let code = 0xe000;
-  while (text.includes(String.fromCharCode(code))) {
+  while (text.includes(String.fromCharCode(code)) || references.has(code)) {
     code++;
   }
   return String.fromCharCode(code);
@@ -502,7 +509,7 @@ interface CellLine {
 }
 
 // The line separators in a cell: `<br>`, or the legacy `\n`.
-const CELL_BREAK_REG_EXP = /^<br\s*\/?>/i;
+const CELL_BREAK_REG_EXP = /<br\s*\/?>/iy;
 const CELL_FENCE_OPEN_REG_EXP = /^ {0,3}(`{3,})[^`]*?(?=<br\s*\/?>|\\n|$)/i;
 const CELL_FENCE_CLOSE_REG_EXP = /^ {0,3}(`{3,})[ \t]*(?=<br\s*\/?>|\\n|$)/i;
 
@@ -528,7 +535,8 @@ function splitCellLines(text: string): CellLine[] {
     let end = i;
     let separator = 0;
     while (end < text.length) {
-      const br = CELL_BREAK_REG_EXP.exec(text.slice(end, end + 8));
+      CELL_BREAK_REG_EXP.lastIndex = end;
+      const br = CELL_BREAK_REG_EXP.exec(text);
       if (br !== null) {
         separator = br[0].length;
         break;
@@ -567,29 +575,48 @@ const BLOCK_LINE_REG_EXP =
   /^ {0,3}(?:#{1,6}(?:\s|$)|([-*_])(?:[ \t]*\1){2,}[ \t]*$)/;
 
 /**
+ * How each separator between a cell's lines reads: as a newline where a
+ * block needs one (in a code block, and beside a fence), as a newline that
+ * a block would start or end if it isn't inside inline syntax (before a
+ * line that starts a block, or after one that a block ends), or as a line
+ * break inside a paragraph.
+ */
+type CellBreak = 'newline' | 'block' | 'inline';
+
+function cellBreaks(lines: CellLine[]): CellBreak[] {
+  return lines.slice(1).map((line, i) => {
+    const prev = lines[i];
+    if (line.fence !== null || prev.fence !== null) {
+      return 'newline';
+    }
+    return BLOCK_START_REG_EXP.test(line.text) ||
+      BLOCK_LINE_REG_EXP.test(prev.text)
+      ? 'block'
+      : 'inline';
+  });
+}
+
+/**
  * A cell's Markdown with its line separators decoded, for
  * `$convertFromMarkdownString`. `<br>` separates lines in a cell, and the
  * literal `\n` this transformer used to write still does, but neither
  * inside a code span nor after a backslash escape (`\<br>`, `C:\\new`).
- * A separator becomes a newline where a block needs one: in a code block,
- * and before a line that starts a block or after one that a block ends.
- * Elsewhere it becomes `mark`, which {@link $createTableCell} turns into a
- * line break after parsing, so formatting and links that span it
- * (`**a<br>b**`, `[a<br>b](url)`) stay whole. A pipe is escaped (`\|`)
- * everywhere in a row, code spans included, so it is unescaped here.
+ * A separator that `newline` picks becomes a newline; any other becomes
+ * `mark`, which {@link $createTableCell} turns into a line break after
+ * parsing, so formatting and links that span it (`**a<br>b**`,
+ * `[a<br>b](url)`) stay whole. A pipe is escaped (`\|`) everywhere in a
+ * row, code spans included, so it is unescaped here.
  */
-function decodeTableCell(text: string, mark: string): string {
+function decodeTableCell(
+  lines: CellLine[],
+  newline: readonly boolean[],
+  mark: string,
+): string {
   let result = '';
-  splitCellLines(text).forEach((line, i, lines) => {
+  lines.forEach((line, i) => {
     if (i > 0) {
-      const prev = lines[i - 1];
-      const inline =
-        line.fence === null &&
-        prev.fence === null &&
-        !BLOCK_START_REG_EXP.test(line.text) &&
-        !BLOCK_LINE_REG_EXP.test(prev.text);
       result = result.replace(/[ \t]+$/, '');
-      result += inline ? mark : '\n';
+      result += newline[i - 1] ? '\n' : mark;
     }
     if (line.fence === 'code') {
       result += line.text.replace(/\\([\\|<n])/g, (_, char: string) =>
@@ -605,6 +632,17 @@ function decodeTableCell(text: string, mark: string): string {
     }
   });
   return result;
+}
+
+/** The text nodes under `cell` that hold each `mark`, in order. */
+function $markNodes(cell: TableCellNode, mark: string): TextNode[] {
+  return cell.getAllTextNodes().flatMap(node =>
+    node
+      .getTextContent()
+      .split(mark)
+      .slice(1)
+      .map(() => node),
+  );
 }
 
 /** Turns each `mark` in the text under `cell` into a line break. */
@@ -632,9 +670,46 @@ const $createTableCell = (textContent: string): TableCellNode => {
   // GFM trims a cell's padding.
   const text = textContent.trim();
   const mark = lineBreakMark(text);
+  const lines = splitCellLines(text);
+  const breaks = cellBreaks(lines);
+  if (breaks.includes('block')) {
+    // Text that would start a block can't when it follows a `<br>` inside
+    // inline syntax (`**a<br># b**`, `[a<br>- b](url)`). Read every such
+    // separator as a line break first, and keep the ones that land in
+    // formatted text or an inline element.
+    const probe = $createTableCellNode();
+    $convertFromMarkdownString(
+      decodeTableCell(
+        lines,
+        breaks.map(kind => kind === 'newline'),
+        mark,
+      ),
+      PLAYGROUND_TRANSFORMERS,
+      probe,
+    );
+    const marked = $markNodes(probe, mark);
+    const unmarked = breaks.flatMap((kind, i) =>
+      kind === 'newline' ? [] : [i],
+    );
+    if (marked.length === unmarked.length) {
+      marked.forEach((node, k) => {
+        const parent = node.getParent();
+        if (
+          node.getFormat() !== 0 ||
+          ($isElementNode(parent) && parent.isInline())
+        ) {
+          breaks[unmarked[k]] = 'inline';
+        }
+      });
+    }
+  }
   const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
   $convertFromMarkdownString(
-    decodeTableCell(text, mark),
+    decodeTableCell(
+      lines,
+      breaks.map(kind => kind !== 'inline'),
+      mark,
+    ),
     PLAYGROUND_TRANSFORMERS,
     cell,
   );

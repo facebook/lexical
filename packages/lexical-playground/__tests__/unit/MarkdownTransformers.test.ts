@@ -674,6 +674,75 @@ describe('playground TABLE markdown transformer', () => {
     });
   });
 
+  it.each([
+    ['**', '# b', 'bold'],
+    ['*', '- b', 'italic'],
+    ['~~', '> b', 'strikethrough'],
+    ['**', '1. b', 'bold'],
+  ] as const)(
+    'keeps %s formatting whole across a <br> before %j',
+    (marker, line, format) => {
+      using editor = importMarkdown(
+        ['| h |', '| --- |', `| ${marker}a<br>${line}${marker} |`].join('\n'),
+      );
+      editor.read(() => {
+        const paragraph = $getRoot().getLastDescendant()?.getParent();
+        assert($isParagraphNode(paragraph), 'The cell must hold a paragraph');
+        const children = paragraph.getChildren();
+        expect(
+          children.map(node => node.getTextContent() || node.getType()),
+        ).toEqual(['a', '\n', line]);
+        for (const node of children) {
+          if ($isTextNode(node)) {
+            expect(node.hasFormat(format)).toBe(true);
+          }
+        }
+        // Formatting is closed on each side of a line break, as elsewhere.
+        expect($convertToMarkdownString([TABLE]).split('\n')[2]).toBe(
+          `| ${marker}a${marker}<br>${marker}${line}${marker} |`,
+        );
+      });
+    },
+  );
+
+  it('keeps a link whose second line starts like a list item', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| [a<br>- b](https://example.com) |'].join('\n'),
+    );
+    editor.read(() => {
+      const link = $getRoot().getLastDescendant()?.getParent();
+      assert($isLinkNode(link), 'The cell must hold a link');
+      expect(link.getTextContent()).toBe('a\n- b');
+      expect($convertToMarkdownString([TABLE]).split('\n')[2]).toBe(
+        '| [a<br>- b](https://example.com) |',
+      );
+    });
+  });
+
+  it('still reads a heading after a <br> outside formatting', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| **a**<br># b |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [['a', 'b']]]);
+  });
+
+  it('keeps a character reference to the line break marker', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| a&#57344;b<br>c |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [['a\ue000b\nc']]]);
+  });
+
+  it.each(['a<br />b', 'a<br    />b', 'a<BR\t/>b'])(
+    'reads %j as a line break',
+    body => {
+      using editor = importMarkdown(
+        ['| h |', '| --- |', `| ${body} |`].join('\n'),
+      );
+      expect(cellTexts(editor)).toEqual([[['h']], [['a\nb']]]);
+    },
+  );
+
   it('reads a link with a <br> in its text', () => {
     using editor = importMarkdown(
       ['| h |', '| --- |', '| [a<br>b](https://example.com) |'].join('\n'),

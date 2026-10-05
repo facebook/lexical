@@ -13,12 +13,13 @@ import {MarkdownTestExtension} from '@lexical/markdown/src/__tests__/utils';
 import {$setBlocksType} from '@lexical/selection';
 import {
   $getSelection,
+  $isRangeSelection,
   configExtension,
   defineExtension,
   INDENT_CONTENT_COMMAND,
   IS_APPLE,
 } from 'lexical';
-import {test} from 'vitest';
+import {expect, test} from 'vitest';
 import {userEvent} from 'vitest/browser';
 
 import {CodeHighlightExtension} from '../../plugins/CodeHighlightExtension';
@@ -152,8 +153,28 @@ test('should not prevent selection and typing outside code block boundaries if b
     {discrete: true},
   );
 
-  // Selection must at start of the previous paragraph when pressing up
+  // ArrowUp's code-block handler reads Lexical's selection, so both carets
+  // must reach the start of the line before it runs.
   await press(IS_APPLE ? 'Meta+ArrowLeft' : 'Home');
+  await assertSelection(root, {
+    anchorOffset: 0,
+    anchorPath: [1, 0, 0],
+    focusOffset: 0,
+    focusPath: [1, 0, 0],
+  });
+  await expect
+    .poll(() =>
+      editor.getEditorState().read(() => {
+        const selection = $getSelection();
+        return (
+          $isRangeSelection(selection) &&
+          selection.isCollapsed() &&
+          selection.anchor.offset === 0 &&
+          selection.anchor.getNode().getParent()?.getType() === 'code'
+        );
+      }),
+    )
+    .toBe(true);
   await press('ArrowUp');
   await assertSelection(root, {
     anchorOffset: 0,

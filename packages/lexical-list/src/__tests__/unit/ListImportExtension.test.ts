@@ -16,7 +16,6 @@ import {
   $isListItemNode,
   $isListNode,
   ListExtension,
-  ListImportExtension,
   ListItemNode,
   ListNode,
   WordListImportExtension,
@@ -186,19 +185,6 @@ describe('ListImportExtension', () => {
       for (const wrapper of wrappers) {
         expect(wrapper.getType()).toBe('custom-listitem');
       }
-    });
-  });
-
-  test('deprecated ListImportExtension alias still imports lists', () => {
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [ListImportExtension],
-        name: 'list-alias-host',
-      }),
-    );
-    importInto(editor, '<ul><li>a</li></ul>');
-    editor.read(() => {
-      expect($items($rootList()).map(i => i.getTextContent())).toEqual(['a']);
     });
   });
 });

@@ -54,10 +54,8 @@ import {
   ImportContextMarkdown,
   MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
-  MdastExportExtension,
   MdastExtension,
   MdastHeadingExtension,
-  MdastImportExtension,
   MdastShadowRootQuoteExtension,
   MdastStrikethroughExtension,
   MdastTableExtension,
@@ -74,7 +72,7 @@ function createEditor(withTable = false): LexicalEditorWithDispose {
         // GFM constructs under test that aren't part of CommonMark.
         MdastStrikethroughExtension,
         MdastTaskListExtension,
-        MdastExportExtension,
+        MdastExtension,
         ...(withTable ? [MdastTableExtension] : []),
       ],
       name: '[root]',
@@ -364,7 +362,7 @@ describe('@lexical/mdast import/export', () => {
         dependencies: [
           MdastCommonMarkExtension,
           MdastAutolinkLiteralExtension,
-          MdastExportExtension,
+          MdastExtension,
         ],
         name: '[root]',
       }),
@@ -467,8 +465,7 @@ describe('@lexical/mdast import/export', () => {
       defineExtension({
         dependencies: [
           MdastCommonMarkExtension,
-          MdastExportExtension,
-          configExtension(MdastImportExtension, {
+          configExtension(MdastExtension, {
             toMarkdownExtensions: [{bullet: '+'}],
           }),
         ],
@@ -700,8 +697,7 @@ describe('@lexical/mdast import/export', () => {
         defineExtension({
           dependencies: [
             MdastCommonMarkExtension,
-            MdastExportExtension,
-            configExtension(MdastImportExtension, {
+            configExtension(MdastExtension, {
               toMarkdownExtensions: [
                 {
                   handlers: {
@@ -750,8 +746,7 @@ describe('@lexical/mdast import/export', () => {
         defineExtension({
           dependencies: [
             MdastCommonMarkExtension,
-            MdastExportExtension,
-            configExtension(MdastImportExtension, {
+            configExtension(MdastExtension, {
               importRules: [
                 {
                   $import: (node, ctx) => {
@@ -809,7 +804,7 @@ describe('@lexical/mdast import/export', () => {
     // children (a paragraph) instead of corrupting or dropping content.
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [MdastHeadingExtension, MdastExportExtension],
+        dependencies: [MdastHeadingExtension, MdastExtension],
         name: '[root]',
       }),
     );
@@ -944,7 +939,7 @@ describe('@lexical/mdast import/export', () => {
         defineExtension({
           dependencies: [
             MdastCommonMarkExtension,
-            MdastExportExtension,
+            MdastExtension,
             MdastShadowRootQuoteExtension,
           ],
           name: '[root]',
@@ -1057,8 +1052,7 @@ describe('@lexical/mdast import/export', () => {
       defineExtension({
         dependencies: [
           MdastCommonMarkExtension,
-          MdastExportExtension,
-          configExtension(MdastImportExtension, {
+          configExtension(MdastExtension, {
             importRules: undefined,
             mdastExtensions: undefined,
           }),

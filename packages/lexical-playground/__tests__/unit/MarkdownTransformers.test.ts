@@ -502,8 +502,14 @@ describe('playground TABLE markdown transformer', () => {
     });
   });
 
-  it.each(['a\\|b', 'a\\\\|b', 'a|b\\'])(
-    'round-trips backslashes beside a pipe in a cell: %j',
+  it.each([
+    '<code>x</code>',
+    'see <code>a|b</code> y',
+    'a\\|b',
+    'a\\\\|b',
+    'a|b\\',
+  ])(
+    'round-trips text with backslashes, pipes and tags in a cell: %j',
     text => {
       using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
       editor.update(

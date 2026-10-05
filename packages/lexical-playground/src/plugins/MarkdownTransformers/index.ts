@@ -472,7 +472,8 @@ function encodeCodeSpan(span: string): string {
   )}</code>`;
 }
 
-const CODE_HTML_REG_EXP = /<code>([^<]*)<\/code>/gi;
+// A `<code>` element that has only text, past backslash escapes.
+const CODE_HTML_REG_EXP = /\\[^]|<code>([^<]*)<\/code>/gi;
 
 /** A code span with the code of a `<code>` element that has only text. */
 function codeSpanFromHtml(html: string): string {
@@ -516,9 +517,9 @@ function encodeTableCell(markdown: string): string {
       .map((part, i) =>
         i % 2 === 1
           ? encodeCodeSpan(part)
-          : // Escapes a pipe and a `<br>` that are text, past what a
-            // backslash already escapes (in `\\|`, the backslash).
-            part.replace(/\\[^]|\||<(?=br\s*\/?>)/gi, match =>
+          : // Escapes a pipe, a `<br>` and a `<code>` that are text, past
+            // what a backslash already escapes (in `\\|`, the backslash).
+            part.replace(/\\[^]|\||<(?=br\s*\/?>|code>)/gi, match =>
               match.length > 1 ? match : '\\' + match,
             ),
       )
@@ -683,8 +684,10 @@ function decodeTableCell(
           const unescaped = part.replace(/\\\|/g, '|');
           return k % 2 === 1
             ? unescaped
-            : unescaped.replace(CODE_HTML_REG_EXP, (_, html: string) =>
-                codeSpanFromHtml(html),
+            : unescaped.replace(
+                CODE_HTML_REG_EXP,
+                (match, html: string | undefined) =>
+                  html === undefined ? match : codeSpanFromHtml(html),
               );
         })
         .join('');

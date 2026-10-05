@@ -7,7 +7,7 @@
  */
 
 import {useMergeRefs} from '@floating-ui/react';
-import {$isCodeNode} from '@lexical/code';
+import {$isCodeNode, CodeNode} from '@lexical/code';
 import {
   getCodeLanguageOptions as getCodeLanguageOptionsPrism,
   normalizeCodeLanguage as normalizeCodeLanguagePrism,
@@ -17,20 +17,26 @@ import {
   getCodeThemeOptions as getCodeThemeOptionsShiki,
   normalizeCodeLanguage as normalizeCodeLanguageShiki,
 } from '@lexical/code-shiki';
-import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/extension';
+import {
+  effect,
+  getPeerDependencyFromEditor,
+  HorizontalRuleNode,
+  INSERT_HORIZONTAL_RULE_COMMAND,
+} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
 import {useLexicalFocusManagerRef} from '@lexical/react/useLexicalFocusManagerRef';
 import {useLexicalRovingTabIndexRef} from '@lexical/react/useLexicalRovingTabIndexRef';
-import {$isHeadingNode} from '@lexical/rich-text';
+import {$isHeadingNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
   $patchStyleText,
 } from '@lexical/selection';
-import {$isTableNode, $isTableSelection} from '@lexical/table';
+import {$isTableNode, $isTableSelection, TableNode} from '@lexical/table';
 import {$getNearestNodeOfType, $isEditorIsNestedEditor} from '@lexical/utils';
 import {
   $addUpdateTag,
@@ -54,6 +60,7 @@ import {
   HISTORIC_TAG,
   INDENT_CONTENT_COMMAND,
   IS_APPLE,
+  type Klass,
   type LexicalEditor,
   type LexicalNode,
   mergeRegister,
@@ -76,7 +83,14 @@ import {
 } from '../../context/ToolbarContext';
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
-import {$createStickyNode} from '../../nodes/StickyNode';
+import {DateTimeNode} from '../../nodes/DateTimeNode/DateTimeNode';
+import {EquationNode} from '../../nodes/EquationNode';
+import {ExcalidrawNode} from '../../nodes/ExcalidrawNode';
+import {ImageNode} from '../../nodes/ImageNode';
+import {LayoutContainerNode} from '../../nodes/LayoutContainerNode';
+import {PageBreakNode} from '../../nodes/PageBreakNode';
+import {PollNode} from '../../nodes/PollNode';
+import {$createStickyNode, StickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
 import {isKeyboardInput} from '../../utils/focusUtils';
@@ -84,6 +98,7 @@ import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsibleExtension';
+import {CollapsibleContainerNode} from '../CollapsibleExtension/CollapsibleContainerNode';
 import {INSERT_DATETIME_COMMAND} from '../DateTimeExtension';
 import {InsertEquationDialog} from '../EquationsExtension';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawExtension';
@@ -94,6 +109,12 @@ import {
 } from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutExtension/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
+import {
+  INSERT_PAGE_COUNT_COMMAND,
+  INSERT_PAGE_NUMBER_COMMAND,
+  PageCountNode,
+  PageNumberNode,
+} from '../PagesExtension';
 import {PagesReactExtension} from '../PagesReactExtension';
 import {InsertPollDialog} from '../PollExtension';
 import {$isRubyNode, $toggleRuby} from '../RubyExtension/RubyNode';
@@ -272,6 +293,9 @@ function BlockFormatDropDown({
   editor: LexicalEditor;
   disabled?: boolean;
 }): JSX.Element {
+  // Offer a block type only where the editor registers its node: a page
+  // header has them all, a caption or sticky note has none.
+  const has = (node: Klass<LexicalNode>) => editor.hasNodes([node]);
   return (
     <DropDown
       disabled={disabled}
@@ -290,80 +314,134 @@ function BlockFormatDropDown({
         </div>
         <span className="shortcut">{shortcut('NORMAL')}</span>
       </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'h1')}
-        onClick={() => formatHeading(editor, blockType, 'h1')}>
-        <div className="icon-text-container">
-          <i className="icon h1" />
-          <span className="text">Heading 1</span>
-        </div>
-        <span className="shortcut">{shortcut('HEADING1')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'h2')}
-        onClick={() => formatHeading(editor, blockType, 'h2')}>
-        <div className="icon-text-container">
-          <i className="icon h2" />
-          <span className="text">Heading 2</span>
-        </div>
-        <span className="shortcut">{shortcut('HEADING2')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'h3')}
-        onClick={() => formatHeading(editor, blockType, 'h3')}>
-        <div className="icon-text-container">
-          <i className="icon h3" />
-          <span className="text">Heading 3</span>
-        </div>
-        <span className="shortcut">{shortcut('HEADING3')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'number')}
-        onClick={() => formatNumberedList(editor, blockType)}>
-        <div className="icon-text-container">
-          <i className="icon numbered-list" />
-          <span className="text">Numbered List</span>
-        </div>
-        <span className="shortcut">{shortcut('NUMBERED_LIST')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'bullet')}
-        onClick={() => formatBulletList(editor, blockType)}>
-        <div className="icon-text-container">
-          <i className="icon bullet-list" />
-          <span className="text">Bullet List</span>
-        </div>
-        <span className="shortcut">{shortcut('BULLET_LIST')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'check')}
-        onClick={() => formatCheckList(editor, blockType)}>
-        <div className="icon-text-container">
-          <i className="icon check-list" />
-          <span className="text">Check List</span>
-        </div>
-        <span className="shortcut">{shortcut('CHECK_LIST')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'quote')}
-        onClick={() => formatQuote(editor, blockType)}>
-        <div className="icon-text-container">
-          <i className="icon quote" />
-          <span className="text">Quote</span>
-        </div>
-        <span className="shortcut">{shortcut('QUOTE')}</span>
-      </DropDownItem>
-      <DropDownItem
-        className={'item wide ' + dropDownActiveClass(blockType === 'code')}
-        onClick={() => formatCode(editor, blockType)}>
-        <div className="icon-text-container">
-          <i className="icon code" />
-          <span className="text">Code Block</span>
-        </div>
-        <span className="shortcut">{shortcut('CODE_BLOCK')}</span>
-      </DropDownItem>
+      {has(HeadingNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'h1')}
+          onClick={() => formatHeading(editor, blockType, 'h1')}>
+          <div className="icon-text-container">
+            <i className="icon h1" />
+            <span className="text">Heading 1</span>
+          </div>
+          <span className="shortcut">{shortcut('HEADING1')}</span>
+        </DropDownItem>
+      )}
+      {has(HeadingNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'h2')}
+          onClick={() => formatHeading(editor, blockType, 'h2')}>
+          <div className="icon-text-container">
+            <i className="icon h2" />
+            <span className="text">Heading 2</span>
+          </div>
+          <span className="shortcut">{shortcut('HEADING2')}</span>
+        </DropDownItem>
+      )}
+      {has(HeadingNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'h3')}
+          onClick={() => formatHeading(editor, blockType, 'h3')}>
+          <div className="icon-text-container">
+            <i className="icon h3" />
+            <span className="text">Heading 3</span>
+          </div>
+          <span className="shortcut">{shortcut('HEADING3')}</span>
+        </DropDownItem>
+      )}
+      {has(ListNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'number')}
+          onClick={() => formatNumberedList(editor, blockType)}>
+          <div className="icon-text-container">
+            <i className="icon numbered-list" />
+            <span className="text">Numbered List</span>
+          </div>
+          <span className="shortcut">{shortcut('NUMBERED_LIST')}</span>
+        </DropDownItem>
+      )}
+      {has(ListNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'bullet')}
+          onClick={() => formatBulletList(editor, blockType)}>
+          <div className="icon-text-container">
+            <i className="icon bullet-list" />
+            <span className="text">Bullet List</span>
+          </div>
+          <span className="shortcut">{shortcut('BULLET_LIST')}</span>
+        </DropDownItem>
+      )}
+      {has(ListNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'check')}
+          onClick={() => formatCheckList(editor, blockType)}>
+          <div className="icon-text-container">
+            <i className="icon check-list" />
+            <span className="text">Check List</span>
+          </div>
+          <span className="shortcut">{shortcut('CHECK_LIST')}</span>
+        </DropDownItem>
+      )}
+      {has(QuoteNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'quote')}
+          onClick={() => formatQuote(editor, blockType)}>
+          <div className="icon-text-container">
+            <i className="icon quote" />
+            <span className="text">Quote</span>
+          </div>
+          <span className="shortcut">{shortcut('QUOTE')}</span>
+        </DropDownItem>
+      )}
+      {has(CodeNode) && (
+        <DropDownItem
+          className={'item wide ' + dropDownActiveClass(blockType === 'code')}
+          onClick={() => formatCode(editor, blockType)}>
+          <div className="icon-text-container">
+            <i className="icon code" />
+            <span className="text">Code Block</span>
+          </div>
+          <span className="shortcut">{shortcut('CODE_BLOCK')}</span>
+        </DropDownItem>
+      )}
     </DropDown>
   );
+}
+
+/**
+ * The history that undo in `editor` reaches: its own, or else the nearest
+ * enclosing editor's (a page header has none of its own and undoes in the
+ * document). Null when no editor on the way has an enabled one.
+ */
+function getHistoryFor(editor: LexicalEditor) {
+  for (
+    let current: LexicalEditor | null = editor;
+    current !== null;
+    current = current._parentEditor
+  ) {
+    const history = getPeerDependencyFromEditor<typeof HistoryExtension>(
+      current,
+      HistoryExtension.name,
+    );
+    if (history !== undefined && !history.output.disabled.peek()) {
+      return history.output;
+    }
+  }
+  return null;
+}
+
+function isSelfOrAncestor(
+  candidate: LexicalEditor,
+  editor: LexicalEditor,
+): boolean {
+  for (
+    let current: LexicalEditor | null = editor;
+    current !== null;
+    current = current._parentEditor
+  ) {
+    if (current === candidate) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function Divider(): JSX.Element {
@@ -585,6 +663,11 @@ export default function ToolbarPlugin({
   const focusManagerRef = useLexicalFocusManagerRef();
   const toolbarRef = useMergeRefs([rovingRef, focusManagerRef]);
 
+  // Insert items only apply in editors that register the node they create:
+  // the document has all of them, a page header has no page breaks or
+  // sticky notes but does have page numbers.
+  const canInsert = (nodes: Klass<LexicalNode>[]) =>
+    activeEditor.hasNodes(nodes);
   const dispatchToolbarCommand = <T extends AnyLexicalCommand>(
     command: T,
     payload: CommandPayloadType<T> | undefined = undefined,
@@ -818,24 +901,47 @@ export default function ToolbarPlugin({
           {editor: activeEditor},
         );
       }),
-      activeEditor.registerCommand(
+    );
+  }, [$updateToolbar, activeEditor, editor, updateToolbarState]);
+
+  // The undo and redo buttons act on the history that undo in the active
+  // editor reaches: its own, or the enclosing editor's (a page header has
+  // none and undoes in the document). Follow that history's `canUndo` /
+  // `canRedo` signals, which always hold the current value, instead of
+  // whichever editor last reported a change.
+  useEffect(() => {
+    const history = getHistoryFor(activeEditor);
+    if (history !== null) {
+      return effect(() => {
+        updateToolbarState('canUndo', history.canUndo.value);
+        updateToolbarState('canRedo', history.canRedo.value);
+      });
+    }
+    // Collaboration replaces the history with Yjs's undo manager, which
+    // still reports only through the deprecated commands (it has no signal
+    // yet). They are dispatched on the root editor; ignore any that come
+    // from editors the caret is not in.
+    const onReport =
+      (key: 'canRedo' | 'canUndo') =>
+      (payload: boolean, from: LexicalEditor) => {
+        if (isSelfOrAncestor(from, activeEditor)) {
+          updateToolbarState(key, payload);
+        }
+        return false;
+      };
+    return mergeRegister(
+      editor.registerCommand(
         CAN_UNDO_COMMAND,
-        payload => {
-          updateToolbarState('canUndo', payload);
-          return false;
-        },
+        onReport('canUndo'),
         COMMAND_PRIORITY_CRITICAL,
       ),
-      activeEditor.registerCommand(
+      editor.registerCommand(
         CAN_REDO_COMMAND,
-        payload => {
-          updateToolbarState('canRedo', payload);
-          return false;
-        },
+        onReport('canRedo'),
         COMMAND_PRIORITY_CRITICAL,
       ),
     );
-  }, [$updateToolbar, activeEditor, editor, updateToolbarState]);
+  }, [activeEditor, editor, updateToolbarState]);
 
   const applyStyleText = useCallback(
     (
@@ -974,7 +1080,11 @@ export default function ToolbarPlugin({
       </button>
       <Divider />
       {toolbarState.blockType in blockTypeToBlockName &&
-        activeEditor === editor && (
+        // Nested rich-text editors (page headers and footers) take block
+        // formats too; only image captions stay inline-only.
+        !toolbarState.isImageCaption &&
+        // Nothing to choose from in a plain-text editor (a sticky note).
+        activeEditor.hasNodes([HeadingNode]) && (
           <>
             <BlockFormatDropDown
               disabled={!isEditable}
@@ -1324,137 +1434,185 @@ export default function ToolbarPlugin({
                 buttonLabel="Insert"
                 buttonAriaLabel="Insert specialized editor node"
                 buttonIconClassName="icon plus">
-                <DropDownItem
-                  onClick={() =>
-                    dispatchToolbarCommand(INSERT_HORIZONTAL_RULE_COMMAND)
-                  }
-                  className="item">
-                  <i className="icon horizontal-rule" />
-                  <span className="text">Horizontal Rule</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() => dispatchToolbarCommand(INSERT_PAGE_BREAK)}
-                  className="item">
-                  <i className="icon page-break" />
-                  <span className="text">Page Break</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() => {
-                    showModal('Insert Image', onClose => (
-                      <InsertImageDialog
-                        activeEditor={activeEditor}
-                        onClose={onClose}
-                      />
-                    ));
-                  }}
-                  className="item">
-                  <i className="icon image" />
-                  <span className="text">Image</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() =>
-                    insertGifOnClick({
-                      altText: 'Cat typing on a laptop',
-                      src: catTypingGif,
-                    })
-                  }
-                  className="item">
-                  <i className="icon gif" />
-                  <span className="text">GIF</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() =>
-                    dispatchToolbarCommand(INSERT_EXCALIDRAW_COMMAND)
-                  }
-                  className="item">
-                  <i className="icon diagram-2" />
-                  <span className="text">Excalidraw</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() => {
-                    showModal('Insert Table', onClose => (
-                      <InsertTableDialog
-                        activeEditor={activeEditor}
-                        onClose={onClose}
-                      />
-                    ));
-                  }}
-                  className="item">
-                  <i className="icon table" />
-                  <span className="text">Table</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() => {
-                    showModal('Insert Poll', onClose => (
-                      <InsertPollDialog
-                        activeEditor={activeEditor}
-                        onClose={onClose}
-                      />
-                    ));
-                  }}
-                  className="item">
-                  <i className="icon poll" />
-                  <span className="text">Poll</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() => {
-                    showModal('Insert Columns Layout', onClose => (
-                      <InsertLayoutDialog
-                        activeEditor={activeEditor}
-                        onClose={onClose}
-                      />
-                    ));
-                  }}
-                  className="item">
-                  <i className="icon columns" />
-                  <span className="text">Columns Layout</span>
-                </DropDownItem>
+                {canInsert([HorizontalRuleNode]) && (
+                  <DropDownItem
+                    onClick={() =>
+                      dispatchToolbarCommand(INSERT_HORIZONTAL_RULE_COMMAND)
+                    }
+                    className="item">
+                    <i className="icon horizontal-rule" />
+                    <span className="text">Horizontal Rule</span>
+                  </DropDownItem>
+                )}
+                {canInsert([PageBreakNode]) && (
+                  <DropDownItem
+                    onClick={() => dispatchToolbarCommand(INSERT_PAGE_BREAK)}
+                    className="item">
+                    <i className="icon page-break" />
+                    <span className="text">Page Break</span>
+                  </DropDownItem>
+                )}
+                {canInsert([PageNumberNode]) && (
+                  <DropDownItem
+                    onClick={() =>
+                      dispatchToolbarCommand(INSERT_PAGE_NUMBER_COMMAND)
+                    }
+                    className="item">
+                    <i className="icon page-number" />
+                    <span className="text">Page Number</span>
+                  </DropDownItem>
+                )}
+                {canInsert([PageCountNode]) && (
+                  <DropDownItem
+                    onClick={() =>
+                      dispatchToolbarCommand(INSERT_PAGE_COUNT_COMMAND)
+                    }
+                    className="item">
+                    <i className="icon page-count" />
+                    <span className="text">Page Count</span>
+                  </DropDownItem>
+                )}
+                {canInsert([ImageNode]) && (
+                  <DropDownItem
+                    onClick={() => {
+                      showModal('Insert Image', onClose => (
+                        <InsertImageDialog
+                          activeEditor={activeEditor}
+                          onClose={onClose}
+                        />
+                      ));
+                    }}
+                    className="item">
+                    <i className="icon image" />
+                    <span className="text">Image</span>
+                  </DropDownItem>
+                )}
+                {canInsert([ImageNode]) && (
+                  <DropDownItem
+                    onClick={() =>
+                      insertGifOnClick({
+                        altText: 'Cat typing on a laptop',
+                        src: catTypingGif,
+                      })
+                    }
+                    className="item">
+                    <i className="icon gif" />
+                    <span className="text">GIF</span>
+                  </DropDownItem>
+                )}
+                {canInsert([ExcalidrawNode]) && (
+                  <DropDownItem
+                    onClick={() =>
+                      dispatchToolbarCommand(INSERT_EXCALIDRAW_COMMAND)
+                    }
+                    className="item">
+                    <i className="icon diagram-2" />
+                    <span className="text">Excalidraw</span>
+                  </DropDownItem>
+                )}
+                {canInsert([TableNode]) && (
+                  <DropDownItem
+                    onClick={() => {
+                      showModal('Insert Table', onClose => (
+                        <InsertTableDialog
+                          activeEditor={activeEditor}
+                          onClose={onClose}
+                        />
+                      ));
+                    }}
+                    className="item">
+                    <i className="icon table" />
+                    <span className="text">Table</span>
+                  </DropDownItem>
+                )}
+                {canInsert([PollNode]) && (
+                  <DropDownItem
+                    onClick={() => {
+                      showModal('Insert Poll', onClose => (
+                        <InsertPollDialog
+                          activeEditor={activeEditor}
+                          onClose={onClose}
+                        />
+                      ));
+                    }}
+                    className="item">
+                    <i className="icon poll" />
+                    <span className="text">Poll</span>
+                  </DropDownItem>
+                )}
+                {canInsert([LayoutContainerNode]) && (
+                  <DropDownItem
+                    onClick={() => {
+                      showModal('Insert Columns Layout', onClose => (
+                        <InsertLayoutDialog
+                          activeEditor={activeEditor}
+                          onClose={onClose}
+                        />
+                      ));
+                    }}
+                    className="item">
+                    <i className="icon columns" />
+                    <span className="text">Columns Layout</span>
+                  </DropDownItem>
+                )}
 
-                <DropDownItem
-                  onClick={() => {
-                    showModal('Insert Equation', onClose => (
-                      <InsertEquationDialog
-                        activeEditor={activeEditor}
-                        onClose={onClose}
-                      />
-                    ));
-                  }}
-                  className="item">
-                  <i className="icon equation" />
-                  <span className="text">Equation</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() => {
-                    editor.update(() => {
-                      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
-                      const root = $getRoot();
-                      const stickyNode = $createStickyNode(0, 0);
-                      root.append(stickyNode);
-                    });
-                  }}
-                  className="item">
-                  <i className="icon sticky" />
-                  <span className="text">Sticky Note</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() =>
-                    dispatchToolbarCommand(INSERT_COLLAPSIBLE_COMMAND)
-                  }
-                  className="item">
-                  <i className="icon caret-right" />
-                  <span className="text">Collapsible container</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() => {
-                    const dateTime = new Date();
-                    dateTime.setHours(0, 0, 0, 0);
-                    dispatchToolbarCommand(INSERT_DATETIME_COMMAND, {dateTime});
-                  }}
-                  className="item">
-                  <i className="icon calendar" />
-                  <span className="text">Date</span>
-                </DropDownItem>
-                {EmbedConfigs.map(embedConfig => (
+                {canInsert([EquationNode]) && (
+                  <DropDownItem
+                    onClick={() => {
+                      showModal('Insert Equation', onClose => (
+                        <InsertEquationDialog
+                          activeEditor={activeEditor}
+                          onClose={onClose}
+                        />
+                      ));
+                    }}
+                    className="item">
+                    <i className="icon equation" />
+                    <span className="text">Equation</span>
+                  </DropDownItem>
+                )}
+                {canInsert([StickyNode]) && (
+                  <DropDownItem
+                    onClick={() => {
+                      editor.update(() => {
+                        $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+                        const root = $getRoot();
+                        const stickyNode = $createStickyNode(0, 0);
+                        root.append(stickyNode);
+                      });
+                    }}
+                    className="item">
+                    <i className="icon sticky" />
+                    <span className="text">Sticky Note</span>
+                  </DropDownItem>
+                )}
+                {canInsert([CollapsibleContainerNode]) && (
+                  <DropDownItem
+                    onClick={() =>
+                      dispatchToolbarCommand(INSERT_COLLAPSIBLE_COMMAND)
+                    }
+                    className="item">
+                    <i className="icon caret-right" />
+                    <span className="text">Collapsible container</span>
+                  </DropDownItem>
+                )}
+                {canInsert([DateTimeNode]) && (
+                  <DropDownItem
+                    onClick={() => {
+                      const dateTime = new Date();
+                      dateTime.setHours(0, 0, 0, 0);
+                      dispatchToolbarCommand(INSERT_DATETIME_COMMAND, {
+                        dateTime,
+                      });
+                    }}
+                    className="item">
+                    <i className="icon calendar" />
+                    <span className="text">Date</span>
+                  </DropDownItem>
+                )}
+                {EmbedConfigs.filter(embedConfig =>
+                  canInsert([embedConfig.node]),
+                ).map(embedConfig => (
                   <DropDownItem
                     key={embedConfig.type}
                     onClick={() =>

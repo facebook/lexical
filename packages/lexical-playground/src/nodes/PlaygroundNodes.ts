@@ -34,14 +34,18 @@ import {KeywordNode} from './KeywordNode';
 import {LayoutContainerNode} from './LayoutContainerNode';
 import {LayoutItemNode} from './LayoutItemNode';
 import {MentionNode} from './MentionNode';
-import {PageBreakNode} from './PageBreakNode';
 import {PollNode} from './PollNode';
 import {SlotContainerNode} from './SlotContainerNode';
 import {SpecialTextNode} from './SpecialTextNode';
-import {StickyNode} from './StickyNode';
 import {TweetNode} from './TweetNode';
 import {YouTubeNode} from './YouTubeNode';
 
+/**
+ * The nodes every playground editor registers. Nodes that only make sense
+ * in the main document (page breaks, sticky notes) are registered by their
+ * own extensions, so nested editors such as page headers can leave them
+ * out and the toolbar and component picker can hide them there.
+ */
 const PlaygroundNodes: Klass<LexicalNode>[] = [
   HeadingNode,
   ListNode,
@@ -57,7 +61,6 @@ const PlaygroundNodes: Klass<LexicalNode>[] = [
   LinkNode,
   OverflowNode,
   PollNode,
-  StickyNode,
   ImageNode,
   MentionNode,
   EmojiNode,
@@ -72,7 +75,6 @@ const PlaygroundNodes: Klass<LexicalNode>[] = [
   CollapsibleContainerNode,
   CollapsibleContentNode,
   CollapsibleTitleNode,
-  PageBreakNode,
   LayoutContainerNode,
   LayoutItemNode,
   SpecialTextNode,

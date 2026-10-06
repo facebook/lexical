@@ -98,11 +98,13 @@ type EmbedMatch<TEmbedConfig extends EmbedConfig> = {
   url: string;
 };
 
-function $isCurrentLink(key: NodeKey, url: string): boolean {
+function $getCurrentLink(key: NodeKey, url: string): LinkNode | null {
   const linkNode = $getNodeByKey(key);
-  return (
-    $isLinkNode(linkNode) && linkNode.isAttached() && linkNode.getURL() === url
-  );
+  return $isLinkNode(linkNode) &&
+    linkNode.isAttached() &&
+    linkNode.getURL() === url
+    ? linkNode
+    : null;
 }
 
 /**
@@ -178,7 +180,9 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
         }
         if (result != null) {
           // Edits made while parseUrl was pending may not be committed yet
-          if (editor.read('pending', () => $isCurrentLink(key, url))) {
+          if (
+            editor.read('pending', () => $getCurrentLink(key, url) !== null)
+          ) {
             setEmbedMatch({embedConfig, key, result, url});
           }
           return;
@@ -253,8 +257,8 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
     }
     const {embedConfig, key, result, url} = embedMatch;
     editor.update(() => {
-      const linkNode = $getNodeByKey(key);
-      if (!$isLinkNode(linkNode) || !$isCurrentLink(key, url)) {
+      const linkNode = $getCurrentLink(key, url);
+      if (linkNode === null) {
         return;
       }
       if (!$getSelection()) {

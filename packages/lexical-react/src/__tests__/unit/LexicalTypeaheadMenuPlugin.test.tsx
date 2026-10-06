@@ -33,7 +33,7 @@ import * as React from 'react';
 import {act, useCallback} from 'react';
 import ReactDOM from 'react-dom';
 import {createRoot, type Root} from 'react-dom/client';
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 class TestMenuOption extends MenuOption {
   title: string;
@@ -472,9 +472,10 @@ describe('LexicalTypeaheadMenuPlugin', () => {
           await act(async () => {
             editor.update(() => {
               const selection = $getSelection();
-              if (!$isRangeSelection(selection)) {
-                throw new Error('expected a range selection');
-              }
+              assert(
+                $isRangeSelection(selection),
+                'expected a range selection',
+              );
               selection.insertText(text);
             });
           });
@@ -558,9 +559,10 @@ describe('LexicalTypeaheadMenuPlugin', () => {
             editor.update(
               () => {
                 const selection = $getSelection();
-                if (!$isRangeSelection(selection)) {
-                  throw new Error('expected a range selection');
-                }
+                assert(
+                  $isRangeSelection(selection),
+                  'expected a range selection',
+                );
                 selection.insertText(text);
               },
               {discrete: true},
@@ -603,9 +605,10 @@ describe('LexicalTypeaheadMenuPlugin', () => {
           editor.update(
             () => {
               const selection = $getSelection();
-              if (!$isRangeSelection(selection)) {
-                throw new Error('expected a range selection');
-              }
+              assert(
+                $isRangeSelection(selection),
+                'expected a range selection',
+              );
               selection.insertText(text);
             },
             {discrete: true},
@@ -862,17 +865,13 @@ describe('LexicalTypeaheadMenuPlugin', () => {
 
     function $getQueryTextNode(): TextNode {
       const textNode = $getRoot().getFirstDescendant();
-      if (!$isTextNode(textNode)) {
-        throw new Error('expected a text node holding the query');
-      }
+      assert($isTextNode(textNode), 'expected a text node holding the query');
       return textNode;
     }
 
     function $compose(text: string): void {
       const selection = $getSelection();
-      if (!$isRangeSelection(selection)) {
-        throw new Error('expected a range selection');
-      }
+      assert($isRangeSelection(selection), 'expected a range selection');
       selection.insertText(text);
       $setCompositionKey(selection.anchor.key);
     }
@@ -900,9 +899,7 @@ describe('LexicalTypeaheadMenuPlugin', () => {
       });
 
       const editor = editorRef.current;
-      if (editor === null) {
-        throw new Error('expected the editor ref to be populated');
-      }
+      assert(editor !== null, 'expected the editor ref to be populated');
 
       await act(async () => {
         editor.update($insertTrigger);

@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor, NodeKey, ParagraphNode} from 'lexical';
-
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {
   AutoEmbedOption,
@@ -32,8 +30,12 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isParagraphNode,
   $isTextNode,
   $setSelection,
+  type LexicalEditor,
+  type NodeKey,
+  type ParagraphNode,
   PASTE_COMMAND,
   PASTE_TAG,
 } from 'lexical';
@@ -218,11 +220,12 @@ describe('LexicalAutoEmbedPlugin', () => {
     });
   }
 
+  function $getParagraph(): ParagraphNode {
+    return $assertNodeType($getRoot().getFirstChild(), $isParagraphNode);
+  }
+
   function $getPastedLink(): LinkNode {
-    return $assertNodeType(
-      $getRoot().getFirstChildOrThrow<ParagraphNode>().getFirstChildOrThrow(),
-      $isLinkNode,
-    )!;
+    return $assertNodeType($getParagraph().getFirstChild(), $isLinkNode);
   }
 
   it('embeds an unchanged link without parsing its URL again', async () => {
@@ -266,7 +269,7 @@ describe('LexicalAutoEmbedPlugin', () => {
     await act(async () => {
       editor.update(() => {
         $getPastedLink().remove();
-        $getRoot().getFirstChildOrThrow<ParagraphNode>().selectEnd();
+        $getParagraph().selectEnd();
       });
       button.click();
     });

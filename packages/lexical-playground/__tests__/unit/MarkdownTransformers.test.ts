@@ -16,14 +16,19 @@ import {
 } from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   registerMarkdownShortcuts,
   TRANSFORMERS,
 } from '@lexical/markdown';
-import {RichTextExtension} from '@lexical/rich-text';
+import {$createHeadingNode, RichTextExtension} from '@lexical/rich-text';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -33,6 +38,7 @@ import {
   $isTableNode,
   TableCellHeaderStates,
   TableExtension,
+  type TableNode,
 } from '@lexical/table';
 import {
   $createLineBreakNode,
@@ -46,6 +52,7 @@ import {
   $isTextNode,
   createEditor,
   defineExtension,
+  type ElementNode,
   type LexicalEditor,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
@@ -1093,5 +1100,170 @@ describe('playground TABLE markdown transformer', () => {
           .map(node => node.getTextContent()),
       ),
     ).toEqual(['| --- |']);
+  });
+  it.each([
+    ['| a\\|b | c |', [['a|b'], ['c']]],
+    ['| a\\\\| b |', [['a\\'], ['b']]],
+    ['| a\\\\\\|b | c |', [['a\\|b'], ['c']]],
+    ['| a | \\a | b |', [['a'], ['\\a'], ['b']]],
+  ])(
+    'splits %j only on pipes after an even run of backslashes',
+    (row, cells) => {
+      using editor = importMarkdown(row);
+      expect(cellTexts(editor)).toEqual([cells]);
+    },
+  );
+
+  it('keeps an empty body row that reads like a delimiter row', () => {
+    using editor = importMarkdown(
+      ['| a | b |', '| --- | --- |', '|  |  |', '| c | d |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([
+      [['a'], ['b']],
+      [[''], ['']],
+      [['c'], ['d']],
+    ]);
+    editor.read(() => {
+      const table = $getRoot().getFirstChildOrThrow();
+      assert($isTableNode(table), 'Root child must be a table');
+      expect(
+        table
+          .getChildren()
+          .map(
+            row =>
+              $isElementNode(row) &&
+              row
+                .getChildren()
+                .every(
+                  cell =>
+                    $isTableCellNode(cell) &&
+                    cell.hasHeaderState(TableCellHeaderStates.ROW),
+                ),
+          ),
+      ).toEqual([true, false, false]);
+    });
+  });
+
+  it('reads a table whose header cells are empty', () => {
+    using editor = importMarkdown(
+      ['|  |  |', '| --- | --- |', '| c | d |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([
+      [[''], ['']],
+      [['c'], ['d']],
+    ]);
+  });
+
+  function $cellOf(...blocks: ElementNode[]): TableNode {
+    return $createTableNode().append(
+      $createTableRowNode().append(
+        $createTableCellNode(TableCellHeaderStates.ROW).append(
+          $createParagraphNode().append($createTextNode('h')),
+        ),
+      ),
+      $createTableRowNode().append($createTableCellNode().append(...blocks)),
+    );
+  }
+
+  function exportTable(build: () => TableNode): string {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(() => $getRoot().clear().append(build()), {discrete: true});
+    return editor.read(() => $convertToMarkdownString([TABLE]));
+  }
+
+  it.each([
+    [
+      'between paragraphs',
+      () => [
+        $createParagraphNode().append($createTextNode('a')),
+        $createParagraphNode(),
+        $createParagraphNode().append($createTextNode('b')),
+      ],
+      'a<br><br>b',
+      [['a\n\nb']],
+    ],
+    [
+      'after a heading',
+      () => [
+        $createHeadingNode('h2').append($createTextNode('t')),
+        $createParagraphNode(),
+        $createParagraphNode().append($createTextNode('b')),
+      ],
+      '## t<br><br>b',
+      [['t', '\nb']],
+    ],
+    [
+      'first',
+      () => [
+        $createParagraphNode(),
+        $createParagraphNode().append($createTextNode('b')),
+      ],
+      '<br>b',
+      [['\nb']],
+    ],
+    [
+      'last',
+      () => [
+        $createParagraphNode().append($createTextNode('a')),
+        $createParagraphNode(),
+      ],
+      'a<br>',
+      [['a\n']],
+    ],
+    [
+      'alone',
+      () => [$createParagraphNode(), $createParagraphNode()],
+      '<br>',
+      [['\n']],
+    ],
+    [
+      'after a list',
+      () => [
+        $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('i')),
+        ),
+        $createParagraphNode(),
+        $createParagraphNode().append($createTextNode('b')),
+      ],
+      '- i<br><br><br>b',
+      [['i', '\nb']],
+    ],
+  ])(
+    'keeps the line of an empty paragraph %s in a cell',
+    (_, blocks, cell, texts) => {
+      const markdown = exportTable(() => $cellOf(...blocks()));
+      expect(markdown.split('\n')[2]).toBe(`| ${cell} |`);
+      using imported = importMarkdown(markdown);
+      expect(cellTexts(imported)[1]).toEqual(texts);
+      expect(imported.read(() => $convertToMarkdownString([TABLE]))).toBe(
+        markdown,
+      );
+    },
+  );
+
+  it.each(['a  \nb', 'a\n  b', 'a\t\n\tb', 'a \n \nb'])(
+    'keeps the spaces beside a line break in %j',
+    text => {
+      const markdown = exportTable(() => {
+        const paragraph = $createParagraphNode();
+        text.split('\n').forEach((line, i) => {
+          if (i > 0) {
+            paragraph.append($createLineBreakNode());
+          }
+          paragraph.append($createTextNode(line));
+        });
+        return $cellOf(paragraph);
+      });
+      using imported = importMarkdown(markdown);
+      expect(cellTexts(imported)[1]).toEqual([[text]]);
+    },
+  );
+
+  it('reads a cell with more line breaks than a call can take arguments', () => {
+    const lines = Array.from({length: 70000}, (_, i) => String(i % 10));
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${lines.join('<br>')} |`].join('\n'),
+    );
+    expect(cellTexts(editor)[1]).toEqual([[lines.join('\n')]]);
   });
 });

@@ -38,6 +38,7 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {
+  $copyNode,
   $createLineBreakNode,
   $createTextNode,
   $isElementNode,
@@ -239,14 +240,6 @@ function unusedChars(
   return chars;
 }
 
-/**
- * A private-use character that `text` doesn't contain, to stand in for the
- * line breaks in a cell's Markdown while it is encoded.
- */
-function lineBreakMark(text: string): string {
-  return unusedChars(text, 1)[0];
-}
-
 // Space characters that a line break can stand in for while a cell is
 // read: Markdown takes them, like the line ending they replace, as
 // whitespace beside emphasis (`a<br>**(b)**`), and `.` matches them.
@@ -287,26 +280,85 @@ function tableCellLineBreak(
   };
 }
 
+/**
+ * Writes an empty paragraph at the top of a table cell as `mark`, and adds
+ * its key to `written`. Markdown has no empty paragraphs, but a cell's
+ * lines can be empty: each paragraph is a line, so an empty one is an
+ * empty line.
+ */
+function tableCellEmptyParagraph(
+  mark: string,
+  written: Set<string>,
+): ElementTransformer {
+  return {
+    dependencies: [],
+    export: node => {
+      if (
+        !$isParagraphNode(node) ||
+        !$isTableCellNode(node.getParent()) ||
+        !node
+          .getChildren()
+          .every(
+            child => $isTextNode(child) && child.getTextContent().trim() === '',
+          )
+      ) {
+        return null;
+      }
+      written.add(node.getKey());
+      return mark;
+    },
+    regExp: /$^/,
+    replace: () => false,
+    type: 'element',
+  };
+}
+
+/** A space or tab as a character reference, which isn't trimmed. */
+function spaceReference(space: string): string {
+  return space && `&#${space.charCodeAt(0)};`;
+}
+
 /** A cell's content as the Markdown of one GFM cell. */
 function $exportTableCell(cell: TableCellNode): string {
-  // The mark must not be in the Markdown, which also holds what isn't text,
-  // such as link URLs, so a mark that turns up more often than the line
-  // breaks written as it is passed over.
+  // The marks must not be in the Markdown, which also holds what isn't
+  // text, such as link URLs, so a mark that turns up more often than the
+  // nodes written as it is passed over.
   let avoid = cell.getTextContent();
   for (;;) {
-    const mark = lineBreakMark(avoid);
+    const [mark, emptyMark] = unusedChars(avoid, 2);
     const written = new Set<string>();
+    const writtenEmpty = new Set<string>();
     const markdown = encodeTableCell(
       $convertToMarkdownString(
-        [tableCellLineBreak(mark, written), ...PLAYGROUND_TRANSFORMERS],
+        [
+          tableCellLineBreak(mark, written),
+          tableCellEmptyParagraph(emptyMark, writtenEmpty),
+          ...PLAYGROUND_TRANSFORMERS,
+        ],
         cell,
       ).trim(),
+      emptyMark,
     );
     const parts = markdown.split(mark);
-    if (parts.length - 1 <= written.size) {
-      return parts.join('<br>');
+    const emptyParts = markdown.split(emptyMark);
+    if (
+      parts.length - 1 <= written.size &&
+      emptyParts.length - 1 <= writtenEmpty.size
+    ) {
+      // An empty paragraph is an empty line between the `<br>`s around it.
+      // Spaces beside a line break would read back as the cell's padding,
+      // so the one next to it is a character reference.
+      return emptyParts
+        .join('')
+        .replace(
+          new RegExp(`([ \\t]?)${mark}([ \\t]?)`, 'g'),
+          (_, before: string, after: string) =>
+            spaceReference(before) + mark + spaceReference(after),
+        )
+        .split(mark)
+        .join('<br>');
     }
-    avoid += mark;
+    avoid += mark + emptyMark;
   }
 }
 
@@ -348,7 +400,7 @@ export const TABLE: ElementTransformer = {
   regExp: TABLE_ROW_REG_EXP,
   replace: (parentNode, _1, match) => {
     // Header row
-    if (isTableRowDivider(match[0])) {
+    if (isTableDelimiterRow(match[0])) {
       // With no table above it, the line stays text.
       const table = parentNode.getPreviousSibling();
       if (!table || !$isTableNode(table)) {
@@ -404,7 +456,7 @@ export const TABLE: ElementTransformer = {
 
       const textContent = firstChild.getTextContent();
       // A delimiter row with no table above it stayed text.
-      if (isTableRowDivider(textContent)) {
+      if (isTableDelimiterRow(textContent)) {
         break;
       }
 
@@ -447,6 +499,21 @@ export const TABLE: ElementTransformer = {
   },
   type: 'element',
 };
+
+/**
+ * Whether `line` is a GFM delimiter row, which has at least one dash in
+ * every cell. `isTableRowDivider` also accepts a row of empty cells
+ * (`|  |  |`), which is how an empty row is written.
+ */
+function isTableDelimiterRow(line: string): boolean {
+  if (!isTableRowDivider(line)) {
+    return false;
+  }
+  const match = line.match(TABLE_ROW_REG_EXP);
+  return (
+    match !== null && splitTableRow(match[1]).every(cell => cell.includes('-'))
+  );
+}
 
 function getTableColumnsSize(table: TableNode) {
   const row = table.getFirstChild();
@@ -578,7 +645,7 @@ function codeFromHtml(html: string, marks: CellMarks): string {
  * a `<br>` (so blank lines survive), and a backslash, a pipe and a `<br>`
  * that are code are backslash-escaped, which {@link decodeTableCell} undoes.
  */
-function encodeTableCell(markdown: string): string {
+function encodeTableCell(markdown: string, emptyMark: string = ''): string {
   const lines = markdown.split('\n');
   let result = '';
   let text = '';
@@ -597,9 +664,15 @@ function encodeTableCell(markdown: string): string {
       .replace(/\n\n?/g, (separator, offset: number, encoded: string) => {
         // The blank line that ends a list or a quote is kept as an empty
         // line, or the paragraph after it would continue its last line.
+        // So does the line that ends one before an empty paragraph.
         const start = encoded.lastIndexOf('\n\n', offset - 1);
         const block = encoded.slice(start === -1 ? 0 : start + 2);
-        return separator.length > 1 && CONTAINER_START_REG_EXP.test(block)
+        const endsBlock =
+          separator.length > 1 ||
+          (emptyMark !== '' &&
+            encoded[offset + 1] === emptyMark &&
+            encoded[offset - 1] !== emptyMark);
+        return endsBlock && CONTAINER_START_REG_EXP.test(block)
           ? '<br><br>'
           : '<br>';
       });
@@ -780,23 +853,26 @@ function decodeTableCell(
   marks: CellMarks,
 ): string {
   const mark = marks.lineBreak;
-  let result = '';
+  // Each line's text, and the separator after it.
+  const parts: string[] = [];
   lines.forEach((line, i) => {
     if (i > 0) {
       // Spaces at the end of a line of code are code.
       if (lines[i - 1].fence !== 'code') {
-        result = result.replace(/[ \t]+$/, '');
+        parts.push(parts.pop()!.replace(/[ \t]+$/, ''));
       }
-      result += newline[i - 1] ? '\n' : mark;
+      parts.push(newline[i - 1] ? '\n' : mark);
     }
     if (line.fence === 'code') {
-      result += line.text.replace(/\\([\\|<n])/g, (_, char: string) =>
-        char === 'n' ? '\n' : char,
+      parts.push(
+        line.text.replace(/\\([\\|<n])/g, (_, char: string) =>
+          char === 'n' ? '\n' : char,
+        ),
       );
     } else if (line.fence === 'open') {
-      result += line.text.replace(/\\([\\|<])/g, '$1');
+      parts.push(line.text.replace(/\\([\\|<])/g, '$1'));
     } else if (line.fence !== null) {
-      result += line.text;
+      parts.push(line.text);
     } else {
       const body = splitCodeSpans(line.text)
         .map((part, k) => {
@@ -811,10 +887,14 @@ function decodeTableCell(
         })
         .join('');
       // Only the cell's padding is trimmed after a line break.
-      result +=
-        i > 0 && result.endsWith(mark) ? body.replace(/^[ \t]+/, '') : body;
+      parts.push(
+        i > 0 && parts[parts.length - 1] === mark
+          ? body.replace(/^[ \t]+/, '')
+          : body,
+      );
     }
   });
+  const result = parts.join('');
   // The line break mark is a space, which Markdown trims from the end of a
   // line, so a line that ends with one ends with an empty code span too,
   // which {@link $marksToNodes} removes.
@@ -842,31 +922,46 @@ function $markNodes(cell: TableCellNode, mark: string): TextNode[] {
  * and the text between code marks into a code span.
  */
 function $marksToNodes(cell: TableCellNode, marks: CellMarks): void {
-  const markChars = [marks.lineBreak, marks.codeStart, marks.codeEnd];
   // Code marks can land in different text nodes.
   let code = false;
   for (const node of cell.getAllTextNodes()) {
-    const textContent = node.getTextContent();
-    const offsets: number[] = [];
-    for (let i = 0; i < textContent.length; i++) {
-      if (markChars.includes(textContent[i])) {
-        offsets.push(i, i + 1);
+    const text = node.getTextContent();
+    // The nodes that replace `node`, built in one pass so that a cell with
+    // many line breaks is read in linear time.
+    const nodes: LexicalNode[] = [];
+    let start = 0;
+    const pushText = (end: number) => {
+      if (end > start) {
+        const piece = $copyNode(node).setTextContent(text.slice(start, end));
+        nodes.push(
+          code && !piece.hasFormat('code') ? piece.toggleFormat('code') : piece,
+        );
+      }
+    };
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (
+        char === marks.lineBreak ||
+        char === marks.codeStart ||
+        char === marks.codeEnd
+      ) {
+        pushText(i);
+        start = i + 1;
+        if (char === marks.lineBreak) {
+          nodes.push($createLineBreakNode());
+        } else {
+          code = char === marks.codeStart;
+        }
       }
     }
-    if (offsets.length === 0) {
+    if (start === 0) {
+      if (code && !node.hasFormat('code')) {
+        node.toggleFormat('code');
+      }
       continue;
     }
-    for (const piece of node.splitText(...offsets)) {
-      const pieceText = piece.getTextContent();
-      if (pieceText === marks.lineBreak) {
-        piece.replace($createLineBreakNode());
-      } else if (pieceText === marks.codeStart || pieceText === marks.codeEnd) {
-        code = pieceText === marks.codeStart;
-        piece.remove();
-      } else if (code && !piece.hasFormat('code')) {
-        piece.toggleFormat('code');
-      }
-    }
+    pushText(text.length);
+    node.getParentOrThrow().splice(node.getIndexWithinParent(), 1, nodes);
   }
 }
 

@@ -15,7 +15,7 @@ import {
   CodeNode,
 } from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {$isLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {
   $convertFromMarkdownString,
@@ -545,19 +545,25 @@ describe('playground TABLE markdown transformer', () => {
     },
   );
 
-  it.each([
-    'a|b',
-    'a\\|b',
-    'a\\\\|b',
-    '\\|',
-    'x`\\|`*y*',
-    '``\\|``',
-    '```\\|```',
-    ' `a\\|` ',
-    '&#38;\\|*',
-  ])(
-    'round-trips inline code with pipes and backslashes in a cell: %j',
-    text => {
+  it.each(
+    [
+      'a|b',
+      'a\\|b',
+      'a\\\\|b',
+      '\\|',
+      'x`\\|`*y*',
+      '``\\|``',
+      '```\\|```',
+      ' `a\\|` ',
+      '&#38;\\|*',
+    ].flatMap(text =>
+      (['code', 'bold', 'italic', 'strikethrough'] as const).map(
+        format => [text, format] as const,
+      ),
+    ),
+  )(
+    'round-trips inline code with pipes and backslashes in a cell: %j, %s',
+    (text, format) => {
       using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
       editor.update(
         () => {
@@ -573,7 +579,11 @@ describe('playground TABLE markdown transformer', () => {
                 $createTableRowNode().append(
                   $createTableCellNode().append(
                     $createParagraphNode().append(
-                      $createTextNode(text).toggleFormat('code'),
+                      format === 'code'
+                        ? $createTextNode(text).toggleFormat('code')
+                        : $createTextNode(text)
+                            .toggleFormat('code')
+                            .toggleFormat(format),
                     ),
                   ),
                 ),
@@ -589,6 +599,7 @@ describe('playground TABLE markdown transformer', () => {
         const node = $getRoot().getLastDescendant();
         assert($isTextNode(node), 'The cell must hold text');
         expect(node.hasFormat('code')).toBe(true);
+        expect(node.hasFormat(format)).toBe(true);
       });
       expect(imported.read(() => $convertToMarkdownString([TABLE]))).toBe(
         markdown,
@@ -817,12 +828,148 @@ describe('playground TABLE markdown transformer', () => {
     ['a&#12288;b<br>c', 'a　b\nc'],
     ['a<br>', 'a\n'],
     ['<br>a', '\na'],
+    ['<br>', '\n'],
+    ['<br><br>', '\n\n'],
+    ['x<br>\u3000y', 'x\n\u3000y'],
+    ['x<br>\u2003\u3000y', 'x\n\u2003\u3000y'],
   ])('reads %j with its spaces and line breaks', (body, text) => {
     using editor = importMarkdown(
       ['| h |', '| --- |', `| ${body} |`].join('\n'),
     );
     expect(cellTexts(editor)).toEqual([[['h']], [[text]]]);
   });
+
+  it('round-trips a cell that is only a line break', () => {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createTableNode().append(
+              $createTableRowNode().append(
+                $createTableCellNode(TableCellHeaderStates.ROW).append(
+                  $createParagraphNode().append($createTextNode('h')),
+                ),
+              ),
+              $createTableRowNode().append(
+                $createTableCellNode().append(
+                  $createParagraphNode().append($createLineBreakNode()),
+                ),
+              ),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    const markdown = editor.read(() => $convertToMarkdownString([TABLE]));
+    expect(markdown.split('\n')[2]).toBe('| <br> |');
+    using imported = importMarkdown(markdown);
+    expect(cellTexts(imported)).toEqual([[['h']], [['\n']]]);
+  });
+
+  it('keeps a link URL that holds the export line break mark', () => {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    const url = 'https://example.com/\ue000';
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createTableNode().append(
+              $createTableRowNode().append(
+                $createTableCellNode(TableCellHeaderStates.ROW).append(
+                  $createParagraphNode().append($createTextNode('h')),
+                ),
+              ),
+              $createTableRowNode().append(
+                $createTableCellNode().append(
+                  $createParagraphNode().append(
+                    $createLinkNode(url).append($createTextNode('l')),
+                    $createLineBreakNode(),
+                    $createTextNode('m'),
+                  ),
+                ),
+              ),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    const markdown = editor.read(() => $convertToMarkdownString([TABLE]));
+    using imported = importMarkdown(markdown);
+    imported.read(() => {
+      const link = $getRoot().getAllTextNodes()[1].getParent();
+      assert($isLinkNode(link), 'The cell must hold the link');
+      expect(link.getURL()).toBe(url);
+    });
+    expect(cellTexts(imported)).toEqual([[['h']], [['l\nm']]]);
+  });
+
+  it('keeps a code block whose info string holds a pipe in one cell', () => {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createTableNode().append(
+              $createTableRowNode().append(
+                $createTableCellNode(TableCellHeaderStates.ROW).append(
+                  $createParagraphNode().append($createTextNode('h')),
+                ),
+              ),
+              $createTableRowNode().append(
+                $createTableCellNode().append(
+                  $createCodeNode('a|b').append($createTextNode('x')),
+                ),
+              ),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    const markdown = editor.read(() => $convertToMarkdownString([TABLE]));
+    using imported = importMarkdown(markdown);
+    // The row stays one cell. The core importer reads only letters,
+    // digits, `_` and `-` as a language, so the language doesn't come back.
+    expect(cellTexts(imported)).toEqual([[['h']], [['x']]]);
+  });
+
+  it.each(['    ', '\t'])(
+    'reads a code fence indented with %j in a cell as the importer does',
+    indent => {
+      const body = `a<br>${indent}\`\`\`<br>*b*  c<br>${indent}\`\`\``;
+      using editor = importMarkdown(
+        ['| h |', '| --- |', `| ${body} |`].join('\n'),
+      );
+      using direct = buildEditorFromExtensions(TableMarkdownTestExtension);
+      direct.update(
+        () =>
+          $convertFromMarkdownString(
+            `a\n${indent}\`\`\`\n*b*  c\n${indent}\`\`\``,
+            PLAYGROUND_TRANSFORMERS,
+          ),
+        {discrete: true},
+      );
+      const types = direct.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(node => [node.getType(), node.getTextContent()]),
+      );
+      expect(types.map(([type]) => type)).toContain('code');
+      expect(
+        editor.read(() =>
+          $getRoot()
+            .getLastDescendant()
+            ?.getParents()
+            .find($isTableCellNode)
+            ?.getChildren()
+            .map(node => [node.getType(), node.getTextContent()]),
+        ),
+      ).toEqual(types);
+    },
+  );
 
   it('keeps a character reference to the line break marker', () => {
     using editor = importMarkdown(

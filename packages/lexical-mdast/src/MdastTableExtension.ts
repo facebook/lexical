@@ -23,7 +23,6 @@ import type {
   TableCell,
   TableRow,
 } from 'mdast';
-import type {State} from 'mdast-util-to-markdown';
 
 import {$getPeerDependency, configExtension} from '@lexical/extension';
 import {
@@ -56,6 +55,7 @@ import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
 import {$append} from './handlers';
+import {splitHtmlBlock} from './htmlBlockParts';
 import {MdastExtension} from './MdastExtension';
 
 /** A GFM column alignment as mdast spells it; anything else reads as `null`. */
@@ -165,9 +165,6 @@ function trimSegment(segment: PhrasingContent[]): PhrasingContent[] {
   }
   return result.filter(node => node.type !== 'text' || node.value !== '');
 }
-
-// The placeholder an `htmlBlock` holds for each of its Markdown children.
-const HTML_BLOCK_CHILD_RE = /<template data-mdast-child="(\d+)"><\/template>/;
 
 /** The names of the block elements a cell's HTML can open with. */
 const BLOCK_HTML_RE =
@@ -302,89 +299,110 @@ function html(value: string): Html {
   return {type: 'html', value};
 }
 
-// Elements whose text keeps its newlines.
-const PRE_HTML_RE = /^(?:listing|pre|textarea)$/i;
+// Elements whose text is read to their end tag without tags in it, and
+// with (RCDATA) or without (raw text) character references.
+const RCDATA_HTML_RE = /^(?:textarea|title)$/i;
+const RAW_TEXT_HTML_RE =
+  /^(?:iframe|noembed|noframes|noscript|plaintext|script|style|xmp)$/i;
+// The characters HTML takes as whitespace.
+const HTML_SPACE_RE = /[\t\n\f\r ]/;
 
 /**
  * Raw HTML as it can go in a GFM cell, which holds one line and splits on
- * `|` even inside HTML. A newline in a quoted attribute value or in the
- * text of a `<pre>` or `<textarea>` is a character reference (`&#10;`),
- * which reads back as a newline. Any other newline, with the whitespace
- * around it, is a space, which HTML reads the same way. Every pipe is a
- * character reference (`&#124;`), which also reads back as a pipe. A
- * comment takes no references, so its pipes stay references: GFM can't
- * write a pipe in one.
+ * `|` even inside HTML. A newline in text or in a quoted attribute value is
+ * a character reference (`&#10;`), which reads back as the same newline, so
+ * whitespace that `<pre>` or CSS keeps survives. A newline between a tag's
+ * attributes, or in a comment or a declaration, is a space, which reads
+ * the same there. Every pipe is a character reference (`&#124;`). The text
+ * of `<script>`, `<style>` and the like takes no references, so a newline
+ * there is a space and a pipe stays a reference: GFM can't write either in
+ * them, nor a pipe in a comment.
  */
 function cellHtml(value: string): string {
   let result = '';
   // What the scan is in: text, a tag, a quoted attribute value, an
-  // unquoted one, or a comment or other markup declaration ending in
-  // `end`.
-  let state: 'text' | 'tag' | 'quoted' | 'unquoted' | 'markup' = 'text';
+  // unquoted one, a comment or other markup declaration ending in
+  // `markupEnd`, or the text of an element named `rawTag`.
+  let state: 'text' | 'tag' | 'quoted' | 'unquoted' | 'markup' | 'raw' = 'text';
   let quote = '';
-  let end = '';
+  let markupEnd = '';
   let afterEquals = false;
-  let preDepth = 0;
+  // The element whose start tag is being read, and the one whose text is.
+  let openTag = '';
+  let rawTag = '';
   for (let i = 0; i < value.length; i++) {
     const char = value[i];
     if (char === '\r' || char === '\n') {
-      if (state === 'quoted' || (state === 'text' && preDepth > 0)) {
-        if (char === '\r' && value[i + 1] === '\n') {
-          i++;
-        }
-        result += '&#10;';
-      } else {
-        // The newline ends an unquoted value, and it and the whitespace
-        // around it read as one space.
-        state = state === 'unquoted' ? 'tag' : state;
-        result = result.replace(/[ \t]+$/, '') + ' ';
-        while (/[\s]/.test(value[i + 1] || '')) {
-          i++;
-        }
+      if (char === '\r' && value[i + 1] === '\n') {
+        i++;
       }
+      if (state === 'unquoted') {
+        state = 'tag';
+      }
+      result +=
+        state === 'text' ||
+        state === 'quoted' ||
+        (state === 'raw' && RCDATA_HTML_RE.test(rawTag))
+          ? '&#10;'
+          : ' ';
       continue;
     }
     switch (state) {
-      case 'text': {
-        if (char !== '<') {
-          break;
-        }
-        if (value.startsWith('<!--', i)) {
-          state = 'markup';
-          end = '-->';
-        } else if (/^<[!?]/.test(value.slice(i, i + 2))) {
-          state = 'markup';
-          end = '>';
-        } else {
-          const tag = /^<(\/?)([a-z][\w-]*)/i.exec(value.slice(i, i + 64));
-          if (tag !== null) {
-            state = 'tag';
-            afterEquals = false;
-            if (PRE_HTML_RE.test(tag[2])) {
-              preDepth = Math.max(0, preDepth + (tag[1] ? -1 : 1));
+      case 'text':
+        if (char === '<') {
+          if (value.startsWith('<!--', i)) {
+            state = 'markup';
+            markupEnd = '-->';
+          } else if (/^<[!?]/.test(value.slice(i, i + 2))) {
+            state = 'markup';
+            markupEnd = '>';
+          } else {
+            const tag = /^<(\/?)([a-z][\w-]*)/i.exec(value.slice(i, i + 64));
+            if (tag !== null) {
+              state = 'tag';
+              afterEquals = false;
+              openTag = tag[1] ? '' : tag[2];
             }
           }
         }
         break;
-      }
       case 'markup':
-        if (value.startsWith(end, i)) {
-          result += end;
-          i += end.length - 1;
+        if (value.startsWith(markupEnd, i)) {
+          result += markupEnd;
+          i += markupEnd.length - 1;
           state = 'text';
           continue;
         }
         break;
+      case 'raw':
+        if (
+          value.slice(i, i + rawTag.length + 2).toLowerCase() ===
+          '</' + rawTag
+        ) {
+          state = 'tag';
+          afterEquals = false;
+          openTag = '';
+        }
+        break;
       case 'tag':
+      case 'unquoted':
         if (char === '>') {
-          state = 'text';
+          rawTag =
+            RCDATA_HTML_RE.test(openTag) || RAW_TEXT_HTML_RE.test(openTag)
+              ? openTag.toLowerCase()
+              : '';
+          state = rawTag === '' ? 'text' : 'raw';
+        } else if (state === 'unquoted') {
+          if (HTML_SPACE_RE.test(char)) {
+            state = 'tag';
+          }
         } else if (char === '=') {
           afterEquals = true;
         } else if (afterEquals && (char === '"' || char === "'")) {
           state = 'quoted';
           quote = char;
           afterEquals = false;
-        } else if (afterEquals && !/[\s]/.test(char)) {
+        } else if (afterEquals && !HTML_SPACE_RE.test(char)) {
           state = 'unquoted';
           afterEquals = false;
         }
@@ -394,25 +412,30 @@ function cellHtml(value: string): string {
           state = 'tag';
         }
         break;
-      case 'unquoted':
-        if (char === '>') {
-          state = 'text';
-        } else if (/[\s]/.test(char)) {
-          state = 'tag';
-        }
-        break;
     }
     result += char === '|' ? '&#124;' : char;
   }
   return result;
 }
 
+/** Whether `nodes` or their descendants hold raw HTML. */
+function hasHtml(nodes: readonly PhrasingContent[]): boolean {
+  return nodes.some(
+    node =>
+      node.type === 'html' || ('children' in node && hasHtml(node.children)),
+  );
+}
+
 /**
- * Writes raw HTML as is, or in a table cell as {@link cellHtml} encodes it,
- * whatever wrote the HTML node.
+ * A cell's content with its raw HTML as {@link cellHtml} writes it, or the
+ * content itself when it has none.
  */
-function htmlToMarkdown(node: Html, _parent: unknown, state: State): string {
-  return state.stack.includes('tableCell') ? cellHtml(node.value) : node.value;
+function encodeCellHtml(nodes: PhrasingContent[]): PhrasingContent[] {
+  return hasHtml(nodes)
+    ? mapPhrasing(nodes, node =>
+        node.type === 'html' ? [html(cellHtml(node.value))] : undefined,
+      )
+    : nodes;
 }
 
 /** The line separator inside a GFM table cell, which can't hold a newline. */
@@ -597,22 +620,40 @@ function blockHtml(node: MdastNode): PhrasingContent[] | null {
     case 'html':
       return [html(node.value)];
     case 'htmlBlock': {
-      // Raw HTML around placeholders for its Markdown children.
+      // Raw HTML around placeholders for its Markdown children. Children
+      // with only whitespace between them are one run of blocks, which
+      // `flowHtml` separates as it does elsewhere (paragraphs by `<br>`).
       const result: PhrasingContent[] = [];
-      const segments = node.value.split(HTML_BLOCK_CHILD_RE);
-      for (let i = 0; i < segments.length; i++) {
-        if (i % 2 === 0) {
-          if (segments[i] !== '') {
-            result.push(html(segments[i]));
-          }
-          continue;
-        }
-        const child = node.children[Number(segments[i])];
-        const content = child === undefined ? [] : flowHtml([child]);
+      let run: MdastNode[] = [];
+      const flushRun = (): boolean => {
+        const content = flowHtml(run);
+        run = [];
         if (content === null) {
-          return null;
+          return false;
         }
         result.push(...content);
+        return true;
+      };
+      const segments = splitHtmlBlock(node.value);
+      for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i];
+        if (i % 2 === 1) {
+          const child = node.children[Number(segment)];
+          if (child !== undefined) {
+            run.push(child);
+          }
+        } else if (
+          run.length === 0 ||
+          i === segments.length - 1 ||
+          segment.trim() !== ''
+        ) {
+          if (!flushRun()) {
+            return null;
+          }
+          if (segment !== '') {
+            result.push(html(segment));
+          }
+        }
       }
       return result;
     }
@@ -777,8 +818,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
         column.aligned.set(cellAlign, (column.aligned.get(cellAlign) ?? 0) + 1);
       }
       cells.push({
-        children: joinCellItems(
-          cellExportItems(ctx.exportChildren(cell), withHtml),
+        children: encodeCellHtml(
+          joinCellItems(cellExportItems(ctx.exportChildren(cell), withHtml)),
         ),
         type: 'tableCell',
       });
@@ -839,10 +880,7 @@ export const MdastTableExtension = defineExtension({
       importRules: [{$import: $importTable, type: 'table'}],
       mdastExtensions: [/* @__PURE__ */ gfmTableFromMarkdown()],
       micromarkExtensions: [/* @__PURE__ */ gfmTable()],
-      toMarkdownExtensions: [
-        /* @__PURE__ */ gfmTableToMarkdown(),
-        {handlers: {html: htmlToMarkdown}},
-      ],
+      toMarkdownExtensions: [/* @__PURE__ */ gfmTableToMarkdown()],
     }),
   ],
   name: '@lexical/mdast/Table',

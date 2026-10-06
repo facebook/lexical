@@ -135,11 +135,13 @@ set as the element format of each of its cells, so it renders as their
 `text-align` and stays with the column when columns are added or removed.
 GFM can't align a single cell, so on export a column takes the alignment
 most of its cells have, or if none has a majority, the alignment of its
-header cell. Raw HTML in a cell is written on one line too: a newline in a
-quoted attribute value or in the text of a `<pre>` or `<textarea>` becomes
-`&#10;`, any other newline becomes a space, and every `|` becomes `&#124;`,
-which a comment keeps as text, since a comment can't hold a pipe in a GFM
-cell. Documents saved before alignment moved to the cells kept it
+header cell. Raw HTML in a cell is written on one line too: a newline in its text or in
+a quoted attribute value becomes `&#10;`, which reads back as the same
+newline, so whitespace that `<pre>` or CSS keeps survives; a newline
+between a tag's attributes or in a comment becomes a space; and every `|`
+becomes `&#124;`. The text of `<script>`, `<style>` and comments takes no
+character references, so a newline there becomes a space and a pipe can't
+be written as is. Documents saved before alignment moved to the cells kept it
 as one array on the table; when such a table loads, each alignment is moved
 onto the cells of its column that have no format of their own, and a cell
 that already has one, including one GFM can't write (`justify`, `start`,

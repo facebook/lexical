@@ -115,6 +115,8 @@ export function importTextTransformers(
         textMatchTransformers,
       );
     }
+    // Each piece, `textNode` among them, has had its escapes read.
+    return;
   } else if (foundTextMatch) {
     const result = importFoundTextMatchTransformer(
       textNode,
@@ -148,6 +150,7 @@ export function importTextTransformers(
         textMatchTransformers,
       );
     }
+    return;
   }
 
   // Handle escape characters, which a code span doesn't take. The node is

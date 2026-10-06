@@ -42,3 +42,21 @@ describe('a code span', () => {
     });
   });
 });
+
+describe('formatted text', () => {
+  // Each backslash escape is read once, however deeply it is formatted.
+  it.each([
+    ['**a\\\\\\*b**', 'a\\*b'],
+    ['*a\\\\\\*b*', 'a\\*b'],
+    ['~~a\\\\\\*b~~', 'a\\*b'],
+    ['***a\\\\\\*b***', 'a\\*b'],
+    ['**x** a\\\\\\*b', 'x a\\*b'],
+    ['a\\\\\\*b', 'a\\*b'],
+  ])('reads %j as %j', (markdown, text) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+      discrete: true,
+    });
+    expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
+  });
+});

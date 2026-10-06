@@ -34,7 +34,8 @@ function project(name, deviceName) {
     use: {
       ...devices[deviceName],
       launchOptions: {
-        slowMo: 50,
+        // Keep the established default while auditing tests for explicit waits.
+        slowMo: Number(process.env.E2E_SLOW_MO ?? 50),
       },
       userAgent: undefined,
       viewport,
@@ -50,8 +51,14 @@ const config = defineConfig({
     project('firefox', 'Desktop Firefox'),
     project('webkit', 'Desktop Safari'),
   ],
+  reporter: IS_CI
+    ? [
+        ['dot'],
+        ['./packages/lexical-playground/__tests__/utils/timingReporter.mjs'],
+      ]
+    : undefined,
   retries: IS_DEBUG ? 0 : IS_CI ? 2 : 1,
-  testIgnore: /\/__tests__\/unit\//,
+  testIgnore: /\/__tests__\/(?:unit|browser)\//,
   timeout: 150000,
   use: {
     actionTimeout: 10000, // Max time to wait for actions

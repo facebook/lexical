@@ -130,6 +130,31 @@ export default defineConfig({
         test: {
           api: {port: 8315},
           browser: {
+            commands: {
+              // Vitest's keyboard descriptor parser splits non-BMP text into
+              // UTF-16 code units. Native Playwright typing preserves code
+              // points, matching the E2E driver's input behavior. Bound each
+              // code point so long input can make progress on a busy runner,
+              // and stop if the fixture is removed. Keep the loop in one
+              // command to avoid a Vitest RPC round trip for every character.
+              typeText: async ({frame}, text: string, selector: string) => {
+                // Capture the element once: type() fails immediately if it
+                // detaches, instead of resolving another fixture's editor.
+                const target = await (await frame())
+                  .locator(selector)
+                  .elementHandle({timeout: 5000});
+                if (target === null) {
+                  throw new Error('typeText target was removed');
+                }
+                try {
+                  for (const character of text) {
+                    await target.type(character, {timeout: 5000});
+                  }
+                } finally {
+                  await target.dispose();
+                }
+              },
+            },
             // Vitest's default browser server port (63315) is in the
             // ephemeral range, and Windows reserves randomized blocks of
             // that range (Hyper-V excluded port ranges), so on Windows CI

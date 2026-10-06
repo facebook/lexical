@@ -101,6 +101,21 @@ function setup($children: () => LexicalNode[]) {
   return {editor, root};
 }
 
+// The reconciler parks a zero-size boundary anchor `<img>` before a block's
+// first child when that child is a decorator (#8922, #7158). It occupies a DOM
+// child slot but is not a Lexical child, so leave it out of DOM paths and
+// offsets computed from Lexical child indices.
+function isBoundaryAnchor(node: Node): boolean {
+  return (
+    node instanceof HTMLElement &&
+    node.hasAttribute('data-lexical-decorator-boundary')
+  );
+}
+
+function managedChildNodes(node: Node): Node[] {
+  return Array.from(node.childNodes).filter(child => !isBoundaryAnchor(child));
+}
+
 function domSelection() {
   const selection = window.getSelection()!;
   return [
@@ -192,13 +207,21 @@ describe('native select-all block expansion', () => {
       return last.getChildrenSize();
     });
     const endNode = endPath.reduce<Node>(
-      (node, index) => node.childNodes[index],
+      (node, index) => managedChildNodes(node)[index],
       paragraph,
+    );
+    const leadingAnchors = Array.from(paragraph.childNodes).findIndex(
+      child => !isBoundaryAnchor(child),
     );
     await selectAll();
     await expect
       .poll(domSelection)
-      .toEqual([paragraph, 0, paragraph, childCount]);
+      .toEqual([
+        paragraph,
+        leadingAnchors,
+        paragraph,
+        childCount + leadingAnchors,
+      ]);
     editor.read('latest', () => {
       const selection = $getSelection();
       assert($isRangeSelection(selection));

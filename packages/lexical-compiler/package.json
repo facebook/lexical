@@ -9,7 +9,7 @@
     "rollup-plugin",
     "tree-shaking"
   ],
-  "version": "0.52.0",
+  "version": "0.52.1-nightly.20261006.0",
   "license": "MIT",
   "repository": {
     "type": "git",

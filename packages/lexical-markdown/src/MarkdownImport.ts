@@ -238,12 +238,19 @@ function $importBlocks(
     const match = lineText.match(regExp);
 
     if (match) {
-      textNode.setTextContent(lineText.slice(match[0].length));
+      const rest = lineText.slice(match[0].length);
+      textNode.setTextContent(rest);
       if (replace(elementNode, [textNode], match, true) !== false) {
         break;
       }
-      // A cancelled transform leaves the line as it was.
-      textNode.setTextContent(lineText);
+      // A transform that cancels without touching the line leaves it as it
+      // was. One that changed the text or moved it keeps its changes.
+      if (
+        textNode.getParent() === elementNode &&
+        textNode.getTextContent() === rest
+      ) {
+        textNode.setTextContent(lineText);
+      }
     }
   }
 

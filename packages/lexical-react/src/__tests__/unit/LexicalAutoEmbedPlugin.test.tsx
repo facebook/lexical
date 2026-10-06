@@ -205,11 +205,16 @@ describe('LexicalAutoEmbedPlugin', () => {
     return resolve;
   }
 
-  async function selectEmbedOption(): Promise<void> {
+  function getEmbedButton(): HTMLButtonElement {
     const button = getMenu()?.querySelector('button') ?? null;
     expect(button).not.toBeNull();
+    return button!;
+  }
+
+  async function selectEmbedOption(): Promise<void> {
+    const button = getEmbedButton();
     await act(async () => {
-      button!.click();
+      button.click();
     });
   }
 
@@ -220,16 +225,11 @@ describe('LexicalAutoEmbedPlugin', () => {
     )!;
   }
 
-  it('embeds an unchanged link', async () => {
+  it('embeds an unchanged link without parsing its URL again', async () => {
     await paste({'text/plain': YOUTUBE_URL});
-    const resolveParseUrl = deferParseUrl();
     await selectEmbedOption();
-    expect(insertNode).not.toHaveBeenCalled();
 
-    await act(async () => {
-      resolveParseUrl({id: 'jNQXAC9IVRw', url: YOUTUBE_URL});
-    });
-
+    expect(parseUrl).toHaveBeenCalledOnce();
     expect(insertNode).toHaveBeenCalledExactlyOnceWith(editor, {
       id: 'jNQXAC9IVRw',
       url: YOUTUBE_URL,
@@ -240,19 +240,14 @@ describe('LexicalAutoEmbedPlugin', () => {
     });
   });
 
-  it('embeds an unchanged link after parsing with no selection', async () => {
+  it('embeds an unchanged link with no selection', async () => {
     await paste({'text/plain': YOUTUBE_URL});
-    const resolveParseUrl = deferParseUrl();
-    await selectEmbedOption();
-    expect(insertNode).not.toHaveBeenCalled();
-
     await act(async () => {
       editor.update(() => $setSelection(null));
     });
-    await act(async () => {
-      resolveParseUrl({id: 'jNQXAC9IVRw', url: YOUTUBE_URL});
-    });
+    await selectEmbedOption();
 
+    expect(parseUrl).toHaveBeenCalledOnce();
     expect(insertNode).toHaveBeenCalledExactlyOnceWith(editor, {
       id: 'jNQXAC9IVRw',
       url: YOUTUBE_URL,
@@ -264,53 +259,63 @@ describe('LexicalAutoEmbedPlugin', () => {
     });
   });
 
-  it('does not embed a link removed while parsing', async () => {
+  it('does not embed a link removed by a pending update', async () => {
     await paste({'text/plain': YOUTUBE_URL});
-    const resolveParseUrl = deferParseUrl();
-    await selectEmbedOption();
+    const button = getEmbedButton();
 
     await act(async () => {
       editor.update(() => {
         $getPastedLink().remove();
         $getRoot().getFirstChildOrThrow<ParagraphNode>().selectEnd();
       });
-    });
-    const editorState = editor.getEditorState();
-    await act(async () => {
-      resolveParseUrl({id: 'jNQXAC9IVRw', url: YOUTUBE_URL});
+      button.click();
     });
 
     expect(insertNode).not.toHaveBeenCalled();
     expect(onError).not.toHaveBeenCalled();
-    expect(editor.getEditorState().toJSON()).toEqual(editorState.toJSON());
     editor.read(() => {
-      expect($getSelection()).toEqual(editorState._selection);
+      expect($getRoot().getTextContent()).toBe('');
     });
   });
 
-  it('does not embed a link whose URL changed while parsing', async () => {
+  it('does not embed a link whose URL changed in a pending update', async () => {
     await paste({'text/plain': YOUTUBE_URL});
-    const resolveParseUrl = deferParseUrl();
-    await selectEmbedOption();
+    const button = getEmbedButton();
 
     await act(async () => {
       editor.update(() => {
         $getPastedLink().setURL('https://example.com/');
       });
-    });
-    editor.read(() => {
-      expect($getPastedLink().getURL()).toBe('https://example.com/');
-    });
-    const editorState = editor.getEditorState();
-    await act(async () => {
-      resolveParseUrl({id: 'jNQXAC9IVRw', url: YOUTUBE_URL});
+      button.click();
     });
 
     expect(insertNode).not.toHaveBeenCalled();
     expect(onError).not.toHaveBeenCalled();
-    expect(editor.getEditorState().toJSON()).toEqual(editorState.toJSON());
     editor.read(() => {
-      expect($getSelection()).toEqual(editorState._selection);
+      expect($getPastedLink().getURL()).toBe('https://example.com/');
+    });
+  });
+
+  it('does not let an older paste that resolves late replace the menu', async () => {
+    const OTHER_URL = 'https://www.youtube.com/watch?v=OTHERvid123';
+    const resolveFirst = deferParseUrl();
+    await paste({'text/plain': YOUTUBE_URL});
+    expect(getMenu()).toBeNull();
+    await paste({'text/plain': OTHER_URL}, () => {
+      const paragraph = $createParagraphNode();
+      $getRoot().append(paragraph);
+      paragraph.select();
+    });
+    expect(getMenu()).not.toBeNull();
+
+    await act(async () => {
+      resolveFirst({id: 'jNQXAC9IVRw', url: YOUTUBE_URL});
+    });
+    await selectEmbedOption();
+
+    expect(insertNode).toHaveBeenCalledExactlyOnceWith(editor, {
+      id: 'OTHERvid123',
+      url: OTHER_URL,
     });
   });
 

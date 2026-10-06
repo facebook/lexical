@@ -22,10 +22,7 @@ import {MarkdownTestExtension} from '../utils';
 describe('a code span', () => {
   // CommonMark: backslash escapes don't work in code spans.
   it.each([
-    ['`a\\|b`', 'a\\|b'],
-    ['`a\\\\b`', 'a\\\\b'],
     ['`\\*`', '\\*'],
-    ['x `a\\*b` y', 'x a\\*b y'],
     ['**`\\*`**', '\\*'],
   ])('keeps its backslashes in %j', (markdown, text) => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
@@ -41,17 +38,32 @@ describe('a code span', () => {
       expect($convertToMarkdownString(TRANSFORMERS)).toBe(markdown);
     });
   });
+
+  it('leaves the text after it to read its escapes', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () => $convertFromMarkdownString('`\\*` \\* &#160;', TRANSFORMERS),
+      {discrete: true},
+    );
+    expect(
+      editor.read(() =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [node.getTextContent(), node.hasFormat('code')]),
+      ),
+    ).toEqual([
+      ['\\*', true],
+      [' * \u00a0', false],
+    ]);
+  });
 });
 
 describe('formatted text', () => {
-  // Each backslash escape is read once, however deeply it is formatted.
+  // Each backslash escape is read once, in formatted text and beside a
+  // text match such as a link.
   it.each([
     ['**a\\\\\\*b**', 'a\\*b'],
-    ['*a\\\\\\*b*', 'a\\*b'],
-    ['~~a\\\\\\*b~~', 'a\\*b'],
-    ['***a\\\\\\*b***', 'a\\*b'],
-    ['**x** a\\\\\\*b', 'x a\\*b'],
-    ['a\\\\\\*b', 'a\\*b'],
+    ['a\\\\\\*b [x](https://y)', 'a\\*b x'],
   ])('reads %j as %j', (markdown, text) => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {

@@ -868,43 +868,58 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(imported)).toEqual([[['h']], [['\n']]]);
   });
 
-  it('keeps a link URL that holds the export line break mark', () => {
-    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
-    const url = 'https://example.com/\ue000';
-    editor.update(
-      () => {
-        $getRoot()
-          .clear()
-          .append(
-            $createTableNode().append(
-              $createTableRowNode().append(
-                $createTableCellNode(TableCellHeaderStates.ROW).append(
-                  $createParagraphNode().append($createTextNode('h')),
+  it.each([false, true])(
+    'keeps a link URL that holds the export line break mark (code block: %s)',
+    withCode => {
+      using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+      const url = 'https://example.com/\ue000';
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createTableNode().append(
+                $createTableRowNode().append(
+                  $createTableCellNode(TableCellHeaderStates.ROW).append(
+                    $createParagraphNode().append($createTextNode('h')),
+                  ),
                 ),
-              ),
-              $createTableRowNode().append(
-                $createTableCellNode().append(
-                  $createParagraphNode().append(
-                    $createLinkNode(url).append($createTextNode('l')),
-                    $createLineBreakNode(),
-                    $createTextNode('m'),
+                $createTableRowNode().append(
+                  $createTableCellNode().append(
+                    $createParagraphNode().append(
+                      $createLinkNode(url).append($createTextNode('l')),
+                      $createLineBreakNode(),
+                      $createTextNode('m'),
+                    ),
+                    ...(withCode
+                      ? [
+                          $createCodeNode().append(
+                            $createTextNode('a'),
+                            $createLineBreakNode(),
+                            $createTextNode('b'),
+                          ),
+                        ]
+                      : []),
                   ),
                 ),
               ),
-            ),
-          );
-      },
-      {discrete: true},
-    );
-    const markdown = editor.read(() => $convertToMarkdownString([TABLE]));
-    using imported = importMarkdown(markdown);
-    imported.read(() => {
-      const link = $getRoot().getAllTextNodes()[1].getParent();
-      assert($isLinkNode(link), 'The cell must hold the link');
-      expect(link.getURL()).toBe(url);
-    });
-    expect(cellTexts(imported)).toEqual([[['h']], [['l\nm']]]);
-  });
+            );
+        },
+        {discrete: true},
+      );
+      const markdown = editor.read(() => $convertToMarkdownString([TABLE]));
+      using imported = importMarkdown(markdown);
+      imported.read(() => {
+        const link = $getRoot().getAllTextNodes()[1].getParent();
+        assert($isLinkNode(link), 'The cell must hold the link');
+        expect(link.getURL()).toBe(url);
+      });
+      expect(cellTexts(imported)).toEqual([
+        [['h']],
+        [withCode ? ['l\nm', 'a\nb'] : ['l\nm']],
+      ]);
+    },
+  );
 
   it('keeps a code block whose info string holds a pipe in one cell', () => {
     using editor = buildEditorFromExtensions(TableMarkdownTestExtension);

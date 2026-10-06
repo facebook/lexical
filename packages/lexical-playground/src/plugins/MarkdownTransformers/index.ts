@@ -263,15 +263,25 @@ interface CellMarks {
 }
 
 /**
- * Writes a line break inside a table cell as `mark`. It runs before the
- * default line break export, which would put the break's hard line break
- * marker (`\` or two spaces) in front of it, and `\<br>` reads back as an
- * escaped `<`.
+ * Writes a line break inside a table cell as `mark`, and adds its key to
+ * `written`. It runs before the default line break export, which would put
+ * the break's hard line break marker (`\` or two spaces) in front of it,
+ * and `\<br>` reads back as an escaped `<`. A line break in a code block
+ * is exported by the code block, as a newline.
  */
-function tableCellLineBreak(mark: string): TextMatchTransformer {
+function tableCellLineBreak(
+  mark: string,
+  written: Set<string>,
+): TextMatchTransformer {
   return {
     dependencies: [LineBreakNode],
-    export: node => ($isLineBreakNode(node) ? mark : null),
+    export: node => {
+      if (!$isLineBreakNode(node)) {
+        return null;
+      }
+      written.add(node.getKey());
+      return mark;
+    },
     regExp: /$^/,
     type: 'text-match',
   };
@@ -279,37 +289,25 @@ function tableCellLineBreak(mark: string): TextMatchTransformer {
 
 /** A cell's content as the Markdown of one GFM cell. */
 function $exportTableCell(cell: TableCellNode): string {
-  const lineBreaks = $countLineBreaks(cell);
   // The mark must not be in the Markdown, which also holds what isn't text,
   // such as link URLs, so a mark that turns up more often than the line
-  // breaks it stands for is passed over.
+  // breaks written as it is passed over.
   let avoid = cell.getTextContent();
   for (;;) {
     const mark = lineBreakMark(avoid);
+    const written = new Set<string>();
     const markdown = encodeTableCell(
       $convertToMarkdownString(
-        [tableCellLineBreak(mark), ...PLAYGROUND_TRANSFORMERS],
+        [tableCellLineBreak(mark, written), ...PLAYGROUND_TRANSFORMERS],
         cell,
       ).trim(),
     );
     const parts = markdown.split(mark);
-    if (parts.length - 1 <= lineBreaks) {
+    if (parts.length - 1 <= written.size) {
       return parts.join('<br>');
     }
     avoid += mark;
   }
-}
-
-/** The number of line breaks under `node`. */
-function $countLineBreaks(node: LexicalNode): number {
-  if ($isLineBreakNode(node)) {
-    return 1;
-  }
-  return $isElementNode(node)
-    ? node
-        .getChildren()
-        .reduce((count, child) => count + $countLineBreaks(child), 0)
-    : 0;
 }
 
 export const TABLE: ElementTransformer = {

@@ -298,6 +298,41 @@ function html(value: string): Html {
   return {type: 'html', value};
 }
 
+/**
+ * Raw HTML as it can go in a GFM cell, which holds one line and splits on
+ * `|` even inside HTML: a newline inside a tag is a space, and any other
+ * newline and every pipe is a character reference, which reads back as the
+ * same character, so whitespace in `<pre>` and attribute values survives.
+ */
+function cellHtml(value: string): string {
+  let result = '';
+  let inTag = false;
+  let quote: string | null = null;
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+    if (inTag) {
+      if (quote !== null) {
+        quote = char === quote ? null : quote;
+      } else if (char === '"' || char === "'") {
+        quote = char;
+      } else if (char === '>') {
+        inTag = false;
+      }
+    } else if (char === '<' && /[a-z/!?]/i.test(value[i + 1] || '')) {
+      inTag = true;
+    }
+    if (char === '\r' || char === '\n') {
+      if (char === '\r' && value[i + 1] === '\n') {
+        i++;
+      }
+      result += inTag && quote === null ? ' ' : '&#10;';
+    } else {
+      result += char === '|' ? '&#124;' : char;
+    }
+  }
+  return result;
+}
+
 /** The line separator inside a GFM table cell, which can't hold a newline. */
 function lineBreakHtml(): Html {
   return html('<br>');
@@ -353,9 +388,7 @@ function cellContentLines(nodes: readonly MdastNode[]): PhrasingContent[][] {
         }
         return;
       case 'html':
-        lines.push([
-          {type: 'html', value: node.value.replace(/\s*\n\s*/g, ' ')},
-        ]);
+        lines.push([html(node.value)]);
         return;
       case 'thematicBreak':
       case 'definition':
@@ -480,7 +513,7 @@ function blockHtml(node: MdastNode): PhrasingContent[] | null {
     case 'thematicBreak':
       return [html('<hr>')];
     case 'html':
-      return [html(node.value.replace(/\s*\n\s*/g, ' '))];
+      return [html(node.value)];
   }
   return null;
 }
@@ -601,8 +634,13 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   }
   const rows: TableRow[] = [];
   const legacyAlign = $getState(node, tableAlignState);
-  // The cells in each column, and how many of them have each alignment.
-  const columns: {aligned: Map<AlignType, number>; cells: number}[] = [];
+  // The cells in each column, how many of them have each alignment, and
+  // the alignment of its header cell.
+  const columns: {
+    aligned: Map<AlignType, number>;
+    cells: number;
+    header: AlignType;
+  }[] = [];
   const withHtml = $hasHtmlPeer();
   for (const row of node.getChildren()) {
     // Structural iteration bypasses the walk's selection filter, so rows a
@@ -616,25 +654,36 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       if (!$isTableCellNode(cell)) {
         continue;
       }
-      const column = (columns[cells.length] ??= {aligned: new Map(), cells: 0});
-      column.cells++;
       const cellAlign = $getCellAlign(cell);
+      const column = (columns[cells.length] ??= {
+        aligned: new Map(),
+        cells: 0,
+        header: rows.length === 0 ? cellAlign : null,
+      });
+      column.cells++;
       if (cellAlign !== null) {
         column.aligned.set(cellAlign, (column.aligned.get(cellAlign) ?? 0) + 1);
       }
       cells.push({
-        children: joinCellItems(
-          cellExportItems(ctx.exportChildren(cell), withHtml),
+        children: mapPhrasing(
+          joinCellItems(cellExportItems(ctx.exportChildren(cell), withHtml)),
+          child =>
+            child.type === 'html' ? [html(cellHtml(child.value))] : undefined,
         ),
         type: 'tableCell',
       });
     }
     rows.push({children: cells, type: 'tableRow'});
   }
-  // GFM aligns columns, not cells: a column takes the alignment that most
-  // of its cells have, so aligning one cell doesn't align its column, and a
-  // row inserted into an aligned column doesn't clear it.
+  // GFM aligns columns, not cells, with the delimiter row under the
+  // header: a column takes the alignment of its header cell, so rows
+  // inserted below it don't clear it, or else the one that most of its
+  // cells have, so aligning one body cell doesn't align its column and a
+  // row inserted above the header doesn't clear it either.
   const align = columns.map((column, i): AlignType => {
+    if (column.header !== null) {
+      return column.header;
+    }
     for (const [cellAlign, count] of column.aligned) {
       if (count * 2 > column.cells) {
         return cellAlign;
@@ -659,7 +708,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  * other blocks in a cell (lists, headings, quotes, code) are written as one
  * line of HTML and read back as blocks; without it they are flattened into
  * lines. Column alignment is the element format of the column's cells
- * (`TableCellNode.setFormat`).
+ * (`TableCellNode.setFormat`), exported from the header cell, or else from
+ * most of the column's cells.
  *
  * @example
  * ```ts

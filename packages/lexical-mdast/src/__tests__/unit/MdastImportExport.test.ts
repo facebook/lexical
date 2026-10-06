@@ -1138,6 +1138,36 @@ describe('@lexical/mdast import/export', () => {
       ).toBe('|  x  |\n| :-: |\n|  a  |\n|  1  |\n|  2  |');
     });
 
+    it('keeps a column aligned when rows are inserted below the header', () => {
+      expect(
+        editColumns('| a |\n| :-: |\n| 1 |', row => {
+          if (row.getIndexWithinParent() === 1) {
+            for (const text of ['x', 'y', 'z']) {
+              row.insertBefore(
+                $createTableRowNode().append(
+                  $createTableCellNode().append(
+                    $createParagraphNode().append($createTextNode(text)),
+                  ),
+                ),
+              );
+            }
+          }
+        }),
+      ).toBe('|  a  |\n| :-: |\n|  x  |\n|  y  |\n|  z  |\n|  1  |');
+    });
+
+    it('aligns a column by its header cell alone', () => {
+      expect(
+        editColumns('| a |\n| - |\n| 1 |\n| 2 |', row => {
+          if (row.getIndexWithinParent() === 0) {
+            $assertNodeType(row.getFirstChild(), $isElementNode).setFormat(
+              'right',
+            );
+          }
+        }),
+      ).toBe('|  a |\n| -: |\n|  1 |\n|  2 |');
+    });
+
     it('gives an inserted column no alignment', () => {
       expect(
         editColumns('| a | b |\n| :- | -: |\n| 1 | 2 |', row =>

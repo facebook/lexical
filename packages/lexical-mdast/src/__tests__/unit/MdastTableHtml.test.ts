@@ -241,6 +241,46 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
     );
   });
 
+  it.each([false, true])(
+    'keeps the newlines and pipes of raw HTML in a cell (HTML extension: %s)',
+    withHtml => {
+      const value = '<pre>a|b\n  c</pre><span\ntitle="x|y\nz">w</span>';
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            configExtension(MdastExtension, {
+              exportRules: [
+                {$export: () => [{type: 'html', value}], type: QuoteNode},
+              ],
+            }),
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            ...(withHtml ? [MdastHtmlExtension] : []),
+            RichTextExtension,
+            TableExtension,
+          ],
+          name: '[root]',
+        }),
+      );
+      editor.update(
+        () => $appendCell($createQuoteNode().append($createTextNode('q'))),
+        {discrete: true},
+      );
+      const markdown = editor.read(() => $convertToMarkdownString());
+      expect(bodyLine(markdown)).toBe(
+        '<pre>a&#124;b&#10;  c</pre><span title="x&#124;y&#10;z">w</span>',
+      );
+      if (withHtml) {
+        editor.update(() => $convertFromMarkdownString(markdown), {
+          discrete: true,
+        });
+        expect(editor.read(() => $getRoot().getTextContent())).toContain(
+          'a|b\n  c',
+        );
+      }
+    },
+  );
+
   it('flattens the same blocks into lines without MdastHtmlExtension', () => {
     using editor = createEditor(false);
     editor.update($buildBlocks, {discrete: true});

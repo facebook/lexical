@@ -133,8 +133,16 @@ written as one line of HTML around their Markdown content, such as
 Without it, they are flattened to one line per item. A column's alignment (`:-:`) is
 set as the element format of each of its cells, so it renders as their
 `text-align` and stays with the column when columns are added or removed.
-On export, a column takes the alignment that most of its cells have, since
-GFM can't align a single cell.
+GFM can't align a single cell, so on export a column takes the alignment of
+its header cell, or if that has none, the alignment that most of its cells
+have. Raw HTML in a cell is written on one line too: a newline inside a tag
+becomes a space, and other newlines and every `|` become character
+references (`&#10;`, `&#124;`), so whitespace in a `<pre>` or an attribute
+value survives. Documents saved before alignment moved to the cells kept it
+as one array on the table; when such a table loads, each alignment is moved
+onto the cells of its column that have no format of their own, and a cell
+that already has one, including one GFM can't write (`justify`, `start`,
+`end`), keeps it.
 
 ## unified / remark interop
 

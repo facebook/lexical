@@ -1562,6 +1562,68 @@ describe('Markdown', () => {
     );
   });
 
+  describe.each(['\\*', '&#160;'])('inline code literal %s', content => {
+    it.each([
+      ['', '', false],
+      ['before ', '', false],
+      ['', ' after', false],
+      ['before ', ' after', false],
+      ['', '', true],
+    ])(
+      'preserves content with prefix %j, suffix %j and bold %j',
+      (prefix, suffix, bold) => {
+        const editor = createTestEditor();
+        const emphasis = bold ? '**' : '';
+        const markdown = `${prefix}${emphasis}\`${content}\`${emphasis}${suffix}`;
+        editor.update(
+          () => $convertFromMarkdownString(markdown, TRANSFORMERS),
+          {discrete: true},
+        );
+        editor.read(() => {
+          expect(
+            $getRoot()
+              .getAllTextNodes()
+              .map(node => [node.getTextContent(), node.getFormat()]),
+          ).toEqual([
+            ...(prefix ? [[prefix, 0]] : []),
+            [
+              content,
+              TEXT_TYPE_TO_FORMAT.code | (bold ? TEXT_TYPE_TO_FORMAT.bold : 0),
+            ],
+            ...(suffix ? [[suffix, 0]] : []),
+          ]);
+          expect($convertToMarkdownString(TRANSFORMERS)).toBe(markdown);
+        });
+      },
+    );
+  });
+
+  it.each(['', '\\* &#160; '])(
+    'unescapes text around code after %j',
+    prefix => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $convertFromMarkdownString(
+            `${prefix}\`\\* &#160;\` \\* &#160;`,
+            TRANSFORMERS,
+          ),
+        {discrete: true},
+      );
+      editor.read(() => {
+        expect(
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => [node.getTextContent(), node.getFormat()]),
+        ).toEqual([
+          ...(prefix ? [['* \u00a0 ', 0]] : []),
+          ['\\* &#160;', TEXT_TYPE_TO_FORMAT.code],
+          [' * \u00a0', 0],
+        ]);
+      });
+    },
+  );
+
   describe('overlapping inline formats (#4895)', () => {
     type Run = [text: string, format: number];
 

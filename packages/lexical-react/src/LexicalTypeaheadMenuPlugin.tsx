@@ -24,6 +24,7 @@ import {
   startTransition,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -166,6 +167,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
 }: TypeaheadMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
+  const openGenerationRef = useRef(0);
   const anchorElementRef = useMenuAnchorRef(
     resolution,
     setResolution,
@@ -177,8 +179,11 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     if (resolution === null) {
       return;
     }
+    const openGeneration = openGenerationRef.current;
     const finish = () => {
-      setResolution(null);
+      if (openGenerationRef.current === openGeneration) {
+        setResolution(null);
+      }
     };
     let result;
     try {
@@ -194,6 +199,8 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
 
   const openTypeahead = useCallback(
     (res: MenuResolution) => {
+      // Track pending opens before their transition has rendered.
+      openGenerationRef.current++;
       setResolution(res);
       if (onOpen != null && resolution === null) {
         onOpen(res);

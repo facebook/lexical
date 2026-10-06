@@ -50,8 +50,10 @@ const TEST_OPTIONS = [
 ];
 
 function TypeaheadPluginWithMenuRenderFn({
+  onClose,
   options = TEST_OPTIONS,
 }: {
+  onClose?: () => void | PromiseLike<void>;
   options?: TestMenuOption[];
 }) {
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
@@ -104,6 +106,7 @@ function TypeaheadPluginWithMenuRenderFn({
       triggerFn={checkForTriggerMatch}
       options={options}
       menuRenderFn={menuRenderFn}
+      onClose={onClose}
     />
   );
 }
@@ -414,6 +417,152 @@ describe('LexicalTypeaheadMenuPlugin', () => {
         document.querySelector('[data-testid="custom-typeahead"]'),
       ).toBeNull();
     });
+
+    it.each([
+      ['resolve', 1],
+      ['reject', 1],
+      ['resolve', 2],
+      ['reject', 2],
+    ] as const)(
+      'preserves a newer query when an earlier onClose promise %ss after %i close requests',
+      async (settlement, closeRequests) => {
+        const editorRef = React.createRef<LexicalEditor>();
+        let finishClose!: () => void;
+        const closePromise = new Promise<void>((resolve, reject) => {
+          finishClose =
+            settlement === 'resolve'
+              ? resolve
+              : () => reject(new Error('close failed'));
+        });
+        const onClose = vi.fn(() => closePromise);
+        const App = createApp(
+          <>
+            <EditorRefPlugin editorRef={editorRef} />
+            <TypeaheadPluginWithMenuRenderFn onClose={onClose} />
+          </>,
+        );
+
+        await act(async () => {
+          reactRoot.render(<App />);
+        });
+
+        const editor = editorRef.current!;
+        await act(async () => {
+          editor.update(() => {
+            $getRoot()
+              .clear()
+              .append($createParagraphNode())
+              .select()
+              .insertText('/old');
+          });
+        });
+        expect(
+          document.querySelector('[data-testid="matching-string"]')
+            ?.textContent,
+        ).toBe('old');
+
+        async function insertText(text: string) {
+          await act(async () => {
+            editor.update(() => {
+              const selection = $getSelection();
+              if (!$isRangeSelection(selection)) {
+                throw new Error('expected a range selection');
+              }
+              selection.insertText(text);
+            });
+          });
+        }
+
+        for (let i = 0; i < closeRequests; i++) {
+          await insertText(' ');
+        }
+        expect(onClose).toHaveBeenCalledTimes(closeRequests);
+        expect(
+          document.querySelector('[data-testid="matching-string"]')
+            ?.textContent,
+        ).toBe('old');
+
+        await insertText('/new');
+        expect(
+          document.querySelector('[data-testid="matching-string"]')
+            ?.textContent,
+        ).toBe('new');
+
+        await act(async () => {
+          finishClose();
+        });
+        expect(
+          document.querySelector('[data-testid="matching-string"]')
+            ?.textContent,
+        ).toBe('new');
+
+        await insertText('er');
+        expect(
+          document.querySelector('[data-testid="matching-string"]')
+            ?.textContent,
+        ).toBe('newer');
+
+        await insertText(' ');
+        expect(onClose).toHaveBeenCalledTimes(closeRequests + 1);
+        expect(
+          document.querySelector('[data-testid="custom-typeahead"]'),
+        ).toBeNull();
+      },
+    );
+
+    it.each(['synchronous', 'resolved', 'rejected'] as const)(
+      'clears an uncommitted query when onClose is %s',
+      async settlement => {
+        const editorRef = React.createRef<LexicalEditor>();
+        const onClose = vi.fn(() => {
+          if (settlement === 'resolved') {
+            return Promise.resolve();
+          }
+          if (settlement === 'rejected') {
+            return Promise.reject(new Error('close failed'));
+          }
+        });
+        const App = createApp(
+          <>
+            <EditorRefPlugin editorRef={editorRef} />
+            <TypeaheadPluginWithMenuRenderFn onClose={onClose} />
+          </>,
+        );
+        await act(async () => {
+          reactRoot.render(<App />);
+        });
+        const editor = editorRef.current!;
+        await act(async () => {
+          editor.update(() => {
+            $getRoot()
+              .clear()
+              .append($createParagraphNode())
+              .select()
+              .insertText('/old');
+          });
+        });
+
+        await act(async () => {
+          for (const text of ['er', ' ']) {
+            editor.update(
+              () => {
+                const selection = $getSelection();
+                if (!$isRangeSelection(selection)) {
+                  throw new Error('expected a range selection');
+                }
+                selection.insertText(text);
+              },
+              {discrete: true},
+            );
+          }
+        });
+
+        expect(onClose).toHaveBeenCalledTimes(1);
+        expect(
+          document.querySelector('[data-testid="custom-typeahead"]'),
+        ).toBeNull();
+      },
+    );
 
     it('runs synchronous onClose before clearing the menu', async () => {
       const editorRef = React.createRef<LexicalEditor>();

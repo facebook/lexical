@@ -6,6 +6,8 @@
  *
  */
 
+import type {RootContent} from 'mdast';
+
 import {$createCodeNode, CodeExtension} from '@lexical/code-core';
 import {
   buildEditorFromExtensions,
@@ -50,6 +52,7 @@ import {
   MdastHtmlExtension,
   MdastTableExtension,
   MdastTaskListExtension,
+  rawHtmlBlock,
 } from '../../index';
 
 function createEditor(withHtml: boolean): LexicalEditorWithDispose {
@@ -280,6 +283,84 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
       }
     },
   );
+
+  function exportRawHtml(
+    withHtml: boolean,
+    $export: () => RootContent[],
+  ): LexicalEditorWithDispose {
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          configExtension(MdastExtension, {
+            exportRules: [{$export, type: QuoteNode}],
+          }),
+          MdastCommonMarkExtension,
+          MdastTableExtension,
+          ...(withHtml ? [MdastHtmlExtension] : []),
+          RichTextExtension,
+          TableExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () => $appendCell($createQuoteNode().append($createTextNode('q'))),
+      {discrete: true},
+    );
+    return editor;
+  }
+
+  it.each([false, true])(
+    'writes a newline as a space outside a <pre> and ignores quotes in comments (HTML extension: %s)',
+    withHtml => {
+      using editor = exportRawHtml(withHtml, () => [
+        {
+          type: 'html',
+          value: "<!-- don't -->\n<div>x<span\nclass='a b'>y</span>\n</div>",
+        },
+      ]);
+      expect(bodyLine(editor.read(() => $convertToMarkdownString()))).toBe(
+        "<!-- don't --> <div>x<span class='a b'>y</span> </div>",
+      );
+    },
+  );
+
+  it('adds no lines to raw HTML in a cell that is read and written again', () => {
+    // Without MdastHtmlExtension, raw HTML reads back as text.
+    using editor = exportRawHtml(false, () => [
+      {type: 'html', value: '<div>\n<span>a</span>\n</div>'},
+    ]);
+    const exports: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const markdown = editor.read(() => $convertToMarkdownString());
+      exports.push(bodyLine(markdown));
+      editor.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+    }
+    expect(exports).toEqual([
+      '<div> <span>a</span> </div>',
+      '\\<div> \\<span>a\\</span> \\</div>',
+      '\\<div> \\<span>a\\</span> \\</div>',
+    ]);
+  });
+
+  it('writes an htmlBlock in a cell on one line', () => {
+    using editor = exportRawHtml(true, () => [
+      rawHtmlBlock(
+        '<details><summary>\n',
+        [{type: 'text', value: 's|t'}],
+        '\n</summary>\n\n',
+        {flow: [{children: [{type: 'text', value: 'b'}], type: 'paragraph'}]},
+        '\n</details>',
+      ),
+    ]);
+    const markdown = editor.read(() => $convertToMarkdownString());
+    expect(markdown.split('\n')).toHaveLength(3);
+    expect(bodyLine(markdown)).toBe(
+      '<details><summary> s\\|t </summary> b </details>',
+    );
+  });
 
   it('flattens the same blocks into lines without MdastHtmlExtension', () => {
     using editor = createEditor(false);

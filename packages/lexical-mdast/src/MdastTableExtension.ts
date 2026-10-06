@@ -23,6 +23,7 @@ import type {
   TableCell,
   TableRow,
 } from 'mdast';
+import type {State} from 'mdast-util-to-markdown';
 
 import {$getPeerDependency, configExtension} from '@lexical/extension';
 import {
@@ -165,6 +166,9 @@ function trimSegment(segment: PhrasingContent[]): PhrasingContent[] {
   return result.filter(node => node.type !== 'text' || node.value !== '');
 }
 
+// The placeholder an `htmlBlock` holds for each of its Markdown children.
+const HTML_BLOCK_CHILD_RE = /<template data-mdast-child="(\d+)"><\/template>/;
+
 /** The names of the block elements a cell's HTML can open with. */
 const BLOCK_HTML_RE =
   /^\s*<(?:address|article|aside|blockquote|details|div|dl|figure|footer|h[1-6]|header|hr|ol|p|pre|section|ul)\b/i;
@@ -298,39 +302,117 @@ function html(value: string): Html {
   return {type: 'html', value};
 }
 
+// Elements whose text keeps its newlines.
+const PRE_HTML_RE = /^(?:listing|pre|textarea)$/i;
+
 /**
  * Raw HTML as it can go in a GFM cell, which holds one line and splits on
- * `|` even inside HTML: a newline inside a tag is a space, and any other
- * newline and every pipe is a character reference, which reads back as the
- * same character, so whitespace in `<pre>` and attribute values survives.
+ * `|` even inside HTML. A newline in a quoted attribute value or in the
+ * text of a `<pre>` or `<textarea>` is a character reference (`&#10;`),
+ * which reads back as a newline. Any other newline, with the whitespace
+ * around it, is a space, which HTML reads the same way. Every pipe is a
+ * character reference (`&#124;`), which also reads back as a pipe. A
+ * comment takes no references, so its pipes stay references: GFM can't
+ * write a pipe in one.
  */
 function cellHtml(value: string): string {
   let result = '';
-  let inTag = false;
-  let quote: string | null = null;
+  // What the scan is in: text, a tag, a quoted attribute value, an
+  // unquoted one, or a comment or other markup declaration ending in
+  // `end`.
+  let state: 'text' | 'tag' | 'quoted' | 'unquoted' | 'markup' = 'text';
+  let quote = '';
+  let end = '';
+  let afterEquals = false;
+  let preDepth = 0;
   for (let i = 0; i < value.length; i++) {
     const char = value[i];
-    if (inTag) {
-      if (quote !== null) {
-        quote = char === quote ? null : quote;
-      } else if (char === '"' || char === "'") {
-        quote = char;
-      } else if (char === '>') {
-        inTag = false;
-      }
-    } else if (char === '<' && /[a-z/!?]/i.test(value[i + 1] || '')) {
-      inTag = true;
-    }
     if (char === '\r' || char === '\n') {
-      if (char === '\r' && value[i + 1] === '\n') {
-        i++;
+      if (state === 'quoted' || (state === 'text' && preDepth > 0)) {
+        if (char === '\r' && value[i + 1] === '\n') {
+          i++;
+        }
+        result += '&#10;';
+      } else {
+        // The newline ends an unquoted value, and it and the whitespace
+        // around it read as one space.
+        state = state === 'unquoted' ? 'tag' : state;
+        result = result.replace(/[ \t]+$/, '') + ' ';
+        while (/[\s]/.test(value[i + 1] || '')) {
+          i++;
+        }
       }
-      result += inTag && quote === null ? ' ' : '&#10;';
-    } else {
-      result += char === '|' ? '&#124;' : char;
+      continue;
     }
+    switch (state) {
+      case 'text': {
+        if (char !== '<') {
+          break;
+        }
+        if (value.startsWith('<!--', i)) {
+          state = 'markup';
+          end = '-->';
+        } else if (/^<[!?]/.test(value.slice(i, i + 2))) {
+          state = 'markup';
+          end = '>';
+        } else {
+          const tag = /^<(\/?)([a-z][\w-]*)/i.exec(value.slice(i, i + 64));
+          if (tag !== null) {
+            state = 'tag';
+            afterEquals = false;
+            if (PRE_HTML_RE.test(tag[2])) {
+              preDepth = Math.max(0, preDepth + (tag[1] ? -1 : 1));
+            }
+          }
+        }
+        break;
+      }
+      case 'markup':
+        if (value.startsWith(end, i)) {
+          result += end;
+          i += end.length - 1;
+          state = 'text';
+          continue;
+        }
+        break;
+      case 'tag':
+        if (char === '>') {
+          state = 'text';
+        } else if (char === '=') {
+          afterEquals = true;
+        } else if (afterEquals && (char === '"' || char === "'")) {
+          state = 'quoted';
+          quote = char;
+          afterEquals = false;
+        } else if (afterEquals && !/[\s]/.test(char)) {
+          state = 'unquoted';
+          afterEquals = false;
+        }
+        break;
+      case 'quoted':
+        if (char === quote) {
+          state = 'tag';
+        }
+        break;
+      case 'unquoted':
+        if (char === '>') {
+          state = 'text';
+        } else if (/[\s]/.test(char)) {
+          state = 'tag';
+        }
+        break;
+    }
+    result += char === '|' ? '&#124;' : char;
   }
   return result;
+}
+
+/**
+ * Writes raw HTML as is, or in a table cell as {@link cellHtml} encodes it,
+ * whatever wrote the HTML node.
+ */
+function htmlToMarkdown(node: Html, _parent: unknown, state: State): string {
+  return state.stack.includes('tableCell') ? cellHtml(node.value) : node.value;
 }
 
 /** The line separator inside a GFM table cell, which can't hold a newline. */
@@ -514,6 +596,26 @@ function blockHtml(node: MdastNode): PhrasingContent[] | null {
       return [html('<hr>')];
     case 'html':
       return [html(node.value)];
+    case 'htmlBlock': {
+      // Raw HTML around placeholders for its Markdown children.
+      const result: PhrasingContent[] = [];
+      const segments = node.value.split(HTML_BLOCK_CHILD_RE);
+      for (let i = 0; i < segments.length; i++) {
+        if (i % 2 === 0) {
+          if (segments[i] !== '') {
+            result.push(html(segments[i]));
+          }
+          continue;
+        }
+        const child = node.children[Number(segments[i])];
+        const content = child === undefined ? [] : flowHtml([child]);
+        if (content === null) {
+          return null;
+        }
+        result.push(...content);
+      }
+      return result;
+    }
   }
   return null;
 }
@@ -642,6 +744,13 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     header: AlignType;
   }[] = [];
   const withHtml = $hasHtmlPeer();
+  // The header is the table's first row of cells, which a selection's
+  // export may leave out.
+  const headerRow = node
+    .getChildren()
+    .find(
+      row => $isTableRowNode(row) && row.getChildren().some($isTableCellNode),
+    );
   for (const row of node.getChildren()) {
     // Structural iteration bypasses the walk's selection filter, so rows a
     // selection export does not reach are skipped here. Cells stay: dropping
@@ -658,38 +767,35 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       const column = (columns[cells.length] ??= {
         aligned: new Map(),
         cells: 0,
-        header: rows.length === 0 ? cellAlign : null,
+        header: null,
       });
+      if (row.is(headerRow)) {
+        column.header = cellAlign;
+      }
       column.cells++;
       if (cellAlign !== null) {
         column.aligned.set(cellAlign, (column.aligned.get(cellAlign) ?? 0) + 1);
       }
       cells.push({
-        children: mapPhrasing(
-          joinCellItems(cellExportItems(ctx.exportChildren(cell), withHtml)),
-          child =>
-            child.type === 'html' ? [html(cellHtml(child.value))] : undefined,
+        children: joinCellItems(
+          cellExportItems(ctx.exportChildren(cell), withHtml),
         ),
         type: 'tableCell',
       });
     }
     rows.push({children: cells, type: 'tableRow'});
   }
-  // GFM aligns columns, not cells, with the delimiter row under the
-  // header: a column takes the alignment of its header cell, so rows
-  // inserted below it don't clear it, or else the one that most of its
-  // cells have, so aligning one body cell doesn't align its column and a
-  // row inserted above the header doesn't clear it either.
+  // GFM aligns columns, not cells: a column takes the alignment that most
+  // of its cells have, so aligning one body cell doesn't align its column,
+  // or else that of its header cell, the cell the delimiter row is under,
+  // so rows inserted into an aligned column don't clear it.
   const align = columns.map((column, i): AlignType => {
-    if (column.header !== null) {
-      return column.header;
-    }
     for (const [cellAlign, count] of column.aligned) {
       if (count * 2 > column.cells) {
         return cellAlign;
       }
     }
-    return legacyAlign[i] || null;
+    return column.header || legacyAlign[i] || null;
   });
   return {
     align,
@@ -708,8 +814,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  * other blocks in a cell (lists, headings, quotes, code) are written as one
  * line of HTML and read back as blocks; without it they are flattened into
  * lines. Column alignment is the element format of the column's cells
- * (`TableCellNode.setFormat`), exported from the header cell, or else from
- * most of the column's cells.
+ * (`TableCellNode.setFormat`), exported as the alignment most of the
+ * column's cells have, or else its header cell's.
  *
  * @example
  * ```ts
@@ -733,7 +839,10 @@ export const MdastTableExtension = defineExtension({
       importRules: [{$import: $importTable, type: 'table'}],
       mdastExtensions: [/* @__PURE__ */ gfmTableFromMarkdown()],
       micromarkExtensions: [/* @__PURE__ */ gfmTable()],
-      toMarkdownExtensions: [/* @__PURE__ */ gfmTableToMarkdown()],
+      toMarkdownExtensions: [
+        /* @__PURE__ */ gfmTableToMarkdown(),
+        {handlers: {html: htmlToMarkdown}},
+      ],
     }),
   ],
   name: '@lexical/mdast/Table',

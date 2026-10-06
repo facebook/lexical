@@ -27,6 +27,8 @@ import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
 import {
   $createTableCellNode,
   $createTableRowNode,
+  $createTableSelectionFrom,
+  $isTableCellNode,
   $isTableNode,
 } from '@lexical/table';
 import {
@@ -40,6 +42,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  $setSelection,
   $setSelectionFromCaretRange,
   defineExtension,
   type ElementNode,
@@ -1166,6 +1169,58 @@ describe('@lexical/mdast import/export', () => {
           }
         }),
       ).toBe('|  a |\n| -: |\n|  1 |\n|  2 |');
+    });
+
+    it('aligns a column by most of its cells over its header cell', () => {
+      expect(
+        editColumns('| a |\n| -: |\n| 1 |\n| 2 |', row => {
+          if (row.getIndexWithinParent() > 0) {
+            $assertNodeType(row.getFirstChild(), $isElementNode).setFormat(
+              'center',
+            );
+          }
+        }),
+      ).toBe('|  a  |\n| :-: |\n|  1  |\n|  2  |');
+    });
+
+    it("takes the header from the table's first row with cells", () => {
+      expect(
+        editColumns('| a |\n| - |\n| 1 |\n| 2 |', row => {
+          if (row.getIndexWithinParent() === 0) {
+            $assertNodeType(row.getFirstChild(), $isElementNode).setFormat(
+              'right',
+            );
+            row.insertBefore($createTableRowNode());
+          }
+        }),
+      ).toBe('|    |\n| -: |\n|  a |\n|  1 |\n|  2 |');
+    });
+
+    it('takes no header alignment from a selection without the header row', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| - |\n| 1 |\n| 2 |\n| 3 |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const [, first, , last] = table.getChildren();
+          const cell = (row: LexicalNode) =>
+            $assertNodeType(
+              $assertNodeType(row, $isElementNode).getFirstChild(),
+              $isTableCellNode,
+            );
+          cell(first).setFormat('right');
+          $setSelection(
+            $createTableSelectionFrom(table, cell(first), cell(last)),
+          );
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertSelectionToMarkdownString())).toBe(
+        '| 1 |\n| - |\n| 2 |\n| 3 |',
+      );
     });
 
     it('gives an inserted column no alignment', () => {

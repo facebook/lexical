@@ -144,6 +144,17 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       for (const embedConfig of embedConfigs) {
         const urlMatch = await Promise.resolve(embedConfig.parseUrl(url));
         if (urlMatch != null) {
+          const isCurrentLink = editor.read(() => {
+            const linkNode = $getNodeByKey(key);
+            return (
+              $isLinkNode(linkNode) &&
+              linkNode.isAttached() &&
+              linkNode.getURL() === url
+            );
+          });
+          if (!isCurrentLink) {
+            return;
+          }
           setActiveEmbedConfig(embedConfig);
           setNodeKey(key);
         }
@@ -214,20 +225,25 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   const embedLinkViaActiveEmbedConfig = useCallback(
     async function () {
       if (activeEmbedConfig != null && nodeKey != null) {
-        const linkNode = editor.read('latest', () => {
+        const url = editor.read('latest', () => {
           const node = $getNodeByKey(nodeKey);
-          if ($isLinkNode(node)) {
-            return node;
+          if ($isLinkNode(node) && node.isAttached()) {
+            return node.getURL();
           }
-          return null;
         });
 
-        if ($isLinkNode(linkNode)) {
-          const result = await Promise.resolve(
-            activeEmbedConfig.parseUrl(linkNode.__url),
-          );
+        if (url !== undefined) {
+          const result = await Promise.resolve(activeEmbedConfig.parseUrl(url));
           if (result != null) {
             editor.update(() => {
+              const linkNode = $getNodeByKey(nodeKey);
+              if (
+                !$isLinkNode(linkNode) ||
+                !linkNode.isAttached() ||
+                linkNode.getURL() !== url
+              ) {
+                return;
+              }
               if (!$getSelection()) {
                 linkNode.selectEnd();
               }

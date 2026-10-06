@@ -6,9 +6,9 @@
  *
  */
 
-import type {LexicalEditor, NodeKey} from 'lexical';
+import type {LexicalEditor, NodeKey, ParagraphNode} from 'lexical';
 
-import {AutoLinkNode, LinkNode} from '@lexical/link';
+import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {
   AutoEmbedOption,
   type EmbedConfig,
@@ -31,7 +31,9 @@ import {
   $createTextNode,
   $getNodeByKey,
   $getRoot,
+  $getSelection,
   $isTextNode,
+  $setSelection,
   PASTE_COMMAND,
   PASTE_TAG,
 } from 'lexical';
@@ -60,13 +62,17 @@ const MATCHERS = [
 
 const menuRenderFn: MenuRenderFn<AutoEmbedOption> = (
   anchorElementRef,
-  {options},
+  {options, selectOptionAndCleanUp},
 ) =>
   anchorElementRef.current && options.length
     ? ReactDOM.createPortal(
         <ul data-testid="auto-embed-menu">
           {options.map(option => (
-            <li key={option.key}>{option.title}</li>
+            <li key={option.key}>
+              <button onClick={() => selectOptionAndCleanUp(option)}>
+                {option.title}
+              </button>
+            </li>
           ))}
         </ul>,
         anchorElementRef.current,
@@ -86,9 +92,8 @@ describe('LexicalAutoEmbedPlugin', () => {
   let reactRoot: Root;
   let editor: LexicalEditor;
   let onError: Mock<(error: Error) => void>;
-  let parseUrl: ReturnType<
-    typeof vi.fn<(url: string) => EmbedMatchResult | null>
-  >;
+  let parseUrl: Mock<EmbedConfig['parseUrl']>;
+  let insertNode: Mock<EmbedConfig['insertNode']>;
 
   beforeEach(async () => {
     class ResizeObserverMock {
@@ -110,8 +115,9 @@ describe('LexicalAutoEmbedPlugin', () => {
       const match = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/.exec(url);
       return match ? {id: match[1], url} : null;
     });
+    insertNode = vi.fn();
     const embedConfig: EmbedConfig = {
-      insertNode: vi.fn(),
+      insertNode,
       parseUrl,
       type: 'youtube-video',
     };
@@ -188,6 +194,159 @@ describe('LexicalAutoEmbedPlugin', () => {
   function getMenu(): Element | null {
     return document.querySelector('[data-testid="auto-embed-menu"]');
   }
+
+  function deferParseUrl(): (result: EmbedMatchResult | null) => void {
+    let resolve!: (result: EmbedMatchResult | null) => void;
+    parseUrl.mockReturnValueOnce(
+      new Promise<EmbedMatchResult | null>(res => {
+        resolve = res;
+      }),
+    );
+    return resolve;
+  }
+
+  async function selectEmbedOption(): Promise<void> {
+    const button = getMenu()?.querySelector('button') ?? null;
+    expect(button).not.toBeNull();
+    await act(async () => {
+      button!.click();
+    });
+  }
+
+  function $getPastedLink(): LinkNode {
+    return $assertNodeType(
+      $getRoot().getFirstChildOrThrow<ParagraphNode>().getFirstChildOrThrow(),
+      $isLinkNode,
+    )!;
+  }
+
+  it('embeds an unchanged link', async () => {
+    await paste({'text/plain': YOUTUBE_URL});
+    const resolveParseUrl = deferParseUrl();
+    await selectEmbedOption();
+    expect(insertNode).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveParseUrl({id: 'jNQXAC9IVRw', url: YOUTUBE_URL});
+    });
+
+    expect(insertNode).toHaveBeenCalledExactlyOnceWith(editor, {
+      id: 'jNQXAC9IVRw',
+      url: YOUTUBE_URL,
+    });
+    expect(onError).not.toHaveBeenCalled();
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('');
+    });
+  });
+
+  it('embeds an unchanged link after parsing with no selection', async () => {
+    await paste({'text/plain': YOUTUBE_URL});
+    const resolveParseUrl = deferParseUrl();
+    await selectEmbedOption();
+    expect(insertNode).not.toHaveBeenCalled();
+
+    await act(async () => {
+      editor.update(() => $setSelection(null));
+    });
+    await act(async () => {
+      resolveParseUrl({id: 'jNQXAC9IVRw', url: YOUTUBE_URL});
+    });
+
+    expect(insertNode).toHaveBeenCalledExactlyOnceWith(editor, {
+      id: 'jNQXAC9IVRw',
+      url: YOUTUBE_URL,
+    });
+    expect(onError).not.toHaveBeenCalled();
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('');
+      expect($getSelection()).not.toBeNull();
+    });
+  });
+
+  it('does not embed a link removed while parsing', async () => {
+    await paste({'text/plain': YOUTUBE_URL});
+    const resolveParseUrl = deferParseUrl();
+    await selectEmbedOption();
+
+    await act(async () => {
+      editor.update(() => {
+        $getPastedLink().remove();
+        $getRoot().getFirstChildOrThrow<ParagraphNode>().selectEnd();
+      });
+    });
+    const editorState = editor.getEditorState();
+    await act(async () => {
+      resolveParseUrl({id: 'jNQXAC9IVRw', url: YOUTUBE_URL});
+    });
+
+    expect(insertNode).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+    expect(editor.getEditorState().toJSON()).toEqual(editorState.toJSON());
+    editor.read(() => {
+      expect($getSelection()).toEqual(editorState._selection);
+    });
+  });
+
+  it('does not embed a link whose URL changed while parsing', async () => {
+    await paste({'text/plain': YOUTUBE_URL});
+    const resolveParseUrl = deferParseUrl();
+    await selectEmbedOption();
+
+    await act(async () => {
+      editor.update(() => {
+        $getPastedLink().setURL('https://example.com/');
+      });
+    });
+    editor.read(() => {
+      expect($getPastedLink().getURL()).toBe('https://example.com/');
+    });
+    const editorState = editor.getEditorState();
+    await act(async () => {
+      resolveParseUrl({id: 'jNQXAC9IVRw', url: YOUTUBE_URL});
+    });
+
+    expect(insertNode).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+    expect(editor.getEditorState().toJSON()).toEqual(editorState.toJSON());
+    editor.read(() => {
+      expect($getSelection()).toEqual(editorState._selection);
+    });
+  });
+
+  it('does not offer to embed a link whose URL changed while parsing', async () => {
+    const resolveParseUrl = deferParseUrl();
+    await paste({'text/plain': YOUTUBE_URL});
+    expect(getMenu()).toBeNull();
+
+    await act(async () => {
+      editor.update(() => {
+        $getPastedLink().setURL('https://example.com/');
+      });
+    });
+    await act(async () => {
+      resolveParseUrl({id: 'jNQXAC9IVRw', url: YOUTUBE_URL});
+    });
+
+    expect(getMenu()).toBeNull();
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it('does not offer to embed a link with a pending URL change when parsing resolves', async () => {
+    const resolveParseUrl = deferParseUrl();
+    await paste({'text/plain': YOUTUBE_URL});
+    expect(getMenu()).toBeNull();
+
+    await act(async () => {
+      resolveParseUrl({id: 'jNQXAC9IVRw', url: YOUTUBE_URL});
+      editor.update(() => {
+        $getPastedLink().setURL('https://example.com/');
+      });
+    });
+
+    expect(getMenu()).toBeNull();
+    expect(onError).not.toHaveBeenCalled();
+  });
 
   it('offers to embed a bare URL pasted as plain text', async () => {
     await paste({'text/plain': YOUTUBE_URL});

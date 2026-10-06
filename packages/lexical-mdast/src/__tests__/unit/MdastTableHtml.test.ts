@@ -9,6 +9,7 @@
 import {$createCodeNode, CodeExtension} from '@lexical/code-core';
 import {
   buildEditorFromExtensions,
+  configExtension,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {
@@ -16,7 +17,12 @@ import {
   $createListNode,
   ListExtension,
 } from '@lexical/list';
-import {$createHeadingNode, RichTextExtension} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  QuoteNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -40,6 +46,7 @@ import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   MdastCommonMarkExtension,
+  MdastExtension,
   MdastHtmlExtension,
   MdastTableExtension,
   MdastTaskListExtension,
@@ -199,6 +206,40 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
       ).toBe(code);
     },
   );
+
+  it('keeps a block exported as inline HTML on a line of its own', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          configExtension(MdastExtension, {
+            exportRules: [
+              {
+                $export: () => [{type: 'html', value: '<span>x</span>'}],
+                type: QuoteNode,
+              },
+            ],
+          }),
+          MdastCommonMarkExtension,
+          MdastTableExtension,
+          MdastHtmlExtension,
+          RichTextExtension,
+          TableExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () =>
+        $appendCell(
+          $createParagraphNode().append($createTextNode('a')),
+          $createQuoteNode().append($createTextNode('q')),
+        ),
+      {discrete: true},
+    );
+    expect(bodyLine(editor.read(() => $convertToMarkdownString()))).toBe(
+      'a<br><span>x</span>',
+    );
+  });
 
   it('flattens the same blocks into lines without MdastHtmlExtension', () => {
     using editor = createEditor(false);

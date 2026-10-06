@@ -24,7 +24,11 @@ import {
 import {$isLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode, $isListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
-import {$createTableCellNode, $isTableNode} from '@lexical/table';
+import {
+  $createTableCellNode,
+  $createTableRowNode,
+  $isTableNode,
+} from '@lexical/table';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -1075,21 +1079,63 @@ describe('@lexical/mdast import/export', () => {
     it('exports alignment set on a cell or on all of its blocks', () => {
       // A cell's own format (what FORMAT_ELEMENT_COMMAND sets on a table
       // selection) or the format its paragraphs share (what it sets with
-      // the caret in one cell) aligns the column.
+      // the caret in one cell) aligns the cell.
       expect(
         editColumns('| a | b |\n| - | - |\n| 1 | 2 |', row => {
           const [first, second] = row.getChildren();
           $assertNodeType(first, $isElementNode).setFormat('right');
-          if (row.getIndexWithinParent() === 1) {
-            for (const child of $assertNodeType(
-              second,
-              $isElementNode,
-            ).getChildren()) {
-              $assertNodeType(child, $isElementNode).setFormat('center');
-            }
+          for (const child of $assertNodeType(
+            second,
+            $isElementNode,
+          ).getChildren()) {
+            $assertNodeType(child, $isElementNode).setFormat('center');
           }
         }),
       ).toBe('|  a |  b  |\n| -: | :-: |\n|  1 |  2  |');
+    });
+
+    it.each([
+      ['| a |\n| - |\n| 1 |\n| 2 |', [1], '| a |\n| - |\n| 1 |\n| 2 |'],
+      ['| a |\n| - |\n| 1 |', [1], '| a |\n| - |\n| 1 |'],
+      [
+        '| a |\n| - |\n| 1 |\n| 2 |',
+        [1, 2],
+        '|  a  |\n| :-: |\n|  1  |\n|  2  |',
+      ],
+    ])(
+      'aligns a column that most of its cells are aligned in: %j, rows %j',
+      (markdown, rows, expected) => {
+        // GFM aligns columns, not cells, so aligning one cell doesn't align
+        // the others in its column.
+        expect(
+          editColumns(markdown, row => {
+            if (rows.includes(row.getIndexWithinParent())) {
+              for (const child of $assertNodeType(
+                row.getFirstChild(),
+                $isElementNode,
+              ).getChildren()) {
+                $assertNodeType(child, $isElementNode).setFormat('center');
+              }
+            }
+          }),
+        ).toBe(expected);
+      },
+    );
+
+    it('keeps a column aligned when a row is inserted above the header', () => {
+      expect(
+        editColumns('| a |\n| :-: |\n| 1 |\n| 2 |', row => {
+          if (row.getIndexWithinParent() === 0) {
+            row.insertBefore(
+              $createTableRowNode().append(
+                $createTableCellNode().append(
+                  $createParagraphNode().append($createTextNode('x')),
+                ),
+              ),
+            );
+          }
+        }),
+      ).toBe('|  x  |\n| :-: |\n|  a  |\n|  1  |\n|  2  |');
     });
 
     it('gives an inserted column no alignment', () => {

@@ -504,8 +504,13 @@ function cellExportItems(
     pending = [];
   };
   for (const node of nodes) {
+    // Raw HTML that isn't a block element reads back as part of a line.
     const block =
-      withHtml && node.type !== 'paragraph' ? blockHtml(node) : null;
+      withHtml &&
+      node.type !== 'paragraph' &&
+      (node.type !== 'html' || BLOCK_HTML_RE.test(node.value))
+        ? blockHtml(node)
+        : null;
     if (block === null) {
       pending.push(node);
     } else {
@@ -596,7 +601,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   }
   const rows: TableRow[] = [];
   const legacyAlign = $getState(node, tableAlignState);
-  const align: AlignType[] = [];
+  // The cells in each column, and how many of them have each alignment.
+  const columns: {aligned: Map<AlignType, number>; cells: number}[] = [];
   const withHtml = $hasHtmlPeer();
   for (const row of node.getChildren()) {
     // Structural iteration bypasses the walk's selection filter, so rows a
@@ -610,11 +616,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       if (!$isTableCellNode(cell)) {
         continue;
       }
-      // A column takes the alignment of its first cell that has one, so a
-      // row inserted above the header doesn't clear it.
-      const column = cells.length;
-      align[column] =
-        align[column] || $getCellAlign(cell) || legacyAlign[column] || null;
+      const column = (columns[cells.length] ??= {aligned: new Map(), cells: 0});
+      column.cells++;
+      const cellAlign = $getCellAlign(cell);
+      if (cellAlign !== null) {
+        column.aligned.set(cellAlign, (column.aligned.get(cellAlign) ?? 0) + 1);
+      }
       cells.push({
         children: joinCellItems(
           cellExportItems(ctx.exportChildren(cell), withHtml),
@@ -624,6 +631,17 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     }
     rows.push({children: cells, type: 'tableRow'});
   }
+  // GFM aligns columns, not cells: a column takes the alignment that most
+  // of its cells have, so aligning one cell doesn't align its column, and a
+  // row inserted into an aligned column doesn't clear it.
+  const align = columns.map((column, i): AlignType => {
+    for (const [cellAlign, count] of column.aligned) {
+      if (count * 2 > column.cells) {
+        return cellAlign;
+      }
+    }
+    return legacyAlign[i] || null;
+  });
   return {
     align,
     children: rows,

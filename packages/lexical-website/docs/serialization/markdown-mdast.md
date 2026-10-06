@@ -133,6 +133,8 @@ written as one line of HTML around their Markdown content, such as
 Without it, they are flattened to one line per item. A column's alignment (`:-:`) is
 set as the element format of each of its cells, so it renders as their
 `text-align` and stays with the column when columns are added or removed.
+On export, a column takes the alignment that most of its cells have, since
+GFM can't align a single cell.
 
 ## unified / remark interop
 

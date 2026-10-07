@@ -12,8 +12,8 @@ import {
   HorizontalRuleNode,
 } from '@lexical/extension';
 import {
-  $convertFromMarkdownString,
   $convertToMarkdownString,
+  $generateNodesFromMarkdownString,
   CHECK_LIST,
   ELEMENT_TRANSFORMERS,
   type ElementTransformer,
@@ -281,36 +281,57 @@ function tableCellLineBreak(
 }
 
 /**
- * Writes an empty paragraph at the top of a table cell as `mark`, and adds
- * its key to `written`. Markdown has no empty paragraphs, but a cell's
- * lines can be empty: each paragraph is a line, so an empty one is an
- * empty line.
+ * Writes a paragraph at the top of a table cell, where each paragraph is a
+ * line. An empty one is an empty line, written as `mark` (with its key
+ * added to `written`), since Markdown has no empty paragraphs. One that is
+ * only whitespace keeps it as character references, which aren't trimmed.
+ * Any other has a block marker it starts with escaped (`\#`), since the
+ * line after a `<br>` reads as a block where one could start.
  */
-function tableCellEmptyParagraph(
+function tableCellParagraph(
   mark: string,
   written: Set<string>,
 ): ElementTransformer {
   return {
     dependencies: [],
-    export: node => {
+    export: (node, exportChildren) => {
+      if (!$isParagraphNode(node) || !$isTableCellNode(node.getParent())) {
+        return null;
+      }
       if (
-        !$isParagraphNode(node) ||
-        !$isTableCellNode(node.getParent()) ||
-        !node
+        node
           .getChildren()
           .every(
             child => $isTextNode(child) && child.getTextContent().trim() === '',
           )
       ) {
-        return null;
+        const text = node.getTextContent();
+        if (text !== '') {
+          return text.replace(/\s/g, spaceReference);
+        }
+        written.add(node.getKey());
+        return mark;
       }
-      written.add(node.getKey());
-      return mark;
+      return escapeBlockStart(exportChildren(node));
     },
     regExp: /$^/,
     replace: () => false,
     type: 'element',
   };
+}
+
+/**
+ * `line` with the marker that makes it start a block in a cell escaped, so
+ * it reads as text: `\# a`, `\- a`, `1\. a`, `\---`, `\$$`.
+ */
+function escapeBlockStart(line: string): string {
+  if (!BLOCK_START_REG_EXP.test(line)) {
+    return line;
+  }
+  const ordered = /^( {0,3}\d{1,9})([.)])/.exec(line);
+  return ordered !== null
+    ? ordered[1] + '\\' + line.slice(ordered[1].length)
+    : line.replace(/^( {0,3})/, '$1\\');
 }
 
 /** A space or tab as a character reference, which isn't trimmed. */
@@ -332,7 +353,7 @@ function $exportTableCell(cell: TableCellNode): string {
       $convertToMarkdownString(
         [
           tableCellLineBreak(mark, written),
-          tableCellEmptyParagraph(emptyMark, writtenEmpty),
+          tableCellParagraph(emptyMark, writtenEmpty),
           ...PLAYGROUND_TRANSFORMERS,
         ],
         cell,
@@ -346,10 +367,14 @@ function $exportTableCell(cell: TableCellNode): string {
       emptyParts.length - 1 <= writtenEmpty.size
     ) {
       // An empty paragraph is an empty line between the `<br>`s around it.
+      // A line after a line break is escaped like a paragraph's first.
       // Spaces beside a line break would read back as the cell's padding,
       // so the one next to it is a character reference.
       return emptyParts
         .join('')
+        .split(mark)
+        .map((line, i) => (i > 0 ? escapeBlockStart(line) : line))
+        .join(mark)
         .replace(
           new RegExp(`([ \\t]?)${mark}([ \\t]?)`, 'g'),
           (_, before: string, after: string) =>
@@ -389,7 +414,13 @@ export const TABLE: ElementTransformer = {
         }
       }
 
-      output.push(`| ${rowOutput.join(' | ')} |`);
+      // A row of dashes and colons would read as a delimiter row.
+      const line = `| ${rowOutput.join(' | ')} |`;
+      output.push(
+        isTableDelimiterRow(line)
+          ? `| ${rowOutput.map(cell => cell.replace(/[-:]/, '\\$&')).join(' | ')} |`
+          : line,
+      );
       if (isHeaderRow) {
         output.push(`| ${rowOutput.map(_ => '---').join(' | ')} |`);
       }
@@ -485,17 +516,23 @@ export const TABLE: ElementTransformer = {
     }
 
     const previousSibling = parentNode.getPreviousSibling();
+    let target = table;
     if (
       $isTableNode(previousSibling) &&
       getTableColumnsSize(previousSibling) === maxCells
     ) {
       previousSibling.append(...table.getChildren());
       parentNode.remove();
+      target = previousSibling;
     } else {
       parentNode.replace(table);
     }
 
-    table.selectEnd();
+    // Only a table in the document takes the selection: nodes generated
+    // apart from it leave the selection where it was.
+    if (target.isAttached()) {
+      target.selectEnd();
+    }
   },
   type: 'element',
 };
@@ -979,15 +1016,15 @@ const $createTableCell = (textContent: string): TableCellNode => {
     // inline syntax (`**a<br># b**`, `[a<br>- b](url)`). Read every such
     // separator as a line break first, and keep the ones that land in
     // formatted text or an inline element.
-    const probe = $createTableCellNode();
-    $convertFromMarkdownString(
-      decodeTableCell(
-        lines,
-        breaks.map(kind => kind === 'newline'),
-        marks,
+    const probe = $createTableCellNode().append(
+      ...$generateNodesFromMarkdownString(
+        decodeTableCell(
+          lines,
+          breaks.map(kind => kind === 'newline'),
+          marks,
+        ),
+        PLAYGROUND_TRANSFORMERS,
       ),
-      PLAYGROUND_TRANSFORMERS,
-      probe,
     );
     const marked = $markNodes(probe, lineBreak);
     const unmarked = breaks.flatMap((kind, i) =>
@@ -1005,15 +1042,17 @@ const $createTableCell = (textContent: string): TableCellNode => {
       });
     }
   }
-  const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
-  $convertFromMarkdownString(
-    decodeTableCell(
-      lines,
-      breaks.map(kind => kind !== 'inline'),
-      marks,
+  // Generating the nodes, unlike converting into the cell, leaves the
+  // selection alone.
+  const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+    ...$generateNodesFromMarkdownString(
+      decodeTableCell(
+        lines,
+        breaks.map(kind => kind !== 'inline'),
+        marks,
+      ),
+      PLAYGROUND_TRANSFORMERS,
     ),
-    PLAYGROUND_TRANSFORMERS,
-    cell,
   );
   $marksToNodes(cell, marks);
   return cell;

@@ -25,6 +25,7 @@ import {
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  $generateNodesFromMarkdownString,
   registerMarkdownShortcuts,
   TRANSFORMERS,
 } from '@lexical/markdown';
@@ -818,7 +819,7 @@ describe('playground TABLE markdown transformer', () => {
       assert($isLinkNode(link), 'The cell must hold a link');
       expect(link.getTextContent()).toBe('a\n- b');
       expect($convertToMarkdownString([TABLE]).split('\n')[2]).toBe(
-        '| [a<br>- b](https://example.com) |',
+        '| [a<br>\\- b](https://example.com) |',
       );
     });
   });
@@ -1265,5 +1266,85 @@ describe('playground TABLE markdown transformer', () => {
       ['| h |', '| --- |', `| ${lines.join('<br>')} |`].join('\n'),
     );
     expect(cellTexts(editor)[1]).toEqual([[lines.join('\n')]]);
+  });
+  it.each(['-', ':-:', '---', '-:'])(
+    'keeps a row whose cells are only %j',
+    text => {
+      for (const header of [false, true]) {
+        const markdown = exportTable(() => {
+          const table = $cellOf(
+            $createParagraphNode().append($createTextNode(text)),
+          );
+          if (header) {
+            const [first, second] = table.getChildren();
+            first.insertBefore(second);
+          }
+          return table;
+        });
+        using imported = importMarkdown(markdown);
+        const texts = header ? [[[text]], [['h']]] : [[['h']], [[text]]];
+        expect(cellTexts(imported)).toEqual(texts);
+      }
+    },
+  );
+
+  it.each(['---', '# h', '> q', '- i', '1. i'])(
+    'keeps a line %j in a cell as text',
+    line => {
+      for (const [first, blocks] of [
+        [
+          'a',
+          () => [
+            $createParagraphNode().append($createTextNode('a')),
+            $createParagraphNode().append($createTextNode(line)),
+          ],
+        ],
+        [
+          'b',
+          () => [
+            $createParagraphNode().append(
+              $createTextNode('b').toggleFormat('bold'),
+              $createLineBreakNode(),
+              $createTextNode(line),
+            ),
+          ],
+        ],
+      ] as const) {
+        const markdown = exportTable(() => $cellOf(...blocks()));
+        using imported = importMarkdown(markdown);
+        expect(cellTexts(imported)[1]).toEqual([[`${first}\n${line}`]]);
+      }
+    },
+  );
+
+  it('keeps a paragraph that is only whitespace', () => {
+    const markdown = exportTable(() =>
+      $cellOf(
+        $createParagraphNode().append($createTextNode('a')),
+        $createParagraphNode().append($createTextNode('   ')),
+        $createParagraphNode().append($createTextNode('b')),
+      ),
+    );
+    using imported = importMarkdown(markdown);
+    expect(cellTexts(imported)[1]).toEqual([['a\n   \nb']]);
+  });
+
+  it('leaves the selection alone when it generates a table', () => {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(
+      () => {
+        const text = $createTextNode('x');
+        $getRoot().clear().append($createParagraphNode().append(text));
+        text.select(1, 1);
+        $generateNodesFromMarkdownString(
+          '| a |\n| --- |\n| **b<br># c** |\n\n| d |\n| --- |\n| e |',
+          [TABLE, ...PLAYGROUND_TRANSFORMERS],
+        );
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'A range selection must remain');
+        expect(selection.anchor.getNode().is(text)).toBe(true);
+      },
+      {discrete: true},
+    );
   });
 });

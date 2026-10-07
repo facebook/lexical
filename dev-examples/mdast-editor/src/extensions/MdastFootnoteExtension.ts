@@ -750,9 +750,7 @@ function $clearFootnotesOfEmptyDocument(root: RootNode): void {
     $hasUpdateTag(HISTORY_MERGE_TAG) ||
     !$isFootnotesNode($getSlot(root, FOOTNOTES_SLOT)) ||
     !$isBodyEmpty(root) ||
-    $getEditor()
-      .getEditorState()
-      .read(() => $isBodyEmpty($getRoot()))
+    $getEditor().read('latest', () => $isBodyEmpty($getRoot()))
   ) {
     return;
   }

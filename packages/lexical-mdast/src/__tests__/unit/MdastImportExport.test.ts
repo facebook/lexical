@@ -1223,6 +1223,47 @@ describe('@lexical/mdast import/export', () => {
       );
     });
 
+    it("takes the header cell's alignment into a selection without it", () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| :-: |\n| 1 |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const [header, row] = table.getChildren();
+          const cell = (node: LexicalNode) =>
+            $assertNodeType(
+              $assertNodeType(node, $isElementNode).getFirstChild(),
+              $isTableCellNode,
+            );
+          for (const text of ['2', '3']) {
+            row.insertAfter(
+              $createTableRowNode().append(
+                $createTableCellNode().append(
+                  $createParagraphNode().append($createTextNode(text)),
+                ),
+              ),
+            );
+          }
+          cell(row).setFormat('');
+          $setSelection(
+            $createTableSelectionFrom(
+              table,
+              cell(row),
+              cell(table.getLastChildOrThrow()),
+            ),
+          );
+          expect(cell(header).getFormatType()).toBe('center');
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertSelectionToMarkdownString())).toBe(
+        '|  1  |\n| :-: |\n|  3  |\n|  2  |',
+      );
+    });
+
     it('gives an inserted column no alignment', () => {
       expect(
         editColumns('| a | b |\n| :- | -: |\n| 1 | 2 |', row =>

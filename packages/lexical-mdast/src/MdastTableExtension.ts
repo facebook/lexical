@@ -22,6 +22,7 @@ import type {
   Table,
   TableCell,
   TableRow,
+  Text,
 } from 'mdast';
 
 import {$getPeerDependency, configExtension} from '@lexical/extension';
@@ -151,17 +152,46 @@ function nestedBrToBreaks(nodes: PhrasingContent[]): PhrasingContent[] {
   });
 }
 
+/**
+ * How many of the spaces and tabs at the start (or the end) of `node`'s
+ * value were written as they are, rather than as character references
+ * (`&#32;`), which {@link refEdgeSpaces} writes for spaces to keep. Without
+ * the source, all of them.
+ */
+function literalSpaces(node: Text, source: string, atEnd: boolean): number {
+  const re = atEnd ? /[ \t]*$/ : /^[ \t]*/;
+  const inValue = re.exec(node.value)![0].length;
+  const {position} = node;
+  if (source === '' || position === undefined) {
+    return inValue;
+  }
+  const written = source.slice(position.start.offset, position.end.offset);
+  return Math.min(inValue, re.exec(written)![0].length);
+}
+
 /** Trims the whitespace a `<br>` was written with (`a <br> b`). */
-function trimSegment(segment: PhrasingContent[]): PhrasingContent[] {
+function trimSegment(
+  segment: PhrasingContent[],
+  source: string,
+): PhrasingContent[] {
   const result = segment.slice();
   const first = result[0];
   if (first && first.type === 'text') {
-    result[0] = {...first, value: first.value.replace(/^[ \t]+/, '')};
+    result[0] = {
+      ...first,
+      value: first.value.slice(literalSpaces(first, source, false)),
+    };
   }
   const lastIndex = result.length - 1;
   const last = result[lastIndex];
   if (last && last.type === 'text') {
-    result[lastIndex] = {...last, value: last.value.replace(/[ \t]+$/, '')};
+    result[lastIndex] = {
+      ...last,
+      value: last.value.slice(
+        0,
+        last.value.length - literalSpaces(last, source, true),
+      ),
+    };
   }
   return result.filter(node => node.type !== 'text' || node.value !== '');
 }
@@ -188,13 +218,16 @@ function isBlockHtml(node: MdastNode): node is HtmlInline {
  * next to a block stands for an empty line on that side
  * (see {@link joinCellItems}).
  */
-function cellItems(cell: TableCell): (PhrasingContent[] | HtmlInline)[] {
+function cellItems(
+  cell: TableCell,
+  source: string,
+): (PhrasingContent[] | HtmlInline)[] {
   const items: (PhrasingContent[] | HtmlInline)[] = [];
   // The open line, or null right after a block.
   let line: PhrasingContent[] | null = [];
   const endLine = () => {
     if (line !== null) {
-      items.push(trimSegment(nestedBrToBreaks(line)));
+      items.push(trimSegment(nestedBrToBreaks(line), source));
     }
   };
   for (const child of cell.children) {
@@ -205,7 +238,7 @@ function cellItems(cell: TableCell): (PhrasingContent[] | HtmlInline)[] {
         line = [];
       }
     } else if (isBlockHtml(child)) {
-      if (line !== null && trimSegment(line).length > 0) {
+      if (line !== null && trimSegment(line, source).length > 0) {
         endLine();
       }
       items.push(child);
@@ -278,7 +311,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
           // edited.
           return $append(
             cellNode.setFormat(align[columnIndex] || ''),
-            cellItems(cell).flatMap(item =>
+            cellItems(cell, ctx.source).flatMap(item =>
               Array.isArray(item)
                 ? [
                     $append(
@@ -416,6 +449,38 @@ function cellHtml(value: string): string {
     result += char === '|' ? '&#124;' : char;
   }
   return result;
+}
+
+/** A space or tab as a character reference, which a cell doesn't trim. */
+function spaceReference(space: string): Html {
+  return html(`&#${space.charCodeAt(0)};`);
+}
+
+/**
+ * A line of a cell (which may hold `<br>`s of its own) with the space or
+ * tab at each edge of its lines written as a character reference, since a
+ * cell's padding and the whitespace around a `<br>` are trimmed on import.
+ */
+function refEdgeSpaces(nodes: PhrasingContent[]): PhrasingContent[] {
+  const isEdge = (node: PhrasingContent | undefined) =>
+    node === undefined || brCount(node) > 0;
+  return nodes.flatMap((node, i): PhrasingContent[] => {
+    if (node.type !== 'text') {
+      return [node];
+    }
+    let {value} = node;
+    const before: PhrasingContent[] = [];
+    const after: PhrasingContent[] = [];
+    if (isEdge(nodes[i - 1]) && /^[ \t]/.test(value)) {
+      before.push(spaceReference(value[0]));
+      value = value.slice(1);
+    }
+    if (isEdge(nodes[i + 1]) && /[ \t]$/.test(value)) {
+      after.push(spaceReference(value[value.length - 1]));
+      value = value.slice(0, -1);
+    }
+    return [...before, ...(value === '' ? [] : [{...node, value}]), ...after];
+  });
 }
 
 /** Whether `nodes` or their descendants hold raw HTML. */
@@ -715,7 +780,8 @@ function joinCellItems(
       (prev.block
         ? !item.block && item.content.length === 0
         : !item.block || prev.content.length === 0);
-    return needsBreak ? [lineBreakHtml(), ...item.content] : item.content;
+    const content = item.block ? item.content : refEdgeSpaces(item.content);
+    return needsBreak ? [lineBreakHtml(), ...content] : content;
   });
 }
 
@@ -777,13 +843,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   }
   const rows: TableRow[] = [];
   const legacyAlign = $getState(node, tableAlignState);
-  // The cells in each column, how many of them have each alignment, and
-  // the alignment of its header cell.
-  const columns: {
-    aligned: Map<AlignType, number>;
-    cells: number;
-    header: AlignType;
-  }[] = [];
+  // The cells in each column, and how many of them have each alignment.
+  const columns: {aligned: Map<AlignType, number>; cells: number}[] = [];
   const withHtml = $hasHtmlPeer();
   // The header is the table's first row of cells, which a selection's
   // export may leave out.
@@ -792,6 +853,10 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     .find(
       row => $isTableRowNode(row) && row.getChildren().some($isTableCellNode),
     );
+  // Read even when a selection's export leaves the header row out.
+  const headerAlign = $isTableRowNode(headerRow)
+    ? headerRow.getChildren().filter($isTableCellNode).map($getCellAlign)
+    : [];
   for (const row of node.getChildren()) {
     // Structural iteration bypasses the walk's selection filter, so rows a
     // selection export does not reach are skipped here. Cells stay: dropping
@@ -805,14 +870,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
         continue;
       }
       const cellAlign = $getCellAlign(cell);
-      const column = (columns[cells.length] ??= {
-        aligned: new Map(),
-        cells: 0,
-        header: null,
-      });
-      if (row.is(headerRow)) {
-        column.header = cellAlign;
-      }
+      const column = (columns[cells.length] ??= {aligned: new Map(), cells: 0});
       column.cells++;
       if (cellAlign !== null) {
         column.aligned.set(cellAlign, (column.aligned.get(cellAlign) ?? 0) + 1);
@@ -836,7 +894,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
         return cellAlign;
       }
     }
-    return column.header || legacyAlign[i] || null;
+    return headerAlign[i] || legacyAlign[i] || null;
   });
   return {
     align,

@@ -29,6 +29,7 @@ import {
   $createTableCellNode,
   $createTableNode,
   $createTableRowNode,
+  $isTableCellNode,
   TableCellHeaderStates,
   TableExtension,
 } from '@lexical/table';
@@ -325,6 +326,57 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
     expect(bodyLine(markdown)).toBe(
       '<details><summary>&#10;s\\|t&#10;</summary>&#10;&#10;b<br>c&#10;</details>',
     );
+  });
+
+  it.each([false, true])(
+    'keeps the spaces at the edges of a line in a cell (HTML extension: %s)',
+    withHtml => {
+      using editor = createEditor(withHtml);
+      editor.update(
+        () =>
+          $appendCell(
+            $createParagraphNode().append(
+              $createTextNode('a  '),
+              $createLineBreakNode(),
+              $createTextNode('\tb'),
+            ),
+            $createParagraphNode().append($createTextNode(' ')),
+            $createParagraphNode().append($createTextNode('c ')),
+          ),
+        {discrete: true},
+      );
+      const markdown = editor.read(() => $convertToMarkdownString());
+      editor.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+      const cell = editor.read(() =>
+        $getRoot()
+          .getLastDescendant()
+          ?.getParents()
+          .find($isTableCellNode)
+          ?.getChildren()
+          .map(node => node.getTextContent()),
+      );
+      expect(cell).toEqual(['a  ', '\tb', ' ', 'c ']);
+      expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
+    },
+  );
+
+  it('still trims the spaces written around a <br>', () => {
+    using editor = createEditor(false);
+    editor.update(() => $convertFromMarkdownString(table('a <br>  b')), {
+      discrete: true,
+    });
+    expect(
+      editor.read(() =>
+        $getRoot()
+          .getLastDescendant()
+          ?.getParents()
+          .find($isTableCellNode)
+          ?.getChildren()
+          .map(node => node.getTextContent()),
+      ),
+    ).toEqual(['a', 'b']);
   });
 
   it('flattens the same blocks into lines without MdastHtmlExtension', () => {

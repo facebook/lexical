@@ -152,10 +152,11 @@ export function importTextTransformers(
     } else if (
       result.transformedNode === undefined &&
       canContainTransformableMarkdown(result.matchedNode) &&
-      result.matchedNode.isAttached()
+      result.matchedNode.getParent() !== null
     ) {
       // A transformer that returns nothing may have edited the matched text
-      // in place, which still reads its escapes.
+      // in place, which still reads its escapes. The parent test, unlike
+      // isAttached(), also holds in a tree not attached to the root.
       result.matchedNode.setTextContent(
         unescapeText(result.matchedNode.getTextContent()),
       );

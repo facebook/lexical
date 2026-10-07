@@ -12,10 +12,19 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  $generateNodesFromMarkdownString,
   type TextMatchTransformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
-import {$getRoot, $isTextNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $isParagraphNode,
+  $isTextNode,
+  type LexicalNode,
+} from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 import {MarkdownTestExtension} from '../utils';
@@ -38,6 +47,27 @@ describe('a code span', () => {
       expect($isTextNode(code)).toBe(true);
       expect($convertToMarkdownString(TRANSFORMERS)).toBe(markdown);
     });
+  });
+
+  it.each([' ', '  '])('round-trips %j, which is only spaces', text => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode(text).toggleFormat('code'),
+            ),
+          ),
+      {discrete: true},
+    );
+    const markdown = editor.read(() => $convertToMarkdownString(TRANSFORMERS));
+    expect(markdown).toBe('`' + text + '`');
+    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+      discrete: true,
+    });
+    expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
   });
 
   it('leaves the text after it to read its escapes', () => {
@@ -75,32 +105,61 @@ describe('formatted text', () => {
 });
 
 describe('text a text match leaves in place', () => {
+  const MENTION: TextMatchTransformer = {
+    dependencies: [],
+    importRegExp: /@\S+/,
+    regExp: /@\S+$/,
+    replace: node => {
+      node.setFormat('bold');
+    },
+    type: 'text-match',
+  };
+  const textOf = (nodes: LexicalNode[]) =>
+    nodes
+      .flatMap(node => ($isTextNode(node) ? [node] : []))
+      .map(node => [node.getTextContent(), node.hasFormat('bold')]);
+
   it.each(['@a\\*b', 'x @a\\*b'])(
     'reads its escapes when the transformer edits it in place: %j',
     markdown => {
-      const MENTION: TextMatchTransformer = {
-        dependencies: [],
-        importRegExp: /@\S+/,
-        regExp: /@\S+$/,
-        replace: node => {
-          node.setFormat('bold');
-        },
-        type: 'text-match',
-      };
       using editor = buildEditorFromExtensions([MarkdownTestExtension]);
       editor.update(() => $convertFromMarkdownString(markdown, [MENTION]), {
         discrete: true,
       });
-      expect(
-        editor.read(() =>
-          $getRoot()
-            .getAllTextNodes()
-            .map(node => [node.getTextContent(), node.hasFormat('bold')]),
-        ),
-      ).toEqual([
+      expect(editor.read(() => textOf($getRoot().getAllTextNodes()))).toEqual([
         ...(markdown.startsWith('x') ? [['x ', false]] : []),
         ['@a*b', true],
       ]);
+    },
+  );
+
+  it('reads its escapes in nodes generated outside the root', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    let text;
+    editor.update(
+      () => {
+        const [paragraph] = $generateNodesFromMarkdownString('@a\\*b', [
+          MENTION,
+        ]);
+        text = textOf(
+          $assertNodeType(paragraph, $isParagraphNode).getChildren(),
+        );
+      },
+      {discrete: true},
+    );
+    expect(text).toEqual([['@a*b', true]]);
+  });
+});
+
+describe('a character reference', () => {
+  it.each(['&#0;', '&#55296;', '&#99999999;'])(
+    'reads %j, which names no valid character, as U+FFFD',
+    markdown => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(editor.read(() => $getRoot().getTextContent())).toBe('\ufffd');
     },
   );
 });

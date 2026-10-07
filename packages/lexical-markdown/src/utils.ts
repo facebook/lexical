@@ -79,7 +79,13 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
 export function unescapeText(value: string): string {
   return value
     .replace(/\\([!-/:-@[-`{-~])/g, '$1')
-    .replace(/&#(\d+);/g, (_, codePoint) =>
-      String.fromCodePoint(Number(codePoint)),
-    );
+    .replace(/&#(\d+);/g, (_, digits) => {
+      // As in CommonMark, a reference to no valid character reads as U+FFFD.
+      const codePoint = Number(digits);
+      return codePoint === 0 ||
+        codePoint > 0x10ffff ||
+        (codePoint >= 0xd800 && codePoint <= 0xdfff)
+        ? '\ufffd'
+        : String.fromCodePoint(codePoint);
+    });
 }

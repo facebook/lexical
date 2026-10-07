@@ -379,7 +379,7 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
     ).toEqual(['a', 'b']);
   });
 
-  it('keeps a line of only spaces after a block in a cell', () => {
+  it('keeps a line of only whitespace after a block in a cell', () => {
     using editor = createEditor(true);
     editor.update(
       () =>
@@ -388,6 +388,11 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
             $createListItemNode().append($createTextNode('a')),
           ),
           $createParagraphNode().append($createTextNode('  ')),
+          $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode('b')),
+          ),
+          // Not padding in GFM, so not trimmed either.
+          $createParagraphNode().append($createTextNode('\u00a0')),
           $createParagraphNode().append($createTextNode(' x ')),
         ),
       {discrete: true},
@@ -408,11 +413,16 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
     ).toEqual([
       ['list', 'a'],
       ['paragraph', '  '],
+      ['list', 'b'],
+      ['paragraph', '\u00a0'],
       ['paragraph', ' x '],
     ]);
   });
 
-  it('trims the spaces around a <br> in a tree without offsets', () => {
+  it.each([
+    ['a <br>  b', ['a', 'b']],
+    ['a<br>&#32;b', ['a', ' b']],
+  ])('reads %j in a tree without offsets as %j', (body, lines) => {
     // A tree transform may leave nodes with lines and columns only.
     const dropOffsets = (node: MdastNode) => {
       if (node.position) {
@@ -436,7 +446,7 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
         name: '[root]',
       }),
     );
-    editor.update(() => $convertFromMarkdownString(table('a <br>  b')), {
+    editor.update(() => $convertFromMarkdownString(table(body)), {
       discrete: true,
     });
     expect(
@@ -448,7 +458,7 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
           ?.getChildren()
           .map(node => node.getTextContent()),
       ),
-    ).toEqual(['a', 'b']);
+    ).toEqual(lines);
   });
 
   it('flattens the same blocks into lines without MdastHtmlExtension', () => {

@@ -152,19 +152,48 @@ function nestedBrToBreaks(nodes: PhrasingContent[]): PhrasingContent[] {
   });
 }
 
+// The offset of each line's start in the last source read without offsets.
+let lineStartsSource: string | null = null;
+let lineStarts: number[] = [];
+
+/**
+ * The offset of `point` in `source`: its own, or else the one its line and
+ * column give, since a tree transform may keep only those.
+ */
+function pointOffset(
+  point: {column?: number; line?: number; offset?: number},
+  source: string,
+): number | null {
+  if (point.offset != null) {
+    return point.offset;
+  }
+  if (point.line == null || point.column == null) {
+    return null;
+  }
+  if (lineStartsSource !== source) {
+    lineStartsSource = source;
+    lineStarts = [0];
+    for (const {index} of source.matchAll(/\r\n?|\n/g)) {
+      lineStarts.push(index + (source[index + 1] === '\n' ? 2 : 1));
+    }
+  }
+  const lineStart = lineStarts[point.line - 1];
+  return lineStart === undefined ? null : lineStart + point.column - 1;
+}
+
 /**
  * How many of the spaces and tabs at the start (or the end) of `node`'s
  * value were written as they are, rather than as character references
  * (`&#32;`), which {@link refEdgeSpaces} writes for spaces to keep. Without
- * the source, or the node's offsets in it, all of them: a tree carries no
+ * the source, or the node's position in it, all of them: a tree carries no
  * record of which characters were references.
  */
 function literalSpaces(node: Text, source: string, atEnd: boolean): number {
   const re = atEnd ? /[ \t]*$/ : /^[ \t]*/;
   const inValue = re.exec(node.value)![0].length;
   const {position} = node;
-  const start = position && position.start.offset;
-  const end = position && position.end.offset;
+  const start = position && pointOffset(position.start, source);
+  const end = position && pointOffset(position.end, source);
   if (source === '' || start == null || end == null) {
     return inValue;
   }
@@ -219,7 +248,10 @@ function isBlockHtml(node: MdastNode): node is HtmlInline {
  * boundary, which is what Enter inserts in a table cell, so typed lines
  * round-trip. A block ends the line before it without a `<br>`, so a `<br>`
  * next to a block stands for an empty line on that side
- * (see {@link joinCellItems}).
+ * (see {@link joinCellItems}). Spaces and tabs written as they are between
+ * a block and a `<br>` are padding and make no line; any other whitespace,
+ * such as spaces written as references (`&#32;`) by {@link refEdgeSpaces}
+ * or a no-break space, is a line's content.
  */
 function cellItems(
   cell: TableCell,
@@ -228,40 +260,36 @@ function cellItems(
   const items: (PhrasingContent[] | HtmlInline)[] = [];
   // The open line, or null right after a block.
   let line: PhrasingContent[] | null = [];
-  const takeLine = () =>
-    line === null ? null : trimSegment(nestedBrToBreaks(line), source);
+  // Ends the open line; one left empty by trimming is no line before a block.
+  const endLine = (beforeBlock = false) => {
+    if (line !== null) {
+      const segment = trimSegment(nestedBrToBreaks(line), source);
+      if (!beforeBlock || segment.length > 0) {
+        items.push(segment);
+      }
+    }
+  };
   for (const child of cell.children) {
     const count = brCount(child);
     if (count > 0) {
       for (let i = 0; i < count; i++) {
-        const taken = takeLine();
-        if (taken !== null) {
-          items.push(taken);
-        }
+        endLine();
         line = [];
       }
     } else if (isBlockHtml(child)) {
-      // The whitespace between a block and the line before it is not a line.
-      const taken = takeLine();
-      if (taken !== null && taken.length > 0) {
-        items.push(taken);
-      }
+      endLine(true);
       items.push(child);
       line = null;
     } else if (
       line !== null ||
       child.type !== 'text' ||
-      // Spaces written as references after a block are a line of their own.
       literalSpaces(child, source, false) < child.value.length
     ) {
       line = line || [];
       line.push(child);
     }
   }
-  const taken = takeLine();
-  if (taken !== null) {
-    items.push(taken);
-  }
+  endLine();
   return items;
 }
 

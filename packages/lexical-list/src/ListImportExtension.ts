@@ -177,11 +177,11 @@ function $flattenListItemBlocks(children: LexicalNode[]): LexicalNode[] {
   }
   flushInlineRun();
   const out: LexicalNode[] = [];
-  for (const segment of segments) {
-    if (out.length > 0) {
+  for (let i = 0; i < segments.length; i++) {
+    if (i > 0) {
       out.push($createLineBreakNode());
     }
-    out.push(...segment);
+    out.push(...segments[i]);
   }
   return out;
 }

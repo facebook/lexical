@@ -84,6 +84,8 @@ export function importFoundTextMatchTransformer(
   transformedNode?: TextNode;
   nodeBefore: TextNode | undefined; // If split
   nodeAfter: TextNode | undefined; // If split
+  // The text the transformer was given, which it may have left in place.
+  matchedNode?: TextNode;
 } | null {
   let transformedNode, nodeAfter, nodeBefore;
 
@@ -102,6 +104,7 @@ export function importFoundTextMatchTransformer(
   const potentialTransformedNode = transformer.replace(transformedNode, match);
 
   return {
+    matchedNode: transformedNode,
     nodeAfter,
     nodeBefore,
     transformedNode: potentialTransformedNode || undefined,

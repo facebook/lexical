@@ -149,6 +149,16 @@ export function importTextTransformers(
         textFormatTransformersIndex,
         textMatchTransformers,
       );
+    } else if (
+      result.transformedNode === undefined &&
+      canContainTransformableMarkdown(result.matchedNode) &&
+      result.matchedNode.isAttached()
+    ) {
+      // A transformer that returns nothing may have edited the matched text
+      // in place, which still reads its escapes.
+      result.matchedNode.setTextContent(
+        unescapeText(result.matchedNode.getTextContent()),
+      );
     }
     return;
   }

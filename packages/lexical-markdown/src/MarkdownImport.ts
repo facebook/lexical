@@ -243,8 +243,10 @@ function $importBlocks(
       if (replace(elementNode, [textNode], match, true) !== false) {
         break;
       }
-      // A transform that cancels without touching the line leaves it as it
-      // was. One that changed the text or moved it keeps its changes.
+      // A transform that cancels without touching the line gives it back
+      // whole. One that changed the text or moved it is left as it was
+      // before this restore, so the next transform that matches still
+      // starts from its own cut of the line.
       if (
         textNode.getParent() === elementNode &&
         textNode.getTextContent() === rest

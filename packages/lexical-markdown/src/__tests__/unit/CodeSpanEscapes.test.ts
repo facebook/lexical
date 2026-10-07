@@ -12,6 +12,7 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  type TextMatchTransformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
 import {$getRoot, $isTextNode} from 'lexical';
@@ -71,4 +72,35 @@ describe('formatted text', () => {
     });
     expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
   });
+});
+
+describe('text a text match leaves in place', () => {
+  it.each(['@a\\*b', 'x @a\\*b'])(
+    'reads its escapes when the transformer edits it in place: %j',
+    markdown => {
+      const MENTION: TextMatchTransformer = {
+        dependencies: [],
+        importRegExp: /@\S+/,
+        regExp: /@\S+$/,
+        replace: node => {
+          node.setFormat('bold');
+        },
+        type: 'text-match',
+      };
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(() => $convertFromMarkdownString(markdown, [MENTION]), {
+        discrete: true,
+      });
+      expect(
+        editor.read(() =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => [node.getTextContent(), node.hasFormat('bold')]),
+        ),
+      ).toEqual([
+        ...(markdown.startsWith('x') ? [['x ', false]] : []),
+        ['@a*b', true],
+      ]);
+    },
+  );
 });

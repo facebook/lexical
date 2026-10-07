@@ -298,21 +298,15 @@ function tableCellParagraph(
       if (!$isParagraphNode(node) || !$isTableCellNode(node.getParent())) {
         return null;
       }
-      if (
-        node
-          .getChildren()
-          .every(
-            child => $isTextNode(child) && child.getTextContent().trim() === '',
-          )
-      ) {
-        const text = node.getTextContent();
-        if (text !== '') {
-          return text.replace(/\s/g, spaceReference);
-        }
+      if (node.isEmpty()) {
         written.add(node.getKey());
         return mark;
       }
-      return escapeBlockStart(exportChildren(node));
+      // Formatted whitespace, such as a code span, isn't only whitespace.
+      const markdown = exportChildren(node);
+      return /^\s+$/.test(markdown)
+        ? markdown.replace(/\s/g, spaceReference)
+        : escapeBlockStart(markdown);
     },
     regExp: /$^/,
     replace: () => false,
@@ -344,8 +338,11 @@ function $exportTableCell(cell: TableCellNode): string {
   // The marks must not be in the Markdown, which also holds what isn't
   // text, such as link URLs, so a mark that turns up more often than the
   // nodes written as it is passed over.
+  // A retry avoids all of the first try's Markdown, so its marks can't
+  // collide; if one still turns up more often, a transformer wrote a node
+  // twice, and the marks are taken as written.
   let avoid = cell.getTextContent();
-  for (;;) {
+  for (let retried = false; ; retried = true) {
     const [mark, emptyMark] = unusedChars(avoid, 2);
     const written = new Set<string>();
     const writtenEmpty = new Set<string>();
@@ -363,8 +360,9 @@ function $exportTableCell(cell: TableCellNode): string {
     const parts = markdown.split(mark);
     const emptyParts = markdown.split(emptyMark);
     if (
-      parts.length - 1 <= written.size &&
-      emptyParts.length - 1 <= writtenEmpty.size
+      (parts.length - 1 <= written.size &&
+        emptyParts.length - 1 <= writtenEmpty.size) ||
+      retried
     ) {
       // An empty paragraph is an empty line between the `<br>`s around it.
       // A line after a line break is escaped like a paragraph's first.
@@ -383,7 +381,7 @@ function $exportTableCell(cell: TableCellNode): string {
         .split(mark)
         .join('<br>');
     }
-    avoid += mark + emptyMark;
+    avoid += markdown;
   }
 }
 
@@ -1002,9 +1000,17 @@ function $marksToNodes(cell: TableCellNode, marks: CellMarks): void {
   }
 }
 
+/**
+ * The transformers that read a cell's content: all but TABLE, since a GFM
+ * cell can't hold a table, so a line such as `|q|` in one is text.
+ */
+function $cellTransformers(): Transformer[] {
+  return PLAYGROUND_TRANSFORMERS.filter(transformer => transformer !== TABLE);
+}
+
 const $createTableCell = (textContent: string): TableCellNode => {
-  // GFM trims a cell's padding.
-  const text = textContent.trim();
+  // GFM trims a cell's padding, which is only spaces and tabs.
+  const text = textContent.replace(/^[ \t]+|[ \t]+$/g, '');
   const [lineBreak] = unusedChars(text, 1, LINE_BREAK_MARKS);
   const [codeStart, codeEnd] = unusedChars(text + lineBreak, 2);
   const marks: CellMarks = {codeEnd, codeStart, lineBreak};
@@ -1023,7 +1029,7 @@ const $createTableCell = (textContent: string): TableCellNode => {
           breaks.map(kind => kind === 'newline'),
           marks,
         ),
-        PLAYGROUND_TRANSFORMERS,
+        $cellTransformers(),
       ),
     );
     const marked = $markNodes(probe, lineBreak);
@@ -1051,7 +1057,7 @@ const $createTableCell = (textContent: string): TableCellNode => {
         breaks.map(kind => kind !== 'inline'),
         marks,
       ),
-      PLAYGROUND_TRANSFORMERS,
+      $cellTransformers(),
     ),
   );
   $marksToNodes(cell, marks);

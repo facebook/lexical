@@ -1329,6 +1329,47 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(imported)[1]).toEqual([['a\n   \nb']]);
   });
 
+  it('keeps a line that starts and ends with a pipe as text', () => {
+    const markdown = exportTable(() =>
+      $cellOf($createParagraphNode().append($createTextNode('|q|'))),
+    );
+    using imported = importMarkdown(markdown);
+    expect(cellTexts(imported)[1]).toEqual([['|q|']]);
+    expect(imported.read(() => $convertToMarkdownString([TABLE]))).toBe(
+      markdown,
+    );
+  });
+
+  it('keeps a code span that is only whitespace', () => {
+    const markdown = exportTable(() =>
+      $cellOf(
+        $createParagraphNode().append($createTextNode('a')),
+        $createParagraphNode().append(
+          $createTextNode('  ').toggleFormat('code'),
+        ),
+      ),
+    );
+    using imported = importMarkdown(markdown);
+    expect(
+      imported.read(() =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [node.getTextContent(), node.hasFormat('code')]),
+      ),
+    ).toEqual([
+      ['h', false],
+      ['a', false],
+      ['  ', true],
+    ]);
+  });
+
+  it('trims only spaces and tabs from a cell', () => {
+    using imported = importMarkdown(
+      ['| h |', '| --- |', '|\u3000a\u00a0 \t|'].join('\n'),
+    );
+    expect(cellTexts(imported)[1]).toEqual([['\u3000a\u00a0']]);
+  });
+
   it('leaves the selection alone when it generates a table', () => {
     using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
     editor.update(

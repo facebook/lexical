@@ -6,7 +6,7 @@
  *
  */
 
-import type {RootContent} from 'mdast';
+import type {Nodes as MdastNode, RootContent} from 'mdast';
 
 import {$createCodeNode, CodeExtension} from '@lexical/code-core';
 import {
@@ -364,6 +364,78 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
 
   it('still trims the spaces written around a <br>', () => {
     using editor = createEditor(false);
+    editor.update(() => $convertFromMarkdownString(table('a <br>  b')), {
+      discrete: true,
+    });
+    expect(
+      editor.read(() =>
+        $getRoot()
+          .getLastDescendant()
+          ?.getParents()
+          .find($isTableCellNode)
+          ?.getChildren()
+          .map(node => node.getTextContent()),
+      ),
+    ).toEqual(['a', 'b']);
+  });
+
+  it('keeps a line of only spaces after a block in a cell', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () =>
+        $appendCell(
+          $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode('a')),
+          ),
+          $createParagraphNode().append($createTextNode('  ')),
+          $createParagraphNode().append($createTextNode(' x ')),
+        ),
+      {discrete: true},
+    );
+    const markdown = editor.read(() => $convertToMarkdownString());
+    editor.update(() => $convertFromMarkdownString(markdown), {
+      discrete: true,
+    });
+    expect(
+      editor.read(() =>
+        $getRoot()
+          .getLastDescendant()
+          ?.getParents()
+          .find($isTableCellNode)
+          ?.getChildren()
+          .map(node => [node.getType(), node.getTextContent()]),
+      ),
+    ).toEqual([
+      ['list', 'a'],
+      ['paragraph', '  '],
+      ['paragraph', ' x '],
+    ]);
+  });
+
+  it('trims the spaces around a <br> in a tree without offsets', () => {
+    // A tree transform may leave nodes with lines and columns only.
+    const dropOffsets = (node: MdastNode) => {
+      if (node.position) {
+        delete node.position.start.offset;
+        delete node.position.end.offset;
+      }
+      if ('children' in node) {
+        node.children.forEach(dropOffsets);
+      }
+    };
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastTableExtension,
+          TableExtension,
+          configExtension(MdastExtension, {
+            mdastExtensions: [{transforms: [dropOffsets]}],
+          }),
+        ],
+        name: '[root]',
+      }),
+    );
     editor.update(() => $convertFromMarkdownString(table('a <br>  b')), {
       discrete: true,
     });

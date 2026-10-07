@@ -156,16 +156,19 @@ function nestedBrToBreaks(nodes: PhrasingContent[]): PhrasingContent[] {
  * How many of the spaces and tabs at the start (or the end) of `node`'s
  * value were written as they are, rather than as character references
  * (`&#32;`), which {@link refEdgeSpaces} writes for spaces to keep. Without
- * the source, all of them.
+ * the source, or the node's offsets in it, all of them: a tree carries no
+ * record of which characters were references.
  */
 function literalSpaces(node: Text, source: string, atEnd: boolean): number {
   const re = atEnd ? /[ \t]*$/ : /^[ \t]*/;
   const inValue = re.exec(node.value)![0].length;
   const {position} = node;
-  if (source === '' || position === undefined) {
+  const start = position && position.start.offset;
+  const end = position && position.end.offset;
+  if (source === '' || start == null || end == null) {
     return inValue;
   }
-  const written = source.slice(position.start.offset, position.end.offset);
+  const written = source.slice(start, end);
   return Math.min(inValue, re.exec(written)![0].length);
 }
 
@@ -225,34 +228,40 @@ function cellItems(
   const items: (PhrasingContent[] | HtmlInline)[] = [];
   // The open line, or null right after a block.
   let line: PhrasingContent[] | null = [];
-  const endLine = () => {
-    if (line !== null) {
-      items.push(trimSegment(nestedBrToBreaks(line), source));
-    }
-  };
+  const takeLine = () =>
+    line === null ? null : trimSegment(nestedBrToBreaks(line), source);
   for (const child of cell.children) {
     const count = brCount(child);
     if (count > 0) {
       for (let i = 0; i < count; i++) {
-        endLine();
+        const taken = takeLine();
+        if (taken !== null) {
+          items.push(taken);
+        }
         line = [];
       }
     } else if (isBlockHtml(child)) {
-      if (line !== null && trimSegment(line, source).length > 0) {
-        endLine();
+      // The whitespace between a block and the line before it is not a line.
+      const taken = takeLine();
+      if (taken !== null && taken.length > 0) {
+        items.push(taken);
       }
       items.push(child);
       line = null;
     } else if (
       line !== null ||
       child.type !== 'text' ||
-      child.value.trim() !== ''
+      // Spaces written as references after a block are a line of their own.
+      literalSpaces(child, source, false) < child.value.length
     ) {
       line = line || [];
       line.push(child);
     }
   }
-  endLine();
+  const taken = takeLine();
+  if (taken !== null) {
+    items.push(taken);
+  }
   return items;
 }
 

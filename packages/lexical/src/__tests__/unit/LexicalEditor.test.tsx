@@ -1818,7 +1818,8 @@ describe('LexicalEditor tests', () => {
       });
 
       expect(listener).toHaveBeenCalledTimes(1);
-      expect(container.innerHTML).toBe(
+      expectHtmlToBeEqual(
+        container.innerHTML,
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto">' +
           '<span data-lexical-decorator="true" contenteditable="false"><span>Hello world</span></span><br data-lexical-managed-linebreak="true"></p></div>',
       );

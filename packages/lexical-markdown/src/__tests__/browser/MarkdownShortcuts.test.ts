@@ -218,8 +218,8 @@ describe('native Markdown block shortcuts', () => {
 // the root (React registers one on a portal's container) gives the mutation
 // observer a microtask checkpoint before Lexical handles the input, so it
 // must still recognize the native text entry and leave it to Lexical.
-describe('native Markdown text format shortcuts', () => {
-  const textCases = [
+describe('native Markdown shortcuts with text', () => {
+  const textCases: {html: string; keys?: string; text: string}[] = [
     {
       html: '<p dir="auto"><em data-lexical-text="true">hi</em></p>',
       text: '*hi*',
@@ -231,6 +231,16 @@ describe('native Markdown text format shortcuts', () => {
     {
       html: '<p dir="auto"><code spellcheck="false" data-lexical-text="true"><span>code</span></code></p>',
       text: '`code`',
+    },
+    {
+      html: '<h1 dir="auto"><span data-lexical-text="true">hi</span></h1>',
+      text: '# hi',
+    },
+    {
+      html: '<p dir="auto"><a href="https://lexical.dev"><span data-lexical-text="true">hi</span></a></p>',
+      // userEvent.keyboard reads a single [ as the start of a key name
+      keys: '[[hi](https://lexical.dev)',
+      text: '[hi](https://lexical.dev)',
     },
   ];
 
@@ -256,16 +266,19 @@ describe('native Markdown text format shortcuts', () => {
 
   test.each(textCases)(
     'types $text in the main window',
-    async ({text, html}) => {
+    async ({html, keys, text}) => {
       const root = setup();
-      await userEvent.keyboard(text);
+      await userEvent.keyboard(keys ?? text);
       await expect.poll(() => root.innerHTML).toBe(normalizeHTML(html));
     },
   );
 
-  test.each(textCases)('types $text in an iframe', async ({text, html}) => {
-    const root = await setupInIframe();
-    await userEvent.keyboard(text);
-    await expect.poll(() => root.innerHTML).toBe(normalizeHTML(html));
-  });
+  test.each(textCases)(
+    'types $text in an iframe',
+    async ({html, keys, text}) => {
+      const root = await setupInIframe();
+      await userEvent.keyboard(keys ?? text);
+      await expect.poll(() => root.innerHTML).toBe(normalizeHTML(html));
+    },
+  );
 });

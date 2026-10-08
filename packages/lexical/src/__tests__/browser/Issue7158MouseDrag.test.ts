@@ -25,9 +25,10 @@ import {
   $isDecoratorNode,
   $isRangeSelection,
   DecoratorNode,
+  getDOMSelection,
   type LexicalEditor,
 } from 'lexical';
-import {describe, expect, onTestFinished, test} from 'vitest';
+import {assert, describe, onTestFinished, test, vi} from 'vitest';
 import {commands} from 'vitest/browser';
 
 declare module 'vitest/browser' {
@@ -104,17 +105,49 @@ function mount(textBetween: boolean) {
   return {editor, left, right, y};
 }
 
-async function selectedDecoratorCount(
+function describeDOMPoint(node: Node | null, offset: number): string {
+  if (node === null) {
+    return 'null';
+  }
+  const name =
+    node.nodeType === Node.TEXT_NODE
+      ? `#text(${JSON.stringify(node.textContent)})`
+      : node.nodeName.toLowerCase();
+  return `${name}:${offset}`;
+}
+
+// The last selectionchange is handled asynchronously, and on a busy runner it
+// can land well after the mouse is released, so wait for the editor's
+// selection to settle rather than for a fixed time. A failure reports the
+// selection that was reached, to tell a selection that never extended apart
+// from one that extended too far.
+async function expectSelectedDecoratorCount(
   editor: LexicalEditor,
-): Promise<number | string> {
-  // Let the last selectionchange be handled and committed.
-  await new Promise(resolve => setTimeout(resolve, 50));
-  return editor.read(() => {
-    const selection = $getSelection();
-    return $isRangeSelection(selection)
-      ? selection.getNodes().filter($isDecoratorNode).length
-      : String(selection);
-  });
+  expected: number,
+): Promise<void> {
+  await vi.waitFor(
+    () => {
+      const [count, lexical] = editor.read(() => {
+        const selection = $getSelection();
+        return $isRangeSelection(selection)
+          ? [
+              selection.getNodes().filter($isDecoratorNode).length,
+              `${selection.anchor.key}:${selection.anchor.offset}->` +
+                `${selection.focus.key}:${selection.focus.offset}`,
+            ]
+          : [-1, String(selection)];
+      });
+      const dom = getDOMSelection(window);
+      assert(
+        count === expected,
+        `expected ${expected} selected decorators, got ${count} ` +
+          `(lexical ${lexical}; dom ` +
+          `${describeDOMPoint(dom?.anchorNode ?? null, dom?.anchorOffset ?? 0)}->` +
+          `${describeDOMPoint(dom?.focusNode ?? null, dom?.focusOffset ?? 0)})`,
+      );
+    },
+    {interval: 50, timeout: 2000},
+  );
 }
 
 describe.each([
@@ -128,7 +161,7 @@ describe.each([
       [left(COUNT - 2) + SIZE / 2, y],
       [left(2) - 2, y],
     ]);
-    expect(await selectedDecoratorCount(editor)).toBe(COUNT - 2);
+    await expectSelectedDecoratorCount(editor, COUNT - 2);
   });
 
   test('a drag from left of the first decorator selects to the end of the line', async () => {
@@ -138,6 +171,6 @@ describe.each([
       [left(1) + SIZE / 2, y],
       [right(COUNT - 1) + 30, y],
     ]);
-    expect(await selectedDecoratorCount(editor)).toBe(COUNT);
+    await expectSelectedDecoratorCount(editor, COUNT);
   });
 });

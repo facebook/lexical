@@ -6,9 +6,36 @@
  *
  */
 
-import type {Nodes} from 'mdast';
+import type {CompiledMdast} from './types';
+import type {Nodes, Root} from 'mdast';
+
+import {fromMarkdown} from 'mdast-util-from-markdown';
 
 type Point = NonNullable<Nodes['position']>['start'];
+
+/**
+ * Parses `markdown` with the registry's extensions. The import reads the
+ * source by offset, so every parse whose tree is imported goes through here,
+ * which also fills the offsets a tree transform left out.
+ */
+export function parseMarkdown(
+  compiled: Pick<CompiledMdast, 'mdastExtensions' | 'micromarkExtensions'>,
+  markdown: string,
+): Root {
+  const tree = fromMarkdown(markdown, {
+    extensions: compiled.micromarkExtensions,
+    mdastExtensions: compiled.mdastExtensions,
+  });
+  // Only a tree transform can leave a point without an offset.
+  if (
+    compiled.mdastExtensions
+      .flat()
+      .some(extension => extension.transforms && extension.transforms.length)
+  ) {
+    fillOffsets(tree, markdown);
+  }
+  return tree;
+}
 
 /**
  * Gives each point in `tree` that has a line and column but no offset the
@@ -19,7 +46,13 @@ type Point = NonNullable<Nodes['position']>['start'];
 export function fillOffsets(tree: Nodes, source: string): void {
   let lineStarts: number[] | null = null;
   const fill = (point: Point) => {
-    if (point.offset != null || point.line == null || point.column == null) {
+    if (
+      point.offset != null ||
+      point.line == null ||
+      point.column == null ||
+      // A transform may share one frozen position; it keeps no offset.
+      Object.isFrozen(point)
+    ) {
       return;
     }
     if (lineStarts === null) {

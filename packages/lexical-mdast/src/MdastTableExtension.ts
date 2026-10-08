@@ -162,8 +162,8 @@ function nestedBrToBreaks(nodes: PhrasingContent[]): PhrasingContent[] {
 function literalSpaces(node: Text, source: string, atEnd: boolean): number {
   const re = atEnd ? /[ \t]*$/ : /^[ \t]*/;
   const inValue = re.exec(node.value)![0].length;
-  // The import gives points without offsets the ones their lines and
-  // columns stand for (see fillOffsets).
+  // parseMarkdown gives points without offsets the ones their lines and
+  // columns stand for.
   const {position} = node;
   const start = position && position.start.offset;
   const end = position && position.end.offset;

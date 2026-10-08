@@ -10,10 +10,8 @@ import type {CompiledMdast, MdastNode} from './types';
 import type {LexicalNode} from 'lexical';
 import type {Blockquote, Code, Heading, List, PhrasingContent} from 'mdast';
 
-import {fromMarkdown} from 'mdast-util-from-markdown';
-
 import {createNodeImporter} from './MdastImport';
-import {fillOffsets} from './sourceOffsets';
+import {parseMarkdown} from './sourceOffsets';
 
 export type MdastBlockMatch =
   | {kind: 'heading'; node: Heading; markerLength: number}
@@ -89,12 +87,7 @@ export class MarkdownStreamScanner {
   }
 
   private parse(value: string) {
-    const tree = fromMarkdown(value, {
-      extensions: this.compiled.micromarkExtensions,
-      mdastExtensions: this.compiled.mdastExtensions,
-    });
-    fillOffsets(tree, value);
-    return tree;
+    return parseMarkdown(this.compiled, value);
   }
 
   /**

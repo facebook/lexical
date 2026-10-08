@@ -420,9 +420,11 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
   });
 
   it.each([
-    ['a <br>  b', ['a', 'b']],
-    ['a<br>&#32;b', ['a', ' b']],
-  ])('reads %j in a tree without offsets as %j', (body, lines) => {
+    ['', 'a <br>  b', ['a', 'b']],
+    ['', 'a<br>&#32;b', ['a', ' b']],
+    // Blank lines before it, and a heading whose marker is read by offset.
+    ['h\n=\n\n\n', 'a<br>&#32;b', ['a', ' b']],
+  ])('reads %j%j in a tree without offsets', (prefix, body, lines) => {
     // A tree transform may leave nodes with lines and columns only.
     const dropOffsets = (node: MdastNode) => {
       if (node.position) {
@@ -446,9 +448,12 @@ describe('MdastTableExtension with MdastHtmlExtension', () => {
         name: '[root]',
       }),
     );
-    editor.update(() => $convertFromMarkdownString(table(body)), {
+    editor.update(() => $convertFromMarkdownString(prefix + table(body)), {
       discrete: true,
     });
+    if (prefix !== '') {
+      expect(editor.read(() => $convertToMarkdownString())).toMatch(/^h\n=+\n/);
+    }
     expect(
       editor.read(() =>
         $getRoot()

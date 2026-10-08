@@ -152,35 +152,6 @@ function nestedBrToBreaks(nodes: PhrasingContent[]): PhrasingContent[] {
   });
 }
 
-// The offset of each line's start in the last source read without offsets.
-let lineStartsSource: string | null = null;
-let lineStarts: number[] = [];
-
-/**
- * The offset of `point` in `source`: its own, or else the one its line and
- * column give, since a tree transform may keep only those.
- */
-function pointOffset(
-  point: {column?: number; line?: number; offset?: number},
-  source: string,
-): number | null {
-  if (point.offset != null) {
-    return point.offset;
-  }
-  if (point.line == null || point.column == null) {
-    return null;
-  }
-  if (lineStartsSource !== source) {
-    lineStartsSource = source;
-    lineStarts = [0];
-    for (const {index} of source.matchAll(/\r\n?|\n/g)) {
-      lineStarts.push(index + (source[index + 1] === '\n' ? 2 : 1));
-    }
-  }
-  const lineStart = lineStarts[point.line - 1];
-  return lineStart === undefined ? null : lineStart + point.column - 1;
-}
-
 /**
  * How many of the spaces and tabs at the start (or the end) of `node`'s
  * value were written as they are, rather than as character references
@@ -191,9 +162,11 @@ function pointOffset(
 function literalSpaces(node: Text, source: string, atEnd: boolean): number {
   const re = atEnd ? /[ \t]*$/ : /^[ \t]*/;
   const inValue = re.exec(node.value)![0].length;
+  // The import gives points without offsets the ones their lines and
+  // columns stand for (see fillOffsets).
   const {position} = node;
-  const start = position && pointOffset(position.start, source);
-  const end = position && pointOffset(position.end, source);
+  const start = position && position.start.offset;
+  const end = position && position.end.offset;
   if (source === '' || start == null || end == null) {
     return inValue;
   }

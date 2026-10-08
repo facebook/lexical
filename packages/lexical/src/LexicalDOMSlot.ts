@@ -84,7 +84,6 @@ const DATA_LEXICAL_DECORATOR_BOUNDARY = 'data-lexical-decorator-boundary';
 function $createDecoratorBoundaryAnchor(): HTMLImageElement {
   const img = $createZeroImg(DATA_LEXICAL_DECORATOR_BOUNDARY);
   img.style.setProperty('position', 'absolute', 'important');
-  img.alt = '';
   return img;
 }
 
@@ -307,9 +306,9 @@ function $createZeroImg(
   attr: 'data-lexical-managed-linebreak' | 'data-lexical-decorator-boundary',
 ): HTMLImageElement {
   const img = $getDocument().createElement('img');
-  setDOMStyleObject(img.style, ZERO_IMG_STYLE);
   img.setAttribute(attr, 'true');
   img.alt = '';
+  setDOMStyleObject(img.style, ZERO_IMG_STYLE);
   return img;
 }
 

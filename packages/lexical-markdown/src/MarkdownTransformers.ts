@@ -1098,9 +1098,9 @@ export function getCodeSpanDelimiter(content: string): {
   const needsPadding =
     content.length === 0 ||
     content.includes('`') ||
-    // A reader strips one space from each end of a span that has
-    // something other than spaces, so a span of only spaces is written bare.
-    (/^\s/.test(content) && /\s$/.test(content) && /[^ ]/.test(content));
+    // A reader strips one space (U+0020 only) from each end of a span that
+    // has something other than spaces, so only such a span needs padding.
+    (content.startsWith(' ') && content.endsWith(' ') && /[^ ]/.test(content));
   const padded = needsPadding ? ` ${content} ` : content;
   return {fence, padded};
 }

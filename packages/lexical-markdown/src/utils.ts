@@ -77,15 +77,21 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
 }
 
 export function unescapeText(value: string): string {
-  return value
-    .replace(/\\([!-/:-@[-`{-~])/g, '$1')
-    .replace(/&#(\d+);/g, (_, digits) => {
-      // As in CommonMark, a reference to no valid character reads as U+FFFD.
+  // One pass, so an escaped `\&#65;` stays the text `&#65;`. As in
+  // CommonMark, a decimal reference has at most 7 digits, and one to no
+  // valid character reads as U+FFFD.
+  return value.replace(
+    /\\([!-/:-@[-`{-~])|&#(\d{1,7});/g,
+    (_, escaped: string | undefined, digits: string | undefined) => {
+      if (escaped !== undefined) {
+        return escaped;
+      }
       const codePoint = Number(digits);
       return codePoint === 0 ||
         codePoint > 0x10ffff ||
         (codePoint >= 0xd800 && codePoint <= 0xdfff)
         ? '\ufffd'
         : String.fromCodePoint(codePoint);
-    });
+    },
+  );
 }

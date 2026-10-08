@@ -49,7 +49,8 @@ describe('a code span', () => {
     });
   });
 
-  it.each([' ', '  '])('round-trips %j, which is only spaces', text => {
+  // A reader strips only U+0020 padding, so other whitespace needs none.
+  it.each([' ', '  ', '\tx\t', '\u00a0'])('round-trips %j bare', text => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     editor.update(
       () =>
@@ -152,7 +153,7 @@ describe('text a text match leaves in place', () => {
 });
 
 describe('a character reference', () => {
-  it.each(['&#0;', '&#55296;', '&#99999999;'])(
+  it.each(['&#0;', '&#55296;', '&#9999999;'])(
     'reads %j, which names no valid character, as U+FFFD',
     markdown => {
       using editor = buildEditorFromExtensions([MarkdownTestExtension]);
@@ -162,4 +163,33 @@ describe('a character reference', () => {
       expect(editor.read(() => $getRoot().getTextContent())).toBe('\ufffd');
     },
   );
+
+  it.each([
+    // More than 7 digits is no reference.
+    ['&#99999999;', '&#99999999;'],
+    // An escaped `&` begins no reference.
+    ['\\&#65;', '&#65;'],
+  ])('reads %j as the text %j', (markdown, text) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+      discrete: true,
+    });
+    expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
+  });
+
+  it('round-trips text that reads as one', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('a &#32; b'))),
+      {discrete: true},
+    );
+    const markdown = editor.read(() => $convertToMarkdownString(TRANSFORMERS));
+    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+      discrete: true,
+    });
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('a &#32; b');
+  });
 });

@@ -16,17 +16,21 @@ import {
 } from '@lexical/mdast';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $createParagraphNode,
   $createRangeSelection,
   $getRoot,
   $getSelection,
+  $getSlot,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
   defineExtension,
+  HISTORY_MERGE_TAG,
+  INSERT_PARAGRAPH_COMMAND,
   type LexicalEditor,
 } from 'lexical';
-import {describe, expect, onTestFinished, test, vi} from 'vitest';
+import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';
 
 import {
   INSERT_ALERT_COMMAND,
@@ -38,6 +42,7 @@ import {
 } from '../../extensions/MdastCollapsibleExtension';
 import {
   $isFootnoteDefinitionNode,
+  FOOTNOTES_SLOT,
   INSERT_FOOTNOTE_COMMAND,
   MdastFootnoteExtension,
 } from '../../extensions/MdastFootnoteExtension';
@@ -252,6 +257,53 @@ describe('footnotes', () => {
     expect(markdownOf(editor)).toBe(
       'body[^a] text\n\ntrailing paragraph\n\n[^a]: the note',
     );
+  });
+
+  test('deleting everything else clears the footnotes', () => {
+    const {editor, root} = mountEditor('body[^a] text\n\n[^a]: the note');
+    editor.update(
+      () => {
+        $getRoot().clear().append($createParagraphNode()).selectEnd();
+      },
+      {discrete: true},
+    );
+    expect(root.querySelector('.footnote-def')).toBeNull();
+    expect(markdownOf(editor)).toBe('');
+  });
+
+  test('the footnotes stay while a definition is being edited', () => {
+    const {editor} = mountEditor('body[^a] text\n\n[^a]: the note');
+    editor.update(
+      () => {
+        const footnotes = $getSlot($getRoot(), FOOTNOTES_SLOT);
+        assert($isElementNode(footnotes));
+        footnotes.selectEnd();
+        $getRoot().clear().append($createParagraphNode());
+      },
+      {discrete: true},
+    );
+    // The empty body paragraph serializes as leading blank lines.
+    expect(markdownOf(editor).trim()).toBe('[^a]: the note');
+  });
+
+  test('a Markdown pane sync keeps definitions with no body', () => {
+    const {editor} = mountEditor('');
+    editor.update(() => $convertFromMarkdownString('[^a]: the note'), {
+      discrete: true,
+      tag: HISTORY_MERGE_TAG,
+    });
+    expect(markdownOf(editor)).toBe('[^a]: the note');
+  });
+
+  test('typing in an already-empty body keeps definitions', () => {
+    const {editor} = mountEditor('');
+    editor.update(() => $convertFromMarkdownString('[^a]: saved note'), {
+      discrete: true,
+      tag: HISTORY_MERGE_TAG,
+    });
+    editor.update(() => $getRoot().selectEnd(), {discrete: true});
+    editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+    expect(markdownOf(editor).trim()).toBe('[^a]: saved note');
   });
 
   test('removing the last definition drops the section and its refs', async () => {

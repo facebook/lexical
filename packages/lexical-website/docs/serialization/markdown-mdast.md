@@ -122,6 +122,31 @@ defer to the document-level serialization options, which can be
 configured by contributing `mdast-util-to-markdown` options through
 `toMarkdownExtensions`.
 
+GFM table cells hold a single line, so `MdastTableExtension` writes each
+paragraph or line break in a cell as `<br>`, the line separator GitHub and
+most renderers accept there, and reads `<br>`, `<br/>` and `<br />` back as
+paragraph boundaries. GFM allows inline HTML in a cell, so when the editor
+also has `MdastHtmlExtension`, the blocks Markdown can't express on one
+line (lists, task lists, headings, quotes, code blocks and rules) are
+written as one line of HTML around their Markdown content, such as
+`<ul><li>**a**</li><li>b</li></ul>`, and read back as the same blocks.
+Without it, they are flattened to one line per item. A column's alignment (`:-:`) is
+set as the element format of each of its cells, so it renders as their
+`text-align` and stays with the column when columns are added or removed.
+GFM can't align a single cell, so on export a column takes the alignment
+most of its cells have, or if none has a majority, the alignment of its
+header cell. Raw HTML in a cell is written on one line too: a newline in its text or in
+a quoted attribute value becomes `&#10;`, which reads back as the same
+newline, so whitespace that `<pre>` or CSS keeps survives; a newline
+between a tag's attributes or in a comment becomes a space; and every `|`
+becomes `&#124;`. The text of `<script>`, `<style>` and comments takes no
+character references, so a newline there becomes a space and a pipe can't
+be written as is. Documents saved before alignment moved to the cells kept it
+as one array on the table; when such a table loads, each alignment is moved
+onto the cells of its column that have no format of their own, and a cell
+that already has one, including one GFM can't write (`justify`, `start`,
+`end`), keeps it.
+
 ## unified / remark interop
 
 The mdast tree itself is part of the API, so editor content can flow

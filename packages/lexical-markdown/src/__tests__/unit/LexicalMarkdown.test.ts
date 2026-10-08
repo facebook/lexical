@@ -1235,6 +1235,46 @@ describe('Markdown', () => {
     );
   });
 
+  it('keeps the whole line when an element transformer cancels its import', () => {
+    const CANCELED_HEADING: ElementTransformer = {
+      dependencies: [HeadingNode],
+      export: () => null,
+      regExp: /^#\s/,
+      replace: () => false,
+      type: 'element',
+    };
+    const editor = createTestEditor({nodes: [HeadingNode]});
+    editor.update(
+      () => $convertFromMarkdownString('# kept', [CANCELED_HEADING]),
+      {discrete: true},
+    );
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('# kept');
+  });
+
+  it('keeps the text an element transformer changed before cancelling', () => {
+    const REWRITING_CANCEL: ElementTransformer = {
+      dependencies: [HeadingNode],
+      export: () => null,
+      regExp: /^#\s/,
+      replace: (_parentNode, children) => {
+        const [text] = children;
+        if ($isTextNode(text)) {
+          text.setTextContent('rewritten ' + text.getTextContent());
+        }
+        return false;
+      },
+      type: 'element',
+    };
+    const editor = createTestEditor({nodes: [HeadingNode]});
+    editor.update(
+      () => $convertFromMarkdownString('# kept', [REWRITING_CANCEL]),
+      {discrete: true},
+    );
+    expect(editor.read(() => $getRoot().getTextContent())).toBe(
+      'rewritten kept',
+    );
+  });
+
   it('should remove leading node and execute transform if replace does not return false', () => {
     const editor = createTestEditor({
       nodes: [

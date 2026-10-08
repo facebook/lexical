@@ -103,9 +103,9 @@ test.each(['', '\n\n[^a]: Footnote'])(
       MdastEditorExtension,
     ).output;
     await vi.waitFor(() => {
-      // Select-all covers the root's children; footnote definitions occupy a
-      // separate slot and remain outside that selection.
-      expect(markdown.value).toBe(footnotes);
+      // Select-all covers the root's children; the footnote definitions
+      // occupy a separate slot, which goes once nothing else is left.
+      expect(markdown.value).toBe('');
       expect(toolbar.blockType.value).toBe('paragraph');
       expect(toolbar.isBold.value).toBe(false);
       expect(toolbar.isItalic.value).toBe(false);
@@ -113,8 +113,6 @@ test.each(['', '\n\n[^a]: Footnote'])(
     });
 
     await userEvent.keyboard('replacement');
-    await vi.waitFor(() =>
-      expect(markdown.value).toBe('replacement' + footnotes),
-    );
+    await vi.waitFor(() => expect(markdown.value).toBe('replacement'));
   },
 );

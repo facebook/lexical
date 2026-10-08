@@ -39,6 +39,7 @@ import {
   $create,
   $createParagraphNode,
   $getDocument,
+  $getEditor,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -46,6 +47,7 @@ import {
   $getSlotHost,
   $getState,
   $getStateChange,
+  $hasUpdateTag,
   $isDecoratorNode,
   $isElementNode,
   $isParagraphNode,
@@ -72,6 +74,7 @@ import {
   type ElementDOMSlot,
   ElementNode,
   HISTORIC_TAG,
+  HISTORY_MERGE_TAG,
   isExactShortcutMatch,
   isHTMLElement,
   KEY_DOWN_COMMAND,
@@ -723,6 +726,44 @@ export function $clearFootnotes(): void {
   }
 }
 
+/** Whether everything outside the footnotes section is empty paragraphs. */
+function $isBodyEmpty(root: RootNode): boolean {
+  return root
+    .getChildren()
+    .every(child => $isParagraphNode(child) && child.isEmpty());
+}
+
+/**
+ * A RootNode transform: once everything outside the footnotes section has
+ * been deleted (select-all and Backspace, cut, ...), the section goes too,
+ * since a definition with no reference to it doesn't render in GFM and the
+ * empty editor would otherwise still show stale notes.
+ *
+ * Left alone: a body that was already empty before this update (only a
+ * deletion clears, not Enter in an empty body), the Markdown pane's sync
+ * (tagged history-merge), so a note typed there before any body text isn't
+ * dropped mid-edit, and an editor whose caret is in a definition, which is
+ * being edited.
+ */
+function $clearFootnotesOfEmptyDocument(root: RootNode): void {
+  if (
+    $hasUpdateTag(HISTORY_MERGE_TAG) ||
+    !$isFootnotesNode($getSlot(root, FOOTNOTES_SLOT)) ||
+    !$isBodyEmpty(root) ||
+    $getEditor().read('latest', () => $isBodyEmpty($getRoot()))
+  ) {
+    return;
+  }
+  const selection = $getSelection();
+  if (
+    $isRangeSelection(selection) &&
+    selection.anchor.getNode().getParents().some($isFootnotesNode)
+  ) {
+    return;
+  }
+  $clearFootnotes();
+}
+
 /* -------------------------------------------------------------------------- *
  * Markdown import: refs inline, definitions relocated to the footnotes slot  *
  * -------------------------------------------------------------------------- */
@@ -1155,6 +1196,7 @@ export const MdastFootnoteExtension = defineExtension({
     mergeRegister(
       registerFootnoteShortcut(editor),
       registerFootnoteAnchors(editor),
+      editor.registerNodeTransform(RootNode, $clearFootnotesOfEmptyDocument),
       editor.registerCommand(
         KEY_DOWN_COMMAND,
         event => {

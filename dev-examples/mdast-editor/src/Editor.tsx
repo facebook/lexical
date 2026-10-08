@@ -70,6 +70,19 @@ Type \`[^another]\` to mint one.
 - [x] Syntax preserved via NodeState
 - [ ] Ship it
 
+## Tables
+
+GFM tables edit as \`@lexical/table\` nodes: Tab moves between cells, and
+the **Table** menu in the toolbar adds or removes rows and columns while
+the cursor is in one. A cell holds a single line in Markdown, so Enter in a
+cell becomes \`<br>\`:
+
+| Construct | Syntax | Notes |
+| :-- | :-: | --: |
+| Strikethrough | \`~~text~~\` | GFM |
+| Task list | \`- [ ] \` | GFM |
+| Line break | \`<br>\` | One line<br>per paragraph |
+
 ## Alerts
 
 GitHub-style alerts are plain blockquotes with a \`[!TYPE]\` marker: the
@@ -109,6 +122,10 @@ const editor = buildEditorFromExtensions({
 `;
 
 const theme = {
+  // The cursor Lexical draws where a text caret can't go, such as between
+  // two tables or decorators: a blinking horizontal bar.
+  blockCursor:
+    'pointer-events-none absolute block after:absolute after:-top-0.5 after:block after:w-5 after:border-0 after:border-t after:border-solid after:border-current after:content-[""] after:animate-[block-cursor-blink_1.1s_steps(2,start)_infinite]',
   code: 'my-2 block rounded-md bg-zinc-100 p-3 font-mono text-sm whitespace-pre dark:bg-zinc-900',
   heading: {
     h1: 'mb-2 text-3xl font-bold',
@@ -132,6 +149,15 @@ const theme = {
   paragraph: 'my-1',
   quote:
     'my-2 border-l-4 border-solid border-zinc-300 pl-3 text-zinc-600 dark:border-zinc-600 dark:text-zinc-300',
+  // @lexical/table: the scroll wrapper holds the margin, cells get a grid,
+  // and a multi-cell selection is drawn on the cells instead of the text.
+  table: 'border-collapse border-spacing-0',
+  tableCell:
+    'relative min-w-[75px] border border-solid border-zinc-300 px-2 py-0.5 text-start align-top dark:border-zinc-600',
+  tableCellHeader: 'bg-zinc-100 font-semibold dark:bg-zinc-700',
+  tableCellSelected: 'bg-blue-100 caret-transparent dark:bg-blue-900/60',
+  tableScrollableWrapper: 'my-2 overflow-x-auto',
+  tableSelection: 'selection:bg-transparent',
   text: {
     bold: 'font-bold',
     code: 'rounded bg-zinc-200/70 px-1 py-0.5 font-mono text-[0.9em] dark:bg-zinc-700/60',

@@ -63,6 +63,7 @@ import {
 } from './MdastCollapsibleExtension';
 import {MdastFootnoteExtension} from './MdastFootnoteExtension';
 import {MdastKbdExtension} from './MdastKbdExtension';
+import {TableEditExtension} from './TableEditExtension';
 
 /**
  * Reformats the current selection's blocks as a paragraph. Toolbars
@@ -146,6 +147,9 @@ export const MdastEditorExtension = defineExtension({
     RichTextExtension,
     ListExtension,
     CheckListExtension,
+    // GFM tables (imported and exported by MdastGfmExtension) get the
+    // @lexical/table editing behavior and the toolbar's structure commands.
+    TableEditExtension,
     HistoryExtension,
     TabIndentationExtension,
     EditorStateExtension,

@@ -6,10 +6,26 @@
  *
  */
 
-import type {MdastExportHandler, MdastImportHandler} from './types';
-import type {AlignType, Table, TableCell, TableRow} from 'mdast';
+import type {MdastHtmlExtension} from './MdastHtmlExtension';
+import type {
+  MdastExportHandler,
+  MdastImportContext,
+  MdastImportHandler,
+  MdastNode,
+} from './types';
+import type {
+  AlignType,
+  Html,
+  HtmlBlock,
+  HtmlInline,
+  PhrasingContent,
+  Table,
+  TableCell,
+  TableRow,
+  Text,
+} from 'mdast';
 
-import {configExtension} from '@lexical/extension';
+import {$getPeerDependency, configExtension} from '@lexical/extension';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -25,54 +41,832 @@ import {
 import {
   $createParagraphNode,
   $getState,
+  $isDecoratorNode,
   $isElementNode,
   $setState,
+  arrayValue,
   createState,
+  declarePeerDependency,
   defineExtension,
+  enumValue,
+  type LexicalNode,
+  type ParagraphNode,
 } from 'lexical';
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
 import {$append} from './handlers';
+import {splitHtmlBlock} from './htmlBlockParts';
 import {MdastExtension} from './MdastExtension';
 
-/** The per-column alignment (`| :-: |`) a table's delimiter row declared. */
+/** A GFM column alignment as mdast spells it; anything else reads as `null`. */
+const alignValue = enumValue<AlignType>([null, 'left', 'center', 'right']);
+
+/**
+ * The per-column alignment (`| :-: |`) a table's delimiter row declared, as
+ * imported before alignment moved to the cells' element format. An editor
+ * moves it onto the cells and clears it as soon as such a table is loaded
+ * (see {@link $migrateTableAlign}); export reads it as the fallback only
+ * where that hasn't happened, such as a read of an `EditorState` that was
+ * never set on an editor.
+ */
 const tableAlignState = createState('mdastTableAlign', {
-  parse: (v): AlignType[] =>
-    Array.isArray(v)
-      ? v.map(a => (a === 'center' || a === 'left' || a === 'right' ? a : null))
-      : [],
+  parse: arrayValue(alignValue),
   resetOnCopyNode: true,
 });
 
-const $importTable: MdastImportHandler<Table> = (node, ctx) => {
-  const table = $createTableNode();
-  if (node.align && node.align.some(a => a != null)) {
-    $setState(table, tableAlignState, node.align);
+/**
+ * The GFM alignment a cell renders with: its own element format (what
+ * import sets, and what `FORMAT_ELEMENT_COMMAND` sets on a cell selection),
+ * else the format its block children share (what that command sets with
+ * the caret in a single cell).
+ */
+function $getCellAlign(cell: TableCellNode): AlignType {
+  const own = alignValue(cell.getFormatType());
+  if (own !== null) {
+    return own;
   }
-  node.children.forEach((row, rowIndex) => {
-    const rowNode = $createTableRowNode();
-    for (const cell of row.children) {
-      const cellNode = $createTableCellNode(
-        rowIndex === 0
-          ? TableCellHeaderStates.ROW
-          : TableCellHeaderStates.NO_STATUS,
-      );
-      const paragraph = $createParagraphNode();
-      $append(paragraph, ctx.importChildren(cell));
-      $append(cellNode, [paragraph]);
-      $append(rowNode, [cellNode]);
+  let shared: AlignType | undefined;
+  for (const child of cell.getChildren()) {
+    if ($isElementNode(child) && !child.isInline()) {
+      const align = alignValue(child.getFormatType());
+      if (shared !== undefined && shared !== align) {
+        return null;
+      }
+      shared = align;
     }
-    $append(table, [rowNode]);
+  }
+  return shared || null;
+}
+
+/**
+ * The number of line breaks an inline `<br>` run stands for (`<br>`,
+ * `<br/>`, `<br />`, any case), or 0 when `node` is anything else. With
+ * {@link MdastHtmlExtension} the tag arrives reassembled as `htmlInline`;
+ * without it, as a plain `html` token.
+ */
+function brCount(node: MdastNode): number {
+  if (
+    (node.type !== 'html' && node.type !== 'htmlInline') ||
+    ('children' in node && node.children.length > 0)
+  ) {
+    return 0;
+  }
+  const value = node.value.trim();
+  return /^(?:<br\s*\/?>\s*)+$/i.test(value)
+    ? value.split(/<br/i).length - 1
+    : 0;
+}
+
+/**
+ * A deep copy of `nodes` with each node that `replace` returns an array for
+ * swapped for that array; the children of the others are mapped in turn.
+ */
+function mapPhrasing(
+  nodes: readonly PhrasingContent[],
+  replace: (node: PhrasingContent) => PhrasingContent[] | undefined,
+): PhrasingContent[] {
+  return nodes.flatMap(
+    node =>
+      replace(node) ||
+      ('children' in node
+        ? ({
+            ...node,
+            children: mapPhrasing(node.children, replace),
+          } as PhrasingContent)
+        : node),
+  );
+}
+
+/**
+ * A copy of `nodes` with every `<br>` nested inside other phrasing content
+ * (`**a<br>b**`) replaced by hard `break`s, which import as line breaks.
+ */
+function nestedBrToBreaks(nodes: PhrasingContent[]): PhrasingContent[] {
+  return mapPhrasing(nodes, node => {
+    const count = brCount(node);
+    if (count > 0) {
+      return Array.from({length: count}, () => ({type: 'break'}));
+    }
+    return node.type === 'htmlInline' ? [node] : undefined;
   });
-  return table;
+}
+
+/**
+ * How many of the spaces and tabs at the start (or the end) of `node`'s
+ * value were written as they are, rather than as character references
+ * (`&#32;`), which {@link refEdgeSpaces} writes for spaces to keep. Without
+ * the source, or the node's position in it, all of them: a tree carries no
+ * record of which characters were references.
+ */
+function literalSpaces(node: Text, source: string, atEnd: boolean): number {
+  const re = atEnd ? /[ \t]*$/ : /^[ \t]*/;
+  const inValue = re.exec(node.value)![0].length;
+  // parseMarkdown gives points without offsets the ones their lines and
+  // columns stand for.
+  const {position} = node;
+  const start = position && position.start.offset;
+  const end = position && position.end.offset;
+  if (source === '' || start == null || end == null) {
+    return inValue;
+  }
+  const written = source.slice(start, end);
+  return Math.min(inValue, re.exec(written)![0].length);
+}
+
+/** Trims the whitespace a `<br>` was written with (`a <br> b`). */
+function trimSegment(
+  segment: PhrasingContent[],
+  source: string,
+): PhrasingContent[] {
+  const result = segment.slice();
+  const first = result[0];
+  if (first && first.type === 'text') {
+    result[0] = {
+      ...first,
+      value: first.value.slice(literalSpaces(first, source, false)),
+    };
+  }
+  const lastIndex = result.length - 1;
+  const last = result[lastIndex];
+  if (last && last.type === 'text') {
+    result[lastIndex] = {
+      ...last,
+      value: last.value.slice(
+        0,
+        last.value.length - literalSpaces(last, source, true),
+      ),
+    };
+  }
+  return result.filter(node => node.type !== 'text' || node.value !== '');
+}
+
+/** The names of the block elements a cell's HTML can open with. */
+const BLOCK_HTML_RE =
+  /^\s*<(?:address|article|aside|blockquote|details|div|dl|figure|footer|h[1-6]|header|hr|ol|p|pre|section|ul)\b/i;
+
+/**
+ * Whether `node` is a block element written as one line of HTML in a cell
+ * (`<ul><li>a</li></ul>`). Only {@link MdastHtmlExtension} reassembles such
+ * a run into one `htmlInline` node.
+ */
+function isBlockHtml(node: MdastNode): node is HtmlInline {
+  return node.type === 'htmlInline' && BLOCK_HTML_RE.test(node.value);
+}
+
+/**
+ * Splits a cell's phrasing content into lines, one paragraph each, and the
+ * blocks written as HTML between them. GFM cells can't contain a newline,
+ * so `<br>` is the conventional line separator; it imports as a paragraph
+ * boundary, which is what Enter inserts in a table cell, so typed lines
+ * round-trip. A block ends the line before it without a `<br>`, so a `<br>`
+ * next to a block stands for an empty line on that side
+ * (see {@link joinCellItems}). Spaces and tabs written as they are between
+ * a block and a `<br>` are padding and make no line; any other whitespace,
+ * such as spaces written as references (`&#32;`) by {@link refEdgeSpaces}
+ * or a no-break space, is a line's content.
+ */
+function cellItems(
+  cell: TableCell,
+  source: string,
+): (PhrasingContent[] | HtmlInline)[] {
+  const items: (PhrasingContent[] | HtmlInline)[] = [];
+  // The open line, or null right after a block.
+  let line: PhrasingContent[] | null = [];
+  // Ends the open line; one left empty by trimming is no line before a block.
+  const endLine = (beforeBlock = false) => {
+    if (line !== null) {
+      const segment = trimSegment(nestedBrToBreaks(line), source);
+      if (!beforeBlock || segment.length > 0) {
+        items.push(segment);
+      }
+    }
+  };
+  for (const child of cell.children) {
+    const count = brCount(child);
+    if (count > 0) {
+      for (let i = 0; i < count; i++) {
+        endLine();
+        line = [];
+      }
+    } else if (isBlockHtml(child)) {
+      endLine(true);
+      items.push(child);
+      line = null;
+    } else if (
+      line !== null ||
+      child.type !== 'text' ||
+      literalSpaces(child, source, false) < child.value.length
+    ) {
+      line = line || [];
+      line.push(child);
+    }
+  }
+  endLine();
+  return items;
+}
+
+/**
+ * Imports a block written as HTML in a cell through
+ * {@link MdastHtmlExtension}'s block import, which keeps its block
+ * structure where an inline run would be flattened into the line.
+ */
+function $importBlockHtml(
+  node: HtmlInline,
+  ctx: MdastImportContext,
+): LexicalNode[] {
+  const block: HtmlBlock = {
+    // The phrasing children are pre-imported into their placeholders the
+    // same way block children are.
+    children: node.children as unknown as HtmlBlock['children'],
+    type: 'htmlBlock',
+    value: node.value,
+  };
+  // Inline output (from a block tag no DOM rule handles) gets a paragraph.
+  const blocks: LexicalNode[] = [];
+  let paragraph: ParagraphNode | null = null;
+  for (const child of ctx.importNode(block)) {
+    if (
+      ($isElementNode(child) || $isDecoratorNode(child)) &&
+      !child.isInline()
+    ) {
+      blocks.push(child);
+      paragraph = null;
+    } else {
+      if (paragraph === null) {
+        paragraph = $createParagraphNode();
+        blocks.push(paragraph);
+      }
+      $append(paragraph, [child]);
+    }
+  }
+  return blocks;
+}
+
+const $importTable: MdastImportHandler<Table> = (node, ctx) => {
+  const align = node.align || [];
+  return $append(
+    $createTableNode(),
+    node.children.map((row, rowIndex) =>
+      $append(
+        $createTableRowNode(),
+        row.children.map((cell, columnIndex) => {
+          const cellNode = $createTableCellNode(
+            rowIndex === 0
+              ? TableCellHeaderStates.ROW
+              : TableCellHeaderStates.NO_STATUS,
+          );
+          // Every cell of the column carries the alignment, so it renders as
+          // the cell's text-align and moves with the cells when columns are
+          // edited.
+          return $append(
+            cellNode.setFormat(align[columnIndex] || ''),
+            cellItems(cell, ctx.source).flatMap(item =>
+              Array.isArray(item)
+                ? [
+                    $append(
+                      $createParagraphNode(),
+                      ctx.importChildren({children: item, type: 'tableCell'}),
+                    ),
+                  ]
+                : $importBlockHtml(item, ctx),
+            ),
+          );
+        }),
+      ),
+    ),
+  );
 };
+
+function html(value: string): Html {
+  return {type: 'html', value};
+}
+
+// Elements whose text is read to their end tag without tags in it, and
+// with (RCDATA) or without (raw text) character references.
+const RCDATA_HTML_RE = /^(?:textarea|title)$/i;
+const RAW_TEXT_HTML_RE =
+  /^(?:iframe|noembed|noframes|noscript|plaintext|script|style|xmp)$/i;
+// The characters HTML takes as whitespace.
+const HTML_SPACE_RE = /[\t\n\f\r ]/;
+
+/**
+ * Raw HTML as it can go in a GFM cell, which holds one line and splits on
+ * `|` even inside HTML. A newline in text or in a quoted attribute value is
+ * a character reference (`&#10;`), which reads back as the same newline, so
+ * whitespace that `<pre>` or CSS keeps survives. A newline between a tag's
+ * attributes, or in a comment or a declaration, is a space, which reads
+ * the same there. Every pipe is a character reference (`&#124;`). The text
+ * of `<script>`, `<style>` and the like takes no references, so a newline
+ * there is a space and a pipe stays a reference: GFM can't write either in
+ * them, nor a pipe in a comment.
+ */
+function cellHtml(value: string): string {
+  let result = '';
+  // What the scan is in: text, a tag, a quoted attribute value, an
+  // unquoted one, a comment or other markup declaration ending in
+  // `markupEnd`, or the text of an element named `rawTag`.
+  let state: 'text' | 'tag' | 'quoted' | 'unquoted' | 'markup' | 'raw' = 'text';
+  let quote = '';
+  let markupEnd = '';
+  let afterEquals = false;
+  // The element whose start tag is being read, and the one whose text is.
+  let openTag = '';
+  let rawTag = '';
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+    if (char === '\r' || char === '\n') {
+      if (char === '\r' && value[i + 1] === '\n') {
+        i++;
+      }
+      if (state === 'unquoted') {
+        state = 'tag';
+      }
+      result +=
+        state === 'text' ||
+        state === 'quoted' ||
+        (state === 'raw' && RCDATA_HTML_RE.test(rawTag))
+          ? '&#10;'
+          : ' ';
+      continue;
+    }
+    switch (state) {
+      case 'text':
+        if (char === '<') {
+          if (value.startsWith('<!--', i)) {
+            state = 'markup';
+            markupEnd = '-->';
+          } else if (/^<[!?]/.test(value.slice(i, i + 2))) {
+            state = 'markup';
+            markupEnd = '>';
+          } else {
+            const tag = /^<(\/?)([a-z][\w-]*)/i.exec(value.slice(i, i + 64));
+            if (tag !== null) {
+              state = 'tag';
+              afterEquals = false;
+              openTag = tag[1] ? '' : tag[2];
+            }
+          }
+        }
+        break;
+      case 'markup':
+        if (value.startsWith(markupEnd, i)) {
+          result += markupEnd;
+          i += markupEnd.length - 1;
+          state = 'text';
+          continue;
+        }
+        break;
+      case 'raw':
+        if (
+          value.slice(i, i + rawTag.length + 2).toLowerCase() ===
+          '</' + rawTag
+        ) {
+          state = 'tag';
+          afterEquals = false;
+          openTag = '';
+        }
+        break;
+      case 'tag':
+      case 'unquoted':
+        if (char === '>') {
+          rawTag =
+            RCDATA_HTML_RE.test(openTag) || RAW_TEXT_HTML_RE.test(openTag)
+              ? openTag.toLowerCase()
+              : '';
+          state = rawTag === '' ? 'text' : 'raw';
+        } else if (state === 'unquoted') {
+          if (HTML_SPACE_RE.test(char)) {
+            state = 'tag';
+          }
+        } else if (char === '=') {
+          afterEquals = true;
+        } else if (afterEquals && (char === '"' || char === "'")) {
+          state = 'quoted';
+          quote = char;
+          afterEquals = false;
+        } else if (afterEquals && !HTML_SPACE_RE.test(char)) {
+          state = 'unquoted';
+          afterEquals = false;
+        }
+        break;
+      case 'quoted':
+        if (char === quote) {
+          state = 'tag';
+        }
+        break;
+    }
+    result += char === '|' ? '&#124;' : char;
+  }
+  return result;
+}
+
+/** A space or tab as a character reference, which a cell doesn't trim. */
+function spaceReference(space: string): Html {
+  return html(`&#${space.charCodeAt(0)};`);
+}
+
+/**
+ * A line of a cell (which may hold `<br>`s of its own) with the space or
+ * tab at each edge of its lines written as a character reference, since a
+ * cell's padding and the whitespace around a `<br>` are trimmed on import.
+ */
+function refEdgeSpaces(nodes: PhrasingContent[]): PhrasingContent[] {
+  const isEdge = (node: PhrasingContent | undefined) =>
+    node === undefined || brCount(node) > 0;
+  return nodes.flatMap((node, i): PhrasingContent[] => {
+    if (node.type !== 'text') {
+      return [node];
+    }
+    let {value} = node;
+    const before: PhrasingContent[] = [];
+    const after: PhrasingContent[] = [];
+    if (isEdge(nodes[i - 1]) && /^[ \t]/.test(value)) {
+      before.push(spaceReference(value[0]));
+      value = value.slice(1);
+    }
+    if (isEdge(nodes[i + 1]) && /[ \t]$/.test(value)) {
+      after.push(spaceReference(value[value.length - 1]));
+      value = value.slice(0, -1);
+    }
+    return [...before, ...(value === '' ? [] : [{...node, value}]), ...after];
+  });
+}
+
+/** Whether `nodes` or their descendants hold raw HTML. */
+function hasHtml(nodes: readonly PhrasingContent[]): boolean {
+  return nodes.some(
+    node =>
+      node.type === 'html' || ('children' in node && hasHtml(node.children)),
+  );
+}
+
+/**
+ * A cell's content with its raw HTML as {@link cellHtml} writes it, or the
+ * content itself when it has none.
+ */
+function encodeCellHtml(nodes: PhrasingContent[]): PhrasingContent[] {
+  return hasHtml(nodes)
+    ? mapPhrasing(nodes, node =>
+        node.type === 'html' ? [html(cellHtml(node.value))] : undefined,
+      )
+    : nodes;
+}
+
+/** The line separator inside a GFM table cell, which can't hold a newline. */
+function lineBreakHtml(): Html {
+  return html('<br>');
+}
+
+/**
+ * Rewrites the line breaks in exported phrasing content (`break` nodes and
+ * newlines inside text) as `<br>`. Left alone, gfm-table would serialize
+ * them as spaces, losing the line structure.
+ */
+function breaksToHtml(nodes: readonly PhrasingContent[]): PhrasingContent[] {
+  return mapPhrasing(nodes, node => {
+    if (node.type === 'break') {
+      return [lineBreakHtml()];
+    }
+    if (node.type === 'text' && /[\r\n]/.test(node.value)) {
+      return joinLines(
+        node.value
+          .split(/\r?\n|\r/)
+          .map((value): PhrasingContent[] =>
+            value ? [{type: 'text', value}] : [],
+          ),
+      );
+    }
+    return undefined;
+  });
+}
+
+/** Joins lines of phrasing content with `<br>`, keeping empty lines. */
+function joinLines(lines: readonly PhrasingContent[][]): PhrasingContent[] {
+  return lines.flatMap((line, i) =>
+    i > 0 ? [lineBreakHtml(), ...line] : line,
+  );
+}
+
+/**
+ * Flattens the mdast a cell's children exported to into lines of phrasing
+ * content: a GFM cell holds a single line of inline content, so every block
+ * (paragraph, heading, list item, code line) becomes its own line.
+ */
+function cellContentLines(nodes: readonly MdastNode[]): PhrasingContent[][] {
+  const lines: PhrasingContent[][] = [];
+  const visit = (node: MdastNode) => {
+    switch (node.type) {
+      case 'paragraph':
+      case 'heading':
+      case 'tableCell':
+        lines.push(breaksToHtml(node.children));
+        return;
+      case 'code':
+        for (const value of node.value.split(/\r?\n|\r/)) {
+          lines.push(value ? [{type: 'inlineCode', value}] : []);
+        }
+        return;
+      case 'html':
+        lines.push([html(node.value)]);
+        return;
+      case 'thematicBreak':
+      case 'definition':
+        return;
+    }
+    if ('children' in node) {
+      node.children.forEach(visit);
+    } else if ('value' in node) {
+      // Phrasing content exported at the cell's top level (an inline
+      // decorator's fallback, for one) stays on the current line.
+      const phrasing = breaksToHtml([node as PhrasingContent]);
+      if (lines.length === 0) {
+        lines.push([]);
+      }
+      lines[lines.length - 1].push(...phrasing);
+    }
+  };
+  nodes.forEach(visit);
+  return lines;
+}
+
+/**
+ * Whether `value`'s characters can go in an HTML attribute value as is.
+ */
+function isPlainAttribute(value: string): boolean {
+  return /^[\w.+#-]+$/.test(value);
+}
+
+/**
+ * Exported blocks as one line of HTML tags around their Markdown phrasing
+ * (paragraphs as bare lines separated by `<br>`), or null when one of them
+ * has no such form.
+ */
+function flowHtml(nodes: readonly MdastNode[]): PhrasingContent[] | null {
+  const result: PhrasingContent[] = [];
+  let afterLine = false;
+  for (const node of nodes) {
+    if (node.type === 'paragraph') {
+      if (afterLine) {
+        result.push(lineBreakHtml());
+      }
+      result.push(...breaksToHtml(node.children));
+      afterLine = true;
+    } else {
+      const block = blockHtml(node);
+      if (block === null) {
+        return null;
+      }
+      result.push(...block);
+      afterLine = false;
+    }
+  }
+  return result;
+}
+
+/**
+ * An exported block as one line of HTML around its Markdown phrasing, which
+ * GFM allows in a cell, or null for a block with no such form here.
+ */
+function blockHtml(node: MdastNode): PhrasingContent[] | null {
+  const wrap = (
+    open: string,
+    content: PhrasingContent[] | null,
+    close: string,
+  ): PhrasingContent[] | null =>
+    content && [html(open), ...content, html(close)];
+  switch (node.type) {
+    case 'heading':
+      return wrap(
+        `<h${node.depth}>`,
+        breaksToHtml(node.children),
+        `</h${node.depth}>`,
+      );
+    case 'blockquote':
+      return wrap('<blockquote>', flowHtml(node.children), '</blockquote>');
+    case 'list': {
+      const tag = node.ordered ? 'ol' : 'ul';
+      let attributes =
+        node.ordered && typeof node.start === 'number' && node.start !== 1
+          ? ` start="${node.start}"`
+          : '';
+      // The classes GitHub renders task lists with, which the list DOM
+      // import rules read back as a check list.
+      if (node.children.some(item => typeof item.checked === 'boolean')) {
+        attributes += ' class="contains-task-list"';
+      }
+      return wrap(
+        `<${tag}${attributes}>`,
+        flowHtml(node.children),
+        `</${tag}>`,
+      );
+    }
+    case 'listItem':
+      return wrap(
+        typeof node.checked === 'boolean'
+          ? `<li class="task-list-item"><input type="checkbox" disabled${
+              node.checked ? ' checked' : ''
+            }>`
+          : '<li>',
+        flowHtml(node.children),
+        '</li>',
+      );
+    case 'code': {
+      const lines = node.value.split(/\r?\n|\r/);
+      // HTML drops a block's last `<br>`, so a code block that ends with
+      // an empty line needs one more.
+      if (lines.length > 1 && lines[lines.length - 1] === '') {
+        lines.push('');
+      }
+      return wrap(
+        node.lang && isPlainAttribute(node.lang)
+          ? `<pre data-language="${node.lang}">`
+          : '<pre>',
+        joinLines(
+          lines.map((value): PhrasingContent[] =>
+            value ? [{type: 'text', value}] : [],
+          ),
+        ),
+        '</pre>',
+      );
+    }
+    case 'thematicBreak':
+      return [html('<hr>')];
+    case 'html':
+      return [html(node.value)];
+    case 'htmlBlock': {
+      // Raw HTML around placeholders for its Markdown children. Children
+      // with only whitespace between them are one run of blocks, which
+      // `flowHtml` separates as it does elsewhere (paragraphs by `<br>`).
+      const result: PhrasingContent[] = [];
+      let run: MdastNode[] = [];
+      const flushRun = (): boolean => {
+        const content = flowHtml(run);
+        run = [];
+        if (content === null) {
+          return false;
+        }
+        result.push(...content);
+        return true;
+      };
+      const segments = splitHtmlBlock(node.value);
+      for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i];
+        if (i % 2 === 1) {
+          const child = node.children[Number(segment)];
+          if (child !== undefined) {
+            run.push(child);
+          }
+        } else if (
+          run.length === 0 ||
+          i === segments.length - 1 ||
+          segment.trim() !== ''
+        ) {
+          if (!flushRun()) {
+            return null;
+          }
+          if (segment !== '') {
+            result.push(html(segment));
+          }
+        }
+      }
+      return result;
+    }
+  }
+  return null;
+}
+
+/**
+ * A cell's exported blocks as lines of phrasing content and, with
+ * {@link MdastHtmlExtension}, blocks written as one line of HTML.
+ * Without it, every block is flattened into lines (see
+ * {@link cellContentLines}).
+ */
+function cellExportItems(
+  nodes: readonly MdastNode[],
+  withHtml: boolean,
+): {block: boolean; content: PhrasingContent[]}[] {
+  const items: {block: boolean; content: PhrasingContent[]}[] = [];
+  let pending: MdastNode[] = [];
+  const flush = () => {
+    for (const content of cellContentLines(pending)) {
+      items.push({block: false, content});
+    }
+    pending = [];
+  };
+  for (const node of nodes) {
+    // Raw HTML that isn't a block element reads back as part of a line.
+    const block =
+      withHtml &&
+      node.type !== 'paragraph' &&
+      (node.type !== 'html' || BLOCK_HTML_RE.test(node.value))
+        ? blockHtml(node)
+        : null;
+    if (block === null) {
+      pending.push(node);
+    } else {
+      flush();
+      items.push({block: true, content: block});
+    }
+  }
+  flush();
+  return items;
+}
+
+/**
+ * Joins a cell's items into its content, the inverse of
+ * {@link cellItems}: lines are separated by `<br>`, and a block needs none
+ * unless the line beside it is empty. Empty lines are kept as consecutive
+ * (or leading/trailing) `<br>`s, which import back as the same empty
+ * paragraphs.
+ */
+function joinCellItems(
+  items: readonly {block: boolean; content: PhrasingContent[]}[],
+): PhrasingContent[] {
+  return items.flatMap((item, i) => {
+    const prev = items[i - 1];
+    const needsBreak =
+      prev !== undefined &&
+      (prev.block
+        ? !item.block && item.content.length === 0
+        : !item.block || prev.content.length === 0);
+    const content = item.block ? item.content : refEdgeSpaces(item.content);
+    return needsBreak ? [lineBreakHtml(), ...content] : content;
+  });
+}
+
+/** Whether the editor writes cell blocks as HTML: its HTML peer is there. */
+function $hasHtmlPeer(): boolean {
+  return (
+    $getPeerDependency<typeof MdastHtmlExtension>('@lexical/mdast/Html') !==
+    undefined
+  );
+}
+
+/**
+ * Whether a cell or one of its blocks has a format of its own, which may
+ * be one that GFM can't write (`justify`, `start`, `end`).
+ */
+function $hasFormat(cell: TableCellNode): boolean {
+  return (
+    cell.getFormatType() !== '' ||
+    cell
+      .getChildren()
+      .some(
+        child =>
+          $isElementNode(child) &&
+          !child.isInline() &&
+          child.getFormatType() !== '',
+      )
+  );
+}
+
+/**
+ * Moves a table's legacy alignment state onto the element format of its
+ * cells that have none, and clears it, so it can no longer override a
+ * column's alignment after the column is cleared or moved.
+ */
+function $migrateTableAlign(table: TableNode): void {
+  const legacyAlign = $getState(table, tableAlignState);
+  if (legacyAlign.length === 0) {
+    return;
+  }
+  for (const row of table.getChildren()) {
+    if ($isTableRowNode(row)) {
+      row
+        .getChildren()
+        .filter($isTableCellNode)
+        .forEach((cell, column) => {
+          const align = legacyAlign[column];
+          if (align && !$hasFormat(cell)) {
+            cell.setFormat(align);
+          }
+        });
+    }
+  }
+  $setState(table, tableAlignState, []);
+}
 
 const $exportTable: MdastExportHandler = (node, ctx) => {
   if (!$isTableNode(node)) {
     return null;
   }
   const rows: TableRow[] = [];
+  const legacyAlign = $getState(node, tableAlignState);
+  // The cells in each column, and how many of them have each alignment.
+  const columns: {aligned: Map<AlignType, number>; cells: number}[] = [];
+  const withHtml = $hasHtmlPeer();
+  // The header is the table's first row of cells, which a selection's
+  // export may leave out.
+  const headerRow = node
+    .getChildren()
+    .find(
+      row => $isTableRowNode(row) && row.getChildren().some($isTableCellNode),
+    );
+  // Read even when a selection's export leaves the header row out.
+  const headerAlign = $isTableRowNode(headerRow)
+    ? headerRow.getChildren().filter($isTableCellNode).map($getCellAlign)
+    : [];
   for (const row of node.getChildren()) {
     // Structural iteration bypasses the walk's selection filter, so rows a
     // selection export does not reach are skipped here. Cells stay: dropping
@@ -85,24 +879,35 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       if (!$isTableCellNode(cell)) {
         continue;
       }
-      const children: TableCell['children'] = [];
-      for (const child of cell.getChildren()) {
-        if ($isElementNode(child)) {
-          // GFM cells hold a single line of phrasing content; multiple block
-          // children (paragraphs from Enter inside the cell) are joined with
-          // hard breaks, which gfm-table serializes as spaces inside the cell.
-          if (children.length > 0) {
-            children.push({type: 'break'});
-          }
-          children.push(...ctx.exportInline(child));
-        }
+      const cellAlign = $getCellAlign(cell);
+      const column = (columns[cells.length] ??= {aligned: new Map(), cells: 0});
+      column.cells++;
+      if (cellAlign !== null) {
+        column.aligned.set(cellAlign, (column.aligned.get(cellAlign) ?? 0) + 1);
       }
-      cells.push({children, type: 'tableCell'});
+      cells.push({
+        children: encodeCellHtml(
+          joinCellItems(cellExportItems(ctx.exportChildren(cell), withHtml)),
+        ),
+        type: 'tableCell',
+      });
     }
     rows.push({children: cells, type: 'tableRow'});
   }
+  // GFM aligns columns, not cells: a column takes the alignment that most
+  // of its cells have, so aligning one body cell doesn't align its column,
+  // or else that of its header cell, the cell the delimiter row is under,
+  // so rows inserted into an aligned column don't clear it.
+  const align = columns.map((column, i): AlignType => {
+    for (const [cellAlign, count] of column.aligned) {
+      if (count * 2 > column.cells) {
+        return cellAlign;
+      }
+    }
+    return headerAlign[i] || legacyAlign[i] || null;
+  });
   return {
-    align: $getState(node, tableAlignState),
+    align,
     children: rows,
     type: 'table',
   };
@@ -112,7 +917,14 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  * GFM tables, mapped to `@lexical/table` nodes. Opt-in (not part of
  * {@link MdastCommonMarkExtension}) because it pulls in the `@lexical/table`
  * nodes it ships. The first table row is treated as the header row in both
- * directions.
+ * directions. A GFM cell holds a single line, so the paragraphs and line
+ * breaks in a cell are written as `<br>`, and `<br>` reads back as a
+ * paragraph boundary. With {@link MdastHtmlExtension} in the editor, the
+ * other blocks in a cell (lists, headings, quotes, code) are written as one
+ * line of HTML and read back as blocks; without it they are flattened into
+ * lines. Column alignment is the element format of the column's cells
+ * (`TableCellNode.setFormat`), exported as the alignment most of the
+ * column's cells have, or else its header cell's.
  *
  * @example
  * ```ts
@@ -141,4 +953,14 @@ export const MdastTableExtension = defineExtension({
   ],
   name: '@lexical/mdast/Table',
   nodes: [TableNode, TableRowNode, TableCellNode],
+  // With it, blocks a cell's single line can't express in Markdown are
+  // written as HTML.
+  peerDependencies: [
+    declarePeerDependency<typeof MdastHtmlExtension>('@lexical/mdast/Html'),
+  ],
+  // A node transform runs before anything edits a table: in the update that
+  // creates or pastes it, when the editor loads a parsed editor state (which
+  // marks every node dirty), and when the transform is registered.
+  register: editor =>
+    editor.registerNodeTransform(TableNode, $migrateTableAlign),
 });

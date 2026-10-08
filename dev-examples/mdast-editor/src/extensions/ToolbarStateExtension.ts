@@ -13,6 +13,7 @@ import {$isHeadingNode} from '@lexical/rich-text';
 import {$getSelection, $isRangeSelection, defineExtension} from 'lexical';
 
 import {MdastEditorExtension} from './MdastEditorExtension';
+import {$getSelectedTable} from './TableEditExtension';
 
 export type BlockType =
   | 'paragraph'
@@ -28,19 +29,25 @@ interface ToolbarSelectionState {
   isBold: boolean;
   isItalic: boolean;
   isCode: boolean;
+  isInTable: boolean;
 }
 
 const DEFAULT_SELECTION_STATE: ToolbarSelectionState = {
   blockType: 'paragraph',
   isBold: false,
   isCode: false,
+  isInTable: false,
   isItalic: false,
 };
 
 function $readSelectionState(): ToolbarSelectionState {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) {
-    return DEFAULT_SELECTION_STATE;
+    // A multi-cell TableSelection still edits its table.
+    const isInTable = $getSelectedTable() !== null;
+    return isInTable
+      ? {...DEFAULT_SELECTION_STATE, isInTable}
+      : DEFAULT_SELECTION_STATE;
   }
   const anchorNode = selection.anchor.getNode();
   // Deleting all content can leave the selection on the root, which has no
@@ -59,6 +66,7 @@ function $readSelectionState(): ToolbarSelectionState {
     blockType,
     isBold: selection.hasFormat('bold'),
     isCode: selection.hasFormat('code'),
+    isInTable: $getSelectedTable() !== null,
     isItalic: selection.hasFormat('italic'),
   };
 }
@@ -68,7 +76,7 @@ function $readSelectionState(): ToolbarSelectionState {
  * derived as `computed()` signals off the existing extension outputs:
  *
  * - The selection-derived signals (`blockType`, `isBold`, `isItalic`,
- *   `isCode`) are computed off the {@link EditorStateExtension} signal,
+ *   `isCode`, `isInTable`) are computed off the {@link EditorStateExtension} signal,
  *   so they recompute lazily whenever the editor state changes.
  * - `canUndo` / `canRedo` are computed off the {@link HistoryExtension}
  *   `historyState` signal. The history state object is mutated in
@@ -112,6 +120,7 @@ export const ToolbarStateExtension = defineExtension({
       }),
       isBold: computed(() => selection.value.isBold),
       isCode: computed(() => selection.value.isCode),
+      isInTable: computed(() => selection.value.isInTable),
       isItalic: computed(() => selection.value.isItalic),
     };
   },

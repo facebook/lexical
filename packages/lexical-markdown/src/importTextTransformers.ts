@@ -115,6 +115,8 @@ export function importTextTransformers(
         textMatchTransformers,
       );
     }
+    // Each piece, `textNode` among them, has had its escapes read.
+    return;
   } else if (foundTextMatch) {
     const result = importFoundTextMatchTransformer(
       textNode,
@@ -147,11 +149,26 @@ export function importTextTransformers(
         textFormatTransformersIndex,
         textMatchTransformers,
       );
+    } else if (
+      result.transformedNode === undefined &&
+      canContainTransformableMarkdown(result.matchedNode) &&
+      result.matchedNode.getParent() !== null
+    ) {
+      // A transformer that returns nothing may have edited the matched text
+      // in place, which still reads its escapes. The parent test, unlike
+      // isAttached(), also holds in a tree not attached to the root.
+      result.matchedNode.setTextContent(
+        unescapeText(result.matchedNode.getTextContent()),
+      );
     }
+    return;
   }
 
-  // Handle escape characters
-  const textContent = textNode.getTextContent();
-  const unescapedText = unescapeText(textContent);
-  textNode.setTextContent(unescapedText);
+  // Handle escape characters, which a code span doesn't take. The node is
+  // the code span itself when the span was all of its text.
+  if (canContainTransformableMarkdown(textNode)) {
+    const textContent = textNode.getTextContent();
+    const unescapedText = unescapeText(textContent);
+    textNode.setTextContent(unescapedText);
+  }
 }

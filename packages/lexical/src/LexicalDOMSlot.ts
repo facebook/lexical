@@ -19,6 +19,7 @@ import {
   IS_SAFARI,
 } from './environment';
 import {$getDocument, $getEditor} from './LexicalUtils';
+import {setDOMStyleObject} from './utils/setDOMStyle';
 
 /**
  * The editor has at most one block cursor element
@@ -51,6 +52,9 @@ function isSlotContainerDOM(
 
 const IS_WEBKIT_BROWSER = IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI;
 
+const DATA_LEXICAL_MANAGED_LINEBREAK = 'data-lexical-managed-linebreak';
+const DATA_LEXICAL_DECORATOR_BOUNDARY = 'data-lexical-decorator-boundary';
+
 /**
  * Browsers drop the selection highlight for a range whose endpoint is an
  * element-boundary DOM position (`(element, 0)` or
@@ -78,19 +82,9 @@ const IS_WEBKIT_BROWSER = IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI;
  * would add a stray blank line here).
  */
 function $createDecoratorBoundaryAnchor(): HTMLImageElement {
-  const img = $getDocument().createElement('img');
-  img.setAttribute('data-lexical-decorator-boundary', 'true');
+  const img = $createZeroImg(DATA_LEXICAL_DECORATOR_BOUNDARY);
+  img.style.setProperty('position', 'absolute', 'important');
   img.alt = '';
-  for (const [property, value] of [
-    ['position', 'absolute'],
-    ['width', '0px'],
-    ['height', '0px'],
-    ['border', '0px'],
-    ['margin', '0px'],
-    ['padding', '0px'],
-  ]) {
-    img.style.setProperty(property, value, 'important');
-  }
   return img;
 }
 
@@ -109,7 +103,7 @@ export function isDecoratorBoundaryAnchorDOM(
   return (
     node !== null &&
     node.nodeType === 1 &&
-    (node as Element).hasAttribute('data-lexical-decorator-boundary')
+    (node as Element).hasAttribute(DATA_LEXICAL_DECORATOR_BOUNDARY)
   );
 }
 
@@ -297,6 +291,26 @@ function $topLevelChildOf(parent: HTMLElement, descendant: Node): Node | null {
     node = node.parentNode;
   }
   return node;
+}
+
+const ZERO_IMG_STYLE = {
+  border: '0px !important',
+  display: 'inline !important',
+  height: '0px !important',
+  margin: '0px !important',
+  'min-height': '0px !important',
+  'min-width': '0px !important',
+  padding: '0px !important',
+  width: '0px !important',
+};
+function $createZeroImg(
+  attr: 'data-lexical-managed-linebreak' | 'data-lexical-decorator-boundary',
+): HTMLImageElement {
+  const img = $getDocument().createElement('img');
+  setDOMStyleObject(img.style, ZERO_IMG_STYLE);
+  img.setAttribute(attr, 'true');
+  img.alt = '';
+  return img;
 }
 
 /**
@@ -498,15 +512,10 @@ export class ElementDOMSlot<
     // end of the managed range.
     const before = this.before || this.getDecoratorBoundaryAnchor('trailing');
     const br = $getDocument().createElement('br');
-    br.setAttribute('data-lexical-managed-linebreak', 'true');
+    br.setAttribute(DATA_LEXICAL_MANAGED_LINEBREAK, 'true');
     element.insertBefore(br, before);
     if (webkitHack) {
-      const img = $getDocument().createElement('img');
-      img.setAttribute('data-lexical-managed-linebreak', 'true');
-      img.style.setProperty('display', 'inline', 'important');
-      img.style.setProperty('border', '0px', 'important');
-      img.style.setProperty('margin', '0px', 'important');
-      img.alt = '';
+      const img = $createZeroImg(DATA_LEXICAL_MANAGED_LINEBREAK);
       element.insertBefore(img, br);
       element.__lexicalLineBreak = img;
     } else {

@@ -103,6 +103,7 @@ import {
   $createTestInlineElementNode,
   createTestEditor,
   createTestHeadlessEditor,
+  DECORATOR_BOUNDARY_ANCHOR_HTML,
   expectHtmlToBeEqual,
   html,
   TestComposer,
@@ -1818,10 +1819,10 @@ describe('LexicalEditor tests', () => {
       });
 
       expect(listener).toHaveBeenCalledTimes(1);
-      expect(container.innerHTML).toBe(
+      expectHtmlToBeEqual(
+        container.innerHTML,
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto">' +
-          // The leading boundary anchor (#7158), as raw innerHTML serializes it.
-          '<img data-lexical-decorator-boundary="true" alt="" style="border: 0px !important; display: inline !important; height: 0px !important; margin: 0px !important; min-height: 0px !important; min-width: 0px !important; padding: 0px !important; width: 0px !important; position: absolute !important;">' +
+          DECORATOR_BOUNDARY_ANCHOR_HTML +
           '<span data-lexical-decorator="true" contenteditable="false"><span>Hello world</span></span><br data-lexical-managed-linebreak="true"></p></div>',
       );
     });

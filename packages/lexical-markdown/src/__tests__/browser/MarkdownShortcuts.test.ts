@@ -15,7 +15,7 @@ import {
   defineExtension,
   IS_APPLE,
 } from 'lexical';
-import {describe, expect, onTestFinished, test} from 'vitest';
+import {assert, describe, expect, onTestFinished, test} from 'vitest';
 import {userEvent} from 'vitest/browser';
 
 import {MarkdownTestExtension} from '../utils';
@@ -26,17 +26,17 @@ const extension = defineExtension({
   register: editor => registerMarkdownShortcuts(editor),
 });
 
-function setup() {
-  const root = document.createElement('div');
+function setup(doc: Document = document) {
+  const root = doc.createElement('div');
   root.contentEditable = 'true';
   root.style.whiteSpace = 'pre-wrap';
-  document.body.append(root);
+  doc.body.append(root);
   const editor = buildEditorFromExtensions(extension);
   editor.setRootElement(root);
   onTestFinished(() => {
     editor.dispose();
     root.remove();
-    window.getSelection()?.removeAllRanges();
+    doc.defaultView?.getSelection()?.removeAllRanges();
   });
   editor.update(
     () => {
@@ -45,7 +45,7 @@ function setup() {
     },
     {discrete: true},
   );
-  window.focus();
+  doc.defaultView?.focus();
   root.focus();
   return root;
 }
@@ -209,5 +209,55 @@ describe('native Markdown block shortcuts', () => {
       IS_APPLE ? '{Meta>}{Shift>}z{/Shift}{/Meta}' : '{Control>}y{/Control}',
     );
     await expect.poll(() => root.innerHTML).toBe(expected);
+  });
+});
+
+// Issue #9336: an iframe created after the page loaded has a later
+// performance.timeOrigin, so its events' timeStamps are on a different clock
+// than the parent's performance.now(). A capture-phase input listener above
+// the root (React registers one on a portal's container) gives the mutation
+// observer a microtask checkpoint before Lexical handles the input, so it
+// must still recognize the native text entry and leave it to Lexical.
+describe('native Markdown text format shortcuts', () => {
+  const textCases = [
+    {
+      html: '<p dir="auto"><em data-lexical-text="true">hi</em></p>',
+      text: '*hi*',
+    },
+    {
+      html: '<p dir="auto"><strong data-lexical-text="true">bold</strong></p>',
+      text: '**bold**',
+    },
+    {
+      html: '<p dir="auto"><code spellcheck="false" data-lexical-text="true"><span>code</span></code></p>',
+      text: '`code`',
+    },
+  ];
+
+  async function createIframeDocument() {
+    // Let the parent's clock run ahead of the iframe's timeOrigin
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const iframe = document.createElement('iframe');
+    document.body.append(iframe);
+    onTestFinished(() => iframe.remove());
+    const doc = iframe.contentDocument;
+    assert(doc !== null, 'iframe has no document');
+    doc.body.addEventListener('input', () => {}, true);
+    return doc;
+  }
+
+  test.each(textCases)(
+    'types $text in the main window',
+    async ({text, html}) => {
+      const root = setup();
+      await userEvent.keyboard(text);
+      await expect.poll(() => root.innerHTML).toBe(normalizeHTML(html));
+    },
+  );
+
+  test.each(textCases)('types $text in an iframe', async ({text, html}) => {
+    const root = setup(await createIframeDocument());
+    await userEvent.keyboard(text);
+    await expect.poll(() => root.innerHTML).toBe(normalizeHTML(html));
   });
 });

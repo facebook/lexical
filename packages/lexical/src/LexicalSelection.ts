@@ -3332,23 +3332,6 @@ export function $clampRangeSelectionToSlotFrame(
   return clamped;
 }
 
-/**
- * Whether a DOM selection endpoint is on an inline DecoratorNode's own
- * element: the DOM the decorator's `createDOM` returned, between its children,
- * rather than somewhere inside the decorator's content.
- */
-function $isOnInlineDecoratorElement(
-  node: LexicalNode | null,
-  dom: Node,
-  editor: LexicalEditor,
-): boolean {
-  return (
-    $isDecoratorNode(node) &&
-    node.isInline() &&
-    editor.getElementByKey(node.getKey()) === dom
-  );
-}
-
 function $internalResolveSelectionPoints(
   anchorDOM: null | Node,
   anchorOffset: number,
@@ -3388,56 +3371,18 @@ function $internalResolveSelectionPoints(
     $validatePoint('anchor', resolvedAnchorPoint);
     $validatePoint('focus', resolvedFocusPoint);
   }
-  // Set when a DOM endpoint sits on an inline decorator's own element and the
-  // resolved point is outside it, in the decorator's parent (#7158).
-  let decoratorDirty = false;
   if (
     resolvedAnchorPoint.type === 'element' &&
     resolvedFocusPoint.type === 'element'
   ) {
     const anchorNode = $getNodeFromDOM(anchorDOM);
     const focusNode = $getNodeFromDOM(focusDOM);
-    const anchorOnDecorator = $isOnInlineDecoratorElement(
-      anchorNode,
-      anchorDOM,
-      editor,
-    );
-    const focusOnDecorator = $isOnInlineDecoratorElement(
-      focusNode,
-      focusDOM,
-      editor,
-    );
     // Ensure if we're selecting the content of a decorator that we
     // return null for this point, as it's not in the controlled scope
-    // of Lexical. Two shapes with both endpoints in inline decorators are a
-    // selection Lexical owns instead (#7158); each point has already resolved
-    // to just before or after its decorator in the parent:
-    //  - endpoints in two *different* inline decorators: a mouse drag across
-    //    a run of inline decorators with no text around them;
-    //  - endpoints on an inline decorator's own element (between its
-    //    children, not inside its content): where a browser puts the caret
-    //    for a click beside the decorator at the start or end of such a
-    //    line. Resolving that to null would make the commit remove every DOM
-    //    range and abort the drag it started.
-    // Block decorators and a selection inside a decorator's content keep
-    // resolving to null.
-    if (
-      $isDecoratorNode(anchorNode) &&
-      $isDecoratorNode(focusNode) &&
-      !(
-        anchorNode.isInline() &&
-        focusNode.isInline() &&
-        (!anchorNode.is(focusNode) || (anchorOnDecorator && focusOnDecorator))
-      )
-    ) {
+    // of Lexical.
+    if ($isDecoratorNode(anchorNode) && $isDecoratorNode(focusNode)) {
       return null;
     }
-    // The decorator's DOM is contentEditable=false. A browser that keeps the
-    // DOM caret there will not extend a mouse drag beyond that decorator, so
-    // only the decorator the drag started on would ever be selected. Mark the
-    // selection dirty so the reconciler moves the DOM selection to the
-    // resolved positions in the editable parent.
-    decoratorDirty = anchorOnDecorator || focusOnDecorator;
   }
 
   // @experimental named-slots. Clamp a slot-straddling drag into the
@@ -3467,7 +3412,7 @@ function $internalResolveSelectionPoints(
   return [
     resolvedAnchorPoint,
     resolvedFocusPoint,
-    anchorDirty || focusDirty || slotClamped || decoratorDirty,
+    anchorDirty || focusDirty || slotClamped,
   ];
 }
 

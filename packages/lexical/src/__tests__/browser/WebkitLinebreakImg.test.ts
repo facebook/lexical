@@ -12,7 +12,7 @@
  * On WebKit and desktop Chromium (since #7158), when a block's last child is
  * an *inline* DecoratorNode the
  * managed line break is rendered as an in-flow `<img>` followed by the usual
- * `<br>` (see `ElementDOMSlot.insertManagedLineBreak`'s `webkitHack`), giving
+ * `<br>` (see `ElementDOMSlot.insertManagedLineBreak`'s `withEdgeImg`), giving
  * the browser an editable inline box between the `contenteditable=false`
  * decorator and the break. In Chromium that box is what lets a mouse drag
  * start to the right of a line's last inline decorator (#7158). The user-visible symptom it fixes involves native Safari
@@ -42,11 +42,11 @@ import {
   IS_IOS,
   IS_SAFARI,
 } from 'lexical';
-import {describe, expect, onTestFinished, test} from 'vitest';
+import {assert, describe, expect, onTestFinished, test} from 'vitest';
 
 import {$assertNodeType} from '../utils/assertNodeType';
 
-// Matches the `webkitHack` gate in ElementDOMSlot.setManagedLineBreak.
+// Restates the internal NEEDS_INLINE_DECORATOR_EDGE_BOX in LexicalDOMSlot.ts.
 const EXPECTS_IMG_HACK =
   IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT || (IS_CHROME && !IS_ANDROID);
 const DECORATOR_LINEBREAK = EXPECTS_IMG_HACK ? ['img', 'br'] : ['br'];
@@ -231,5 +231,72 @@ describe('managed-linebreak img hack (inline decorator last child)', () => {
     );
 
     expect(linebreakScaffold(contentEditable)).toEqual(['br']);
+  });
+});
+
+/** The paragraph's DOM children, with the reconciler's scaffolding named. */
+function paragraphShape(contentEditable: HTMLElement): string[] {
+  const paragraph = contentEditable.querySelector('p');
+  assert(paragraph !== null);
+  return Array.from(paragraph.childNodes, node => {
+    assert(node instanceof Element);
+    if (node.hasAttribute('data-lexical-decorator-boundary')) {
+      return 'anchor';
+    }
+    if (node.hasAttribute('data-lexical-managed-linebreak')) {
+      return `managed-${node.nodeName.toLowerCase()}`;
+    }
+    return node.hasAttribute('data-lexical-decorator') ? 'decorator' : 'text';
+  });
+}
+
+// Lets the MutationObserver deliver its records and the editor flush them.
+function flushMutations(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 0));
+}
+
+describe('scaffolding removed from outside the reconciler is restored', () => {
+  const EXPECTED_SHAPE = [
+    ...(EXPECTS_IMG_HACK ? ['anchor'] : []),
+    'decorator',
+    'text',
+    'decorator',
+    ...DECORATOR_LINEBREAK.map(tag => `managed-${tag}`),
+  ];
+
+  function mountDecoratorLine() {
+    const mounted = mountEditor();
+    mounted.editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              new TestInlineDecoratorNode(),
+              $createTextNode('text'),
+              new TestInlineDecoratorNode(),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    expect(paragraphShape(mounted.contentEditable)).toEqual(EXPECTED_SHAPE);
+    return mounted;
+  }
+
+  test.each([
+    ['the leading boundary anchor', '[data-lexical-decorator-boundary]'],
+    ['the managed line break img', 'img[data-lexical-managed-linebreak]'],
+    ['the managed line break br', 'br[data-lexical-managed-linebreak]'],
+  ])('%s', async (_name, selector) => {
+    const {contentEditable} = mountDecoratorLine();
+    const removed = contentEditable.querySelector(`p > ${selector}`);
+    if (removed === null) {
+      // Not part of this engine's scaffold.
+      return;
+    }
+    removed.remove();
+    await flushMutations();
+    expect(paragraphShape(contentEditable)).toEqual(EXPECTED_SHAPE);
   });
 });

@@ -52,6 +52,19 @@ function isSlotContainerDOM(
 
 const IS_WEBKIT_BROWSER = IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI;
 
+/**
+ * @internal
+ *
+ * Engines that need an editable inline box beside an inline DecoratorNode at
+ * either edge of a line: without one, a click beside the decorator puts the
+ * DOM caret inside its contentEditable=false DOM, and a mouse drag that starts
+ * there can never extend beyond that decorator (#7158). WebKit has needed the
+ * trailing one for its caret all along. Android is left alone: its IME is
+ * sensitive to the DOM around the caret.
+ */
+export const NEEDS_INLINE_DECORATOR_EDGE_BOX: boolean =
+  IS_WEBKIT_BROWSER || (IS_CHROME && !IS_ANDROID);
+
 const DATA_LEXICAL_MANAGED_LINEBREAK = 'data-lexical-managed-linebreak';
 const DATA_LEXICAL_DECORATOR_BOUNDARY = 'data-lexical-decorator-boundary';
 
@@ -67,10 +80,11 @@ const DATA_LEXICAL_DECORATOR_BOUNDARY = 'data-lexical-decorator-boundary';
  * it when both endpoints do. Interior element points next to the same decorator
  * paint fine everywhere; only the first / last child matters.
  *
- * The leading anchor is also used before an *inline* first-child decorator:
- * without an editable position there, a click at the start of the line puts
- * the caret inside the decorator's non-editable DOM, and a mouse drag that
- * starts there cannot extend past that decorator (#7158).
+ * On the engines in {@link NEEDS_INLINE_DECORATOR_EDGE_BOX}, the leading
+ * anchor is also used before an *inline* first-child decorator: without an
+ * editable position there, a click at the start of the line puts the caret
+ * inside the decorator's non-editable DOM, and a mouse drag that starts there
+ * cannot extend past that decorator (#7158).
  *
  * Parking a zero-size, out-of-flow `<img>` on the outside of such a boundary
  * decorator gives the browser an editable inline box to canonicalize the
@@ -303,7 +317,9 @@ const ZERO_IMG_STYLE = {
   width: '0px !important',
 };
 function $createZeroImg(
-  attr: 'data-lexical-managed-linebreak' | 'data-lexical-decorator-boundary',
+  attr:
+    | typeof DATA_LEXICAL_MANAGED_LINEBREAK
+    | typeof DATA_LEXICAL_DECORATOR_BOUNDARY,
 ): HTMLImageElement {
   const img = $getDocument().createElement('img');
   img.setAttribute(attr, 'true');
@@ -471,16 +487,37 @@ export class ElementDOMSlot<
     if (nextLineBreakType === null) {
       this.removeManagedLineBreak();
     } else {
-      // Desktop Chromium needs the same editable inline box after a trailing
-      // inline decorator: without it, a click to the right of the decorator
-      // puts the DOM caret inside its contentEditable=false DOM, and a mouse
-      // drag that starts there can never extend beyond that decorator
-      // (#7158). Android is left alone: it has no mouse drag, and its IME is
-      // sensitive to the DOM around the caret.
-      const webkitHack =
-        nextLineBreakType === 'decorator' &&
-        (IS_WEBKIT_BROWSER || (IS_CHROME && !IS_ANDROID));
-      this.insertManagedLineBreak(webkitHack);
+      this.insertManagedLineBreak(
+        nextLineBreakType === 'decorator' && NEEDS_INLINE_DECORATOR_EDGE_BOX,
+      );
+    }
+  }
+
+  /**
+   * @internal
+   *
+   * Rebuild the managed line break after something outside the reconciler
+   * (native editing, an IME, an extension) removed part of it. The `<img>` of
+   * the img+br pair is the tracked node, so a lone `<br>` or `<img>` left
+   * behind is dropped and the pair is inserted again in its usual place,
+   * inside the trailing boundary.
+   */
+  restoreManagedLineBreak(): void {
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    for (const child of Array.from(element.childNodes)) {
+      if (
+        child.nodeType === 1 &&
+        (child as Element).hasAttribute(DATA_LEXICAL_MANAGED_LINEBREAK)
+      ) {
+        element.removeChild(child);
+      }
+    }
+    element.__lexicalLineBreak = undefined;
+    const kind = element.__lexicalLastChildKind;
+    if (kind != null) {
+      this.insertManagedLineBreak(
+        kind === 'decorator' && NEEDS_INLINE_DECORATOR_EDGE_BOX,
+      );
     }
   }
 
@@ -498,10 +535,10 @@ export class ElementDOMSlot<
     }
   }
   /** @internal */
-  insertManagedLineBreak(webkitHack: boolean): void {
+  insertManagedLineBreak(withEdgeImg: boolean): void {
     const prevBreak = this.getManagedLineBreak();
     if (prevBreak) {
-      if (webkitHack === (prevBreak.nodeName === 'IMG')) {
+      if (withEdgeImg === (prevBreak.nodeName === 'IMG')) {
         return;
       }
       this.removeManagedLineBreak();
@@ -513,7 +550,7 @@ export class ElementDOMSlot<
     const br = $getDocument().createElement('br');
     br.setAttribute(DATA_LEXICAL_MANAGED_LINEBREAK, 'true');
     element.insertBefore(br, before);
-    if (webkitHack) {
+    if (withEdgeImg) {
       const img = $createZeroImg(DATA_LEXICAL_MANAGED_LINEBREAK);
       element.insertBefore(img, br);
       element.__lexicalLineBreak = img;

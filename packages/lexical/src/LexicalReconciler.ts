@@ -44,6 +44,7 @@ import {
   IS_ALIGN_RIGHT,
   IS_ALIGN_START,
 } from './LexicalConstants';
+import {NEEDS_INLINE_DECORATOR_EDGE_BOX} from './LexicalDOMSlot';
 import {cloneMap} from './LexicalGenMap';
 import {$isSlotChild, $isSlotHost, EMPTY_SLOTS} from './LexicalSlot';
 import {
@@ -955,8 +956,9 @@ function $isBlockDecoratorChild(
 }
 
 /**
- * Whether the element's first child needs the leading boundary anchor: any
- * DecoratorNode, block or inline. A line that starts with an inline decorator
+ * Whether the element's first child needs the leading boundary anchor: a
+ * block DecoratorNode, or on the engines in
+ * {@link NEEDS_INLINE_DECORATOR_EDGE_BOX} an inline one too. A line that starts with an inline decorator
  * has no editable caret position before it either, so a browser canonicalizes
  * a caret at the start of the line into the decorator's non-editable DOM and
  * will not extend a mouse drag out of it (#7158). (The trailing edge of an
@@ -967,7 +969,14 @@ function $isLeadingDecoratorChild(
   key: null | NodeKey,
   nodeMap: NodeMap,
 ): boolean {
-  return !!key && $isDecoratorNode(nodeMap.get(key));
+  if (!key) {
+    return false;
+  }
+  const node = nodeMap.get(key);
+  return (
+    $isDecoratorNode(node) &&
+    (!node.isInline() || NEEDS_INLINE_DECORATOR_EDGE_BOX)
+  );
 }
 
 /**
@@ -978,22 +987,28 @@ function $isLeadingDecoratorChild(
  * out-of-flow anchor parked outside each such boundary child so the browser has
  * an editable inline box to resolve the boundary position against. Interior
  * decorators are unaffected, so only the first / last child is considered.
- * The leading anchor is also parked before an inline first-child decorator,
- * so a mouse drag can start at the start of such a line
- * (see {@link $isLeadingDecoratorChild}, #7158).
+ * The leading anchor is also parked before an inline first-child decorator
+ * where the engine needs it, so a mouse drag can start at the start of such a
+ * line (see {@link $isLeadingDecoratorChild}, #7158).
+ *
+ * Also called outside a reconcile, with the editor and node map passed
+ * explicitly, to put back an anchor that something else removed from the DOM
+ * (see `flushMutations`).
  */
-function $reconcileDecoratorBoundaryAnchors(
+export function $reconcileDecoratorBoundaryAnchors(
   nextElement: ElementNode,
   dom: HTMLElement & LexicalPrivateDOM,
+  editor: LexicalEditor = activeEditor,
+  nodeMap: NodeMap = activeNextNodeMap,
 ): void {
-  const slot = $getDOMSlot(nextElement, dom, activeEditor);
+  const slot = $getDOMSlot(nextElement, dom, editor);
   slot.setDecoratorBoundaryAnchor(
     'leading',
-    $isLeadingDecoratorChild(nextElement.__first, activeNextNodeMap),
+    $isLeadingDecoratorChild(nextElement.__first, nodeMap),
   );
   slot.setDecoratorBoundaryAnchor(
     'trailing',
-    $isBlockDecoratorChild(nextElement.__last, activeNextNodeMap),
+    $isBlockDecoratorChild(nextElement.__last, nodeMap),
   );
 }
 

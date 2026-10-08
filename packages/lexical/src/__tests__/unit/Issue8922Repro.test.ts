@@ -40,7 +40,7 @@ import {
   type RangeSelection,
 } from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
-import {afterEach, assert, beforeEach, describe, expect, test} from 'vitest';
+import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 const BOUNDARY_SELECTOR = 'img[data-lexical-decorator-boundary="true"]';
 
@@ -213,7 +213,7 @@ describe('Issue #8922: select-all with a boundary block decorator', () => {
     expect(rootChildNames(container)).toEqual(['p']);
   });
 
-  test('an inline boundary decorator gets a leading anchor and keeps its own trailing linebreak hack', () => {
+  test('an inline boundary decorator keeps its own linebreak hack instead', () => {
     editor.update(
       () => {
         $getRoot()
@@ -226,15 +226,11 @@ describe('Issue #8922: select-all with a boundary block decorator', () => {
       {discrete: true},
     );
 
-    // A line that starts with an inline decorator has no editable caret
-    // position before it, so it gets the leading anchor (#7158). The trailing
-    // edge needs none: the existing managed line break is what it needs.
-    // In jsdom that line break is a plain <br>; WebKit and Chromium render it
-    // as an img+br pair.
-    const paragraph = container.firstElementChild;
-    assert(paragraph !== null);
-    expect(paragraph.querySelectorAll(BOUNDARY_SELECTOR)).toHaveLength(1);
-    expect(paragraph.firstElementChild?.matches(BOUNDARY_SELECTOR)).toBe(true);
+    // Inline decorators paint fine at a boundary, so no anchor — the existing
+    // managed line break is what they need. Outside Safari that line break is
+    // a plain <br>; the Safari img+br shape is pinned by
+    // LexicalWebkitLinebreakImg.test.ts.
+    expect(container.querySelectorAll(BOUNDARY_SELECTOR)).toHaveLength(0);
     const managedLinebreaks = Array.from(
       container.querySelectorAll('[data-lexical-managed-linebreak="true"]'),
       node => node.nodeName.toLowerCase(),

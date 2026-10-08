@@ -131,6 +131,27 @@ export default defineConfig({
           api: {port: 8315},
           browser: {
             commands: {
+              // Drive a real mouse drag through `points` (relative to the
+              // top-left of `selector`), so the browser's own hit testing
+              // and drag-extension logic decide the selection. Synthetic
+              // Selection.setBaseAndExtent/extend calls do not model that.
+              mouseDrag: async (
+                {frame, page},
+                selector: string,
+                points: [x: number, y: number][],
+              ) => {
+                const target = (await frame()).locator(selector);
+                const [first, ...rest] = points;
+                await target.hover({
+                  force: true,
+                  position: {x: first[0], y: first[1]},
+                });
+                await page.mouse.down();
+                for (const [x, y] of rest) {
+                  await target.hover({force: true, position: {x, y}});
+                }
+                await page.mouse.up();
+              },
               // Vitest's keyboard descriptor parser splits non-BMP text into
               // UTF-16 code units. Native Playwright typing preserves code
               // points, matching the E2E driver's input behavior. Bound each

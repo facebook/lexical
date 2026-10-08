@@ -511,5 +511,95 @@ describe('ContentEditableElement tests', () => {
       const results = await axe(container!);
       expect(results).toHaveNoViolations();
     });
+
+    it('does not count an empty aria-label as a name', async () => {
+      expect.extend(toHaveNoViolations);
+      editor.setEditable(false);
+      await act(async () => {
+        reactRoot.render(
+          <ContentEditableElement editor={editor} aria-label="" />,
+        );
+      });
+      const element = container!.querySelector('div[contenteditable]')!;
+      // An empty label names nothing, so it cannot keep the widget role: the
+      // element would be an unnamed textbox (aria-input-field-name).
+      expect(element.getAttribute('role')).toBe(null);
+      const results = await axe(container!);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('counts title as an accessible name', async () => {
+      expect.extend(toHaveNoViolations);
+      editor.setEditable(false);
+      await act(async () => {
+        reactRoot.render(
+          <ContentEditableElement editor={editor} title="Notes" />,
+        );
+      });
+      const element = container!.querySelector('div[contenteditable]')!;
+      // `title` supplies the accessible name when no ARIA label does, so this
+      // is a named read-only field and keeps the role it had before.
+      expect(element.getAttribute('role')).toBe('textbox');
+      expect(element.getAttribute('title')).toBe('Notes');
+      const results = await axe(container!);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('keeps aria-expanded on a read-only combobox', async () => {
+      expect.extend(toHaveNoViolations);
+      editor.setEditable(false);
+      await act(async () => {
+        reactRoot.render(
+          <>
+            <div id="listbox-id" role="listbox" />
+            <ContentEditableElement
+              editor={editor}
+              role="combobox"
+              aria-label="Notes"
+              aria-expanded={false}
+              aria-controls="listbox-id"
+            />
+          </>,
+        );
+      });
+      const element = container!.querySelector('[role="combobox"]')!;
+      // A combobox requires aria-expanded whether or not it is editable;
+      // without it axe reports aria-required-attr.
+      expect(element.getAttribute('aria-expanded')).toBe('false');
+      const results = await axe(container!);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('reads the string "false" on aria-expanded as false', async () => {
+      await act(async () => {
+        reactRoot.render(
+          <ContentEditableElement
+            editor={editor}
+            role="combobox"
+            aria-label="Notes"
+            aria-expanded="false"
+          />,
+        );
+      });
+      const element = container!.querySelector('[role="combobox"]')!;
+      // React's own type for this attribute allows the string, and ARIA reads
+      // it as false; `!!` would render it as "true".
+      expect(element.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('reads the string "true" on aria-expanded as true', async () => {
+      await act(async () => {
+        reactRoot.render(
+          <ContentEditableElement
+            editor={editor}
+            role="combobox"
+            aria-label="Notes"
+            aria-expanded="true"
+          />,
+        );
+      });
+      const element = container!.querySelector('[role="combobox"]')!;
+      expect(element.getAttribute('aria-expanded')).toBe('true');
+    });
   });
 });

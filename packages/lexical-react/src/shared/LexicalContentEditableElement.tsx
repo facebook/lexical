@@ -131,16 +131,22 @@ function ContentEditableElementImpl(
     'aria-placeholder': ariaPlaceholderAttr,
     'aria-readonly': ariaReadOnlyAttr,
     'aria-required': ariaRequiredAttr = ariaRequired,
+    title,
     ...htmlProps
   } = rest;
 
+  // An accessible name needs content: `aria-label=""` names nothing, so it
+  // cannot stand in for one. `title` can supply the name when no ARIA label
+  // does, so a read-only editor named only by its tooltip is still a field.
+  const hasAccessibleName = [ariaLabelAttr, ariaLabelledByAttr, title].some(
+    value => typeof value === 'string' && value.trim() !== '',
+  );
   // `textbox` is the default while the editor is editable. While it is not,
-  // the default turns on whether the element can be named: a labelled
-  // read-only editor is a form field and keeps the role (and every attribute
-  // it had before), while an unnamed one is content and takes no role, since
-  // an unnamed widget role is an `aria-input-field-name` violation and a name
-  // on a roleless element is an `aria-prohibited-attr` one.
-  const hasAccessibleName = ariaLabelAttr != null || ariaLabelledByAttr != null;
+  // the default turns on whether the element can be named: a named read-only
+  // editor is a form field and keeps the role (and every attribute it had
+  // before), while an unnamed one is content and takes no role, since an
+  // unnamed widget role is an `aria-input-field-name` violation and a name on
+  // a roleless element is an `aria-prohibited-attr` one.
   const resolvedRole =
     role === undefined
       ? isEditable || hasAccessibleName
@@ -164,8 +170,15 @@ function ContentEditableElementImpl(
         ? {'aria-errormessage': ariaErrorMessage}
         : {})}
       aria-expanded={
-        isEditable && resolvedRole === 'combobox'
-          ? !!ariaExpandedAttr
+        // A combobox requires `aria-expanded` whether or not it is editable;
+        // dropping it on a read-only one is an `aria-required-attr`
+        // violation. The authored value is preserved rather than coerced:
+        // `!!` turns the string "false" — which ARIA reads as false, and
+        // which React's own type for this attribute allows — into `true`.
+        resolvedRole === 'combobox'
+          ? ariaExpandedAttr === 'false'
+            ? false
+            : !!ariaExpandedAttr
           : undefined
       }
       // for compat, only override aria-invalid if ariaInvalid is defined
@@ -191,6 +204,9 @@ function ContentEditableElementImpl(
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex ?? (isEditable ? undefined : -1)}
+      // Destructured above to read it as a possible accessible name, so it
+      // needs putting back; `htmlProps` no longer carries it.
+      title={title}
       {...htmlProps}
     />
   );

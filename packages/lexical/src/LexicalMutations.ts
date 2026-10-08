@@ -42,18 +42,23 @@ const TEXT_MUTATION_VARIANCE = 100;
 
 let isProcessingMutations = false;
 let lastTextEntryTimeStamp = 0;
+const windowsWithTextEntryListener = new WeakSet<Window>();
 
 export function getIsProcessingMutations(): boolean {
   return isProcessingMutations;
 }
 
-function updateTimeStamp(event: Event) {
-  lastTextEntryTimeStamp = event.timeStamp;
+function updateTimeStamp() {
+  // Use the same clock as flushMutations: event.timeStamp is relative to the
+  // timeOrigin of the event's window, which differs for an iframe.
+  lastTextEntryTimeStamp = performance.now();
 }
 
 function initTextEntryListener(editor: LexicalEditor): void {
-  if (lastTextEntryTimeStamp === 0) {
-    getWindow(editor).addEventListener('textInput', updateTimeStamp, true);
+  const windowObj = getWindow(editor);
+  if (!windowsWithTextEntryListener.has(windowObj)) {
+    windowsWithTextEntryListener.add(windowObj);
+    windowObj.addEventListener('textInput', updateTimeStamp, true);
   }
 }
 

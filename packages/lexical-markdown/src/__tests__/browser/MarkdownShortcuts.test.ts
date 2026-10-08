@@ -15,8 +15,8 @@ import {
   defineExtension,
   IS_APPLE,
 } from 'lexical';
-import {describe, expect, onTestFinished, test} from 'vitest';
-import {userEvent} from 'vitest/browser';
+import {assert, describe, expect, onTestFinished, test} from 'vitest';
+import {page, userEvent} from 'vitest/browser';
 
 import {MarkdownTestExtension} from '../utils';
 
@@ -26,17 +26,17 @@ const extension = defineExtension({
   register: editor => registerMarkdownShortcuts(editor),
 });
 
-function setup() {
-  const root = document.createElement('div');
+function setup(doc: Document = document) {
+  const root = doc.createElement('div');
   root.contentEditable = 'true';
   root.style.whiteSpace = 'pre-wrap';
-  document.body.append(root);
+  doc.body.append(root);
   const editor = buildEditorFromExtensions(extension);
   editor.setRootElement(root);
   onTestFinished(() => {
     editor.dispose();
     root.remove();
-    window.getSelection()?.removeAllRanges();
+    doc.defaultView?.getSelection()?.removeAllRanges();
   });
   editor.update(
     () => {
@@ -45,7 +45,7 @@ function setup() {
     },
     {discrete: true},
   );
-  window.focus();
+  doc.defaultView?.focus();
   root.focus();
   return root;
 }
@@ -210,4 +210,75 @@ describe('native Markdown block shortcuts', () => {
     );
     await expect.poll(() => root.innerHTML).toBe(expected);
   });
+});
+
+// Issue #9336: an iframe created after the page loaded has a later
+// performance.timeOrigin, so its events' timeStamps are on a different clock
+// than the parent's performance.now(). A capture-phase input listener above
+// the root (React registers one on a portal's container) gives the mutation
+// observer a microtask checkpoint before Lexical handles the input, so it
+// must still recognize the native text entry and leave it to Lexical.
+describe('native Markdown shortcuts with text', () => {
+  const textCases: {html: string; keys?: string; text: string}[] = [
+    {
+      html: '<p dir="auto"><em data-lexical-text="true">hi</em></p>',
+      text: '*hi*',
+    },
+    {
+      html: '<p dir="auto"><strong data-lexical-text="true">bold</strong></p>',
+      text: '**bold**',
+    },
+    {
+      html: '<p dir="auto"><code spellcheck="false" data-lexical-text="true"><span>code</span></code></p>',
+      text: '`code`',
+    },
+    {
+      html: '<h1 dir="auto"><span data-lexical-text="true">hi</span></h1>',
+      text: '# hi',
+    },
+    {
+      html: '<p dir="auto"><a href="https://lexical.dev"><span data-lexical-text="true">hi</span></a></p>',
+      // userEvent.keyboard reads a single [ as the start of a key name
+      keys: '[[hi](https://lexical.dev)',
+      text: '[hi](https://lexical.dev)',
+    },
+  ];
+
+  async function setupInIframe() {
+    // Let the parent's clock run ahead of the iframe's timeOrigin
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const iframe = document.createElement('iframe');
+    document.body.append(iframe);
+    onTestFinished(() => iframe.remove());
+    const doc = iframe.contentDocument;
+    assert(doc !== null, 'iframe has no document');
+    doc.body.addEventListener('input', () => {}, true);
+    const root = setup(doc);
+    root.dataset.testid = 'editor';
+    // Firefox keeps keyboard focus in the parent frame after a programmatic
+    // focus() inside the iframe, so click into the editor instead
+    await page
+      .frameLocator(page.elementLocator(iframe))
+      .getByTestId('editor')
+      .click();
+    return root;
+  }
+
+  test.each(textCases)(
+    'types $text in the main window',
+    async ({html, keys, text}) => {
+      const root = setup();
+      await userEvent.keyboard(keys ?? text);
+      await expect.poll(() => root.innerHTML).toBe(normalizeHTML(html));
+    },
+  );
+
+  test.each(textCases)(
+    'types $text in an iframe',
+    async ({html, keys, text}) => {
+      const root = await setupInIframe();
+      await userEvent.keyboard(keys ?? text);
+      await expect.poll(() => root.innerHTML).toBe(normalizeHTML(html));
+    },
+  );
 });

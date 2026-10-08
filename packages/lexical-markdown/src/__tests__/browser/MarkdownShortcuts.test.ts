@@ -16,7 +16,7 @@ import {
   IS_APPLE,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
-import {userEvent} from 'vitest/browser';
+import {page, userEvent} from 'vitest/browser';
 
 import {MarkdownTestExtension} from '../utils';
 
@@ -234,7 +234,7 @@ describe('native Markdown text format shortcuts', () => {
     },
   ];
 
-  async function createIframeDocument() {
+  async function setupInIframe() {
     // Let the parent's clock run ahead of the iframe's timeOrigin
     await new Promise(resolve => setTimeout(resolve, 500));
     const iframe = document.createElement('iframe');
@@ -243,7 +243,15 @@ describe('native Markdown text format shortcuts', () => {
     const doc = iframe.contentDocument;
     assert(doc !== null, 'iframe has no document');
     doc.body.addEventListener('input', () => {}, true);
-    return doc;
+    const root = setup(doc);
+    root.dataset.testid = 'editor';
+    // Firefox keeps keyboard focus in the parent frame after a programmatic
+    // focus() inside the iframe, so click into the editor instead
+    await page
+      .frameLocator(page.elementLocator(iframe))
+      .getByTestId('editor')
+      .click();
+    return root;
   }
 
   test.each(textCases)(
@@ -256,7 +264,7 @@ describe('native Markdown text format shortcuts', () => {
   );
 
   test.each(textCases)('types $text in an iframe', async ({text, html}) => {
-    const root = setup(await createIframeDocument());
+    const root = await setupInIframe();
     await userEvent.keyboard(text);
     await expect.poll(() => root.innerHTML).toBe(normalizeHTML(html));
   });

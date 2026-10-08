@@ -1340,6 +1340,28 @@ describe('playground TABLE markdown transformer', () => {
     );
   });
 
+  it('writes a paragraph whose content writes nothing as an empty line', () => {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    let markdown = '';
+    editor.update(
+      () => {
+        // Before normalization drops it, an empty text node writes nothing.
+        $getRoot()
+          .clear()
+          .append(
+            $cellOf(
+              $createParagraphNode().append($createTextNode('a')),
+              $createParagraphNode().append($createTextNode('')),
+              $createParagraphNode().append($createTextNode('b')),
+            ),
+          );
+        markdown = $convertToMarkdownString([TABLE]);
+      },
+      {discrete: true},
+    );
+    expect(markdown.split('\n')[2]).toBe('| a<br><br>b |');
+  });
+
   it('keeps a code span that is only whitespace', () => {
     const markdown = exportTable(() =>
       $cellOf(

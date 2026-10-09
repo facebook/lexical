@@ -140,15 +140,31 @@ export default defineConfig({
                 selector: string,
                 points: [x: number, y: number][],
               ) => {
-                const target = (await frame()).locator(selector);
+                const testFrame = await frame();
+                const target = testFrame.locator(selector);
+                // A person's mouse events arrive a frame or more apart, so the
+                // editor has handled the selectionchange from one before the
+                // next. Without this pause a busy machine can deliver the
+                // whole drag before the editor reacts to the mousedown, and
+                // the editor then writes back a selection the drag has
+                // already moved past.
+                const settle = () =>
+                  testFrame.evaluate(
+                    () =>
+                      new Promise<void>(resolve =>
+                        requestAnimationFrame(() => setTimeout(resolve, 0)),
+                      ),
+                  );
                 const [first, ...rest] = points;
                 await target.hover({
                   force: true,
                   position: {x: first[0], y: first[1]},
                 });
                 await page.mouse.down();
+                await settle();
                 for (const [x, y] of rest) {
                   await target.hover({force: true, position: {x, y}});
+                  await settle();
                 }
                 await page.mouse.up();
               },

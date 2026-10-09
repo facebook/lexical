@@ -162,9 +162,29 @@ export default defineConfig({
                 });
                 await page.mouse.down();
                 await settle();
+                // Chromium collapses the selection at the pointer on the
+                // first drag move after a press that placed a caret, and
+                // extends it from there, so a drag's anchor is where it first
+                // moved. A hand never jumps tens of pixels in one move, so
+                // move in steps of at most STEP pixels as it would.
+                const STEP = 5;
+                let [lastX, lastY] = first;
                 for (const [x, y] of rest) {
-                  await target.hover({force: true, position: {x, y}});
-                  await settle();
+                  const steps = Math.max(
+                    1,
+                    Math.ceil(Math.hypot(x - lastX, y - lastY) / STEP),
+                  );
+                  for (let i = 1; i <= steps; i++) {
+                    await target.hover({
+                      force: true,
+                      position: {
+                        x: lastX + ((x - lastX) * i) / steps,
+                        y: lastY + ((y - lastY) * i) / steps,
+                      },
+                    });
+                    await settle();
+                  }
+                  [lastX, lastY] = [x, y];
                 }
                 await page.mouse.up();
               },

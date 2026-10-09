@@ -940,11 +940,23 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
     getWindow(editor).getComputedStyle(parentDOM).direction === 'rtl';
   const isAfter = event.clientX > rect.left + rect.width / 2 !== isRTL;
   const offset = isAfter ? index + 1 : index;
-  const {focusNode, focusOffset} = domSelection;
-  if (focusNode !== parentDOM || focusOffset !== offset) {
-    drag.hasExtended = true;
-    domSelection.extend(parentDOM, offset);
-  }
+  // The browser moves the selection for this pointer position in the
+  // default action of the mousemove that follows, which may put the focus
+  // somewhere else on the line (macOS Chrome picks the start or the end of
+  // it), so extend once that has run.
+  setTimeout(() => {
+    if (
+      editor._inputState.mouseSelectionDrag !== drag ||
+      domSelection.rangeCount === 0
+    ) {
+      return;
+    }
+    const {focusNode, focusOffset} = domSelection;
+    if (focusNode !== parentDOM || focusOffset !== offset) {
+      drag.hasExtended = true;
+      domSelection.extend(parentDOM, offset);
+    }
+  }, 0);
 }
 
 /**

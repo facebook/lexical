@@ -95,6 +95,8 @@ type DecoratorClass =
   | typeof ImageLikeDecoratorNode
   | typeof BoxedImageDecoratorNode;
 
+const pointerLog: string[] = [];
+
 function mount(textBetween: boolean, klass: DecoratorClass) {
   const root = document.createElement('div');
   root.id = 'issue-7158-root';
@@ -119,7 +121,30 @@ function mount(textBetween: boolean, klass: DecoratorClass) {
     }),
   );
   editor.setRootElement(root);
+  // Where each pointer event landed (relative to the root) and the DOM
+  // selection once the browser has handled it, for the failure message.
+  pointerLog.length = 0;
+  const logPointer = (event: PointerEvent) => {
+    const rect = root.getBoundingClientRect();
+    const x = Math.round(event.clientX - rect.left);
+    const y = Math.round(event.clientY - rect.top);
+    setTimeout(() => {
+      const dom = getDOMSelection(window);
+      pointerLog.push(
+        `${event.type.slice(7)}(${x},${y} b${event.buttons})=` +
+          `${describeDOMPoint(dom?.anchorNode ?? null, dom?.anchorOffset ?? 0)}->` +
+          `${describeDOMPoint(dom?.focusNode ?? null, dom?.focusOffset ?? 0)}`,
+      );
+    });
+  };
+  const pointerTypes = ['pointerdown', 'pointermove', 'pointerup'] as const;
+  for (const type of pointerTypes) {
+    document.addEventListener(type, logPointer, true);
+  }
   onTestFinished(() => {
+    for (const type of pointerTypes) {
+      document.removeEventListener(type, logPointer, true);
+    }
     editor.dispose();
     root.remove();
   });
@@ -135,6 +160,9 @@ function mount(textBetween: boolean, klass: DecoratorClass) {
     images[i].getBoundingClientRect().left - rootRect.left;
   const right = (i: number) =>
     images[i].getBoundingClientRect().right - rootRect.left;
+  pointerLog.push(
+    `left(0)=${Math.round(left(0))} right(${COUNT - 1})=${Math.round(right(COUNT - 1))} y=${Math.round(y)} dpr=${window.devicePixelRatio}`,
+  );
   return {editor, left, right, y};
 }
 
@@ -176,7 +204,8 @@ async function expectSelectedDecoratorCount(
         `expected ${expected} selected decorators, got ${count} ` +
           `(lexical ${lexical}; dom ` +
           `${describeDOMPoint(dom?.anchorNode ?? null, dom?.anchorOffset ?? 0)}->` +
-          `${describeDOMPoint(dom?.focusNode ?? null, dom?.focusOffset ?? 0)})`,
+          `${describeDOMPoint(dom?.focusNode ?? null, dom?.focusOffset ?? 0)}; ` +
+          `pointer ${pointerLog.join(' ')})`,
       );
     },
     {interval: 50, timeout: 2000},

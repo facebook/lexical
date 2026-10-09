@@ -92,6 +92,7 @@ import {
   DOUBLE_LINE_BREAK,
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
+import {NEEDS_INLINE_DECORATOR_EDGE_BOX} from './LexicalDOMSlot';
 import {
   compileKeyboardShortcuts,
   CONTROL_OR_ALT,
@@ -114,6 +115,7 @@ import {
   $getAdjacentNode,
   $getDOMTextNode,
   $getNodeByKey,
+  $getNodeFromDOMNode,
   $isTokenOrSegmented,
   $isTokenOrTab,
   $setSelection,
@@ -157,6 +159,8 @@ type RootElementEvents = [
 ][];
 const PASS_THROUGH_COMMAND = /* @__PURE__ */ Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
+// Chromium's mouse drag threshold is 4px and WebKit's is 3px.
+const DRAG_THRESHOLD_PX = 4;
 let rootElementEvents: RootElementEvents | undefined;
 
 function getRootElementEvents(): RootElementEvents {
@@ -185,6 +189,15 @@ function getRootElementEvents(): RootElementEvents {
       'beforeinput',
       (event, editor) => onBeforeInput(event as InputEvent, editor),
     ]);
+  }
+  if (NEEDS_INLINE_DECORATOR_EDGE_BOX) {
+    events.push(
+      [
+        'pointermove',
+        (event, editor) => onPointerMove(event as PointerEvent, editor),
+      ],
+      ['pointerup', onPointerUp],
+    );
   }
   if (IS_IOS) {
     events.push(
@@ -829,6 +842,123 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
       }
     });
   }
+  if (NEEDS_INLINE_DECORATOR_EDGE_BOX) {
+    editor._inputState.mouseSelectionDrag =
+      isDOMNode(target) &&
+      pointerType === 'mouse' &&
+      event.button === 0 &&
+      !isDOMCapturingSelection(target, editor)
+        ? {
+            clientX: event.clientX,
+            clientY: event.clientY,
+            hasExtended: false,
+            isPastDragThreshold: false,
+          }
+        : null;
+  }
+}
+
+function onPointerUp(_event: Event, editor: LexicalEditor) {
+  editor._inputState.mouseSelectionDrag = null;
+}
+
+/**
+ * Extends a mouse drag selection across an inline DecoratorNode (#7158).
+ *
+ * Chromium and WebKit move the focus of a drag selection by hit-testing the
+ * pointer, and over an inline decorator's contentEditable=false DOM the hit
+ * test often finds no position the selection can extend to: always when the
+ * decorator's content is `user-select: none` or holds a block box, and
+ * intermittently otherwise. The drag then stays where it was until the pointer
+ * reaches text or the end of the line. While the pointer is over an inline
+ * decorator, put the DOM focus on the side of the decorator nearest the
+ * pointer; the drag keeps the anchor it took on mousedown.
+ *
+ * Nothing changes until a pointermove after the one that crossed the drag
+ * threshold, so a press on an existing selection still drags it. Once the
+ * selection has been extended, it contains the mousedown point, and Chromium
+ * keeps checking for a selection drag and drop until its own hit test has
+ * moved the selection; {@link onSelectionDragStart} cancels that drag.
+ */
+function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
+  const drag = editor._inputState.mouseSelectionDrag;
+  if (
+    drag === null ||
+    event.pointerType !== 'mouse' ||
+    (event.buttons & 1) === 0
+  ) {
+    return;
+  }
+  if (!drag.isPastDragThreshold) {
+    drag.isPastDragThreshold =
+      Math.abs(event.clientX - drag.clientX) > DRAG_THRESHOLD_PX ||
+      Math.abs(event.clientY - drag.clientY) > DRAG_THRESHOLD_PX;
+    return;
+  }
+  const target = getComposedEventTarget(event);
+  const rootElement = editor.getRootElement();
+  if (!isDOMNode(target) || rootElement === null) {
+    return;
+  }
+  const domSelection = getDOMSelectionFromTarget(target);
+  if (domSelection === null || domSelection.rangeCount === 0) {
+    return;
+  }
+  const {anchorNode} = getDOMSelectionPoints(domSelection, rootElement);
+  if (
+    anchorNode === null ||
+    getNearestEditorFromDOMNode(anchorNode) !== editor
+  ) {
+    return;
+  }
+  const decoratorDOM = editor.read('latest', () => {
+    let dom: Node | null = target;
+    while (dom !== null && dom !== rootElement) {
+      const node = $getNodeFromDOMNode(dom);
+      if (node !== null) {
+        return $isDecoratorNode(node) && node.isInline() ? dom : null;
+      }
+      dom = getParentElement(dom);
+    }
+    return null;
+  });
+  const parentDOM = decoratorDOM && decoratorDOM.parentNode;
+  if (
+    decoratorDOM === null ||
+    parentDOM === null ||
+    !isHTMLElement(decoratorDOM)
+  ) {
+    return;
+  }
+  const rect = decoratorDOM.getBoundingClientRect();
+  const index = Array.prototype.indexOf.call(
+    parentDOM.childNodes,
+    decoratorDOM,
+  );
+  const isRTL =
+    isHTMLElement(parentDOM) &&
+    getWindow(editor).getComputedStyle(parentDOM).direction === 'rtl';
+  const isAfter = event.clientX > rect.left + rect.width / 2 !== isRTL;
+  const offset = isAfter ? index + 1 : index;
+  const {focusNode, focusOffset} = domSelection;
+  if (focusNode !== parentDOM || focusOffset !== offset) {
+    drag.hasExtended = true;
+    domSelection.extend(parentDOM, offset);
+  }
+}
+
+/**
+ * Cancels the drag and drop that a press would otherwise start once
+ * {@link onPointerMove} has extended its selection over the mousedown point,
+ * so the press keeps selecting. Returns true when it did.
+ */
+function onSelectionDragStart(event: DragEvent, editor: LexicalEditor) {
+  const drag = editor._inputState.mouseSelectionDrag;
+  if (drag === null || !drag.hasExtended) {
+    return false;
+  }
+  event.preventDefault();
+  return true;
 }
 
 function getTargetRange(event: InputEvent): null | StaticRange {
@@ -2300,6 +2430,9 @@ export function addRootElementEvents(
                 );
 
               case 'dragstart':
+                if (onSelectionDragStart(event as DragEvent, editor)) {
+                  return true;
+                }
                 return (
                   isEditable &&
                   dispatchCommand(editor, DRAGSTART_COMMAND, event as DragEvent)

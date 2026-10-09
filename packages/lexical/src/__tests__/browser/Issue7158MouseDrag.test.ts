@@ -66,7 +66,36 @@ class ImageLikeDecoratorNode extends DecoratorNode<null> {
   }
 }
 
-function mount(textBetween: boolean) {
+/**
+ * Styled like the playground's ImageNode: an unselectable inline-block whose
+ * image sits in a block wrapper. Chromium's hit test finds no position inside
+ * it that a drag selection can extend to.
+ */
+class BoxedImageDecoratorNode extends ImageLikeDecoratorNode {
+  $config() {
+    return this.config('test_7158_mouse_boxed_image', {
+      extends: ImageLikeDecoratorNode,
+    });
+  }
+  createDOM(): HTMLElement {
+    const span = document.createElement('span');
+    span.style.cssText =
+      'display:inline-block;position:relative;user-select:none;overflow:hidden';
+    const div = document.createElement('div');
+    const img = document.createElement('img');
+    img.alt = '';
+    img.style.cssText = `display:block;width:${SIZE}px;height:${SIZE}px;background:#888`;
+    div.appendChild(img);
+    span.appendChild(div);
+    return span;
+  }
+}
+
+type DecoratorClass =
+  | typeof ImageLikeDecoratorNode
+  | typeof BoxedImageDecoratorNode;
+
+function mount(textBetween: boolean, klass: DecoratorClass) {
   const root = document.createElement('div');
   root.id = 'issue-7158-root';
   root.contentEditable = 'true';
@@ -80,13 +109,13 @@ function mount(textBetween: boolean) {
           if (textBetween) {
             paragraph.append($createTextNode(' '));
           }
-          paragraph.append($create(ImageLikeDecoratorNode));
+          paragraph.append($create(klass));
         }
         $getRoot().clear().append(paragraph);
       },
       dependencies: [RichTextExtension],
       name: '[7158-mouse]',
-      nodes: [ImageLikeDecoratorNode],
+      nodes: [ImageLikeDecoratorNode, BoxedImageDecoratorNode],
     }),
   );
   editor.setRootElement(root);
@@ -94,7 +123,11 @@ function mount(textBetween: boolean) {
     editor.dispose();
     root.remove();
   });
-  const images = Array.from(root.querySelectorAll('span > img'));
+  const images = Array.from(
+    root.querySelectorAll(
+      'img:not([data-lexical-decorator-boundary]):not([data-lexical-managed-linebreak])',
+    ),
+  );
   const rootRect = root.getBoundingClientRect();
   // Points relative to the root's top-left, on the images' center line.
   const y = images[0].getBoundingClientRect().top + SIZE / 2 - rootRect.top;
@@ -150,27 +183,61 @@ async function expectSelectedDecoratorCount(
   );
 }
 
+function dragFromLineEnd(klass: DecoratorClass, textBetween: boolean) {
+  return async () => {
+    const {editor, left, right, y} = mount(textBetween, klass);
+    await commands.mouseDrag('#issue-7158-root', [
+      [right(COUNT - 1) + 30, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [left(3) + SIZE / 2, y],
+      [left(2) - 2, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, COUNT - 2);
+  };
+}
+
+function dragFromLineStart(klass: DecoratorClass, textBetween: boolean) {
+  return async () => {
+    const {editor, left, right, y} = mount(textBetween, klass);
+    await commands.mouseDrag('#issue-7158-root', [
+      [left(0) - 5, y],
+      [left(1) + SIZE / 2, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [right(COUNT - 1) + 30, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, COUNT);
+  };
+}
+
 describe.each([
   ['only inline decorators', false],
   ['text between inline decorators', true],
 ])('Issue #7158: mouse drag over %s', (_name, textBetween) => {
-  test('a drag from right of the last decorator selects back to the third', async () => {
-    const {editor, left, right, y} = mount(textBetween);
-    await commands.mouseDrag('#issue-7158-root', [
-      [right(COUNT - 1) + 30, y],
-      [left(COUNT - 2) + SIZE / 2, y],
-      [left(2) - 2, y],
-    ]);
-    await expectSelectedDecoratorCount(editor, COUNT - 2);
-  });
+  test(
+    'a drag from right of the last decorator selects back to the third',
+    dragFromLineEnd(ImageLikeDecoratorNode, textBetween),
+  );
+  test(
+    'a drag from left of the first decorator selects to the end of the line',
+    dragFromLineStart(ImageLikeDecoratorNode, textBetween),
+  );
+});
 
-  test('a drag from left of the first decorator selects to the end of the line', async () => {
-    const {editor, left, right, y} = mount(textBetween);
-    await commands.mouseDrag('#issue-7158-root', [
-      [left(0) - 5, y],
-      [left(1) + SIZE / 2, y],
-      [right(COUNT - 1) + 30, y],
-    ]);
-    await expectSelectedDecoratorCount(editor, COUNT);
-  });
+// Chromium never extends a drag across these decorators by itself, so these
+// exercise the pointermove fallback. A drag that starts left of an
+// unselectable first decorator is not covered: Chromium anchors it after that
+// decorator, and a drag keeps the anchor it took on mousedown.
+describe('Issue #7158: mouse drag over unselectable inline decorators', () => {
+  test(
+    'a drag from right of the last decorator selects back to the third',
+    dragFromLineEnd(BoxedImageDecoratorNode, false),
+  );
+  test(
+    'with text between, a drag from right of the last decorator selects back to the third',
+    dragFromLineEnd(BoxedImageDecoratorNode, true),
+  );
+  test(
+    'with text between, a drag from left of the first text selects to the end of the line',
+    dragFromLineStart(BoxedImageDecoratorNode, true),
+  );
 });

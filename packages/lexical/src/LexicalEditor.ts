@@ -304,6 +304,20 @@ export interface InputState {
   };
   isSelectionChangeFromMouseDown: boolean;
   /**
+   * Where a primary-button mouse pointerdown that may start a text selection
+   * drag in the root element happened, from that pointerdown until the next
+   * pointerup there, whether the pointer has since moved past the browser's
+   * drag threshold, and whether Lexical has extended the drag's selection over
+   * an inline DecoratorNode. Only tracked on the engines in
+   * NEEDS_INLINE_DECORATOR_EDGE_BOX; null otherwise.
+   */
+  mouseSelectionDrag: null | {
+    clientX: number;
+    clientY: number;
+    hasExtended: boolean;
+    isPastDragThreshold: boolean;
+  };
+  /**
    * The pointerType of the latest pointerdown in the root element ('touch',
    * 'pen' or 'mouse'), so the compatibility mousedown and click that follow a
    * tap can tell it from an iPadOS trackpad or mouse press. Recorded on iOS
@@ -348,6 +362,7 @@ export function createInputState(): InputState {
     lastKeyCode: null,
     lastKeyDownTimeStamp: 0,
     lastPointerType: '',
+    mouseSelectionDrag: null,
     postDeleteSelectionToRestore: null,
     savedInputMode: undefined,
     selectionChangeFromDOMUpdatePoints: null,

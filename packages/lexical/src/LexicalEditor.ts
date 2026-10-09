@@ -304,18 +304,19 @@ export interface InputState {
   };
   isSelectionChangeFromMouseDown: boolean;
   /**
-   * Where a primary-button mouse pointerdown that may start a text selection
-   * drag in the root element happened, from that pointerdown until the next
-   * pointerup there, whether the pointer has since moved past the browser's
-   * drag threshold, and whether Lexical has extended the drag's selection over
-   * an inline DecoratorNode. Only tracked on the engines in
-   * NEEDS_INLINE_DECORATOR_EDGE_BOX; null otherwise.
+   * A single primary-button mouse press in the root element that may start a
+   * text selection drag, from its pointerdown until the next pointerup
+   * anywhere in its document: where it was pressed, the DOM anchor of its
+   * selection once the pointer has crossed the drag threshold (false when
+   * that is outside this editor), and whether Lexical has changed the drag's
+   * selection. Only tracked on the engines in NEEDS_INLINE_DECORATOR_EDGE_BOX;
+   * null otherwise.
    */
   mouseSelectionDrag: null | {
+    anchor: null | false | [node: Node, offset: number];
     clientX: number;
     clientY: number;
     hasExtended: boolean;
-    isPastDragThreshold: boolean;
   };
   /**
    * The pointerType of the latest pointerdown in the root element ('touch',

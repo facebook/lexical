@@ -3942,8 +3942,13 @@ export function $updateDOMSelection(
     // of editor.setRootElement(). If this occurs on init when the
     // editor is already focused, then this can cause the editor to
     // lose focus.
+    // While a mouse button is held for a selection drag, the browser's
+    // selection is the drag in progress, and removing it would restart the
+    // drag from wherever the pointer moves next. It is null here when a drag
+    // point lands inside a decorator, which the next pointermove moves out.
     if (
       prevSelection !== null &&
+      editor._inputState.mouseSelectionDrag === null &&
       isSelectionWithinEditor(
         editor,
         currentPoints.anchorNode,

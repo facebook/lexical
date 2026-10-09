@@ -91,9 +91,27 @@ class BoxedImageDecoratorNode extends ImageLikeDecoratorNode {
   }
 }
 
+/**
+ * The same block-wrapped image, but selectable: Chromium's hit test can put
+ * a drag point inside it, where the point resolves to no Lexical selection.
+ */
+class SelectableBoxedImageDecoratorNode extends ImageLikeDecoratorNode {
+  $config() {
+    return this.config('test_7158_mouse_selectable_boxed_image', {
+      extends: ImageLikeDecoratorNode,
+    });
+  }
+  createDOM(): HTMLElement {
+    const span = new BoxedImageDecoratorNode().createDOM();
+    span.style.userSelect = '';
+    return span;
+  }
+}
+
 type DecoratorClass =
   | typeof ImageLikeDecoratorNode
-  | typeof BoxedImageDecoratorNode;
+  | typeof BoxedImageDecoratorNode
+  | typeof SelectableBoxedImageDecoratorNode;
 
 const pointerLog: string[] = [];
 
@@ -117,7 +135,11 @@ function mount(textBetween: boolean, klass: DecoratorClass) {
       },
       dependencies: [RichTextExtension],
       name: '[7158-mouse]',
-      nodes: [ImageLikeDecoratorNode, BoxedImageDecoratorNode],
+      nodes: [
+        ImageLikeDecoratorNode,
+        BoxedImageDecoratorNode,
+        SelectableBoxedImageDecoratorNode,
+      ],
     }),
   );
   editor.setRootElement(root);
@@ -269,4 +291,62 @@ describe('Issue #7158: mouse drag over unselectable inline decorators', () => {
     'with text between, a drag from left of the first text selects to the end of the line',
     dragFromLineStart(BoxedImageDecoratorNode, true),
   );
+});
+
+describe('Issue #7158: mouse drag over selectable boxed inline decorators', () => {
+  test(
+    'a drag from right of the last decorator selects back to the third',
+    dragFromLineEnd(SelectableBoxedImageDecoratorNode, false),
+  );
+  test(
+    'a drag from left of the first decorator selects to the end of the line',
+    dragFromLineStart(SelectableBoxedImageDecoratorNode, false),
+  );
+  test('a drag that returns to its start and leaves again keeps its anchor', async () => {
+    const {editor, left, right, y} = mount(
+      false,
+      SelectableBoxedImageDecoratorNode,
+    );
+    await commands.mouseDrag('#issue-7158-root', [
+      [right(COUNT - 1) + 30, y],
+      [left(2) + SIZE / 2, y],
+      [right(COUNT - 1) + 10, y],
+      [left(COUNT - 1) + 5, y],
+      [left(2) - 2, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, COUNT - 2);
+  });
+
+  // On macOS Chrome a drag can restart from the pointer, collapsing the
+  // selection inside a decorator, where it resolves to no Lexical selection.
+  // Linux Chromium does not do this, so do it the way it would: after the
+  // browser and Lexical have handled a pointermove.
+  test('a drag that restarts inside a decorator keeps its anchor', async () => {
+    const {editor, left, right, y} = mount(
+      false,
+      SelectableBoxedImageDecoratorNode,
+    );
+    const root = document.getElementById('issue-7158-root')!;
+    const decorators = root.querySelectorAll('span > div');
+    let injected = false;
+    const inject = (event: PointerEvent) => {
+      const x = event.clientX - root.getBoundingClientRect().left;
+      if (!injected && event.buttons === 1 && x < left(COUNT - 2)) {
+        injected = true;
+        requestAnimationFrame(() =>
+          getDOMSelection(window)?.collapse(decorators[COUNT - 2], 0),
+        );
+      }
+    };
+    document.addEventListener('pointermove', inject, true);
+    onTestFinished(() =>
+      document.removeEventListener('pointermove', inject, true),
+    );
+    await commands.mouseDrag('#issue-7158-root', [
+      [right(COUNT - 1) + 30, y],
+      [left(2) - 2, y],
+    ]);
+    assert(injected, 'the drag never reached the injection point');
+    await expectSelectedDecoratorCount(editor, COUNT - 2);
+  });
 });

@@ -3888,6 +3888,25 @@ function $getElementPointScrollTarget(
     : child;
 }
 
+/**
+ * The offset in `node` before any managed line break children that precede
+ * `offset`, which is the same position as far as Lexical is concerned.
+ */
+function skipManagedLineBreak(node: Node, offset: number): number {
+  const children = node.childNodes;
+  while (offset > 0) {
+    const child = children[offset - 1];
+    if (
+      !isHTMLElement(child) ||
+      !child.hasAttribute('data-lexical-managed-linebreak')
+    ) {
+      break;
+    }
+    offset--;
+  }
+  return offset;
+}
+
 /** @internal */
 export function $updateDOMSelection(
   prevSelection: BaseSelection | null,
@@ -4064,6 +4083,23 @@ export function $updateDOMSelection(
     if (anchor.type !== 'element') {
       return;
     }
+  }
+
+  // During a mouse drag past the end of a line that ends in an inline
+  // decorator, the browser puts the focus after the managed line break's
+  // <img>, which is the same Lexical point as before it. Writing the
+  // selection back would only make the browser move it again on the next
+  // pointer move, turning every move into two selection changes.
+  if (
+    editor._inputState.mouseSelectionDrag !== null &&
+    currentPoints.anchorNode === nextAnchorNode &&
+    currentPoints.focusNode === nextFocusNode &&
+    skipManagedLineBreak(nextAnchorNode, currentPoints.anchorOffset) ===
+      nextAnchorOffset &&
+    skipManagedLineBreak(nextFocusNode, currentPoints.focusOffset) ===
+      nextFocusOffset
+  ) {
+    return;
   }
 
   // Apply the updated selection to the DOM. Note: this will trigger

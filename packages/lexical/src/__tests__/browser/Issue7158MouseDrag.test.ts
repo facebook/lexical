@@ -24,9 +24,11 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isRangeSelection,
+  COMMAND_PRIORITY_CRITICAL,
   DecoratorNode,
   getDOMSelection,
   type LexicalEditor,
+  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {assert, describe, onTestFinished, test, vi} from 'vitest';
 import {commands} from 'vitest/browser';
@@ -271,6 +273,45 @@ describe.each([
   test(
     'a drag from left of the first decorator selects to the end of the line',
     dragFromLineStart(ImageLikeDecoratorNode, textBetween),
+  );
+});
+
+// The browser puts a drag's focus below or past the end of the line after the
+// managed line break's <img>, which Lexical maps to the point before it.
+// Writing that point back only has the browser move it again on the next
+// pointer move, so each move would be two selection changes.
+test('Issue #7158: a drag past the end of the line does not keep changing the selection', async () => {
+  const {editor, right, y} = mount(false, ImageLikeDecoratorNode);
+  let selectionChanges = 0;
+  onTestFinished(
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
+        selectionChanges++;
+        return false;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    ),
+  );
+  const x = right(COUNT - 1) + 30;
+  await commands.mouseDrag('#issue-7158-root', [
+    [x, y],
+    [x + 100, y + SIZE],
+  ]);
+  await vi.waitFor(() =>
+    assert(
+      editor.read(() => {
+        const selection = $getSelection();
+        return $isRangeSelection(selection) && selection.isCollapsed();
+      }),
+      'expected a collapsed selection',
+    ),
+  );
+  // The press and the first move can each change the selection once; the
+  // other twenty or so moves must not.
+  assert(
+    selectionChanges <= 3,
+    `expected at most 3 selection changes, got ${selectionChanges}`,
   );
 });
 

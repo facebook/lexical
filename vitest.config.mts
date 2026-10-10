@@ -6,12 +6,36 @@
  *
  */
 
+import type {Plugin} from 'vite';
+
 import react from '@vitejs/plugin-react';
 import {playwright} from '@vitest/browser-playwright';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {configDefaults, defineConfig} from 'vitest/config';
+
+// @vitest/browser adds @vitest/mocker's interceptor plugin with
+// `registerWebSocketEvents: false`, which still defines a configureServer
+// hook that does nothing, so Vite warns on every browser run that the hook is
+// ignored. Vitest installs its own logger, so drop the warning from the
+// resolved one.
+const IGNORED_INTERCEPTOR_WARNING =
+  'Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer)';
+function ignoreInterceptorWarning(): Plugin {
+  return {
+    configResolved(config) {
+      const {logger} = config;
+      const {warnOnce} = logger;
+      logger.warnOnce = (message, options) => {
+        if (!message.startsWith(IGNORED_INTERCEPTOR_WARNING)) {
+          warnOnce(message, options);
+        }
+      };
+    },
+    name: 'lexical:ignore-interceptor-warning',
+  };
+}
 
 // Resolve monorepo imports to TypeScript source from the test tsconfig's
 // `paths`. This includes the cross-package and deep `*/src/__tests__/utils`
@@ -126,7 +150,7 @@ export default defineConfig({
             'react-dom/client',
           ],
         },
-        plugins: [react()],
+        plugins: [react(), ignoreInterceptorWarning()],
         test: {
           api: {port: 8315},
           browser: {

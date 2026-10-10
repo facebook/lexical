@@ -6,12 +6,36 @@
  *
  */
 
+import type {Plugin} from 'vite';
+
 import react from '@vitejs/plugin-react';
 import {playwright} from '@vitest/browser-playwright';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {configDefaults, defineConfig} from 'vitest/config';
+
+// @vitest/browser adds @vitest/mocker's interceptor plugin with
+// `registerWebSocketEvents: false`, which still defines a configureServer
+// hook that does nothing, so Vite warns on every browser run that the hook is
+// ignored. Vitest installs its own logger, so drop the warning from the
+// resolved one.
+const IGNORED_INTERCEPTOR_WARNING =
+  'Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer)';
+function ignoreInterceptorWarning(): Plugin {
+  return {
+    configResolved(config) {
+      const {logger} = config;
+      const {warnOnce} = logger;
+      logger.warnOnce = (message, options) => {
+        if (!message.startsWith(IGNORED_INTERCEPTOR_WARNING)) {
+          warnOnce(message, options);
+        }
+      };
+    },
+    name: 'lexical:ignore-interceptor-warning',
+  };
+}
 
 // Resolve monorepo imports to TypeScript source from the test tsconfig's
 // `paths`. This includes the cross-package and deep `*/src/__tests__/utils`
@@ -126,11 +150,68 @@ export default defineConfig({
             'react-dom/client',
           ],
         },
-        plugins: [react()],
+        plugins: [react(), ignoreInterceptorWarning()],
         test: {
           api: {port: 8315},
           browser: {
             commands: {
+              // Drive a real mouse drag through `points` (relative to the
+              // top-left of `selector`), so the browser's own hit testing
+              // and drag-extension logic decide the selection. Synthetic
+              // Selection.setBaseAndExtent/extend calls do not model that.
+              mouseDrag: async (
+                {frame, page},
+                selector: string,
+                points: [x: number, y: number][],
+              ) => {
+                const testFrame = await frame();
+                const target = testFrame.locator(selector);
+                // A person's mouse events arrive a frame or more apart, so the
+                // editor has handled the selectionchange from one before the
+                // next. Without this pause a busy machine can deliver the
+                // whole drag before the editor reacts to the mousedown, and
+                // the editor then writes back a selection the drag has
+                // already moved past.
+                const settle = () =>
+                  testFrame.evaluate(
+                    () =>
+                      new Promise<void>(resolve =>
+                        requestAnimationFrame(() => setTimeout(resolve, 0)),
+                      ),
+                  );
+                const [first, ...rest] = points;
+                await target.hover({
+                  force: true,
+                  position: {x: first[0], y: first[1]},
+                });
+                await page.mouse.down();
+                await settle();
+                // Chromium collapses the selection at the pointer on the
+                // first drag move after a press that placed a caret, and
+                // extends it from there, so a drag's anchor is where it first
+                // moved. A hand never jumps tens of pixels in one move, so
+                // move in steps of at most STEP pixels as it would.
+                const STEP = 5;
+                let [lastX, lastY] = first;
+                for (const [x, y] of rest) {
+                  const steps = Math.max(
+                    1,
+                    Math.ceil(Math.hypot(x - lastX, y - lastY) / STEP),
+                  );
+                  for (let i = 1; i <= steps; i++) {
+                    await target.hover({
+                      force: true,
+                      position: {
+                        x: lastX + ((x - lastX) * i) / steps,
+                        y: lastY + ((y - lastY) * i) / steps,
+                      },
+                    });
+                    await settle();
+                  }
+                  [lastX, lastY] = [x, y];
+                }
+                await page.mouse.up();
+              },
               // Vitest's keyboard descriptor parser splits non-BMP text into
               // UTF-16 code units. Native Playwright typing preserves code
               // points, matching the E2E driver's input behavior. Bound each

@@ -66,6 +66,12 @@ export async function pasteFromClipboard(
   for (const [type, value] of Object.entries(payload)) {
     clipboardData.setData(type, value);
   }
+  // A paste uses the editor's selection, which follows a key that moved the
+  // caret only once its selectionchange is handled. A person cannot paste
+  // before that, but a test can on a busy runner, so let it be delivered.
+  await new Promise<void>(resolve =>
+    requestAnimationFrame(() => setTimeout(resolve, 0)),
+  );
   await act(async () => {
     root.dispatchEvent(clipboardEvent('paste', clipboardData));
   });

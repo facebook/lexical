@@ -304,6 +304,21 @@ export interface InputState {
   };
   isSelectionChangeFromMouseDown: boolean;
   /**
+   * A single primary-button mouse press in the root element that may start a
+   * text selection drag, from its pointerdown until the next pointerup
+   * anywhere in its document: where it was pressed, the DOM anchor of its
+   * selection once the pointer has crossed the drag threshold (false when
+   * that is outside this editor), and whether Lexical has changed the drag's
+   * selection. Only tracked on the engines in TRACKS_MOUSE_SELECTION_DRAG;
+   * null otherwise.
+   */
+  mouseSelectionDrag: null | {
+    anchor: null | false | [node: Node, offset: number];
+    clientX: number;
+    clientY: number;
+    hasExtended: boolean;
+  };
+  /**
    * The pointerType of the latest pointerdown in the root element ('touch',
    * 'pen' or 'mouse'), so the compatibility mousedown and click that follow a
    * tap can tell it from an iPadOS trackpad or mouse press. Recorded on iOS
@@ -348,6 +363,7 @@ export function createInputState(): InputState {
     lastKeyCode: null,
     lastKeyDownTimeStamp: 0,
     lastPointerType: '',
+    mouseSelectionDrag: null,
     postDeleteSelectionToRestore: null,
     savedInputMode: undefined,
     selectionChangeFromDOMUpdatePoints: null,

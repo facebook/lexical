@@ -3888,6 +3888,25 @@ function $getElementPointScrollTarget(
     : child;
 }
 
+/**
+ * The offset in `node` before any managed line break children that precede
+ * `offset`, which is the same position as far as Lexical is concerned.
+ */
+function skipManagedLineBreak(node: Node, offset: number): number {
+  const children = node.childNodes;
+  while (offset > 0) {
+    const child = children[offset - 1];
+    if (
+      !isHTMLElement(child) ||
+      !child.hasAttribute('data-lexical-managed-linebreak')
+    ) {
+      break;
+    }
+    offset--;
+  }
+  return offset;
+}
+
 /** @internal */
 export function $updateDOMSelection(
   prevSelection: BaseSelection | null,
@@ -3942,8 +3961,13 @@ export function $updateDOMSelection(
     // of editor.setRootElement(). If this occurs on init when the
     // editor is already focused, then this can cause the editor to
     // lose focus.
+    // While a mouse button is held for a selection drag, the browser's
+    // selection is the drag in progress, and removing it would restart the
+    // drag from wherever the pointer moves next. It is null here when a drag
+    // point lands inside a decorator, which the next pointermove moves out.
     if (
       prevSelection !== null &&
+      editor._inputState.mouseSelectionDrag === null &&
       isSelectionWithinEditor(
         editor,
         currentPoints.anchorNode,
@@ -4059,6 +4083,23 @@ export function $updateDOMSelection(
     if (anchor.type !== 'element') {
       return;
     }
+  }
+
+  // During a mouse drag past the end of a line that ends in an inline
+  // decorator, the browser puts the focus after the managed line break's
+  // <img>, which is the same Lexical point as before it. Writing the
+  // selection back would only make the browser move it again on the next
+  // pointer move, turning every move into two selection changes.
+  if (
+    editor._inputState.mouseSelectionDrag !== null &&
+    currentPoints.anchorNode === nextAnchorNode &&
+    currentPoints.focusNode === nextFocusNode &&
+    skipManagedLineBreak(nextAnchorNode, currentPoints.anchorOffset) ===
+      nextAnchorOffset &&
+    skipManagedLineBreak(nextFocusNode, currentPoints.focusOffset) ===
+      nextFocusOffset
+  ) {
+    return;
   }
 
   // Apply the updated selection to the DOM. Note: this will trigger

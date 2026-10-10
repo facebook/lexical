@@ -14,6 +14,7 @@ import type {BaseSelection} from './LexicalSelection';
 import {
   $getSelection,
   $isDecoratorNode,
+  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
@@ -22,8 +23,10 @@ import {
 } from '.';
 import {IS_FIREFOX} from './environment';
 import {isDecoratorBoundaryAnchorDOM} from './LexicalDOMSlot';
+import {$reconcileDecoratorBoundaryAnchors} from './LexicalReconciler';
 import {updateEditorSync} from './LexicalUpdates';
 import {
+  $getDOMSlot,
   $getNodeByKey,
   $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
@@ -72,6 +75,15 @@ function isEditorManagedLineBreak(
       (dom === lexicalLineBreak ||
         (isBR && dom.previousSibling === lexicalLineBreak))) ||
     (isBR && getNodeKeyFromDOMNode(dom, editor) !== undefined)
+  );
+}
+
+// A piece of an element's managed line break: the `<br>`, or the `<img>` that
+// precedes it after an inline decorator. Recognized by its attribute, which
+// a removed node keeps after it loses its siblings.
+function isManagedLineBreakDOM(dom: Node): boolean {
+  return (
+    isHTMLElement(dom) && dom.hasAttribute('data-lexical-managed-linebreak')
   );
 }
 
@@ -248,22 +260,51 @@ function flushMutations(
 
           if (removedDOMsLength > 0) {
             let unremovedBRs = 0;
+            // The element's own scaffolding has a fixed place in its DOM (the
+            // managed line break inside the trailing boundary, with its img
+            // first; a boundary anchor on the edge it belongs to), so it is
+            // rebuilt in place below rather than re-appended at the end.
+            const elementSlot = $isElementNode(targetNode)
+              ? $getDOMSlot(targetNode, nodeDOM, editor)
+              : null;
+            const slot =
+              elementSlot !== null && elementSlot.element === targetDOM
+                ? elementSlot
+                : null;
+            let restoreLineBreak = false;
+            let restoreAnchors = false;
 
             for (let s = 0; s < removedDOMsLength; s++) {
               const removedDOM = removedDOMs[s];
 
               if (
+                slot !== null &&
+                (removedDOM === slot.getManagedLineBreak() ||
+                  isManagedLineBreakDOM(removedDOM))
+              ) {
+                restoreLineBreak = true;
+                unremovedBRs++;
+              } else if (
                 isEditorManagedLineBreak(removedDOM, targetDOM, editor) ||
                 blockCursorElement === removedDOM
               ) {
                 targetDOM.appendChild(removedDOM);
                 unremovedBRs++;
               } else if (isDecoratorBoundaryAnchorDOM(removedDOM)) {
-                // Position matters for these (leading vs trailing), so don't
-                // blindly re-append — the next reconcile of this element puts
-                // a fresh anchor on the right edge.
+                restoreAnchors = true;
                 unremovedBRs++;
               }
+            }
+            if (slot !== null && restoreLineBreak) {
+              slot.restoreManagedLineBreak();
+            }
+            if (restoreAnchors && $isElementNode(targetNode)) {
+              $reconcileDecoratorBoundaryAnchors(
+                targetNode,
+                nodeDOM,
+                editor,
+                currentEditorState._nodeMap,
+              );
             }
 
             if (removedDOMsLength !== unremovedBRs) {

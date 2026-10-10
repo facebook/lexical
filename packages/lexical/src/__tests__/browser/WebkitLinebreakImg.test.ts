@@ -7,13 +7,15 @@
  */
 
 /**
- * Characterization tests for the WebKit managed-linebreak img hack.
+ * Characterization tests for the managed-linebreak img hack.
  *
- * On WebKit, when a block's last child is an *inline* DecoratorNode the
+ * On WebKit and desktop Chromium (since #7158), when a block's last child is
+ * an *inline* DecoratorNode the
  * managed line break is rendered as an in-flow `<img>` followed by the usual
- * `<br>` (see `ElementDOMSlot.insertManagedLineBreak`'s `webkitHack`), giving
- * Safari an editable inline box between the `contenteditable=false` decorator
- * and the break. The user-visible symptom it fixes involves native Safari
+ * `<br>` (see `ElementDOMSlot.insertManagedLineBreak`'s `withEdgeImg`), giving
+ * the browser an editable inline box between the `contenteditable=false`
+ * decorator and the break. In Chromium that box is what lets a mouse drag
+ * start to the right of a line's last inline decorator (#7158). The user-visible symptom it fixes involves native Safari
  * caret behavior that headless Linux WebKit does not reproduce, so these
  * tests pin the *mechanism* — the DOM contract of
  * `setManagedLineBreak('decorator')` on each real engine — such that removing
@@ -21,8 +23,8 @@
  * would (no other test exercises it).
  *
  * Running in browser mode means the real environment detection is live: the
- * webkit instance asserts the img+br shape and chromium / firefox assert the
- * plain-br shape, all from the same file.
+ * webkit and chromium instances assert the img+br shape and firefox asserts
+ * the plain-br shape, all from the same file.
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
@@ -34,16 +36,19 @@ import {
   $getRoot,
   $isParagraphNode,
   DecoratorNode,
+  IS_ANDROID,
   IS_APPLE_WEBKIT,
+  IS_CHROME,
   IS_IOS,
   IS_SAFARI,
 } from 'lexical';
-import {describe, expect, onTestFinished, test} from 'vitest';
+import {assert, describe, expect, onTestFinished, test} from 'vitest';
 
 import {$assertNodeType} from '../utils/assertNodeType';
 
-// Matches the `webkitHack` gate in ElementDOMSlot.setManagedLineBreak.
-const EXPECTS_IMG_HACK = IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT;
+// Restates the internal NEEDS_INLINE_DECORATOR_EDGE_BOX in LexicalDOMSlot.ts.
+const EXPECTS_IMG_HACK =
+  IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT || (IS_CHROME && !IS_ANDROID);
 const DECORATOR_LINEBREAK = EXPECTS_IMG_HACK ? ['img', 'br'] : ['br'];
 
 class TestInlineDecoratorNode extends DecoratorNode<null> {
@@ -98,7 +103,7 @@ function linebreakScaffold(contentEditable: HTMLElement): string[] {
   );
 }
 
-describe('WebKit managed-linebreak img hack (inline decorator last child)', () => {
+describe('managed-linebreak img hack (inline decorator last child)', () => {
   test('a block ending with an inline decorator gets the engine-appropriate scaffold', () => {
     const {contentEditable, editor} = mountEditor();
     editor.update(
@@ -115,9 +120,10 @@ describe('WebKit managed-linebreak img hack (inline decorator last child)', () =
       {discrete: true},
     );
 
-    // WebKit: an in-flow img gives Safari an editable inline box between the
-    // contenteditable=false decorator and the break, and must precede the br
-    // (the e2e selection utils rely on that order). Everywhere else: plain br.
+    // WebKit and desktop Chromium: an in-flow img gives the browser an
+    // editable inline box between the contenteditable=false decorator and the
+    // break, and must precede the br (the e2e selection utils rely on that
+    // order). Everywhere else: plain br.
     expect(linebreakScaffold(contentEditable)).toEqual(DECORATOR_LINEBREAK);
     const img = contentEditable.querySelector(
       'p img[data-lexical-managed-linebreak="true"]',
@@ -225,5 +231,72 @@ describe('WebKit managed-linebreak img hack (inline decorator last child)', () =
     );
 
     expect(linebreakScaffold(contentEditable)).toEqual(['br']);
+  });
+});
+
+/** The paragraph's DOM children, with the reconciler's scaffolding named. */
+function paragraphShape(contentEditable: HTMLElement): string[] {
+  const paragraph = contentEditable.querySelector('p');
+  assert(paragraph !== null);
+  return Array.from(paragraph.childNodes, node => {
+    assert(node instanceof Element);
+    if (node.hasAttribute('data-lexical-decorator-boundary')) {
+      return 'anchor';
+    }
+    if (node.hasAttribute('data-lexical-managed-linebreak')) {
+      return `managed-${node.nodeName.toLowerCase()}`;
+    }
+    return node.hasAttribute('data-lexical-decorator') ? 'decorator' : 'text';
+  });
+}
+
+// Lets the MutationObserver deliver its records and the editor flush them.
+function flushMutations(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 0));
+}
+
+describe('scaffolding removed from outside the reconciler is restored', () => {
+  const EXPECTED_SHAPE = [
+    ...(EXPECTS_IMG_HACK ? ['anchor'] : []),
+    'decorator',
+    'text',
+    'decorator',
+    ...DECORATOR_LINEBREAK.map(tag => `managed-${tag}`),
+  ];
+
+  function mountDecoratorLine() {
+    const mounted = mountEditor();
+    mounted.editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              new TestInlineDecoratorNode(),
+              $createTextNode('text'),
+              new TestInlineDecoratorNode(),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    expect(paragraphShape(mounted.contentEditable)).toEqual(EXPECTED_SHAPE);
+    return mounted;
+  }
+
+  test.each([
+    ['the leading boundary anchor', '[data-lexical-decorator-boundary]'],
+    ['the managed line break img', 'img[data-lexical-managed-linebreak]'],
+    ['the managed line break br', 'br[data-lexical-managed-linebreak]'],
+  ])('%s', async (_name, selector) => {
+    const {contentEditable} = mountDecoratorLine();
+    const removed = contentEditable.querySelector(`p > ${selector}`);
+    if (removed === null) {
+      // Not part of this engine's scaffold.
+      return;
+    }
+    removed.remove();
+    await flushMutations();
+    expect(paragraphShape(contentEditable)).toEqual(EXPECTED_SHAPE);
   });
 });

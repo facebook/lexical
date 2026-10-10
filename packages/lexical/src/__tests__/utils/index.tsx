@@ -603,9 +603,11 @@ export function polyfillContentEditable() {
  * first / last edge.
  */
 export const DECORATOR_BOUNDARY_ANCHOR_HTML =
-  '<img alt="" style="position: absolute !important; width: 0px !important; ' +
-  'height: 0px !important; border: 0px !important; margin: 0px !important; ' +
-  'padding: 0px !important;" data-lexical-decorator-boundary="true" />';
+  '<img alt="" style="border: 0px !important; display: inline !important; ' +
+  'height: 0px !important; margin: 0px !important; ' +
+  'min-height: 0px !important; min-width: 0px !important; ' +
+  'padding: 0px !important; width: 0px !important; ' +
+  'position: absolute !important;" data-lexical-decorator-boundary="true" />';
 
 /**
  * Assert that a node's generated exporters write exactly what the schema-driven

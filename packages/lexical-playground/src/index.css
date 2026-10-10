@@ -1226,7 +1226,6 @@ i.page-setup,
   cursor: default;
   display: inline-block;
   position: relative;
-  user-select: none;
   overflow: hidden;
 }
 

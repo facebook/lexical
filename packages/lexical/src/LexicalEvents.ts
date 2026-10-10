@@ -933,10 +933,19 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
         domSelection,
         rootElement,
       );
+      // Firefox puts a press beyond the end of a line that ends in an
+      // unselectable inline decorator before that decorator.
       drag.anchor =
         anchorNode !== null &&
         getNearestEditorFromDOMNode(anchorNode) === editor
-          ? [anchorNode, anchorOffset]
+          ? movePastInlineDecorators(
+              editor,
+              rootElement,
+              anchorNode,
+              anchorOffset,
+              drag.clientX,
+              drag.clientY,
+            )
           : false;
     }
     return;
@@ -988,7 +997,8 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
       rootElement,
       focusNode,
       focusOffset,
-      event,
+      event.clientX,
+      event.clientY,
     );
     if (
       points === null ||
@@ -1015,17 +1025,19 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
 }
 
 /**
- * Moves a drag's focus past the inline decorators next to it that the
- * pointer has already passed on the same line. Firefox's hit test never puts
- * the focus after an inline decorator whose content is `user-select: none`,
- * so beyond the end of a line that ends in one, the focus stays before it.
+ * Moves a drag point past the inline decorators next to it that the pointer
+ * at (`clientX`, `clientY`) has already passed on the same line. Firefox's
+ * hit test never puts a point after an inline decorator whose content is
+ * `user-select: none`, so beyond the end of a line that ends in one, the
+ * point stays before it.
  */
 function movePastInlineDecorators(
   editor: LexicalEditor,
   rootElement: HTMLElement,
   node: Node,
   offset: number,
-  event: PointerEvent,
+  clientX: number,
+  clientY: number,
 ): [node: Node, offset: number] {
   for (const isForward of [true, false]) {
     for (;;) {
@@ -1039,16 +1051,14 @@ function movePastInlineDecorators(
         break;
       }
       const rect = (sibling as HTMLElement).getBoundingClientRect();
-      if (event.clientY < rect.top || event.clientY > rect.bottom) {
+      if (clientY < rect.top || clientY > rect.bottom) {
         break;
       }
       const isRTL =
         isHTMLElement(parentDOM) &&
         getWindow(editor).getComputedStyle(parentDOM).direction === 'rtl';
       const hasPassed =
-        isForward !== isRTL
-          ? event.clientX > rect.right
-          : event.clientX < rect.left;
+        isForward !== isRTL ? clientX > rect.right : clientX < rect.left;
       if (!hasPassed) {
         break;
       }

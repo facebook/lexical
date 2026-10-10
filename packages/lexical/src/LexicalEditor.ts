@@ -309,7 +309,7 @@ export interface InputState {
    * anywhere in its document: where it was pressed, the DOM anchor of its
    * selection once the pointer has crossed the drag threshold (false when
    * that is outside this editor), and whether Lexical has changed the drag's
-   * selection. Only tracked on the engines in NEEDS_INLINE_DECORATOR_EDGE_BOX;
+   * selection. Only tracked on the engines in TRACKS_MOUSE_SELECTION_DRAG;
    * null otherwise.
    */
   mouseSelectionDrag: null | {

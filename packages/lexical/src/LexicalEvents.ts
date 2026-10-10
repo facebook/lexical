@@ -152,6 +152,14 @@ import {
 import {mergeRegister} from './utils/mergeRegister';
 import {registerEventListener} from './utils/registerEventListener';
 
+/**
+ * The engines whose mouse drags {@link onPointerMove} extends across inline
+ * decorators. Firefox needs no edge boxes, but its drags do not cross an
+ * inline decorator whose content is `user-select: none` either.
+ */
+const TRACKS_MOUSE_SELECTION_DRAG: boolean =
+  NEEDS_INLINE_DECORATOR_EDGE_BOX || IS_FIREFOX;
+
 type RootElementRemoveHandles = (() => void)[];
 type RootElementEvents = [
   string,
@@ -190,7 +198,7 @@ function getRootElementEvents(): RootElementEvents {
       (event, editor) => onBeforeInput(event as InputEvent, editor),
     ]);
   }
-  if (NEEDS_INLINE_DECORATOR_EDGE_BOX) {
+  if (TRACKS_MOUSE_SELECTION_DRAG) {
     events.push([
       'pointermove',
       (event, editor) => onPointerMove(event as PointerEvent, editor),
@@ -839,7 +847,7 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
       }
     });
   }
-  if (NEEDS_INLINE_DECORATOR_EDGE_BOX) {
+  if (TRACKS_MOUSE_SELECTION_DRAG) {
     const drag =
       isDOMNode(target) &&
       pointerType === 'mouse' &&
@@ -875,11 +883,12 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
 /**
  * Extends a mouse drag selection across an inline DecoratorNode (#7158).
  *
- * Chromium and WebKit move the focus of a drag selection by hit-testing the
- * pointer, and over an inline decorator's contentEditable=false DOM the hit
- * test often finds no position the selection can extend to: always when the
- * decorator's content is `user-select: none` or holds a block box, and
- * intermittently otherwise. The drag then stays where it was until the pointer
+ * Browsers move the focus of a drag selection by hit-testing the pointer, and
+ * over an inline decorator's contentEditable=false DOM the hit test often
+ * finds no position the selection can extend to: in Chromium and WebKit
+ * always when the decorator's content is `user-select: none` or holds a block
+ * box, and intermittently otherwise, and in Firefox when its content is
+ * `user-select: none`. The drag then stays where it was until the pointer
  * reaches text or the end of the line. While the pointer is over an inline
  * decorator, or the browser has put the focus inside one, put the DOM focus
  * on the side of the decorator nearest the pointer.
@@ -974,6 +983,13 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
     if (focusNode === null) {
       return;
     }
+    [focusNode, focusOffset] = movePastInlineDecorators(
+      editor,
+      rootElement,
+      focusNode,
+      focusOffset,
+      event,
+    );
     if (
       points === null ||
       points.anchorNode !== anchorNode ||
@@ -996,6 +1012,86 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
       domSelection.extend(focusNode, focusOffset);
     }
   }, 0);
+}
+
+/**
+ * Moves a drag's focus past the inline decorators next to it that the
+ * pointer has already passed on the same line. Firefox's hit test never puts
+ * the focus after an inline decorator whose content is `user-select: none`,
+ * so beyond the end of a line that ends in one, the focus stays before it.
+ */
+function movePastInlineDecorators(
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+  node: Node,
+  offset: number,
+  event: PointerEvent,
+): [node: Node, offset: number] {
+  for (const isForward of [true, false]) {
+    for (;;) {
+      const sibling = getDOMSiblingAt(node, offset, isForward, rootElement);
+      const parentDOM = sibling && sibling.parentNode;
+      if (
+        sibling === null ||
+        parentDOM === null ||
+        getInlineDecoratorDOM(editor, sibling, rootElement) !== sibling
+      ) {
+        break;
+      }
+      const rect = (sibling as HTMLElement).getBoundingClientRect();
+      if (event.clientY < rect.top || event.clientY > rect.bottom) {
+        break;
+      }
+      const isRTL =
+        isHTMLElement(parentDOM) &&
+        getWindow(editor).getComputedStyle(parentDOM).direction === 'rtl';
+      const hasPassed =
+        isForward !== isRTL
+          ? event.clientX > rect.right
+          : event.clientX < rect.left;
+      if (!hasPassed) {
+        break;
+      }
+      const index = Array.prototype.indexOf.call(parentDOM.childNodes, sibling);
+      node = parentDOM;
+      offset = isForward ? index + 1 : index;
+    }
+  }
+  return [node, offset];
+}
+
+/**
+ * The DOM node right after (or, when `isForward` is false, right before) the
+ * point at `offset` in `node`, leaving any text node or element that the
+ * point is at the edge of, or null at the edge of `rootElement`.
+ */
+function getDOMSiblingAt(
+  node: Node,
+  offset: number,
+  isForward: boolean,
+  rootElement: HTMLElement,
+): Node | null {
+  if (isDOMTextNode(node)) {
+    if (isForward ? offset < node.length : offset > 0) {
+      return null;
+    }
+  } else {
+    const child = node.childNodes[isForward ? offset : offset - 1];
+    if (child) {
+      return child;
+    }
+  }
+  let dom: Node | null = node;
+  while (dom !== null && dom !== rootElement) {
+    const sibling: Node | null = isForward
+      ? dom.nextSibling
+      : dom.previousSibling;
+    if (sibling !== null) {
+      return sibling;
+    }
+    dom = dom.parentNode;
+  }
+  return null;
 }
 
 /**

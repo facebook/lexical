@@ -27,7 +27,6 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   DecoratorNode,
   getDOMSelection,
-  IS_FIREFOX,
   type LexicalEditor,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -316,10 +315,10 @@ test('Issue #7158: a drag past the end of the line does not keep changing the se
   );
 });
 
-// Chromium never extends a drag across these decorators by itself, so these
-// exercise the pointermove fallback. A drag that starts left of an
-// unselectable first decorator is not covered: Chromium anchors it after that
-// decorator, and a drag keeps the anchor it took on mousedown.
+// Chromium and Firefox never extend a drag across these decorators by
+// themselves, so these exercise the pointermove fallback. A drag that starts
+// left of an unselectable first decorator is not covered: Chromium anchors it
+// after that decorator, and a drag keeps the anchor it took on mousedown.
 describe('Issue #7158: mouse drag over unselectable inline decorators', () => {
   test(
     'a drag from right of the last decorator selects back to the third',
@@ -362,38 +361,33 @@ describe('Issue #7158: mouse drag over selectable boxed inline decorators', () =
   // On macOS Chrome a drag can restart from the pointer, collapsing the
   // selection inside a decorator, where it resolves to no Lexical selection.
   // Linux Chromium does not do this, so do it the way it would: after the
-  // browser and Lexical have handled a pointermove. Firefox never restarts a
-  // drag, so Lexical leaves its drags alone, and Firefox extends its drag from
-  // wherever a script collapsed the selection.
-  test.skipIf(IS_FIREFOX)(
-    'a drag that restarts inside a decorator keeps its anchor',
-    async () => {
-      const {editor, left, right, y} = mount(
-        false,
-        SelectableBoxedImageDecoratorNode,
-      );
-      const root = document.getElementById('issue-7158-root')!;
-      const decorators = root.querySelectorAll('span > div');
-      let injected = false;
-      const inject = (event: PointerEvent) => {
-        const x = event.clientX - root.getBoundingClientRect().left;
-        if (!injected && event.buttons === 1 && x < left(COUNT - 2)) {
-          injected = true;
-          requestAnimationFrame(() =>
-            getDOMSelection(window)?.collapse(decorators[COUNT - 2], 0),
-          );
-        }
-      };
-      document.addEventListener('pointermove', inject, true);
-      onTestFinished(() =>
-        document.removeEventListener('pointermove', inject, true),
-      );
-      await commands.mouseDrag('#issue-7158-root', [
-        [right(COUNT - 1) + 30, y],
-        [left(2) - 2, y],
-      ]);
-      assert(injected, 'the drag never reached the injection point');
-      await expectSelectedDecoratorCount(editor, COUNT - 2);
-    },
-  );
+  // browser and Lexical have handled a pointermove.
+  test('a drag that restarts inside a decorator keeps its anchor', async () => {
+    const {editor, left, right, y} = mount(
+      false,
+      SelectableBoxedImageDecoratorNode,
+    );
+    const root = document.getElementById('issue-7158-root')!;
+    const decorators = root.querySelectorAll('span > div');
+    let injected = false;
+    const inject = (event: PointerEvent) => {
+      const x = event.clientX - root.getBoundingClientRect().left;
+      if (!injected && event.buttons === 1 && x < left(COUNT - 2)) {
+        injected = true;
+        requestAnimationFrame(() =>
+          getDOMSelection(window)?.collapse(decorators[COUNT - 2], 0),
+        );
+      }
+    };
+    document.addEventListener('pointermove', inject, true);
+    onTestFinished(() =>
+      document.removeEventListener('pointermove', inject, true),
+    );
+    await commands.mouseDrag('#issue-7158-root', [
+      [right(COUNT - 1) + 30, y],
+      [left(2) - 2, y],
+    ]);
+    assert(injected, 'the drag never reached the injection point');
+    await expectSelectedDecoratorCount(editor, COUNT - 2);
+  });
 });

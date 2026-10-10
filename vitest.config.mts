@@ -184,6 +184,16 @@ export default defineConfig({
                   force: true,
                   position: {x: first[0], y: first[1]},
                 });
+                // hover() looks the element up, scrolls it into view and
+                // checks it on every call, which made each step of a drag
+                // several round trips. The element stays put during a drag,
+                // so move the mouse to page coordinates from its box instead.
+                const box = await target.boundingBox();
+                if (box === null) {
+                  throw new Error(
+                    `mouseDrag target ${selector} is not visible`,
+                  );
+                }
                 await page.mouse.down();
                 await settle();
                 // Chromium collapses the selection at the pointer on the
@@ -199,13 +209,10 @@ export default defineConfig({
                     Math.ceil(Math.hypot(x - lastX, y - lastY) / STEP),
                   );
                   for (let i = 1; i <= steps; i++) {
-                    await target.hover({
-                      force: true,
-                      position: {
-                        x: lastX + ((x - lastX) * i) / steps,
-                        y: lastY + ((y - lastY) * i) / steps,
-                      },
-                    });
+                    await page.mouse.move(
+                      box.x + lastX + ((x - lastX) * i) / steps,
+                      box.y + lastY + ((y - lastY) * i) / steps,
+                    );
                     await settle();
                   }
                   [lastX, lastY] = [x, y];

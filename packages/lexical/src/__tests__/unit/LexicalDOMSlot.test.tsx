@@ -19,12 +19,22 @@ import {
   type LexicalEditor,
   type TextNode,
 } from 'lexical';
-import {afterEach, beforeEach, describe, expect, test} from 'vitest';
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+} from 'vitest';
 
 import {ElementDOMSlot} from '../../LexicalDOMSlot';
 import {
   $assertNodeType,
   $createTestDecoratorNode,
+  expectHtmlToBeEqual,
+  html,
   TestDecoratorNode,
 } from '../utils';
 
@@ -656,6 +666,82 @@ describe('ElementDOMSlot integration: trailing decoration (slot.before)', () => 
     const marker = blockDom.querySelector('[data-marker]');
     expect(marker).not.toBe(null);
     expect(blockDom.querySelector('[data-lexical-text="true"]')).toBe(null);
+  });
+});
+
+describe('ElementDOMSlot integration: a removed trailing decoration', () => {
+  // A slot that keeps a reference to its `before` boundary, rather than
+  // finding it in the DOM, still names it after an edit has removed it.
+  const markers = new WeakMap<HTMLElement, HTMLElement>();
+  class StoredTrailingDecorElementNode extends ElementNode {
+    $config() {
+      return this.config('stored-trailing-decor', {extends: ElementNode});
+    }
+    createDOM() {
+      const el = document.createElement('div');
+      el.setAttribute('data-block', 'true');
+      const marker = document.createElement('span');
+      marker.setAttribute('data-marker', 'true');
+      marker.contentEditable = 'false';
+      el.appendChild(marker);
+      markers.set(el, marker);
+      return el;
+    }
+    updateDOM() {
+      return false;
+    }
+    getDOMSlot(dom: HTMLElement): ElementDOMSlot {
+      return super.getDOMSlot(dom).withBefore(markers.get(dom));
+    }
+  }
+
+  test('a managed line break removed with the decoration is rebuilt', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        name: '[stored-trailing-decor]',
+        nodes: [StoredTrailingDecorElementNode],
+      }),
+    );
+    editor.setRootElement(container);
+    onTestFinished(() => {
+      editor.dispose();
+      container.remove();
+    });
+    editor.update(
+      () => {
+        $getRoot().clear().append(new StoredTrailingDecorElementNode());
+      },
+      {discrete: true},
+    );
+    const block = container.querySelector('[data-block]');
+    assert(block !== null, 'Expected the block to be rendered');
+    expectHtmlToBeEqual(
+      block.outerHTML,
+      html`
+        <div dir="auto" data-block="true">
+          <br data-lexical-managed-linebreak="true" />
+          <span contenteditable="false" data-marker="true"></span>
+        </div>
+      `,
+    );
+    // A native edit removes both at once.
+    block.replaceChildren();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const expected = html`
+      <div dir="auto" data-block="true">
+        <br data-lexical-managed-linebreak="true" />
+      </div>
+    `;
+    expectHtmlToBeEqual(block.outerHTML, expected);
+    editor.update(
+      () => {
+        $getRoot().getFirstChildOrThrow().markDirty();
+      },
+      {discrete: true},
+    );
+    expectHtmlToBeEqual(block.outerHTML, expected);
   });
 });
 

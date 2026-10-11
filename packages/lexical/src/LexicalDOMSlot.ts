@@ -526,7 +526,13 @@ export class ElementDOMSlot<
     element.__lexicalLineBreak = undefined;
     const kind = element.__lexicalLastChildKind;
     if (kind != null) {
-      this.insertManagedLineBreak(needsEdgeImg(kind));
+      // The edit can have removed this slot's `before` boundary along with
+      // the line break, and there is nothing to insert before then.
+      const slot =
+        this.before === null || this.before.parentNode === element
+          ? this
+          : this.withBefore(null);
+      slot.insertManagedLineBreak(needsEdgeImg(kind));
     }
   }
 

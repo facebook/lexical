@@ -40,7 +40,7 @@ import {
   type RangeSelection,
 } from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
-import {afterEach, beforeEach, describe, expect, test} from 'vitest';
+import {afterEach, assert, beforeEach, describe, expect, test} from 'vitest';
 
 const BOUNDARY_SELECTOR = 'img[data-lexical-decorator-boundary="true"]';
 
@@ -237,6 +237,40 @@ describe('Issue #8922: select-all with a boundary block decorator', () => {
     );
     expect(managedLinebreaks.length).toBeGreaterThan(0);
     expect(managedLinebreaks).not.toContain('img');
+  });
+
+  // Lexical adds anchors only while it isn't observing the DOM, so one that
+  // native editing or an extension moved or copied is put back on its edge.
+  test.each([
+    [
+      'an anchor moved into a paragraph',
+      (anchor: Node, paragraph: Element) => {
+        paragraph.appendChild(anchor);
+      },
+    ],
+    [
+      'an anchor moved into a text node',
+      (anchor: Node, paragraph: Element) => {
+        const text = paragraph.firstElementChild;
+        assert(text !== null, 'Expected the text');
+        text.appendChild(anchor);
+      },
+    ],
+    [
+      'a copy of an anchor',
+      (anchor: Node) => {
+        container.insertBefore(anchor.cloneNode(true), anchor);
+      },
+    ],
+  ])('%s leaves one anchor, on its edge', async (_name, edit) => {
+    setRootChildren('decorator', 'text');
+    const anchor = container.firstChild;
+    const paragraph = container.lastElementChild;
+    assert(anchor !== null && paragraph !== null, 'Expected the anchor and p');
+    edit(anchor, paragraph);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(rootChildNames(container)).toEqual(['boundary', 'decorator', 'p']);
+    expect(paragraph.querySelectorAll(BOUNDARY_SELECTOR)).toHaveLength(0);
   });
 
   test('anchors do not shift the child offsets $selectAll resolves to', () => {

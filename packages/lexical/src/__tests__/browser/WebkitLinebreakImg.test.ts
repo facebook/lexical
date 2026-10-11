@@ -295,4 +295,38 @@ describe('scaffolding removed from outside the reconciler is restored', () => {
       .poll(() => paragraphShape(contentEditable))
       .toEqual(EXPECTED_SHAPE);
   });
+
+  // Lexical adds the anchor only while it isn't observing the DOM, so an
+  // anchor that something else moved or copied, where it would shift DOM
+  // offsets, is put back on its edge.
+  describe.skipIf(!EXPECTS_IMG_HACK)('the leading boundary anchor', () => {
+    test.each([
+      [
+        'moved before the second decorator',
+        (anchor: Element, paragraph: Element) => {
+          paragraph.insertBefore(
+            anchor,
+            paragraph.querySelectorAll('[data-lexical-decorator]')[1],
+          );
+        },
+      ],
+      [
+        'copied beside it',
+        (anchor: Element) => {
+          anchor.after(anchor.cloneNode(true));
+        },
+      ],
+    ])('%s', async (_name, edit) => {
+      const {contentEditable} = mountDecoratorLine();
+      const paragraph = contentEditable.querySelector('p');
+      const anchor = contentEditable.querySelector(
+        'p > [data-lexical-decorator-boundary]',
+      );
+      assert(paragraph !== null && anchor !== null, 'expected the anchor');
+      edit(anchor, paragraph);
+      await expect
+        .poll(() => paragraphShape(contentEditable))
+        .toEqual(EXPECTED_SHAPE);
+    });
+  });
 });

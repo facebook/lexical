@@ -197,6 +197,12 @@ function flushMutations(
           }
         } else if (type === 'childList') {
           shouldRevertSelection = true;
+          // The zero-size selection anchors the reconciler parks outside a
+          // leading / trailing block decorator (#8922), and on some engines
+          // before a leading inline one (#7158), have a fixed place in their
+          // element's DOM. When one is added or removed here, the element's
+          // anchors are rebuilt in place below.
+          let restoreAnchors = false;
           // We attempt to "undo" any changes that have occurred outside
           // of Lexical. We want Lexical's editor state to be source of truth.
           // To the user, these will look like no-ops.
@@ -207,17 +213,19 @@ function flushMutations(
             const node = $getNodeFromDOMNode(addedDOM);
             const parentDOM = addedDOM.parentNode;
 
-            if (
+            if (isDecoratorBoundaryAnchorDOM(addedDOM)) {
+              // Lexical only adds anchors while it isn't observing, so this
+              // one was moved or copied by something else (native editing,
+              // an extension), possibly to where it shifts DOM offsets.
+              if (parentDOM !== null) {
+                parentDOM.removeChild(addedDOM);
+              }
+              restoreAnchors = true;
+            } else if (
               parentDOM != null &&
               addedDOM !== blockCursorElement &&
               node === null &&
               !isEditorManagedLineBreak(addedDOM, parentDOM, editor) &&
-              // The zero-size selection anchors the reconciler parks outside
-              // a leading / trailing block decorator (#8922), and on some
-              // engines before a leading inline one (#7158), are keyless
-              // scaffolding, like the managed line break — don't evict them
-              // as foreign DOM.
-              !isDecoratorBoundaryAnchorDOM(addedDOM) &&
               // @experimental named-slots. Slot containers are keyless
               // reconciler scaffolding: a flush that observes one being
               // parked in its host or relocated by an explicit mount must
@@ -265,7 +273,6 @@ function flushMutations(
                 ? elementSlot
                 : null;
             let restoreLineBreak = false;
-            let restoreAnchors = false;
 
             for (let s = 0; s < removedDOMsLength; s++) {
               const removedDOM = removedDOMs[s];
@@ -287,18 +294,23 @@ function flushMutations(
             if (slot !== null && restoreLineBreak) {
               slot.restoreManagedLineBreak();
             }
-            if (restoreAnchors && $isElementNode(targetNode)) {
-              $reconcileDecoratorBoundaryAnchors(
-                targetNode,
-                nodeDOM,
-                editor,
-                currentEditorState._nodeMap,
-              );
-            }
 
             if (removedDOMsLength !== unremovedBRs) {
               badDOMTargets.set(nodeDOM, targetNode);
             }
+          }
+          // The reconciler only gives non-inline elements anchors.
+          if (
+            restoreAnchors &&
+            $isElementNode(targetNode) &&
+            !targetNode.isInline()
+          ) {
+            $reconcileDecoratorBoundaryAnchors(
+              targetNode,
+              nodeDOM,
+              editor,
+              currentEditorState._nodeMap,
+            );
           }
         }
       }

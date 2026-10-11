@@ -497,6 +497,77 @@ describe('LexicalEditor tests', () => {
         });
       });
     });
+    it('does not flush an update started by a commit listener until every listener of that commit has run (#7709)', async () => {
+      init(function onError(err) {
+        throw err;
+      });
+      await update(() => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('first')));
+      });
+
+      const updates: [
+        prevEditorState: EditorState,
+        editorState: EditorState,
+      ][] = [];
+      editor.registerUpdateListener(({prevEditorState, editorState}) => {
+        updates.push([prevEditorState, editorState]);
+      });
+      let appended = false;
+      editor.registerMutationListener(
+        ParagraphNode,
+        () => {
+          if (!appended) {
+            appended = true;
+            editor.update(() => {
+              $getRoot().append(
+                $createParagraphNode().append($createTextNode('third')),
+              );
+            });
+          }
+        },
+        {skipInitialization: true},
+      );
+      const reads: string[] = [];
+      editor.registerMutationListener(
+        ParagraphNode,
+        () => {
+          reads.push(editor.read(() => $getRoot().getTextContent()));
+        },
+        {skipInitialization: true},
+      );
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      try {
+        editor.update(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('second')),
+            );
+          },
+          {discrete: true},
+        );
+        // The read must not commit the update started by the first mutation
+        // listener: the update listeners would have been notified of it before
+        // the commit that is still notifying its own listeners.
+        expect(updates).toHaveLength(1);
+        expect(updates[0][1]).toBe(editor.getEditorState());
+        expect(reads).toEqual(['first\n\nsecond']);
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+        expect(warnSpy.mock.calls[0][0]).toMatch(/editor\.read\(\)/);
+
+        // The pending update commits afterwards, continuing from that state.
+        await Promise.resolve();
+        expect(updates).toHaveLength(2);
+        expect(updates[1][0]).toBe(updates[0][1]);
+        expect(updates[1][1]).toBe(editor.getEditorState());
+        expect(reads).toEqual(['first\n\nsecond', 'first\n\nsecond\n\nthird']);
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        warnSpy.mockRestore();
+      }
+    });
   });
 
   it('Should create an editor with an initial editor state', async () => {

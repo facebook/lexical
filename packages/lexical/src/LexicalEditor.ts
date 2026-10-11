@@ -58,6 +58,7 @@ import {
   $commitPendingUpdates,
   $fullReconcile,
   internalGetActiveEditor,
+  isDispatchingCommitListeners,
   parseEditorState,
   triggerListeners,
   updateEditor,
@@ -163,7 +164,10 @@ export type EditorSetOptions = {
  *
  * - `'force-commit'` (the default) flushes any pending updates immediately
  *   before the read, so it always observes a fully committed and reconciled
- *   state.
+ *   state. The exception is a read while the editor is notifying listeners of
+ *   a commit: pending updates then commit after those listeners have run, so
+ *   that every listener observes commits in order, and the read observes the
+ *   state being committed.
  * - `'pending'` reads the pending state if it exists, otherwise the committed
  *   state, without flushing. This is safe to call when an update may already
  *   be in progress at the cost of possibly observing an uncommitted state
@@ -1918,7 +1922,19 @@ export class LexicalEditor {
     const [mode, callbackFn]: [EditorReadMode, () => T] =
       args.length === 1 ? ['force-commit', args[0]] : args;
     if (mode === 'force-commit') {
-      $commitPendingUpdates(this);
+      if (!isDispatchingCommitListeners(this)) {
+        $commitPendingUpdates(this);
+      } else if (__DEV__ && this._pendingEditorState !== null) {
+        console.warn(
+          `editor.read() was called while the editor was notifying listeners ` +
+            `of a commit, and a listener had started another update. That ` +
+            `update was not committed early, so that listeners observe ` +
+            `commits in order, and the read observed the state being ` +
+            `committed. Inside listeners, read with ` +
+            `editor.getEditorState().read(fn, {editor}) or ` +
+            `editor.read('latest', fn) instead.`,
+        );
+      }
     }
     // 'pending' observes an in-progress or queued update without flushing it;
     // 'force-commit' and 'latest' read the committed (reconciled) state.

@@ -22,12 +22,6 @@ import {commands, userEvent} from 'vitest/browser';
 
 import theme from '../../themes/PlaygroundEditorTheme';
 
-declare module 'vitest/browser' {
-  interface BrowserCommands {
-    typeText(text: string, selector: string): Promise<void>;
-  }
-}
-
 export function setupEditor(dependencies: AnyLexicalExtensionArgument[]) {
   const root = document.createElement('div');
   root.contentEditable = 'true';

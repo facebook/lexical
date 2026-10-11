@@ -598,9 +598,10 @@ export function polyfillContentEditable() {
 /**
  * The zero-size, out-of-flow `<img>` the reconciler parks outside a leading or
  * trailing block DecoratorNode so browsers keep painting the selection
- * highlight for a range that ends on that boundary (#8922). Interpolate it into
- * an expected-HTML template wherever a block decorator sits on an element's
- * first / last edge.
+ * highlight for a range that ends on that boundary (#8922), and, on the
+ * engines that need an inline decorator edge box, before a leading inline one
+ * (#7158). Interpolate it into an expected-HTML template wherever a decorator
+ * sits on an element's edge where it gets one.
  */
 export const DECORATOR_BOUNDARY_ANCHOR_HTML =
   '<img alt="" style="border: 0px !important; display: inline !important; ' +

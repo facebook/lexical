@@ -813,7 +813,12 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
     }
     if (!node.isInline()) {
       $reconcileElementTerminatingLineBreak(null, node, dom);
-      $reconcileDecoratorBoundaryAnchors(node, dom);
+      $reconcileDecoratorBoundaryAnchors(
+        node,
+        dom,
+        activeEditor,
+        activeNextNodeMap,
+      );
     }
   } else {
     const text = node.getTextContent();
@@ -944,39 +949,20 @@ function $isLastChildLineBreakOrDecorator(
   return null;
 }
 
-function $isBlockDecoratorChild(
-  key: null | NodeKey,
-  nodeMap: NodeMap,
-): boolean {
-  if (!key) {
-    return false;
-  }
-  const node = nodeMap.get(key);
-  return $isDecoratorNode(node) && !node.isInline();
-}
-
 /**
- * Whether the element's first child needs the leading boundary anchor: a
- * block DecoratorNode, or on the engines in
- * {@link NEEDS_INLINE_DECORATOR_EDGE_BOX} an inline one too. A line that starts with an inline decorator
- * has no editable caret position before it either, so a browser canonicalizes
- * a caret at the start of the line into the decorator's non-editable DOM and
- * will not extend a mouse drag out of it (#7158). (The trailing edge of an
- * inline decorator already has an editable position: the managed line break
- * that {@link $reconcileElementTerminatingLineBreak} appends after it.)
+ * Whether the child with `key` is a block DecoratorNode, or with
+ * `includeInline` any DecoratorNode.
  */
-function $isLeadingDecoratorChild(
+function $isEdgeDecoratorChild(
   key: null | NodeKey,
   nodeMap: NodeMap,
+  includeInline: boolean,
 ): boolean {
   if (!key) {
     return false;
   }
   const node = nodeMap.get(key);
-  return (
-    $isDecoratorNode(node) &&
-    (!node.isInline() || NEEDS_INLINE_DECORATOR_EDGE_BOX)
-  );
+  return $isDecoratorNode(node) && (includeInline || !node.isInline());
 }
 
 /**
@@ -987,28 +973,37 @@ function $isLeadingDecoratorChild(
  * out-of-flow anchor parked outside each such boundary child so the browser has
  * an editable inline box to resolve the boundary position against. Interior
  * decorators are unaffected, so only the first / last child is considered.
- * The leading anchor is also parked before an inline first-child decorator
- * where the engine needs it, so a mouse drag can start at the start of such a
- * line (see {@link $isLeadingDecoratorChild}, #7158).
  *
- * Also called outside a reconcile, with the editor and node map passed
- * explicitly, to put back an anchor that something else removed from the DOM
- * (see `flushMutations`).
+ * On the engines in {@link NEEDS_INLINE_DECORATOR_EDGE_BOX} the leading anchor
+ * is also parked before an inline first-child decorator. A line that starts
+ * with an inline decorator has no editable caret position before it either,
+ * so a browser canonicalizes a caret at the start of the line into the
+ * decorator's non-editable DOM and will not extend a mouse drag out of it
+ * (#7158). The trailing edge of an inline decorator already has an editable
+ * position: the managed line break that
+ * {@link $reconcileElementTerminatingLineBreak} appends after it.
+ *
+ * Also called by `flushMutations`, outside a reconcile, to put back an anchor
+ * that something else removed from the DOM.
  */
 export function $reconcileDecoratorBoundaryAnchors(
   nextElement: ElementNode,
   dom: HTMLElement & LexicalPrivateDOM,
-  editor: LexicalEditor = activeEditor,
-  nodeMap: NodeMap = activeNextNodeMap,
+  editor: LexicalEditor,
+  nodeMap: NodeMap,
 ): void {
   const slot = $getDOMSlot(nextElement, dom, editor);
   slot.setDecoratorBoundaryAnchor(
     'leading',
-    $isLeadingDecoratorChild(nextElement.__first, nodeMap),
+    $isEdgeDecoratorChild(
+      nextElement.__first,
+      nodeMap,
+      NEEDS_INLINE_DECORATOR_EDGE_BOX,
+    ),
   );
   slot.setDecoratorBoundaryAnchor(
     'trailing',
-    $isBlockDecoratorChild(nextElement.__last, nodeMap),
+    $isEdgeDecoratorChild(nextElement.__last, nodeMap, false),
   );
 }
 
@@ -1875,7 +1870,12 @@ function $reconcileNode(
         // Unlike the terminating line break this applies to the root too — a
         // leading / trailing block decorator at the top level is exactly the
         // shape that breaks select-all.
-        $reconcileDecoratorBoundaryAnchors(nextNode, dom);
+        $reconcileDecoratorBoundaryAnchors(
+          nextNode,
+          dom,
+          activeEditor,
+          activeNextNodeMap,
+        );
       }
       // Fold slot text slots-first, ahead of the child text the children
       // reconcile just wrote, matching `ElementNode.getTextContent` and the

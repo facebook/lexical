@@ -46,6 +46,7 @@ import {
   COMPOSITION_START_CHAR,
   COMPOSITION_SUFFIX,
   CONTROL_OR_OTHER_KEY,
+  DATA_LEXICAL_MANAGED_LINEBREAK,
   DOM_DOCUMENT_FRAGMENT_TYPE,
   DOM_DOCUMENT_TYPE,
   DOM_ELEMENT_TYPE,
@@ -2829,6 +2830,17 @@ export function isHTMLTableCellElement(x: unknown): x is HTMLTableCellElement {
  */
 export function isHTMLElement(x: unknown): x is HTMLElement {
   return isDOMNode(x) && x.nodeType === DOM_ELEMENT_TYPE;
+}
+
+/**
+ * @internal
+ *
+ * A piece of an element's managed line break: the `<br>`, or the `<img>` that
+ * precedes it after an inline decorator. Recognized by its attribute, which a
+ * removed node keeps after it loses its siblings.
+ */
+export function isManagedLineBreakDOM(x: unknown): x is HTMLElement {
+  return isHTMLElement(x) && x.hasAttribute(DATA_LEXICAL_MANAGED_LINEBREAK);
 }
 
 /**

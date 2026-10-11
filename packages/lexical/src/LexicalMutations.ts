@@ -39,6 +39,7 @@ import {
   isDOMUnmanaged,
   isFirefoxClipboardEvents,
   isHTMLElement,
+  isManagedLineBreakDOM,
 } from './LexicalUtils';
 // The time between a text entry event and the mutation observer firing.
 const TEXT_MUTATION_VARIANCE = 100;
@@ -75,15 +76,6 @@ function isEditorManagedLineBreak(
       (dom === lexicalLineBreak ||
         (isBR && dom.previousSibling === lexicalLineBreak))) ||
     (isBR && getNodeKeyFromDOMNode(dom, editor) !== undefined)
-  );
-}
-
-// A piece of an element's managed line break: the `<br>`, or the `<img>` that
-// precedes it after an inline decorator. Recognized by its attribute, which
-// a removed node keeps after it loses its siblings.
-function isManagedLineBreakDOM(dom: Node): boolean {
-  return (
-    isHTMLElement(dom) && dom.hasAttribute('data-lexical-managed-linebreak')
   );
 }
 
@@ -221,7 +213,8 @@ function flushMutations(
               node === null &&
               !isEditorManagedLineBreak(addedDOM, parentDOM, editor) &&
               // The zero-size selection anchors the reconciler parks outside
-              // a leading / trailing block decorator (#8922) are keyless
+              // a leading / trailing block decorator (#8922), and on some
+              // engines before a leading inline one (#7158), are keyless
               // scaffolding, like the managed line break — don't evict them
               // as foreign DOM.
               !isDecoratorBoundaryAnchorDOM(addedDOM) &&
@@ -277,11 +270,7 @@ function flushMutations(
             for (let s = 0; s < removedDOMsLength; s++) {
               const removedDOM = removedDOMs[s];
 
-              if (
-                slot !== null &&
-                (removedDOM === slot.getManagedLineBreak() ||
-                  isManagedLineBreakDOM(removedDOM))
-              ) {
+              if (slot !== null && isManagedLineBreakDOM(removedDOM)) {
                 restoreLineBreak = true;
                 unremovedBRs++;
               } else if (

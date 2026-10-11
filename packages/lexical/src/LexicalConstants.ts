@@ -21,6 +21,13 @@ export const DOM_TEXT_TYPE = 3;
 export const DOM_DOCUMENT_TYPE = 9;
 export const DOM_DOCUMENT_FRAGMENT_TYPE = 11;
 
+// The attributes of the DOM scaffolding the reconciler adds to an element
+// (see LexicalDOMSlot): its managed line break, and a decorator boundary
+// anchor.
+export const DATA_LEXICAL_MANAGED_LINEBREAK = 'data-lexical-managed-linebreak';
+export const DATA_LEXICAL_DECORATOR_BOUNDARY =
+  'data-lexical-decorator-boundary';
+
 // Reconciling
 export const NO_DIRTY_NODES = 0;
 export const HAS_DIRTY_NODES = 1;

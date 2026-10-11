@@ -115,6 +115,7 @@ import {
   isDOMShadowRoot,
   isDOMTextNode,
   isHTMLElement,
+  isManagedLineBreakDOM,
   isMouseSelectionDragging,
   isSelectionWithinEditor,
   removeDOMBlockCursorElement,
@@ -3894,15 +3895,7 @@ function $getElementPointScrollTarget(
  * `offset`, which is the same position as far as Lexical is concerned.
  */
 function skipManagedLineBreak(node: Node, offset: number): number {
-  const children = node.childNodes;
-  while (offset > 0) {
-    const child = children[offset - 1];
-    if (
-      !isHTMLElement(child) ||
-      !child.hasAttribute('data-lexical-managed-linebreak')
-    ) {
-      break;
-    }
+  while (offset > 0 && isManagedLineBreakDOM(node.childNodes[offset - 1])) {
     offset--;
   }
   return offset;
@@ -3964,9 +3957,10 @@ export function $updateDOMSelection(
     // lose focus.
     // During a mouse selection drag, the browser's selection is the drag in
     // progress, and removing it would restart the drag from wherever the
-    // pointer moves next. It is null here when a drag point lands inside a
-    // decorator, which the next pointermove moves out. A click still removes
-    // it: Firefox relies on that to place a click between block decorators.
+    // pointer moves next. nextSelection is null here when a drag point lands
+    // inside a decorator, which the next pointermove moves out. A click still
+    // removes it: Firefox relies on that to place a click between block
+    // decorators.
     if (
       prevSelection !== null &&
       !isMouseSelectionDragging(editor) &&
@@ -4088,10 +4082,11 @@ export function $updateDOMSelection(
   }
 
   // During a mouse drag past the end of a line that ends in an inline
-  // decorator, the browser puts the focus after the managed line break's
-  // <img>, which is the same Lexical point as before it. Writing the
-  // selection back would only make the browser move it again on the next
-  // pointer move, turning every move into two selection changes.
+  // decorator, the browser can put the focus after the managed line break
+  // (its <img> on the engines that render one, or its <br>), which is the
+  // same Lexical point as before it. Writing the selection back would only
+  // make the browser move it again on the next pointer move, turning every
+  // move into two selection changes.
   if (
     isMouseSelectionDragging(editor) &&
     currentPoints.anchorNode === nextAnchorNode &&

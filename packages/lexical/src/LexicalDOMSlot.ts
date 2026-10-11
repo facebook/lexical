@@ -18,7 +18,16 @@ import {
   IS_IOS,
   IS_SAFARI,
 } from './environment';
-import {$getDocument, $getEditor} from './LexicalUtils';
+import {
+  DATA_LEXICAL_DECORATOR_BOUNDARY,
+  DATA_LEXICAL_MANAGED_LINEBREAK,
+} from './LexicalConstants';
+import {
+  $getDocument,
+  $getEditor,
+  isHTMLElement,
+  isManagedLineBreakDOM,
+} from './LexicalUtils';
 import {setDOMStyleObject} from './utils/setDOMStyle';
 
 /**
@@ -64,9 +73,6 @@ const IS_WEBKIT_BROWSER = IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI;
  */
 export const NEEDS_INLINE_DECORATOR_EDGE_BOX: boolean =
   IS_WEBKIT_BROWSER || (IS_CHROME && !IS_ANDROID);
-
-const DATA_LEXICAL_MANAGED_LINEBREAK = 'data-lexical-managed-linebreak';
-const DATA_LEXICAL_DECORATOR_BOUNDARY = 'data-lexical-decorator-boundary';
 
 /**
  * Browsers drop the selection highlight for a range whose endpoint is an
@@ -114,10 +120,18 @@ export function isDecoratorBoundaryAnchorDOM(
   node: Node | null,
 ): node is Element & {[DecoratorBoundaryAnchorDOMBrand]: never} {
   return (
-    node !== null &&
-    node.nodeType === 1 &&
-    (node as Element).hasAttribute(DATA_LEXICAL_DECORATOR_BOUNDARY)
+    isHTMLElement(node) && node.hasAttribute(DATA_LEXICAL_DECORATOR_BOUNDARY)
   );
+}
+
+/**
+ * Whether a managed line break of `kind` gets an `<img>` before its `<br>`,
+ * the editable inline box after a line's last inline decorator.
+ */
+function needsEdgeImg(
+  kind: LexicalPrivateDOM['__lexicalLastChildKind'],
+): boolean {
+  return kind === 'decorator' && NEEDS_INLINE_DECORATOR_EDGE_BOX;
 }
 
 /** Which boundaries of an ElementNode's DOM carry a decorator anchor. */
@@ -402,7 +416,9 @@ export class ElementDOMSlot<
    * @internal
    *
    * The zero-size selection anchor parked outside a leading / trailing block
-   * decorator child, or `null` when this element has none on that edge. Each
+   * decorator child (#8922), or on the engines in
+   * {@link NEEDS_INLINE_DECORATOR_EDGE_BOX} before a leading inline one
+   * (#7158), or `null` when this element has none on that edge. Each
    * edge's anchor has a fixed DOM position — leading: the head of the managed
    * range (after the `after` boundary and any slot containers); trailing: the
    * very end of the managed range (just inside the `before` boundary) — so
@@ -487,9 +503,7 @@ export class ElementDOMSlot<
     if (nextLineBreakType === null) {
       this.removeManagedLineBreak();
     } else {
-      this.insertManagedLineBreak(
-        nextLineBreakType === 'decorator' && NEEDS_INLINE_DECORATOR_EDGE_BOX,
-      );
+      this.insertManagedLineBreak(needsEdgeImg(nextLineBreakType));
     }
   }
 
@@ -505,19 +519,14 @@ export class ElementDOMSlot<
   restoreManagedLineBreak(): void {
     const element: HTMLElement & LexicalPrivateDOM = this.element;
     for (const child of Array.from(element.childNodes)) {
-      if (
-        child.nodeType === 1 &&
-        (child as Element).hasAttribute(DATA_LEXICAL_MANAGED_LINEBREAK)
-      ) {
+      if (isManagedLineBreakDOM(child)) {
         element.removeChild(child);
       }
     }
     element.__lexicalLineBreak = undefined;
     const kind = element.__lexicalLastChildKind;
     if (kind != null) {
-      this.insertManagedLineBreak(
-        kind === 'decorator' && NEEDS_INLINE_DECORATOR_EDGE_BOX,
-      );
+      this.insertManagedLineBreak(needsEdgeImg(kind));
     }
   }
 

@@ -36,14 +36,12 @@ function mount() {
     theme: {tableScrollableWrapper: ''},
   });
   editor.setRootElement(root);
-  let mounted = true;
+  // Run by the caller and again when the test finishes: both steps can
+  // repeat.
   const unmount = () => {
-    if (mounted) {
-      mounted = false;
-      editor.dispose();
-      container.remove();
-      style.remove();
-    }
+    editor.dispose();
+    container.remove();
+    style.remove();
   };
   onTestFinished(unmount);
   editor.update(

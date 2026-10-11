@@ -3787,11 +3787,13 @@ describe('LexicalEditor tests', () => {
 
   it('can read in a nested update', async () => {
     init();
+    const rootElement = editor.getRootElement();
+    assert(rootElement !== null, 'expected a root element');
     await editor.update(() => {
       $getRoot().append($createParagraphNode().append($createTextNode('foo')));
       editor.read(() => {});
       expectHtmlToBeEqual(
-        editor.getRootElement()?.innerHTML ?? '',
+        rootElement.innerHTML,
         '<p dir="auto"><span data-lexical-text="true">foo</span></p>',
       );
       editor.update(() => {
@@ -3801,7 +3803,7 @@ describe('LexicalEditor tests', () => {
       });
     });
     expectHtmlToBeEqual(
-      editor.getRootElement()?.innerHTML ?? '',
+      rootElement.innerHTML,
       '<p dir="auto"><span data-lexical-text="true">foo</span></p><p dir="auto"><span data-lexical-text="true">bar</span></p>',
     );
   });
@@ -3818,8 +3820,10 @@ describe('LexicalEditor tests', () => {
       );
     });
 
+    const rootElement = container.firstElementChild;
+    assert(rootElement !== null, 'expected a root element');
     expectHtmlToBeEqual(
-      container.firstElementChild?.innerHTML ?? '',
+      rootElement.innerHTML,
       '<p dir="auto"><span data-lexical-text="true">Hello</span><a></a></p>',
     );
   });

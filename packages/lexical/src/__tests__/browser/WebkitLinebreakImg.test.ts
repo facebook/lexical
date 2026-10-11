@@ -10,17 +10,17 @@
  * Characterization tests for the managed-linebreak img hack.
  *
  * On WebKit and desktop Chromium (since #7158), when a block's last child is
- * an *inline* DecoratorNode the
- * managed line break is rendered as an in-flow `<img>` followed by the usual
- * `<br>` (see `ElementDOMSlot.insertManagedLineBreak`'s `withEdgeImg`), giving
- * the browser an editable inline box between the `contenteditable=false`
+ * an *inline* DecoratorNode the managed line break is rendered as an in-flow
+ * `<img>` followed by the usual `<br>` (see
+ * `ElementDOMSlot.insertManagedLineBreak`'s `withEdgeImg`), giving the
+ * browser an editable inline box between the `contenteditable=false`
  * decorator and the break. In Chromium that box is what lets a mouse drag
- * start to the right of a line's last inline decorator (#7158). The user-visible symptom it fixes involves native Safari
- * caret behavior that headless Linux WebKit does not reproduce, so these
- * tests pin the *mechanism* — the DOM contract of
- * `setManagedLineBreak('decorator')` on each real engine — such that removing
- * or breaking the hack fails loudly instead of silently, as it otherwise
- * would (no other test exercises it).
+ * start to the right of a line's last inline decorator, which
+ * Issue7158MouseDrag.test.ts covers. The Safari caret behavior it fixes is
+ * not reproduced by headless Linux WebKit, so these tests pin the
+ * *mechanism* — the DOM contract of `setManagedLineBreak('decorator')` on each
+ * real engine — such that removing or breaking the hack in WebKit fails
+ * loudly instead of silently.
  *
  * Running in browser mode means the real environment detection is live: the
  * webkit and chromium instances assert the img+br shape and firefox asserts
@@ -30,25 +30,22 @@
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $create,
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $isParagraphNode,
   DecoratorNode,
-  IS_ANDROID,
-  IS_APPLE_WEBKIT,
-  IS_CHROME,
-  IS_IOS,
-  IS_SAFARI,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
+import {server} from 'vitest/browser';
 
 import {$assertNodeType} from '../utils/assertNodeType';
 
-// Restates the internal NEEDS_INLINE_DECORATOR_EDGE_BOX in LexicalDOMSlot.ts.
-const EXPECTS_IMG_HACK =
-  IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT || (IS_CHROME && !IS_ANDROID);
+// From the browser the test runs in rather than from the editor's own
+// detection, so that a detection that stops matching an engine fails here.
+const EXPECTS_IMG_HACK = server.browser !== 'firefox';
 const DECORATOR_LINEBREAK = EXPECTS_IMG_HACK ? ['img', 'br'] : ['br'];
 
 class TestInlineDecoratorNode extends DecoratorNode<null> {
@@ -250,11 +247,6 @@ function paragraphShape(contentEditable: HTMLElement): string[] {
   });
 }
 
-// Lets the MutationObserver deliver its records and the editor flush them.
-function flushMutations(): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, 0));
-}
-
 describe('scaffolding removed from outside the reconciler is restored', () => {
   const EXPECTED_SHAPE = [
     ...(EXPECTS_IMG_HACK ? ['anchor'] : []),
@@ -272,9 +264,9 @@ describe('scaffolding removed from outside the reconciler is restored', () => {
           .clear()
           .append(
             $createParagraphNode().append(
-              new TestInlineDecoratorNode(),
+              $create(TestInlineDecoratorNode),
               $createTextNode('text'),
-              new TestInlineDecoratorNode(),
+              $create(TestInlineDecoratorNode),
             ),
           );
       },
@@ -285,18 +277,22 @@ describe('scaffolding removed from outside the reconciler is restored', () => {
   }
 
   test.each([
-    ['the leading boundary anchor', '[data-lexical-decorator-boundary]'],
-    ['the managed line break img', 'img[data-lexical-managed-linebreak]'],
+    ...(EXPECTS_IMG_HACK
+      ? [
+          ['the leading boundary anchor', '[data-lexical-decorator-boundary]'],
+          ['the managed line break img', 'img[data-lexical-managed-linebreak]'],
+        ]
+      : []),
     ['the managed line break br', 'br[data-lexical-managed-linebreak]'],
   ])('%s', async (_name, selector) => {
     const {contentEditable} = mountDecoratorLine();
     const removed = contentEditable.querySelector(`p > ${selector}`);
-    if (removed === null) {
-      // Not part of this engine's scaffold.
-      return;
-    }
+    assert(removed !== null, `expected ${selector} in the scaffold`);
     removed.remove();
-    await flushMutations();
-    expect(paragraphShape(contentEditable)).toEqual(EXPECTED_SHAPE);
+    // The MutationObserver delivers its records, and the editor restores the
+    // scaffolding, after this task.
+    await expect
+      .poll(() => paragraphShape(contentEditable))
+      .toEqual(EXPECTED_SHAPE);
   });
 });

@@ -19,6 +19,7 @@ import {
   defineExtension,
   type LexicalNode,
 } from 'lexical';
+import {isDecoratorBoundaryAnchorDOM} from 'lexical/src/LexicalDOMSlot';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
 import {userEvent} from 'vitest/browser';
 
@@ -105,15 +106,10 @@ function setup($children: () => LexicalNode[]) {
 // first child when that child is a decorator (#8922, #7158). It occupies a DOM
 // child slot but is not a Lexical child, so leave it out of DOM paths and
 // offsets computed from Lexical child indices.
-function isBoundaryAnchor(node: Node): boolean {
-  return (
-    node instanceof HTMLElement &&
-    node.hasAttribute('data-lexical-decorator-boundary')
+function childNodesWithoutAnchors(node: Node): Node[] {
+  return Array.from(node.childNodes).filter(
+    child => !isDecoratorBoundaryAnchorDOM(child),
   );
-}
-
-function managedChildNodes(node: Node): Node[] {
-  return Array.from(node.childNodes).filter(child => !isBoundaryAnchor(child));
 }
 
 function domSelection() {
@@ -207,11 +203,11 @@ describe('native select-all block expansion', () => {
       return last.getChildrenSize();
     });
     const endNode = endPath.reduce<Node>(
-      (node, index) => managedChildNodes(node)[index],
+      (node, index) => childNodesWithoutAnchors(node)[index],
       paragraph,
     );
     const leadingAnchors = Array.from(paragraph.childNodes).findIndex(
-      child => !isBoundaryAnchor(child),
+      child => !isDecoratorBoundaryAnchorDOM(child),
     );
     await selectAll();
     await expect

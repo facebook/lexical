@@ -137,7 +137,7 @@ const isPointerDownOnEvent = (event: PointerEvent) => {
 const TAP_SLOP = 10;
 
 // Distance (px) from a scroll container edge at which drag auto-scroll kicks
-// in, and the maximum scroll delta applied per 60Hz animation frame.
+// in, and the maximum scroll delta applied per frame at AUTO_SCROLL_FPS.
 const AUTO_SCROLL_EDGE_ZONE = 40;
 const AUTO_SCROLL_MAX_STEP = 18;
 // The deltas are per frame at AUTO_SCROLL_FPS, and each tick scales them
@@ -173,9 +173,8 @@ function autoScrollStep(pos: number, start: number, end: number): number {
 }
 
 // The time (ms) an auto-scroll tick at `time` covers, given the previous
-// tick's. The first tick of a run covers one frame, as does a tick whose time
-// can't be measured (a callback run without a timestamp, or a clock that did
-// not advance).
+// tick's. The first tick of a run covers one frame, as does a tick whose
+// clock did not advance.
 function autoScrollElapsed(time: number, prevTime: number | null): number {
   const frameMs = 1000 / AUTO_SCROLL_FPS;
   const elapsed = prevTime === null ? frameMs : time - prevTime;

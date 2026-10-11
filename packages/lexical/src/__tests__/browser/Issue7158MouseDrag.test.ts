@@ -11,7 +11,11 @@
  * decorator of a line must extend across the decorators it crosses. jsdom
  * cannot model this (it has no hit testing, and a browser's mouse drag keeps
  * its own anchor regardless of later Selection API calls), so the drag is
- * driven through Playwright's mouse.
+ * driven through Playwright's mouse. These also check that a drag past the
+ * end of a line does not rewrite the selection on every move, and that the
+ * presses the fallback must not track (double clicks, presses on a selection,
+ * drags ended by pointercancel or dragstart, anchors edited mid-drag) are left
+ * to the browser.
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
@@ -26,27 +30,21 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isRangeSelection,
+  $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   DecoratorNode,
   getDOMSelection,
+  isDOMTextNode,
   type LexicalEditor,
-  type ParagraphNode,
+  registerEventListener,
+  registerEventListeners,
   SELECTION_CHANGE_COMMAND,
-  type TextNode,
 } from 'lexical';
 import {assert, describe, onTestFinished, test, vi} from 'vitest';
 import {commands} from 'vitest/browser';
 
-declare module 'vitest/browser' {
-  interface BrowserCommands {
-    mouseDrag: (
-      selector: string,
-      points: [x: number, y: number][],
-      options?: {clickCount?: number},
-    ) => Promise<void>;
-  }
-}
+import {$assertNodeType} from '../utils/assertNodeType';
 
 const COUNT = 6;
 const SIZE = 40;
@@ -75,9 +73,9 @@ class ImageLikeDecoratorNode extends DecoratorNode<null> {
 }
 
 /**
- * Styled like the playground's ImageNode: an unselectable inline-block whose
- * image sits in a block wrapper. Chromium's hit test finds no position inside
- * it that a drag selection can extend to.
+ * An unselectable (`user-select: none`) inline-block whose image sits in a
+ * block wrapper, as many integrations style images. Chromium's hit test finds
+ * no position inside it that a drag selection can extend to.
  */
 class BoxedImageDecoratorNode extends ImageLikeDecoratorNode {
   $config() {
@@ -100,28 +98,24 @@ class BoxedImageDecoratorNode extends ImageLikeDecoratorNode {
 }
 
 /**
- * The same block-wrapped image, but selectable: Chromium's hit test can put
- * a drag point inside it, where the point resolves to no Lexical selection.
+ * The same block-wrapped image, but selectable, like the playground's
+ * ImageNode: Chromium's hit test can put a drag point inside it, where the
+ * point resolves to no Lexical selection.
  */
-class SelectableBoxedImageDecoratorNode extends ImageLikeDecoratorNode {
+class SelectableBoxedImageDecoratorNode extends BoxedImageDecoratorNode {
   $config() {
     return this.config('test_7158_mouse_selectable_boxed_image', {
-      extends: ImageLikeDecoratorNode,
+      extends: BoxedImageDecoratorNode,
     });
   }
   createDOM(): HTMLElement {
-    const span = new BoxedImageDecoratorNode().createDOM();
+    const span = super.createDOM();
     span.style.userSelect = '';
     return span;
   }
 }
 
-type DecoratorClass =
-  | typeof ImageLikeDecoratorNode
-  | typeof BoxedImageDecoratorNode
-  | typeof SelectableBoxedImageDecoratorNode;
-
-const pointerLog: string[] = [];
+type DecoratorClass = typeof ImageLikeDecoratorNode;
 
 function mount(
   textBetween: boolean,
@@ -131,8 +125,8 @@ function mount(
   const root = document.createElement('div');
   root.id = 'issue-7158-root';
   root.contentEditable = 'true';
-  // Narrower than the test frame (414px), which would scroll sideways when a
-  // drag nears its edge, or to show a point mouseDrag hovers.
+  // Narrower than the test frame (414px), which would otherwise scroll
+  // sideways when a drag nears its edge.
   root.style.cssText = 'width:380px;padding:10px;font-size:16px';
   document.body.appendChild(root);
   const editor = buildEditorFromExtensions(
@@ -160,30 +154,32 @@ function mount(
     }),
   );
   editor.setRootElement(root);
+  const trailingTextKey = editor.read('latest', () => {
+    const last = $getRoot().getLastDescendant();
+    return $isTextNode(last) ? last.getKey() : null;
+  });
   // Where each pointer event landed (relative to the root) and the DOM
   // selection once the browser has handled it, for the failure message.
-  pointerLog.length = 0;
+  const pointerLog: string[] = [];
   const logPointer = (event: PointerEvent) => {
     const rect = root.getBoundingClientRect();
     const x = Math.round(event.clientX - rect.left);
     const y = Math.round(event.clientY - rect.top);
     setTimeout(() => {
-      const dom = getDOMSelection(window);
       pointerLog.push(
         `${event.type.slice(7)}(${x},${y} b${event.buttons})=` +
-          `${describeDOMPoint(dom?.anchorNode ?? null, dom?.anchorOffset ?? 0)}->` +
-          `${describeDOMPoint(dom?.focusNode ?? null, dom?.focusOffset ?? 0)}`,
+          describeDOMSelection(getDOMSelection(window)),
       );
     });
   };
-  const pointerTypes = ['pointerdown', 'pointermove', 'pointerup'] as const;
-  for (const type of pointerTypes) {
-    document.addEventListener(type, logPointer, true);
-  }
+  onTestFinished(
+    registerEventListeners(
+      document,
+      {pointerdown: logPointer, pointermove: logPointer, pointerup: logPointer},
+      true,
+    ),
+  );
   onTestFinished(() => {
-    for (const type of pointerTypes) {
-      document.removeEventListener(type, logPointer, true);
-    }
     editor.dispose();
     root.remove();
   });
@@ -201,8 +197,12 @@ function mount(
     images[i].getBoundingClientRect().right - rootRect.left;
   // The box of `text` within the trailing text, relative to the root.
   const textRect = (text: string) => {
-    const textNode = root.lastChild!.lastChild!.firstChild!;
-    const index = textNode.textContent!.indexOf(text);
+    const textNode =
+      trailingTextKey !== null
+        ? editor.getElementByKey(trailingTextKey)?.firstChild
+        : null;
+    assert(isDOMTextNode(textNode), 'expected the trailing text');
+    const index = textNode.data.indexOf(text);
     const range = document.createRange();
     range.setStart(textNode, index);
     range.setEnd(textNode, index + text.length);
@@ -217,18 +217,79 @@ function mount(
   pointerLog.push(
     `left(0)=${Math.round(left(0))} right(${COUNT - 1})=${Math.round(right(COUNT - 1))} y=${Math.round(y)} dpr=${window.devicePixelRatio}`,
   );
-  return {editor, left, right, root, textRect, y};
+  return {
+    editor,
+    left,
+    pointerLog,
+    right,
+    root,
+    textRect,
+    trailingTextKey,
+    y,
+  };
 }
 
 function describeDOMPoint(node: Node | null, offset: number): string {
   if (node === null) {
     return 'null';
   }
-  const name =
-    node.nodeType === Node.TEXT_NODE
-      ? `#text(${JSON.stringify(node.textContent)})`
-      : node.nodeName.toLowerCase();
+  const name = isDOMTextNode(node)
+    ? `#text(${JSON.stringify(node.data)})`
+    : node.nodeName.toLowerCase();
   return `${name}:${offset}`;
+}
+
+/**
+ * A real mouse drag through `points` relative to the root. It moves in steps
+ * of at most half a decorator's width, so the pointer stops over each
+ * decorator it crosses.
+ */
+function mouseDrag(
+  points: Parameters<typeof commands.mouseDrag>[1],
+  options?: {clickCount?: number},
+): Promise<void> {
+  return commands.mouseDrag('#issue-7158-root', points, {
+    ...options,
+    maxStep: SIZE / 2,
+  });
+}
+
+function describeDOMSelection(selection: Selection | null): string {
+  return selection === null
+    ? 'null'
+    : `${describeDOMPoint(selection.anchorNode, selection.anchorOffset)}->` +
+        describeDOMPoint(selection.focusNode, selection.focusOffset);
+}
+
+/**
+ * The init of a left button mouse PointerEvent at (`x`, `y`) relative to
+ * `root`.
+ */
+function mousePointerInit(
+  root: HTMLElement,
+  x: number,
+  y: number,
+): PointerEventInit {
+  const rootRect = root.getBoundingClientRect();
+  return {
+    bubbles: true,
+    button: 0,
+    buttons: 1,
+    clientX: rootRect.left + x,
+    clientY: rootRect.top + y,
+    composed: true,
+    pointerType: 'mouse',
+  };
+}
+
+/** The element at the point of `init`, to dispatch a pointer event to. */
+function elementAt(init: PointerEventInit): Element {
+  const element = document.elementFromPoint(
+    init.clientX ?? 0,
+    init.clientY ?? 0,
+  );
+  assert(element !== null, 'expected an element at the pointer');
+  return element;
 }
 
 // The last selectionchange is handled asynchronously, and on a busy runner it
@@ -239,10 +300,11 @@ function describeDOMPoint(node: Node | null, offset: number): string {
 async function expectSelectedDecoratorCount(
   editor: LexicalEditor,
   expected: number,
+  pointerLog: string[],
 ): Promise<void> {
   await vi.waitFor(
     () => {
-      const [count, lexical] = editor.read(() => {
+      const [count, lexical] = editor.read('latest', () => {
         const selection = $getSelection();
         return $isRangeSelection(selection)
           ? [
@@ -252,13 +314,11 @@ async function expectSelectedDecoratorCount(
             ]
           : [-1, String(selection)];
       });
-      const dom = getDOMSelection(window);
       assert(
         count === expected,
         `expected ${expected} selected decorators, got ${count} ` +
-          `(lexical ${lexical}; dom ` +
-          `${describeDOMPoint(dom?.anchorNode ?? null, dom?.anchorOffset ?? 0)}->` +
-          `${describeDOMPoint(dom?.focusNode ?? null, dom?.focusOffset ?? 0)}; ` +
+          `(lexical ${lexical}; ` +
+          `dom ${describeDOMSelection(getDOMSelection(window))}; ` +
           `pointer ${pointerLog.join(' ')})`,
       );
     },
@@ -268,27 +328,27 @@ async function expectSelectedDecoratorCount(
 
 function dragFromLineEnd(klass: DecoratorClass, textBetween: boolean) {
   return async () => {
-    const {editor, left, right, y} = mount(textBetween, klass);
-    await commands.mouseDrag('#issue-7158-root', [
+    const {editor, left, pointerLog, right, y} = mount(textBetween, klass);
+    await mouseDrag([
       [right(COUNT - 1) + 30, y],
       [left(COUNT - 2) + SIZE / 2, y],
       [left(3) + SIZE / 2, y],
       [left(2) - 2, y],
     ]);
-    await expectSelectedDecoratorCount(editor, COUNT - 2);
+    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
   };
 }
 
 function dragFromLineStart(klass: DecoratorClass, textBetween: boolean) {
   return async () => {
-    const {editor, left, right, y} = mount(textBetween, klass);
-    await commands.mouseDrag('#issue-7158-root', [
+    const {editor, left, pointerLog, right, y} = mount(textBetween, klass);
+    await mouseDrag([
       [left(0) - 5, y],
       [left(1) + SIZE / 2, y],
       [left(COUNT - 2) + SIZE / 2, y],
       [right(COUNT - 1) + 30, y],
     ]);
-    await expectSelectedDecoratorCount(editor, COUNT);
+    await expectSelectedDecoratorCount(editor, COUNT, pointerLog);
   };
 }
 
@@ -306,10 +366,11 @@ describe.each([
   );
 });
 
-// The browser puts a drag's focus below or past the end of the line after the
-// managed line break's <img>, which Lexical maps to the point before it.
-// Writing that point back only has the browser move it again on the next
-// pointer move, so each move would be two selection changes.
+// Where a line ends in the managed line break's <img> (WebKit and desktop
+// Chromium), the browser puts a drag's focus below or past the end of the line
+// after that <img>, which Lexical maps to the point before it. Writing that
+// point back only has the browser move it again on the next pointer move, so
+// each move would be two selection changes.
 test('Issue #7158: a drag past the end of the line does not keep changing the selection', async () => {
   const {editor, right, y} = mount(false, ImageLikeDecoratorNode);
   let selectionChanges = 0;
@@ -324,7 +385,7 @@ test('Issue #7158: a drag past the end of the line does not keep changing the se
     ),
   );
   const x = right(COUNT - 1) + 30;
-  await commands.mouseDrag('#issue-7158-root', [
+  await mouseDrag([
     [x, y],
     [x + 50, y + SIZE],
     [x + 100, y + SIZE],
@@ -332,23 +393,24 @@ test('Issue #7158: a drag past the end of the line does not keep changing the se
   ]);
   await vi.waitFor(() =>
     assert(
-      editor.read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
         return $isRangeSelection(selection) && selection.isCollapsed();
       }),
       'expected a collapsed selection',
     ),
   );
-  // The press and the first move can each change the selection once; the
-  // other ten or so moves must not.
+  // Chromium changes the selection twice here (on the press and on the first
+  // move) and Firefox and WebKit once. Allow one more than that, since this
+  // checks for a change on every move, which would be about a dozen.
   assert(
     selectionChanges <= 3,
     `expected at most 3 selection changes, got ${selectionChanges}`,
   );
 });
 
-// Chromium and Firefox never extend a drag across these decorators by
-// themselves, so these exercise the pointermove fallback. A drag that starts
+// No engine extends a drag across these decorators by itself, so these
+// exercise the pointermove fallback. A drag that starts
 // left of an unselectable first decorator is not covered: Chromium anchors it
 // after that decorator, and a drag keeps the anchor it took on mousedown.
 describe('Issue #7158: mouse drag over unselectable inline decorators', () => {
@@ -376,51 +438,49 @@ describe('Issue #7158: mouse drag over selectable boxed inline decorators', () =
     dragFromLineStart(SelectableBoxedImageDecoratorNode, false),
   );
   test('a drag that returns to its start and leaves again keeps its anchor', async () => {
-    const {editor, left, right, y} = mount(
+    const {editor, left, pointerLog, right, y} = mount(
       false,
       SelectableBoxedImageDecoratorNode,
     );
-    await commands.mouseDrag('#issue-7158-root', [
+    await mouseDrag([
       [right(COUNT - 1) + 30, y],
       [left(2) + SIZE / 2, y],
       [right(COUNT - 1) + 10, y],
       [left(COUNT - 1) + 5, y],
       [left(2) - 2, y],
     ]);
-    await expectSelectedDecoratorCount(editor, COUNT - 2);
+    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
   });
 
   // On macOS Chrome a drag can restart from the pointer, collapsing the
   // selection inside a decorator, where it resolves to no Lexical selection.
   // Linux Chromium does not do this, so do it the way it would: after the
-  // browser and Lexical have handled a pointermove.
+  // browser and Lexical have handled a pointermove. This listener bubbles to
+  // the document after the root's, and its timeout runs after the one the
+  // root's handler queued.
   test('a drag that restarts inside a decorator keeps its anchor', async () => {
-    const {editor, left, right, y} = mount(
+    const {editor, left, pointerLog, right, root, y} = mount(
       false,
       SelectableBoxedImageDecoratorNode,
     );
-    const root = document.getElementById('issue-7158-root')!;
     const decorators = root.querySelectorAll('span > div');
     let injected = false;
     const inject = (event: PointerEvent) => {
       const x = event.clientX - root.getBoundingClientRect().left;
       if (!injected && event.buttons === 1 && x < left(COUNT - 2)) {
         injected = true;
-        requestAnimationFrame(() =>
+        setTimeout(() =>
           getDOMSelection(window)?.collapse(decorators[COUNT - 2], 0),
         );
       }
     };
-    document.addEventListener('pointermove', inject, true);
-    onTestFinished(() =>
-      document.removeEventListener('pointermove', inject, true),
-    );
-    await commands.mouseDrag('#issue-7158-root', [
+    onTestFinished(registerEventListener(document, 'pointermove', inject));
+    await mouseDrag([
       [right(COUNT - 1) + 30, y],
       [left(2) - 2, y],
     ]);
     assert(injected, 'the drag never reached the injection point');
-    await expectSelectedDecoratorCount(editor, COUNT - 2);
+    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
   });
 });
 
@@ -436,8 +496,7 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     );
     const word = textRect('world');
     const wordY = (word.top + word.bottom) / 2;
-    await commands.mouseDrag(
-      '#issue-7158-root',
+    await mouseDrag(
       [
         [(word.left + word.right) / 2, wordY],
         [left(COUNT - 1) + SIZE / 2, y],
@@ -446,7 +505,7 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
       {clickCount: 2},
     );
     await vi.waitFor(() => {
-      const text = editor.read(() => {
+      const text = editor.read('latest', () => {
         const selection = $getSelection();
         return $isRangeSelection(selection) ? selection.getTextContent() : '';
       });
@@ -460,21 +519,15 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
   // A collaborator's edit (simulated here) can change the text at the drag's
   // anchor mid-drag, and move the editor's selection with it.
   test('a drag whose anchor text changes mid-drag continues from the moved anchor', async () => {
-    const {editor, left, root, textRect, y} = mount(
+    const {editor, left, root, textRect, trailingTextKey, y} = mount(
       false,
       ImageLikeDecoratorNode,
       ' hello world',
     );
-    const textKey = editor.read(() =>
-      $getRoot()
-        .getFirstChildOrThrow<ParagraphNode>()
-        .getLastChildOrThrow()
-        .getKey(),
-    );
+    assert(trailingTextKey !== null, 'expected the trailing text');
     const errors: unknown[] = [];
     const onError = (event: ErrorEvent) => errors.push(event.error);
-    window.addEventListener('error', onError);
-    onTestFinished(() => window.removeEventListener('error', onError));
+    onTestFinished(registerEventListener(window, 'error', onError));
     let edited = false;
     const edit = () => {
       const drag = editor._inputState.mouseSelectionDrag;
@@ -482,13 +535,15 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
         edited = true;
         editor.update(
           () => {
-            const textNode = $getNodeByKey<TextNode>(textKey)!;
-            textNode.setTextContent(' hi');
+            $assertNodeType(
+              $getNodeByKey(trailingTextKey),
+              $isTextNode,
+            ).setTextContent(' hi');
             const selection = $getSelection();
             if ($isRangeSelection(selection)) {
-              selection.anchor.set(textKey, 3, 'text');
-              if (selection.focus.key === textKey) {
-                selection.focus.set(textKey, 3, 'text');
+              selection.anchor.set(trailingTextKey, 3, 'text');
+              if (selection.focus.key === trailingTextKey) {
+                selection.focus.set(trailingTextKey, 3, 'text');
               }
             }
           },
@@ -496,10 +551,9 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
         );
       }
     };
-    root.addEventListener('pointermove', edit, true);
-    onTestFinished(() => root.removeEventListener('pointermove', edit, true));
+    onTestFinished(registerEventListener(root, 'pointermove', edit, true));
     const end = textRect('world').right + 30;
-    await commands.mouseDrag('#issue-7158-root', [
+    await mouseDrag([
       [end, y],
       [end - 30, y],
       [left(COUNT - 1) + SIZE / 2, y],
@@ -508,14 +562,14 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     assert(edited, 'the drag never recorded its anchor');
     assert(errors.length === 0, `uncaught errors: ${errors.join(', ')}`);
     await vi.waitFor(() => {
-      const anchor = editor.read(() => {
+      const anchor = editor.read('latest', () => {
         const selection = $getSelection();
         return $isRangeSelection(selection)
           ? `${selection.anchor.key}:${selection.anchor.offset}`
           : String(selection);
       });
       assert(
-        anchor === `${textKey}:3`,
+        anchor === `${trailingTextKey}:3`,
         `expected the anchor at the end of the edited text, got ${anchor}`,
       );
     });
@@ -523,37 +577,30 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
 
   // A press on an inline decorator never starts a selection drag, so these
   // press the text after the decorators.
-  test('a press on a non-collapsed selection is not tracked as a selection drag', async () => {
-    const {editor, root, textRect} = mount(
+  test('a press on a non-collapsed selection is not tracked as a selection drag', () => {
+    const {editor, root, textRect, trailingTextKey} = mount(
       false,
       ImageLikeDecoratorNode,
       ' hello world',
     );
-    const textKey = editor.read(() =>
-      $getRoot()
-        .getFirstChildOrThrow<ParagraphNode>()
-        .getLastChildOrThrow()
-        .getKey(),
-    );
+    assert(trailingTextKey !== null, 'expected the trailing text');
     editor.update(
       () => {
-        $getNodeByKey<TextNode>(textKey)!.select(1, 6);
+        $assertNodeType($getNodeByKey(trailingTextKey), $isTextNode).select(
+          1,
+          6,
+        );
       },
       {discrete: true},
     );
     const press = (text: string) => {
       const rect = textRect(text);
-      const rootRect = root.getBoundingClientRect();
-      const init = {
-        bubbles: true,
-        button: 0,
-        buttons: 1,
-        clientX: rootRect.left + (rect.left + rect.right) / 2,
-        clientY: rootRect.top + (rect.top + rect.bottom) / 2,
-        composed: true,
-        pointerType: 'mouse',
-      };
-      const target = document.elementFromPoint(init.clientX, init.clientY)!;
+      const init = mousePointerInit(
+        root,
+        (rect.left + rect.right) / 2,
+        (rect.top + rect.bottom) / 2,
+      );
+      const target = elementAt(init);
       target.dispatchEvent(new PointerEvent('pointerdown', init));
       const tracked = editor._inputState.mouseSelectionDrag !== null;
       target.dispatchEvent(new PointerEvent('pointerup', init));
@@ -563,9 +610,11 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     assert(press('world'), 'a press beside the selection selects');
   });
 
-  test.each(['pointercancel', 'dragstart'])(
+  // A move with no button pressed ends a press whose pointerup never reached
+  // the document.
+  test.each(['pointercancel', 'dragstart', 'a move with no button'])(
     'a press ended by %s lets a NodeSelection remove the DOM selection',
-    async type => {
+    type => {
       const {editor, root, textRect} = mount(
         false,
         ImageLikeDecoratorNode,
@@ -573,25 +622,14 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
       );
       editor.update(
         () => {
-          $getRoot().getFirstChildOrThrow<ParagraphNode>().selectEnd();
+          $getRoot().selectEnd();
         },
         {discrete: true},
       );
       const rect = textRect('world');
-      const rootRect = root.getBoundingClientRect();
-      const init = (dx: number) => ({
-        bubbles: true,
-        button: 0,
-        buttons: 1,
-        clientX: rootRect.left + rect.left + dx,
-        clientY: rootRect.top + (rect.top + rect.bottom) / 2,
-        composed: true,
-        pointerType: 'mouse',
-      });
-      const target = document.elementFromPoint(
-        init(0).clientX,
-        init(0).clientY,
-      )!;
+      const init = (dx: number) =>
+        mousePointerInit(root, rect.left + dx, (rect.top + rect.bottom) / 2);
+      const target = elementAt(init(0));
       target.dispatchEvent(new PointerEvent('pointerdown', init(0)));
       target.dispatchEvent(new PointerEvent('pointermove', init(10)));
       assert(
@@ -601,23 +639,26 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
       target.dispatchEvent(
         type === 'dragstart'
           ? new DragEvent(type, {bubbles: true, cancelable: true})
-          : new PointerEvent(type, {bubbles: true, pointerType: 'mouse'}),
+          : type === 'pointercancel'
+            ? new PointerEvent(type, {bubbles: true, pointerType: 'mouse'})
+            : new PointerEvent('pointermove', {...init(20), buttons: 0}),
       );
       editor.update(
         () => {
           const selection = $createNodeSelection();
           selection.add(
-            $getRoot()
-              .getFirstChildOrThrow<ParagraphNode>()
-              .getFirstChildOrThrow()
-              .getKey(),
+            $assertNodeType(
+              $getRoot().getFirstDescendant(),
+              $isDecoratorNode,
+            ).getKey(),
           );
           $setSelection(selection);
         },
         {discrete: true},
       );
+      const domSelection = getDOMSelection(window);
       assert(
-        getDOMSelection(window)!.rangeCount === 0,
+        domSelection !== null && domSelection.rangeCount === 0,
         'expected the DOM selection to be removed',
       );
     },

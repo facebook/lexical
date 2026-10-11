@@ -114,8 +114,8 @@ import {
   $flushMutations,
   $getAdjacentNode,
   $getDOMTextNode,
+  $getNearestNodeFromDOMNode,
   $getNodeByKey,
-  $getNodeFromDOMNode,
   $isTokenOrSegmented,
   $isTokenOrTab,
   $setSelection,
@@ -152,6 +152,7 @@ import {
 } from './LexicalUtils';
 import {mergeRegister} from './utils/mergeRegister';
 import {registerEventListener} from './utils/registerEventListener';
+import {registerEventListeners} from './utils/registerEventListeners';
 
 /**
  * The engines whose mouse drags {@link onPointerMove} extends across inline
@@ -168,7 +169,10 @@ type RootElementEvents = [
 ][];
 const PASS_THROUGH_COMMAND = /* @__PURE__ */ Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
-// Chromium's mouse drag threshold is 4px and WebKit's is 3px.
+// How far a mouse press moves before onPointerMove treats it as a selection
+// drag rather than a click whose hand moved, and records the drag's anchor.
+// Every engine extends a press's selection from its first move, so this only
+// needs to be larger than that jitter and smaller than an inline decorator.
 const DRAG_THRESHOLD_PX = 4;
 let rootElementEvents: RootElementEvents | undefined;
 
@@ -200,21 +204,22 @@ function getRootElementEvents(): RootElementEvents {
     ]);
   }
   if (TRACKS_MOUSE_SELECTION_DRAG) {
-    events.push([
-      'pointermove',
-      (event, editor) => onPointerMove(event as PointerEvent, editor),
-    ]);
+    // Every iOS browser is WebKit, so this includes iOS.
+    events.push(
+      [
+        'pointermove',
+        (event, editor) => onPointerMove(event as PointerEvent, editor),
+      ],
+      [
+        'mousedown',
+        (event, editor) => onMouseDown(event as MouseEvent, editor),
+      ],
+    );
   }
   if (IS_IOS) {
     events.push([
       'keyup',
       (event, editor) => onKeyUp(event as KeyboardEvent, editor),
-    ]);
-  }
-  if (TRACKS_MOUSE_SELECTION_DRAG || IS_IOS) {
-    events.push([
-      'mousedown',
-      (event, editor) => onMouseDown(event as MouseEvent, editor),
     ]);
   }
   rootElementEvents = events;
@@ -840,6 +845,8 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
   // outer shadow host the engine retargets to.
   const target = getComposedEventTarget(event);
   const pointerType = event.pointerType;
+  const isCapturingSelection =
+    isDOMNode(target) && isDOMCapturingSelection(target, editor);
   if (
     isDOMNode(target) &&
     pointerType !== 'touch' &&
@@ -849,47 +856,47 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
     updateEditorSync(editor, () => {
       // Drag & drop should not recompute selection until mouse up; otherwise the initially
       // selected content is lost.
-      if (!isDOMCapturingSelection(target, editor)) {
+      if (!isCapturingSelection) {
         editor._inputState.isSelectionChangeFromMouseDown = true;
       }
     });
   }
   if (TRACKS_MOUSE_SELECTION_DRAG) {
+    editor._inputState.mouseSelectionDrag = null;
     const rootElement = editor.getRootElement();
-    const drag =
+    if (
       isDOMNode(target) &&
       rootElement !== null &&
       pointerType === 'mouse' &&
       event.button === 0 &&
-      !isDOMCapturingSelection(target, editor) &&
+      !isCapturingSelection &&
       !isPointOverDOMSelection(
         getDOMSelectionFromTarget(target),
         rootElement,
         event.clientX,
         event.clientY,
       )
-        ? {
-            anchor: null,
-            clientX: event.clientX,
-            clientY: event.clientY,
-            hasExtended: false,
-          }
-        : null;
-    editor._inputState.mouseSelectionDrag = drag;
-    const doc =
-      drag !== null && isDOMNode(target) ? target.ownerDocument : null;
-    if (drag !== null && doc !== null) {
+    ) {
+      const drag: NonNullable<InputState['mouseSelectionDrag']> = {
+        anchor: null,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        hasExtended: false,
+      };
+      editor._inputState.mouseSelectionDrag = drag;
       // The button may be released outside the root element, and a press
       // that starts a drag and drop gets a pointercancel instead.
       const endDrag = () => {
         if (editor._inputState.mouseSelectionDrag === drag) {
           editor._inputState.mouseSelectionDrag = null;
         }
-        doc.removeEventListener('pointerup', endDrag, true);
-        doc.removeEventListener('pointercancel', endDrag, true);
+        removeEndDragListeners();
       };
-      doc.addEventListener('pointerup', endDrag, true);
-      doc.addEventListener('pointercancel', endDrag, true);
+      const removeEndDragListeners = registerEventListeners(
+        rootElement.ownerDocument,
+        {pointercancel: endDrag, pointerup: endDrag},
+        true,
+      );
     }
   }
 }
@@ -928,16 +935,17 @@ function isPointOverDOMSelection(
 }
 
 /**
- * The browsers that report a click count on pointerdown (Chromium and
- * Firefox report 0) all report it on the mousedown that follows, so stop
- * tracking a press there when it is a double or triple click, which extends
- * the selection by words or paragraphs.
+ * Chromium and Firefox report a click count (`detail`) of 0 on pointerdown,
+ * but every engine reports it on the mousedown that follows, so stop tracking
+ * a press there when it is a double or triple click, which extends the
+ * selection by words or paragraphs. On iOS this also runs
+ * {@link onMouseDownIOS}.
  */
 function onMouseDown(event: MouseEvent, editor: LexicalEditor): void {
   if (IS_IOS) {
     onMouseDownIOS(event, editor);
   }
-  if (TRACKS_MOUSE_SELECTION_DRAG && event.detail > 1) {
+  if (event.detail > 1) {
     editor._inputState.mouseSelectionDrag = null;
   }
 }
@@ -969,11 +977,13 @@ function onMouseDown(event: MouseEvent, editor: LexicalEditor): void {
  */
 function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
   const drag = editor._inputState.mouseSelectionDrag;
-  if (
-    drag === null ||
-    event.pointerType !== 'mouse' ||
-    (event.buttons & 1) === 0
-  ) {
+  if (drag === null || event.pointerType !== 'mouse') {
+    return;
+  }
+  if ((event.buttons & 1) === 0) {
+    // The press ended without a pointerup or pointercancel reaching the
+    // document (such as when the window lost focus mid-press).
+    editor._inputState.mouseSelectionDrag = null;
     return;
   }
   const target = getComposedEventTarget(event);
@@ -996,14 +1006,16 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
         domSelection,
         rootElement,
       );
-      // Firefox puts a press beyond the end of a line that ends in an
-      // unselectable inline decorator before that decorator.
       if (
         anchorNode === null ||
         getNearestEditorFromDOMNode(anchorNode) !== editor
       ) {
+        // The press put the selection outside this editor (such as in a
+        // nested editor), so leave the drag to the browser.
         drag.anchor = false;
       } else {
+        // Firefox puts a press beyond the end of a line that ends in an
+        // unselectable inline decorator before that decorator.
         const [node, offset] = movePastInlineDecorators(
           editor,
           rootElement,
@@ -1047,21 +1059,19 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
     let focusNode = points ? points.focusNode : null;
     let focusOffset = points ? points.focusOffset : 0;
     const decoratorDOM =
-      getInlineDecoratorDOM(editor, target, rootElement) ||
-      (focusNode && getInlineDecoratorDOM(editor, focusNode, rootElement));
+      getInlineDecoratorDOM(editor, target) ||
+      (focusNode && getInlineDecoratorDOM(editor, focusNode));
     const parentDOM = decoratorDOM && decoratorDOM.parentNode;
     if (decoratorDOM && parentDOM) {
       const rect = decoratorDOM.getBoundingClientRect();
-      const index = Array.prototype.indexOf.call(
-        parentDOM.childNodes,
+      const isAfter =
+        event.clientX > rect.left + rect.width / 2 !==
+        isDOMRTL(editor, parentDOM);
+      [focusNode, focusOffset] = getDOMPointBeside(
         decoratorDOM,
+        parentDOM,
+        isAfter,
       );
-      const isRTL =
-        isHTMLElement(parentDOM) &&
-        getWindow(editor).getComputedStyle(parentDOM).direction === 'rtl';
-      const isAfter = event.clientX > rect.left + rect.width / 2 !== isRTL;
-      focusNode = parentDOM;
-      focusOffset = isAfter ? index + 1 : index;
     }
     if (focusNode === null) {
       return;
@@ -1116,32 +1126,48 @@ function movePastInlineDecorators(
   for (const isForward of [true, false]) {
     for (;;) {
       const sibling = getDOMSiblingAt(node, offset, isForward, rootElement);
-      const parentDOM = sibling && sibling.parentNode;
+      const decoratorDOM = sibling && getInlineDecoratorDOM(editor, sibling);
+      const parentDOM = decoratorDOM && decoratorDOM.parentNode;
       if (
-        sibling === null ||
-        parentDOM === null ||
-        getInlineDecoratorDOM(editor, sibling, rootElement) !== sibling
+        decoratorDOM === null ||
+        decoratorDOM !== sibling ||
+        parentDOM === null
       ) {
         break;
       }
-      const rect = (sibling as HTMLElement).getBoundingClientRect();
+      const rect = decoratorDOM.getBoundingClientRect();
       if (clientY < rect.top || clientY > rect.bottom) {
         break;
       }
-      const isRTL =
-        isHTMLElement(parentDOM) &&
-        getWindow(editor).getComputedStyle(parentDOM).direction === 'rtl';
       const hasPassed =
-        isForward !== isRTL ? clientX > rect.right : clientX < rect.left;
+        isForward !== isDOMRTL(editor, parentDOM)
+          ? clientX > rect.right
+          : clientX < rect.left;
       if (!hasPassed) {
         break;
       }
-      const index = Array.prototype.indexOf.call(parentDOM.childNodes, sibling);
-      node = parentDOM;
-      offset = isForward ? index + 1 : index;
+      [node, offset] = getDOMPointBeside(decoratorDOM, parentDOM, isForward);
     }
   }
   return [node, offset];
+}
+
+/** Whether `dom` lays out its inline content right to left. */
+function isDOMRTL(editor: LexicalEditor, dom: Node): boolean {
+  return (
+    isHTMLElement(dom) &&
+    getWindow(editor).getComputedStyle(dom).direction === 'rtl'
+  );
+}
+
+/** The DOM point right before `dom` in `parentDOM`, or right after it. */
+function getDOMPointBeside(
+  dom: Node,
+  parentDOM: ParentNode,
+  isAfter: boolean,
+): [node: Node, offset: number] {
+  const index = Array.prototype.indexOf.call(parentDOM.childNodes, dom);
+  return [parentDOM, isAfter ? index + 1 : index];
 }
 
 /**
@@ -1185,22 +1211,12 @@ function getDOMSiblingAt(
 function getInlineDecoratorDOM(
   editor: LexicalEditor,
   dom: Node,
-  rootElement: HTMLElement,
 ): HTMLElement | null {
   return editor.read('latest', () => {
-    let node: Node | null = dom;
-    while (node !== null && node !== rootElement) {
-      const lexicalNode = $getNodeFromDOMNode(node);
-      if (lexicalNode !== null) {
-        return $isDecoratorNode(lexicalNode) &&
-          lexicalNode.isInline() &&
-          isHTMLElement(node)
-          ? node
-          : null;
-      }
-      node = getParentElement(node);
-    }
-    return null;
+    const node = $getNearestNodeFromDOMNode(dom);
+    return $isDecoratorNode(node) && node.isInline()
+      ? editor.getElementByKey(node.getKey())
+      : null;
   });
 }
 

@@ -82,7 +82,15 @@ const browserInstances = (process.env.VITEST_BROWSER || 'chromium')
   .filter(
     name => name === 'webkit' || name === 'chromium' || name === 'firefox',
   )
-  .map(browser => ({browser}));
+  // Test files run in parallel pages of one browser. Playwright's Firefox
+  // activates a page's window for every mouse event it dispatches, so a click
+  // or drag in one file deactivates the window of a file that is pressing
+  // keys, and Firefox can drop caret navigation (arrow keys, Home, End) in an
+  // inactive window. Chromium and WebKit pages each behave as focused, so
+  // only Firefox runs its files one at a time.
+  .map(browser =>
+    browser === 'firefox' ? {browser, maxWorkers: 1} : {browser},
+  );
 
 const compilerUnitTests =
   'packages/lexical-compiler/**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}';

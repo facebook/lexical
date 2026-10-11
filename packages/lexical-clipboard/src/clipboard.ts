@@ -23,6 +23,7 @@ import {
   $getChildCaret,
   $getChildCaretAtIndex,
   $getCollapsedCaretRange,
+  $getDOMSlot,
   $getEditor,
   $getNearestNodeFromDOMNode,
   $getRoot,
@@ -263,7 +264,24 @@ function $resolveDropPointCaret(
     return $getTextPointCaret(node, 'next', hit.offset);
   }
   if ($isElementNode(node)) {
-    return $getChildCaretAtIndex(node, hit.offset, 'next');
+    // The DOM offset also counts the DOM the editor renders between the
+    // children (such as a zero-size anchor before a leading decorator), and
+    // a point outside the element's slot is beside the element.
+    const dom = editor.getElementByKey(node.getKey());
+    if (dom === null) {
+      return null;
+    }
+    const slot = $getDOMSlot(node, dom, editor);
+    if (hit.node !== slot.element && node.getParent() === null) {
+      return null;
+    }
+    const [parent, index] = slot.resolveChildIndex(
+      node,
+      dom,
+      hit.node,
+      hit.offset,
+    );
+    return $getChildCaretAtIndex(parent, index, 'next');
   }
   const parent = node.getParent();
   if (parent === null) {

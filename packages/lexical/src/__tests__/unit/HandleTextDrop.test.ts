@@ -13,7 +13,9 @@ import {
   $writeDragSourceToDataTransfer,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
+import {registerRichText} from '@lexical/rich-text';
 import {
+  $create,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -23,6 +25,7 @@ import {
   $isDecoratorNode,
   $isRangeSelection,
   $setSelection,
+  DecoratorNode,
   type LexicalEditor,
   type RangeSelection,
   TextNode,
@@ -854,6 +857,86 @@ describe('$handleRichTextDrop across editors', () => {
     });
     await destEditor.read(() => {
       expect($getRoot().getTextContent()).toBe('destination');
+    });
+  });
+});
+
+class BlockDecoratorNode extends DecoratorNode<null> {
+  $config() {
+    return this.config('test_drop_block_decorator', {extends: DecoratorNode});
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  isInline(): false {
+    return false;
+  }
+  decorate(): null {
+    return null;
+  }
+}
+
+describe('$handleRichTextDrop beside an anchor the editor renders', () => {
+  let container: HTMLDivElement;
+  let editor: LexicalEditor;
+
+  beforeEach(() => {
+    caretFromPointState.current = () => null;
+    container = document.createElement('div');
+    container.contentEditable = 'true';
+    document.body.appendChild(container);
+    editor = createTestEditor({nodes: [BlockDecoratorNode]});
+    registerRichText(editor);
+    editor.setRootElement(container);
+  });
+
+  afterEach(() => {
+    editor.setRootElement(null);
+    container.remove();
+  });
+
+  // A block decorator at the start of the root has a zero-size anchor before
+  // it (#8922), so the DOM point before the decorator is (root, 1), which is
+  // the Lexical point (root, 0).
+  test('drops before the decorator at the DOM point before it', () => {
+    editor.update(
+      () => {
+        const text = $createTextNode('Hello foo world');
+        $getRoot()
+          .clear()
+          .append(
+            $create(BlockDecoratorNode),
+            $createParagraphNode().append(text),
+          );
+        text.select(6, 9);
+      },
+      {discrete: true},
+    );
+    expect(container.firstElementChild?.nodeName).toBe('IMG');
+    editor.update(
+      () => {
+        setCaretFromPoint(container, 1);
+        const {dataTransfer, event} = createDropEvent();
+        setLexicalClipboardDataTransfer(
+          dataTransfer,
+          $getClipboardDataFromSelection(),
+        );
+        $writeDragSourceToDataTransfer(dataTransfer, editor);
+        expect($handleRichTextDrop(event, editor)).toBe(true);
+      },
+      {discrete: true},
+    );
+    editor.read('latest', () => {
+      expect(
+        $getRoot()
+          .getChildren()
+          .map(node =>
+            $isDecoratorNode(node) ? 'decorator' : node.getTextContent(),
+          ),
+      ).toEqual(['foo', 'decorator', 'Hello  world']);
     });
   });
 });

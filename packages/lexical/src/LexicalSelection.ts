@@ -3488,17 +3488,31 @@ export function $createRangeSelectionFromDom(
   return $internalCreateRangeSelection(null, domSelection, editor, null);
 }
 
-// Keys whose keydown handlers move the caret or edit at it themselves.
+// Keys whose keydown handlers move the caret or edit at it themselves. Their
+// shortcuts with Control or Meta do too (Control+H deletes backward on Apple
+// platforms, Control or Meta+B formats), as can a paste, cut or copy that
+// follows the keydown, so a keydown with either modifier counts as well.
 const SELECTION_KEYS = /* @__PURE__ */ new Set([
+  ' ',
   'ArrowDown',
   'ArrowLeft',
   'ArrowRight',
   'ArrowUp',
   'Backspace',
   'Delete',
+  'End',
   'Enter',
+  'Home',
   'Tab',
 ]);
+
+function isSelectionKeyDownEvent(event: Event): boolean {
+  if (event.type !== 'keydown') {
+    return false;
+  }
+  const {ctrlKey, key, metaKey} = event as KeyboardEvent;
+  return ctrlKey || metaKey || SELECTION_KEYS.has(key);
+}
 
 export function $internalCreateRangeSelection(
   lastSelection: null | BaseSelection,
@@ -3532,8 +3546,7 @@ export function $internalCreateRangeSelection(
   // (key repeat, or a busy main thread). Reading the DOM here keeps that
   // keydown from acting on the caret from before the native move.
   const isSelectionKeyDown =
-    eventType === 'keydown' &&
-    SELECTION_KEYS.has((windowEvent as KeyboardEvent).key);
+    windowEvent != null && isSelectionKeyDownEvent(windowEvent);
   const useDOMSelection =
     !getIsProcessingMutations() &&
     (isSelectionChange ||

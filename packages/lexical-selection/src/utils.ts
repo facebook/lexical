@@ -7,7 +7,9 @@
  */
 
 import {
+  $getDOMSlot,
   $getEditor,
+  $isElementNode,
   $isRootNode,
   $isTextNode,
   type ElementNode,
@@ -29,6 +31,23 @@ function getDOMTextNode(element: Node | null): Text | null {
   }
 
   return null;
+}
+
+/**
+ * The DOM point for the point at `offset` in an ElementNode: in the element's
+ * DOM slot, counting the DOM the editor renders ahead of its children (such
+ * as a zero-size anchor before a leading decorator).
+ */
+function getElementDOMPoint(
+  editor: LexicalEditor,
+  node: ElementNode,
+  dom: HTMLElement,
+  offset: number,
+): [HTMLElement, number] {
+  return editor.read('latest', () => {
+    const slot = $getDOMSlot(node, dom, editor);
+    return [slot.element, slot.getFirstChildOffset() + offset];
+  });
 }
 
 function getDOMIndexWithinParent(node: ChildNode): [ParentNode, number] {
@@ -62,17 +81,33 @@ export function createDOMRange(
   // Resolve through the editor's own document so iframe / shadow-mounted
   // editors don't end up with a Range bound to the wrong realm.
   const range = getRootOwnerDocument(editor.getRootElement()).createRange();
-  let anchorDOM: Node | Text | null = editor.getElementByKey(anchorKey);
-  let focusDOM: Node | Text | null = editor.getElementByKey(focusKey);
+  const anchorElement = editor.getElementByKey(anchorKey);
+  const focusElement = editor.getElementByKey(focusKey);
+  let anchorDOM: Node | Text | null = anchorElement;
+  let focusDOM: Node | Text | null = focusElement;
   let anchorOffset = _anchorOffset;
   let focusOffset = _focusOffset;
 
   if ($isTextNode(anchorNode)) {
     anchorDOM = getDOMTextNode(anchorDOM);
+  } else if ($isElementNode(anchorNode) && anchorElement !== null) {
+    [anchorDOM, anchorOffset] = getElementDOMPoint(
+      editor,
+      anchorNode,
+      anchorElement,
+      anchorOffset,
+    );
   }
 
   if ($isTextNode(focusNode)) {
     focusDOM = getDOMTextNode(focusDOM);
+  } else if ($isElementNode(focusNode) && focusElement !== null) {
+    [focusDOM, focusOffset] = getElementDOMPoint(
+      editor,
+      focusNode,
+      focusElement,
+      focusOffset,
+    );
   }
 
   if (

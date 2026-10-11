@@ -13,6 +13,39 @@ should be less than 3kB in a production environment.
 
 The NodeCaret API was introduced in lexical v0.25.0.
 
+## Narrowing traversal results
+
+Node traversal and key lookup methods return the base node type. The deprecated
+generic overloads have been removed: passing a type argument such as
+`element.getFirstChild<TextNode>()` asserted a subclass without checking the node.
+Call the method without a type argument and use a type guard before accessing
+subclass-specific methods:
+
+```ts
+import {$isTextNode} from 'lexical';
+
+const child = element.getFirstChild();
+if ($isTextNode(child)) {
+  child.setTextContent('Updated text');
+}
+
+const textChildren = element.getChildren().filter($isTextNode);
+```
+
+This applies to `getParent`, `getParentOrThrow`, `getPreviousSibling`,
+`getPreviousSiblings`, `getNextSibling`, `getNextSiblings`, `getChildren`,
+`getChildAtIndex`, `getFirstChild`, `getFirstChildOrThrow`, `getLastChild`,
+`getLastChildOrThrow`, `getFirstDescendant`, `getLastDescendant`,
+`getDescendantByIndex`, `$getNodeByKey`, and `$getNodeByKeyOrThrow`. Flow callers
+must also remove type arguments from `getParents` and the array-type overload of
+`getChildren`. The non-generic methods keep their existing runtime behavior;
+`OrThrow` checks existence, so the result still needs a guard to establish its
+subclass. A custom guard should check your node's actual type, rather than merely
+asserting it in its return annotation.
+
+Generics whose inputs establish the result type remain supported, including
+`getLatest`, `getWritable`, `$cloneWithProperties`, and NodeCaret's origin types.
+
 ## Concepts
 
 The core concept with `NodeCaret` is that you can represent any specific

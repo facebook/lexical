@@ -1449,16 +1449,16 @@ describe('LexicalEditor tests', () => {
     // Unbounded: flips the text content again on every commit, forever.
     const unregisterUpdate = editor.registerUpdateListener(() => {
       editor.update(() => {
-        const text = $getNodeByKey<TextNode>(textKey);
-        if (text !== null) {
+        const text = $getNodeByKey(textKey);
+        if ($isTextNode(text)) {
           text.setTextContent(text.getTextContent() === 'a' ? 'b' : 'a');
         }
       });
     });
 
     editor.update(() => {
-      const text = $getNodeByKey<TextNode>(textKey);
-      if (text !== null) {
+      const text = $getNodeByKey(textKey);
+      if ($isTextNode(text)) {
         text.setTextContent('b');
       }
     });

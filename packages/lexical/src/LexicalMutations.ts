@@ -218,10 +218,9 @@ function flushMutations(
         } else if (type === 'childList') {
           shouldRevertSelection = true;
           // The zero-size selection anchors the reconciler parks outside a
-          // leading / trailing block decorator (#8922), and on some engines
-          // before a leading inline one (#7158), have a fixed place in their
-          // element's DOM. When one is added or removed here, the element's
-          // anchors are rebuilt in place below.
+          // leading / trailing block decorator (#8922) have a fixed place in
+          // their element's DOM. When one is added or removed here, the
+          // element's anchors are rebuilt in place below.
           let restoreAnchors = false;
           // The element's own scaffolding (the managed line break inside the
           // trailing boundary, with its img first; a boundary anchor on the

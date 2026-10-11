@@ -64,12 +64,12 @@ const IS_WEBKIT_BROWSER = IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI;
 /**
  * @internal
  *
- * Engines that need an editable inline box beside an inline DecoratorNode at
- * either edge of a line: without one, a click beside the decorator puts the
- * DOM caret inside its contentEditable=false DOM, and a mouse drag that starts
- * there can never extend beyond that decorator (#7158). WebKit has needed the
- * trailing one for its caret all along. Android is left alone: its IME is
- * sensitive to the DOM around the caret.
+ * Engines that need an editable inline box after an inline DecoratorNode that
+ * ends a line, the `<img>` of the managed line break. WebKit has needed it for
+ * its caret all along. Without it, a desktop Chromium mouse drag that starts
+ * past the end of such a line can put its focus back at the end of the line
+ * while the pointer is over the line's other decorators and text (#7158).
+ * Android is left alone: its IME is sensitive to the DOM around the caret.
  */
 export const NEEDS_INLINE_DECORATOR_EDGE_BOX: boolean =
   IS_WEBKIT_BROWSER || (IS_CHROME && !IS_ANDROID);
@@ -85,12 +85,6 @@ export const NEEDS_INLINE_DECORATOR_EDGE_BOX: boolean =
  * `document.execCommand('selectAll')` hits the same wall — and Chromium drops
  * it when both endpoints do. Interior element points next to the same decorator
  * paint fine everywhere; only the first / last child matters.
- *
- * On the engines in {@link NEEDS_INLINE_DECORATOR_EDGE_BOX}, the leading
- * anchor is also used before an *inline* first-child decorator: without an
- * editable position there, a click at the start of the line puts the caret
- * inside the decorator's non-editable DOM, and a mouse drag that starts there
- * cannot extend past that decorator (#7158).
  *
  * Parking a zero-size, out-of-flow `<img>` on the outside of such a boundary
  * decorator gives the browser an editable inline box to canonicalize the
@@ -416,9 +410,7 @@ export class ElementDOMSlot<
    * @internal
    *
    * The zero-size selection anchor parked outside a leading / trailing block
-   * decorator child (#8922), or on the engines in
-   * {@link NEEDS_INLINE_DECORATOR_EDGE_BOX} before a leading inline one
-   * (#7158), or `null` when this element has none on that edge. Each
+   * decorator child, or `null` when this element has none on that edge. Each
    * edge's anchor has a fixed DOM position — leading: the head of the managed
    * range (after the `after` boundary and any slot containers); trailing: the
    * very end of the managed range (just inside the `before` boundary) — so

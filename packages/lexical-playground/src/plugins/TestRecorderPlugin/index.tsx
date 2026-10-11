@@ -117,8 +117,7 @@ export function isSelectAll(event: KeyboardEvent): boolean {
 
 /**
  * How many of the zero-size anchors that the reconciler parks outside a
- * leading or trailing block decorator (#8922), and on WebKit and desktop
- * Chromium before a leading inline one (#7158), are among the first `index`
+ * leading or trailing block decorator (#8922) are among the first `index`
  * children of `parent`. They take a DOM child slot but no Lexical one, so
  * paths and offsets leave them out, as assertSelection in the e2e utils does.
  * Keep these helpers in step with its copies in

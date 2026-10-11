@@ -23,9 +23,12 @@ import {
   $getRoot,
   $getSelection,
   $isDecoratorNode,
+  $isElementNode,
   $isRangeSelection,
   $setSelection,
   DecoratorNode,
+  type ElementDOMSlot,
+  ElementNode,
   type LexicalEditor,
   type RangeSelection,
   TextNode,
@@ -39,6 +42,7 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {
   afterEach,
+  assert,
   beforeEach,
   describe,
   expect,
@@ -879,7 +883,34 @@ class BlockDecoratorNode extends DecoratorNode<null> {
   }
 }
 
-describe('$handleRichTextDrop beside an anchor the editor renders', () => {
+/**
+ * A block that renders a non-editable marker ahead of its children, which its
+ * DOM slot keeps them after.
+ */
+class LeadingMarkerElementNode extends ElementNode {
+  $config() {
+    return this.config('test_drop_leading_marker', {extends: ElementNode});
+  }
+  createDOM(): HTMLElement {
+    const div = document.createElement('div');
+    const marker = document.createElement('span');
+    marker.setAttribute('data-marker', 'true');
+    marker.contentEditable = 'false';
+    marker.textContent = '§';
+    div.appendChild(marker);
+    return div;
+  }
+  updateDOM(): false {
+    return false;
+  }
+  getDOMSlot(dom: HTMLElement): ElementDOMSlot<HTMLElement> {
+    const marker = dom.querySelector(':scope > [data-marker]');
+    assert(marker !== null, 'Expected the marker');
+    return super.getDOMSlot(dom).withAfter(marker);
+  }
+}
+
+describe('$handleRichTextDrop beside DOM the editor renders', () => {
   let container: HTMLDivElement;
   let editor: LexicalEditor;
 
@@ -888,7 +919,9 @@ describe('$handleRichTextDrop beside an anchor the editor renders', () => {
     container = document.createElement('div');
     container.contentEditable = 'true';
     document.body.appendChild(container);
-    editor = createTestEditor({nodes: [BlockDecoratorNode]});
+    editor = createTestEditor({
+      nodes: [BlockDecoratorNode, LeadingMarkerElementNode],
+    });
     registerRichText(editor);
     editor.setRootElement(container);
   });
@@ -937,6 +970,56 @@ describe('$handleRichTextDrop beside an anchor the editor renders', () => {
             $isDecoratorNode(node) ? 'decorator' : node.getTextContent(),
           ),
       ).toEqual(['foo', 'decorator', 'Hello  world']);
+    });
+  });
+
+  // The DOM point before the first child of an element whose children follow
+  // a marker of its own is (element, 1), which is the Lexical point
+  // (element, 0).
+  test('drops before the first child of an element at the DOM point after its marker', () => {
+    editor.update(
+      () => {
+        const text = $createTextNode('Hello foo world');
+        $getRoot()
+          .clear()
+          .append(
+            $create(LeadingMarkerElementNode).append(
+              $createTestDecoratorNode(),
+            ),
+            $createParagraphNode().append(text),
+          );
+        text.select(6, 9);
+      },
+      {discrete: true},
+    );
+    const elementDOM = container.firstElementChild;
+    assert(elementDOM !== null, 'Expected the element');
+    expect(elementDOM.firstElementChild?.hasAttribute('data-marker')).toBe(
+      true,
+    );
+    editor.update(
+      () => {
+        setCaretFromPoint(elementDOM, 1);
+        const {dataTransfer, event} = createDropEvent();
+        setLexicalClipboardDataTransfer(
+          dataTransfer,
+          $getClipboardDataFromSelection(),
+        );
+        $writeDragSourceToDataTransfer(dataTransfer, editor);
+        expect($handleRichTextDrop(event, editor)).toBe(true);
+      },
+      {discrete: true},
+    );
+    editor.read('latest', () => {
+      const element = $getRoot().getFirstChild();
+      assert($isElementNode(element), 'Expected the element');
+      expect(
+        element
+          .getChildren()
+          .map(node =>
+            $isDecoratorNode(node) ? 'decorator' : node.getTextContent(),
+          ),
+      ).toEqual(['foo', 'decorator']);
     });
   });
 });

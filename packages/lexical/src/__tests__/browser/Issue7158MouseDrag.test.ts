@@ -11,8 +11,9 @@
  * decorator of a line must extend across the decorators it crosses. jsdom
  * cannot model this (it has no hit testing, and a browser's mouse drag keeps
  * its own anchor regardless of later Selection API calls), so the drag is
- * driven through Playwright's mouse. These also check that a drag past the
- * end of a line does not rewrite the selection on every move, that a Shift
+ * driven through Playwright's mouse. These also check that a click beside
+ * those decorators puts the caret beside them, that a drag past the end or
+ * start of a line does not rewrite the selection on every move, that a Shift
  * drag keeps the selection's anchor, and that the presses the fallback must
  * not track (double clicks, presses on a selection, drags ended by
  * pointercancel or dragstart, anchors edited mid-drag) are left to the
@@ -457,11 +458,8 @@ test('Issue #7158: a drag past the end of the line does not keep changing the se
   );
 });
 
-// On WebKit and desktop Chromium a line that starts with an inline decorator
-// starts with a zero-size anchor before it, and the browser can put a drag's
-// focus above the line before that anchor, which is the same Lexical point as
-// after it. As at the end of the line, that must not be written back on every
-// move.
+// As at the end of the line, a drag above the start of a line that starts with
+// an inline decorator must not change the selection on every move.
 test('Issue #7158: a drag past the start of the line does not keep changing the selection', async () => {
   const {editor, left, y} = mount(false, ImageLikeDecoratorNode);
   let selectionChanges = 0;
@@ -499,13 +497,15 @@ test('Issue #7158: a drag past the start of the line does not keep changing the 
 });
 
 // No engine extends a drag across these decorators by itself, so these
-// exercise the pointermove fallback. A drag that starts
-// left of an unselectable first decorator is not covered: Chromium anchors it
-// after that decorator, and a drag keeps the anchor it took on mousedown.
+// exercise the pointermove fallback.
 describe('Issue #7158: mouse drag over unselectable inline decorators', () => {
   test(
     'a drag from right of the last decorator selects back to the third',
     dragFromLineEnd(BoxedImageDecoratorNode, false),
+  );
+  test(
+    'a drag from left of the first decorator selects to the end of the line',
+    dragFromLineStart(BoxedImageDecoratorNode, false),
   );
   test(
     'with text between, a drag from right of the last decorator selects back to the third',
@@ -679,8 +679,69 @@ describe('Issue #7158: mouse drag over inline decorators that hold a nested edit
   );
 });
 
-// The reconciler renders edge boxes only beside the decorators that start or
-// end a paragraph, so a line that a line break starts or ends has none.
+// A click beside the first or last inline decorator of a line puts the caret
+// beside it, not inside its contentEditable=false DOM, where it would resolve
+// to no selection at all; with a caret elsewhere already, Lexical would then
+// remove the DOM selection too.
+describe.each([
+  ['inline', ImageLikeDecoratorNode],
+  ['unselectable boxed inline', BoxedImageDecoratorNode],
+  ['selectable boxed inline', SelectableBoxedImageDecoratorNode],
+])('Issue #7158: mouse click beside %s decorators', (_name, klass) => {
+  test.each([
+    ['', 'left of the first', 'start', 0, false],
+    ['', 'right of the last', 'end', COUNT, false],
+    ['with a caret at the other end, ', 'left of the first', 'start', 0, true],
+    [
+      'with a caret at the other end, ',
+      'right of the last',
+      'end',
+      COUNT,
+      true,
+    ],
+  ])(
+    '%sa click %s decorator puts the caret at the %s of the line',
+    async (_caret, _side, _edge, offset, hasCaret) => {
+      const {editor, left, pointerLog, right, root, y} = mount(false, klass);
+      if (hasCaret) {
+        root.focus();
+        editor.update(
+          () => {
+            if (offset === 0) {
+              $getRoot().selectEnd();
+            } else {
+              $getRoot().selectStart();
+            }
+          },
+          {discrete: true},
+        );
+      }
+      await mouseDrag([
+        [offset === 0 ? left(0) - 5 : right(COUNT - 1) + 30, y],
+      ]);
+      await vi.waitFor(
+        () => {
+          const caret = editor.read('latest', () => {
+            const selection = $getSelection();
+            return $isRangeSelection(selection) && selection.isCollapsed()
+              ? `${selection.anchor.getNode().getType()}:${selection.anchor.offset}`
+              : String(selection);
+          });
+          assert(
+            caret === `paragraph:${offset}`,
+            `expected the caret at paragraph:${offset}, got ${caret} ` +
+              `(dom ${describeDOMSelection(getDOMSelection(window))}; ` +
+              `pointer ${pointerLog.join(' ')})`,
+          );
+        },
+        {interval: 50, timeout: 2000},
+      );
+    },
+  );
+});
+
+// The reconciler renders an edge box only after the decorator that ends a
+// paragraph, so a line that a line break ends has none.
 describe('Issue #7158: mouse drag over inline decorators beside a line break', () => {
   test('on a line a line break starts, a drag from left of the first decorator selects to the end of the line', async () => {
     const {editor, left, pointerLog, right, y} = mount(

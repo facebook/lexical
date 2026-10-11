@@ -10,9 +10,8 @@
  * A style set at a caret is kept for the text typed next, across the
  * selectionchange that writing the caret to the DOM causes. The editor
  * matches that selectionchange to the caret by its Lexical offset, which for
- * an element point differs from the DOM offset when the editor renders DOM
- * ahead of the children: the zero-size anchor before an inline decorator
- * that starts a paragraph, on Chromium and WebKit (#7158).
+ * an element point differs from the DOM offset when the element renders DOM
+ * ahead of its children.
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
@@ -27,6 +26,8 @@ import {
   $isElementNode,
   $isRangeSelection,
   DecoratorNode,
+  type ElementDOMSlot,
+  ElementNode,
 } from 'lexical';
 import {assert, expect, onTestFinished, test} from 'vitest';
 import {userEvent} from 'vitest/browser';
@@ -50,7 +51,36 @@ class InlineDecoratorNode extends DecoratorNode<null> {
   }
 }
 
-test('a style set at the caret after a leading inline decorator is typed with', async () => {
+/**
+ * A block that renders a non-editable marker ahead of its children, which its
+ * DOM slot keeps them after.
+ */
+class LeadingMarkerElementNode extends ElementNode {
+  $config() {
+    return this.config('test_collapsed_style_leading_marker', {
+      extends: ElementNode,
+    });
+  }
+  createDOM(): HTMLElement {
+    const div = document.createElement('div');
+    const marker = document.createElement('span');
+    marker.setAttribute('data-marker', 'true');
+    marker.contentEditable = 'false';
+    marker.textContent = '§';
+    div.appendChild(marker);
+    return div;
+  }
+  updateDOM(): false {
+    return false;
+  }
+  getDOMSlot(dom: HTMLElement): ElementDOMSlot<HTMLElement> {
+    const marker = dom.querySelector(':scope > [data-marker]');
+    assert(marker !== null, 'Expected the marker');
+    return super.getDOMSlot(dom).withAfter(marker);
+  }
+}
+
+test('a style set at the caret after a decorator in an element with a leading marker is typed with', async () => {
   const root = document.createElement('div');
   root.contentEditable = 'true';
   document.body.appendChild(root);
@@ -60,13 +90,15 @@ test('a style set at the caret after a leading inline decorator is typed with', 
         $getRoot()
           .clear()
           .append(
-            $createParagraphNode().append($create(InlineDecoratorNode)),
+            $create(LeadingMarkerElementNode).append(
+              $create(InlineDecoratorNode),
+            ),
             $createParagraphNode().append($createTextNode('abc')),
           );
       },
       dependencies: [RichTextExtension],
       name: '[collapsed-style-beside-decorator]',
-      nodes: [InlineDecoratorNode],
+      nodes: [InlineDecoratorNode, LeadingMarkerElementNode],
     }),
   );
   editor.setRootElement(root);
@@ -77,9 +109,9 @@ test('a style set at the caret after a leading inline decorator is typed with', 
   root.focus();
   editor.update(
     () => {
-      const paragraph = $getRoot().getFirstChild();
-      assert($isElementNode(paragraph), 'Expected the paragraph');
-      paragraph.select(1, 1);
+      const element = $getRoot().getFirstChild();
+      assert($isElementNode(element), 'Expected the element');
+      element.select(1, 1);
     },
     {discrete: true},
   );

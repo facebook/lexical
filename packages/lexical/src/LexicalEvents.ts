@@ -299,7 +299,13 @@ const documentMouseSelectionDrag = createRefCountedRegistry((doc: Document) => {
           forEachMouseSelectionDrag(doc, (editor, drag) =>
             onPointerMove(event, editor, drag),
           ),
-        pointerup: endDrags,
+        pointerup: event =>
+          forEachMouseSelectionDrag(doc, (editor, drag) => {
+            editor._inputState.mouseSelectionDrag = null;
+            if (event.button === 0 && event.pointerType === 'mouse') {
+              adjustMouseClickCaret(editor, drag);
+            }
+          }),
       },
       true,
     ),
@@ -418,6 +424,9 @@ function onSelectionChange(
     focusOffset,
   } = getDOMSelectionPoints(domSelection, editor._rootElement);
   const inputState = editor._inputState;
+  if (isActive && moveMousePressCaretOutOfInlineDecorator(editor)) {
+    return;
+  }
   if (inputState.isSelectionChangeFromDOMUpdate) {
     inputState.isSelectionChangeFromDOMUpdate = false;
     const appliedPoints = inputState.selectionChangeFromDOMUpdatePoints;
@@ -1140,32 +1149,133 @@ function recordMouseSelectionDragAnchor(
     return;
   }
   // A Shift press only moved the focus, so the anchor is not at the press.
-  // Otherwise a press beside an inline decorator can be anchored inside it,
-  // and Firefox puts a press beyond the end of a line that ends in an
-  // unselectable inline decorator before that decorator.
   const [node, offset] = drag.isExtending
     ? [anchorNode, anchorOffset]
     : editor.read('latest', () =>
-        $movePastInlineDecorators(
+        $getMousePressDOMPoint(
           editor,
           rootElement,
-          ...($getDOMPointBeforeLineStartDecorator(
-            editor,
-            anchorNode,
-            drag.clientX,
-            drag.clientY,
-          ) ||
-            $getDOMPointOutsideInlineDecorator(
-              editor,
-              anchorNode,
-              anchorOffset,
-              drag.clientX,
-            )),
-          drag.clientX,
-          drag.clientY,
+          anchorNode,
+          anchorOffset,
+          drag,
         ),
       );
   drag.anchor = [node, offset, getDOMPointContext(node, offset)];
+}
+
+/**
+ * Where a mouse press at (`drag.clientX`, `drag.clientY`) that the browser
+ * put at `offset` in `node` belongs, as far as the inline decorators around
+ * it are concerned. A press beside an inline decorator can be put inside it,
+ * where it resolves to no selection; Firefox puts a press beyond the end of a
+ * line that ends in an unselectable inline decorator before that decorator;
+ * and a press before the decorator that starts a line after a line break
+ * lands on another line.
+ */
+function $getMousePressDOMPoint(
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+  node: Node,
+  offset: number,
+  {clientX, clientY}: MouseSelectionDrag,
+): [node: Node, offset: number] {
+  return $movePastInlineDecorators(
+    editor,
+    rootElement,
+    ...($getDOMPointBeforeLineStartDecorator(editor, node, clientX, clientY) ||
+      $getDOMPointOutsideInlineDecorator(editor, node, offset, clientX)),
+    clientX,
+    clientY,
+  );
+}
+
+/**
+ * The collapsed DOM selection of a mouse press tracked by `drag` that has
+ * not become a drag, in this editor and not on an inline decorator, which
+ * leaves the caret to the decorator's own handling. Null otherwise.
+ */
+function getMouseClickCaret(
+  editor: LexicalEditor,
+  drag: MouseSelectionDrag,
+): null | {domSelection: Selection; node: Node; offset: number} {
+  const target = getComposedEventTarget(drag.pointerDown);
+  const rootElement = editor.getRootElement();
+  if (
+    drag.anchor !== null ||
+    drag.isExtending ||
+    drag.pointerDown.defaultPrevented ||
+    (drag.mouseDown !== null && drag.mouseDown.defaultPrevented) ||
+    !isDOMNode(target) ||
+    rootElement === null
+  ) {
+    return null;
+  }
+  const domSelection = getDOMSelectionFromTarget(target);
+  if (domSelection === null || domSelection.rangeCount === 0) {
+    return null;
+  }
+  const {anchorNode, anchorOffset, focusNode, focusOffset} =
+    getDOMSelectionPoints(domSelection, rootElement);
+  if (
+    anchorNode === null ||
+    anchorNode !== focusNode ||
+    anchorOffset !== focusOffset ||
+    getNearestEditorFromDOMNode(anchorNode) !== editor ||
+    editor.read('latest', () => $getInlineDecoratorDOM(editor, target)) !== null
+  ) {
+    return null;
+  }
+  return {domSelection, node: anchorNode, offset: anchorOffset};
+}
+
+/**
+ * While a mouse press is held, moves the caret that the browser put inside
+ * the DOM of an inline decorator beside the press (Firefox does that for a
+ * press before the decorator that starts a line) to the side of the
+ * decorator that was pressed. Inside, the caret resolves to no selection, and
+ * Lexical would then remove the DOM selection. Returns true when it moved
+ * the caret, whose own selectionchange follows.
+ */
+function moveMousePressCaretOutOfInlineDecorator(
+  editor: LexicalEditor,
+): boolean {
+  const drag = editor._inputState.mouseSelectionDrag;
+  const caret = drag && getMouseClickCaret(editor, drag);
+  if (drag === null || caret === null) {
+    return false;
+  }
+  const {domSelection, node, offset} = caret;
+  const [nextNode, nextOffset] = editor.read('latest', () =>
+    $getDOMPointOutsideInlineDecorator(editor, node, offset, drag.clientX),
+  );
+  if (nextNode === node && nextOffset === offset) {
+    return false;
+  }
+  domSelection.setBaseAndExtent(nextNode, nextOffset, nextNode, nextOffset);
+  return true;
+}
+
+/**
+ * Puts the caret of a mouse click (a press released before it became a
+ * drag) where the press belongs ({@link $getMousePressDOMPoint}), when the
+ * browser put it elsewhere.
+ */
+function adjustMouseClickCaret(
+  editor: LexicalEditor,
+  drag: MouseSelectionDrag,
+): void {
+  const caret = getMouseClickCaret(editor, drag);
+  const rootElement = editor.getRootElement();
+  if (caret === null || rootElement === null) {
+    return;
+  }
+  const {domSelection, node, offset} = caret;
+  const [nextNode, nextOffset] = editor.read('latest', () =>
+    $getMousePressDOMPoint(editor, rootElement, node, offset, drag),
+  );
+  if (nextNode !== node || nextOffset !== offset) {
+    domSelection.setBaseAndExtent(nextNode, nextOffset, nextNode, nextOffset);
+  }
 }
 
 /**

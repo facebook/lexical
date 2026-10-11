@@ -382,10 +382,10 @@ export async function clickSelectors(page, selectors) {
   }
 }
 
-// On the engines that need an editable box beside an inline decorator
-// (WebKit and desktop Chromium, #7158), the reconciler renders the managed
-// line break after a trailing inline decorator as an img+br pair; keep the img
-// out of the HTML the specs assert on.
+// On the engines that need an editable box after an inline decorator that
+// ends a line (WebKit and desktop Chromium, #7158), the reconciler renders the
+// managed line break after it as an img+br pair; keep the img out of the HTML
+// the specs assert on.
 function removeManagedLineBreakImgs(actualHtml) {
   return actualHtml.replaceAll(
     /<img (?:[^>]+ )?data-lexical-managed-linebreak="true"(?: [^>]+)?>/g,
@@ -396,8 +396,7 @@ function removeManagedLineBreakImgs(actualHtml) {
 /**
  * The reconciler parks a zero-size, out-of-flow `<img>` outside a leading or
  * trailing block DecoratorNode so browsers keep painting the selection
- * highlight for a range that ends on that boundary (#8922), and on WebKit and
- * desktop Chromium before a leading inline one too (#7158). It is invisible
+ * highlight for a range that ends on that boundary (#8922). It is invisible
  * scaffolding, so keep it out of the HTML the specs assert on.
  */
 function removeDecoratorBoundaryAnchors(actualHtml) {
@@ -607,11 +606,10 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       const rootElement = document.querySelector('div[contenteditable="true"]');
 
       // The zero-size anchors the reconciler parks outside a leading / trailing
-      // block decorator (#8922), and on WebKit and desktop Chromium before a
-      // leading inline one (#7158), occupy a DOM child slot but no lexical
-      // one, so discount them from both paths and offsets. Keep these helpers
-      // in step with the playground's TestRecorderPlugin, which records the
-      // paths and offsets that this asserts.
+      // block decorator (#8922) occupy a DOM child slot but no lexical one, so
+      // discount them from both paths and offsets. Keep these helpers in step
+      // with the playground's TestRecorderPlugin, which records the paths and
+      // offsets that this asserts.
       const boundaryAnchorsBefore = (parent, index) => {
         const children = parent.childNodes;
         let count = 0;

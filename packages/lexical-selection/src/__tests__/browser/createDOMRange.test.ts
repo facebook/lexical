@@ -16,17 +16,18 @@ import {
   $getRoot,
   $isElementNode,
   DecoratorNode,
+  type ElementDOMSlot,
+  ElementNode,
   type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
 
-// The editor renders DOM of its own between an element's children: a
-// zero-size anchor before a block decorator at the edge of the root on every
-// engine (#8922), and before an inline decorator that starts a paragraph on
-// Chromium and WebKit (#7158). Element points must count it, as the editor's
-// own DOM selection does, so that ranges for remote carets, comments and the
-// like cover the nodes they name.
+// The editor renders DOM of its own between an element's children, such as a
+// zero-size anchor before a block decorator at the edge of the root (#8922),
+// and an element can render DOM of its own ahead of its children. Element
+// points must count it, as the editor's own DOM selection does, so that ranges
+// for remote carets, comments and the like cover the nodes they name.
 
 class InlineDecoratorNode extends DecoratorNode<null> {
   $config() {
@@ -69,6 +70,35 @@ class BlockDecoratorNode extends DecoratorNode<null> {
   }
 }
 
+/**
+ * A block that renders a non-editable marker ahead of its children, which its
+ * DOM slot keeps them after.
+ */
+class LeadingMarkerElementNode extends ElementNode {
+  $config() {
+    return this.config('test_create_dom_range_leading_marker', {
+      extends: ElementNode,
+    });
+  }
+  createDOM(): HTMLElement {
+    const div = document.createElement('div');
+    const marker = document.createElement('span');
+    marker.setAttribute('data-marker', 'true');
+    marker.contentEditable = 'false';
+    marker.textContent = '§';
+    div.appendChild(marker);
+    return div;
+  }
+  updateDOM(): false {
+    return false;
+  }
+  getDOMSlot(dom: HTMLElement): ElementDOMSlot<HTMLElement> {
+    const marker = dom.querySelector(':scope > [data-marker]');
+    assert(marker !== null, 'Expected the marker');
+    return super.getDOMSlot(dom).withAfter(marker);
+  }
+}
+
 function mount($children: () => LexicalNode[]): LexicalEditor {
   const root = document.createElement('div');
   root.contentEditable = 'true';
@@ -82,7 +112,11 @@ function mount($children: () => LexicalNode[]): LexicalEditor {
       },
       dependencies: [RichTextExtension],
       name: '[create-dom-range]',
-      nodes: [InlineDecoratorNode, BlockDecoratorNode],
+      nodes: [
+        InlineDecoratorNode,
+        BlockDecoratorNode,
+        LeadingMarkerElementNode,
+      ],
     }),
   );
   editor.setRootElement(root);
@@ -110,25 +144,25 @@ function childAfterStart(range: Range): Node | null {
 }
 
 describe('createDOMRange element points', () => {
-  test('in a paragraph that starts with an inline decorator', () => {
+  test('in an element whose children follow a marker of its own', () => {
     const editor = mount(() => [
-      $createParagraphNode().append(
+      $create(LeadingMarkerElementNode).append(
         $create(InlineDecoratorNode),
         $createTextNode('abc'),
         $create(InlineDecoratorNode),
       ),
     ]);
     editor.read('latest', () => {
-      const paragraph = $getRoot().getFirstChild();
-      assert($isElementNode(paragraph), 'Expected the paragraph');
-      const [first, text, last] = paragraph.getChildren();
+      const element = $getRoot().getFirstChild();
+      assert($isElementNode(element), 'Expected the element');
+      const [first, text, last] = element.getChildren();
       const firstDOM = editor.getElementByKey(first.getKey());
       const textDOM = editor.getElementByKey(text.getKey());
       const lastDOM = editor.getElementByKey(last.getKey());
       assert(firstDOM !== null && textDOM !== null && lastDOM !== null);
-      expect(childAfterStart(rangeAt(editor, paragraph, 0))).toBe(firstDOM);
-      expect(childAfterStart(rangeAt(editor, paragraph, 1))).toBe(textDOM);
-      const range = createDOMRange(editor, paragraph, 0, paragraph, 3);
+      expect(childAfterStart(rangeAt(editor, element, 0))).toBe(firstDOM);
+      expect(childAfterStart(rangeAt(editor, element, 1))).toBe(textDOM);
+      const range = createDOMRange(editor, element, 0, element, 3);
       assert(range !== null, 'Expected a range');
       expect(range.intersectsNode(firstDOM)).toBe(true);
       expect(range.endContainer.childNodes[range.endOffset - 1]).toBe(lastDOM);

@@ -58,7 +58,6 @@ import {
 } from '.';
 import {IS_FIREFOX} from './environment';
 import {DOM_TEXT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
-import {isDecoratorBoundaryAnchorDOM} from './LexicalDOMSlot';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
@@ -3931,15 +3930,11 @@ function $isDOMPointAt(
 
 /**
  * The offset in `node` before any managed line break children that precede
- * `offset`, and after any decorator boundary anchors that follow it, which is
- * the same position as far as Lexical is concerned.
+ * `offset`, which is the same position as far as Lexical is concerned.
  */
-function skipDOMScaffolding(node: Node, offset: number): number {
+function skipManagedLineBreak(node: Node, offset: number): number {
   while (offset > 0 && isManagedLineBreakDOM(node.childNodes[offset - 1])) {
     offset--;
-  }
-  while (isDecoratorBoundaryAnchorDOM(node.childNodes[offset])) {
-    offset++;
   }
   return offset;
 }
@@ -4129,21 +4124,20 @@ export function $updateDOMSelection(
 
   // During a mouse drag past the end of a line that ends in an inline
   // decorator, the browser can put the focus after the managed line break
-  // (its <img> on the engines that render one, or its <br>), and past the
-  // start of a line that starts with one, before the decorator boundary
-  // anchor, which are the same Lexical points as the ones beside them.
-  // Writing the selection back would only make the browser move it again on
-  // the next pointer move, turning every move into two selection changes.
+  // (its <img> on the engines that render one, or its <br>), which is the
+  // same Lexical point as before it. Writing the selection back would only
+  // make the browser move it again on the next pointer move, turning every
+  // move into two selection changes.
   if (
     isMouseSelectionDragging(editor) &&
     currentPoints.anchorNode === nextAnchorNode &&
     currentPoints.focusNode === nextFocusNode &&
     (currentPoints.anchorOffset !== nextAnchorOffset ||
       currentPoints.focusOffset !== nextFocusOffset) &&
-    skipDOMScaffolding(nextAnchorNode, currentPoints.anchorOffset) ===
-      skipDOMScaffolding(nextAnchorNode, nextAnchorOffset) &&
-    skipDOMScaffolding(nextFocusNode, currentPoints.focusOffset) ===
-      skipDOMScaffolding(nextFocusNode, nextFocusOffset)
+    skipManagedLineBreak(nextAnchorNode, currentPoints.anchorOffset) ===
+      nextAnchorOffset &&
+    skipManagedLineBreak(nextFocusNode, currentPoints.focusOffset) ===
+      nextFocusOffset
   ) {
     return;
   }

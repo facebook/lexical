@@ -44,7 +44,6 @@ import {
   IS_ALIGN_RIGHT,
   IS_ALIGN_START,
 } from './LexicalConstants';
-import {NEEDS_INLINE_DECORATOR_EDGE_BOX} from './LexicalDOMSlot';
 import {cloneMap} from './LexicalGenMap';
 import {$isSlotChild, $isSlotHost, EMPTY_SLOTS} from './LexicalSlot';
 import {
@@ -948,20 +947,15 @@ function $isLastChildLineBreakOrDecorator(
   return null;
 }
 
-/**
- * Whether the child with `key` is a block DecoratorNode, or with
- * `includeInline` any DecoratorNode.
- */
-function $isEdgeDecoratorChild(
+function $isBlockDecoratorChild(
   key: null | NodeKey,
   nodeMap: NodeMap,
-  includeInline: boolean,
 ): boolean {
   if (!key) {
     return false;
   }
   const node = nodeMap.get(key);
-  return $isDecoratorNode(node) && (includeInline || !node.isInline());
+  return $isDecoratorNode(node) && !node.isInline();
 }
 
 /**
@@ -973,15 +967,6 @@ function $isEdgeDecoratorChild(
  * an editable inline box to resolve the boundary position against. Interior
  * decorators are unaffected, so only the first / last child is considered.
  *
- * On the engines in {@link NEEDS_INLINE_DECORATOR_EDGE_BOX} the leading anchor
- * is also parked before an inline first-child decorator. A line that starts
- * with an inline decorator has no editable caret position before it either,
- * so a browser canonicalizes a caret at the start of the line into the
- * decorator's non-editable DOM and will not extend a mouse drag out of it
- * (#7158). The trailing edge of an inline decorator already has an editable
- * position: the managed line break that
- * {@link $reconcileElementTerminatingLineBreak} appends after it.
- *
  * Also called by `flushMutations`, outside a reconcile, to put back an anchor
  * that something else removed from or added to the DOM.
  */
@@ -992,15 +977,11 @@ export function $reconcileDecoratorBoundaryAnchors(
 ): void {
   slot.setDecoratorBoundaryAnchor(
     'leading',
-    $isEdgeDecoratorChild(
-      nextElement.__first,
-      nodeMap,
-      NEEDS_INLINE_DECORATOR_EDGE_BOX,
-    ),
+    $isBlockDecoratorChild(nextElement.__first, nodeMap),
   );
   slot.setDecoratorBoundaryAnchor(
     'trailing',
-    $isEdgeDecoratorChild(nextElement.__last, nodeMap, false),
+    $isBlockDecoratorChild(nextElement.__last, nodeMap),
   );
 }
 

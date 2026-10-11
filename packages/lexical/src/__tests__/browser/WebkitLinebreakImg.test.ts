@@ -14,13 +14,13 @@
  * `<img>` followed by the usual `<br>` (see
  * `ElementDOMSlot.insertManagedLineBreak`'s `withEdgeImg`), giving the
  * browser an editable inline box between the `contenteditable=false`
- * decorator and the break. In Chromium that box is what lets a mouse drag
- * start to the right of a line's last inline decorator, which
- * Issue7158MouseDrag.test.ts covers. The Safari caret behavior it fixes is
- * not reproduced by headless Linux WebKit, so these tests pin the
- * *mechanism* — the DOM contract of `setManagedLineBreak('decorator')` on each
- * real engine — such that removing or breaking the hack in WebKit fails
- * loudly instead of silently.
+ * decorator and the break. In Chromium that box is what keeps a mouse drag
+ * that starts past the end of such a line from putting its focus back at the
+ * end of the line, which Issue7158MouseDrag.test.ts covers. The Safari caret
+ * behavior it fixes is not reproduced by headless Linux WebKit, so these
+ * tests pin the *mechanism* — the DOM contract of
+ * `setManagedLineBreak('decorator')` on each real engine — such that removing
+ * or breaking the hack in WebKit fails loudly instead of silently.
  *
  * Running in browser mode means the real environment detection is live: the
  * webkit and chromium instances assert the img+br shape and firefox asserts
@@ -37,7 +37,6 @@ import {
   $getRoot,
   $isParagraphNode,
   DecoratorNode,
-  ElementNode,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
 import {server} from 'vitest/browser';
@@ -67,25 +66,10 @@ class TestInlineDecoratorNode extends DecoratorNode<null> {
   }
 }
 
-class TestInlineElementNode extends ElementNode {
-  $config() {
-    return this.config('test_inline_element', {extends: ElementNode});
-  }
-  createDOM(): HTMLElement {
-    return document.createElement('a');
-  }
-  updateDOM(): false {
-    return false;
-  }
-  isInline(): true {
-    return true;
-  }
-}
-
 const ext = defineExtension({
   dependencies: [RichTextExtension],
   name: '[webkit-linebreak-img]',
-  nodes: [TestInlineDecoratorNode, TestInlineElementNode],
+  nodes: [TestInlineDecoratorNode],
 });
 
 function mountEditor() {
@@ -265,7 +249,6 @@ function paragraphShape(contentEditable: HTMLElement): string[] {
 
 describe('scaffolding removed from outside the reconciler is restored', () => {
   const EXPECTED_SHAPE = [
-    ...(EXPECTS_IMG_HACK ? ['anchor'] : []),
     'decorator',
     'text',
     'decorator',
@@ -294,10 +277,7 @@ describe('scaffolding removed from outside the reconciler is restored', () => {
 
   test.each([
     ...(EXPECTS_IMG_HACK
-      ? [
-          ['the leading boundary anchor', '[data-lexical-decorator-boundary]'],
-          ['the managed line break img', 'img[data-lexical-managed-linebreak]'],
-        ]
+      ? [['the managed line break img', 'img[data-lexical-managed-linebreak]']]
       : []),
     ['the managed line break br', 'br[data-lexical-managed-linebreak]'],
   ])('%s', async (_name, selector) => {
@@ -310,74 +290,5 @@ describe('scaffolding removed from outside the reconciler is restored', () => {
     await expect
       .poll(() => paragraphShape(contentEditable))
       .toEqual(EXPECTED_SHAPE);
-  });
-
-  // Lexical adds the anchor only while it isn't observing the DOM, so an
-  // anchor that something else moved or copied, where it would shift DOM
-  // offsets, is put back on its edge.
-  describe.skipIf(!EXPECTS_IMG_HACK)('the leading boundary anchor', () => {
-    test.each([
-      [
-        'moved before the second decorator',
-        (anchor: Element, paragraph: Element) => {
-          paragraph.insertBefore(
-            anchor,
-            paragraph.querySelectorAll('[data-lexical-decorator]')[1],
-          );
-        },
-      ],
-      [
-        'copied beside it',
-        (anchor: Element) => {
-          anchor.after(anchor.cloneNode(true));
-        },
-      ],
-    ])('%s', async (_name, edit) => {
-      const {contentEditable} = mountDecoratorLine();
-      const paragraph = contentEditable.querySelector('p');
-      const anchor = contentEditable.querySelector(
-        'p > [data-lexical-decorator-boundary]',
-      );
-      assert(paragraph !== null && anchor !== null, 'expected the anchor');
-      edit(anchor, paragraph);
-      await expect
-        .poll(() => paragraphShape(contentEditable))
-        .toEqual(EXPECTED_SHAPE);
-    });
-
-    // Inline elements never have anchors, even one that starts with an
-    // inline decorator.
-    test('moved into an inline element', async () => {
-      const {contentEditable, editor} = mountEditor();
-      editor.update(
-        () => {
-          $getRoot()
-            .clear()
-            .append(
-              $createParagraphNode().append(
-                $create(TestInlineDecoratorNode),
-                $create(TestInlineElementNode).append(
-                  $create(TestInlineDecoratorNode),
-                  $createTextNode('link'),
-                ),
-                $createTextNode('text'),
-              ),
-            );
-        },
-        {discrete: true},
-      );
-      const anchor = contentEditable.querySelector(
-        'p > [data-lexical-decorator-boundary]',
-      );
-      const inline = contentEditable.querySelector('p > a');
-      assert(anchor !== null && inline !== null, 'expected the anchor');
-      inline.prepend(anchor);
-      await expect
-        .poll(() => paragraphShape(contentEditable))
-        .toEqual(['anchor', 'decorator', 'text', 'text']);
-      expect(
-        inline.querySelector('[data-lexical-decorator-boundary]'),
-      ).toBeNull();
-    });
   });
 });

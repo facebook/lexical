@@ -61,8 +61,9 @@ function mount() {
 }
 
 /**
- * Takes over requestAnimationFrame until `restore` is called. `runFrame` runs
- * the callbacks requested so far as one frame at `time`.
+ * Takes over requestAnimationFrame until `restore` is called or the test
+ * finishes. `runFrame` runs the callbacks requested so far as one frame at
+ * `time`.
  */
 function captureAnimationFrames() {
   const callbacks = new Map<number, FrameRequestCallback>();
@@ -79,11 +80,13 @@ function captureAnimationFrames() {
     .mockImplementation(id => {
       callbacks.delete(id);
     });
+  const restore = () => {
+    requestSpy.mockRestore();
+    cancelSpy.mockRestore();
+  };
+  onTestFinished(restore);
   return {
-    restore() {
-      requestSpy.mockRestore();
-      cancelSpy.mockRestore();
-    },
+    restore,
     runFrame(time: number) {
       const frame = [...callbacks.values()];
       callbacks.clear();
@@ -119,19 +122,19 @@ function autoScrollFor100ms(frameMs: number): number {
     );
   const holdX = wrapper.getBoundingClientRect().right - 5;
   const {restore, runFrame} = captureAnimationFrames();
-  try {
-    pointer('pointerdown', cellRect.left + cellRect.width / 2);
-    pointer('pointermove', holdX);
-    const frames = Math.round(100 / frameMs);
-    for (let frame = 0; frame <= frames; frame++) {
-      runFrame(1000 + frame * frameMs);
-    }
-    pointer('pointerup', holdX);
-    return wrapper.scrollLeft;
-  } finally {
-    restore();
-    unmount();
+  pointer('pointerdown', cellRect.left + cellRect.width / 2);
+  pointer('pointermove', holdX);
+  const frames = Math.round(100 / frameMs);
+  for (let frame = 0; frame <= frames; frame++) {
+    runFrame(1000 + frame * frameMs);
   }
+  pointer('pointerup', holdX);
+  const scrollLeft = wrapper.scrollLeft;
+  // Before the next measurement, which mounts another editor. Both run again
+  // when the test finishes, which also covers a measurement that throws.
+  restore();
+  unmount();
+  return scrollLeft;
 }
 
 test('drag auto-scroll covers the same distance in the same time at any frame rate', () => {

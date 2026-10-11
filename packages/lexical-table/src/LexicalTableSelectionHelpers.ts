@@ -137,9 +137,17 @@ const isPointerDownOnEvent = (event: PointerEvent) => {
 const TAP_SLOP = 10;
 
 // Distance (px) from a scroll container edge at which drag auto-scroll kicks
-// in, and the maximum scroll delta applied per animation frame.
+// in, and the maximum scroll delta applied per 60Hz animation frame.
 const AUTO_SCROLL_EDGE_ZONE = 40;
 const AUTO_SCROLL_MAX_STEP = 18;
+// The deltas are per frame at AUTO_SCROLL_FPS, and each tick scales them
+// by the time since the previous one, so the scroll speed doesn't follow the
+// frame rate: a 120Hz display would otherwise scroll twice as fast, and a
+// page whose frames slow down under load would barely creep. A tick covers at
+// most AUTO_SCROLL_MAX_ELAPSED_MS, so a long stall between frames resumes with
+// a jump of a few frames rather than one past most of the table.
+const AUTO_SCROLL_FPS = 60;
+const AUTO_SCROLL_MAX_ELAPSED_MS = 100;
 
 // Given a pointer position and the start/end edges of a scroll container on one
 // axis, return the signed per-frame scroll delta: negative near the start edge,
@@ -162,6 +170,23 @@ function autoScrollStep(pos: number, start: number, end: number): number {
     return speed(pos - (end - AUTO_SCROLL_EDGE_ZONE));
   }
   return 0;
+}
+
+// The time (ms) an auto-scroll tick at `time` covers, given the previous
+// tick's. The first tick of a run covers one frame, as does a tick whose time
+// can't be measured (a callback run without a timestamp, or a clock that did
+// not advance).
+function autoScrollElapsed(time: number, prevTime: number | null): number {
+  const frameMs = 1000 / AUTO_SCROLL_FPS;
+  const elapsed = prevTime === null ? frameMs : time - prevTime;
+  return elapsed > 0 ? Math.min(elapsed, AUTO_SCROLL_MAX_ELAPSED_MS) : frameMs;
+}
+
+// Scale a per-frame delta from autoScrollStep to a tick covering `elapsed` ms.
+// It stays at least one pixel: the loop stops on a tick that scrolls nothing.
+function scaleAutoScrollStep(step: number, elapsed: number): number {
+  const scaled = Math.round((step * elapsed * AUTO_SCROLL_FPS) / 1000);
+  return step < 0 ? Math.min(-1, scaled) : Math.max(1, scaled);
 }
 
 export function isHTMLTableElement(el: unknown): el is HTMLTableElement {
@@ -346,6 +371,9 @@ function $handleTableClick(
     let lastClientX = event.clientX;
     let lastClientY = event.clientY;
     let autoScrollRafId: number | null = null;
+    // The timestamp of the previous tick of the running auto-scroll, or null
+    // before its first tick.
+    let lastAutoScrollTime: number | null = null;
     // Removes every listener below. Assigned once they are defined; nothing
     // can call stopSelecting before then, since only those listeners do.
     let removeGestureListeners: (() => void) | null = null;
@@ -462,11 +490,13 @@ function $handleTableClick(
     };
 
     // Scroll `container` (or the window when null) on `axis` if the pointer is
-    // within the edge zone. Returns whether it actually scrolled.
+    // within the edge zone, by as much as `elapsed` ms of auto-scroll covers.
+    // Returns whether it actually scrolled.
     const scrollAxis = (
       container: HTMLElement | null,
       pos: number,
       axis: 'x' | 'y',
+      elapsed: number,
     ): boolean => {
       let start: number;
       let end: number;
@@ -478,10 +508,11 @@ function $handleTableClick(
         start = axis === 'x' ? rect.left : rect.top;
         end = axis === 'x' ? rect.right : rect.bottom;
       }
-      const step = autoScrollStep(pos, start, end);
-      if (step === 0) {
+      const frameStep = autoScrollStep(pos, start, end);
+      if (frameStep === 0) {
         return false;
       }
+      const step = scaleAutoScrollStep(frameStep, elapsed);
       if (container === null) {
         const before =
           axis === 'x' ? editorWindow.scrollX : editorWindow.scrollY;
@@ -543,18 +574,21 @@ function $handleTableClick(
       return autoScrollStep(lastClientY, vStart, vEnd) !== 0;
     };
 
-    const tickAutoScroll = () => {
+    const tickAutoScroll = (time: number) => {
       autoScrollRafId = null;
       if (!tableObserver.isSelecting) {
         return;
       }
+      const elapsed = autoScrollElapsed(time, lastAutoScrollTime);
+      lastAutoScrollTime = time;
       const hContainer = findScrollContainer('x');
       const vContainer = findScrollContainer('y');
       // Only the table's own wrapper scrolls horizontally; pages don't
       // auto-scroll sideways. Vertically we fall back to the window.
       const scrolledX =
-        hContainer !== null && scrollAxis(hContainer, lastClientX, 'x');
-      const scrolledY = scrollAxis(vContainer, lastClientY, 'y');
+        hContainer !== null &&
+        scrollAxis(hContainer, lastClientX, 'x', elapsed);
+      const scrolledY = scrollAxis(vContainer, lastClientY, 'y', elapsed);
       if (scrolledX || scrolledY) {
         const [hitX, hitY] = clampHitPoint(hContainer, vContainer);
         const focusCell = resolveFocusCellFromPoint(hitX, hitY);
@@ -577,6 +611,7 @@ function $handleTableClick(
       ) {
         return;
       }
+      lastAutoScrollTime = null;
       autoScrollRafId = editorWindow.requestAnimationFrame(tickAutoScroll);
     };
 

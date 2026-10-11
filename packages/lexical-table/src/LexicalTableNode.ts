@@ -273,15 +273,36 @@ export function attachStickyScrollbarListeners(
     scrollable.style.scrollbarWidth = 'auto';
     return () => {};
   }
+  // A scroll event is dispatched on the frame after its scroll, so the event
+  // for the position one listener copies onto the other element arrives a
+  // frame late. By then the element it was copied from may have moved on —
+  // drag auto-scroll moves the wrapper every frame, and so does dragging the
+  // proxy's thumb — and copying that stale position back would undo the newer
+  // scroll, which halved the speed of drag auto-scroll. So each listener skips
+  // an event that only reports the position its element was last synced to.
+  let syncedWrapperLeft = scrollable.scrollLeft;
+  let syncedScrollbarLeft = scrollbar.scrollLeft;
   const onWrapperScroll = () => {
-    if (scrollbar.scrollLeft !== scrollable.scrollLeft) {
-      scrollbar.scrollLeft = scrollable.scrollLeft;
+    const left = scrollable.scrollLeft;
+    if (left === syncedWrapperLeft) {
+      return;
     }
+    if (scrollbar.scrollLeft !== left) {
+      scrollbar.scrollLeft = left;
+    }
+    syncedWrapperLeft = left;
+    syncedScrollbarLeft = scrollbar.scrollLeft;
   };
   const onScrollbarScroll = () => {
-    if (scrollable.scrollLeft !== scrollbar.scrollLeft) {
-      scrollable.scrollLeft = scrollbar.scrollLeft;
+    const left = scrollbar.scrollLeft;
+    if (left === syncedScrollbarLeft) {
+      return;
     }
+    if (scrollable.scrollLeft !== left) {
+      scrollable.scrollLeft = left;
+    }
+    syncedScrollbarLeft = left;
+    syncedWrapperLeft = scrollable.scrollLeft;
   };
   scrollable.addEventListener('scroll', onWrapperScroll, {
     passive: true,

@@ -9097,11 +9097,12 @@ test.describe('Tables', () => {
         page,
         anchorBox,
         {height: 0, width: 0, x: wrapperBox.x + wrapperBox.width - 5, y: holdY},
-        {mouseDown: true, mouseUp: false, slow: true},
+        {mouseDown: true, mouseUp: false},
       );
 
       // While the pointer is held near the edge, the requestAnimationFrame loop
-      // scrolls the wrapper all the way to the end...
+      // scrolls the wrapper all the way to the end, at a speed that does not
+      // depend on how often the browser renders a frame...
       await expect
         .poll(async () => (await getScroll()).left, {timeout: 5000})
         .toBeGreaterThanOrEqual(max - 1);

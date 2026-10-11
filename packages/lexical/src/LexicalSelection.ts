@@ -115,6 +115,7 @@ import {
   isDOMShadowRoot,
   isDOMTextNode,
   isHTMLElement,
+  isMouseSelectionDragging,
   isSelectionWithinEditor,
   removeDOMBlockCursorElement,
   scrollIntoViewIfNeeded,
@@ -3961,13 +3962,14 @@ export function $updateDOMSelection(
     // of editor.setRootElement(). If this occurs on init when the
     // editor is already focused, then this can cause the editor to
     // lose focus.
-    // While a mouse button is held for a selection drag, the browser's
-    // selection is the drag in progress, and removing it would restart the
-    // drag from wherever the pointer moves next. It is null here when a drag
-    // point lands inside a decorator, which the next pointermove moves out.
+    // During a mouse selection drag, the browser's selection is the drag in
+    // progress, and removing it would restart the drag from wherever the
+    // pointer moves next. It is null here when a drag point lands inside a
+    // decorator, which the next pointermove moves out. A click still removes
+    // it: Firefox relies on that to place a click between block decorators.
     if (
       prevSelection !== null &&
-      editor._inputState.mouseSelectionDrag === null &&
+      !isMouseSelectionDragging(editor) &&
       isSelectionWithinEditor(
         editor,
         currentPoints.anchorNode,
@@ -4091,9 +4093,11 @@ export function $updateDOMSelection(
   // selection back would only make the browser move it again on the next
   // pointer move, turning every move into two selection changes.
   if (
-    editor._inputState.mouseSelectionDrag !== null &&
+    isMouseSelectionDragging(editor) &&
     currentPoints.anchorNode === nextAnchorNode &&
     currentPoints.focusNode === nextFocusNode &&
+    (currentPoints.anchorOffset !== nextAnchorOffset ||
+      currentPoints.focusOffset !== nextFocusOffset) &&
     skipManagedLineBreak(nextAnchorNode, currentPoints.anchorOffset) ===
       nextAnchorOffset &&
     skipManagedLineBreak(nextFocusNode, currentPoints.focusOffset) ===

@@ -346,6 +346,19 @@ export function $isTokenOrSegmented(node: TextNode): boolean {
  * @param node - The element being tested
  * @returns Returns true if node is an DOM Text node, false otherwise.
  */
+/**
+ * Whether a mouse press in `editor` has moved past the drag threshold, so the
+ * browser is extending a selection drag rather than handling a click. Only
+ * tracked on the engines whose drags Lexical extends across inline
+ * decorators.
+ *
+ * @internal
+ */
+export function isMouseSelectionDragging(editor: LexicalEditor): boolean {
+  const drag = editor._inputState.mouseSelectionDrag;
+  return drag !== null && drag.anchor !== null;
+}
+
 export function isDOMTextNode(node: unknown): node is Text {
   return isDOMNode(node) && node.nodeType === DOM_TEXT_TYPE;
 }

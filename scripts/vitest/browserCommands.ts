@@ -25,6 +25,8 @@ type Point = [x: number, y: number];
  * Selection.setBaseAndExtent/extend calls do not model that. The mouse moves
  * between the points in steps of at most `maxStep` pixels. A clickCount above
  * 1 makes the press that drags the last click of a double or triple click.
+ * The `modifiers` keys are held from before the first press until the
+ * release.
  */
 async function mouseDrag(
   {frame, page}: BrowserCommandContext,
@@ -33,7 +35,12 @@ async function mouseDrag(
   {
     clickCount = 1,
     maxStep = Infinity,
-  }: {clickCount?: number; maxStep?: number} = {},
+    modifiers = [],
+  }: {
+    clickCount?: number;
+    maxStep?: number;
+    modifiers?: ('Alt' | 'Control' | 'Meta' | 'Shift')[];
+  } = {},
 ): Promise<void> {
   const testFrame = await frame();
   const target = testFrame.locator(selector);
@@ -115,7 +122,12 @@ async function mouseDrag(
     }
   };
   let isPressed = false;
+  const heldKeys: string[] = [];
   try {
+    for (const key of modifiers) {
+      await page.keyboard.down(key);
+      heldKeys.push(key);
+    }
     for (let count = 1; count < clickCount; count++) {
       await page.mouse.down({clickCount: count});
       await settle(`press ${count}`);
@@ -158,11 +170,14 @@ async function mouseDrag(
     isPressed = false;
     await settle('release');
   } finally {
-    // Leave no button held or listener behind for the next test, without
+    // Leave no button, key or listener behind for the next test, without
     // hiding the error that got here behind one from a frame that is gone.
     const ignore = () => {};
     if (isPressed) {
       await page.mouse.up({clickCount}).catch(ignore);
+    }
+    for (const key of heldKeys.reverse()) {
+      await page.keyboard.up(key).catch(ignore);
     }
     await tracker.evaluate(state => state.dispose()).catch(ignore);
     await tracker.dispose().catch(ignore);

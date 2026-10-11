@@ -870,18 +870,23 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
       pointerType === 'mouse' &&
       event.button === 0 &&
       !isCapturingSelection &&
-      !isPointOverDOMSelection(
-        getDOMSelectionFromTarget(target),
-        rootElement,
-        event.clientX,
-        event.clientY,
-      )
+      // A press on a non-collapsed selection drags it, except that Chromium
+      // and WebKit extend the selection to a Shift press instead (Firefox
+      // drags the selection then too).
+      ((event.shiftKey && !IS_FIREFOX) ||
+        !isPointOverDOMSelection(
+          getDOMSelectionFromTarget(target),
+          rootElement,
+          event.clientX,
+          event.clientY,
+        ))
     ) {
       const drag: NonNullable<InputState['mouseSelectionDrag']> = {
         anchor: null,
         clientX: event.clientX,
         clientY: event.clientY,
         hasExtended: false,
+        isExtending: event.shiftKey,
       };
       editor._inputState.mouseSelectionDrag = drag;
       // The button may be released outside the root element, and a press
@@ -968,12 +973,12 @@ function onMouseDown(event: MouseEvent, editor: LexicalEditor): void {
  * restart from the pointer), restore the anchor the drag had once it crossed
  * the drag threshold.
  *
- * A press on a non-collapsed selection is not tracked, so it still drags the
- * selection: Firefox starts that drag and drop only past the platform's drag
- * threshold, which can be larger than this one. Once the selection has been
- * extended, it contains the mousedown point, and Chromium keeps checking for
- * a selection drag and drop until its own hit test has moved the selection;
- * {@link onSelectionDragStart} cancels that drag.
+ * A press on a non-collapsed selection that drags it is not tracked, so it
+ * still drags the selection: Firefox starts that drag and drop only past the
+ * platform's drag threshold, which can be larger than this one. Once the
+ * selection has been extended, it contains the mousedown point, and Chromium
+ * keeps checking for a selection drag and drop until its own hit test has
+ * moved the selection; {@link onSelectionDragStart} cancels that drag.
  */
 function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
   const drag = editor._inputState.mouseSelectionDrag;
@@ -1015,15 +1020,18 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
         drag.anchor = false;
       } else {
         // Firefox puts a press beyond the end of a line that ends in an
-        // unselectable inline decorator before that decorator.
-        const [node, offset] = movePastInlineDecorators(
-          editor,
-          rootElement,
-          anchorNode,
-          anchorOffset,
-          drag.clientX,
-          drag.clientY,
-        );
+        // unselectable inline decorator before that decorator. A Shift press
+        // only moved the focus, so the anchor is not at the press.
+        const [node, offset] = drag.isExtending
+          ? [anchorNode, anchorOffset]
+          : movePastInlineDecorators(
+              editor,
+              rootElement,
+              anchorNode,
+              anchorOffset,
+              drag.clientX,
+              drag.clientY,
+            );
         drag.anchor = [node, offset, getDOMPointContext(node, offset)];
       }
     }

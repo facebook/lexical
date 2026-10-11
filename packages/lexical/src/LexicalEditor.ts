@@ -310,9 +310,11 @@ export interface InputState {
    * pressed, the DOM anchor of its selection once the pointer has crossed
    * the drag threshold, with what that point was next to (false when the
    * anchor is outside this editor, or the DOM there has changed since), and
-   * whether Lexical has changed the drag's selection. Only tracked on the
-   * engines in TRACKS_MOUSE_SELECTION_DRAG, and not for a press on a
-   * non-collapsed selection or a double or triple click; null otherwise.
+   * whether Lexical has changed the drag's selection, and whether Shift
+   * made the press extend the selection rather than start a new one. Only
+   * tracked on the engines in TRACKS_MOUSE_SELECTION_DRAG, and not for a
+   * press that drags a non-collapsed selection or a double or triple click;
+   * null otherwise.
    */
   mouseSelectionDrag: null | {
     anchor:
@@ -322,6 +324,7 @@ export interface InputState {
     clientX: number;
     clientY: number;
     hasExtended: boolean;
+    isExtending: boolean;
   };
   /**
    * The pointerType of the latest pointerdown in the root element ('touch',

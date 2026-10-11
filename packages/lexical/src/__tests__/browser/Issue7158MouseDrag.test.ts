@@ -12,10 +12,11 @@
  * cannot model this (it has no hit testing, and a browser's mouse drag keeps
  * its own anchor regardless of later Selection API calls), so the drag is
  * driven through Playwright's mouse. These also check that a drag past the
- * end of a line does not rewrite the selection on every move, and that the
- * presses the fallback must not track (double clicks, presses on a selection,
- * drags ended by pointercancel or dragstart, anchors edited mid-drag) are left
- * to the browser.
+ * end of a line does not rewrite the selection on every move, that a Shift
+ * drag keeps the selection's anchor, and that the presses the fallback must
+ * not track (double clicks, presses on a selection, drags ended by
+ * pointercancel or dragstart, anchors edited mid-drag) are left to the
+ * browser.
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
@@ -29,6 +30,7 @@ import {
   $getRoot,
   $getSelection,
   $isDecoratorNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
@@ -42,7 +44,7 @@ import {
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {assert, describe, onTestFinished, test, vi} from 'vitest';
-import {commands} from 'vitest/browser';
+import {commands, server} from 'vitest/browser';
 
 import {$assertNodeType} from '../utils/assertNodeType';
 
@@ -246,7 +248,10 @@ function describeDOMPoint(node: Node | null, offset: number): string {
  */
 function mouseDrag(
   points: Parameters<typeof commands.mouseDrag>[1],
-  options?: {clickCount?: number},
+  options?: Omit<
+    NonNullable<Parameters<typeof commands.mouseDrag>[2]>,
+    'maxStep'
+  >,
 ): Promise<void> {
   return commands.mouseDrag('#issue-7158-root', points, {
     ...options,
@@ -428,6 +433,70 @@ describe('Issue #7158: mouse drag over unselectable inline decorators', () => {
   );
 });
 
+// A Shift press extends the selection to the press, so its drag keeps the
+// selection's anchor. Chromium and WebKit do that even for a press on the
+// selection, where Firefox drags the selection, with or without Shift.
+describe('Issue #7158: Shift mouse drag over unselectable inline decorators', () => {
+  test.skipIf(server.browser === 'firefox')(
+    'a drag from inside the selection extends it back to the third decorator',
+    async () => {
+      const {editor, left, pointerLog, root, textRect, trailingTextKey, y} =
+        mount(false, BoxedImageDecoratorNode, ' hello world');
+      assert(trailingTextKey !== null, 'expected the trailing text');
+      root.focus();
+      editor.update(
+        () => {
+          $assertNodeType($getNodeByKey(trailingTextKey), $isTextNode).select(
+            1,
+            12,
+          );
+        },
+        {discrete: true},
+      );
+      const hello = textRect('hello');
+      await mouseDrag(
+        [
+          [(hello.left + hello.right) / 2, (hello.top + hello.bottom) / 2],
+          [left(COUNT - 1) + SIZE / 2, y],
+          [left(3) + SIZE / 2, y],
+          [left(2) - 2, y],
+        ],
+        {modifiers: ['Shift']},
+      );
+      await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+    },
+  );
+
+  test('a drag keeps a caret anchor before a decorator the press is beyond', async () => {
+    const {editor, left, pointerLog, root, textRect, y} = mount(
+      false,
+      BoxedImageDecoratorNode,
+      ' hello world',
+    );
+    root.focus();
+    editor.update(
+      () => {
+        $assertNodeType($getRoot().getFirstChild(), $isParagraphNode).select(
+          1,
+          1,
+        );
+      },
+      {discrete: true},
+    );
+    const world = textRect('world');
+    await mouseDrag(
+      [
+        [(world.left + world.right) / 2, (world.top + world.bottom) / 2],
+        [left(COUNT - 1) + SIZE / 2, y],
+        [left(4) - 2, y],
+      ],
+      {modifiers: ['Shift']},
+    );
+    // From before the second decorator to before the fifth.
+    await expectSelectedDecoratorCount(editor, 3, pointerLog);
+  });
+});
+
 describe('Issue #7158: mouse drag over selectable boxed inline decorators', () => {
   test(
     'a drag from right of the last decorator selects back to the third',
@@ -593,13 +662,16 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
       },
       {discrete: true},
     );
-    const press = (text: string) => {
+    const press = (text: string, shiftKey = false) => {
       const rect = textRect(text);
-      const init = mousePointerInit(
-        root,
-        (rect.left + rect.right) / 2,
-        (rect.top + rect.bottom) / 2,
-      );
+      const init = {
+        ...mousePointerInit(
+          root,
+          (rect.left + rect.right) / 2,
+          (rect.top + rect.bottom) / 2,
+        ),
+        shiftKey,
+      };
       const target = elementAt(init);
       target.dispatchEvent(new PointerEvent('pointerdown', init));
       const tracked = editor._inputState.mouseSelectionDrag !== null;
@@ -608,6 +680,11 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     };
     assert(!press('hello'), 'a press on the selection would drag it');
     assert(press('world'), 'a press beside the selection selects');
+    // Firefox drags the selection with Shift too.
+    assert(
+      press('hello', true) === (server.browser !== 'firefox'),
+      'a Shift press on the selection extends it, except in Firefox',
+    );
   });
 
   // A move with no button pressed ends a press whose pointerup never reached

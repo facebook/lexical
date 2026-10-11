@@ -92,7 +92,10 @@ import {
   DOUBLE_LINE_BREAK,
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
-import {NEEDS_INLINE_DECORATOR_EDGE_BOX} from './LexicalDOMSlot';
+import {
+  isDecoratorBoundaryAnchorDOM,
+  NEEDS_INLINE_DECORATOR_EDGE_BOX,
+} from './LexicalDOMSlot';
 import {
   compileKeyboardShortcuts,
   CONTROL_OR_ALT,
@@ -146,6 +149,7 @@ import {
   isFirefoxClipboardEvents,
   isHTMLElement,
   isLexicalEditor,
+  isManagedLineBreakDOM,
   isModifier,
   isSelectionWithinEditor,
   type KeyboardEventModifierMask,
@@ -155,12 +159,16 @@ import {registerEventListener} from './utils/registerEventListener';
 import {registerEventListeners} from './utils/registerEventListeners';
 
 /**
- * The engines whose mouse drags {@link onPointerMove} extends across inline
- * decorators. Firefox needs no edge boxes, but its drags do not cross an
- * inline decorator whose content is `user-select: none` either.
+ * Whether this engine's mouse drags are extended across inline decorators by
+ * {@link onPointerMove}. Firefox needs no edge boxes, but its drags do not
+ * cross an inline decorator whose content is `user-select: none` either. This
+ * is not a module constant because the modules here import each other, so
+ * this one can be evaluated before the one that defines
+ * {@link NEEDS_INLINE_DECORATOR_EDGE_BOX}.
  */
-const TRACKS_MOUSE_SELECTION_DRAG: boolean =
-  NEEDS_INLINE_DECORATOR_EDGE_BOX || IS_FIREFOX;
+function tracksMouseSelectionDrag(): boolean {
+  return NEEDS_INLINE_DECORATOR_EDGE_BOX || IS_FIREFOX;
+}
 
 type RootElementRemoveHandles = (() => void)[];
 type RootElementEvents = [
@@ -203,24 +211,11 @@ function getRootElementEvents(): RootElementEvents {
       (event, editor) => onBeforeInput(event as InputEvent, editor),
     ]);
   }
-  if (TRACKS_MOUSE_SELECTION_DRAG) {
-    // Every iOS browser is WebKit, so this includes iOS.
-    events.push(
-      [
-        'pointermove',
-        (event, editor) => onPointerMove(event as PointerEvent, editor),
-      ],
-      [
-        'mousedown',
-        (event, editor) => onMouseDown(event as MouseEvent, editor),
-      ],
-    );
-  }
   if (IS_IOS) {
-    events.push([
-      'keyup',
-      (event, editor) => onKeyUp(event as KeyboardEvent, editor),
-    ]);
+    events.push(
+      ['mousedown', onMouseDownIOS],
+      ['keyup', (event, editor) => onKeyUp(event as KeyboardEvent, editor)],
+    );
   }
   rootElementEvents = events;
   return events;
@@ -252,6 +247,68 @@ const documentSelectionChange = createRefCountedRegistry((doc: Document) => {
   doc.addEventListener('selectionchange', onDocumentSelectionChange);
   return () =>
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);
+});
+
+type MouseSelectionDrag = NonNullable<InputState['mouseSelectionDrag']>;
+
+/**
+ * Calls `fn` for each editor registered against `doc` that is tracking a
+ * mouse selection drag.
+ */
+function forEachMouseSelectionDrag(
+  doc: Document,
+  fn: (editor: LexicalEditor, drag: MouseSelectionDrag) => void,
+): void {
+  const registration = documentRegistrations.get(doc);
+  if (registration !== undefined) {
+    for (const editor of registration.editors) {
+      const drag = editor._inputState.mouseSelectionDrag;
+      if (drag !== null) {
+        fn(editor, drag);
+      }
+    }
+  }
+}
+
+// The listeners that follow a mouse selection drag once onPointerDown has
+// started tracking it, shared by every editor registered against a document
+// and reference counted like `documentSelectionChange`. They are captured at
+// the document, so that nothing in the root element (a nested editor, or
+// decorator content that stops propagation) can hide the press's events,
+// and an end of the drag that never reaches the document (the window losing
+// focus mid-press) leaves no listener of its own behind.
+const documentMouseSelectionDrag = createRefCountedRegistry((doc: Document) => {
+  const endDrags = () =>
+    forEachMouseSelectionDrag(doc, editor => {
+      editor._inputState.mouseSelectionDrag = null;
+    });
+  const defaultView = doc.defaultView;
+  return mergeRegister(
+    registerEventListeners(
+      doc,
+      {
+        mousedown: event =>
+          forEachMouseSelectionDrag(doc, (editor, drag) =>
+            onMouseSelectionDragMouseDown(event, editor, drag),
+          ),
+        pointercancel: endDrags,
+        // Before the root element's own pointerdown handler starts a new
+        // drag.
+        pointerdown: endDrags,
+        pointermove: event =>
+          forEachMouseSelectionDrag(doc, (editor, drag) =>
+            onPointerMove(event, editor, drag),
+          ),
+        pointerup: endDrags,
+      },
+      true,
+    ),
+    // Not captured: focus moving within the document (from the root
+    // element to a check list item, say) blurs the element, not the window.
+    defaultView !== null
+      ? registerEventListener(defaultView, 'blur', endDrags)
+      : () => {},
+  );
 });
 
 // This function is used to determine if Lexical should attempt to override
@@ -861,7 +918,7 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
       }
     });
   }
-  if (TRACKS_MOUSE_SELECTION_DRAG) {
+  if (tracksMouseSelectionDrag()) {
     editor._inputState.mouseSelectionDrag = null;
     const rootElement = editor.getRootElement();
     if (
@@ -869,6 +926,7 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
       rootElement !== null &&
       pointerType === 'mouse' &&
       event.button === 0 &&
+      !event.defaultPrevented &&
       !isCapturingSelection &&
       // A press on a non-collapsed selection drags it, except that Chromium
       // and WebKit extend the selection to a Shift press instead (Firefox
@@ -877,43 +935,37 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
         !isPointOverDOMSelection(
           getDOMSelectionFromTarget(target),
           rootElement,
+          target,
           event.clientX,
           event.clientY,
         ))
     ) {
-      const drag: NonNullable<InputState['mouseSelectionDrag']> = {
+      // The document's listeners (documentMouseSelectionDrag) follow the
+      // drag from here.
+      editor._inputState.mouseSelectionDrag = {
         anchor: null,
         clientX: event.clientX,
         clientY: event.clientY,
         hasExtended: false,
         isExtending: event.shiftKey,
+        mouseDown: null,
+        pendingMove: null,
+        pointerDown: event,
       };
-      editor._inputState.mouseSelectionDrag = drag;
-      // The button may be released outside the root element, and a press
-      // that starts a drag and drop gets a pointercancel instead.
-      const endDrag = () => {
-        if (editor._inputState.mouseSelectionDrag === drag) {
-          editor._inputState.mouseSelectionDrag = null;
-        }
-        removeEndDragListeners();
-      };
-      const removeEndDragListeners = registerEventListeners(
-        rootElement.ownerDocument,
-        {pointercancel: endDrag, pointerup: endDrag},
-        true,
-      );
     }
   }
 }
 
 /**
- * Whether the point at (`clientX`, `clientY`) is over the non-collapsed DOM
- * selection, where a press drags the selection rather than starting a new
- * one.
+ * Whether the point at (`clientX`, `clientY`) on `target` is over the
+ * non-collapsed DOM selection, where a press drags the selection rather than
+ * starting a new one. Only the part of the selection inside `target` is
+ * measured, so that a press after selecting a long document stays cheap.
  */
 function isPointOverDOMSelection(
   domSelection: Selection | null,
   rootElement: HTMLElement,
+  target: Node,
   clientX: number,
   clientY: number,
 ): boolean {
@@ -921,10 +973,23 @@ function isPointOverDOMSelection(
     domSelection !== null && domSelection.rangeCount > 0
       ? getDOMSelectionRange(domSelection, rootElement)
       : null;
-  if (range === null || range.collapsed) {
+  if (
+    range === null ||
+    range.collapsed ||
+    target === rootElement ||
+    !range.intersectsNode(target)
+  ) {
     return false;
   }
-  const rects = range.getClientRects();
+  const part = range.cloneRange();
+  part.selectNodeContents(target);
+  if (range.compareBoundaryPoints(range.START_TO_START, part) > 0) {
+    part.setStart(range.startContainer, range.startOffset);
+  }
+  if (range.compareBoundaryPoints(range.END_TO_END, part) < 0) {
+    part.setEnd(range.endContainer, range.endOffset);
+  }
+  const rects = part.getClientRects();
   for (let i = 0; i < rects.length; i++) {
     const rect = rects[i];
     if (
@@ -943,15 +1008,22 @@ function isPointOverDOMSelection(
  * Chromium and Firefox report a click count (`detail`) of 0 on pointerdown,
  * but every engine reports it on the mousedown that follows, so stop tracking
  * a press there when it is a double or triple click, which extends the
- * selection by words or paragraphs. On iOS this also runs
- * {@link onMouseDownIOS}.
+ * selection by words or paragraphs. Otherwise keep the mousedown, so that
+ * {@link onPointerMove} can tell whether anything cancelled it, which keeps
+ * the browser from starting a selection drag.
  */
-function onMouseDown(event: MouseEvent, editor: LexicalEditor): void {
-  if (IS_IOS) {
-    onMouseDownIOS(event, editor);
+function onMouseSelectionDragMouseDown(
+  event: MouseEvent,
+  editor: LexicalEditor,
+  drag: MouseSelectionDrag,
+): void {
+  if (drag.mouseDown !== null) {
+    return;
   }
   if (event.detail > 1) {
     editor._inputState.mouseSelectionDrag = null;
+  } else {
+    drag.mouseDown = event;
   }
 }
 
@@ -971,7 +1043,8 @@ function onMouseDown(event: MouseEvent, editor: LexicalEditor): void {
  * A drag also keeps extending from the selection's current anchor, so when
  * something replaces the selection mid-drag (on macOS Chrome the drag can
  * restart from the pointer), restore the anchor the drag had once it crossed
- * the drag threshold.
+ * the drag threshold. A press that the browser anchors inside a decorator
+ * has its anchor moved beside it the same way.
  *
  * A press on a non-collapsed selection that drags it is not tracked, so it
  * still drags the selection: Firefox starts that drag and drop only past the
@@ -980,24 +1053,28 @@ function onMouseDown(event: MouseEvent, editor: LexicalEditor): void {
  * keeps checking for a selection drag and drop until its own hit test has
  * moved the selection; {@link onSelectionDragStart} cancels that drag.
  */
-function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
-  const drag = editor._inputState.mouseSelectionDrag;
-  if (drag === null || event.pointerType !== 'mouse') {
+function onPointerMove(
+  event: PointerEvent,
+  editor: LexicalEditor,
+  drag: MouseSelectionDrag,
+): void {
+  if (event.pointerType !== 'mouse') {
     return;
   }
-  if ((event.buttons & 1) === 0) {
+  if ((event.buttons & 1) === 0 || !editor.isEditable()) {
     // The press ended without a pointerup or pointercancel reaching the
-    // document (such as when the window lost focus mid-press).
+    // document (such as on a context menu), or the editor stopped being
+    // editable.
     editor._inputState.mouseSelectionDrag = null;
     return;
   }
   const target = getComposedEventTarget(event);
   const rootElement = editor.getRootElement();
-  if (!isDOMNode(target) || rootElement === null) {
-    return;
-  }
-  const domSelection = getDOMSelectionFromTarget(target);
-  if (domSelection === null || domSelection.rangeCount === 0) {
+  if (
+    !isDOMNode(target) ||
+    rootElement === null ||
+    !event.composedPath().includes(rootElement)
+  ) {
     return;
   }
   if (drag.anchor === null) {
@@ -1005,115 +1082,204 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
       Math.abs(event.clientX - drag.clientX) > DRAG_THRESHOLD_PX ||
       Math.abs(event.clientY - drag.clientY) > DRAG_THRESHOLD_PX
     ) {
-      // The browser has placed the drag's anchor, and Lexical has handled
-      // it, by the time the pointer crosses the drag threshold.
-      const {anchorNode, anchorOffset} = getDOMSelectionPoints(
-        domSelection,
-        rootElement,
-      );
-      if (
-        anchorNode === null ||
-        getNearestEditorFromDOMNode(anchorNode) !== editor
-      ) {
-        // The press put the selection outside this editor (such as in a
-        // nested editor), so leave the drag to the browser.
-        drag.anchor = false;
-      } else {
-        // Firefox puts a press beyond the end of a line that ends in an
-        // unselectable inline decorator before that decorator. A Shift press
-        // only moved the focus, so the anchor is not at the press.
-        const [node, offset] = drag.isExtending
-          ? [anchorNode, anchorOffset]
-          : movePastInlineDecorators(
-              editor,
-              rootElement,
-              anchorNode,
-              anchorOffset,
-              drag.clientX,
-              drag.clientY,
-            );
-        drag.anchor = [node, offset, getDOMPointContext(node, offset)];
-      }
+      recordMouseSelectionDragAnchor(editor, drag, rootElement, target);
     }
     return;
   }
-  const dragAnchor = drag.anchor;
-  if (dragAnchor === false) {
+  if (drag.anchor === false) {
     return;
   }
   // The browser moves the selection for this pointer position in the
   // default action of the mousemove that follows, which may put the focus
   // somewhere else on the line (macOS Chrome picks the start or the end of
-  // it) or inside the decorator, so adjust it once that has run.
-  setTimeout(() => {
-    if (editor._inputState.mouseSelectionDrag !== drag) {
-      return;
-    }
-    const [anchorNode, anchorOffset, anchorContext] = dragAnchor;
-    if (
-      !anchorNode.isConnected ||
-      getDOMPointContext(anchorNode, anchorOffset) !== anchorContext
-    ) {
-      // An update (such as a collaborator's edit) has changed the DOM at the
-      // drag's anchor, so the recorded point may no longer be where the drag
-      // started; leave the rest of the drag to the browser.
-      drag.anchor = false;
-      return;
-    }
-    const points =
-      domSelection.rangeCount > 0
-        ? getDOMSelectionPoints(domSelection, rootElement)
-        : null;
-    let focusNode = points ? points.focusNode : null;
-    let focusOffset = points ? points.focusOffset : 0;
-    const decoratorDOM =
-      getInlineDecoratorDOM(editor, target) ||
-      (focusNode && getInlineDecoratorDOM(editor, focusNode));
-    const parentDOM = decoratorDOM && decoratorDOM.parentNode;
-    if (decoratorDOM && parentDOM) {
-      const rect = decoratorDOM.getBoundingClientRect();
-      const isAfter =
-        event.clientX > rect.left + rect.width / 2 !==
-        isDOMRTL(editor, parentDOM);
-      [focusNode, focusOffset] = getDOMPointBeside(
-        decoratorDOM,
-        parentDOM,
-        isAfter,
+  // it) or inside the decorator, so adjust it once that has run. Moves that
+  // arrive before then only update the position to adjust for.
+  const isScheduled = drag.pendingMove !== null;
+  drag.pendingMove = {clientX: event.clientX, clientY: event.clientY, target};
+  if (!isScheduled) {
+    setTimeout(() => adjustMouseSelectionDrag(editor, drag), 0);
+  }
+}
+
+/**
+ * Records the anchor of a drag once the pointer has crossed the drag
+ * threshold, by which time the browser has placed it and Lexical has handled
+ * it, or stops tracking the drag when the browser started none.
+ */
+function recordMouseSelectionDragAnchor(
+  editor: LexicalEditor,
+  drag: MouseSelectionDrag,
+  rootElement: HTMLElement,
+  target: Node,
+): void {
+  if (
+    drag.pointerDown.defaultPrevented ||
+    (drag.mouseDown !== null && drag.mouseDown.defaultPrevented)
+  ) {
+    // Something cancelled the press after Lexical started tracking it (a
+    // check list item's check mark, or a listener later in the document),
+    // so the browser started no selection drag.
+    editor._inputState.mouseSelectionDrag = null;
+    return;
+  }
+  const domSelection = getDOMSelectionFromTarget(target);
+  if (domSelection === null || domSelection.rangeCount === 0) {
+    return;
+  }
+  const {anchorNode, anchorOffset} = getDOMSelectionPoints(
+    domSelection,
+    rootElement,
+  );
+  if (
+    anchorNode === null ||
+    getNearestEditorFromDOMNode(anchorNode) !== editor
+  ) {
+    // The press put the selection outside this editor (such as in a
+    // nested editor), so leave the drag to the browser.
+    drag.anchor = false;
+    return;
+  }
+  // A Shift press only moved the focus, so the anchor is not at the press.
+  // Otherwise a press beside an inline decorator can be anchored inside it,
+  // and Firefox puts a press beyond the end of a line that ends in an
+  // unselectable inline decorator before that decorator.
+  const [node, offset] = drag.isExtending
+    ? [anchorNode, anchorOffset]
+    : editor.read('latest', () =>
+        $movePastInlineDecorators(
+          editor,
+          rootElement,
+          ...($getDOMPointBeforeLineStartDecorator(
+            editor,
+            anchorNode,
+            drag.clientX,
+            drag.clientY,
+          ) ||
+            $getDOMPointOutsideInlineDecorator(
+              editor,
+              anchorNode,
+              anchorOffset,
+              drag.clientX,
+            )),
+          drag.clientX,
+          drag.clientY,
+        ),
       );
-    }
-    if (focusNode === null) {
-      return;
-    }
-    [focusNode, focusOffset] = movePastInlineDecorators(
-      editor,
-      rootElement,
+  drag.anchor = [node, offset, getDOMPointContext(node, offset)];
+}
+
+/**
+ * Puts the focus of a drag beside the inline decorator that the latest
+ * pointer move ({@link MouseSelectionDrag.pendingMove}) is over or passed,
+ * once the browser has moved the selection for it.
+ */
+function adjustMouseSelectionDrag(
+  editor: LexicalEditor,
+  drag: MouseSelectionDrag,
+): void {
+  const move = drag.pendingMove;
+  drag.pendingMove = null;
+  const dragAnchor = drag.anchor;
+  const rootElement = editor.getRootElement();
+  if (
+    editor._inputState.mouseSelectionDrag !== drag ||
+    move === null ||
+    !Array.isArray(dragAnchor) ||
+    rootElement === null
+  ) {
+    return;
+  }
+  const [anchorNode, anchorOffset, anchorContext] = dragAnchor;
+  if (
+    !anchorNode.isConnected ||
+    getDOMPointContext(anchorNode, anchorOffset) !== anchorContext
+  ) {
+    // An update (such as a collaborator's edit) has changed the DOM at the
+    // drag's anchor, so the recorded point may no longer be where the drag
+    // started; leave the rest of the drag to the browser.
+    drag.anchor = false;
+    return;
+  }
+  const domSelection = getDOMSelectionFromTarget(move.target);
+  const adjusted =
+    domSelection !== null && domSelection.rangeCount > 0
+      ? editor.read('latest', () => {
+          const selection = $getSelection();
+          if (selection !== null && !$isRangeSelection(selection)) {
+            return null;
+          }
+          // Copied, since in the light DOM these are the live selection's.
+          const points = getDOMSelectionPoints(domSelection, rootElement);
+          const isAnchorMoved =
+            points.anchorNode !== anchorNode ||
+            points.anchorOffset !== anchorOffset;
+          const prevFocusNode = points.focusNode;
+          const prevFocusOffset = points.focusOffset;
+          let focusNode = prevFocusNode;
+          let focusOffset = prevFocusOffset;
+          const decoratorDOM =
+            $getInlineDecoratorDOM(editor, move.target) ||
+            (focusNode && $getInlineDecoratorDOM(editor, focusNode));
+          const parentDOM = decoratorDOM && decoratorDOM.parentNode;
+          if (decoratorDOM && parentDOM) {
+            [focusNode, focusOffset] = getDOMPointBeside(
+              decoratorDOM,
+              parentDOM,
+              isPointerAfter(editor, decoratorDOM, parentDOM, move.clientX),
+            );
+          }
+          if (focusNode === null) {
+            return undefined;
+          }
+          [focusNode, focusOffset] = $getDOMPointBeforeLineStartDecorator(
+            editor,
+            focusNode,
+            move.clientX,
+            move.clientY,
+          ) || [focusNode, focusOffset];
+          [focusNode, focusOffset] = $movePastInlineDecorators(
+            editor,
+            rootElement,
+            focusNode,
+            focusOffset,
+            move.clientX,
+            move.clientY,
+          );
+          return {
+            focusNode,
+            focusOffset,
+            isAnchorMoved,
+            isFocusMoved:
+              prevFocusNode !== focusNode || prevFocusOffset !== focusOffset,
+          };
+        })
+      : null;
+  if (adjusted === null || domSelection === null) {
+    // Lexical keeps the DOM selection during a drag ($updateDOMSelection), so
+    // a drag left with no DOM selection, or with another kind of selection
+    // than a RangeSelection (a table selection removes the DOM ranges), was
+    // taken over on purpose; leave the rest of it to whatever did.
+    drag.anchor = false;
+    return;
+  }
+  if (adjusted === undefined) {
+    return;
+  }
+  const {focusNode, focusOffset, isAnchorMoved, isFocusMoved} = adjusted;
+  if (isAnchorMoved) {
+    // Something reset the selection during the drag, and the browser
+    // would carry on from wherever it now is.
+    drag.hasExtended = true;
+    domSelection.setBaseAndExtent(
+      anchorNode,
+      anchorOffset,
       focusNode,
       focusOffset,
-      event.clientX,
-      event.clientY,
     );
-    if (
-      points === null ||
-      points.anchorNode !== anchorNode ||
-      points.anchorOffset !== anchorOffset
-    ) {
-      // Something reset the selection during the drag, and the browser
-      // would carry on from wherever it now is.
-      drag.hasExtended = true;
-      domSelection.setBaseAndExtent(
-        anchorNode,
-        anchorOffset,
-        focusNode,
-        focusOffset,
-      );
-    } else if (
-      points.focusNode !== focusNode ||
-      points.focusOffset !== focusOffset
-    ) {
-      drag.hasExtended = true;
-      domSelection.extend(focusNode, focusOffset);
-    }
-  }, 0);
+  } else if (isFocusMoved) {
+    drag.hasExtended = true;
+    domSelection.extend(focusNode, focusOffset);
+  }
 }
 
 /**
@@ -1123,7 +1289,7 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
  * `user-select: none`, so beyond the end of a line that ends in one, the
  * point stays before it.
  */
-function movePastInlineDecorators(
+function $movePastInlineDecorators(
   editor: LexicalEditor,
   rootElement: HTMLElement,
   node: Node,
@@ -1134,7 +1300,7 @@ function movePastInlineDecorators(
   for (const isForward of [true, false]) {
     for (;;) {
       const sibling = getDOMSiblingAt(node, offset, isForward, rootElement);
-      const decoratorDOM = sibling && getInlineDecoratorDOM(editor, sibling);
+      const decoratorDOM = sibling && $getInlineDecoratorDOM(editor, sibling);
       const parentDOM = decoratorDOM && decoratorDOM.parentNode;
       if (
         decoratorDOM === null ||
@@ -1143,8 +1309,13 @@ function movePastInlineDecorators(
       ) {
         break;
       }
-      const rect = decoratorDOM.getBoundingClientRect();
-      if (clientY < rect.top || clientY > rect.bottom) {
+      const rect = getInlineDecoratorRect(decoratorDOM);
+      if (
+        clientY < rect.top ||
+        clientY > rect.bottom ||
+        // Over the decorator, the pointer has passed it in neither direction.
+        (clientX >= rect.left && clientX <= rect.right)
+      ) {
         break;
       }
       const hasPassed =
@@ -1160,12 +1331,100 @@ function movePastInlineDecorators(
   return [node, offset];
 }
 
+/**
+ * The DOM point before the inline decorator that starts the line at
+ * `clientY` after a line break, in the block that holds `dom`, when the
+ * pointer at `clientX` is before that decorator; null otherwise. The
+ * reconciler renders an edge box only before a decorator that starts the
+ * block, so without one here a press or drag before the decorator lands
+ * elsewhere: Chromium puts it at the end of the line above, and WebKit at the
+ * start of the block.
+ */
+function $getDOMPointBeforeLineStartDecorator(
+  editor: LexicalEditor,
+  dom: Node,
+  clientX: number,
+  clientY: number,
+): [node: Node, offset: number] | null {
+  let block = $getNearestNodeFromDOMNode(dom);
+  while (block !== null && !($isElementNode(block) && !block.isInline())) {
+    block = block.getParent();
+  }
+  if (block === null) {
+    return null;
+  }
+  for (
+    let child = block.getFirstChild();
+    child !== null;
+    child = child.getNextSibling()
+  ) {
+    const next = $isLineBreakNode(child) ? child.getNextSibling() : null;
+    const decoratorDOM =
+      $isDecoratorNode(next) && next.isInline()
+        ? editor.getElementByKey(next.getKey())
+        : null;
+    const parentDOM = decoratorDOM && decoratorDOM.parentNode;
+    if (decoratorDOM === null || parentDOM === null) {
+      continue;
+    }
+    const rect = getInlineDecoratorRect(decoratorDOM);
+    if (clientY >= rect.top && clientY <= rect.bottom) {
+      return (
+        isDOMRTL(editor, parentDOM) ? clientX > rect.right : clientX < rect.left
+      )
+        ? getDOMPointBeside(decoratorDOM, parentDOM, false)
+        : null;
+    }
+  }
+  return null;
+}
+
+/**
+ * The box of an inline decorator's DOM together with its content's. An
+ * inline element's own box is only as tall as its font, so it can leave out
+ * most of the inline-block (such as an image) inside it.
+ */
+function getInlineDecoratorRect(decoratorDOM: HTMLElement): {
+  bottom: number;
+  left: number;
+  right: number;
+  top: number;
+} {
+  const rect = decoratorDOM.getBoundingClientRect();
+  let {bottom, left, right, top} = rect;
+  const range = decoratorDOM.ownerDocument.createRange();
+  range.selectNodeContents(decoratorDOM);
+  const rects = range.getClientRects();
+  for (let i = 0; i < rects.length; i++) {
+    const contentRect = rects[i];
+    bottom = Math.max(bottom, contentRect.bottom);
+    left = Math.min(left, contentRect.left);
+    right = Math.max(right, contentRect.right);
+    top = Math.min(top, contentRect.top);
+  }
+  return {bottom, left, right, top};
+}
+
 /** Whether `dom` lays out its inline content right to left. */
 function isDOMRTL(editor: LexicalEditor, dom: Node): boolean {
   return (
     isHTMLElement(dom) &&
     getWindow(editor).getComputedStyle(dom).direction === 'rtl'
   );
+}
+
+/**
+ * Whether the pointer at `clientX` is nearer the end of `decoratorDOM` in its
+ * line's direction than its start.
+ */
+function isPointerAfter(
+  editor: LexicalEditor,
+  decoratorDOM: HTMLElement,
+  parentDOM: Node,
+  clientX: number,
+): boolean {
+  const rect = getInlineDecoratorRect(decoratorDOM);
+  return clientX > (rect.left + rect.right) / 2 !== isDOMRTL(editor, parentDOM);
 }
 
 /** The DOM point right before `dom` in `parentDOM`, or right after it. */
@@ -1179,9 +1438,50 @@ function getDOMPointBeside(
 }
 
 /**
+ * The point at `offset` in `node`, or when that is inside an inline
+ * decorator, the point beside the decorator on the side nearest `clientX`.
+ */
+function $getDOMPointOutsideInlineDecorator(
+  editor: LexicalEditor,
+  node: Node,
+  offset: number,
+  clientX: number,
+): [node: Node, offset: number] {
+  const decoratorDOM = $getInlineDecoratorDOM(editor, node);
+  const parentDOM = decoratorDOM && decoratorDOM.parentNode;
+  return decoratorDOM && parentDOM
+    ? getDOMPointBeside(
+        decoratorDOM,
+        parentDOM,
+        isPointerAfter(editor, decoratorDOM, parentDOM, clientX),
+      )
+    : [node, offset];
+}
+
+/**
+ * `node`, or when it is DOM the reconciler renders between an element's
+ * children (a decorator boundary anchor, or a managed line break), the first
+ * sibling past it in that direction that is not.
+ */
+function skipDOMScaffolding(
+  node: Node | null,
+  isForward: boolean,
+): Node | null {
+  while (
+    node !== null &&
+    (isDecoratorBoundaryAnchorDOM(node) || isManagedLineBreakDOM(node))
+  ) {
+    node = isForward ? node.nextSibling : node.previousSibling;
+  }
+  return node;
+}
+
+/**
  * The DOM node right after (or, when `isForward` is false, right before) the
  * point at `offset` in `node`, leaving any text node or element that the
- * point is at the edge of, or null at the edge of `rootElement`.
+ * point is at the edge of, or null at the edge of `rootElement`. The DOM the
+ * reconciler renders between an element's children is the same Lexical point
+ * as the position past it, so it is skipped.
  */
 function getDOMSiblingAt(
   node: Node,
@@ -1194,16 +1494,20 @@ function getDOMSiblingAt(
       return null;
     }
   } else {
-    const child = node.childNodes[isForward ? offset : offset - 1];
-    if (child) {
+    const child = skipDOMScaffolding(
+      node.childNodes[isForward ? offset : offset - 1] || null,
+      isForward,
+    );
+    if (child !== null) {
       return child;
     }
   }
   let dom: Node | null = node;
   while (dom !== null && dom !== rootElement) {
-    const sibling: Node | null = isForward
-      ? dom.nextSibling
-      : dom.previousSibling;
+    const sibling = skipDOMScaffolding(
+      isForward ? dom.nextSibling : dom.previousSibling,
+      isForward,
+    );
     if (sibling !== null) {
       return sibling;
     }
@@ -1216,16 +1520,14 @@ function getDOMSiblingAt(
  * The DOM of the inline DecoratorNode of `editor` that contains `dom`, or
  * null when `dom` is not inside one.
  */
-function getInlineDecoratorDOM(
+function $getInlineDecoratorDOM(
   editor: LexicalEditor,
   dom: Node,
 ): HTMLElement | null {
-  return editor.read('latest', () => {
-    const node = $getNearestNodeFromDOMNode(dom);
-    return $isDecoratorNode(node) && node.isInline()
-      ? editor.getElementByKey(node.getKey())
-      : null;
-  });
+  const node = $getNearestNodeFromDOMNode(dom);
+  return $isDecoratorNode(node) && node.isInline()
+    ? editor.getElementByKey(node.getKey())
+    : null;
 }
 
 /**
@@ -1245,6 +1547,27 @@ function onSelectionDragStart(event: DragEvent, editor: LexicalEditor) {
   }
   event.preventDefault();
   return true;
+}
+
+/**
+ * @internal
+ *
+ * Makes the DOM point at `offset` in `node`, where Lexical is about to put
+ * the DOM selection's anchor, the anchor of the mouse selection drag in
+ * progress, so that the drag carries on from there instead of restoring the
+ * anchor it had. Lexical only moves the anchor of a drag when something moved
+ * the selection's anchor on purpose, such as a table that a drag leaves
+ * selecting itself whole.
+ */
+export function setMouseSelectionDragAnchor(
+  editor: LexicalEditor,
+  node: Node,
+  offset: number,
+): void {
+  const drag = editor._inputState.mouseSelectionDrag;
+  if (drag !== null && Array.isArray(drag.anchor)) {
+    drag.anchor = [node, offset, getDOMPointContext(node, offset)];
+  }
 }
 
 /**
@@ -2679,6 +3002,9 @@ export function addRootElementEvents(
   // Reference-counted shared `selectionchange` listener; the disposer is run
   // with this root element's other listeners in removeRootElementEvents.
   removeHandles.push(documentSelectionChange.register(doc));
+  if (tracksMouseSelectionDrag()) {
+    removeHandles.push(documentMouseSelectionDrag.register(doc));
+  }
 
   const events = getRootElementEvents();
   for (let i = 0; i < events.length; i++) {

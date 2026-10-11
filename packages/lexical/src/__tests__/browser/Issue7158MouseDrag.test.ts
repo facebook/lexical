@@ -23,6 +23,7 @@ import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $create,
+  $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
@@ -30,6 +31,7 @@ import {
   $getRoot,
   $getSelection,
   $isDecoratorNode,
+  $isLineBreakNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
@@ -43,7 +45,7 @@ import {
   registerEventListeners,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {assert, describe, onTestFinished, test, vi} from 'vitest';
+import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';
 import {commands, server} from 'vitest/browser';
 
 import {$assertNodeType} from '../utils/assertNodeType';
@@ -117,12 +119,35 @@ class SelectableBoxedImageDecoratorNode extends BoxedImageDecoratorNode {
   }
 }
 
+/**
+ * An unselectable inline decorator whose box is a nested editor's root
+ * element, like the caption of the playground's ImageNode, so that the
+ * pointer moves over it are aimed at that editor.
+ */
+class NestedEditorDecoratorNode extends ImageLikeDecoratorNode {
+  $config() {
+    return this.config('test_7158_mouse_nested_editor', {
+      extends: ImageLikeDecoratorNode,
+    });
+  }
+  createDOM(): HTMLElement {
+    const span = document.createElement('span');
+    span.style.cssText = 'display:inline-block;user-select:none';
+    const div = document.createElement('div');
+    div.style.cssText = `width:${SIZE}px;height:${SIZE}px;background:#888`;
+    span.appendChild(div);
+    return span;
+  }
+}
+
 type DecoratorClass = typeof ImageLikeDecoratorNode;
 
 function mount(
   textBetween: boolean,
   klass: DecoratorClass,
   trailingText: string = '',
+  leadingLine: string = '',
+  trailingLine: string = '',
 ) {
   const root = document.createElement('div');
   root.id = 'issue-7158-root';
@@ -135,6 +160,13 @@ function mount(
     defineExtension({
       $initialEditorState: () => {
         const paragraph = $createParagraphNode();
+        if (leadingLine !== '') {
+          // The decorators start the paragraph's second line.
+          paragraph.append(
+            $createTextNode(leadingLine),
+            $createLineBreakNode(),
+          );
+        }
         for (let i = 0; i < COUNT; i++) {
           if (textBetween) {
             paragraph.append($createTextNode(' '));
@@ -144,6 +176,13 @@ function mount(
         if (trailingText !== '') {
           paragraph.append($createTextNode(trailingText));
         }
+        if (trailingLine !== '') {
+          // The decorators end the paragraph's first line.
+          paragraph.append(
+            $createLineBreakNode(),
+            $createTextNode(trailingLine),
+          );
+        }
         $getRoot().clear().append(paragraph);
       },
       dependencies: [RichTextExtension],
@@ -152,6 +191,7 @@ function mount(
         ImageLikeDecoratorNode,
         BoxedImageDecoratorNode,
         SelectableBoxedImageDecoratorNode,
+        NestedEditorDecoratorNode,
       ],
     }),
   );
@@ -185,10 +225,9 @@ function mount(
     editor.dispose();
     root.remove();
   });
+  // The box inside each decorator.
   const images = Array.from(
-    root.querySelectorAll(
-      'img:not([data-lexical-decorator-boundary]):not([data-lexical-managed-linebreak])',
-    ),
+    root.querySelectorAll('[data-lexical-decorator] > :first-child'),
   );
   const rootRect = root.getBoundingClientRect();
   // Points relative to the root's top-left, on the images' center line.
@@ -311,9 +350,13 @@ async function expectSelectedDecoratorCount(
     () => {
       const [count, lexical] = editor.read('latest', () => {
         const selection = $getSelection();
+        // A caret beside a decorator "selects" it as far as getNodes() is
+        // concerned, so it counts as none.
         return $isRangeSelection(selection)
           ? [
-              selection.getNodes().filter($isDecoratorNode).length,
+              selection.isCollapsed()
+                ? 0
+                : selection.getNodes().filter($isDecoratorNode).length,
               `${selection.anchor.key}:${selection.anchor.offset}->` +
                 `${selection.focus.key}:${selection.focus.offset}`,
             ]
@@ -408,6 +451,47 @@ test('Issue #7158: a drag past the end of the line does not keep changing the se
   // Chromium changes the selection twice here (on the press and on the first
   // move) and Firefox and WebKit once. Allow one more than that, since this
   // checks for a change on every move, which would be about a dozen.
+  assert(
+    selectionChanges <= 3,
+    `expected at most 3 selection changes, got ${selectionChanges}`,
+  );
+});
+
+// On WebKit and desktop Chromium a line that starts with an inline decorator
+// starts with a zero-size anchor before it, and the browser can put a drag's
+// focus above the line before that anchor, which is the same Lexical point as
+// after it. As at the end of the line, that must not be written back on every
+// move.
+test('Issue #7158: a drag past the start of the line does not keep changing the selection', async () => {
+  const {editor, left, y} = mount(false, ImageLikeDecoratorNode);
+  let selectionChanges = 0;
+  onTestFinished(
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
+        selectionChanges++;
+        return false;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    ),
+  );
+  const x = left(0) + SIZE / 2;
+  await mouseDrag([
+    [left(0) - 5, y],
+    [x, y - SIZE],
+    [x + 50, y - SIZE],
+    [x + 100, y - SIZE],
+    [x + 50, y - SIZE / 2],
+  ]);
+  await vi.waitFor(() =>
+    assert(
+      editor.read('latest', () => {
+        const selection = $getSelection();
+        return $isRangeSelection(selection);
+      }),
+      'expected a RangeSelection',
+    ),
+  );
   assert(
     selectionChanges <= 3,
     `expected at most 3 selection changes, got ${selectionChanges}`,
@@ -553,6 +637,108 @@ describe('Issue #7158: mouse drag over selectable boxed inline decorators', () =
   });
 });
 
+// A nested editor handles the pointer events aimed at its root, as the
+// caption of the playground's ImageNode does, and the drag must still see the
+// moves over it. The drag ends over one, where only the drag's own handling
+// can put the focus before that decorator. Firefox aims the moves of a drag
+// at the element that was pressed, so there the nested editors never see
+// them.
+describe('Issue #7158: mouse drag over inline decorators that hold a nested editor', () => {
+  test.each([
+    ['an editable', true],
+    ['a read-only', false],
+  ])(
+    'a drag from right of the last decorator to %s nested editor in the third selects back to it',
+    async (_name, isEditable) => {
+      const {editor, left, pointerLog, right, root, y} = mount(
+        false,
+        NestedEditorDecoratorNode,
+      );
+      for (const box of root.querySelectorAll<HTMLElement>(
+        '[data-lexical-decorator] > div',
+      )) {
+        const nested = buildEditorFromExtensions(
+          defineExtension({
+            dependencies: [RichTextExtension],
+            name: '[7158-mouse-nested]',
+          }),
+        );
+        box.contentEditable = 'true';
+        nested.setRootElement(box);
+        nested.setEditable(isEditable);
+        onTestFinished(() => nested.dispose());
+      }
+      await mouseDrag([
+        [right(COUNT - 1) + 30, y],
+        [left(COUNT - 2) + SIZE / 2, y],
+        [left(3) + SIZE / 2, y],
+        [left(2) + SIZE / 4, y],
+      ]);
+      await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+    },
+  );
+});
+
+// The reconciler renders edge boxes only beside the decorators that start or
+// end a paragraph, so a line that a line break starts or ends has none.
+describe('Issue #7158: mouse drag over inline decorators beside a line break', () => {
+  test('on a line a line break starts, a drag from left of the first decorator selects to the end of the line', async () => {
+    const {editor, left, pointerLog, right, y} = mount(
+      false,
+      ImageLikeDecoratorNode,
+      '',
+      'text',
+    );
+    await mouseDrag([
+      [left(0) - 5, y],
+      [left(1) + SIZE / 2, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [right(COUNT - 1) + 30, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, COUNT, pointerLog);
+    assert(
+      editor.read('latest', () => {
+        const selection = $getSelection();
+        return (
+          $isRangeSelection(selection) &&
+          !selection.getNodes().some($isLineBreakNode)
+        );
+      }),
+      `expected the line break to stay unselected (dom ` +
+        `${describeDOMSelection(getDOMSelection(window))}; ` +
+        `pointer ${pointerLog.join(' ')})`,
+    );
+  });
+  test('on a line a line break ends, a drag from right of the last decorator selects back to the third', async () => {
+    const {editor, left, pointerLog, right, y} = mount(
+      false,
+      ImageLikeDecoratorNode,
+      '',
+      '',
+      'text',
+    );
+    await mouseDrag([
+      [right(COUNT - 1) + 30, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [left(3) + SIZE / 2, y],
+      [left(2) - 2, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+    assert(
+      editor.read('latest', () => {
+        const selection = $getSelection();
+        return (
+          $isRangeSelection(selection) &&
+          !selection.getNodes().some($isLineBreakNode)
+        );
+      }),
+      `expected the line break to stay unselected (dom ` +
+        `${describeDOMSelection(getDOMSelection(window))}; ` +
+        `pointer ${pointerLog.join(' ')})`,
+    );
+  });
+});
+
 describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
   // A double-click drag extends the selection by words, keeping the word it
   // selected; the drag's anchor moves to whichever end of that word is
@@ -583,6 +769,48 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
         `expected the selection to end with the double-clicked word, got ${JSON.stringify(text)}`,
       );
     });
+  });
+
+  // Something can cancel a press after Lexical has started tracking it (a
+  // check list item's check mark does on pointerdown, the playground's card
+  // chrome on mousedown), and the browser then starts no selection drag.
+  test.each([
+    ['pointerdown', true],
+    ['mousedown', false],
+  ])('a press whose %s is cancelled selects nothing', async (type, capture) => {
+    const {editor, left, root, textRect, y} = mount(
+      false,
+      BoxedImageDecoratorNode,
+      ' hello world',
+    );
+    root.focus();
+    editor.update(
+      () => {
+        $getRoot().selectEnd();
+      },
+      {discrete: true},
+    );
+    onTestFinished(
+      registerEventListener(
+        root,
+        type,
+        event => event.preventDefault(),
+        capture,
+      ),
+    );
+    const world = textRect('world');
+    await mouseDrag([
+      [(world.left + world.right) / 2, (world.top + world.bottom) / 2],
+      [left(COUNT - 1) + SIZE / 2, y],
+      [left(2) - 2, y],
+    ]);
+    assert(
+      editor.read('latest', () => {
+        const selection = $getSelection();
+        return $isRangeSelection(selection) && selection.isCollapsed();
+      }),
+      `expected the caret to stay put, got ${describeDOMSelection(getDOMSelection(window))}`,
+    );
   });
 
   // A collaborator's edit (simulated here) can change the text at the drag's
@@ -689,7 +917,12 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
 
   // A move with no button pressed ends a press whose pointerup never reached
   // the document.
-  test.each(['pointercancel', 'dragstart', 'a move with no button'])(
+  test.each([
+    'pointercancel',
+    'dragstart',
+    'a move with no button',
+    'the window losing focus',
+  ])(
     'a press ended by %s lets a NodeSelection remove the DOM selection',
     type => {
       const {editor, root, textRect} = mount(
@@ -713,13 +946,17 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
         Array.isArray(editor._inputState.mouseSelectionDrag?.anchor),
         'the press never became a selection drag',
       );
-      target.dispatchEvent(
-        type === 'dragstart'
-          ? new DragEvent(type, {bubbles: true, cancelable: true})
-          : type === 'pointercancel'
-            ? new PointerEvent(type, {bubbles: true, pointerType: 'mouse'})
-            : new PointerEvent('pointermove', {...init(20), buttons: 0}),
-      );
+      if (type === 'the window losing focus') {
+        window.dispatchEvent(new FocusEvent('blur'));
+      } else {
+        target.dispatchEvent(
+          type === 'dragstart'
+            ? new DragEvent(type, {bubbles: true, cancelable: true})
+            : type === 'pointercancel'
+              ? new PointerEvent(type, {bubbles: true, pointerType: 'mouse'})
+              : new PointerEvent('pointermove', {...init(20), buttons: 0}),
+        );
+      }
       editor.update(
         () => {
           const selection = $createNodeSelection();
@@ -740,4 +977,155 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
       );
     },
   );
+
+  // A press on a selection measures only the part of it in the pressed
+  // element, however much of the document is selected.
+  test('a press on a selection measures only the pressed element', () => {
+    const {editor, root, textRect} = mount(
+      false,
+      ImageLikeDecoratorNode,
+      ' hello world',
+    );
+    editor.update(
+      () => {
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
+        paragraph.select(0, paragraph.getChildrenSize());
+      },
+      {discrete: true},
+    );
+    const spy = vi.spyOn(Range.prototype, 'getClientRects');
+    onTestFinished(() => spy.mockRestore());
+    const rect = textRect('hello');
+    const init = mousePointerInit(
+      root,
+      (rect.left + rect.right) / 2,
+      (rect.top + rect.bottom) / 2,
+    );
+    const target = elementAt(init);
+    target.dispatchEvent(new PointerEvent('pointerdown', init));
+    const tracked = editor._inputState.mouseSelectionDrag !== null;
+    target.dispatchEvent(new PointerEvent('pointerup', init));
+    assert(!tracked, 'a press on the selection would drag it');
+    assert(spy.mock.contexts.length > 0, 'expected the selection measured');
+    for (const range of spy.mock.contexts) {
+      assert(range instanceof Range, 'expected a Range');
+      assert(
+        target.contains(range.commonAncestorContainer),
+        `measured ${describeDOMPoint(range.startContainer, range.startOffset)}` +
+          ` to ${describeDOMPoint(range.endContainer, range.endOffset)}`,
+      );
+    }
+  });
+
+  // Past the end of a line that ends in an inline decorator, Chromium and
+  // WebKit put a drag's focus after the managed line break's <img> and
+  // Firefox after its <br>, which are the same Lexical point as before the
+  // line break, so the decorator before them is the one the pointer passes.
+  test('a drag focus after the line break moves before a decorator the pointer has passed', async () => {
+    const {editor, left, pointerLog, right, root, y} = mount(
+      true,
+      ImageLikeDecoratorNode,
+    );
+    root.focus();
+    editor.update(
+      () => {
+        $getRoot().selectEnd();
+      },
+      {discrete: true},
+    );
+    const paragraph = root.querySelector('p');
+    const domSelection = getDOMSelection(window);
+    assert(paragraph !== null && domSelection !== null, 'expected the line');
+    const press = mousePointerInit(root, right(COUNT - 1) + 30, y);
+    paragraph.dispatchEvent(new PointerEvent('pointerdown', press));
+    paragraph.dispatchEvent(
+      new PointerEvent('pointermove', {
+        ...press,
+        clientX: (press.clientX ?? 0) + 10,
+      }),
+    );
+    assert(
+      Array.isArray(editor._inputState.mouseSelectionDrag?.anchor),
+      'the press never became a selection drag',
+    );
+    // Lexical would handle the selectionchange for this point first and
+    // write the point before the line break back, which would hide whether
+    // the drag looks past the line break, so keep the selection changes that
+    // leave the focus there from Lexical.
+    onTestFinished(
+      registerEventListener(
+        window,
+        'selectionchange',
+        event => {
+          if (
+            domSelection.focusNode === paragraph &&
+            domSelection.focusOffset === paragraph.childNodes.length
+          ) {
+            event.stopImmediatePropagation();
+          }
+        },
+        true,
+      ),
+    );
+    // What the browser's hit test does for a pointer past the end of the
+    // line, which synthetic events don't make it do.
+    domSelection.extend(paragraph, paragraph.childNodes.length);
+    // Over the text between the last two decorators.
+    const move = mousePointerInit(root, left(COUNT - 1) - 2, y);
+    elementAt(move).dispatchEvent(new PointerEvent('pointermove', move));
+    await expectSelectedDecoratorCount(editor, 1, pointerLog);
+  });
+
+  // The browser moves a drag's selection in each move's default action, and
+  // the drag adjusts it after that, so the moves that arrive before it has
+  // do not each adjust it, with a position that is already stale.
+  test('moves that arrive before the drag adjusts adjust it once, for the latest', async () => {
+    const {editor, left, root, textRect, y} = mount(
+      false,
+      BoxedImageDecoratorNode,
+      ' hello world',
+    );
+    root.focus();
+    editor.update(
+      () => {
+        $getRoot().selectEnd();
+      },
+      {discrete: true},
+    );
+    const world = textRect('world');
+    const press = mousePointerInit(
+      root,
+      (world.left + world.right) / 2,
+      (world.top + world.bottom) / 2,
+    );
+    const target = elementAt(press);
+    target.dispatchEvent(new PointerEvent('pointerdown', press));
+    target.dispatchEvent(
+      new PointerEvent('pointermove', {
+        ...press,
+        clientX: (press.clientX ?? 0) - 10,
+      }),
+    );
+    assert(
+      Array.isArray(editor._inputState.mouseSelectionDrag?.anchor),
+      'the press never became a selection drag',
+    );
+    const spy = vi.spyOn(Selection.prototype, 'extend');
+    onTestFinished(() => spy.mockRestore());
+    // The left half of the third decorator, then its right half.
+    for (const x of [left(3) + 5, left(3) + SIZE - 5]) {
+      const move = mousePointerInit(root, x, y);
+      elementAt(move).dispatchEvent(new PointerEvent('pointermove', move));
+    }
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const decoratorDOM = root.querySelectorAll('[data-lexical-decorator]')[3];
+    const paragraph = decoratorDOM.parentNode;
+    assert(paragraph !== null, 'expected the line');
+    expect(spy.mock.calls).toEqual([
+      [paragraph, Array.from(paragraph.childNodes).indexOf(decoratorDOM) + 1],
+    ]);
+  });
 });

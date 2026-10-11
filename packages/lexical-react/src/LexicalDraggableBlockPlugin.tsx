@@ -584,6 +584,16 @@ function useDraggableBlockMenu(
   );
 }
 
+export interface DraggableBlockPluginProps {
+  anchorElem?: HTMLElement;
+  isOnMenu: (element: HTMLElement) => boolean;
+  menuComponent: ReactNode;
+  menuRef: React.RefObject<HTMLElement | null>;
+  onElementChanged?: (element: HTMLElement | null) => void;
+  targetLineComponent: ReactNode;
+  targetLineRef: React.RefObject<HTMLElement | null>;
+}
+
 /**
  * Renders a draggable handle and drop-target line that let users reorder
  * top-level blocks by dragging. You supply the handle and target-line elements
@@ -603,15 +613,7 @@ export function DraggableBlockPlugin_EXPERIMENTAL({
   targetLineComponent,
   isOnMenu,
   onElementChanged,
-}: {
-  anchorElem?: HTMLElement;
-  menuRef: React.RefObject<HTMLElement | null>;
-  targetLineRef: React.RefObject<HTMLElement | null>;
-  menuComponent: ReactNode;
-  targetLineComponent: ReactNode;
-  isOnMenu: (element: HTMLElement) => boolean;
-  onElementChanged?: (element: HTMLElement | null) => void;
-}): JSX.Element {
+}: DraggableBlockPluginProps): JSX.Element {
   const [editor] = useLexicalComposerContext();
   // Subscribed rather than read off the editor, so that setEditable() actually
   // re-renders the handle. useLexicalEditable also handles StrictMode and

@@ -8,7 +8,7 @@
 
 import type {InputState, LexicalCommand, LexicalEditor} from './LexicalEditor';
 import type {KeyboardShortcutMatch} from './LexicalKeyboardShortcuts';
-import type {NodeKey} from './LexicalNode';
+import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
@@ -1394,10 +1394,13 @@ function adjustMouseSelectionDrag(
 
 /**
  * Moves a drag point past the inline decorators next to it that the pointer
- * at (`clientX`, `clientY`) has already passed on the same line. Firefox's
- * hit test never puts a point after an inline decorator whose content is
- * `user-select: none`, so beyond the end of a line that ends in one, the
- * point stays before it.
+ * at (`clientX`, `clientY`) has already passed on the same line, including
+ * one at the edge of an inline element next to it (such as a link around an
+ * image). Firefox's hit test never puts a point after an inline decorator
+ * whose content is `user-select: none`, so beyond the end of a line that ends
+ * in one, the point stays before it, and WebKit puts a point beyond the end
+ * of a line that ends in an inline element around one after the line's
+ * first child.
  */
 function $movePastInlineDecorators(
   editor: LexicalEditor,
@@ -1410,13 +1413,10 @@ function $movePastInlineDecorators(
   for (const isForward of [true, false]) {
     for (;;) {
       const sibling = getDOMSiblingAt(node, offset, isForward, rootElement);
-      const decoratorDOM = sibling && $getInlineDecoratorDOM(editor, sibling);
+      const decoratorDOM =
+        sibling && $getInlineDecoratorDOMAtEdge(editor, sibling, isForward);
       const parentDOM = decoratorDOM && decoratorDOM.parentNode;
-      if (
-        decoratorDOM === null ||
-        decoratorDOM !== sibling ||
-        parentDOM === null
-      ) {
+      if (decoratorDOM === null || parentDOM === null) {
         break;
       }
       const rect = getInlineDecoratorRect(decoratorDOM);
@@ -1443,10 +1443,9 @@ function $movePastInlineDecorators(
 
 /**
  * The DOM point before the inline decorator that starts the line at
- * `clientY` after a line break, in the block that holds `dom`, when the
- * pointer at `clientX` is before that decorator; null otherwise. The
- * reconciler renders an edge box only before a decorator that starts the
- * block, so without one here a press or drag before the decorator lands
+ * `clientY` after a line break (or starts the inline element that does), in
+ * the block that holds `dom`, when the pointer at `clientX` is before that
+ * decorator; null otherwise. A press or drag before such a decorator lands
  * elsewhere: Chromium puts it at the end of the line above, and WebKit at the
  * start of the block.
  */
@@ -1468,7 +1467,9 @@ function $getDOMPointBeforeLineStartDecorator(
     child !== null;
     child = child.getNextSibling()
   ) {
-    const next = $isLineBreakNode(child) ? child.getNextSibling() : null;
+    const next = $isLineBreakNode(child)
+      ? $getInlineEdgeNode(child.getNextSibling(), true)
+      : null;
     const decoratorDOM =
       $isDecoratorNode(next) && next.isInline()
         ? editor.getElementByKey(next.getKey())
@@ -1624,6 +1625,40 @@ function getDOMSiblingAt(
     dom = dom.parentNode;
   }
   return null;
+}
+
+/**
+ * `node`, or when it is an inline ElementNode, the first (or, when
+ * `isForward` is false, the last) node inside it that is not.
+ */
+function $getInlineEdgeNode(
+  node: LexicalNode | null,
+  isForward: boolean,
+): LexicalNode | null {
+  while ($isElementNode(node) && node.isInline()) {
+    node = isForward ? node.getFirstChild() : node.getLastChild();
+  }
+  return node;
+}
+
+/**
+ * The DOM of the inline DecoratorNode of `editor` whose DOM is `dom`, or that
+ * starts (or, when `isForward` is false, ends) the inline ElementNode whose
+ * DOM is `dom`; null otherwise.
+ */
+function $getInlineDecoratorDOMAtEdge(
+  editor: LexicalEditor,
+  dom: Node,
+  isForward: boolean,
+): HTMLElement | null {
+  const node = $getNearestNodeFromDOMNode(dom);
+  if (node === null || editor.getElementByKey(node.getKey()) !== dom) {
+    return null;
+  }
+  const edge = $getInlineEdgeNode(node, isForward);
+  return $isDecoratorNode(edge) && edge.isInline()
+    ? editor.getElementByKey(edge.getKey())
+    : null;
 }
 
 /**

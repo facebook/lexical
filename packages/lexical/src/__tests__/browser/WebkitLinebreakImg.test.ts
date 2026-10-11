@@ -35,8 +35,10 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   $isParagraphNode,
   DecoratorNode,
+  ElementNode,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
 import {server} from 'vitest/browser';
@@ -66,10 +68,26 @@ class TestInlineDecoratorNode extends DecoratorNode<null> {
   }
 }
 
+/** An inline element, like a link or a mark, to put a decorator in. */
+class TestInlineElementNode extends ElementNode {
+  $config() {
+    return this.config('test_inline_element', {extends: ElementNode});
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('a');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  isInline(): true {
+    return true;
+  }
+}
+
 const ext = defineExtension({
   dependencies: [RichTextExtension],
   name: '[webkit-linebreak-img]',
-  nodes: [TestInlineDecoratorNode],
+  nodes: [TestInlineDecoratorNode, TestInlineElementNode],
 });
 
 function mountEditor() {
@@ -169,6 +187,44 @@ describe('managed-linebreak img hack (inline decorator last child)', () => {
     );
 
     expect(linebreakScaffold(contentEditable)).toEqual(['br']);
+  });
+
+  // The browser has no editable position after the decorator either when an
+  // inline element around it, such as a link around an image, ends the line.
+  test('a block ending with an inline element around an inline decorator gets the same scaffold', () => {
+    const {contentEditable, editor} = mountEditor();
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('text'),
+              $create(TestInlineElementNode).append(
+                $create(TestInlineDecoratorNode),
+              ),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    expect(linebreakScaffold(contentEditable)).toEqual(DECORATOR_LINEBREAK);
+
+    // Text after the decorator in the inline element ends the line instead,
+    // which updates the scaffold of the block even though only the inline
+    // element changed.
+    editor.update(
+      () => {
+        const inline = $assertNodeType(
+          $getRoot().getFirstChildOrThrow(),
+          $isParagraphNode,
+        ).getLastChild();
+        assert($isElementNode(inline), 'expected the inline element');
+        inline.append($createTextNode('after'));
+      },
+      {discrete: true},
+    );
+    expect(linebreakScaffold(contentEditable)).toEqual([]);
   });
 
   test('the scaffold is dropped when the decorator stops being the last child', () => {

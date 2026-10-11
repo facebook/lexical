@@ -39,6 +39,7 @@ import {
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   DecoratorNode,
+  ElementNode,
   getDOMSelection,
   isDOMTextNode,
   type LexicalEditor,
@@ -141,14 +142,44 @@ class NestedEditorDecoratorNode extends ImageLikeDecoratorNode {
   }
 }
 
+/** An inline element, like a link or a mark, to put a decorator in. */
+class InlineWrapperNode extends ElementNode {
+  $config() {
+    return this.config('test_7158_inline_wrapper', {extends: ElementNode});
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('a');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  isInline(): true {
+    return true;
+  }
+}
+
 type DecoratorClass = typeof ImageLikeDecoratorNode;
+
+interface MountOptions {
+  /** Text after the decorators. */
+  trailingText?: string;
+  /** A line before the decorators, ended by a line break. */
+  leadingLine?: string;
+  /** A line after the decorators, after a line break. */
+  trailingLine?: string;
+  /** Whether each decorator is in an inline element of its own. */
+  inInlineElements?: boolean;
+}
 
 function mount(
   textBetween: boolean,
   klass: DecoratorClass,
-  trailingText: string = '',
-  leadingLine: string = '',
-  trailingLine: string = '',
+  {
+    trailingText = '',
+    leadingLine = '',
+    trailingLine = '',
+    inInlineElements = false,
+  }: MountOptions = {},
 ) {
   const root = document.createElement('div');
   root.id = 'issue-7158-root';
@@ -172,7 +203,11 @@ function mount(
           if (textBetween) {
             paragraph.append($createTextNode(' '));
           }
-          paragraph.append($create(klass));
+          paragraph.append(
+            inInlineElements
+              ? $create(InlineWrapperNode).append($create(klass))
+              : $create(klass),
+          );
         }
         if (trailingText !== '') {
           paragraph.append($createTextNode(trailingText));
@@ -193,6 +228,7 @@ function mount(
         BoxedImageDecoratorNode,
         SelectableBoxedImageDecoratorNode,
         NestedEditorDecoratorNode,
+        InlineWrapperNode,
       ],
     }),
   );
@@ -375,9 +411,17 @@ async function expectSelectedDecoratorCount(
   );
 }
 
-function dragFromLineEnd(klass: DecoratorClass, textBetween: boolean) {
+function dragFromLineEnd(
+  klass: DecoratorClass,
+  textBetween: boolean,
+  options?: MountOptions,
+) {
   return async () => {
-    const {editor, left, pointerLog, right, y} = mount(textBetween, klass);
+    const {editor, left, pointerLog, right, y} = mount(
+      textBetween,
+      klass,
+      options,
+    );
     await mouseDrag([
       [right(COUNT - 1) + 30, y],
       [left(COUNT - 2) + SIZE / 2, y],
@@ -388,9 +432,17 @@ function dragFromLineEnd(klass: DecoratorClass, textBetween: boolean) {
   };
 }
 
-function dragFromLineStart(klass: DecoratorClass, textBetween: boolean) {
+function dragFromLineStart(
+  klass: DecoratorClass,
+  textBetween: boolean,
+  options?: MountOptions,
+) {
   return async () => {
-    const {editor, left, pointerLog, right, y} = mount(textBetween, klass);
+    const {editor, left, pointerLog, right, y} = mount(
+      textBetween,
+      klass,
+      options,
+    );
     await mouseDrag([
       [left(0) - 5, y],
       [left(1) + SIZE / 2, y],
@@ -517,6 +569,33 @@ describe('Issue #7158: mouse drag over unselectable inline decorators', () => {
   );
 });
 
+// A decorator can be in an inline element, such as a link or a mark, including
+// at either end of the line.
+describe.each([
+  ['inline', ImageLikeDecoratorNode],
+  ['unselectable boxed inline', BoxedImageDecoratorNode],
+])(
+  'Issue #7158: mouse drag over %s decorators that are each in an inline element',
+  (_name, klass) => {
+    test(
+      'a drag from right of the last decorator selects back to the third',
+      dragFromLineEnd(klass, false, {inInlineElements: true}),
+    );
+    test(
+      'a drag from left of the first decorator selects to the end of the line',
+      dragFromLineStart(klass, false, {inInlineElements: true}),
+    );
+    test(
+      'with text between, a drag from right of the last decorator selects back to the third',
+      dragFromLineEnd(klass, true, {inInlineElements: true}),
+    );
+    test(
+      'with text between, a drag from left of the first text selects to the end of the line',
+      dragFromLineStart(klass, true, {inInlineElements: true}),
+    );
+  },
+);
+
 // A Shift press extends the selection to the press, so its drag keeps the
 // selection's anchor. Chromium and WebKit do that even for a press on the
 // selection, where Firefox drags the selection, with or without Shift.
@@ -525,7 +604,7 @@ describe('Issue #7158: Shift mouse drag over unselectable inline decorators', ()
     'a drag from inside the selection extends it back to the third decorator',
     async () => {
       const {editor, left, pointerLog, root, textRect, trailingTextKey, y} =
-        mount(false, BoxedImageDecoratorNode, ' hello world');
+        mount(false, BoxedImageDecoratorNode, {trailingText: ' hello world'});
       assert(trailingTextKey !== null, 'expected the trailing text');
       root.focus();
       editor.update(
@@ -555,7 +634,7 @@ describe('Issue #7158: Shift mouse drag over unselectable inline decorators', ()
     const {editor, left, pointerLog, root, textRect, y} = mount(
       false,
       BoxedImageDecoratorNode,
-      ' hello world',
+      {trailingText: ' hello world'},
     );
     root.focus();
     editor.update(
@@ -684,10 +763,19 @@ describe('Issue #7158: mouse drag over inline decorators that hold a nested edit
 // to no selection at all; with a caret elsewhere already, Lexical would then
 // remove the DOM selection too.
 describe.each([
-  ['inline', ImageLikeDecoratorNode],
-  ['unselectable boxed inline', BoxedImageDecoratorNode],
-  ['selectable boxed inline', SelectableBoxedImageDecoratorNode],
-])('Issue #7158: mouse click beside %s decorators', (_name, klass) => {
+  ['inline decorators', ImageLikeDecoratorNode, false],
+  ['unselectable boxed inline decorators', BoxedImageDecoratorNode, false],
+  [
+    'selectable boxed inline decorators',
+    SelectableBoxedImageDecoratorNode,
+    false,
+  ],
+  [
+    'unselectable boxed inline decorators each in an inline element',
+    BoxedImageDecoratorNode,
+    true,
+  ],
+])('Issue #7158: mouse click beside %s', (_name, klass, inInlineElements) => {
   test.each([
     ['', 'left of the first', 'start', 0, false],
     ['', 'right of the last', 'end', COUNT, false],
@@ -702,7 +790,9 @@ describe.each([
   ])(
     '%sa click %s decorator puts the caret at the %s of the line',
     async (_caret, _side, _edge, offset, hasCaret) => {
-      const {editor, left, pointerLog, right, root, y} = mount(false, klass);
+      const {editor, left, pointerLog, right, root, y} = mount(false, klass, {
+        inInlineElements,
+      });
       if (hasCaret) {
         root.focus();
         editor.update(
@@ -719,6 +809,14 @@ describe.each([
       await mouseDrag([
         [offset === 0 ? left(0) - 5 : right(COUNT - 1) + 30, y],
       ]);
+      // In an inline element at the edge of the line, the caret can also be
+      // at the edge of that element.
+      const carets = [
+        `paragraph:${offset}`,
+        ...(inInlineElements
+          ? [`test_7158_inline_wrapper:${offset === 0 ? 0 : 1}`]
+          : []),
+      ];
       await vi.waitFor(
         () => {
           const caret = editor.read('latest', () => {
@@ -728,8 +826,8 @@ describe.each([
               : String(selection);
           });
           assert(
-            caret === `paragraph:${offset}`,
-            `expected the caret at paragraph:${offset}, got ${caret} ` +
+            carets.includes(caret),
+            `expected the caret at ${carets.join(' or ')}, got ${caret} ` +
               `(dom ${describeDOMSelection(getDOMSelection(window))}; ` +
               `pointer ${pointerLog.join(' ')})`,
           );
@@ -742,74 +840,75 @@ describe.each([
 
 // The reconciler renders an edge box only after the decorator that ends a
 // paragraph, so a line that a line break ends has none.
-describe('Issue #7158: mouse drag over inline decorators beside a line break', () => {
-  test('on a line a line break starts, a drag from left of the first decorator selects to the end of the line', async () => {
-    const {editor, left, pointerLog, right, y} = mount(
-      false,
-      ImageLikeDecoratorNode,
-      '',
-      'text',
-    );
-    await mouseDrag([
-      [left(0) - 5, y],
-      [left(1) + SIZE / 2, y],
-      [left(COUNT - 2) + SIZE / 2, y],
-      [right(COUNT - 1) + 30, y],
-    ]);
-    await expectSelectedDecoratorCount(editor, COUNT, pointerLog);
-    assert(
-      editor.read('latest', () => {
-        const selection = $getSelection();
-        return (
-          $isRangeSelection(selection) &&
-          !selection.getNodes().some($isLineBreakNode)
-        );
-      }),
-      `expected the line break to stay unselected (dom ` +
-        `${describeDOMSelection(getDOMSelection(window))}; ` +
-        `pointer ${pointerLog.join(' ')})`,
-    );
-  });
-  test('on a line a line break ends, a drag from right of the last decorator selects back to the third', async () => {
-    const {editor, left, pointerLog, right, y} = mount(
-      false,
-      ImageLikeDecoratorNode,
-      '',
-      '',
-      'text',
-    );
-    await mouseDrag([
-      [right(COUNT - 1) + 30, y],
-      [left(COUNT - 2) + SIZE / 2, y],
-      [left(3) + SIZE / 2, y],
-      [left(2) - 2, y],
-    ]);
-    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
-    assert(
-      editor.read('latest', () => {
-        const selection = $getSelection();
-        return (
-          $isRangeSelection(selection) &&
-          !selection.getNodes().some($isLineBreakNode)
-        );
-      }),
-      `expected the line break to stay unselected (dom ` +
-        `${describeDOMSelection(getDOMSelection(window))}; ` +
-        `pointer ${pointerLog.join(' ')})`,
-    );
-  });
-});
+describe.each([
+  ['', false],
+  [' that are each in an inline element', true],
+])(
+  'Issue #7158: mouse drag over inline decorators%s beside a line break',
+  (_name, inInlineElements) => {
+    test('on a line a line break starts, a drag from left of the first decorator selects to the end of the line', async () => {
+      const {editor, left, pointerLog, right, y} = mount(
+        false,
+        ImageLikeDecoratorNode,
+        {inInlineElements, leadingLine: 'text'},
+      );
+      await mouseDrag([
+        [left(0) - 5, y],
+        [left(1) + SIZE / 2, y],
+        [left(COUNT - 2) + SIZE / 2, y],
+        [right(COUNT - 1) + 30, y],
+      ]);
+      await expectSelectedDecoratorCount(editor, COUNT, pointerLog);
+      assert(
+        editor.read('latest', () => {
+          const selection = $getSelection();
+          return (
+            $isRangeSelection(selection) &&
+            !selection.getNodes().some($isLineBreakNode)
+          );
+        }),
+        `expected the line break to stay unselected (dom ` +
+          `${describeDOMSelection(getDOMSelection(window))}; ` +
+          `pointer ${pointerLog.join(' ')})`,
+      );
+    });
+    test('on a line a line break ends, a drag from right of the last decorator selects back to the third', async () => {
+      const {editor, left, pointerLog, right, y} = mount(
+        false,
+        ImageLikeDecoratorNode,
+        {inInlineElements, trailingLine: 'text'},
+      );
+      await mouseDrag([
+        [right(COUNT - 1) + 30, y],
+        [left(COUNT - 2) + SIZE / 2, y],
+        [left(3) + SIZE / 2, y],
+        [left(2) - 2, y],
+      ]);
+      await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+      assert(
+        editor.read('latest', () => {
+          const selection = $getSelection();
+          return (
+            $isRangeSelection(selection) &&
+            !selection.getNodes().some($isLineBreakNode)
+          );
+        }),
+        `expected the line break to stay unselected (dom ` +
+          `${describeDOMSelection(getDOMSelection(window))}; ` +
+          `pointer ${pointerLog.join(' ')})`,
+      );
+    });
+  },
+);
 
 describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
   // A double-click drag extends the selection by words, keeping the word it
   // selected; the drag's anchor moves to whichever end of that word is
   // farther from the pointer.
   test('a double-click drag keeps the double-clicked word', async () => {
-    const {editor, left, textRect, y} = mount(
-      false,
-      ImageLikeDecoratorNode,
-      ' hello world',
-    );
+    const {editor, left, textRect, y} = mount(false, ImageLikeDecoratorNode, {
+      trailingText: ' hello world',
+    });
     const word = textRect('world');
     const wordY = (word.top + word.bottom) / 2;
     await mouseDrag(
@@ -842,7 +941,7 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     const {editor, left, root, textRect, y} = mount(
       false,
       BoxedImageDecoratorNode,
-      ' hello world',
+      {trailingText: ' hello world'},
     );
     root.focus();
     editor.update(
@@ -880,7 +979,7 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     const {editor, left, root, textRect, trailingTextKey, y} = mount(
       false,
       ImageLikeDecoratorNode,
-      ' hello world',
+      {trailingText: ' hello world'},
     );
     assert(trailingTextKey !== null, 'expected the trailing text');
     const errors: unknown[] = [];
@@ -939,7 +1038,7 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     const {editor, root, textRect, trailingTextKey} = mount(
       false,
       ImageLikeDecoratorNode,
-      ' hello world',
+      {trailingText: ' hello world'},
     );
     assert(trailingTextKey !== null, 'expected the trailing text');
     editor.update(
@@ -986,11 +1085,9 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
   ])(
     'a press ended by %s lets a NodeSelection remove the DOM selection',
     type => {
-      const {editor, root, textRect} = mount(
-        false,
-        ImageLikeDecoratorNode,
-        ' hello world',
-      );
+      const {editor, root, textRect} = mount(false, ImageLikeDecoratorNode, {
+        trailingText: ' hello world',
+      });
       editor.update(
         () => {
           $getRoot().selectEnd();
@@ -1042,11 +1139,9 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
   // A press on a selection measures only the part of it in the pressed
   // element, however much of the document is selected.
   test('a press on a selection measures only the pressed element', () => {
-    const {editor, root, textRect} = mount(
-      false,
-      ImageLikeDecoratorNode,
-      ' hello world',
-    );
+    const {editor, root, textRect} = mount(false, ImageLikeDecoratorNode, {
+      trailingText: ' hello world',
+    });
     editor.update(
       () => {
         const paragraph = $assertNodeType(
@@ -1147,7 +1242,7 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     const {editor, left, root, textRect, y} = mount(
       false,
       BoxedImageDecoratorNode,
-      ' hello world',
+      {trailingText: ' hello world'},
     );
     root.focus();
     editor.update(

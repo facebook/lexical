@@ -926,6 +926,12 @@ function $createChildren(
 }
 
 type LastChildState = 'line-break' | 'decorator' | 'empty';
+/**
+ * What ends `element`'s last line, for its managed line break: a
+ * LineBreakNode, an inline DecoratorNode (also at the end of an inline
+ * element that ends the line, such as a link around an image, which leaves
+ * the browser no editable position after it either), or nothing at all.
+ */
 function $isLastChildLineBreakOrDecorator(
   element: null | ElementNode,
   nodeMap: NodeMap,
@@ -933,7 +939,14 @@ function $isLastChildLineBreakOrDecorator(
   if (element) {
     const lastKey = element.__last;
     if (lastKey) {
-      const node = nodeMap.get(lastKey);
+      let node = nodeMap.get(lastKey);
+      while ($isElementNode(node) && node.isInline() && node.__last) {
+        const last = nodeMap.get(node.__last);
+        if (!$isDecoratorNode(last) && !$isElementNode(last)) {
+          break;
+        }
+        node = last;
+      }
       if (node) {
         return $isLineBreakNode(node)
           ? 'line-break'

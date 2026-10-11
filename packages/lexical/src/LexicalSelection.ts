@@ -101,6 +101,7 @@ import {
   getActiveElement,
   getActiveElementDeep,
   getCaretRect,
+  getComposedEventTarget,
   getComposedStaticRange,
   getDOMSelection,
   getDOMSelectionPoints,
@@ -112,6 +113,7 @@ import {
   INTERNAL_$isBlock,
   isDOMCapturingSelection,
   isDOMDocumentNode,
+  isDOMNode,
   isDOMShadowRoot,
   isDOMTextNode,
   isHTMLElement,
@@ -3506,12 +3508,20 @@ const SELECTION_KEYS = /* @__PURE__ */ new Set([
   'Tab',
 ]);
 
-function isSelectionKeyDownEvent(event: Event): boolean {
+function isSelectionKeyDownEvent(event: Event, editor: LexicalEditor): boolean {
   if (event.type !== 'keydown') {
     return false;
   }
   const {ctrlKey, key, metaKey} = event as KeyboardEvent;
-  return ctrlKey || metaKey || SELECTION_KEYS.has(key);
+  if (!ctrlKey && !metaKey && !SELECTION_KEYS.has(key)) {
+    return false;
+  }
+  // Only a keydown sent to this editor can follow a native caret move in it
+  // that the browser has not reported yet. A shortcut handled elsewhere (a
+  // toolbar, a dialog, a global hotkey) that updates this editor acts at the
+  // editor's own selection, not at a DOM selection left behind in its root.
+  const target = getComposedEventTarget(event);
+  return isDOMNode(target) && getNearestEditorFromDOMNode(target) === editor;
 }
 
 export function $internalCreateRangeSelection(
@@ -3546,7 +3556,7 @@ export function $internalCreateRangeSelection(
   // (key repeat, or a busy main thread). Reading the DOM here keeps that
   // keydown from acting on the caret from before the native move.
   const isSelectionKeyDown =
-    windowEvent != null && isSelectionKeyDownEvent(windowEvent);
+    windowEvent != null && isSelectionKeyDownEvent(windowEvent, editor);
   const useDOMSelection =
     !getIsProcessingMutations() &&
     (isSelectionChange ||

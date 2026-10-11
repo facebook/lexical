@@ -121,6 +121,8 @@ export function isSelectAll(event: KeyboardEvent): boolean {
  * Chromium before a leading inline one (#7158), are among the first `index`
  * children of `parent`. They take a DOM child slot but no Lexical one, so
  * paths and offsets leave them out, as assertSelection in the e2e utils does.
+ * Keep these helpers in step with its copies in
+ * `__tests__/utils/index.mjs`, which run inside the page.
  */
 function boundaryAnchorsBefore(parent: Node, index: number): number {
   const children = parent.childNodes;

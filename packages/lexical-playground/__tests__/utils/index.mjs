@@ -609,7 +609,9 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       // The zero-size anchors the reconciler parks outside a leading / trailing
       // block decorator (#8922), and on WebKit and desktop Chromium before a
       // leading inline one (#7158), occupy a DOM child slot but no lexical
-      // one, so discount them from both paths and offsets.
+      // one, so discount them from both paths and offsets. Keep these helpers
+      // in step with the playground's TestRecorderPlugin, which records the
+      // paths and offsets that this asserts.
       const boundaryAnchorsBefore = (parent, index) => {
         const children = parent.childNodes;
         let count = 0;

@@ -140,13 +140,15 @@ describe('createDOMRange element points', () => {
       $create(BlockDecoratorNode),
       $createParagraphNode().append($createTextNode('abc')),
     ]);
-    editor.read('latest', () => {
-      const root = $getRoot();
-      const paragraphDOM = editor.getElementByKey(
-        root.getLastChildOrThrow().getKey(),
-      );
-      assert(paragraphDOM !== null);
-      expect(childAfterStart(rangeAt(editor, root, 1))).toBe(paragraphDOM);
+    const [root, paragraphDOM] = editor.read('latest', () => {
+      const rootNode = $getRoot();
+      return [
+        rootNode,
+        editor.getElementByKey(rootNode.getLastChildOrThrow().getKey()),
+      ] as const;
     });
+    assert(paragraphDOM !== null);
+    // Outside a read, as collaboration cursors call it.
+    expect(childAfterStart(rangeAt(editor, root, 1))).toBe(paragraphDOM);
   });
 });

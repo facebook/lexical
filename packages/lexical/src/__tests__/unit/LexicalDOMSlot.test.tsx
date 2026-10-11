@@ -743,6 +743,60 @@ describe('ElementDOMSlot integration: a removed trailing decoration', () => {
     );
     expectHtmlToBeEqual(block.outerHTML, expected);
   });
+
+  test.each(['leading', 'trailing'])(
+    'a %s decorator anchor removed with the decoration is rebuilt',
+    async edge => {
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      const editor = buildEditorFromExtensions(
+        defineExtension({
+          name: '[stored-trailing-decor-anchors]',
+          nodes: [StoredTrailingDecorElementNode, TestDecoratorNode],
+        }),
+      );
+      editor.setRootElement(container);
+      onTestFinished(() => {
+        editor.dispose();
+        container.remove();
+      });
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              new StoredTrailingDecorElementNode().append(
+                $createTestDecoratorNode().setIsInline(false),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+      const block = container.querySelector('[data-block]');
+      assert(block !== null, 'Expected the block to be rendered');
+      const shape = () =>
+        Array.from(block.children, child =>
+          child.hasAttribute('data-lexical-decorator-boundary')
+            ? 'anchor'
+            : child.hasAttribute('data-marker')
+              ? 'marker'
+              : 'decorator',
+        );
+      expect(shape()).toEqual(['anchor', 'decorator', 'anchor', 'marker']);
+      // A native edit removes both at once.
+      const anchors = block.querySelectorAll(
+        ':scope > [data-lexical-decorator-boundary]',
+      );
+      const marker = block.querySelector('[data-marker]');
+      assert(marker !== null, 'Expected the marker');
+      block.removeChild(anchors[edge === 'leading' ? 0 : 1]);
+      block.removeChild(marker);
+      await new Promise(resolve => setTimeout(resolve, 0));
+      // Put back in place, rather than by rendering the editor again.
+      expect(container.querySelector('[data-block]')).toBe(block);
+      expect(shape()).toEqual(['anchor', 'decorator', 'anchor']);
+    },
+  );
 });
 
 // Regression coverage for facebook/lexical#8561. A node whose `getDOMSlot`

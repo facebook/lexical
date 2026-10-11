@@ -6,6 +6,7 @@
  *
  */
 
+import type {ElementDOMSlot} from './LexicalDOMSlot';
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalPrivateDOM} from './LexicalNode';
@@ -18,6 +19,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  type ElementNode,
   type LexicalNode,
   type TextNode,
 } from '.';
@@ -148,6 +150,24 @@ function $getNearestManagedNodePairFromDOMNode(
   }
 }
 
+/**
+ * The DOM slot of an element whose DOM an edit outside the reconciler has
+ * changed, for putting back the element's own scaffolding. The edit can have
+ * removed the slot's `before` boundary too, and the scaffolding then goes at
+ * the end of the element.
+ */
+function $getMutatedDOMSlot(
+  node: ElementNode,
+  dom: HTMLElement,
+  editor: LexicalEditor,
+): ElementDOMSlot {
+  const slot = $getDOMSlot(node, dom, editor);
+  const {before} = slot;
+  return before !== null && before.parentNode !== slot.element
+    ? slot.withBefore(null)
+    : slot;
+}
+
 function flushMutations(
   editor: LexicalEditor,
   mutations: MutationRecord[],
@@ -203,6 +223,13 @@ function flushMutations(
           // element's DOM. When one is added or removed here, the element's
           // anchors are rebuilt in place below.
           let restoreAnchors = false;
+          // The element's own scaffolding (the managed line break inside the
+          // trailing boundary, with its img first; a boundary anchor on the
+          // edge it belongs to) has a fixed place in its DOM, so it is rebuilt
+          // in place below rather than re-appended at the end.
+          const elementSlot = $isElementNode(targetNode)
+            ? $getMutatedDOMSlot(targetNode, nodeDOM, editor)
+            : null;
           // We attempt to "undo" any changes that have occurred outside
           // of Lexical. We want Lexical's editor state to be source of truth.
           // To the user, these will look like no-ops.
@@ -261,13 +288,6 @@ function flushMutations(
 
           if (removedDOMsLength > 0) {
             let unremovedBRs = 0;
-            // The element's own scaffolding has a fixed place in its DOM (the
-            // managed line break inside the trailing boundary, with its img
-            // first; a boundary anchor on the edge it belongs to), so it is
-            // rebuilt in place below rather than re-appended at the end.
-            const elementSlot = $isElementNode(targetNode)
-              ? $getDOMSlot(targetNode, nodeDOM, editor)
-              : null;
             const slot =
               elementSlot !== null && elementSlot.element === targetDOM
                 ? elementSlot
@@ -302,13 +322,13 @@ function flushMutations(
           // The reconciler only gives non-inline elements anchors.
           if (
             restoreAnchors &&
+            elementSlot !== null &&
             $isElementNode(targetNode) &&
             !targetNode.isInline()
           ) {
             $reconcileDecoratorBoundaryAnchors(
               targetNode,
-              nodeDOM,
-              editor,
+              elementSlot,
               currentEditorState._nodeMap,
             );
           }

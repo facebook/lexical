@@ -37,6 +37,7 @@ import {
   $getRoot,
   $isParagraphNode,
   DecoratorNode,
+  ElementNode,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
 import {server} from 'vitest/browser';
@@ -66,10 +67,25 @@ class TestInlineDecoratorNode extends DecoratorNode<null> {
   }
 }
 
+class TestInlineElementNode extends ElementNode {
+  $config() {
+    return this.config('test_inline_element', {extends: ElementNode});
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('a');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  isInline(): true {
+    return true;
+  }
+}
+
 const ext = defineExtension({
   dependencies: [RichTextExtension],
   name: '[webkit-linebreak-img]',
-  nodes: [TestInlineDecoratorNode],
+  nodes: [TestInlineDecoratorNode, TestInlineElementNode],
 });
 
 function mountEditor() {
@@ -327,6 +343,41 @@ describe('scaffolding removed from outside the reconciler is restored', () => {
       await expect
         .poll(() => paragraphShape(contentEditable))
         .toEqual(EXPECTED_SHAPE);
+    });
+
+    // Inline elements never have anchors, even one that starts with an
+    // inline decorator.
+    test('moved into an inline element', async () => {
+      const {contentEditable, editor} = mountEditor();
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $create(TestInlineDecoratorNode),
+                $create(TestInlineElementNode).append(
+                  $create(TestInlineDecoratorNode),
+                  $createTextNode('link'),
+                ),
+                $createTextNode('text'),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+      const anchor = contentEditable.querySelector(
+        'p > [data-lexical-decorator-boundary]',
+      );
+      const inline = contentEditable.querySelector('p > a');
+      assert(anchor !== null && inline !== null, 'expected the anchor');
+      inline.prepend(anchor);
+      await expect
+        .poll(() => paragraphShape(contentEditable))
+        .toEqual(['anchor', 'decorator', 'text', 'text']);
+      expect(
+        inline.querySelector('[data-lexical-decorator-boundary]'),
+      ).toBeNull();
     });
   });
 });

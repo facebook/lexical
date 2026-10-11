@@ -815,8 +815,7 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
       $reconcileElementTerminatingLineBreak(null, node, dom);
       $reconcileDecoratorBoundaryAnchors(
         node,
-        dom,
-        activeEditor,
+        $getDOMSlot(node, dom, activeEditor),
         activeNextNodeMap,
       );
     }
@@ -984,15 +983,13 @@ function $isEdgeDecoratorChild(
  * {@link $reconcileElementTerminatingLineBreak} appends after it.
  *
  * Also called by `flushMutations`, outside a reconcile, to put back an anchor
- * that something else removed from the DOM.
+ * that something else removed from or added to the DOM.
  */
 export function $reconcileDecoratorBoundaryAnchors(
   nextElement: ElementNode,
-  dom: HTMLElement & LexicalPrivateDOM,
-  editor: LexicalEditor,
+  slot: ElementDOMSlot,
   nodeMap: NodeMap,
 ): void {
-  const slot = $getDOMSlot(nextElement, dom, editor);
   slot.setDecoratorBoundaryAnchor(
     'leading',
     $isEdgeDecoratorChild(
@@ -1872,8 +1869,7 @@ function $reconcileNode(
         // shape that breaks select-all.
         $reconcileDecoratorBoundaryAnchors(
           nextNode,
-          dom,
-          activeEditor,
+          $getDOMSlot(nextNode, dom, activeEditor),
           activeNextNodeMap,
         );
       }

@@ -305,15 +305,20 @@ export interface InputState {
   isSelectionChangeFromMouseDown: boolean;
   /**
    * A single primary-button mouse press in the root element that may start a
-   * text selection drag, from its pointerdown until the next pointerup
-   * anywhere in its document: where it was pressed, the DOM anchor of its
-   * selection once the pointer has crossed the drag threshold (false when
-   * that is outside this editor), and whether Lexical has changed the drag's
-   * selection. Only tracked on the engines in TRACKS_MOUSE_SELECTION_DRAG;
-   * null otherwise.
+   * text selection drag, from its pointerdown until the next pointerup or
+   * pointercancel anywhere in its document, or a drag and drop: where it was
+   * pressed, the DOM anchor of its selection once the pointer has crossed
+   * the drag threshold, with what that point was next to (false when the
+   * anchor is outside this editor, or the DOM there has changed since), and
+   * whether Lexical has changed the drag's selection. Only tracked on the
+   * engines in TRACKS_MOUSE_SELECTION_DRAG, and not for a press on a
+   * non-collapsed selection or a double or triple click; null otherwise.
    */
   mouseSelectionDrag: null | {
-    anchor: null | false | [node: Node, offset: number];
+    anchor:
+      | null
+      | false
+      | [node: Node, offset: number, context: Node | string | null];
     clientX: number;
     clientY: number;
     hasExtended: boolean;

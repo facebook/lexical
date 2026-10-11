@@ -132,6 +132,7 @@ import {
   getDOMSelection,
   getDOMSelectionFromTarget,
   getDOMSelectionPoints,
+  getDOMSelectionRange,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
@@ -205,10 +206,16 @@ function getRootElementEvents(): RootElementEvents {
     ]);
   }
   if (IS_IOS) {
-    events.push(
-      ['keyup', (event, editor) => onKeyUp(event as KeyboardEvent, editor)],
-      ['mousedown', onMouseDownIOS],
-    );
+    events.push([
+      'keyup',
+      (event, editor) => onKeyUp(event as KeyboardEvent, editor),
+    ]);
+  }
+  if (TRACKS_MOUSE_SELECTION_DRAG || IS_IOS) {
+    events.push([
+      'mousedown',
+      (event, editor) => onMouseDown(event as MouseEvent, editor),
+    ]);
   }
   rootElementEvents = events;
   return events;
@@ -848,12 +855,19 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
     });
   }
   if (TRACKS_MOUSE_SELECTION_DRAG) {
+    const rootElement = editor.getRootElement();
     const drag =
       isDOMNode(target) &&
+      rootElement !== null &&
       pointerType === 'mouse' &&
       event.button === 0 &&
-      event.detail <= 1 &&
-      !isDOMCapturingSelection(target, editor)
+      !isDOMCapturingSelection(target, editor) &&
+      !isPointOverDOMSelection(
+        getDOMSelectionFromTarget(target),
+        rootElement,
+        event.clientX,
+        event.clientY,
+      )
         ? {
             anchor: null,
             clientX: event.clientX,
@@ -862,21 +876,69 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
           }
         : null;
     editor._inputState.mouseSelectionDrag = drag;
-    if (drag !== null && isDOMNode(target)) {
-      // The button may be released outside the root element.
-      const doc = target.ownerDocument;
-      if (doc !== null) {
-        doc.addEventListener(
-          'pointerup',
-          () => {
-            if (editor._inputState.mouseSelectionDrag === drag) {
-              editor._inputState.mouseSelectionDrag = null;
-            }
-          },
-          {capture: true, once: true},
-        );
-      }
+    const doc =
+      drag !== null && isDOMNode(target) ? target.ownerDocument : null;
+    if (drag !== null && doc !== null) {
+      // The button may be released outside the root element, and a press
+      // that starts a drag and drop gets a pointercancel instead.
+      const endDrag = () => {
+        if (editor._inputState.mouseSelectionDrag === drag) {
+          editor._inputState.mouseSelectionDrag = null;
+        }
+        doc.removeEventListener('pointerup', endDrag, true);
+        doc.removeEventListener('pointercancel', endDrag, true);
+      };
+      doc.addEventListener('pointerup', endDrag, true);
+      doc.addEventListener('pointercancel', endDrag, true);
     }
+  }
+}
+
+/**
+ * Whether the point at (`clientX`, `clientY`) is over the non-collapsed DOM
+ * selection, where a press drags the selection rather than starting a new
+ * one.
+ */
+function isPointOverDOMSelection(
+  domSelection: Selection | null,
+  rootElement: HTMLElement,
+  clientX: number,
+  clientY: number,
+): boolean {
+  const range =
+    domSelection !== null && domSelection.rangeCount > 0
+      ? getDOMSelectionRange(domSelection, rootElement)
+      : null;
+  if (range === null || range.collapsed) {
+    return false;
+  }
+  const rects = range.getClientRects();
+  for (let i = 0; i < rects.length; i++) {
+    const rect = rects[i];
+    if (
+      clientX >= rect.left &&
+      clientX <= rect.right &&
+      clientY >= rect.top &&
+      clientY <= rect.bottom
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * The browsers that report a click count on pointerdown (Chromium and
+ * Firefox report 0) all report it on the mousedown that follows, so stop
+ * tracking a press there when it is a double or triple click, which extends
+ * the selection by words or paragraphs.
+ */
+function onMouseDown(event: MouseEvent, editor: LexicalEditor): void {
+  if (IS_IOS) {
+    onMouseDownIOS(event, editor);
+  }
+  if (TRACKS_MOUSE_SELECTION_DRAG && event.detail > 1) {
+    editor._inputState.mouseSelectionDrag = null;
   }
 }
 
@@ -898,11 +960,12 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
  * restart from the pointer), restore the anchor the drag had once it crossed
  * the drag threshold.
  *
- * Nothing changes until a pointermove after the one that crossed the drag
- * threshold, so a press on an existing selection still drags it. Once the
- * selection has been extended, it contains the mousedown point, and Chromium
- * keeps checking for a selection drag and drop until its own hit test has
- * moved the selection; {@link onSelectionDragStart} cancels that drag.
+ * A press on a non-collapsed selection is not tracked, so it still drags the
+ * selection: Firefox starts that drag and drop only past the platform's drag
+ * threshold, which can be larger than this one. Once the selection has been
+ * extended, it contains the mousedown point, and Chromium keeps checking for
+ * a selection drag and drop until its own hit test has moved the selection;
+ * {@link onSelectionDragStart} cancels that drag.
  */
 function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
   const drag = editor._inputState.mouseSelectionDrag;
@@ -935,18 +998,22 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
       );
       // Firefox puts a press beyond the end of a line that ends in an
       // unselectable inline decorator before that decorator.
-      drag.anchor =
-        anchorNode !== null &&
-        getNearestEditorFromDOMNode(anchorNode) === editor
-          ? movePastInlineDecorators(
-              editor,
-              rootElement,
-              anchorNode,
-              anchorOffset,
-              drag.clientX,
-              drag.clientY,
-            )
-          : false;
+      if (
+        anchorNode === null ||
+        getNearestEditorFromDOMNode(anchorNode) !== editor
+      ) {
+        drag.anchor = false;
+      } else {
+        const [node, offset] = movePastInlineDecorators(
+          editor,
+          rootElement,
+          anchorNode,
+          anchorOffset,
+          drag.clientX,
+          drag.clientY,
+        );
+        drag.anchor = [node, offset, getDOMPointContext(node, offset)];
+      }
     }
     return;
   }
@@ -962,8 +1029,15 @@ function onPointerMove(event: PointerEvent, editor: LexicalEditor) {
     if (editor._inputState.mouseSelectionDrag !== drag) {
       return;
     }
-    const [anchorNode, anchorOffset] = dragAnchor;
-    if (!anchorNode.isConnected) {
+    const [anchorNode, anchorOffset, anchorContext] = dragAnchor;
+    if (
+      !anchorNode.isConnected ||
+      getDOMPointContext(anchorNode, anchorOffset) !== anchorContext
+    ) {
+      // An update (such as a collaborator's edit) has changed the DOM at the
+      // drag's anchor, so the recorded point may no longer be where the drag
+      // started; leave the rest of the drag to the browser.
+      drag.anchor = false;
       return;
     }
     const points =
@@ -1133,15 +1207,29 @@ function getInlineDecoratorDOM(
 /**
  * Cancels the drag and drop that a press would otherwise start once
  * {@link onPointerMove} has extended its selection over the mousedown point,
- * so the press keeps selecting. Returns true when it did.
+ * so the press keeps selecting. Returns true when it did. Any other drag and
+ * drop ends the press's selection drag.
  */
 function onSelectionDragStart(event: DragEvent, editor: LexicalEditor) {
   const drag = editor._inputState.mouseSelectionDrag;
-  if (drag === null || !drag.hasExtended) {
+  if (drag === null) {
+    return false;
+  }
+  if (!drag.hasExtended) {
+    editor._inputState.mouseSelectionDrag = null;
     return false;
   }
   event.preventDefault();
   return true;
+}
+
+/**
+ * What the DOM point at `offset` in `node` is next to: the text of a text
+ * node, or the child before the point, so that a point recorded earlier can
+ * be checked against later changes to the DOM.
+ */
+function getDOMPointContext(node: Node, offset: number): Node | string | null {
+  return isDOMTextNode(node) ? node.data : node.childNodes[offset - 1] || null;
 }
 
 function getTargetRange(event: InputEvent): null | StaticRange {

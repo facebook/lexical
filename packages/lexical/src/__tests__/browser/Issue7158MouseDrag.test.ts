@@ -18,17 +18,22 @@ import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $create,
+  $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
   $isRangeSelection,
+  $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   DecoratorNode,
   getDOMSelection,
   type LexicalEditor,
+  type ParagraphNode,
   SELECTION_CHANGE_COMMAND,
+  type TextNode,
 } from 'lexical';
 import {assert, describe, onTestFinished, test, vi} from 'vitest';
 import {commands} from 'vitest/browser';
@@ -38,6 +43,7 @@ declare module 'vitest/browser' {
     mouseDrag: (
       selector: string,
       points: [x: number, y: number][],
+      options?: {clickCount?: number},
     ) => Promise<void>;
   }
 }
@@ -117,11 +123,17 @@ type DecoratorClass =
 
 const pointerLog: string[] = [];
 
-function mount(textBetween: boolean, klass: DecoratorClass) {
+function mount(
+  textBetween: boolean,
+  klass: DecoratorClass,
+  trailingText: string = '',
+) {
   const root = document.createElement('div');
   root.id = 'issue-7158-root';
   root.contentEditable = 'true';
-  root.style.cssText = 'width:600px;padding:10px;font-size:16px';
+  // Narrower than the test frame (414px), which would scroll sideways when a
+  // drag nears its edge, or to show a point mouseDrag hovers.
+  root.style.cssText = 'width:380px;padding:10px;font-size:16px';
   document.body.appendChild(root);
   const editor = buildEditorFromExtensions(
     defineExtension({
@@ -132,6 +144,9 @@ function mount(textBetween: boolean, klass: DecoratorClass) {
             paragraph.append($createTextNode(' '));
           }
           paragraph.append($create(klass));
+        }
+        if (trailingText !== '') {
+          paragraph.append($createTextNode(trailingText));
         }
         $getRoot().clear().append(paragraph);
       },
@@ -184,10 +199,25 @@ function mount(textBetween: boolean, klass: DecoratorClass) {
     images[i].getBoundingClientRect().left - rootRect.left;
   const right = (i: number) =>
     images[i].getBoundingClientRect().right - rootRect.left;
+  // The box of `text` within the trailing text, relative to the root.
+  const textRect = (text: string) => {
+    const textNode = root.lastChild!.lastChild!.firstChild!;
+    const index = textNode.textContent!.indexOf(text);
+    const range = document.createRange();
+    range.setStart(textNode, index);
+    range.setEnd(textNode, index + text.length);
+    const rect = range.getBoundingClientRect();
+    return {
+      bottom: rect.bottom - rootRect.top,
+      left: rect.left - rootRect.left,
+      right: rect.right - rootRect.left,
+      top: rect.top - rootRect.top,
+    };
+  };
   pointerLog.push(
     `left(0)=${Math.round(left(0))} right(${COUNT - 1})=${Math.round(right(COUNT - 1))} y=${Math.round(y)} dpr=${window.devicePixelRatio}`,
   );
-  return {editor, left, right, y};
+  return {editor, left, right, root, textRect, y};
 }
 
 function describeDOMPoint(node: Node | null, offset: number): string {
@@ -296,9 +326,9 @@ test('Issue #7158: a drag past the end of the line does not keep changing the se
   const x = right(COUNT - 1) + 30;
   await commands.mouseDrag('#issue-7158-root', [
     [x, y],
+    [x + 50, y + SIZE],
     [x + 100, y + SIZE],
-    [x + 200, y + SIZE],
-    [x + 100, y + 2 * SIZE],
+    [x + 50, y + 2 * SIZE],
   ]);
   await vi.waitFor(() =>
     assert(
@@ -310,7 +340,7 @@ test('Issue #7158: a drag past the end of the line does not keep changing the se
     ),
   );
   // The press and the first move can each change the selection once; the
-  // other fifteen or so moves must not.
+  // other ten or so moves must not.
   assert(
     selectionChanges <= 3,
     `expected at most 3 selection changes, got ${selectionChanges}`,
@@ -392,4 +422,204 @@ describe('Issue #7158: mouse drag over selectable boxed inline decorators', () =
     assert(injected, 'the drag never reached the injection point');
     await expectSelectedDecoratorCount(editor, COUNT - 2);
   });
+});
+
+describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
+  // A double-click drag extends the selection by words, keeping the word it
+  // selected; the drag's anchor moves to whichever end of that word is
+  // farther from the pointer.
+  test('a double-click drag keeps the double-clicked word', async () => {
+    const {editor, left, textRect, y} = mount(
+      false,
+      ImageLikeDecoratorNode,
+      ' hello world',
+    );
+    const word = textRect('world');
+    const wordY = (word.top + word.bottom) / 2;
+    await commands.mouseDrag(
+      '#issue-7158-root',
+      [
+        [(word.left + word.right) / 2, wordY],
+        [left(COUNT - 1) + SIZE / 2, y],
+        [left(2) - 2, y],
+      ],
+      {clickCount: 2},
+    );
+    await vi.waitFor(() => {
+      const text = editor.read(() => {
+        const selection = $getSelection();
+        return $isRangeSelection(selection) ? selection.getTextContent() : '';
+      });
+      assert(
+        text.endsWith(' hello world'),
+        `expected the selection to end with the double-clicked word, got ${JSON.stringify(text)}`,
+      );
+    });
+  });
+
+  // A collaborator's edit (simulated here) can change the text at the drag's
+  // anchor mid-drag, and move the editor's selection with it.
+  test('a drag whose anchor text changes mid-drag continues from the moved anchor', async () => {
+    const {editor, left, root, textRect, y} = mount(
+      false,
+      ImageLikeDecoratorNode,
+      ' hello world',
+    );
+    const textKey = editor.read(() =>
+      $getRoot()
+        .getFirstChildOrThrow<ParagraphNode>()
+        .getLastChildOrThrow()
+        .getKey(),
+    );
+    const errors: unknown[] = [];
+    const onError = (event: ErrorEvent) => errors.push(event.error);
+    window.addEventListener('error', onError);
+    onTestFinished(() => window.removeEventListener('error', onError));
+    let edited = false;
+    const edit = () => {
+      const drag = editor._inputState.mouseSelectionDrag;
+      if (!edited && drag !== null && Array.isArray(drag.anchor)) {
+        edited = true;
+        editor.update(
+          () => {
+            const textNode = $getNodeByKey<TextNode>(textKey)!;
+            textNode.setTextContent(' hi');
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              selection.anchor.set(textKey, 3, 'text');
+              if (selection.focus.key === textKey) {
+                selection.focus.set(textKey, 3, 'text');
+              }
+            }
+          },
+          {discrete: true},
+        );
+      }
+    };
+    root.addEventListener('pointermove', edit, true);
+    onTestFinished(() => root.removeEventListener('pointermove', edit, true));
+    const end = textRect('world').right + 30;
+    await commands.mouseDrag('#issue-7158-root', [
+      [end, y],
+      [end - 30, y],
+      [left(COUNT - 1) + SIZE / 2, y],
+      [left(2) - 2, y],
+    ]);
+    assert(edited, 'the drag never recorded its anchor');
+    assert(errors.length === 0, `uncaught errors: ${errors.join(', ')}`);
+    await vi.waitFor(() => {
+      const anchor = editor.read(() => {
+        const selection = $getSelection();
+        return $isRangeSelection(selection)
+          ? `${selection.anchor.key}:${selection.anchor.offset}`
+          : String(selection);
+      });
+      assert(
+        anchor === `${textKey}:3`,
+        `expected the anchor at the end of the edited text, got ${anchor}`,
+      );
+    });
+  });
+
+  // A press on an inline decorator never starts a selection drag, so these
+  // press the text after the decorators.
+  test('a press on a non-collapsed selection is not tracked as a selection drag', async () => {
+    const {editor, root, textRect} = mount(
+      false,
+      ImageLikeDecoratorNode,
+      ' hello world',
+    );
+    const textKey = editor.read(() =>
+      $getRoot()
+        .getFirstChildOrThrow<ParagraphNode>()
+        .getLastChildOrThrow()
+        .getKey(),
+    );
+    editor.update(
+      () => {
+        $getNodeByKey<TextNode>(textKey)!.select(1, 6);
+      },
+      {discrete: true},
+    );
+    const press = (text: string) => {
+      const rect = textRect(text);
+      const rootRect = root.getBoundingClientRect();
+      const init = {
+        bubbles: true,
+        button: 0,
+        buttons: 1,
+        clientX: rootRect.left + (rect.left + rect.right) / 2,
+        clientY: rootRect.top + (rect.top + rect.bottom) / 2,
+        composed: true,
+        pointerType: 'mouse',
+      };
+      const target = document.elementFromPoint(init.clientX, init.clientY)!;
+      target.dispatchEvent(new PointerEvent('pointerdown', init));
+      const tracked = editor._inputState.mouseSelectionDrag !== null;
+      target.dispatchEvent(new PointerEvent('pointerup', init));
+      return tracked;
+    };
+    assert(!press('hello'), 'a press on the selection would drag it');
+    assert(press('world'), 'a press beside the selection selects');
+  });
+
+  test.each(['pointercancel', 'dragstart'])(
+    'a press ended by %s lets a NodeSelection remove the DOM selection',
+    async type => {
+      const {editor, root, textRect} = mount(
+        false,
+        ImageLikeDecoratorNode,
+        ' hello world',
+      );
+      editor.update(
+        () => {
+          $getRoot().getFirstChildOrThrow<ParagraphNode>().selectEnd();
+        },
+        {discrete: true},
+      );
+      const rect = textRect('world');
+      const rootRect = root.getBoundingClientRect();
+      const init = (dx: number) => ({
+        bubbles: true,
+        button: 0,
+        buttons: 1,
+        clientX: rootRect.left + rect.left + dx,
+        clientY: rootRect.top + (rect.top + rect.bottom) / 2,
+        composed: true,
+        pointerType: 'mouse',
+      });
+      const target = document.elementFromPoint(
+        init(0).clientX,
+        init(0).clientY,
+      )!;
+      target.dispatchEvent(new PointerEvent('pointerdown', init(0)));
+      target.dispatchEvent(new PointerEvent('pointermove', init(10)));
+      assert(
+        Array.isArray(editor._inputState.mouseSelectionDrag?.anchor),
+        'the press never became a selection drag',
+      );
+      target.dispatchEvent(
+        type === 'dragstart'
+          ? new DragEvent(type, {bubbles: true, cancelable: true})
+          : new PointerEvent(type, {bubbles: true, pointerType: 'mouse'}),
+      );
+      editor.update(
+        () => {
+          const selection = $createNodeSelection();
+          selection.add(
+            $getRoot()
+              .getFirstChildOrThrow<ParagraphNode>()
+              .getFirstChildOrThrow()
+              .getKey(),
+          );
+          $setSelection(selection);
+        },
+        {discrete: true},
+      );
+      assert(
+        getDOMSelection(window)!.rangeCount === 0,
+        'expected the DOM selection to be removed',
+      );
+    },
+  );
 });

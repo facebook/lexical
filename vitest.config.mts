@@ -159,10 +159,13 @@ export default defineConfig({
               // top-left of `selector`), so the browser's own hit testing
               // and drag-extension logic decide the selection. Synthetic
               // Selection.setBaseAndExtent/extend calls do not model that.
+              // A clickCount above 1 makes the press that drags the last
+              // click of a double or triple click.
               mouseDrag: async (
                 {frame, page},
                 selector: string,
                 points: [x: number, y: number][],
+                {clickCount = 1}: {clickCount?: number} = {},
               ) => {
                 const testFrame = await frame();
                 const target = testFrame.locator(selector);
@@ -262,7 +265,13 @@ export default defineConfig({
                       performance.now() < deadline
                     );
                   }, ++events);
-                await page.mouse.down();
+                for (let count = 1; count < clickCount; count++) {
+                  await page.mouse.down({clickCount: count});
+                  await settle();
+                  await page.mouse.up({clickCount: count});
+                  await settle();
+                }
+                await page.mouse.down({clickCount});
                 await settle();
                 // Chromium collapses the selection at the pointer on the
                 // first drag move after a press that placed a caret, and

@@ -16,10 +16,11 @@ import {
   $isBlockFullySelected,
   $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   defineExtension,
+  type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
-import {isDecoratorBoundaryAnchorDOM} from 'lexical/src/LexicalDOMSlot';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
 import {userEvent} from 'vitest/browser';
 
@@ -102,14 +103,35 @@ function setup($children: () => LexicalNode[]) {
   return {editor, root};
 }
 
-// The reconciler parks a zero-size boundary anchor `<img>` before a block's
-// first child when that child is a decorator (#8922, #7158). It occupies a DOM
-// child slot but is not a Lexical child, so leave it out of DOM paths and
-// offsets computed from Lexical child indices.
-function childNodesWithoutAnchors(node: Node): Node[] {
-  return Array.from(node.childNodes).filter(
-    child => !isDecoratorBoundaryAnchorDOM(child),
-  );
+/**
+ * The DOM point for the Lexical point at `offset` in `node`: in the DOM text
+ * of a TextNode, or else beside the DOM of the element's children, since the
+ * editor can render DOM of its own between them (such as a zero-size anchor
+ * before a paragraph's leading decorator, #7158).
+ */
+function $getDOMPoint(
+  editor: LexicalEditor,
+  node: LexicalNode,
+  offset: number,
+): [Node, number] {
+  const dom = editor.getElementByKey(node.getKey());
+  assert(dom !== null, 'Expected the node to be rendered');
+  if ($isTextNode(node)) {
+    assert(dom.firstChild !== null, 'Expected the text to be rendered');
+    return [dom.firstChild, offset];
+  }
+  assert($isElementNode(node), 'Expected a text or element node');
+  const indexOf = (child: LexicalNode) => {
+    const childDOM = editor.getElementByKey(child.getKey());
+    assert(childDOM !== null, 'Expected the child to be rendered');
+    return Array.from(dom.childNodes).indexOf(childDOM);
+  };
+  const next = node.getChildAtIndex(offset);
+  if (next !== null) {
+    return [dom, indexOf(next)];
+  }
+  const last = node.getLastChild();
+  return [dom, last === null ? 0 : indexOf(last) + 1];
 }
 
 function domSelection() {
@@ -130,7 +152,7 @@ const cases = [
   {
     $children: () => [$createTextNode('Simple text')],
     endOffset: 11,
-    endPath: [0, 0],
+    endPath: [0],
     name: 'simple text',
   },
   {
@@ -139,7 +161,7 @@ const cases = [
       $createTextNode('text').toggleFormat('bold'),
     ],
     endOffset: 4,
-    endPath: [1, 0],
+    endPath: [1],
     name: 'formatted text',
   },
   {
@@ -147,13 +169,13 @@ const cases = [
       $createLinkNode('https://').append($createTextNode('link')),
     ],
     endOffset: 4,
-    endPath: [0, 0, 0],
+    endPath: [0, 0],
     name: 'inline element',
   },
   {
     $children: () => [new InlineDecoratorNode(), $createTextNode(' text')],
     endOffset: 5,
-    endPath: [1, 0],
+    endPath: [1],
     name: 'inline decorator, text',
   },
   {
@@ -169,7 +191,7 @@ const cases = [
       $createTextNode(' text'),
     ],
     endOffset: 5,
-    endPath: [2, 0],
+    endPath: [2],
     name: 'text, inline decorator, text',
   },
   {
@@ -188,7 +210,7 @@ const cases = [
       $createLinkNode('https://').append($createTextNode(' link')),
     ],
     endOffset: 5,
-    endPath: [1, 0, 0],
+    endPath: [1, 0],
     name: 'inline decorator, element',
   },
 ];
@@ -196,28 +218,23 @@ const cases = [
 describe('native select-all block expansion', () => {
   test.each(cases)('$name', async ({$children, endPath, endOffset}) => {
     const {editor, root} = setup($children);
-    const paragraph = root.lastElementChild!;
-    const childCount = editor.read('latest', () => {
-      const last = $getRoot().getLastChildOrThrow();
-      assert($isElementNode(last));
-      return last.getChildrenSize();
+    const [blockStart, blockEnd, end] = editor.read('latest', () => {
+      const paragraph = $getRoot().getLastChildOrThrow();
+      assert($isElementNode(paragraph));
+      const endNode = endPath.reduce<LexicalNode>((node, index) => {
+        assert($isElementNode(node));
+        const child = node.getChildAtIndex(index);
+        assert(child !== null);
+        return child;
+      }, paragraph);
+      return [
+        $getDOMPoint(editor, paragraph, 0),
+        $getDOMPoint(editor, paragraph, paragraph.getChildrenSize()),
+        $getDOMPoint(editor, endNode, endOffset),
+      ];
     });
-    const endNode = endPath.reduce<Node>(
-      (node, index) => childNodesWithoutAnchors(node)[index],
-      paragraph,
-    );
-    const leadingAnchors = Array.from(paragraph.childNodes).findIndex(
-      child => !isDecoratorBoundaryAnchorDOM(child),
-    );
     await selectAll();
-    await expect
-      .poll(domSelection)
-      .toEqual([
-        paragraph,
-        leadingAnchors,
-        paragraph,
-        childCount + leadingAnchors,
-      ]);
+    await expect.poll(domSelection).toEqual([...blockStart, ...blockEnd]);
     editor.read('latest', () => {
       const selection = $getSelection();
       assert($isRangeSelection(selection));
@@ -226,12 +243,7 @@ describe('native select-all block expansion', () => {
     await selectAll();
     await expect
       .poll(domSelection)
-      .toEqual([
-        root.firstElementChild!.firstChild!.firstChild!,
-        0,
-        endNode,
-        endOffset,
-      ]);
+      .toEqual([root.firstElementChild!.firstChild!.firstChild!, 0, ...end]);
     editor.read('latest', () => {
       const selection = $getSelection();
       assert($isRangeSelection(selection));

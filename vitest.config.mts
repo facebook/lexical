@@ -166,43 +166,123 @@ export default defineConfig({
               ) => {
                 const testFrame = await frame();
                 const target = testFrame.locator(selector);
-                // A person's mouse events arrive a frame or more apart, so the
-                // editor has handled the selectionchange from one before the
-                // next. Without this pause a busy machine can deliver the
-                // whole drag before the editor reacts to the mousedown, and
-                // the editor then writes back a selection the drag has
-                // already moved past.
-                const settle = () =>
-                  testFrame.evaluate(
-                    () =>
-                      new Promise<void>(resolve =>
-                        requestAnimationFrame(() => setTimeout(resolve, 0)),
-                      ),
-                  );
                 const [first, ...rest] = points;
                 await target.hover({
                   force: true,
                   position: {x: first[0], y: first[1]},
                 });
                 // hover() looks the element up, scrolls it into view and
-                // checks it on every call, which made each step of a drag
-                // several round trips. The element stays put during a drag,
-                // so move the mouse to page coordinates from its box instead.
+                // checks it on every call. The element stays put during a
+                // drag, so move the mouse to page coordinates from its box.
                 const box = await target.boundingBox();
                 if (box === null) {
                   throw new Error(
                     `mouseDrag target ${selector} is not visible`,
                   );
                 }
+                // A person's mouse events arrive far enough apart that the
+                // browser and the editor have handled each one, and the
+                // selection changes it caused, before the next. Count the
+                // pointer events the frame has dispatched, and remember the
+                // selection each selectionchange reported, so that each step
+                // can wait for exactly that instead of for a while.
+                await testFrame.evaluate(() => {
+                  const getPoints = () => {
+                    const selection = document.getSelection();
+                    return selection === null
+                      ? []
+                      : [
+                          selection.anchorNode,
+                          selection.anchorOffset,
+                          selection.focusNode,
+                          selection.focusOffset,
+                        ];
+                  };
+                  const state = {events: 0, notified: getPoints()};
+                  const onPointer = () => {
+                    state.events++;
+                  };
+                  const onSelectionChange = () => {
+                    state.notified = getPoints();
+                  };
+                  const types = ['pointerdown', 'pointermove', 'pointerup'];
+                  for (const type of types) {
+                    window.addEventListener(type, onPointer, true);
+                  }
+                  window.addEventListener(
+                    'selectionchange',
+                    onSelectionChange,
+                    true,
+                  );
+                  Object.assign(window, {
+                    __mouseDrag: {
+                      dispose() {
+                        for (const type of types) {
+                          window.removeEventListener(type, onPointer, true);
+                        }
+                        window.removeEventListener(
+                          'selectionchange',
+                          onSelectionChange,
+                          true,
+                        );
+                      },
+                      getPoints,
+                      state,
+                    },
+                  });
+                });
+                let events = 0;
+                // Wait until the frame has dispatched the step's pointer
+                // event, then until the tasks it queued have run (the editor
+                // adjusts a drag's selection in one) and no selectionchange
+                // is still to be dispatched and handled.
+                const settle = () =>
+                  testFrame.evaluate(async expected => {
+                    const {getPoints, state} = (
+                      window as unknown as {
+                        __mouseDrag: {
+                          getPoints: () => unknown[];
+                          state: {events: number; notified: unknown[]};
+                        };
+                      }
+                    ).__mouseDrag;
+                    const nextTask = () =>
+                      new Promise<void>(resolve => setTimeout(resolve, 0));
+                    const isPending = () =>
+                      getPoints().some(
+                        (value, i) => value !== state.notified[i],
+                      );
+                    // Never hang a test on an event the browser coalesced
+                    // or a selection that keeps changing.
+                    const deadline = performance.now() + 1000;
+                    do {
+                      await nextTask();
+                    } while (
+                      (state.events < expected || isPending()) &&
+                      performance.now() < deadline
+                    );
+                  }, ++events);
                 await page.mouse.down();
                 await settle();
                 // Chromium collapses the selection at the pointer on the
                 // first drag move after a press that placed a caret, and
                 // extends it from there, so a drag's anchor is where it first
-                // moved. A hand never jumps tens of pixels in one move, so
-                // move in steps of at most STEP pixels as it would.
-                const STEP = 5;
+                // moved. A hand starts a drag with a move of a pixel or two,
+                // so make the first move one; after that, move in steps of
+                // at most STEP pixels, half the width of the tests' inline
+                // decorators, so the pointer stops over each one it crosses.
+                const STEP = 20;
                 let [lastX, lastY] = first;
+                if (rest.length > 0) {
+                  const [x, y] = rest[0];
+                  const distance = Math.hypot(x - lastX, y - lastY);
+                  if (distance > 2) {
+                    lastX += ((x - lastX) * 2) / distance;
+                    lastY += ((y - lastY) * 2) / distance;
+                    await page.mouse.move(box.x + lastX, box.y + lastY);
+                    await settle();
+                  }
+                }
                 for (const [x, y] of rest) {
                   const steps = Math.max(
                     1,
@@ -218,6 +298,12 @@ export default defineConfig({
                   [lastX, lastY] = [x, y];
                 }
                 await page.mouse.up();
+                await settle();
+                await testFrame.evaluate(() =>
+                  (
+                    window as unknown as {__mouseDrag: {dispose: () => void}}
+                  ).__mouseDrag.dispose(),
+                );
               },
               // Vitest's keyboard descriptor parser splits non-BMP text into
               // UTF-16 code units. Native Playwright typing preserves code

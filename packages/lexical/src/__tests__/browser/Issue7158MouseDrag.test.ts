@@ -297,6 +297,8 @@ test('Issue #7158: a drag past the end of the line does not keep changing the se
   await commands.mouseDrag('#issue-7158-root', [
     [x, y],
     [x + 100, y + SIZE],
+    [x + 200, y + SIZE],
+    [x + 100, y + 2 * SIZE],
   ]);
   await vi.waitFor(() =>
     assert(
@@ -308,7 +310,7 @@ test('Issue #7158: a drag past the end of the line does not keep changing the se
     ),
   );
   // The press and the first move can each change the selection once; the
-  // other twenty or so moves must not.
+  // other fifteen or so moves must not.
   assert(
     selectionChanges <= 3,
     `expected at most 3 selection changes, got ${selectionChanges}`,

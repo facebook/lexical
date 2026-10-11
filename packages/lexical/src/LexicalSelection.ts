@@ -4054,7 +4054,10 @@ export function $updateDOMSelection(
       editor,
       nextFormat,
       nextStyle,
-      nextAnchorOffset,
+      // The Lexical offset, which onSelectionChange compares, rather than
+      // the DOM one, which also counts the DOM the editor renders between
+      // an element's children.
+      anchor.offset,
       anchor.key,
       performance.now(),
     );

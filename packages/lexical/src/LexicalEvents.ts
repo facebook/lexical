@@ -10,6 +10,7 @@ import type {InputState, LexicalCommand, LexicalEditor} from './LexicalEditor';
 import type {KeyboardShortcutMatch} from './LexicalKeyboardShortcuts';
 import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
+import type {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -103,6 +104,7 @@ import {
 } from './LexicalKeyboardShortcuts';
 import {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 import {
+  $createRangeSelectionFromDom,
   $internalCreateRangeSelection,
   type RangeSelection,
 } from './LexicalSelection';
@@ -424,9 +426,6 @@ function onSelectionChange(
     focusOffset,
   } = getDOMSelectionPoints(domSelection, editor._rootElement);
   const inputState = editor._inputState;
-  if (isActive && moveMousePressCaretOutOfInlineDecorator(editor)) {
-    return;
-  }
   if (inputState.isSelectionChangeFromDOMUpdate) {
     inputState.isSelectionChangeFromDOMUpdate = false;
     const appliedPoints = inputState.selectionChangeFromDOMUpdatePoints;
@@ -1182,8 +1181,13 @@ function $getMousePressDOMPoint(
   return $movePastInlineDecorators(
     editor,
     rootElement,
-    ...($getDOMPointBeforeLineStartDecorator(editor, node, clientX, clientY) ||
-      $getDOMPointOutsideInlineDecorator(editor, node, offset, clientX)),
+    ...($getDOMPointBesideLineBreakDecorator(
+      editor,
+      node,
+      offset,
+      clientX,
+      clientY,
+    ) || $getDOMPointOutsideInlineDecorator(editor, node, offset, clientX)),
     clientX,
     clientY,
   );
@@ -1229,53 +1233,63 @@ function getMouseClickCaret(
 }
 
 /**
- * While a mouse press is held, moves the caret that the browser put inside
- * the DOM of an inline decorator beside the press (Firefox does that for a
- * press before the decorator that starts a line) to the side of the
- * decorator that was pressed. Inside, the caret resolves to no selection, and
- * Lexical would then remove the DOM selection. Returns true when it moved
- * the caret, whose own selectionchange follows.
+ * Puts the caret of a mouse press tracked by `drag` that has not become a
+ * drag where the press belongs ({@link $getMousePressDOMPoint}), when the
+ * browser put it elsewhere: inside the DOM of an inline decorator beside the
+ * press, where it resolves to no selection (Firefox does that for a press
+ * before the decorator that starts a line), past an unselectable decorator
+ * that the press is before, or on another line. Returns the DOM selection
+ * when it moved the caret, and null otherwise.
  */
-function moveMousePressCaretOutOfInlineDecorator(
-  editor: LexicalEditor,
-): boolean {
-  const drag = editor._inputState.mouseSelectionDrag;
-  const caret = drag && getMouseClickCaret(editor, drag);
-  if (drag === null || caret === null) {
-    return false;
-  }
-  const {domSelection, node, offset} = caret;
-  const [nextNode, nextOffset] = editor.read('latest', () =>
-    $getDOMPointOutsideInlineDecorator(editor, node, offset, drag.clientX),
-  );
-  if (nextNode === node && nextOffset === offset) {
-    return false;
-  }
-  domSelection.setBaseAndExtent(nextNode, nextOffset, nextNode, nextOffset);
-  return true;
-}
-
-/**
- * Puts the caret of a mouse click (a press released before it became a
- * drag) where the press belongs ({@link $getMousePressDOMPoint}), when the
- * browser put it elsewhere.
- */
-function adjustMouseClickCaret(
+function moveMouseClickCaret(
   editor: LexicalEditor,
   drag: MouseSelectionDrag,
-): void {
+): Selection | null {
   const caret = getMouseClickCaret(editor, drag);
   const rootElement = editor.getRootElement();
   if (caret === null || rootElement === null) {
-    return;
+    return null;
   }
   const {domSelection, node, offset} = caret;
   const [nextNode, nextOffset] = editor.read('latest', () =>
     $getMousePressDOMPoint(editor, rootElement, node, offset, drag),
   );
-  if (nextNode !== node || nextOffset !== offset) {
-    domSelection.setBaseAndExtent(nextNode, nextOffset, nextNode, nextOffset);
+  if (nextNode === node && nextOffset === offset) {
+    return null;
   }
+  domSelection.setBaseAndExtent(nextNode, nextOffset, nextNode, nextOffset);
+  return domSelection;
+}
+
+/**
+ * Puts the caret of a mouse click (a press released before it became a
+ * drag) where the press belongs, as {@link onDocumentSelectionChange} already
+ * does while the press is held unless the press left the caret where it was,
+ * and takes it into the editor's selection: WebKit fires no selectionchange
+ * for a caret moved between DOM points that it takes for the same position,
+ * such as the two sides of an unselectable inline decorator. Beside a
+ * decorator, as after a selectionchange that puts the caret there, the
+ * selection keeps its format and takes no style.
+ */
+function adjustMouseClickCaret(
+  editor: LexicalEditor,
+  drag: MouseSelectionDrag,
+): void {
+  const domSelection = moveMouseClickCaret(editor, drag);
+  if (domSelection === null) {
+    return;
+  }
+  updateEditorSync(editor, () => {
+    const selection = $getSelection();
+    const nextSelection = $createRangeSelectionFromDom(domSelection, editor);
+    if (nextSelection !== null) {
+      if ($isRangeSelection(selection)) {
+        $updateSelectionFormatStyle(nextSelection, selection.format, '');
+      }
+      $setSelection(nextSelection);
+      $dispatchSelectionChangeCommand(editor, nextSelection);
+    }
+  });
 }
 
 /**
@@ -1341,9 +1355,10 @@ function adjustMouseSelectionDrag(
           if (focusNode === null) {
             return undefined;
           }
-          [focusNode, focusOffset] = $getDOMPointBeforeLineStartDecorator(
+          [focusNode, focusOffset] = $getDOMPointBesideLineBreakDecorator(
             editor,
             focusNode,
+            focusOffset,
             move.clientX,
             move.clientY,
           ) || [focusNode, focusOffset];
@@ -1442,20 +1457,25 @@ function $movePastInlineDecorators(
 }
 
 /**
- * The DOM point before the inline decorator that starts the line at
- * `clientY` after a line break (or starts the inline element that does), in
- * the block that holds `dom`, when the pointer at `clientX` is before that
- * decorator; null otherwise. A press or drag before such a decorator lands
- * elsewhere: Chromium puts it at the end of the line above, and WebKit at the
- * start of the block.
+ * The DOM point beside the inline decorator that starts a line after a line
+ * break, or ends one before a line break (or starts or ends the inline
+ * element that does), on the line at `clientY` in the block that holds the
+ * point at `offset` in `node`: before the first decorator or past the last
+ * one when the pointer at `clientX` is beyond it, and also when the browser
+ * put the point on another line; null otherwise. A press beside such a
+ * decorator can land on another line: Chromium puts one before the first
+ * decorator at the end of the line above, Firefox and WebKit at the start of
+ * the block, and WebKit puts one past the last decorator at the end of the
+ * line above.
  */
-function $getDOMPointBeforeLineStartDecorator(
+function $getDOMPointBesideLineBreakDecorator(
   editor: LexicalEditor,
-  dom: Node,
+  node: Node,
+  offset: number,
   clientX: number,
   clientY: number,
 ): [node: Node, offset: number] | null {
-  let block = $getNearestNodeFromDOMNode(dom);
+  let block = $getNearestNodeFromDOMNode(node);
   while (block !== null && !($isElementNode(block) && !block.isInline())) {
     block = block.getParent();
   }
@@ -1467,27 +1487,79 @@ function $getDOMPointBeforeLineStartDecorator(
     child !== null;
     child = child.getNextSibling()
   ) {
-    const next = $isLineBreakNode(child)
-      ? $getInlineEdgeNode(child.getNextSibling(), true)
-      : null;
-    const decoratorDOM =
-      $isDecoratorNode(next) && next.isInline()
-        ? editor.getElementByKey(next.getKey())
-        : null;
-    const parentDOM = decoratorDOM && decoratorDOM.parentNode;
-    if (decoratorDOM === null || parentDOM === null) {
+    if (!$isLineBreakNode(child)) {
       continue;
     }
-    const rect = getInlineDecoratorRect(decoratorDOM);
-    if (clientY >= rect.top && clientY <= rect.bottom) {
-      return (
-        isDOMRTL(editor, parentDOM) ? clientX > rect.right : clientX < rect.left
-      )
-        ? getDOMPointBeside(decoratorDOM, parentDOM, false)
+    for (const isLineStart of [true, false]) {
+      const edge = $getInlineEdgeNode(
+        isLineStart ? child.getNextSibling() : child.getPreviousSibling(),
+        isLineStart,
+      );
+      const decoratorDOM =
+        $isDecoratorNode(edge) && edge.isInline()
+          ? editor.getElementByKey(edge.getKey())
+          : null;
+      const parentDOM = decoratorDOM && decoratorDOM.parentNode;
+      if (decoratorDOM === null || parentDOM === null) {
+        continue;
+      }
+      const rect = getInlineDecoratorRect(decoratorDOM);
+      if (clientY < rect.top || clientY > rect.bottom) {
+        continue;
+      }
+      const isBeyond =
+        isLineStart !== isDOMRTL(editor, parentDOM)
+          ? clientX < rect.left
+          : clientX > rect.right;
+      return isBeyond ||
+        !$isDOMPointOnLine(editor, node, offset, child, isLineStart)
+        ? getDOMPointBeside(decoratorDOM, parentDOM, !isLineStart)
         : null;
     }
   }
   return null;
+}
+
+/**
+ * Whether the DOM point at `offset` in `node` is on the line that
+ * `lineBreak` starts (or, when `isLineStart` is false, ends): after the line
+ * break before that line, if any, and before the one after it, if any.
+ */
+function $isDOMPointOnLine(
+  editor: LexicalEditor,
+  node: Node,
+  offset: number,
+  lineBreak: LineBreakNode,
+  isLineStart: boolean,
+): boolean {
+  let other: LexicalNode | null = lineBreak;
+  do {
+    other = isLineStart ? other.getNextSibling() : other.getPreviousSibling();
+  } while (other !== null && !$isLineBreakNode(other));
+  const lineBreakDOM = editor.getElementByKey(lineBreak.getKey());
+  const otherDOM = other && editor.getElementByKey(other.getKey());
+  if (lineBreakDOM === null) {
+    return true;
+  }
+  const point = lineBreakDOM.ownerDocument.createRange();
+  point.setStart(node, offset);
+  point.collapse(true);
+  // Whether the line's edge beside the line break `dom` (after it when
+  // `isAfter`) leaves the point outside the line. comparePoint is positive
+  // for a DOM point after the point, and negative for one before it.
+  const isOutside = (dom: HTMLElement | null, isAfter: boolean): boolean => {
+    const parentDOM = dom && dom.parentNode;
+    if (dom === null || parentDOM === null) {
+      return false;
+    }
+    const comparison = point.comparePoint(
+      ...getDOMPointBeside(dom, parentDOM, isAfter),
+    );
+    return isAfter ? comparison > 0 : comparison < 0;
+  };
+  return (
+    !isOutside(lineBreakDOM, isLineStart) && !isOutside(otherDOM, !isLineStart)
+  );
 }
 
 /**
@@ -3048,6 +3120,14 @@ function onDocumentSelectionChange(event: Event): void {
   }
   if (nextActiveEditor === null) {
     return;
+  }
+
+  const drag = nextActiveEditor._inputState.mouseSelectionDrag;
+  if (drag !== null && moveMouseClickCaret(nextActiveEditor, drag) !== null) {
+    // The editor takes the caret where the press belongs from this
+    // selectionchange, rather than from the one that moving it causes, which
+    // WebKit does not fire when it takes both points for the same position.
+    resolvedAnchorNode = null;
   }
 
   if (nextActiveEditor._inputState.isSelectionChangeFromMouseDown) {

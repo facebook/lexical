@@ -761,47 +761,63 @@ describe('Issue #7158: mouse drag over inline decorators that hold a nested edit
 // A click beside the first or last inline decorator of a line puts the caret
 // beside it, not inside its contentEditable=false DOM, where it would resolve
 // to no selection at all; with a caret elsewhere already, Lexical would then
-// remove the DOM selection too.
-describe.each([
-  ['inline decorators', ImageLikeDecoratorNode, false],
-  ['unselectable boxed inline decorators', BoxedImageDecoratorNode, false],
-  [
-    'selectable boxed inline decorators',
-    SelectableBoxedImageDecoratorNode,
-    false,
-  ],
+// remove the DOM selection too. On a line between line breaks, it also stays
+// on that line rather than going to the end of the line above or the start of
+// the line below.
+const BETWEEN_LINE_BREAKS = {leadingLine: 'above', trailingLine: 'below'};
+describe.each<[string, DecoratorClass, MountOptions]>([
+  ['inline decorators', ImageLikeDecoratorNode, {}],
+  ['unselectable boxed inline decorators', BoxedImageDecoratorNode, {}],
+  ['selectable boxed inline decorators', SelectableBoxedImageDecoratorNode, {}],
   [
     'unselectable boxed inline decorators each in an inline element',
     BoxedImageDecoratorNode,
-    true,
+    {inInlineElements: true},
   ],
-])('Issue #7158: mouse click beside %s', (_name, klass, inInlineElements) => {
+  [
+    'inline decorators on a line between line breaks',
+    ImageLikeDecoratorNode,
+    BETWEEN_LINE_BREAKS,
+  ],
+  [
+    'unselectable boxed inline decorators on a line between line breaks',
+    BoxedImageDecoratorNode,
+    BETWEEN_LINE_BREAKS,
+  ],
+  [
+    'unselectable boxed inline decorators each in an inline element on a line between line breaks',
+    BoxedImageDecoratorNode,
+    {...BETWEEN_LINE_BREAKS, inInlineElements: true},
+  ],
+])('Issue #7158: mouse click beside %s', (_name, klass, options) => {
+  // The paragraph offset of the line's first decorator: after the leading
+  // line's text and line break.
+  const first = options.leadingLine !== undefined ? 2 : 0;
+  // The caret before the click, as an offset among the line's decorators,
+  // if any: at the other end of the line, or beside the decorator clicked
+  // next to, where the browser can leave it for the click.
   test.each([
-    ['', 'left of the first', 'start', 0, false],
-    ['', 'right of the last', 'end', COUNT, false],
-    ['with a caret at the other end, ', 'left of the first', 'start', 0, true],
-    [
-      'with a caret at the other end, ',
-      'right of the last',
-      'end',
-      COUNT,
-      true,
-    ],
+    ['', 'left of the first', 'start', 0, null],
+    ['', 'right of the last', 'end', COUNT, null],
+    ['with a caret at the other end, ', 'left of the first', 'start', 0, COUNT],
+    ['with a caret at the other end, ', 'right of the last', 'end', COUNT, 0],
+    ['with a caret after it, ', 'left of the first', 'start', 0, 1],
+    ['with a caret before it, ', 'right of the last', 'end', COUNT, COUNT - 1],
   ])(
     '%sa click %s decorator puts the caret at the %s of the line',
-    async (_caret, _side, _edge, offset, hasCaret) => {
-      const {editor, left, pointerLog, right, root, y} = mount(false, klass, {
-        inInlineElements,
-      });
-      if (hasCaret) {
+    async (_caret, _side, _edge, offset, caretOffset) => {
+      const {editor, left, pointerLog, right, root, y} = mount(
+        false,
+        klass,
+        options,
+      );
+      if (caretOffset !== null) {
         root.focus();
         editor.update(
           () => {
-            if (offset === 0) {
-              $getRoot().selectEnd();
-            } else {
-              $getRoot().selectStart();
-            }
+            const paragraph = $getRoot().getFirstChild();
+            assert($isParagraphNode(paragraph), 'expected the paragraph');
+            paragraph.select(first + caretOffset, first + caretOffset);
           },
           {discrete: true},
         );
@@ -812,8 +828,8 @@ describe.each([
       // In an inline element at the edge of the line, the caret can also be
       // at the edge of that element.
       const carets = [
-        `paragraph:${offset}`,
-        ...(inInlineElements
+        `paragraph:${first + offset}`,
+        ...(options.inInlineElements
           ? [`test_7158_inline_wrapper:${offset === 0 ? 0 : 1}`]
           : []),
       ];

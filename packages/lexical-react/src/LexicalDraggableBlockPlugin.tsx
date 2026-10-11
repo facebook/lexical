@@ -253,12 +253,13 @@ function setMenuPosition(
 function setDragImage(
   dataTransfer: DataTransfer,
   draggableBlockElem: HTMLElement,
+  offset: {x: number; y: number} = {x: 0, y: 0},
 ) {
   const {transform} = draggableBlockElem.style;
 
   // Remove dragImage borders
   draggableBlockElem.style.transform = 'translateZ(0)';
-  dataTransfer.setDragImage(draggableBlockElem, 0, 0);
+  dataTransfer.setDragImage(draggableBlockElem, offset.x, offset.y);
 
   setTimeout(() => {
     draggableBlockElem.style.transform = transform;
@@ -311,6 +312,7 @@ function useDraggableBlockMenu(
   targetLineComponent: ReactNode,
   isOnMenu: (element: HTMLElement) => boolean,
   onElementChanged?: (element: HTMLElement | null) => void,
+  dragImageOffset?: {x: number; y: number},
 ): JSX.Element {
   const scrollerElem = getParentElement(anchorElem);
 
@@ -535,7 +537,7 @@ function useDraggableBlockMenu(
       return;
     }
 
-    setDragImage(dataTransfer, draggableBlockElem);
+    setDragImage(dataTransfer, draggableBlockElem, dragImageOffset);
     let nodeKey = '';
     editor.update(() => {
       const node = $getNearestNodeFromDOMNode(draggableBlockElem);
@@ -586,6 +588,8 @@ function useDraggableBlockMenu(
 
 export interface DraggableBlockPluginProps {
   anchorElem?: HTMLElement;
+  /** Offset from the drag image's top-left corner. Defaults to `{x: 0, y: 0}`. */
+  dragImageOffset?: {x: number; y: number};
   isOnMenu: (element: HTMLElement) => boolean;
   menuComponent: ReactNode;
   menuRef: React.RefObject<HTMLElement | null>;
@@ -613,6 +617,7 @@ export function DraggableBlockPlugin_EXPERIMENTAL({
   targetLineComponent,
   isOnMenu,
   onElementChanged,
+  dragImageOffset,
 }: DraggableBlockPluginProps): JSX.Element {
   const [editor] = useLexicalComposerContext();
   // Subscribed rather than read off the editor, so that setEditable() actually
@@ -629,5 +634,6 @@ export function DraggableBlockPlugin_EXPERIMENTAL({
     targetLineComponent,
     isOnMenu,
     onElementChanged,
+    dragImageOffset,
   );
 }

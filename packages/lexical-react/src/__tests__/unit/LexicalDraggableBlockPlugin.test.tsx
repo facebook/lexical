@@ -39,7 +39,13 @@ describe('DraggableBlockPlugin_EXPERIMENTAL', () => {
     document.body.removeChild(container);
   });
 
-  function Test({editorRef}: {editorRef: React.RefObject<LexicalEditor>}) {
+  function Test({
+    dragImageOffset,
+    editorRef,
+  }: {
+    dragImageOffset?: {x: number; y: number};
+    editorRef: React.RefObject<LexicalEditor>;
+  }) {
     const menuRef = React.useRef<HTMLDivElement | null>(null);
     const targetLineRef = React.useRef<HTMLDivElement | null>(null);
     return (
@@ -57,6 +63,7 @@ describe('DraggableBlockPlugin_EXPERIMENTAL', () => {
         />
         <DraggableBlockPlugin_EXPERIMENTAL
           anchorElem={anchorElem}
+          dragImageOffset={dragImageOffset}
           menuRef={menuRef}
           targetLineRef={targetLineRef}
           menuComponent={<div ref={menuRef} className={MENU_CLASS} />}
@@ -71,13 +78,16 @@ describe('DraggableBlockPlugin_EXPERIMENTAL', () => {
     return anchorElem.querySelector(`.${MENU_CLASS}`) !== null;
   }
 
-  async function getDragImageCall(): Promise<
-    Parameters<DataTransfer['setDragImage']>
-  > {
+  async function getDragImageCall(dragImageOffset?: {
+    x: number;
+    y: number;
+  }): Promise<Parameters<DataTransfer['setDragImage']>> {
     const editorRef =
       createRef<LexicalEditor>() as React.RefObject<LexicalEditor>;
     await act(async () => {
-      reactRoot.render(<Test editorRef={editorRef} />);
+      reactRoot.render(
+        <Test editorRef={editorRef} dragImageOffset={dragImageOffset} />,
+      );
     });
 
     const blockElem = container.querySelector('[contenteditable] > p');
@@ -172,5 +182,12 @@ describe('DraggableBlockPlugin_EXPERIMENTAL', () => {
     const [, x, y] = await getDragImageCall();
 
     expect([x, y]).toEqual([0, 0]);
+  });
+
+  it('uses the configured drag image offset', async () => {
+    const [blockElem, x, y] = await getDragImageCall({x: 17, y: 23});
+
+    expect(blockElem).toBe(container.querySelector('[contenteditable] > p'));
+    expect([x, y]).toEqual([17, 23]);
   });
 });

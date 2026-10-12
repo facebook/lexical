@@ -336,6 +336,11 @@ function $createZeroImg(
   return img;
 }
 
+/** Whether `node` is the `<br>` of a managed line break. */
+function isManagedBreakDOM(node: Node | null): node is HTMLBRElement {
+  return isManagedLineBreakDOM(node) && node.nodeName === 'BR';
+}
+
 /**
  * A utility class for managing the DOM children of an ElementNode.
  *
@@ -537,14 +542,34 @@ export class ElementDOMSlot<
   }
   /** @internal */
   insertManagedLineBreak(withEdgeImg: boolean): void {
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
     const prevBreak = this.getManagedLineBreak();
     if (prevBreak) {
-      if (withEdgeImg === (prevBreak.nodeName === 'IMG')) {
+      const hasEdgeImg = prevBreak.nodeName === 'IMG';
+      if (withEdgeImg === hasEdgeImg) {
+        return;
+      }
+      // Only add or remove the <img>, and keep the <br> where it is. The
+      // browser can hold a caret that the user put before the <br> relative
+      // to it, and removing the <br> pins that caret to a fixed offset.
+      // Chromium then takes the editor's next selection at that offset for
+      // the one it already has, and sets nothing, so a commit from outside
+      // the editor (a toolbar or a dialog inserting an inline decorator)
+      // does not focus the root.
+      if (withEdgeImg) {
+        const img = $createZeroImg(DATA_LEXICAL_MANAGED_LINEBREAK);
+        element.insertBefore(img, prevBreak);
+        element.__lexicalLineBreak = img;
+        return;
+      }
+      const br = prevBreak.nextSibling;
+      if (isManagedBreakDOM(br)) {
+        element.removeChild(prevBreak);
+        element.__lexicalLineBreak = br;
         return;
       }
       this.removeManagedLineBreak();
     }
-    const element: HTMLElement & LexicalPrivateDOM = this.element;
     // Stay inside the trailing decorator boundary anchor, which marks the very
     // end of the managed range.
     const before = this.before || this.getDecoratorBoundaryAnchor('trailing');

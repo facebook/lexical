@@ -35,13 +35,17 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
+  $insertNodes,
   $isElementNode,
   $isParagraphNode,
+  $isRangeSelection,
   DecoratorNode,
   ElementNode,
+  registerEventListener,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
-import {server} from 'vitest/browser';
+import {server, userEvent} from 'vitest/browser';
 
 import {$assertNodeType} from '../utils/assertNodeType';
 
@@ -274,6 +278,9 @@ describe('managed-linebreak img hack (inline decorator last child)', () => {
     );
     expect(linebreakScaffold(contentEditable)).toEqual(DECORATOR_LINEBREAK);
 
+    const br = contentEditable.querySelector(
+      'p br[data-lexical-managed-linebreak="true"]',
+    );
     editor.update(
       () => {
         $assertNodeType($getRoot().getFirstChildOrThrow(), $isParagraphNode)
@@ -284,13 +291,75 @@ describe('managed-linebreak img hack (inline decorator last child)', () => {
     );
 
     expect(linebreakScaffold(contentEditable)).toEqual(['br']);
+    // Only the img goes; the br stays, as the next test needs.
+    expect(
+      contentEditable.querySelector(
+        'p br[data-lexical-managed-linebreak="true"]',
+      ),
+    ).toBe(br);
+  });
+
+  // Chromium holds a caret that the keyboard moved into an empty block
+  // relative to the block's br. Had the scaffold replaced that br to add its
+  // img, the caret would be pinned to the offset where the editor then puts
+  // the selection after the decorator, and Chromium would take setting it
+  // for no change and leave the focus where it was (#6870).
+  test('an inline decorator inserted from outside the editor at a caret the user put focuses the editor', async () => {
+    const {contentEditable, editor} = mountEditor();
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append($createTextNode('text')),
+            $createParagraphNode(),
+          )
+          .getFirstChildOrThrow()
+          .selectEnd();
+      },
+      {discrete: true},
+    );
+    contentEditable.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    const emptyKey = editor.read('latest', () =>
+      $getRoot().getLastChildOrThrow().getKey(),
+    );
+    await expect
+      .poll(() =>
+        editor.read('latest', () => {
+          const selection = $getSelection();
+          return $isRangeSelection(selection) ? selection.anchor.key : null;
+        }),
+      )
+      .toBe(emptyKey);
+
+    // Like a toolbar dialog: the button that inserts the decorator is gone,
+    // and the focus with it, by the time the editor commits.
+    const button = document.createElement('button');
+    button.textContent = 'Insert';
+    contentEditable.after(button);
+    onTestFinished(
+      registerEventListener(button, 'click', () => {
+        editor.update(() => {
+          $insertNodes([$create(TestInlineDecoratorNode)]);
+        });
+        button.remove();
+      }),
+    );
+    await userEvent.click(button);
+
+    await expect.poll(() => document.activeElement).toBe(contentEditable);
+    expect(paragraphShape(contentEditable, 1)).toEqual([
+      'decorator',
+      ...DECORATOR_LINEBREAK.map(tag => `managed-${tag}`),
+    ]);
   });
 });
 
 /** The paragraph's DOM children, with the reconciler's scaffolding named. */
-function paragraphShape(contentEditable: HTMLElement): string[] {
-  const paragraph = contentEditable.querySelector('p');
-  assert(paragraph !== null);
+function paragraphShape(contentEditable: HTMLElement, index = 0): string[] {
+  const paragraph = contentEditable.querySelectorAll('p')[index];
+  assert(paragraph !== undefined);
   return Array.from(paragraph.childNodes, node => {
     assert(node instanceof Element);
     if (node.hasAttribute('data-lexical-decorator-boundary')) {

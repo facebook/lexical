@@ -1058,6 +1058,10 @@ i.page-setup,
   .code-language .dropdown-button-text {
     display: flex !important;
   }
+
+  .vertical-align .dropdown-button-text {
+    display: flex !important;
+  }
 }
 
 .icon.paragraph {

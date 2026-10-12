@@ -326,17 +326,20 @@ editor.registerUpdateListener(({editorState}) => {
 ### Reading the document tree
 
 Start from `$getRoot()` and use node methods inside a read to inspect the
-document. For example, this returns a summary of each top-level block:
+document. For example, this reads the latest committed editor state and
+returns a summary of each top-level block:
 
 ```js
 import {$getRoot} from 'lexical';
 
-const blocks = editor.read('force-commit', () =>
-  $getRoot().getChildren().map(node => ({
-    key: node.getKey(),
-    text: node.getTextContent(),
-    type: node.getType(),
-  })),
+const blocks = editor.getEditorState().read(() =>
+  $getRoot()
+    .getChildren()
+    .map(node => ({
+      key: node.getKey(),
+      text: node.getTextContent(),
+      type: node.getType(),
+    })),
 );
 ```
 
@@ -351,20 +354,17 @@ outside a read or update is not supported.
 
 A node key identifies a node within the editor. Keep the key when you need to
 find that node in a later update, and resolve it with `$getNodeByKey()` inside
-that update. For example, to change the first text node:
+that update. This helper updates a text node using a key captured earlier
+with `node.getKey()` inside a read or update:
 
 ```js
-import {$getNodeByKey, $getRoot, $isTextNode} from 'lexical';
+import {$getNodeByKey, $isTextNode} from 'lexical';
 
-const nodeKey = editor.read('force-commit', () =>
-  $getRoot().getAllTextNodes()[0]?.getKey(),
-);
-
-if (nodeKey !== undefined) {
+function updateTextNode(nodeKey, textContent) {
   editor.update(() => {
     const node = $getNodeByKey(nodeKey);
     if ($isTextNode(node)) {
-      node.setTextContent('Updated text');
+      node.setTextContent(textContent);
     }
   });
 }

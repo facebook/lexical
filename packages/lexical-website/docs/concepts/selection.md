@@ -127,6 +127,34 @@ editor.update(() => {
 });
 ```
 
+## Inserting nodes
+
+Use `selection.insertNodes()` inside an update or command listener to
+replace selected content with new nodes. With a collapsed selection, it
+inserts the nodes at the caret instead.
+
+This example inserts text for a `RangeSelection`:
+
+```js
+import {$createTextNode, $getSelection, $isRangeSelection} from 'lexical';
+
+editor.update(() => {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection)) {
+    selection.insertNodes([$createTextNode('Inserted text')]);
+  }
+});
+```
+
+Create the new nodes inside the update, where Lexical's active editor state
+is available. If there is no selection, or it is a `NodeSelection` or
+`TableSelection`, this example does nothing. Choose the appropriate
+selection explicitly when your application needs to insert at a different
+location; see the selection methods above.
+
+For edits to a specific existing node, see
+[Updating a node by key](./editor-state.md#updating-a-node-by-key).
+
 ## Focus
 
 You may notice that when you issue an `editor.update` or

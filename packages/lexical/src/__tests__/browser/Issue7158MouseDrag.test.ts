@@ -469,24 +469,42 @@ describe.each([
 
 /**
  * Records each selection change of `editor`, with the selection it changed to
- * in Lexical and in the DOM, so that a test that counts them can tell a
- * change the browser made from one the editor made back.
+ * in Lexical and in the DOM, and how many pointer events the document had
+ * dispatched by then.
  */
-function recordSelectionChanges(editor: LexicalEditor): string[] {
-  const changes: string[] = [];
+function recordSelectionChanges(
+  editor: LexicalEditor,
+): {description: string; pointerEvents: number}[] {
+  const changes: {description: string; pointerEvents: number}[] = [];
+  let pointerEvents = 0;
+  const countPointerEvent = () => {
+    pointerEvents++;
+  };
+  onTestFinished(
+    registerEventListeners(
+      document,
+      {
+        pointerdown: countPointerEvent,
+        pointermove: countPointerEvent,
+        pointerup: countPointerEvent,
+      },
+      true,
+    ),
+  );
   onTestFinished(
     editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
       () => {
         const selection = $getSelection();
-        changes.push(
-          `${
+        changes.push({
+          description: `${
             $isRangeSelection(selection)
               ? `${selection.anchor.key}:${selection.anchor.offset}->` +
                 `${selection.focus.key}:${selection.focus.offset}`
               : String(selection)
           } (dom ${describeDOMSelection(getDOMSelection(window))})`,
-        );
+          pointerEvents,
+        });
         return false;
       },
       COMMAND_PRIORITY_CRITICAL,
@@ -495,15 +513,32 @@ function recordSelectionChanges(editor: LexicalEditor): string[] {
   return changes;
 }
 
-function assertSelectionChangesAtMost(
-  changes: string[],
-  max: number,
+/**
+ * Asserts that no pointer event changed the selection more than once, which
+ * is what a selection that the editor and the browser keep moving back and
+ * forth looks like. How often a drag changes the selection while following
+ * the pointer depends on the browser, so that is not counted: above a line,
+ * Linux Firefox keeps a drag's focus at the start of the line, and macOS
+ * Firefox puts it under the pointer.
+ */
+function assertOneSelectionChangePerPointerEvent(
+  changes: {description: string; pointerEvents: number}[],
   pointerLog: string[],
 ): void {
+  const repeated = changes.filter(
+    ({pointerEvents}, i) =>
+      i > 0 && changes[i - 1].pointerEvents === pointerEvents,
+  );
   assert(
-    changes.length <= max,
-    `expected at most ${max} selection changes, got ${changes.length}: ` +
-      `${changes.join(', ')}; pointer ${pointerLog.join(' ')}`,
+    repeated.length === 0,
+    `expected at most one selection change per pointer event, got ` +
+      changes
+        .map(
+          ({description, pointerEvents}) =>
+            `${description} after pointer event ${pointerEvents}`,
+        )
+        .join(', ') +
+      `; pointer ${pointerLog.join(' ')}`,
   );
 }
 
@@ -531,16 +566,13 @@ async function dragPastLineEnd() {
       'expected a collapsed selection',
     ),
   );
-  // Chromium changes the selection twice here (on the press and on the first
-  // move) and Firefox and WebKit once. Allow one more than that, since this
-  // checks for a change on every move, which would be about a dozen.
-  assertSelectionChangesAtMost(changes, 3, pointerLog);
+  assertOneSelectionChangePerPointerEvent(changes, pointerLog);
 }
 
 // As at the end of the line, a drag above the start of a line that starts with
-// an inline decorator must not change the selection on every move. Firefox
-// puts the focus of each move inside the first decorator, which the editor
-// moves beside it.
+// an inline decorator must not change the selection back and forth. Firefox
+// puts the focus of each move inside a decorator, which the editor moves
+// beside it.
 async function dragPastLineStart() {
   const {editor, left, pointerLog, y} = mount(false, ImageLikeDecoratorNode);
   const changes = recordSelectionChanges(editor);
@@ -552,18 +584,9 @@ async function dragPastLineStart() {
     [x + 100, y - SIZE],
     [x + 50, y - SIZE / 2],
   ]);
-  await vi.waitFor(() =>
-    assert(
-      editor.read('latest', () => {
-        const selection = $getSelection();
-        return $isRangeSelection(selection);
-      }),
-      'expected a RangeSelection',
-    ),
-  );
-  // The press, the first move past the middle of the first decorator, and
-  // the return to the line: three in Firefox, two in Chromium and WebKit.
-  assertSelectionChangesAtMost(changes, 3, pointerLog);
+  // The drag ends over the right half of the second decorator.
+  await expectSelectedDecoratorCount(editor, 2, pointerLog);
+  assertOneSelectionChangePerPointerEvent(changes, pointerLog);
 }
 
 test(

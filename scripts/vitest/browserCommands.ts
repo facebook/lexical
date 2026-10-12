@@ -96,8 +96,8 @@ async function mouseDrag(
   });
   let events = 0;
   // Wait until the frame has dispatched the step's pointer event, then until
-  // the tasks it queued have run (the editor adjusts a drag's selection in
-  // one) and no selectionchange is still to be dispatched and handled.
+  // the tasks it queued have run and no selectionchange is still to be
+  // dispatched and handled.
   const settle = async (step: string) => {
     const result = await tracker.evaluate(async (state, expected) => {
       const nextTask = () =>

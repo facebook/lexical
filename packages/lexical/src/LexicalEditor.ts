@@ -307,30 +307,28 @@ export interface InputState {
    * A single primary-button mouse press in the root element that may start a
    * text selection drag, from its pointerdown until the next pointerdown,
    * pointerup or pointercancel anywhere in its document, the window losing
-   * focus, or a drag and drop: where it was pressed, the DOM anchor of its
-   * selection once the pointer has crossed the drag threshold, with what that
-   * point was next to (false when the anchor is outside this editor, the DOM
-   * there has changed since, or something else has taken over the
-   * selection), whether Lexical has changed the drag's selection, whether
-   * Shift made the press extend the selection rather than start a new one,
-   * the press's pointerdown and mousedown events, to tell whether anything
-   * cancelled the press, and the latest pointer move not yet handled. Only
-   * tracked on the engines whose mouse drags Lexical extends across inline
-   * decorators, and not for a press that drags a non-collapsed selection, a
-   * cancelled press, or a double or triple click; null otherwise.
+   * focus, or a drag and drop: the DOM anchor of its selection once the pointer
+   * has crossed the drag threshold, with what that point was next to (false
+   * when the anchor is outside this editor, the DOM there has changed since, or
+   * something else has taken over the selection), whether Lexical has changed
+   * the drag's selection, the press's pointerdown and mousedown events (where
+   * it was pressed, with Shift or not, and whether anything cancelled it), the
+   * node it was pressed on, and its latest pointer move inside the root element
+   * once it is a drag. Only tracked on the engines whose mouse drags Lexical
+   * extends across inline decorators, and not for a press that drags a
+   * non-collapsed selection, a cancelled press, or a double or triple click;
+   * null otherwise.
    */
   mouseSelectionDrag: null | {
     anchor:
       | null
       | false
       | [node: Node, offset: number, context: Node | string | null];
-    clientX: number;
-    clientY: number;
     hasExtended: boolean;
-    isExtending: boolean;
     mouseDown: MouseEvent | null;
-    pendingMove: null | {clientX: number; clientY: number; target: Node};
+    move: null | {clientX: number; clientY: number; target: Node};
     pointerDown: PointerEvent;
+    target: Node;
   };
   /**
    * The pointerType of the latest pointerdown in the root element ('touch',

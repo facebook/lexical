@@ -47,7 +47,7 @@ import {
   registerEventListeners,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';
+import {assert, describe, onTestFinished, test, vi} from 'vitest';
 import {commands, server} from 'vitest/browser';
 
 import {$assertNodeType} from '../utils/assertNodeType';
@@ -598,74 +598,24 @@ test(
   dragPastLineStart,
 );
 
-/**
- * Runs `fn` with the task in which the editor adjusts each pointer move of a
- * drag, once the browser has moved the selection for it, running `delay` ms
- * late, as on a busy runner: what the move schedules without a delay while
- * it is dispatched. The browser's selectionchange for the move, the next
- * move, and the release then come first.
- */
-function withLateDragAdjustments(fn: () => Promise<void>, delay = 30) {
-  return async () => {
-    let isDispatchingMove = false;
-    onTestFinished(
-      registerEventListener(
-        window,
-        'pointermove',
-        () => {
-          isDispatchingMove = true;
-        },
-        true,
-      ),
-    );
-    onTestFinished(
-      registerEventListener(window, 'pointermove', () => {
-        isDispatchingMove = false;
-      }),
-    );
-    const realSetTimeout = window.setTimeout;
-    const spy = vi
-      .spyOn(window, 'setTimeout')
-      .mockImplementation((handler, timeout, ...args) =>
-        realSetTimeout.call(
-          window,
-          handler,
-          isDispatchingMove && !timeout ? delay : timeout,
-          ...args,
-        ),
-      );
-    onTestFinished(() => spy.mockRestore());
-    await fn();
-  };
-}
-
-describe('Issue #7158: mouse drags that the editor adjusts after the browser reports them', () => {
-  test(
-    'a drag past the end of the line does not keep changing the selection',
-    withLateDragAdjustments(dragPastLineEnd),
+// Once a drag leaves the root element, the browser alone follows the pointer:
+// the editor must not keep putting the focus where the last move inside the
+// root was, as each selectionchange would. The drag moves in steps over the
+// decorators, then jumps from over the third one out of the right of the
+// root, where the browser puts the focus at the end of the line, so the
+// selection collapses there.
+test('Issue #7158: a drag that leaves the root element is left to the browser', async () => {
+  const {editor, left, pointerLog, right, root, y} = mount(
+    false,
+    ImageLikeDecoratorNode,
   );
-  test(
-    'a drag past the start of the line does not keep changing the selection',
-    withLateDragAdjustments(dragPastLineStart),
-  );
-  test(
-    'a drag from left of the first decorator selects to the end of the line',
-    withLateDragAdjustments(dragFromLineStart(ImageLikeDecoratorNode, false)),
-  );
-  test(
-    'a drag from right of the last decorator selects back to the third',
-    withLateDragAdjustments(dragFromLineEnd(ImageLikeDecoratorNode, false)),
-  );
-  test(
-    'with text between unselectable decorators, a drag from left of the first text selects to the end of the line',
-    withLateDragAdjustments(dragFromLineStart(BoxedImageDecoratorNode, true)),
-  );
-  test(
-    'over unselectable decorators each in an inline element, a drag from right of the last decorator selects back to the third',
-    withLateDragAdjustments(
-      dragFromLineEnd(BoxedImageDecoratorNode, false, {inInlineElements: true}),
-    ),
-  );
+  const points: [x: number, y: number][] = [];
+  for (let x = right(COUNT - 1) + 30; x > left(2) + 5; x -= SIZE / 2) {
+    points.push([x, y]);
+  }
+  points.push([left(2) + 5, y], [root.getBoundingClientRect().width + 5, y]);
+  await commands.mouseDrag('#issue-7158-root', [points[0], ...points.slice(1)]);
+  await expectSelectedDecoratorCount(editor, 0, pointerLog);
 });
 
 // No engine extends a drag across these decorators by itself, so these
@@ -1369,55 +1319,5 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     const move = mousePointerInit(root, left(COUNT - 1) - 2, y);
     elementAt(move).dispatchEvent(new PointerEvent('pointermove', move));
     await expectSelectedDecoratorCount(editor, 1, pointerLog);
-  });
-
-  // The browser moves a drag's selection in each move's default action, and
-  // the drag adjusts it after that, so the moves that arrive before it has
-  // do not each adjust it, with a position that is already stale.
-  test('moves that arrive before the drag adjusts adjust it once, for the latest', async () => {
-    const {editor, left, root, textRect, y} = mount(
-      false,
-      BoxedImageDecoratorNode,
-      {trailingText: ' hello world'},
-    );
-    root.focus();
-    editor.update(
-      () => {
-        $getRoot().selectEnd();
-      },
-      {discrete: true},
-    );
-    const world = textRect('world');
-    const press = mousePointerInit(
-      root,
-      (world.left + world.right) / 2,
-      (world.top + world.bottom) / 2,
-    );
-    const target = elementAt(press);
-    target.dispatchEvent(new PointerEvent('pointerdown', press));
-    target.dispatchEvent(
-      new PointerEvent('pointermove', {
-        ...press,
-        clientX: (press.clientX ?? 0) - 10,
-      }),
-    );
-    assert(
-      Array.isArray(editor._inputState.mouseSelectionDrag?.anchor),
-      'the press never became a selection drag',
-    );
-    const spy = vi.spyOn(Selection.prototype, 'extend');
-    onTestFinished(() => spy.mockRestore());
-    // The left half of the third decorator, then its right half.
-    for (const x of [left(3) + 5, left(3) + SIZE - 5]) {
-      const move = mousePointerInit(root, x, y);
-      elementAt(move).dispatchEvent(new PointerEvent('pointermove', move));
-    }
-    await new Promise(resolve => setTimeout(resolve, 0));
-    const decoratorDOM = root.querySelectorAll('[data-lexical-decorator]')[3];
-    const paragraph = decoratorDOM.parentNode;
-    assert(paragraph !== null, 'expected the line');
-    expect(spy.mock.calls).toEqual([
-      [paragraph, Array.from(paragraph.childNodes).indexOf(decoratorDOM) + 1],
-    ]);
   });
 });

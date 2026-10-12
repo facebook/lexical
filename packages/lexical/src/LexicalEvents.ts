@@ -215,8 +215,8 @@ function getRootElementEvents(): RootElementEvents {
   }
   if (IS_IOS) {
     events.push(
-      ['mousedown', onMouseDownIOS],
       ['keyup', (event, editor) => onKeyUp(event as KeyboardEvent, editor)],
+      ['mousedown', onMouseDownIOS],
     );
   }
   rootElementEvents = events;

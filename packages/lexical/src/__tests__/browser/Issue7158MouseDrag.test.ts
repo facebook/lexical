@@ -467,24 +467,54 @@ describe.each([
   );
 });
 
-// Where a line ends in the managed line break's <img> (WebKit and desktop
-// Chromium), the browser puts a drag's focus below or past the end of the line
-// after that <img>, which Lexical maps to the point before it. Writing that
-// point back only has the browser move it again on the next pointer move, so
-// each move would be two selection changes.
-test('Issue #7158: a drag past the end of the line does not keep changing the selection', async () => {
-  const {editor, right, y} = mount(false, ImageLikeDecoratorNode);
-  let selectionChanges = 0;
+/**
+ * Records each selection change of `editor`, with the selection it changed to
+ * in Lexical and in the DOM, so that a test that counts them can tell a
+ * change the browser made from one the editor made back.
+ */
+function recordSelectionChanges(editor: LexicalEditor): string[] {
+  const changes: string[] = [];
   onTestFinished(
     editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
       () => {
-        selectionChanges++;
+        const selection = $getSelection();
+        changes.push(
+          `${
+            $isRangeSelection(selection)
+              ? `${selection.anchor.key}:${selection.anchor.offset}->` +
+                `${selection.focus.key}:${selection.focus.offset}`
+              : String(selection)
+          } (dom ${describeDOMSelection(getDOMSelection(window))})`,
+        );
         return false;
       },
       COMMAND_PRIORITY_CRITICAL,
     ),
   );
+  return changes;
+}
+
+function assertSelectionChangesAtMost(
+  changes: string[],
+  max: number,
+  pointerLog: string[],
+): void {
+  assert(
+    changes.length <= max,
+    `expected at most ${max} selection changes, got ${changes.length}: ` +
+      `${changes.join(', ')}; pointer ${pointerLog.join(' ')}`,
+  );
+}
+
+// Where a line ends in the managed line break's <img> (WebKit and desktop
+// Chromium), the browser puts a drag's focus below or past the end of the line
+// after that <img>, which Lexical maps to the point before it. Writing that
+// point back only has the browser move it again on the next pointer move, so
+// each move would be two selection changes.
+async function dragPastLineEnd() {
+  const {editor, pointerLog, right, y} = mount(false, ImageLikeDecoratorNode);
+  const changes = recordSelectionChanges(editor);
   const x = right(COUNT - 1) + 30;
   await mouseDrag([
     [x, y],
@@ -504,27 +534,16 @@ test('Issue #7158: a drag past the end of the line does not keep changing the se
   // Chromium changes the selection twice here (on the press and on the first
   // move) and Firefox and WebKit once. Allow one more than that, since this
   // checks for a change on every move, which would be about a dozen.
-  assert(
-    selectionChanges <= 3,
-    `expected at most 3 selection changes, got ${selectionChanges}`,
-  );
-});
+  assertSelectionChangesAtMost(changes, 3, pointerLog);
+}
 
 // As at the end of the line, a drag above the start of a line that starts with
-// an inline decorator must not change the selection on every move.
-test('Issue #7158: a drag past the start of the line does not keep changing the selection', async () => {
-  const {editor, left, y} = mount(false, ImageLikeDecoratorNode);
-  let selectionChanges = 0;
-  onTestFinished(
-    editor.registerCommand(
-      SELECTION_CHANGE_COMMAND,
-      () => {
-        selectionChanges++;
-        return false;
-      },
-      COMMAND_PRIORITY_CRITICAL,
-    ),
-  );
+// an inline decorator must not change the selection on every move. Firefox
+// puts the focus of each move inside the first decorator, which the editor
+// moves beside it.
+async function dragPastLineStart() {
+  const {editor, left, pointerLog, y} = mount(false, ImageLikeDecoratorNode);
+  const changes = recordSelectionChanges(editor);
   const x = left(0) + SIZE / 2;
   await mouseDrag([
     [left(0) - 5, y],
@@ -542,9 +561,87 @@ test('Issue #7158: a drag past the start of the line does not keep changing the 
       'expected a RangeSelection',
     ),
   );
-  assert(
-    selectionChanges <= 3,
-    `expected at most 3 selection changes, got ${selectionChanges}`,
+  // The press, the first move past the middle of the first decorator, and
+  // the return to the line: three in Firefox, two in Chromium and WebKit.
+  assertSelectionChangesAtMost(changes, 3, pointerLog);
+}
+
+test(
+  'Issue #7158: a drag past the end of the line does not keep changing the selection',
+  dragPastLineEnd,
+);
+test(
+  'Issue #7158: a drag past the start of the line does not keep changing the selection',
+  dragPastLineStart,
+);
+
+/**
+ * Runs `fn` with the task in which the editor adjusts each pointer move of a
+ * drag, once the browser has moved the selection for it, running `delay` ms
+ * late, as on a busy runner: what the move schedules without a delay while
+ * it is dispatched. The browser's selectionchange for the move, the next
+ * move, and the release then come first.
+ */
+function withLateDragAdjustments(fn: () => Promise<void>, delay = 30) {
+  return async () => {
+    let isDispatchingMove = false;
+    onTestFinished(
+      registerEventListener(
+        window,
+        'pointermove',
+        () => {
+          isDispatchingMove = true;
+        },
+        true,
+      ),
+    );
+    onTestFinished(
+      registerEventListener(window, 'pointermove', () => {
+        isDispatchingMove = false;
+      }),
+    );
+    const realSetTimeout = window.setTimeout;
+    const spy = vi
+      .spyOn(window, 'setTimeout')
+      .mockImplementation((handler, timeout, ...args) =>
+        realSetTimeout.call(
+          window,
+          handler,
+          isDispatchingMove && !timeout ? delay : timeout,
+          ...args,
+        ),
+      );
+    onTestFinished(() => spy.mockRestore());
+    await fn();
+  };
+}
+
+describe('Issue #7158: mouse drags that the editor adjusts after the browser reports them', () => {
+  test(
+    'a drag past the end of the line does not keep changing the selection',
+    withLateDragAdjustments(dragPastLineEnd),
+  );
+  test(
+    'a drag past the start of the line does not keep changing the selection',
+    withLateDragAdjustments(dragPastLineStart),
+  );
+  test(
+    'a drag from left of the first decorator selects to the end of the line',
+    withLateDragAdjustments(dragFromLineStart(ImageLikeDecoratorNode, false)),
+  );
+  test(
+    'a drag from right of the last decorator selects back to the third',
+    withLateDragAdjustments(dragFromLineEnd(ImageLikeDecoratorNode, false)),
+  );
+  test(
+    'with text between unselectable decorators, a drag from left of the first text selects to the end of the line',
+    withLateDragAdjustments(dragFromLineStart(BoxedImageDecoratorNode, true)),
+  );
+  test(
+    'over unselectable decorators each in an inline element, a drag from right of the last decorator selects back to the third',
+    withLateDragAdjustments(
+      dragFromLineEnd(BoxedImageDecoratorNode, false, {inInlineElements: true}),
+    ),
   );
 });
 

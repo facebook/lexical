@@ -303,6 +303,9 @@ const documentMouseSelectionDrag = createRefCountedRegistry((doc: Document) => {
           ),
         pointerup: event =>
           forEachMouseSelectionDrag(doc, (editor, drag) => {
+            // The release can arrive before the task that adjusts the
+            // drag's latest move, which then finds the drag over.
+            adjustMouseSelectionDrag(editor, drag);
             editor._inputState.mouseSelectionDrag = null;
             if (event.button === 0 && event.pointerType === 'mouse') {
               adjustMouseClickCaret(editor, drag);
@@ -3123,11 +3126,23 @@ function onDocumentSelectionChange(event: Event): void {
   }
 
   const drag = nextActiveEditor._inputState.mouseSelectionDrag;
-  if (drag !== null && moveMouseClickCaret(nextActiveEditor, drag) !== null) {
-    // The editor takes the caret where the press belongs from this
-    // selectionchange, rather than from the one that moving it causes, which
-    // WebKit does not fire when it takes both points for the same position.
-    resolvedAnchorNode = null;
+  if (drag !== null) {
+    if (moveMouseClickCaret(nextActiveEditor, drag) !== null) {
+      // The editor takes the caret where the press belongs from this
+      // selectionchange, rather than from the one that moving it causes,
+      // which WebKit does not fire when it takes both points for the same
+      // position.
+      resolvedAnchorNode = null;
+    } else if (drag.pendingMove !== null) {
+      // The browser has moved the selection for the drag's latest pointer
+      // move, and this selectionchange can come before the task that
+      // adjusts it (Firefox on a busy macOS runner). Adjust it first, so that
+      // the editor does not take a focus that the browser put inside a
+      // decorator, only to take the adjusted one from the next
+      // selectionchange: two selection changes for one move.
+      adjustMouseSelectionDrag(nextActiveEditor, drag);
+      resolvedAnchorNode = null;
+    }
   }
 
   if (nextActiveEditor._inputState.isSelectionChangeFromMouseDown) {

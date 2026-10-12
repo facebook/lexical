@@ -9,11 +9,13 @@
 import noImportsFromSelf from './rules/no-imports-from-self.js';
 import noOptionalChaining from './rules/no-optional-chaining.js';
 import noPureAnnotation from './rules/no-pure-annotation.js';
+import noUnscopedWindowMessaging from './rules/no-unscoped-window-messaging.js';
 
 const rules = {
   'no-imports-from-self': noImportsFromSelf,
   'no-optional-chaining': noOptionalChaining,
   'no-pure-annotation': noPureAnnotation,
+  'no-unscoped-window-messaging': noUnscopedWindowMessaging,
 };
 
 // Legacy config format (ESLint 7-8)
@@ -24,6 +26,7 @@ const legacyAll = {
   rules: {
     '@lexical/internal/no-imports-from-self': 'error',
     '@lexical/internal/no-optional-chaining': 'error',
+    '@lexical/internal/no-unscoped-window-messaging': 'error',
   },
 };
 
@@ -50,6 +53,7 @@ const flatAll = {
   rules: {
     '@lexical/internal/no-imports-from-self': 'error',
     '@lexical/internal/no-optional-chaining': 'error',
+    '@lexical/internal/no-unscoped-window-messaging': 'error',
   },
 };
 

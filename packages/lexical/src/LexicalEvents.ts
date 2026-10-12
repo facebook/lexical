@@ -1120,9 +1120,6 @@ function onPointerMove(
     drag.anchor = [node, offset, getDOMPointContext(node, offset)];
     return;
   }
-  if (drag.anchor === false) {
-    return;
-  }
   // Adjust now, for when the browser's hit test finds no position and leaves
   // the selection where it is. When it does move the selection, in the
   // default action of the mousemove that follows, the selectionchange
@@ -1279,12 +1276,7 @@ function adjustMouseSelectionDrag(
   const move = drag.move;
   const dragAnchor = drag.anchor;
   const rootElement = editor.getRootElement();
-  if (
-    editor._inputState.mouseSelectionDrag !== drag ||
-    move === null ||
-    !Array.isArray(dragAnchor) ||
-    rootElement === null
-  ) {
+  if (move === null || !Array.isArray(dragAnchor) || rootElement === null) {
     return;
   }
   const [anchorNode, anchorOffset, anchorContext] = dragAnchor;

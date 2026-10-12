@@ -314,6 +314,9 @@ const documentMouseSelectionDrag = createRefCountedRegistry((doc: Document) => {
           ),
         pointerup: event =>
           forEachMouseSelectionDrag(doc, (editor, drag) => {
+            // The release can come before the selectionchange for the
+            // browser's move of the drag's focus.
+            adjustMouseSelectionDrag(editor, drag);
             editor._inputState.mouseSelectionDrag = null;
             if (event.button === 0 && event.pointerType === 'mouse') {
               moveMouseClickCaret(editor, drag, true);

@@ -1320,4 +1320,46 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     elementAt(move).dispatchEvent(new PointerEvent('pointermove', move));
     await expectSelectedDecoratorCount(editor, 1, pointerLog);
   });
+
+  // The browser moves a drag's focus after the pointermove listeners have
+  // run, and a release can come before the selectionchange that reports that
+  // move, so the release adjusts the drag for its last move too.
+  test('a release before the last move is reported keeps that move adjusted', async () => {
+    const {editor, left, pointerLog, root, y} = mount(
+      false,
+      ImageLikeDecoratorNode,
+    );
+    root.focus();
+    editor.update(
+      () => {
+        $getRoot().selectStart();
+      },
+      {discrete: true},
+    );
+    const paragraph = root.querySelector('p');
+    const domSelection = getDOMSelection(window);
+    assert(paragraph !== null && domSelection !== null, 'expected the line');
+    const press = mousePointerInit(root, left(0) - 5, y);
+    paragraph.dispatchEvent(new PointerEvent('pointerdown', press));
+    paragraph.dispatchEvent(
+      new PointerEvent('pointermove', {
+        ...press,
+        clientX: (press.clientX ?? 0) + 10,
+      }),
+    );
+    assert(
+      Array.isArray(editor._inputState.mouseSelectionDrag?.anchor),
+      'the press never became a selection drag',
+    );
+    // Over the right half of the third decorator.
+    const move = mousePointerInit(root, left(2) + (SIZE * 3) / 4, y);
+    const target = elementAt(move);
+    target.dispatchEvent(new PointerEvent('pointermove', move));
+    // What the browser's hit test can do for that move once the listeners
+    // have run, which synthetic events don't make it do: leave the focus
+    // before a decorator that the pointer has passed.
+    domSelection.extend(paragraph, 1);
+    target.dispatchEvent(new PointerEvent('pointerup', {...move, buttons: 0}));
+    await expectSelectedDecoratorCount(editor, 3, pointerLog);
+  });
 });

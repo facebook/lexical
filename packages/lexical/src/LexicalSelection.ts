@@ -2897,7 +2897,7 @@ function shouldResolveAncestor(
   );
 }
 
-function $internalResolveSelectionPoint(
+export function $internalResolveSelectionPoint(
   dom: Node,
   offset: number,
   lastPoint: null | PointType,
@@ -3506,22 +3506,6 @@ const SELECTION_KEYS = /* @__PURE__ */ new Set([
   'Tab',
 ]);
 
-function isSelectionKeyDownEvent(
-  event: KeyboardEvent,
-  editor: LexicalEditor,
-): boolean {
-  // Only a keydown sent to this editor can follow a native caret move in it
-  // that the browser has not reported yet. A shortcut handled elsewhere (a
-  // toolbar, a dialog, a global hotkey) that updates this editor acts at the
-  // editor's own selection, not at a DOM selection left behind in its root.
-  const target = getComposedEventTarget(event);
-  return (
-    (event.ctrlKey || event.metaKey || SELECTION_KEYS.has(event.key)) &&
-    isDOMNode(target) &&
-    getNearestEditorFromDOMNode(target) === editor
-  );
-}
-
 export function $internalCreateRangeSelection(
   lastSelection: null | BaseSelection,
   domSelection: Selection | null,
@@ -3552,10 +3536,18 @@ export function $internalCreateRangeSelection(
   // Chromium coalesces selectionchange events, so a caret move made natively
   // by one arrow key can still be unreported when the next keydown arrives
   // (key repeat, or a busy main thread). Reading the DOM here keeps that
-  // keydown from acting on the caret from before the native move.
+  // keydown from acting on the caret from before the native move. Only a
+  // keydown sent to this editor can follow such a move in it: a shortcut
+  // handled elsewhere (a toolbar, a dialog, a global hotkey) that updates
+  // this editor acts at the editor's own selection, not at a DOM selection
+  // left behind in its root.
+  const keyDown = eventType === 'keydown' && (windowEvent as KeyboardEvent);
+  const target = keyDown && getComposedEventTarget(keyDown);
   const isSelectionKeyDown =
-    eventType === 'keydown' &&
-    isSelectionKeyDownEvent(windowEvent as KeyboardEvent, editor);
+    keyDown &&
+    (keyDown.ctrlKey || keyDown.metaKey || SELECTION_KEYS.has(keyDown.key)) &&
+    isDOMNode(target) &&
+    getNearestEditorFromDOMNode(target) === editor;
   const useDOMSelection =
     !getIsProcessingMutations() &&
     (isSelectionChange ||

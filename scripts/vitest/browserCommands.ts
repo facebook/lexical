@@ -34,7 +34,7 @@ type Point = [x: number, y: number];
  * release.
  */
 async function mouseDrag(
-  {frame, page}: BrowserCommandContext,
+  {context, frame, page}: BrowserCommandContext,
   selector: string,
   points: [first: Point, ...rest: Point[]],
   {
@@ -51,24 +51,17 @@ async function mouseDrag(
     quickStart?: boolean;
   } = {},
 ): Promise<void> {
-  const testFrame = await frame();
-  const target = testFrame.locator(selector);
+  const target = (await frame()).locator(selector);
   const [first, ...rest] = points;
-  // The element stays put during a drag, so look it up once and move the
-  // mouse to page coordinates from its box. Not with scrollIntoViewIfNeeded,
-  // which waits for the element to stay put for two frames first.
-  await target.evaluate(element =>
-    element.scrollIntoView({block: 'nearest', inline: 'nearest'}),
-  );
-  const box = await target.boundingBox();
-  assert(box !== null, `mouseDrag target ${selector} is not visible`);
-  await page.mouse.move(box.x + first[0], box.y + first[1]);
   // A person's mouse events arrive far enough apart that the browser and the
   // editor have handled each one, and the selection changes it caused,
-  // before the next. Count the pointer events the frame has dispatched, and
-  // remember the selection each selectionchange reported, so that each step
-  // can wait for exactly that instead of for a while.
-  const tracker = await testFrame.evaluateHandle(() => {
+  // before the next. Count the pointer events of the drag that the frame has
+  // dispatched, and remember the selection each selectionchange reported, so
+  // that each step can wait for exactly that instead of for a while. The
+  // element stays put during a drag, so scroll it into view here too, without
+  // scrollIntoViewIfNeeded, which waits for it to stay put for two frames.
+  const tracker = await target.evaluateHandle(element => {
+    element.scrollIntoView({block: 'nearest', inline: 'nearest'});
     const getPoints = () => {
       const selection = document.getSelection();
       return selection === null
@@ -88,15 +81,17 @@ async function mouseDrag(
       getPoints,
       notified: getPoints(),
     };
-    for (const type of ['pointerdown', 'pointermove', 'pointerup']) {
-      window.addEventListener(
-        type,
-        () => {
-          state.events++;
-        },
-        listenerOptions,
-      );
-    }
+    const count = () => {
+      state.events++;
+    };
+    window.addEventListener('pointerdown', count, listenerOptions);
+    window.addEventListener('pointerup', count, listenerOptions);
+    // Not the move to the first point, before the press.
+    window.addEventListener(
+      'pointermove',
+      event => event.buttons !== 0 && count(),
+      listenerOptions,
+    );
     window.addEventListener(
       'selectionchange',
       () => {
@@ -106,41 +101,53 @@ async function mouseDrag(
     );
     return state;
   });
+  // Move the mouse to page coordinates from the element's box.
+  const box = await target.boundingBox();
+  assert(box !== null, `mouseDrag target ${selector} is not visible`);
+  await page.mouse.move(box.x + first[0], box.y + first[1]);
   let events = 0;
+  const browser = context.browser();
+  const isWebKit =
+    browser !== null && browser.browserType().name() === 'webkit';
   // Wait until the frame has dispatched the step's pointer event, then until
   // the tasks it queued have run and no selectionchange is still to be
   // dispatched and handled.
   const settle = async (name: string) => {
-    const result = await tracker.evaluate(async (state, expected) => {
-      const nextTask = () =>
-        new Promise<void>(resolve => setTimeout(resolve, 0));
-      const isSame = (a: unknown[], b: unknown[]) =>
-        a.every((value, i) => value === b[i]);
-      // Never hang a test on an event the browser coalesced or a selection
-      // that keeps changing.
-      const deadline = performance.now() + 1000;
-      let isSettled = false;
-      let current = state.getPoints();
-      let unchangedTasks = 0;
-      do {
-        await nextTask();
-        const next = state.getPoints();
-        // Counted from the step's event, which can come after the wait starts.
-        unchangedTasks =
-          state.events >= expected && isSame(next, current)
-            ? unchangedTasks + 1
-            : 0;
-        current = next;
-        // WebKit reports no selectionchange for a selection that it takes for
-        // the one it has, such as points on either side of a user-select:none
-        // box or of an inline element's edge, though the points change. So
-        // points that a few tasks leave alone have settled too.
-        isSettled =
-          state.events >= expected &&
-          (isSame(current, state.notified) || unchangedTasks >= 3);
-      } while (!isSettled && performance.now() < deadline);
-      return {events: state.events, isSettled};
-    }, events + 1);
+    const result = await tracker.evaluate(
+      async (state, [expected, webKit]) => {
+        const nextTask = () =>
+          new Promise<void>(resolve => setTimeout(resolve, 0));
+        const isSame = (a: unknown[], b: unknown[]) =>
+          a.every((value, i) => value === b[i]);
+        // Never hang a test on an event the browser coalesced or a selection
+        // that keeps changing.
+        const deadline = performance.now() + 1000;
+        let isSettled = false;
+        let current = state.getPoints();
+        let unchangedTasks = 0;
+        do {
+          await nextTask();
+          const next = state.getPoints();
+          // Counted from the step's event, which can come after the wait starts.
+          unchangedTasks =
+            state.events >= expected && isSame(next, current)
+              ? unchangedTasks + 1
+              : 0;
+          current = next;
+          // WebKit reports no selectionchange for a selection that it takes for
+          // the one it has, such as points on either side of a user-select:none
+          // box or of an inline element's edge, though the points change. So
+          // there, points that a few tasks leave alone have settled too. The
+          // other engines report every change.
+          isSettled =
+            state.events >= expected &&
+            (isSame(current, state.notified) ||
+              (webKit && unchangedTasks >= 3));
+        } while (!isSettled && performance.now() < deadline);
+        return {events: state.events, isSettled};
+      },
+      [events + 1, isWebKit] as const,
+    );
     // Count from what the frame saw, so that a step that dispatched more
     // than one pointer event doesn't let later steps stop waiting early.
     events = result.events;
@@ -169,6 +176,8 @@ async function mouseDrag(
     let [lastX, lastY] = first;
     if (quickStart) {
       await press;
+      // The next step waits for the press's pointerdown too.
+      events++;
     } else {
       await step('press', press);
       if (hold > 0) {

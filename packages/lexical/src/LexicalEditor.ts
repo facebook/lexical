@@ -855,7 +855,8 @@ export function resetEditor(
   if (prevRootElement !== null) {
     restoreInputModeIOS(editor, prevRootElement);
   }
-  editor._inputState = createInputState();
+  // In place, as the root element's listeners hold it.
+  Object.assign(editor._inputState, createInputState());
 
   const observer = editor._observer;
 

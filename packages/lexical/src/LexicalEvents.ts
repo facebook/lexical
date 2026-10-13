@@ -101,6 +101,7 @@ import {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 import {
   $createRangeSelectionFromDom,
   $internalCreateRangeSelection,
+  $internalResolveSelectionPoint,
   type RangeSelection,
 } from './LexicalSelection';
 import {
@@ -856,18 +857,26 @@ function $adjustMouseDrag(
   const isPress = event.type === 'mousedown';
   const isCaret = isPress && !event.shiftKey;
   const decorator = focusDOM && $getNearestNodeFromDOMNode(focusDOM);
-  // A focus that the browser put inside a decorator goes back for a drag and
-  // before it for a press, in the DOM too.
-  if ($isDecoratorNode(decorator) && !isCaret && $isRangeSelection(previous)) {
-    $setSelection(previous.clone());
-  } else if ($isDecoratorNode(decorator) && decorator.isInline()) {
-    decorator.selectPrevious();
+  // A focus that the browser put inside a decorator goes back for a drag
+  // (unless a table selected cells) and before it for a click, in the DOM
+  // too. A Shift press keeps what the platform chose.
+  if ($isDecoratorNode(decorator)) {
+    if (!isPress) {
+      if ($isRangeSelection(previous)) {
+        $setSelection(previous.clone());
+      }
+    } else if (isCaret && decorator.isInline()) {
+      decorator.selectPrevious();
+    }
   }
   const selection = $getSelection();
   const root = editor.getRootElement();
   const doc = root && root.getRootNode();
   if (
     !$isRangeSelection(selection) ||
+    // A press on a selection can drag it. (macOS drags only after 150 ms, and
+    // a quicker drag from there selects text without this adjustment.)
+    (isCaret && !selection.isCollapsed()) ||
     !(isDOMDocumentNode(doc) || isDOMShadowRoot(doc))
   ) {
     return;
@@ -908,11 +917,11 @@ function $adjustMouseDrag(
   const win = getWindow(editor);
   const range = win.document.createRange();
   for (const [node, isStart] of candidates) {
-    const dom =
-      $isDecoratorNode(node) && node.isInline()
-        ? editor.getElementByKey(node.getKey())
-        : null;
-    if (!dom || !node) {
+    if (!$isDecoratorNode(node) || !node.isInline()) {
+      continue;
+    }
+    const dom = editor.getElementByKey(node.getKey());
+    if (!dom) {
       continue;
     }
     // The box of what it draws, which can be larger than its element (an
@@ -922,9 +931,16 @@ function $adjustMouseDrag(
     const rect = dom.getBoundingClientRect();
     const {bottom, left, right, top} =
       contents.height > rect.height ? contents : rect;
-    const isAfter =
-      x * 2 > left + right !== (win.getComputedStyle(dom).direction === 'rtl');
-    if (isStart === null || (isAfter !== isStart && y >= top && y <= bottom)) {
+    const style = win.getComputedStyle(dom);
+    const isAfter = x * 2 > left + right !== (style.direction === 'rtl');
+    if (
+      isStart === null ||
+      // A float is at the edge of no line.
+      (isAfter !== isStart &&
+        y >= top &&
+        y <= bottom &&
+        style.cssFloat === 'none')
+    ) {
       // A focus already beside it stays, as WebKit reports no move to a
       // point it takes for the same one.
       if (!node.is($leaf($getAdjacentNode(focus, isAfter), !isAfter))) {
@@ -935,6 +951,29 @@ function $adjustMouseDrag(
         anchor.set(focus.key, focus.offset, focus.type, true);
       }
       return;
+    }
+  }
+  // Chromium restarts a drag from its press when the editor has moved the
+  // selection, and a press beyond a decorator then puts both points inside
+  // it, so the focus goes to the position at the pointer instead.
+  if ($isDecoratorNode(decorator) && !isPress) {
+    const ownerDoc = win.document;
+    const caret =
+      ownerDoc.caretPositionFromPoint &&
+      ownerDoc.caretPositionFromPoint(x, y, {
+        shadowRoots: isDOMShadowRoot(doc) ? [doc] : [],
+      });
+    const resolved =
+      caret &&
+      $internalResolveSelectionPoint(
+        caret.offsetNode,
+        caret.offset,
+        null,
+        editor,
+      );
+    if (resolved) {
+      const [{key, offset, type}] = resolved;
+      focus.set(key, offset, type);
     }
   }
 }
@@ -2455,33 +2494,38 @@ export function addRootElementEvents(
   // Follows a mouse press that can start a selection drag: not on a decorator,
   // nor a double or triple click, which selects by words or paragraphs.
   const inputState = editor._inputState;
-  // A drag that left the root element, to follow again if it comes back.
-  let leftDrag: MouseEvent | null = null;
   const endMouseDrag = () => {
-    inputState.mouseDrag = leftDrag = null;
+    inputState.mouseDrag = null;
   };
+  // On the document, which also sees the part of a drag outside the root
+  // element, and its release.
   const onMouseDragMove = (event: PointerEvent) => {
-    const drag = inputState.mouseDrag || leftDrag;
+    const drag = inputState.mouseDrag;
     if (!drag) {
       return;
     }
-    if (event.type === 'pointermove' && event.buttons !== 1) {
+    if (
+      event.pointerType !== 'mouse' ||
+      (event.type === 'pointermove' && event.buttons !== 1)
+    ) {
       return endMouseDrag();
     }
-    inputState.mouseDrag = event;
-    leftDrag = null;
+    inputState.mouseDrag = event.type === 'pointerup' ? null : event;
     updateEditorSync(editor, () => {
       const domSelection = getDOMSelection(getWindow(editor));
       const selection =
         domSelection && $createRangeSelectionFromDom(domSelection, editor);
+      const current = $getSelection();
+      const isRange = $isRangeSelection(current);
+      if (selection && isRange) {
+        // With the format and style that the editor worked out.
+        selection.format = current.format;
+        selection.style = current.style;
+      }
       if (drag.type !== 'mousedown') {
         // The release can come before the selectionchange of the last move,
         // but a table's selection of cells stays.
-        if (
-          selection &&
-          event.type === 'pointerup' &&
-          $isRangeSelection($getSelection())
-        ) {
+        if (selection && event.type === 'pointerup' && isRange) {
           $setSelection(selection);
         }
         return $adjustMouseDrag(editor, event);
@@ -2494,18 +2538,28 @@ export function addRootElementEvents(
         (!drag.shiftKey && selection && !selection.isCollapsed())
       ) {
         endMouseDrag();
-      } else if (selection && inputState.isSelectionChangeFromMouseDown) {
-        // The editor has not seen the press's caret yet, which the drag
-        // extends from.
-        $setSelection(selection);
+      } else if (inputState.isSelectionChangeFromMouseDown) {
+        // The editor has not seen the press's selectionchange yet, which the
+        // drag extends from, so this handles it.
+        if (selection) {
+          $setSelection(selection);
+        }
+        $adjustMouseDrag(
+          editor,
+          drag,
+          domSelection &&
+            getDOMSelectionPoints(domSelection, rootElement).focusNode,
+        );
       }
     });
-    if (event.type === 'pointerup') {
-      endMouseDrag();
-    }
   };
   removeHandles.push(
+    registerEventListeners(rootElement.ownerDocument, {
+      pointermove: onMouseDragMove,
+      pointerup: onMouseDragMove,
+    }),
     registerEventListeners(rootElement, {
+      contextmenu: endMouseDrag,
       dragstart: endMouseDrag,
       // As after a release that the window did not get, but not for the
       // modifier keys, which Windows repeats while they are held.
@@ -2524,17 +2578,14 @@ export function addRootElementEvents(
           !isDOMCapturingSelection(target, editor)
         ) {
           inputState.mouseDrag = event;
-          // Also before the browser, which can leave the caret where it was.
-          updateEditorSync(editor, () => $adjustMouseDrag(editor, event));
+          // Also before the browser, which can leave the caret where it was,
+          // but not for a Shift press, which macOS extends from the end of
+          // the selection that is farther from it.
+          if (!event.shiftKey) {
+            updateEditorSync(editor, () => $adjustMouseDrag(editor, event));
+          }
         }
       },
-      // A drag outside the root element is left to the browser.
-      pointerleave: () => {
-        leftDrag = inputState.mouseDrag;
-        inputState.mouseDrag = null;
-      },
-      pointermove: onMouseDragMove,
-      pointerup: onMouseDragMove,
     }),
     // Captured, so a decorator that stops its pointerdown from propagating
     // (resize handles often do) can't leave a stale pointer type behind for

@@ -88,8 +88,30 @@ const browserInstances = (process.env.VITEST_BROWSER || 'chromium')
   // keys, and Firefox can drop caret navigation (arrow keys, Home, End) in an
   // inactive window. Chromium and WebKit pages each behave as focused, so
   // only Firefox runs its files one at a time.
+  //
+  // A mouse move that Playwright dispatches in Chromium or Firefox completes
+  // at the next frame, and both pace frames at 60Hz, so tests that drag the
+  // mouse spent most of their time waiting for frames. Both draw frames as
+  // soon as they can instead.
   .map(browser =>
-    browser === 'firefox' ? {browser, maxWorkers: 1} : {browser},
+    browser === 'firefox'
+      ? {
+          browser,
+          maxWorkers: 1,
+          provider: playwright({
+            launchOptions: {firefoxUserPrefs: {'layout.frame_rate': 0}},
+          }),
+        }
+      : browser === 'chromium'
+        ? {
+            browser,
+            provider: playwright({
+              launchOptions: {
+                args: ['--disable-frame-rate-limit', '--disable-gpu-vsync'],
+              },
+            }),
+          }
+        : {browser},
   );
 
 const compilerUnitTests =

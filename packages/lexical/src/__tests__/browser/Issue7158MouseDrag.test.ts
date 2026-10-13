@@ -213,6 +213,26 @@ class FloatRightDecoratorNode extends ImageLikeDecoratorNode {
   }
 }
 
+/** The error that a `ThrowingDecoratorNode` throws once. */
+class ReconcilerTestError extends Error {}
+let throwInCreateDOM = false;
+
+/** A decorator whose createDOM throws once `throwInCreateDOM` is set. */
+class ThrowingDecoratorNode extends ImageLikeDecoratorNode {
+  $config() {
+    return this.config('test_7158_mouse_throwing', {
+      extends: ImageLikeDecoratorNode,
+    });
+  }
+  createDOM(): HTMLElement {
+    if (throwInCreateDOM) {
+      throwInCreateDOM = false;
+      throw new ReconcilerTestError('test_7158_mouse_throwing');
+    }
+    return super.createDOM();
+  }
+}
+
 /** An inline element, like a link or a mark, to put a decorator in. */
 class InlineWrapperNode extends ElementNode {
   $config() {
@@ -244,6 +264,11 @@ interface MountOptions {
   betweenText?: string;
   /** Whether the editor is in a shadow root. */
   inShadowRoot?: boolean;
+  /**
+   * Whether the editor has recovered from an error in its reconciler, after
+   * which it renders its state again with new input state.
+   */
+  recoverFromError?: boolean;
 }
 
 const NODES = [
@@ -255,6 +280,7 @@ const NODES = [
   TextChipDecoratorNode,
   UnselectableTextChipDecoratorNode,
   FloatRightDecoratorNode,
+  ThrowingDecoratorNode,
   InlineWrapperNode,
 ];
 
@@ -262,7 +288,11 @@ const NODES = [
  * An editor of `$children`, in a 380px wide root element (in a shadow root,
  * if `inShadowRoot`), with the root's id the drag command finds it by.
  */
-function mountEditor($children: () => LexicalNode[], inShadowRoot = false) {
+function mountEditor(
+  $children: () => LexicalNode[],
+  inShadowRoot = false,
+  recoverFromError = false,
+) {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const root = document.createElement('div');
@@ -282,13 +312,43 @@ function mountEditor($children: () => LexicalNode[], inShadowRoot = false) {
       dependencies: [RichTextExtension],
       name: '[7158-mouse]',
       nodes: NODES,
+      // As by default, except for the error the editor recovers from.
+      onError: error => {
+        if (!(error instanceof ReconcilerTestError)) {
+          throw error;
+        }
+      },
     }),
   );
   editor.setRootElement(root);
   onTestFinished(() => {
+    if (recoverFromError) {
+      // The recovery leaves the editor's first MutationObserver attached as
+      // well, which in Firefox fails on the mutations of dispose() while the
+      // editor has a selection.
+      editor.update(() => $setSelection(null), {discrete: true});
+    }
     editor.dispose();
     host.remove();
   });
+  if (recoverFromError) {
+    throwInCreateDOM = true;
+    editor.update(
+      () => {
+        $getRoot().append(
+          $createParagraphNode().append($create(ThrowingDecoratorNode)),
+        );
+      },
+      {discrete: true},
+    );
+    assert(!throwInCreateDOM, 'expected the reconciler to fail');
+    editor.update(
+      () => {
+        $getRoot().getLastChildOrThrow().remove();
+      },
+      {discrete: true},
+    );
+  }
   return {editor, root};
 }
 
@@ -323,33 +383,38 @@ function mount(
     inInlineElements = false,
     betweenText = ' ',
     inShadowRoot = false,
+    recoverFromError = false,
   }: MountOptions = {},
 ) {
-  const {editor, root} = mountEditor(() => {
-    const paragraph = $createParagraphNode();
-    if (leadingLine !== '') {
-      // The decorators start the paragraph's second line.
-      paragraph.append($createTextNode(leadingLine), $createLineBreakNode());
-    }
-    for (let i = 0; i < COUNT; i++) {
-      if (textBetween) {
-        paragraph.append($createTextNode(betweenText));
+  const {editor, root} = mountEditor(
+    () => {
+      const paragraph = $createParagraphNode();
+      if (leadingLine !== '') {
+        // The decorators start the paragraph's second line.
+        paragraph.append($createTextNode(leadingLine), $createLineBreakNode());
       }
-      paragraph.append(
-        inInlineElements
-          ? $create(InlineWrapperNode).append($create(klass))
-          : $create(klass),
-      );
-    }
-    if (trailingText !== '') {
-      paragraph.append($createTextNode(trailingText));
-    }
-    if (trailingLine !== '') {
-      // The decorators end the paragraph's first line.
-      paragraph.append($createLineBreakNode(), $createTextNode(trailingLine));
-    }
-    return [paragraph];
-  }, inShadowRoot);
+      for (let i = 0; i < COUNT; i++) {
+        if (textBetween) {
+          paragraph.append($createTextNode(betweenText));
+        }
+        paragraph.append(
+          inInlineElements
+            ? $create(InlineWrapperNode).append($create(klass))
+            : $create(klass),
+        );
+      }
+      if (trailingText !== '') {
+        paragraph.append($createTextNode(trailingText));
+      }
+      if (trailingLine !== '') {
+        // The decorators end the paragraph's first line.
+        paragraph.append($createLineBreakNode(), $createTextNode(trailingLine));
+      }
+      return [paragraph];
+    },
+    inShadowRoot,
+    recoverFromError,
+  );
   const trailingTextKey = editor.read('latest', () => {
     const last = $getRoot().getLastDescendant();
     return $isTextNode(last) ? last.getKey() : null;
@@ -516,25 +581,65 @@ async function expectSelectedDecoratorCount(
   );
 }
 
+/** Asserts that the selection holds no line break of the decorators' line. */
+function assertNoLineBreakSelected(
+  editor: LexicalEditor,
+  pointerLog: string[],
+): void {
+  assert(
+    editor.read('latest', () => {
+      const selection = $getSelection();
+      return (
+        $isRangeSelection(selection) &&
+        !selection.getNodes().some($isLineBreakNode)
+      );
+    }),
+    `expected the line break to stay unselected (` +
+      `${describeEditorSelection(editor)}; dom ` +
+      `${describeDOMSelection(getDOMSelection(window))}; ` +
+      `pointer ${pointerLog.join(' ')})`,
+  );
+}
+
+/**
+ * The drag of `dragFromLineEnd` or `dragFromLineStart`, with the press
+ * beyond the line's last or first decorator.
+ */
+async function dragFromLineEdge(
+  edge: 'end' | 'start',
+  {editor, left, pointerLog, right, y}: ReturnType<typeof mount>,
+  options?: Parameters<typeof mouseDrag>[1],
+): Promise<void> {
+  await mouseDrag(
+    edge === 'end'
+      ? [
+          [right(COUNT - 1) + 30, y],
+          [left(COUNT - 2) + SIZE / 2, y],
+          [left(3) + SIZE / 2, y],
+          [left(2) - 2, y],
+        ]
+      : [
+          [left(0) - 5, y],
+          [left(1) + SIZE / 2, y],
+          [left(COUNT - 2) + SIZE / 2, y],
+          [right(COUNT - 1) + 30, y],
+        ],
+    options,
+  );
+  await expectSelectedDecoratorCount(
+    editor,
+    edge === 'end' ? COUNT - 2 : COUNT,
+    pointerLog,
+  );
+  assertNoLineBreakSelected(editor, pointerLog);
+}
+
 function dragFromLineEnd(
   klass: DecoratorClass,
   textBetween: boolean,
   options?: MountOptions,
 ) {
-  return async () => {
-    const {editor, left, pointerLog, right, y} = mount(
-      textBetween,
-      klass,
-      options,
-    );
-    await mouseDrag([
-      [right(COUNT - 1) + 30, y],
-      [left(COUNT - 2) + SIZE / 2, y],
-      [left(3) + SIZE / 2, y],
-      [left(2) - 2, y],
-    ]);
-    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
-  };
+  return () => dragFromLineEdge('end', mount(textBetween, klass, options));
 }
 
 function dragFromLineStart(
@@ -542,34 +647,52 @@ function dragFromLineStart(
   textBetween: boolean,
   options?: MountOptions,
 ) {
-  return async () => {
-    const {editor, left, pointerLog, right, y} = mount(
-      textBetween,
-      klass,
-      options,
-    );
-    await mouseDrag([
-      [left(0) - 5, y],
-      [left(1) + SIZE / 2, y],
-      [left(COUNT - 2) + SIZE / 2, y],
-      [right(COUNT - 1) + 30, y],
-    ]);
-    await expectSelectedDecoratorCount(editor, COUNT, pointerLog);
-  };
+  return () => dragFromLineEdge('start', mount(textBetween, klass, options));
 }
 
-describe.each([
-  ['only inline decorators', false],
-  ['text between inline decorators', true],
-])('Issue #7158: mouse drag over %s', (_name, textBetween) => {
+describe('Issue #7158: mouse drag over only inline decorators', () => {
   test(
     'a drag from right of the last decorator selects back to the third',
-    dragFromLineEnd(ImageLikeDecoratorNode, textBetween),
+    dragFromLineEnd(ImageLikeDecoratorNode, false),
   );
   test(
     'a drag from left of the first decorator selects to the end of the line',
-    dragFromLineStart(ImageLikeDecoratorNode, textBetween),
+    dragFromLineStart(ImageLikeDecoratorNode, false),
   );
+});
+
+test(
+  'Issue #7158: a drag over text between inline decorators from right of the last decorator selects back to the third',
+  dragFromLineEnd(ImageLikeDecoratorNode, true),
+);
+
+// Chromium restarts a drag from its press once the editor has moved the
+// selection, and a press beyond the last decorator puts both of its points
+// inside that decorator, so it has no position in the text to report.
+test('Issue #7158: a drag from right of the last decorator into a word between decorators ends in the word', async () => {
+  const {editor, left, pointerLog, right, y} = mount(
+    true,
+    ImageLikeDecoratorNode,
+    {betweenText: 'ab'},
+  );
+  await mouseDrag([
+    [right(COUNT - 1) + 30, y],
+    [left(COUNT - 1) + SIZE / 2, y],
+    // Between the "a" and the "b" before the fifth decorator.
+    [(right(COUNT - 3) + left(COUNT - 2)) / 2, y],
+  ]);
+  await vi.waitFor(() => {
+    const text = editor.read('latest', () => {
+      const selection = $getSelection();
+      return $isRangeSelection(selection) ? selection.getTextContent() : '';
+    });
+    assert(
+      text === 'bab',
+      `expected the selection to start in the word, got ${JSON.stringify(text)} ` +
+        `(dom ${describeDOMSelection(getDOMSelection(window))}; ` +
+        `pointer ${pointerLog.join(' ')})`,
+    );
+  });
 });
 
 /**
@@ -738,28 +861,18 @@ describe('Issue #7158: mouse drag over unselectable inline decorators', () => {
     'with text between, a drag from right of the last decorator selects back to the third',
     dragFromLineEnd(BoxedImageDecoratorNode, true),
   );
-  test(
-    'with text between, a drag from left of the first text selects to the end of the line',
-    dragFromLineStart(BoxedImageDecoratorNode, true),
-  );
 });
 
-describe.each([
-  ['selectable', TextChipDecoratorNode],
-  ['unselectable', UnselectableTextChipDecoratorNode],
-])(
-  'Issue #7158: mouse drag over %s inline decorators of text',
-  (_name, klass) => {
-    test(
-      'a drag from right of the last decorator selects back to the third',
-      dragFromLineEnd(klass, false),
-    );
-    test(
-      'a drag from left of the first decorator selects to the end of the line',
-      dragFromLineStart(klass, false),
-    );
-  },
-);
+describe('Issue #7158: mouse drag over inline decorators of text', () => {
+  test(
+    'a drag from right of the last selectable decorator selects back to the third',
+    dragFromLineEnd(TextChipDecoratorNode, false),
+  );
+  test(
+    'a drag from left of the first unselectable decorator selects to the end of the line',
+    dragFromLineStart(UnselectableTextChipDecoratorNode, false),
+  );
+});
 
 // A decorator can be in an inline element, such as a link or a mark, including
 // at either end of the line.
@@ -776,14 +889,6 @@ describe.each([
     test(
       'a drag from left of the first decorator selects to the end of the line',
       dragFromLineStart(klass, false, {inInlineElements: true}),
-    );
-    test(
-      'with text between, a drag from right of the last decorator selects back to the third',
-      dragFromLineEnd(klass, true, {inInlineElements: true}),
-    );
-    test(
-      'with text between, a drag from left of the first text selects to the end of the line',
-      dragFromLineStart(klass, true, {inInlineElements: true}),
     );
   },
 );
@@ -853,14 +958,6 @@ describe('Issue #7158: Shift mouse drag over unselectable inline decorators', ()
 });
 
 describe('Issue #7158: mouse drag over selectable boxed inline decorators', () => {
-  test(
-    'a drag from right of the last decorator selects back to the third',
-    dragFromLineEnd(SelectableBoxedImageDecoratorNode, false),
-  );
-  test(
-    'a drag from left of the first decorator selects to the end of the line',
-    dragFromLineStart(SelectableBoxedImageDecoratorNode, false),
-  );
   test('a drag that returns to its start and leaves again keeps its anchor', async () => {
     const {editor, left, pointerLog, right, y} = mount(
       false,
@@ -957,10 +1054,26 @@ describe('Issue #7158: mouse drag over inline decorators that hold a nested edit
 // on that line rather than going to the end of the line above or the start of
 // the line below.
 const BETWEEN_LINE_BREAKS = {leadingLine: 'above', trailingLine: 'below'};
+
+/**
+ * The carets beside the decorators at the `edge` of their line, as
+ * `expectCaret` takes them: in the paragraph, after the leading line's text
+ * and line break if there is one, or, in an inline element at the edge of the
+ * line, also at the edge of that element.
+ */
+function edgeCarets(options: MountOptions, edge: 'end' | 'start'): string[] {
+  const offset =
+    (options.leadingLine !== undefined ? 2 : 0) + (edge === 'end' ? COUNT : 0);
+  return [
+    `paragraph:${offset}`,
+    ...(options.inInlineElements
+      ? [`test_7158_inline_wrapper:${edge === 'end' ? 1 : 0}`]
+      : []),
+  ];
+}
 describe.each<[string, DecoratorClass, MountOptions]>([
   ['inline decorators', ImageLikeDecoratorNode, {}],
   ['unselectable boxed inline decorators', BoxedImageDecoratorNode, {}],
-  ['selectable boxed inline decorators', SelectableBoxedImageDecoratorNode, {}],
   [
     'unselectable boxed inline decorators each in an inline element',
     BoxedImageDecoratorNode,
@@ -988,16 +1101,16 @@ describe.each<[string, DecoratorClass, MountOptions]>([
   // The caret before the click, as an offset among the line's decorators,
   // if any: at the other end of the line, or beside the decorator clicked
   // next to, where the browser can leave it for the click.
-  test.each([
-    ['', 'left of the first', 'start', 0, null],
-    ['', 'right of the last', 'end', COUNT, null],
-    ['with a caret at the other end, ', 'left of the first', 'start', 0, COUNT],
-    ['with a caret at the other end, ', 'right of the last', 'end', COUNT, 0],
-    ['with a caret after it, ', 'left of the first', 'start', 0, 1],
-    ['with a caret before it, ', 'right of the last', 'end', COUNT, COUNT - 1],
+  test.each<[string, string, 'end' | 'start', number | null]>([
+    ['', 'left of the first', 'start', null],
+    ['', 'right of the last', 'end', null],
+    ['with a caret at the other end, ', 'left of the first', 'start', COUNT],
+    ['with a caret at the other end, ', 'right of the last', 'end', 0],
+    ['with a caret after it, ', 'left of the first', 'start', 1],
+    ['with a caret before it, ', 'right of the last', 'end', COUNT - 1],
   ])(
     '%sa click %s decorator puts the caret at the %s of the line',
-    async (_caret, _side, _edge, offset, caretOffset) => {
+    async (_caret, _side, edge, caretOffset) => {
       const {editor, left, pointerLog, right, root, y} = mount(
         false,
         klass,
@@ -1015,17 +1128,9 @@ describe.each<[string, DecoratorClass, MountOptions]>([
         );
       }
       await mouseDrag([
-        [offset === 0 ? left(0) - 5 : right(COUNT - 1) + 30, y],
+        [edge === 'start' ? left(0) - 5 : right(COUNT - 1) + 30, y],
       ]);
-      // In an inline element at the edge of the line, the caret can also be
-      // at the edge of that element.
-      const carets = [
-        `paragraph:${first + offset}`,
-        ...(options.inInlineElements
-          ? [`test_7158_inline_wrapper:${offset === 0 ? 0 : 1}`]
-          : []),
-      ];
-      await expectCaret(editor, carets, pointerLog);
+      await expectCaret(editor, edgeCarets(options, edge), pointerLog);
     },
   );
 });
@@ -1038,58 +1143,20 @@ describe.each([
 ])(
   'Issue #7158: mouse drag over inline decorators%s beside a line break',
   (_name, inInlineElements) => {
-    test('on a line a line break starts, a drag from left of the first decorator selects to the end of the line', async () => {
-      const {editor, left, pointerLog, right, y} = mount(
-        false,
-        ImageLikeDecoratorNode,
-        {inInlineElements, leadingLine: 'text'},
-      );
-      await mouseDrag([
-        [left(0) - 5, y],
-        [left(1) + SIZE / 2, y],
-        [left(COUNT - 2) + SIZE / 2, y],
-        [right(COUNT - 1) + 30, y],
-      ]);
-      await expectSelectedDecoratorCount(editor, COUNT, pointerLog);
-      assert(
-        editor.read('latest', () => {
-          const selection = $getSelection();
-          return (
-            $isRangeSelection(selection) &&
-            !selection.getNodes().some($isLineBreakNode)
-          );
-        }),
-        `expected the line break to stay unselected (dom ` +
-          `${describeDOMSelection(getDOMSelection(window))}; ` +
-          `pointer ${pointerLog.join(' ')})`,
-      );
-    });
-    test('on a line a line break ends, a drag from right of the last decorator selects back to the third', async () => {
-      const {editor, left, pointerLog, right, y} = mount(
-        false,
-        ImageLikeDecoratorNode,
-        {inInlineElements, trailingLine: 'text'},
-      );
-      await mouseDrag([
-        [right(COUNT - 1) + 30, y],
-        [left(COUNT - 2) + SIZE / 2, y],
-        [left(3) + SIZE / 2, y],
-        [left(2) - 2, y],
-      ]);
-      await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
-      assert(
-        editor.read('latest', () => {
-          const selection = $getSelection();
-          return (
-            $isRangeSelection(selection) &&
-            !selection.getNodes().some($isLineBreakNode)
-          );
-        }),
-        `expected the line break to stay unselected (dom ` +
-          `${describeDOMSelection(getDOMSelection(window))}; ` +
-          `pointer ${pointerLog.join(' ')})`,
-      );
-    });
+    test(
+      'on a line a line break starts, a drag from left of the first decorator selects to the end of the line',
+      dragFromLineStart(ImageLikeDecoratorNode, false, {
+        inInlineElements,
+        leadingLine: 'text',
+      }),
+    );
+    test(
+      'on a line a line break ends, a drag from right of the last decorator selects back to the third',
+      dragFromLineEnd(ImageLikeDecoratorNode, false, {
+        inInlineElements,
+        trailingLine: 'text',
+      }),
+    );
   },
 );
 
@@ -1228,69 +1295,79 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
   // A press whose release never reached the window (a context menu or a
   // dialog took it), or that became a drag and drop, leaves a drag behind,
   // which must not move the focus of a later selection to where that drag
-  // last was. A move with no button ends it, as do a dragstart and a key.
-  test.each(['a move with no button', 'dragstart', 'the key'])(
-    'a press ended by %s leaves a later selection alone',
-    async ending => {
-      const {editor, left, root, textRect, trailingTextKey, y} = mount(
-        false,
-        ImageLikeDecoratorNode,
-        {trailingText: ' hello world'},
+  // last was. A move with no button ends it, as do a dragstart, a context
+  // menu, a key, and a pen or touch moving.
+  test.each([
+    'a move with no button',
+    'dragstart',
+    'a context menu',
+    'a pen move',
+    'the key',
+  ])('a press ended by %s leaves a later selection alone', async ending => {
+    const {editor, left, root, textRect, trailingTextKey, y} = mount(
+      false,
+      ImageLikeDecoratorNode,
+      {trailingText: ' hello world'},
+    );
+    assert(trailingTextKey !== null, 'expected the trailing text');
+    root.focus();
+    editor.update(
+      () => {
+        $assertNodeType($getNodeByKey(trailingTextKey), $isTextNode).select(
+          6,
+          6,
+        );
+      },
+      {discrete: true},
+    );
+    // A press on the caret, then a first move over the third decorator,
+    // which the editor leaves to the browser.
+    const hello = textRect('hello');
+    const press = mousePointerInit(root, hello.right, hello.y);
+    const target = elementAt(press);
+    target.dispatchEvent(new PointerEvent('pointerdown', press));
+    target.dispatchEvent(new MouseEvent('mousedown', {...press, detail: 1}));
+    const over = mousePointerInit(root, left(2) + SIZE / 4, y);
+    elementAt(over).dispatchEvent(new PointerEvent('pointermove', over));
+    if (ending === 'a move with no button') {
+      target.dispatchEvent(
+        new PointerEvent('pointermove', {...over, buttons: 0}),
       );
-      assert(trailingTextKey !== null, 'expected the trailing text');
-      root.focus();
-      editor.update(
-        () => {
-          $assertNodeType($getNodeByKey(trailingTextKey), $isTextNode).select(
-            6,
-            6,
-          );
-        },
-        {discrete: true},
+    } else if (ending === 'dragstart') {
+      target.dispatchEvent(
+        new DragEvent('dragstart', {bubbles: true, cancelable: true}),
       );
-      // A press on the caret, then a first move over the third decorator,
-      // which the editor leaves to the browser.
-      const hello = textRect('hello');
-      const press = mousePointerInit(root, hello.right, hello.y);
-      const target = elementAt(press);
-      target.dispatchEvent(new PointerEvent('pointerdown', press));
-      target.dispatchEvent(new MouseEvent('mousedown', {...press, detail: 1}));
-      const over = mousePointerInit(root, left(2) + SIZE / 4, y);
-      elementAt(over).dispatchEvent(new PointerEvent('pointermove', over));
-      if (ending === 'a move with no button') {
-        target.dispatchEvent(
-          new PointerEvent('pointermove', {...over, buttons: 0}),
-        );
-      } else if (ending === 'dragstart') {
-        target.dispatchEvent(
-          new DragEvent('dragstart', {bubbles: true, cancelable: true}),
-        );
-      }
-      // Then the selection changes, once the editor has handled the moves.
-      await new Promise(resolve => setTimeout(resolve));
-      if (ending === 'the key') {
-        await userEvent.keyboard('{Shift>}{ArrowLeft}{/Shift}');
-      } else {
-        // As a drop, or a script, moves it.
-        const text = editor.getElementByKey(trailingTextKey)?.firstChild;
-        assert(isDOMTextNode(text), 'expected the trailing text');
-        getDOMSelection(window)?.setBaseAndExtent(text, 6, text, 5);
-      }
-      await vi.waitFor(() => {
-        const points = editor.read('latest', () => {
-          const selection = $getSelection();
-          return $isRangeSelection(selection)
-            ? `${selection.anchor.key}:${selection.anchor.offset}->` +
-                `${selection.focus.key}:${selection.focus.offset}`
-            : String(selection);
-        });
-        assert(
-          points === `${trailingTextKey}:6->${trailingTextKey}:5`,
-          `expected the focus one character back, got ${points}`,
-        );
+    } else if (ending === 'a context menu') {
+      target.dispatchEvent(new MouseEvent('contextmenu', over));
+    } else if (ending === 'a pen move') {
+      elementAt(over).dispatchEvent(
+        new PointerEvent('pointermove', {...over, pointerType: 'pen'}),
+      );
+    }
+    // Then the selection changes, once the editor has handled the moves.
+    await new Promise(resolve => setTimeout(resolve));
+    if (ending === 'the key') {
+      await userEvent.keyboard('{Shift>}{ArrowLeft}{/Shift}');
+    } else {
+      // As a drop, or a script, moves it.
+      const text = editor.getElementByKey(trailingTextKey)?.firstChild;
+      assert(isDOMTextNode(text), 'expected the trailing text');
+      getDOMSelection(window)?.setBaseAndExtent(text, 6, text, 5);
+    }
+    await vi.waitFor(() => {
+      const points = editor.read('latest', () => {
+        const selection = $getSelection();
+        return $isRangeSelection(selection)
+          ? `${selection.anchor.key}:${selection.anchor.offset}->` +
+              `${selection.focus.key}:${selection.focus.offset}`
+          : String(selection);
       });
-    },
-  );
+      assert(
+        points === `${trailingTextKey}:6->${trailingTextKey}:5`,
+        `expected the focus one character back, got ${points}`,
+      );
+    });
+  });
 
   // An app can cancel a press before the editor's listener sees it (a check
   // list item's check mark does), and the browser then leaves the caret where
@@ -1473,7 +1550,8 @@ function describeEditorSelection(editor: LexicalEditor): string {
 }
 
 /**
- * Waits for a caret at `expected`, `type:offset` with the type of its node.
+ * Waits for a caret at `expected`, `type:offset` with the type of its node,
+ * or at one of them.
  */
 async function expectCaret(
   editor: LexicalEditor,
@@ -1518,6 +1596,37 @@ function withholdSelectionChanges(isWithheld: () => boolean): void {
       true,
     ),
   );
+}
+
+/**
+ * Keeps the selectionchange events of a press from the editor until its
+ * first move, or with `untilRelease` until its release, as a busy main thread
+ * can deliver them after those. The editor then gets one after the release.
+ */
+function withholdPressSelectionChanges(untilRelease = false): void {
+  let isWithheld = false;
+  onTestFinished(
+    registerEventListeners(document, {
+      pointerdown: () => {
+        isWithheld = true;
+      },
+      // After the editor's listener.
+      pointermove: event => {
+        if (!untilRelease && event.buttons === 1) {
+          isWithheld = false;
+        }
+      },
+      pointerup: () => {
+        if (isWithheld) {
+          isWithheld = false;
+          setTimeout(() =>
+            document.dispatchEvent(new Event('selectionchange')),
+          );
+        }
+      },
+    }),
+  );
+  withholdSelectionChanges(() => isWithheld);
 }
 
 describe('Issue #7158: mouse drags whose events come in another order', () => {
@@ -1569,10 +1678,48 @@ describe('Issue #7158: mouse drags whose events come in another order', () => {
     await expectSelectedDecoratorCount(editor, 1, []);
   });
 
+  // A hand that moves fast makes the first move of a drag well away from the
+  // press, before the editor has seen the press's selectionchange.
+  test('over unselectable boxed inline decorators on a line between line breaks, a drag with a fast first move from left of the first selects to the end of the line', () =>
+    dragFromLineEdge(
+      'start',
+      mount(false, BoxedImageDecoratorNode, BETWEEN_LINE_BREAKS),
+      {quickStart: true},
+    ));
+
   // On a busy main thread the first move of a drag can come before the
   // selectionchange of its press. The drag must still extend from the press,
-  // not from the caret before it.
-  test('a drag whose first move comes before the selectionchange of its press extends from the press', async () => {
+  // not from the caret before it, and from beside a decorator the press is
+  // beyond.
+  test.each<[string, DecoratorClass, MountOptions, 'end' | 'start']>([
+    [
+      'right of the last decorator of a line between line breaks',
+      ImageLikeDecoratorNode,
+      BETWEEN_LINE_BREAKS,
+      'end',
+    ],
+    [
+      'left of the first unselectable boxed decorator of a line between line breaks',
+      BoxedImageDecoratorNode,
+      BETWEEN_LINE_BREAKS,
+      'start',
+    ],
+    [
+      'left of the first decorator of a line, in an editor recovered from an error,',
+      BoxedImageDecoratorNode,
+      {...BETWEEN_LINE_BREAKS, recoverFromError: true},
+      'start',
+    ],
+  ])(
+    'a drag from %s whose first move comes before the selectionchange of its press selects from beside the decorator',
+    async (_name, klass, options, edge) => {
+      const mounted = mount(false, klass, options);
+      withholdPressSelectionChanges();
+      await dragFromLineEdge(edge, mounted);
+    },
+  );
+
+  test('a drag from text whose first move comes before the selectionchange of its press extends from the press', async () => {
     const {editor, left, pointerLog, root, textRect, y} = mount(
       false,
       BoxedImageDecoratorNode,
@@ -1585,21 +1732,7 @@ describe('Issue #7158: mouse drags whose events come in another order', () => {
       },
       {discrete: true},
     );
-    let isWithheld = false;
-    onTestFinished(
-      registerEventListeners(document, {
-        pointerdown: () => {
-          isWithheld = true;
-        },
-        // After the editor's listener on the root.
-        pointermove: event => {
-          if (event.buttons === 1) {
-            isWithheld = false;
-          }
-        },
-      }),
-    );
-    withholdSelectionChanges(() => isWithheld);
+    withholdPressSelectionChanges();
     const world = textRect('world');
     await mouseDrag([
       [world.x, world.y],
@@ -1644,6 +1777,33 @@ describe('Issue #7158: mouse drags whose events come in another order', () => {
     ]);
     await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
   });
+
+  // On a busy main thread the release of a click can come before the
+  // selectionchange of its press.
+  test.each<[string, DecoratorClass, MountOptions, 'end' | 'start']>([
+    [
+      'left of the first decorator of a line between line breaks',
+      ImageLikeDecoratorNode,
+      BETWEEN_LINE_BREAKS,
+      'start',
+    ],
+    [
+      'right of the last decorator of a line between line breaks',
+      ImageLikeDecoratorNode,
+      BETWEEN_LINE_BREAKS,
+      'end',
+    ],
+  ])(
+    'a click %s released before the selectionchange of its press puts the caret beside the decorator',
+    async (_name, klass, options, edge) => {
+      const {editor, left, pointerLog, right, y} = mount(false, klass, options);
+      withholdPressSelectionChanges(true);
+      await mouseDrag([
+        [edge === 'start' ? left(0) - 5 : right(COUNT - 1) + 30, y],
+      ]);
+      await expectCaret(editor, edgeCarets(options, edge), pointerLog);
+    },
+  );
 
   // A press on a selection can start a drag and drop of it, which the browser
   // decides on once the pointer has moved a few pixels. Until then the moves
@@ -1708,6 +1868,62 @@ describe('Issue #7158: mouse drags whose events come in another order', () => {
       );
     },
   );
+
+  // Chromium and WebKit take a press beyond either end of a selected line for
+  // a press on the selection, so the press must leave it to them. Firefox
+  // selects from there instead.
+  test.skipIf(server.browser === 'firefox')(
+    'a drag and drop of a selection pressed beyond the end of its line drags the selection',
+    async () => {
+      const {editor, pointerLog, right, root, y} = mount(
+        true,
+        ImageLikeDecoratorNode,
+        {trailingLine: 'below'},
+      );
+      root.focus();
+      // The whole first line.
+      editor.update(
+        () => {
+          $assertNodeType($getRoot().getFirstChild(), $isParagraphNode).select(
+            0,
+            2 * COUNT,
+          );
+        },
+        {discrete: true},
+      );
+      const describeContent = () =>
+        editor.read('latest', () => {
+          const selection = $getSelection();
+          return $isRangeSelection(selection)
+            ? `${selection.getNodes().filter($isDecoratorNode).length} ` +
+                `decorators and ${JSON.stringify(selection.getTextContent())}`
+            : String(selection);
+        });
+      const pressed = describeContent();
+      let dragged: string | null = null;
+      onTestFinished(
+        registerEventListener(
+          document,
+          'dragstart',
+          event => {
+            dragged = describeContent();
+            event.preventDefault();
+          },
+          true,
+        ),
+      );
+      const x = right(COUNT - 1) + 10;
+      await mouseDrag([
+        [x, y],
+        [x, y + 3 * SIZE],
+      ]);
+      assert(
+        dragged === pressed,
+        `expected a drag of ${pressed}, got ${dragged}, then ` +
+          `${describeEditorSelection(editor)} (pointer ${pointerLog.join(' ')})`,
+      );
+    },
+  );
 });
 
 describe('Issue #7158: mouse drags in other layouts and states', () => {
@@ -1745,35 +1961,34 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
 
   // Windows repeats the keydown of a held Shift, and a modifier can be
   // pressed mid-drag, neither of which ends the drag.
-  test.each([
-    ['a repeated Shift', {key: 'Shift', repeat: true, shiftKey: true}],
-    ['an Alt', {altKey: true, key: 'Alt'}],
-  ])(
-    'a drag with %s keydown mid-drag selects back to the third',
-    async (_name, init) => {
-      const {editor, left, pointerLog, right, root, y} = mount(
-        false,
-        BoxedImageDecoratorNode,
-      );
-      let moves = 0;
-      onTestFinished(
-        registerEventListener(root, 'pointermove', event => {
-          if (event.buttons === 1 && ++moves === 2) {
-            root.dispatchEvent(
-              new KeyboardEvent('keydown', {...init, bubbles: true}),
-            );
-          }
-        }),
-      );
-      await mouseDrag([
-        [right(COUNT - 1) + 30, y],
-        [left(COUNT - 2) + SIZE / 2, y],
-        [left(3) + SIZE / 2, y],
-        [left(2) - 2, y],
-      ]);
-      await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
-    },
-  );
+  test('a drag with a repeated Shift keydown and an Alt keydown mid-drag selects back to the third', async () => {
+    const {editor, left, pointerLog, right, root, y} = mount(
+      false,
+      BoxedImageDecoratorNode,
+    );
+    const keydowns: KeyboardEventInit[] = [
+      {key: 'Shift', repeat: true, shiftKey: true},
+      {altKey: true, key: 'Alt'},
+    ];
+    let moves = 0;
+    onTestFinished(
+      registerEventListener(root, 'pointermove', event => {
+        const init = event.buttons === 1 ? keydowns[++moves - 2] : undefined;
+        if (init) {
+          root.dispatchEvent(
+            new KeyboardEvent('keydown', {...init, bubbles: true}),
+          );
+        }
+      }),
+    );
+    await mouseDrag([
+      [right(COUNT - 1) + 30, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [left(3) + SIZE / 2, y],
+      [left(2) - 2, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+  });
 
   // In right-to-left text the decorators run from the right, and the right
   // half of one is before it.
@@ -1909,6 +2124,145 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
     );
   });
 
+  // Beside a short line, a pointer between its text and a decorator floated
+  // right that starts the paragraph is beyond the end of the line, not the
+  // start.
+  test('a click to the right of a short line beside a decorator floated right puts the caret at the end of the line', async () => {
+    let textKey = '';
+    const {editor, root} = mountEditor(() => {
+      const text = $createTextNode('Short line.');
+      textKey = text.getKey();
+      return [
+        $createParagraphNode().append($create(FloatRightDecoratorNode), text),
+      ];
+    });
+    const text = editor.getElementByKey(textKey)?.firstChild;
+    assert(isDOMTextNode(text), 'expected the text');
+    const last = rectIn(root, text, text.length - 1);
+    await mouseDrag([[last.right + 60, last.y]]);
+    const expected = `${textKey}:${text.length}->${textKey}:${text.length}`;
+    await vi.waitFor(() => {
+      const points = describeEditorSelection(editor);
+      assert(points === expected, `expected ${expected}, got ${points}`);
+    });
+  });
+
+  // A drag can be released outside the root element, where the editor does
+  // not see the release. A later drag from outside the editor that crosses
+  // the root keeps its own anchor.
+  test('after a drag released outside the root element, a drag from page text across the root keeps its anchor there', async () => {
+    const {editor, left, pointerLog, right, root, y} = mount(
+      false,
+      ImageLikeDecoratorNode,
+    );
+    const other = document.createElement('div');
+    other.style.cssText = 'width:380px;padding:10px;font-size:16px';
+    document.body.appendChild(other);
+    onTestFinished(() => other.remove());
+    other.textContent = 'Page text outside of the editor.';
+    const rootRect = root.getBoundingClientRect();
+    const otherRect = other.getBoundingClientRect();
+    const otherY = (otherRect.top + otherRect.bottom) / 2 - rootRect.top;
+    await mouseDrag([
+      [right(COUNT - 1) + 30, y],
+      [left(3) + SIZE / 2, y],
+      [100, otherY],
+    ]);
+    const before = describeEditorSelection(editor);
+    await mouseDrag([
+      [150, otherY],
+      [170, otherY],
+      [150, y],
+      [left(1) + SIZE / 4, y],
+    ]);
+    await vi.waitFor(() => {
+      const selection = getDOMSelection(window);
+      assert(
+        selection !== null && other.contains(selection.anchorNode),
+        `expected the anchor in the page text, got ` +
+          `${describeDOMSelection(selection)} (editor ${before} then ` +
+          `${describeEditorSelection(editor)}; pointer ${pointerLog.join(' ')})`,
+      );
+    });
+  });
+
+  // The editor works out the format of a selection from the text it holds,
+  // which typing at a caret uses, and must keep it when a release or the
+  // first move of a press takes the selection from the DOM.
+  test('a drag over bold text selects with the bold format', async () => {
+    let textKey = '';
+    const {editor, root} = mountEditor(() => {
+      const text = $createTextNode('hello world and more').toggleFormat('bold');
+      textKey = text.getKey();
+      return [$createParagraphNode().append(text)];
+    });
+    const text = editor.getElementByKey(textKey)?.firstChild;
+    assert(isDOMTextNode(text), 'expected the text');
+    const from = rectIn(root, text, 1);
+    const to = rectIn(root, text, 8);
+    await mouseDrag([
+      [from.x, from.y],
+      [to.x, to.y],
+    ]);
+    await vi.waitFor(() =>
+      assert(
+        editor.read('latest', () => {
+          const selection = $getSelection();
+          return (
+            $isRangeSelection(selection) &&
+            !selection.isCollapsed() &&
+            selection.hasFormat('bold')
+          );
+        }),
+        `expected a bold selection, got ${describeEditorSelection(editor)}`,
+      ),
+    );
+  });
+
+  // A click often moves the mouse a pixel or so, which is a drag.
+  test('typing after a click on the caret that moves a pixel in bold text types bold text', async () => {
+    let textKey = '';
+    const {editor, root} = mountEditor(() => {
+      const text = $createTextNode('hello world and more').toggleFormat('bold');
+      textKey = text.getKey();
+      return [$createParagraphNode().append(text)];
+    });
+    root.focus();
+    // With the format a click would give it.
+    editor.update(
+      () => {
+        const text = $assertNodeType($getNodeByKey(textKey), $isTextNode);
+        text.select(7, 7).format = text.getFormat();
+      },
+      {discrete: true},
+    );
+    // After the selectionchange of that caret.
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const text = editor.getElementByKey(textKey)?.firstChild;
+    assert(isDOMTextNode(text), 'expected the text');
+    const {left, y} = rectIn(root, text, 7);
+    await mouseDrag([
+      [left + 1, y],
+      [left + 2, y],
+      [left + 1, y],
+    ]);
+    const clicked = describeEditorSelection(editor);
+    await userEvent.keyboard('X');
+    await vi.waitFor(() => {
+      const format = editor.read('latest', () => {
+        const typed = $getRoot()
+          .getAllTextNodes()
+          .find(node => node.getTextContent().includes('X'));
+        return typed === undefined ? 'nothing typed' : typed.getFormat();
+      });
+      assert(
+        format === 1,
+        `expected X typed in bold, got format ${format} after a click ` +
+          `to ${clicked}`,
+      );
+    });
+  });
+
   // In a read-only editor the editor does not write the DOM selection, so a
   // drag is left to the browser, and a copy, which the editor makes from its
   // own selection, copies what is highlighted.
@@ -1952,47 +2306,65 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
 });
 
 // macOS Chrome and Safari extend a Shift press from the far end of the
-// selection, where Linux extends it from its anchor. Making the far end the
-// anchor before the press, as macOS would, the editor must keep that anchor.
-test('Issue #7158: a Shift click keeps the anchor the browser extends from', async () => {
-  const {editor, pointerLog, root, textRect, trailingTextKey} = mount(
-    false,
-    ImageLikeDecoratorNode,
-    {trailingText: ' hello world'},
-  );
-  assert(trailingTextKey !== null, 'expected the trailing text');
-  root.focus();
-  editor.update(
-    () => {
-      $assertNodeType($getNodeByKey(trailingTextKey), $isTextNode).select(
-        7,
-        12,
-      );
-    },
-    {discrete: true},
-  );
-  onTestFinished(
-    registerEventListener(
-      window,
-      'mousedown',
+// selection, where Linux extends it from its anchor. They decide that in the
+// press's default action, which this listener, after the editor's, stands in
+// for: it makes the far end the anchor, here the end of a selection the press
+// is before. The editor must leave the selection to that, on text and beyond
+// a decorator that starts the line.
+test.each([
+  ['on text', false],
+  ['left of the first decorator', true],
+])(
+  'Issue #7158: a Shift click %s keeps the anchor the browser extends from',
+  async (_name, isBeyondDecorator) => {
+    const {editor, left, pointerLog, root, textRect, trailingTextKey, y} =
+      mount(false, ImageLikeDecoratorNode, {trailingText: ' hello world'});
+    assert(trailingTextKey !== null, 'expected the trailing text');
+    root.focus();
+    editor.update(
       () => {
-        const text = editor.getElementByKey(trailingTextKey)?.firstChild;
-        assert(isDOMTextNode(text), 'expected the text');
-        getDOMSelection(window)?.setBaseAndExtent(text, 12, text, 7);
+        $assertNodeType($getNodeByKey(trailingTextKey), $isTextNode).select(
+          7,
+          12,
+        );
       },
-      true,
-    ),
-  );
-  const hello = textRect('hello');
-  await mouseDrag([[hello.x, hello.y]], {modifiers: ['Shift']});
-  await vi.waitFor(() => {
-    const points = describeEditorSelection(editor);
-    assert(
-      points.startsWith(`${trailingTextKey}:12->${trailingTextKey}:`) &&
-        !points.endsWith(':7') &&
-        !points.endsWith(':12'),
-      `expected the selection from the end of "world" to the press, got ` +
-        `${points} (pointer ${pointerLog.join(' ')})`,
+      {discrete: true},
     );
-  });
-});
+    let pressed = '';
+    onTestFinished(
+      registerEventListener(window, 'mousedown', () => {
+        const selection = getDOMSelection(window);
+        assert(selection !== null, 'expected a DOM selection');
+        pressed = describeDOMSelection(selection);
+        const range = selection.getRangeAt(0);
+        selection.setBaseAndExtent(
+          range.endContainer,
+          range.endOffset,
+          range.startContainer,
+          range.startOffset,
+        );
+      }),
+    );
+    const hello = textRect('hello');
+    await mouseDrag(
+      [isBeyondDecorator ? [left(0) - 5, y] : [hello.x, hello.y]],
+      {modifiers: ['Shift']},
+    );
+    const paragraphKey = editor.read('latest', () =>
+      $getRoot().getFirstChildOrThrow().getKey(),
+    );
+    await vi.waitFor(() => {
+      const points = describeEditorSelection(editor);
+      const [anchor, focus] = points.split('->');
+      assert(
+        anchor === `${trailingTextKey}:12` &&
+          (isBeyondDecorator
+            ? focus === `${paragraphKey}:0`
+            : /:[1-6]$/.test(focus) && focus.startsWith(`${trailingTextKey}:`)),
+        `expected the selection from the end of "world" to the press, got ` +
+          `${points}, from ${pressed} at the press ` +
+          `(pointer ${pointerLog.join(' ')})`,
+      );
+    });
+  },
+);

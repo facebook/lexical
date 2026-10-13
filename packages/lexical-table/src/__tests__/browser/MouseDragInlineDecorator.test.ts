@@ -11,6 +11,7 @@
  * focus of its own selection as the drag moves. In a table, a drag that
  * leaves its cell becomes the table's own selection, which Lexical must leave
  * to the table, also on release: a drag into a cell over an inline decorator
+ * (an image, or a chip of text that a browser can put the drag's focus in)
  * selects the cells, and a drag out of the table below it selects the whole
  * table.
  */
@@ -63,11 +64,27 @@ class InlineImageNode extends DecoratorNode<null> {
   }
 }
 
+/** A chip of text, like a mention. */
+class InlineChipNode extends InlineImageNode {
+  $config() {
+    return this.config('test_table_mouse_drag_chip', {
+      extends: InlineImageNode,
+    });
+  }
+  createDOM(): HTMLElement {
+    const span = document.createElement('span');
+    span.style.cssText = `display:inline-block;width:${SIZE}px;height:${SIZE}px;background:#ccc;overflow:hidden`;
+    span.textContent = '@abcdef';
+    return span;
+  }
+}
+
 /**
  * A 1x2 table whose first cell holds "Cell A text" and whose second starts
- * with an inline image, above a paragraph of "below the table".
+ * with an inline image, or with `Decorator` between text, above a paragraph
+ * of "below the table".
  */
-function mount() {
+function mount(Decorator: typeof InlineImageNode = InlineImageNode) {
   const root = document.createElement('div');
   root.id = 'table-mouse-drag-root';
   root.contentEditable = 'true';
@@ -86,7 +103,10 @@ function mount() {
                 ),
                 $createTableCellNode().append(
                   $createParagraphNode().append(
-                    $create(InlineImageNode),
+                    ...(Decorator === InlineImageNode
+                      ? []
+                      : [$createTextNode('B ')]),
+                    $create(Decorator),
                     $createTextNode(' B'),
                   ),
                 ),
@@ -97,7 +117,7 @@ function mount() {
       },
       dependencies: [RichTextExtension, TableExtension],
       name: '[table-mouse-drag]',
-      nodes: [InlineImageNode],
+      nodes: [InlineImageNode, InlineChipNode],
       theme: {tableScrollableWrapper: ''},
     }),
   );
@@ -120,10 +140,10 @@ function mount() {
   assert(isDOMTextNode(cellText), 'Expected the text of the first cell');
   const textRange = document.createRange();
   textRange.selectNodeContents(cellText);
-  const image = root.querySelector(
-    'td img:not([data-lexical-decorator-boundary])',
-  );
-  assert(image !== null, 'Expected the image in the second cell');
+  const decorator = root.querySelector('td [data-lexical-decorator]');
+  assert(decorator !== null, 'Expected the decorator in the second cell');
+  // The image in it, or the chip itself.
+  const image = decorator.firstElementChild || decorator;
   const below = root.querySelector(':scope > p');
   assert(below !== null, 'Expected the paragraph below the table');
   return {
@@ -198,33 +218,39 @@ function describeWrites(
     .join(' ');
 }
 
-test('a drag from a cell to an inline decorator in the next cell leaves the cells to the table', async () => {
-  const {cellTextBox, editor, image} = mount();
-  const writes = recordDOMSelectionWrites(editor);
-  const textY = (cellTextBox.top + cellTextBox.bottom) / 2;
-  const imageY = (image.top + image.bottom) / 2;
-  await commands.mouseDrag(
-    '#table-mouse-drag-root',
-    [
-      [cellTextBox.left + 20, textY],
-      [cellTextBox.right - 5, textY],
-      [image.left + SIZE / 4, imageY],
-      [image.left + SIZE / 2, imageY],
-      [image.left + SIZE / 4, imageY],
-    ],
-    {maxStep: SIZE / 2},
-  );
-  await vi.waitFor(() =>
+test.each([
+  ['an inline image', InlineImageNode],
+  ['a chip of text', InlineChipNode],
+])(
+  'a drag from a cell to %s in the next cell leaves the cells to the table',
+  async (_name, Decorator) => {
+    const {cellTextBox, editor, image} = mount(Decorator);
+    const writes = recordDOMSelectionWrites(editor);
+    const textY = (cellTextBox.top + cellTextBox.bottom) / 2;
+    const imageY = (image.top + image.bottom) / 2;
+    await commands.mouseDrag(
+      '#table-mouse-drag-root',
+      [
+        [cellTextBox.left + 20, textY],
+        [cellTextBox.right - 5, textY],
+        [image.left + SIZE / 4, imageY],
+        [image.left + SIZE / 2, imageY],
+        [image.left + SIZE / 4, imageY],
+      ],
+      {maxStep: SIZE / 2},
+    );
+    await vi.waitFor(() =>
+      assert(
+        editor.read('latest', () => $isTableSelection($getSelection())),
+        'expected a table selection',
+      ),
+    );
     assert(
-      editor.read('latest', () => $isTableSelection($getSelection())),
-      'expected a table selection',
-    ),
-  );
-  assert(
-    !writes.some(({isTableSelected}) => isTableSelected),
-    `expected no DOM selection writes once the table selected the cells, got ${describeWrites(writes)}`,
-  );
-});
+      !writes.some(({isTableSelected}) => isTableSelected),
+      `expected no DOM selection writes once the table selected the cells, got ${describeWrites(writes)}`,
+    );
+  },
+);
 
 test('a drag out of a table below it leaves the table selected whole', async () => {
   const {below, cellText, cellTextBox, editor} = mount();

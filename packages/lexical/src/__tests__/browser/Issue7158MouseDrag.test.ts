@@ -670,13 +670,15 @@ test(
 // selection, and a press beyond the last decorator puts both of its points
 // inside that decorator, so it has no position in the text to report.
 test('Issue #7158: a drag from right of the last decorator into a word between decorators ends in the word', async () => {
-  const {editor, left, pointerLog, right, y} = mount(
+  const {editor, left, pointerLog, right, root, y} = mount(
     true,
     ImageLikeDecoratorNode,
     {betweenText: 'ab'},
   );
   await mouseDrag([
-    [right(COUNT - 1) + 30, y],
+    // Halfway to the right edge of the root, which the text before the
+    // decorators moves closer in a wider font.
+    [(right(COUNT - 1) + root.offsetWidth) / 2, y],
     [left(COUNT - 1) + SIZE / 2, y],
     // Between the "a" and the "b" before the fifth decorator.
     [(right(COUNT - 3) + left(COUNT - 2)) / 2, y],
@@ -1296,12 +1298,15 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
   // dialog took it), or that became a drag and drop, leaves a drag behind,
   // which must not move the focus of a later selection to where that drag
   // last was. A move with no button ends it, as do a dragstart, a context
-  // menu, a key, and a pen or touch moving.
+  // menu, a key, a pen or touch moving, a pointercancel, and the window
+  // losing focus.
   test.each([
     'a move with no button',
     'dragstart',
     'a context menu',
     'a pen move',
+    'a pointercancel',
+    'a window blur',
     'the key',
   ])('a press ended by %s leaves a later selection alone', async ending => {
     const {editor, left, root, textRect, trailingTextKey, y} = mount(
@@ -1343,6 +1348,10 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
       elementAt(over).dispatchEvent(
         new PointerEvent('pointermove', {...over, pointerType: 'pen'}),
       );
+    } else if (ending === 'a pointercancel') {
+      elementAt(over).dispatchEvent(new PointerEvent('pointercancel', over));
+    } else if (ending === 'a window blur') {
+      window.dispatchEvent(new FocusEvent('blur'));
     }
     // Then the selection changes, once the editor has handled the moves.
     await new Promise(resolve => setTimeout(resolve));

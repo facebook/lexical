@@ -2561,10 +2561,13 @@ export function addRootElementEvents(
     });
   };
   removeHandles.push(
-    registerEventListeners(rootElement.ownerDocument, {
+    registerEventListeners(doc, {
+      pointercancel: endMouseDrag,
       pointermove: onMouseDragMove,
       pointerup: onMouseDragMove,
     }),
+    // The window misses the release of a press that it loses focus during.
+    registerEventListener(getWindow(editor), 'blur', endMouseDrag),
     registerEventListeners(rootElement, {
       contextmenu: endMouseDrag,
       dragstart: endMouseDrag,

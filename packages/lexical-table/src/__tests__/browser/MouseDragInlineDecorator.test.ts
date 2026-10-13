@@ -13,7 +13,8 @@
  * to the table, also on release: a drag into a cell over an inline decorator
  * (an image, or a chip of text that a browser can put the drag's focus in)
  * selects the cells, and a drag out of the table below it selects the whole
- * table.
+ * table. So does a Shift-click from one cell into the next, which Lexical
+ * handles at the release when its selectionchange comes later.
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
@@ -29,12 +30,14 @@ import {
   $create,
   $createParagraphNode,
   $createTextNode,
+  $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
   DecoratorNode,
   isDOMTextNode,
   type LexicalEditor,
+  registerEventListener,
 } from 'lexical';
 import {assert, onTestFinished, test, vi} from 'vitest';
 import {commands} from 'vitest/browser';
@@ -292,4 +295,53 @@ test('a drag out of a table below it leaves the table selected whole', async () 
         .some(({anchorNode}) => anchorNode === cellText),
     `expected the anchor to stay at the start of the table, got ${describeWrites(writes)}`,
   );
+});
+
+test('a caret put at the start of the editor after a Shift-click into the next cell leaves the cells selected', async () => {
+  const {cellTextBox, editor, image} = mount();
+  const textY = (cellTextBox.top + cellTextBox.bottom) / 2;
+  await commands.mouseDrag('#table-mouse-drag-root', [
+    [cellTextBox.left + 20, textY],
+  ]);
+  const root = editor.getRootElement();
+  assert(root !== null, 'Expected the root element');
+  // A table selection removes the native one, and macOS Chromium then puts a
+  // caret at the start of the focused editor as it handles the release. The
+  // selectionchange of a click as quick as a test's comes after that, and
+  // the editor, which handled the press at the release, must not take that
+  // caret for the press's selection.
+  onTestFinished(
+    registerEventListener(window, 'click', () => {
+      const domSelection = window.getSelection();
+      if (domSelection !== null && domSelection.rangeCount === 0) {
+        domSelection.collapse(root, 0);
+      }
+    }),
+  );
+  const cellBox = root.querySelectorAll('td')[1].getBoundingClientRect();
+  await commands.mouseDrag(
+    '#table-mouse-drag-root',
+    [
+      [
+        cellBox.right - root.getBoundingClientRect().left - 8,
+        (image.top + image.bottom) / 2,
+      ],
+    ],
+    {modifiers: ['Shift'], quickStart: true},
+  );
+  editor.read('latest', () => {
+    const selection = $getSelection();
+    assert(
+      $isTableSelection(selection),
+      `expected a table selection, got ${selection && selection.constructor.name}`,
+    );
+    const [cellA, cellB] = Array.from(root.querySelectorAll('td'), cell =>
+      $getNearestNodeFromDOMNode(cell),
+    );
+    assert(
+      selection.anchor.getNode().is(cellA) &&
+        selection.focus.getNode().is(cellB),
+      'expected the selection from the first cell to the second',
+    );
+  });
 });

@@ -2185,6 +2185,20 @@ function getRootElementRemoveHandles(
   return eventHandles;
 }
 
+// Clear the flag on all editors registered on a document — a pointerdown
+// inside a nested editor bubbles to the parent, setting the flag on both.
+// Only one selectionchange fires, so stale flags on sibling/parent editors
+// must be cleared to match the previous single-global semantics.
+function clearSelectionChangeFromMouseDown(
+  registration: DocumentRegistration | undefined,
+): void {
+  if (registration !== undefined) {
+    for (const ed of registration.editors) {
+      ed._inputState.isSelectionChangeFromMouseDown = false;
+    }
+  }
+}
+
 // Mapping root editors to their active nested editors, contains nested editors
 // mapping only, so if root editor is selected map will have no reference to free up memory
 const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
@@ -2305,16 +2319,7 @@ function onDocumentSelectionChange(event: Event): void {
   }
 
   if (nextActiveEditor._inputState.isSelectionChangeFromMouseDown) {
-    // Clear the flag on all editors registered on this document — a
-    // pointerdown inside a nested editor bubbles to the parent, setting
-    // the flag on both. Only one selectionchange fires, so stale flags
-    // on sibling/parent editors must be cleared to match the previous
-    // single-global semantics.
-    if (registration !== undefined) {
-      for (const ed of registration.editors) {
-        ed._inputState.isSelectionChangeFromMouseDown = false;
-      }
-    }
+    clearSelectionChangeFromMouseDown(registration);
     updateEditorSync(nextActiveEditor, () => {
       const lastSelection = $getPreviousSelection();
       const domAnchorNode =
@@ -2541,7 +2546,11 @@ export function addRootElementEvents(
       } else if (inputState.isSelectionChangeFromMouseDown) {
         // The editor has not seen the press's selectionchange yet, which the
         // drag extends from, so this handles it, with the format and style
-        // that it takes from the node at the press.
+        // that it takes from the node at the press. That selectionchange,
+        // when it comes, must not replace what the editor made of the press,
+        // such as a table's selection of cells, after which macOS Chromium
+        // puts a caret at the start of the editor.
+        clearSelectionChangeFromMouseDown(documentRegistrations.get(doc));
         if (selection) {
           const node = selection.anchor.getNode();
           if ($isTextNode(node)) {

@@ -1951,10 +1951,15 @@ describe('Issue #7158: mouse drags whose events come in another order', () => {
         ),
       );
       const x = right(COUNT - 1) + 10;
-      await mouseDrag([
-        [x, y],
-        [x, y + 3 * SIZE],
-      ]);
+      // macOS drags a selection only after the pointer has stayed still for
+      // 150ms.
+      await mouseDrag(
+        [
+          [x, y],
+          [x, y + 3 * SIZE],
+        ],
+        {hold: 200},
+      );
       assert(
         dragged === pressed,
         `expected a drag of ${pressed}, got ${dragged}, then ` +

@@ -41,11 +41,14 @@ describe('no-unscoped-window-messaging', () => {
   it('is not enabled by the shared configs', () => {
     // It is about one messaging API in one package, so eslint.config.mjs
     // scopes it rather than the plugin turning it on everywhere.
-    for (const config of ['all', 'recommended', 'flat/all']) {
+    const configs = [
+      plugin.configs.all,
+      plugin.configs.recommended,
+      plugin.configs['flat/all'],
+    ];
+    for (const config of configs) {
       expect(
-        plugin.configs[config].rules[
-          '@lexical/internal/no-unscoped-window-messaging'
-        ],
+        config.rules['@lexical/internal/no-unscoped-window-messaging'],
       ).toBeUndefined();
     }
   });

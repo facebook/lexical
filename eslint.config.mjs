@@ -482,6 +482,16 @@ export default [
     },
   },
 
+  // A window messaging channel is addressable by anything running in the page,
+  // so its name has to be specific to that page rather than shared, and a
+  // message has to name the origin it is for.
+  {
+    files: ['packages/**', 'examples/**', 'dev-examples/**'],
+    rules: {
+      '@lexical/internal/no-unscoped-window-messaging': ERROR,
+    },
+  },
+
   // Keep extension source imports independent of the published bundle layout.
   // The package build rewrites barrels and relative siblings to subpaths.
   {

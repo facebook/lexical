@@ -2540,8 +2540,15 @@ export function addRootElementEvents(
         endMouseDrag();
       } else if (inputState.isSelectionChangeFromMouseDown) {
         // The editor has not seen the press's selectionchange yet, which the
-        // drag extends from, so this handles it.
+        // drag extends from, so this handles it, with the format and style
+        // that it takes from the node at the press.
         if (selection) {
+          const node = selection.anchor.getNode();
+          if ($isTextNode(node)) {
+            $updateSelectionFormatStyleFromTextNode(selection, node);
+          } else if ($isElementNode(node) && node.isEmpty()) {
+            $updateSelectionFormatStyleFromElementNode(selection, node);
+          }
           $setSelection(selection);
         }
         $adjustMouseDrag(

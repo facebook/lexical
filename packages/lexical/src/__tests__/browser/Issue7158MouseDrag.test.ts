@@ -1805,6 +1805,44 @@ describe('Issue #7158: mouse drags whose events come in another order', () => {
     },
   );
 
+  test('typing after a click in bold text released before the selectionchange of its press types bold text', async () => {
+    let boldKey = '';
+    const {editor, root} = mountEditor(() => {
+      const bold = $createTextNode('bold text').toggleFormat('bold');
+      boldKey = bold.getKey();
+      return [
+        $createParagraphNode().append($createTextNode('plain text '), bold),
+      ];
+    });
+    root.focus();
+    editor.update(
+      () => {
+        $getRoot().selectStart();
+      },
+      {discrete: true},
+    );
+    withholdPressSelectionChanges(true);
+    const text = editor.getElementByKey(boldKey)?.firstChild;
+    assert(isDOMTextNode(text), 'expected the bold text');
+    const {left, y} = rectIn(root, text, 4);
+    await mouseDrag([[left, y]]);
+    const clicked = describeEditorSelection(editor);
+    await userEvent.keyboard('X');
+    await vi.waitFor(() => {
+      const format = editor.read('latest', () => {
+        const typed = $getRoot()
+          .getAllTextNodes()
+          .find(node => node.getTextContent().includes('X'));
+        return typed === undefined ? 'nothing typed' : typed.getFormat();
+      });
+      assert(
+        format === 1,
+        `expected X typed in bold, got format ${format} after a click ` +
+          `to ${clicked}`,
+      );
+    });
+  });
+
   // A press on a selection can start a drag and drop of it, which the browser
   // decides on once the pointer has moved a few pixels. Until then the moves
   // must leave the selection alone, also in a shadow root, where WebKit

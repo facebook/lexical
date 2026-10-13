@@ -16,12 +16,12 @@
  * start of a line does not rewrite the selection on every move, that a Shift
  * drag keeps the selection's anchor, that events in another order (a fast
  * first move, a late selectionchange, a release before the last move's
- * selectionchange), other layouts (right-to-left text, floats, columns) and
- * pointer events that the page stops from propagating are handled, and that
- * the presses the editor must not follow (double clicks, presses on a
- * selection, cancelled presses, touch and pen, read-only editors,
- * compositions, presses ended by a move with no button, a dragstart or a key)
- * are left to the browser.
+ * selectionchange), other layouts (lines that wrap after a decorator,
+ * right-to-left text, floats, columns) and pointer events that the page stops
+ * from propagating are handled, and that the presses the editor must not
+ * follow (double clicks, presses on a selection, cancelled presses, touch and
+ * pen, read-only editors, compositions, presses ended by a move with no
+ * button, a dragstart or a key) are left to the browser.
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
@@ -270,6 +270,8 @@ interface MountOptions {
    * which it renders its state again with new input state.
    */
   recoverFromError?: boolean;
+  /** The width of the root element's content, if not 380px. */
+  width?: number;
 }
 
 const NODES = [
@@ -385,6 +387,7 @@ function mount(
     betweenText = ' ',
     inShadowRoot = false,
     recoverFromError = false,
+    width,
   }: MountOptions = {},
 ) {
   const {editor, root} = mountEditor(
@@ -416,6 +419,9 @@ function mount(
     inShadowRoot,
     recoverFromError,
   );
+  if (width !== undefined) {
+    root.style.width = `${width}px`;
+  }
   const trailingTextKey = editor.read('latest', () => {
     const last = $getRoot().getLastDescendant();
     return $isTextNode(last) ? last.getKey() : null;
@@ -1160,6 +1166,53 @@ describe.each([
         trailingLine: 'text',
       }),
     );
+  },
+);
+
+// A line that the browser wraps after a decorator ends in that decorator, as
+// one that a line break ends does: with a word too long for the rest of the
+// line right after the last decorator, or with only decorators, three to a
+// line. Past the end of such a line, Firefox puts a drag's focus inside the
+// decorator, and WebKit puts a press or a drag's focus before it.
+describe.each<[string, MountOptions, number]>([
+  [
+    'a long word wraps after the last decorator',
+    {trailingText: 'b'.repeat(30)},
+    COUNT,
+  ],
+  ['the decorators wrap after the third', {width: 3 * SIZE + 30}, 3],
+])(
+  'Issue #7158: mouse drag and click on a line that %s',
+  (_name, options, count) => {
+    // The editor, with the point right of the end of its first line.
+    const mountWrapped = () => {
+      const mounted = mount(false, ImageLikeDecoratorNode, options);
+      const {left, right, textRect, y} = mounted;
+      const next =
+        options.trailingText !== undefined ? textRect('b').left : left(count);
+      assert(
+        next < right(count - 1),
+        `expected the line to wrap after decorator ${count}`,
+      );
+      const end: [x: number, y: number] = [right(count - 1) + 20, y];
+      return {...mounted, end};
+    };
+    test('a drag from left of the first decorator past the end of the line selects to the end of the line', async () => {
+      const {editor, end, left, pointerLog, y} = mountWrapped();
+      await mouseDrag([[left(0) - 5, y], [left(1) + SIZE / 2, y], end]);
+      await expectSelectedDecoratorCount(editor, count, pointerLog);
+    });
+    test('a click past the end of the line puts the caret after the last decorator', async () => {
+      const {editor, end, pointerLog} = mountWrapped();
+      await mouseDrag([end]);
+      // Or at the start of the word after it, the same position.
+      await expectCaret(editor, [`paragraph:${count}`, 'text:0'], pointerLog);
+    });
+    test('a drag from past the end of the line selects back to the second decorator', async () => {
+      const {editor, end, left, pointerLog, y} = mountWrapped();
+      await mouseDrag([end, [left(count - 1) + SIZE / 2, y], [left(1) - 2, y]]);
+      await expectSelectedDecoratorCount(editor, count - 1, pointerLog);
+    });
   },
 );
 

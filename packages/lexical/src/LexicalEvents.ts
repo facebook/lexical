@@ -897,9 +897,11 @@ function $adjustMouseDrag(
         : node.getLastDescendant()
       : node;
   // The node under the pointer, then, when the pointer is over a block
-  // rather than its content, the first and last of each of its lines, which
-  // the pointer must be beyond.
-  const candidates: [LexicalNode | null, boolean | null][] = [[hit, null]];
+  // rather than its content, the first and last of each of its children,
+  // with the node beside it there (none at a line break), which the pointer
+  // must be beyond at the edge of a line.
+  const candidates: [LexicalNode | null, boolean | null, LexicalNode | null][] =
+    [[hit, null, null]];
   const block =
     $isElementNode(hit) &&
     !hit.isInline() &&
@@ -909,14 +911,16 @@ function $adjustMouseDrag(
   for (const child of block ? block.getChildren() : []) {
     for (const isStart of [true, false]) {
       const sib = isStart ? child.getPreviousSibling() : child.getNextSibling();
-      if (sib === null || $isLineBreakNode(sib)) {
-        candidates.push([$leaf(child, isStart), isStart]);
-      }
+      candidates.push([
+        $leaf(child, isStart),
+        isStart,
+        $isLineBreakNode(sib) ? null : sib,
+      ]);
     }
   }
   const win = getWindow(editor);
   const range = win.document.createRange();
-  for (const [node, isStart] of candidates) {
+  for (const [node, isStart, sib] of candidates) {
     if (!$isDecoratorNode(node) || !node.isInline()) {
       continue;
     }
@@ -933,13 +937,17 @@ function $adjustMouseDrag(
       contents.height > rect.height ? contents : rect;
     const style = win.getComputedStyle(dom);
     const isAfter = x * 2 > left + right !== (style.direction === 'rtl');
+    const sibDOM = sib && editor.getElementByKey(sib.getKey());
+    const sibRect = sibDOM && sibDOM.getBoundingClientRect();
     if (
       isStart === null ||
-      // A float is at the edge of no line.
+      // A float is at the edge of no line, and a decorator beside a node
+      // above or below it is at the edge of a line that wraps there.
       (isAfter !== isStart &&
         y >= top &&
         y <= bottom &&
-        style.cssFloat === 'none')
+        style.cssFloat === 'none' &&
+        (!sibRect || sibRect.bottom <= top || sibRect.top >= bottom))
     ) {
       // A focus already beside it stays, as WebKit reports no move to a
       // point it takes for the same one.

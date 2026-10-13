@@ -25,10 +25,13 @@ type Point = [x: number, y: number];
  * Selection.setBaseAndExtent/extend calls do not model that. The mouse moves
  * between the points in steps of at most `maxStep` pixels, after a first
  * move of a pixel or two, or, with `quickStart`, from the press at once, as a
- * hand that moves fast does, before the browser has handled the press. A
- * clickCount above 1 makes the press that drags the last click of a double
- * or triple click. The `modifiers` keys are held from before the first press
- * until the release.
+ * hand that moves fast does, before the browser has handled the press. With
+ * `hold`, the pointer stays still for that many milliseconds after the
+ * press, which macOS Chromium and WebKit wait for (150ms) before a press on
+ * a selection can drag it rather than select from the pointer. A clickCount
+ * above 1 makes the press that drags the last click of a double or triple
+ * click. The `modifiers` keys are held from before the first press until the
+ * release.
  */
 async function mouseDrag(
   {frame, page}: BrowserCommandContext,
@@ -36,11 +39,13 @@ async function mouseDrag(
   points: [first: Point, ...rest: Point[]],
   {
     clickCount = 1,
+    hold = 0,
     maxStep = Infinity,
     modifiers = [],
     quickStart = false,
   }: {
     clickCount?: number;
+    hold?: number;
     maxStep?: number;
     modifiers?: ('Alt' | 'Control' | 'Meta' | 'Shift')[];
     quickStart?: boolean;
@@ -50,8 +55,11 @@ async function mouseDrag(
   const target = testFrame.locator(selector);
   const [first, ...rest] = points;
   // The element stays put during a drag, so look it up once and move the
-  // mouse to page coordinates from its box.
-  await target.scrollIntoViewIfNeeded();
+  // mouse to page coordinates from its box. Not with scrollIntoViewIfNeeded,
+  // which waits for the element to stay put for two frames first.
+  await target.evaluate(element =>
+    element.scrollIntoView({block: 'nearest', inline: 'nearest'}),
+  );
   const box = await target.boundingBox();
   assert(box !== null, `mouseDrag target ${selector} is not visible`);
   await page.mouse.move(box.x + first[0], box.y + first[1]);
@@ -102,7 +110,7 @@ async function mouseDrag(
   // Wait until the frame has dispatched the step's pointer event, then until
   // the tasks it queued have run and no selectionchange is still to be
   // dispatched and handled.
-  const settle = async (step: string) => {
+  const settle = async (name: string) => {
     const result = await tracker.evaluate(async (state, expected) => {
       const nextTask = () =>
         new Promise<void>(resolve => setTimeout(resolve, 0));
@@ -117,7 +125,11 @@ async function mouseDrag(
       do {
         await nextTask();
         const next = state.getPoints();
-        unchangedTasks = isSame(next, current) ? unchangedTasks + 1 : 0;
+        // Counted from the step's event, which can come after the wait starts.
+        unchangedTasks =
+          state.events >= expected && isSame(next, current)
+            ? unchangedTasks + 1
+            : 0;
         current = next;
         // WebKit reports no selectionchange for a selection that it takes for
         // the one it has, such as points on either side of a user-select:none
@@ -133,8 +145,13 @@ async function mouseDrag(
     // than one pointer event doesn't let later steps stop waiting early.
     events = result.events;
     if (!result.isSettled) {
-      console.warn(`mouseDrag ${selector}: ${step} did not settle in 1s`);
+      console.warn(`mouseDrag ${selector}: ${name} did not settle in 1s`);
     }
+  };
+  // Take a step and settle it, waiting from the start of the step so that the
+  // wait costs no round trip of its own.
+  const step = async (name: string, action: Promise<void>) => {
+    await Promise.all([action, settle(name)]);
   };
   let isPressed = false;
   const heldKeys: string[] = [];
@@ -144,16 +161,19 @@ async function mouseDrag(
       heldKeys.push(key);
     }
     for (let count = 1; count < clickCount; count++) {
-      await page.mouse.down({clickCount: count});
-      await settle(`press ${count}`);
-      await page.mouse.up({clickCount: count});
-      await settle(`release ${count}`);
+      await step(`press ${count}`, page.mouse.down({clickCount: count}));
+      await step(`release ${count}`, page.mouse.up({clickCount: count}));
     }
-    await page.mouse.down({clickCount});
+    const press = page.mouse.down({clickCount});
     isPressed = true;
     let [lastX, lastY] = first;
-    if (!quickStart) {
-      await settle('press');
+    if (quickStart) {
+      await press;
+    } else {
+      await step('press', press);
+      if (hold > 0) {
+        await new Promise(resolve => setTimeout(resolve, hold));
+      }
       // Chromium collapses the selection at the pointer on the first drag
       // move after a press that placed a caret, and extends it from there, so
       // a drag's anchor is where it first moved. A hand starts a drag with a
@@ -164,8 +184,10 @@ async function mouseDrag(
         if (distance > 2) {
           lastX += ((x - lastX) * 2) / distance;
           lastY += ((y - lastY) * 2) / distance;
-          await page.mouse.move(box.x + lastX, box.y + lastY);
-          await settle('first move');
+          await step(
+            'first move',
+            page.mouse.move(box.x + lastX, box.y + lastY),
+          );
         }
       }
     }
@@ -175,17 +197,18 @@ async function mouseDrag(
         Math.ceil(Math.hypot(x - lastX, y - lastY) / maxStep),
       );
       for (let i = 1; i <= steps; i++) {
-        await page.mouse.move(
-          box.x + lastX + ((x - lastX) * i) / steps,
-          box.y + lastY + ((y - lastY) * i) / steps,
+        await step(
+          `move to (${x}, ${y})`,
+          page.mouse.move(
+            box.x + lastX + ((x - lastX) * i) / steps,
+            box.y + lastY + ((y - lastY) * i) / steps,
+          ),
         );
-        await settle(`move to (${x}, ${y})`);
       }
       [lastX, lastY] = [x, y];
     }
-    await page.mouse.up({clickCount});
+    await step('release', page.mouse.up({clickCount}));
     isPressed = false;
-    await settle('release');
   } finally {
     // Leave no button, key or listener behind for the next test, without
     // hiding the error that got here behind one from a frame that is gone.

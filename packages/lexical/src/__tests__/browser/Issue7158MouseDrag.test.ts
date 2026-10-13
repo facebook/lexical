@@ -880,8 +880,8 @@ describe('Issue #7158: mouse drag over selectable boxed inline decorators', () =
   // selection inside a decorator, where it resolves to no Lexical selection.
   // Linux Chromium does not do this, so do it the way it would: after the
   // browser and Lexical have handled a pointermove. This listener bubbles to
-  // the document after the root's, and its timeout runs after the one the
-  // root's handler queued.
+  // the document after the root's, and its timeout runs after the browser's
+  // default action for the move.
   test('a drag that restarts inside a decorator keeps its anchor', async () => {
     const {editor, left, pointerLog, right, root, y} = mount(
       false,
@@ -1025,23 +1025,7 @@ describe.each<[string, DecoratorClass, MountOptions]>([
           ? [`test_7158_inline_wrapper:${offset === 0 ? 0 : 1}`]
           : []),
       ];
-      await vi.waitFor(
-        () => {
-          const caret = editor.read('latest', () => {
-            const selection = $getSelection();
-            return $isRangeSelection(selection) && selection.isCollapsed()
-              ? `${selection.anchor.getNode().getType()}:${selection.anchor.offset}`
-              : String(selection);
-          });
-          assert(
-            carets.includes(caret),
-            `expected the caret at ${carets.join(' or ')}, got ${caret} ` +
-              `(dom ${describeDOMSelection(getDOMSelection(window))}; ` +
-              `pointer ${pointerLog.join(' ')})`,
-          );
-        },
-        {interval: 50, timeout: 2000},
-      );
+      await expectCaret(editor, carets, pointerLog);
     },
   );
 });
@@ -1493,9 +1477,10 @@ function describeEditorSelection(editor: LexicalEditor): string {
  */
 async function expectCaret(
   editor: LexicalEditor,
-  expected: string,
+  expected: string | string[],
   pointerLog: string[],
 ): Promise<void> {
+  const carets = typeof expected === 'string' ? [expected] : expected;
   await vi.waitFor(
     () => {
       const caret = editor.read('latest', () => {
@@ -1505,8 +1490,8 @@ async function expectCaret(
           : String(selection);
       });
       assert(
-        caret === expected,
-        `expected the caret at ${expected}, got ${caret} ` +
+        carets.includes(caret),
+        `expected the caret at ${carets.join(' or ')}, got ${caret} ` +
           `(dom ${describeDOMSelection(getDOMSelection(window))}; ` +
           `pointer ${pointerLog.join(' ')})`,
       );
@@ -1663,7 +1648,9 @@ describe('Issue #7158: mouse drags whose events come in another order', () => {
   // A press on a selection can start a drag and drop of it, which the browser
   // decides on once the pointer has moved a few pixels. Until then the moves
   // must leave the selection alone, also in a shadow root, where WebKit
-  // reports a selection as collapsed at the host.
+  // reports a selection as collapsed at the host. On macOS, Chromium and
+  // WebKit drag a selection only when the pointer has stayed still for 150ms
+  // after the press, and otherwise select from the pointer.
   test.each([
     ['', false],
     [' in a shadow root', true],
@@ -1706,11 +1693,14 @@ describe('Issue #7158: mouse drags whose events come in another order', () => {
       );
       // On the space after the last decorator, then onto that decorator.
       const textY = textRect('hello').y;
-      await mouseDrag([
-        [right(COUNT - 1) + 2, textY],
-        [right(COUNT - 1) - 3, textY],
-        [right(COUNT - 1) - 3, y + 3 * SIZE],
-      ]);
+      await mouseDrag(
+        [
+          [right(COUNT - 1) + 2, textY],
+          [right(COUNT - 1) - 3, textY],
+          [right(COUNT - 1) - 3, y + 3 * SIZE],
+        ],
+        {hold: 200},
+      );
       assert(
         dragged === pressed,
         `expected a drag of ${pressed}, got ${dragged} ` +
@@ -1823,9 +1813,7 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
       assert(isDOMTextNode(text), 'expected the text');
       const char = rectIn(root, text, 5);
       await mouseDrag([[char.x, char.y]]);
-      await expectCaret(editor, `text:5`, []).catch(() =>
-        expectCaret(editor, `text:6`, []),
-      );
+      await expectCaret(editor, ['text:5', 'text:6'], []);
     },
   );
 

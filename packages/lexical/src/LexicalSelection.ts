@@ -61,7 +61,6 @@ import {DOM_TEXT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
-  setMouseSelectionDragAnchor,
 } from './LexicalEvents';
 import {getIsProcessingMutations} from './LexicalMutations';
 import {insertRangeAfter, type LexicalNode, type NodeKey} from './LexicalNode';
@@ -118,8 +117,6 @@ import {
   isDOMShadowRoot,
   isDOMTextNode,
   isHTMLElement,
-  isManagedLineBreakDOM,
-  isMouseSelectionDragging,
   isSelectionWithinEditor,
   removeDOMBlockCursorElement,
   scrollIntoViewIfNeeded,
@@ -3509,20 +3506,20 @@ const SELECTION_KEYS = /* @__PURE__ */ new Set([
   'Tab',
 ]);
 
-function isSelectionKeyDownEvent(event: Event, editor: LexicalEditor): boolean {
-  if (event.type !== 'keydown') {
-    return false;
-  }
-  const {ctrlKey, key, metaKey} = event as KeyboardEvent;
-  if (!ctrlKey && !metaKey && !SELECTION_KEYS.has(key)) {
-    return false;
-  }
+function isSelectionKeyDownEvent(
+  event: KeyboardEvent,
+  editor: LexicalEditor,
+): boolean {
   // Only a keydown sent to this editor can follow a native caret move in it
   // that the browser has not reported yet. A shortcut handled elsewhere (a
   // toolbar, a dialog, a global hotkey) that updates this editor acts at the
   // editor's own selection, not at a DOM selection left behind in its root.
   const target = getComposedEventTarget(event);
-  return isDOMNode(target) && getNearestEditorFromDOMNode(target) === editor;
+  return (
+    (event.ctrlKey || event.metaKey || SELECTION_KEYS.has(event.key)) &&
+    isDOMNode(target) &&
+    getNearestEditorFromDOMNode(target) === editor
+  );
 }
 
 export function $internalCreateRangeSelection(
@@ -3557,7 +3554,8 @@ export function $internalCreateRangeSelection(
   // (key repeat, or a busy main thread). Reading the DOM here keeps that
   // keydown from acting on the caret from before the native move.
   const isSelectionKeyDown =
-    windowEvent != null && isSelectionKeyDownEvent(windowEvent, editor);
+    eventType === 'keydown' &&
+    isSelectionKeyDownEvent(windowEvent as KeyboardEvent, editor);
   const useDOMSelection =
     !getIsProcessingMutations() &&
     (isSelectionChange ||
@@ -3914,31 +3912,6 @@ function $getElementPointScrollTarget(
     : child;
 }
 
-/** Whether the DOM point at `offset` in `node` resolves to `point`. */
-function $isDOMPointAt(
-  node: Node | null,
-  offset: number,
-  point: PointType,
-  editor: LexicalEditor,
-): boolean {
-  const resolved =
-    node !== null
-      ? $internalResolveSelectionPoint(node, offset, null, editor)
-      : null;
-  return resolved !== null && resolved[0].is(point);
-}
-
-/**
- * The offset in `node` before any managed line break children that precede
- * `offset`, which is the same position as far as Lexical is concerned.
- */
-function skipManagedLineBreak(node: Node, offset: number): number {
-  while (offset > 0 && isManagedLineBreakDOM(node.childNodes[offset - 1])) {
-    offset--;
-  }
-  return offset;
-}
-
 /** @internal */
 export function $updateDOMSelection(
   prevSelection: BaseSelection | null,
@@ -3993,15 +3966,8 @@ export function $updateDOMSelection(
     // of editor.setRootElement(). If this occurs on init when the
     // editor is already focused, then this can cause the editor to
     // lose focus.
-    // During a mouse selection drag, the browser's selection is the drag in
-    // progress, and removing it would restart the drag from wherever the
-    // pointer moves next. nextSelection is null here when a drag point lands
-    // inside a decorator, which the next pointermove moves out. A click still
-    // removes it: Firefox relies on that to place a click between block
-    // decorators.
     if (
       prevSelection !== null &&
-      !isMouseSelectionDragging(editor) &&
       isSelectionWithinEditor(
         editor,
         currentPoints.anchorNode,
@@ -4120,44 +4086,6 @@ export function $updateDOMSelection(
     if (anchor.type !== 'element') {
       return;
     }
-  }
-
-  // During a mouse drag past the end of a line that ends in an inline
-  // decorator, the browser can put the focus after the managed line break
-  // (its <img> on the engines that render one, or its <br>), which is the
-  // same Lexical point as before it. Writing the selection back would only
-  // make the browser move it again on the next pointer move, turning every
-  // move into two selection changes.
-  if (
-    isMouseSelectionDragging(editor) &&
-    currentPoints.anchorNode === nextAnchorNode &&
-    currentPoints.focusNode === nextFocusNode &&
-    (currentPoints.anchorOffset !== nextAnchorOffset ||
-      currentPoints.focusOffset !== nextFocusOffset) &&
-    skipManagedLineBreak(nextAnchorNode, currentPoints.anchorOffset) ===
-      nextAnchorOffset &&
-    skipManagedLineBreak(nextFocusNode, currentPoints.focusOffset) ===
-      nextFocusOffset
-  ) {
-    return;
-  }
-
-  // When a command or a transform has moved the anchor of a mouse selection
-  // drag (a table that a drag leaves selects itself whole), rather than
-  // Lexical writing the same point back in another DOM form, the drag
-  // carries on from the new anchor.
-  if (
-    isMouseSelectionDragging(editor) &&
-    (currentPoints.anchorNode !== nextAnchorNode ||
-      currentPoints.anchorOffset !== nextAnchorOffset) &&
-    !$isDOMPointAt(
-      currentPoints.anchorNode,
-      currentPoints.anchorOffset,
-      anchor,
-      editor,
-    )
-  ) {
-    setMouseSelectionDragAnchor(editor, nextAnchorNode, nextAnchorOffset);
   }
 
   // Apply the updated selection to the DOM. Note: this will trigger

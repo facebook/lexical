@@ -16,9 +16,7 @@ import {
   $isBlockFullySelected,
   $isElementNode,
   $isRangeSelection,
-  $isTextNode,
   defineExtension,
-  type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
@@ -103,37 +101,6 @@ function setup($children: () => LexicalNode[]) {
   return {editor, root};
 }
 
-/**
- * The DOM point for the Lexical point at `offset` in `node`: in the DOM text
- * of a TextNode, or else beside the DOM of the element's children, since the
- * editor can render DOM of its own between them (such as a zero-size anchor
- * before a paragraph's leading decorator, #7158).
- */
-function $getDOMPoint(
-  editor: LexicalEditor,
-  node: LexicalNode,
-  offset: number,
-): [Node, number] {
-  const dom = editor.getElementByKey(node.getKey());
-  assert(dom !== null, 'Expected the node to be rendered');
-  if ($isTextNode(node)) {
-    assert(dom.firstChild !== null, 'Expected the text to be rendered');
-    return [dom.firstChild, offset];
-  }
-  assert($isElementNode(node), 'Expected a text or element node');
-  const indexOf = (child: LexicalNode) => {
-    const childDOM = editor.getElementByKey(child.getKey());
-    assert(childDOM !== null, 'Expected the child to be rendered');
-    return Array.from(dom.childNodes).indexOf(childDOM);
-  };
-  const next = node.getChildAtIndex(offset);
-  if (next !== null) {
-    return [dom, indexOf(next)];
-  }
-  const last = node.getLastChild();
-  return [dom, last === null ? 0 : indexOf(last) + 1];
-}
-
 function domSelection() {
   const selection = window.getSelection()!;
   return [
@@ -152,7 +119,7 @@ const cases = [
   {
     $children: () => [$createTextNode('Simple text')],
     endOffset: 11,
-    endPath: [0],
+    endPath: [0, 0],
     name: 'simple text',
   },
   {
@@ -161,7 +128,7 @@ const cases = [
       $createTextNode('text').toggleFormat('bold'),
     ],
     endOffset: 4,
-    endPath: [1],
+    endPath: [1, 0],
     name: 'formatted text',
   },
   {
@@ -169,13 +136,13 @@ const cases = [
       $createLinkNode('https://').append($createTextNode('link')),
     ],
     endOffset: 4,
-    endPath: [0, 0],
+    endPath: [0, 0, 0],
     name: 'inline element',
   },
   {
     $children: () => [new InlineDecoratorNode(), $createTextNode(' text')],
     endOffset: 5,
-    endPath: [1],
+    endPath: [1, 0],
     name: 'inline decorator, text',
   },
   {
@@ -191,7 +158,7 @@ const cases = [
       $createTextNode(' text'),
     ],
     endOffset: 5,
-    endPath: [2],
+    endPath: [2, 0],
     name: 'text, inline decorator, text',
   },
   {
@@ -210,7 +177,7 @@ const cases = [
       $createLinkNode('https://').append($createTextNode(' link')),
     ],
     endOffset: 5,
-    endPath: [1, 0],
+    endPath: [1, 0, 0],
     name: 'inline decorator, element',
   },
 ];
@@ -218,23 +185,20 @@ const cases = [
 describe('native select-all block expansion', () => {
   test.each(cases)('$name', async ({$children, endPath, endOffset}) => {
     const {editor, root} = setup($children);
-    const [blockStart, blockEnd, end] = editor.read('latest', () => {
-      const paragraph = $getRoot().getLastChildOrThrow();
-      assert($isElementNode(paragraph));
-      const endNode = endPath.reduce<LexicalNode>((node, index) => {
-        assert($isElementNode(node));
-        const child = node.getChildAtIndex(index);
-        assert(child !== null);
-        return child;
-      }, paragraph);
-      return [
-        $getDOMPoint(editor, paragraph, 0),
-        $getDOMPoint(editor, paragraph, paragraph.getChildrenSize()),
-        $getDOMPoint(editor, endNode, endOffset),
-      ];
+    const paragraph = root.lastElementChild!;
+    const childCount = editor.read('latest', () => {
+      const last = $getRoot().getLastChildOrThrow();
+      assert($isElementNode(last));
+      return last.getChildrenSize();
     });
+    const endNode = endPath.reduce<Node>(
+      (node, index) => node.childNodes[index],
+      paragraph,
+    );
     await selectAll();
-    await expect.poll(domSelection).toEqual([...blockStart, ...blockEnd]);
+    await expect
+      .poll(domSelection)
+      .toEqual([paragraph, 0, paragraph, childCount]);
     editor.read('latest', () => {
       const selection = $getSelection();
       assert($isRangeSelection(selection));
@@ -243,7 +207,12 @@ describe('native select-all block expansion', () => {
     await selectAll();
     await expect
       .poll(domSelection)
-      .toEqual([root.firstElementChild!.firstChild!.firstChild!, 0, ...end]);
+      .toEqual([
+        root.firstElementChild!.firstChild!.firstChild!,
+        0,
+        endNode,
+        endOffset,
+      ]);
     editor.read('latest', () => {
       const selection = $getSelection();
       assert($isRangeSelection(selection));

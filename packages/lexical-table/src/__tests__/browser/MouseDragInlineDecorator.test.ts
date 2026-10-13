@@ -8,10 +8,11 @@
 
 /**
  * Lexical extends a mouse drag across inline decorators (#7158) by moving the
- * DOM selection itself. In a table, a drag that leaves its cell becomes the
- * table's own selection, which Lexical must leave to the table: a drag into a
- * cell over an inline decorator selects the cells, and a drag out of the
- * table below it selects the whole table.
+ * focus of its own selection as the drag moves. In a table, a drag that
+ * leaves its cell becomes the table's own selection, which Lexical must leave
+ * to the table, also on release: a drag into a cell over an inline decorator
+ * selects the cells, and a drag out of the table below it selects the whole
+ * table.
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';

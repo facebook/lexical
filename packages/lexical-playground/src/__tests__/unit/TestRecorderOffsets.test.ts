@@ -25,13 +25,12 @@ import {
   getPathFromNodeToEditor,
 } from '../../plugins/TestRecorderPlugin';
 
-// Render as desktop Chromium does, with an img before the br of the managed
-// line break after an inline decorator that ends a line. `vi.mock` is hoisted
-// above all imports, so the reconciler sees Chrome.
+// Render as WebKit does, with an img before the br of the managed line break
+// after an inline decorator that ends a line. `vi.mock` is hoisted above all
+// imports, so the reconciler sees WebKit.
 vi.mock('lexical/src/environment', async importOriginal => ({
   ...(await importOriginal<typeof import('lexical/src/environment')>()),
-  IS_ANDROID: false,
-  IS_CHROME: true,
+  IS_APPLE_WEBKIT: true,
 }));
 
 class InlineDecoratorNode extends DecoratorNode<null> {

@@ -23,10 +23,12 @@ type Point = [x: number, y: number];
  * `selector`'s border box), so the browser's own hit testing and
  * drag-extension logic decide the selection. Synthetic
  * Selection.setBaseAndExtent/extend calls do not model that. The mouse moves
- * between the points in steps of at most `maxStep` pixels. A clickCount above
- * 1 makes the press that drags the last click of a double or triple click.
- * The `modifiers` keys are held from before the first press until the
- * release.
+ * between the points in steps of at most `maxStep` pixels, after a first
+ * move of a pixel or two, or, with `quickStart`, from the press at once, as a
+ * hand that moves fast does, before the browser has handled the press. A
+ * clickCount above 1 makes the press that drags the last click of a double
+ * or triple click. The `modifiers` keys are held from before the first press
+ * until the release.
  */
 async function mouseDrag(
   {frame, page}: BrowserCommandContext,
@@ -36,10 +38,12 @@ async function mouseDrag(
     clickCount = 1,
     maxStep = Infinity,
     modifiers = [],
+    quickStart = false,
   }: {
     clickCount?: number;
     maxStep?: number;
     modifiers?: ('Alt' | 'Control' | 'Meta' | 'Shift')[];
+    quickStart?: boolean;
   } = {},
 ): Promise<void> {
   const testFrame = await frame();
@@ -102,15 +106,26 @@ async function mouseDrag(
     const result = await tracker.evaluate(async (state, expected) => {
       const nextTask = () =>
         new Promise<void>(resolve => setTimeout(resolve, 0));
-      const isPending = () =>
-        state.getPoints().some((value, i) => value !== state.notified[i]);
+      const isSame = (a: unknown[], b: unknown[]) =>
+        a.every((value, i) => value === b[i]);
       // Never hang a test on an event the browser coalesced or a selection
       // that keeps changing.
       const deadline = performance.now() + 1000;
       let isSettled = false;
+      let current = state.getPoints();
+      let unchangedTasks = 0;
       do {
         await nextTask();
-        isSettled = state.events >= expected && !isPending();
+        const next = state.getPoints();
+        unchangedTasks = isSame(next, current) ? unchangedTasks + 1 : 0;
+        current = next;
+        // WebKit reports no selectionchange for a selection that it takes for
+        // the one it has, such as points on either side of a user-select:none
+        // box or of an inline element's edge, though the points change. So
+        // points that a few tasks leave alone have settled too.
+        isSettled =
+          state.events >= expected &&
+          (isSame(current, state.notified) || unchangedTasks >= 3);
       } while (!isSettled && performance.now() < deadline);
       return {events: state.events, isSettled};
     }, events + 1);
@@ -136,20 +151,22 @@ async function mouseDrag(
     }
     await page.mouse.down({clickCount});
     isPressed = true;
-    await settle('press');
-    // Chromium collapses the selection at the pointer on the first drag move
-    // after a press that placed a caret, and extends it from there, so a
-    // drag's anchor is where it first moved. A hand starts a drag with a
-    // move of a pixel or two, so make the first move one.
     let [lastX, lastY] = first;
-    if (rest.length > 0) {
-      const [x, y] = rest[0];
-      const distance = Math.hypot(x - lastX, y - lastY);
-      if (distance > 2) {
-        lastX += ((x - lastX) * 2) / distance;
-        lastY += ((y - lastY) * 2) / distance;
-        await page.mouse.move(box.x + lastX, box.y + lastY);
-        await settle('first move');
+    if (!quickStart) {
+      await settle('press');
+      // Chromium collapses the selection at the pointer on the first drag
+      // move after a press that placed a caret, and extends it from there, so
+      // a drag's anchor is where it first moved. A hand starts a drag with a
+      // move of a pixel or two, so make the first move one.
+      if (rest.length > 0) {
+        const [x, y] = rest[0];
+        const distance = Math.hypot(x - lastX, y - lastY);
+        if (distance > 2) {
+          lastX += ((x - lastX) * 2) / distance;
+          lastY += ((y - lastY) * 2) / distance;
+          await page.mouse.move(box.x + lastX, box.y + lastY);
+          await settle('first move');
+        }
       }
     }
     for (const [x, y] of rest) {

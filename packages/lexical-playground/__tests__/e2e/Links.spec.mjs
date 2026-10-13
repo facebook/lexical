@@ -1673,7 +1673,6 @@ test.describe('Links', () => {
                 </div>
               </span>
             </a>
-            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
         undefined,
@@ -1723,7 +1722,6 @@ test.describe('Links', () => {
                 </div>
               </span>
             </a>
-            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
         undefined,
@@ -1831,7 +1829,6 @@ test.describe('Links', () => {
                 </div>
               </span>
             </a>
-            <br data-lexical-managed-linebreak="true" />
           </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <a
@@ -1863,7 +1860,6 @@ test.describe('Links', () => {
                 </div>
               </span>
             </a>
-            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
         undefined,
@@ -1916,7 +1912,6 @@ test.describe('Links', () => {
                 </div>
               </span>
             </a>
-            <br data-lexical-managed-linebreak="true" />
           </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <a
@@ -1948,7 +1943,6 @@ test.describe('Links', () => {
                 </div>
               </span>
             </a>
-            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
         undefined,

@@ -34,20 +34,25 @@ function getDOMTextNode(element: Node | null): Text | null {
 }
 
 /**
- * The DOM point for the point at `offset` in an ElementNode: in the element's
- * DOM slot, counting the DOM the editor renders ahead of its children (such
- * as a zero-size anchor before a leading decorator).
+ * The DOM point for the point at `offset` in `node`: in its text, or in an
+ * element's DOM slot, counting the DOM the editor renders ahead of its
+ * children (such as a zero-size anchor before a leading decorator).
  */
-function getElementDOMPoint(
+function getDOMPoint(
   editor: LexicalEditor,
-  node: ElementNode,
-  dom: HTMLElement,
+  node: LexicalNode,
   offset: number,
-): [HTMLElement, number] {
-  return editor.read('latest', () => {
-    const slot = $getDOMSlot(node, dom, editor);
-    return [slot.element, slot.getFirstChildOffset() + offset];
-  });
+): [Node | null, number] {
+  const dom = editor.getElementByKey(node.getKey());
+  if ($isTextNode(node)) {
+    return [getDOMTextNode(dom), offset];
+  }
+  return $isElementNode(node) && dom !== null
+    ? editor.read('latest', (): [Node, number] => {
+        const slot = $getDOMSlot(node, dom, editor);
+        return [slot.element, slot.getFirstChildOffset() + offset];
+      })
+    : [dom, offset];
 }
 
 function getDOMIndexWithinParent(node: ChildNode): [ParentNode, number] {
@@ -81,34 +86,12 @@ export function createDOMRange(
   // Resolve through the editor's own document so iframe / shadow-mounted
   // editors don't end up with a Range bound to the wrong realm.
   const range = getRootOwnerDocument(editor.getRootElement()).createRange();
-  const anchorElement = editor.getElementByKey(anchorKey);
-  const focusElement = editor.getElementByKey(focusKey);
-  let anchorDOM: Node | Text | null = anchorElement;
-  let focusDOM: Node | Text | null = focusElement;
-  let anchorOffset = _anchorOffset;
-  let focusOffset = _focusOffset;
-
-  if ($isTextNode(anchorNode)) {
-    anchorDOM = getDOMTextNode(anchorDOM);
-  } else if ($isElementNode(anchorNode) && anchorElement !== null) {
-    [anchorDOM, anchorOffset] = getElementDOMPoint(
-      editor,
-      anchorNode,
-      anchorElement,
-      anchorOffset,
-    );
-  }
-
-  if ($isTextNode(focusNode)) {
-    focusDOM = getDOMTextNode(focusDOM);
-  } else if ($isElementNode(focusNode) && focusElement !== null) {
-    [focusDOM, focusOffset] = getElementDOMPoint(
-      editor,
-      focusNode,
-      focusElement,
-      focusOffset,
-    );
-  }
+  let [anchorDOM, anchorOffset] = getDOMPoint(
+    editor,
+    anchorNode,
+    _anchorOffset,
+  );
+  let [focusDOM, focusOffset] = getDOMPoint(editor, focusNode, _focusOffset);
 
   if (
     anchorNode === undefined ||

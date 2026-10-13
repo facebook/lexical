@@ -140,12 +140,9 @@ const TAP_SLOP = 10;
 // in, and the maximum scroll delta applied per frame at AUTO_SCROLL_FPS.
 const AUTO_SCROLL_EDGE_ZONE = 40;
 const AUTO_SCROLL_MAX_STEP = 18;
-// The deltas are per frame at AUTO_SCROLL_FPS, and each tick scales them
-// by the time since the previous one, so the scroll speed doesn't follow the
-// frame rate: a 120Hz display would otherwise scroll twice as fast, and a
-// page whose frames slow down under load would barely creep. A tick covers at
-// most AUTO_SCROLL_MAX_ELAPSED_MS, so a long stall between frames resumes with
-// a jump of a few frames rather than one past most of the table.
+// Each tick scales the per-frame deltas by the time since the previous one
+// (at most AUTO_SCROLL_MAX_ELAPSED_MS), so the scroll speed doesn't follow
+// the frame rate.
 const AUTO_SCROLL_FPS = 60;
 const AUTO_SCROLL_MAX_ELAPSED_MS = 100;
 
@@ -170,15 +167,6 @@ function autoScrollStep(pos: number, start: number, end: number): number {
     return speed(pos - (end - AUTO_SCROLL_EDGE_ZONE));
   }
   return 0;
-}
-
-// The time (ms) an auto-scroll tick at `time` covers, given the previous
-// tick's. The first tick of a run covers one frame, as does a tick whose
-// clock did not advance.
-function autoScrollElapsed(time: number, prevTime: number | null): number {
-  const frameMs = 1000 / AUTO_SCROLL_FPS;
-  const elapsed = prevTime === null ? frameMs : time - prevTime;
-  return elapsed > 0 ? Math.min(elapsed, AUTO_SCROLL_MAX_ELAPSED_MS) : frameMs;
 }
 
 // Scale a per-frame delta from autoScrollStep to a tick covering `elapsed` ms.
@@ -370,8 +358,7 @@ function $handleTableClick(
     let lastClientX = event.clientX;
     let lastClientY = event.clientY;
     let autoScrollRafId: number | null = null;
-    // The timestamp of the previous tick of the running auto-scroll, or null
-    // before its first tick.
+    // The previous tick of the running auto-scroll, or null before its first.
     let lastAutoScrollTime: number | null = null;
     // Removes every listener below. Assigned once they are defined; nothing
     // can call stopSelecting before then, since only those listeners do.
@@ -578,7 +565,12 @@ function $handleTableClick(
       if (!tableObserver.isSelecting) {
         return;
       }
-      const elapsed = autoScrollElapsed(time, lastAutoScrollTime);
+      // The first tick of a run covers a frame, as does one whose clock did
+      // not advance.
+      const elapsed =
+        lastAutoScrollTime === null || time <= lastAutoScrollTime
+          ? 1000 / AUTO_SCROLL_FPS
+          : Math.min(time - lastAutoScrollTime, AUTO_SCROLL_MAX_ELAPSED_MS);
       lastAutoScrollTime = time;
       const hContainer = findScrollContainer('x');
       const vContainer = findScrollContainer('y');

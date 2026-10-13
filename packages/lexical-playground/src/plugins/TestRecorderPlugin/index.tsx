@@ -147,10 +147,10 @@ export function fixOffset(node: Node, offset: number): number {
   if (!isHTMLElement(node)) {
     return offset;
   }
-  // If the selection offset is at the br of an img+br managed line break
-  // (WebKit, desktop Chromium) then move the offset to the img so the tests
-  // are consistent across browsers. Look the child up by the DOM offset: a
-  // leading anchor can precede it in the same element.
+  // If the selection offset is at the br of a webkit img+br linebreak then
+  // move the offset to the img so the tests are consistent across browsers.
+  // Look the child up by the DOM offset: a leading anchor can precede it in
+  // the same element.
   const child = offset > 0 ? node.childNodes[offset - 1] : null;
   const lexicalOffset = offset - boundaryAnchorsBefore(node, offset);
   if (

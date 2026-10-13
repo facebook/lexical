@@ -14,10 +14,13 @@
  * driven through Playwright's mouse. These also check that a click beside
  * those decorators puts the caret beside them, that a drag past the end or
  * start of a line does not rewrite the selection on every move, that a Shift
- * drag keeps the selection's anchor, and that the presses the fallback must
- * not track (double clicks, presses on a selection, drags ended by
- * pointercancel or dragstart, anchors edited mid-drag) are left to the
- * browser.
+ * drag keeps the selection's anchor, that events in another order (a fast
+ * first move, a late selectionchange, a release before the last move's
+ * selectionchange) and other layouts (right-to-left text, floats, columns)
+ * are handled, and that the presses the editor must not follow (double
+ * clicks, presses on a selection, cancelled presses, touch and pen, read-only
+ * editors, compositions, presses ended by a move with no button, a dragstart
+ * or a key) are left to the browser.
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
@@ -25,8 +28,8 @@ import {RichTextExtension} from '@lexical/rich-text';
 import {
   $create,
   $createLineBreakNode,
-  $createNodeSelection,
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getNodeByKey,
   $getRoot,
@@ -43,12 +46,13 @@ import {
   getDOMSelection,
   isDOMTextNode,
   type LexicalEditor,
+  type LexicalNode,
   registerEventListener,
   registerEventListeners,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {assert, describe, onTestFinished, test, vi} from 'vitest';
-import {commands, server} from 'vitest/browser';
+import {commands, server, userEvent} from 'vitest/browser';
 
 import {$assertNodeType} from '../utils/assertNodeType';
 
@@ -142,6 +146,73 @@ class NestedEditorDecoratorNode extends ImageLikeDecoratorNode {
   }
 }
 
+/**
+ * An unselectable inline decorator drawn by its own element, which has no
+ * child nodes, like a span sized by CSS or a React decorator before its portal
+ * renders.
+ */
+class ChildlessDecoratorNode extends ImageLikeDecoratorNode {
+  $config() {
+    return this.config('test_7158_mouse_childless', {
+      extends: ImageLikeDecoratorNode,
+    });
+  }
+  createDOM(): HTMLElement {
+    const span = document.createElement('span');
+    span.style.cssText = `display:inline-block;width:${SIZE}px;height:${SIZE}px;background:#888;user-select:none`;
+    return span;
+  }
+}
+
+/**
+ * An inline decorator of text, like a mention or an equation, which browsers
+ * put drag points in, where they resolve to no selection.
+ */
+class TextChipDecoratorNode extends ImageLikeDecoratorNode {
+  $config() {
+    return this.config('test_7158_mouse_text_chip', {
+      extends: ImageLikeDecoratorNode,
+    });
+  }
+  createDOM(): HTMLElement {
+    const span = document.createElement('span');
+    span.style.cssText = `display:inline-block;width:${SIZE}px;height:${SIZE}px;background:#ccc;overflow:hidden`;
+    span.textContent = '@ab';
+    return span;
+  }
+}
+
+/** The same chip of text, unselectable. */
+class UnselectableTextChipDecoratorNode extends TextChipDecoratorNode {
+  $config() {
+    return this.config('test_7158_mouse_unselectable_text_chip', {
+      extends: TextChipDecoratorNode,
+    });
+  }
+  createDOM(): HTMLElement {
+    const span = super.createDOM();
+    span.style.userSelect = 'none';
+    return span;
+  }
+}
+
+/** An inline image floated right, as an "align right" image is. */
+class FloatRightDecoratorNode extends ImageLikeDecoratorNode {
+  $config() {
+    return this.config('test_7158_mouse_float_right', {
+      extends: ImageLikeDecoratorNode,
+    });
+  }
+  createDOM(): HTMLElement {
+    const span = super.createDOM();
+    span.style.cssText = 'float:right;margin-left:8px';
+    const img = span.firstElementChild;
+    assert(img instanceof HTMLElement, 'expected the image');
+    img.style.cssText = `display:block;width:${2 * SIZE}px;height:${3 * SIZE}px;background:#888`;
+    return span;
+  }
+}
+
 /** An inline element, like a link or a mark, to put a decorator in. */
 class InlineWrapperNode extends ElementNode {
   $config() {
@@ -169,6 +240,77 @@ interface MountOptions {
   trailingLine?: string;
   /** Whether each decorator is in an inline element of its own. */
   inInlineElements?: boolean;
+  /** The text between the decorators, if there is text between them. */
+  betweenText?: string;
+  /** Whether the editor is in a shadow root. */
+  inShadowRoot?: boolean;
+}
+
+const NODES = [
+  ImageLikeDecoratorNode,
+  BoxedImageDecoratorNode,
+  SelectableBoxedImageDecoratorNode,
+  NestedEditorDecoratorNode,
+  ChildlessDecoratorNode,
+  TextChipDecoratorNode,
+  UnselectableTextChipDecoratorNode,
+  FloatRightDecoratorNode,
+  InlineWrapperNode,
+];
+
+/**
+ * An editor of `$children`, in a 380px wide root element (in a shadow root,
+ * if `inShadowRoot`), with the root's id the drag command finds it by.
+ */
+function mountEditor($children: () => LexicalNode[], inShadowRoot = false) {
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const root = document.createElement('div');
+  root.id = 'issue-7158-root';
+  root.contentEditable = 'true';
+  // Narrower than the test frame (414px), which would otherwise scroll
+  // sideways when a drag nears its edge.
+  root.style.cssText = 'width:380px;padding:10px;font-size:16px';
+  (inShadowRoot ? host.attachShadow({mode: 'open'}) : host).appendChild(root);
+  const editor = buildEditorFromExtensions(
+    defineExtension({
+      $initialEditorState: () => {
+        $getRoot()
+          .clear()
+          .append(...$children());
+      },
+      dependencies: [RichTextExtension],
+      name: '[7158-mouse]',
+      nodes: NODES,
+    }),
+  );
+  editor.setRootElement(root);
+  onTestFinished(() => {
+    editor.dispose();
+    host.remove();
+  });
+  return {editor, root};
+}
+
+/** The box of `node`, or of a range in it, relative to the top-left of `root`. */
+function rectIn(root: HTMLElement, node: Node, start?: number, end?: number) {
+  const range = document.createRange();
+  if (start === undefined) {
+    range.selectNode(node);
+  } else {
+    range.setStart(node, start);
+    range.setEnd(node, end ?? start + 1);
+  }
+  const rect = range.getBoundingClientRect();
+  const rootRect = root.getBoundingClientRect();
+  return {
+    bottom: rect.bottom - rootRect.top,
+    left: rect.left - rootRect.left,
+    right: rect.right - rootRect.left,
+    top: rect.top - rootRect.top,
+    x: (rect.left + rect.right) / 2 - rootRect.left,
+    y: (rect.top + rect.bottom) / 2 - rootRect.top,
+  };
 }
 
 function mount(
@@ -179,60 +321,35 @@ function mount(
     leadingLine = '',
     trailingLine = '',
     inInlineElements = false,
+    betweenText = ' ',
+    inShadowRoot = false,
   }: MountOptions = {},
 ) {
-  const root = document.createElement('div');
-  root.id = 'issue-7158-root';
-  root.contentEditable = 'true';
-  // Narrower than the test frame (414px), which would otherwise scroll
-  // sideways when a drag nears its edge.
-  root.style.cssText = 'width:380px;padding:10px;font-size:16px';
-  document.body.appendChild(root);
-  const editor = buildEditorFromExtensions(
-    defineExtension({
-      $initialEditorState: () => {
-        const paragraph = $createParagraphNode();
-        if (leadingLine !== '') {
-          // The decorators start the paragraph's second line.
-          paragraph.append(
-            $createTextNode(leadingLine),
-            $createLineBreakNode(),
-          );
-        }
-        for (let i = 0; i < COUNT; i++) {
-          if (textBetween) {
-            paragraph.append($createTextNode(' '));
-          }
-          paragraph.append(
-            inInlineElements
-              ? $create(InlineWrapperNode).append($create(klass))
-              : $create(klass),
-          );
-        }
-        if (trailingText !== '') {
-          paragraph.append($createTextNode(trailingText));
-        }
-        if (trailingLine !== '') {
-          // The decorators end the paragraph's first line.
-          paragraph.append(
-            $createLineBreakNode(),
-            $createTextNode(trailingLine),
-          );
-        }
-        $getRoot().clear().append(paragraph);
-      },
-      dependencies: [RichTextExtension],
-      name: '[7158-mouse]',
-      nodes: [
-        ImageLikeDecoratorNode,
-        BoxedImageDecoratorNode,
-        SelectableBoxedImageDecoratorNode,
-        NestedEditorDecoratorNode,
-        InlineWrapperNode,
-      ],
-    }),
-  );
-  editor.setRootElement(root);
+  const {editor, root} = mountEditor(() => {
+    const paragraph = $createParagraphNode();
+    if (leadingLine !== '') {
+      // The decorators start the paragraph's second line.
+      paragraph.append($createTextNode(leadingLine), $createLineBreakNode());
+    }
+    for (let i = 0; i < COUNT; i++) {
+      if (textBetween) {
+        paragraph.append($createTextNode(betweenText));
+      }
+      paragraph.append(
+        inInlineElements
+          ? $create(InlineWrapperNode).append($create(klass))
+          : $create(klass),
+      );
+    }
+    if (trailingText !== '') {
+      paragraph.append($createTextNode(trailingText));
+    }
+    if (trailingLine !== '') {
+      // The decorators end the paragraph's first line.
+      paragraph.append($createLineBreakNode(), $createTextNode(trailingLine));
+    }
+    return [paragraph];
+  }, inShadowRoot);
   const trailingTextKey = editor.read('latest', () => {
     const last = $getRoot().getLastDescendant();
     return $isTextNode(last) ? last.getKey() : null;
@@ -258,13 +375,10 @@ function mount(
       true,
     ),
   );
-  onTestFinished(() => {
-    editor.dispose();
-    root.remove();
-  });
-  // The box inside each decorator.
+  // The box inside each decorator, or the decorator's own.
   const images = Array.from(
-    root.querySelectorAll('[data-lexical-decorator] > :first-child'),
+    root.querySelectorAll('[data-lexical-decorator]'),
+    dom => dom.firstElementChild || dom,
   );
   const rootRect = root.getBoundingClientRect();
   // Points relative to the root's top-left, on the images' center line.
@@ -281,16 +395,7 @@ function mount(
         : null;
     assert(isDOMTextNode(textNode), 'expected the trailing text');
     const index = textNode.data.indexOf(text);
-    const range = document.createRange();
-    range.setStart(textNode, index);
-    range.setEnd(textNode, index + text.length);
-    const rect = range.getBoundingClientRect();
-    return {
-      bottom: rect.bottom - rootRect.top,
-      left: rect.left - rootRect.left,
-      right: rect.right - rootRect.left,
-      top: rect.top - rootRect.top,
-    };
+    return rectIn(root, textNode, index, index + text.length);
   };
   pointerLog.push(
     `left(0)=${Math.round(left(0))} right(${COUNT - 1})=${Math.round(right(COUNT - 1))} y=${Math.round(y)} dpr=${window.devicePixelRatio}`,
@@ -638,6 +743,23 @@ describe('Issue #7158: mouse drag over unselectable inline decorators', () => {
     dragFromLineStart(BoxedImageDecoratorNode, true),
   );
 });
+
+describe.each([
+  ['selectable', TextChipDecoratorNode],
+  ['unselectable', UnselectableTextChipDecoratorNode],
+])(
+  'Issue #7158: mouse drag over %s inline decorators of text',
+  (_name, klass) => {
+    test(
+      'a drag from right of the last decorator selects back to the third',
+      dragFromLineEnd(klass, false),
+    );
+    test(
+      'a drag from left of the first decorator selects to the end of the line',
+      dragFromLineStart(klass, false),
+    );
+  },
+);
 
 // A decorator can be in an inline element, such as a link or a mark, including
 // at either end of the line.
@@ -1072,9 +1194,10 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     const onError = (event: ErrorEvent) => errors.push(event.error);
     onTestFinished(registerEventListener(window, 'error', onError));
     let edited = false;
-    const edit = () => {
-      const drag = editor._inputState.mouseSelectionDrag;
-      if (!edited && drag !== null && Array.isArray(drag.anchor)) {
+    let moves = 0;
+    // On the second move of the drag, once it has started from its anchor.
+    const edit = (event: PointerEvent) => {
+      if (!edited && event.buttons === 1 && ++moves === 2) {
         edited = true;
         editor.update(
           () => {
@@ -1102,7 +1225,7 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
       [left(COUNT - 1) + SIZE / 2, y],
       [left(2) - 2, y],
     ]);
-    assert(edited, 'the drag never recorded its anchor');
+    assert(edited, 'the drag never moved');
     assert(errors.length === 0, `uncaught errors: ${errors.join(', ')}`);
     await vi.waitFor(() => {
       const anchor = editor.read('latest', () => {
@@ -1118,216 +1241,357 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
     });
   });
 
-  // A press on an inline decorator never starts a selection drag, so these
-  // press the text after the decorators.
-  test('a press on a non-collapsed selection is not tracked as a selection drag', () => {
-    const {editor, root, textRect, trailingTextKey} = mount(
-      false,
-      ImageLikeDecoratorNode,
-      {trailingText: ' hello world'},
-    );
-    assert(trailingTextKey !== null, 'expected the trailing text');
-    editor.update(
-      () => {
-        $assertNodeType($getNodeByKey(trailingTextKey), $isTextNode).select(
-          1,
-          6,
-        );
-      },
-      {discrete: true},
-    );
-    const press = (text: string, shiftKey = false) => {
-      const rect = textRect(text);
-      const init = {
-        ...mousePointerInit(
-          root,
-          (rect.left + rect.right) / 2,
-          (rect.top + rect.bottom) / 2,
-        ),
-        shiftKey,
-      };
-      const target = elementAt(init);
-      target.dispatchEvent(new PointerEvent('pointerdown', init));
-      const tracked = editor._inputState.mouseSelectionDrag !== null;
-      target.dispatchEvent(new PointerEvent('pointerup', init));
-      return tracked;
-    };
-    assert(!press('hello'), 'a press on the selection would drag it');
-    assert(press('world'), 'a press beside the selection selects');
-    // Firefox drags the selection with Shift too.
-    assert(
-      press('hello', true) === (server.browser !== 'firefox'),
-      'a Shift press on the selection extends it, except in Firefox',
-    );
-  });
-
-  // A move with no button pressed ends a press whose pointerup never reached
-  // the document.
-  test.each([
-    'pointercancel',
-    'dragstart',
-    'a move with no button',
-    'the window losing focus',
-  ])(
-    'a press ended by %s lets a NodeSelection remove the DOM selection',
-    type => {
-      const {editor, root, textRect} = mount(false, ImageLikeDecoratorNode, {
-        trailingText: ' hello world',
-      });
+  // A press whose release never reached the window (a context menu or a
+  // dialog took it), or that became a drag and drop, leaves a drag behind,
+  // which must not move the focus of a later selection to where that drag
+  // last was. A move with no button ends it, as do a dragstart and a key.
+  test.each(['a move with no button', 'dragstart', 'the key'])(
+    'a press ended by %s leaves a later selection alone',
+    async ending => {
+      const {editor, left, root, textRect, trailingTextKey, y} = mount(
+        false,
+        ImageLikeDecoratorNode,
+        {trailingText: ' hello world'},
+      );
+      assert(trailingTextKey !== null, 'expected the trailing text');
+      root.focus();
       editor.update(
         () => {
-          $getRoot().selectEnd();
+          $assertNodeType($getNodeByKey(trailingTextKey), $isTextNode).select(
+            6,
+            6,
+          );
         },
         {discrete: true},
       );
-      const rect = textRect('world');
-      const init = (dx: number) =>
-        mousePointerInit(root, rect.left + dx, (rect.top + rect.bottom) / 2);
-      const target = elementAt(init(0));
-      target.dispatchEvent(new PointerEvent('pointerdown', init(0)));
-      target.dispatchEvent(new PointerEvent('pointermove', init(10)));
-      assert(
-        Array.isArray(editor._inputState.mouseSelectionDrag?.anchor),
-        'the press never became a selection drag',
-      );
-      if (type === 'the window losing focus') {
-        window.dispatchEvent(new FocusEvent('blur'));
-      } else {
+      // A press on the caret, then a first move over the third decorator,
+      // which the editor leaves to the browser.
+      const hello = textRect('hello');
+      const press = mousePointerInit(root, hello.right, hello.y);
+      const target = elementAt(press);
+      target.dispatchEvent(new PointerEvent('pointerdown', press));
+      target.dispatchEvent(new MouseEvent('mousedown', {...press, detail: 1}));
+      const over = mousePointerInit(root, left(2) + SIZE / 4, y);
+      elementAt(over).dispatchEvent(new PointerEvent('pointermove', over));
+      if (ending === 'a move with no button') {
         target.dispatchEvent(
-          type === 'dragstart'
-            ? new DragEvent(type, {bubbles: true, cancelable: true})
-            : type === 'pointercancel'
-              ? new PointerEvent(type, {bubbles: true, pointerType: 'mouse'})
-              : new PointerEvent('pointermove', {...init(20), buttons: 0}),
+          new PointerEvent('pointermove', {...over, buttons: 0}),
+        );
+      } else if (ending === 'dragstart') {
+        target.dispatchEvent(
+          new DragEvent('dragstart', {bubbles: true, cancelable: true}),
         );
       }
-      editor.update(
-        () => {
-          const selection = $createNodeSelection();
-          selection.add(
-            $assertNodeType(
-              $getRoot().getFirstDescendant(),
-              $isDecoratorNode,
-            ).getKey(),
-          );
-          $setSelection(selection);
-        },
-        {discrete: true},
-      );
-      const domSelection = getDOMSelection(window);
-      assert(
-        domSelection !== null && domSelection.rangeCount === 0,
-        'expected the DOM selection to be removed',
-      );
+      // Then the selection changes, once the editor has handled the moves.
+      await new Promise(resolve => setTimeout(resolve));
+      if (ending === 'the key') {
+        await userEvent.keyboard('{Shift>}{ArrowLeft}{/Shift}');
+      } else {
+        // As a drop, or a script, moves it.
+        const text = editor.getElementByKey(trailingTextKey)?.firstChild;
+        assert(isDOMTextNode(text), 'expected the trailing text');
+        getDOMSelection(window)?.setBaseAndExtent(text, 6, text, 5);
+      }
+      await vi.waitFor(() => {
+        const points = editor.read('latest', () => {
+          const selection = $getSelection();
+          return $isRangeSelection(selection)
+            ? `${selection.anchor.key}:${selection.anchor.offset}->` +
+                `${selection.focus.key}:${selection.focus.offset}`
+            : String(selection);
+        });
+        assert(
+          points === `${trailingTextKey}:6->${trailingTextKey}:5`,
+          `expected the focus one character back, got ${points}`,
+        );
+      });
     },
   );
 
-  // A press on a selection measures only the part of it in the pressed
-  // element, however much of the document is selected.
-  test('a press on a selection measures only the pressed element', () => {
-    const {editor, root, textRect} = mount(false, ImageLikeDecoratorNode, {
-      trailingText: ' hello world',
-    });
-    editor.update(
-      () => {
-        const paragraph = $assertNodeType(
-          $getRoot().getFirstChild(),
-          $isParagraphNode,
-        );
-        paragraph.select(0, paragraph.getChildrenSize());
-      },
-      {discrete: true},
-    );
-    const spy = vi.spyOn(Range.prototype, 'getClientRects');
-    onTestFinished(() => spy.mockRestore());
-    const rect = textRect('hello');
-    const init = mousePointerInit(
-      root,
-      (rect.left + rect.right) / 2,
-      (rect.top + rect.bottom) / 2,
-    );
-    const target = elementAt(init);
-    target.dispatchEvent(new PointerEvent('pointerdown', init));
-    const tracked = editor._inputState.mouseSelectionDrag !== null;
-    target.dispatchEvent(new PointerEvent('pointerup', init));
-    assert(!tracked, 'a press on the selection would drag it');
-    assert(spy.mock.contexts.length > 0, 'expected the selection measured');
-    for (const range of spy.mock.contexts) {
-      assert(range instanceof Range, 'expected a Range');
-      assert(
-        target.contains(range.commonAncestorContainer),
-        `measured ${describeDOMPoint(range.startContainer, range.startOffset)}` +
-          ` to ${describeDOMPoint(range.endContainer, range.endOffset)}`,
-      );
-    }
-  });
-
-  // Past the end of a line that ends in an inline decorator, Chromium and
-  // WebKit put a drag's focus after the managed line break's <img> and
-  // Firefox after its <br>, which are the same Lexical point as before the
-  // line break, so the decorator before them is the one the pointer passes.
-  test('a drag focus after the line break moves before a decorator the pointer has passed', async () => {
-    const {editor, left, pointerLog, right, root, y} = mount(
-      true,
+  // An app can cancel a press before the editor's listener sees it (a check
+  // list item's check mark does), and the browser then leaves the caret where
+  // it was.
+  test('a click right of the last decorator that is cancelled before the editor sees it leaves the caret', async () => {
+    const {editor, pointerLog, right, root, y} = mount(
+      false,
       ImageLikeDecoratorNode,
     );
     root.focus();
     editor.update(
       () => {
-        $getRoot().selectEnd();
+        $assertNodeType($getRoot().getFirstChild(), $isParagraphNode).select(
+          0,
+          0,
+        );
       },
       {discrete: true},
     );
-    const paragraph = root.querySelector('p');
-    const domSelection = getDOMSelection(window);
-    assert(paragraph !== null && domSelection !== null, 'expected the line');
-    const press = mousePointerInit(root, right(COUNT - 1) + 30, y);
-    paragraph.dispatchEvent(new PointerEvent('pointerdown', press));
-    paragraph.dispatchEvent(
-      new PointerEvent('pointermove', {
-        ...press,
-        clientX: (press.clientX ?? 0) + 10,
-      }),
-    );
-    assert(
-      Array.isArray(editor._inputState.mouseSelectionDrag?.anchor),
-      'the press never became a selection drag',
-    );
-    // Lexical would handle the selectionchange for this point first and
-    // write the point before the line break back, which would hide whether
-    // the drag looks past the line break, so keep the selection changes that
-    // leave the focus there from Lexical.
     onTestFinished(
       registerEventListener(
-        window,
-        'selectionchange',
-        event => {
-          if (
-            domSelection.focusNode === paragraph &&
-            domSelection.focusOffset === paragraph.childNodes.length
-          ) {
-            event.stopImmediatePropagation();
-          }
+        root,
+        'mousedown',
+        event => event.preventDefault(),
+        true,
+      ),
+    );
+    await mouseDrag([[right(COUNT - 1) + 30, y]]);
+    await expectCaret(editor, 'paragraph:0', pointerLog);
+  });
+
+  // The mouse events a touch or pen tap is followed by must not move the
+  // caret before the platform puts its own, which iOS and Android manage
+  // closely; a mouse press beside the decorator does.
+  test.each([
+    ['touch', 0],
+    ['pen', 0],
+    ['mouse', COUNT],
+  ])(
+    'the mouse events of a %s press right of the last decorator put the caret at %i',
+    async (pointerType, offset) => {
+      const {editor, pointerLog, right, root, y} = mount(
+        false,
+        ImageLikeDecoratorNode,
+      );
+      root.focus();
+      editor.update(
+        () => {
+          $assertNodeType($getRoot().getFirstChild(), $isParagraphNode).select(
+            0,
+            0,
+          );
+        },
+        {discrete: true},
+      );
+      const init = {
+        ...mousePointerInit(root, right(COUNT - 1) + 30, y),
+        pointerType,
+      };
+      const target = elementAt(init);
+      target.dispatchEvent(new PointerEvent('pointerdown', init));
+      target.dispatchEvent(new MouseEvent('mousedown', {...init, detail: 1}));
+      // Synthetic events have no default action, so the caret is final once
+      // the editor's update has committed.
+      await new Promise(resolve => setTimeout(resolve));
+      target.dispatchEvent(
+        new PointerEvent('pointerup', {...init, buttons: 0}),
+      );
+      await expectCaret(editor, `paragraph:${offset}`, pointerLog);
+    },
+  );
+
+  // Chromium commits a composition in the default action of the press that
+  // ends it, which runs after the editor's listeners, so the press must leave
+  // the caret in the composition for that.
+  test('a press right of the last decorator during a composition leaves the caret in it', async () => {
+    const {editor, pointerLog, right, root, y} = mount(
+      true,
+      ImageLikeDecoratorNode,
+    );
+    root.focus();
+    // In the text before the last decorator.
+    const paragraphOffset = 2 * COUNT - 2;
+    editor.update(
+      () => {
+        $assertNodeType($getRoot().getFirstChild(), $isParagraphNode).select(
+          paragraphOffset,
+          paragraphOffset,
+        );
+      },
+      {discrete: true},
+    );
+    root.dispatchEvent(
+      new CompositionEvent('compositionstart', {bubbles: true, data: ''}),
+    );
+    assert(editor.isComposing(), 'expected a composition');
+    const caret = describeEditorSelection(editor);
+    const init = mousePointerInit(root, right(COUNT - 1) + 30, y);
+    const target = elementAt(init);
+    target.dispatchEvent(new PointerEvent('pointerdown', init));
+    target.dispatchEvent(new MouseEvent('mousedown', {...init, detail: 1}));
+    await Promise.resolve();
+    assert(editor.isComposing(), 'expected the composition to go on');
+    assert(
+      describeEditorSelection(editor) === caret,
+      `expected the caret to stay at ${caret}, got ` +
+        `${describeEditorSelection(editor)} (pointer ${pointerLog.join(' ')})`,
+    );
+    target.dispatchEvent(new PointerEvent('pointerup', {...init, buttons: 0}));
+  });
+
+  // A listener that runs before the editor's can update the editor in the
+  // same task, without committing, and add an inline decorator at the end of
+  // the line, which then has no DOM to measure.
+  test('a press right of a decorator that an update has just put at the end of the line', async () => {
+    const {editor, right, root, y} = mount(false, ImageLikeDecoratorNode);
+    root.focus();
+    editor.update(
+      () => {
+        $assertNodeType($getRoot().getFirstChild(), $isParagraphNode).select(
+          0,
+          0,
+        );
+      },
+      {discrete: true},
+    );
+    const errors: unknown[] = [];
+    onTestFinished(
+      registerEventListener(window, 'error', event => {
+        errors.push(event.error);
+        event.preventDefault();
+      }),
+    );
+    onTestFinished(
+      registerEventListener(
+        root,
+        'mousedown',
+        () =>
+          editor.update(() => {
+            $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            ).append($create(ImageLikeDecoratorNode));
+          }),
+        true,
+      ),
+    );
+    const init = mousePointerInit(root, right(COUNT - 1) + 30, y);
+    const target = elementAt(init);
+    target.dispatchEvent(new PointerEvent('pointerdown', init));
+    target.dispatchEvent(new MouseEvent('mousedown', {...init, detail: 1}));
+    await Promise.resolve();
+    target.dispatchEvent(new PointerEvent('pointerup', {...init, buttons: 0}));
+    assert(errors.length === 0, `uncaught errors: ${errors.join(', ')}`);
+    const count = editor.read(
+      'latest',
+      () =>
+        $getRoot().getAllTextNodes().length +
+        $getRoot()
+          .getChildren()
+          .flatMap(node => ($isParagraphNode(node) ? node.getChildren() : []))
+          .filter($isDecoratorNode).length,
+    );
+    assert(
+      count === COUNT + 1,
+      `expected ${COUNT + 1} decorators, got ${count}`,
+    );
+  });
+});
+
+/** The editor's selection, as anchor->focus key:offset points. */
+function describeEditorSelection(editor: LexicalEditor): string {
+  return editor.read('latest', () => {
+    const selection = $getSelection();
+    return $isRangeSelection(selection)
+      ? `${selection.anchor.key}:${selection.anchor.offset}->` +
+          `${selection.focus.key}:${selection.focus.offset}`
+      : String(selection);
+  });
+}
+
+/**
+ * Waits for a caret at `expected`, `type:offset` with the type of its node.
+ */
+async function expectCaret(
+  editor: LexicalEditor,
+  expected: string,
+  pointerLog: string[],
+): Promise<void> {
+  await vi.waitFor(
+    () => {
+      const caret = editor.read('latest', () => {
+        const selection = $getSelection();
+        return $isRangeSelection(selection) && selection.isCollapsed()
+          ? `${selection.anchor.getNode().getType()}:${selection.anchor.offset}`
+          : String(selection);
+      });
+      assert(
+        caret === expected,
+        `expected the caret at ${expected}, got ${caret} ` +
+          `(dom ${describeDOMSelection(getDOMSelection(window))}; ` +
+          `pointer ${pointerLog.join(' ')})`,
+      );
+    },
+    {interval: 50, timeout: 2000},
+  );
+}
+
+/**
+ * Keeps selectionchange events from the editor while `isWithheld()`, as a
+ * busy main thread can deliver one after the input events that follow it.
+ * The drag command still sees them, as it listens on the window.
+ */
+function withholdSelectionChanges(isWithheld: () => boolean): void {
+  onTestFinished(
+    registerEventListener(
+      document,
+      'selectionchange',
+      event => {
+        if (isWithheld()) {
+          event.stopImmediatePropagation();
+        }
+      },
+      true,
+    ),
+  );
+}
+
+describe('Issue #7158: mouse drags whose events come in another order', () => {
+  // Chromium and WebKit decide on the first move of a press whether it drags
+  // a selection that holds the press point. The editor must not select up to
+  // a decorator beside the press before then, or the gesture becomes a drag
+  // and drop of that selection.
+  test('a drag from text whose first move crosses half a decorator selects across it', async () => {
+    let decoratorKey = '';
+    const {editor, root} = mountEditor(() => {
+      const decorator = $create(ImageLikeDecoratorNode);
+      decoratorKey = decorator.getKey();
+      return [
+        $createParagraphNode().append(
+          $createTextNode('hello '),
+          decorator,
+          $createTextNode(' world and more'),
+        ),
+      ];
+    });
+    const image = editor.getElementByKey(decoratorKey)?.firstElementChild;
+    assert(image != null, 'expected the image');
+    const box = rectIn(root, image);
+    // On the line's text, as the press is.
+    const text = image.parentElement?.previousSibling?.firstChild;
+    assert(isDOMTextNode(text), 'expected the text before the decorator');
+    const {y} = rectIn(root, text, 0);
+    let dragStarts = 0;
+    onTestFinished(
+      registerEventListener(
+        document,
+        'dragstart',
+        () => {
+          dragStarts++;
         },
         true,
       ),
     );
-    // What the browser's hit test does for a pointer past the end of the
-    // line, which synthetic events don't make it do.
-    domSelection.extend(paragraph, paragraph.childNodes.length);
-    // Over the text between the last two decorators.
-    const move = mousePointerInit(root, left(COUNT - 1) - 2, y);
-    elementAt(move).dispatchEvent(new PointerEvent('pointermove', move));
-    await expectSelectedDecoratorCount(editor, 1, pointerLog);
+    await commands.mouseDrag(
+      '#issue-7158-root',
+      [
+        [box.left - 2, y],
+        [box.left + (SIZE * 3) / 4, y],
+        [box.right + 60, y],
+      ],
+      {maxStep: SIZE, quickStart: true},
+    );
+    assert(dragStarts === 0, 'expected no drag and drop');
+    await expectSelectedDecoratorCount(editor, 1, []);
   });
 
-  // The browser moves a drag's focus after the pointermove listeners have
-  // run, and a release can come before the selectionchange that reports that
-  // move, so the release adjusts the drag for its last move too.
-  test('a release before the last move is reported keeps that move adjusted', async () => {
-    const {editor, left, pointerLog, root, y} = mount(
+  // On a busy main thread the first move of a drag can come before the
+  // selectionchange of its press. The drag must still extend from the press,
+  // not from the caret before it.
+  test('a drag whose first move comes before the selectionchange of its press extends from the press', async () => {
+    const {editor, left, pointerLog, root, textRect, y} = mount(
       false,
-      ImageLikeDecoratorNode,
+      BoxedImageDecoratorNode,
+      {trailingText: ' hello world'},
     );
     root.focus();
     editor.update(
@@ -1336,30 +1600,411 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
       },
       {discrete: true},
     );
-    const paragraph = root.querySelector('p');
-    const domSelection = getDOMSelection(window);
-    assert(paragraph !== null && domSelection !== null, 'expected the line');
-    const press = mousePointerInit(root, left(0) - 5, y);
-    paragraph.dispatchEvent(new PointerEvent('pointerdown', press));
-    paragraph.dispatchEvent(
-      new PointerEvent('pointermove', {
-        ...press,
-        clientX: (press.clientX ?? 0) + 10,
+    let isWithheld = false;
+    onTestFinished(
+      registerEventListeners(document, {
+        pointerdown: () => {
+          isWithheld = true;
+        },
+        // After the editor's listener on the root.
+        pointermove: event => {
+          if (event.buttons === 1) {
+            isWithheld = false;
+          }
+        },
       }),
     );
-    assert(
-      Array.isArray(editor._inputState.mouseSelectionDrag?.anchor),
-      'the press never became a selection drag',
+    withholdSelectionChanges(() => isWithheld);
+    const world = textRect('world');
+    await mouseDrag([
+      [world.x, world.y],
+      [left(COUNT - 1) + SIZE / 2, y],
+      [left(2) - 2, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+  });
+
+  // The release can come before the selectionchange of the last move, which
+  // the editor then gets after the drag.
+  test('a drag released before the selectionchange of its last move puts the focus beside the decorator', async () => {
+    const {editor, left, pointerLog, right, root, y} = mount(
+      false,
+      SelectableBoxedImageDecoratorNode,
     );
-    // Over the right half of the third decorator.
-    const move = mousePointerInit(root, left(2) + (SIZE * 3) / 4, y);
-    const target = elementAt(move);
-    target.dispatchEvent(new PointerEvent('pointermove', move));
-    // What the browser's hit test can do for that move once the listeners
-    // have run, which synthetic events don't make it do: leave the focus
-    // before a decorator that the pointer has passed.
-    domSelection.extend(paragraph, 1);
-    target.dispatchEvent(new PointerEvent('pointerup', {...move, buttons: 0}));
-    await expectSelectedDecoratorCount(editor, 3, pointerLog);
+    const lastX = root.getBoundingClientRect().left + left(2) + SIZE / 4;
+    let isWithheld = false;
+    onTestFinished(
+      registerEventListeners(document, {
+        pointermove: event => {
+          if (event.buttons === 1 && Math.abs(event.clientX - lastX) < 1) {
+            isWithheld = true;
+          }
+        },
+        pointerup: () => {
+          if (isWithheld) {
+            isWithheld = false;
+            setTimeout(() =>
+              document.dispatchEvent(new Event('selectionchange')),
+            );
+          }
+        },
+      }),
+    );
+    withholdSelectionChanges(() => isWithheld);
+    await mouseDrag([
+      [right(COUNT - 1) + 30, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [left(3) + SIZE / 2, y],
+      [left(2) + SIZE / 4, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+  });
+
+  // A press on a selection can start a drag and drop of it, which the browser
+  // decides on once the pointer has moved a few pixels. Until then the moves
+  // must leave the selection alone, also in a shadow root, where WebKit
+  // reports a selection as collapsed at the host.
+  test.each([
+    ['', false],
+    [' in a shadow root', true],
+  ])(
+    'a drag and drop of a selection%s drags the selection that was pressed',
+    async (_name, inShadowRoot) => {
+      const {editor, pointerLog, right, root, textRect, trailingTextKey, y} =
+        mount(false, ImageLikeDecoratorNode, {
+          inShadowRoot,
+          trailingText: ' hello world',
+        });
+      assert(trailingTextKey !== null, 'expected the trailing text');
+      root.focus();
+      // From before the second decorator to after "hello".
+      editor.update(
+        () => {
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
+          const selection = $createRangeSelection();
+          selection.anchor.set(paragraph.getKey(), 1, 'element');
+          selection.focus.set(trailingTextKey, 6, 'text');
+          $setSelection(selection);
+        },
+        {discrete: true},
+      );
+      const pressed = describeEditorSelection(editor);
+      let dragged: string | null = null;
+      onTestFinished(
+        registerEventListener(
+          document,
+          'dragstart',
+          event => {
+            dragged = describeEditorSelection(editor);
+            event.preventDefault();
+          },
+          true,
+        ),
+      );
+      // On the space after the last decorator, then onto that decorator.
+      const textY = textRect('hello').y;
+      await mouseDrag([
+        [right(COUNT - 1) + 2, textY],
+        [right(COUNT - 1) - 3, textY],
+        [right(COUNT - 1) - 3, y + 3 * SIZE],
+      ]);
+      assert(
+        dragged === pressed,
+        `expected a drag of ${pressed}, got ${dragged} ` +
+          `(pointer ${pointerLog.join(' ')})`,
+      );
+    },
+  );
+});
+
+describe('Issue #7158: mouse drags in other layouts and states', () => {
+  // A decorator drawn by its own element has no box inside it to measure.
+  test('a drag released over the left half of a childless decorator puts the focus before it', async () => {
+    const {editor, left, pointerLog, right, y} = mount(
+      true,
+      ChildlessDecoratorNode,
+    );
+    await mouseDrag([
+      [right(COUNT - 1) + 30, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [left(3) + SIZE / 2, y],
+      [left(2) + 5, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+  });
+
+  // A drag that overshoots the root element, or passes over something drawn
+  // over it, is followed again once it is back.
+  test('a drag that leaves the root element and comes back selects back to the third', async () => {
+    const {editor, left, pointerLog, right, root, y} = mount(
+      false,
+      BoxedImageDecoratorNode,
+    );
+    await mouseDrag([
+      [right(COUNT - 1) + 30, y],
+      [root.getBoundingClientRect().width + 5, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [left(3) + SIZE / 2, y],
+      [left(2) - 2, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+  });
+
+  // Windows repeats the keydown of a held Shift, and a modifier can be
+  // pressed mid-drag, neither of which ends the drag.
+  test.each([
+    ['a repeated Shift', {key: 'Shift', repeat: true, shiftKey: true}],
+    ['an Alt', {altKey: true, key: 'Alt'}],
+  ])(
+    'a drag with %s keydown mid-drag selects back to the third',
+    async (_name, init) => {
+      const {editor, left, pointerLog, right, root, y} = mount(
+        false,
+        BoxedImageDecoratorNode,
+      );
+      let moves = 0;
+      onTestFinished(
+        registerEventListener(root, 'pointermove', event => {
+          if (event.buttons === 1 && ++moves === 2) {
+            root.dispatchEvent(
+              new KeyboardEvent('keydown', {...init, bubbles: true}),
+            );
+          }
+        }),
+      );
+      await mouseDrag([
+        [right(COUNT - 1) + 30, y],
+        [left(COUNT - 2) + SIZE / 2, y],
+        [left(3) + SIZE / 2, y],
+        [left(2) - 2, y],
+      ]);
+      await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+    },
+  );
+
+  // In right-to-left text the decorators run from the right, and the right
+  // half of one is before it.
+  test('a drag over right-to-left text and decorators selects back to the third', async () => {
+    const {editor, left, pointerLog, right, y} = mount(
+      true,
+      BoxedImageDecoratorNode,
+      {betweenText: 'א'},
+    );
+    await mouseDrag([
+      [left(COUNT - 1) - 20, y],
+      [right(COUNT - 2) - SIZE / 2, y],
+      [right(3) - SIZE / 2, y],
+      [right(2) - 5, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+  });
+
+  // The first node of a right-to-left line is at its right edge, so text left
+  // of a decorator that starts the line, or right of one that ends it, is not
+  // beyond the line.
+  test.each(['start', 'end'])(
+    'a click on right-to-left text beside a decorator at the %s of the line puts the caret in the text',
+    async edge => {
+      let textKey = '';
+      const {editor, root} = mountEditor(() => {
+        const text = $createTextNode('שלום עולם שלום');
+        textKey = text.getKey();
+        const decorator = $create(ImageLikeDecoratorNode);
+        return [
+          $createParagraphNode().append(
+            ...(edge === 'start' ? [decorator, text] : [text, decorator]),
+          ),
+        ];
+      });
+      const text = editor.getElementByKey(textKey)?.firstChild;
+      assert(isDOMTextNode(text), 'expected the text');
+      const char = rectIn(root, text, 5);
+      await mouseDrag([[char.x, char.y]]);
+      await expectCaret(editor, `text:5`, []).catch(() =>
+        expectCaret(editor, `text:6`, []),
+      );
+    },
+  );
+
+  // Text flows beside an inline decorator floated right, so a pointer on that
+  // text is not beyond the line the decorator starts.
+  test.each([
+    ['a click', [50, 51]],
+    ['a drag', [2, 15]],
+  ] as const)(
+    '%s on text beside a decorator floated right selects that text',
+    async (_name, [start, end]) => {
+      let textKey = '';
+      const {editor, root} = mountEditor(() => {
+        const text = $createTextNode(
+          'lorem ipsum dolor sit amet consectetur adipiscing elit sed do ' +
+            'eiusmod tempor incididunt ut labore et dolore magna aliqua',
+        );
+        textKey = text.getKey();
+        return [
+          $createParagraphNode().append($create(FloatRightDecoratorNode), text),
+        ];
+      });
+      const text = editor.getElementByKey(textKey)?.firstChild;
+      assert(isDOMTextNode(text), 'expected the text');
+      const first = rectIn(root, text, start);
+      const last = rectIn(root, text, end - 1);
+      await mouseDrag(
+        start + 1 === end
+          ? [[first.x, first.y]]
+          : [
+              [first.left + 1, first.y],
+              [last.right - 1, last.y],
+            ],
+      );
+      await vi.waitFor(() => {
+        const points = describeEditorSelection(editor);
+        assert(
+          points.split('->').every(point => point.startsWith(`${textKey}:`)),
+          `expected the selection in the text, got ${points}`,
+        );
+      });
+    },
+  );
+
+  // Side by side, a line of one block can be level with a decorator that
+  // ends a line of the other, and a press must leave that block alone.
+  test('a click in a block beside one that ends in a decorator keeps the caret in the block clicked', async () => {
+    let otherKey = '';
+    const {editor, root} = mountEditor(() => {
+      const other = $createParagraphNode().append(
+        $createTextNode('aa'),
+        $create(ImageLikeDecoratorNode),
+      );
+      otherKey = other.getKey();
+      return [other, $createParagraphNode().append($createTextNode('bb'))];
+    });
+    root.style.display = 'grid';
+    root.style.gridTemplateColumns = '1fr 1fr';
+    root.focus();
+    editor.update(
+      () => {
+        $assertNodeType($getNodeByKey(otherKey), $isParagraphNode).select(0, 0);
+      },
+      {discrete: true},
+    );
+    // After the selectionchange of that caret.
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const blocks: string[] = [];
+    onTestFinished(
+      editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const block = selection.focus.getNode().getTopLevelElement();
+            blocks.push(block === null ? 'none' : block.getKey());
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+    );
+    const decorator = root.querySelector('[data-lexical-decorator]');
+    assert(decorator !== null, 'expected the decorator');
+    const level = rectIn(root, decorator);
+    await mouseDrag([[root.getBoundingClientRect().width - 30, level.y]]);
+    await vi.waitFor(() =>
+      assert(blocks.length > 0, 'expected a selection change'),
+    );
+    assert(
+      !blocks.includes(otherKey),
+      `expected no selection change in the other block, got ${blocks.join(', ')}`,
+    );
+  });
+
+  // In a read-only editor the editor does not write the DOM selection, so a
+  // drag is left to the browser, and a copy, which the editor makes from its
+  // own selection, copies what is highlighted.
+  test('a copy after a drag in a read-only editor copies the decorators highlighted', async () => {
+    const {editor, left, pointerLog, right, root, y} = mount(
+      false,
+      ImageLikeDecoratorNode,
+    );
+    // As the ContentEditable component renders a read-only editor.
+    editor.setEditable(false);
+    root.contentEditable = 'false';
+    await mouseDrag([
+      [right(COUNT - 1) + 30, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [left(3) + SIZE / 2, y],
+      [left(2) + SIZE / 2 - 3, y],
+    ]);
+    const domSelection = getDOMSelection(window);
+    assert(domSelection !== null, 'expected a DOM selection');
+    const highlighted = Array.from(
+      root.querySelectorAll('[data-lexical-decorator]'),
+    ).filter(dom => domSelection.containsNode(dom, false)).length;
+    const clipboardData = new DataTransfer();
+    const event = new ClipboardEvent('copy', {
+      bubbles: true,
+      cancelable: true,
+      clipboardData,
+    });
+    root.dispatchEvent(event);
+    const copied = event.defaultPrevented
+      ? clipboardData
+          .getData('application/x-lexical-editor')
+          .split('"test_7158_mouse_image"').length - 1
+      : highlighted;
+    assert(
+      copied === highlighted,
+      `copied ${copied} decorators but ${highlighted} are highlighted ` +
+        `(${describeEditorSelection(editor)}; pointer ${pointerLog.join(' ')})`,
+    );
+  });
+});
+
+// macOS Chrome and Safari extend a Shift press from the far end of the
+// selection, where Linux extends it from its anchor. Making the far end the
+// anchor before the press, as macOS would, the editor must keep that anchor.
+test('Issue #7158: a Shift click keeps the anchor the browser extends from', async () => {
+  const {editor, pointerLog, root, textRect, trailingTextKey} = mount(
+    false,
+    ImageLikeDecoratorNode,
+    {trailingText: ' hello world'},
+  );
+  assert(trailingTextKey !== null, 'expected the trailing text');
+  root.focus();
+  editor.update(
+    () => {
+      $assertNodeType($getNodeByKey(trailingTextKey), $isTextNode).select(
+        7,
+        12,
+      );
+    },
+    {discrete: true},
+  );
+  onTestFinished(
+    registerEventListener(
+      window,
+      'mousedown',
+      () => {
+        const text = editor.getElementByKey(trailingTextKey)?.firstChild;
+        assert(isDOMTextNode(text), 'expected the text');
+        getDOMSelection(window)?.setBaseAndExtent(text, 12, text, 7);
+      },
+      true,
+    ),
+  );
+  const hello = textRect('hello');
+  await mouseDrag([[hello.x, hello.y]], {modifiers: ['Shift']});
+  await vi.waitFor(() => {
+    const points = describeEditorSelection(editor);
+    assert(
+      points.startsWith(`${trailingTextKey}:12->${trailingTextKey}:`) &&
+        !points.endsWith(':7') &&
+        !points.endsWith(':12'),
+      `expected the selection from the end of "world" to the press, got ` +
+        `${points} (pointer ${pointerLog.join(' ')})`,
+    );
   });
 });

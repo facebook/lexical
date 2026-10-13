@@ -42,6 +42,59 @@ import {
 
 type IntentionallyMarkedAsDirtyElement = boolean;
 
+// Keys present in both child lists that keep their relative order: the longest
+// increasing subsequence of their positions in prevChildren, taken in
+// nextChildren order. Yjs has no native move, so every key outside this set
+// (added, removed or moved) is deleted and/or re-created, and the rest keep
+// their collab nodes and Yjs identities.
+function getStableChildKeys(
+  prevChildren: readonly NodeKey[],
+  prevStart: number,
+  nextChildren: readonly NodeKey[],
+  nextStart: number,
+): Set<NodeKey> {
+  const prevPositions = new Map<NodeKey, number>();
+  for (let i = prevStart; i < prevChildren.length; i++) {
+    prevPositions.set(prevChildren[i], i);
+  }
+  const keys: NodeKey[] = [];
+  const positions: number[] = [];
+  for (let i = nextStart; i < nextChildren.length; i++) {
+    const position = prevPositions.get(nextChildren[i]);
+    if (position !== undefined) {
+      keys.push(nextChildren[i]);
+      positions.push(position);
+    }
+  }
+  // tails[n] is the index (into positions) of the smallest tail of any
+  // increasing subsequence of length n + 1
+  const tails: number[] = [];
+  const predecessors: number[] = new Array(positions.length);
+  for (let i = 0; i < positions.length; i++) {
+    let lo = 0;
+    let hi = tails.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (positions[tails[mid]] < positions[i]) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    predecessors[i] = lo > 0 ? tails[lo - 1] : -1;
+    tails[lo] = i;
+  }
+  const stableKeys = new Set<NodeKey>();
+  for (
+    let i = tails.length > 0 ? tails[tails.length - 1] : -1;
+    i >= 0;
+    i = predecessors[i]
+  ) {
+    stableKeys.add(keys[i]);
+  }
+  return stableKeys;
+}
+
 export class CollabElementNode {
   _key: NodeKey;
   _children: (
@@ -549,8 +602,7 @@ export class CollabElementNode {
     const prevEndIndex = prevChildren.length - 1;
     const nextEndIndex = nextChildren.length - 1;
     const collabNodeMap = binding.collabNodeMap;
-    let prevChildrenSet: Set<NodeKey> | undefined;
-    let nextChildrenSet: Set<NodeKey> | undefined;
+    let stableKeys: Set<NodeKey> | undefined;
     let prevIndex = 0;
     let nextIndex = 0;
 
@@ -558,8 +610,47 @@ export class CollabElementNode {
       const prevKey = prevChildren[prevIndex];
       const nextKey = nextChildren[nextIndex];
 
-      if (prevKey === nextKey) {
-        // Nove move, create or remove
+      if (stableKeys === undefined) {
+        if (prevKey === nextKey) {
+          this._syncChildFromLexical(
+            binding,
+            nextIndex,
+            nextKey,
+            prevNodeMap,
+            dirtyElements,
+            dirtyLeaves,
+          );
+
+          prevIndex++;
+          nextIndex++;
+          continue;
+        }
+        stableKeys = getStableChildKeys(
+          prevChildren,
+          prevIndex,
+          nextChildren,
+          nextIndex,
+        );
+      }
+
+      if (!stableKeys.has(prevKey)) {
+        // Removed, or moved elsewhere (re-created at its new position)
+        this.splice(binding, nextIndex, 1);
+        prevIndex++;
+      } else if (!stableKeys.has(nextKey)) {
+        // Created, or moved here (its old collab node is deleted when
+        // prevIndex reaches it)
+        const nextChildNode = $getNodeByKeyOrThrow(nextKey);
+        const collabNode = $createCollabNodeFromLexicalNode(
+          binding,
+          nextChildNode,
+          this,
+        );
+        collabNodeMap.set(nextKey, collabNode);
+        this.splice(binding, nextIndex, 0, collabNode);
+        nextIndex++;
+      } else {
+        // Both stable, so prevKey === nextKey
         this._syncChildFromLexical(
           binding,
           nextIndex,
@@ -571,41 +662,6 @@ export class CollabElementNode {
 
         prevIndex++;
         nextIndex++;
-      } else {
-        if (prevChildrenSet === undefined) {
-          prevChildrenSet = new Set(prevChildren);
-        }
-
-        if (nextChildrenSet === undefined) {
-          nextChildrenSet = new Set(nextChildren);
-        }
-
-        const nextHasPrevKey = nextChildrenSet.has(prevKey);
-        const prevHasNextKey = prevChildrenSet.has(nextKey);
-
-        if (!nextHasPrevKey) {
-          // Remove
-          this.splice(binding, nextIndex, 1);
-          prevIndex++;
-        } else {
-          // Create or replace
-          const nextChildNode = $getNodeByKeyOrThrow(nextKey);
-          const collabNode = $createCollabNodeFromLexicalNode(
-            binding,
-            nextChildNode,
-            this,
-          );
-          collabNodeMap.set(nextKey, collabNode);
-
-          if (prevHasNextKey) {
-            this.splice(binding, nextIndex, 1, collabNode);
-            prevIndex++;
-            nextIndex++;
-          } else {
-            this.splice(binding, nextIndex, 0, collabNode);
-            nextIndex++;
-          }
-        }
       }
     }
 

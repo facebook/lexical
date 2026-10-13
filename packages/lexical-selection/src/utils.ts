@@ -13,30 +13,18 @@ import {
   $isRootNode,
   $isTextNode,
   type ElementNode,
+  getDOMTextNode,
   getRootOwnerDocument,
   getStyleObjectFromCSS,
   type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
 
-function getDOMTextNode(element: Node | null): Text | null {
-  let node = element;
-
-  while (node != null) {
-    if (node.nodeType === Node.TEXT_NODE) {
-      return node as Text;
-    }
-
-    node = node.firstChild;
-  }
-
-  return null;
-}
-
 /**
- * The DOM point for the point at `offset` in `node`: in its text, or in an
- * element's DOM slot, counting the DOM the editor renders ahead of its
- * children (such as a zero-size anchor before a leading decorator).
+ * The DOM point for the point at `offset` in `node`: in its text, before a
+ * line break, or in an element's DOM slot, counting the DOM the editor renders
+ * ahead of its children (such as a zero-size anchor before a leading
+ * decorator).
  */
 function getDOMPoint(
   editor: LexicalEditor,
@@ -47,22 +35,16 @@ function getDOMPoint(
   if ($isTextNode(node)) {
     return [getDOMTextNode(dom), offset];
   }
-  return $isElementNode(node) && dom !== null
-    ? editor.read('latest', (): [Node, number] => {
-        const slot = $getDOMSlot(node, dom, editor);
-        return [slot.element, slot.getFirstChildOffset() + offset];
-      })
-    : [dom, offset];
-}
-
-function getDOMIndexWithinParent(node: ChildNode): [ParentNode, number] {
-  const parent = node.parentNode;
-
-  if (parent == null) {
-    throw new Error('Should never happen');
+  if ($isElementNode(node) && dom !== null) {
+    return editor.read('latest', () => {
+      const slot = $getDOMSlot(node, dom, editor);
+      return [slot.element, slot.getFirstChildOffset() + offset];
+    });
   }
-
-  return [parent, Array.from(parent.childNodes).indexOf(node)];
+  const parent = dom && dom.nodeName === 'BR' ? dom.parentNode : null;
+  return parent && dom
+    ? [parent, Array.from(parent.childNodes).indexOf(dom)]
+    : [dom, offset];
 }
 
 /**
@@ -86,28 +68,20 @@ export function createDOMRange(
   // Resolve through the editor's own document so iframe / shadow-mounted
   // editors don't end up with a Range bound to the wrong realm.
   const range = getRootOwnerDocument(editor.getRootElement()).createRange();
-  let [anchorDOM, anchorOffset] = getDOMPoint(
+  const [anchorDOM, anchorOffset] = getDOMPoint(
     editor,
     anchorNode,
     _anchorOffset,
   );
-  let [focusDOM, focusOffset] = getDOMPoint(editor, focusNode, _focusOffset);
+  const [focusDOM, domFocusOffset] = getDOMPoint(
+    editor,
+    focusNode,
+    _focusOffset,
+  );
+  let focusOffset = domFocusOffset;
 
-  if (
-    anchorNode === undefined ||
-    focusNode === undefined ||
-    anchorDOM === null ||
-    focusDOM === null
-  ) {
+  if (anchorDOM === null || focusDOM === null) {
     return null;
-  }
-
-  if (anchorDOM.nodeName === 'BR') {
-    [anchorDOM, anchorOffset] = getDOMIndexWithinParent(anchorDOM as ChildNode);
-  }
-
-  if (focusDOM.nodeName === 'BR') {
-    [focusDOM, focusOffset] = getDOMIndexWithinParent(focusDOM as ChildNode);
   }
 
   const firstChild = anchorDOM.firstChild;

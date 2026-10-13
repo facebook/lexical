@@ -2502,8 +2502,8 @@ export function addRootElementEvents(
   const endMouseDrag = () => {
     inputState.mouseDrag = null;
   };
-  // On the document, which also sees the part of a drag outside the root
-  // element, and its release.
+  // Captured on the document, which also sees the part of a drag outside the
+  // root element, and its release, even where a listener stops them.
   const onMouseDragMove = (event: PointerEvent) => {
     const drag = inputState.mouseDrag;
     if (!drag) {
@@ -2570,11 +2570,15 @@ export function addRootElementEvents(
     });
   };
   removeHandles.push(
-    registerEventListeners(doc, {
-      pointercancel: endMouseDrag,
-      pointermove: onMouseDragMove,
-      pointerup: onMouseDragMove,
-    }),
+    registerEventListeners(
+      doc,
+      {
+        pointercancel: endMouseDrag,
+        pointermove: onMouseDragMove,
+        pointerup: onMouseDragMove,
+      },
+      true,
+    ),
     // The window misses the release of a press that it loses focus during.
     registerEventListener(getWindow(editor), 'blur', endMouseDrag),
     registerEventListeners(rootElement, {

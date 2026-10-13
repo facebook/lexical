@@ -16,11 +16,12 @@
  * start of a line does not rewrite the selection on every move, that a Shift
  * drag keeps the selection's anchor, that events in another order (a fast
  * first move, a late selectionchange, a release before the last move's
- * selectionchange) and other layouts (right-to-left text, floats, columns)
- * are handled, and that the presses the editor must not follow (double
- * clicks, presses on a selection, cancelled presses, touch and pen, read-only
- * editors, compositions, presses ended by a move with no button, a dragstart
- * or a key) are left to the browser.
+ * selectionchange), other layouts (right-to-left text, floats, columns) and
+ * pointer events that the page stops from propagating are handled, and that
+ * the presses the editor must not follow (double clicks, presses on a
+ * selection, cancelled presses, touch and pen, read-only editors,
+ * compositions, presses ended by a move with no button, a dragstart or a key)
+ * are left to the browser.
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
@@ -2354,6 +2355,100 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
       `copied ${copied} decorators but ${highlighted} are highlighted ` +
         `(${describeEditorSelection(editor)}; pointer ${pointerLog.join(' ')})`,
     );
+  });
+});
+
+/** Stops the `types` of pointer event that reach `element` from propagating. */
+function stopPropagationAt(
+  element: Element | null,
+  types: ('pointermove' | 'pointerup')[],
+): void {
+  assert(element !== null, 'expected an element to stop events at');
+  for (const type of types) {
+    onTestFinished(
+      registerEventListener(element, type, event => event.stopPropagation()),
+    );
+  }
+}
+
+// An element around the editor (a canvas, a drag library) or a decorator (a
+// React one whose onPointerMove calls stopPropagation) can stop the pointer
+// events of a press from propagating, and the editor must still follow the
+// press.
+describe('Issue #7158: mouse presses whose pointer events are stopped from propagating', () => {
+  test('a drag from text into a selectable boxed decorator, whose moves the host stops, keeps its anchor', async () => {
+    let textKey = '';
+    const {editor, root} = mountEditor(() => {
+      const text = $createTextNode('abc ');
+      textKey = text.getKey();
+      const paragraph = $createParagraphNode().append(text);
+      for (let i = 0; i < 4; i++) {
+        paragraph.append(
+          $create(SelectableBoxedImageDecoratorNode),
+          $createTextNode(' '),
+        );
+      }
+      return [paragraph];
+    });
+    stopPropagationAt(root.parentElement, ['pointermove']);
+    const text = editor.getElementByKey(textKey)?.firstChild;
+    assert(isDOMTextNode(text), 'expected the text');
+    const third = rectIn(
+      root,
+      root.querySelectorAll('[data-lexical-decorator] img')[2],
+    );
+    await mouseDrag([
+      [rectIn(root, text, 0).left + 2, third.y],
+      [third.left + 25, third.y],
+    ]);
+    await expectSelectedDecoratorCount(editor, 3, []);
+    const anchor = describeEditorSelection(editor).split('->')[0];
+    assert(
+      anchor === `${textKey}:0`,
+      `expected the anchor at the press, got ${anchor}`,
+    );
+  });
+
+  test('a drag from right of the last decorator, over decorators that stop its moves and release, selects back to the third', () => {
+    const mounted = mount(false, ImageLikeDecoratorNode);
+    for (const dom of mounted.root.querySelectorAll(
+      '[data-lexical-decorator]',
+    )) {
+      stopPropagationAt(dom, ['pointermove', 'pointerup']);
+    }
+    return dragFromLineEdge('end', mounted);
+  });
+
+  // A toolbar keeps the editor focused by cancelling the mousedown of its
+  // buttons.
+  test('a click right of the last decorator, whose release the host stops, leaves the caret that a toolbar button puts next', async () => {
+    const {editor, pointerLog, right, root, trailingTextKey, y} = mount(
+      false,
+      ImageLikeDecoratorNode,
+      {trailingLine: 'hello world'},
+    );
+    assert(trailingTextKey !== null, 'expected the trailing text');
+    stopPropagationAt(root.parentElement, ['pointermove', 'pointerup']);
+    const button = document.createElement('button');
+    button.id = 'issue-7158-toolbar';
+    button.textContent = 'End';
+    button.addEventListener('mousedown', event => event.preventDefault());
+    button.addEventListener('click', () =>
+      editor.update(
+        () => {
+          $assertNodeType(
+            $getNodeByKey(trailingTextKey),
+            $isTextNode,
+          ).selectEnd();
+        },
+        {discrete: true},
+      ),
+    );
+    root.before(button);
+    await mouseDrag([[right(COUNT - 1) + 30, y]]);
+    await expectCaret(editor, `paragraph:${COUNT}`, pointerLog);
+    await commands.mouseDrag('#issue-7158-toolbar', [[5, 5]]);
+    await expectCaret(editor, 'text:11', pointerLog);
   });
 });
 

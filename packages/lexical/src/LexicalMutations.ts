@@ -229,13 +229,18 @@ function flushMutations(
           }
 
           for (const removedDOM of mutation.removedNodes) {
-            if (
+            const isScaffolding =
               blockCursorElement === removedDOM ||
-              isDecoratorBoundaryAnchorDOM(removedDOM)
+              isDecoratorBoundaryAnchorDOM(removedDOM);
+            if (
+              isScaffolding ||
+              (isHTMLElement(removedDOM) &&
+                removedDOM.hasAttribute('data-lexical-managed-linebreak'))
             ) {
-              // Back in its place, which matters for the scaffolding:
-              // after its previous sibling when a later record took the
-              // next one.
+              // Back in its place, wherever the edit put it, which matters for
+              // the scaffolding and for DOM an extension keeps beside the
+              // line break: after its previous sibling when a later record
+              // took the next one.
               const next = mutation.nextSibling;
               const prev = mutation.previousSibling;
               targetDOM.insertBefore(
@@ -248,11 +253,12 @@ function flushMutations(
                       ? prev.nextSibling
                       : null,
               );
-            } else {
-              // A removed child or managed line break is put back by
-              // reconcileObservedMutation once every record has been seen,
-              // since a later record can still move what it would sit next
-              // to.
+            }
+            if (!isScaffolding) {
+              // A removed child is put back, and a line break that is no
+              // longer whole is rebuilt, by reconcileObservedMutation once
+              // every record has been seen, since a later record can still
+              // move what it would sit next to.
               badDOMTargets.set(nodeDOM, targetNode);
             }
           }

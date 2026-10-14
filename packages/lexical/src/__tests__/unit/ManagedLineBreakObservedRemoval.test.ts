@@ -7,16 +7,17 @@
  */
 
 /**
- * The editor's MutationObserver reverts DOM changes it did not make. Once it
- * has seen every record of a batch, `reconcileObservedMutation` puts each
- * changed block back together: it moves the keyed children into place and
- * rebuilds the managed line break (the keyless `<br>` the reconciler adds
- * after a block's last inline decorator or LineBreakNode, or in an empty
- * block) if the batch took a node of it. After a batch that removes or moves
- * keyed children, that line break, or both, the DOM must again be what
- * Lexical renders for the unchanged editor state, with no error reported,
- * and nodes Lexical does not manage (a slot's boundaries, DOM marked with
- * setDOMUnmanaged) must keep their place.
+ * The editor's MutationObserver reverts DOM changes it did not make. It puts
+ * a removed node of a block's managed line break (the keyless `<br>` the
+ * reconciler adds after a block's last inline decorator or LineBreakNode, or
+ * in an empty block) back where it was, and once it has seen every record of
+ * a batch, `reconcileObservedMutation` puts each changed block back together:
+ * it moves the keyed children into place and rebuilds the line break if it is
+ * no longer whole. After a batch that removes or moves keyed children, that
+ * line break, or both, the DOM must again be what Lexical renders for the
+ * unchanged editor state, with no error reported, and nodes Lexical does not
+ * manage (a slot's boundaries, DOM marked with setDOMUnmanaged) must keep
+ * their place.
  *
  * jsdom models the Chromium / Firefox shape of the managed line break (a
  * plain `<br>`); the WebKit img+br shape and native editing are covered by
@@ -305,6 +306,21 @@ describe('DOM an extension adds with setDOMUnmanaged keeps its place', () => {
         mountEditor(() => [$paragraph()]),
         append,
         block => remove(textSpans(block)[0]),
+      );
+    },
+  );
+
+  test.each([
+    ['an inline decorator', $endingWithDecorator],
+    ['a LineBreakNode', $endingWithLineBreak],
+    ['nothing (an empty paragraph)', () => $createParagraphNode()],
+  ])(
+    'after the line break of a paragraph ending with %s, when the line break is removed',
+    async (_, $paragraph) => {
+      await expectUnmanagedKept(
+        mountEditor(() => [$paragraph()]),
+        append,
+        block => remove(...managedLineBreak(block)),
       );
     },
   );

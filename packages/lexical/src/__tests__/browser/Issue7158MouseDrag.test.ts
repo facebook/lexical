@@ -56,6 +56,7 @@ import {
   registerEventListener,
   registerEventListeners,
   SELECTION_CHANGE_COMMAND,
+  setDOMUnmanaged,
 } from 'lexical';
 import {assert, describe, onTestFinished, test, vi} from 'vitest';
 import {commands, server, userEvent} from 'vitest/browser';
@@ -3450,3 +3451,62 @@ test.each([
     });
   },
 );
+
+// An extension can keep DOM of its own in a block with setDOMUnmanaged, such
+// as a badge at the end of a line. The browser can put a point of the drag in
+// it, which is no position in the editor, and an edit of the block mid-drag,
+// which the editor reverts, must leave it where it was.
+describe('Issue #7158: mouse drag beside DOM an extension keeps in the block', () => {
+  function badge(): HTMLElement {
+    const span = document.createElement('span');
+    span.textContent = '*';
+    setDOMUnmanaged(span);
+    return span;
+  }
+  const managedLineBreak = (block: Element) =>
+    Array.from(
+      block.querySelectorAll(':scope > [data-lexical-managed-linebreak]'),
+    );
+  const afterLineBreak = (block: Element) => block.append(badge());
+  const removeLineBreak = (block: Element) =>
+    managedLineBreak(block).forEach(node => node.remove());
+
+  type Edit = (block: Element) => void;
+  test.each<[string, 'end' | 'start', Edit, Edit | null]>([
+    [
+      'right of the last decorator, with a badge after a line break that an edit removes mid-drag,',
+      'end',
+      afterLineBreak,
+      removeLineBreak,
+    ],
+    [
+      'left of the first decorator, with a badge after a line break that an edit removes mid-drag,',
+      'start',
+      afterLineBreak,
+      removeLineBreak,
+    ],
+  ])(
+    'a drag from %s selects as without the badge',
+    async (_name, edge, addBadge, editMidDrag) => {
+      const mounted = mount(false, ImageLikeDecoratorNode);
+      const block = mounted.root.firstElementChild!;
+      addBadge(block);
+      const rendered = mounted.root.innerHTML;
+      let moves = 0;
+      onTestFinished(
+        registerEventListener(
+          window,
+          'pointermove',
+          event => {
+            if (editMidDrag && event.buttons !== 0 && ++moves === 2) {
+              editMidDrag(block);
+            }
+          },
+          true,
+        ),
+      );
+      await dragFromLineEdge(edge, mounted);
+      assert.equal(mounted.root.innerHTML, rendered);
+    },
+  );
+});

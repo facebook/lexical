@@ -226,6 +226,47 @@ describe('a block ending with an inline decorator', () => {
     expectRestored(mounted);
   });
 
+  // On WebKit the last node of the line break is the <br> after the <img>,
+  // which the editor does not hold on to.
+  test('moving the last node of the line break into the decorator', async () => {
+    const mounted = mountEditor($children);
+    const {block} = mounted;
+    await observeBatch(mounted.root, () => {
+      decorators(block)[0].appendChild(lastLineBreakNode(block));
+    });
+    expectRestored(mounted);
+  });
+
+  test('moving the line break into the decorator', async () => {
+    const mounted = mountEditor($children);
+    const {block} = mounted;
+    await observeBatch(mounted.root, () => {
+      decorators(block)[0].append(...managedLineBreak(block));
+    });
+    expectRestored(mounted);
+  });
+
+  test('moving the last node of the line break into an unmanaged node', async () => {
+    await expectUnmanagedKept(
+      mountEditor($children),
+      block =>
+        block.insertBefore(unmanagedSpan('badge'), managedLineBreak(block)[0]),
+      block => {
+        block
+          .querySelector('[data-unmanaged]')!
+          .appendChild(lastLineBreakNode(block));
+      },
+    );
+  });
+
+  test('removing the line break keeps an unmanaged node after it', async () => {
+    await expectUnmanagedKept(
+      mountEditor($children),
+      block => block.appendChild(unmanagedSpan('badge')),
+      block => remove(...managedLineBreak(block)),
+    );
+  });
+
   test('moving the decorator to the start of the block', async () => {
     const mounted = mountEditor($children);
     const {block} = mounted;

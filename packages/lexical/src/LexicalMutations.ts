@@ -47,14 +47,12 @@ export function getIsProcessingMutations(): boolean {
   return isProcessingMutations;
 }
 
-function updateTimeStamp(event: Event) {
-  lastTextEntryTimeStamp = event.timeStamp;
+function updateTimeStamp() {
+  lastTextEntryTimeStamp = performance.now();
 }
 
 function initTextEntryListener(editor: LexicalEditor): void {
-  if (lastTextEntryTimeStamp === 0) {
-    getWindow(editor).addEventListener('textInput', updateTimeStamp, true);
-  }
+  getWindow(editor).addEventListener('textInput', updateTimeStamp, true);
 }
 
 // True when `dom` is a line break the editor is actively managing in the

@@ -6,6 +6,7 @@
  *
  */
 
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {
   $convertFromMarkdownString,
@@ -13,8 +14,9 @@ import {
   registerMarkdownShortcuts,
 } from '@lexical/markdown';
 import {MarkdownTestExtension} from '@lexical/markdown/src/__tests__/utils';
-import {defineExtension} from 'lexical';
-import {expect, test} from 'vitest';
+import {$createParagraphNode, $getRoot, defineExtension} from 'lexical';
+import {expect, onTestFinished, test} from 'vitest';
+import {userEvent} from 'vitest/browser';
 
 import {
   assertHTML,
@@ -172,6 +174,36 @@ test.each(cases)(
     }
   },
 );
+test('transforms Markdown shortcuts when the editor root is in an iframe', async () => {
+  const iframe = document.createElement('iframe');
+  document.body.append(iframe);
+  const iframeDocument = iframe.contentDocument;
+  if (iframeDocument === null) {
+    throw new Error('Expected the test iframe to have a document');
+  }
+  const root = iframeDocument.createElement('div');
+  root.contentEditable = 'true';
+  root.style.whiteSpace = 'pre-wrap';
+  iframeDocument.body.append(root);
+  const editor = buildEditorFromExtensions([extension]);
+  editor.setRootElement(root);
+  editor.update(
+    () => {
+      $getRoot().clear().append($createParagraphNode());
+      $getRoot().selectEnd();
+    },
+    {discrete: true},
+  );
+  onTestFinished(() => {
+    editor.dispose();
+    iframe.remove();
+  });
+  iframe.contentWindow?.focus();
+  root.focus();
+  await userEvent.keyboard('*world*');
+  await expect.poll(() => root.textContent).toBe('world');
+  expect(root.querySelector('em')?.textContent).toBe('world');
+});
 test('can undo/redo nested transformations', async () => {
   const {root} = setup();
   await typeText('~~_**hello world**_~~');

@@ -128,6 +128,7 @@ function flushMutations(
   editor: LexicalEditor,
   mutations: MutationRecord[],
   observer: MutationObserver,
+  rerenderText?: boolean,
 ): void {
   isProcessingMutations = true;
   const shouldFlushTextMutations =
@@ -158,9 +159,15 @@ function flushMutations(
         const [nodeDOM, targetNode] = pair;
 
         if (type === 'characterData') {
-          // Text mutations are deferred and passed to mutation listeners to be
-          // processed outside of the Lexical engine.
-          if (
+          if (rerenderText) {
+            // The editor applied this input itself, so the text the browser
+            // also changed is rendered again from the editor state.
+            if ($isTextNode(targetNode) && targetNode.isAttached()) {
+              targetNode.markDirty();
+            }
+          } else if (
+            // Text mutations are deferred and passed to mutation listeners to
+            // be processed outside of the Lexical engine.
             // TODO there is an edge case here if a mutation happens too quickly
             //      after text input, it may never be handled since we do not
             //      track the ignored mutations in any way
@@ -326,12 +333,15 @@ function flushMutations(
   }
 }
 
-export function flushRootMutations(editor: LexicalEditor): void {
+export function flushRootMutations(
+  editor: LexicalEditor,
+  rerenderText?: boolean,
+): void {
   const observer = editor._observer;
 
   if (observer !== null) {
     const mutations = observer.takeRecords();
-    flushMutations(editor, mutations, observer);
+    flushMutations(editor, mutations, observer, rerenderText);
   }
 }
 

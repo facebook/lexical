@@ -487,28 +487,34 @@ describe('native editing with execCommand', () => {
 
   // The engine edits both blocks while Lexical's input handling has already
   // changed the editor state, so the revert must put back what is on screen.
+  // Where the engine dispatches no beforeinput, the editor inserts the text
+  // as well, so the text it is left with is checked too: the text before the
+  // selection, then what was typed and the text after it, each once.
   const $inlineDecorator = () => $create(InlineDecoratorNode);
   test.each([
-    ['end', 'an inline decorator', () => [$inlineDecorator()]],
+    ['end', 'an inline decorator', () => [$inlineDecorator()], 'Zd'],
     [
       'end',
       'text and an inline decorator',
       () => [$createTextNode('ab'), $inlineDecorator()],
+      'abZd',
     ],
     [
       'text',
       'text and an inline decorator',
       () => [$createTextNode('ab'), $inlineDecorator()],
+      'aZd',
     ],
     [
       'end',
       'text and a LineBreakNode',
       () => [$createTextNode('ab'), $createLineBreakNode()],
+      'abZd',
     ],
-    ['end', 'nothing (an empty paragraph)', () => []],
-  ] as ['end' | 'text', string, () => LexicalNode[]][])(
+    ['end', 'nothing (an empty paragraph)', () => [], 'Zd'],
+  ] as ['end' | 'text', string, () => LexicalNode[], string][])(
     'execCommand(insertText) from the %s of a block ending with %s into the next block',
-    async (from, _, $firstChildren) => {
+    async (from, _, $firstChildren, text) => {
       const mounted = mountEditor(() => [
         $createParagraphNode().append(...$firstChildren()),
         $createParagraphNode().append(
@@ -531,6 +537,14 @@ describe('native editing with execCommand', () => {
         expect(document.execCommand('insertText', false, 'Z')).toBe(true);
       });
       expectRendersEditorState(mounted);
+      expect(
+        mounted.editor.read(() =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => node.getTextContent())
+            .join(''),
+        ),
+      ).toBe(text);
     },
   );
 });

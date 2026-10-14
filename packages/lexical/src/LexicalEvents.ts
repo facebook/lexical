@@ -1683,6 +1683,7 @@ function $handleInput(event: InputEvent): boolean {
   const targetRange = getTargetRange(event);
 
   let handled = false;
+  let rerenderText = false;
   if (data != null && $isRangeSelection(selection)) {
     const domSelection = getDOMSelection(getWindow(editor));
     const domSelectionPoints =
@@ -1764,6 +1765,10 @@ function $handleInput(event: InputEvent): boolean {
           getAnchorTextFromDOM(domSelectionPoints.anchorNode)
       ) {
         dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+        // The browser has inserted the text as well, and not necessarily
+        // where the editor did (Firefox, over a selection running into the
+        // next block), so its text changes are not read back.
+        rerenderText = event.inputType === 'insertText';
       }
 
       const textLength = data.length;
@@ -1806,7 +1811,7 @@ function $handleInput(event: InputEvent): boolean {
 
   // Also flush any other mutations that might have occurred
   // since the change.
-  $flushMutations();
+  $flushMutations(rerenderText);
 
   return true;
 }

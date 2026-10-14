@@ -268,8 +268,11 @@ function $resolveDropPointCaret(
     // children (such as a zero-size anchor before a leading decorator), and
     // a point outside the element's slot is beside the element.
     const dom = editor.getElementByKey(node.getKey());
-    const slot = dom && $getDOMSlot(node, dom, editor);
-    return dom && slot && (hit.node === slot.element || node.getParent())
+    if (dom === null) {
+      return null;
+    }
+    const slot = $getDOMSlot(node, dom, editor);
+    return hit.node === slot.element || node.getParent()
       ? $getChildCaretAtIndex(
           ...slot.resolveChildIndex(node, dom, hit.node, hit.offset),
           'next',

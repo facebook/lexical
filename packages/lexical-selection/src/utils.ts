@@ -7,8 +7,8 @@
  */
 
 import {
-  $getDOMSlot,
   $getEditor,
+  $getElementAndOffsetForPoint,
   $isElementNode,
   $isRootNode,
   $isTextNode,
@@ -22,9 +22,7 @@ import {
 
 /**
  * The DOM point for the point at `offset` in `node`: in its text, before a
- * line break, or in an element's DOM slot, counting the DOM the editor renders
- * ahead of its children (such as a zero-size anchor before a leading
- * decorator).
+ * line break, or where the editor puts its own DOM selection in an element.
  */
 function getDOMPoint(
   editor: LexicalEditor,
@@ -32,17 +30,17 @@ function getDOMPoint(
   offset: number,
 ): [Node | null, number] {
   const dom = editor.getElementByKey(node.getKey());
-  if ($isTextNode(node)) {
+  if (dom === null || $isTextNode(node)) {
     return [getDOMTextNode(dom), offset];
   }
-  if ($isElementNode(node) && dom !== null) {
-    return editor.read('latest', () => {
-      const slot = $getDOMSlot(node, dom, editor);
-      return [slot.element, slot.getFirstChildOffset() + offset];
-    });
+  if ($isElementNode(node)) {
+    // createDOMRange is also called outside a read, as by collab cursors.
+    return editor.read('latest', () =>
+      $getElementAndOffsetForPoint(editor, node, offset),
+    );
   }
-  const parent = dom && dom.nodeName === 'BR' ? dom.parentNode : null;
-  return parent && dom
+  const parent = dom.parentNode;
+  return parent && dom.nodeName === 'BR'
     ? [parent, Array.from(parent.childNodes).indexOf(dom)]
     : [dom, offset];
 }

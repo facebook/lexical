@@ -33,6 +33,7 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
+  $createRangeSelectionFromDom,
   $createTextNode,
   $getNodeByKey,
   $getRoot,
@@ -788,34 +789,45 @@ test(
 
 // Chromium restarts a drag from its press once the editor has moved the
 // selection, and a press beyond the last decorator puts both of its points
-// inside that decorator, so it has no position in the text to report.
-test('Issue #7158: a drag from right of the last decorator into a word between decorators ends in the word', async () => {
-  const {editor, left, pointerLog, right, root, y} = mount(
-    true,
-    ImageLikeDecoratorNode,
-    {betweenText: 'ab'},
-  );
-  await mouseDrag([
-    // Halfway to the right edge of the root, which the text before the
-    // decorators moves closer in a wider font.
-    [(right(COUNT - 1) + root.offsetWidth) / 2, y],
-    [left(COUNT - 1) + SIZE / 2, y],
-    // Between the "a" and the "b" before the fifth decorator.
-    [(right(COUNT - 3) + left(COUNT - 2)) / 2, y],
-  ]);
-  await vi.waitFor(() => {
-    const text = editor.read('latest', () => {
-      const selection = $getSelection();
-      return $isRangeSelection(selection) ? selection.getTextContent() : '';
-    });
-    assert(
-      text === 'bab',
-      `expected the selection to start in the word, got ${JSON.stringify(text)} ` +
-        `(dom ${describeDOMSelection(getDOMSelection(window))}; ` +
-        `pointer ${pointerLog.join(' ')})`,
+// inside that decorator, so it has no position in the text to report, also
+// at a release that comes before the selectionchange of the last move.
+test.each([
+  ['', false],
+  [', released before the selectionchange of its last move,', true],
+])(
+  'Issue #7158: a drag from right of the last decorator into a word between decorators%s ends in the word',
+  async (_name, isReleasedFirst) => {
+    const {editor, left, pointerLog, right, root, y} = mount(
+      true,
+      ImageLikeDecoratorNode,
+      {betweenText: 'ab'},
     );
-  });
-});
+    // Between the "a" and the "b" before the fifth decorator.
+    const word = (right(COUNT - 3) + left(COUNT - 2)) / 2;
+    if (isReleasedFirst) {
+      withholdLastMoveSelectionChanges(root, word);
+    }
+    await mouseDrag([
+      // Halfway to the right edge of the root, which the text before the
+      // decorators moves closer in a wider font.
+      [(right(COUNT - 1) + root.offsetWidth) / 2, y],
+      [left(COUNT - 1) + SIZE / 2, y],
+      [word, y],
+    ]);
+    await vi.waitFor(() => {
+      const text = editor.read('latest', () => {
+        const selection = $getSelection();
+        return $isRangeSelection(selection) ? selection.getTextContent() : '';
+      });
+      assert(
+        text === 'bab',
+        `expected the selection to start in the word, got ${JSON.stringify(text)} ` +
+          `(dom ${describeDOMSelection(getDOMSelection(window))}; ` +
+          `pointer ${pointerLog.join(' ')})`,
+      );
+    });
+  },
+);
 
 /**
  * Records each selection change of `editor`, with the selection it changed to
@@ -1577,13 +1589,11 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
   // dialog took it), or that became a drag and drop, leaves a drag behind,
   // which must not move the focus of a later selection to where that drag
   // last was. A move with no button ends it, as do a dragstart, a context
-  // menu, a key, a pen or touch moving, a pointercancel, and the window
-  // losing focus.
+  // menu, a key, a pointercancel, and the window losing focus.
   test.each([
     'a move with no button',
     'dragstart',
     'a context menu',
-    'a pen move',
     'a pointercancel',
     'a window blur',
     'the key',
@@ -1623,10 +1633,6 @@ describe('Issue #7158: mouse presses the drag fallback leaves alone', () => {
       );
     } else if (ending === 'a context menu') {
       target.dispatchEvent(new MouseEvent('contextmenu', over));
-    } else if (ending === 'a pen move') {
-      elementAt(over).dispatchEvent(
-        new PointerEvent('pointermove', {...over, pointerType: 'pen'}),
-      );
     } else if (ending === 'a pointercancel') {
       elementAt(over).dispatchEvent(new PointerEvent('pointercancel', over));
     } else if (ending === 'a window blur') {
@@ -2022,6 +2028,34 @@ function withholdPressSelectionChanges(untilRelease = false): void {
   withholdSelectionChanges(() => isWithheld);
 }
 
+/**
+ * Keeps the selectionchange events of a drag's move to `x` (relative to
+ * `root`) from the editor until its release, as a busy main thread can
+ * deliver them after that. The editor then gets one after the release.
+ */
+function withholdLastMoveSelectionChanges(root: HTMLElement, x: number): void {
+  const clientX = root.getBoundingClientRect().left + x;
+  let isWithheld = false;
+  onTestFinished(
+    registerEventListeners(document, {
+      pointermove: event => {
+        if (event.buttons === 1 && Math.abs(event.clientX - clientX) < 1) {
+          isWithheld = true;
+        }
+      },
+      pointerup: () => {
+        if (isWithheld) {
+          isWithheld = false;
+          setTimeout(() =>
+            document.dispatchEvent(new Event('selectionchange')),
+          );
+        }
+      },
+    }),
+  );
+  withholdSelectionChanges(() => isWithheld);
+}
+
 describe('Issue #7158: mouse drags whose events come in another order', () => {
   // Chromium and WebKit decide on the first move of a press whether it drags
   // a selection that holds the press point. The editor must not select up to
@@ -2142,26 +2176,7 @@ describe('Issue #7158: mouse drags whose events come in another order', () => {
       false,
       SelectableBoxedImageDecoratorNode,
     );
-    const lastX = root.getBoundingClientRect().left + left(2) + SIZE / 4;
-    let isWithheld = false;
-    onTestFinished(
-      registerEventListeners(document, {
-        pointermove: event => {
-          if (event.buttons === 1 && Math.abs(event.clientX - lastX) < 1) {
-            isWithheld = true;
-          }
-        },
-        pointerup: () => {
-          if (isWithheld) {
-            isWithheld = false;
-            setTimeout(() =>
-              document.dispatchEvent(new Event('selectionchange')),
-            );
-          }
-        },
-      }),
-    );
-    withholdSelectionChanges(() => isWithheld);
+    withholdLastMoveSelectionChanges(root, left(2) + SIZE / 4);
     await mouseDrag([
       [right(COUNT - 1) + 30, y],
       [left(COUNT - 2) + SIZE / 2, y],
@@ -2423,6 +2438,40 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
       [left(3) + SIZE / 2, y],
       [left(2) - 2, y],
     ]);
+    await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+  });
+
+  // A touch or a pen beside a drag, as on a touchscreen laptop, does not end
+  // it, nor does the browser cancelling that touch to scroll.
+  test('a drag with a touch and a pen moving beside it selects back to the third', async () => {
+    const {editor, left, pointerLog, right, root, y} = mount(
+      false,
+      BoxedImageDecoratorNode,
+    );
+    const touch = {pointerId: 2, pointerType: 'touch'};
+    const pen = {pointerId: 3, pointerType: 'pen'};
+    const others: [string, PointerEventInit][] = [
+      ['pointermove', {...touch, buttons: 1}],
+      ['pointercancel', touch],
+      ['pointermove', pen],
+      ['pointerup', pen],
+    ];
+    let moves = 0;
+    onTestFinished(
+      registerEventListener(root, 'pointermove', event => {
+        const other = event.buttons === 1 ? others[++moves - 2] : undefined;
+        if (other) {
+          document.dispatchEvent(new PointerEvent(...other));
+        }
+      }),
+    );
+    await mouseDrag([
+      [right(COUNT - 1) + 30, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [left(3) + SIZE / 2, y],
+      [left(2) - 2, y],
+    ]);
+    assert(moves > others.length, 'expected each other pointer mid-drag');
     await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
   });
 
@@ -2708,6 +2757,38 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
     );
   });
 
+  // A selection has the format of the text it holds, so one of only the
+  // decorator before bold text has none, also where the editor has put the
+  // focus back beside the decorator while the DOM's is inside it.
+  test('a drag over a decorator before bold text selects it without the bold format', async () => {
+    const {editor, root} = mountEditor(() => [
+      $createParagraphNode()
+        .setIndent(2)
+        .append(
+          $create(TextChipDecoratorNode),
+          $createTextNode('hello').toggleFormat('bold'),
+        ),
+    ]);
+    const decorator = root.querySelector('[data-lexical-decorator]');
+    assert(decorator !== null, 'expected the decorator');
+    const {left, right, y} = rectIn(root, decorator);
+    await mouseDrag([
+      [left - 20, y],
+      [right - SIZE / 4, y],
+    ]);
+    await expectSelectedDecoratorCount(editor, 1, []);
+    const format = editor.read('latest', () => {
+      const selection = $getSelection();
+      return $isRangeSelection(selection) ? selection.format : -1;
+    });
+    assert(
+      format === 0,
+      `expected no format, got ${format} for ` +
+        `${describeEditorSelection(editor)} ` +
+        `(dom ${describeDOMSelection(getDOMSelection(window))})`,
+    );
+  });
+
   // A click often moves the mouse a pixel or so, which is a drag.
   test('typing after a click on the caret that moves a pixel in bold text types bold text', async () => {
     let textKey = '';
@@ -2886,6 +2967,59 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
       editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
       await mouseDrag([[right + 30, y]]);
       await expectCaret(editor, caret, []);
+      await userEvent.keyboard('X');
+      await vi.waitFor(() => {
+        const format = editor.read('latest', () => {
+          const typed = $getRoot()
+            .getAllTextNodes()
+            .find(node => node.getTextContent().includes('X'));
+          return typed === undefined ? 'nothing typed' : typed.getFormat();
+        });
+        assert(format === 1, `expected X typed in bold, got format ${format}`);
+      });
+    },
+  );
+
+  // A format armed at a caret beside the children of a line is kept by a
+  // click that the editor puts elsewhere among them, as by a selectionchange
+  // there, also in a line without text, when the release comes first and
+  // the editor takes the press from the DOM.
+  test.each([
+    ['of only a decorator', false],
+    ['of text between decorators', true],
+  ])(
+    'typing after a click right of the last decorator in a line %s, released before the selectionchange of its press, from a caret at its start with bold armed types bold text',
+    async (_name, hasText) => {
+      const {editor, root} = mountEditor(() => [
+        $createParagraphNode().append(
+          ...(hasText
+            ? [
+                $create(ImageLikeDecoratorNode),
+                $createTextNode(' hello '),
+                $create(ImageLikeDecoratorNode),
+              ]
+            : [$create(ImageLikeDecoratorNode)]),
+        ),
+      ]);
+      const selectionChanged = nextSelectionChange();
+      root.focus();
+      editor.update(
+        () => {
+          $getRoot().selectStart();
+        },
+        {discrete: true},
+      );
+      await selectionChanged;
+      editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+      const decorators = root.querySelectorAll('[data-lexical-decorator]');
+      const {right, y} = rectIn(root, decorators[decorators.length - 1]);
+      withholdPressSelectionChanges(true);
+      await mouseDrag([[right + 30, y]]);
+      await expectCaret(
+        editor,
+        `paragraph:${decorators.length + (hasText ? 1 : 0)}`,
+        [],
+      );
       await userEvent.keyboard('X');
       await vi.waitFor(() => {
         const format = editor.read('latest', () => {
@@ -3080,6 +3214,51 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
       copied === highlighted,
       `copied ${copied} decorators but ${highlighted} are highlighted ` +
         `(${describeEditorSelection(editor)}; pointer ${pointerLog.join(' ')})`,
+    );
+  });
+
+  // An editor that becomes read-only during a drag stops writing the DOM
+  // selection too, so it leaves the rest of the drag to the browser, which
+  // does not extend it over unselectable boxes.
+  test('a drag that the editor becomes read-only during leaves the selection where the browser has it', async () => {
+    const {editor, left, pointerLog, right, root, y} = mount(
+      false,
+      BoxedImageDecoratorNode,
+    );
+    // Once the drag has crossed the last decorator.
+    onTestFinished(
+      registerEventListener(document, 'pointermove', event => {
+        if (
+          editor.isEditable() &&
+          event.clientX < root.getBoundingClientRect().left + left(COUNT - 1)
+        ) {
+          editor.setEditable(false);
+          root.contentEditable = 'false';
+        }
+      }),
+    );
+    await mouseDrag([
+      [right(COUNT - 1) + 30, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [left(2) + SIZE / 2 - 3, y],
+    ]);
+    assert(!editor.isEditable(), 'expected the editor to be read-only');
+    const browser = editor.read('latest', () => {
+      const selection = $createRangeSelectionFromDom(
+        getDOMSelection(window),
+        editor,
+      );
+      return selection
+        ? `${selection.anchor.key}:${selection.anchor.offset}->` +
+            `${selection.focus.key}:${selection.focus.offset}`
+        : String(selection);
+    });
+    const lexical = describeEditorSelection(editor);
+    assert(
+      lexical === browser,
+      `expected the selection at ${browser}, got ${lexical} (dom ` +
+        `${describeDOMSelection(getDOMSelection(window))}; ` +
+        `pointer ${pointerLog.join(' ')})`,
     );
   });
 });

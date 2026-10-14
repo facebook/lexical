@@ -3633,7 +3633,7 @@ export function $internalCreateRangeSelection(
  * there discards a format armed with Cmd+B on the way through Enter,
  * Shift+Enter and paste.
  */
-function $internalRefreshSelectionFormatAndStyle(
+export function $internalRefreshSelectionFormatAndStyle(
   selection: RangeSelection,
   previousAnchorKey: NodeKey,
 ): void {
@@ -3866,7 +3866,14 @@ function setDOMSelectionBaseAndExtent(
   }
 }
 
-function $getElementAndOffsetForPoint(
+/**
+ * @internal
+ *
+ * The DOM element and offset for a point at `offset` in `node`: in an
+ * element's DOM slot, counting the DOM the editor renders ahead of its
+ * children, or in the keyed DOM of any other node.
+ */
+export function $getElementAndOffsetForPoint(
   editor: LexicalEditor,
   node: LexicalNode,
   offset: number,

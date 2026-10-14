@@ -307,9 +307,10 @@ export interface InputState {
   mouseDrag: MouseEvent | null;
   /**
    * The pointerType of the latest pointerdown in the root element ('touch',
-   * 'pen' or 'mouse'), so the compatibility mousedown and click that follow a
-   * tap can tell it from an iPadOS trackpad or mouse press. Recorded on iOS
-   * only; '' until the first pointerdown, and always '' elsewhere.
+   * 'pen' or 'mouse'; '' until the first), on every platform. The
+   * compatibility mousedown and click that follow a tap on iOS tell it from an
+   * iPadOS trackpad or mouse press by it, and a mousedown starts a mouseDrag
+   * only after a 'mouse' one.
    */
   lastPointerType: '' | PointerEvent['pointerType'];
   /**
@@ -855,8 +856,7 @@ export function resetEditor(
   if (prevRootElement !== null) {
     restoreInputModeIOS(editor, prevRootElement);
   }
-  // In place, as the root element's listeners hold it.
-  Object.assign(editor._inputState, createInputState());
+  editor._inputState = createInputState();
 
   const observer = editor._observer;
 

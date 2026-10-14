@@ -259,11 +259,20 @@ function flushMutations(
                 (isHTMLElement(removedDOM) &&
                   removedDOM.hasAttribute('data-lexical-managed-linebreak'))
               ) {
-                // Back in its place, which matters for the scaffolding.
+                // Back in its place, which matters for the scaffolding:
+                // after its previous sibling when a later record took the
+                // next one.
                 const next = mutation.nextSibling;
+                const prev = mutation.previousSibling;
                 targetDOM.insertBefore(
                   removedDOM,
-                  next && next.parentNode === targetDOM ? next : null,
+                  !next || next.parentNode === targetDOM
+                    ? next
+                    : !prev
+                      ? targetDOM.firstChild
+                      : prev.parentNode === targetDOM
+                        ? prev.nextSibling
+                        : null,
                 );
                 unremovedBRs++;
               }

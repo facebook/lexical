@@ -325,7 +325,7 @@ describe('ElementDOMSlot integration: leading decoration (slot.after)', () => {
     editor = buildEditorFromExtensions(
       defineExtension({
         name: '[leading-decor]',
-        nodes: [LeadingDecorElementNode],
+        nodes: [LeadingDecorElementNode, TestDecoratorNode],
       }),
     );
     editor.setRootElement(container);
@@ -519,6 +519,39 @@ describe('ElementDOMSlot integration: leading decoration (slot.after)', () => {
         2,
       ]);
     });
+  });
+
+  test('a decorator anchor removed before its decorator goes back after the decoration', async () => {
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createLeadingDecorNode().append(
+              $createTestDecoratorNode().setIsInline(false),
+              $createTextNode('x'),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    const block = container.querySelector('[data-block]');
+    assert(block !== null, 'Expected the block to be rendered');
+    const shape = () =>
+      Array.from(block.children, child =>
+        child.hasAttribute('data-lexical-decorator-boundary')
+          ? 'anchor'
+          : child.hasAttribute('data-marker')
+            ? 'marker'
+            : child.nodeName.toLowerCase(),
+      );
+    expect(shape()).toEqual(['marker', 'anchor', 'div', 'span']);
+    const [, anchor, decorator] = Array.from(block.children);
+    // One record each, so the decorator the anchor's record names as its
+    // next sibling is gone when that record is read.
+    anchor.remove();
+    decorator.remove();
+    await expect.poll(shape).toEqual(['marker', 'anchor', 'div', 'span']);
   });
 });
 

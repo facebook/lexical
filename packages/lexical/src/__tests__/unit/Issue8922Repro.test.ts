@@ -273,6 +273,18 @@ describe('Issue #8922: select-all with a boundary block decorator', () => {
     expect(paragraph.querySelectorAll(BOUNDARY_SELECTOR)).toHaveLength(0);
   });
 
+  test('an anchor removed before its decorator goes back on its edge', async () => {
+    setRootChildren('decorator', 'text');
+    const [anchor, decorator] = Array.from(container.childNodes);
+    // One record each, so the decorator the anchor's record names as its
+    // next sibling is gone when that record is read.
+    anchor.remove();
+    decorator.remove();
+    await expect
+      .poll(() => rootChildNames(container))
+      .toEqual(['boundary', 'decorator', 'p']);
+  });
+
   test('anchors do not shift the child offsets $selectAll resolves to', () => {
     setRootChildren('decorator', 'text', 'decorator');
 

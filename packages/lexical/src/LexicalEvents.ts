@@ -379,8 +379,11 @@ function onSelectionChange(
     if (!isSelectionWithinEditor(editor, anchorDOM, focusDOM)) {
       return;
     }
-    if (inputState.mouseDrag !== null) {
-      $adjustMouseDrag(editor, inputState.mouseDrag, focusDOM);
+    // Not for a press that a listener after the editor's cancelled, which
+    // the browser does not select from either.
+    const drag = inputState.mouseDrag;
+    if (drag && !(drag.type === 'mousedown' && drag.defaultPrevented)) {
+      $adjustMouseDrag(editor, drag, focusDOM);
     }
 
     let selection = $getSelection();
@@ -509,12 +512,13 @@ function onSelectionChange(
       }
     }
 
-    // Not again for a drag move that the editor adjusted before the browser.
+    // Not again when the adjustment for the drag's latest mouse event moved
+    // the selection, which notified it.
     $dispatchSelectionChangeCommand(
       editor,
       selection,
       selection !== null &&
-        ((selection.dirty && inputState.mouseDrag === null) ||
+        ((selection.dirty && !(drag && adjustedMouseEvents.has(drag))) ||
           !$isRangeSelection(selection)),
     );
   });
@@ -548,6 +552,24 @@ function $updateSelectionFormatStyleFromElementNode(
   const format = node.getTextFormat();
   const style = node.getTextStyle();
   $updateSelectionFormatStyle(selection, format, style);
+}
+
+/**
+ * Gives a caret that comes to the anchor of `selection` the format and style
+ * that a selectionchange there gives it: those of its text or of its empty
+ * element, or beside the children of an element, its format and no style.
+ */
+function $updateSelectionFormatStyleFromAnchor(selection: RangeSelection) {
+  const node = selection.anchor.getNode();
+  if ($isTextNode(node)) {
+    $updateSelectionFormatStyleFromTextNode(selection, node);
+  } else if ($isElementNode(node)) {
+    $updateSelectionFormatStyle(
+      selection,
+      node.getTextFormat(),
+      node.isEmpty() ? node.getTextStyle() : '',
+    );
+  }
 }
 
 // This is a work-around is mainly Chrome specific bug where if you select
@@ -842,6 +864,10 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
   }
 }
 
+// The press and moves of mouse drags for which $adjustMouseDrag moved the
+// selection.
+const adjustedMouseEvents = new WeakSet<MouseEvent>();
+
 /**
  * Puts the focus of a mouse press or drag beside the inline decorator that
  * the pointer is over, or is beyond at the start or end of a line, where
@@ -852,6 +878,21 @@ function $adjustMouseDrag(
   editor: LexicalEditor,
   event: MouseEvent,
   focusDOM: Node | null = null,
+): void {
+  const selection = $getSelection();
+  const before = selection && selection.clone();
+  $moveMouseDragFocus(editor, event, focusDOM);
+  const after = $getSelection();
+  const drag = editor._inputState.mouseDrag;
+  if (drag && after && !after.is(before)) {
+    adjustedMouseEvents.add(drag);
+  }
+}
+
+function $moveMouseDragFocus(
+  editor: LexicalEditor,
+  event: MouseEvent,
+  focusDOM: Node | null,
 ): void {
   const previous = $getPreviousSelection();
   const isPress = event.type === 'mousedown';
@@ -866,7 +907,7 @@ function $adjustMouseDrag(
         $setSelection(previous.clone());
       }
     } else if (isCaret && decorator.isInline()) {
-      decorator.selectPrevious();
+      $updateSelectionFormatStyleFromAnchor(decorator.selectPrevious());
     }
   }
   const selection = $getSelection();
@@ -920,8 +961,9 @@ function $adjustMouseDrag(
   }
   const win = getWindow(editor);
   const range = win.document.createRange();
+  let offLine: LexicalNode | null = null;
   for (const [node, isStart, sib] of candidates) {
-    if (!$isDecoratorNode(node) || !node.isInline()) {
+    if (!$isDecoratorNode(node) || !node.isInline() || node === offLine) {
       continue;
     }
     const dom = editor.getElementByKey(node.getKey());
@@ -935,28 +977,42 @@ function $adjustMouseDrag(
     const rect = dom.getBoundingClientRect();
     const {bottom, left, right, top} =
       contents.height > rect.height ? contents : rect;
-    const style = win.getComputedStyle(dom);
-    const isAfter = x * 2 > left + right !== (style.direction === 'rtl');
+    // Off the pointer's line, and so not measured again for its other edge.
+    if (isStart !== null && (y < top || y > bottom)) {
+      offLine = node;
+      continue;
+    }
+    // By its line's direction, as a chip of code can have its own.
+    const isRtl =
+      win.getComputedStyle(getParentElement(dom) || dom).direction === 'rtl';
+    const isAfter = x * 2 > left + right !== isRtl;
+    // On its line, the nearest box of the node beside it there is beyond
+    // it, and where the line wraps between them, past its middle. A node
+    // without a box tells neither.
     const sibDOM = sib && editor.getElementByKey(sib.getKey());
-    const sibRect = sibDOM && sibDOM.getBoundingClientRect();
+    const sibRects = sibDOM ? sibDOM.getClientRects() : [];
+    const sibRect: DOMRect | undefined =
+      sibRects[isStart ? sibRects.length - 1 : 0];
     if (
       isStart === null ||
-      // A float is at the edge of no line, and a decorator beside a node
-      // above or below it is at the edge of a line that wraps there.
+      // A float is at the edge of no line.
       (isAfter !== isStart &&
-        y >= top &&
-        y <= bottom &&
-        style.cssFloat === 'none' &&
-        (!sibRect || sibRect.bottom <= top || sibRect.top >= bottom))
+        win.getComputedStyle(dom).cssFloat === 'none' &&
+        (!sib ||
+          (sibRect &&
+            (isStart !== isRtl
+              ? sibRect.right * 2 > left + right
+              : sibRect.left * 2 < left + right))))
     ) {
       // A focus already beside it stays, as WebKit reports no move to a
       // point it takes for the same one.
       if (!node.is($leaf($getAdjacentNode(focus, isAfter), !isAfter))) {
         const offset = node.getIndexWithinParent() + (isAfter ? 1 : 0);
         focus.set(node.getParentOrThrow().getKey(), offset, 'element');
-      }
-      if (isCaret) {
-        anchor.set(focus.key, focus.offset, focus.type, true);
+        if (isCaret) {
+          anchor.set(focus.key, focus.offset, focus.type);
+          $updateSelectionFormatStyleFromAnchor(selection);
+        }
       }
       return;
     }
@@ -2553,18 +2609,17 @@ export function addRootElementEvents(
         endMouseDrag();
       } else if (inputState.isSelectionChangeFromMouseDown) {
         // The editor has not seen the press's selectionchange yet, which the
-        // drag extends from, so this handles it, with the format and style
-        // that it takes from the node at the press. That selectionchange,
-        // when it comes, must not replace what the editor made of the press,
-        // such as a table's selection of cells, after which macOS Chromium
-        // puts a caret at the start of the editor.
+        // drag extends from (and none may come for a press that leaves the
+        // caret where it was), so this handles it, with the format and style
+        // that it takes from the node at the press, unless the anchor stays,
+        // which keeps a format armed there. That selectionchange, when it
+        // comes, must not replace what the editor made of the press, such as
+        // a table's selection of cells, after which macOS Chromium puts a
+        // caret at the start of the editor.
         clearSelectionChangeFromMouseDown(documentRegistrations.get(doc));
         if (selection) {
-          const node = selection.anchor.getNode();
-          if ($isTextNode(node)) {
-            $updateSelectionFormatStyleFromTextNode(selection, node);
-          } else if ($isElementNode(node) && node.isEmpty()) {
-            $updateSelectionFormatStyleFromElementNode(selection, node);
+          if (!(isRange && selection.anchor.is(current.anchor))) {
+            $updateSelectionFormatStyleFromAnchor(selection);
           }
           $setSelection(selection);
         }
@@ -2609,12 +2664,6 @@ export function addRootElementEvents(
           !isDOMCapturingSelection(target, editor)
         ) {
           inputState.mouseDrag = event;
-          // Also before the browser, which can leave the caret where it was,
-          // but not for a Shift press, which macOS extends from the end of
-          // the selection that is farther from it.
-          if (!event.shiftKey) {
-            updateEditorSync(editor, () => $adjustMouseDrag(editor, event));
-          }
         }
       },
     }),

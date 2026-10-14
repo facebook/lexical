@@ -13,7 +13,7 @@ import {
   registerMarkdownShortcuts,
 } from '@lexical/markdown';
 import {MarkdownTestExtension} from '@lexical/markdown/src/__tests__/utils';
-import {defineExtension} from 'lexical';
+import {configExtension, defineExtension} from 'lexical';
 import {expect, test} from 'vitest';
 
 import {
@@ -28,7 +28,14 @@ import {
 } from './utils';
 
 const extension = defineExtension({
-  dependencies: [MarkdownTestExtension, HistoryExtension],
+  dependencies: [
+    MarkdownTestExtension,
+    // Keys typed in a row make one undo step only while each comes within the
+    // history delay (300 ms) of the one before, which a busy runner can miss.
+    // Merge them however slowly they come, so each undo takes the step the
+    // undo/redo test expects.
+    configExtension(HistoryExtension, {delay: Infinity}),
+  ],
   name: '[markdown-inline-test]',
   register: editor => registerMarkdownShortcuts(editor),
 });

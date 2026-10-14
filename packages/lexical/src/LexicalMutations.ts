@@ -8,12 +8,12 @@
 
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
-import type {LexicalPrivateDOM} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
 
 import {
   $getSelection,
   $isDecoratorNode,
+  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
@@ -25,7 +25,6 @@ import {isDecoratorBoundaryAnchorDOM} from './LexicalDOMSlot';
 import {updateEditorSync} from './LexicalUpdates';
 import {
   $getNodeByKey,
-  $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getDOMSelection,
   getDOMSelectionPoints,
@@ -55,24 +54,6 @@ function initTextEntryListener(editor: LexicalEditor): void {
   if (lastTextEntryTimeStamp === 0) {
     getWindow(editor).addEventListener('textInput', updateTimeStamp, true);
   }
-}
-
-// True when `dom` is a line break the editor is actively managing in the
-// live DOM — identified by the `__lexicalLineBreak` slot reference or by
-// having a node key.
-function isEditorManagedLineBreak(
-  dom: Node,
-  target: Node & LexicalPrivateDOM,
-  editor: LexicalEditor,
-): boolean {
-  const isBR = dom.nodeName === 'BR';
-  const lexicalLineBreak = target.__lexicalLineBreak;
-  return (
-    (lexicalLineBreak &&
-      (dom === lexicalLineBreak ||
-        (isBR && dom.previousSibling === lexicalLineBreak))) ||
-    (isBR && getNodeKeyFromDOMNode(dom, editor) !== undefined)
-  );
 }
 
 function getLastSelection(editor: LexicalEditor): null | BaseSelection {
@@ -200,34 +181,39 @@ function flushMutations(
 
           for (let s = 0; s < addedDOMs.length; s++) {
             const addedDOM = addedDOMs[s];
-            const node = $getNodeFromDOMNode(addedDOM);
+            const key = getNodeKeyFromDOMNode(addedDOM, editor);
             const parentDOM = addedDOM.parentNode;
 
             if (
               parentDOM != null &&
               addedDOM !== blockCursorElement &&
-              node === null &&
               // Not when it has moved on: scaffolding is put back below.
               parentDOM === targetDOM &&
+              // Keyed DOM stays only when it is the DOM its node renders
+              // to: a stale copy (of a removed node, or from before a node
+              // was rendered anew) is evicted like foreign DOM. So is a node
+              // of a managed line break: an edit that moved one took it from
+              // an element that reconcileObservedMutation puts back together.
               // The reconciler adds a decorator boundary anchor (#8922) only
               // while nothing observes, so one added here was moved or copied
               // by something else and is evicted too.
-              !isEditorManagedLineBreak(addedDOM, parentDOM, editor) &&
-              // @experimental named-slots. Slot containers are keyless
-              // reconciler scaffolding: a flush that observes one being
-              // parked in its host or relocated by an explicit mount must
-              // not evict it as foreign DOM. Gated on the editor slot latch so
-              // a non-slot editor still evicts foreign DOM that happens to
-              // carry a `data-lexical-slot` attribute.
-              !(
-                editor._slotsUsed &&
-                isHTMLElement(addedDOM) &&
-                addedDOM.hasAttribute('data-lexical-slot')
-              ) &&
-              // Skip externally-added DOM that's explicitly opted out of
-              // mutation tracking (e.g. an extension-rendered decoration
-              // inside a TextNode's span, like the autocomplete ghost).
-              !isDOMUnmanaged(addedDOM)
+              (key
+                ? editor.getElementByKey(key) !== addedDOM
+                : // @experimental named-slots. Slot containers are keyless
+                  // reconciler scaffolding: a flush that observes one being
+                  // parked in its host or relocated by an explicit mount must
+                  // not evict it as foreign DOM. Gated on the editor slot
+                  // latch so a non-slot editor still evicts foreign DOM that
+                  // happens to carry a `data-lexical-slot` attribute.
+                  !(
+                    editor._slotsUsed &&
+                    isHTMLElement(addedDOM) &&
+                    addedDOM.hasAttribute('data-lexical-slot')
+                  ) &&
+                  // Skip externally-added DOM that's explicitly opted out of
+                  // mutation tracking (e.g. an extension-rendered decoration
+                  // inside a TextNode's span, like the autocomplete ghost).
+                  !isDOMUnmanaged(addedDOM))
             ) {
               if (IS_FIREFOX) {
                 const possibleText =
@@ -243,42 +229,31 @@ function flushMutations(
             }
           }
 
-          const removedDOMs = mutation.removedNodes;
-          const removedDOMsLength = removedDOMs.length;
-
-          if (removedDOMsLength > 0) {
-            let unremovedBRs = 0;
-
-            for (let s = 0; s < removedDOMsLength; s++) {
-              const removedDOM = removedDOMs[s];
-
-              if (
-                isEditorManagedLineBreak(removedDOM, targetDOM, editor) ||
-                blockCursorElement === removedDOM ||
-                isDecoratorBoundaryAnchorDOM(removedDOM) ||
-                (isHTMLElement(removedDOM) &&
-                  removedDOM.hasAttribute('data-lexical-managed-linebreak'))
-              ) {
-                // Back in its place, which matters for the scaffolding:
-                // after its previous sibling when a later record took the
-                // next one.
-                const next = mutation.nextSibling;
-                const prev = mutation.previousSibling;
-                targetDOM.insertBefore(
-                  removedDOM,
-                  !next || next.parentNode === targetDOM
-                    ? next
-                    : !prev
-                      ? targetDOM.firstChild
-                      : prev.parentNode === targetDOM
-                        ? prev.nextSibling
-                        : null,
-                );
-                unremovedBRs++;
-              }
-            }
-
-            if (removedDOMsLength !== unremovedBRs) {
+          for (const removedDOM of mutation.removedNodes) {
+            if (
+              blockCursorElement === removedDOM ||
+              isDecoratorBoundaryAnchorDOM(removedDOM)
+            ) {
+              // Back in its place, which matters for the scaffolding:
+              // after its previous sibling when a later record took the
+              // next one.
+              const next = mutation.nextSibling;
+              const prev = mutation.previousSibling;
+              targetDOM.insertBefore(
+                removedDOM,
+                !next || next.parentNode === targetDOM
+                  ? next
+                  : !prev
+                    ? targetDOM.firstChild
+                    : prev.parentNode === targetDOM
+                      ? prev.nextSibling
+                      : null,
+              );
+            } else {
+              // A removed child or managed line break is put back by
+              // reconcileObservedMutation once every record has been seen,
+              // since a later record can still move what it would sit next
+              // to.
               badDOMTargets.set(nodeDOM, targetNode);
             }
           }
@@ -291,7 +266,17 @@ function flushMutations(
       // an internal revert on the DOM.
       if (badDOMTargets.size > 0) {
         for (const [nodeDOM, targetNode] of badDOMTargets) {
-          targetNode.reconcileObservedMutation(nodeDOM, editor);
+          if ($isElementNode(targetNode)) {
+            // Put back the children of the committed state: they are what
+            // is on screen, and what this update's reconciler diffs the DOM
+            // against when the flush runs inside an update (onInput) that
+            // has already changed them.
+            editor.read('latest', () =>
+              targetNode.reconcileObservedMutation(nodeDOM, editor),
+            );
+          } else {
+            targetNode.reconcileObservedMutation(nodeDOM, editor);
+          }
         }
       }
 
@@ -307,16 +292,20 @@ function flushMutations(
         for (let i = 0; i < records.length; i++) {
           const record = records[i];
           const addedNodes = record.addedNodes;
-          const target = record.target;
 
           for (let s = 0; s < addedNodes.length; s++) {
             const addedDOM = addedNodes[s];
             const parentDOM = addedDOM.parentNode;
 
+            // Keep the line breaks the revert put back: a LineBreakNode's
+            // and the managed one.
             if (
               parentDOM != null &&
               addedDOM.nodeName === 'BR' &&
-              !isEditorManagedLineBreak(addedDOM, target, editor)
+              !getNodeKeyFromDOMNode(addedDOM, editor) &&
+              !(addedDOM as Element).hasAttribute(
+                'data-lexical-managed-linebreak',
+              )
             ) {
               parentDOM.removeChild(addedDOM);
             }

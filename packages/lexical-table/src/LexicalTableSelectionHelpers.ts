@@ -170,10 +170,14 @@ function autoScrollStep(pos: number, start: number, end: number): number {
 }
 
 // Scale a per-frame delta from autoScrollStep to a tick covering `elapsed` ms.
-// It stays at least one pixel: the loop stops on a tick that scrolls nothing.
+// It rounds the magnitude, since Math.round rounds halves up and would favour
+// positive steps, and keeps at least one pixel: the loop stops on a tick that
+// scrolls nothing.
 function scaleAutoScrollStep(step: number, elapsed: number): number {
-  const scaled = Math.round((step * elapsed * AUTO_SCROLL_FPS) / 1000);
-  return step < 0 ? Math.min(-1, scaled) : Math.max(1, scaled);
+  return (
+    Math.sign(step) *
+    Math.max(1, Math.round((Math.abs(step) * elapsed * AUTO_SCROLL_FPS) / 1000))
+  );
 }
 
 export function isHTMLTableElement(el: unknown): el is HTMLTableElement {

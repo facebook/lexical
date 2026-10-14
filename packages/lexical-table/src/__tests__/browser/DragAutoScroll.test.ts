@@ -98,13 +98,24 @@ function captureAnimationFrames() {
 }
 
 /**
- * Presses the mouse in the first cell of the second row and holds it 5px
- * inside the right edge of the table's scroll wrapper, then runs frames at
- * `frameMs` intervals for 100ms. Returns how far the wrapper scrolled.
+ * With the table's scroll wrapper scrolled as far from `edge` as it goes,
+ * presses the mouse in the second row's cell at the other end and holds it
+ * `inset` px inside `edge`, then runs frames at `frameMs` intervals for 100ms.
+ * Returns how far the wrapper scrolled.
  */
-function autoScrollFor100ms(frameMs: number): number {
+function autoScrollFor100ms(
+  frameMs: number,
+  edge: 'left' | 'right' = 'right',
+  inset = 5,
+): number {
   const {table, unmount, wrapper} = mount();
-  const cell = table.querySelectorAll('tr')[1].querySelector('td');
+  if (edge === 'left') {
+    wrapper.scrollLeft = wrapper.scrollWidth;
+  }
+  const startScrollLeft = wrapper.scrollLeft;
+  const cell = table
+    .querySelectorAll('tr')[1]
+    .querySelector(edge === 'left' ? 'td:last-child' : 'td');
   assert(cell !== null, 'Expected the second row to have a cell');
   const cellRect = cell.getBoundingClientRect();
   const clientY = cellRect.top + cellRect.height / 2;
@@ -120,7 +131,9 @@ function autoScrollFor100ms(frameMs: number): number {
         pointerType: 'mouse',
       }),
     );
-  const holdX = wrapper.getBoundingClientRect().right - 5;
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const holdX =
+    edge === 'left' ? wrapperRect.left + inset : wrapperRect.right - inset;
   const {restore, runFrame} = captureAnimationFrames();
   pointer('pointerdown', cellRect.left + cellRect.width / 2);
   pointer('pointermove', holdX);
@@ -129,12 +142,12 @@ function autoScrollFor100ms(frameMs: number): number {
     runFrame(1000 + frame * frameMs);
   }
   pointer('pointerup', holdX);
-  const scrollLeft = wrapper.scrollLeft;
+  const distance = Math.abs(wrapper.scrollLeft - startScrollLeft);
   // Before the next measurement, which mounts another editor. Both run again
   // when the test finishes, which also covers a measurement that throws.
   restore();
   unmount();
-  return scrollLeft;
+  return distance;
 }
 
 test('drag auto-scroll covers the same distance in the same time at any frame rate', () => {
@@ -142,4 +155,13 @@ test('drag auto-scroll covers the same distance in the same time at any frame ra
   const at10Hz = autoScrollFor100ms(100);
   expect(at60Hz).toBeGreaterThan(0);
   expect(at10Hz).toBe(at60Hz);
+});
+
+test('drag auto-scroll covers the same distance toward either edge', () => {
+  // 5.5px into an edge zone scrolls 3px a frame, which a 25ms frame scales
+  // to 4.5px.
+  const toRight = autoScrollFor100ms(25, 'right', 34.5);
+  const toLeft = autoScrollFor100ms(25, 'left', 34.5);
+  expect(toRight).toBeGreaterThan(0);
+  expect(toLeft).toBe(toRight);
 });

@@ -16,6 +16,7 @@ import invariant from '@lexical/internal/invariant';
 import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 
 import {
+  $createRangeSelection,
   $createTextNode,
   $getChildCaret,
   $getPreviousSelection,
@@ -922,7 +923,17 @@ function $moveMouseDragFocus(
       decorator.selectPrevious();
     }
   }
-  const selection = $getSelection();
+  const current = $getSelection();
+  // A point in DOM that no node renders (an extension's badge at the end of
+  // a line) leaves no selection. A decorator at the pointer still places one:
+  // from nothing for a click, else keeping the previous anchor.
+  const selection =
+    current ||
+    (isCaret
+      ? $createRangeSelection()
+      : $isRangeSelection(previous)
+        ? previous.clone()
+        : null);
   const root = editor.getRootElement();
   const doc = root && root.getRootNode();
   if (
@@ -1021,6 +1032,9 @@ function $moveMouseDragFocus(
         if (isCaret) {
           $setPointFromCaret(anchor, beside);
         }
+      }
+      if (!current) {
+        $setSelection(selection);
       }
       return;
     }

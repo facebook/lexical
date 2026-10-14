@@ -3467,12 +3467,26 @@ describe('Issue #7158: mouse drag beside DOM an extension keeps in the block', (
     Array.from(
       block.querySelectorAll(':scope > [data-lexical-managed-linebreak]'),
     );
+  const beforeLineBreak = (block: Element) =>
+    block.insertBefore(badge(), managedLineBreak(block)[0]);
   const afterLineBreak = (block: Element) => block.append(badge());
   const removeLineBreak = (block: Element) =>
     managedLineBreak(block).forEach(node => node.remove());
 
   type Edit = (block: Element) => void;
   test.each<[string, 'end' | 'start', Edit, Edit | null]>([
+    [
+      'right of the last decorator, with a badge before the line break,',
+      'end',
+      beforeLineBreak,
+      null,
+    ],
+    [
+      'left of the first decorator, with a badge before the line break,',
+      'start',
+      beforeLineBreak,
+      null,
+    ],
     [
       'right of the last decorator, with a badge after a line break that an edit removes mid-drag,',
       'end',

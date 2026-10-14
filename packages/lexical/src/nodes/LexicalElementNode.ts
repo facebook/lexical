@@ -1091,52 +1091,57 @@ export class ElementNode
 
   /** @internal */
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
-    let slot = $getDOMSlot(this, dom, editor);
-    const element = slot.element;
-    // The edit may have removed a boundary that the slot still names.
-    if (slot.after && slot.after.parentNode !== element) {
-      slot = slot.withAfter(null);
-    }
-    if (slot.before && slot.before.parentNode !== element) {
-      slot = slot.withBefore(null);
-    }
-    // Put the managed line break back where the reconciler would if the edit
-    // removed or moved a node of it.
-    const lineBreak = slot.getManagedLineBreak();
-    if (lineBreak) {
-      slot.insertManagedLineBreak(lineBreak.nodeName === 'IMG');
-    }
-    let currentDOM = slot.getFirstChild();
-    for (const key of this.getChildrenKeys()) {
-      const correctDOM = editor.getElementByKey(key);
+    // Put back the children of the committed state: they are what is on
+    // screen, and what the reconciler diffs the DOM against when this runs
+    // inside an update (onInput) that has already changed them.
+    editor.read('latest', () => {
+      let slot = $getDOMSlot(this, dom, editor);
+      const element = slot.element;
+      // The edit may have removed a boundary that the slot still names.
+      if (slot.after && slot.after.parentNode !== element) {
+        slot = slot.withAfter(null);
+      }
+      if (slot.before && slot.before.parentNode !== element) {
+        slot = slot.withBefore(null);
+      }
+      // Put the managed line break back where the reconciler would if the
+      // edit removed or moved a node of it.
+      const lineBreak = slot.getManagedLineBreak();
+      if (lineBreak) {
+        slot.insertManagedLineBreak(lineBreak.nodeName === 'IMG');
+      }
+      let currentDOM = slot.getFirstChild();
+      for (const key of this.getChildrenKeys()) {
+        const correctDOM = editor.getElementByKey(key);
 
-      if (!correctDOM) {
-        continue;
-      }
+        if (!correctDOM) {
+          continue;
+        }
 
-      // Only move children into place, never replace a node. DOM an
-      // extension keeps among the children (keyless, marked with
-      // setDOMUnmanaged) stays ahead of the child that follows it; a child
-      // with no such follower goes before that DOM, so DOM at the end stays
-      // at the end.
-      let nextDOM = currentDOM;
-      let nextKey: NodeKey | undefined;
-      while (
-        nextDOM &&
-        !(nextKey = getNodeKeyFromDOMNode(nextDOM, editor)) &&
-        isDOMUnmanaged(nextDOM)
-      ) {
-        nextDOM = nextDOM.nextSibling;
+        // Only move children into place, never replace a node. DOM an
+        // extension keeps among the children (keyless, marked with
+        // setDOMUnmanaged) stays ahead of the child that follows it; a
+        // child with no such follower goes before that DOM, so DOM at the
+        // end stays at the end.
+        let nextDOM = currentDOM;
+        let nextKey: NodeKey | undefined;
+        while (
+          nextDOM &&
+          !(nextKey = getNodeKeyFromDOMNode(nextDOM, editor)) &&
+          isDOMUnmanaged(nextDOM)
+        ) {
+          nextDOM = nextDOM.nextSibling;
+        }
+        if (nextDOM !== correctDOM) {
+          element.insertBefore(
+            correctDOM,
+            nextKey ? nextDOM : currentDOM || slot.getInsertionAnchor(),
+          );
+        }
+        currentDOM = correctDOM.nextSibling;
       }
-      if (nextDOM !== correctDOM) {
-        element.insertBefore(
-          correctDOM,
-          nextKey ? nextDOM : currentDOM || slot.getInsertionAnchor(),
-        );
-      }
-      currentDOM = correctDOM.nextSibling;
-    }
-    $reconcileDecoratorBoundaryAnchors(this, dom, slot);
+      $reconcileDecoratorBoundaryAnchors(this, dom, slot);
+    });
   }
 }
 

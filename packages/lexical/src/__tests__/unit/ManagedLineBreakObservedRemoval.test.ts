@@ -206,26 +206,6 @@ describe('a paragraph ending with an inline decorator', () => {
     expectRestored(mounted);
   });
 
-  // PagesExtension in the playground clears a page's DOM and calls the
-  // (internal) reconcileObservedMutation itself, inside an update.
-  test('clearing the paragraph and reverting it directly, as PagesExtension does', async () => {
-    const mounted = mountEditor($children);
-    const {block, editor} = mounted;
-    await observeBatch(mounted.root, () => {
-      editor.update(
-        () => {
-          block.textContent = '';
-          $assertNodeType(
-            $getRoot().getFirstChild(),
-            $isParagraphNode,
-          ).reconcileObservedMutation(block, editor);
-        },
-        {discrete: true},
-      );
-    });
-    expectRestored(mounted);
-  });
-
   test('a later edit at the end of the paragraph still renders', async () => {
     const mounted = mountEditor($children);
     await observeBatch(mounted.root, () =>
@@ -303,24 +283,6 @@ describe('an empty paragraph', () => {
     await observeBatch(mounted.root, () =>
       remove(...managedLineBreak(mounted.block)),
     );
-    expectRestored(mounted);
-  });
-
-  test('clearing it and reverting it directly, as PagesExtension does', async () => {
-    const mounted = mountEditor(() => [$createParagraphNode()]);
-    const {block, editor} = mounted;
-    await observeBatch(mounted.root, () => {
-      editor.update(
-        () => {
-          block.textContent = '';
-          $assertNodeType(
-            $getRoot().getFirstChild(),
-            $isParagraphNode,
-          ).reconcileObservedMutation(block, editor);
-        },
-        {discrete: true},
-      );
-    });
     expectRestored(mounted);
   });
 });

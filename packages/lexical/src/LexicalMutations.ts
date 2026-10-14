@@ -13,7 +13,6 @@ import type {BaseSelection} from './LexicalSelection';
 import {
   $getSelection,
   $isDecoratorNode,
-  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
@@ -266,17 +265,7 @@ function flushMutations(
       // an internal revert on the DOM.
       if (badDOMTargets.size > 0) {
         for (const [nodeDOM, targetNode] of badDOMTargets) {
-          if ($isElementNode(targetNode)) {
-            // Put back the children of the committed state: they are what
-            // is on screen, and what this update's reconciler diffs the DOM
-            // against when the flush runs inside an update (onInput) that
-            // has already changed them.
-            editor.read('latest', () =>
-              targetNode.reconcileObservedMutation(nodeDOM, editor),
-            );
-          } else {
-            targetNode.reconcileObservedMutation(nodeDOM, editor);
-          }
+          targetNode.reconcileObservedMutation(nodeDOM, editor);
         }
       }
 
